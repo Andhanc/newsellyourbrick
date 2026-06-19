@@ -146,17 +146,20 @@
 }
 
 .oap-documents-step__req-icon--tiffany,
-.oap-documents-step__req-icon--blue {
-  color: var(--doc-tiffany);
-  background: var(--doc-tiffany-soft);
-  border: 1px solid var(--doc-tiffany-border);
-}
-
+.oap-documents-step__req-icon--blue,
 .oap-documents-step__req-icon--tiffany-soft,
 .oap-documents-step__req-icon--green {
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-softer);
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  color: #ffffff;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 6px 14px rgba(10, 186, 181, 0.22);
+}
+
+.oap-documents-step__req-icon--tiffany svg,
+.oap-documents-step__req-icon--blue svg,
+.oap-documents-step__req-icon--tiffany-soft svg,
+.oap-documents-step__req-icon--green svg {
+  color: #ffffff;
 }
 
 .oap-documents-step__req-content {
@@ -267,16 +270,17 @@
   letter-spacing: 0.04em;
 }
 
-.oap-documents-step__file-badge--pdf {
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-soft);
-  border: 1px solid var(--doc-tiffany-border);
+.oap-documents-step__file-badge--pdf,
+.oap-documents-step__file-badge--image {
+  color: #ffffff;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 4px 10px rgba(10, 186, 181, 0.2);
 }
 
-.oap-documents-step__file-badge--image {
-  color: var(--doc-tiffany);
-  background: var(--doc-tiffany-soft);
-  border: 1px solid var(--doc-tiffany-border);
+.oap-documents-step__file-badge--pdf svg,
+.oap-documents-step__file-badge--image svg {
+  color: #ffffff;
 }
 
 .oap-documents-step__file-badge--slot {
@@ -355,9 +359,10 @@
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-soft);
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  color: #fff;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.22);
 }
 
 .oap-documents-step__section-meta {
@@ -395,8 +400,9 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-soft);
+  color: #ffffff;
+  background: var(--doc-tiffany);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.2);
 }
 
 .oap-documents-step__upload-note-text {
@@ -549,8 +555,9 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-soft);
+  color: #ffffff;
+  background: var(--doc-tiffany);
+  box-shadow: 0 6px 14px rgba(10, 186, 181, 0.22);
 }
 
 .oap-documents-step__security-title {
@@ -733,17 +740,6 @@
   overflow: visible;
 }
 
-.oap-documents-step--embedded .oap-documents-step__card:not(.oap-documents-step__card--security)::before {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: 16px;
-  left: 0;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #53d8d3 0%, #0abab5 52%, #089a95 100%);
-}
-
 .oap-documents-step--embedded .oap-documents-step__section-head--numbered {
   margin: 0;
   padding: 0 0 14px;
@@ -767,10 +763,6 @@
   border: none;
   box-shadow: none;
   background: transparent;
-}
-
-.oap-documents-step--embedded .oap-documents-step__card--security::before {
-  display: none;
 }
 
 /* Sidebar */
@@ -837,15 +829,20 @@
 }
 
 .oap-documents-step__tip-icon--tiffany,
-.oap-documents-step__tip-icon--blue {
-  color: var(--doc-tiffany);
-  background: var(--doc-tiffany-soft);
-}
-
+.oap-documents-step__tip-icon--blue,
 .oap-documents-step__tip-icon--tiffany-soft,
 .oap-documents-step__tip-icon--green {
-  color: var(--doc-tiffany-dark);
-  background: var(--doc-tiffany-softer);
+  color: #ffffff;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 4px 10px rgba(10, 186, 181, 0.18);
+}
+
+.oap-documents-step__tip-icon--tiffany svg,
+.oap-documents-step__tip-icon--blue svg,
+.oap-documents-step__tip-icon--tiffany-soft svg,
+.oap-documents-step__tip-icon--green svg {
+  color: #ffffff;
 }
 
 .oap-documents-step__tip-icon--tiffany-muted,

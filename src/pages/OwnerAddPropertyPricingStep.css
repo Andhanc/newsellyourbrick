@@ -65,8 +65,8 @@
 
 .oap-pricing-step__field--compact {
   flex: 0 0 auto;
-  width: min(100%, 188px);
-  max-width: 188px;
+  width: min(100%, 248px);
+  max-width: 248px;
 }
 
 .oap-pricing-step__field--full {
@@ -161,7 +161,7 @@
 }
 
 .oap-pricing-step__input--with-currency {
-  padding-right: 76px;
+  padding-right: 82px;
 }
 
 .oap-pricing-step__input--date {
@@ -234,18 +234,18 @@
   color: #dc2626;
 }
 
-.oap-pricing-step__auction-block {
+.oap-pricing-step__auction-period {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-top: 8px;
-  border-top: 1px solid #f1f5f9;
+  gap: 6px;
+  width: min(100%, 260px);
+  max-width: 260px;
+  align-self: flex-start;
 }
 
-.oap-pricing-step__auction-period {
-  width: min(100%, 188px);
-  max-width: 188px;
-  align-self: flex-start;
+.oap-pricing-step--embedded .oap-pricing-step__auction-period {
+  width: min(100%, 260px);
+  max-width: 260px;
 }
 
 .oap-pricing-step__auction-period .auction-period-header {
@@ -262,6 +262,11 @@
   font-size: 13px;
   font-weight: 600;
   color: #6b7280;
+}
+
+.oap-pricing-step:not(.oap-pricing-step--embedded) .oap-pricing-step__auction-period {
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .oap-pricing-step__auction-period .auction-period-content {

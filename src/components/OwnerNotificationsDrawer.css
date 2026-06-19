@@ -102,15 +102,39 @@
 }
 
 .ond-item {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 12px;
   align-items: flex-start;
-  padding: 14px;
+  padding: 14px 36px 14px 14px;
   border: 1px solid rgba(226, 232, 240, 0.92);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.ond-item__dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ond-item__dismiss:hover {
+  background: rgba(148, 163, 184, 0.14);
+  color: #64748b;
 }
 
 .ond-item__icon {
@@ -123,8 +147,8 @@
 }
 
 .ond-item--teal .ond-item__icon {
-  background: #ccfbf1;
-  color: #0d9488;
+  background: #0abab5;
+  color: #ffffff;
 }
 
 .ond-item--amber .ond-item__icon {
@@ -190,8 +214,8 @@
 .ond-item__amount {
   padding: 5px 9px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.1);
-  color: #0d9488;
+  background: #0abab5;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;

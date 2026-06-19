@@ -518,7 +518,7 @@
 /* ——— Plan cards ——— */
 .ost-plans-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: stretch;
 }
@@ -527,19 +527,99 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 24px 20px 20px;
+  height: 100%;
+  min-height: 0;
+  padding: 0 20px 24px;
   border-radius: var(--ost-radius);
   background: var(--ost-surface);
   border: 1.5px solid var(--oc-border-soft);
   box-shadow: var(--oc-shadow-md);
-  min-height: 100%;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.ost-plan-card > *:not(.ost-plan-card__ambient):not(.ost-plan-card__art) {
+  position: relative;
+  z-index: 1;
+}
+
+.ost-plan-card__art {
+  position: relative;
+  height: 88px;
+  margin: 0 -20px 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 0;
+}
+
+.ost-plan-card__art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  display: block;
+  filter: grayscale(1) contrast(1.05);
+}
+
+.ost-plan-card:not(.ost-plan-card--current-paid) .ost-plan-card__art {
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.ost-plan-card__art-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.94) 88%);
+}
+
+.ost-plan-card__head {
+  margin-top: 14px;
+}
+
+.ost-plan-card__features {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ost-plan-card__billing-slot {
+  flex: 0 0 auto;
+  min-height: 72px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: stretch;
+}
+
+.ost-plan-card__billing-slot .ost-plan-card__billing {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.ost-plan-card__billing--placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.ost-plan-card__footer {
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .ost-plan-card:hover:not(.ost-plan-card--current) {
-  transform: translateY(-2px);
-  border-color: rgba(15, 23, 42, 0.12);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-3px);
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.ost-plan-card--tier-pro:hover:not(.ost-plan-card--current) {
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+}
+
+.ost-plan-card--tier-institutional:hover:not(.ost-plan-card--current) {
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.12);
 }
 
 .ost-plan-card--current {
@@ -549,19 +629,53 @@
     0 16px 40px rgba(10, 186, 181, 0.14);
 }
 
-.ost-plan-card__owned-badge {
+.ost-plan-card__current-ribbon {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: var(--ost-gradient-brand);
+  top: 0;
+  left: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px 10px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(
+    180deg,
+    var(--ost-tiffany-light, #53d8d3) 0%,
+    var(--ost-tiffany, #0abab5) 52%,
+    var(--ost-tiffany-dark, #089a95) 100%
+  );
   color: #fff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  box-shadow: 0 6px 16px var(--ost-tiffany-ring);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 2px solid var(--ost-tiffany-dark, #089a95);
+  border-top: none;
+  box-shadow:
+    0 8px 22px rgba(10, 186, 181, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  text-shadow: 0 1px 1px rgba(4, 47, 46, 0.18);
+}
+
+.ost-plan-card__current-ribbon svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(4, 47, 46, 0.15));
+}
+
+.ost-plan-card--current-paid {
+  border-width: 2.5px;
+  border-color: rgba(10, 186, 181, 0.62) !important;
+  box-shadow:
+    0 0 0 5px rgba(10, 186, 181, 0.14),
+    0 22px 48px rgba(10, 186, 181, 0.22) !important;
+}
+
+/* legacy alias */
+.ost-plan-card__owned-badge {
+  display: none;
 }
 
 .ost-plan-card__billing {
@@ -580,7 +694,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   min-width: 0;
 }
 
@@ -654,9 +768,126 @@
 .ost-plan-card__head {
   display: flex;
   align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ost-plan-card__title-row {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.ost-plan-card__tier-label {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ost-plan-card__priority {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.ost-plan-card__priority-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: #e8edf2;
+}
+
+.ost-plan-card__priority-bar--on {
+  background: #0f172a;
+}
+
+.ost-plan-card--tier-pro .ost-plan-card__priority-bar--on {
+  background: #334155;
+}
+
+.ost-plan-card--tier-institutional .ost-plan-card__priority-bar--on {
+  background: #030712;
+}
+
+.ost-plan-card__chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.94);
+  color: #334155;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ost-plan-card__head-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.ost-plan-emblem {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.ost-plan-emblem__rank {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #64748b;
+  line-height: 1;
+}
+
+.ost-plan-card--tier-pro .ost-plan-emblem {
+  width: 46px;
+  height: 46px;
+  border-color: #cbd5e1;
+}
+
+.ost-plan-card--tier-pro .ost-plan-emblem__rank {
+  font-size: 18px;
+  color: #334155;
+}
+
+.ost-plan-card--tier-institutional .ost-plan-emblem {
+  width: 48px;
+  height: 48px;
+  border-width: 1.5px;
+  border-color: #94a3b8;
+}
+
+.ost-plan-card--tier-institutional .ost-plan-emblem__rank {
+  font-size: 19px;
+  color: #0f172a;
+}
+
+.ost-plan-card__ambient {
+  display: none;
 }
 
 .ost-plan-card__name {
@@ -667,9 +898,10 @@
 }
 
 .ost-plan-card__tagline {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
+  font-weight: 500;
   color: var(--ost-text-muted);
 }
 
@@ -694,8 +926,26 @@
   line-height: 1.1;
 }
 
+.ost-plan-card__price-row {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.ost-plan-card__was-price {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ef4444;
+  text-decoration: line-through;
+  text-decoration-thickness: 2.5px;
+  text-decoration-color: #ef4444;
+  opacity: 0.92;
+}
+
 .ost-plan-card__amount {
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
@@ -715,32 +965,59 @@
 
 .ost-plan-card__features {
   list-style: none;
-  margin: 0 0 22px;
-  padding: 0;
+  margin: 0 0 18px;
+  padding: 14px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 10px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.025);
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .ost-plan-card__feature {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-  line-height: 1.45;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--ost-text);
+  padding: 5px 0;
+  border-radius: 10px;
+  transition: background 0.18s ease;
 }
 
-.ost-plan-card__feature svg {
+.ost-plan-card__feature:hover {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.ost-plan-feat-icon {
   flex-shrink: 0;
-  margin-top: 1px;
-  color: var(--ost-slate-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.ost-plan-feat-icon--inverted {
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.28);
+}
+
+.ost-plan-card__feature-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .ost-plan-card__btn {
   width: 100%;
-  padding: 12px 16px;
+  padding: 13px 14px;
   border-radius: 10px;
   border: none;
   font: inherit;
@@ -783,39 +1060,181 @@
   cursor: default;
 }
 
+.ost-plan-card--current-paid .ost-plan-card__btn--current {
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 14px var(--ost-tiffany-ring);
+  opacity: 1;
+}
+
 .ost-plan-card--featured .ost-plan-card__btn--select {
   box-shadow: 0 6px 20px rgba(10, 186, 181, 0.32);
+}
+
+/* ——— Tier priority: unified monochrome cards ——— */
+
+.ost-plan-card--tier-standard,
+.ost-plan-card--tier-pro,
+.ost-plan-card--tier-institutional {
+  background: #ffffff;
+  color: var(--ost-text);
+}
+
+.ost-plan-card--tier-standard::after,
+.ost-plan-card--tier-pro::after,
+.ost-plan-card--tier-institutional::after {
+  display: none;
+}
+
+.ost-plan-card--tier-standard {
+  border: 1px solid #e8edf2;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.ost-plan-card--tier-pro {
+  border: 1.5px solid #d1d5db;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+}
+
+.ost-plan-card--tier-institutional {
+  border: 2px solid #9ca3af;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__name,
+.ost-plan-card--tier-pro .ost-plan-card__name,
+.ost-plan-card--tier-institutional .ost-plan-card__name {
+  color: var(--ost-slate);
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__amount,
+.ost-plan-card--tier-pro .ost-plan-card__amount,
+.ost-plan-card--tier-institutional .ost-plan-card__amount {
+  color: var(--ost-slate);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+.ost-plan-card--tier-pro .ost-plan-card__amount {
+  font-size: 30px;
+}
+
+.ost-plan-card--tier-institutional .ost-plan-card__amount {
+  font-size: 32px;
+  font-weight: 850;
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__features,
+.ost-plan-card--tier-pro .ost-plan-card__features,
+.ost-plan-card--tier-institutional .ost-plan-card__features {
+  background: #f8fafc;
+  border-color: #eef2f6;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__feature-text,
+.ost-plan-card--tier-pro .ost-plan-card__feature-text,
+.ost-plan-card--tier-institutional .ost-plan-card__feature-text {
+  color: var(--ost-slate-muted);
+  font-weight: 600;
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__btn--select,
+.ost-plan-card--tier-pro .ost-plan-card__btn--select,
+.ost-plan-card--tier-institutional .ost-plan-card__btn--select {
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--ost-tiffany-ring);
+}
+
+.ost-plan-card--tier-standard .ost-plan-card__btn--select:hover,
+.ost-plan-card--tier-pro .ost-plan-card__btn--select:hover,
+.ost-plan-card--tier-institutional .ost-plan-card__btn--select:hover {
+  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.35);
+}
+
+.ost-plan-card--tier-pro .ost-plan-card__btn--current,
+.ost-plan-card--tier-institutional .ost-plan-card__btn--current {
+  background: var(--oc-surface-muted);
+  color: var(--ost-slate-light);
+  border: 1.5px solid var(--oc-border-soft);
+}
+
+.ost-plan-card--tier-pro.ost-plan-card--current-paid,
+.ost-plan-card--tier-institutional.ost-plan-card--current-paid {
+  border-color: rgba(10, 186, 181, 0.62) !important;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 5px rgba(10, 186, 181, 0.14),
+    0 22px 48px rgba(10, 186, 181, 0.18) !important;
+}
+
+.ost-plan-card--tier-pro.ost-plan-card--current-paid .ost-plan-card__btn--current,
+.ost-plan-card--tier-institutional.ost-plan-card--current-paid .ost-plan-card__btn--current {
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px var(--ost-tiffany-ring);
+  opacity: 1;
 }
 
 /* ——— Save banner ——— */
 .ost-save-banner {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 20px;
-  padding: 18px 22px;
+  grid-template-columns: 156px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   border-radius: var(--ost-radius);
-  background: linear-gradient(105deg, #ecfdf5 0%, #ffffff 42%, #ccfbf1 100%);
-  border: 1px solid var(--ost-tiffany-ring);
-  box-shadow: var(--ost-shadow);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 58%, #ecfeff 100%);
+  border: 1.5px solid #e5e7eb;
+  box-shadow:
+    0 12px 32px rgba(10, 186, 181, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.ost-save-banner__icon-wrap {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
+.ost-save-banner__visual {
+  position: relative;
+  min-height: 100%;
+  background: linear-gradient(165deg, rgba(10, 186, 181, 0.1) 0%, rgba(204, 251, 241, 0.45) 100%);
+}
+
+.ost-save-banner__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 118px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ost-save-banner__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
   background: var(--ost-gradient-brand);
-  box-shadow: 0 6px 16px rgba(10, 186, 181, 0.28);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  box-shadow: 0 6px 16px rgba(10, 186, 181, 0.32);
 }
 
-.ost-save-banner__percent {
-  font-size: 15px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.02em;
+.ost-save-banner__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 20px;
+  min-width: 0;
 }
 
 .ost-save-banner__title {
@@ -823,15 +1242,18 @@
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: #111827;
 }
 
 .ost-save-banner__text {
   margin: 0;
   font-size: 13px;
-  color: var(--ost-text-muted);
+  color: #4b5563;
+  line-height: 1.45;
 }
 
 .ost-save-banner__btn {
+  align-self: flex-start;
   padding: 11px 18px;
   border: none;
   border-radius: 10px;
@@ -843,11 +1265,12 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 4px 14px var(--ost-tiffany-ring);
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, transform 0.12s;
 }
 
 .ost-save-banner__btn:hover {
   box-shadow: 0 6px 18px rgba(10, 186, 181, 0.35);
+  transform: translateY(-1px);
 }
 
 .ost-btn {
@@ -891,13 +1314,20 @@
   }
 
   .ost-save-banner {
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
+    grid-template-columns: 1fr;
+  }
+
+  .ost-save-banner__visual {
+    min-height: 140px;
+  }
+
+  .ost-save-banner__body {
+    padding: 18px 20px 20px;
   }
 
   .ost-save-banner__btn {
-    grid-column: 1 / -1;
     width: 100%;
+    align-self: stretch;
     text-align: center;
   }
 }
@@ -921,13 +1351,12 @@
   max-width: 1180px;
   margin: 0 auto;
   padding-top: 28px;
-  gap: 22px;
+  gap: 18px;
   background: #ffffff;
 }
 
 .ost-subscriptions-intro,
 .ost-billing__hint,
-.ost-plan-card__tagline,
 .ost-plan-card__badge,
 .ost-plan-card__ribbon,
 .ost-plan-card__yearly-note {
@@ -987,56 +1416,57 @@
   box-shadow: 0 12px 26px var(--ost-tiffany-ring);
 }
 
+@media (min-width: 901px) {
 .ost-plans-grid {
   gap: 18px;
+  align-items: stretch;
+}
+
+.ost-plan-card--tier-pro {
+  transform: translateY(-2px);
 }
 
 .ost-plan-card {
-  min-height: 420px;
-  padding: 28px 28px 24px;
+  min-height: 0;
+  padding: 0 24px 26px;
   border-radius: var(--oc-radius-lg);
-  background: #fff;
-  border: 1.5px solid var(--oc-border-soft);
-  box-shadow: var(--oc-shadow-md);
   transform: none;
   overflow: hidden;
 }
 
-.ost-plan-card--featured:not(.ost-plan-card--current) {
-  padding-top: 28px;
-  border-left: 4px solid var(--ost-tiffany);
+.ost-plan-card__art {
+  margin: 0 -24px 0;
+  height: 92px;
 }
 
-.ost-plan-card--featured:not(.ost-plan-card--current) .ost-plan-card__btn--select {
-  background: var(--ost-gradient-brand);
-  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.2);
+.ost-plan-card__head {
+  margin-top: 14px;
+  margin-bottom: 14px;
 }
 
-.ost-plan-card:hover:not(.ost-plan-card--current),
-.ost-plan-card--featured:hover:not(.ost-plan-card--current) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+.ost-plan-card__features {
+  min-height: 0;
+  margin-bottom: 16px;
 }
 
-.ost-plan-card--current-paid {
-  border: 2px solid rgba(10, 186, 181, 0.45);
+.ost-plan-card__billing-slot {
+  flex: 0 0 auto;
+  min-height: 72px;
+  margin-bottom: 10px;
+}
+
+.ost-plan-card:hover:not(.ost-plan-card--current) {
+  transform: translateY(-3px);
+}
+
+.ost-plan-card--current-paid:not(.ost-plan-card--tier-pro):not(.ost-plan-card--tier-institutional) {
+  border: 2.5px solid rgba(10, 186, 181, 0.62);
   background:
-    linear-gradient(180deg, rgba(10, 186, 181, 0.1) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, rgba(10, 186, 181, 0.12) 0%, rgba(255, 255, 255, 0) 48%),
     #ffffff;
   box-shadow:
-    0 0 0 4px rgba(10, 186, 181, 0.1),
-    0 18px 44px rgba(10, 186, 181, 0.16);
-}
-
-.ost-plan-card--current-paid::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: var(--ost-gradient-brand);
-  border-radius: var(--oc-radius-lg) var(--oc-radius-lg) 0 0;
+    0 0 0 5px rgba(10, 186, 181, 0.14),
+    0 22px 48px rgba(10, 186, 181, 0.22);
 }
 
 .ost-plan-card--current-paid:hover {
@@ -1055,8 +1485,8 @@
     0 12px 28px rgba(10, 186, 181, 0.12);
 }
 
-.ost-plan-card--current .ost-plan-card__feature svg {
-  color: var(--ost-tiffany);
+.ost-plan-card--current .ost-plan-feat-icon--inverted {
+  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.28);
 }
 
 .ost-plan-card--current-paid .ost-plan-card__billing {
@@ -1073,11 +1503,11 @@
 }
 
 .ost-plan-card__head {
-  margin-bottom: 6px;
+  margin-bottom: 14px;
 }
 
 .ost-plan-card__name {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--ost-slate);
 }
@@ -1087,14 +1517,18 @@
 }
 
 .ost-plan-card__price {
-  min-height: 42px;
-  margin: 0 0 12px;
+  min-height: 34px;
+  margin: 0 0 8px;
+}
+
+.ost-plan-card__was-price {
+  font-size: 19px;
 }
 
 .ost-plan-card__amount {
   display: inline-block;
   color: var(--ost-slate);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 850;
   animation: ost-price-pop 0.28s ease;
   transform-origin: left center;
@@ -1115,12 +1549,14 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  min-height: 28px;
-  margin: 0 0 28px;
+  min-height: 20px;
+  margin: 0 0 14px;
 }
 
 .ost-plan-card__saving--empty {
-  visibility: hidden;
+  display: none;
+  min-height: 0;
+  margin: 0;
 }
 
 .ost-plan-card__old-price {
@@ -1144,42 +1580,29 @@
   white-space: nowrap;
 }
 
-@keyframes ost-price-pop {
-  0% {
-    opacity: 0.4;
-    transform: translateY(5px) scale(0.96);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 .ost-plan-card__features {
-  gap: 22px;
-  margin-bottom: 26px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .ost-plan-card__feature {
-  gap: 11px;
+  gap: 9px;
   color: var(--ost-slate-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
 }
 
-.ost-plan-card__feature svg {
-  width: 14px;
-  height: 14px;
-  margin-top: 2px;
-  color: var(--ost-slate-light);
-  stroke-width: 3;
+.ost-plan-feat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
 }
 
 .ost-plan-card__btn {
-  margin-top: auto;
-  min-height: 48px;
-  border-radius: 16px;
-  font-size: 14px;
+  margin-top: 0;
+  min-height: 50px;
+  border-radius: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1191,6 +1614,18 @@
 .ost-plan-card__btn--select:hover {
   box-shadow: 0 14px 28px rgba(10, 186, 181, 0.35);
 }
+}
+
+@keyframes ost-price-pop {
+  0% {
+    opacity: 0.4;
+    transform: translateY(5px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 
 .ost-plan-card__btn--current {
   background: var(--oc-surface-muted);
@@ -1199,23 +1634,39 @@
 }
 
 .ost-plan-card--current-paid .ost-plan-card__btn--current {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, #ffffff 100%);
-  color: var(--ost-tiffany-dark);
-  border-color: rgba(10, 186, 181, 0.34);
-  font-weight: 800;
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 14px var(--ost-tiffany-ring);
+  opacity: 1;
 }
 
 .ost-save-banner {
-  grid-template-columns: minmax(0, 1fr) auto 92px;
-  min-height: 128px;
-  padding: 28px 32px;
-  gap: 24px;
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  grid-template-columns: 200px minmax(0, 1fr);
+  min-height: 136px;
+  border: 1.5px solid #e5e7eb;
   border-radius: 24px;
-  background:
-    radial-gradient(circle at 90% 20%, rgba(83, 216, 211, 0.22) 0%, transparent 34%),
-    linear-gradient(135deg, #ffffff 0%, var(--oc-surface-muted) 42%, var(--oc-tiffany-mint) 100%);
-  box-shadow: 0 18px 40px rgba(10, 186, 181, 0.12);
+  box-shadow:
+    0 18px 40px rgba(10, 186, 181, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.ost-save-banner__art {
+  min-height: 136px;
+}
+
+.ost-save-banner__badge {
+  top: 14px;
+  right: 14px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.ost-save-banner__body {
+  padding: 24px 28px;
+  gap: 16px;
 }
 
 .ost-save-banner__title {
@@ -1231,28 +1682,12 @@
 }
 
 .ost-save-banner__btn {
-  min-width: 260px;
+  min-width: 220px;
   min-height: 48px;
   border-radius: 16px;
   background: var(--ost-gradient-brand);
   box-shadow: 0 12px 24px var(--ost-tiffany-ring);
   font-weight: 800;
-}
-
-.ost-save-banner__icon-wrap {
-  width: 82px;
-  height: 82px;
-  border-radius: 20px;
-  background: transparent;
-  box-shadow: none;
-}
-
-.ost-save-banner__icon-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  filter: hue-rotate(-38deg) saturate(0.95) brightness(1.06);
 }
 
 .ost-owner-ads {

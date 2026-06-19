@@ -8,6 +8,7 @@ import '../pages/Home.css'
 export default function SiteChatDock({
   wrapperClassName = 'site-chat-dock',
   footerNear = false,
+  hideFab = false,
   children,
   recommendationProperties = [],
   resolveRecommendationProperty,
@@ -32,15 +33,17 @@ export default function SiteChatDock({
     >
       {children}
 
-      <button
-        type="button"
-        className="ai-button"
-        onClick={chat.toggleChat}
-        aria-label="AI Assistant"
-        aria-expanded={chat.isChatOpen}
-      >
-        AI
-      </button>
+      {!hideFab ? (
+        <button
+          type="button"
+          className="ai-button"
+          onClick={chat.toggleChat}
+          aria-label="AI Assistant"
+          aria-expanded={chat.isChatOpen}
+        >
+          AI
+        </button>
+      ) : null}
 
       {chat.isChatOpen && (
         <div className="chat-widget">

@@ -166,19 +166,18 @@ export default function OwnerAddPropertyPricingStep({
   )
 
   const auctionDates = isAuctionMode && (
-    <div className="oap-pricing-step__auction-block">
-      <div className="oap-pricing-step__auction-period">
-        <AuctionPeriodPicker
-          label={t('oap_pricingAuctionPeriod')}
-          startDate={auctionStartDate}
-          endDate={auctionEndDate}
-          onStartDateChange={(date) => onChangeField('auctionStartDate', date)}
-          onEndDateChange={(date) => onChangeField('auctionEndDate', date)}
-        />
-        {errors.auctionEndDate && (
-          <span className="oap-pricing-step__field-error">{errors.auctionEndDate}</span>
-        )}
-      </div>
+    <div className="oap-pricing-step__auction-period">
+      <AuctionPeriodPicker
+        variant={embedded ? 'embedded' : 'default'}
+        label={embedded ? undefined : t('oap_pricingAuctionPeriod')}
+        startDate={auctionStartDate}
+        endDate={auctionEndDate}
+        onStartDateChange={(date) => onChangeField('auctionStartDate', date)}
+        onEndDateChange={(date) => onChangeField('auctionEndDate', date)}
+      />
+      {errors.auctionEndDate && (
+        <span className="oap-pricing-step__field-error">{errors.auctionEndDate}</span>
+      )}
     </div>
   )
 
@@ -213,7 +212,7 @@ export default function OwnerAddPropertyPricingStep({
 
           <div className="oap-pricing-step__card">
             {priceFields}
-            {auctionDates}
+            {!embedded && auctionDates}
           </div>
         </div>
 

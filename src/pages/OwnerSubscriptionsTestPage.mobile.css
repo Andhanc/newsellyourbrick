@@ -316,7 +316,7 @@
   .ost-plans-grid {
     display: grid !important;
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
     overflow: visible;
   }
@@ -327,14 +327,88 @@
   .ost-plan-card--current-paid {
     min-height: 0 !important;
     height: auto !important;
-    overflow: visible !important;
-    padding: 20px 16px 16px;
-    border-radius: 18px;
+    overflow: hidden !important;
+    padding: 0 16px 24px !important;
+    border-radius: 16px;
+    background: #ffffff !important;
+    color: var(--ost-text) !important;
   }
 
-  .ost-plan-card:not(.ost-plan-card--current) {
-    border: var(--oc-mob-card-border);
+  .ost-plan-card--tier-standard {
+    border: 1px solid #e8edf2 !important;
     box-shadow: var(--oc-mob-card-shadow);
+  }
+
+  .ost-plan-card--tier-pro {
+    border: 1.5px solid #d1d5db !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    transform: none;
+  }
+
+  .ost-plan-card--tier-institutional {
+    border: 2px solid #9ca3af !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  }
+
+  .ost-plan-card__chip {
+    top: 10px;
+    right: 10px;
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+
+  .ost-plan-card__tier-label {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .ost-plan-card__priority {
+    margin-top: 6px;
+  }
+
+  .ost-plan-card__title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ost-plan-card__art {
+    margin: 0 -16px 0;
+    height: 96px !important;
+    min-height: 96px !important;
+  }
+
+  .ost-plan-card__head {
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+    gap: 10px;
+  }
+
+  .ost-plan-card__features {
+    min-height: 0;
+    flex: 0 0 auto;
+    padding: 16px !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+    border-radius: 12px;
+  }
+
+  .ost-plan-card__feature {
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    padding: 6px 0 !important;
+    min-height: 34px;
+    align-items: center;
+  }
+
+  .ost-plan-card__billing-slot {
+    flex: 0 0 auto;
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+
+  .ost-plan-card__billing-slot--empty {
+    display: none;
   }
 
   .ost-plan-card--current:not(.ost-plan-card--current-paid) {
@@ -349,18 +423,7 @@
     box-shadow:
       0 0 0 4px rgba(10, 186, 181, 0.1),
       0 18px 44px rgba(10, 186, 181, 0.16);
-    padding-bottom: 16px;
-  }
-
-  .ost-plan-card--current-paid::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--ost-gradient-brand);
-    border-radius: 18px 18px 0 0;
+    padding-bottom: 26px !important;
   }
 
   .ost-plan-card--featured:not(.ost-plan-card--current) {
@@ -375,55 +438,76 @@
     color: var(--ost-tiffany);
   }
 
-  .ost-plan-card--current .ost-plan-card__feature svg {
-    color: var(--ost-tiffany);
+  .ost-plan-emblem {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
   }
 
-  .ost-plan-card__owned-badge {
-    top: 12px;
-    right: 12px;
-    font-size: 10px;
-    padding: 4px 9px;
+  .ost-plan-emblem__rank {
+    font-size: 16px;
+  }
+
+  .ost-plan-feat-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
+  }
+
+  .ost-plan-card--current .ost-plan-feat-icon--inverted {
+    box-shadow: 0 4px 12px rgba(10, 186, 181, 0.24);
   }
 
   .ost-plan-card__name {
-    font-size: 18px;
+    font-size: 16px;
+  }
+
+  .ost-plan-card__tagline {
+    font-size: 11px;
+    margin-top: 4px;
   }
 
   .ost-plan-card__price {
-    min-height: 0;
-    margin-bottom: 8px;
+    min-height: 36px;
+    margin-bottom: 12px !important;
+  }
+
+  .ost-plan-card__was-price {
+    font-size: 17px;
   }
 
   .ost-plan-card__amount {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .ost-plan-card__saving {
     min-height: 0;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
   .ost-plan-card__saving--empty {
     display: none;
   }
 
-  .ost-plan-card__features {
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .ost-plan-card__feature {
-    font-size: 13px;
-  }
-
   .ost-plan-card__billing {
     margin-bottom: 12px;
     overflow: visible;
+    border-radius: 12px;
   }
 
   .ost-plan-card__billing-item {
     padding: 9px 12px;
+    gap: 10px;
+  }
+
+  .ost-plan-card__billing-label {
+    font-size: 11px;
   }
 
   .ost-plan-card__billing-value {
@@ -432,9 +516,10 @@
 
   .ost-plan-card__btn {
     margin-top: 0;
-    min-height: 44px;
+    min-height: 52px !important;
+    padding: 13px 14px !important;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 13px;
     flex-shrink: 0;
   }
 
@@ -444,57 +529,53 @@
   }
 
   .ost-save-banner {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 64px;
-    grid-template-rows: auto auto;
-    min-height: 0;
-    padding: 16px;
+    grid-template-columns: 1fr;
+    border: 1.5px solid #e5e7eb;
     border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(10, 186, 181, 0.1);
+  }
+
+  .ost-save-banner__visual {
+    min-height: 128px;
+  }
+
+  .ost-save-banner__art {
+    min-height: 128px;
+  }
+
+  .ost-save-banner__badge {
+    top: 10px;
+    right: 10px;
+    padding: 7px 11px;
+    font-size: 14px;
+  }
+
+  .ost-save-banner__body {
+    padding: 14px 16px 16px;
     gap: 12px;
-    border-color: rgba(10, 186, 181, 0.2);
-    background:
-      radial-gradient(circle at 90% 20%, rgba(83, 216, 211, 0.2) 0%, transparent 34%),
-      linear-gradient(135deg, #ffffff 0%, var(--oc-surface-muted) 42%, var(--oc-tiffany-mint) 100%);
-    box-shadow: 0 12px 28px rgba(10, 186, 181, 0.1);
-  }
-
-  .ost-save-banner__btn {
-    background: var(--ost-gradient-brand);
-    box-shadow: 0 8px 18px var(--ost-tiffany-ring);
-  }
-
-  .ost-save-banner__copy {
-    grid-column: 1;
-    grid-row: 1;
   }
 
   .ost-save-banner__title {
     font-size: 16px;
     line-height: 1.25;
+    color: #111827;
   }
 
   .ost-save-banner__text {
     font-size: 12px;
     line-height: 1.4;
-  }
-
-  .ost-save-banner__icon-wrap {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    grid-column: 2;
-    grid-row: 1;
-    align-self: center;
+    color: #4b5563;
   }
 
   .ost-save-banner__btn {
-    grid-column: 1 / -1;
     width: 100%;
     min-width: 0;
     min-height: 44px;
+    align-self: stretch;
     border-radius: 12px;
     font-size: 13px;
     padding: 11px 14px;
+    box-shadow: 0 8px 18px var(--ost-tiffany-ring);
   }
 
   /* —— Ads —— */
@@ -505,14 +586,36 @@
   }
 
   .ost-owner-ads .oad-card {
-    min-height: 0;
-    padding: 18px 16px;
+    min-height: 148px;
+    padding: 18px 14px 16px;
     border-radius: 16px;
+    overflow: hidden;
   }
 
-  .ost-owner-ads .oad-card__copy {
-    width: 100%;
-    max-width: none;
+  .ost-owner-ads .oad-card--premium {
+    position: relative;
+    display: block;
+    min-height: 160px;
+    padding: 18px 16px 16px;
+  }
+
+  .ost-owner-ads .oad-card--help {
+    position: relative;
+    display: block;
+    min-height: 160px;
+    padding: 18px 16px 16px;
+  }
+
+  .ost-owner-ads .oad-card--help .oad-card__copy {
+    width: 62%;
+    position: relative;
+    z-index: 2;
+  }
+
+  .ost-owner-ads .oad-card--premium .oad-card__copy {
+    width: 62%;
+    position: relative;
+    z-index: 2;
   }
 
   .ost-owner-ads .oad-card__title {
@@ -530,8 +633,38 @@
   }
 
   .ost-owner-ads .oad-card__image {
-    width: 96px;
-    height: 96px;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .ost-owner-ads .oad-card--premium .oad-card__image--house {
+    position: absolute;
+    right: -56px;
+    bottom: -12px;
+    width: 66%;
+    max-width: 230px;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+    object-position: bottom right;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+    z-index: 1;
+  }
+
+  .ost-owner-ads .oad-card--help .oad-card__image--expert {
+    position: absolute;
+    right: -48px;
+    bottom: -10px;
+    width: 62%;
+    max-width: 220px;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+    object-position: bottom right;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+    z-index: 1;
   }
 
   /* —— Success modal —— */

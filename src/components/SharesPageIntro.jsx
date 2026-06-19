@@ -101,17 +101,15 @@ export function SharesPageBanner({ minInvestment = null, platformStats = null })
   return (
     <div className="shares-page-intro__banner">
       <div className="shares-page-intro__banner-visual" aria-hidden>
-        <div className="shares-page-intro__banner-image-wrap">
-          <img
-            src={HERO_IMAGE}
-            alt=""
-            className="shares-page-intro__banner-image"
-            loading="eager"
-            decoding="async"
-          />
-          <div className="shares-page-intro__banner-image-fade" />
-          <div className="shares-page-intro__banner-image-tint" />
-        </div>
+        <img
+          src={HERO_IMAGE}
+          alt=""
+          className="shares-page-intro__banner-image"
+          loading="eager"
+          decoding="async"
+        />
+        <div className="shares-page-intro__banner-fade" />
+        <div className="shares-page-intro__banner-tint" />
       </div>
 
       <div className="shares-page-intro__banner-copy">
@@ -127,7 +125,7 @@ export function SharesPageBanner({ minInvestment = null, platformStats = null })
           {STATS_CONFIG.map(({ id, valueKey, labelKey, Icon }) => (
             <div key={id} className="shares-page-intro__stat">
               <span className="shares-page-intro__stat-icon" aria-hidden>
-                <Icon size={22} strokeWidth={1.75} />
+                <Icon size={18} strokeWidth={2.1} />
               </span>
               <div className="shares-page-intro__stat-body">
                 <span className="shares-page-intro__stat-value">{statValues[valueKey]}</span>

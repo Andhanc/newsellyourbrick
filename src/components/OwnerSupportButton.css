@@ -12,9 +12,11 @@
   width: min(280px, calc(100vw - 24px));
   padding: 10px;
   border-radius: 14px;
-  border: 1px solid rgba(10, 186, 181, 0.18);
+  border: 1.5px solid #e5e7eb;
   background: #fff;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.14),
+    0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .otsb__menu-title {

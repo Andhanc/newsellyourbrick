@@ -26,18 +26,11 @@ const LISTING_MODE_META = {
   },
 }
 
-function ListingModesList({ listingModes, listingMode, testDriveEnabled, errors, onSelectMode }) {
+function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
   const { t } = useTranslation()
 
   return (
     <>
-      {testDriveEnabled && (
-        <p className="oap-listing-step__testdrive-note" role="note">
-          {t('oap_listingTestDriveOnlyNote', {
-            mode: t('oap_listingModeAuctionBuyNow'),
-          })}
-        </p>
-      )}
       <div
         className={`oap-listing-step__modes${listingModes.length === 1 ? ' oap-listing-step__modes--single' : ''}`}
         role="radiogroup"
@@ -84,7 +77,6 @@ export default function OwnerAddPropertyListingStep({
   embedded = false,
   listingModes,
   listingMode,
-  testDriveEnabled,
   errors = {},
   onSelectMode,
 }) {
@@ -96,7 +88,6 @@ export default function OwnerAddPropertyListingStep({
         <ListingModesList
           listingModes={listingModes}
           listingMode={listingMode}
-          testDriveEnabled={testDriveEnabled}
           errors={errors}
           onSelectMode={onSelectMode}
         />
@@ -121,7 +112,6 @@ export default function OwnerAddPropertyListingStep({
               <ListingModesList
                 listingModes={listingModes}
                 listingMode={listingMode}
-                testDriveEnabled={testDriveEnabled}
                 errors={errors}
                 onSelectMode={onSelectMode}
               />

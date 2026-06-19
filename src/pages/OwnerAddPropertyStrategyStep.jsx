@@ -15,7 +15,6 @@ export default function OwnerAddPropertyStrategyStep({
   listingMode,
   listingErrors,
   onSelectListingMode,
-  testDriveEnabled,
   testDrive,
   testDrivePricePerDay,
   testDriveInsuranceDeposit,
@@ -74,7 +73,6 @@ export default function OwnerAddPropertyStrategyStep({
               embedded
               listingModes={listingModes}
               listingMode={listingMode}
-              testDriveEnabled={testDriveEnabled}
               errors={listingErrors}
               onSelectMode={onSelectListingMode}
             />

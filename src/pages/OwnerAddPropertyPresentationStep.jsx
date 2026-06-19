@@ -114,47 +114,45 @@ export default function OwnerAddPropertyPresentationStep({
                 </span>
               </label>
             </OwnerAddPropertyWizardSection>
+
+            <OwnerAddPropertyWizardSection
+              number={2}
+              title={t('oap_presentationDescTitle')}
+              hint={t('oap_presentationDescHint')}
+            >
+              <label className="oap-presentation-field">
+                <span className="oap-presentation-field__control">
+                  <textarea
+                    className="oap-presentation-field__textarea"
+                    rows={6}
+                    placeholder={t('oap_presentationDescPlaceholder')}
+                    value={form.description}
+                    maxLength={descriptionMaxLength}
+                    onChange={(e) => onFieldChange('description', e.target.value)}
+                  />
+                  <span
+                    className={`oap-presentation-field__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-presentation-field__counter--warn' : ''}`}
+                  >
+                    {descriptionLength}/{descriptionMaxLength}
+                  </span>
+                </span>
+              </label>
+              <div className="oap-presentation-step__generate-row">
+                <AnimatedGenerateButton
+                  labelIdle={t('oap_presentationGenerate')}
+                  labelActive={t('oap_presentationGenerating')}
+                  generating={isGeneratingDescription}
+                  highlightHueDeg={210}
+                  onClick={handleGenerateDescription}
+                  disabled={isGeneratingDescription || !(form.description || '').trim()}
+                  ariaLabel={t('oap_presentationGenerateAria')}
+                  className="oap-presentation-step__generate-btn"
+                />
+              </div>
+            </OwnerAddPropertyWizardSection>
           </div>
 
           <OwnerAddPropertyStepAside layout="inline" {...OAP_PRESENTATION_ROW_ASIDES.copy} />
-        </div>
-
-        <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--description">
-          <OwnerAddPropertyWizardSection
-            number={2}
-            title={t('oap_presentationDescTitle')}
-            hint={t('oap_presentationDescHint')}
-          >
-            <label className="oap-presentation-field">
-              <span className="oap-presentation-field__control">
-                <textarea
-                  className="oap-presentation-field__textarea"
-                  rows={6}
-                  placeholder={t('oap_presentationDescPlaceholder')}
-                  value={form.description}
-                  maxLength={descriptionMaxLength}
-                  onChange={(e) => onFieldChange('description', e.target.value)}
-                />
-                <span
-                  className={`oap-presentation-field__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-presentation-field__counter--warn' : ''}`}
-                >
-                  {descriptionLength}/{descriptionMaxLength}
-                </span>
-              </span>
-            </label>
-            <div className="oap-presentation-step__generate-row">
-              <AnimatedGenerateButton
-                labelIdle={t('oap_presentationGenerate')}
-                labelActive={t('oap_presentationGenerating')}
-                generating={isGeneratingDescription}
-                highlightHueDeg={210}
-                onClick={handleGenerateDescription}
-                disabled={isGeneratingDescription || !(form.description || '').trim()}
-                ariaLabel={t('oap_presentationGenerateAria')}
-                className="oap-presentation-step__generate-btn"
-              />
-            </div>
-          </OwnerAddPropertyWizardSection>
         </div>
 
         <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">

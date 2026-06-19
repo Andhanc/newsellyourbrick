@@ -42,6 +42,11 @@ Thumbs.db
 # Vite
 .vite
 
+# Python venv / ML caches (local only)
+.venv-img/
+.venv/
+.cache/
+
 # Optional npm cache directory
 .npm
 

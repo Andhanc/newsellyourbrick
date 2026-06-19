@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { BadgeCheck, Eye, MessageCircle, ShieldCheck } from 'lucide-react'
 import './OwnerAds.css'
 
-const AD_IMAGES = {
+export const AD_IMAGES = {
   buyerHouse: '/images/owner-test/owner-promo-sidebar-buyer.png',
+  buyerHero: '/images/owner-test/owner-buyer-promo-hero.png',
+  buyerMobile: '/images/owner-test/owner-buyer-promo-mobile.png',
   premiumHouse: '/images/owner-test/owner-promo-promote-thumb.png',
-  growthChart: '/images/owner-wallet-test/metric-chart.png',
-  salesExpert: '/images/owner-test/owner-promo-buyer-thumb.png',
+  fastSalesHero: '/images/owner-test/owner-promo-fast-sales-thumb.png',
+  salesExpert: '/images/owner-test/owner-promo-help-thumb.png',
 }
 
 function useCompactAds() {
@@ -22,14 +24,13 @@ function useCompactAds() {
         image: AD_IMAGES.premiumHouse,
         imageClassName: 'oad-card__image--house',
         tone: 'premium',
-        dismiss: true,
       },
       fastSales: {
         title: t('ownerTest_adFastSalesTitle'),
         text: t('ownerTest_adFastSalesText'),
         button: t('ownerTest_adFastSalesBtn'),
-        image: AD_IMAGES.growthChart,
-        imageClassName: 'oad-card__image--chart',
+        image: AD_IMAGES.fastSalesHero,
+        imageClassName: 'oad-card__image--fast',
         tone: 'fast',
       },
       help: {
@@ -59,7 +60,7 @@ function useBuyerFeatures() {
   )
 }
 
-export function OwnerBuyerAd({ className = '' }) {
+export function OwnerBuyerAd({ className = '', imageSrc = AD_IMAGES.buyerHouse }) {
   const { t } = useTranslation()
   const buyerFeatures = useBuyerFeatures()
 
@@ -72,7 +73,7 @@ export function OwnerBuyerAd({ className = '' }) {
 
       <img
         className="oad-buyer__image"
-        src={AD_IMAGES.buyerHouse}
+        src={imageSrc}
         alt=""
         loading="lazy"
         decoding="async"

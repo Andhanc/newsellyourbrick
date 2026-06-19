@@ -168,10 +168,6 @@
     box-shadow: none;
   }
 
-  .oap-content::before {
-    display: none;
-  }
-
   /* Hide sidebar tips on mobile — keep all form fields */
   .oap--mobile .oap-wizard-aside {
     display: none !important;
@@ -186,8 +182,33 @@
     display: none;
   }
 
+  .oap--mobile .oap-wizard-step__head {
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .oap--mobile .oap-wizard-step__head-row {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap--mobile .oap-wizard-step__title-wrap {
+    flex: 1;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap--mobile .oap-wizard-step__title {
+    width: 100%;
+    text-align: center;
+  }
+
   .oap--mobile .oap-wizard-step__subtitle {
     padding-left: 0;
+    text-align: center;
+    max-width: 320px;
+    margin-inline: auto;
   }
 
   .oap--mobile .oap-wizard-step__panel {
@@ -202,10 +223,6 @@
     border: none;
     box-shadow: none;
     background: transparent;
-  }
-
-  .oap--mobile .oap-wizard-section::before {
-    display: none;
   }
 
   .oap--mobile .oap-wizard-section__head {

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, Menu, X, Sparkles } from 'lucide-react'
-import { OST_IMAGES } from './ownerSubscriptionsTestImages'
+import { Menu, X, Sparkles } from 'lucide-react'
+import OwnerPlanFeatureIcon, { OwnerPlanTierEmblem } from '../components/OwnerPlanFeatureIcon'
+import { OST_IMAGES, OST_PLAN_ART } from './ownerSubscriptionsTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { OwnerAdStack } from '../components/OwnerAds'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
@@ -12,7 +13,6 @@ import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import Confetti from '../components/Confetti'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import {
-  formatOwnerTestDays,
   getOwnerTestIntlLocale,
   resolveProfileSubscriptionPlanId,
 } from '../utils/ownerTestI18n'
@@ -21,10 +21,18 @@ import {
   confirmCheckoutSession,
   startOwnerSubscriptionCheckout,
 } from '../utils/subscriptionCheckout'
+import SiteBrandLogo from '../components/SiteBrandLogo'
 import './OwnerSubscriptionsTestPage.css'
 import './OwnerSubscriptionsTestPage.mobile.css'
 
 const PLAN_IDS = ['basic', 'standard', 'pro', 'institutional']
+const SELLER_PLAN_IDS = ['standard', 'pro', 'institutional']
+
+const PLAN_TIER_LEVEL = {
+  standard: 1,
+  pro: 2,
+  institutional: 3,
+}
 
 function normalizeReturnedPlanId(planKey) {
   const key = String(planKey || '').toLowerCase()
@@ -33,30 +41,6 @@ function normalizeReturnedPlanId(planKey) {
   return PLAN_IDS.includes(key) ? key : ''
 }
 
-function LogoMark({ className = '' }) {
-  return (
-    <svg className={`ost-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
-      <defs>
-        <linearGradient id="ost-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
-        </linearGradient>
-      </defs>
-      <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#ost-logo-grad)" />
-      <text
-        x="20"
-        y="24"
-        textAnchor="middle"
-        fill="#fff"
-        fontSize="14"
-        fontWeight="700"
-        fontFamily="Inter, sans-serif"
-      >
-        $
-      </text>
-    </svg>
-  )
-}
 
 function formatPrice(amount, locale) {
   if (amount === 0) return '0 €'
@@ -68,37 +52,9 @@ function getPeriodPrice(plan, period) {
   return period === 'yearly' ? Math.round(plan.price * 0.8) : plan.price
 }
 
-function getCurrentPlanBilling(plan, period, subscriptionPeriodEnd, t, intlLocale, lang) {
-  if (!plan || plan.price === 0) return null
-
-  const amount = getPeriodPrice(plan, period)
-  let nextChargeDate = subscriptionPeriodEnd ? new Date(subscriptionPeriodEnd) : null
-
-  if (!nextChargeDate || !Number.isFinite(nextChargeDate.getTime())) {
-    nextChargeDate = new Date()
-    nextChargeDate.setDate(nextChargeDate.getDate() + 18)
-  }
-
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  const endDay = new Date(nextChargeDate)
-  endDay.setHours(0, 0, 0, 0)
-  const daysRemaining = Math.max(0, Math.ceil((endDay - now) / (1000 * 60 * 60 * 24)))
-
-  return {
-    daysRemaining,
-    daysLabel: formatOwnerTestDays(daysRemaining, lang),
-    nextChargeDate: nextChargeDate.toLocaleDateString(intlLocale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }),
-    amountLabel: formatPrice(amount, intlLocale),
-    periodLabel:
-      period === 'yearly'
-        ? t('ownerTest_planPerYear', { price: '' }).replace(/^\s*\/?\s*/, '/ ')
-        : t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ '),
-  }
+function getListPrice(plan, period) {
+  if (!plan.listPrice || plan.price === 0) return null
+  return period === 'yearly' ? Math.round(plan.listPrice * 0.8) : plan.listPrice
 }
 
 export default function OwnerSubscriptionsTestPage() {
@@ -129,49 +85,50 @@ export default function OwnerSubscriptionsTestPage() {
   const plans = useMemo(
     () => [
       {
-        id: 'basic',
-        name: t('ownerTest_planBasic'),
-        price: 0,
-        features: [
-          t('ownerTest_planFeatureBasic1'),
-          t('ownerTest_planFeatureBasic2'),
-          t('ownerTest_planFeatureBasic3'),
-        ],
-      },
-      {
         id: 'standard',
         name: t('ownerTest_planStandard'),
+        tagline: t('ownerTest_planTaglineStandard'),
         price: 99,
+        listPrice: 149,
         features: [
-          t('ownerTest_planFeatureStandard1'),
-          t('ownerTest_planFeatureStandard2'),
-          t('ownerTest_planFeatureStandard3'),
-          t('ownerTest_planFeatureStandard4'),
+          { icon: 'listings', label: t('ownerTest_planFeatureStandard1') },
+          { icon: 'stats', label: t('ownerTest_planFeatureStandard2') },
+          { icon: 'support', label: t('ownerTest_planFeatureStandard3') },
+          { icon: 'promote', label: t('ownerTest_planFeatureStandard4') },
         ],
       },
       {
         id: 'pro',
         name: t('ownerTest_planPro'),
+        tagline: t('ownerTest_planTaglinePro'),
         price: 490,
+        listPrice: 690,
         features: [
-          t('ownerTest_planFeaturePro1'),
-          t('ownerTest_planFeaturePro2'),
-          t('ownerTest_planFeaturePro3'),
-          t('ownerTest_planFeaturePro4'),
+          { icon: 'unlimited', label: t('ownerTest_planFeaturePro1') },
+          { icon: 'analytics', label: t('ownerTest_planFeaturePro2') },
+          { icon: 'boost', label: t('ownerTest_planFeaturePro3') },
+          { icon: 'manager', label: t('ownerTest_planFeaturePro4') },
         ],
       },
       {
         id: 'institutional',
         name: t('ownerTest_planInstitutional'),
+        tagline: t('ownerTest_planTaglineInstitutional'),
         price: 1500,
+        listPrice: 1990,
         features: [
-          t('ownerTest_planFeatureInstitutional1'),
-          t('ownerTest_planFeatureInstitutional2'),
-          t('ownerTest_planFeatureInstitutional3'),
+          { icon: 'allPro', label: t('ownerTest_planFeatureInstitutional1') },
+          { icon: 'custom', label: t('ownerTest_planFeatureInstitutional2') },
+          { icon: 'concierge', label: t('ownerTest_planFeatureInstitutional3') },
         ],
       },
     ],
     [t]
+  )
+
+  const displayPlans = useMemo(
+    () => plans.filter((plan) => SELLER_PLAN_IDS.includes(plan.id)),
+    [plans]
   )
 
   const checkoutErrorText = useMemo(
@@ -189,7 +146,9 @@ export default function OwnerSubscriptionsTestPage() {
 
   const activePlanId = useMemo(() => {
     if (successPlanId) return successPlanId
-    return resolveProfileSubscriptionPlanId(profile?.subscription) || 'basic'
+    const resolved = resolveProfileSubscriptionPlanId(profile?.subscription)
+    if (!resolved || resolved === 'basic') return null
+    return resolved
   }, [profile?.subscription, successPlanId])
 
   const clearCheckoutParams = useCallback(() => {
@@ -204,7 +163,7 @@ export default function OwnerSubscriptionsTestPage() {
 
   const handlePlanCheckout = useCallback(
     async (plan) => {
-      if (!plan || plan.id === 'basic' || plan.id === activePlanId || startingPlanId) return
+      if (!plan || plan.id === activePlanId || startingPlanId) return
 
       const userId = localStorage.getItem('userId')
       if (!userId || !/^\d+$/.test(userId)) {
@@ -373,6 +332,32 @@ export default function OwnerSubscriptionsTestPage() {
           </div>
 
           <div className="ost-content">
+            <section className="ost-save-banner" aria-label={t('ownerTest_ariaYearlyDiscount')}>
+              <div className="ost-save-banner__visual" aria-hidden>
+                <img
+                  className="ost-save-banner__art"
+                  src={OST_IMAGES.yearlySaveHero}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="ost-save-banner__badge">−20%</span>
+              </div>
+              <div className="ost-save-banner__body">
+                <div className="ost-save-banner__copy">
+                  <h2 className="ost-save-banner__title">{t('ownerTest_planYearlyBannerTitle')}</h2>
+                  <p className="ost-save-banner__text">{t('ownerTest_planYearlyBannerText')}</p>
+                </div>
+                <button
+                  type="button"
+                  className="ost-save-banner__btn"
+                  onClick={() => setPeriod('yearly')}
+                >
+                  {t('ownerTest_subscriptionsBillingYearly')}
+                </button>
+              </div>
+            </section>
+
             <div className="ost-billing">
               <div
                 className="ost-period-tabs"
@@ -401,38 +386,76 @@ export default function OwnerSubscriptionsTestPage() {
             </div>
 
             <div className="ost-plans-grid">
-              {plans.map((plan) => {
+              {displayPlans.map((plan) => {
                 const displayPrice = getPeriodPrice(plan, period)
+                const listPrice = getListPrice(plan, period)
+                const showListPrice = listPrice != null && listPrice > displayPrice
                 const isCurrent = plan.id === activePlanId
-                const isPaidPlan = plan.id !== 'basic'
                 const isStarting = startingPlanId === plan.id
-                const billing = isCurrent && isPaidPlan
-                  ? getCurrentPlanBilling(plan, period, profile?.subscriptionPeriodEnd, t, intlLocale, i18n.language)
-                  : null
                 return (
                   <article
                     key={plan.id}
                     className={[
                       'ost-plan-card',
+                      `ost-plan-card--tier-${plan.id}`,
                       isCurrent && 'ost-plan-card--current',
-                      isCurrent && isPaidPlan && 'ost-plan-card--current-paid',
-                      plan.id === 'pro' && !isCurrent && 'ost-plan-card--featured',
+                      isCurrent && 'ost-plan-card--current-paid',
                     ]
                       .filter(Boolean)
                       .join(' ')}
                   >
-                    {isCurrent && isPaidPlan ? (
-                      <span className="ost-plan-card__owned-badge">{t('ownerTest_planCurrent')}</span>
+                    <div className="ost-plan-card__ambient" aria-hidden />
+                    <div className="ost-plan-card__art" aria-hidden>
+                      <img
+                        className="ost-plan-card__art-img"
+                        src={OST_PLAN_ART[plan.id]}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="ost-plan-card__art-fade" />
+                    </div>
+                    {plan.id === 'pro' ? (
+                      <span className="ost-plan-card__chip">{t('ownerTest_planChipPopular')}</span>
                     ) : null}
                     <div className="ost-plan-card__head">
-                      <h2 className="ost-plan-card__name">{plan.name}</h2>
+                      <OwnerPlanTierEmblem tier={plan.id} />
+                      <div className="ost-plan-card__head-copy">
+                        <div className="ost-plan-card__title-row">
+                          <h2 className="ost-plan-card__name">{plan.name}</h2>
+                          <span className="ost-plan-card__tier-label">
+                            {t('ownerTest_planTierLevel', { level: PLAN_TIER_LEVEL[plan.id] })}
+                          </span>
+                        </div>
+                        {plan.tagline ? <p className="ost-plan-card__tagline">{plan.tagline}</p> : null}
+                        <div className="ost-plan-card__priority" aria-hidden>
+                          {[1, 2, 3].map((level) => (
+                            <span
+                              key={level}
+                              className={[
+                                'ost-plan-card__priority-bar',
+                                level <= PLAN_TIER_LEVEL[plan.id] && 'ost-plan-card__priority-bar--on',
+                              ]
+                                .filter(Boolean)
+                                .join(' ')}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <p className="ost-plan-card__price">
-                      <span key={`${plan.id}-${period}`} className="ost-plan-card__amount">
-                        {formatPrice(displayPrice, intlLocale)}
-                      </span>
-                      <span className="ost-plan-card__period">
-                        {t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ ')}
+                      <span className="ost-plan-card__price-row">
+                        {showListPrice ? (
+                          <span className="ost-plan-card__was-price" aria-hidden>
+                            {formatPrice(listPrice, intlLocale)}
+                          </span>
+                        ) : null}
+                        <span key={`${plan.id}-${period}`} className="ost-plan-card__amount">
+                          {formatPrice(displayPrice, intlLocale)}
+                        </span>
+                        <span className="ost-plan-card__period">
+                          {t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ ')}
+                        </span>
                       </span>
                     </p>
                     {isYearly && plan.price > 0 ? (
@@ -447,40 +470,16 @@ export default function OwnerSubscriptionsTestPage() {
                     )}
                     <ul className="ost-plan-card__features">
                       {plan.features.map((feature) => (
-                        <li key={feature} className="ost-plan-card__feature">
-                          <Check size={15} strokeWidth={2.5} aria-hidden />
-                          <span>{feature}</span>
+                        <li key={feature.label} className="ost-plan-card__feature">
+                          <OwnerPlanFeatureIcon name={feature.icon} tier={plan.id} inverted={isCurrent} />
+                          <span className="ost-plan-card__feature-text">{feature.label}</span>
                         </li>
                       ))}
                     </ul>
-                    {billing ? (
-                      <div className="ost-plan-card__billing" aria-label={t('ownerTest_ariaCurrentSubscription')}>
-                        <div className="ost-plan-card__billing-item">
-                          <span className="ost-plan-card__billing-label">{t('ownerTest_propertiesTimerLeft')}</span>
-                          <span className="ost-plan-card__billing-value">{billing.daysLabel}</span>
-                        </div>
-                        <div className="ost-plan-card__billing-item">
-                          <span className="ost-plan-card__billing-label">
-                            {t('ownerTest_withdrawCardExp', { date: '' }).replace(/\s*\{\{date\}\}.*/, '').trim()}
-                          </span>
-                          <span className="ost-plan-card__billing-value">{billing.nextChargeDate}</span>
-                        </div>
-                        <div className="ost-plan-card__billing-item">
-                          <span className="ost-plan-card__billing-label">{t('ownerSaleCelebrationSumLabel')}</span>
-                          <span className="ost-plan-card__billing-value ost-plan-card__billing-value--amount">
-                            {billing.amountLabel}
-                            <span className="ost-plan-card__billing-period">{billing.periodLabel}</span>
-                          </span>
-                        </div>
-                      </div>
-                    ) : null}
+                    <div className="ost-plan-card__footer">
                     {isCurrent ? (
                       <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
-                        {isPaidPlan ? t('ownerTest_planActiveSubscription') : t('ownerTest_planCurrent')}
-                      </button>
-                    ) : !isPaidPlan ? (
-                      <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
-                        {t('ownerTest_planBasic')}
+                        {t('ownerTest_planActiveSubscription')}
                       </button>
                     ) : (
                       <button
@@ -492,27 +491,11 @@ export default function OwnerSubscriptionsTestPage() {
                         {isStarting ? t('ownerTest_planOpeningStripe') : t('ownerTest_planBuy')}
                       </button>
                     )}
+                    </div>
                   </article>
                 )
               })}
             </div>
-
-            <section className="ost-save-banner" aria-label={t('ownerTest_ariaYearlyDiscount')}>
-              <div className="ost-save-banner__copy">
-                <h2 className="ost-save-banner__title">{t('ownerTest_planYearlyBannerTitle')}</h2>
-                <p className="ost-save-banner__text">{t('ownerTest_planYearlyBannerText')}</p>
-              </div>
-              <button
-                type="button"
-                className="ost-save-banner__btn"
-                onClick={() => setPeriod('yearly')}
-              >
-                {t('ownerTest_subscriptionsBillingYearly')}
-              </button>
-              <div className="ost-save-banner__icon-wrap" aria-hidden>
-                <img src={OST_IMAGES.discountPercent} alt="" loading="lazy" decoding="async" />
-              </div>
-            </section>
 
             <OwnerAdStack cards={['premium', 'help']} className="ost-owner-ads" />
           </div>
@@ -566,8 +549,7 @@ export default function OwnerSubscriptionsTestPage() {
       >
         <div className="ost-drawer__head">
           <div className="ost-mob-topbar__brand">
-            <LogoMark />
-            <span className="ost-logo__text">{t('ownerTest_brandName')}</span>
+            <SiteBrandLogo textClassName="ost-logo__text" />
           </div>
           <button type="button" className="ost-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
@@ -579,8 +561,7 @@ export default function OwnerSubscriptionsTestPage() {
 
       <aside className="ost-sidebar ost-desktop-only">
         <div className="ost-sidebar__brand">
-          <LogoMark />
-          <span className="ost-logo__text">{t('ownerTest_brandName')}</span>
+          <SiteBrandLogo textClassName="ost-logo__text" />
         </div>
         <div className="ost-sidebar__divider" aria-hidden />
 

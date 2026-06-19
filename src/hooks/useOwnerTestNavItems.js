@@ -11,10 +11,10 @@ import {
   Settings,
   Home,
   Briefcase,
-  ClipboardList,
   SlidersHorizontal,
   User,
 } from 'lucide-react'
+import OwnerAiTabIcon from '../components/OwnerAiTabIcon'
 
 /** Sidebar navigation for owner-test cabinet (desktop + mobile drawer). */
 export function useOwnerTestNavItems(options = {}) {
@@ -70,7 +70,7 @@ export function useOwnerTestNavItems(options = {}) {
         label: t('ownerTest_navMessages'),
         icon: MessageSquare,
         badge: 3,
-        href: hrefMap.messages,
+        action: 'managerChat',
       },
       {
         id: 'settings',
@@ -138,11 +138,11 @@ export function useOwnerTestTabItems(options = {}) {
       },
       { id: 'fab', fab: true },
       {
-        id: 'bookings',
-        label: t('ownerTest_tabBookings'),
-        icon: ClipboardList,
-        active: activeId === 'bookings',
-        href: options.hrefMap?.bookings,
+        id: 'ai',
+        label: t('ownerTest_tabAi'),
+        icon: OwnerAiTabIcon,
+        action: 'aiChat',
+        active: activeId === 'ai',
       },
       {
         id: 'more',

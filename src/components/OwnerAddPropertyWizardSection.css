@@ -9,17 +9,6 @@
     0 6px 18px rgba(15, 23, 42, 0.03);
 }
 
-.oap-wizard-section::before {
-  content: '';
-  position: absolute;
-  top: 14px;
-  bottom: 14px;
-  left: 0;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #53d8d3 0%, #0abab5 52%, #089a95 100%);
-}
-
 .oap-wizard-section + .oap-wizard-section {
   margin-top: 14px;
 }
@@ -43,9 +32,10 @@
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #089a95;
-  background: rgba(10, 186, 181, 0.1);
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  color: #fff;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.22);
 }
 
 .oap-wizard-section__meta {

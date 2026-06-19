@@ -231,21 +231,31 @@
     box-sizing: border-box;
   }
 
+  .mot-mob-hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
   .mot-mob-hero__title {
     margin: 0;
     font-size: 22px;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: #000000;
-    line-height: 1.2;
+    color: #111827;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mot-mob-hero__subtitle {
-    margin: 6px 0 0;
-    font-size: 13px;
-    font-weight: 400;
-    color: #9ca3af;
-    line-height: 1.35;
+    margin: 8px 0 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.4;
   }
 
   .mot-date-pill--full {
@@ -258,10 +268,31 @@
     font-weight: 500;
     color: #374151;
     background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    border: none;
+    border-radius: 0;
     box-shadow: none;
     line-height: 1.2;
+  }
+
+  .mot-date-control--full {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .mot-date-control--expanded {
+    border-color: #e5e7eb;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  }
+
+  .mot-date-control--expanded .mot-date-pill--full svg:last-child {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
   }
 
   .mot-date-pill--full span {
@@ -278,6 +309,7 @@
   .mot-date-pill--full svg:last-child {
     flex-shrink: 0;
     color: #9ca3af;
+    transition: transform 0.2s ease;
   }
 
   .mot-date-control--mobile {
@@ -285,26 +317,39 @@
     flex-shrink: 0;
   }
 
-  .mot-date-control--full {
-    width: 100%;
-  }
-
   .mot-date-control--mobile .mot-date-popover {
-    position: fixed;
+    position: static;
     top: auto;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-    width: calc(100vw - 24px) !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto;
+    width: 100% !important;
     max-width: none;
-    padding: 14px;
-    border-radius: 18px;
-    transform: translateY(10px) scale(0.98);
-    transform-origin: bottom right;
+    margin: 0;
+    padding: 0 14px;
+    border: none;
+    border-top: 1px solid transparent;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+    opacity: 1;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transform: none;
+    transform-origin: top center;
+    transition:
+      max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      padding 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.2s ease;
   }
 
   .mot-date-control--mobile .mot-date-popover--open {
-    transform: translateY(0) scale(1);
+    max-height: 520px;
+    padding: 14px;
+    border-top-color: #e5e7eb;
+    pointer-events: auto;
+    transform: none;
   }
 
   .mot-date-popover__head strong {
@@ -477,7 +522,8 @@
     flex: 1 1 0;
     min-width: 0;
     max-width: none;
-    align-self: auto;
+    align-self: stretch;
+    display: flex;
   }
 
   .mot-chart-card__tools {
@@ -494,18 +540,30 @@
     flex: 1 1 0;
     min-width: 0;
     width: auto;
+    align-self: stretch;
+    box-sizing: border-box;
   }
 
   .mot-chart-mode__btn {
     padding: 8px 6px;
-    font-size: 10px;
+    font-size: 12px;
     text-align: center;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .mot-chart-card__head .mot-select-pill {
     width: 100%;
-    max-width: none;
+    flex: 1;
+    min-height: 100%;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
+    padding: 8px 10px;
+    font-size: 12px;
+    box-sizing: border-box;
   }
 
   .mot-chart-card__legend {
@@ -605,7 +663,6 @@
     right: 10px;
     padding: 6px 10px;
     font-size: 11px;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
   }
 
   .mot-row--chart .mot-best__name {
@@ -718,8 +775,9 @@
   .mot-activity__item--bid {
     padding: 12px;
     border-radius: 14px;
-    background: linear-gradient(135deg, rgba(10, 186, 181, 0.06) 0%, rgba(255, 255, 255, 0.92) 100%);
-    border: 1px solid rgba(10, 186, 181, 0.1);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
   }
 
   .mot-activity__icon {
@@ -770,14 +828,14 @@
     min-width: 0;
     padding-top: 10px;
     margin-top: 2px;
-    border-top: 1px solid rgba(10, 186, 181, 0.14);
+    border-top: 1px solid #e5e7eb;
   }
 
   .mot-activity__amount {
     padding: 6px 11px;
     border-radius: 999px;
-    background: rgba(10, 186, 181, 0.12);
-    color: #0d9488;
+    background: var(--mot-tiffany);
+    color: #ffffff;
     font-size: 12px;
     font-weight: 800;
     line-height: 1;
@@ -834,8 +892,9 @@
     min-height: 0;
     padding: 16px;
     border-radius: 16px;
-    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
-    border: 1px solid rgba(10, 186, 181, 0.08);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   }
 
   .mot-row--triple .mot-donut-wrap {
@@ -855,8 +914,8 @@
   .mot-row--triple .mot-status-legend li {
     padding: 8px 10px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(10, 186, 181, 0.08);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     font-size: 12px;
   }
 
@@ -866,19 +925,119 @@
   }
 
   .mot-row--triple .mot-status-buyer-ad.oad-buyer {
+    position: relative;
     width: 100%;
     min-height: 0;
     margin: 0;
-    padding: 14px;
+    padding: 14px 14px 12px 17px;
     border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-areas:
+      "copy image"
+      "list list"
+      "actions actions";
+    align-items: start;
+    column-gap: 12px;
+    row-gap: 10px;
+    overflow: hidden;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad.oad-buyer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #53d8d3 0%, #0abab5 100%);
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__copy {
+    grid-area: copy;
+    max-width: none;
+    align-self: center;
   }
 
   .mot-row--triple .mot-status-buyer-ad .oad-buyer__title {
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.22;
+    font-weight: 700;
   }
 
   .mot-row--triple .mot-status-buyer-ad .oad-buyer__text {
+    margin-top: 5px;
     font-size: 12px;
+    line-height: 1.4;
+    color: #64748b;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__image {
+    grid-area: image;
+    width: 104px;
+    max-width: 104px;
+    height: 84px;
+    margin: 0;
+    object-fit: cover;
+    border-radius: 12px;
+    justify-self: end;
+    align-self: center;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__list {
+    grid-area: list;
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 8px 0 0;
+    width: 100%;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__list li {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #64748b;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__list li:nth-child(n + 3) {
+    display: none;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__actions {
+    grid-area: actions;
+    width: 100%;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__button {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 12px;
   }
 
   /* —— Promo cards —— */

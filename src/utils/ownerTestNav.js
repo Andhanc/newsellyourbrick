@@ -43,7 +43,6 @@ export const NAV_ID_TO_VIEW = {
   sales: OWNER_VIEWS.SALES,
   wallet: OWNER_VIEWS.WALLET,
   testdrive: OWNER_VIEWS.TEST_DRIVE,
-  bookings: OWNER_VIEWS.TEST_DRIVE,
   subscriptions: OWNER_VIEWS.SUBSCRIPTIONS,
   settings: OWNER_VIEWS.PROFILE,
 }
@@ -137,6 +136,5 @@ export function isTabItemActive(tabId, view) {
   if (tabId === 'properties') {
     return view === OWNER_VIEWS.PROPERTIES || view === OWNER_VIEWS.PROPERTY_ANALYTICS
   }
-  if (tabId === 'bookings') return view === OWNER_VIEWS.TEST_DRIVE
   return false
 }

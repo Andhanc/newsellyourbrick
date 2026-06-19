@@ -1174,7 +1174,6 @@ export default function OwnerAddPropertyTestPage() {
         listingModes={filteredListingModes}
         listingMode={form.listingMode}
         listingErrors={listingErrors}
-        testDriveEnabled={form.testDrive === 'yes'}
         onSelectListingMode={(modeId) => {
           updateField('listingMode', modeId)
           setListingErrors((prev) => {

@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { X, Plus } from 'lucide-react'
 import OwnerTestProfileMenu from './OwnerTestProfileMenu'
-import OwnerCabinetLogoMark from './OwnerCabinetLogoMark'
+import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
 import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
 import OwnerSupportButton from './OwnerSupportButton'
+import SiteChatDock from './SiteChatDock'
+import OwnerAiTabIcon from './OwnerAiTabIcon'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { openOwnerAiChat, openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import {
   isNavItemActive,
   isTabItemActive,
@@ -18,8 +21,8 @@ import {
 } from '../utils/ownerTestNav'
 import './OwnerTestCabinetChrome.css'
 
-function LogoMark({ className = '' }) {
-  return <OwnerCabinetLogoMark className={`otc-logo__mark ${className}`.trim()} />
+function BrandLogo({ className = '' }) {
+  return <SiteBrandLogo className={className} textClassName="otc-logo__text" />
 }
 
 export default function OwnerTestCabinetChrome({ children }) {
@@ -28,6 +31,8 @@ export default function OwnerTestCabinetChrome({ children }) {
   const navItems = useOwnerTestNavItems()
   const tabItems = useOwnerTestTabItems()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [aiChatOpen, setAiChatOpen] = useState(false)
+  const [managerChatOpen, setManagerChatOpen] = useState(false)
   const showTabbar = isTabbarView(view)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -41,6 +46,17 @@ export default function OwnerTestCabinetChrome({ children }) {
     }
   }, [menuOpen])
 
+  useEffect(() => {
+    const onAi = (event) => setAiChatOpen(Boolean(event.detail?.isOpen))
+    const onManager = (event) => setManagerChatOpen(Boolean(event.detail?.isOpen))
+    window.addEventListener('aiChatStateChange', onAi)
+    window.addEventListener('managerChatStateChange', onManager)
+    return () => {
+      window.removeEventListener('aiChatStateChange', onAi)
+      window.removeEventListener('managerChatStateChange', onManager)
+    }
+  }, [])
+
   const handleNavClick = useCallback(
     (navId) => {
       const target = NAV_ID_TO_VIEW[navId]
@@ -51,8 +67,9 @@ export default function OwnerTestCabinetChrome({ children }) {
   )
 
   const renderNavItem = useCallback(
-    ({ id, label, icon: Icon, badge, href }) => {
-      const active = isNavItemActive(id, view)
+    ({ id, label, icon: Icon, badge, href, action }) => {
+      const active =
+        action === 'managerChat' ? managerChatOpen : isNavItemActive(id, view)
       const className = `otc-nav__item${active ? ' otc-nav__item--active' : ''}`
       const target = NAV_ID_TO_VIEW[id]
       const inner = (
@@ -62,6 +79,22 @@ export default function OwnerTestCabinetChrome({ children }) {
           {badge != null && <span className="otc-nav__badge">{badge}</span>}
         </>
       )
+
+      if (action === 'managerChat') {
+        return (
+          <button
+            key={id}
+            type="button"
+            className={className}
+            onClick={() => {
+              openOwnerManagerChat()
+              closeMenu()
+            }}
+          >
+            {inner}
+          </button>
+        )
+      }
 
       if (href) {
         return (
@@ -85,15 +118,15 @@ export default function OwnerTestCabinetChrome({ children }) {
         </button>
       )
     },
-    [view, handleNavClick, closeMenu]
+    [view, handleNavClick, closeMenu, managerChatOpen]
   )
 
   return (
-    <div className={`otc${menuOpen ? ' otc--menu-open' : ''}${showTabbar ? ' otc--tabbar' : ''}`}>
+    <SiteChatDock hideFab wrapperClassName="owner-cabinet-chat-dock">
+      <div className={`otc${menuOpen ? ' otc--menu-open' : ''}${showTabbar ? ' otc--tabbar' : ''}`}>
       <header className="otc-mob-topbar otc-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="otc-mob-topbar__brand">
-          <LogoMark />
-          <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+          <BrandLogo />
         </div>
         <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
           <OwnerSupportButton className="otc-mob-topbar__bell" iconSize={22} />
@@ -118,8 +151,7 @@ export default function OwnerTestCabinetChrome({ children }) {
       >
         <div className="otc-drawer__head">
           <div className="otc-sidebar__brand otc-sidebar__brand--drawer">
-            <LogoMark />
-            <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+            <BrandLogo />
           </div>
           <button type="button" className="otc-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
@@ -134,8 +166,7 @@ export default function OwnerTestCabinetChrome({ children }) {
 
       <aside className="otc-sidebar otc-desktop-only">
         <div className="otc-sidebar__brand">
-          <LogoMark />
-          <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+          <BrandLogo />
         </div>
         <div className="otc-sidebar__divider" aria-hidden />
         <nav className="otc-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
@@ -164,22 +195,31 @@ export default function OwnerTestCabinetChrome({ children }) {
               )
             }
             const Icon = item.icon
-            const active = isTabItemActive(item.id, view)
+            const active = item.action === 'aiChat' ? aiChatOpen : isTabItemActive(item.id, view)
             const target = NAV_ID_TO_VIEW[item.id]
+            const isAiTab = item.action === 'aiChat'
             return (
               <button
                 key={item.id}
                 type="button"
-                className={`otc-tabbar__item${active ? ' otc-tabbar__item--active' : ''}`}
+                className={`otc-tabbar__item${active ? ' otc-tabbar__item--active' : ''}${isAiTab ? ' otc-tabbar__item--ai' : ''}`}
                 onClick={() => {
                   if (item.id === 'more') {
                     setMenuOpen(true)
                     return
                   }
+                  if (item.action === 'aiChat') {
+                    openOwnerAiChat()
+                    return
+                  }
                   if (target) goTo(target)
                 }}
               >
-                <Icon size={22} strokeWidth={active ? 2.25 : 2} aria-hidden />
+                {isAiTab ? (
+                  <OwnerAiTabIcon size={22} active={active} />
+                ) : (
+                  <Icon size={22} strokeWidth={active ? 2.25 : 2} aria-hidden />
+                )}
                 <span>{item.label}</span>
               </button>
             )
@@ -187,6 +227,7 @@ export default function OwnerTestCabinetChrome({ children }) {
         </nav>
       )}
 
-    </div>
+      </div>
+    </SiteChatDock>
   )
 }

@@ -545,7 +545,7 @@
 }
 
 .otd-amount--positive {
-  color: #16a34a;
+  color: var(--otd-tiffany-dark);
 }
 
 .otd-status {
@@ -559,8 +559,8 @@
 }
 
 .otd-status--confirmed {
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
+  background: var(--otd-gradient-brand);
+  color: #ffffff;
 }
 
 .otd-status--pending {

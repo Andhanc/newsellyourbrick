@@ -48,12 +48,7 @@
 }
 
 .oap-wizard-step__title-mark {
-  flex-shrink: 0;
-  width: 4px;
-  align-self: stretch;
-  min-height: 36px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #53d8d3 0%, #0abab5 52%, #089a95 100%);
+  display: none;
 }
 
 .oap-wizard-step__title {
@@ -80,7 +75,6 @@
 
 .oap-wizard-step__subtitle {
   margin: 0;
-  padding-left: 16px;
   font-size: 14px;
   line-height: 1.55;
   color: var(--oap-text-muted, #6b7280);
@@ -108,6 +102,35 @@
     gap: 20px;
   }
 
+  .oap-wizard-step__head {
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .oap-wizard-step__head-row {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap-wizard-step__title-wrap {
+    flex: 1;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap-wizard-step__title {
+    font-size: 18px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .oap-wizard-step__subtitle {
+    text-align: center;
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
   .oap-wizard-step__subtitle-full {
     display: none;
   }
@@ -118,9 +141,5 @@
 
   .oap-wizard-step__panel {
     padding: 14px 12px 16px;
-  }
-
-  .oap-wizard-step__title {
-    font-size: 18px;
   }
 }

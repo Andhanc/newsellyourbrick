@@ -145,13 +145,13 @@
 }
 
 .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field--compact {
-  width: min(100%, 188px);
-  max-width: 188px;
+  width: min(100%, 248px);
+  max-width: 248px;
 }
 
 .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__auction-period {
-  width: min(100%, 188px);
-  max-width: 188px;
+  width: min(100%, 260px);
+  max-width: 260px;
 }
 
 .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field-label {
@@ -178,14 +178,7 @@
 
 .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__card--dates {
   max-width: none;
-}
-
-.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__auction-block {
-  margin: 0;
-}
-
-.oap-finance-block--pricing .oap-pricing-step--embedded .auction-period-picker {
-  gap: 12px;
+  padding: 0;
 }
 
 @media (max-width: 900px) {
@@ -205,10 +198,6 @@
     background: #f8fafc;
     border: 1px solid #e8edf2;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  }
-
-  .oap--mobile .oap-finance-step .oap-wizard-section::before {
-    display: block;
   }
 
   .oap--mobile .oap-finance-step .oap-wizard-section__head {

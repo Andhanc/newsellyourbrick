@@ -173,3 +173,99 @@
   color: #111827;
   line-height: 1.5;
 }
+
+/* Embedded variant — flat field inside OAP pricing wizard */
+.auction-period-picker--embedded {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-period-picker--embedded .auction-period-content {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auction-period-picker--embedded .auction-period-end-date {
+  gap: 8px;
+}
+
+.auction-period-picker--embedded .auction-period-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  letter-spacing: normal;
+}
+
+.auction-period-picker--embedded .auction-period-field-label::before {
+  display: none;
+}
+
+.auction-period-picker--embedded .auction-period-date-shell {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.auction-period-picker--embedded .auction-period-date-shell:focus-within {
+  border-color: #0abab5;
+  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+}
+
+.auction-period-picker--embedded .auction-period-date-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  color: #089a95;
+  background: rgba(10, 186, 181, 0.14);
+  pointer-events: none;
+}
+
+.auction-period-picker--embedded .auction-period-date-input {
+  min-height: 44px;
+  padding: 0 14px 0 46px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auction-period-picker--embedded .auction-period-date-input:hover {
+  color: #0f172a;
+}
+
+.auction-period-picker--embedded .auction-period-hint {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.auction-period-picker--embedded .auction-period-error {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #dc2626;
+  line-height: 1.35;
+}

@@ -18,6 +18,14 @@ export function getOwnerAuctionTimerFlags(remainingMs) {
   return { expired: false, warning, critical, urgent }
 }
 
+export function getOwnerAuctionTimerBadgeModifier(flags) {
+  if (flags.expired) return 'expired'
+  if (flags.urgent) return 'urgent'
+  if (flags.critical) return 'critical'
+  if (flags.warning) return 'warning'
+  return 'long'
+}
+
 export function formatOwnerAuctionTimerCountdown(remainingMs, { daySeparator = 'd ' } = {}) {
   const totalSeconds = Math.floor(remainingMs / 1000)
   const days = Math.floor(totalSeconds / 86400)

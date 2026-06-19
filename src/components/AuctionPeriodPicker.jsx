@@ -22,6 +22,7 @@ const AuctionPeriodPicker = ({
   onStartDateChange,
   onEndDateChange,
   label,
+  variant = 'default',
   // В админ-режиме можно убрать минимальные ограничения по периоду.
   minMonths = 3,
   minDays = 15,
@@ -123,10 +124,17 @@ const AuctionPeriodPicker = ({
   }
 
   const minEndDate = disableMinConstraints ? undefined : calculateMinEndDate()
+  const isEmbedded = variant === 'embedded'
+  const pickerClassName = [
+    'auction-period-picker',
+    isEmbedded ? 'auction-period-picker--embedded' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div className="auction-period-picker">
-      {label && (
+    <div className={pickerClassName}>
+      {label && !isEmbedded && (
         <div className="auction-period-header">
           <span className="auction-period-header__icon" aria-hidden="true">
             <FiCalendar size={22} strokeWidth={2} />
@@ -139,11 +147,16 @@ const AuctionPeriodPicker = ({
         <div className="auction-period-end-date">
           <label className="auction-period-field-label">{t('addPropertyPriceAuctionEndDateLabel')}</label>
           <div className="auction-period-date-shell">
+            {isEmbedded ? (
+              <span className="auction-period-date-icon" aria-hidden="true">
+                <FiCalendar size={15} strokeWidth={2} />
+              </span>
+            ) : null}
             <input
               type="date"
               value={endDateValue}
               onChange={handleEndDateChange}
-              className={`auction-period-date-input ${error ? 'auction-period-date-input--error' : ''}`}
+              className={`auction-period-date-input${isEmbedded ? ' auction-period-date-input--with-icon' : ''} ${error ? ' auction-period-date-input--error' : ''}`}
               min={minEndDate || undefined}
             />
           </div>

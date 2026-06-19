@@ -47,7 +47,7 @@ export default function OwnerSupportButton({ className = '', iconSize = 20 }) {
 
       {open ? (
         <div className="otsb__menu" role="menu" aria-label={t('ownerTest_supportAria')}>
-          <p className="otsb__menu-title">{t('ownerTest_supportTitle')}</p>
+          <p className="otsb__menu-title">{t('ownerTest_supportMenuTitle')}</p>
           <Link
             to="/chat?manager=1"
             className="otsb__menu-item"

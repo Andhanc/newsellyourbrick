@@ -163,6 +163,7 @@
 
 .oad-card--fast::before {
   background:
+    radial-gradient(circle at 86% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 28%),
     radial-gradient(circle at 85% 50%, rgba(24, 194, 142, 0.42) 0%, transparent 34%),
     linear-gradient(135deg, #226b5f 0%, #0f513f 55%, #12342f 100%);
 }
@@ -254,20 +255,31 @@
   filter: contrast(1.04) saturate(1.05);
 }
 
+.oad-card__image--fast {
+  right: -70px;
+  bottom: -12px;
+  width: 55%;
+  max-width: 330px;
+  mix-blend-mode: multiply;
+  filter: contrast(1.04) saturate(1.05);
+}
+
 .oad-card__image--chart {
-  right: 22px;
-  bottom: -18px;
-  width: 42%;
-  max-width: 220px;
-  filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.25));
+  right: -70px;
+  bottom: -12px;
+  width: 55%;
+  max-width: 330px;
+  mix-blend-mode: multiply;
+  filter: contrast(1.04) saturate(1.05);
 }
 
 .oad-card__image--expert {
-  right: -12px;
-  bottom: -2px;
-  width: 45%;
-  max-width: 250px;
-  filter: drop-shadow(0 20px 30px rgba(15, 23, 42, 0.24));
+  right: -18px;
+  bottom: -8px;
+  width: 48%;
+  max-width: 260px;
+  mix-blend-mode: multiply;
+  filter: contrast(1.04) saturate(1.05);
 }
 
 @media (max-width: 1180px) {
@@ -329,10 +341,18 @@
     min-height: 160px;
     padding: 22px 18px 18px;
     border-radius: 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 108px;
+    align-items: end;
+    gap: 8px;
   }
 
   .oad-card__copy {
-    width: 62%;
+    width: 100%;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    z-index: 2;
   }
 
   .oad-card__title {
@@ -352,18 +372,108 @@
     font-size: 13px;
   }
 
-  .oad-card__image--house {
-    right: -78px;
-    width: 64%;
+  .oad-card__image {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    justify-self: end;
+    width: 100%;
+    max-width: 108px;
+    height: auto;
+    max-height: 112px;
+    object-fit: contain;
+    object-position: bottom right;
+    right: auto;
+    bottom: auto;
+  }
+
+  .oad-card__image--house,
+  .oad-card__image--fast,
+  .oad-card__image--chart,
+  .oad-card__image--expert {
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: 108px;
+  }
+
+  .oad-card__image--house,
+  .oad-card__image--fast {
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+    max-width: 130px;
   }
 
   .oad-card__image--chart {
-    right: -6px;
-    width: 42%;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+    max-width: 130px;
   }
 
-  .oad-card__image--expert {
-    right: -24px;
-    width: 50%;
+  .oad-card--help {
+    position: relative;
+    display: block;
+  }
+
+  .oad-card--help .oad-card__copy {
+    width: 62%;
+  }
+
+  .oad-card--help .oad-card__image--expert {
+    position: absolute;
+    right: -40px;
+    bottom: -10px;
+    width: 58%;
+    max-width: 210px;
+    max-height: none;
+    grid-column: unset;
+    grid-row: unset;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+  }
+
+  .oad-card--premium {
+    position: relative;
+    display: block;
+  }
+
+  .oad-card--premium .oad-card__copy {
+    width: 62%;
+  }
+
+  .oad-card--premium .oad-card__image--house {
+    position: absolute;
+    right: -52px;
+    bottom: -12px;
+    width: 64%;
+    max-width: 220px;
+    max-height: none;
+    grid-column: unset;
+    grid-row: unset;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
+  }
+
+  .oad-card--fast {
+    position: relative;
+    display: block;
+  }
+
+  .oad-card--fast .oad-card__copy {
+    width: 62%;
+  }
+
+  .oad-card--fast .oad-card__image--fast {
+    position: absolute;
+    right: -52px;
+    bottom: -12px;
+    width: 64%;
+    max-width: 220px;
+    max-height: none;
+    grid-column: unset;
+    grid-row: unset;
+    mix-blend-mode: multiply;
+    filter: contrast(1.04) saturate(1.05);
   }
 }

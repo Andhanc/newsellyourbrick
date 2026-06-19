@@ -32,12 +32,17 @@ import OwnerSupportButton from '../components/OwnerSupportButton'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import {
   formatOwnerTestDays,
   getOwnerTestIntlLocale,
 } from '../utils/ownerTestI18n'
+import {
+  getOwnerAuctionTimerBadgeModifier,
+  getOwnerAuctionTimerFlags,
+} from '../utils/ownerTestTimer'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
@@ -148,10 +153,10 @@ function parseMotTime(value) {
   return Number.isFinite(ts) ? ts : null
 }
 
-function formatTimerLeft(endTime, t, lang) {
+function formatTimerLeft(endTime, t, lang, now = Date.now()) {
   const ts = parseMotTime(endTime)
   if (!ts) return '—'
-  const diff = Math.max(0, ts - Date.now())
+  const diff = Math.max(0, ts - now)
   if (diff <= 0) return t('ownerTest_timerFinished')
   const days = Math.floor(diff / 86400000)
   const hours = Math.floor((diff % 86400000) / 3600000)
@@ -160,6 +165,27 @@ function formatTimerLeft(endTime, t, lang) {
     return `${formatOwnerTestDays(days, lang)} ${String(hours).padStart(2, '0')}${t('timerHour')}`
   }
   return `${hours}${t('timerHour')} ${String(minutes).padStart(2, '0')}${t('timerMin')}`
+}
+
+function BestTimerBadge({ endTime, t, lang }) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const ts = parseMotTime(endTime)
+  if (!ts) return null
+
+  const flags = getOwnerAuctionTimerFlags(ts - now)
+  const modifier = getOwnerAuctionTimerBadgeModifier(flags)
+
+  return (
+    <span className={`mot-best__badge mot-best__badge--${modifier}`}>
+      {flags.expired ? t('ownerTest_timerFinished') : formatTimerLeft(endTime, t, lang, now)}
+    </span>
+  )
 }
 
 function buildPropertyKey(propertyId, table) {
@@ -402,7 +428,7 @@ function Sparkline({ variant, className = '', filled = false }) {
 
 const ACTIVITY_TONES = {
   blue: { bg: '#ecfdf5', fg: MOT_TIFFANY },
-  teal: { bg: '#e6f9f8', fg: MOT_TIFFANY },
+  teal: { bg: MOT_TIFFANY, fg: '#ffffff' },
   green: { bg: '#ecfdf5', fg: '#22C55E' },
   orange: { bg: '#fff7ed', fg: '#F59E0B' },
   red: { bg: '#fef2f2', fg: '#EF4444' },
@@ -422,7 +448,7 @@ function BestTimerCard({ property, goTo, className = '', t, locale, lang }) {
               loading="lazy"
               decoding="async"
             />
-            <span className="mot-best__badge">{formatTimerLeft(property.auctionEndTime, t, lang)}</span>
+            <BestTimerBadge endTime={property.auctionEndTime} t={t} lang={lang} />
           </div>
           <h3 className="mot-best__name">{property.title}</h3>
           <p className="mot-best__location">{property.location}</p>
@@ -513,7 +539,7 @@ function StatusDistributionCard({ donutData, donutOptions, propertyCount, status
             ))}
           </ul>
         </div>
-        <OwnerBuyerAd className="mot-status-buyer-ad" />
+        <OwnerBuyerAd className="mot-status-buyer-ad" imageSrc="/images/owner-test/owner-buyer-promo-hero.png" />
       </div>
     </article>
   )
@@ -578,6 +604,11 @@ export default function MainOwnerTestPage() {
     if (full) return full.split(/\s+/)[0]
     return t('ownerTest_roleSeller')
   }, [profileCtx?.fullName, profileCtx?.profile?.firstName, t])
+
+  const welcomeDisplayName = useMemo(() => {
+    if (!welcomeName) return welcomeName
+    return welcomeName.charAt(0).toUpperCase() + welcomeName.slice(1)
+  }, [welcomeName])
 
   const datePresets = useMemo(
     () => [
@@ -875,7 +906,16 @@ export default function MainOwnerTestPage() {
       .sort((a, b) => b.createdTs - a.createdTs)
   }, [goTo, intlLocale, ownerBidRows, propertyStatsRows, t])
 
-  const visibleBidNotifications = useMemo(() => bidNotifications.slice(0, 4), [bidNotifications])
+  const { dismiss: dismissBidNotification, filterItems: filterBidNotifications } =
+    useOwnerDismissedNotifications()
+  const activeBidNotifications = useMemo(
+    () => filterBidNotifications(bidNotifications),
+    [bidNotifications, filterBidNotifications]
+  )
+  const visibleBidNotifications = useMemo(
+    () => activeBidNotifications.slice(0, 4),
+    [activeBidNotifications]
+  )
 
   const statusLegend = useMemo(() => {
     const counts = propertyStatsRows.reduce(
@@ -1168,7 +1208,7 @@ export default function MainOwnerTestPage() {
           <OwnerNotificationsButton
             className="mot-icon-btn"
             badgeClassName="mot-icon-btn__badge"
-            badge={bidNotifications.length || null}
+            badge={activeBidNotifications.length || null}
             items={bidNotifications}
           />
           <OwnerTestProfileMenu />
@@ -1178,10 +1218,16 @@ export default function MainOwnerTestPage() {
       <div className="mot-content">
         <div className="mot-mob-hero mot-mobile-only">
           <div className="mot-mob-hero__copy">
-            <h1 className="mot-mob-hero__title">{welcomeName}!</h1>
+            <h1 className="mot-mob-hero__title">
+              {t('ownerTest_mobWelcomeEyebrow')}, {welcomeDisplayName}
+            </h1>
             <p className="mot-mob-hero__subtitle">{t('ownerDashboardSubtitle')}</p>
           </div>
-          <div className="mot-date-control mot-date-control--mobile mot-date-control--full">
+          <div
+            className={`mot-date-control mot-date-control--mobile mot-date-control--full${
+              datePopoverOpen ? ' mot-date-control--expanded' : ''
+            }`}
+          >
             <button
               type="button"
               className="mot-date-pill mot-date-pill--full"
@@ -1380,7 +1426,8 @@ export default function MainOwnerTestPage() {
       <OwnerNotificationsDrawer
         open={bidDrawerOpen}
         onClose={() => setBidDrawerOpen(false)}
-        items={bidNotifications}
+        items={activeBidNotifications}
+        onDismiss={dismissBidNotification}
       />
 
     </div>
@@ -1414,7 +1461,7 @@ export default function MainOwnerTestPage() {
             className="mot-mob-topbar__bell"
             badgeClassName="mot-icon-btn__badge"
             iconSize={22}
-            badge={bidNotifications.length || null}
+            badge={activeBidNotifications.length || null}
             items={bidNotifications}
           />
         </div>

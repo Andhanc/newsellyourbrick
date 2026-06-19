@@ -301,16 +301,6 @@
   margin-bottom: 24px;
 }
 
-.oap-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-}
-
 /* ——— Step: title & description (mockup) ——— */
 .oap-text-step__layout {
   display: grid;

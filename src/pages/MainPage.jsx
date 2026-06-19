@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import './MainPage.css'
-/** Фон hero-секции (внешнее изображение виллы) */
+/** Фон hero-секции (вилла в public/images/external) */
 const HERO_BACKGROUND_URL =
-  '/images/external/villa-palazzetta-1-577bba2c20.jpg'
+  '/images/external/shares-hero-villa.jpg'
 import {
   FiSearch,
   FiSliders,

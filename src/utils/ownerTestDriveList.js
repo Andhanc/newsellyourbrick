@@ -27,6 +27,19 @@ function formatDateRange(start, end) {
   }
 }
 
+function formatDateRangeShort(start, end) {
+  try {
+    const s = new Date(`${start}T12:00:00`)
+    const e = new Date(`${end}T12:00:00`)
+    const opts = { day: 'numeric', month: 'short' }
+    const startLabel = s.toLocaleDateString('ru-RU', opts).replace(/\.$/, '')
+    const endLabel = e.toLocaleDateString('ru-RU', opts).replace(/\.$/, '')
+    return `${startLabel} — ${endLabel}`
+  } catch {
+    return `${start || '—'} — ${end || '—'}`
+  }
+}
+
 function formatDeposit(booking) {
   const insurance = Number(booking.insurance_deposit_amount)
   if (Number.isFinite(insurance) && insurance > 0) {
@@ -113,6 +126,7 @@ export function mapOwnerTestDriveBooking(booking, locationByKey = new Map()) {
     image,
     buyer: booking.buyer_display || 'Покупатель',
     dates: formatDateRange(booking.start_date, booking.end_date),
+    datesShort: formatDateRangeShort(booking.start_date, booking.end_date),
     startDate: booking.start_date,
     endDate: booking.end_date,
     amount: formatDeposit(booking),

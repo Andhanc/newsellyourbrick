@@ -45,7 +45,7 @@ export function getDefaultOwnerNotifications(t) {
   ]
 }
 
-export default function OwnerNotificationsDrawer({ open, onClose, items }) {
+export default function OwnerNotificationsDrawer({ open, onClose, items, onDismiss }) {
   const { t } = useTranslation()
   const resolvedItems = items ?? getDefaultOwnerNotifications(t)
 
@@ -103,6 +103,16 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
               const Icon = item.icon
               return (
                 <li key={item.id} className={`ond-item ond-item--${item.tone}`}>
+                  {onDismiss && (
+                    <button
+                      type="button"
+                      className="ond-item__dismiss"
+                      aria-label={t('ownerTest_notificationsDismiss')}
+                      onClick={() => onDismiss(item.id)}
+                    >
+                      <X size={14} strokeWidth={2.2} aria-hidden />
+                    </button>
+                  )}
                   <span className="ond-item__icon">
                     <Icon size={18} strokeWidth={2.2} aria-hidden />
                   </span>

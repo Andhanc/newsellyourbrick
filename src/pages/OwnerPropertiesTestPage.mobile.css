@@ -374,7 +374,7 @@
 
   /* —— Mobile list (как owl-mob-list в кошельке) —— */
   .op-table-card {
-    margin: 0 var(--op-mob-pad);
+    margin: 12px var(--op-mob-pad) 0;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     background: #fff;
@@ -513,8 +513,8 @@
   }
 
   .op-mob-list .op-status--active {
-    background: rgba(34, 197, 94, 0.12);
-    color: #15803d;
+    background: var(--op-tiffany, #0abab5);
+    color: #ffffff;
   }
 
   .op-mob-list .op-status--booked {
@@ -588,11 +588,18 @@
     max-width: 220px;
   }
 
+  .op-mob-owner-ads .oad-card__image--fast {
+    right: -72px;
+    bottom: -10px;
+    width: 62%;
+    max-width: 220px;
+  }
+
   .op-mob-owner-ads .oad-card__image--chart {
-    right: -4px;
-    bottom: -14px;
-    width: 44%;
-    max-width: 160px;
+    right: -72px;
+    bottom: -10px;
+    width: 62%;
+    max-width: 220px;
   }
 
   /* —— Bottom nav —— */

@@ -42,8 +42,6 @@ export default function OwnerAddPropertyBasicsStep({
     landPurposeOptions,
   } = paramOptions
 
-  const sqm = t('addPropertyDetailsUnitSqm')
-
   const fieldClassName = (key, { fullWidth = false } = {}) =>
     [
       'oap-basics-field',
@@ -140,12 +138,10 @@ export default function OwnerAddPropertyBasicsStep({
       return (
         <>
           {renderNumberField('area', t('addPropertyDetailsAreaLabel'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
           {renderNumberField('livingArea', t('addPropertyDetailsLivingAreaLabel'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
@@ -182,17 +178,14 @@ export default function OwnerAddPropertyBasicsStep({
       return (
         <>
           {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
           {renderNumberField('area', t('oap_paramsHouseAreaTotal'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
           {renderNumberField('livingArea', t('oap_paramsHouseAreaLiving'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
@@ -228,7 +221,6 @@ export default function OwnerAddPropertyBasicsStep({
       return (
         <>
           {renderNumberField('area', t('addPropertyDetailsAreaLabelShort'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}
@@ -254,7 +246,6 @@ export default function OwnerAddPropertyBasicsStep({
       return (
         <>
           {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
-            suffix: sqm,
             placeholder: '0',
             required: true,
           })}

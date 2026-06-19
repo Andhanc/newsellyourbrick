@@ -923,8 +923,8 @@
 }
 
 .op-status--active {
-  background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  background: var(--op-tiffany, #0abab5);
+  color: #ffffff;
 }
 
 .op-status--booked {
@@ -1658,9 +1658,14 @@ html.op-page-active,
   width: 68%;
 }
 
+.op-owner-ads .oad-card__image--fast {
+  right: -74px;
+  width: 68%;
+}
+
 .op-owner-ads .oad-card__image--chart {
-  right: -12px;
-  width: 46%;
+  right: -74px;
+  width: 68%;
 }
 
 /* ——— Buttons ——— */

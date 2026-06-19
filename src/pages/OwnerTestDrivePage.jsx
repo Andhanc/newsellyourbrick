@@ -20,6 +20,21 @@ import {
 import './OwnerTestDrivePage.css'
 import './OwnerTestDrivePage.mobile.css'
 
+function useOtdMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const onChange = () => setIsMobile(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return isMobile
+}
+
 function LogoMark({ className = '' }) {
   return (
     <svg className={`otd-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
@@ -48,6 +63,7 @@ function LogoMark({ className = '' }) {
 export default function OwnerTestDrivePage() {
   const { t } = useTranslation()
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const isMobile = useOtdMobile()
   const navItems = useOwnerTestNavItems({
     activeId: 'testdrive',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
@@ -208,6 +224,8 @@ export default function OwnerTestDrivePage() {
                   : t('ownerTest_propertiesEmptyFilter')}
               </div>
             ) : (
+            <>
+            {!isMobile ? (
             <div className="otd-table-wrap">
               <table className="otd-table">
                 <thead>
@@ -283,6 +301,40 @@ export default function OwnerTestDrivePage() {
                 </tbody>
               </table>
             </div>
+            ) : null}
+
+            {isMobile ? (
+            <ul className="otd-mob-list">
+              {filteredRows.map((row) => (
+                <li key={row.id} className="otd-mob-list__item">
+                  <button
+                    type="button"
+                    className="otd-mob-list__open"
+                    onClick={() => handleRowOpen(row)}
+                    aria-label={`${t('ownerTest_notificationsOpen')} ${row.displayId}`}
+                  >
+                    <img src={row.image} alt="" className="otd-mob-list__thumb" loading="lazy" />
+                    <span className="otd-mob-list__body">
+                      <span className="otd-mob-list__head">
+                        <span className="otd-mob-list__title">{row.title}</span>
+                        <span className={`otd-status otd-status--${row.statusKey} otd-mob-list__status`}>
+                          {row.status}
+                        </span>
+                      </span>
+                      <span className="otd-mob-list__meta">{row.buyer}</span>
+                      <span className="otd-mob-list__meta">{row.datesShort}</span>
+                    </span>
+                    <span
+                      className={`otd-mob-list__price${row.statusKey === 'confirmed' ? ' otd-mob-list__price--positive' : ''}`}
+                    >
+                      {row.amount}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            ) : null}
+            </>
             )}
           </div>
 

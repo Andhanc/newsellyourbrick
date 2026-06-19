@@ -23,7 +23,6 @@ export const OAP_WIZARD_STEP_VISUALS = {
     accent: 'teal',
     image: OAP_PARAMS_IMAGES.sidebarHero,
     stepLabel: 'Шаг 1 из 5',
-    highlights: ['~5 мин', '3 раздела'],
     eyebrow: 'Объект и адрес',
     lead: 'Точные параметры и адрес помогают покупателям быстрее найти ваше объявление и повышают доверие к сделке.',
     tipsTitle: 'На что обратить внимание',
@@ -49,7 +48,6 @@ export const OAP_BASICS_ROW_ASIDES = {
     accent: 'teal',
     image: OAP_PARAMS_IMAGES.sidebarHero,
     stepLabel: 'Шаг 1 из 5',
-    highlights: ['~5 мин', '3 раздела'],
     eyebrow: 'Объект и адрес',
     lead: OAP_WIZARD_STEP_VISUALS[1].lead,
     tipsTitle: 'На что обратить внимание',
@@ -114,7 +112,7 @@ export const OAP_PRESENTATION_ROW_ASIDES = {
 }
 
 const OAP_FINANCE_STEP_ASIDE = {
-  accent: 'emerald',
+  accent: 'teal',
   image: OAP_CALCULATOR_IMAGES.sidebarHero,
   stepLabel: 'Шаг 4 из 5',
   highlights: ['Оценка рынка', '2 раздела'],
@@ -139,7 +137,7 @@ const OAP_FINANCE_STEP_ASIDE = {
 
 export const OAP_FINANCE_ROW_ASIDES = {
   calculator: {
-    accent: 'emerald',
+    accent: 'teal',
     image: OAP_CALCULATOR_IMAGES.sidebarHero,
     eyebrow: 'Оценка рынка',
     lead: 'Автоматический расчёт по похожим объявлениям — результат можно подставить в поля цены.',
@@ -147,7 +145,7 @@ export const OAP_FINANCE_ROW_ASIDES = {
     tips: [OAP_FINANCE_STEP_ASIDE.tips[0]],
   },
   pricing: {
-    accent: 'emerald',
+    accent: 'teal',
     image: OAP_CALCULATOR_IMAGES.pricingPublicationHero,
     eyebrow: 'Цена и публикация',
     lead: 'Итоговые суммы и даты аукциона вы контролируете сами — расчёт служит ориентиром.',
@@ -195,7 +193,7 @@ const OAP_STRATEGY_STEP_ASIDE = {
 
 export const OAP_STRATEGY_ROW_ASIDES = {
   testdrive: {
-    accent: 'amber',
+    accent: 'teal',
     image: OAP_TESTDRIVE_IMAGES.sidebarHero,
     eyebrow: 'Тест-драйв',
     lead: 'Просмотр или пробное проживание повышает доверие и ускоряет принятие решения.',
