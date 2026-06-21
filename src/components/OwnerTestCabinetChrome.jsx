@@ -19,10 +19,7 @@ import {
   NAV_ID_TO_VIEW,
   OWNER_VIEWS,
 } from '../utils/ownerTestNav'
-import {
-  hasCompletedOwnerCabinetOnboarding,
-  markOwnerCabinetOnboardingComplete,
-} from '../utils/ownerCabinetOnboarding'
+import { preloadOwnerOnboardingImages } from './ownerOnboardingImages'
 import './OwnerTestCabinetChrome.css'
 
 function BrandLogo({ className = '' }) {
@@ -62,17 +59,15 @@ export default function OwnerTestCabinetChrome({ children }) {
   }, [])
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId')
-    if (!userId || !/^\d+$/.test(userId)) return undefined
-    if (hasCompletedOwnerCabinetOnboarding(userId)) return undefined
+    preloadOwnerOnboardingImages()
+  }, [])
 
+  useEffect(() => {
     const timer = window.setTimeout(() => setOnboardingOpen(true), 500)
     return () => window.clearTimeout(timer)
   }, [])
 
   const completeOnboarding = useCallback(() => {
-    const userId = localStorage.getItem('userId')
-    if (userId) markOwnerCabinetOnboardingComplete(userId)
     setOnboardingOpen(false)
   }, [])
 

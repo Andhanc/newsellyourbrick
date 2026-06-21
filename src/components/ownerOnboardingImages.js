@@ -1,11 +1,23 @@
 import { publicAsset } from '../utils/publicAsset'
 
-/** PNG-иллюстрации onboarding (public/images/owner-onboarding/) */
+/** Иллюстрации onboarding (public/images/owner-onboarding/) */
 export const OWNER_ONBOARDING_IMAGES = [
-  publicAsset('images/owner-onboarding/owner-onboarding-step-1-cabinet.png'),
-  publicAsset('images/owner-onboarding/owner-onboarding-step-2-analytics.png'),
-  publicAsset('images/owner-onboarding/owner-onboarding-step-3-add-property.png'),
-  publicAsset('images/owner-onboarding/owner-onboarding-step-4-start.png'),
+  publicAsset('images/owner-onboarding/owner-onboarding-step-1-cabinet.webp'),
+  publicAsset('images/owner-onboarding/owner-onboarding-step-2-analytics.webp'),
+  publicAsset('images/owner-onboarding/owner-onboarding-step-3-add-property.webp'),
+  publicAsset('images/owner-onboarding/owner-onboarding-step-4-start.webp'),
 ]
 
-export { OWNER_ONBOARDING_ILLUSTRATIONS } from './OwnerOnboardingStepIllustrations'
+let preloadStarted = false
+
+export function preloadOwnerOnboardingImages() {
+  if (preloadStarted || typeof window === 'undefined') return
+  preloadStarted = true
+
+  OWNER_ONBOARDING_IMAGES.forEach((src, index) => {
+    const img = new Image()
+    img.decoding = 'async'
+    if (index === 0) img.fetchPriority = 'high'
+    img.src = src
+  })
+}

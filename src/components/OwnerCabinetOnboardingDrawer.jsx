@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
-import { OWNER_ONBOARDING_ILLUSTRATIONS } from './ownerOnboardingImages'
+import { OWNER_ONBOARDING_IMAGES, preloadOwnerOnboardingImages } from './ownerOnboardingImages'
 import './OwnerCabinetOnboardingDrawer.css'
 
 const STEP_COUNT = 4
@@ -28,6 +28,12 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
     }
     const frame = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(frame)
+  }, [visible])
+
+  useEffect(() => {
+    if (!visible) return undefined
+    preloadOwnerOnboardingImages()
+    return undefined
   }, [visible])
 
   useEffect(() => {
@@ -87,12 +93,18 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
           </div>
 
           <div className="owner-onboarding-drawer__hero">
-            {OWNER_ONBOARDING_ILLUSTRATIONS.map((Illustration, index) => (
-              <Illustration
-                key={index}
+            {OWNER_ONBOARDING_IMAGES.map((src, index) => (
+              <img
+                key={src}
                 className={`owner-onboarding-drawer__illustration${
                   index === step ? ' owner-onboarding-drawer__illustration--active' : ''
                 }`}
+                src={src}
+                alt=""
+                draggable={false}
+                decoding="async"
+                loading={index <= 1 ? 'eager' : 'lazy'}
+                fetchPriority={index === step ? 'high' : 'low'}
               />
             ))}
           </div>
