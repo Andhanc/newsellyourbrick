@@ -1,15 +1,16 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BadgeCheck, Eye, MessageCircle, ShieldCheck } from 'lucide-react'
+import { publicAsset } from '../utils/publicAsset'
 import './OwnerAds.css'
 
 export const AD_IMAGES = {
-  buyerHouse: '/images/owner-test/owner-promo-sidebar-buyer.png',
-  buyerHero: '/images/owner-test/owner-buyer-promo-hero.png',
-  buyerMobile: '/images/owner-test/owner-buyer-promo-mobile.png',
-  premiumHouse: '/images/owner-test/owner-promo-promote-thumb.png',
-  fastSalesHero: '/images/owner-test/owner-promo-fast-sales-thumb.png',
-  salesExpert: '/images/owner-test/owner-promo-help-thumb.png',
+  buyerHouse: publicAsset('images/owner-test/owner-promo-sidebar-buyer.png'),
+  buyerHero: publicAsset('images/owner-test/owner-buyer-promo-hero.png'),
+  buyerMobile: publicAsset('images/owner-test/owner-buyer-promo-mobile.png'),
+  premiumHouse: publicAsset('images/owner-test/owner-promo-promote-thumb.png'),
+  fastSalesHero: publicAsset('images/owner-test/owner-promo-fast-sales-thumb.png'),
+  salesExpert: publicAsset('images/owner-test/owner-promo-help-thumb.png'),
 }
 
 function useCompactAds() {

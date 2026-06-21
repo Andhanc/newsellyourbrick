@@ -241,3 +241,59 @@
   }
 }
 
+/* ——— Journey mobile: flat sections ——— */
+.oap-finance-step--journey .oap-finance-step__rows {
+  gap: 0;
+}
+
+.oap-finance-step--journey .oap-finance-step__row {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap-finance-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap-finance-step__zone--pricing-journey {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap-finance-step--journey .oap-finance-block--pricing {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap-finance-step--journey .oap-finance-block--pricing .oap-pricing-step--journey {
+  gap: 1.35rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap-finance-step--journey .oap-finance-block--pricing .oap-pricing-step--journey .oap-pricing-step__field--compact,
+.oap-finance-step--journey .oap-finance-block--pricing .oap-pricing-step--journey .oap-pricing-step__auction-period {
+  width: 100%;
+  max-width: none;
+}
+
+.oap-finance-step--journey .oap-finance-block--pricing .oap-pricing-step--journey .oap-pricing-step__prices-row {
+  flex-direction: column;
+  gap: 12px;
+}
+

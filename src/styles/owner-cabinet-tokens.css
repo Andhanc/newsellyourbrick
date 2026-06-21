@@ -22,7 +22,7 @@ html.owner-test-cabinet-active,
   --oc-tiffany-ink: #042f2e;
   --oc-tiffany-light: #53d8d3;
   --oc-tiffany-pale: #99f6e4;
-  --oc-tiffany-soft: #ecfdf5;
+  --oc-tiffany-soft: #eefdfb;
   --oc-tiffany-mint: #ccfbf1;
   --oc-tiffany-muted: rgba(10, 186, 181, 0.14);
   --oc-tiffany-ring: rgba(10, 186, 181, 0.28);
@@ -33,8 +33,8 @@ html.owner-test-cabinet-active,
   --oc-slate-light: #64748b;
   --oc-slate-faint: #94a3b8;
   --oc-surface: #ffffff;
-  --oc-surface-muted: #f8fafc;
-  --oc-surface-warm: #f4fbfb;
+  --oc-surface-muted: #f7fbfb;
+  --oc-surface-warm: #f1fbfa;
   --oc-border: #e5e7eb;
   --oc-border-soft: rgba(226, 232, 240, 0.85);
   --oc-text: #111827;
@@ -51,7 +51,7 @@ html.owner-test-cabinet-active,
     rgba(15, 118, 110, 0.04) 38%,
     rgba(255, 255, 255, 0) 72%
   );
-  --oc-gradient-page: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 55%, #ecfdf5 100%);
+  --oc-gradient-page: linear-gradient(135deg, #f7fbfb 0%, #f0fffd 48%, #fbfff8 100%);
   --oc-gradient-promo-shade: linear-gradient(
     115deg,
     rgba(4, 47, 46, 0.9) 0%,
@@ -60,12 +60,12 @@ html.owner-test-cabinet-active,
   );
 
   /* Elevation */
-  --oc-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
-  --oc-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.05);
+  --oc-shadow-sm: 0 16px 36px rgba(15, 23, 42, 0.06), 0 18px 34px rgba(10, 186, 181, 0.07);
+  --oc-shadow-md: 0 22px 46px rgba(15, 23, 42, 0.08), 0 18px 36px rgba(10, 186, 181, 0.08);
   --oc-shadow-current: 0 0 0 1px rgba(15, 118, 110, 0.22), 0 20px 48px rgba(4, 47, 46, 0.14);
-  --oc-radius: 16px;
-  --oc-radius-sm: 12px;
-  --oc-radius-lg: 22px;
+  --oc-radius: 22px;
+  --oc-radius-sm: 16px;
+  --oc-radius-lg: 28px;
 
   /* Mobile shared */
   --oc-mob-pad: 16px;
@@ -89,5 +89,45 @@ html.owner-test-cabinet-active,
     --oc-mob-surface: #ffffff;
     --oc-mob-accent: var(--oc-tiffany);
     --oc-mob-accent-dark: var(--oc-tiffany-dark);
+  }
+}
+
+@media (min-width: 901px) {
+  :where(.op-body, .opa-body, .otd-body, .ost-body, .osl-body, .opr-body, .owl-body),
+  :where(.op-workspace, .opa-workspace, .otd-workspace, .ost-workspace, .osl-workspace, .opr-workspace, .owl-workspace) {
+    background: transparent !important;
+  }
+
+  :where(.op, .opa, .otd, .ost, .osl, .opr, .owl) {
+    background-color: var(--oc-surface-warm) !important;
+    background-image: var(--oc-gradient-page) !important;
+  }
+
+  :where(.op, .opa, .otd, .ost, .osl, .opr, .owl)
+    :where(
+      [class$='-card'],
+      [class*='-card '],
+      [class*='__card'],
+      [class$='-panel'],
+      [class*='-panel '],
+      [class*='__panel'],
+      [class$='-surface'],
+      [class*='-surface '],
+      [class*='__surface']
+    ) {
+    border-radius: var(--oc-radius) !important;
+    border-color: rgba(10, 186, 181, 0.1) !important;
+    box-shadow: var(--oc-shadow-sm) !important;
+  }
+
+  :where(.op, .opa, .otd, .ost, .osl, .opr, .owl)
+    :where([class$='-card'], [class*='-card '], [class*='__card']) {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  :where(.op, .opa, .otd, .ost, .osl, .opr, .owl)
+    :where([class$='-card'], [class*='-card '], [class*='__card']):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--oc-shadow-md) !important;
   }
 }

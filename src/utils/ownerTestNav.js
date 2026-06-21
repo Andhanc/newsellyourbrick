@@ -101,6 +101,7 @@ export function scrollOwnerCabinetToTop() {
 export function resolveOwnerTestView(searchParams) {
   const view = searchParams.get('view') || OWNER_VIEWS.HOME
   if (!VALID_VIEWS.has(view)) return OWNER_VIEWS.HOME
+  if (view === OWNER_VIEWS.SALES) return OWNER_VIEWS.HOME
   if (view === OWNER_VIEWS.PROPERTY_ANALYTICS && !searchParams.get('propertyId')) {
     return OWNER_VIEWS.PROPERTIES
   }
@@ -131,10 +132,20 @@ export function isNavItemActive(navId, view) {
   return mapped === view
 }
 
-export function isTabItemActive(tabId, view) {
+export function isTabItemActive(tabId, view, { aiChatOpen = false, menuOpen = false } = {}) {
   if (tabId === 'home') return view === OWNER_VIEWS.HOME
   if (tabId === 'properties') {
     return view === OWNER_VIEWS.PROPERTIES || view === OWNER_VIEWS.PROPERTY_ANALYTICS
+  }
+  if (tabId === 'ai') return aiChatOpen
+  if (tabId === 'more') {
+    if (menuOpen) return true
+    return (
+      view === OWNER_VIEWS.PROFILE ||
+      view === OWNER_VIEWS.SUBSCRIPTIONS ||
+      view === OWNER_VIEWS.WALLET ||
+      view === OWNER_VIEWS.TEST_DRIVE
+    )
   }
   return false
 }

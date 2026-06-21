@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Headphones, Sparkles } from 'lucide-react'
+import OapWizardSidebarImage from './OapWizardSidebarImage'
 import './OwnerAddPropertyStepAside.css'
 
 export default function OwnerAddPropertyStepAside({
@@ -59,7 +60,7 @@ export default function OwnerAddPropertyStepAside({
             {image ? (
               <div className="oap-wizard-aside__visual-frame">
                 <div className="oap-wizard-aside__visual-glow" aria-hidden />
-                <img src={image} alt="" className="oap-wizard-aside__visual-img" />
+                <OapWizardSidebarImage src={image} className="oap-wizard-aside__visual-img" />
               </div>
             ) : null}
             {(eyebrow || lead) && (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -10,15 +10,12 @@ import {
   Flag,
   Percent,
   ArrowUpRight,
-  Upload,
   MoreVertical,
   Info,
-  Filter,
 } from 'lucide-react'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OwnerWalletWithdrawModal from '../components/OwnerWalletWithdrawModal'
 import OwnerWalletMetricChart from '../components/OwnerWalletMetricChart'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
@@ -27,17 +24,15 @@ import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import { OWL_IMAGES } from './ownerWalletImages'
 import {
-  DEMO_STRIPE_PAYOUT,
   DEMO_WALLET_BALANCES,
   DEMO_WALLET_TRANSACTIONS,
-  filterWalletTransactions,
   formatWalletAmount,
   formatWalletDate,
   formatWalletDateMobile,
-  getWalletFilterOptions,
   getWalletTxTypeMeta,
   getWalletTxStatusLabel,
   getWalletTxStatusTone,
+  shouldShowWalletTxStatus,
 } from '../utils/ownerWalletDemo'
 import './OwnerWalletTestPage.css'
 import './OwnerWalletTestPage.mobile.css'
@@ -147,7 +142,6 @@ export default function OwnerWalletTestPage() {
       ? undefined
       : { ...OWNER_TEST_STANDALONE_HREF_MAP, profile: OWNER_TEST_STANDALONE_HREF_MAP.settings },
   })
-  const walletFilterOptions = useMemo(() => getWalletFilterOptions(t), [t])
   const metricDefs = useMemo(
     () => [
       {
@@ -182,31 +176,21 @@ export default function OwnerWalletTestPage() {
     return `${fromStr} – ${toStr}`
   }, [intlLocale])
   const [menuOpen, setMenuOpen] = useState(false)
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [historyFilter, setHistoryFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE)
-  const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [balances, setBalances] = useState(DEMO_WALLET_BALANCES)
-  const [transactions, setTransactions] = useState(DEMO_WALLET_TRANSACTIONS)
-  const filterRef = useRef(null)
-  const filterMobRef = useRef(null)
+  const [balances] = useState(DEMO_WALLET_BALANCES)
+  const [transactions] = useState(DEMO_WALLET_TRANSACTIONS)
 
   const fullName = profileCtx?.fullName?.trim() || 'John Smith'
   const roleLabel = profileCtx?.roleLabel?.trim() || t('ownerTest_roleSeller')
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
-  const filteredTransactions = useMemo(
-    () => filterWalletTransactions(transactions, historyFilter),
-    [transactions, historyFilter]
-  )
-
   const visibleTransactions = useMemo(
-    () => filteredTransactions.slice(0, visibleCount),
-    [filteredTransactions, visibleCount]
+    () => transactions.slice(0, visibleCount),
+    [transactions, visibleCount]
   )
 
-  const hasMore = visibleCount < filteredTransactions.length
+  const hasMore = visibleCount < transactions.length
 
   const metricValues = useMemo(
     () => ({
@@ -216,31 +200,6 @@ export default function OwnerWalletTestPage() {
     }),
     [balances]
   )
-
-  const activeFilterLabel =
-    walletFilterOptions.find((opt) => opt.id === historyFilter)?.label || t('ownerTest_walletFilterAll')
-
-  const handleWithdraw = useCallback(async (amount) => {
-    setBalances((prev) => ({
-      ...prev,
-      available: Math.max(0, prev.available - amount),
-      withdrawnTotal: prev.withdrawnTotal + amount,
-    }))
-    setTransactions((prev) => [
-      {
-        id: `tx-withdraw-${Date.now()}`,
-        date: new Date().toISOString(),
-        propertyTitle: '—',
-        propertyId: null,
-        propertyImage: null,
-        type: 'withdrawal',
-        amount: -amount,
-        status: 'processing',
-        isShare: false,
-      },
-      ...prev,
-    ])
-  }, [])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -284,23 +243,6 @@ export default function OwnerWalletTestPage() {
       document.body.style.overflow = prev
     }
   }, [menuOpen])
-
-  useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE)
-  }, [historyFilter])
-
-  useEffect(() => {
-    if (!filterOpen) return undefined
-    const onPointerDown = (event) => {
-      const inDesktop = filterRef.current?.contains(event.target)
-      const inMob = filterMobRef.current?.contains(event.target)
-      if (!inDesktop && !inMob) setFilterOpen(false)
-    }
-    document.addEventListener('mousedown', onPointerDown)
-    return () => document.removeEventListener('mousedown', onPointerDown)
-  }, [filterOpen])
-
-  const canWithdraw = balances.available > 0
 
   const mainColumn = (
     <div className="owl-body">
@@ -352,85 +294,14 @@ export default function OwnerWalletTestPage() {
           <section className="owl-history" aria-label={t('ownerTest_ariaTransactionHistory')}>
             <div className="owl-history__mob-head owl-mobile-only">
               <h2 className="owl-history__title">{t('ownerTest_ariaTransactionHistory')}</h2>
-              <div className="owl-filter owl-filter--mob" ref={filterMobRef}>
-                <button
-                  type="button"
-                  className="owl-history__filter-btn"
-                  aria-label={t('ownerTest_ariaOperationFilter')}
-                  aria-expanded={filterOpen}
-                  onClick={() => setFilterOpen((prev) => !prev)}
-                >
-                  <Filter size={18} strokeWidth={2} aria-hidden />
-                </button>
-                {filterOpen ? (
-                  <ul className="owl-filter__menu owl-filter__menu--mob" role="listbox">
-                    {walletFilterOptions.map((opt) => (
-                      <li key={opt.id}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={historyFilter === opt.id}
-                          className={`owl-filter__option${historyFilter === opt.id ? ' owl-filter__option--active' : ''}`}
-                          onClick={() => {
-                            setHistoryFilter(opt.id)
-                            setFilterOpen(false)
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
             </div>
 
             <div className="owl-history__head owl-desktop-only">
               <h2 className="owl-history__title">{t('ownerTest_ariaTransactionHistory')}</h2>
               <div className="owl-history__toolbar">
-                <div className="owl-filter" ref={filterRef}>
-                  <button
-                    type="button"
-                    className="owl-filter__btn"
-                    aria-expanded={filterOpen}
-                    onClick={() => setFilterOpen((prev) => !prev)}
-                  >
-                    {activeFilterLabel}
-                    <ChevronDown size={16} strokeWidth={2} aria-hidden />
-                  </button>
-                  {filterOpen ? (
-                    <ul className="owl-filter__menu" role="listbox">
-                      {walletFilterOptions.map((opt) => (
-                        <li key={opt.id}>
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={historyFilter === opt.id}
-                            className={`owl-filter__option${historyFilter === opt.id ? ' owl-filter__option--active' : ''}`}
-                            onClick={() => {
-                              setHistoryFilter(opt.id)
-                              setFilterOpen(false)
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
                 <button type="button" className="owl-date-btn owl-date-btn--compact owl-desktop-only">
                   <Calendar size={16} strokeWidth={2} aria-hidden />
                   <span>{dateRangeLabel}</span>
-                </button>
-                <button
-                  type="button"
-                  className="owl-withdraw-btn owl-desktop-only"
-                  disabled={!canWithdraw}
-                  onClick={() => setWithdrawOpen(true)}
-                >
-                  <Upload size={16} strokeWidth={2.2} aria-hidden />
-                  {t('ownerTest_walletWithdrawBtn')}
                 </button>
               </div>
             </div>
@@ -492,9 +363,11 @@ export default function OwnerWalletTestPage() {
                                 </span>
                               </td>
                               <td>
-                                <span className={`owl-tx-status owl-tx-status--${statusTone}`}>
-                                  {getWalletTxStatusLabel(row.status, t)}
-                                </span>
+                                {shouldShowWalletTxStatus(row.status) ? (
+                                  <span className={`owl-tx-status owl-tx-status--${statusTone}`}>
+                                    {getWalletTxStatusLabel(row.status, t)}
+                                  </span>
+                                ) : null}
                               </td>
                             </tr>
                           )
@@ -524,9 +397,11 @@ export default function OwnerWalletTestPage() {
                           <span className={`owl-tx-amount owl-tx-amount--${amountTone}`}>
                             {formatWalletAmount(row.amount, { signed: true, locale: intlLocale })}
                           </span>
-                          <span className={`owl-tx-status owl-tx-status--${statusTone}`}>
-                            {getWalletTxStatusLabel(row.status, t)}
-                          </span>
+                          {shouldShowWalletTxStatus(row.status) ? (
+                            <span className={`owl-tx-status owl-tx-status--${statusTone}`}>
+                              {getWalletTxStatusLabel(row.status, t)}
+                            </span>
+                          ) : null}
                         </div>
                       </li>
                     )
@@ -541,7 +416,7 @@ export default function OwnerWalletTestPage() {
                       onClick={() => setVisibleCount((prev) => prev + INITIAL_VISIBLE)}
                     >
                       {t('showMore', {
-                        count: Math.min(INITIAL_VISIBLE, filteredTransactions.length - visibleCount),
+                        count: Math.min(INITIAL_VISIBLE, transactions.length - visibleCount),
                       })}
                       <ChevronDown size={16} strokeWidth={2} aria-hidden />
                     </button>
@@ -550,27 +425,8 @@ export default function OwnerWalletTestPage() {
               </>
             )}
           </section>
-
-          <div className="owl-mob-withdraw-bar owl-mobile-only">
-            <button
-              type="button"
-              className="owl-mob-withdraw-bar__btn"
-              disabled={!canWithdraw}
-              onClick={() => setWithdrawOpen(true)}
-            >
-              {t('ownerTest_walletWithdrawBtn')}
-            </button>
-          </div>
         </div>
       </div>
-
-      <OwnerWalletWithdrawModal
-        open={withdrawOpen}
-        onClose={() => setWithdrawOpen(false)}
-        available={balances.available}
-        stripePayout={DEMO_STRIPE_PAYOUT}
-        onSubmit={handleWithdraw}
-      />
     </div>
   )
 

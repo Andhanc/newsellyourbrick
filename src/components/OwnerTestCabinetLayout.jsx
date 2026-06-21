@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { OwnerTestProfileProvider } from '../context/OwnerTestProfileContext'
 import '../styles/owner-cabinet-tokens.css'
+import '../styles/owner-cabinet-skeleton.css'
 
 export default function OwnerTestCabinetLayout({ children }) {
   useEffect(() => {

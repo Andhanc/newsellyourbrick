@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Gavel, Zap, PieChart, Shield, Target, Lightbulb, Check } from 'lucide-react'
+import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_LISTING_IMAGES } from './oapListingImages'
 import './OwnerAddPropertyListingStep.css'
 
@@ -131,9 +132,8 @@ export default function OwnerAddPropertyListingStep({
             {t('oap_listingSidebarP2')}
           </p>
           <div className="oap-listing-step__sidebar-illustration">
-            <img
+            <OapWizardSidebarImage
               src={OAP_LISTING_IMAGES.sidebarHero}
-              alt=""
               className="oap-listing-step__sidebar-img"
             />
           </div>

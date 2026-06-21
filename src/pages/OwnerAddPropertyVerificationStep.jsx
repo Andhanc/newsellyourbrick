@@ -7,6 +7,7 @@ import { OAP_WIZARD_STEP_VISUALS } from './oapWizardStepVisuals'
 import './OwnerAddPropertyVerificationStep.css'
 
 export default function OwnerAddPropertyVerificationStep({
+  hideWizardChrome = false,
   listingMode,
   requiredDocuments,
   additionalDocuments,
@@ -17,6 +18,35 @@ export default function OwnerAddPropertyVerificationStep({
   onRemoveAdditional,
 }) {
   const { t } = useTranslation()
+
+  const documentsStep = (
+    <OwnerAddPropertyDocumentsStep
+      embedded
+      journeyLayout={hideWizardChrome}
+      listingMode={listingMode}
+      requiredDocuments={requiredDocuments}
+      additionalDocuments={additionalDocuments}
+      errors={errors}
+      onRequiredChange={onRequiredChange}
+      onRequiredRemove={onRequiredRemove}
+      onAddAdditional={onAddAdditional}
+      onRemoveAdditional={onRemoveAdditional}
+    />
+  )
+
+  if (hideWizardChrome) {
+    return (
+      <section
+        className="oap-verification-step oap-verification-step--journey"
+        aria-labelledby="oap-journey-documents-title"
+      >
+        <h2 id="oap-journey-documents-title" className="oap-verification-step__journey-title">
+          {t('oap_journeyDocumentsTitle')}
+        </h2>
+        <div className="oap-verification-step__rows">{documentsStep}</div>
+      </section>
+    )
+  }
 
   return (
     <OwnerAddPropertyWizardStepLayout
@@ -32,19 +62,7 @@ export default function OwnerAddPropertyVerificationStep({
         stepNumber={5}
       />
 
-      <div className="oap-verification-step__rows">
-        <OwnerAddPropertyDocumentsStep
-          embedded
-          listingMode={listingMode}
-          requiredDocuments={requiredDocuments}
-          additionalDocuments={additionalDocuments}
-          errors={errors}
-          onRequiredChange={onRequiredChange}
-          onRequiredRemove={onRequiredRemove}
-          onAddAdditional={onAddAdditional}
-          onRemoveAdditional={onRemoveAdditional}
-        />
-      </div>
+      <div className="oap-verification-step__rows">{documentsStep}</div>
     </OwnerAddPropertyWizardStepLayout>
   )
 }

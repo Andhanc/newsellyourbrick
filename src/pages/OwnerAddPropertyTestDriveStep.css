@@ -251,12 +251,23 @@
 
 .oap-testdrive-step__price-currency.oap-select {
   position: absolute;
-  top: 50%;
+  top: 0;
   right: 8px;
-  transform: translateY(-50%);
+  bottom: 0;
+  transform: none;
+  display: flex;
+  align-items: center;
   width: auto;
   min-width: 52px;
   z-index: 2;
+}
+
+.oap-testdrive-step__price-input-wrap:has(.oap-select--open) {
+  z-index: 30;
+}
+
+.oap-testdrive-step__price-currency.oap-select--open {
+  z-index: 31;
 }
 
 .oap-testdrive-step__price-currency .oap-select__trigger {
@@ -283,9 +294,11 @@
 }
 
 .oap-testdrive-step__price-currency .oap-select__menu {
+  top: calc(100% + 6px);
   right: 0;
   left: auto;
-  min-width: 88px;
+  width: 96px;
+  min-width: 96px;
 }
 
 .oap-testdrive-step__required {
@@ -329,13 +342,14 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #4338ca;
+  color: #374151;
 }
 
 .oap-testdrive-step__format-note p {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
+  color: #6b7280;
 }
 
 .oap-testdrive-step__preview {
@@ -472,4 +486,128 @@
   .oap-testdrive-step__sidebar-img {
     max-width: 220px;
   }
+}
+
+/* ——— Journey mobile: flat panel ——— */
+.oap-testdrive-step--journey {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__journey-panel {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: #fff;
+  overflow: visible;
+}
+
+.oap-testdrive-step--journey:not(.oap-testdrive-step--on) .oap-testdrive-step__toggle-row {
+  border-radius: 14px;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__toggle-row {
+  padding: 14px 16px;
+  gap: 12px;
+  border-bottom: none;
+  background: #fff;
+}
+
+.oap-testdrive-step--journey.oap-testdrive-step--on .oap-testdrive-step__toggle-row {
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__toggle-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--oap-primary-dark);
+  background: var(--oap-primary-soft);
+  border: 1px solid rgba(10, 186, 181, 0.2);
+}
+
+.oap-testdrive-step--journey.oap-testdrive-step--on .oap-testdrive-step__toggle-icon {
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__toggle-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__toggle-hint {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__switch--on {
+  background: var(--oap-primary);
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__body {
+  padding: 14px 16px 16px;
+  gap: 14px;
+  background: #fff;
+  border-radius: 0 0 14px 14px;
+  overflow: visible;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__price-card {
+  overflow: visible;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__section-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__pricing {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__price-card {
+  padding: 12px;
+  border-radius: 10px;
+  border-color: rgba(17, 24, 39, 0.08);
+  background: #faf8f5;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__format-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #6b7280;
+  background: rgba(17, 24, 39, 0.04);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 10px;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__format-note-icon {
+  color: #6b7280;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__format-note strong {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #374151;
+}
+
+.oap-testdrive-step--journey .oap-testdrive-step__format-note p {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #6b7280;
 }

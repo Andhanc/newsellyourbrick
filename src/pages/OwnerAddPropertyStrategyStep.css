@@ -313,9 +313,9 @@
   padding: 10px 12px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--oap-primary-dark);
-  background: rgba(10, 186, 181, 0.08);
-  border: 1px solid var(--oap-primary-ring);
+  color: #6b7280;
+  background: rgba(17, 24, 39, 0.04);
+  border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 10px;
 }
 
@@ -327,8 +327,9 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  color: var(--oap-primary-dark);
-  background: var(--oap-primary-soft);
+  color: #6b7280;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__format-note p {
@@ -340,7 +341,7 @@
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__format-note strong {
   font-size: 12px;
-  color: var(--oap-text);
+  color: #374151;
 }
 
 @media (min-width: 640px) {
@@ -447,4 +448,41 @@
     max-width: none;
     min-height: 0;
   }
+}
+
+/* ——— Journey mobile: flat sections ——— */
+.oap-strategy-step--journey .oap-strategy-step__rows {
+  gap: 1.75rem;
+}
+
+.oap-strategy-step--journey .oap-strategy-step__row {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap-strategy-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap-strategy-step__zone--testdrive-journey,
+.oap-strategy-step__zone--listing-journey {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap-strategy-step__row--listing-journey {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }

@@ -761,6 +761,11 @@
   line-height: 1.5;
 }
 
+.op-table-card .owner-empty-state {
+  margin: 12px;
+  min-height: 320px;
+}
+
 .op-table-wrap {
   overflow-x: auto;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Confetti.css'
 
-const Confetti = () => {
+const Confetti = ({ className = '' }) => {
   const [confetti, setConfetti] = useState([])
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const Confetti = () => {
   }, [])
 
   return (
-    <div className="confetti-container">
+    <div className={`confetti-container${className ? ` ${className}` : ''}`} aria-hidden="true">
       {confetti.map((piece) => (
         <div
           key={piece.id}

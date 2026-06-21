@@ -5,9 +5,10 @@ import {
   formatMinimumShareInvestment,
   formatSharesPlatformStatValues,
 } from '../utils/sharesListing'
+import { publicAsset } from '../utils/publicAsset'
 import './SharesPageIntro.css'
 
-const HERO_IMAGE = '/images/external/shares-hero-estate.jpg'
+const HERO_IMAGE = publicAsset('images/external/shares-hero-estate.jpg')
 
 const CATEGORY_TABS = [
   { id: 'all', labelKey: 'sharesPageTabAll' },

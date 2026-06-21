@@ -411,4 +411,405 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* ——— 8-screen journey wizard ——— */
+  .oap.oap--journey-mobile {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    background: #faf8f5;
+  }
+
+  .oap-shell--journey {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oap-journey-topbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) var(--ost-mob-pad, 16px) 4px;
+    background: #faf8f5;
+  }
+
+  .oap-journey-topbar__back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: #111827;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .oap-journey-topbar__back:hover {
+    background: rgba(17, 24, 39, 0.06);
+  }
+
+  .oap-content--journey {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0;
+    background: #faf8f5;
+  }
+
+  .oap-content__body--journey {
+    padding: 1rem var(--ost-mob-pad, 16px) calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .oap--journey-mobile .oap-mobile-screen {
+    gap: 1.35rem;
+  }
+
+  .oap--journey-mobile .oap-mobile-screen__title {
+    text-align: center;
+  }
+
+  .oap--journey-mobile .oap-mobile-screen__fields {
+    margin-top: 0;
+  }
+
+  .oap-footer--journey {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 12px var(--ost-mob-pad, 16px) calc(12px + env(safe-area-inset-bottom, 0px));
+    background: #faf8f5;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .oap-journey-footer__actions {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .oap-journey-footer__back {
+    flex: 0 0 56px;
+    width: 56px;
+    min-height: 56px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fff;
+    color: #111827;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .oap-journey-footer__back:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+  }
+
+  .oap-journey-footer__back:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    background: #f9fafb;
+    color: #9ca3af;
+  }
+
+  .oap-journey-footer__next {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .oap-journey-footer__next:not(:disabled) {
+    background: #111827 !important;
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(17, 24, 39, 0.22);
+  }
+
+  .oap-journey-footer__next:disabled {
+    background: #d1d5db !important;
+    color: #9ca3af !important;
+    opacity: 1;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .oap-footer--journey .oap-journey-footer__next.oap-btn {
+    display: flex;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__head,
+  .oap--journey-mobile .oap-step-aside,
+  .oap--journey-mobile .oap-wizard-step__layout {
+    display: block;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__head,
+  .oap--journey-mobile .oap-step-aside {
+    display: none !important;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__main,
+  .oap--journey-mobile .oap-wizard-step__layout {
+    width: 100%;
+    max-width: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__row--split {
+    grid-template-columns: 1fr;
+  }
+
+  .oap--journey-mobile .oap-basics-step__card,
+  .oap--journey-mobile .oap-presentation-step__card,
+  .oap--journey-mobile .oap-strategy-step__card,
+  .oap--journey-mobile .oap-finance-step__card,
+  .oap--journey-mobile .oap-verification-step__card,
+  .oap--journey-mobile .oap-wizard-step__panel,
+  .oap--journey-mobile .oap-strategy-block,
+  .oap--journey-mobile .oap-presentation-block,
+  .oap--journey-mobile .oap-finance-block:not(.oap-finance-block--pricing),
+  .oap--journey-mobile .oap-basics-params__grid,
+  .oap--journey-mobile .oap-media-step--embedded .oap-media-step__card,
+  .oap--journey-mobile .oap-calculator-step--embedded .oap-calculator-step__card,
+  .oap--journey-mobile .oap-pricing-step--embedded .oap-pricing-step__card,
+  .oap--journey-mobile .oap-testdrive-step--embedded .oap-testdrive-step__card,
+  .oap--journey-mobile .oap-documents-step--embedded .oap-documents-step__card,
+  .oap--journey-mobile .oap-mobile-screen__summary {
+    background: #faf8f5;
+    box-shadow: none;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+  }
+
+  .oap--journey-mobile .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__card {
+    background: #faf8f5;
+  }
+
+  .oap--journey-mobile .oap-basics-field__input,
+  .oap--journey-mobile .oap-basics-field__select,
+  .oap--journey-mobile .oap-wizard-section input:not([type='checkbox']):not([type='radio']),
+  .oap--journey-mobile .oap-wizard-section select,
+  .oap--journey-mobile .oap-wizard-section textarea {
+    background: #fff;
+  }
+
+  .oap--journey-mobile .oap-basics-step__row--type-journey {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__rows > .oap-basics-step__row--type-journey:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey {
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__journey-type-title {
+    margin: 0;
+    font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: #111827;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey .oap-basics-type-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey .oap-basics-type-card {
+    min-height: 78px;
+    padding: 8px 6px;
+    background: #fff;
+    border-color: rgba(17, 24, 39, 0.1);
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey .oap-basics-type-card__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey .oap-basics-type-card__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--type-journey .oap-basics-type-card__title {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .oap--journey-mobile .oap-basics-step__row--address-journey {
+    margin-top: 1.75rem;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--address-journey {
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__row--params-journey {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__rows > .oap-basics-step__row--params-journey:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--params-journey {
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-basics-step__zone--params-journey .oap-basics-params__grid {
+    gap: 22px 10px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-strategy-step--journey .oap-wizard-section {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-strategy-step__row--testdrive-journey,
+  .oap--journey-mobile .oap-strategy-step__row--listing-journey {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--journey-mobile .oap-strategy-step__zone--testdrive-journey,
+  .oap--journey-mobile .oap-strategy-step__zone--listing-journey {
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-strategy-step__journey-title {
+    margin: 0;
+    font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: #111827;
+  }
+
+  .oap--journey-mobile .oap-strategy-step__row--listing-journey {
+    margin-top: 1.75rem;
+  }
+
+  .oap--journey-mobile .oap-testdrive-step--journey .oap-testdrive-step__journey-panel {
+    background: #fff;
+    border-color: rgba(17, 24, 39, 0.08);
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-amenities-step--journey .oap-amenities-step__card,
+  .oap--journey-mobile .oap-amenities-step--journey {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-finance-step--journey .oap-wizard-section {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-finance-step__row--pricing-journey,
+  .oap--journey-mobile .oap-finance-step__zone--pricing-journey,
+  .oap--journey-mobile .oap-finance-step--journey .oap-finance-block--pricing,
+  .oap--journey-mobile .oap-finance-step--journey .oap-pricing-step--journey {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    gap: 1rem;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-finance-step__journey-title {
+    margin: 0;
+    font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: #111827;
+  }
+
+  .oap--journey-mobile .oap-verification-step--journey .oap-documents-step--journey,
+  .oap--journey-mobile .oap-verification-step--journey .oap-documents-step--journey .oap-documents-step__section {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-verification-step__journey-title {
+    margin: 0;
+    font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: #111827;
+  }
+
 }

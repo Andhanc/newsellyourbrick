@@ -7,7 +7,6 @@ import OwnerPropertiesTestPage from './OwnerPropertiesTestPage'
 import OwnerPropertyAnalyticsTestPage from './OwnerPropertyAnalyticsTestPage'
 import OwnerTestDrivePage from './OwnerTestDrivePage'
 import OwnerSubscriptionsTestPage from './OwnerSubscriptionsTestPage'
-import OwnerSalesTestPage from './OwnerSalesTestPage'
 import OwnerWalletTestPage from './OwnerWalletTestPage'
 import OwnerProfileTestPage from './OwnerProfileTestPage'
 import OwnerAddPropertyTestPage from './OwnerAddPropertyTestPage'
@@ -30,8 +29,6 @@ function OwnerTestViewRouter() {
       return <OwnerTestDrivePage />
     case OWNER_VIEWS.SUBSCRIPTIONS:
       return <OwnerSubscriptionsTestPage />
-    case OWNER_VIEWS.SALES:
-      return <OwnerSalesTestPage />
     case OWNER_VIEWS.WALLET:
       return <OwnerWalletTestPage />
     case OWNER_VIEWS.PROFILE:

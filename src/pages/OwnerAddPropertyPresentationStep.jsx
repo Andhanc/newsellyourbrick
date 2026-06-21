@@ -29,6 +29,8 @@ export default function OwnerAddPropertyPresentationStep({
   onRemovePhoto,
   onAddVideo,
   onRemoveVideo,
+  hideCopySection = false,
+  hideWizardChrome = false,
 }) {
   const { t } = useTranslation()
   const titleLength = form.title.length
@@ -80,15 +82,18 @@ export default function OwnerAddPropertyPresentationStep({
 
   return (
     <section className="oap-presentation-step" aria-labelledby="oap-presentation-step-title">
-      <OwnerAddPropertyWizardStepHead
-        titleId="oap-presentation-step-title"
-        title={t('oap_presentationTitle')}
-        subtitle={t('oap_presentationSubtitle')}
-        subtitleShort={t('oap_presentationSubtitleShort')}
-        stepNumber={2}
-      />
+      {!hideWizardChrome ? (
+        <OwnerAddPropertyWizardStepHead
+          titleId="oap-presentation-step-title"
+          title={t('oap_presentationTitle')}
+          subtitle={t('oap_presentationSubtitle')}
+          subtitleShort={t('oap_presentationSubtitleShort')}
+          stepNumber={2}
+        />
+      ) : null}
 
       <div className="oap-presentation-step__rows">
+        {!hideCopySection ? (
         <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--title">
           <div className="oap-presentation-step__zone">
             <OwnerAddPropertyWizardSection
@@ -154,6 +159,7 @@ export default function OwnerAddPropertyPresentationStep({
 
           <OwnerAddPropertyStepAside layout="inline" {...OAP_PRESENTATION_ROW_ASIDES.copy} />
         </div>
+        ) : null}
 
         <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">
           <OwnerAddPropertyStepAside

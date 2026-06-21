@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { flushSync } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClerk, useUser } from '@clerk/clerk-react'
 import { 
@@ -25,7 +24,6 @@ import {
   FiBell,
   FiArrowRight,
   FiArrowUp,
-  FiShoppingBag,
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -37,7 +35,6 @@ import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal'
 import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
 import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
-import OwnerMySalesSection from '../components/OwnerMySalesSection'
 import OwnerCabinetQuickNav from '../components/OwnerCabinetQuickNav'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
@@ -263,7 +260,7 @@ const OwnerDashboard = () => {
   const { signOut } = useClerk()
   const { user: clerkUser } = useUser()
   const [properties, setProperties] = useState([])
-  const [activeTab, setActiveTab] = useState('properties') // 'properties' | 'analytics' | 'sales'
+  const [activeTab, setActiveTab] = useState('properties') // 'properties' | 'analytics'
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false)
@@ -619,16 +616,7 @@ const OwnerDashboard = () => {
   }, [fetchOwnerSaleCelebrations])
 
   const handleSaleCelebrationGoToSales = useCallback(() => {
-    flushSync(() => {
-      setActiveTab('sales')
-    })
     finishSaleCelebrationAndPoll()
-    requestAnimationFrame(() => {
-      document.getElementById('owner-dashboard-my-sales')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      })
-    })
   }, [finishSaleCelebrationAndPoll])
 
   useEffect(() => {
@@ -1838,14 +1826,6 @@ const OwnerDashboard = () => {
             <FiBarChart2 size={20} aria-hidden />
             <span className="owner-dashboard__tab-text">{t('ownerTabAnalytics')}</span>
           </button>
-          <button
-            type="button"
-            className={`owner-dashboard__tab ${activeTab === 'sales' ? 'owner-dashboard__tab--active' : ''}`}
-            onClick={() => setActiveTab('sales')}
-          >
-            <FiShoppingBag size={20} aria-hidden />
-            <span className="owner-dashboard__tab-text">{t('ownerTabMySales')}</span>
-          </button>
         </div>
 
         <OwnerCabinetQuickNav />
@@ -2051,11 +2031,6 @@ const OwnerDashboard = () => {
             </div>
           </div>
         </section>
-
-        {/* Блок «Мои продажи» */}
-        {activeTab === 'sales' && userId ? (
-          <OwnerMySalesSection userId={userId} apiBaseUrl={API_BASE_URL} />
-        ) : null}
 
         {/* Блок "Рассчитать стоимость объекта" */}
 

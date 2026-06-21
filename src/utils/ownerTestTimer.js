@@ -26,12 +26,36 @@ export function getOwnerAuctionTimerBadgeModifier(flags) {
   return 'long'
 }
 
+export function getOwnerAuctionTimerParts(remainingMs) {
+  const totalSeconds = Math.max(0, Math.floor(Number(remainingMs) / 1000))
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+  }
+}
+
+export const OWNER_AUCTION_TIMER_SEGMENT_KEYS = [
+  ['days', 'timerDaysFull'],
+  ['hours', 'timerHoursFull'],
+  ['minutes', 'timerMinutesFull'],
+  ['seconds', 'timerSecondsFull'],
+]
+
+export function formatOwnerAuctionTimerFullCountdown(remainingMs, t) {
+  const { days, hours, minutes, seconds } = getOwnerAuctionTimerParts(remainingMs)
+  const two = (value) => String(value).padStart(2, '0')
+
+  if (typeof t === 'function') {
+    return `${days} ${t('timerDaysFull')} ${two(hours)} ${t('timerHoursFull')} ${two(minutes)} ${t('timerMinutesFull')} ${two(seconds)} ${t('timerSecondsFull')}`
+  }
+
+  return `${days}:${two(hours)}:${two(minutes)}:${two(seconds)}`
+}
+
 export function formatOwnerAuctionTimerCountdown(remainingMs, { daySeparator = 'd ' } = {}) {
-  const totalSeconds = Math.floor(remainingMs / 1000)
-  const days = Math.floor(totalSeconds / 86400)
-  const hours = Math.floor((totalSeconds % 86400) / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
+  const { days, hours, minutes, seconds } = getOwnerAuctionTimerParts(remainingMs)
   const two = (value) => String(value).padStart(2, '0')
 
   if (days > 0) {

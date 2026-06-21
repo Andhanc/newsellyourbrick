@@ -765,6 +765,32 @@
   background: transparent;
 }
 
+/* ——— Journey (mobile flat layout) ——— */
+.oap-documents-step--journey {
+  gap: 1.35rem;
+}
+
+.oap-documents-step--journey .oap-documents-step__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.oap-documents-step--journey .oap-documents-step__journey-group-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.oap-documents-step--journey .oap-documents-step__required-list {
+  gap: 10px;
+}
+
+.oap-documents-step--journey .oap-documents-step__security {
+  margin-top: 0;
+}
+
 /* Sidebar */
 .oap-documents-step__sidebar {
   display: flex;

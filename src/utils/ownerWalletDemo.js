@@ -215,13 +215,17 @@ export function formatWalletDateMobile(iso, locale) {
 export function getWalletTxStatusLabel(status, t) {
   const keyByStatus = {
     processing: 'ownerTest_walletTxStatusProcessing',
-    done: 'ownerTest_walletTxStatusDone',
+    done: 'ownerTest_walletTxStatusCompleted',
     pending: 'ownerTest_walletTxStatusPending',
     failed: 'ownerTest_walletTxStatusFailed',
     completed: 'ownerTest_walletTxStatusCompleted',
   }
   const key = keyByStatus[status]
   return key ? t(key) : t('ownerTest_walletTxStatusCompleted')
+}
+
+export function shouldShowWalletTxStatus(status) {
+  return status !== 'completed' && status !== 'done'
 }
 
 export function getWalletTxStatusTone(status) {

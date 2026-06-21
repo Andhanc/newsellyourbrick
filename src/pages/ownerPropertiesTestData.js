@@ -145,6 +145,7 @@ const RAW_PROPERTIES = [
     currentBid: '$2 380 000',
     listingType: 'auction',
     auctionTimer: '1д 08:45:12',
+    raw: { test_drive: 1 },
     date: '12.03.2024',
   },
   {
@@ -213,6 +214,15 @@ const RAW_PROPERTIES = [
     bookingsUp: true,
     price: '$1 890 000',
     listingType: 'shares',
+    currency: 'USD',
+    priceAmount: 1890000,
+    raw: {
+      test_drive: 1,
+      total_shares: 20,
+      shares_sold: 8,
+      price_per_share: 94500,
+      currency: 'USD',
+    },
     date: '22.02.2024',
   },
   {

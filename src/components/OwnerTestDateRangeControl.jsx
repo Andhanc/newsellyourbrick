@@ -73,7 +73,7 @@ export default function OwnerTestDateRangeControl({
   const [open, setOpen] = useState(false)
   const [draftRange, setDraftRange] = useState(value || getDefaultOwnerTestDateRange())
 
-  const datePresets = useMemo(() => getOwnerTestDatePresets(t, intlLocale), [intlLocale, t])
+  const datePresets = useMemo(() => getOwnerTestDatePresets(t), [t])
 
   useEffect(() => {
     if (value) setDraftRange(value)

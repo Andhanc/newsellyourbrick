@@ -174,11 +174,10 @@ export default function OwnerNotificationsButton({
   const { dismiss, filterItems } = useOwnerDismissedNotifications()
   const resolvedItems = items ?? fetchedItems
   const visibleItems = useMemo(() => filterItems(resolvedItems), [filterItems, resolvedItems])
-  const dismissedCount = resolvedItems.length - visibleItems.length
+  const badgeCount =
+    items != null ? visibleItems.length : badge != null ? Number(badge) : visibleItems.length
   const resolvedBadge =
-    badge !== undefined
-      ? Math.max(0, badge - dismissedCount) || null
-      : visibleItems.length || null
+    badgeCount > 0 ? (badgeCount > 99 ? '99+' : badgeCount) : null
 
   return (
     <>

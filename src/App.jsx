@@ -23,6 +23,7 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
+import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import MainPage from './pages/MainPage'
@@ -849,7 +850,7 @@ function App() {
               <Route
                 path="/owner-test"
                 element={
-                  <LazyPage>
+                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }

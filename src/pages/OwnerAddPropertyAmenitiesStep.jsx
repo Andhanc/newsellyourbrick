@@ -2,17 +2,18 @@ import { useTranslation } from 'react-i18next'
 import { Check, Lightbulb } from 'lucide-react'
 import { getAmenityGroupsForProfile } from '../utils/oapAmenityGroups'
 import { getAmenityIcon } from './oapAmenityIcons'
+import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_AMENITIES_IMAGES } from './oapAmenitiesImages'
 import './OwnerAddPropertyAmenitiesStep.css'
 import './oapStepSidebar.css'
 
-function AmenityCard({ item, isActive, embedded, onToggle }) {
+function AmenityCard({ item, isActive, embedded, journeyLayout, onToggle }) {
   const ItemIcon = getAmenityIcon(item.tzKey)
 
   return (
     <button
       type="button"
-      className={`oap-amenity-card${isActive ? ' oap-amenity-card--active' : ''}`}
+      className={`oap-amenity-card${journeyLayout ? ' oap-amenity-card--journey' : ''}${isActive ? ' oap-amenity-card--active' : ''}`}
       aria-pressed={isActive}
       title={item.label}
       onClick={() => onToggle(item.tzKey)}
@@ -30,6 +31,7 @@ function AmenityCard({ item, isActive, embedded, onToggle }) {
 
 export default function OwnerAddPropertyAmenitiesStep({
   embedded = false,
+  journeyLayout = false,
   typeProfile,
   additionalAmenities,
   selectedAmenities,
@@ -74,6 +76,7 @@ export default function OwnerAddPropertyAmenitiesStep({
                 item={item}
                 isActive={selectedAmenities.includes(item.tzKey)}
                 embedded={embedded}
+                journeyLayout={journeyLayout}
                 onToggle={onToggleAmenity}
               />
             ))}
@@ -97,12 +100,18 @@ export default function OwnerAddPropertyAmenitiesStep({
   )
 
   if (embedded) {
+    const body = (
+      <>
+        {groupedAmenities}
+        {extraField}
+      </>
+    )
+
     return (
-      <section className="oap-amenities-step oap-amenities-step--embedded">
-        <div className="oap-amenities-step__card">
-          {groupedAmenities}
-          {extraField}
-        </div>
+      <section
+        className={`oap-amenities-step oap-amenities-step--embedded${journeyLayout ? ' oap-amenities-step--journey' : ''}`}
+      >
+        {journeyLayout ? body : <div className="oap-amenities-step__card">{body}</div>}
       </section>
     )
   }
@@ -139,9 +148,8 @@ export default function OwnerAddPropertyAmenitiesStep({
             <li>{t('addPropertyAmenitiesOtherLabel')}</li>
           </ul>
           <div className="oap-step-sidebar__illustration">
-            <img
+            <OapWizardSidebarImage
               src={OAP_AMENITIES_IMAGES.sidebarInterior}
-              alt=""
               className="oap-step-sidebar__img"
             />
           </div>

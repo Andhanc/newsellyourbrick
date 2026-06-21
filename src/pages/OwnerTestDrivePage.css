@@ -343,9 +343,21 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 16px;
   padding: 0 32px 32px;
   background: #ffffff;
+}
+
+.otd-content--split {
+  padding-top: 8px;
+}
+
+.otd-split-lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--otd-text-muted);
+  max-width: 720px;
 }
 
 /* ——— Tabs + filter (как op-tabs на «Мои объекты») ——— */

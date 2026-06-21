@@ -1,0 +1,297 @@
+.pricing-interaction {
+  width: 100%;
+  max-width: 22.5rem;
+  padding: 0.85rem;
+  border: 2px solid #eef2f7;
+  border-radius: 2rem;
+  background: #ffffff;
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.pricing-interaction__period {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.35rem;
+  border-radius: 999px;
+  background: #eef2ff;
+}
+
+.pricing-interaction__period-btn {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 0.65rem 0.5rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.pricing-interaction__period-btn--active {
+  color: #0f172a;
+}
+
+.pricing-interaction__period-indicator {
+  position: absolute;
+  inset: 0.35rem;
+  width: calc(50% - 0.35rem);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.32, 1);
+  pointer-events: none;
+}
+
+.pricing-interaction__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.pricing-interaction__plan {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 1rem 1rem 0.95rem;
+  border: 2px solid #dbe3ee;
+  border-radius: 1rem;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.2s ease;
+}
+
+.pricing-interaction__plan:active {
+  transform: scale(0.995);
+}
+
+.pricing-interaction__plan--selected {
+  border-color: #000000;
+  border-width: 3px;
+  padding: calc(1rem - 1px) calc(1rem - 1px) calc(0.95rem - 1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+}
+
+.pricing-interaction__plan-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.pricing-interaction__plan-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pricing-interaction__plan-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #030712;
+}
+
+.pricing-interaction__plan-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.55rem;
+  background: #fef9c3;
+  color: #854d0e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pricing-interaction__plan--popular .pricing-interaction__plan-badge {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  color: #ffffff;
+  background: linear-gradient(
+    120deg,
+    #78350f 0%,
+    #b45309 18%,
+    #d97706 36%,
+    #fbbf24 50%,
+    #fde68a 62%,
+    #f59e0b 78%,
+    #92400e 100%
+  );
+  background-size: 260% 260%;
+  animation: pricing-interaction-gold-gradient 8s ease-in-out infinite;
+  box-shadow:
+    0 4px 14px rgba(180, 83, 9, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.pricing-interaction__plan--popular .pricing-interaction__plan-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255, 255, 255, 0.24) 0%, transparent 48%),
+    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, 0.14) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+.pricing-interaction__plan--popular .pricing-interaction__plan-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -180% 0;
+  animation: pricing-interaction-gold-shine 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.pricing-interaction__plan-price {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.pricing-interaction__plan-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  color: #030712;
+  font-weight: 600;
+}
+
+.pricing-interaction__plan-suffix {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pricing-interaction__radio {
+  flex-shrink: 0;
+  width: 1.45rem;
+  height: 1.45rem;
+  margin-top: 0.1rem;
+  border: 2px solid #94a3b8;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.25s ease;
+}
+
+.pricing-interaction__radio--selected {
+  border-color: #000000;
+}
+
+.pricing-interaction__radio-dot {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: #000000;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.pricing-interaction__radio-dot--visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pricing-interaction__cta {
+  width: 100%;
+  margin-top: 0.15rem;
+  padding: 0.95rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: #000000;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.pricing-interaction__cta:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.pricing-interaction__cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@keyframes pricing-interaction-gold-gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes pricing-interaction-gold-shine {
+  0%,
+  100% {
+    background-position: -180% 0;
+  }
+
+  50% {
+    background-position: 180% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-interaction__plan--popular .pricing-interaction__plan-badge {
+    animation: none;
+  }
+
+  .pricing-interaction__plan--popular .pricing-interaction__plan-badge::after {
+    animation: none;
+    background-position: 50% 0;
+  }
+}

@@ -34,6 +34,23 @@
   min-width: 0;
 }
 
+.oap-verification-step--journey {
+  gap: 1rem;
+}
+
+.oap-verification-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap-verification-step--journey .oap-verification-step__rows {
+  gap: 1rem;
+}
+
 @media (max-width: 900px) {
   .oap-verification-step__rows {
     gap: 14px;

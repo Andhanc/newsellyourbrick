@@ -24,9 +24,12 @@ import {
   Plus,
   Gavel,
   CircleDollarSign,
-  RefreshCw,
   Clock,
-  Download,
+  BedDouble,
+  ShowerHead,
+  Maximize2,
+  Eye,
+  PieChart,
 } from 'lucide-react'
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
 import { getOwnerListingTypeLabels, getOwnerTestProperty } from './ownerPropertiesTestData'
@@ -43,15 +46,19 @@ import { showNotification } from '../utils/toastHelper'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerPropertyAnalyticsSkeleton from '../components/OwnerPropertyAnalyticsSkeleton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import {
-  formatOwnerAuctionTimerCountdown,
+  formatOwnerAuctionTimerFullCountdown,
   getOwnerAuctionTimerFlags,
+  getOwnerAuctionTimerParts,
+  OWNER_AUCTION_TIMER_SEGMENT_KEYS,
 } from '../utils/ownerTestTimer'
+import { getCurrencySymbol } from '../utils/currency'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import './OwnerPropertyAnalyticsTestPage.css'
 import './OwnerPropertyAnalyticsTestPage.mobile.css'
@@ -67,6 +74,7 @@ ChartJS.register(
 )
 
 const OPA_TIFFANY = '#0abab5'
+const AUCTION_CROWN_IMAGE = '/images/owner-properties-test/owner-auction-crown-3d.png'
 
 const EMPTY_OWNER_SALES = {
   auction: [],
@@ -74,6 +82,123 @@ const EMPTY_OWNER_SALES = {
   debts: [],
   buy_now: [],
   test_drive: [],
+}
+
+function formatOwnerHighlightMoney(amount, currency, locale) {
+  const num = Number(amount)
+  if (!Number.isFinite(num)) return '—'
+  const sym = getCurrencySymbol(currency || 'USD')
+  return `${sym}${num.toLocaleString(locale, { maximumFractionDigits: 0 })}`
+}
+
+function getPropertyListingHighlight(property) {
+  if (!property) return null
+
+  if (property.listingType === 'auction') {
+    return {
+      type: 'auction',
+      currentBid: property.currentBid || property.price || '—',
+    }
+  }
+
+  if (property.listingType === 'shares') {
+    const raw = property.raw || {}
+    const totalShares = Number(raw.total_shares ?? raw.totalShares) || 0
+    const sharesSold = Math.min(
+      Number(raw.shares_sold ?? raw.sharesSold ?? property.shares_sold) || 0,
+      totalShares || Number.POSITIVE_INFINITY
+    )
+    const totalPrice = Number(raw.price ?? property.priceAmount) || 0
+    const pricePerShare =
+      Number(raw.price_per_share ?? raw.pricePerShare) ||
+      (totalShares > 0 ? totalPrice / totalShares : 0)
+    const collected = sharesSold * pricePerShare
+    const currency = property.currency || raw.currency || 'USD'
+    const progress = totalShares > 0 ? Math.min(100, (sharesSold / totalShares) * 100) : 0
+
+    return {
+      type: 'shares',
+      sharesSold,
+      totalShares,
+      collected,
+      currency,
+      progress,
+    }
+  }
+
+  return null
+}
+
+function ListingHighlightBlock({ property, t, intlLocale }) {
+  const highlight = useMemo(() => getPropertyListingHighlight(property), [property])
+  if (!highlight) return null
+
+  if (highlight.type === 'auction') {
+    return (
+      <article className="opa-listing-highlight opa-listing-highlight--auction" aria-label={t('bidHistoryCurrentMaxBid')}>
+        <div className="opa-listing-highlight__content">
+          <span className="opa-listing-highlight__eyebrow">{t('bidHistoryCurrentMaxBid')}</span>
+          <p className="opa-listing-highlight__value">{highlight.currentBid}</p>
+          <span className="opa-listing-highlight__hint">{t('ownerTest_analyticsAuctionBidHint')}</span>
+        </div>
+        <div className="opa-listing-highlight__art-wrap" aria-hidden>
+          <img
+            src={AUCTION_CROWN_IMAGE}
+            alt=""
+            className="opa-listing-highlight__art"
+            loading="lazy"
+          />
+        </div>
+      </article>
+    )
+  }
+
+  return (
+    <article className="opa-listing-highlight opa-listing-highlight--shares" aria-label={t('ownerTest_analyticsSharesHighlight')}>
+      <div className="opa-listing-highlight__glow" aria-hidden />
+      <div className="opa-listing-highlight__content">
+        <span className="opa-listing-highlight__eyebrow">{t('ownerTest_analyticsSharesHighlight')}</span>
+        <p className="opa-listing-highlight__shares-count">
+          <strong>{highlight.sharesSold.toLocaleString(intlLocale)}</strong>
+          {highlight.totalShares > 0 ? (
+            <>
+              <span className="opa-listing-highlight__shares-sep">/</span>
+              <span>{highlight.totalShares.toLocaleString(intlLocale)}</span>
+            </>
+          ) : null}
+        </p>
+        <p className="opa-listing-highlight__shares-label">
+          {highlight.totalShares > 0
+            ? t('sharesSoldCount', {
+                sold: highlight.sharesSold.toLocaleString(intlLocale),
+                total: highlight.totalShares.toLocaleString(intlLocale),
+              })
+            : t('ownerTest_analyticsSharesSoldOnly', {
+                sold: highlight.sharesSold.toLocaleString(intlLocale),
+              })}
+        </p>
+        {highlight.totalShares > 0 ? (
+          <div
+            className="opa-listing-highlight__progress"
+            role="progressbar"
+            aria-valuenow={Math.round(highlight.progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('sharesPercentSold', { percent: Math.round(highlight.progress) })}
+          >
+            <span style={{ width: `${highlight.progress}%` }} />
+          </div>
+        ) : null}
+        <p className="opa-listing-highlight__collected">
+          <span>{t('sharesSidebarStatsCollected')}</span>
+          <strong>{formatOwnerHighlightMoney(highlight.collected, highlight.currency, intlLocale)}</strong>
+        </p>
+      </div>
+      <div className="opa-listing-highlight__visual opa-listing-highlight__visual--shares" aria-hidden>
+        <PieChart size={34} strokeWidth={1.9} />
+      </div>
+    </article>
+  )
 }
 
 function LogoMark({ className = '' }) {
@@ -206,19 +331,73 @@ function buildAnalyticsExcelProperty(property) {
   }
 }
 
+function getPropertyHeroSpecs(property, t) {
+  const raw = property?.raw || {}
+  const beds = Number(raw.bedrooms ?? raw.rooms)
+  const baths = Number(raw.bathrooms)
+  const area = Number(raw.area ?? raw.total_area ?? raw.living_area)
+  const items = []
+
+  if (Number.isFinite(beds) && beds > 0) {
+    items.push({
+      id: 'beds',
+      icon: BedDouble,
+      value: beds,
+      label: t('propertyDetailBedsShort'),
+    })
+  }
+
+  if (Number.isFinite(baths) && baths > 0) {
+    items.push({
+      id: 'baths',
+      icon: ShowerHead,
+      value: baths,
+      label: t('propertyDetailBathsShort'),
+    })
+  }
+
+  if (Number.isFinite(area) && area > 0) {
+    items.push({
+      id: 'area',
+      icon: Maximize2,
+      value: area,
+      label: t('propertyDetailSpecsArea'),
+      suffix: raw.area_unit === 'sqft' ? ' sqft' : ' m²',
+    })
+  }
+
+  return items
+}
+
 function getAnalyticsTimerEndTime(property) {
-  return (
+  const raw = property?.raw || {}
+  const direct =
     property?.auctionEndTime ||
     property?.test_timer_end_date ||
     property?.auction_end_date ||
     property?.end_time ||
     property?.endTime ||
-    property?.raw?.test_timer_end_date ||
-    property?.raw?.auction_end_date ||
-    property?.raw?.end_time ||
-    property?.raw?.endTime ||
+    raw.test_timer_end_date ||
+    raw.auction_end_date ||
+    raw.auction_end_at ||
+    raw.auctionEndAt ||
+    raw.auction_end_time ||
+    raw.end_time ||
+    raw.endTime ||
     null
-  )
+
+  if (direct) return direct
+
+  const duration = Number(raw.test_timer_duration ?? property?.test_timer_duration)
+  const createdAt = raw.created_at || raw.published_at || raw.listed_at
+  if (Number.isFinite(duration) && duration > 0 && createdAt) {
+    const startMs = new Date(createdAt).getTime()
+    if (Number.isFinite(startMs)) {
+      return new Date(startMs + duration).toISOString()
+    }
+  }
+
+  return null
 }
 
 function formatAnalyticsTimerLabel(label) {
@@ -232,7 +411,9 @@ function getAnalyticsTimerState(property, t, now = Date.now()) {
   if (!endTime && property?.auctionTimer) {
     return {
       expired: false,
+      warning: false,
       critical: false,
+      urgent: false,
       caption: t('ownerTest_propertiesTimerLeft'),
       label: formatAnalyticsTimerLabel(property.auctionTimer),
     }
@@ -262,8 +443,57 @@ function getAnalyticsTimerState(property, t, now = Date.now()) {
     critical,
     urgent,
     caption: t('ownerTest_propertiesTimerLeft'),
-    label: formatOwnerAuctionTimerCountdown(remainingMs, { daySeparator: ':' }),
+    label: formatOwnerAuctionTimerFullCountdown(remainingMs, t),
   }
+}
+
+function getPropertyCoverTimerModifier(timer) {
+  if (!timer) return 'empty'
+  if (timer.expired) return 'finished'
+  if (timer.urgent) return 'urgent'
+  if (timer.critical) return 'critical'
+  if (timer.warning) return 'warning'
+  return 'long'
+}
+
+function PropertyCoverTimer({ property, now, t }) {
+  const timer = getAnalyticsTimerState(property, t, now)
+  if (!timer) return null
+
+  const endTime = getAnalyticsTimerEndTime(property)
+  const endMs = endTime ? new Date(endTime).getTime() : NaN
+  const remainingMs = Number.isFinite(endMs) ? Math.max(0, endMs - now) : null
+  const hasLiveCountdown = !timer.expired && remainingMs != null && remainingMs > 0
+  const parts = hasLiveCountdown ? getOwnerAuctionTimerParts(remainingMs) : null
+
+  return (
+    <div
+      className={`opa-property-card__timer opa-property-card__timer--${getPropertyCoverTimerModifier(timer)}`}
+      aria-live="polite"
+    >
+      <div className="opa-property-card__timer-fade" aria-hidden />
+      <div className="opa-property-card__timer-content">
+        <span className="opa-property-card__timer-eyebrow">
+          <Clock size={12} strokeWidth={2.2} aria-hidden />
+          {timer.caption}
+        </span>
+        {parts ? (
+          <div className="opa-property-card__timer-segments">
+            {OWNER_AUCTION_TIMER_SEGMENT_KEYS.map(([partKey, labelKey]) => (
+              <div key={partKey} className="opa-property-card__timer-segment">
+                <strong>{String(parts[partKey]).padStart(2, '0')}</strong>
+                <span>{t(labelKey)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="opa-property-card__timer-value">
+            <strong>{timer.label}</strong>
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function AnalyticsTimerPanel({ property, now, t }) {
@@ -575,9 +805,13 @@ export default function OwnerPropertyAnalyticsTestPage() {
   }, [analytics, formatDateForExport, property, t])
 
   if (propertyLoading) {
+    const skeleton = <OwnerPropertyAnalyticsSkeleton />
+    if (isEmbedded) {
+      return <div className="opa opa--embedded">{skeleton}</div>
+    }
     return (
-      <div className="opa-page opa-page--loading">
-        <p>{t('ownerTest_metricLoading')}…</p>
+      <div className="opa-page">
+        {skeleton}
       </div>
     )
   }
@@ -586,6 +820,8 @@ export default function OwnerPropertyAnalyticsTestPage() {
     if (isEmbedded) return null
     return <Navigate to="/owner-properties-test" replace />
   }
+
+  const heroSpecs = getPropertyHeroSpecs(property, t)
 
   const kpiItems = [
     {
@@ -660,12 +896,86 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
             <section className="opa-hero">
               <article className="opa-property-card">
-                <img src={property.image} alt="" className="opa-property-card__img" loading="lazy" />
+                <div className="opa-property-card__cover opa-mobile-only">
+                  {isEmbedded ? (
+                    <button
+                      type="button"
+                      className="opa-property-card__back"
+                      aria-label={t('ownerTest_analyticsBack')}
+                      onClick={() => goTo(OWNER_VIEWS.PROPERTIES)}
+                    >
+                      <ArrowLeft size={20} strokeWidth={2.4} aria-hidden />
+                    </button>
+                  ) : (
+                    <Link
+                      to="/owner-properties-test"
+                      className="opa-property-card__back"
+                      aria-label={t('ownerTest_analyticsBack')}
+                    >
+                      <ArrowLeft size={20} strokeWidth={2.4} aria-hidden />
+                    </Link>
+                  )}
+                  <img
+                    src={property.image}
+                    alt=""
+                    className="opa-property-card__cover-img"
+                    loading="lazy"
+                  />
+                  <PropertyCoverTimer property={property} now={timerNow} t={t} />
+                  <div className="opa-property-card__cover-fade" aria-hidden />
+                </div>
+                <img
+                  src={property.image}
+                  alt=""
+                  className="opa-property-card__img opa-desktop-only"
+                  loading="lazy"
+                />
                 <div className="opa-property-card__body">
                   <h2 className="opa-property-card__title">{property.title}</h2>
-                  <p className="opa-property-card__location">{property.location}</p>
+                  <div className="opa-property-card__stats opa-mobile-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
+                    <span className="opa-property-card__stat">
+                      <Heart size={16} strokeWidth={2.2} aria-hidden />
+                      <span>{analytics.likes}</span>
+                      <span className="opa-property-card__stat-label">{t('ownerTest_analyticsMetricLikes')}</span>
+                    </span>
+                    <span className="opa-property-card__stat">
+                      <Eye size={16} strokeWidth={2.2} aria-hidden />
+                      <span>{analytics.views}</span>
+                      <span className="opa-property-card__stat-label">{t('ownerTest_metricViews')}</span>
+                    </span>
+                  </div>
+                  {heroSpecs.length > 0 ? (
+                    <div className="opa-property-card__specs opa-mobile-only">
+                      {heroSpecs.map((spec) => {
+                        const Icon = spec.icon
+                        return (
+                          <div key={spec.id} className="opa-property-card__spec">
+                            <span className="opa-property-card__spec-icon" aria-hidden>
+                              <Icon size={18} strokeWidth={2.1} />
+                            </span>
+                            <span className="opa-property-card__spec-text">
+                              <strong>
+                                {spec.value}
+                                {spec.suffix || ''}
+                              </strong>{' '}
+                              {spec.label}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+                  <p className="opa-property-card__location opa-desktop-only">{property.location}</p>
                   <p className="opa-property-card__price">{property.price}</p>
-                  <div className="opa-property-card__chips">
+                  <button
+                    type="button"
+                    className="opa-property-card__excel-btn opa-mobile-only"
+                    onClick={handleExportToExcel}
+                    disabled={exportingExcel}
+                  >
+                    {exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_analyticsDownloadExcel')}
+                  </button>
+                  <div className="opa-property-card__chips opa-desktop-only">
                     <span className={`opa-status opa-status--${property.statusKey}`}>{property.status}</span>
                     <span className={`opa-listing-type opa-listing-type--${property.listingType}`}>
                       <span>{t('auctionFilterSaleType')}</span>
@@ -675,7 +985,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
                 </div>
               </article>
 
-              <div className="opa-kpi-grid">
+              <div className="opa-kpi-grid opa-desktop-only">
                 {kpiItems.map((item) => {
                   const Icon = item.icon
                   return (
@@ -693,6 +1003,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
             </section>
 
             <section className="opa-charts">
+              <ListingHighlightBlock property={property} t={t} intlLocale={intlLocale} />
               <article className="opa-card opa-chart-card">
                 <div className="opa-chart-card__head">
                   <h2 className="opa-card__title">
@@ -741,53 +1052,22 @@ export default function OwnerPropertyAnalyticsTestPage() {
                 <section className="opa-analytics-ad" aria-label={t('ownerTest_adPremiumTitle')}>
                   <OwnerAdCard type="premium" />
                 </section>
-                <article className="opa-report-card" aria-label={t('ownerAnalyticsExportExcel')}>
-                  <span className="opa-report-card__icon" aria-hidden>
-                    <Download size={21} strokeWidth={2.3} />
-                  </span>
-                  <div className="opa-report-card__copy">
-                    <h2 className="opa-report-card__title">{t('ownerAnalyticsExportExcel')}</h2>
-                    <p className="opa-report-card__text">{t('ownerTest_adPremiumText')}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="opa-report-card__button"
-                    onClick={handleExportToExcel}
-                    disabled={exportingExcel}
-                  >
-                    {exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_analyticsExport')}
-                  </button>
-                </article>
               </div>
             </section>
 
-            <AnalyticsTimerPanel property={property} now={timerNow} t={t} />
+            <div className="opa-desktop-only">
+              <AnalyticsTimerPanel property={property} now={timerNow} t={t} />
+            </div>
 
           </div>
         </div>
       </div>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) return <div className="opa opa--embedded">{mainColumn}</div>
 
   return (
     <div className={`opa${menuOpen ? ' opa--menu-open' : ''}`}>
-      <header className="opa-mob-topbar opa-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
-        <div className="opa-mob-topbar__slot opa-mob-topbar__slot--left">
-          <Link to="/owner-properties-test" className="opa-mob-topbar__back" aria-label={t('ownerTest_analyticsBack')}>
-            <ArrowLeft size={22} strokeWidth={2} />
-          </Link>
-        </div>
-        <div className="opa-mob-topbar__title-wrap">
-          <h1 className="opa-mob-topbar__title">{property.title}</h1>
-        </div>
-        <div className="opa-mob-topbar__slot opa-mob-topbar__slot--right">
-          <button type="button" className="opa-mob-topbar__period" aria-label={t('ownerTest_ariaAnalyticsPeriod')}>
-            <RefreshCw size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
       <div
         className="opa-drawer-backdrop opa-mobile-only"
         aria-hidden={!menuOpen}

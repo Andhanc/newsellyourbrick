@@ -3,10 +3,8 @@ import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
+import { publicAsset } from '../utils/publicAsset'
 import './MainPage.css'
-/** Фон hero-секции (вилла в public/images/external) */
-const HERO_BACKGROUND_URL =
-  '/images/external/shares-hero-villa.jpg'
 import {
   FiSearch,
   FiSliders,
@@ -95,6 +93,9 @@ import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
+
+/** Фон hero-секции (вилла в public/images/external) */
+const HERO_BACKGROUND_URL = publicAsset('images/external/shares-hero-villa.jpg')
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()

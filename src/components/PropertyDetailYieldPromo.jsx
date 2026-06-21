@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { publicAsset } from '../utils/publicAsset'
 import './PropertyDetailYieldPromo.css'
 
-const YIELD_PROMO_HOUSE_IMAGE = '/images/owner-ads/ad-premium-house.png'
+const YIELD_PROMO_HOUSE_IMAGE = publicAsset('images/owner-ads/ad-premium-house.png')
 
 export default function PropertyDetailYieldPromo({ onClick, className = '', variant = 'default' }) {
   const { t } = useTranslation()

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Building2,
-  ShoppingBag,
   Car,
   Wallet,
   CreditCard,
@@ -36,13 +35,6 @@ export function useOwnerTestNavItems(options = {}) {
         icon: Building2,
         active: activeId === 'properties',
         href: hrefMap.properties,
-      },
-      {
-        id: 'sales',
-        label: t('ownerTest_navSales'),
-        icon: ShoppingBag,
-        active: activeId === 'sales',
-        href: hrefMap.sales,
       },
       {
         id: 'testdrive',
@@ -98,12 +90,6 @@ export function useOwnerTestTabItems(options = {}) {
           label: t('ownerTest_tabProperties'),
           icon: Briefcase,
           href: options.hrefMap?.properties,
-        },
-        {
-          id: 'sales',
-          label: t('ownerTest_navSales'),
-          icon: ShoppingBag,
-          href: options.hrefMap?.sales,
         },
         {
           id: 'messages',

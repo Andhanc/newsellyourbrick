@@ -11,6 +11,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { formatSharesPlatformStatValues } from '../utils/sharesListing'
+import { publicAsset } from '../utils/publicAsset'
 import './SharesPageSidebar.css'
 
 const BENEFIT_ITEMS = [
@@ -27,7 +28,7 @@ const STAT_ITEMS = [
   { icon: Wallet, labelKey: 'sharesSidebarStatsMinEntry', valueKey: 'minEntry' },
 ]
 
-const PROMO_ART_IMAGE = '/images/external/shares-sidebar-promo-art.png'
+const PROMO_ART_IMAGE = publicAsset('images/external/shares-sidebar-promo-art.png')
 
 function SharesPageSidebar({ platformStats = null }) {
   const { t, i18n } = useTranslation()

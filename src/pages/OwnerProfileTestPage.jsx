@@ -16,6 +16,7 @@ import {
   UserRound,
   FileText,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
@@ -26,7 +27,7 @@ import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
-import { getOwnerProfileFieldLabel, getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { getOwnerProfileFieldLabel, getOwnerSubscriptionPlanLabel, getOwnerTestIntlLocale, getNextOwnerSubscriptionPlanId, resolveProfileSubscriptionPlanId } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
@@ -39,6 +40,7 @@ import {
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
+import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
 import {
   buildCountryIsoByName,
@@ -285,6 +287,29 @@ export default function OwnerProfileTestPage() {
   const saveReleaseRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const currentSubscriptionPlanId = useMemo(
+    () => resolveProfileSubscriptionPlanId(profile?.subscription) || 'standard',
+    [profile?.subscription]
+  )
+
+  const nextSubscriptionPlanId = useMemo(
+    () => getNextOwnerSubscriptionPlanId(currentSubscriptionPlanId),
+    [currentSubscriptionPlanId]
+  )
+
+  const nextSubscriptionPlanLabel = useMemo(
+    () => (nextSubscriptionPlanId ? getOwnerSubscriptionPlanLabel(nextSubscriptionPlanId) : ''),
+    [nextSubscriptionPlanId]
+  )
+
+  const handleSubscriptionUpgrade = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.SUBSCRIPTIONS)
+      return
+    }
+    window.location.assign(OWNER_TEST_STANDALONE_HREF_MAP.subscriptions)
+  }, [goTo, isEmbedded])
 
   const phoneCodeByCountryName = useMemo(() => buildPhoneCodeByCountryName(), [])
   const countryIsoByName = useMemo(() => buildCountryIsoByName(), [])
@@ -767,9 +792,11 @@ export default function OwnerProfileTestPage() {
   }, [excelProperties, formatDateForExport, ownerSalesData, statsTotals, t])
 
   if (loading || !profile) {
+    const skeleton = <OwnerProfilePageSkeleton />
+    if (isEmbedded) return skeleton
     return (
-      <div className="opr opr--loading">
-        <p className="opr-loading-text">{t('buyerCabinet_loadingProfile')}</p>
+      <div className="opr">
+        {skeleton}
       </div>
     )
   }
@@ -829,15 +856,37 @@ export default function OwnerProfileTestPage() {
                   <div className="opr-profile-overview__copy">
                     <span className="opr-profile-overview__eyebrow">{t('ownerDashboard')}</span>
                     <h2 className="opr-profile-overview__name">{fullName}</h2>
-                    <div className="opr-profile-overview__badges">
-                      <span className="opr-profile-overview__badge">
-                        <ShieldCheck size={15} strokeWidth={2.3} aria-hidden />
-                        {roleLabel}
-                      </span>
-                      <span className="opr-profile-overview__badge opr-profile-overview__badge--soft">
-                        <Sparkles size={15} strokeWidth={2.3} aria-hidden />
-                        {profile.subscription}
-                      </span>
+                    <div className="opr-profile-overview__meta">
+                      <div className="opr-profile-overview__badges">
+                        <span className="opr-profile-overview__badge">
+                          <ShieldCheck size={15} strokeWidth={2.3} aria-hidden />
+                          {roleLabel}
+                        </span>
+                        <span className="opr-profile-overview__badge opr-profile-overview__badge--soft">
+                          <Sparkles size={15} strokeWidth={2.3} aria-hidden />
+                          {profile.subscription}
+                        </span>
+                      </div>
+                      {nextSubscriptionPlanId ? (
+                        isEmbedded ? (
+                          <button
+                            type="button"
+                            className="opr-profile-overview__upgrade"
+                            onClick={handleSubscriptionUpgrade}
+                          >
+                            <span>{t('ownerTest_profileUpgradeTo', { plan: nextSubscriptionPlanLabel })}</span>
+                            <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+                          </button>
+                        ) : (
+                          <Link
+                            to={OWNER_TEST_STANDALONE_HREF_MAP.subscriptions}
+                            className="opr-profile-overview__upgrade"
+                          >
+                            <span>{t('ownerTest_profileUpgradeTo', { plan: nextSubscriptionPlanLabel })}</span>
+                            <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+                          </Link>
+                        )
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -1081,7 +1130,8 @@ export default function OwnerProfileTestPage() {
                 <div className="opr-stats-table-wrap">
                   <h3 className="opr-stats-table__title">{t('ownerTest_propertiesTabAll')}</h3>
                   {statsError ? <p className="opr-stats__message">{statsError}</p> : null}
-                  <table className="opr-stats-table">
+                  <div className="opr-stats-table-scroll">
+                    <table className="opr-stats-table">
                     <thead>
                       <tr>
                         <th>{t('oap_wizardStepObject')}</th>
@@ -1118,6 +1168,7 @@ export default function OwnerProfileTestPage() {
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </section>
             </div>

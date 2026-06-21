@@ -63,6 +63,18 @@ import {
   confirmListingPublicationFeeSession,
 } from '../utils/subscriptionCheckout'
 import { publishOapProperty } from '../utils/oapPublishProperty'
+import OapAddPropertyJourneyStrip from '../components/OapAddPropertyJourneyStrip'
+import OapAddPropertyJourneyProgress from '../components/OapAddPropertyJourneyProgress'
+import { preloadOapWizardImages } from './oapWizardImages'
+import { OapAddPropertyMobileWelcome } from '../components/OapAddPropertyMobileScreens'
+import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
+import OapJourneyPublishLoader from '../components/OapJourneyPublishLoader'
+import OapAddPropertyMobileMedia from '../components/OapAddPropertyMobileMedia'
+import OwnerAddPropertyAmenitiesStep from './OwnerAddPropertyAmenitiesStep'
+import '../components/OapAddPropertyMobileScreens.css'
+import '../components/OapAddPropertyMobileMedia.css'
+import '../components/OapAddPropertyJourneyStrip.css'
+import '../components/OapAddPropertyJourneyProgress.css'
 import './OwnerAddPropertyBasicsStep.css'
 import './OwnerAddPropertyPresentationStep.css'
 import './OwnerAddPropertyStrategyStep.css'
@@ -135,6 +147,7 @@ const INITIAL_FORM = {
   listingMode: '',
   minimumSalePrice: '',
   debtAmount: '',
+  totalShares: '',
   listingCurrency: 'EUR',
   calculatorApplied: false,
   auctionStartingPrice: '',
@@ -215,6 +228,10 @@ function validatePricingStep(form) {
     if (price === null || price <= 0) {
       errors.price = i18n.t('oap_err_price')
     }
+    const sharesNum = parseInt(String(form.totalShares || '').replace(/\D/g, ''), 10)
+    if (!form.totalShares || Number.isNaN(sharesNum) || sharesNum <= 0) {
+      errors.totalShares = i18n.t('oap_err_totalShares')
+    }
     return errors
   }
 
@@ -291,7 +308,7 @@ function validateParametersStep(form, typeProfile) {
   if (typeProfile === 'house' || typeProfile === 'villa') {
     if (!parsePositiveNum(form.landArea)) errors.landArea = i18n.t('oap_err_landArea')
     if (!parsePositiveNum(form.area)) errors.area = i18n.t('oap_err_houseArea')
-    if (!parsePositiveNum(form.livingArea)) errors.livingArea = i18n.t('oap_err_livingArea')
+    if (!parsePositiveNum(form.bedrooms)) errors.bedrooms = i18n.t('oap_err_rooms')
     if (!parsePositiveNum(form.totalFloors)) errors.totalFloors = i18n.t('oap_err_houseFloors')
     if (!parsePositiveNum(form.bathrooms)) errors.bathrooms = i18n.t('oap_err_bathrooms')
     if (!parsePositiveNum(form.yearBuilt)) errors.yearBuilt = i18n.t('oap_err_yearBuilt')
@@ -315,7 +332,34 @@ function validateParametersStep(form, typeProfile) {
   return errors
 }
 
+function isJourneyLocationComplete(form) {
+  if (!form.propertyType) return false
+  return Object.keys(validateLocationForm(form, form.address)).length === 0
+}
+
+function isJourneyParamsComplete(form) {
+  if (!form.propertyType) return false
+  return Object.keys(validateParametersStep(form, getTypeProfile(form.propertyType))).length === 0
+}
+
+function isJourneyStrategyComplete(form) {
+  if (Object.keys(validateListingStep(form)).length > 0) return false
+  if (form.testDrive === 'yes' && Object.keys(validateTestDriveDetails(form)).length > 0) return false
+  return true
+}
+
+function isJourneyPricingComplete(form) {
+  return Object.keys(validatePricingStep(form)).length === 0
+}
+
+function isJourneyDocumentsComplete(form, requiredDocuments) {
+  const isDebtListing = form.listingMode === 'debt' || form.listingMode === 'debt_auction'
+  if (isDebtListing) return true
+  return Boolean(requiredDocuments.ownership && requiredDocuments.noDebts)
+}
+
 const TOTAL_STEPS = 5
+const MOBILE_JOURNEY_SCREENS = 7
 
 export default function OwnerAddPropertyTestPage() {
   const { t } = useTranslation()
@@ -325,6 +369,23 @@ export default function OwnerAddPropertyTestPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const isMobile = useOapMobile()
   const [step, setStep] = useState(1)
+  const [mobileScreen, setMobileScreen] = useState(1)
+  const journeyScrollRef = useRef(null)
+
+  const scrollJourneyToTop = useCallback(() => {
+    journeyScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    scrollMainTo(0, 0, 'auto')
+  }, [])
+
+  useEffect(() => {
+    if (!isMobile) return
+    scrollJourneyToTop()
+  }, [isMobile, mobileScreen, scrollJourneyToTop])
+
+  useEffect(() => {
+    preloadOapWizardImages()
+  }, [])
+
   const [form, setForm] = useState(INITIAL_FORM)
   const [paramErrors, setParamErrors] = useState({})
   const [locationErrors, setLocationErrors] = useState({})
@@ -350,6 +411,7 @@ export default function OwnerAddPropertyTestPage() {
   const [listingFeeStripeLoading, setListingFeeStripeLoading] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showJourneyPublishDrawer, setShowJourneyPublishDrawer] = useState(false)
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
   const saveDraftTimeoutRef = useRef(null)
@@ -546,6 +608,15 @@ export default function OwnerAddPropertyTestPage() {
     setPhotos((prev) => [...prev, ...toAdd])
   }, [])
 
+  const addPhotoLink = useCallback((photo) => {
+    if (!photo?.preview) return false
+    setPhotos((prev) => {
+      if (prev.length >= 10) return prev
+      return [...prev, photo]
+    })
+    return photos.length < 10
+  }, [photos.length])
+
   const removePhoto = useCallback((id) => {
     setPhotos((prev) => {
       const item = prev.find((p) => p.id === id)
@@ -615,6 +686,14 @@ export default function OwnerAddPropertyTestPage() {
     }
   }, [goTo, navigate])
 
+  const goToHome = useCallback(() => {
+    if (goTo) {
+      goTo(OWNER_VIEWS.HOME)
+    } else {
+      navigate('/owner-test?view=home')
+    }
+  }, [goTo, navigate])
+
   const saveDraftNow = useCallback(async () => {
     const payload = await buildOapDraftPayload({
       form,
@@ -649,9 +728,8 @@ export default function OwnerAddPropertyTestPage() {
       selectedAmenities,
       userId,
     })
-    setIsSubmitting(false)
-
     if (!result.ok) {
+      setIsSubmitting(false)
       if (result.error === 'login_required') {
         requestOpenLoginModal({ wizard: true })
         return false
@@ -674,7 +752,12 @@ export default function OwnerAddPropertyTestPage() {
     setShowVerificationModal(false)
     clearOapDraft()
     window.dispatchEvent(new CustomEvent('owner-properties-update'))
-    setShowSuccessModal(true)
+    if (isMobile) {
+      setShowJourneyPublishDrawer(true)
+    } else {
+      setShowSuccessModal(true)
+    }
+    setIsSubmitting(false)
     return true
   }, [
     userId,
@@ -686,6 +769,7 @@ export default function OwnerAddPropertyTestPage() {
     selectedAmenities,
     goTo,
     navigate,
+    isMobile,
   ])
 
   const handleAfterListingFeeSuccess = useCallback(async () => {
@@ -908,6 +992,132 @@ export default function OwnerAddPropertyTestPage() {
     }
   }, [step, goToProperties])
 
+  const validateJourneyBasicsLocation = useCallback(() => {
+    const nextLocationErrors = {}
+    if (!form.propertyType) nextLocationErrors.propertyType = t('oap_err_propertyType')
+    Object.assign(nextLocationErrors, validateLocationForm(form, form.address))
+    if (Object.keys(nextLocationErrors).length > 0) {
+      setLocationErrors(nextLocationErrors)
+      scrollMainTo(0, 0, 'auto')
+      return false
+    }
+    setLocationErrors({})
+    return true
+  }, [form, t])
+
+  const validateJourneyBasicsParams = useCallback(() => {
+    const paramValidation = validateParametersStep(form, getTypeProfile(form.propertyType))
+    if (Object.keys(paramValidation).length > 0) {
+      setParamErrors(paramValidation)
+      scrollMainTo(0, 0, 'auto')
+      return false
+    }
+    setParamErrors({})
+    return true
+  }, [form])
+
+  const handleJourneyNext = useCallback(() => {
+    if (mobileScreen === 1) {
+      if (!form.title.trim()) {
+        scrollJourneyToTop()
+        return
+      }
+      setMobileScreen(2)
+      setStep(1)
+      return
+    }
+    if (mobileScreen === 2) {
+      if (!validateJourneyBasicsLocation()) return
+      setMobileScreen(3)
+      return
+    }
+    if (mobileScreen === 3) {
+      if (!validateJourneyBasicsParams()) return
+      setMobileScreen(4)
+      setStep(2)
+      return
+    }
+    if (mobileScreen === 4) {
+      setMobileScreen(5)
+      setStep(3)
+      return
+    }
+    if (mobileScreen === 5) {
+      if (form.testDrive === 'yes') {
+        const errors = validateTestDriveDetails(form)
+        if (Object.keys(errors).length > 0) {
+          setTestDriveErrors(errors)
+          scrollJourneyToTop()
+          return
+        }
+      }
+      const listingValidation = validateListingStep(form)
+      if (Object.keys(listingValidation).length > 0) {
+        setListingErrors(listingValidation)
+        scrollJourneyToTop()
+        return
+      }
+      setTestDriveErrors({})
+      setListingErrors({})
+      setMobileScreen(6)
+      setStep(4)
+      return
+    }
+    if (mobileScreen === 6) {
+      const errors = validatePricingStep(form)
+      if (Object.keys(errors).length > 0) {
+        setPricingErrors(errors)
+        scrollJourneyToTop()
+        return
+      }
+      setPricingErrors({})
+      setMobileScreen(7)
+      setStep(5)
+      return
+    }
+    if (mobileScreen === 7) {
+      const isDebtListing =
+        form.listingMode === 'debt' || form.listingMode === 'debt_auction'
+      const errors = {}
+      if (!isDebtListing) {
+        if (!requiredDocuments.ownership) errors.ownership = t('oap_err_ownership')
+        if (!requiredDocuments.noDebts) errors.noDebts = t('oap_err_noDebts')
+      }
+      if (Object.keys(errors).length > 0) {
+        setDocumentErrors(errors)
+        scrollJourneyToTop()
+        return
+      }
+      setDocumentErrors({})
+      handlePriceContinue()
+      return
+    }
+  }, [
+    form,
+    handlePriceContinue,
+    mobileScreen,
+    requiredDocuments,
+    t,
+    validateJourneyBasicsLocation,
+    validateJourneyBasicsParams,
+    scrollJourneyToTop,
+  ])
+
+  const syncStepFromMobileScreen = useCallback((screen) => {
+    if (screen <= 3) setStep(1)
+    else if (screen === 4) setStep(2)
+    else if (screen === 5) setStep(3)
+    else if (screen === 6) setStep(4)
+    else setStep(5)
+  }, [])
+
+  const handleJourneyBack = useCallback(() => {
+    if (mobileScreen <= 1 || isSubmitting) return
+    const prevScreen = mobileScreen - 1
+    setMobileScreen(prevScreen)
+    syncStepFromMobileScreen(prevScreen)
+  }, [isSubmitting, mobileScreen, syncStepFromMobileScreen])
+
   const handleStepClick = useCallback(
     (targetStep) => {
       if (targetStep === step || isSubmitting) return
@@ -1116,7 +1326,29 @@ export default function OwnerAddPropertyTestPage() {
     (step === 2 && Boolean(form.title.trim())) ||
     step > 2
 
-  const renderStepBasics = () => {
+  const canProceedJourney = useMemo(() => {
+    switch (mobileScreen) {
+      case 1:
+        return Boolean(form.title.trim())
+      case 2:
+        return isJourneyLocationComplete(form)
+      case 3:
+        return isJourneyParamsComplete(form)
+      case 4:
+        return photos.length > 0
+      case 5:
+        return isJourneyStrategyComplete(form)
+      case 6:
+        return isJourneyPricingComplete(form)
+      case 7:
+        return isJourneyDocumentsComplete(form, requiredDocuments)
+      default:
+        return false
+    }
+  }, [form, mobileScreen, photos.length, requiredDocuments])
+
+  const renderStepBasics = (options = {}) => {
+    const { mobileSection = 'all', hideWizardChrome = false } = options
     const typeProfile = getTypeProfile(form.propertyType)
     return (
       <OwnerAddPropertyBasicsStep
@@ -1135,11 +1367,46 @@ export default function OwnerAddPropertyTestPage() {
           commercialTypeOptions,
           landPurposeOptions,
         }}
+        mobileSection={mobileSection}
+        hideWizardChrome={hideWizardChrome}
       />
     )
   }
 
-  const renderStepPresentation = () => {
+  const renderJourneyMediaStep = () => {
+    const typeProfile = getTypeProfile(form.propertyType)
+
+    return (
+      <>
+        <OapAddPropertyMobileMedia
+          photos={photos}
+          videos={videos}
+          onAddPhotos={addPhotos}
+          onRemovePhoto={removePhoto}
+          onAddVideo={addVideo}
+          onRemoveVideo={removeVideo}
+          onAddPhotoLink={addPhotoLink}
+        />
+        <section className="oap-journey-amenities" aria-labelledby="oap-journey-amenities-title">
+          <h2 id="oap-journey-amenities-title" className="oap-journey-amenities__title">
+            {t('oap_journeyAmenitiesTitle')}
+          </h2>
+          <OwnerAddPropertyAmenitiesStep
+            embedded
+            journeyLayout
+            typeProfile={typeProfile}
+            additionalAmenities={form.additionalAmenities}
+            selectedAmenities={selectedAmenities}
+            onAdditionalChange={(value) => updateField('additionalAmenities', value)}
+            onToggleAmenity={toggleAmenity}
+          />
+        </section>
+      </>
+    )
+  }
+
+  const renderStepPresentation = (options = {}) => {
+    const { hideCopySection = false, hideWizardChrome = false } = options
     const typeProfile = getTypeProfile(form.propertyType)
 
     return (
@@ -1158,11 +1425,14 @@ export default function OwnerAddPropertyTestPage() {
         onRemovePhoto={removePhoto}
         onAddVideo={addVideo}
         onRemoveVideo={removeVideo}
+        hideCopySection={hideCopySection}
+        hideWizardChrome={hideWizardChrome}
       />
     )
   }
 
-  const renderStepStrategy = () => {
+  const renderStepStrategy = (options = {}) => {
+    const { hideWizardChrome = false } = options
     const selectedType = propertyTypeOptions.find((type) => type.value === form.propertyType)
     const filteredListingModes =
       form.testDrive === 'yes'
@@ -1171,6 +1441,7 @@ export default function OwnerAddPropertyTestPage() {
 
     return (
       <OwnerAddPropertyStrategyStep
+        hideWizardChrome={hideWizardChrome}
         listingModes={filteredListingModes}
         listingMode={form.listingMode}
         listingErrors={listingErrors}
@@ -1195,8 +1466,12 @@ export default function OwnerAddPropertyTestPage() {
     )
   }
 
-  const renderStepDocuments = () => (
+  const renderStepDocuments = (options = {}) => {
+    const { hideWizardChrome = false } = options
+
+    return (
     <OwnerAddPropertyVerificationStep
+      hideWizardChrome={hideWizardChrome}
       listingMode={form.listingMode}
       requiredDocuments={requiredDocuments}
       additionalDocuments={additionalDocuments}
@@ -1206,7 +1481,8 @@ export default function OwnerAddPropertyTestPage() {
       onAddAdditional={addAdditionalDocument}
       onRemoveAdditional={removeAdditionalDocument}
     />
-  )
+    )
+  }
 
   const handlePricingFieldChange = useCallback(
     (key, value) => {
@@ -1231,8 +1507,12 @@ export default function OwnerAddPropertyTestPage() {
     [form, updateField]
   )
 
-  const renderStepFinance = () => (
+  const renderStepFinance = (options = {}) => {
+    const { hideWizardChrome = false } = options
+
+    return (
     <OwnerAddPropertyFinanceStep
+      hideWizardChrome={hideWizardChrome}
       propertyData={{
         propertyType: form.propertyType,
         area: form.area,
@@ -1248,6 +1528,7 @@ export default function OwnerAddPropertyTestPage() {
       minimumSalePrice={form.minimumSalePrice}
       price={form.price}
       debtAmount={form.debtAmount}
+      totalShares={form.totalShares}
       auctionStartingPrice={form.auctionStartingPrice}
       auctionStartDate={form.auctionStartDate}
       auctionEndDate={form.auctionEndDate}
@@ -1255,19 +1536,92 @@ export default function OwnerAddPropertyTestPage() {
       pricingErrors={pricingErrors}
       onPricingFieldChange={handlePricingFieldChange}
     />
-  )
+    )
+  }
 
   const stepContent = {
-    1: renderStepBasics,
+    1: () => renderStepBasics(),
     2: renderStepPresentation,
     3: renderStepStrategy,
     4: renderStepFinance,
     5: renderStepDocuments,
   }
 
+  const journeyScreenContent = {
+    1: () => (
+      <OapAddPropertyMobileWelcome
+        title={form.title}
+        description={form.description}
+        titleMaxLength={TITLE_MAX_LENGTH}
+        descriptionMaxLength={DESCRIPTION_MAX_LENGTH}
+        onTitleChange={(value) => updateField('title', value)}
+        onDescriptionChange={(value) => updateField('description', value)}
+      />
+    ),
+    2: () => renderStepBasics({ mobileSection: 'type-location', hideWizardChrome: true }),
+    3: () => renderStepBasics({ mobileSection: 'params', hideWizardChrome: true }),
+    4: renderJourneyMediaStep,
+    5: () => renderStepStrategy({ hideWizardChrome: true }),
+    6: () => renderStepFinance({ hideWizardChrome: true }),
+    7: () => renderStepDocuments({ hideWizardChrome: true }),
+  }
+
+  const journeyPrimaryLabel =
+    mobileScreen === MOBILE_JOURNEY_SCREENS ? t('oap_publishPublish') : t('oap_publishNext')
+
   return (
+    <>
+      {isMobile ? (
+        <div
+          className={`oap oap--mobile oap--journey-mobile${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
+        >
+          <div className="oap-shell oap-shell--journey">
+            <header className="oap-journey-topbar">
+              <button
+                type="button"
+                className="oap-journey-topbar__back"
+                aria-label={t('oap_publishBackList')}
+                onClick={goToProperties}
+              >
+                <ArrowLeft size={22} strokeWidth={2} />
+              </button>
+            </header>
+            <OapAddPropertyJourneyProgress
+              currentStep={mobileScreen}
+              totalSteps={MOBILE_JOURNEY_SCREENS}
+            />
+            <div ref={journeyScrollRef} className="oap-content oap-content--journey">
+              <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
+              <div className="oap-content__body oap-content__body--journey">
+                {journeyScreenContent[mobileScreen]?.()}
+              </div>
+            </div>
+            <footer className="oap-footer oap-footer--journey">
+              <div className="oap-journey-footer__actions">
+                <button
+                  type="button"
+                  className="oap-journey-footer__back"
+                  aria-label={t('oap_publishBack')}
+                  onClick={handleJourneyBack}
+                  disabled={mobileScreen === 1 || isSubmitting}
+                >
+                  <ArrowLeft size={22} strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                  onClick={handleJourneyNext}
+                  disabled={!canProceedJourney || isSubmitting}
+                >
+                  {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                </button>
+              </div>
+            </footer>
+          </div>
+        </div>
+      ) : (
     <div
-      className={`oap${isMobile ? ' oap--mobile' : ''}${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
+      className={`oap${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
     >
       <div className="oap-shell">
         <header className="oap-header">
@@ -1373,6 +1727,8 @@ export default function OwnerAddPropertyTestPage() {
           </div>
         </footer>
       </div>
+    </div>
+      )}
 
       <SellerVerificationModal
         isOpen={showVerificationModal}
@@ -1514,6 +1870,21 @@ export default function OwnerAddPropertyTestPage() {
         </div>
       )}
 
+      {isMobile && isSubmitting && !showJourneyPublishDrawer ? <OapJourneyPublishLoader /> : null}
+
+      <OapPublishSuccessDrawer
+        isOpen={showJourneyPublishDrawer}
+        onClose={() => setShowJourneyPublishDrawer(false)}
+        onViewProperties={() => {
+          setShowJourneyPublishDrawer(false)
+          goToProperties()
+        }}
+        onGoHome={() => {
+          setShowJourneyPublishDrawer(false)
+          goToHome()
+        }}
+      />
+
       {showSuccessModal && (
         <div
           className="success-modal-overlay"
@@ -1553,6 +1924,6 @@ export default function OwnerAddPropertyTestPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

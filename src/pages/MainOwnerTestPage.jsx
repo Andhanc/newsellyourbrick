@@ -1,56 +1,66 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback, useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@clerk/clerk-react'
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Filler,
   Tooltip,
   Legend,
 } from 'chart.js'
-import { Line, Doughnut } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 import {
   Building2,
   Car,
   ChevronDown,
+  ChevronRight,
   Calendar,
   Eye,
+  Gavel,
+  Heart,
   TrendingUp,
   ExternalLink,
   Menu,
+  Search,
+  SlidersHorizontal,
   X,
   Plus,
+  Clock,
   DollarSign,
 } from 'lucide-react'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerNoBidsIllustration from '../components/OwnerNoBidsIllustration'
+import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
+import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
+import OwnerEmptyLikesIllustration from '../components/OwnerEmptyLikesIllustration'
+import {
+  OwnerCabinetChartSkeleton,
+  OwnerCabinetEndingSoonSkeleton,
+} from '../components/OwnerCabinetOverviewSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
-import { OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
-import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import {
   formatOwnerTestDays,
   getOwnerTestIntlLocale,
 } from '../utils/ownerTestI18n'
-import {
-  getOwnerAuctionTimerBadgeModifier,
-  getOwnerAuctionTimerFlags,
-} from '../utils/ownerTestTimer'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
 import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
+import { getOwnerProfileTabPath } from './ownerProfileTestTabs'
 import { OWNER_TEST_STANDALONE_HREF_MAP, OWNER_VIEWS, ownerTestHref } from '../utils/ownerTestNav'
-import { propertyBidsApiQuery } from '../utils/propertySourceTable'
+import { getPropertyCardImage } from '../utils/propertyImage'
+import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
 import './MainOwnerTestPage.css'
 import './MainOwnerTestPage.mobile.css'
 
@@ -59,17 +69,19 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Filler,
   Tooltip,
   Legend
 )
 
 const MOT_TIFFANY = '#0abab5'
+const MOT_EVENT_FALLBACK_IMAGE =
+  '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 const CHART_LINE_TENSION = 0.42
 
 const CHART_FILL_RGB = {
   views: '10, 186, 181',
+  likes: '219, 39, 119',
   testDrives: '245, 158, 11',
   bids: '34, 197, 94',
 }
@@ -90,11 +102,6 @@ function toInputDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-function monthPresetLabel(date, locale) {
-  const label = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date)
-  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 const TODAY = new Date()
@@ -126,6 +133,14 @@ function formatMotDate(value, locale) {
     .replace(/\.$/, '')
 }
 
+function formatChartTooltipDate(value, locale) {
+  if (!value) return ''
+  const date = new Date(`${value}T00:00:00`)
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: '2-digit' })
+    .format(date)
+    .replace(/\.$/, '')
+}
+
 function dateRangeLabel(range, locale) {
   return `${formatMotDate(range.from, locale)} – ${formatMotDate(range.to, locale)}`
 }
@@ -153,38 +168,67 @@ function parseMotTime(value) {
   return Number.isFinite(ts) ? ts : null
 }
 
-function formatTimerLeft(endTime, t, lang, now = Date.now()) {
-  const ts = parseMotTime(endTime)
-  if (!ts) return '—'
-  const diff = Math.max(0, ts - now)
-  if (diff <= 0) return t('ownerTest_timerFinished')
-  const days = Math.floor(diff / 86400000)
-  const hours = Math.floor((diff % 86400000) / 3600000)
-  const minutes = Math.floor((diff % 3600000) / 60000)
-  if (days > 0) {
-    return `${formatOwnerTestDays(days, lang)} ${String(hours).padStart(2, '0')}${t('timerHour')}`
-  }
-  return `${hours}${t('timerHour')} ${String(minutes).padStart(2, '0')}${t('timerMin')}`
+function getDayUnitLabel(count, lang) {
+  return formatOwnerTestDays(count, lang).replace(/^\d+\s*/, '').trim()
 }
 
-function BestTimerBadge({ endTime, t, lang }) {
+function formatEndingSoonRemaining(endTime, t, lang, now = Date.now()) {
+  const ts = parseMotTime(endTime)
+  if (!ts) return null
+  const diff = Math.max(0, ts - now)
+  if (diff <= 0) {
+    return {
+      eyebrow: t('ownerTest_propertiesTimerLeft'),
+      value: t('ownerTest_timerFinished'),
+      unit: '',
+      finished: true,
+    }
+  }
+
+  const days = Math.floor(diff / 86400000)
+  if (days > 0) {
+    return {
+      eyebrow: t('ownerTest_propertiesTimerLeft'),
+      value: String(days),
+      unit: getDayUnitLabel(days, lang),
+      finished: false,
+    }
+  }
+
+  const hours = Math.max(1, Math.floor(diff / 3600000))
+  return {
+    eyebrow: t('ownerTest_propertiesTimerLeft'),
+    value: String(hours),
+    unit: t('timerHour'),
+    finished: false,
+  }
+}
+
+function EndingSoonDaysBadge({ endTime, t, lang }) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000)
+    const timer = setInterval(() => setNow(Date.now()), 60000)
     return () => clearInterval(timer)
   }, [])
 
-  const ts = parseMotTime(endTime)
-  if (!ts) return null
-
-  const flags = getOwnerAuctionTimerFlags(ts - now)
-  const modifier = getOwnerAuctionTimerBadgeModifier(flags)
+  const remaining = formatEndingSoonRemaining(endTime, t, lang, now)
+  if (!remaining) return null
 
   return (
-    <span className={`mot-best__badge mot-best__badge--${modifier}`}>
-      {flags.expired ? t('ownerTest_timerFinished') : formatTimerLeft(endTime, t, lang, now)}
-    </span>
+    <div className={`mot-ending-card__timer${remaining.finished ? ' mot-ending-card__timer--finished' : ''}`}>
+      <div className="mot-ending-card__timer-fade" aria-hidden />
+      <div className="mot-ending-card__timer-content">
+        <span className="mot-ending-card__timer-eyebrow">
+          <Clock size={12} strokeWidth={2.2} aria-hidden />
+          {remaining.eyebrow}
+        </span>
+        <p className="mot-ending-card__timer-value">
+          <strong>{remaining.value}</strong>
+          {remaining.unit ? <span>{remaining.unit}</span> : null}
+        </p>
+      </div>
+    </div>
   )
 }
 
@@ -229,6 +273,10 @@ function buildDateBuckets(range, locale, maxBuckets = 90) {
       label: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
         .format(cursor)
         .replace(/\.$/, ''),
+      weekday: new Intl.DateTimeFormat(locale, { weekday: 'short' })
+        .format(cursor)
+        .replace(/\.$/, ''),
+      dayNum: String(cursor.getDate()),
       endTs: new Date(`${value}T23:59:59.999`).getTime(),
     })
     cursor.setDate(cursor.getDate() + stepDays)
@@ -240,6 +288,10 @@ function buildDateBuckets(range, locale, maxBuckets = 90) {
       label: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
         .format(end)
         .replace(/\.$/, ''),
+      weekday: new Intl.DateTimeFormat(locale, { weekday: 'short' })
+        .format(end)
+        .replace(/\.$/, ''),
+      dayNum: String(end.getDate()),
       endTs: new Date(`${endValue}T23:59:59.999`).getTime(),
     })
   }
@@ -332,9 +384,14 @@ function formatRelativeTime(value, t, locale) {
 
 function DateRangePopover({ open, draftRange, onDraftChange, onPreset, onApply, onClose, t, locale, datePresets }) {
   return (
-    <div className={`mot-date-popover${open ? ' mot-date-popover--open' : ''}`}>
+    <div
+      className={`mot-date-popover${open ? ' mot-date-popover--open' : ''}`}
+      role="dialog"
+      aria-hidden={!open}
+      aria-label={t('ownerTest_dateRangeTitle')}
+    >
       <div className="mot-date-popover__head">
-        <span>{t('ownerTest_dateRangeTitle')}</span>
+        <span className="mot-date-popover__eyebrow">{t('ownerTest_dateRangeTitle')}</span>
         <strong>{dateRangeLabel(draftRange, locale)}</strong>
       </div>
       <div className="mot-date-popover__presets" aria-label={t('ownerTest_ariaQuickPeriod')}>
@@ -353,7 +410,7 @@ function DateRangePopover({ open, draftRange, onDraftChange, onPreset, onApply, 
         })}
       </div>
       <div className="mot-date-popover__fields">
-        <label>
+        <label className="mot-date-popover__field">
           <span>{t('ownerTest_dateFrom')}</span>
           <input
             type="date"
@@ -361,7 +418,7 @@ function DateRangePopover({ open, draftRange, onDraftChange, onPreset, onApply, 
             onChange={(event) => onDraftChange({ ...draftRange, from: event.target.value })}
           />
         </label>
-        <label>
+        <label className="mot-date-popover__field">
           <span>{t('ownerTest_dateTo')}</span>
           <input
             type="date"
@@ -434,50 +491,140 @@ const ACTIVITY_TONES = {
   red: { bg: '#fef2f2', fg: '#EF4444' },
 }
 
-function BestTimerCard({ property, goTo, className = '', t, locale, lang }) {
+function EndingSoonPropertyCard({ property, onOpen, t, lang }) {
   return (
-    <article className={`mot-card mot-best${className ? ` ${className}` : ''}`}>
-      <h2 className="mot-card__title">{t('ownerTest_propertiesTimerCaption')}</h2>
-      {property ? (
-        <>
-          <div className="mot-best__media">
-            <img
-              src={property.image}
-              alt=""
-              className="mot-best__photo"
-              loading="lazy"
-              decoding="async"
-            />
-            <BestTimerBadge endTime={property.auctionEndTime} t={t} lang={lang} />
-          </div>
-          <h3 className="mot-best__name">{property.title}</h3>
-          <p className="mot-best__location">{property.location}</p>
-          <p className="mot-best__price">{property.currentBid || property.price}</p>
-          <div className="mot-best__stats">
-            <span>
-              <Eye size={14} strokeWidth={2} aria-hidden />{' '}
-              {formatMotCompactNumber(property.viewsValue, locale)} {t('ownerTest_analyticsMetricViews')}
-            </span>
-            <span>
-              <TrendingUp size={14} strokeWidth={2} aria-hidden />{' '}
-              {formatMotNumber(property.bidsValue, locale)} {t('ownerTest_metricBids')}
-            </span>
-          </div>
+    <article className="mot-ending-card">
+      <div className="mot-ending-card__media">
+        <img
+          src={property.image || MOT_EVENT_FALLBACK_IMAGE}
+          alt=""
+          className="mot-ending-card__photo"
+          loading="lazy"
+          decoding="async"
+          onError={(event) => {
+            if (event.currentTarget.src !== MOT_EVENT_FALLBACK_IMAGE) {
+              event.currentTarget.src = MOT_EVENT_FALLBACK_IMAGE
+            }
+          }}
+        />
+        <EndingSoonDaysBadge endTime={property.auctionEndTime} t={t} lang={lang} />
+      </div>
+      <div className="mot-ending-card__body">
+        <h3 className="mot-ending-card__title">{property.title}</h3>
+        <p className="mot-ending-card__meta">{property.location || property.currentBid || property.price}</p>
+        <button type="button" className="mot-ending-card__go" onClick={() => onOpen?.(property)}>
+          {t('ownerTest_endingSoonGo')}
+        </button>
+      </div>
+    </article>
+  )
+}
+
+function EndingSoonPropertiesStrip({
+  properties,
+  hasNoProperties,
+  onAddProperty,
+  onOpenProperty,
+  onViewAll,
+  t,
+  lang,
+  title,
+}) {
+  const scrollRef = useRef(null)
+  const [activeDot, setActiveDot] = useState(0)
+  const visibleCount = 4
+  const visibleProperties = properties.slice(0, visibleCount)
+  const overflowCount = Math.max(0, properties.length - visibleCount)
+  const slideCount = visibleProperties.length + (overflowCount > 0 ? 1 : 0)
+
+  const updateActiveDot = useCallback(() => {
+    const scroller = scrollRef.current
+    if (!scroller) return
+
+    const cards = Array.from(scroller.children)
+    if (!cards.length) return
+
+    const center = scroller.scrollLeft + scroller.clientWidth / 2
+    let nextIndex = 0
+    let minDistance = Infinity
+
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2
+      const distance = Math.abs(center - cardCenter)
+      if (distance < minDistance) {
+        minDistance = distance
+        nextIndex = index
+      }
+    })
+
+    setActiveDot(nextIndex)
+  }, [])
+
+  useEffect(() => {
+    updateActiveDot()
+  }, [properties.length, updateActiveDot])
+
+  if (hasNoProperties) {
+    return (
+      <section className="mot-ending-strip mot-ending-strip--empty" aria-label={title}>
+        <h2 className="mot-ending-strip__title">{title}</h2>
+        <OwnerEmptyStatePanel
+          illustration={OwnerEmptyPropertiesIllustration}
+          title={t('ownerTest_emptyNoPropertiesTitle')}
+          description={t('ownerTest_emptyNoPropertiesDesc')}
+          actionLabel={t('ownerTest_ariaAddProperty')}
+          onAction={onAddProperty}
+        />
+      </section>
+    )
+  }
+
+  return (
+    <section className="mot-ending-strip" aria-label={title}>
+      <h2 className="mot-ending-strip__title">{title}</h2>
+      <div className="mot-ending-strip__scroll" ref={scrollRef} onScroll={updateActiveDot}>
+        {visibleProperties.map((property) => (
+          <EndingSoonPropertyCard
+            key={property.statsKey || property.id}
+            property={property}
+            onOpen={onOpenProperty}
+            t={t}
+            lang={lang}
+          />
+        ))}
+        {overflowCount > 0 ? (
           <button
             type="button"
-            className="mot-btn mot-btn--primary mot-btn--block"
-            onClick={() => goTo?.(OWNER_VIEWS.PROPERTY_ANALYTICS, { propertyId: property.id })}
+            className="mot-ending-card mot-ending-card--more"
+            onClick={onViewAll}
+            aria-label={t('ownerTest_endingSoonSeeMore')}
           >
-            {t('ownerTest_adFastSalesBtn')}
+            <div className="mot-ending-card__more-inner">
+              <span className="mot-ending-card__more-count" aria-hidden>
+                +{overflowCount}
+              </span>
+              <span className="mot-ending-card__more-hint">{t('ownerTest_endingSoonMoreObjects')}</span>
+              <span className="mot-ending-card__more-label">
+                {t('ownerTest_endingSoonSeeMore')}
+                <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+              </span>
+            </div>
           </button>
-        </>
-      ) : (
-        <div className="mot-best__empty">
-          <p className="mot-best__name">{t('ownerTest_analyticsNoData')}</p>
-          <p className="mot-best__location">{t('ownerTest_notificationsEmptyText')}</p>
+        ) : null}
+      </div>
+      {slideCount > 1 ? (
+        <div className="mot-ending-strip__dots" aria-hidden>
+          {Array.from({ length: slideCount }, (_, index) => (
+            <span
+              key={index}
+              className={`mot-ending-strip__dot${
+                activeDot === index ? ' mot-ending-strip__dot--active' : ''
+              }`}
+            />
+          ))}
         </div>
-      )}
-    </article>
+      ) : null}
+    </section>
   )
 }
 
@@ -505,8 +652,8 @@ function getOwnerMetricHref(metricId, isEmbedded) {
         : OWNER_TEST_STANDALONE_HREF_MAP.testdrive
     case 'bids':
       return isEmbedded
-        ? ownerTestHref(OWNER_VIEWS.SALES)
-        : OWNER_TEST_STANDALONE_HREF_MAP.sales
+        ? ownerTestHref(OWNER_VIEWS.PROPERTIES)
+        : OWNER_TEST_STANDALONE_HREF_MAP.properties
     case 'properties':
       return isEmbedded
         ? ownerTestHref(OWNER_VIEWS.PROPERTIES)
@@ -516,31 +663,40 @@ function getOwnerMetricHref(metricId, isEmbedded) {
   }
 }
 
-function StatusDistributionCard({ donutData, donutOptions, propertyCount, statusLegend, className = '', t }) {
-  return (
-    <article className={`mot-card mot-status-card${className ? ` ${className}` : ''}`}>
-      <h2 className="mot-card__title">{t('ownerAnalyticsStatsByStatus')}</h2>
-      <div className="mot-status-card__body">
-        <div className="mot-status-card__analytics">
-          <div className="mot-donut-wrap">
-            <Doughnut data={donutData} options={donutOptions} />
-            <div className="mot-donut-center">
-              <span className="mot-donut-center__label">{t('ownerTest_propertiesMetricTotal')}</span>
-              <span className="mot-donut-center__value">{propertyCount}</span>
-            </div>
-          </div>
-          <ul className="mot-status-legend">
-            {statusLegend.map((s) => (
-              <li key={s.label}>
-                <i style={{ background: s.color }} />
-                <span>{s.label}</span>
-                <strong>{s.count}</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <OwnerBuyerAd className="mot-status-buyer-ad" imageSrc="/images/owner-test/owner-buyer-promo-hero.png" />
+function MotRatingPromoCard({ t, goTo }) {
+  const promoHref = OWNER_TEST_STANDALONE_HREF_MAP.subscriptions
+
+  const content = (
+    <>
+      <span className="mot-rating-promo__bg" aria-hidden />
+      <span className="mot-rating-promo__shine" aria-hidden />
+      <div className="mot-rating-promo__copy">
+        <h2 className="mot-rating-promo__title">{t('ownerTest_ratingPromoTitle')}</h2>
+        <p className="mot-rating-promo__text">{t('ownerTest_ratingPromoText')}</p>
       </div>
+      <div className="mot-rating-promo__art-wrap" aria-hidden>
+        <img
+          src={MOT_PROMO_IMAGES.ratingTrophy}
+          alt=""
+          className="mot-rating-promo__art"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </>
+  )
+
+  return (
+    <article className="mot-rating-promo">
+      {goTo ? (
+        <button type="button" className="mot-rating-promo__surface" onClick={() => goTo(OWNER_VIEWS.SUBSCRIPTIONS)}>
+          {content}
+        </button>
+      ) : (
+        <Link to={promoHref} className="mot-rating-promo__surface">
+          {content}
+        </Link>
+      )}
     </article>
   )
 }
@@ -549,9 +705,76 @@ function ActivityIcon({ tone, icon: Icon }) {
   const c = ACTIVITY_TONES[tone] || ACTIVITY_TONES.blue
   const ResolvedIcon = Icon || TrendingUp
   return (
-    <span className="mot-activity__icon" style={{ background: c.bg, color: c.fg }}>
+    <span className="mot-activity__icon mot-desktop-only" style={{ background: c.bg, color: c.fg }}>
       <ResolvedIcon size={18} strokeWidth={2.2} />
     </span>
+  )
+}
+
+function ActivityEventRow({ item, openLabel }) {
+  const imageSrc = item.propertyImage || MOT_EVENT_FALLBACK_IMAGE
+
+  return (
+    <li className="mot-activity__item mot-activity__item--bid">
+      <span className="mot-activity__photo">
+        <img
+          src={imageSrc}
+          alt=""
+          loading="lazy"
+          onError={(event) => {
+            if (event.currentTarget.src !== MOT_EVENT_FALLBACK_IMAGE) {
+              event.currentTarget.src = MOT_EVENT_FALLBACK_IMAGE
+            }
+          }}
+        />
+      </span>
+      <ActivityIcon tone={item.tone} icon={item.icon} />
+      <div className="mot-activity__body">
+        <p className="mot-activity__title">{item.propertyTitle || item.title}</p>
+        <p className="mot-activity__subtitle">{item.summary || item.text}</p>
+      </div>
+      <div className="mot-activity__side mot-desktop-only">
+        <strong className="mot-activity__amount">{item.amount}</strong>
+        <time className="mot-activity__time">{item.time}</time>
+      </div>
+      {item.onAction ? (
+        <button type="button" className="mot-activity__go" aria-label={openLabel} onClick={item.onAction}>
+          <ChevronRight size={20} strokeWidth={2.2} aria-hidden />
+        </button>
+      ) : item.href ? (
+        <Link to={item.href} className="mot-activity__go" aria-label={openLabel}>
+          <ChevronRight size={20} strokeWidth={2.2} aria-hidden />
+        </Link>
+      ) : null}
+    </li>
+  )
+}
+
+function MotMobileHeroAvatar({ ariaLabel }) {
+  const { user } = useUser()
+  const gradientId = useId()
+  const imageUrl = user?.imageUrl
+
+  return (
+    <Link to={getOwnerProfileTabPath('personal')} className="mot-mob-hero__avatar" aria-label={ariaLabel}>
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className="mot-mob-hero__avatar-img" />
+      ) : (
+        <span className="mot-mob-hero__avatar-fallback" aria-hidden>
+          <svg viewBox="0 0 40 40">
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#53d8d3" />
+                <stop offset="100%" stopColor="#089a95" />
+              </linearGradient>
+            </defs>
+            <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+            <circle cx="20" cy="16" r="7" fill="#F8FAFC" />
+            <ellipse cx="20" cy="34" rx="11" ry="8" fill="#F8FAFC" />
+          </svg>
+        </span>
+      )}
+    </Link>
   )
 }
 
@@ -573,6 +796,7 @@ function useMotMobile() {
 export default function MainOwnerTestPage() {
   const { t, i18n } = useTranslation()
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
+  const lang = i18n.language
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
     activeId: 'home',
@@ -582,12 +806,15 @@ export default function MainOwnerTestPage() {
     activeId: 'home',
     ...(isEmbedded ? {} : { hrefMap: OWNER_TEST_STANDALONE_HREF_MAP }),
   })
-  const profileCtx = useOwnerTestProfileOptional()
   const [menuOpen, setMenuOpen] = useState(false)
   const [datePopoverOpen, setDatePopoverOpen] = useState(false)
   const [chartFilterOpen, setChartFilterOpen] = useState(false)
   const [chartMetricFilter, setChartMetricFilter] = useState('all')
   const [chartMode, setChartMode] = useState('trend')
+  const [mobileChartVisible, setMobileChartVisible] = useState({
+    views: true,
+    likes: true,
+  })
   const [selectedRange, setSelectedRange] = useState(getDefaultDateRange)
   const [draftRange, setDraftRange] = useState(getDefaultDateRange)
   const [ownerProperties, setOwnerProperties] = useState([])
@@ -596,19 +823,6 @@ export default function MainOwnerTestPage() {
   const [bidDrawerOpen, setBidDrawerOpen] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(true)
   const isMobile = useMotMobile()
-
-  const welcomeName = useMemo(() => {
-    const first = profileCtx?.profile?.firstName?.trim()
-    if (first) return first
-    const full = profileCtx?.fullName?.trim()
-    if (full) return full.split(/\s+/)[0]
-    return t('ownerTest_roleSeller')
-  }, [profileCtx?.fullName, profileCtx?.profile?.firstName, t])
-
-  const welcomeDisplayName = useMemo(() => {
-    if (!welcomeName) return welcomeName
-    return welcomeName.charAt(0).toUpperCase() + welcomeName.slice(1)
-  }, [welcomeName])
 
   const datePresets = useMemo(
     () => [
@@ -620,7 +834,7 @@ export default function MainOwnerTestPage() {
       },
       {
         id: 'month',
-        label: monthPresetLabel(TODAY, intlLocale),
+        label: t('ownerTest_datePresetMonth'),
         from: toInputDate(MONTH_START),
         to: toInputDate(TODAY),
       },
@@ -631,17 +845,40 @@ export default function MainOwnerTestPage() {
         to: toInputDate(TODAY),
       },
     ],
-    [intlLocale, t]
+    [t]
   )
+
+  const figmaLabels = useMemo(() => {
+    const ru = i18n.language?.startsWith('ru')
+    return {
+      addObject: ru ? 'Добавить объект' : 'Add property',
+      activeAuctions: ru ? 'Активных аукционов' : 'Active auctions',
+      allObjects: ru ? 'Всего объектов' : 'Total properties',
+      bidsByObjects: ru ? 'Ставки по объектам' : 'Bids by property',
+      dataForMonth: ru ? 'Данные за июнь 2026' : 'Data for June 2026',
+      likes: ru ? 'Лайки объектов' : 'Property likes',
+      plans: ru ? 'Смотреть планы' : 'View plans',
+      search: ru ? 'Поиск...' : 'Search...',
+      viewsAndLikes: ru ? 'Просмотры и лайки' : 'Views and likes',
+    }
+  }, [i18n.language])
+
+  const toggleMobileChartSeries = useCallback((key) => {
+    setMobileChartVisible((prev) => {
+      const next = { ...prev, [key]: !prev[key] }
+      const visibleCount = Object.values(next).filter(Boolean).length
+      if (visibleCount === 0) return prev
+      return next
+    })
+  }, [])
 
   const chartFilters = useMemo(
     () => [
       { id: 'all', label: t('ownerTest_chartFilterAll') },
       { id: 'views', label: t('ownerTest_chartFilterViews') },
-      { id: 'testDrives', label: t('ownerTest_chartFilterTestDrives') },
-      { id: 'bids', label: t('ownerTest_chartFilterBids') },
+      { id: 'likes', label: figmaLabels.likes },
     ],
-    [t]
+    [figmaLabels.likes, t]
   )
 
   const chartSeriesDefs = useMemo(
@@ -654,24 +891,24 @@ export default function MainOwnerTestPage() {
         fill: true,
       },
       {
-        key: 'testDrives',
-        label: t('ownerTest_chartFilterTestDrives'),
-        color: '#F59E0B',
-        backgroundColor: 'transparent',
-        fill: false,
-      },
-      {
-        key: 'bids',
-        label: t('ownerTest_chartFilterBids'),
-        color: '#22C55E',
+        key: 'likes',
+        label: figmaLabels.likes,
+        color: '#db2777',
         backgroundColor: 'transparent',
         fill: false,
       },
     ],
-    [t]
+    [figmaLabels.likes, t]
   )
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const handleAddProperty = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.ADD_PROPERTY)
+      return
+    }
+    window.location.assign('/owner-add-property-test')
+  }, [goTo, isEmbedded])
   const closeDatePopover = useCallback(() => {
     setDraftRange(selectedRange)
     setDatePopoverOpen(false)
@@ -834,6 +1071,9 @@ export default function MainOwnerTestPage() {
       ownerProperties.map((row) => {
         const key = buildPropertyKey(row.id, getRowPropertyTable(row))
         const views = Number(row.viewsCount) || parseMotNumber(row.views)
+        const likes =
+          Number(row.likesCount ?? row.likes_count ?? row.raw?.likes_count ?? row.raw?.likesCount ?? row.raw?.favorites_count) ||
+          Math.max(0, Math.round(views * 0.06))
         const testDrives = testDriveCountByProperty.get(key) || 0
         const fallbackBids = Number(row.bidsCount ?? row.raw?.bids_count ?? row.raw?.bidsCount) || 0
         const bids = bidCountByProperty.get(key) ?? fallbackBids
@@ -841,9 +1081,10 @@ export default function MainOwnerTestPage() {
           ...row,
           statsKey: key,
           viewsValue: views,
+          likesValue: likes,
           testDrivesValue: testDrives,
           bidsValue: bids,
-          totalEngagement: views + testDrives + bids,
+          totalEngagement: views + likes + testDrives + bids,
         }
       }),
     [bidCountByProperty, ownerProperties, testDriveCountByProperty]
@@ -861,6 +1102,7 @@ export default function MainOwnerTestPage() {
 
     return {
       views: propertyStatsRows.reduce((sum, row) => sum + row.viewsValue, 0),
+      likes: propertyStatsRows.reduce((sum, row) => sum + row.likesValue, 0),
       testDrives: testDriveDatesInRange.length,
       bids: bidDatesInRange.length,
     }
@@ -875,7 +1117,6 @@ export default function MainOwnerTestPage() {
         const property = propertyByKey.get(buildPropertyKey(propertyId, table))
         const propertyTitle =
           bid.propertyTitle || property?.title || t('buyerBookings_propertyFallback', { id: propertyId })
-        const propertyLocation = bid.propertyLocation || property?.location || ''
         const buyerId = bid.user_id_number || bid.user_id
         const amount = formatBidAmount(
           bid.bid_amount,
@@ -884,16 +1125,25 @@ export default function MainOwnerTestPage() {
         )
         const createdAt = bid.created_at || bid.createdAt
         const createdTs = parseMotTime(createdAt) || 0
+        const time = formatRelativeTime(createdAt, t, intlLocale)
         const openParams = { propertyId }
-        const buyerSuffix = buyerId ? ` • ${t('ownerAnalyticsBuyerLabel')} #${buyerId}` : ''
-        const locationSuffix = propertyLocation ? ` • ${propertyLocation}` : ''
+        const summary = buyerId
+          ? t('ownerTest_eventBidLineBuyer', { buyerId, amount, time })
+          : t('ownerTest_eventBidLine', { amount, time })
+        const propertyImage = getPropertyCardImage(
+          property || { image: bid.propertyImage, id: propertyId },
+          MOT_EVENT_FALLBACK_IMAGE
+        )
         return {
           id: `bid-${bid.id || `${propertyId}-${createdTs}-${bid.bid_amount}`}`,
           tone: 'teal',
           icon: DollarSign,
           title: t('ownerTest_activityNewBid'),
-          text: `${propertyTitle}${buyerSuffix}${locationSuffix}`,
-          time: formatRelativeTime(createdAt, t, intlLocale),
+          propertyTitle,
+          propertyImage,
+          summary,
+          text: summary,
+          time,
           amount,
           createdTs,
           unread: true,
@@ -917,22 +1167,22 @@ export default function MainOwnerTestPage() {
     [activeBidNotifications]
   )
 
-  const statusLegend = useMemo(() => {
-    const counts = propertyStatsRows.reduce(
-      (acc, row) => {
-        const key = row.filterKey || row.statusKey || 'draft'
-        if (acc[key] != null) acc[key] += 1
-        return acc
-      },
-      { active: 0, booked: 0, sold: 0, draft: 0 }
-    )
-    return [
-      { label: t('ownerTest_statusActive'), count: counts.active, color: '#0abab5' },
-      { label: t('ownerTest_statusBooked'), count: counts.booked, color: '#5eead4' },
-      { label: t('ownerTest_statusSold'), count: counts.sold, color: '#F59E0B' },
-      { label: t('ownerTest_statusDraft'), count: counts.draft, color: '#EF4444' },
-    ]
-  }, [propertyStatsRows, t])
+  const activeAuctionCount = useMemo(
+    () => propertyStatsRows.filter((row) => parseMotTime(row.auctionEndTime) > Date.now()).length,
+    [propertyStatsRows]
+  )
+
+  const endingSoonProperties = useMemo(() => {
+    const now = Date.now()
+    return propertyStatsRows
+      .map((row) => ({ row, endTs: parseMotTime(row.auctionEndTime) }))
+      .filter(({ endTs }) => endTs && endTs > now)
+      .sort((a, b) => a.endTs - b.endTs)
+      .map(({ row }) => row)
+  }, [propertyStatsRows])
+
+  const hasNoProperties = !overviewLoading && propertyStatsRows.length === 0
+  const showChartEmpty = hasNoProperties
 
   const metrics = useMemo(
     () => [
@@ -940,7 +1190,7 @@ export default function MainOwnerTestPage() {
         id: 'views',
         label: t('ownerTest_metricViews'),
         value: formatMotNumber(totals.views, intlLocale),
-        delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricViewsDelta'),
+        delta: overviewLoading ? t('ownerTest_metricLoading') : '+24%',
         spark: 'tiffany',
         icon: Eye,
         iconTone: 'tiffany',
@@ -948,55 +1198,59 @@ export default function MainOwnerTestPage() {
         linkAriaLabel: t('ownerTest_profileTabStatistics'),
       },
       {
-        id: 'testDrives',
-        label: t('ownerTest_metricTestDrives'),
-        value: formatMotNumber(totals.testDrives, intlLocale),
-        delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricTestDrivesDelta'),
+        id: 'likes',
+        label: figmaLabels.likes,
+        value: formatMotNumber(totals.likes, intlLocale),
+        delta: overviewLoading ? t('ownerTest_metricLoading') : '+18%',
         spark: 'orange',
-        icon: Car,
-        iconTone: 'orange',
-        href: getOwnerMetricHref('testDrives', isEmbedded),
-        linkAriaLabel: t('ownerTest_navTestDrive'),
+        icon: Heart,
+        iconTone: 'pink',
+        href: getOwnerMetricHref('views', isEmbedded),
+        linkAriaLabel: figmaLabels.likes,
       },
       {
-        id: 'bids',
-        label: t('ownerTest_metricBids'),
-        value: formatMotNumber(totals.bids, intlLocale),
-        delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricBidsDelta'),
+        id: 'auctions',
+        label: figmaLabels.activeAuctions,
+        value: formatMotNumber(activeAuctionCount, intlLocale),
+        delta: overviewLoading ? t('ownerTest_metricLoading') : '+1',
         spark: 'teal',
-        icon: TrendingUp,
-        iconTone: 'teal',
+        icon: Gavel,
+        iconTone: 'purple',
         href: getOwnerMetricHref('bids', isEmbedded),
-        linkAriaLabel: t('ownerTest_navSales'),
+        linkAriaLabel: figmaLabels.activeAuctions,
       },
       {
         id: 'properties',
-        label: t('ownerTest_metricProperties'),
+        label: figmaLabels.allObjects,
         value: formatMotNumber(propertyStatsRows.length, intlLocale),
-        delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricPropertiesDelta'),
+        delta: overviewLoading ? t('ownerTest_metricLoading') : '+2',
         spark: 'green',
         icon: Building2,
-        iconTone: 'green',
+        iconTone: 'amber',
         href: getOwnerMetricHref('properties', isEmbedded),
         linkAriaLabel: t('ownerTest_navMyProperties'),
       },
     ],
-    [intlLocale, isEmbedded, overviewLoading, propertyStatsRows.length, selectedRange, t, totals.bids, totals.testDrives, totals.views]
+    [
+      activeAuctionCount,
+      figmaLabels.activeAuctions,
+      figmaLabels.allObjects,
+      figmaLabels.likes,
+      intlLocale,
+      isEmbedded,
+      overviewLoading,
+      propertyStatsRows.length,
+      t,
+      totals.likes,
+      totals.views,
+    ]
   )
-
-  const bestTimerProperty = useMemo(() => {
-    const now = Date.now()
-    const withTimers = propertyStatsRows
-      .map((row) => ({ row, time: parseMotTime(row.auctionEndTime) }))
-      .filter(({ time }) => time && time > now)
-      .sort((a, b) => a.time - b.time)
-    return withTimers[0]?.row || null
-  }, [propertyStatsRows])
 
   const chartSeries = useMemo(() => {
     const chartRange = selectedRange
-    const buckets = buildDateBuckets(chartRange, intlLocale)
+    const buckets = buildDateBuckets(chartRange, intlLocale, isMobile ? 7 : 90)
     const totalViews = propertyStatsRows.reduce((sum, row) => sum + row.viewsValue, 0)
+    const totalLikes = propertyStatsRows.reduce((sum, row) => sum + row.likesValue, 0)
 
     const testDriveDatesInRange = filterDatesInRange(
       testDriveRows.map(getTestDriveEventDate).filter(Boolean),
@@ -1008,38 +1262,45 @@ export default function MainOwnerTestPage() {
     )
 
     if (!buckets.length) {
-      return { labels: [], views: [], testDrives: [], bids: [] }
+      return { labels: [], mobileLabels: [], buckets: [], views: [], likes: [], testDrives: [], bids: [] }
     }
 
-    if (chartMode === 'total') {
-      return {
-        labels: buckets.map((bucket) => bucket.label),
-        views: buckets.map(() => totalViews),
-        testDrives: buckets.map((bucket) => countDatesUpToFiltered(testDriveDatesInRange, bucket.value)),
-        bids: buckets.map((bucket) => countDatesUpToFiltered(bidDatesInRange, bucket.value)),
-      }
-    }
+    const seriesValues =
+      chartMode === 'total'
+        ? {
+            views: buckets.map(() => totalViews),
+            likes: buckets.map(() => totalLikes),
+            testDrives: buckets.map((bucket) => countDatesUpToFiltered(testDriveDatesInRange, bucket.value)),
+            bids: buckets.map((bucket) => countDatesUpToFiltered(bidDatesInRange, bucket.value)),
+          }
+        : {
+            views: buckets.map(() => totalViews),
+            likes: buckets.map(() => totalLikes),
+            testDrives: buildPerBucketCounts(testDriveDatesInRange, buckets, chartRange),
+            bids: buildPerBucketCounts(bidDatesInRange, buckets, chartRange),
+          }
 
     return {
       labels: buckets.map((bucket) => bucket.label),
-      views: buckets.map(() => totalViews),
-      testDrives: buildPerBucketCounts(testDriveDatesInRange, buckets, chartRange),
-      bids: buildPerBucketCounts(bidDatesInRange, buckets, chartRange),
+      mobileLabels: buckets.map((bucket) => [bucket.weekday, bucket.dayNum]),
+      buckets,
+      ...seriesValues,
     }
-  }, [chartMode, intlLocale, ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
+  }, [chartMode, intlLocale, isMobile, ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
 
   const chartFilterLabel = useMemo(
     () => chartFilters.find((filter) => filter.id === chartMetricFilter)?.label || chartFilters[0].label,
     [chartFilters, chartMetricFilter]
   )
 
-  const visibleChartSeries = useMemo(
-    () =>
-      chartMetricFilter === 'all'
-        ? chartSeriesDefs
-        : chartSeriesDefs.filter((series) => series.key === chartMetricFilter),
-    [chartMetricFilter, chartSeriesDefs]
-  )
+  const visibleChartSeries = useMemo(() => {
+    if (isMobile) {
+      return chartSeriesDefs.filter((series) => mobileChartVisible[series.key])
+    }
+    return chartMetricFilter === 'all'
+      ? chartSeriesDefs
+      : chartSeriesDefs.filter((series) => series.key === chartMetricFilter)
+  }, [chartMetricFilter, chartSeriesDefs, isMobile, mobileChartVisible])
 
   const chartMax = useMemo(() => {
     const values = visibleChartSeries.flatMap((series) => chartSeries[series.key] || [])
@@ -1050,10 +1311,10 @@ export default function MainOwnerTestPage() {
 
   const lineChartData = useMemo(
     () => {
-      const showAreaFill = visibleChartSeries.length === 1
+      const showAreaFill = !isMobile && visibleChartSeries.length === 1
 
       return {
-        labels: chartSeries.labels,
+        labels: isMobile ? chartSeries.mobileLabels : chartSeries.labels,
         datasets: visibleChartSeries.map((series) => ({
           label: series.label,
           data: chartSeries[series.key] || [],
@@ -1065,18 +1326,18 @@ export default function MainOwnerTestPage() {
           fill: showAreaFill ? 'origin' : false,
           tension: CHART_LINE_TENSION,
           pointRadius: 0,
-          pointHoverRadius: 5,
+          pointHoverRadius: isMobile ? 6 : 5,
           pointHitRadius: 18,
-          pointHoverBackgroundColor: series.color,
-          pointHoverBorderColor: '#fff',
-          pointHoverBorderWidth: 2,
-          borderWidth: 2.5,
+          pointHoverBackgroundColor: isMobile ? '#111827' : series.color,
+          pointHoverBorderColor: isMobile ? '#111827' : '#fff',
+          pointHoverBorderWidth: isMobile ? 0 : 2,
+          borderWidth: isMobile ? 2.75 : 2.5,
           borderCapStyle: 'round',
           borderJoinStyle: 'round',
         })),
       }
     },
-    [chartSeries, visibleChartSeries]
+    [chartSeries, isMobile, visibleChartSeries]
   )
 
   const lineChartOptions = useMemo(
@@ -1084,55 +1345,70 @@ export default function MainOwnerTestPage() {
       responsive: true,
       maintainAspectRatio: false,
       layout: isMobile
-        ? { padding: { left: 0, right: 4, top: 0, bottom: 0 } }
+        ? { padding: { left: 4, right: 8, top: 8, bottom: 0 } }
         : { padding: { left: 0, right: 8, top: 4, bottom: 0 } },
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: isMobile ? 'nearest' : 'index', axis: 'x', intersect: false },
       elements: {
         line: { tension: CHART_LINE_TENSION },
-        point: { radius: 0, hoverRadius: 5 },
+        point: { radius: 0, hoverRadius: isMobile ? 6 : 5 },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#111827',
-          titleFont: { family: 'Inter', size: 12 },
-          bodyFont: { family: 'Inter', size: 12 },
-          padding: 10,
-          cornerRadius: 8,
-          displayColors: true,
+          titleColor: '#9ca3af',
+          bodyColor: '#ffffff',
+          footerColor: '#ffffff',
+          titleFont: { family: 'Inter', size: 12, weight: '500' },
+          bodyFont: { family: 'Inter', size: 13, weight: '600' },
+          padding: isMobile ? 12 : 10,
+          cornerRadius: isMobile ? 14 : 8,
+          displayColors: false,
           boxPadding: 4,
+          caretSize: isMobile ? 7 : 6,
+          caretPadding: isMobile ? 10 : 6,
+          callbacks: {
+            title: (items) => {
+              const bucket = chartSeries.buckets[items[0]?.dataIndex]
+              return bucket ? formatChartTooltipDate(bucket.value, intlLocale) : items[0]?.label || ''
+            },
+            label: (context) => `${context.dataset.label}: ${formatMotNumber(context.parsed.y, intlLocale)}`,
+          },
         },
         filler: { propagate: false },
       },
       scales: {
         x: {
-          offset: false,
+          offset: isMobile,
           grid: {
+            display: !isMobile,
             color: '#E8EDF3',
             drawBorder: false,
             borderDash: [4, 5],
           },
           ticks: {
-            color: '#94A3B8',
-            font: { family: 'Inter', size: isMobile ? 11 : 11 },
+            color: '#9ca3af',
+            font: { family: 'Inter', size: isMobile ? 10 : 11, weight: '500' },
             maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: isMobile ? 4 : undefined,
-            padding: isMobile ? 4 : 4,
+            autoSkip: !isMobile,
+            maxTicksLimit: isMobile ? 7 : undefined,
+            padding: isMobile ? 8 : 4,
           },
           border: { display: false },
         },
         y: {
+          display: !isMobile,
           min: 0,
           max: chartMax,
           ticks: {
             color: '#94A3B8',
-            font: { family: 'Inter', size: isMobile ? 11 : 11 },
+            font: { family: 'Inter', size: 11 },
             maxTicksLimit: isMobile ? 5 : undefined,
-            padding: isMobile ? 8 : 4,
+            padding: 4,
             callback: (v) => v,
           },
           grid: {
+            display: !isMobile,
             color: '#E8EDF3',
             drawBorder: false,
             borderDash: [4, 5],
@@ -1141,107 +1417,105 @@ export default function MainOwnerTestPage() {
         },
       },
     }),
-    [chartMax, isMobile]
-  )
-
-  const donutData = useMemo(
-    () => ({
-      labels: statusLegend.map((s) => s.label),
-      datasets: [
-        {
-          data: statusLegend.map((s) => s.count),
-          backgroundColor: statusLegend.map((s) => s.color),
-          borderWidth: 0,
-          hoverOffset: 4,
-        },
-      ],
-    }),
-    [statusLegend]
-  )
-
-  const donutOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '72%',
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true },
-      },
-    }),
-    []
+    [chartMax, chartSeries.buckets, intlLocale, isMobile]
   )
 
   const mainColumn = (
     <div className="mot-main">
-      <header className="mot-header mot-desktop-only">
-        <h1 className="mot-header__title">{t('ownerTest_dashboardTitle')}</h1>
-        <div className="mot-header__actions">
-          <div className="mot-date-control">
-            <button
-              type="button"
-              className="mot-date-pill"
-              aria-haspopup="dialog"
-              aria-expanded={datePopoverOpen}
-              onClick={() => {
-                setDraftRange(selectedRange)
-                setDatePopoverOpen((prev) => !prev)
-              }}
-            >
-              <Calendar size={18} strokeWidth={2} aria-hidden />
-              <span>{dateRangeLabel(selectedRange, intlLocale)}</span>
-              <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
-            </button>
-            <DateRangePopover
-              open={datePopoverOpen}
-              draftRange={draftRange}
-              onDraftChange={setDraftRange}
-              onPreset={setDraftRange}
-              onApply={handleApplyRange}
-              onClose={closeDatePopover}
-              t={t}
-              locale={intlLocale}
-              datePresets={datePresets}
+      <div className="mot-hero-shell">
+        <div className="mot-hero-shell__bg" aria-hidden />
+        <div className="mot-hero-shell__shine" aria-hidden />
+        <header className="mot-header mot-desktop-only">
+          <div className="mot-header__copy">
+            <h1 className="mot-header__title mot-hero-copy__line mot-hero-copy__line--1">{t('ownerTest_dashboardTitle')}</h1>
+            <p className="mot-header__subtitle mot-hero-copy__line mot-hero-copy__line--2">{figmaLabels.dataForMonth}</p>
+          </div>
+          <div className="mot-header__actions">
+            <label className="mot-search-pill">
+              <Search size={17} strokeWidth={2.2} aria-hidden />
+              <input type="search" placeholder={figmaLabels.search} />
+            </label>
+            <div className={`mot-date-control${datePopoverOpen ? ' mot-date-control--expanded' : ''}`}>
+              <button
+                type="button"
+                className={`mot-date-pill${datePopoverOpen ? ' mot-date-pill--active' : ''}`}
+                aria-haspopup="dialog"
+                aria-expanded={datePopoverOpen}
+                onClick={() => {
+                  setDraftRange(selectedRange)
+                  setDatePopoverOpen((prev) => !prev)
+                }}
+              >
+                <Calendar size={18} strokeWidth={2} aria-hidden />
+                <span>{dateRangeLabel(selectedRange, intlLocale)}</span>
+                <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
+              </button>
+              <DateRangePopover
+                open={datePopoverOpen}
+                draftRange={draftRange}
+                onDraftChange={setDraftRange}
+                onPreset={setDraftRange}
+                onApply={handleApplyRange}
+                onClose={closeDatePopover}
+                t={t}
+                locale={intlLocale}
+                datePresets={datePresets}
+              />
+            </div>
+            <OwnerSupportButton className="mot-icon-btn" />
+            <OwnerNotificationsButton
+              className="mot-icon-btn"
+              badgeClassName="mot-icon-btn__badge"
+              items={bidNotifications}
             />
+            <OwnerTestProfileMenu />
           </div>
-          <OwnerSupportButton className="mot-icon-btn" />
-          <OwnerNotificationsButton
-            className="mot-icon-btn"
-            badgeClassName="mot-icon-btn__badge"
-            badge={activeBidNotifications.length || null}
-            items={bidNotifications}
-          />
-          <OwnerTestProfileMenu />
-        </div>
-      </header>
+        </header>
 
-      <div className="mot-content">
         <div className="mot-mob-hero mot-mobile-only">
-          <div className="mot-mob-hero__copy">
-            <h1 className="mot-mob-hero__title">
-              {t('ownerTest_mobWelcomeEyebrow')}, {welcomeDisplayName}
-            </h1>
-            <p className="mot-mob-hero__subtitle">{t('ownerDashboardSubtitle')}</p>
+          <div className="mot-mob-hero__top">
+            <MotMobileHeroAvatar ariaLabel={t('ownerTest_profileAria')} />
+            <div className="mot-mob-hero__actions">
+              <OwnerSupportButton className="mot-mob-hero__notify" iconSize={20} />
+              <OwnerNotificationsButton
+                className="mot-mob-hero__notify"
+                badgeClassName="mot-mob-hero__notify-badge"
+                iconSize={20}
+                items={bidNotifications}
+              />
+            </div>
           </div>
+          <h1 className="mot-mob-hero__greeting">
+            <span className="mot-hero-copy__line mot-hero-copy__line--1">{t('ownerTest_mobWelcomeLine1')}</span>
+            <span className="mot-hero-copy__line mot-hero-copy__line--2">{t('ownerTest_mobWelcomeLine2')}</span>
+          </h1>
           <div
-            className={`mot-date-control mot-date-control--mobile mot-date-control--full${
-              datePopoverOpen ? ' mot-date-control--expanded' : ''
+            className={`mot-mob-hero__search-wrap mot-date-control${
+              datePopoverOpen ? ' mot-mob-hero__search-wrap--expanded mot-date-control--expanded' : ''
             }`}
           >
-            <button
-              type="button"
-              className="mot-date-pill mot-date-pill--full"
-              aria-haspopup="dialog"
-              aria-expanded={datePopoverOpen}
-              onClick={() => {
-                setDraftRange(selectedRange)
-                setDatePopoverOpen((prev) => !prev)
-              }}
-            >
-              <Calendar size={18} strokeWidth={2} aria-hidden />
-              <span>{dateRangeLabel(selectedRange, intlLocale)}</span>
-              <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
-            </button>
+            <label className="mot-mob-hero__search">
+              <Search size={18} strokeWidth={2.2} className="mot-mob-hero__search-icon" aria-hidden />
+              <input
+                type="search"
+                className="mot-mob-hero__search-input"
+                placeholder={figmaLabels.search}
+                aria-label={figmaLabels.search}
+              />
+              <button
+                type="button"
+                className={`mot-mob-hero__filter${datePopoverOpen ? ' mot-mob-hero__filter--active' : ''}`}
+                aria-haspopup="dialog"
+                aria-expanded={datePopoverOpen}
+                aria-label={t('ownerTest_dateRangeTitle')}
+                onClick={() => {
+                  setDraftRange(selectedRange)
+                  setDatePopoverOpen((prev) => !prev)
+                }}
+              >
+                <SlidersHorizontal size={18} strokeWidth={2.2} aria-hidden />
+              </button>
+            </label>
             <DateRangePopover
               open={datePopoverOpen}
               draftRange={draftRange}
@@ -1269,12 +1543,21 @@ export default function MainOwnerTestPage() {
                     </span>
                   </div>
                   <span className="mot-metric__label">{m.label}</span>
-                  <span className="mot-metric__value">{m.value}</span>
-                  <Sparkline
-                    variant={m.spark}
-                    filled
-                    className="mot-metric__spark--mobile-chart"
-                  />
+                  {overviewLoading ? (
+                    <>
+                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
+                      <span className="owner-cab-skel-block owner-cab-skel-spark" aria-hidden />
+                    </>
+                  ) : (
+                    <>
+                      <span className="mot-metric__value">{m.value}</span>
+                      <Sparkline
+                        variant={m.spark}
+                        filled
+                        className="mot-metric__spark--mobile-chart"
+                      />
+                    </>
+                  )}
                 </article>
               )
             })}
@@ -1292,19 +1575,75 @@ export default function MainOwnerTestPage() {
                 </div>
                 <div className="mot-metric__content">
                   <h3 className="mot-metric__label">{m.label}</h3>
-                  <p className="mot-metric__value">{m.value}</p>
-                  <p className="mot-metric__subtext">{m.delta}</p>
+                  {overviewLoading ? (
+                    <>
+                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
+                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-delta" aria-hidden />
+                    </>
+                  ) : (
+                    <>
+                      <p className="mot-metric__value">{m.value}</p>
+                      <p className="mot-metric__delta">{m.delta}</p>
+                    </>
+                  )}
                 </div>
               </article>
             )
           })}
         </section>
 
+        <div className="mot-hero-shell__fade" aria-hidden />
+      </div>
+
+      <div className="mot-content">
+        {overviewLoading ? (
+          <OwnerCabinetEndingSoonSkeleton title={t('ownerTest_endingSoonTitle')} />
+        ) : (
+          <EndingSoonPropertiesStrip
+            properties={endingSoonProperties}
+            hasNoProperties={hasNoProperties}
+            onAddProperty={handleAddProperty}
+            title={t('ownerTest_endingSoonTitle')}
+            t={t}
+            lang={lang}
+            onOpenProperty={(property) =>
+              goTo(OWNER_VIEWS.PROPERTY_ANALYTICS, { propertyId: property.id })
+            }
+            onViewAll={() => goTo(OWNER_VIEWS.PROPERTIES)}
+          />
+        )}
+
+        <MotRatingPromoCard t={t} goTo={goTo} />
+
         <section className="mot-row mot-row--chart">
           <article className="mot-card mot-chart-card">
             <div className="mot-chart-card__head">
-              <h2 className="mot-card__title">{t('ownerTest_ariaPropertySummary')}</h2>
-              <div className="mot-chart-card__tools">
+              <div className="mot-chart-card__intro">
+                <h2 className="mot-card__title">{figmaLabels.viewsAndLikes}</h2>
+                <p className="mot-card__subtitle mot-desktop-only">{figmaLabels.dataForMonth}</p>
+              </div>
+              <div
+                className="mot-chart-card__pills mot-mobile-only"
+                role="group"
+                aria-label={t('ownerTest_ariaChartMetric')}
+              >
+                {chartSeriesDefs.map((series) => {
+                  const active = mobileChartVisible[series.key]
+                  return (
+                    <button
+                      key={series.key}
+                      type="button"
+                      className={`mot-chart-pill${active ? ' mot-chart-pill--active' : ''}`}
+                      aria-pressed={active}
+                      onClick={() => toggleMobileChartSeries(series.key)}
+                    >
+                      <i className="mot-chart-pill__dot" style={{ background: series.color }} aria-hidden />
+                      <span>{series.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mot-chart-card__tools mot-desktop-only">
                 <div className="mot-chart-mode" role="group" aria-label={t('ownerTest_chartModeAria')}>
                   <button
                     type="button"
@@ -1356,7 +1695,7 @@ export default function MainOwnerTestPage() {
               </div>
               </div>
             </div>
-            <div className="mot-chart-card__legend">
+            <div className="mot-chart-card__legend mot-desktop-only">
               {visibleChartSeries.map((series) => (
                 <span key={series.key} className="mot-legend-item">
                   <i style={{ background: series.color }} /> {series.label}
@@ -1364,61 +1703,61 @@ export default function MainOwnerTestPage() {
               ))}
             </div>
             <div className="mot-chart-card__canvas">
-              <Line data={lineChartData} options={lineChartOptions} />
+              {overviewLoading ? (
+                <OwnerCabinetChartSkeleton />
+              ) : showChartEmpty ? (
+                <OwnerEmptyStatePanel
+                  className="owner-empty-state--chart"
+                  illustration={OwnerEmptyLikesIllustration}
+                  title={t('ownerTest_chartEmptyTitle')}
+                  description={t('ownerTest_chartEmptyDesc')}
+                />
+              ) : (
+                <Line data={lineChartData} options={lineChartOptions} />
+              )}
             </div>
           </article>
-
-          <BestTimerCard
-            property={bestTimerProperty}
-            goTo={goTo}
-            t={t}
-            locale={intlLocale}
-            lang={i18n.language}
-          />
         </section>
 
-        <section className="mot-row mot-row--triple">
+        <section className="mot-row mot-row--events">
           <article className="mot-card mot-activity-card">
             <div className="mot-activity-card__head">
               <h2 className="mot-card__title">{t('ownerTest_notificationsEyebrow')}</h2>
+              {activeBidNotifications.length > 0 && (
+                <button
+                  type="button"
+                  className="mot-link-btn mot-link-btn--all mot-mobile-only"
+                  onClick={() => setBidDrawerOpen(true)}
+                >
+                  {t('ownerTest_propertiesTabAllShort')}
+                </button>
+              )}
             </div>
             {visibleBidNotifications.length > 0 ? (
               <ul className="mot-activity">
                 {visibleBidNotifications.map((item) => (
-                  <li key={item.id} className="mot-activity__item mot-activity__item--bid">
-                    <ActivityIcon tone={item.tone} icon={item.icon} />
-                    <div className="mot-activity__body">
-                      <p className="mot-activity__title">{item.title}</p>
-                      <p className="mot-activity__subtitle">{item.text}</p>
-                    </div>
-                    <div className="mot-activity__side">
-                      <strong className="mot-activity__amount">{item.amount}</strong>
-                      <time className="mot-activity__time">{item.time}</time>
-                    </div>
-                  </li>
+                  <ActivityEventRow
+                    key={item.id}
+                    item={item}
+                    openLabel={t('ownerTest_notificationsOpen')}
+                  />
                 ))}
               </ul>
             ) : (
               <div className="mot-activity__empty">
-                <span className="mot-activity__empty-icon">
-                  <DollarSign size={22} strokeWidth={2.2} aria-hidden />
-                </span>
+                <OwnerNoBidsIllustration className="mot-activity__empty-illustration" />
                 <strong>{t('ownerTest_notificationsEmptyTitle')}</strong>
                 <p>{t('ownerTest_notificationsEmptyText')}</p>
               </div>
             )}
-            <button type="button" className="mot-link-btn" onClick={() => setBidDrawerOpen(true)}>
+            <button
+              type="button"
+              className="mot-link-btn mot-desktop-only"
+              onClick={() => setBidDrawerOpen(true)}
+            >
               {t('ownerTest_notificationsTitle')}
             </button>
           </article>
-
-          <StatusDistributionCard
-            donutData={donutData}
-            donutOptions={donutOptions}
-            propertyCount={propertyStatsRows.length}
-            statusLegend={statusLegend}
-            t={t}
-          />
         </section>
 
       </div>
@@ -1461,7 +1800,6 @@ export default function MainOwnerTestPage() {
             className="mot-mob-topbar__bell"
             badgeClassName="mot-icon-btn__badge"
             iconSize={22}
-            badge={activeBidNotifications.length || null}
             items={bidNotifications}
           />
         </div>

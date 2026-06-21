@@ -164,6 +164,22 @@
   padding-right: 82px;
 }
 
+.oap-pricing-step__input--shares-count {
+  padding-right: 16px;
+}
+
+.oap-pricing-step__per-share {
+  margin: -4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.oap-pricing-step__per-share strong {
+  color: #111827;
+  font-weight: 700;
+}
+
 .oap-pricing-step__input--date {
   color-scheme: light;
 }
@@ -378,4 +394,67 @@
   .oap-pricing-step__sidebar-img {
     max-width: 220px;
   }
+}
+
+/* ——— Journey mobile: flat layout ——— */
+.oap-pricing-step--journey {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-group-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-fields,
+.oap-pricing-step--journey .oap-pricing-step__journey-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__prices-row {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__field--compact {
+  width: 100%;
+  max-width: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__auction-period {
+  width: 100%;
+  max-width: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__auction-period .auction-period-picker,
+.oap-pricing-step--journey .oap-pricing-step__auction-period .auction-period-content {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__input {
+  background: #fff;
+  border-color: rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__currency .oap-select__menu {
+  top: calc(100% + 6px);
+  width: 96px;
+  min-width: 96px;
 }

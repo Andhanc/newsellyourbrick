@@ -182,6 +182,72 @@
     font-size: 15px;
   }
 
+  /* —— Hero card (Daily challenge style) —— */
+  .otd-mob-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    margin: calc(16px + env(safe-area-inset-top, 0px)) var(--otd-mob-pad) 14px;
+    padding: 20px 14px 20px 18px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ebe3ff 0%, #ddd0ff 52%, #d4c4ff 100%);
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(91, 33, 182, 0.12);
+  }
+
+  .otd.otd--embedded .otd-mob-hero {
+    margin-top: 16px;
+  }
+
+  .otd-mob-hero__copy {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  .otd-mob-hero__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: #111827;
+  }
+
+  .otd-mob-hero__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #374151;
+  }
+
+  .otd-mob-hero__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    margin-top: 12px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #5b21b6;
+    font-size: 13px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  .otd-mob-hero__art {
+    width: 152px;
+    height: 152px;
+    flex-shrink: 0;
+    display: block;
+    overflow: visible;
+  }
+
   /* —— «Тест-драйв» —— */
   .otd-mob-pagehead {
     display: flex !important;

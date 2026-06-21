@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Lightbulb, TrendingUp, CheckCircle2 } from 'lucide-react'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
+import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_CALCULATOR_IMAGES } from './oapCalculatorImages'
 import './OwnerAddPropertyCalculatorStep.css'
 
@@ -83,9 +84,8 @@ export default function OwnerAddPropertyCalculatorStep({
             <li>{t('oap_calculatorSidebarLi3')}</li>
           </ul>
           <div className="oap-calculator-step__sidebar-illustration">
-            <img
+            <OapWizardSidebarImage
               src={OAP_CALCULATOR_IMAGES.sidebarHero}
-              alt=""
               className="oap-calculator-step__sidebar-img"
             />
           </div>

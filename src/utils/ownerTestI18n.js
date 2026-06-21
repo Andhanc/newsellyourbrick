@@ -45,7 +45,8 @@ export const OWNER_SUBSCRIPTION_PLAN_KEYS = {
   basic: 'ownerTest_planBasic',
   standard: 'ownerTest_planStandard',
   pro: 'ownerTest_planPro',
-  institutional: 'ownerTest_planInstitutional',
+  institutional: 'ownerTest_planVip',
+  vip: 'ownerTest_planVip',
 }
 
 export function getOwnerSubscriptionPlanLabel(planId) {
@@ -60,11 +61,22 @@ export function resolveProfileSubscriptionPlanId(label) {
     Базовый: 'basic',
     Стандарт: 'standard',
     Pro: 'pro',
+    VIP: 'institutional',
     Корпоративный: 'institutional',
     Институциональный: 'institutional',
     [ownerTestT('ownerTest_planInstitutional')]: 'institutional',
+    [ownerTestT('ownerTest_planVip')]: 'institutional',
   }
   return map[label] || null
+}
+
+const OWNER_SUBSCRIPTION_PLAN_ORDER = ['basic', 'standard', 'pro', 'institutional']
+
+export function getNextOwnerSubscriptionPlanId(planId) {
+  const current = planId || 'basic'
+  const index = OWNER_SUBSCRIPTION_PLAN_ORDER.indexOf(current)
+  if (index === -1 || index >= OWNER_SUBSCRIPTION_PLAN_ORDER.length - 1) return null
+  return OWNER_SUBSCRIPTION_PLAN_ORDER[index + 1]
 }
 
 export function formatOwnerTestDays(count, lang = i18n.language) {

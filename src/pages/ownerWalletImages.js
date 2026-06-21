@@ -1,11 +1,13 @@
+import { publicAsset } from '../utils/publicAsset'
+
 /** Изображения для страницы «Кошелёк» (owner-wallet-test) */
 export const OWL_IMAGES = {
-  metricWallet: '/images/owner-wallet-test/metric-wallet.png?v=3',
-  metricHourglass: '/images/owner-wallet-test/metric-hourglass.png?v=3',
-  metricChart: '/images/owner-wallet-test/metric-chart.png?v=3',
-  promoExpand: '/images/owner-properties-test/owner-prop-thumb-villa.png',
-  thumbForest: '/images/owner-properties-test/owner-prop-thumb-villa.png',
-  thumbApartment: '/images/owner-properties-test/owner-prop-thumb-apartment.png',
-  thumbLoft: '/images/owner-properties-test/owner-prop-thumb-loft.png',
-  thumbPenthouse: '/images/owner-properties-test/owner-prop-thumb-penthouse.png',
+  metricWallet: publicAsset('images/owner-wallet-test/metric-wallet.png'),
+  metricHourglass: publicAsset('images/owner-wallet-test/metric-hourglass.png'),
+  metricChart: publicAsset('images/owner-wallet-test/metric-chart.png'),
+  promoExpand: publicAsset('images/owner-properties-test/owner-prop-thumb-villa.png'),
+  thumbForest: publicAsset('images/owner-properties-test/owner-prop-thumb-villa.png'),
+  thumbApartment: publicAsset('images/owner-properties-test/owner-prop-thumb-apartment.png'),
+  thumbLoft: publicAsset('images/owner-properties-test/owner-prop-thumb-loft.png'),
+  thumbPenthouse: publicAsset('images/owner-properties-test/owner-prop-thumb-penthouse.png'),
 }

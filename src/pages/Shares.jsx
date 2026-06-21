@@ -12,6 +12,7 @@ import SharesPropertyCard, { SharesPropertyCardSkeleton } from '../components/Sh
 import SharesListingPagination from '../components/SharesListingPagination'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
+import { publicAsset } from '../utils/publicAsset'
 import './Shares.css'
 import '../components/SharesListing.css'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -34,7 +35,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const SHARE_CARD_FALLBACK = '/images/external/shares-hero-villa.jpg'
+const SHARE_CARD_FALLBACK = publicAsset('images/external/shares-hero-villa.jpg')
 
 const Shares = () => {
   const { t } = useTranslation()

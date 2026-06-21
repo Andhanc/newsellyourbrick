@@ -1,3 +1,5 @@
+import { publicAsset } from '../utils/publicAsset'
+
 export const OAP_AMENITIES_IMAGES = {
-  sidebarInterior: '/images/oap-amenities/sidebar-interior.png',
+  sidebarInterior: publicAsset('images/oap-amenities/sidebar-interior.webp'),
 }

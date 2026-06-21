@@ -11,11 +11,6 @@ export function toOwnerTestInputDate(date) {
   return `${year}-${month}-${day}`
 }
 
-export function monthPresetLabel(date, locale) {
-  const label = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date)
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
-
 export function getDefaultOwnerTestDateRange() {
   return {
     id: 'month',
@@ -35,7 +30,7 @@ export function formatOwnerTestDateRangeLabel(range, locale) {
   return `${format(range.from)} – ${format(range.to)}`
 }
 
-export function getOwnerTestDatePresets(t, locale) {
+export function getOwnerTestDatePresets(t) {
   return [
     {
       id: 'week',
@@ -45,7 +40,7 @@ export function getOwnerTestDatePresets(t, locale) {
     },
     {
       id: 'month',
-      label: monthPresetLabel(TODAY, locale),
+      label: t('ownerTest_datePresetMonth'),
       from: toOwnerTestInputDate(MONTH_START),
       to: toOwnerTestInputDate(TODAY),
     },

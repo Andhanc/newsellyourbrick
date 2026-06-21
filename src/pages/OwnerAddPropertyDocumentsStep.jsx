@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Files,
 } from 'lucide-react'
+import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_DOCUMENT_IMAGES } from './oapDocumentImages'
 import './OwnerAddPropertyDocumentsStep.css'
 
@@ -65,8 +66,22 @@ function formatFileSize(bytes, t) {
   return t('oap_fileSizeMB', { size: (bytes / (1024 * 1024)).toFixed(1) })
 }
 
+function DocumentsJourneyGroupTitle({ title, optional = false }) {
+  const { t } = useTranslation()
+
+  return (
+    <h3 className="oap-documents-step__journey-group-title">
+      {title}
+      {optional ? (
+        <span className="oap-documents-step__optional-mark"> {t('oap_docsOptionalMark')}</span>
+      ) : null}
+    </h3>
+  )
+}
+
 function DocumentsContent({
   embedded = false,
+  journeyLayout = false,
   listingMode,
   requiredDocuments,
   additionalDocuments,
@@ -219,10 +234,16 @@ function DocumentsContent({
 
   const requiredSectionNumber = 1
   const additionalSectionNumber = 2
+  const useSectionCard = embedded && !journeyLayout
 
   const additionalSection = (
-    <div className={`oap-documents-step__section oap-documents-step__section--additional${embedded ? ' oap-documents-step__card' : ''}`}>
-      {embedded ? (
+    <div className={`oap-documents-step__section oap-documents-step__section--additional${useSectionCard ? ' oap-documents-step__card' : ''}`}>
+      {journeyLayout ? (
+        <DocumentsJourneyGroupTitle
+          title={t('oap_documentsAdditionalTitle')}
+          optional={!isDebtListing}
+        />
+      ) : embedded ? (
         <DocumentsSectionHead
           number={additionalSectionNumber}
           title={t('oap_documentsAdditionalTitle')}
@@ -352,7 +373,7 @@ function DocumentsContent({
   )
 
   const securityBanner = embedded && (
-    <div className="oap-documents-step__card oap-documents-step__card--security">
+    journeyLayout ? (
       <div className="oap-documents-step__security" role="note">
         <span className="oap-documents-step__security-icon" aria-hidden>
           <Lock size={18} strokeWidth={1.85} />
@@ -362,7 +383,19 @@ function DocumentsContent({
           <p className="oap-documents-step__security-text">{t('oap_docsSecurityText')}</p>
         </div>
       </div>
-    </div>
+    ) : (
+      <div className="oap-documents-step__card oap-documents-step__card--security">
+        <div className="oap-documents-step__security" role="note">
+          <span className="oap-documents-step__security-icon" aria-hidden>
+            <Lock size={18} strokeWidth={1.85} />
+          </span>
+          <div>
+            <strong className="oap-documents-step__security-title">{t('oap_docsSecurityTitle')}</strong>
+            <p className="oap-documents-step__security-text">{t('oap_docsSecurityText')}</p>
+          </div>
+        </div>
+      </div>
+    )
   )
 
   const body = (
@@ -374,8 +407,10 @@ function DocumentsContent({
       )}
 
       {isDebtListing ? (
-        <div className={`oap-documents-step__section oap-documents-step__section--debt${embedded ? ' oap-documents-step__card' : ''}`}>
-          {embedded ? (
+        <div className={`oap-documents-step__section oap-documents-step__section--debt${useSectionCard ? ' oap-documents-step__card' : ''}`}>
+          {journeyLayout ? (
+            <DocumentsJourneyGroupTitle title={t('oap_documentsDebtPackTitle')} />
+          ) : embedded ? (
             <DocumentsSectionHead
               number={requiredSectionNumber}
               title={t('oap_documentsDebtPackTitle')}
@@ -406,8 +441,10 @@ function DocumentsContent({
           </div>
         </div>
       ) : (
-        <div className={`oap-documents-step__section oap-documents-step__section--required${embedded ? ' oap-documents-step__card' : ''}`}>
-          {embedded ? (
+        <div className={`oap-documents-step__section oap-documents-step__section--required${useSectionCard ? ' oap-documents-step__card' : ''}`}>
+          {journeyLayout ? (
+            <DocumentsJourneyGroupTitle title={t('oap_documentsRequiredTitle')} />
+          ) : embedded ? (
             <DocumentsSectionHead
               number={requiredSectionNumber}
               title={t('oap_documentsRequiredTitle')}
@@ -517,7 +554,13 @@ function DocumentsContent({
   )
 
   if (embedded) {
-    return <div className="oap-documents-step oap-documents-step--embedded">{body}</div>
+    return (
+      <div
+        className={`oap-documents-step oap-documents-step--embedded${journeyLayout ? ' oap-documents-step--journey' : ''}`}
+      >
+        {body}
+      </div>
+    )
   }
 
   return body
@@ -552,7 +595,7 @@ export default function OwnerAddPropertyDocumentsStep(props) {
   )
 
   if (embedded) {
-    return <DocumentsContent embedded {...contentProps} />
+    return <DocumentsContent embedded journeyLayout={props.journeyLayout} {...contentProps} />
   }
 
   return (
@@ -576,9 +619,8 @@ export default function OwnerAddPropertyDocumentsStep(props) {
 
         <aside className="oap-documents-step__sidebar" aria-label={t('oap_wizardTipsTitle')}>
           <div className="oap-documents-step__sidebar-hero">
-            <img
+            <OapWizardSidebarImage
               src={OAP_DOCUMENT_IMAGES.sidebarHero}
-              alt=""
               className="oap-documents-step__sidebar-img"
             />
           </div>
