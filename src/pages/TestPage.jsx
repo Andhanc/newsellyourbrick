@@ -65,6 +65,7 @@ import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
+import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
 import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
@@ -1522,8 +1523,16 @@ function TestPage() {
         }
 
         if (res.status === 409) {
-          showNotification(json.error || 'Пользователь с таким email уже существует', 'error')
-          setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
+          showNotification(json.error || 'Конфликт данных профиля', 'error')
+          if (fieldKey === 'email') {
+            setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
+          }
+          if (fieldKey === 'phone') {
+            setProfileForm((prev) => ({
+              ...prev,
+              phone: formatPhoneForDisplayByCountry(row.phone_number ?? '', row.country ?? ''),
+            }))
+          }
           return
         }
 
@@ -3376,7 +3385,7 @@ function TestPage() {
             cabinetOverviewHiddenBehindSheet ? ' test-page__below-hero--hidden-with-sheet' : ''
           }`}
           aria-hidden={cabinetOverviewHiddenBehindSheet || undefined}
-          {...(cabinetOverviewHiddenBehindSheet ? { inert: '' } : {})}
+          {...(cabinetOverviewHiddenBehindSheet ? { inert: true } : {})}
         >
               {showBuyerCabinetSkeleton ? (
                 <BuyerCabinetBelowSkeleton
@@ -3587,6 +3596,8 @@ function TestPage() {
                   </section>
                 </aside>
               </div>
+
+              <RoleSwitchBottomCta targetRole="seller" />
                 </>
               )}
         </div>

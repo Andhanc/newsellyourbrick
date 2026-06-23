@@ -40,6 +40,7 @@ import {
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
+import { RoleSwitchButton } from '../components/RoleSwitchBottomCta'
 import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
 import {
@@ -1323,9 +1324,9 @@ export default function OwnerProfileTestPage() {
         <div className="opr-sidebar-promo">
           <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
           <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
-          <button type="button" className="opr-btn opr-btn--primary opr-btn--sm">
+          <RoleSwitchButton targetRole="buyer" className="opr-btn opr-btn--primary opr-btn--sm">
             {t('heroPitchBecomeBuyerCta')}
-          </button>
+          </RoleSwitchButton>
           <img
             className="opr-sidebar-promo__img"
             src={OPR_IMAGES.promoSidebarBuyer}

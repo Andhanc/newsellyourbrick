@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BadgeCheck, Eye, MessageCircle, ShieldCheck } from 'lucide-react'
 import { publicAsset } from '../utils/publicAsset'
+import { RoleSwitchButton } from './RoleSwitchBottomCta'
 import './OwnerAds.css'
 
 export const AD_IMAGES = {
@@ -93,9 +94,9 @@ export function OwnerBuyerAd({ className = '', imageSrc = AD_IMAGES.buyerHouse }
       </ul>
 
       <div className="oad-buyer__actions">
-        <button type="button" className="oad-buyer__button">
+        <RoleSwitchButton targetRole="buyer" className="oad-buyer__button">
           {t('ownerTest_adBuyerBecome')}
-        </button>
+        </RoleSwitchButton>
         <button type="button" className="oad-buyer__link">
           {t('ownerTest_adBuyerMore')}
         </button>

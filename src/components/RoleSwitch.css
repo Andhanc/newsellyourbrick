@@ -1,0 +1,766 @@
+.role-switch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8, 15, 30, 0.58);
+  backdrop-filter: blur(6px);
+  animation: roleSwitchFadeIn 0.22s ease-out;
+}
+
+@keyframes roleSwitchFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.role-switch-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(92vh, 720px);
+  overflow: auto;
+  border-radius: 22px;
+  background: linear-gradient(165deg, #ffffff 0%, #f3f7fb 100%);
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset;
+  animation: roleSwitchSlideUp 0.28s ease-out;
+}
+
+.role-switch-modal--wide {
+  max-width: 560px;
+}
+
+@keyframes roleSwitchSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.role-switch-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4b5563;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.role-switch-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 0;
+  min-height: 44px;
+}
+
+.role-switch-modal__header-spacer {
+  flex: 1;
+}
+
+.role-switch-modal__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.role-switch-modal__back:hover {
+  color: #334155;
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.role-switch-modal__close:hover {
+  background: #fff;
+  color: #111827;
+}
+
+/* —— Mobile bottom sheet drawer —— */
+
+.role-switch-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 24990;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(5px);
+  animation: role-switch-drawer-backdrop-in 0.28s ease-out both;
+}
+
+@keyframes role-switch-drawer-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.role-switch-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.role-switch-drawer:not(.role-switch-drawer--dragging) .role-switch-drawer__panel {
+  animation: role-switch-drawer-panel-in 0.4s cubic-bezier(0.22, 1, 0.32, 1) both;
+}
+
+.role-switch-drawer--dragging .role-switch-drawer__panel {
+  animation: none !important;
+}
+
+.role-switch-drawer__panel {
+  position: relative;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  pointer-events: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.2);
+  border-top: 1px solid rgba(10, 186, 181, 0.12);
+  touch-action: pan-y;
+}
+
+.role-switch-drawer__panel--collapsed .role-switch-drawer__scroll,
+.role-switch-drawer__panel--collapsed .role-switch-drawer__toolbar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes role-switch-drawer-panel-in {
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.role-switch-drawer__toolbar {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 4px;
+  padding:
+    max(8px, env(safe-area-inset-top, 0px))
+    max(12px, env(safe-area-inset-right, 0px))
+    4px
+    max(12px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.2s ease;
+}
+
+.role-switch-drawer__toolbar-side {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.role-switch-drawer__toolbar-side--start {
+  justify-content: flex-start;
+}
+
+.role-switch-drawer__toolbar-side--end {
+  justify-content: flex-end;
+}
+
+.role-switch-drawer__toolbar-spacer {
+  display: block;
+  width: 44px;
+  height: 34px;
+}
+
+.role-switch-drawer__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 6px 8px 6px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+
+.role-switch-drawer__back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-switch-drawer__back:active {
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+}
+
+.role-switch-drawer__drag-zone {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+  min-width: 72px;
+  padding: 4px 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.role-switch-drawer__drag-zone:active {
+  cursor: grabbing;
+}
+
+.role-switch-drawer__handle {
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.role-switch-drawer__handle-pill {
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.role-switch-drawer__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.role-switch-drawer__close:active {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.role-switch-drawer__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding:
+    16px
+    max(20px, env(safe-area-inset-right, 0px))
+    calc(20px + env(safe-area-inset-bottom, 0px))
+    max(20px, env(safe-area-inset-left, 0px));
+  transition: opacity 0.2s ease;
+}
+
+.role-switch-pitch__hero {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 22px 22px 0 0;
+  display: block;
+}
+
+.role-switch-pitch__body {
+  padding: 24px 28px 28px;
+  text-align: center;
+}
+
+.role-switch-pitch__title {
+  margin: 0 0 10px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.role-switch-pitch__text {
+  margin: 0 0 22px;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.role-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.role-switch-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.role-switch-btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #0abab5 0%, #069a96 100%);
+  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.35);
+}
+
+.role-switch-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(10, 186, 181, 0.42);
+}
+
+.role-switch-btn--ghost {
+  margin-top: 10px;
+  color: #64748b;
+  background: transparent;
+}
+
+.role-switch-btn--ghost:hover:not(:disabled) {
+  color: #334155;
+}
+
+.role-switch-setup__body {
+  padding: 28px;
+}
+
+.role-switch-setup__title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.role-switch-setup__subtitle {
+  margin: 0 0 20px;
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.role-switch-profile {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(10, 186, 181, 0.06);
+  border: 1px solid rgba(10, 186, 181, 0.14);
+}
+
+.role-switch-profile__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.role-switch-profile__label {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.role-switch-profile__value {
+  color: #0f172a;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+.role-switch-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.role-switch-field label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.role-switch-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d1d9e6;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.role-switch-field input:focus {
+  outline: none;
+  border-color: #0abab5;
+  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.18);
+}
+
+.role-switch-field__password-wrap {
+  position: relative;
+}
+
+.role-switch-field__password-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.role-switch-field__password-input {
+  padding-left: 40px;
+  padding-right: 44px;
+}
+
+.role-switch-field__password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.role-switch-field__password-toggle:active {
+  background: rgba(15, 23, 42, 0.06);
+  color: #64748b;
+}
+
+.role-switch-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 16px;
+}
+
+.role-switch-forgot__link {
+  border: none;
+  background: none;
+  padding: 4px 0;
+  color: #0abab5;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.role-switch-forgot__link:hover {
+  color: #069a96;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.role-switch-hint {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.role-switch-error {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.role-switch-cabinets {
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+}
+
+.role-switch-cabinets__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+}
+
+.role-switch-cabinets__subtitle {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #64748b;
+  text-align: center;
+}
+
+.role-switch-cabinet-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.role-switch-cabinet-card:hover:not(:disabled) {
+  border-color: #0abab5;
+  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.12);
+  transform: translateY(-1px);
+}
+
+.role-switch-cabinet-card--active {
+  border-color: #0abab5;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.08) 0%, rgba(10, 186, 181, 0.03) 100%);
+  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.1);
+}
+
+.role-switch-cabinet-card:disabled {
+  cursor: default;
+}
+
+.role-switch-cabinet-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.role-switch-cabinet-card__icon--buyer {
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.2), rgba(6, 122, 118, 0.1));
+  color: #067a76;
+}
+
+.role-switch-cabinet-card__icon--seller {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(79, 70, 229, 0.1));
+  color: #4f46e5;
+}
+
+.role-switch-cabinet-card__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-switch-cabinet-card__title {
+  margin: 0 0 4px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.role-switch-cabinet-card__desc {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.role-switch-cabinet-card__badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #067a76;
+  background: rgba(10, 186, 181, 0.14);
+}
+
+.role-switch-bottom-cta {
+  display: flex;
+  justify-content: center;
+  padding: 28px 16px 36px;
+}
+
+.role-switch-bottom-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0abab5 0%, #069a96 100%);
+  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.32);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.role-switch-bottom-cta__btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(10, 186, 181, 0.4);
+}
+
+.role-switch-bottom-cta__btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.role-switch-bottom-cta--seller .role-switch-bottom-cta__btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.32);
+}
+
+.role-switch-bottom-cta--seller .role-switch-bottom-cta__btn:hover:not(:disabled) {
+  box-shadow: 0 14px 32px rgba(99, 102, 241, 0.4);
+}
+
+.role-switch-switching-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 26000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(8, 15, 30, 0.72);
+  backdrop-filter: blur(8px);
+  animation: roleSwitchFadeIn 0.2s ease-out;
+}
+
+.role-switch-switching-overlay__spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #0abab5;
+  border-radius: 50%;
+  animation: role-switch-spin 0.75s linear infinite;
+}
+
+.role-switch-switching-overlay__text {
+  margin: 0;
+  max-width: 280px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #fff;
+  text-align: center;
+}
+
+@keyframes role-switch-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .role-switch-pitch__hero {
+    width: calc(100% + 40px);
+    max-width: none;
+    margin: 0 -20px 16px;
+    height: min(168px, 28dvh);
+    border-radius: 0;
+    object-fit: cover;
+  }
+
+  .role-switch-pitch__body {
+    padding: 4px 0 8px;
+    text-align: center;
+  }
+
+  .role-switch-pitch__title {
+    font-size: clamp(1.15rem, 4.8vw, 1.35rem);
+  }
+
+  .role-switch-pitch__text {
+    font-size: clamp(0.88rem, 3.6vw, 0.96rem);
+    margin-bottom: 18px;
+  }
+
+  .role-switch-setup__body,
+  .role-switch-cabinets {
+    padding: 0;
+  }
+
+  .role-switch-setup__title,
+  .role-switch-cabinets__title {
+    font-size: clamp(1.12rem, 4.5vw, 1.28rem);
+    padding-right: 0;
+  }
+
+  .role-switch-bottom-cta {
+    padding: 20px 12px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .role-switch-bottom-cta__btn {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-switch-drawer:not(.role-switch-drawer--dragging) .role-switch-drawer__panel,
+  .role-switch-drawer__backdrop,
+  .role-switch-overlay,
+  .role-switch-modal {
+    animation: none !important;
+  }
+}

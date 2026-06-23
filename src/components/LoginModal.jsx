@@ -6,6 +6,7 @@ import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
+import ForgotPasswordModal from './ForgotPasswordModal'
 import BuyerSellerLinkConfirmModal from './BuyerSellerLinkConfirmModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
@@ -48,6 +49,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const [registerBottomError, setRegisterBottomError] = useState('')
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
   const [showBuyerSellerLinkConfirm, setShowBuyerSellerLinkConfirm] = useState(false)
   const [pendingSellerLinkBuyerId, setPendingSellerLinkBuyerId] = useState(null)
   const [sellerRegistrationBuyerId, setSellerRegistrationBuyerId] = useState(null)
@@ -1197,7 +1199,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
 
           {isLogin && (
             <div className="login-modal__forgot">
-              <button type="button" className="login-modal__forgot-link">
+              <button
+                type="button"
+                className="login-modal__forgot-link"
+                onClick={() => setShowForgotPasswordModal(true)}
+              >
                 {t('forgotPassword')}
               </button>
             </div>
@@ -1261,6 +1267,15 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         }}
         onConfirm={handleBuyerSellerLinkConfirmed}
         email={formData.email}
+      />
+
+      <ForgotPasswordModal
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+        initialEmail={formData.email}
+        onSuccess={() => {
+          showNotification(t('forgotPassword_success'), 'success')
+        }}
       />
 
       <EmailVerificationModal

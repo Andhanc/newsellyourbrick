@@ -2622,18 +2622,28 @@ app.put('/api/users/:id', async (req, res) => {
     // Проверяем, обновляется ли email и требуется ли его подтверждение
     if (updateData.email && updateData.email !== currentUser.email) {
       const emailLower = updateData.email.toLowerCase();
-      
-      // Проверяем, не занят ли email другим пользователем
-      const existingUser = await userQueries.getByEmail(emailLower);
-      if (existingUser && existingUser.id !== parseInt(userId)) {
-        return res.status(409).json({ 
-          success: false, 
-          error: 'Пользователь с таким email уже существует' 
+
+      const sameEmailUsers = await userQueries.getAllByEmail(emailLower);
+      const emailConflict = sameEmailUsers.find((u) => u.id !== parseInt(userId, 10));
+      if (emailConflict) {
+        return res.status(409).json({
+          success: false,
+          error: 'Пользователь с таким email уже существует',
         });
       }
-      
+
       // Смена email подтверждается явным согласием на фронтенде перед сохранением.
       // Здесь пропускаем изменение дальше, оставляя серверную проверку уникальности.
+    }
+
+    if (updateData.phone_number) {
+      const phoneOwner = await userQueries.getByPhone(updateData.phone_number);
+      if (phoneOwner && phoneOwner.id !== parseInt(userId, 10)) {
+        return res.status(409).json({
+          success: false,
+          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+        });
+      }
     }
     
     // Если пароль передан, валидируем и хешируем его перед сохранением
@@ -2693,7 +2703,14 @@ app.put('/api/users/:id', async (req, res) => {
     console.error('   Сообщение:', error.message);
     console.error('   Stack:', error.stack);
     
-    if (error.message && error.message.includes('UNIQUE constraint')) {
+    if (error.message && (error.message.includes('UNIQUE constraint') || error.code === 'P2002')) {
+      const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(', ') : '';
+      if (target.includes('phone_number') || error.message.includes('phone_number')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+        });
+      }
       return res.status(409).json({ 
         success: false, 
         error: 'Пользователь с таким email или номером телефона уже существует' 
@@ -5238,6 +5255,248 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
   }
 });
 
+const isSellerCabinetRole = (role) => role === 'seller' || role === 'owner';
+const isBuyerCabinetRole = (role) => role === 'buyer' || role === 'client' || !role;
+
+function linkedRolePublicUser(u) {
+  if (!u) return null;
+  return {
+    id: u.id,
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Пользователь',
+    email: u.email,
+    role: u.role,
+    phone: u.phone_number || null,
+    country: u.country || null,
+    address: u.address || null,
+    passportNumber: u.passport_number || null,
+    identificationNumber: u.identification_number || null,
+    ...(u.hasOwnProperty('user_id_number') && u.user_id_number ? { user_id_number: u.user_id_number } : {}),
+  };
+}
+
+function buildLinkedRoleProfileFromUser(sourceUser) {
+  const firstName = (sourceUser.first_name || '').trim() || 'Пользователь';
+  return {
+    first_name: firstName,
+    last_name: sourceUser.last_name ?? null,
+    email: (sourceUser.email || '').toLowerCase(),
+    // phone_number UNIQUE — второй аккаунт с тем же email не может повторять телефон (как при link_buyer_id register)
+    phone_number: null,
+    country: sourceUser.country ?? null,
+    address: sourceUser.address ?? null,
+    passport_number: sourceUser.passport_number ?? null,
+    identification_number: sourceUser.identification_number ?? null,
+    passport_series: sourceUser.passport_series ?? null,
+    user_photo: sourceUser.user_photo ?? null,
+    passport_photo: sourceUser.passport_photo ?? null,
+    is_verified: 0,
+    is_online: 1,
+    is_blocked: 0,
+  };
+}
+
+/**
+ * GET /api/auth/linked-roles — связанные кабинеты покупателя и продавца по email
+ */
+app.get('/api/auth/linked-roles', async (req, res) => {
+  try {
+    const userIdRaw = req.query.userId;
+    const emailRaw = req.query.email;
+    let emailLower = typeof emailRaw === 'string' ? emailRaw.toLowerCase().trim() : '';
+
+    if (userIdRaw) {
+      const user = await userQueries.getById(parseInt(String(userIdRaw), 10));
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      }
+      emailLower = (user.email || '').toLowerCase();
+    }
+
+    if (!emailLower) {
+      return res.status(400).json({ success: false, error: 'Укажите userId или email' });
+    }
+
+    const rows = await userQueries.getAllByEmail(emailLower);
+    const buyer = rows.find((u) => isBuyerCabinetRole(u.role)) || null;
+    const seller = rows.find((u) => isSellerCabinetRole(u.role)) || null;
+
+    res.json({
+      success: true,
+      email: emailLower,
+      buyer: linkedRolePublicUser(buyer),
+      seller: linkedRolePublicUser(seller),
+      hasBoth: Boolean(buyer && seller),
+    });
+  } catch (error) {
+    console.error('❌ linked-roles GET:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/linked-roles/create — создать связанный кабинет (покупатель ↔ продавец)
+ */
+app.post('/api/auth/linked-roles/create', async (req, res) => {
+  try {
+    const userId = parseInt(String(req.body.userId), 10);
+    const targetRole = String(req.body.targetRole || '').toLowerCase();
+    const password = req.body.password;
+
+    if (!userId || !password || !targetRole) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите userId, targetRole и password',
+      });
+    }
+
+    if (targetRole !== 'buyer' && targetRole !== 'seller') {
+      return res.status(400).json({
+        success: false,
+        error: 'targetRole должен быть buyer или seller',
+      });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: passwordValidation.message,
+        passwordValidation: {
+          missing: passwordValidation.missing,
+          present: passwordValidation.present,
+        },
+      });
+    }
+
+    const sourceUser = await userQueries.getById(userId);
+    if (!sourceUser) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const emailLower = (sourceUser.email || '').toLowerCase();
+    if (!emailLower) {
+      return res.status(400).json({
+        success: false,
+        error: 'Для создания связанного кабинета нужен email в профиле',
+      });
+    }
+
+    const sourceRole = sourceUser.role || 'buyer';
+    const wantsBuyer = targetRole === 'buyer';
+    const wantsSeller = targetRole === 'seller';
+
+    if (wantsBuyer && !isSellerCabinetRole(sourceRole)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Кабинет покупателя можно создать только из кабинета продавца',
+      });
+    }
+    if (wantsSeller && !isBuyerCabinetRole(sourceRole)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Кабинет продавца можно создать только из кабинета покупателя',
+      });
+    }
+
+    const rows = await userQueries.getAllByEmail(emailLower);
+    const existingBuyer = rows.find((u) => isBuyerCabinetRole(u.role)) || null;
+    const existingSeller = rows.find((u) => isSellerCabinetRole(u.role)) || null;
+
+    if (wantsBuyer && existingBuyer) {
+      return res.status(409).json({
+        success: false,
+        status: 'already_exists',
+        error: 'Кабинет покупателя для этого email уже существует',
+        user: linkedRolePublicUser(existingBuyer),
+      });
+    }
+    if (wantsSeller && existingSeller) {
+      return res.status(409).json({
+        success: false,
+        status: 'already_exists',
+        error: 'Кабинет продавца для этого email уже существует',
+        user: linkedRolePublicUser(existingSeller),
+      });
+    }
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    for (const u of rows) {
+      if (u.password && u.password === hashedPassword) {
+        return res.status(400).json({
+          success: false,
+          status: 'password_same_as_other',
+          error:
+            'Пароль нового кабинета должен отличаться от пароля другого кабинета. Укажите другой пароль.',
+        });
+      }
+    }
+
+    const profileBase = buildLinkedRoleProfileFromUser(sourceUser);
+    const newUser = {
+      ...profileBase,
+      password: hashedPassword,
+      role: wantsBuyer ? 'buyer' : 'seller',
+    };
+
+    const result = await userQueries.create(newUser);
+    const createdUser = await userQueries.getById(result.lastInsertRowid);
+    if (!createdUser) {
+      return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
+    }
+
+    if (wantsSeller && isBuyerCabinetRole(sourceRole)) {
+      try {
+        await userQueries.migrateBuyerAssetsToSellerUser(sourceUser.id, createdUser.id);
+        const dep = Number(sourceUser.deposit_amount) || 0;
+        if (dep > 0) {
+          await userQueries.update(createdUser.id, { deposit_amount: dep });
+          await userQueries.update(sourceUser.id, { deposit_amount: 0 });
+        }
+      } catch (migErr) {
+        console.error('❌ Ошибка переноса данных покупателя → продавец:', migErr);
+        try {
+          await userQueries.delete(createdUser.id);
+        } catch (delErr) {
+          console.error('❌ Не удалось откатить создание продавца:', delErr);
+        }
+        return res.status(500).json({
+          success: false,
+          error: 'Не удалось перенести данные покупателя. Попробуйте позже или обратитесь в поддержку.',
+        });
+      }
+    }
+
+    const createdUserFinal = await userQueries.getById(createdUser.id);
+
+    res.status(201).json({
+      success: true,
+      user: linkedRolePublicUser(createdUserFinal),
+    });
+  } catch (error) {
+    const msg = String(error?.message || '');
+    const isUnique =
+      msg.includes('UNIQUE constraint') ||
+      error?.code === 'P2002' ||
+      msg.includes('Unique constraint failed');
+
+    if (isUnique) {
+      if (msg.includes('phone_number') || error?.meta?.target?.includes?.('phone_number')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Не удалось создать кабинет: телефон уже привязан к другому аккаунту. Повторите попытку.',
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        error: 'Аккаунт с такими данными уже существует',
+      });
+    }
+    console.error('❌ linked-roles/create:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 /**
  * POST /api/auth/email/register - Регистрация через Email
  */
@@ -5429,7 +5688,7 @@ app.post('/api/auth/email/register', async (req, res) => {
  */
 app.post('/api/auth/email/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ 
@@ -5451,11 +5710,24 @@ app.post('/api/auth/email/login', async (req, res) => {
       });
     }
 
+    const roleNorm = role ? String(role).toLowerCase() : null;
+    let loginCandidates = candidates;
+    if (roleNorm === 'buyer' || roleNorm === 'seller') {
+      loginCandidates = usersForCabinetRole(candidates, roleNorm);
+      if (!loginCandidates.length) {
+        console.log('❌ Кабинет не найден для email:', { identifier, role: roleNorm });
+        return res.status(401).json({
+          success: false,
+          error: 'Неверный email или пароль',
+        });
+      }
+    }
+
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
     /** Несколько аккаунтов с одним email (покупатель + продавец) — подбираем по паролю */
     let user = null;
-    for (const u of candidates) {
+    for (const u of loginCandidates) {
       if (!u.password) continue;
       if (u.password === hashedPassword) {
         user = u;
@@ -5464,7 +5736,7 @@ app.post('/api/auth/email/login', async (req, res) => {
     }
 
     if (!user) {
-      if (candidates.length === 1 && !candidates[0].password) {
+      if (loginCandidates.length === 1 && !loginCandidates[0].password) {
         return res.status(401).json({
           success: false,
           error:
@@ -5513,6 +5785,255 @@ app.post('/api/auth/email/login', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/** Сессии восстановления пароля (email → код + токен) */
+const passwordResetSessions = new Map();
+const PASSWORD_RESET_CODE_TTL_MS = 10 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+function generatePasswordResetCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function getEmailJsServerConfig() {
+  return {
+    serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
+    templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
+    publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || '',
+  };
+}
+
+async function sendPasswordResetEmail(email, code) {
+  const emailJsConfig = getEmailJsServerConfig();
+  if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
+    console.warn('⚠️ EmailJS не настроен — код восстановления пароля:', code);
+    return { sent: false, devCode: code };
+  }
+  const emailData = {
+    service_id: emailJsConfig.serviceId,
+    template_id: emailJsConfig.templateId,
+    user_id: emailJsConfig.publicKey,
+    template_params: {
+      to_email: email,
+      email,
+      verification_code: code,
+      code,
+      passcode: code,
+      subject: 'Восстановление пароля — Sellyourbrick',
+    },
+  };
+  await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return { sent: true };
+}
+
+function cabinetRolesForUsers(users) {
+  const roles = new Set();
+  for (const u of users) {
+    const r = u.role || 'buyer';
+    roles.add(r === 'seller' || r === 'owner' ? 'seller' : 'buyer');
+  }
+  return [...roles];
+}
+
+function usersForCabinetRole(users, role) {
+  const wantSeller = role === 'seller';
+  return users.filter((u) => {
+    const r = u.role || 'buyer';
+    const isSeller = r === 'seller' || r === 'owner';
+    return wantSeller ? isSeller : !isSeller;
+  });
+}
+
+/**
+ * POST /api/auth/email/forgot-password/send-code — отправить 4-значный код
+ */
+app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
+  try {
+    const emailRaw = req.body.email;
+    if (!emailRaw || typeof emailRaw !== 'string') {
+      return res.status(400).json({ success: false, error: 'Укажите email' });
+    }
+    const emailLower = emailRaw.toLowerCase().trim();
+    const users = await userQueries.getAllByEmail(emailLower);
+    if (!users.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'Аккаунт с таким email не найден',
+      });
+    }
+
+    const code = generatePasswordResetCode();
+    const roles = cabinetRolesForUsers(users);
+    passwordResetSessions.set(emailLower, {
+      code,
+      expiresAt: Date.now() + PASSWORD_RESET_CODE_TTL_MS,
+      resetToken: null,
+      resetTokenExpiresAt: null,
+      roles,
+    });
+
+    try {
+      const mailResult = await sendPasswordResetEmail(emailLower, code);
+      res.json({
+        success: true,
+        message: 'Код отправлен на email',
+        roles,
+        hasMultipleRoles: roles.length > 1,
+        ...(mailResult.devCode && process.env.NODE_ENV !== 'production' ? { devCode: mailResult.devCode } : {}),
+      });
+    } catch (mailErr) {
+      console.error('❌ forgot-password send email:', mailErr.message);
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({
+          success: true,
+          message: 'Email не отправлен (dev). Используйте код из ответа.',
+          roles,
+          hasMultipleRoles: roles.length > 1,
+          devCode: code,
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: 'Не удалось отправить письмо. Попробуйте позже.',
+      });
+    }
+  } catch (error) {
+    console.error('❌ forgot-password/send-code:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/email/forgot-password/verify-code — проверить 4-значный код
+ */
+app.post('/api/auth/email/forgot-password/verify-code', async (req, res) => {
+  try {
+    const emailLower = String(req.body.email || '').toLowerCase().trim();
+    const code = String(req.body.code || '').trim();
+    if (!emailLower || !code) {
+      return res.status(400).json({ success: false, error: 'Укажите email и код' });
+    }
+    if (!/^\d{4}$/.test(code)) {
+      return res.status(400).json({ success: false, error: 'Код должен содержать 4 цифры' });
+    }
+
+    const session = passwordResetSessions.get(emailLower);
+    if (!session || Date.now() > session.expiresAt) {
+      passwordResetSessions.delete(emailLower);
+      return res.status(400).json({ success: false, error: 'Код не найден или истёк. Запросите новый.' });
+    }
+    if (session.code !== code) {
+      return res.status(400).json({ success: false, error: 'Неверный код' });
+    }
+
+    const resetToken = crypto.randomBytes(24).toString('hex');
+    session.resetToken = resetToken;
+    session.resetTokenExpiresAt = Date.now() + PASSWORD_RESET_TOKEN_TTL_MS;
+
+    res.json({
+      success: true,
+      resetToken,
+      roles: session.roles,
+      hasMultipleRoles: session.roles.length > 1,
+    });
+  } catch (error) {
+    console.error('❌ forgot-password/verify-code:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/email/forgot-password/reset — установить новый пароль
+ */
+app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
+  try {
+    const emailLower = String(req.body.email || '').toLowerCase().trim();
+    const resetToken = String(req.body.resetToken || '').trim();
+    const password = req.body.password;
+    const role = req.body.role ? String(req.body.role).toLowerCase() : null;
+
+    if (!emailLower || !resetToken || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите email, токен и новый пароль',
+      });
+    }
+
+    const session = passwordResetSessions.get(emailLower);
+    if (
+      !session ||
+      !session.resetToken ||
+      session.resetToken !== resetToken ||
+      !session.resetTokenExpiresAt ||
+      Date.now() > session.resetTokenExpiresAt
+    ) {
+      return res.status(401).json({
+        success: false,
+        error: 'Сессия восстановления истекла. Запросите код заново.',
+      });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: passwordValidation.message,
+        passwordValidation: {
+          missing: passwordValidation.missing,
+          present: passwordValidation.present,
+        },
+      });
+    }
+
+    const users = await userQueries.getAllByEmail(emailLower);
+    if (!users.length) {
+      return res.status(404).json({ success: false, error: 'Аккаунт не найден' });
+    }
+
+    let targets = users;
+    if (role === 'buyer' || role === 'seller') {
+      targets = usersForCabinetRole(users, role);
+      if (!targets.length) {
+        return res.status(400).json({ success: false, error: 'Кабинет не найден для этого email' });
+      }
+    } else if (session.roles.length > 1) {
+      return res.status(400).json({
+        success: false,
+        status: 'needs_role',
+        error: 'Выберите кабинет, для которого меняете пароль',
+        roles: session.roles,
+      });
+    }
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    for (const u of targets) {
+      const others = users.filter((x) => x.id !== u.id && x.password);
+      if (others.some((x) => x.password === hashedPassword)) {
+        return res.status(400).json({
+          success: false,
+          status: 'password_same_as_other',
+          error:
+            'Пароль должен отличаться от пароля другого кабинета с этим email. Укажите другой пароль.',
+        });
+      }
+      await userQueries.update(u.id, { password: hashedPassword });
+    }
+
+    passwordResetSessions.delete(emailLower);
+
+    res.json({
+      success: true,
+      message: 'Пароль успешно обновлён',
+      updatedUserIds: targets.map((u) => u.id),
+    });
+  } catch (error) {
+    console.error('❌ forgot-password/reset:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
