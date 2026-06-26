@@ -1230,6 +1230,21 @@ body.admin-panel-active .footer .footer__upper {
   border-top: none;
 }
 
+/* Селектор языка открывается вверх — поднимаем футер над .app-layout__content (z-index: 11) */
+#site-footer.footer.footer--language-open {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+
+#site-footer.footer.footer--language-open .footer__container,
+#site-footer.footer.footer--language-open .footer__upper,
+#site-footer.footer.footer--language-open .footer__upper-right,
+#site-footer.footer.footer--language-open .footer__store-buttons,
+#site-footer.footer.footer--language-open .footer__language-selector {
+  overflow: visible;
+}
+
 /* Во время обязательного онбординга из кабинета покупателя отключаем переходы в футере. */
 body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   pointer-events: none !important;

@@ -9,6 +9,7 @@ import { isSiteUserSignedIn } from '@/utils/siteAuthGate'
 import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
 import { navigateToWallet } from '@/utils/walletNavigation'
 import { getCabinetDataPath, getCabinetProfilePath } from '@/utils/cabinetRoutes'
+import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '@/utils/sectionRoutes'
 import LeadGenCta from '@/components/LeadGenCta'
 import './MainPage.css'
 import './SectionsPage.css'
@@ -23,8 +24,9 @@ const INVESTOR_SECTIONS = [
     sectionTitleKey: 'sectionsGroupInvestorPurchase',
     items: [
       { titleKey: 'auction', path: '/auction' },
-      { titleKey: 'shares', path: '/shares' },
+      { titleKey: 'coInvestment', path: CO_INVESTMENT_PATH },
       { titleKey: 'debtsTitle', path: '/debts' },
+      { titleKey: 'testDrive', path: TEST_DRIVE_PATH },
       { titleKey: 'mapLink', path: '/map', requiresAuth: true },
     ],
   },
@@ -80,8 +82,9 @@ const SELLER_SECTIONS = [
       { titleKey: 'ownerDashboard', path: '/owner', requiresAuth: true },
       { titleKey: 'addProperty', path: '/owner/property/new', requiresAuth: true },
       { titleKey: 'auction', path: '/auction' },
-      { titleKey: 'shares', path: '/shares' },
+      { titleKey: 'coInvestment', path: CO_INVESTMENT_PATH },
       { titleKey: 'debtsTitle', path: '/debts' },
+      { titleKey: 'testDrive', path: TEST_DRIVE_PATH },
       { titleKey: 'mapLink', path: '/map', requiresAuth: true },
     ],
   },

@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { viteSeoHtmlPlugin } from './plugins/vite-seo-html.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -153,10 +154,59 @@ export default defineConfig(({ mode }) => {
       timeout: 30000,
       proxyTimeout: 30000,
     },
+    '/robots.txt': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 10000,
+      proxyTimeout: 10000,
+    },
+    '/sitemap.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-pages.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-all.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-properties': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-images': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
   };
 
   return {
     plugins: [
+      viteSeoHtmlPlugin(),
       react({
         // Используем более стабильные настройки для Railway
         jsxRuntime: 'automatic',

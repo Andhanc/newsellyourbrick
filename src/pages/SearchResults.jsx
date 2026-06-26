@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiAlertCircle } from 'react-icons/fi'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
@@ -29,6 +29,7 @@ import {
   normalizeSearchPriceFilters,
 } from '../utils/propertySearchFilters'
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
+import { getSearchResultsPropertyPath, parseSearchResultsGeoRoute } from '../utils/searchResultsGeoUrl'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -38,13 +39,14 @@ function isHiddenSoldListing(property) {
   return isPropertyListingSoldOut(property)
 }
 
-function SearchResultsGrid({ properties, onOpen }) {
+function SearchResultsGrid({ properties, onOpen, linkGeo }) {
   return (
     <div className="properties-grid property-listing-grid search-results__grid">
       {properties.map((property) => (
         <PropertyListingCard
           key={auctionListingDedupeKey(property)}
           property={property}
+          href={getSearchResultsPropertyPath(property, linkGeo)}
           onOpen={onOpen}
           showActions={false}
           pinFooter
@@ -58,6 +60,13 @@ const SearchResults = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const params = useParams()
+  const routeGeo = useMemo(
+    () => parseSearchResultsGeoRoute({ country: params.country, city: params.city }),
+    [params.country, params.city],
+  )
+  const routeCountry = routeGeo.country
+  const routeCity = routeGeo.region
   const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
@@ -91,6 +100,10 @@ const SearchResults = () => {
           .filter((property) => !isHiddenSoldListing(property))
         const bounds = getCatalogFilterBounds(formatted)
         const initialFilters = sanitizeCatalogFilters(loadCatalogFiltersFromSession(bounds), bounds)
+        if (routeCountry && routeCity) {
+          initialFilters.country = routeCountry
+          initialFilters.region = routeCity
+        }
         persistCatalogFilters(initialFilters)
         setCatalogProperties(formatted)
         setActiveFilters(initialFilters)
@@ -104,7 +117,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [routeCountry, routeCity])
 
   const filterBounds = useMemo(
     () => getCatalogFilterBounds(catalogProperties),
@@ -124,6 +137,13 @@ const SearchResults = () => {
   const groupedSections = useMemo(
     () => groupPropertiesByCatalogSection(filteredProperties, activeFilters),
     [filteredProperties, activeFilters],
+  )
+  const linkGeo = useMemo(
+    () => ({
+      country: activeFilters.country || routeCountry,
+      region: activeFilters.region || routeCity,
+    }),
+    [activeFilters.country, activeFilters.region, routeCountry, routeCity],
   )
 
   const totalUniqueCount = useMemo(() => {
@@ -152,7 +172,8 @@ const SearchResults = () => {
     const { pathname, state } = buildPropertyDetailNavigation(property, {
       auctionTab: auctionTab || undefined,
     })
-    navigate(pathname, { state })
+    const targetPath = getSearchResultsPropertyPath(property, linkGeo)
+    navigate(targetPath === getPropertyDetailPath(property) ? pathname : targetPath, { state })
   }
 
   const sanitizeActiveFilters = (nextFilters) =>
@@ -340,7 +361,7 @@ const SearchResults = () => {
                             ({section.properties.length})
                           </span>
                         </h2>
-                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} />
+                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} linkGeo={linkGeo} />
                         {index < groupedSections.length - 1 ? (
                           <div
                             className="property-listing-grid-divider"

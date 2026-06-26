@@ -74,6 +74,8 @@ const CITY_TO_COUNTRY = {
   мадрид: { countryKey: 'spain', countryLabel: 'Испания', regionKey: 'madrid', regionLabel: 'Мадрид' },
   moscow: { countryKey: 'russia', countryLabel: 'Россия', regionKey: 'moscow', regionLabel: 'Москва' },
   москва: { countryKey: 'russia', countryLabel: 'Россия', regionKey: 'moscow', regionLabel: 'Москва' },
+  minsk: { countryKey: 'belarus', countryLabel: 'Беларусь', regionKey: 'minsk', regionLabel: 'Минск' },
+  минск: { countryKey: 'belarus', countryLabel: 'Беларусь', regionKey: 'minsk', regionLabel: 'Минск' },
   'saint-petersburg': {
     countryKey: 'russia',
     countryLabel: 'Россия',
@@ -93,6 +95,7 @@ const REGION_CANONICAL = {
   barcelona: { label: 'Барселона', aliases: ['barcelona', 'барселона'] },
   madrid: { label: 'Мадрид', aliases: ['madrid', 'мадрид'] },
   moscow: { label: 'Москва', aliases: ['moscow', 'москва'] },
+  minsk: { label: 'Минск', aliases: ['minsk', 'минск'] },
   'saint-petersburg': {
     label: 'Санкт-Петербург',
     aliases: ['saint-petersburg', 'sankt-peterburg', 'санкт-петербург', 'spb', 'петербург'],
@@ -173,6 +176,11 @@ export function getCanonicalRegionLabel(regionKey = '', fallback = '') {
   const canonical = getCanonicalRegionKey(regionKey) || regionKey
   if (REGION_CANONICAL[canonical]?.label) return REGION_CANONICAL[canonical].label
   return fallback || regionKey
+}
+
+export function getCountryLabel(countryKeyOrSlug = '', fallback = '') {
+  const key = matchCountryKey(countryKeyOrSlug) || String(countryKeyOrSlug || '').trim().toLowerCase()
+  return COUNTRY_LABELS[key] || fallback || String(countryKeyOrSlug || '').trim()
 }
 
 export function isRecognizedCountry(raw = '') {

@@ -19,13 +19,13 @@ function DebtsPageFilters({
   debtBounds,
   riskStats = [],
   purchaseCounts = { auction: 0, buyNow: 0 },
-  filterOptions = { countries: [] },
+  filterOptions = { locations: [] },
 }) {
   const { t } = useTranslation()
   const [openSections, setOpenSections] = useState({
     risk: true,
     type: true,
-    region: true,
+    location: true,
     price: true,
     debt: true,
     purchase: true,
@@ -137,22 +137,40 @@ function DebtsPageFilters({
         </FilterSection>
 
         <FilterSection
-          title={t('debtsFilterRegion')}
-          open={openSections.region}
-          onToggle={() => toggleSection('region')}
+          title={t('catalogFilterLocation')}
+          open={openSections.location}
+          onToggle={() => toggleSection('location')}
         >
           <label className="debts-page-filters__select-wrap">
             <select
               className="debts-page-filters__select"
-              value={filters.region}
-              onChange={(e) => setFilter({ region: e.target.value })}
+              value={filters.country}
+              onChange={(e) => setFilter({ country: e.target.value, city: 'all' })}
             >
-              <option value="all">{t('debtsFilterAllRegions')}</option>
-              {filterOptions.countries.map((country) => (
-                <option key={country} value={country}>
-                  {country}
+              <option value="all">{t('catalogFilterAll')}</option>
+              {filterOptions.locations.map((country) => (
+                <option key={country.key} value={country.key}>
+                  {country.label}
                 </option>
               ))}
+            </select>
+            <ChevronDown size={16} className="debts-page-filters__select-icon" aria-hidden />
+          </label>
+          <label className="debts-page-filters__select-wrap">
+            <select
+              className="debts-page-filters__select"
+              value={filters.city}
+              onChange={(e) => setFilter({ city: e.target.value })}
+              disabled={!filters.country || filters.country === 'all'}
+            >
+              <option value="all">{t('catalogFilterAll')}</option>
+              {(filterOptions.locations.find((item) => item.key === filters.country)?.regions || []).map(
+                (city) => (
+                  <option key={city.key} value={city.key}>
+                    {city.label}
+                  </option>
+                ),
+              )}
             </select>
             <ChevronDown size={16} className="debts-page-filters__select-icon" aria-hidden />
           </label>

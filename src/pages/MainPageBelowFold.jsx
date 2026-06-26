@@ -10,8 +10,10 @@ import PropertyTimer from '../components/PropertyTimer'
 import { AuctionShowcaseSkeletonCards } from '../components/AuctionShowcaseSkeletonStrip'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import LandingFaqAccordion from '../components/LandingFaqAccordion'
+import SeoSpaLink from '../components/SeoSpaLink'
 import '../components/PropertyList.css'
-import { PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { CO_INVESTMENT_PATH, getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 /* После PropertyList: стили витрины из MainPage (лента карточек) гарантированно в каскаде */
 import './MainPage.css'
 import LeadGenCta from '../components/LeadGenCta'
@@ -69,14 +71,14 @@ export default function MainPageBelowFold() {
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
                 <h2 className="auction-showcase__title">
-                  <Link to="/auction?filter=auction" className="auction-showcase__title-link">
+                  <Link to="/auction/bidding" className="auction-showcase__title-link">
                     {t('auctionSectionTitle')}
                   </Link>
                 </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
-                  onClick={() => navigate('/auction?filter=auction')}
+                  onClick={() => navigate('/auction/bidding')}
                 >
                   <span className="auction-showcase__cta-text">{t('auctionSectionCta')}</span>
                   <span className="auction-showcase__cta-icon" aria-hidden>
@@ -137,9 +139,10 @@ export default function MainPageBelowFold() {
                       </button>
                     </div>
                   ) : null}
-                  <div
+                  <SeoSpaLink
+                    href={getPropertyDetailPath(apartment)}
                     className="auction-showcase-card__link"
-                    onClick={() => {
+                    onNavigate={() => {
                       handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
                     }}
                   >
@@ -187,7 +190,7 @@ export default function MainPageBelowFold() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </SeoSpaLink>
                 </div>
               )
             })
@@ -226,14 +229,14 @@ export default function MainPageBelowFold() {
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
                 <h2 className="auction-showcase__title">
-                  <Link to="/auction?filter=buy_now" className="auction-showcase__title-link">
+                  <Link to="/auction/buy-now" className="auction-showcase__title-link">
                     {t('buyNowSectionTitle')}
                   </Link>
                 </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
-                  onClick={() => navigate('/auction?filter=buy_now')}
+                  onClick={() => navigate('/auction/buy-now')}
                 >
                   <span className="auction-showcase__cta-text">{t('buyNowSectionCta')}</span>
                   <span className="auction-showcase__cta-icon" aria-hidden>
@@ -285,9 +288,10 @@ export default function MainPageBelowFold() {
                       </button>
                     </div>
                   ) : null}
-                  <div
+                  <SeoSpaLink
+                    href={getPropertyDetailPath(villa)}
                     className="auction-showcase-card__link"
-                    onClick={() => {
+                    onNavigate={() => {
                       handlePropertyClick('villa', villa.id, false, false, villa)
                     }}
                   >
@@ -334,7 +338,7 @@ export default function MainPageBelowFold() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </SeoSpaLink>
                 </div>
               )
             })
@@ -415,9 +419,10 @@ export default function MainPageBelowFold() {
 
                 return (
                   <div key={flat.id} className="auction-showcase-card">
-                    <div
+                    <SeoSpaLink
+                      href={getPropertyDetailPath(flat)}
                       className="auction-showcase-card__link"
-                      onClick={() => {
+                      onNavigate={() => {
                         handlePropertyClick('debt', flat.id, false, hasTimer, flat)
                       }}
                     >
@@ -480,7 +485,7 @@ export default function MainPageBelowFold() {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </SeoSpaLink>
                   </div>
                 )
               })
@@ -518,7 +523,7 @@ export default function MainPageBelowFold() {
               <div className="auction-showcase__title-row">
                 <h2 className="auction-showcase__title">
                   <Link
-                    to="/shares"
+                    to={CO_INVESTMENT_PATH}
                     className="auction-showcase__title-link"
                     onClick={(e) => {
                       if (!ensureCanOpenProperty()) {
@@ -538,7 +543,7 @@ export default function MainPageBelowFold() {
                       showPropertyAuthRequiredToast()
                       return
                     }
-                    navigate('/shares')
+                    navigate(CO_INVESTMENT_PATH)
                   }}
                 >
                   <span className="auction-showcase__cta-text">{t('fractionalSectionCta')}</span>
@@ -594,22 +599,27 @@ export default function MainPageBelowFold() {
                     (totalShares > 0 ? totalPrice / totalShares : 0)
                 )
 
+                const sharePath = getCoInvestmentDetailPath({
+                  id: townhouse.id,
+                  property_type:
+                    townhouse.property_type || townhouse.propertyType || 'apartment',
+                  slug: townhouse.slug,
+                })
+
                 return (
                   <div
                     key={townhouse.id}
                     className={`auction-showcase-card${isSoldOut ? ' auction-showcase-card--share-sold-out' : ''}`}
                   >
-                    <div
+                    <SeoSpaLink
+                      href={sharePath}
                       className="auction-showcase-card__link"
-                      onClick={() => {
+                      onNavigate={() => {
                         if (!ensureCanOpenProperty()) {
                           showPropertyAuthRequiredToast()
                           return
                         }
-                        const propertyType =
-                          townhouse.property_type || townhouse.propertyType || 'apartment'
-                        const shareId = `${propertyType}-${townhouse.id}`
-                        navigate(`/shares/${shareId}`)
+                        navigate(sharePath)
                       }}
                     >
                       <div className="auction-showcase-card__surface">
@@ -680,7 +690,7 @@ export default function MainPageBelowFold() {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </SeoSpaLink>
                   </div>
                 )
               })
@@ -748,13 +758,9 @@ export default function MainPageBelowFold() {
         {getPropertyTypes.map((type) => {
           const IconComponent = type.icon
           const isActive = activeCategory === type.label
-          return (
-            <button
-              type="button"
-              className={`categories__item ${isActive ? 'categories__item--active' : ''}`}
-              key={`${type.label}-${i18n.language}`}
-              onClick={() => handleCategoryClick(type.label)}
-            >
+          const className = `categories__item ${isActive ? 'categories__item--active' : ''}`
+          const content = (
+            <>
               <span className="categories__icon">
                 {type.image ? (
                   <img loading="lazy" 
@@ -767,6 +773,28 @@ export default function MainPageBelowFold() {
                 )}
               </span>
               <span className="categories__label">{type.displayLabel}</span>
+            </>
+          )
+          return type.href ? (
+            <SeoSpaLink
+              href={type.href}
+              className={className}
+              key={`${type.label}-${i18n.language}`}
+              onClick={(e) => {
+                e.preventDefault()
+                handleCategoryClick(type.label)
+              }}
+            >
+              {content}
+            </SeoSpaLink>
+          ) : (
+            <button
+              type="button"
+              className={className}
+              key={`${type.label}-${i18n.language}`}
+              onClick={() => handleCategoryClick(type.label)}
+            >
+              {content}
             </button>
           )
         })}
@@ -784,16 +812,14 @@ export default function MainPageBelowFold() {
           (filteredProperties?.recommended || filteredRecommended).map((property, index) => {
             return (
               <div key={property.id} className="property-card">
-                <div 
+                <SeoSpaLink
+                  href={getPropertyDetailPath(property)}
                   className="property-link"
-                  onClick={() => {
-                    // hasTimer определяется только по данным объекта, не зависит от индекса
+                  onNavigate={() => {
                     const hasTimer = property.isAuction === true && property.endTime != null && property.endTime !== ''
-                    // showTimer используется только для визуального отображения таймера
                     const showTimer = index % 2 === 1 && hasTimer
                     handlePropertyClick('recommended', property.id, !showTimer, hasTimer, property)
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
                   <div className="property-image-container">
                     <img loading="lazy" 
@@ -863,7 +889,7 @@ export default function MainPageBelowFold() {
                       </>
                     )}
                   </div>
-                </div>
+                </SeoSpaLink>
               </div>
             )
           })
@@ -883,16 +909,14 @@ export default function MainPageBelowFold() {
           (filteredProperties?.nearby || filteredNearby).map((property, index) => {
             return (
               <div key={property.id} className="property-card">
-                <div 
+                <SeoSpaLink
+                  href={getPropertyDetailPath(property)}
                   className="property-link"
-                  onClick={() => {
-                    // hasTimer определяется только по данным объекта, не зависит от индекса
+                  onNavigate={() => {
                     const hasTimer = property.isAuction === true && property.endTime != null && property.endTime !== ''
-                    // showTimer используется только для визуального отображения таймера
                     const showTimer = index % 2 === 1 && hasTimer
                     handlePropertyClick('nearby', property.id, !showTimer, hasTimer, property)
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
                   <div className="property-image-container">
                     <img loading="lazy" 
@@ -965,7 +989,7 @@ export default function MainPageBelowFold() {
                       </>
                     )}
                   </div>
-                </div>
+                </SeoSpaLink>
               </div>
             )
           })

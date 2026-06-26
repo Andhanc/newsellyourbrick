@@ -19,7 +19,7 @@ import {
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
-import { auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
@@ -28,6 +28,7 @@ const MOBILE_BREAKPOINT = 768
 const PropertyListingCard = ({
   property,
   onOpen,
+  href: hrefOverride = null,
   showActions = false,
   showFavorite = true,
   showDescription = true,
@@ -207,9 +208,11 @@ const PropertyListingCard = ({
     ) : null
 
   const handleCardClick = (e) => {
-    if (e.target.closest('button') || e.target.closest('a')) return
+    if (e.target.closest('button') || e.target.closest('a.property-card__overlay-link')) return
     onOpen?.(property)
   }
+
+  const detailHref = hrefOverride || (property ? getPropertyDetailPath(property) : '#')
 
   const cardClassName = [
     'property-card',
@@ -220,7 +223,20 @@ const PropertyListingCard = ({
     .join(' ')
 
   return (
-    <div className={cardClassName} onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+    <a
+      href={detailHref}
+      className={cardClassName}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        if (e.target.closest('button')) {
+          e.preventDefault()
+          return
+        }
+        if (!onOpen) return
+        e.preventDefault()
+        handleCardClick(e)
+      }}
+    >
       {isAuctionEndedCard ? (
         <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
           <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
@@ -506,7 +522,7 @@ const PropertyListingCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </a>
   )
 }
 

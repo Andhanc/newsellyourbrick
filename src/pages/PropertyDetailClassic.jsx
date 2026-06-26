@@ -51,6 +51,8 @@ import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import PropertyDetailTestDrivePromo from '../components/PropertyDetailTestDrivePromo'
 import PageBackButton from '../components/PageBackButton'
+import PropertyGeoLinks from '../components/PropertyGeoLinks'
+import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { getCabinetProfilePath } from '../utils/cabinetRoutes'
 import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
@@ -6077,8 +6079,9 @@ function PropertyDetailClassic({
             : ''
         }`}
       >
-        <div className="property-detail-header__container">
+        <div className="property-detail-header__container property-detail-header__container--with-geo">
           <PageBackButton onClick={handleBackClick} />
+          <PropertyGeoLinks property={displayProperty} />
           {isAuctionLayout ? (
             <div
               className={`property-detail-header__auction-title${
@@ -6765,6 +6768,8 @@ function PropertyDetailClassic({
             )}
           </div>
         </div>
+
+        <PropertyDetailInternalLinks property={displayProperty} />
       </div>
 
       {/* Модальное окно истории ставок для всех объектов */}

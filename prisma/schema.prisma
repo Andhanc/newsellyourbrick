@@ -19,6 +19,8 @@ model administrators {
   can_access_chat              Int?             @default(0)
   can_access_objects           Int?             @default(0)
   can_access_access_management Int?             @default(0)
+  can_access_seo               Int?             @default(0)
+  seo_role                     String?
   created_by                   Int?
   created_at                   DateTime?        @default(now())
   updated_at                   DateTime?        @default(now())
@@ -308,6 +310,7 @@ model properties {
   auction_minimum_bid    Float?
   /// Только участники закрытого клуба (VIP) видят лот в аукционе.
   private_club_only      Int?      @default(0)
+  slug                   String?   @unique
   users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id, moderation_status], map: "idx_properties_user_status")
@@ -399,6 +402,8 @@ model properties_apartments {
   test_timer_duration    Int?
   /// Только участники закрытого клуба (VIP) видят лот в аукционе.
   private_club_only      Int?    @default(0)
+  /// ЧПУ для SEO: villa-costa-brava-123 (immutable после публикации)
+  slug                   String? @unique
   users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([country], map: "idx_apartments_country")
@@ -489,6 +494,8 @@ model properties_houses {
   test_timer_duration    Int?
   /// Только участники закрытого клуба (VIP) видят лот в аукционе.
   private_club_only      Int?    @default(0)
+  /// ЧПУ для SEO: villa-costa-brava-123 (immutable после публикации)
+  slug                   String? @unique
   users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([country], map: "idx_houses_country")
@@ -857,4 +864,63 @@ model live_chat_messages {
   live_chat_sessions live_chat_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([session_id, id], map: "idx_live_chat_messages_session")
+}
+
+model seo_page_overrides {
+  id                 Int       @id @default(autoincrement())
+  path               String    @unique(map: "sqlite_autoindex_seo_page_overrides_1")
+  page_type          String?
+  title              String?
+  meta_description   String?
+  h1                 String?
+  canonical_path     String?
+  robots_index       Int?      @default(1)
+  target_keywords    String?
+  seo_notes          String?
+  og_title           String?
+  og_description     String?
+  og_image           String?
+  twitter_card       String?   @default("summary_large_image")
+  sitemap_include    Int?      @default(1)
+  sitemap_priority   Float?
+  sitemap_changefreq String?
+  sitemap_lastmod    DateTime?
+  updated_at         DateTime? @default(now())
+  updated_by         String?
+
+  @@index([page_type], map: "idx_seo_page_overrides_type")
+  @@index([updated_at], map: "idx_seo_page_overrides_updated")
+}
+
+model seo_redirects {
+  id          Int       @id @default(autoincrement())
+  from_path   String    @unique(map: "sqlite_autoindex_seo_redirects_1")
+  to_path     String
+  status_code Int       @default(301)
+  is_active   Int?      @default(1)
+  created_at  DateTime? @default(now())
+  created_by  String?
+
+  @@index([is_active], map: "idx_seo_redirects_active")
+}
+
+model seo_templates {
+  id                   Int       @id @default(autoincrement())
+  page_type            String    @unique(map: "sqlite_autoindex_seo_templates_1")
+  title_template       String?
+  description_template String?
+  h1_template          String?
+  updated_at           DateTime? @default(now())
+  updated_by           String?
+}
+
+model seo_page_history {
+  id         Int       @id @default(autoincrement())
+  path       String
+  snapshot   String
+  changed_by String?
+  changed_at DateTime? @default(now())
+  action     String?   @default("update")
+
+  @@index([path, changed_at], map: "idx_seo_page_history_path")
 }

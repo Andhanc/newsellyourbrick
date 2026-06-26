@@ -17,8 +17,18 @@ import PropertyDetailClassicSkeleton from './PropertyDetailClassicSkeleton'
 import {
   normalizePropertyTypeForDetailQuery,
   normalizePropertyTypeQueryParam,
+  getPropertyDetailPath,
 } from '../utils/propertyDetailUrl'
+import {
+  getPropertySlugFromRecord,
+  isNumericPropertyRouteParam,
+  parseIdFromPropertySlug,
+  propertyTypeHintFromSlug,
+} from '../utils/propertySlug'
 import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../utils/propertySourceTable'
+import { usePageSeoOverride } from '../context/PageSeoContext'
+import NotFoundPage from '../components/NotFoundPage'
+import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -33,7 +43,7 @@ function normalizePropertyDetailType(prop) {
 // - таймер аукциона
 // - блок с аукционной информацией и кнопкой «История ставок»
 const PropertyDetailPage = () => {
-  const { id } = useParams()
+  const { slugOrId: routeParam } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const { i18n, t } = useTranslation()
@@ -41,30 +51,42 @@ const PropertyDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+
+  const routeId = routeParam ?? ''
+  const resolvedNumericId = useMemo(() => parseIdFromPropertySlug(routeId), [routeId])
+  const apiPropertyKey = useMemo(() => {
+    if (isNumericPropertyRouteParam(routeId)) return routeId
+    return routeId
+  }, [routeId])
 
   /** При совпадающих numeric id в properties_apartments и properties_houses API должен получить property_type. */
   const disambigPropertyType = useMemo(() => {
     const qs = new URLSearchParams(location.search || '')
     const fromUrl = normalizePropertyTypeQueryParam(qs.get('property_type'))
     if (fromUrl) return fromUrl
+    const fromSlug = propertyTypeHintFromSlug(routeId)
+    if (fromSlug) return fromSlug
     const sp = location.state?.property
-    if (sp != null && id != null && String(sp.id) === String(id)) {
+    if (sp != null && resolvedNumericId != null && String(sp.id) === String(resolvedNumericId)) {
       return normalizePropertyTypeForDetailQuery(sp)
     }
     return ''
-  }, [location.search, location.state?.property, id])
+  }, [location.search, location.state?.property, routeId, resolvedNumericId])
 
   const propertyFromState =
     location.state?.property != null &&
-    id != null &&
-    String(location.state.property.id) === String(id)
+    resolvedNumericId != null &&
+    String(location.state.property.id) === String(resolvedNumericId)
       ? location.state.property
       : null
   const initializedFromStateRef = useRef(false)
 
   useEffect(() => {
     initializedFromStateRef.current = false
-  }, [id])
+    setNotFound(false)
+    setError(null)
+  }, [routeId])
 
   useEffect(() => {
     const fromState = location.state?.from
@@ -79,6 +101,20 @@ const PropertyDetailPage = () => {
     }
   }, [location.pathname, location.search, location.state])
   
+  const propertySeo = useMemo(() => {
+    if (!property) return null
+    const base = buildPropertyPageSeo(property, t, i18n.language)
+    if (!base) return null
+    const { image } = normalizePropertyMediaFields(property)
+    return {
+      ...base,
+      canonicalPath: location.pathname.split('?')[0],
+      ogImage: image || undefined,
+      ogType: 'product',
+    }
+  }, [property, t, i18n.language, location.pathname])
+  usePageSeoOverride(propertySeo)
+
   useEffect(() => {
     const abortController = new AbortController()
     let isActive = true
@@ -94,7 +130,7 @@ const PropertyDetailPage = () => {
       }
 
       // Загружаем из API (всегда загружаем актуальные данные, включая резервацию)
-      if (id) {
+      if (apiPropertyKey) {
         try {
           setIsLoading(true)
           const lang = (i18n.language || 'ru').split('-')[0]
@@ -102,7 +138,7 @@ const PropertyDetailPage = () => {
           if (disambigPropertyType) params.set('property_type', disambigPropertyType)
           const viewerId = getStoredNumericUserId()
           if (viewerId != null) params.set('viewer_user_id', String(viewerId))
-          const response = await fetch(`${API_BASE_URL}/properties/${id}?${params.toString()}`, {
+          const response = await fetch(`${API_BASE_URL}/properties/${encodeURIComponent(apiPropertyKey)}?${params.toString()}`, {
             signal: abortController.signal,
           })
           if (response.status === 403) {
@@ -120,10 +156,23 @@ const PropertyDetailPage = () => {
             if (isActive) setError('Ошибка при загрузке объявления')
             return
           }
+          if (response.status === 404) {
+            if (isActive) setNotFound(true)
+            return
+          }
           if (response.ok) {
             const result = await response.json()
             if (result.success && result.data) {
               const prop = result.data
+              const isOwnerContext =
+                location.pathname.includes('/owner') || location.pathname.includes('/edit')
+              if (
+                String(prop.moderation_status || '').toLowerCase() !== 'approved' &&
+                !isOwnerContext
+              ) {
+                if (isActive) setNotFound(true)
+                return
+              }
               
               // Обрабатываем фотографии (включая legacy форматы photos/images)
               const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
@@ -326,8 +375,16 @@ const PropertyDetailPage = () => {
               }
               if (isActive) {
                 setProperty(formattedProperty)
+                const canonicalSlug = getPropertySlugFromRecord(prop)
+                if (canonicalSlug && isNumericPropertyRouteParam(routeId)) {
+                  const canonicalPath = getPropertyDetailPath({ ...prop, slug: canonicalSlug }, {
+                    classic: new URLSearchParams(location.search || '').get('classic') === '1',
+                  })
+                  navigate(canonicalPath, { replace: true, state: location.state })
+                  return
+                }
                 const ptForUrl = normalizePropertyTypeForDetailQuery(prop)
-                if (ptForUrl && !disambigPropertyType) {
+                if (ptForUrl && !disambigPropertyType && isNumericPropertyRouteParam(routeId)) {
                   const qs = new URLSearchParams(location.search || '')
                   if (!normalizePropertyTypeQueryParam(qs.get('property_type'))) {
                     qs.set('property_type', ptForUrl)
@@ -339,7 +396,7 @@ const PropertyDetailPage = () => {
                 }
               }
             } else {
-              if (isActive) setError('Объявление не найдено')
+              if (isActive) setNotFound(true)
             }
           } else {
             if (isActive) setError('Ошибка при загрузке объявления')
@@ -362,7 +419,11 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state])
+  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state])
+
+  if (notFound) {
+    return <NotFoundPage />
+  }
 
   if (isLoading && !property && !error) {
     return <PropertyDetailClassicSkeleton />

@@ -2,6 +2,7 @@ import { getMapPriceBounds } from './mapPageFilters'
 import { hasBuyNowOption } from './hasBuyNowOption'
 import { getEffectiveAuctionEndTime } from './auctionReminderBounds'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
+import { buildLocationOptionsFromProperties, parsePropertyLocation } from './propertySearchLocation'
 
 export const EMPTY_DEBTS_FILTERS = {
   propertyType: 'все',
@@ -11,7 +12,8 @@ export const EMPTY_DEBTS_FILTERS = {
   maxPrice: '',
   minDebt: '',
   maxDebt: '',
-  region: 'all',
+  country: 'all',
+  city: 'all',
   showAuction: true,
   showBuyNow: true,
   timeRemaining: 'all',
@@ -71,13 +73,9 @@ export function getDebtsDebtBounds(properties = []) {
 }
 
 export function getDebtsFilterOptions(properties = []) {
-  const countries = new Set()
-  for (const property of properties) {
-    const country = getPropertyCountry(property)
-    if (country) countries.add(country)
-  }
+  const locations = buildLocationOptionsFromProperties(properties)
   return {
-    countries: [...countries].sort((a, b) => a.localeCompare(b)),
+    locations,
   }
 }
 
@@ -98,7 +96,8 @@ export function countActiveDebtsFilters(filters = EMPTY_DEBTS_FILTERS) {
   else if (filters.risk && filters.risk !== 'all') count += 1
   if (filters.minPrice !== '' || filters.maxPrice !== '') count += 1
   if (filters.minDebt !== '' || filters.maxDebt !== '') count += 1
-  if (filters.region && filters.region !== 'all') count += 1
+  if (filters.country && filters.country !== 'all') count += 1
+  if (filters.city && filters.city !== 'all') count += 1
   if (!filters.showAuction || !filters.showBuyNow) count += 1
   return count
 }
@@ -197,19 +196,17 @@ function matchesDebt(property, filters) {
   return true
 }
 
-function getPropertyCountry(property) {
-  const country = (property.country || '').trim()
-  if (country) return country
-  const location = (property.location || '').trim()
-  if (!location) return null
-  return location.split(',')[0]?.trim() || null
-}
+function matchesLocation(property, { country, city }) {
+  const hasCountry = country && country !== 'all'
+  const hasCity = city && city !== 'all'
+  if (!hasCountry && !hasCity) return true
 
-function matchesRegion(property, region) {
-  if (!region || region === 'all') return true
-  const country = getPropertyCountry(property)
-  if (!country) return false
-  return country.toLowerCase() === region.toLowerCase()
+  const parsed = parsePropertyLocation(property)
+  if (!parsed) return false
+
+  if (hasCountry && parsed.countryKey !== country) return false
+  if (hasCity && parsed.regionKey !== city) return false
+  return true
 }
 
 function matchesPurchaseMethod(property, filters) {
@@ -275,7 +272,7 @@ export function applyDebtsPageFilters(properties = [], filters = EMPTY_DEBTS_FIL
       matchesRisk(property, filters) &&
       matchesPrice(property, filters) &&
       matchesDebt(property, filters) &&
-      matchesRegion(property, filters.region) &&
+      matchesLocation(property, filters) &&
       matchesPurchaseMethod(property, filters) &&
       matchesTimeRemaining(property, filters.timeRemaining) &&
       matchesYield(property, filters.yieldRange),

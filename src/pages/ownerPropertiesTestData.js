@@ -301,5 +301,5 @@ export function getOwnerTestProperty(propertyId) {
 }
 
 export function getOwnerPropertyAnalyticsPath(propertyId) {
-  return `/owner-test?view=property-analytics&propertyId=${encodeURIComponent(propertyId)}`
+  return `/owner-test/property-analytics/${encodeURIComponent(propertyId)}`
 }

@@ -1291,6 +1291,11 @@
   outline: none;
 }
 
+a.categories__item {
+  text-decoration: none;
+  color: inherit;
+}
+
 .categories__icon {
   display: inline-flex;
   align-items: center;
@@ -1550,13 +1555,15 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.property-link {
+.property-link,
+a.property-link {
   display: flex;
   flex-direction: column;
   color: inherit;
   text-decoration: none;
   height: 100%;
   flex: 1;
+  cursor: pointer;
 }
 
 .property-image-container {
@@ -7417,11 +7424,14 @@
   border-radius: 18px;
 }
 
-.auction-showcase-card__link {
+.auction-showcase-card__link,
+a.auction-showcase-card__link {
   display: flex;
   flex-direction: column;
   cursor: pointer;
   height: 100%;
+  text-decoration: none;
+  color: inherit;
 }
 
 .auction-showcase-card__surface {

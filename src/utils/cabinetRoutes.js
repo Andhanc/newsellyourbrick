@@ -44,14 +44,20 @@ export function getCabinetProfilePath(role = readStoredUserRole()) {
 
 /** Персональные данные и документы. */
 export function getCabinetDataPath(role = readStoredUserRole()) {
-  if (isSellerCabinetRole(role)) return '/owner-test?view=profile'
+  if (isSellerCabinetRole(role)) return '/owner-test/profile'
   return '/profile?data=1'
+}
+
+/** Кошелёк / депозит: покупатель — /wallet, продавец — кабинет owner-test. */
+export function getCabinetWalletPath(role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) return '/owner-test/wallet'
+  return '/wallet'
 }
 
 /** Ссылка на поле в разделе «Данные» (например из VerificationToast). */
 export function getCabinetDataFieldPath(field, role = readStoredUserRole()) {
   const encoded = encodeURIComponent(field)
-  if (isSellerCabinetRole(role)) return `/owner-test?view=profile&highlight=${encoded}`
+  if (isSellerCabinetRole(role)) return `/owner-test/profile?highlight=${encoded}`
   return `/profile?data=1&highlight=${encoded}`
 }
 
@@ -70,7 +76,7 @@ export function isCabinetProfilePath(pathname, role = readStoredUserRole()) {
 export function isCabinetDataPath(pathname, search = '', role = readStoredUserRole()) {
   const params = new URLSearchParams(search)
   if (isSellerCabinetRole(role)) {
-    return pathname === '/owner-test' && params.get('view') === 'profile'
+    return pathname === '/owner-test/profile' || (pathname === '/owner-test' && params.get('view') === 'profile')
   }
   return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('data') === '1'
 }

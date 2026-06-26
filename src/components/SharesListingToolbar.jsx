@@ -41,14 +41,16 @@ function SharesListingToolbar({
 }) {
   const { t } = useTranslation()
 
+  const locations = filterOptions.locations || []
   const countryOptions = [
     { value: 'all', labelKey: 'sharesFilterAllCountries' },
-    ...filterOptions.countries.map((country) => ({ value: country, label: country })),
+    ...locations.map((country) => ({ value: country.key, label: country.label })),
   ]
 
+  const selectedCountry = locations.find((country) => country.key === filters.country)
   const cityOptions = [
     { value: 'all', labelKey: 'sharesFilterAllCities' },
-    ...filterOptions.cities.map((city) => ({ value: city, label: city })),
+    ...((selectedCountry?.regions || []).map((city) => ({ value: city.key, label: city.label }))),
   ]
 
   const setFilter = (key, value) => {
@@ -72,7 +74,9 @@ function SharesListingToolbar({
           id="shares-filter-country"
           label={t('sharesFilterCountry')}
           value={filters.country}
-          onChange={(value) => setFilter('country', value)}
+          onChange={(value) => {
+            onFiltersChange({ ...filters, country: value, city: 'all' })
+          }}
           options={countryOptions}
           t={t}
         />

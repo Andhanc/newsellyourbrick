@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNewsArticleTocFixed } from '@/hooks/useNewsArticleTocFixed'
 import {
   getNewsArticleScrollOffsetPx,
@@ -11,6 +12,10 @@ import PageBackButton from '@/components/PageBackButton'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
 import NewsArticleBody from '@/components/news/NewsArticleBody'
 import { fetchArticleBySlug } from '@/services/newsApi'
+import { usePageSeoOverride } from '@/context/PageSeoContext'
+import NotFoundPage from '@/components/NotFoundPage'
+import { buildNewsArticlePageSeo } from '@/utils/pageSeoBuilders'
+import NewsCommercialLinks from '@/components/NewsCommercialLinks'
 import {
   getMainScrollEl,
   pickActiveIdByMainScroll,
@@ -67,6 +72,13 @@ export default function NewsArticlePage() {
       cancelled = true
     }
   }, [slug])
+
+  const { t: tSeo } = useTranslation()
+  const articleSeo = useMemo(
+    () => (article ? buildNewsArticlePageSeo(article, tSeo) : null),
+    [article, tSeo],
+  )
+  usePageSeoOverride(articleSeo)
 
   const sectionIds = article?.sections?.map((s) => s.id).filter(Boolean) ?? []
 
@@ -166,23 +178,7 @@ export default function NewsArticlePage() {
   }
 
   if (error || !article) {
-    return (
-      <div className="news-page news-page--article">
-        <Header />
-        <main className="news-article-page__main">
-          <div ref={stickyHeadRef} className="news-article-page__sticky-head">
-            <div ref={toolbarRef} className="news-article-page__toolbar">
-              <PageBackButton
-                className="news-article-page__back-btn"
-                onClick={goToNewsList}
-              />
-            </div>
-          </div>
-          <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
-          <p className="news-article-page__status">{error || 'Статья не найдена'}</p>
-        </main>
-      </div>
-    )
+    return <NotFoundPage />
   }
 
   const hasToc = (article.sections || []).length > 0
@@ -267,6 +263,8 @@ export default function NewsArticlePage() {
             </div>
 
             <NewsArticleBody body={article.body} />
+
+            <NewsCommercialLinks />
 
             <p className="news-article-page__back-wrap">
               <Link to="/news" className="news-article-page__back">

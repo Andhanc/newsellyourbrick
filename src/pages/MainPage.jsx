@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
 import {
   FiSearch,
@@ -51,6 +52,7 @@ import {
 } from 'react-icons/pi'
 import PropertySearchBlock from '../components/PropertySearchBlock'
 import LandingModelsFolders from '../components/LandingModelsFolders'
+import HomeKeySectionsNav from '../components/HomeKeySectionsNav'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
@@ -84,6 +86,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
+import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
 import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
@@ -112,13 +115,13 @@ function asFiniteNumberOrNull(value) {
 
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
-  { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', linkHref: '/auction?filter=auction', projects: [
+  { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', linkHref: '/auction/bidding', projects: [
     { id: 'ab1', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Аукцион недвижимости' },
     { id: 'ab2', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Торги объектами' },
     { id: 'ab3', image: '/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg', title: 'Концентрация спроса' },
     { id: 'ab4', image: '/images/external/photo-1600566753190-17f0baa2a6c3-9c1606daed.jpg', title: 'Рыночные ставки' },
   ] },
-  { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', linkHref: '/auction?filter=buy_now', projects: [
+  { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', linkHref: '/auction/buy-now', projects: [
     { id: 'ip1', image: '/images/external/photo-1560448204-e02f11c3d0e2-5b957100f2.jpg', title: 'Сделка по цене' },
     { id: 'ip2', image: '/images/external/photo-1484154218962-a197022b5858-7367c16227.jpg', title: 'Ликвидность сейчас' },
     { id: 'ip3', image: '/images/external/photo-1600596542815-ffad4c1539a9-514a2414cc.jpg', title: 'Без ожидания' },
@@ -136,7 +139,7 @@ const landingFolderDataBase = [
     { id: 'db3', image: '/images/external/photo-1554224154-22dec7ec8818-ee3fb0cdfa.jpg', title: 'Структура сделки' },
     { id: 'db4', image: '/images/external/photo-1526304640581-d334cdbbf45e-d7bba8f22f.jpg', title: 'Доходность и сроки' },
   ] },
-  { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', linkHref: '/shares', projects: [
+  { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', linkHref: CO_INVESTMENT_PATH, projects: [
     { id: 'fo1', image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg', title: 'Долевое участие' },
     { id: 'fo2', image: '/images/external/photo-1545324418-cc1a3fa10c00-d04a952c51.jpg', title: 'Премиальные активы' },
     { id: 'fo3', image: '/images/external/photo-1503387762-592deb58ef4e-c6ab278a57.jpg', title: 'Co-investment' },
@@ -2014,10 +2017,10 @@ function MainPage() {
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
-      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png' },
-      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png' },
-      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png' },
-      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png' },
+      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
+      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
+      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
+      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
   ], [t, i18n.language])
   
   const navigationItems = useMemo(() => [
@@ -2047,7 +2050,7 @@ function MainPage() {
     setActiveCategory(categoryLabel)
     
     // Обновляем URL с параметрами фильтра
-    navigate(`/auction?category=${categoryLabel}`, { replace: true })
+    navigate(buildAuctionFilterPath({ categorySlug: legacyCategoryToSlug(categoryLabel) }), { replace: true })
 
     setTimeout(() => {
       // Фильтруем объявления по типу
@@ -2694,6 +2697,8 @@ function MainPage() {
           />
         </div>
       </section>
+
+      <HomeKeySectionsNav />
 
       {/* Блок подборки недвижимости */}
       <PropertySearchBlock />

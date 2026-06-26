@@ -9,6 +9,7 @@ import {
   isCabinetProfilePath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
+import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
 
 /**
  * Бургер-панель навигации (как на /auction). Для highlight «умный помощник» передайте
@@ -34,8 +35,9 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
     return {
       home: pathname === '/',
       auction: starts('/auction') || pathname === '/main',
-      shares: starts('/shares'),
+      shares: starts(CO_INVESTMENT_PATH) || starts('/shares'),
       debts: starts('/debts'),
+      testDrive: starts(TEST_DRIVE_PATH),
       chat: managerChatHighlighted,
       bonuses: starts('/bonuses'),
       map: starts('/map'),
@@ -150,11 +152,11 @@ export default function SiteNavDrawer({
                   className={`menu-dropdown__item${drawerMenuActive.shares ? ' menu-dropdown__item--active' : ''}`}
                   aria-current={drawerMenuActive.shares ? 'page' : undefined}
                   onClick={() => {
-                    navigate('/shares')
+                    navigate(CO_INVESTMENT_PATH)
                     closeAfterNav()
                   }}
                 >
-                  <span>{t('shares')}</span>
+                  <span>{t('coInvestment')}</span>
                 </button>
                 <button
                   type="button"
@@ -166,6 +168,17 @@ export default function SiteNavDrawer({
                   }}
                 >
                   <span>{t('debtsTitle')}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`menu-dropdown__item${drawerMenuActive.testDrive ? ' menu-dropdown__item--active' : ''}`}
+                  aria-current={drawerMenuActive.testDrive ? 'page' : undefined}
+                  onClick={() => {
+                    navigate(TEST_DRIVE_PATH)
+                    closeAfterNav()
+                  }}
+                >
+                  <span>{t('testDrive')}</span>
                 </button>
                 <button
                   type="button"

@@ -1672,7 +1672,7 @@ export function registerStripeBillingRoutes(app) {
           req.body.returnPath.startsWith('/') &&
           !req.body.returnPath.includes('..')
             ? req.body.returnPath.slice(0, 220)
-            : '/owner-test?view=subscriptions';
+            : '/owner-test/subscriptions';
         const joiner = returnPath.includes('?') ? '&' : '?';
         const successUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${plan}`;
         const cancelUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=canceled`;

@@ -40,6 +40,7 @@ import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
 import { useCabinetOverviewData } from '../hooks/useCabinetOverviewData'
 
 const MOBILE_BREAKPOINT = 768
@@ -86,7 +87,7 @@ function Home() {
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const navigate = useNavigate()
   const location = useLocation()
-  const isAuctionRoute = location.pathname === '/auction'
+  const isAuctionRoute = checkAuctionRoute(location.pathname)
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )

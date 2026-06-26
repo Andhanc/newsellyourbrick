@@ -24,6 +24,11 @@ function AuctionDesktopFilters({
   setPropertyTypes,
   saleFilters,
   setSaleFilters,
+  locationOptions = [],
+  country = '',
+  city = '',
+  setCountry,
+  setCity,
   minArea,
   maxArea,
   setMinArea,
@@ -38,11 +43,16 @@ function AuctionDesktopFilters({
 }) {
   const { t } = useTranslation()
   const [openSections, setOpenSections] = useState({
+    location: true,
     type: true,
     sale: true,
     area: true,
     price: true,
   })
+  const selectedCountry = useMemo(
+    () => locationOptions.find((item) => item.key === country) || null,
+    [locationOptions, country],
+  )
 
   const activeChips = useMemo(() => {
     const chips = []
@@ -66,6 +76,27 @@ function AuctionDesktopFilters({
         })
       }
     })
+    if (country) {
+      const countryLabel =
+        locationOptions.find((item) => item.key === country)?.label || country
+      chips.push({
+        id: `country-${country}`,
+        label: countryLabel,
+        onRemove: () => {
+          setCountry?.('')
+          setCity?.('')
+        },
+      })
+    }
+    if (city) {
+      const cityLabel =
+        selectedCountry?.regions?.find((item) => item.key === city)?.label || city
+      chips.push({
+        id: `city-${city}`,
+        label: cityLabel,
+        onRemove: () => setCity?.(''),
+      })
+    }
     if (minArea !== '' || maxArea !== '') {
       chips.push({
         id: 'area',
@@ -104,6 +135,12 @@ function AuctionDesktopFilters({
     setMaxArea,
     setMinPrice,
     setMaxPrice,
+    country,
+    city,
+    locationOptions,
+    selectedCountry,
+    setCountry,
+    setCity,
     t,
   ])
 
@@ -126,6 +163,8 @@ function AuctionDesktopFilters({
   const handleReset = () => {
     setPropertyTypes([])
     setSaleFilters([])
+    setCountry?.('')
+    setCity?.('')
     setMinArea('')
     setMaxArea('')
     setMinPrice('')
@@ -181,6 +220,49 @@ function AuctionDesktopFilters({
       )}
 
       <div className="auction-desktop-filters__sections">
+        <FilterSection
+          title={t('catalogFilterLocation')}
+          open={openSections.location}
+          onToggle={() => toggleSection('location')}
+        >
+          <div className="catalog-desktop-filters__location-fields">
+            <label className="catalog-desktop-filters__select-label">
+              <span>{t('catalogFilterCountry')}</span>
+              <select
+                className="auction-desktop-filters__input catalog-desktop-filters__select"
+                value={country}
+                onChange={(e) => {
+                  setCountry?.(e.target.value)
+                  setCity?.('')
+                }}
+              >
+                <option value="">{t('catalogFilterAll')}</option>
+                {locationOptions.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="catalog-desktop-filters__select-label">
+              <span>{t('catalogFilterRegion')}</span>
+              <select
+                className="auction-desktop-filters__input catalog-desktop-filters__select"
+                value={city}
+                onChange={(e) => setCity?.(e.target.value)}
+                disabled={!country}
+              >
+                <option value="">{t('catalogFilterAll')}</option>
+                {(selectedCountry?.regions || []).map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </FilterSection>
+
         <FilterSection
           title={t('auctionFilterPropertyType')}
           open={openSections.type}

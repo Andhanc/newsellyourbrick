@@ -34,13 +34,15 @@ const CONTACT_OPTIONS = [
 ]
 
 export default function TestDriveBookingPage() {
-  const { id } = useParams()
+  const { slugOrId: propertyRouteKey } = useParams()
+  const propertyApiKey = propertyRouteKey ? encodeURIComponent(propertyRouteKey) : ''
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const propertyTable =
     searchParams.get('table') || 'properties_apartments'
 
   const [propertyTitle, setPropertyTitle] = useState('')
+  const [propertyNumericId, setPropertyNumericId] = useState(null)
   const [bookedDates, setBookedDates] = useState([])
   const [myBookedDates, setMyBookedDates] = useState([])
   const [saving, setSaving] = useState(false)
@@ -80,10 +82,11 @@ export default function TestDriveBookingPage() {
         const { getApiBaseUrl } = await import('../utils/apiConfig')
         API_BASE_URL = await getApiBaseUrl()
         const lang = (localStorage.getItem('i18nextLng') || 'ru').split('-')[0]
-        const pr = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`)
+        const pr = await fetch(`${API_BASE_URL}/properties/${propertyApiKey}?lang=${lang}`)
         const pj = await pr.json()
         if (pj.success && pj.data) {
-          setPropertyTitle(pj.data.title || ` #${id}`)
+          setPropertyTitle(pj.data.title || ` #${propertyRouteKey}`)
+          if (pj.data.id != null) setPropertyNumericId(Number(pj.data.id))
         }
         const uid = localStorage.getItem('userId')
         const userQ =
@@ -91,7 +94,7 @@ export default function TestDriveBookingPage() {
             ? `&user_id=${encodeURIComponent(uid)}`
             : ''
         const br = await fetch(
-          `${API_BASE_URL}/properties/${id}/test-drive/bookings?property_table=${encodeURIComponent(propertyTable)}${userQ}`
+          `${API_BASE_URL}/properties/${propertyApiKey}/test-drive/bookings?property_table=${encodeURIComponent(propertyTable)}${userQ}`
         )
         const bj = await br.json()
         if (bj.success && bj.data?.booked_dates) {
@@ -105,7 +108,7 @@ export default function TestDriveBookingPage() {
       }
     }
     load()
-  }, [id, propertyTable])
+  }, [propertyRouteKey, propertyApiKey, propertyTable])
 
   useEffect(() => {
     const checkoutResult = searchParams.get('test_drive_checkout')
@@ -174,7 +177,7 @@ export default function TestDriveBookingPage() {
   const fetchQuote = async () => {
     if (!pendingRange) return null
     const res = await fetch(
-      `${API_BASE_URL}/properties/${id}/test-drive/quote?start_date=${encodeURIComponent(
+      `${API_BASE_URL}/properties/${propertyApiKey}/test-drive/quote?start_date=${encodeURIComponent(
         pendingRange.start
       )}&end_date=${encodeURIComponent(pendingRange.end)}`
     )
@@ -225,14 +228,14 @@ export default function TestDriveBookingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: parseInt(uid, 10),
-          propertyId: parseInt(id, 10),
+          propertyId: propertyNumericId,
           propertyType: null,
           propertyTable,
           startDate: pendingRange.start,
           endDate: pendingRange.end,
           contactChannel,
           customerEmail,
-          returnPath: `/property/${id}/test-drive`,
+          returnPath: `/property/${propertyRouteKey}/test-drive`,
         }),
       })
       const data = await res.json()

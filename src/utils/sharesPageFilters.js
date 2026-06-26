@@ -2,6 +2,7 @@ import {
   AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
   matchesAuctionPropertyTypeFilter,
 } from './auctionDesktopFilterMatch'
+import { parsePropertyLocation } from './propertySearchLocation'
 
 export const EMPTY_SHARES_FILTERS = {
   propertyType: 'все',
@@ -91,12 +92,16 @@ function matchesPropertyType(share, propertyType) {
 
 function matchesCountry(share, country) {
   if (!country || country === 'all') return true
-  return getShareLocationParts(share).country === country
+  const parsed = parsePropertyLocation(share)
+  if (!parsed) return false
+  return parsed.countryKey === country
 }
 
 function matchesCity(share, city) {
   if (!city || city === 'all') return true
-  return getShareLocationParts(share).city === city
+  const parsed = parsePropertyLocation(share)
+  if (!parsed) return false
+  return parsed.regionKey === city
 }
 
 function getShareCollectedPercent(share) {

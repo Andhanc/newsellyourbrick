@@ -26,7 +26,7 @@ import {
 } from '../components/AuctionMobileListingSkeleton'
 import './Shares.css'
 import '../components/PropertyList.css'
-import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import {
   EMPTY_DEBTS_FILTERS,
   applyDebtsPageFilters,
@@ -37,6 +37,8 @@ import {
   DEBTS_MOBILE_FILTER_ITEMS,
 } from '../utils/debtsPageFilters'
 import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
+import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
+import { getDebtsContextPropertyPath } from '../utils/listingContextUrl'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
@@ -251,6 +253,29 @@ const Debts = () => {
     void loadDebts()
   }, [loadDebts])
 
+  useEffect(() => {
+    if (debtsFilters.country === 'all' || debtsFilters.city === 'all') return
+    const typeToCatalogPlural = {
+      апартаменты: 'apartments',
+      квартира: 'apartments',
+      вилла: 'villas',
+      дом: 'houses',
+      коммерческая: 'commercial',
+    }
+    const path = buildCatalogCityPath({
+      country: debtsFilters.country,
+      city: debtsFilters.city,
+      typePlural: typeToCatalogPlural[debtsFilters.propertyType] || undefined,
+      sale: 'debts',
+    })
+    if (path) navigate(path)
+  }, [
+    debtsFilters.country,
+    debtsFilters.city,
+    debtsFilters.propertyType,
+    navigate,
+  ])
+
   const priceBounds = useMemo(() => getDebtsPriceBounds(apiDebts), [apiDebts])
   const debtBounds = useMemo(() => getDebtsDebtBounds(apiDebts), [apiDebts])
 
@@ -264,7 +289,11 @@ const Debts = () => {
   const purchaseCounts = useMemo(() => getDebtsPurchaseCounts(apiDebts), [apiDebts])
 
   const openProperty = (property) => {
-    navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
+    const targetPath = getDebtsContextPropertyPath(property, {
+      country: debtsFilters.country,
+      city: debtsFilters.city,
+    })
+    navigate(targetPath, { state: { property } })
   }
 
   const formatPrice = (n, currency = 'USD') => {
@@ -388,6 +417,10 @@ const Debts = () => {
                           property={property}
                           isFavorite={isPropertyLiked(property)}
                           onFavoriteToggle={handleFavoriteToggle}
+                          href={getDebtsContextPropertyPath(property, {
+                            country: debtsFilters.country,
+                            city: debtsFilters.city,
+                          })}
                           onOpen={openProperty}
                         />
                       ))

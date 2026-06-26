@@ -1,0 +1,75 @@
+.catalog-city-page {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+.catalog-city__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.catalog-city__breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.catalog-city__breadcrumbs a {
+  color: #0d9488;
+  text-decoration: none;
+}
+
+.catalog-city__title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 20px;
+  color: #111827;
+}
+
+.catalog-city__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.catalog-city__tabs--sale {
+  margin-bottom: 24px;
+}
+
+.catalog-city__tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.catalog-city__tab--active {
+  border-color: #0d9488;
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.catalog-city__status {
+  color: #6b7280;
+  padding: 24px 0;
+}
+
+.catalog-city__grid {
+  margin-top: 8px;
+}
+
+a.property-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

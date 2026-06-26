@@ -38,6 +38,16 @@ import {
   matchesAuctionPropertyTypesFilter,
   matchesAuctionSaleTypesFilter,
 } from '../utils/auctionDesktopFilterMatch'
+import {
+  isAuctionRoute,
+  parseAuctionFilterPath,
+} from '../utils/auctionFilterUrl'
+import { getAuctionContextPropertyPath } from '../utils/listingContextUrl'
+import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
+import {
+  buildLocationOptionsFromProperties,
+  propertyMatchesLocationFilter,
+} from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
@@ -80,6 +90,8 @@ const PropertyList = ({
   const [maxAreaFilter, setMaxAreaFilter] = useState('')
   const [minPriceFilter, setMinPriceFilter] = useState('')
   const [maxPriceFilter, setMaxPriceFilter] = useState('')
+  const [countryFilter, setCountryFilter] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
   const searchFiltersBarRef = useRef(null)
 
   const toggleDesktopFilters = () => {
@@ -102,7 +114,7 @@ const PropertyList = ({
   }, [])
 
   useEffect(() => {
-    if (!isMobile || location.pathname !== '/auction' || !mobileAuctionTypesOpen) return
+    if (!isMobile || !isAuctionRoute(location.pathname) || !mobileAuctionTypesOpen) return
     const handlePointerDown = (e) => {
       if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
         setMobileAuctionTypesOpen(false)
@@ -138,36 +150,41 @@ const PropertyList = ({
     return null
   }
   
-  // Читаем параметры из URL при загрузке и прокручиваем к объектам
+  // Читаем фильтры из SEO-пути (/auction/buy-now/apartments) или legacy ?filter=
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    const category = searchParams.get('category')
-    const filter = searchParams.get('filter')
-    
-    const normalizedCategory = normalizeCategoryFromUrl(category)
-    if (normalizedCategory) setPropertyTypes([normalizedCategory])
+    const parsed = parseAuctionFilterPath(location.pathname, location.search)
 
-    // Применяем фильтр типа продажи (аукцион / купить сейчас)
-    if (filter === 'auction') {
-      setSaleFilters(['auction'])
-    } else if (filter === 'buy_now') {
-      setSaleFilters(['buy_now'])
-    } else if (filter === 'ended') {
-      setSaleFilters(['ended'])
+    if (parsed.legacyRedirect && parsed.legacyRedirect !== `${location.pathname}${location.search}`) {
+      navigate(parsed.legacyRedirect, { replace: true })
+      return
+    }
+
+    if (parsed.propertyTypes.length) {
+      setPropertyTypes(parsed.propertyTypes)
+    } else {
+      setPropertyTypes([])
+    }
+
+    if (parsed.saleFilters.length) {
+      setSaleFilters(parsed.saleFilters)
     } else {
       setSaleFilters([])
     }
-    
-    // Прокрутка к блоку объектов при фильтре категории или «Купить сейчас»
-    if (location.search.includes('category=') || filter === 'buy_now' || filter === 'ended') {
+
+    const shouldScroll =
+      parsed.propertyTypes.length > 0 ||
+      parsed.saleFilters.includes('buy_now') ||
+      parsed.saleFilters.includes('ended')
+
+    if (shouldScroll) {
       setTimeout(() => {
         const element = document.getElementById('properties-grid')
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
-      }, 300) // Небольшая задержка для применения фильтров
+      }, 300)
     }
-  }, [location.search])
+  }, [location.pathname, location.search, navigate])
   const [visibleCount, setVisibleCount] = useState(9)
   const [auctionPage, setAuctionPage] = useState(1)
 
@@ -181,11 +198,27 @@ const PropertyList = ({
 
   // Используем переданные аукционные объявления или статические данные
   const propertiesToUse = auctionProperties || properties
+  const auctionLocationOptions = useMemo(() => {
+    const onlyAuction = propertiesToUse.filter((property) => {
+      const isDebtProperty =
+        property.sale_type === 'debt' ||
+        property.is_debt === 1 ||
+        property.is_debt === true ||
+        property.has_debt === 1 ||
+        property.has_debt === true
+      const isShareProperty =
+        property.sale_type === 'share' ||
+        property.is_shared_ownership === 1 ||
+        property.is_shared_ownership === true
+      return !isDebtProperty && !isShareProperty
+    })
+    return buildLocationOptionsFromProperties(onlyAuction)
+  }, [propertiesToUse])
 
   /** На /auction раз в секунду пересчитываем «таймер истёк» и сортировку (завершённые в конец) */
   const [auctionNowTick, setAuctionNowTick] = useState(0)
   useEffect(() => {
-    if (location.pathname !== '/auction') return undefined
+    if (!isAuctionRoute(location.pathname)) return undefined
     const id = window.setInterval(() => setAuctionNowTick((n) => n + 1), 1000)
     return () => clearInterval(id)
   }, [location.pathname])
@@ -205,11 +238,11 @@ const PropertyList = ({
       property.is_shared_ownership === true
 
     // На странице аукциона исключаем объекты с долгами
-    if (location.pathname === '/auction' && isDebtProperty) {
+    if (isAuctionRoute(location.pathname) && isDebtProperty) {
       return false
     }
     // На странице аукциона исключаем объекты с долями (долевая продажа)
-    if (location.pathname === '/auction' && isShareProperty) {
+    if (isAuctionRoute(location.pathname) && isShareProperty) {
       return false
     }
 
@@ -220,6 +253,14 @@ const PropertyList = ({
 
     // Фильтрация по типу продажи
     if (!matchesAuctionSaleTypesFilter(property, saleFilters, isAuctionEnded)) {
+      return false
+    }
+    if (
+      !propertyMatchesLocationFilter(property, {
+        country: countryFilter,
+        region: cityFilter,
+      })
+    ) {
       return false
     }
 
@@ -251,7 +292,7 @@ const PropertyList = ({
     return true
   })
 
-    if (location.pathname !== '/auction') return list
+    if (!isAuctionRoute(location.pathname)) return list
 
     const auctionTimerEnded = (p) => isAuctionListingEnded(p)
 
@@ -275,15 +316,27 @@ const PropertyList = ({
     maxAreaFilter,
     minPriceFilter,
     maxPriceFilter,
+    countryFilter,
+    cityFilter,
     auctionNowTick,
   ])
 
   useEffect(() => {
     setVisibleCount(9)
     setAuctionPage(1)
-  }, [searchQuery, propertyTypes, saleFilters, minAreaFilter, maxAreaFilter, minPriceFilter, maxPriceFilter])
+  }, [
+    searchQuery,
+    propertyTypes,
+    saleFilters,
+    minAreaFilter,
+    maxAreaFilter,
+    minPriceFilter,
+    maxPriceFilter,
+    countryFilter,
+    cityFilter,
+  ])
 
-  const isAuctionPage = location.pathname === '/auction'
+  const isAuctionPage = isAuctionRoute(location.pathname)
   const isAuctionMobileFilters = isMobile && isAuctionPage
   const isAuctionDesktop = isAuctionPage && !isMobile
 
@@ -381,10 +434,14 @@ const PropertyList = ({
       )
       return
     }
-    const { pathname, state } = buildPropertyDetailNavigation(property, {
+    const { state } = buildPropertyDetailNavigation(property, {
       auctionTab: auctionTab || undefined,
     })
-    navigate(pathname, { state })
+    const targetPath = getAuctionContextPropertyPath(property, {
+      country: countryFilter,
+      city: cityFilter,
+    })
+    navigate(targetPath, { state })
   }
 
   return (
@@ -495,6 +552,11 @@ const PropertyList = ({
               setPropertyTypes={setPropertyTypes}
               saleFilters={saleFilters}
               setSaleFilters={setSaleFilters}
+              locationOptions={auctionLocationOptions}
+              country={countryFilter}
+              city={cityFilter}
+              setCountry={setCountryFilter}
+              setCity={setCityFilter}
               minArea={minAreaFilter}
               maxArea={maxAreaFilter}
               setMinArea={setMinAreaFilter}
@@ -512,6 +574,26 @@ const PropertyList = ({
                 max: auctionFilterBounds.priceMax,
               }}
               onApply={() => {
+                if (countryFilter && cityFilter) {
+                  const typeToCatalogPlural = {
+                    апартаменты: 'apartments',
+                    квартира: 'apartments',
+                    вилла: 'villas',
+                    дом: 'houses',
+                    коммерческая: 'commercial',
+                  }
+                  const singleType = propertyTypes.length === 1 ? propertyTypes[0] : ''
+                  const path = buildCatalogCityPath({
+                    country: countryFilter,
+                    city: cityFilter,
+                    typePlural: typeToCatalogPlural[singleType] || undefined,
+                    sale: 'auction',
+                  })
+                  if (path) {
+                    navigate(path)
+                    return
+                  }
+                }
                 const grid = document.getElementById('properties-grid')
                 grid?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
@@ -762,7 +844,7 @@ const PropertyList = ({
                 const isAuctionEndedCard = isTimerExpired && hasTimer
                 const buyNowWinnerId = property.buy_now_winner_user_id
                 const showPrivateClubAuctionHero =
-                  location.pathname === '/auction' &&
+                  isAuctionRoute(location.pathname) &&
                   viewerHasVip &&
                   isPrivateClubAuctionLot(property) &&
                   !isAuctionListingEnded(property)

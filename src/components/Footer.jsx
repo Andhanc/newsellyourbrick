@@ -13,6 +13,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { getUserData, logout } from '../services/authService'
 
@@ -131,9 +132,10 @@ const Footer = () => {
   /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
   const footerObjectLinksCol1 = [
     { to: '/auction', label: t('auction') },
-    { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
-    { to: '/shares', label: t('shares') },
+    { to: '/auction/buy-now', label: t('buyNowSectionTitle') },
+    { to: CO_INVESTMENT_PATH, label: t('coInvestment') },
     { to: '/debts', label: t('debtsTitle') },
+    { to: '/test-drive', label: t('testDrive') },
   ]
 
   /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
@@ -236,7 +238,10 @@ const Footer = () => {
   )
 
   return (
-    <footer id="site-footer" className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}`}>
+    <footer
+      id="site-footer"
+      className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}${isLanguageDropdownOpen ? ' footer--language-open' : ''}`}
+    >
       <div className="footer__container">
         <div className="footer__upper">
           <div className="footer__upper-left">

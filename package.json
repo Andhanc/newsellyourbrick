@@ -31,6 +31,7 @@
     "db:status": "prisma migrate status",
     "load:test": "node scripts/load-test.js",
     "puppeteer:install": "npx puppeteer browsers install chrome",
+    "backfill:slugs": "node scripts/backfill-property-slugs.mjs",
     "import:housetenerife": "node scripts/import-housetenerife.mjs"
   },
   "dependencies": {
