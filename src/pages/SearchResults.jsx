@@ -136,6 +136,9 @@ const SearchResults = () => {
 
   useEffect(() => {
     if (!location.state?.fromPropertySearchBlock) return
+    if (typeof location.state?.searchQuery === 'string' && location.state.searchQuery.trim()) {
+      setSearchQuery(location.state.searchQuery.trim())
+    }
     if (loading || autoScrolledRef.current) return
 
     const target = document.getElementById('search-results-grid')

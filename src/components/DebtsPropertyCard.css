@@ -251,11 +251,11 @@
 }
 
 .debts-property-card__btn--secondary:hover:not(:disabled) {
-  border-color: rgba(10, 186, 181, 0.45);
+  border-color: rgba(184, 207, 154, 0.45);
   background: #f8fafc;
-  color: #0f766e;
+  color: #2d5a36;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.12);
+  box-shadow: 0 4px 12px rgba(45, 90, 54, 0.12);
 }
 
 /* Узкая карточка (мобильная сетка 2 колонки): кнопки столбиком на всю ширину */

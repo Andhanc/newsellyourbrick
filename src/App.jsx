@@ -56,7 +56,7 @@ const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCal
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
 const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
-const About = lazyWithRetry(() => import('./pages/About'))
+const About = lazyWithRetry(() => import('./pages/About.tsx'))
 const News = lazyWithRetry(() => import('./pages/News'))
 const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticlePage'))
 const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
@@ -64,6 +64,8 @@ const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
+const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
+const SellerPage = lazyWithRetry(() => import('./pages/SellerPage'))
 const OwnerTestRoute = lazyWithRetry(() => import('./pages/OwnerTestRoute'), 'OwnerTestRoute')
 const OwnerTestLegacyRedirect = lazyWithRetry(() =>
   import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyRedirect }))
@@ -792,6 +794,22 @@ function App() {
                 }
               />
               <Route
+                path="/sellyourbrick"
+                element={
+                  <LazyPage>
+                    <SellYourBrickLandingPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/seller"
+                element={
+                  <LazyPage>
+                    <SellerPage />
+                  </LazyPage>
+                }
+              />
+              <Route
                 path="/news"
                 element={
                   <LazyPage>
@@ -996,4 +1014,3 @@ function App() {
 }
 
 export default App
-

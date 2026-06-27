@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
 import './MainPage.css'
 import {
   FiSearch,
-  FiSliders,
   FiHeart,
   FiChevronDown,
   FiArrowRight,
@@ -49,9 +48,9 @@ import {
   PiBuilding,
   PiWarehouse,
 } from 'react-icons/pi'
-import PropertySearchBlock from '../components/PropertySearchBlock'
-import LandingModelsFolders from '../components/LandingModelsFolders'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
+import SybLandingSearchBar from '../components/SybLandingSearchBar'
+import { ScrollReveal, ScrollRevealItem, ScrollRevealStagger } from '../components/ScrollReveal'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -108,41 +107,6 @@ function asFiniteNumberOrNull(value) {
   const n = Number(value)
   return Number.isFinite(n) ? n : null
 }
-
-
-// Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
-const landingFolderDataBase = [
-  { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', linkHref: '/auction?filter=auction', projects: [
-    { id: 'ab1', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Аукцион недвижимости' },
-    { id: 'ab2', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Торги объектами' },
-    { id: 'ab3', image: '/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg', title: 'Концентрация спроса' },
-    { id: 'ab4', image: '/images/external/photo-1600566753190-17f0baa2a6c3-9c1606daed.jpg', title: 'Рыночные ставки' },
-  ] },
-  { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', linkHref: '/auction?filter=buy_now', projects: [
-    { id: 'ip1', image: '/images/external/photo-1560448204-e02f11c3d0e2-5b957100f2.jpg', title: 'Сделка по цене' },
-    { id: 'ip2', image: '/images/external/photo-1484154218962-a197022b5858-7367c16227.jpg', title: 'Ликвидность сейчас' },
-    { id: 'ip3', image: '/images/external/photo-1600596542815-ffad4c1539a9-514a2414cc.jpg', title: 'Без ожидания' },
-    { id: 'ip4', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Твёрдая цена' },
-  ] },
-  { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkHref: '/about', projects: [
-    { id: 'da1', image: '/images/external/photo-1564013799919-ab600027ffc6-614ed79fec.jpg', title: 'Арбитраж активов' },
-    { id: 'da2', image: '/images/external/photo-1522771739844-6a9f6d5f14af-afc86ce7ca.jpg', title: 'Специальные ситуации' },
-    { id: 'da3', image: '/images/external/photo-1512917774080-9991f1c4c750-928d26ff49.jpg', title: 'Верификация лотов' },
-    { id: 'da4', image: '/images/external/photo-1600566753086-00f18fb6b3ea-79bf60cec6.jpg', title: 'Due Diligence' },
-  ] },
-  { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkHref: '/debts', projects: [
-    { id: 'db1', image: '/images/external/photo-1450101499163-c8848c66ca85-eb206c83e6.jpg', title: 'Покупка долга' },
-    { id: 'db2', image: '/images/external/photo-1554224155-8d04cb21cd6c-6f898cdd1f.jpg', title: 'Анализ рисков' },
-    { id: 'db3', image: '/images/external/photo-1554224154-22dec7ec8818-ee3fb0cdfa.jpg', title: 'Структура сделки' },
-    { id: 'db4', image: '/images/external/photo-1526304640581-d334cdbbf45e-d7bba8f22f.jpg', title: 'Доходность и сроки' },
-  ] },
-  { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', linkHref: '/shares', projects: [
-    { id: 'fo1', image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg', title: 'Долевое участие' },
-    { id: 'fo2', image: '/images/external/photo-1545324418-cc1a3fa10c00-d04a952c51.jpg', title: 'Премиальные активы' },
-    { id: 'fo3', image: '/images/external/photo-1503387762-592deb58ef4e-c6ab278a57.jpg', title: 'Co-investment' },
-    { id: 'fo4', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Доли в объектах' },
-  ] },
-]
 
 const recommendedProperties = [
   {
@@ -408,7 +372,7 @@ function MainPage() {
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
-  const [propertyMode, setPropertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
+  const [propertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
   const [activeNav, setActiveNav] = useState('home')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
@@ -767,6 +731,7 @@ function MainPage() {
   const languageDropdownMobileRef = useRef(null)
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
+  const heroVideoRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
   const menuRef = useRef(null)
@@ -811,6 +776,36 @@ function MainPage() {
   }
   
   const heroImage = heroImages[propertyMode]
+
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return undefined
+
+    const playHeroVideo = () => {
+      video.muted = true
+      video.defaultMuted = true
+      video.playsInline = true
+      const playPromise = video.play()
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {})
+      }
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') playHeroVideo()
+    }
+
+    playHeroVideo()
+    video.addEventListener('loadedmetadata', playHeroVideo)
+    video.addEventListener('canplay', playHeroVideo)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      video.removeEventListener('loadedmetadata', playHeroVideo)
+      video.removeEventListener('canplay', playHeroVideo)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
 
   // Прогресс скролла для секции «Цифры»: 0 = секция внизу экрана, 1 = контент по центру (секция белая)
   useEffect(() => {
@@ -2028,11 +2023,44 @@ function MainPage() {
       { id: 'profile', label: t('profile'), icon: FaUser },
   ], [t, i18n.language])
 
-  const landingFolderData = useMemo(() => landingFolderDataBase.map((folder) => ({
-    ...folder,
-    title: t(folder.titleKey),
-    linkLabel: folder.linkLabelKey ? t(folder.linkLabelKey) : undefined,
-  })), [t, i18n.language])
+  const salesStrategies = useMemo(() => [
+    {
+      id: 'auction',
+      label: t('auctionSectionTitle'),
+      title: t('auctionSectionTitle'),
+      text: t('auctionSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-auction.jpg',
+      to: '/auction?filter=auction',
+      metric: '01',
+    },
+    {
+      id: 'buy-now',
+      label: t('buyNowSectionTitle'),
+      title: t('buyNowSectionTitle'),
+      text: t('buyNowSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-buynow.jpg',
+      to: '/auction?filter=buy_now',
+      metric: '02',
+    },
+    {
+      id: 'shares',
+      label: t('fractionalSaleTitle'),
+      title: t('fractionalSaleTitle'),
+      text: t('fractionalSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-shares.jpg',
+      to: '/shares',
+      metric: '03',
+    },
+    {
+      id: 'debts',
+      label: t('debtsTitle'),
+      title: t('debtsTitle'),
+      text: t('debtsSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-debts.jpg',
+      to: '/debts',
+      metric: '04',
+    },
+  ], [t, i18n.language])
   
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
@@ -2222,19 +2250,17 @@ function MainPage() {
 
   return (
     <div className="app">
-      <section
-        className="hero-section"
-        // CSS-переменная для фонового изображения в pseudo-element'ах
-        style={{ ['--hero-bg']: `url("${heroImage}")` }}
-      >
-        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.rent}")` }}></div>
-        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.buy}")` }}></div>
-        <div className="hero-section__overlay"></div>
-        {/* Новый хедер для десктопной версии */}
-        <div className="new-header-spacer" aria-hidden="true" />
-        <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
+      <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
         <div className="new-header__left">
+        <button
+          type="button"
+          className="new-header__brand-mini"
+          onClick={() => navigate('/')}
+          aria-label="SellYourBrick"
+        >
+          SellYourBrick
+        </button>
         <div className="new-header__location">
           <span className="new-header__location-icon">
             <FiGlobe size={20} aria-hidden />
@@ -2279,8 +2305,8 @@ function MainPage() {
           <button 
             className={`new-header__menu-btn ${isMenuOpen ? 'new-header__menu-btn--active' : ''}`}
             onClick={(e) => {
-              e.stopPropagation() // Останавливаем всплытие события
-              e.preventDefault() // Предотвращаем стандартное поведение
+              e.stopPropagation()
+              e.preventDefault()
               if (isMenuOpen) {
                 setIsMenuClosing(true)
                 setTimeout(() => {
@@ -2368,7 +2394,6 @@ function MainPage() {
                     setSearchQuery('')
                     setPageSearchResults([])
                   } else if (e.key === 'Enter' && pageSearchResults.length > 0) {
-                    // Переходим на первую доступную страницу
                     const firstAccessible = pageSearchResults.find(r => r.canAccess.allowed)
                     if (firstAccessible) {
                       handleSearchResultClick(firstAccessible)
@@ -2435,14 +2460,13 @@ function MainPage() {
         <button 
           type="button"
           className="new-header__auction-btn"
-          onClick={() => navigate('/auction')}
+          onClick={() => navigate('/')}
         >
-          {t('auction')}
+          {t('home')}
         </button>
         <button 
           className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
           onClick={() => {
-            // Всегда сначала проверяем локальные данные (роль, флаги)
             const userData = getUserData()
             const localRole = localStorage.getItem('userRole')
             const storedRole = userData.role || localRole
@@ -2454,19 +2478,16 @@ function MainPage() {
               storedRole === 'owner' ||
               isOwnerFlag
 
-            // Если по локальным данным видно, что это админ — ведем в админ-панель
             if (isAdmin) {
               navigate('/admin')
               return
             }
 
-            // Продавца ведем в кабинет продавца
             if (isOwner) {
               navigate(getCabinetHomePath('seller'))
               return
             }
 
-            // Дальше обычная логика профиля покупателя
             if (userLoaded && user) {
               navigate(getCabinetProfilePath())
             } else if (userData.isLoggedIn) {
@@ -2486,7 +2507,6 @@ function MainPage() {
                   alt="Profile" 
                   className="new-header__avatar-img"
                   onError={(e) => {
-                    // Если фото не загрузилось, показываем placeholder
                     setUserPhoto(null)
                   }}
                 />
@@ -2509,6 +2529,40 @@ function MainPage() {
         </div>
         </div>
       </header>
+
+      <section
+        className="hero-section"
+        // CSS-переменная для фонового изображения в pseudo-element'ах
+        style={{ ['--hero-bg']: `url("${heroImage}")` }}
+      >
+        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.rent}")` }}></div>
+        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.buy}")` }}></div>
+        <div className="hero-section__film" aria-hidden="true">
+          <video
+            ref={heroVideoRef}
+            className="hero-section__video"
+            src="https://storage.googleapis.com/webild/default/templates/hotel/hero.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+          />
+          <span
+            className="hero-section__film-frame hero-section__film-frame--one"
+            style={{ backgroundImage: 'url("/images/new-home/new-home-hero-villa.jpg")' }}
+          />
+          <span
+            className="hero-section__film-frame hero-section__film-frame--two"
+            style={{ backgroundImage: 'url("/images/sellyourbrick/canary-islands-hero.jpg")' }}
+          />
+          <span
+            className="hero-section__film-frame hero-section__film-frame--three"
+            style={{ backgroundImage: 'url("/images/external/shares-hero-villa.jpg")' }}
+          />
+        </div>
+        <div className="hero-section__overlay"></div>
+        <div className="new-header-spacer" aria-hidden="true" />
 
         <div className="hero-section__inner">
         <div className="hero-section__col1">
@@ -2619,43 +2673,28 @@ function MainPage() {
           </header>
         </div>
 
-          <p className="hero-headline__brand hero-headline__brand--mobile">Saleyourbrick</p>
+          <p className="hero-headline__brand hero-headline__brand--mobile">SellYourBrick</p>
 
           <div className="hero-headline">
             <span className="hero-headline__accent" aria-hidden="true" />
-            <p className="hero-headline__brand hero-headline__brand--desktop">Saleyourbrick</p>
-            <h1 className="hero-headline__title">{t('heroTitle')}</h1>
+            <p className="hero-headline__brand hero-headline__brand--desktop">SellYourBrick</p>
+            <h1 className="hero-headline__title">SellYourBrick</h1>
             <p className="hero-headline__subtitle">
-              {t('heroSubtitle')}
+              {t('heroTitle')}. {t('heroSubtitle')}
             </p>
+            <div className="hero-headline__actions">
+              <Link to="/auction" className="hero-headline__cta hero-headline__cta--primary">
+                <span>{t('sybLandingHeroCta')}</span>
+                <span className="hero-headline__cta-icon" aria-hidden>
+                  <FiArrowRight size={18} />
+                </span>
+              </Link>
+              <Link to="/sections" className="hero-headline__cta hero-headline__cta--ghost">
+                {t('sybLandingHeroSecondaryCta')}
+              </Link>
+            </div>
           </div>
         </div>
-
-          <section className="search">
-            <div className="search__field">
-              <FiSearch size={18} className="search__icon" />
-              <input
-                type="text"
-                placeholder={t('searchPlaceholderLong')}
-                className="search__input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button 
-                  type="button"
-                  className="search__clear"
-                  onClick={() => setSearchQuery('')}
-                  aria-label={t('clearSearch')}
-                >
-                  <FiX size={18} />
-                </button>
-              )}
-              <button type="button" className="search__filter">
-                <FiSliders size={18} />
-              </button>
-            </div>
-          </section>
 
           <div className="hero-section__cta">
             <FrostedGlassCard
@@ -2678,25 +2717,49 @@ function MainPage() {
         </div>
       </section>
 
-      {/* Блок: 4 инвестиционные модели (3D-папки) */}
+      <ScrollReveal className="hero-search-bridge" y={28}>
+        <SybLandingSearchBar />
+      </ScrollReveal>
+
+      {/* Блок: стратегии продажи и инвестирования */}
       <section id="landing-models" className="landing-models">
         <div className="landing-models__container">
-          <h2 className="landing-models__title">
-            <span className="landing-models__title-mark">
-              <span className="landing-models__title-mark-text">{t('landingModelsTitleMark')}</span>
-            </span>{' '}
-            {t('landingModelsTitleRest')}
-          </h2>
-          <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
-          <LandingModelsFolders
-            folders={landingFolderData}
-            ariaLabel={t('landingFoldersCarouselAria')}
-          />
+          <ScrollReveal y={32}>
+            <p className="landing-models__eyebrow">{t('sybLandingDirectionsTitle')}</p>
+            <h2 className="landing-models__title">
+              <span className="landing-models__title-line">{t('landingModelsTitleMark')}</span>
+              <span className="landing-models__title-line">{t('landingModelsTitleRest')}</span>
+            </h2>
+            <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
+          </ScrollReveal>
+          <ScrollRevealStagger className="landing-strategies" aria-label={t('landingFoldersCarouselAria')}>
+            {salesStrategies.map((strategy) => (
+              <ScrollRevealItem key={strategy.id}>
+                <button
+                  type="button"
+                  className={`landing-strategy landing-strategy--${strategy.id}`}
+                  onClick={() => navigate(strategy.to)}
+                >
+                  <span className="landing-strategy__media">
+                    <img src={strategy.image} alt="" loading="lazy" decoding="async" />
+                    <span className="landing-strategy__meta">
+                      <span className="landing-strategy__number">{strategy.metric}</span>
+                      <span className="landing-strategy__label">{strategy.label}</span>
+                    </span>
+                  </span>
+                  <span className="landing-strategy__body">
+                    <span className="landing-strategy__title">{strategy.title}</span>
+                    <span className="landing-strategy__text">{strategy.text}</span>
+                    <span className="landing-strategy__arrow" aria-hidden="true">
+                      <FiArrowRight size={18} strokeWidth={2.25} />
+                    </span>
+                  </span>
+                </button>
+              </ScrollRevealItem>
+            ))}
+          </ScrollRevealStagger>
         </div>
       </section>
-
-      {/* Блок подборки недвижимости */}
-      <PropertySearchBlock />
 
       <MainPageDeferredContext.Provider
         value={{

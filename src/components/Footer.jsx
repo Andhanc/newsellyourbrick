@@ -123,6 +123,8 @@ const Footer = () => {
   /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
   const footerSiteLinks = [
     { to: '/', label: t('home') },
+    { to: '/sellyourbrick', label: t('sybLandingFooterLink') },
+    { to: '/seller', label: t('sellerPageFooterLink') },
     { to: '/news', label: t('news') },
     { to: '/sections', label: t('footerAllSections') },
     { to: '/about#about-intro', label: t('aboutUs') },
