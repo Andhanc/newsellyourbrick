@@ -8,6 +8,7 @@ import {
 } from './sharesPageFilters'
 import { getPropertyCardImage } from './propertyImage'
 import { formatPropertyPrice, normalizeCurrencyCode } from './currency'
+import { buildLocationOptionsFromProperties } from './propertySearchLocation'
 
 export const SHARES_CATEGORY_TAB_IDS = ['all', 'residential', 'commercial', 'land']
 
@@ -271,18 +272,8 @@ export function formatShareAnnualYieldDisplay(stats, locale = 'en') {
 }
 
 export function getSharesFilterOptions(shares = []) {
-  const countries = new Set()
-  const cities = new Set()
-
-  for (const share of shares) {
-    const { city, country } = getShareLocationParts(share)
-    if (country) countries.add(country)
-    if (city) cities.add(city)
-  }
-
   return {
-    countries: [...countries].sort((a, b) => a.localeCompare(b, 'ru')),
-    cities: [...cities].sort((a, b) => a.localeCompare(b, 'ru')),
+    locations: buildLocationOptionsFromProperties(shares),
   }
 }
 

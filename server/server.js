@@ -43,6 +43,12 @@ import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './e
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
 import { registerNewsRoutes } from './newsRoutes.js';
+import { registerSeoRedirects } from './seoRedirects.js';
+import { registerSeoSitemap } from './seoSitemap.js';
+import { registerSeoNotFound } from './seoNotFound.js';
+import { registerSeoAdminRoutes } from './seoAdminRoutes.js';
+import { sendSeoSpaHtml } from './seoHtmlRender.js';
+import { registerCatalogRoutes } from './catalogRoutes.js';
 import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 import { getCurrencySymbol } from './utils/currency.js';
@@ -141,6 +147,11 @@ app.use(
 
 registerIntelligenceIoProxy(app);
 registerNewsRoutes(app);
+registerSeoRedirects(app);
+registerSeoSitemap(app);
+registerSeoNotFound(app);
+registerSeoAdminRoutes(app);
+registerCatalogRoutes(app);
 // На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
 // В development: используем SERVER_PORT или 3000
 // Логика: если NODE_ENV=production и есть PORT, используем PORT, иначе SERVER_PORT или 3000
@@ -7368,7 +7379,9 @@ app.post('/api/admin/auth/login', async (req, res) => {
           can_access_moderation: 1,
           can_access_chat: 1,
           can_access_objects: 1,
-          can_access_access_management: 1
+          can_access_access_management: 1,
+          can_access_seo: 1,
+          seo_role: 'admin'
         });
         superAdmin = await administratorQueries.getByUsername('admin');
       }
@@ -7512,7 +7525,9 @@ app.post('/api/admin/administrators', async (req, res) => {
       can_access_moderation: permissions.can_access_moderation ? 1 : 0,
       can_access_chat: permissions.can_access_chat ? 1 : 0,
       can_access_objects: permissions.can_access_objects ? 1 : 0,
-      can_access_access_management: 0 // Только для супер-админа
+      can_access_access_management: 0, // Только для супер-админа
+      can_access_seo: permissions.can_access_seo ? 1 : 0,
+      seo_role: permissions.seo_role || null
     });
 
     const newAdmin = await administratorQueries.getById(result.lastInsertRowid);
@@ -7561,7 +7576,9 @@ app.put('/api/admin/administrators/:id', async (req, res) => {
       can_access_moderation: permissions.can_access_moderation ? 1 : 0,
       can_access_chat: permissions.can_access_chat ? 1 : 0,
       can_access_objects: permissions.can_access_objects ? 1 : 0,
-      can_access_access_management: 0 // Только для супер-админа
+      can_access_access_management: 0, // Только для супер-админа
+      can_access_seo: permissions.can_access_seo ? 1 : 0,
+      seo_role: permissions.seo_role || null
     });
 
     const updatedAdmin = await administratorQueries.getById(id);
@@ -7620,8 +7637,19 @@ function getFrontendPublicBase() {
   return String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 }
 
-function buildPropertyPublicLink(propertyId) {
-  return `${getFrontendPublicBase()}/property/${Number(propertyId)}`;
+function buildPropertyPublicLink(propertyId, slug = null) {
+  const base = getFrontendPublicBase();
+  if (slug) return `${base}/property/${slug}`;
+  return `${base}/property/${Number(propertyId)}`;
+}
+
+/** Numeric id из /api/properties/:id когда :id может быть slug. */
+async function resolvePropertyRouteId(param, propertyTypeHint = null) {
+  const raw = String(param ?? '').trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const property = await propertyQueries.getByIdOrSlug(raw, propertyTypeHint);
+  return property?.id != null ? Number(property.id) : null;
 }
 
 async function loadPropertyRowForReminder(propertyId, propertyTable) {
@@ -10651,6 +10679,61 @@ app.delete('/api/properties/:id/test-timer', async (req, res) => {
 });
 
 /**
+ * GET /api/properties/test-drive — объекты с доступным test-drive
+ * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
+ */
+app.get('/api/properties/test-drive', async (req, res) => {
+  try {
+    const auctions = await propertyQueries.getAuctions();
+    const properties = auctions.filter((p) => {
+      const td =
+        p.test_drive === 1 ||
+        p.test_drive === true ||
+        p.test_drive === '1';
+      return td && propertyRowAllowsTestDriveListing(p);
+    });
+
+    const formattedProperties = properties.map((prop) => {
+      const formatted = { ...prop };
+
+      if (formatted.photos && typeof formatted.photos === 'string') {
+        try { formatted.photos = JSON.parse(formatted.photos); } catch { formatted.photos = []; }
+      } else if (!formatted.photos) {
+        formatted.photos = [];
+      }
+
+      if (formatted.videos && typeof formatted.videos === 'string') {
+        try { formatted.videos = JSON.parse(formatted.videos); } catch { formatted.videos = []; }
+      } else if (!formatted.videos) {
+        formatted.videos = [];
+      }
+
+      if (formatted.additional_documents && typeof formatted.additional_documents === 'string') {
+        try { formatted.additional_documents = JSON.parse(formatted.additional_documents); } catch { formatted.additional_documents = []; }
+      } else if (!formatted.additional_documents) {
+        formatted.additional_documents = [];
+      }
+
+      if (formatted.amenities && typeof formatted.amenities === 'string') {
+        try { formatted.amenities = JSON.parse(formatted.amenities); } catch { formatted.amenities = []; }
+      } else if (!formatted.amenities) {
+        formatted.amenities = [];
+      }
+
+      formatted.name = formatted.title;
+      applyListingPhotosToFormatted(formatted);
+      return formatted;
+    });
+
+    res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
+    res.json({ success: true, data: formattedProperties });
+  } catch (error) {
+    console.error('Ошибка при получении test-drive объектов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/properties/shares - Получить одобренные объекты долевой собственности
  * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
  */
@@ -10844,7 +10927,7 @@ function parseJsonSafe(value, fallback = null) {
  */
 app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     const userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
     const propertyTable = req.query.property_table || null;
     if (!propertyId || Number.isNaN(propertyId)) {
@@ -10901,7 +10984,7 @@ app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
  */
 app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
     }
@@ -10961,7 +11044,7 @@ app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
  */
 app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     const { start_date, end_date } = req.query || {};
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
@@ -11016,7 +11099,7 @@ app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
  */
 app.post('/api/properties/:id/test-drive/request', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.body?.property_type || null);
     const { user_id, start_date, end_date, property_table } = req.body || {};
     const userId = parseInt(user_id, 10);
     if (!propertyId || Number.isNaN(propertyId) || !userId || Number.isNaN(userId)) {
@@ -12407,7 +12490,7 @@ app.get('/api/properties/:id', async (req, res) => {
   try {
     const requestedPropertyType = req.query.property_type || null; // apartment | commercial | house | villa — для однозначного поиска доли
     console.log(`🔍 GET /api/properties/:id - Поиск объекта с ID=${id}, property_type=${requestedPropertyType || 'любой'}`);
-    const property = await propertyQueries.getById(id, requestedPropertyType);
+    const property = await propertyQueries.getByIdOrSlug(id, requestedPropertyType);
     
     if (!property) {
       console.log(`❌ GET /api/properties/:id - Объект с ID=${id} не найден`);
@@ -16703,18 +16786,15 @@ if (process.env.NODE_ENV === 'production') {
     
     console.log('📦 Production режим: раздача статики из dist');
 
-    const sendSpaIndex = (res, indexPath) => {
-      // Свежий index.html — иначе после деплоя в кэше остаются ссылки на старые чанки → 404/MIME-ошибки
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.sendFile(indexPath);
+    const sendSpaIndex = (res, indexPath, req) => {
+      return sendSeoSpaHtml(res, indexPath, req);
     };
     
     // Явно обрабатываем корневой маршрут - отдаем index.html
     app.get('/', (req, res) => {
       const indexPath = join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
-        sendSpaIndex(res, indexPath);
+        sendSpaIndex(res, indexPath, req);
       } else {
         console.error(`❌ index.html не найден по пути: ${indexPath}`);
         res.status(404).send('index.html not found');
@@ -16779,9 +16859,7 @@ if (process.env.NODE_ENV === 'production') {
     // Для всех остальных маршрутов отдаем index.html (SPA routing)
     const indexPath = join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.sendFile(indexPath);
+      sendSeoSpaHtml(res, indexPath, req);
     } else {
       console.error(`❌ index.html не найден по пути: ${indexPath}`);
       res.status(404).send('index.html not found');

@@ -1,4 +1,5 @@
 import { getStoredNumericUserId } from '../services/authService'
+import { getPropertySlugFromRecord } from './propertySlug.js'
 
 /** Тип для GET /api/properties/:id?property_type= — снимает неоднозначность при одинаковых id в двух таблицах. */
 const DISAMBIG_PROPERTY_TYPES = new Set(['apartment', 'commercial', 'house', 'villa'])
@@ -15,20 +16,46 @@ export function normalizePropertyTypeQueryParam(raw) {
   return DISAMBIG_PROPERTY_TYPES.has(t) ? t : ''
 }
 
-/** Query для /property/:id (classic UI + однозначный тип в API). */
-export function buildPropertyDetailSearch({ property = null, classic = false } = {}) {
+/** Query для /property/:slug (classic UI; property_type не нужен при ЧПУ). */
+export function buildPropertyDetailSearch({ property = null, classic = false, useSlugPath = false } = {}) {
   const params = new URLSearchParams()
   if (classic) params.set('classic', '1')
-  const pt = normalizePropertyTypeForDetailQuery(property)
-  if (pt) params.set('property_type', pt)
+  if (!useSlugPath) {
+    const pt = normalizePropertyTypeForDetailQuery(property)
+    if (pt) params.set('property_type', pt)
+  }
   const s = params.toString()
   return s ? `?${s}` : ''
 }
 
-export function getPropertyDetailPath(propertyId, options = {}) {
+/**
+ * @param {number | string | object | null | undefined} propertyOrId
+ * @param {{ property?: object, classic?: boolean }} [options]
+ */
+export function getPropertyDetailPath(propertyOrId, options = {}) {
+  let property = options.property ?? null
+  let propertyId = propertyOrId
+
+  if (propertyOrId && typeof propertyOrId === 'object') {
+    property = propertyOrId
+    propertyId = property.id
+  }
+
   if (propertyId == null || propertyId === '') return '/'
-  const search = buildPropertyDetailSearch(options)
-  return `/property/${propertyId}${search}`
+
+  const slug = property ? getPropertySlugFromRecord(property) : ''
+  const useSlugPath = Boolean(slug && !/^\d+$/.test(slug))
+  const segment = useSlugPath ? slug : String(propertyId)
+  const search = buildPropertyDetailSearch({ property, ...options, useSlugPath })
+  return `/property/${segment}${search}`
+}
+
+/** Страница бронирования test-drive у объекта. */
+export function getPropertyTestDrivePath(propertyOrId, options = {}) {
+  const detail = getPropertyDetailPath(propertyOrId, options)
+  if (!detail || detail === '/') return '/test-drive'
+  const [pathOnly] = detail.split('?')
+  return `${pathOnly}/test-drive`
 }
 
 /** Вкладка «История ставок» на странице объекта (PropertyDetailClassic). */
@@ -41,7 +68,7 @@ export function buildPropertyDetailNavigation(property, { auctionTab, ...pathOpt
   const state = { property }
   if (auctionTab) state.auctionTab = auctionTab
   return {
-    pathname: getPropertyDetailPath(property.id, { property, ...pathOptions }),
+    pathname: getPropertyDetailPath(property, pathOptions),
     state,
   }
 }

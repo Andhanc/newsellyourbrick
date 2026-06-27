@@ -1,3 +1,9 @@
+.debts-property-card--link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .debts-property-card {
   display: flex;
   flex-direction: column;

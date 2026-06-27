@@ -14,6 +14,8 @@ function adminToPlain(row) {
     can_access_chat: o.can_access_chat === 1,
     can_access_objects: o.can_access_objects === 1,
     can_access_access_management: o.can_access_access_management === 1,
+    can_access_seo: o.can_access_seo === 1,
+    seo_role: o.seo_role || null,
   };
 }
 
@@ -32,6 +34,8 @@ export const administratorQueries = {
         can_access_chat: adminData.can_access_chat ? 1 : 0,
         can_access_objects: adminData.can_access_objects ? 1 : 0,
         can_access_access_management: adminData.can_access_access_management ? 1 : 0,
+        can_access_seo: adminData.can_access_seo ? 1 : 0,
+        seo_role: adminData.seo_role || null,
         created_by: adminData.created_by || null,
       },
     });
@@ -74,6 +78,8 @@ export const administratorQueries = {
         can_access_chat: adminData.can_access_chat ? 1 : 0,
         can_access_objects: adminData.can_access_objects ? 1 : 0,
         can_access_access_management: adminData.can_access_access_management ? 1 : 0,
+        can_access_seo: adminData.can_access_seo ? 1 : 0,
+        seo_role: adminData.seo_role !== undefined ? adminData.seo_role || null : undefined,
         updated_at: new Date(),
       },
     });

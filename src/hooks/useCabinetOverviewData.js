@@ -10,6 +10,7 @@ import { fetchUserById } from '../utils/usersApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
@@ -260,7 +261,9 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const pt = row.property_type || 'property'
     const pid = row.property_id
     const href =
-      pid != null ? `/shares/${pt}-${pid}` : null
+      pid != null
+        ? getCoInvestmentDetailPath({ id: pid, property_type: pt })
+        : null
     const loc = String(row.property_location || '').trim()
     events.push({
       sort,

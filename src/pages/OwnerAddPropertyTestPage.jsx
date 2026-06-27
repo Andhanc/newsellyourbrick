@@ -682,7 +682,7 @@ export default function OwnerAddPropertyTestPage() {
     if (goTo) {
       goTo(OWNER_VIEWS.PROPERTIES)
     } else {
-      navigate('/owner-test?view=properties')
+      navigate('/owner-test/properties')
     }
   }, [goTo, navigate])
 
@@ -690,7 +690,7 @@ export default function OwnerAddPropertyTestPage() {
     if (goTo) {
       goTo(OWNER_VIEWS.HOME)
     } else {
-      navigate('/owner-test?view=home')
+      navigate('/owner-test')
     }
   }, [goTo, navigate])
 
@@ -741,7 +741,7 @@ export default function OwnerAddPropertyTestPage() {
         if (goTo) {
           goTo(OWNER_VIEWS.PROFILE)
         } else {
-          navigate('/owner-test?view=profile')
+          navigate('/owner-test/profile')
         }
         return false
       }
@@ -1807,7 +1807,7 @@ export default function OwnerAddPropertyTestPage() {
                       setListingFeePromoCode('')
                       setListingFeePromoError(null)
                       navigate('/bonuses?tab=seller', {
-                        state: { fromListingFee: true, returnPath: '/owner-test?view=add-property' },
+                        state: { fromListingFee: true, returnPath: '/owner-test/add-property' },
                       })
                     }}
                   >

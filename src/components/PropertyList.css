@@ -311,6 +311,12 @@
   }
 }
 
+a.property-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .property-card {
   background: var(--site-color-surface);
   border: 1px solid rgba(226, 232, 240, 0.78);

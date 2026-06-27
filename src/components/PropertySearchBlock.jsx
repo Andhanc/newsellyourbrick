@@ -1,14 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PropertySearchFiltersPanel from './PropertySearchFiltersPanel'
+import { getSearchResultsGeoPath } from '../utils/searchResultsGeoUrl'
 import './PropertySearchBlock.css'
 
 const PropertySearchBlock = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const handleApplyFilters = () => {
-    navigate('/search-results', { state: { fromPropertySearchBlock: true } })
+  const handleApplyFilters = (filters = {}) => {
+    navigate(getSearchResultsGeoPath(filters), {
+      state: { fromPropertySearchBlock: true },
+    })
   }
 
   return (

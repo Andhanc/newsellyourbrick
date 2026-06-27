@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel, FaGem } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel, FaGem, FaSearch } from 'react-icons/fa';
 import './Sidebar.css';
 
 const BADGE_SECTION_IDS = new Set(['test_drive', 'moderation', 'chat', 'purchase_requests', 'bonuses']);
@@ -44,6 +44,7 @@ const Sidebar = ({
     { id: 'clients', icon: FaAddressBook, label: 'Клиенты / CRM', permission: 'can_access_clients' },
     { id: 'purchase_requests', icon: FaShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
     { id: 'bonuses', icon: FaGift, label: 'Бонусные задания', permission: 'can_access_moderation' },
+    { id: 'seo', icon: FaSearch, label: 'SEO', permission: 'can_access_seo' },
     { id: 'testing', icon: FaFlask, label: 'Тестирование', permission: 'can_access_objects' },
     { id: 'access_management', icon: FaKey, label: 'Доступы', permission: 'can_access_access_management' },
     { id: 'storage', icon: FaWarehouse, label: 'Хранилище', permission: 'can_access_objects' }

@@ -32,6 +32,8 @@ import {
   paginateShares,
   sortShares,
 } from '../utils/sharesListing'
+import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
+import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -141,6 +143,29 @@ const Shares = () => {
   }, [sharesFilters, sortKey, activeCategory])
 
   useEffect(() => {
+    if (sharesFilters.country === 'all' || sharesFilters.city === 'all') return
+    const typeToCatalogPlural = {
+      апартаменты: 'apartments',
+      квартира: 'apartments',
+      вилла: 'villas',
+      дом: 'houses',
+      коммерческая: 'commercial',
+    }
+    const path = buildCatalogCityPath({
+      country: sharesFilters.country,
+      city: sharesFilters.city,
+      typePlural: typeToCatalogPlural[sharesFilters.propertyType] || undefined,
+      sale: 'co-investment',
+    })
+    if (path) navigate(path)
+  }, [
+    sharesFilters.country,
+    sharesFilters.city,
+    sharesFilters.propertyType,
+    navigate,
+  ])
+
+  useEffect(() => {
     if (currentPage > pagination.totalPages) {
       setCurrentPage(pagination.totalPages)
     }
@@ -178,8 +203,11 @@ const Shares = () => {
   }
 
   const handleInvest = (share) => {
-    const routeId = share.shareId || share.routeId || `${share.property_type}-${share.id}`
-    navigate(`/shares/${routeId}`, { state: { shareObject: share } })
+    const targetPath = getCoInvestmentContextPropertyPath(share, {
+      country: sharesFilters.country,
+      city: sharesFilters.city,
+    })
+    navigate(targetPath, { state: { shareObject: share } })
   }
 
   const handleResetFilters = () => {
@@ -203,7 +231,7 @@ const Shares = () => {
               platformStats={platformStats}
             />
 
-            <section className="shares-listing-section" aria-label={t('shares')}>
+            <section className="shares-listing-section" aria-label={t('coInvestment')}>
               <SharesListingToolbar
                 filters={sharesFilters}
                 onFiltersChange={setSharesFilters}
@@ -233,6 +261,10 @@ const Shares = () => {
                       share={obj}
                       isFavorite={isShareLiked(obj)}
                       onFavoriteToggle={handleShareFavoriteToggle}
+                      href={getCoInvestmentContextPropertyPath(obj, {
+                        country: sharesFilters.country,
+                        city: sharesFilters.city,
+                      })}
                       onInvest={handleInvest}
                       imageFallback={SHARE_CARD_FALLBACK}
                     />
@@ -257,8 +289,7 @@ const Shares = () => {
         wrapperClassName="shares-floats"
         recommendationProperties={allShareObjects}
         onRecommendationClick={(share) => {
-          const routeId = share.shareId || share.routeId || `${share.property_type}-${share.id}`
-          navigate(`/shares/${routeId}`, { state: { shareObject: share } })
+          handleInvest(share)
         }}
       >
         {dbUserId ? (

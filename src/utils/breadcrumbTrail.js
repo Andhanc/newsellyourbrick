@@ -3,6 +3,26 @@
  * @typedef {{ to: string | null, label: string }} BreadcrumbItem
  */
 
+import { CO_INVESTMENT_PATH } from './sectionRoutes'
+import {
+  CATALOG_TYPE_PLURALS,
+  CATALOG_SALE_TABS,
+  isCatalogCountrySegment,
+} from './catalogGeoUrl'
+import { getCanonicalRegionLabel } from './propertySearchLocation'
+import {
+  buildAuctionFilterPath,
+  isAuctionRoute,
+  parseAuctionFilterPath,
+} from './auctionFilterUrl'
+
+const CATALOG_TYPE_I18N = {
+  apartments: 'oap_propertyTypeApartments',
+  villas: 'propertyTypeVilla',
+  houses: 'propertyTypeHouse',
+  commercial: 'propertyTypeCommercial',
+}
+
 function normalizePathname(pathname) {
   if (!pathname || pathname === '/') return pathname || '/'
   return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname
@@ -47,32 +67,38 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
   /** @type {BreadcrumbItem[]} */
   let crumbs = []
 
-  if (pathname === '/auction' || pathnameRaw === '/main') {
-    const filter = q.get('filter')
-    const categoryRaw = q.get('category')
-    const normalizedCat = normalizeCategoryFromUrl(categoryRaw)
-    const hasSaleFilter = filter === 'buy_now' || filter === 'ended'
-    const hasCategory = Boolean(normalizedCat && normalizedCat !== 'все')
+  if (isAuctionRoute(pathname) || pathnameRaw === '/main') {
+    const parsed = parseAuctionFilterPath(pathname, search)
+    const hasSaleFilter = parsed.saleFilters.length === 1
+    const hasCategory = parsed.propertyTypes.length === 1
 
     if (!hasSaleFilter && !hasCategory) {
       crumbs = [home, { to: null, label: t('auction') }]
     } else {
       crumbs = [home, { to: '/auction', label: t('auction') }]
       if (hasSaleFilter) {
-        const fs = filter === 'buy_now' ? 'buy_now' : 'ended'
+        const filter = parsed.saleFilters[0]
+        const saleLabelKey =
+          filter === 'buy_now'
+            ? 'buyNowSectionTitle'
+            : filter === 'ended'
+              ? 'auctionFilterEnded'
+              : filter === 'pre_auction'
+                ? 'auctionFilterPreAuction'
+                : 'modalPurchaseTypeAuction'
         crumbs.push({
-          to: `/auction?filter=${fs}`,
-          label: filter === 'buy_now' ? t('buyNowSectionTitle') : t('auctionFilterEnded'),
+          to: hasCategory
+            ? buildAuctionFilterPath({ saleFilter: filter, categorySlug: null })
+            : null,
+          label: t(saleLabelKey),
         })
       }
       if (hasCategory) {
-        const qs = new URLSearchParams()
-        if (hasSaleFilter) qs.set('filter', filter)
-        qs.set('category', categoryRaw || normalizedCat)
+        const normalizedCat = parsed.propertyTypes[0]
         const key = CATEGORY_I18N[normalizedCat]
         crumbs.push({
-          to: `/auction?${qs.toString()}`,
-          label: key ? t(key) : categoryRaw || normalizedCat,
+          to: parsed.canonicalPath,
+          label: key ? t(key) : normalizedCat,
         })
       }
       const last = crumbs[crumbs.length - 1]
@@ -81,20 +107,27 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
     return crumbs
   }
 
-  if (pathname === '/shares') {
-    return [home, { to: null, label: t('shares') }]
+  if (pathname === CO_INVESTMENT_PATH || pathname === '/shares') {
+    return [home, { to: null, label: t('coInvestment') }]
   }
 
-  if (/^\/shares\/[^/]+$/.test(pathname)) {
+  if (
+    pathname.startsWith(`${CO_INVESTMENT_PATH}/`) ||
+    /^\/shares\/[^/]+$/.test(pathname)
+  ) {
     return [
       home,
-      { to: '/shares', label: t('shares') },
+      { to: CO_INVESTMENT_PATH, label: t('coInvestment') },
       { to: null, label: t('listingDefault') },
     ]
   }
 
   if (pathname === '/debts') {
     return [home, { to: null, label: t('debtsTitle') }]
+  }
+
+  if (pathname === '/test-drive') {
+    return [home, { to: null, label: t('testDrive') }]
   }
 
   if (pathname === '/bonuses') {
@@ -184,6 +217,49 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
   const key = staticKeys[pathname]
   if (key) {
     return [home, { to: null, label: t(key) }]
+  }
+
+  if (pathname === '/search-results' || pathname.startsWith('/search-results/')) {
+    return [home, { to: null, label: t('search') }]
+  }
+
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length >= 2 && isCatalogCountrySegment(segments[0])) {
+    const [country, city, typePlural] = segments
+    const cityLabel = getCanonicalRegionLabel(city, city)
+    /** @type {BreadcrumbItem[]} */
+    let catalogCrumbs = [home, { to: `/${country}/${city}`, label: cityLabel }]
+
+    if (typePlural && CATALOG_TYPE_PLURALS[typePlural]) {
+      const typeKey = CATALOG_TYPE_I18N[typePlural]
+      catalogCrumbs.push({
+        to: `/${country}/${city}/${typePlural}`,
+        label: typeKey ? t(typeKey) : typePlural,
+      })
+    }
+
+    const sale = String(q.get('sale') || '').toLowerCase()
+    if (sale && sale !== 'all' && CATALOG_SALE_TABS.includes(sale)) {
+      const basePath = typePlural
+        ? `/${country}/${city}/${typePlural}`
+        : `/${country}/${city}`
+      const saleLabel =
+        sale === 'auction'
+          ? t('auction')
+          : sale === 'co-investment'
+            ? t('coInvestment')
+            : sale === 'debts'
+              ? t('debtsTitle')
+              : sale
+      catalogCrumbs.push({
+        to: `${basePath}?sale=${sale}`,
+        label: saleLabel,
+      })
+    }
+
+    const last = catalogCrumbs[catalogCrumbs.length - 1]
+    catalogCrumbs[catalogCrumbs.length - 1] = { ...last, to: null }
+    return catalogCrumbs
   }
 
   if (pathname.startsWith('/property/')) {

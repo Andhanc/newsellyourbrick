@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
 import {
   FiSearch,
@@ -83,6 +84,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
+import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
 import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
@@ -2009,10 +2011,10 @@ function MainPage() {
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
-      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png' },
-      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png' },
-      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png' },
-      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png' },
+      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
+      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
+      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
+      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
   ], [t, i18n.language])
   
   const navigationItems = useMemo(() => [
@@ -2075,7 +2077,7 @@ function MainPage() {
     setActiveCategory(categoryLabel)
     
     // Обновляем URL с параметрами фильтра
-    navigate(`/auction?category=${categoryLabel}`, { replace: true })
+    navigate(buildAuctionFilterPath({ categorySlug: legacyCategoryToSlug(categoryLabel) }), { replace: true })
 
     setTimeout(() => {
       // Фильтруем объявления по типу

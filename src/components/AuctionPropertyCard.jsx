@@ -20,7 +20,7 @@ import {
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
 import './AuctionPropertyCard.css'
-import { PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 
 function useAuctionCardState(property) {
   return useMemo(() => {
@@ -122,10 +122,7 @@ export default function AuctionPropertyCard({
     ? resolveAuctionCurrentBidValue(property)
     : property.price || 0
 
-  const handleCardClick = (e) => {
-    if (e.target.closest('button') || e.target.closest('a')) return
-    onOpen(property)
-  }
+  const detailHref = property ? getPropertyDetailPath(property) : '#'
 
   const showFeatureBadges =
     !state.isReserved &&
@@ -133,17 +130,29 @@ export default function AuctionPropertyCard({
     (state.hasBuyNowPrice || state.hasTestDrive) &&
     !state.listingEnded
 
+  const cardClassName = [
+    'auction-card',
+    state.isAuctionEndedCard && 'auction-card--ended',
+    showPrivateClubBand && 'auction-card--vip',
+    state.showCircularTimer && 'auction-card--live',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <article
-      className={[
-        'auction-card',
-        state.isAuctionEndedCard && 'auction-card--ended',
-        showPrivateClubBand && 'auction-card--vip',
-        state.showCircularTimer && 'auction-card--live',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      onClick={handleCardClick}
+    <a
+      href={detailHref}
+      className={cardClassName}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        if (e.target.closest('button')) {
+          e.preventDefault()
+          return
+        }
+        if (!onOpen) return
+        e.preventDefault()
+        onOpen(property)
+      }}
     >
       {state.isAuctionEndedCard ? (
         <div className="auction-card__ended-overlay">
@@ -401,6 +410,6 @@ export default function AuctionPropertyCard({
           </div>
         ) : null}
       </div>
-    </article>
+    </a>
   )
 }

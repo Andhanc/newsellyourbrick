@@ -9,6 +9,7 @@ import {
   getShareLocationLabel,
 } from '../utils/sharesListing'
 import { getSharePricePerShare, isShareSoldOut } from '../utils/sharesPageFilters'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { formatPropertyPrice } from '../utils/currency'
 import './SharesPropertyCard.css'
 
@@ -24,6 +25,7 @@ function SharesPropertyCard({
   isFavorite = false,
   onFavoriteToggle,
   onInvest,
+  href,
   imageFallback,
 }) {
   const { t, i18n } = useTranslation()
@@ -64,10 +66,26 @@ function SharesPropertyCard({
     if (!soldOut) onInvest?.(share)
   }
 
+  const detailHref = href || (share ? getCoInvestmentDetailPath(share) : '#')
+
   return (
-    <article
+    <a
+      href={detailHref}
       className={`shares-v2-card shares-v2-card--${viewMode}${soldOut ? ' shares-v2-card--sold-out' : ''}`}
-      onClick={() => !soldOut && onInvest?.(share)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        if (e.target.closest('button')) {
+          e.preventDefault()
+          return
+        }
+        if (soldOut) {
+          e.preventDefault()
+          return
+        }
+        if (!onInvest) return
+        e.preventDefault()
+        onInvest(share)
+      }}
     >
       <div className="shares-v2-card__media">
         <span className={`shares-v2-card__badge shares-v2-card__badge--${badgeType}`}>
@@ -146,7 +164,7 @@ function SharesPropertyCard({
           </button>
         </div>
       </div>
-    </article>
+    </a>
   )
 }
 

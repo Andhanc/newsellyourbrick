@@ -14,13 +14,22 @@ import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { getPropertyCardImage, normalizePropertyMediaFields } from '../utils/propertyImage'
 import { buildDisplayProperty } from '../utils/buildDisplayProperty'
 import { formatPropertyPrice } from '../utils/currency'
+import { getCoInvestmentDetailPath, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { getPropertySlugFromRecord, isNumericPropertyRouteParam } from '../utils/propertySlug'
+import { usePageSeoOverride } from '../context/PageSeoContext'
+import NotFoundPage from '../components/NotFoundPage'
+import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
 import './PropertyDetailClassic.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function isShareDbRouteId(routeId) {
-  return typeof routeId === 'string' && /^(apartment|commercial|house|villa)-(\d+)$/.test(routeId)
+  if (typeof routeId !== 'string' || !routeId) return false
+  if (/^(apartment|commercial|house|villa)-\d+$/i.test(routeId)) return true
+  if (/^(apartment|commercial|house|villa)-.+/i.test(routeId)) return true
+  if (/^\d+$/.test(routeId)) return true
+  return false
 }
 
 const DEMO_SHARE_OBJECTS = [
@@ -87,7 +96,7 @@ const DEMO_SHARE_OBJECTS = [
 
 const ShareDetailPage = () => {
   const { t, i18n } = useTranslation()
-  const { id } = useParams()
+  const { slugOrId: id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -133,6 +142,20 @@ const ShareDetailPage = () => {
           : 'properties_apartments'),
     }
   }, [shareObject])
+
+  const shareSeo = useMemo(() => {
+    if (!shareObject) return null
+    const base = buildPropertyPageSeo(shareObject, t, i18n.language)
+    if (!base) return null
+    const image = getPropertyCardImage(shareObject, '')
+    return {
+      ...base,
+      canonicalPath: location.pathname.split('?')[0],
+      ogImage: image || undefined,
+      ogType: 'product',
+    }
+  }, [shareObject, t, i18n.language, location.pathname])
+  usePageSeoOverride(shareSeo)
 
   useEffect(() => {
     const apply = () => {
@@ -181,12 +204,15 @@ const ShareDetailPage = () => {
   }, [user, userLoaded])
 
   const loadPropertyFromApi = useCallback(() => {
-    if (!id) return Promise.resolve()
-    const match = id.match(/^(apartment|commercial|house|villa)-(\d+)$/)
-    if (!match) return Promise.resolve()
-    const [, propertyType, propertyId] = match
+    if (!id || !isShareDbRouteId(id)) return Promise.resolve()
     setLoadingShare(true)
-    return fetch(`${API_BASE}/properties/${propertyId}?property_type=${propertyType}`)
+    const legacyMatch = id.match(/^(apartment|commercial|house|villa)-(\d+)$/i)
+    const apiKey = legacyMatch ? legacyMatch[2] : id
+    const typeQ = legacyMatch
+      ? `property_type=${encodeURIComponent(legacyMatch[1].toLowerCase())}`
+      : ''
+    const url = `${API_BASE}/properties/${encodeURIComponent(apiKey)}${typeQ ? `?${typeQ}` : ''}`
+    return fetch(url)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
         const p = json.data || json
@@ -219,12 +245,17 @@ const ShareDetailPage = () => {
           bedrooms: p.bedrooms,
           property_type: p.property_type,
           currency: p.currency || 'EUR',
+          slug: p.slug,
           ...p,
         })
+        const slug = getPropertySlugFromRecord(p)
+        if (slug && id && (isNumericPropertyRouteParam(id) || legacyMatch)) {
+          navigate(getCoInvestmentDetailPath({ ...p, slug }), { replace: true, state: location.state })
+        }
       })
       .catch(() => setShareObject(null))
       .finally(() => setLoadingShare(false))
-  }, [id])
+  }, [id, navigate, location.state])
 
   useLayoutEffect(() => {
     setLoadingShare(isShareDbRouteId(id))
@@ -406,21 +437,14 @@ const ShareDetailPage = () => {
   }
 
   if (!shareObject || !classicProperty) {
-    return (
-      <div className="property-detail-page-new" style={{ padding: '48px 24px', textAlign: 'center' }}>
-        <p>{t('shareDetailNotFound')}</p>
-        <button type="button" onClick={() => navigate('/shares')}>
-          {t('shareDetailBackToShares')}
-        </button>
-      </div>
-    )
+    return <NotFoundPage />
   }
 
   return (
     <>
       <PropertyDetailClassic
         property={classicProperty}
-        onBack={() => navigate('/shares')}
+        onBack={() => navigate(CO_INVESTMENT_PATH)}
         requireAuthOnLoad={false}
         shareListingConfig={shareListingConfig}
       />
@@ -433,7 +457,7 @@ const ShareDetailPage = () => {
         userId={userId}
         userEmail={userEmail}
         userDeposit={userDeposit}
-        returnPath={id ? `/shares/${id}` : undefined}
+        returnPath={id ? getCoInvestmentDetailPath(shareObject || { id }) : undefined}
       />
 
       <DepositRequiredModal

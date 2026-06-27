@@ -15,6 +15,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import i18n from '../i18n/config'
 import { getCurrencySymbol } from '../utils/currency'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import './History.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
@@ -894,7 +895,10 @@ const History = () => {
                     </p>
                     {sharePurchases.map((row) => {
                       const cur = (row.currency || 'USD').toUpperCase()
-                      const shareTo = `/shares/${row.property_type}-${row.property_id}`
+                      const shareTo = getCoInvestmentDetailPath({
+                        id: row.property_id,
+                        property_type: row.property_type,
+                      })
                       const title =
                         row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
                       const imgSrc = sharePurchaseImageSrc(row.property_image)

@@ -12,6 +12,7 @@ import {
   getDebtRiskTone,
   getDebtsCardPresentation,
 } from '../utils/debtsPageFilters'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import './DebtsPropertyCard.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -21,6 +22,7 @@ function DebtsPropertyCard({
   isFavorite = false,
   onFavoriteToggle,
   onOpen,
+  href,
 }) {
   const { t, i18n } = useTranslation()
 
@@ -49,6 +51,8 @@ function DebtsPropertyCard({
       locale: i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US',
     })
 
+  const detailHref = href || (property ? getPropertyDetailPath(property) : '#')
+
   const handleOpen = (e) => {
     if (e?.target?.closest('button')) return
     if (!ensureCanOpenProperty()) return
@@ -69,9 +73,18 @@ function DebtsPropertyCard({
   }
 
   return (
-    <article
-      className={`debts-property-card${isReserved ? ' debts-property-card--reserved' : ''}`}
-      onClick={handleOpen}
+    <a
+      href={detailHref}
+      className={`debts-property-card debts-property-card--link${isReserved ? ' debts-property-card--reserved' : ''}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        if (e.target.closest('button')) {
+          e.preventDefault()
+          return
+        }
+        e.preventDefault()
+        handleOpen(e)
+      }}
     >
       <div className="debts-property-card__media">
         <span className={`debts-property-card__risk debts-property-card__risk--${tone}`}>
@@ -160,7 +173,7 @@ function DebtsPropertyCard({
           </div>
         ) : null}
       </div>
-    </article>
+    </a>
   )
 }
 

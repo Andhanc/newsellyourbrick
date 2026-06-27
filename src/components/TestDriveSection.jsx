@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { Check, Circle } from 'lucide-react'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 
@@ -10,7 +11,9 @@ let API_BASE_URL = getApiBaseUrlSync()
  */
 export default function TestDriveSection({
   propertyId,
+  propertySlug,
   propertyTable,
+  propertyType,
   hasTestDrive,
   i18nLang,
   layout = 'default',
@@ -36,8 +39,9 @@ export default function TestDriveSection({
         user_id: uid,
         property_table: propertyTable || 'properties_apartments',
       })
+      const apiKey = propertySlug || propertyId
       const res = await fetch(
-        `${API_BASE_URL}/properties/${propertyId}/test-drive/eligibility?${q.toString()}`
+        `${API_BASE_URL}/properties/${encodeURIComponent(apiKey)}/test-drive/eligibility?${q.toString()}`
       )
       const json = await res.json()
       if (json.success && json.data) {
@@ -51,7 +55,7 @@ export default function TestDriveSection({
     } finally {
       setLoading(false)
     }
-  }, [propertyId, propertyTable])
+  }, [propertyId, propertySlug, propertyTable])
 
   useEffect(() => {
     fetchEligibility()
@@ -120,7 +124,13 @@ export default function TestDriveSection({
         disabled={!allDone || loading}
         onClick={() => {
           const table = encodeURIComponent(propertyTable || 'properties_apartments')
-          navigate(`/property/${propertyId}/test-drive?table=${table}`)
+          const basePath = getPropertyDetailPath({
+            id: propertyId,
+            property_type: propertyType,
+            slug: propertySlug,
+          })
+          const pathname = basePath.split('?')[0]
+          navigate(`${pathname}/test-drive?table=${table}`)
         }}
       >
         {loading

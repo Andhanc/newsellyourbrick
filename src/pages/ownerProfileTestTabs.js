@@ -18,6 +18,6 @@ export function isOwnerProfileTabId(value) {
 }
 
 export function getOwnerProfileTabPath(tabId) {
-  if (tabId === 'personal') return '/owner-test?view=profile'
-  return `/owner-test?view=profile&tab=${tabId}`
+  if (tabId === 'personal') return '/owner-test/profile'
+  return `/owner-test/profile?tab=${tabId}`
 }

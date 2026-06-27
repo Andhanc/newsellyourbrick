@@ -24,6 +24,7 @@ import AdminAddition from '../components/admin/AdminAddition';
 import AdminTestDrive from '../components/admin/AdminTestDrive';
 import AdminAuctions from '../components/admin/AdminAuctions';
 import AdminPrivateClub from '../components/admin/AdminPrivateClub';
+import SeoPanel from '../components/admin/SeoPanel';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import { getApiBaseUrl } from '../utils/apiConfig';
@@ -114,7 +115,8 @@ const AdminPanelPage = () => {
     testing: 'Тестирование',
     access_management: 'Доступы',
     storage: 'Хранилище',
-    auctions: 'Аукционы'
+    auctions: 'Аукционы',
+    seo: 'SEO'
   };
 
   // Проверка прав доступа к разделу
@@ -143,7 +145,8 @@ const AdminPanelPage = () => {
       testing: adminPermissions.can_access_objects,
       access_management: adminPermissions.can_access_access_management,
       storage: adminPermissions.can_access_objects,
-      auctions: adminPermissions.can_access_objects
+      auctions: adminPermissions.can_access_objects,
+      seo: adminPermissions.can_access_seo
     };
 
     return accessMap[section] || false;
@@ -360,6 +363,8 @@ const AdminPanelPage = () => {
         return <StorageMirror />;
       case 'auctions':
         return <AdminAuctions />;
+      case 'seo':
+        return <SeoPanel />;
       default:
         return <Statistics businessInfo={mockBusinessInfo} onShowUsers={() => setShowUsersModal(true)} />;
     }

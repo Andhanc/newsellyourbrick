@@ -1,6 +1,11 @@
 import { getPropertyDetailPath } from './propertyDetailUrl'
+import { getCoInvestmentDetailPath } from './sectionRoutes'
 
-const SHARE_LISTING_TYPES = new Set(['apartment', 'house', 'villa', 'commercial'])
+export {
+  getCoInvestmentDetailPath,
+  CO_INVESTMENT_PATH,
+  CO_INVESTMENT_LEGACY_PATH,
+} from './sectionRoutes'
 
 function isShareListing(property) {
   if (!property) return false
@@ -15,16 +20,9 @@ function isShareListing(property) {
   )
 }
 
-function getShareListingPath(property) {
-  const id = property?.id
-  if (id == null || id === '') return '/shares'
-
-  const pt = String(property.property_type || '').trim().toLowerCase()
-  if (SHARE_LISTING_TYPES.has(pt)) {
-    return `/shares/${pt}-${id}`
-  }
-
-  return `/shares/${id}`
+/** @deprecated используйте getCoInvestmentDetailPath */
+export function getShareListingPath(property) {
+  return getCoInvestmentDetailPath(property)
 }
 
 /** Абсолютный URL карточки объекта или долевого лота. */
@@ -33,8 +31,8 @@ export function getPropertyShareUrl(property) {
 
   const origin = window.location.origin
   const path = isShareListing(property)
-    ? getShareListingPath(property)
-    : getPropertyDetailPath(property.id, { property })
+    ? getCoInvestmentDetailPath(property)
+    : getPropertyDetailPath(property)
 
   return `${origin}${path}`
 }

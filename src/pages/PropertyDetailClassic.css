@@ -402,6 +402,16 @@
   gap: 24px;
 }
 
+.property-detail-header__container--with-geo {
+  gap: 16px;
+}
+
+.property-detail-header__container--with-geo .property-geo-links {
+  flex: 1;
+  min-width: 0;
+}
+
+
 /* Кнопка «Назад» — см. PageBackButton.css */
 
 /* Основной контент */

@@ -9,6 +9,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import './OwnerPurchasedAssets.css'
 import { getCurrencySymbol } from '../utils/currency'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -383,7 +384,10 @@ export default function OwnerPurchasedAssets({ userId }) {
               <div className="owner-purchased__grid">
                 {sharePurchases.map((row) => {
                   const cur = (row.currency || 'USD').toUpperCase()
-                  const shareTo = `/shares/${row.property_type}-${row.property_id}`
+                  const shareTo = getCoInvestmentDetailPath({
+                    id: row.property_id,
+                    property_type: row.property_type,
+                  })
                   const title =
                     row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
                   const imgSrc = sharePurchaseImageSrc(row.property_image)
