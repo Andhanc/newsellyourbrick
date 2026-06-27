@@ -6,7 +6,7 @@ import i18n from '../i18n/config'
 import {
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
-} from '../hooks/useCabinetOverviewData'
+} from '../constants/cabinetEvents'
 
 /**
  * Одно SSE-подключение на вкладку для push из админки (без polling):
@@ -96,20 +96,60 @@ export default function UserCabinetSseBridge() {
       }
     }
 
-    connect()
+    const startConnect = () => {
+      if (!cancelled) void connect()
+    }
 
-    const onClerkSynced = () => connect()
+    const raw = localStorage.getItem('userId')
+    const hasDbUser = raw && /^\d+$/.test(String(raw))
+    if (!hasDbUser) {
+      const onClerkSyncedOnly = () => startConnect()
+      window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSyncedOnly)
+      return () => {
+        cancelled = true
+        window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSyncedOnly)
+        closeEs()
+      }
+    }
+
+    const isHome = window.location.pathname === '/'
+    let idleCancel = null
+    const interactEvents = ['scroll', 'click', 'keydown', 'touchstart']
+    const onInteract = () => startConnect()
+
+    if (isHome) {
+      interactEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onInteract, { once: true, passive: true })
+      })
+      if (typeof window.requestIdleCallback === 'function') {
+        const id = window.requestIdleCallback(startConnect, { timeout: 15000 })
+        idleCancel = () => window.cancelIdleCallback(id)
+      } else {
+        const t = window.setTimeout(startConnect, 8000)
+        idleCancel = () => window.clearTimeout(t)
+      }
+    } else {
+      startConnect()
+    }
+
+    const onClerkSynced = () => startConnect()
     window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible' && !cancelled) {
-        connect()
+        startConnect()
       }
     }
     document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       cancelled = true
+      idleCancel?.()
+      if (isHome) {
+        interactEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, onInteract)
+        })
+      }
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
       document.removeEventListener('visibilitychange', onVisibility)
       closeEs()

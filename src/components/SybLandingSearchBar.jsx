@@ -4,10 +4,29 @@ import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import { FaGavel, FaShoppingBag, FaChartPie, FaHome, FaBuilding } from 'react-icons/fa'
 import { scrollMainTo } from '@/utils/mainScroll'
-import {
-  EMPTY_CATALOG_FILTERS,
-  persistCatalogFilters,
-} from '@/utils/catalogFilters'
+
+const CATALOG_FILTERS_STORAGE_KEY = 'propertySearchFilters'
+
+const EMPTY_SEARCH_FILTERS = {
+  country: '',
+  region: '',
+  propertyType: '',
+  purchaseTypes: [],
+  purchaseType: '',
+  currency: '',
+  minPrice: '',
+  maxPrice: '',
+  minArea: '',
+  maxArea: '',
+}
+
+function persistSearchFilters(filters) {
+  const payload = {
+    ...filters,
+    purchaseType: filters.purchaseTypes?.length === 1 ? filters.purchaseTypes[0] : '',
+  }
+  sessionStorage.setItem(CATALOG_FILTERS_STORAGE_KEY, JSON.stringify(payload))
+}
 
 const FILTER_CHIPS = [
   {
@@ -64,7 +83,7 @@ export default function SybLandingSearchBar() {
 
   const handleSearch = () => {
     const chip = FILTER_CHIPS.find((item) => item.id === activeChipId)
-    const nextFilters = { ...EMPTY_CATALOG_FILTERS }
+    const nextFilters = { ...EMPTY_SEARCH_FILTERS }
 
     if (chip?.kind === 'purchase') {
       nextFilters.purchaseTypes = [chip.value]
@@ -72,7 +91,7 @@ export default function SybLandingSearchBar() {
       nextFilters.propertyType = chip.value
     }
 
-    persistCatalogFilters(nextFilters)
+    persistSearchFilters(nextFilters)
     scrollMainTo(0, 0, 'instant')
     navigate('/search-results', {
       state: {

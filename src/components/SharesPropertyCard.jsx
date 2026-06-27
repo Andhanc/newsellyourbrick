@@ -7,8 +7,8 @@ import {
   formatShareOwnershipPercent,
   getShareBadgeType,
   getShareLocationLabel,
-} from '../utils/sharesListing'
-import { getSharePricePerShare, isShareSoldOut } from '../utils/sharesPageFilters'
+} from '../utils/shareCardDisplay'
+import { getSharePricePerShare, isShareSoldOut } from '../utils/shareCardMetrics'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { formatPropertyPrice } from '../utils/currency'
 import './SharesPropertyCard.css'

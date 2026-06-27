@@ -1,6 +1,7 @@
 import { getUserData } from '../services/authService'
-import { NEW_OWNER_CABINET_HOME_PATH } from './ownerTestProfile'
-import { OWNER_TEST_STANDALONE_HREF_MAP } from './ownerTestNav'
+
+const OWNER_CABINET_HOME_PATH = '/owner-test'
+const OWNER_SUBSCRIPTIONS_PATH = '/owner-test/subscriptions'
 
 /** @returns {'admin' | 'seller' | 'owner' | 'buyer' | 'client'} */
 export function readStoredUserRole() {
@@ -29,7 +30,7 @@ export function isSellerCabinetRole(role = readStoredUserRole()) {
 /** Главная страница личного кабинета по роли. */
 export function getCabinetHomePath(role = readStoredUserRole()) {
   if (role === 'admin') return '/admin'
-  if (isSellerCabinetRole(role)) return NEW_OWNER_CABINET_HOME_PATH
+  if (isSellerCabinetRole(role)) return OWNER_CABINET_HOME_PATH
   return '/profile'
 }
 
@@ -52,14 +53,14 @@ export function getCabinetWalletPath(role = readStoredUserRole()) {
 
 /** Подписки: покупатель — лист в /profile, продавец — /owner-test/subscriptions. */
 export function getCabinetSubscriptionsPath(role = readStoredUserRole()) {
-  if (isSellerCabinetRole(role)) return OWNER_TEST_STANDALONE_HREF_MAP.subscriptions
+  if (isSellerCabinetRole(role)) return OWNER_SUBSCRIPTIONS_PATH
   return '/profile?subscriptions=1'
 }
 
 export function isCabinetSubscriptionsPath(pathname, search = '', role = readStoredUserRole()) {
   if (isSellerCabinetRole(role)) {
     return (
-      pathname === OWNER_TEST_STANDALONE_HREF_MAP.subscriptions ||
+      pathname === OWNER_SUBSCRIPTIONS_PATH ||
       pathname.startsWith('/owner-subscriptions-test')
     )
   }
@@ -76,7 +77,7 @@ export function getCabinetDataFieldPath(field, role = readStoredUserRole()) {
 
 export function isCabinetProfilePath(pathname, role = readStoredUserRole()) {
   if (isSellerCabinetRole(role)) {
-    return pathname === NEW_OWNER_CABINET_HOME_PATH || pathname.startsWith('/owner-')
+    return pathname === OWNER_CABINET_HOME_PATH || pathname.startsWith('/owner-')
   }
   return pathname === '/profile' || pathname.startsWith('/profile/')
 }

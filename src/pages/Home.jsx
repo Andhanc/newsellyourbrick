@@ -1,15 +1,12 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useUser, useAuth } from '@clerk/clerk-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
-import { FaWhatsapp } from 'react-icons/fa'
-import { FaTelegram } from 'react-icons/fa6'
+import { WhatsAppIcon, TelegramIcon } from '../components/icons/ContactChannelIcons'
 import Header from '../components/Header'
 import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
-import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import {
@@ -19,8 +16,6 @@ import {
   fetchNumericDbUserIdForApi,
   getStoredNumericUserId,
 } from '../services/authService'
-import { syncAssistantLead } from '../services/assistantLeadService'
-import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import {
   getCachedList,
   hasCachedList,
@@ -36,12 +31,13 @@ import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
-import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
-import { useCabinetOverviewData } from '../hooks/useCabinetOverviewData'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
+
+const FAQLazy = lazy(() => import('../components/FAQ'))
 
 const MOBILE_BREAKPOINT = 768
 
@@ -81,8 +77,6 @@ function Home() {
   const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
   const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
-  const { user, isLoaded: userLoaded } = useUser()
-  const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const navigate = useNavigate()
@@ -91,9 +85,11 @@ function Home() {
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
-  const { cabinetVipActive, numericUserId } = useCabinetOverviewData()
+  const { cabinetVipActive, numericUserId } = useViewerVipAccess()
   const cabinetVipRef = useRef(false)
   const viewerUserIdRef = useRef(null)
+  const [showFaq, setShowFaq] = useState(false)
+  const faqSentinelRef = useRef(null)
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -337,32 +333,38 @@ function Home() {
     return () => window.removeEventListener(CLERK_DB_USER_SYNCED, applyNumericUserIdFromStorage)
   }, [])
 
-  // Числовой id БД: легаси (email/телефон) не блокируем ожиданием Clerk userLoaded
+  // Числовой id БД — после idle, без ожидания Clerk
   useEffect(() => {
     let cancelled = false
     const run = async () => {
-      const id = await fetchNumericDbUserIdForApi({
-        clerkUser: user,
-        clerkUserLoaded: userLoaded,
-      })
+      const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
       if (!cancelled && id != null) {
         setDbUserId((prev) => (prev === id ? prev : id))
       }
     }
-    void run()
+    const schedule =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? () => window.requestIdleCallback(() => void run(), { timeout: 5000 })
+        : () => window.setTimeout(() => void run(), 1200)
+    const handle = schedule()
     return () => {
       cancelled = true
+      if (typeof handle === 'number') {
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.cancelIdleCallback(handle)
+        } else if (typeof window !== 'undefined') {
+          window.clearTimeout(handle)
+        }
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoaded, user?.id, user?.primaryEmailAddress?.emailAddress])
+  }, [])
 
-  // Загружаем депозит пользователя
+  // Загружаем депозит пользователя (после idle — не конкурирует с листингом)
   useEffect(() => {
     let cancelled = false
 
     const loadUserDeposit = async () => {
       if (!dbUserId) {
-        // Не сбрасываем в 0 если пользователь залогинен — id ещё грузится
         if (!localStorage.getItem('isLoggedIn') || localStorage.getItem('isLoggedIn') !== 'true') {
           setUserDeposit(0)
         }
@@ -389,16 +391,28 @@ function Home() {
       }
     }
 
-    void loadUserDeposit()
+    const schedule =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? () => window.requestIdleCallback(() => void loadUserDeposit(), { timeout: 6000 })
+        : () => window.setTimeout(() => void loadUserDeposit(), 1500)
+
+    const handle = schedule()
     const onFocus = () => void loadUserDeposit()
     window.addEventListener('focus', onFocus)
     return () => {
       cancelled = true
       window.removeEventListener('focus', onFocus)
+      if (typeof handle === 'number') {
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.cancelIdleCallback(handle)
+        } else if (typeof window !== 'undefined') {
+          window.clearTimeout(handle)
+        }
+      }
     }
   }, [dbUserId])
 
-  const isLoggedIn = isAuthenticated() || (user && userLoaded)
+  const isLoggedIn = isAuthenticated() || Boolean(getUserData()?.isLoggedIn)
   const getChatUserId = useMemo(() => {
     if (isLoggedIn) {
       const currentUserData = getUserData()
@@ -427,7 +441,7 @@ function Home() {
   } = useManagerLiveChat(getChatUserId, t)
 
   const openManagerChatDock = useCallback(async () => {
-    if (!isSiteUserSignedIn(user, userLoaded)) {
+    if (!isSiteUserSignedIn(null, false)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
@@ -438,7 +452,7 @@ function Home() {
     } catch {
       setIsManagerChatOpen(false)
     }
-  }, [enterLiveManagerChat, user, userLoaded])
+  }, [enterLiveManagerChat])
 
   const closeManagerChatDock = useCallback(() => {
     setIsManagerChatOpen(false)
@@ -533,7 +547,7 @@ function Home() {
         }
         setChatMessages((prev) => [...prev, botMessage])
         setIsChatOpen(false)
-        if (!isSiteUserSignedIn(user, userLoaded)) {
+        if (!isSiteUserSignedIn(null, false)) {
           requestOpenLoginModal({ wizard: true })
           return
         }
@@ -634,12 +648,14 @@ function Home() {
 
     let wantsManager = false
     try {
+      const { detectManagerContactIntent } = await import('../services/aiService')
       wantsManager = await detectManagerContactIntent(userMessage)
     } catch {
       wantsManager = false
     }
 
     if (wantsManager) {
+      const { getManagerContactButtons } = await import('../services/liveChatApi')
       const alreadyDone = userPreferences.preferredContact
       if (alreadyDone) {
         const methodLabel =
@@ -704,7 +720,7 @@ function Home() {
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
-      // Получаем ответ от AI
+      const { askPropertyAssistant } = await import('../services/aiService')
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         userPreferences,
@@ -744,13 +760,9 @@ function Home() {
   }
 
   const canShowDeposit = () => {
-    const legacyIn = isAuthenticated() && userData?.isLoggedIn
-    const clerkIn = authLoaded && Boolean(isSignedIn)
-    if (!legacyIn && !clerkIn) return false
+    if (!isAuthenticated() && !getUserData()?.isLoggedIn) return false
 
-    const roleRaw = legacyIn
-      ? (userData.role || localStorage.getItem('userRole') || 'buyer')
-      : (localStorage.getItem('userRole') || user?.publicMetadata?.role || 'buyer')
+    const roleRaw = getUserData()?.role || localStorage.getItem('userRole') || 'buyer'
     const userRole = String(roleRaw || 'buyer').toLowerCase()
     if (userRole === 'seller' || userRole === 'owner' || userRole === 'admin') return false
     return userRole === 'buyer' || userRole === 'client'
@@ -806,22 +818,41 @@ function Home() {
     }
   }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
+  // Сохраняем историю чата в localStorage при каждом изменении
   useEffect(() => {
-    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
+    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return
+    try {
+      const historyKey = `aiChatHistory_${getChatUserId}`
+      localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+    } catch (error) {
+      console.error('Ошибка при сохранении истории чата:', error)
+    }
+  }, [chatMessages, getChatUserId])
+
+  // Синхронизация с сервером — только когда чат открыт
+  useEffect(() => {
+    if (!isChatOpen) return undefined
+    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return undefined
+
+    const timer = window.setTimeout(() => {
       try {
         const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        // Сохраняем историю в localStorage с привязкой к пользователю
-        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
-        // Синхронизация с сервером для админки «Умный помощник»
-        const userData = getUserData()
-        syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
+        const currentUserData = getUserData()
+        import('../services/assistantLeadService').then(({ syncAssistantLead }) => {
+          syncAssistantLead(
+            chatUserId,
+            chatMessages,
+            userPreferences,
+            currentUserData?.isLoggedIn ? currentUserData : null,
+          )
+        })
       } catch (error) {
-        console.error('Ошибка при сохранении истории чата:', error)
+        console.error('Ошибка при синхронизации умного помощника:', error)
       }
-    }
-  }, [chatMessages, userPreferences, getChatUserId])
+    }, 1500)
+
+    return () => window.clearTimeout(timer)
+  }, [isChatOpen, chatMessages, userPreferences, getChatUserId])
 
   // Сохраняем предпочтения пользователя в localStorage
   useEffect(() => {
@@ -903,6 +934,22 @@ function Home() {
       if (observer) observer.disconnect()
     }
   }, [])
+
+  useEffect(() => {
+    const node = faqSentinelRef.current
+    if (!node || showFaq) return undefined
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShowFaq(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '240px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [showFaq])
 
   // История чата сохраняется в localStorage и не очищается при закрытии страницы
   // Каждый пользователь видит только свою переписку
@@ -1018,9 +1065,9 @@ function Home() {
                             : button.value === 'email'
                               ? FiMail
                               : button.value === 'whatsapp'
-                                ? FaWhatsapp
+                                ? WhatsAppIcon
                                 : button.value === 'telegram'
-                                  ? FaTelegram
+                                  ? TelegramIcon
                                   : FiMessageCircle
                         return (
                           <button
@@ -1208,7 +1255,12 @@ function Home() {
           viewerHasVip={cabinetVipActive}
         />
       </div>
-      <FAQ />
+      <div ref={faqSentinelRef} aria-hidden="true" />
+      {showFaq ? (
+        <Suspense fallback={null}>
+          <FAQLazy />
+        </Suspense>
+      ) : null}
     </div>
   )
 }

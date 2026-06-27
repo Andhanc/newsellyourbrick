@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiArrowUpRight } from 'react-icons/fi'
-import { fetchPublishedArticles } from '@/services/newsApi'
 import { scrollMainTo } from '@/utils/mainScroll'
-
-const NEWS_CARD_COUNT = 4
 
 const STATIC_NEWS_KEYS = [
   {
@@ -35,22 +32,6 @@ const STATIC_NEWS_KEYS = [
     excerptKey: 'sybLandingNews4Excerpt',
   },
 ]
-
-function mapPublishedArticle(article, index) {
-  const tags = []
-  if (article.badge) tags.push(article.badge)
-  if (article.category && article.category !== article.badge) tags.push(article.category)
-
-  return {
-    id: article.id,
-    slug: article.slug,
-    featured: index === 0,
-    image: article.image,
-    title: article.title,
-    excerpt: article.excerpt,
-    tags: tags.slice(0, 2),
-  }
-}
 
 function SybNewsCard({ item, ctaLabel, onOpen }) {
   const isFeatured = Boolean(item.featured)
@@ -97,34 +78,8 @@ function SybNewsCard({ item, ctaLabel, onOpen }) {
 export default function SybLandingNewsShowcase() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [published, setPublished] = useState([])
-
-  useEffect(() => {
-    let cancelled = false
-    fetchPublishedArticles()
-      .then((articles) => {
-        if (!cancelled) setPublished(Array.isArray(articles) ? articles : [])
-      })
-      .catch(() => {
-        if (!cancelled) setPublished([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const articles = useMemo(() => {
-    if (published.length > 0) {
-      const seen = new Set()
-      const unique = published.filter((article) => {
-        const key = article.id ?? article.slug
-        if (!key || seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-      return unique.slice(0, NEWS_CARD_COUNT).map(mapPublishedArticle)
-    }
-
     return STATIC_NEWS_KEYS.map((item) => ({
       id: item.id,
       slug: null,
@@ -134,7 +89,7 @@ export default function SybLandingNewsShowcase() {
       excerpt: t(item.excerptKey),
       tags: (item.tagKeys || []).map((key) => t(key)),
     }))
-  }, [published, t])
+  }, [t])
 
   const handleOpen = useCallback(
     (item) => {

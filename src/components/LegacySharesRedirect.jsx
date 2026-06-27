@@ -1,5 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom'
-import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { CO_INVESTMENT_PATH } from '../utils/sectionPaths'
 
 /** 301 на клиенте: /shares → /co-investment, /shares/:id → /co-investment/:id */
 export function LegacySharesIndexRedirect() {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
@@ -7,11 +7,9 @@ import DebtsPageFilters from '../components/DebtsPageFilters'
 import DebtsListingMeta from '../components/DebtsListingMeta'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from '../components/DebtsPropertyCard'
 import Header from '../components/Header'
-import SiteChatDock from '../components/SiteChatDock'
 import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
-import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { formatPropertyPrice } from '../utils/currency'
@@ -40,6 +38,9 @@ import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import { getDebtsContextPropertyPath } from '../utils/listingContextUrl'
 
+const SiteChatDockLazy = lazy(() => import('../components/SiteChatDock'))
+const AuctionMobileLayoutLazy = lazy(() => import('../components/ui/AuctionMobileLayout'))
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
 
@@ -61,6 +62,18 @@ const Debts = () => {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
+
+  const [showChatDock, setShowChatDock] = useState(false)
+
+  useEffect(() => {
+    const reveal = () => setShowChatDock(true)
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(reveal, { timeout: 4500 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(reveal, 1500)
+    return () => window.clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
@@ -511,19 +524,21 @@ const Debts = () => {
                       </div>
                     )}
 
-                    {!loadingDebts && filtered.length > 0 && (
+                    {!loadingDebts && filtered.length > 0 && isMobile ? (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <div className="properties-grid properties-grid--mobile-auction">
-                          <AuctionMobileLayout
+                          <Suspense fallback={<AuctionMobileListingSkeleton />}>
+                            <AuctionMobileLayoutLazy
                             properties={filtered}
                             formatPrice={formatPrice}
                             isFavorite={isPropertyLiked}
                             onFavoriteToggle={handleFavoriteToggle}
                             debtsCards
-                          />
+                            />
+                          </Suspense>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -531,15 +546,19 @@ const Debts = () => {
           )}
         </div>
       </main>
-      <SiteChatDock wrapperClassName="shares-floats" recommendationProperties={apiDebts}>
-        {dbUserId ? (
-          depositLoading ? (
-            <DepositButtonSkeleton />
-          ) : (
-            <DepositButton amount={userDeposit} />
-          )
-        ) : null}
-      </SiteChatDock>
+      {showChatDock ? (
+        <Suspense fallback={null}>
+          <SiteChatDockLazy wrapperClassName="shares-floats" recommendationProperties={apiDebts}>
+            {dbUserId ? (
+              depositLoading ? (
+                <DepositButtonSkeleton />
+              ) : (
+                <DepositButton amount={userDeposit} />
+              )
+            ) : null}
+          </SiteChatDockLazy>
+        </Suspense>
+      ) : null}
     </div>
   )
 }

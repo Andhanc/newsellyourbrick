@@ -248,8 +248,8 @@ export default defineConfig(({ mode }) => {
         'framer-motion',
         'recharts',
       ],
-      // Исключаем проблемные зависимости из оптимизации
-      exclude: [],
+      // Исключаем тяжёлые наборы react-icons из pre-bundle (fa/pi по ~1–6 MB в dev)
+      exclude: ['react-icons/fa', 'react-icons/fa6', 'react-icons/pi'],
       // Принудительно пересобираем зависимости при проблемах
       force: false,
       // Используем esbuild для оптимизации

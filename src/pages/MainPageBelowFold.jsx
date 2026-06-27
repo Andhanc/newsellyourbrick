@@ -10,8 +10,11 @@ import SybLandingBottomSections from '../components/SybLandingBottomSections'
 import SybLandingNewsShowcase from '../components/SybLandingNewsShowcase'
 import HomePropertyShowcaseSection from '../components/HomePropertyShowcaseSection'
 import LandingAnimatedStat from '../components/LandingAnimatedStat'
-import { ScrollReveal, ScrollRevealItem, ScrollRevealStagger } from '../components/ScrollReveal'
 import { useMainPageDeferred } from './mainPageDeferredContext'
+
+function BelowFoldBlock({ children, className }) {
+  return <div className={className ? `main-below-fold-block ${className}` : 'main-below-fold-block'}>{children}</div>
+}
 
 export default function MainPageBelowFold() {
   const {
@@ -40,7 +43,7 @@ export default function MainPageBelowFold() {
 
   return (
     <>
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <HomePropertyShowcaseSection
           sectionClassName="apartments-section apartments-section--auction apartments-section--auction-showcase"
           title={t('auctionSectionTitle')}
@@ -61,9 +64,9 @@ export default function MainPageBelowFold() {
           ensureCanOpenProperty={ensureCanOpenProperty}
           showPropertyAuthRequiredToast={showPropertyAuthRequiredToast}
         />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <HomePropertyShowcaseSection
           sectionClassName="apartments-section apartments-section--buy-now-showcase"
           containerClassName="apartments-section__container apartments-section__container--mint-panel"
@@ -85,9 +88,9 @@ export default function MainPageBelowFold() {
           ensureCanOpenProperty={ensureCanOpenProperty}
           showPropertyAuthRequiredToast={showPropertyAuthRequiredToast}
         />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <HomePropertyShowcaseSection
           sectionClassName="apartments-section apartments-section--debts-showcase"
           title={t('debtsTitle')}
@@ -107,9 +110,9 @@ export default function MainPageBelowFold() {
           ensureCanOpenProperty={ensureCanOpenProperty}
           showPropertyAuthRequiredToast={showPropertyAuthRequiredToast}
         />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <HomePropertyShowcaseSection
           sectionClassName="apartments-section apartments-section--shares-showcase"
           title={t('fractionalSaleTitle')}
@@ -135,7 +138,7 @@ export default function MainPageBelowFold() {
           ensureCanOpenProperty={ensureCanOpenProperty}
           showPropertyAuthRequiredToast={showPropertyAuthRequiredToast}
         />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
       <section
         ref={landingStatsRef}
@@ -146,52 +149,48 @@ export default function MainPageBelowFold() {
         <div className="landing-stats__bg-white-triangle" aria-hidden="true" />
         <div className="landing-stats__container">
           <div className="landing-stats__content">
-            <ScrollReveal y={32}>
+            <BelowFoldBlock>
               <h2 className="landing-stats__title">{t('statsTitle')}</h2>
-            </ScrollReveal>
-            <ScrollRevealStagger className="landing-stats__grid" stagger={0.12}>
-              <ScrollRevealItem>
-                <div className="landing-stat">
-                  <LandingAnimatedStat
-                    className="landing-stat__value"
-                    value={1.4}
-                    prefix="€"
-                    suffix="B+"
-                    decimals={1}
-                  />
-                  <span className="landing-stat__label">{t('statLabel1')}</span>
-                </div>
-              </ScrollRevealItem>
-              <ScrollRevealItem>
-                <div className="landing-stat">
-                  <LandingAnimatedStat
-                    className="landing-stat__value"
-                    value={34}
-                    suffix="%"
-                  />
-                  <span className="landing-stat__label">{t('statLabel2')}</span>
-                </div>
-              </ScrollRevealItem>
-            </ScrollRevealStagger>
-            <ScrollReveal delay={0.08} y={24}>
+            </BelowFoldBlock>
+            <div className="landing-stats__grid">
+              <div className="landing-stat">
+                <LandingAnimatedStat
+                  className="landing-stat__value"
+                  value={1.4}
+                  prefix="€"
+                  suffix="B+"
+                  decimals={1}
+                />
+                <span className="landing-stat__label">{t('statLabel1')}</span>
+              </div>
+              <div className="landing-stat">
+                <LandingAnimatedStat
+                  className="landing-stat__value"
+                  value={34}
+                  suffix="%"
+                />
+                <span className="landing-stat__label">{t('statLabel2')}</span>
+              </div>
+            </div>
+            <BelowFoldBlock>
               <div className="landing-stats__about-wrap">
                 <Link to="/about" className="landing-stats__about-link">
                   <span className="landing-stats__about-link-text">{t('statsAboutMore')}</span>
                   <FiArrowRight className="landing-stats__about-link-icon" size={20} strokeWidth={2.25} aria-hidden />
                 </Link>
               </div>
-            </ScrollReveal>
+            </BelowFoldBlock>
           </div>
         </div>
       </section>
 
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <SybLandingNewsShowcase />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
-      <ScrollReveal y={40}>
+      <BelowFoldBlock>
         <LeadGenCta />
-      </ScrollReveal>
+      </BelowFoldBlock>
 
       <SybLandingBottomSections />
     </>

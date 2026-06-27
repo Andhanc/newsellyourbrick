@@ -1,13 +1,11 @@
 import { getPropertySlugFromRecord } from './propertySlug'
+import {
+  CO_INVESTMENT_LEGACY_PATH,
+  CO_INVESTMENT_PATH,
+  TEST_DRIVE_PATH,
+} from './sectionPaths'
 
-/** Публичный лендинг test-drive. */
-export const TEST_DRIVE_PATH = '/test-drive'
-
-/** Публичный раздел долевой собственности (SEO URL). */
-export const CO_INVESTMENT_PATH = '/co-investment'
-
-/** Устаревший путь — только для 301 / client redirect. */
-export const CO_INVESTMENT_LEGACY_PATH = '/shares'
+export { CO_INVESTMENT_LEGACY_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH }
 
 const SHARE_LISTING_TYPES = new Set(['apartment', 'house', 'villa', 'commercial'])
 

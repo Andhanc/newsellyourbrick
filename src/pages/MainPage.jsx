@@ -2,7 +2,15 @@ import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'rea
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import {
+  Home,
+  Heart,
+  Gavel,
+  MessageCircle,
+  User,
+  Building2,
+  Building,
+} from 'lucide-react'
 import { publicAsset } from '../utils/publicAsset'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
@@ -26,32 +34,7 @@ import {
   FiMessageCircle,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
-import {
-  FaHome,
-  FaHeart,
-  FaHeart as FaHeartSolid,
-  FaGavel,
-  FaComment,
-  FaUser,
-  FaAndroid,
-  FaApple,
-  FaYoutube,
-  FaCar,
-  FaBolt,
-  FaGem,
-  FaWhatsapp,
-} from 'react-icons/fa'
-import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
-import {
-  PiHouseLine,
-  PiBuildings,
-  PiBuildingApartment,
-  PiBuilding,
-  PiWarehouse,
-} from 'react-icons/pi'
-import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
-import SybLandingSearchBar from '../components/SybLandingSearchBar'
-import { ScrollReveal, ScrollRevealItem, ScrollRevealStagger } from '../components/ScrollReveal'
+import { WhatsAppIcon, TelegramIcon } from '../components/icons/ContactChannelIcons'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -64,8 +47,6 @@ import {
   getCabinetSubscriptionsPath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
-import { syncAssistantLead } from '../services/assistantLeadService'
-import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
@@ -80,7 +61,6 @@ import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
 import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
-import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
@@ -88,6 +68,12 @@ import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
+const MainPageMidSectionLazy = lazyWithRetry(() => import('./MainPageMidSection'))
+const FrostedGlassCardLazy = lazyWithRetry(() =>
+  import('../components/ui/interactive-frosted-glass-card').then((m) => ({
+    default: m.FrostedGlassCard,
+  })),
+)
 const LoginModalLazy = lazyWithRetry(() => import('../components/LoginModal'))
 const HeroRolePitchModalLazy = lazyWithRetry(() => import('../components/HeroRolePitchModal'))
 const SiteNavDrawerLazy = lazyWithRetry(() => import('../components/SiteNavDrawer'))
@@ -403,7 +389,6 @@ function MainPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, i18n } = useTranslation()
-  const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [propertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
@@ -470,7 +455,7 @@ function MainPage() {
       localStorage.setItem('chatSessionId', sessionId)
     }
     return sessionId
-  }, [isLoggedIn, user, userLoaded])
+  }, [isLoggedIn])
 
   const {
     managerMessagesRef,
@@ -538,22 +523,41 @@ function MainPage() {
     }
   }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
+  // Сохраняем историю чата в localStorage при каждом изменении
   useEffect(() => {
-    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
+    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return
+    try {
+      const historyKey = `aiChatHistory_${getChatUserId}`
+      localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+    } catch (error) {
+      console.error('Ошибка при сохранении истории чата:', error)
+    }
+  }, [chatMessages, getChatUserId])
+
+  // Синхронизация с сервером — только когда чат открыт (не при первом mount / восстановлении истории)
+  useEffect(() => {
+    if (!isChatOpen) return undefined
+    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return undefined
+
+    const timer = window.setTimeout(() => {
       try {
         const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        // Сохраняем историю в localStorage с привязкой к пользователю
-        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
-        // Синхронизация с сервером для админки «Умный помощник»
         const userData = getUserData()
-        syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
+        import('../services/assistantLeadService').then(({ syncAssistantLead }) => {
+          syncAssistantLead(
+            chatUserId,
+            chatMessages,
+            userPreferences,
+            userData?.isLoggedIn ? userData : null,
+          )
+        })
       } catch (error) {
-        console.error('Ошибка при сохранении истории чата:', error)
+        console.error('Ошибка при синхронизации умного помощника:', error)
       }
-    }
-  }, [chatMessages, userPreferences, getChatUserId])
+    }, 1500)
+
+    return () => window.clearTimeout(timer)
+  }, [isChatOpen, chatMessages, userPreferences, getChatUserId])
 
   // Сохраняем предпочтения пользователя в localStorage
   useEffect(() => {
@@ -607,125 +611,75 @@ function MainPage() {
   // Загружаем фотографию пользователя и проверяем заполненность профиля
   useEffect(() => {
     const loadUserPhotoAndCheckProfile = async () => {
-      // Проверяем авторизацию через Clerk
-      if (userLoaded && user) {
-        // Пользователь авторизован через Clerk
-        const clerkPhoto = user.imageUrl || user.profileImageUrl || null
-        setUserPhoto(clerkPhoto)
+      const userData = getUserData()
+      if (userData.isLoggedIn) {
         setIsLoggedIn(true)
-        
-        // Пытаемся загрузить данные из БД для полной проверки
-        const userData = getUserData()
+
+        let photo = userData.picture || null
         let profileIncomplete = false
-        
-        // Используем числовой ID из БД (из localStorage), а не Clerk ID
+
         const dbUserId = localStorage.getItem('userId')
-        if (userData && dbUserId && /^\d+$/.test(dbUserId)) {
+        if (dbUserId && /^\d+$/.test(dbUserId)) {
           try {
-            const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
-            if (dbUser) {
-              // Проверяем заполненность профиля из БД
+            const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
+
+            if (result.notFound) {
+              console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
+              clearUserData()
+              setIsLoggedIn(false)
+              setUserPhoto(null)
+              setHasIncompleteProfile(false)
+              return
+            }
+
+            if (result.ok && result.user) {
+              const dbUser = result.user
               profileIncomplete = checkProfileCompleteness(dbUser)
               setHasIncompleteProfile(profileIncomplete)
-            } else {
-              // Если запрос не удался, проверяем базовые поля Clerk
-              profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
-              setHasIncompleteProfile(profileIncomplete)
+
+              if (dbUser.user_photo && !photo) {
+                const photoPath = dbUser.user_photo
+                photo = photoPath.startsWith('http')
+                  ? photoPath
+                  : `${API_BASE_URL.replace('/api', '')}${photoPath}`
+
+                const updatedUserData = {
+                  ...userData,
+                  picture: photo,
+                }
+                localStorage.setItem('userData', JSON.stringify(updatedUserData))
+              }
             }
           } catch (error) {
-            console.warn('⚠️ Не удалось загрузить данные из БД для Clerk пользователя:', error)
-            // Если ошибка, проверяем базовые поля Clerk
-            profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
-            setHasIncompleteProfile(profileIncomplete)
-          }
-        } else {
-          // Если нет ID в localStorage, проверяем базовые поля Clerk
-          profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
-          setHasIncompleteProfile(profileIncomplete)
-        }
-      } else {
-        // Проверяем старую систему авторизации
-        const userData = getUserData()
-        if (userData.isLoggedIn) {
-          setIsLoggedIn(true)
-          
-          // Сначала пытаемся получить фотографию из localStorage
-          let photo = userData.picture || null
-          let profileIncomplete = false
-          
-          // Загружаем данные из БД для проверки заполненности
-          // Используем числовой ID из БД (из localStorage), а не Clerk ID
-          const dbUserId = localStorage.getItem('userId')
-          if (dbUserId && /^\d+$/.test(dbUserId)) {
-            try {
-              const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
-              
-              // Если пользователь не найден в БД (404) — сессия устарела, очищаем её
-              if (result.notFound) {
-                console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
-                clearUserData()
-                setIsLoggedIn(false)
-                setUserPhoto(null)
-                setHasIncompleteProfile(false)
-                return
-              }
-              
-              if (result.ok && result.user) {
-                  const dbUser = result.user
-                  
-                  // Проверяем заполненность профиля
-                  profileIncomplete = checkProfileCompleteness(dbUser)
-                  setHasIncompleteProfile(profileIncomplete)
-                  
-                  // Если user_photo есть, используем его
-                  if (dbUser.user_photo && !photo) {
-                    const photoPath = dbUser.user_photo
-                    photo = photoPath.startsWith('http') 
-                      ? photoPath 
-                      : `${API_BASE_URL.replace('/api', '')}${photoPath}`
-                    
-                    // Обновляем localStorage с фотографией
-                    const updatedUserData = {
-                      ...userData,
-                      picture: photo
-                    }
-                    localStorage.setItem('userData', JSON.stringify(updatedUserData))
-                  }
-              }
-            } catch (error) {
-              console.warn('⚠️ Не удалось загрузить данные из БД:', error)
-              // Если не удалось загрузить из БД, проверяем localStorage
-              profileIncomplete = !userData.name || (!userData.email && !userData.phone)
-              setHasIncompleteProfile(profileIncomplete)
-            }
-          } else {
-            // Если нет ID, проверяем только localStorage
+            console.warn('⚠️ Не удалось загрузить данные из БД:', error)
             profileIncomplete = !userData.name || (!userData.email && !userData.phone)
             setHasIncompleteProfile(profileIncomplete)
           }
-          
-          setUserPhoto(photo)
         } else {
-          setIsLoggedIn(false)
-          setUserPhoto(null)
-          setHasIncompleteProfile(false)
+          profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+          setHasIncompleteProfile(profileIncomplete)
         }
+
+        setUserPhoto(photo)
+      } else {
+        setIsLoggedIn(false)
+        setUserPhoto(null)
+        setHasIncompleteProfile(false)
       }
     }
-    
+
     loadUserPhotoAndCheckProfile()
-    
-    // Обновляем данные при фокусе окна (когда пользователь возвращается на страницу)
+
     const handleFocus = () => {
       loadUserPhotoAndCheckProfile()
     }
-    
+
     window.addEventListener('focus', handleFocus)
-    
+
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [user, userLoaded, location.pathname]) // Обновляем при изменении маршрута
+  }, [location.pathname])
 
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
@@ -741,6 +695,9 @@ function MainPage() {
   const [cookieConsentOpen, setCookieConsentOpen] = useState(
     () => COOKIE_CONSENT_ENABLED && location.pathname === '/' && readCookieConsentChoice() == null,
   )
+  const [showMidSection, setShowMidSection] = useState(false)
+  const [showBelowFold, setShowBelowFold] = useState(false)
+  const belowFoldSentinelRef = useRef(null)
 
   useEffect(() => {
     if (!COOKIE_CONSENT_ENABLED) {
@@ -753,6 +710,51 @@ function MainPage() {
       setCookieConsentOpen(false)
     }
   }, [location.pathname])
+
+  useEffect(() => {
+    if (showMidSection) return undefined
+
+    let cancelled = false
+    const reveal = () => {
+      if (!cancelled) setShowMidSection(true)
+    }
+    const onInteraction = () => reveal()
+    const events = ['scroll', 'wheel', 'touchstart', 'keydown']
+    events.forEach((eventName) => {
+      const opts = eventName === 'keydown' ? { once: true } : { once: true, passive: true }
+      window.addEventListener(eventName, onInteraction, opts)
+    })
+    // Safety fallback: даже без интеракции покажем блок позже.
+    const t = window.setTimeout(reveal, 12000)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+      events.forEach((eventName) => {
+        window.removeEventListener(eventName, onInteraction)
+      })
+    }
+  }, [showMidSection])
+
+  /** Нижняя часть главной (витрины, FAQ, новости) — только при прокрутке к sentinel. */
+  useEffect(() => {
+    if (!showMidSection) return undefined
+    const node = belowFoldSentinelRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setShowBelowFold(true)
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShowBelowFold(true)
+          observer.disconnect()
+        }
+      },
+      { root: null, rootMargin: '-10% 0px -5% 0px', threshold: 0.01 },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [showMidSection])
 
   /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
   const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
@@ -1008,7 +1010,7 @@ function MainPage() {
   }
 
   const isMainSiteUserLoggedIn = () =>
-    isLoggedIn || (userLoaded && !!user) || getUserData().isLoggedIn
+    isLoggedIn || getUserData().isLoggedIn
 
   const goWalletIfAuthed = () => {
     if (!isMainSiteUserLoggedIn()) {
@@ -1069,18 +1071,6 @@ function MainPage() {
 
   // Открытие LoginModal по глобальному запросу (например, клик из toast «Войти / Регистрация»)
   useEffect(() => {
-    const preloadLoginModal = () => {
-      void import('../components/LoginModal')
-    }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(preloadLoginModal, { timeout: 5000 })
-      return () => window.cancelIdleCallback(id)
-    }
-    const t = window.setTimeout(preloadLoginModal, 2500)
-    return () => window.clearTimeout(t)
-  }, [])
-
-  useEffect(() => {
     const openForcedLoginModal = () => {
       const forceOpen = sessionStorage.getItem('login_modal_force_open')
       if (forceOpen !== 'true') return
@@ -1127,7 +1117,7 @@ function MainPage() {
         // Фильтруем по роли пользователя
         // Если пользователь не авторизован, показываем только страницы без авторизации
         const userData = getUserData()
-        const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
+        const isUserLoggedIn = isLoggedIn || userData.isLoggedIn
         
         if (!isUserLoggedIn) {
           return !page.requiresAuth
@@ -1160,7 +1150,7 @@ function MainPage() {
 
     // Проверяем авторизацию
     const userData = getUserData()
-    const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
+    const isUserLoggedIn = isLoggedIn || userData.isLoggedIn
 
     if (!isUserLoggedIn) {
       return { 
@@ -1352,6 +1342,7 @@ function MainPage() {
           item &&
           (item.isAuction === true || item.is_auction === 1 || item.is_auction === true),
       )
+      const { fetchAuctionMaxBidsBatch, getMaxBidForProperty } = await import('../utils/fetchAuctionMaxBids')
       const bidByKey = await fetchAuctionMaxBidsBatch(apiBase, auctionItems)
       if (bidByKey.size > 0) {
         merged = merged.map((item) => {
@@ -1373,16 +1364,35 @@ function MainPage() {
     }
   }, [i18n.language])
 
-  // При смене языка в футере перезагружаем объявления с переводами
+  // Загрузка объявлений — только когда пользователь доскроллил до нижней части главной
   useEffect(() => {
-    loadHomeProperties()
-  }, [i18n.language, loadHomeProperties])
+    if (!showBelowFold) return undefined
+    let cancelled = false
+    const run = () => {
+      if (!cancelled) loadHomeProperties()
+    }
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: 2200 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(id)
+      }
+    }
+    const t = window.setTimeout(run, 400)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [showBelowFold, i18n.language, loadHomeProperties])
 
-  // SSE: новые лоты и тест-таймер с админки — без F5 (тот же канал, что на /auction)
+  // SSE: новые лоты — только после появления нижней части главной
   useEffect(() => {
+    if (!showBelowFold) return undefined
     let eventSource = null
     let reconnectTimer = null
     let cancelled = false
+    let idleId = null
+    let timeoutId = null
 
     const connect = async () => {
       const base = await getApiBaseUrl()
@@ -1420,13 +1430,32 @@ function MainPage() {
       }
     }
 
-    void connect()
+    const scheduleConnect = () => {
+      if (cancelled) return
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(() => {
+          idleId = null
+          void connect()
+        }, { timeout: 4500 })
+      } else {
+        timeoutId = window.setTimeout(() => {
+          timeoutId = null
+          void connect()
+        }, 1200)
+      }
+    }
+
+    scheduleConnect()
     return () => {
       cancelled = true
+      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId != null) window.clearTimeout(timeoutId)
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (eventSource) eventSource.close()
     }
-  }, [loadHomeProperties])
+  }, [showBelowFold, loadHomeProperties])
 
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {
@@ -1900,6 +1929,7 @@ function MainPage() {
     }
 
     if (wantsManager) {
+      const { getManagerContactButtons } = await import('../services/liveChatApi')
       const alreadyDone = userPreferences.preferredContact
       if (alreadyDone) {
         const methodLabel =
@@ -2057,59 +2087,20 @@ function MainPage() {
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
-      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
+      { label: 'House', displayLabel: t('house'), icon: Home, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
       { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
-      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
-      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
+      { label: 'Apartment', displayLabel: t('apartment'), icon: Building2, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
+      { label: 'Villa', displayLabel: t('villa'), icon: Building, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
   ], [t, i18n.language])
   
   const navigationItems = useMemo(() => [
-      { id: 'home', label: t('home'), icon: FaHome },
-      { id: 'favourite', label: t('favorites'), icon: FaHeartSolid },
-      { id: 'auction', label: t('auction'), icon: FaGavel },
-      { id: 'chat', label: t('chat'), icon: FaComment },
-      { id: 'profile', label: t('profile'), icon: FaUser },
+      { id: 'home', label: t('home'), icon: Home },
+      { id: 'favourite', label: t('favorites'), icon: Heart, iconFilled: true },
+      { id: 'auction', label: t('auction'), icon: Gavel },
+      { id: 'chat', label: t('chat'), icon: MessageCircle },
+      { id: 'profile', label: t('profile'), icon: User },
   ], [t, i18n.language])
 
-  const salesStrategies = useMemo(() => [
-    {
-      id: 'auction',
-      label: t('auctionSectionTitle'),
-      title: t('auctionSectionTitle'),
-      text: t('auctionSectionSubtitle'),
-      image: '/images/sellyourbrick/about/about-category-auction.jpg',
-      to: '/auction?filter=auction',
-      metric: '01',
-    },
-    {
-      id: 'buy-now',
-      label: t('buyNowSectionTitle'),
-      title: t('buyNowSectionTitle'),
-      text: t('buyNowSectionSubtitle'),
-      image: '/images/sellyourbrick/about/about-category-buynow.jpg',
-      to: '/auction?filter=buy_now',
-      metric: '02',
-    },
-    {
-      id: 'shares',
-      label: t('fractionalSaleTitle'),
-      title: t('fractionalSaleTitle'),
-      text: t('fractionalSectionSubtitle'),
-      image: '/images/sellyourbrick/about/about-category-shares.jpg',
-      to: '/shares',
-      metric: '03',
-    },
-    {
-      id: 'debts',
-      label: t('debtsTitle'),
-      title: t('debtsTitle'),
-      text: t('debtsSectionSubtitle'),
-      image: '/images/sellyourbrick/about/about-category-debts.jpg',
-      to: '/debts',
-      metric: '04',
-    },
-  ], [t, i18n.language])
-  
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
 
@@ -2540,9 +2531,7 @@ function MainPage() {
               return
             }
 
-            if (userLoaded && user) {
-              navigate(getCabinetProfilePath())
-            } else if (userData.isLoggedIn) {
+            if (isLoggedIn || userData.isLoggedIn) {
               navigate(getCabinetProfilePath())
             } else {
               setMainLoginModalAuthEntry('header_wizard')
@@ -2685,9 +2674,7 @@ function MainPage() {
                   }
 
                   // Дальше обычная логика профиля покупателя
-                  if (userLoaded && user) {
-                    navigate(getCabinetProfilePath())
-                  } else if (userData.isLoggedIn) {
+                  if (isLoggedIn || userData.isLoggedIn) {
                     navigate(getCabinetProfilePath())
                   } else {
                     setMainLoginModalAuthEntry('header_wizard')
@@ -2749,70 +2736,37 @@ function MainPage() {
         </div>
 
           <div className="hero-section__cta">
-            <FrostedGlassCard
-              variant="investor"
-              title={t('becomeInvestor')}
-              buttonText={t('startBtn')}
-              onButtonClick={handleHeroInvestorCardClick}
-            >
-              {t('investorCardText')}
-            </FrostedGlassCard>
-            <FrostedGlassCard
-              variant="seller"
-              title={t('becomeSeller')}
-              buttonText={isHeroCtaAdaptive ? t('startBtn') : t('listProperty')}
-              onButtonClick={handleHeroSellerCardClick}
-            >
-              {t('sellerCardText')}
-            </FrostedGlassCard>
+            <Suspense fallback={null}>
+              <FrostedGlassCardLazy
+                variant="investor"
+                title={t('becomeInvestor')}
+                buttonText={t('startBtn')}
+                onButtonClick={handleHeroInvestorCardClick}
+              >
+                {t('investorCardText')}
+              </FrostedGlassCardLazy>
+              <FrostedGlassCardLazy
+                variant="seller"
+                title={t('becomeSeller')}
+                buttonText={isHeroCtaAdaptive ? t('startBtn') : t('listProperty')}
+                onButtonClick={handleHeroSellerCardClick}
+              >
+                {t('sellerCardText')}
+              </FrostedGlassCardLazy>
+            </Suspense>
           </div>
         </div>
       </section>
 
-      <ScrollReveal className="hero-search-bridge" y={28}>
-        <SybLandingSearchBar />
-      </ScrollReveal>
+      {showMidSection ? (
+        <Suspense fallback={null}>
+          <MainPageMidSectionLazy />
+        </Suspense>
+      ) : null}
 
-      {/* Блок: стратегии продажи и инвестирования */}
-      <section id="landing-models" className="landing-models">
-        <div className="landing-models__container">
-          <ScrollReveal y={32}>
-            <p className="landing-models__eyebrow">{t('sybLandingDirectionsTitle')}</p>
-            <h2 className="landing-models__title">
-              <span className="landing-models__title-line">{t('landingModelsTitleMark')}</span>
-              <span className="landing-models__title-line">{t('landingModelsTitleRest')}</span>
-            </h2>
-            <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
-          </ScrollReveal>
-          <ScrollRevealStagger className="landing-strategies" aria-label={t('landingFoldersCarouselAria')}>
-            {salesStrategies.map((strategy) => (
-              <ScrollRevealItem key={strategy.id}>
-                <button
-                  type="button"
-                  className={`landing-strategy landing-strategy--${strategy.id}`}
-                  onClick={() => navigate(strategy.to)}
-                >
-                  <span className="landing-strategy__media">
-                    <img src={strategy.image} alt="" loading="lazy" decoding="async" />
-                    <span className="landing-strategy__meta">
-                      <span className="landing-strategy__number">{strategy.metric}</span>
-                      <span className="landing-strategy__label">{strategy.label}</span>
-                    </span>
-                  </span>
-                  <span className="landing-strategy__body">
-                    <span className="landing-strategy__title">{strategy.title}</span>
-                    <span className="landing-strategy__text">{strategy.text}</span>
-                    <span className="landing-strategy__arrow" aria-hidden="true">
-                      <FiArrowRight size={18} strokeWidth={2.25} />
-                    </span>
-                  </span>
-                </button>
-              </ScrollRevealItem>
-            ))}
-          </ScrollRevealStagger>
-        </div>
-      </section>
+      <div ref={belowFoldSentinelRef} className="main-page-below-fold-sentinel" aria-hidden="true" />
 
+      {showBelowFold ? (
       <MainPageDeferredContext.Provider
         value={{
           t,
@@ -2853,6 +2807,7 @@ function MainPage() {
           <MainPageBelowFoldLazy />
         </Suspense>
       </MainPageDeferredContext.Provider>
+      ) : null}
 
 
       <nav className="bottom-nav">
@@ -2880,7 +2835,7 @@ function MainPage() {
                 onClick={() => navigate(route)}
                 aria-label={item.label}
               >
-                <IconComponent size={28} />
+                <IconComponent size={28} fill={item.iconFilled ? 'currentColor' : 'none'} />
               </button>
             )
           }
@@ -2896,7 +2851,7 @@ function MainPage() {
               }}
               aria-label={item.label}
             >
-              <IconComponent size={26} />
+              <IconComponent size={26} fill={item.iconFilled ? 'currentColor' : 'none'} />
             </button>
           )
         })}
@@ -3004,9 +2959,9 @@ function MainPage() {
                             : button.value === 'email'
                               ? FiMail
                               : button.value === 'whatsapp'
-                                ? FaWhatsapp
+                                ? WhatsAppIcon
                                 : button.value === 'telegram'
-                                  ? FaTelegram
+                                  ? TelegramIcon
                                   : FiMessageCircle
                         return (
                           <button
@@ -3203,7 +3158,7 @@ function MainPage() {
         </Suspense>
       ) : null}
 
-      {isLoginModalOpen ? (
+      {isLoginModalOpen && !isMainSiteUserLoggedIn() ? (
         <Suspense fallback={null}>
           <LoginModalLazy
             isOpen={isLoginModalOpen}

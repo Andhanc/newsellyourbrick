@@ -8,7 +8,7 @@ import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
-import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
+import { resolveAuctionCurrentBidValue } from '../utils/auctionBidValue'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -10,7 +10,6 @@ import {
   FiGlobe,
 } from 'react-icons/fi'
 import { isInlineAiChatRoute } from '../utils/inlineAiChatRoutes'
-import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -28,8 +27,10 @@ import {
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
-import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+
+const LoginModalLazy = lazy(() => import('./LoginModal'))
+const SiteNavDrawerLazy = lazy(() => import('./SiteNavDrawer'))
 
 const Header = () => {
   const navigate = useNavigate()
@@ -635,7 +636,9 @@ const Header = () => {
               </button>
             </div>
             
-            <SiteNavDrawer
+            {(isMenuOpen || isMenuClosing) ? (
+              <Suspense fallback={null}>
+                <SiteNavDrawerLazy
               menuRef={menuRef}
               isMenuOpen={isMenuOpen}
               isMenuClosing={isMenuClosing}
@@ -651,7 +654,9 @@ const Header = () => {
                 setIsLoginModalOpen(true)
                 setIsMenuOpen(false)
               }}
-            />
+                />
+              </Suspense>
+            ) : null}
           </div>
 
           <div className="new-header__filters">
@@ -915,14 +920,18 @@ const Header = () => {
       </header>
       
       {/* Модальное окно входа/регистрации */}
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
+      {isLoginModalOpen ? (
+        <Suspense fallback={null}>
+          <LoginModalLazy
+        isOpen={isLoginModalOpen}
         onClose={() => {
           setIsLoginModalOpen(false)
           setLoginModalEntry('direct')
         }}
         authEntryVariant={loginModalEntry === 'wizard' ? 'header_wizard' : 'default'}
-      />
+          />
+        </Suspense>
+      ) : null}
 
       {isGlobalAiModalOpen && (
         <div className="global-ai-modal" role="dialog" aria-modal="true" aria-label={t('aiAssistant')}>

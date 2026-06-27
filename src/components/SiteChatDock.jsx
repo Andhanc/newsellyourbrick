@@ -1,6 +1,5 @@
 import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
-import { FaWhatsapp } from 'react-icons/fa'
-import { FaTelegram } from 'react-icons/fa6'
+import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
 import { useSiteAiChatDock } from '../hooks/useSiteAiChatDock'
 import '../pages/Home.css'
@@ -136,9 +135,9 @@ export default function SiteChatDock({
                             : button.value === 'email'
                               ? FiMail
                               : button.value === 'whatsapp'
-                                ? FaWhatsapp
+                                ? WhatsAppIcon
                                 : button.value === 'telegram'
-                                  ? FaTelegram
+                                  ? TelegramIcon
                                   : FiMessageCircle
                         return (
                           <button

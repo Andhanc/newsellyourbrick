@@ -1,11 +1,9 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
-import SiteChatDock from '../components/SiteChatDock'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
-import SharesPageSidebar from '../components/SharesPageSidebar'
 import { SharesPageIntroHead, SharesPageBanner } from '../components/SharesPageIntro'
 import SharesListingToolbar from '../components/SharesListingToolbar'
 import SharesPropertyCard, { SharesPropertyCardSkeleton } from '../components/SharesPropertyCard'
@@ -35,6 +33,9 @@ import {
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 
+const SiteChatDockLazy = lazy(() => import('../components/SiteChatDock'))
+const SharesPageSidebarLazy = lazy(() => import('../components/SharesPageSidebar'))
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const SHARE_CARD_FALLBACK = publicAsset('images/external/shares-hero-villa.jpg')
@@ -52,27 +53,63 @@ const Shares = () => {
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const [userDeposit, setUserDeposit] = useState(0)
   const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
+  const [showChatDock, setShowChatDock] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false)
+
+  useEffect(() => {
+    const revealChat = () => setShowChatDock(true)
+    const revealSidebar = () => setShowSidebar(true)
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const chatId = window.requestIdleCallback(revealChat, { timeout: 4500 })
+      const sidebarId = window.requestIdleCallback(revealSidebar, { timeout: 3500 })
+      return () => {
+        window.cancelIdleCallback(chatId)
+        window.cancelIdleCallback(sidebarId)
+      }
+    }
+    const chatT = window.setTimeout(revealChat, 1500)
+    const sidebarT = window.setTimeout(revealSidebar, 900)
+    return () => {
+      window.clearTimeout(chatT)
+      window.clearTimeout(sidebarT)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
+    const run = async () => {
       const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
       if (!cancelled && id) setDbUserId(id)
-    })()
+    }
+
+    const schedule =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? () => window.requestIdleCallback(() => void run(), { timeout: 6000 })
+        : () => window.setTimeout(() => void run(), 1800)
+
+    const handle = schedule()
     return () => {
       cancelled = true
+      if (typeof handle === 'number') {
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.cancelIdleCallback(handle)
+        } else if (typeof window !== 'undefined') {
+          window.clearTimeout(handle)
+        }
+      }
     }
   }, [])
 
   useEffect(() => {
     if (!dbUserId) {
       setDepositLoading(false)
-      return
+      return undefined
     }
+
     let cancelled = false
     setDepositLoading(true)
 
-    ;(async () => {
+    const run = async () => {
       try {
         const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
         if (
@@ -87,10 +124,22 @@ const Shares = () => {
       } finally {
         if (!cancelled) setDepositLoading(false)
       }
-    })()
+    }
+
+    const handle =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(() => void run(), { timeout: 8000 })
+        : window.setTimeout(() => void run(), 400)
 
     return () => {
       cancelled = true
+      if (typeof handle === 'number') {
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.cancelIdleCallback(handle)
+        } else if (typeof window !== 'undefined') {
+          window.clearTimeout(handle)
+        }
+      }
     }
   }, [dbUserId])
 
@@ -282,24 +331,32 @@ const Shares = () => {
             </section>
           </div>
 
-          <SharesPageSidebar platformStats={platformStats} />
+          {showSidebar ? (
+            <Suspense fallback={null}>
+              <SharesPageSidebarLazy platformStats={platformStats} />
+            </Suspense>
+          ) : null}
         </div>
       </main>
-      <SiteChatDock
+      {showChatDock ? (
+        <Suspense fallback={null}>
+          <SiteChatDockLazy
         wrapperClassName="shares-floats"
         recommendationProperties={allShareObjects}
         onRecommendationClick={(share) => {
           handleInvest(share)
         }}
-      >
-        {dbUserId ? (
-          depositLoading ? (
-            <DepositButtonSkeleton />
-          ) : (
-            <DepositButton amount={userDeposit} />
-          )
-        ) : null}
-      </SiteChatDock>
+          >
+            {dbUserId ? (
+              depositLoading ? (
+                <DepositButtonSkeleton />
+              ) : (
+                <DepositButton amount={userDeposit} />
+              )
+            ) : null}
+          </SiteChatDockLazy>
+        </Suspense>
+      ) : null}
     </div>
   )
 }

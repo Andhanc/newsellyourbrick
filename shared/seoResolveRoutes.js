@@ -8,6 +8,7 @@ import {
   isAuctionRoute,
   parseAuctionFilterPath,
 } from '../src/utils/auctionFilterUrl.js';
+import { resolveStaticPageSeo } from './seoStaticResolve.js';
 
 const CO_INVESTMENT_PATH = '/co-investment';
 const TEST_DRIVE_PATH = '/test-drive';
@@ -40,31 +41,8 @@ function normalizePathname(pathname) {
 export function resolvePageSeo(pathname, t) {
   const path = normalizePathname(pathname);
 
-  const staticRoutes = {
-    '/': { titleKey: 'pageSeoHomeTitle', descKey: 'pageSeoHomeDescription' },
-    '/auction': { titleKey: 'pageSeoAuctionTitle', descKey: 'pageSeoAuctionDescription' },
-    '/debts': { titleKey: 'pageSeoDebtsTitle', descKey: 'pageSeoDebtsDescription' },
-    [CO_INVESTMENT_PATH]: {
-      titleKey: 'pageSeoCoInvestmentTitle',
-      descKey: 'pageSeoCoInvestmentDescription',
-    },
-    [TEST_DRIVE_PATH]: {
-      titleKey: 'pageSeoTestDriveTitle',
-      descKey: 'pageSeoTestDriveDescription',
-    },
-    '/about': { titleKey: 'pageSeoAboutTitle', descKey: 'pageSeoAboutDescription' },
-    '/news': { titleKey: 'pageSeoNewsTitle', descKey: 'pageSeoNewsDescription' },
-    '/map': { titleKey: 'pageSeoMapTitle', descKey: 'pageSeoMapDescription' },
-  };
-
-  const hit = staticRoutes[path];
-  if (hit) {
-    return {
-      title: t(hit.titleKey),
-      description: t(hit.descKey),
-      canonicalPath: path,
-    };
-  }
+  const staticHit = resolveStaticPageSeo(path, t);
+  if (staticHit) return staticHit;
 
   if (isAuctionRoute(path)) {
     const parsed = parseAuctionFilterPath(path);

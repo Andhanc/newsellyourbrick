@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import VerificationSuccessNotification from './VerificationSuccessNotification'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
-import { fetchUserNotifications } from '../utils/notificationsApi'
+
+const LazyVerificationSuccessNotification = lazy(() => import('./VerificationSuccessNotification'))
 
 const shownKeyFor = (userId, notificationId) =>
   `verification_success_shown_${userId}_${notificationId}`
@@ -28,13 +28,14 @@ export default function GlobalVerificationSuccessGate() {
 
     loadingRef.current = true
     try {
+      const { fetchUserNotifications } = await import('../utils/notificationsApi')
       const notifications = await fetchUserNotifications(dbUserId, {
         ttlMs: force ? 0 : 15000,
         force,
       })
 
       const verificationNotif = notifications.find(
-        (n) => n.type === 'verification_success' && n.view_count === 0
+        (n) => n.type === 'verification_success' && n.view_count === 0,
       )
       if (!verificationNotif) return
 
@@ -92,10 +93,12 @@ export default function GlobalVerificationSuccessGate() {
   if (!isOpen || !verificationNotification) return null
 
   return (
-    <VerificationSuccessNotification
-      notification={verificationNotification}
-      onClose={handleClose}
-      onView={() => {}}
-    />
+    <Suspense fallback={null}>
+      <LazyVerificationSuccessNotification
+        notification={verificationNotification}
+        onClose={handleClose}
+        onView={() => {}}
+      />
+    </Suspense>
   )
 }

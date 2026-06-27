@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -117,6 +117,7 @@ function PropertyFavoritesDrawersHost({
 
 export function PropertyFavoritesProvider({ children }) {
   const { user, isLoaded: userLoaded } = useUser()
+  const { pathname } = useLocation()
   const [dbKeys, setDbKeys] = useState(() => new Set())
   const [favoriteRows, setFavoriteRows] = useState(() => [])
   const [mockMap, setMockMap] = useState(() => readMockFavoritesMap())
@@ -154,23 +155,46 @@ export function PropertyFavoritesProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!getDbUserId()) return undefined
     let cancelled = false
+    let loaded = false
     const run = () => {
-      if (!cancelled && getDbUserId()) void loadDbFavorites()
+      if (cancelled || loaded) return
+      loaded = true
+      void loadDbFavorites()
     }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(run, { timeout: 4500 })
+    const isHome = pathname === '/'
+    const onInteract = () => run()
+    const interactEvents = ['scroll', 'click', 'keydown', 'touchstart']
+    if (isHome) {
+      interactEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onInteract, { once: true, passive: true })
+      })
+    }
+    const idleTimeout = isHome ? 12000 : 4500
+    if (!isHome && typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: idleTimeout })
       return () => {
         cancelled = true
         window.cancelIdleCallback(id)
+        if (isHome) {
+          interactEvents.forEach((eventName) => {
+            window.removeEventListener(eventName, onInteract)
+          })
+        }
       }
     }
-    const t = window.setTimeout(run, 600)
+    const t = window.setTimeout(run, isHome ? 3000 : 600)
     return () => {
       cancelled = true
       window.clearTimeout(t)
+      if (isHome) {
+        interactEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, onInteract)
+        })
+      }
     }
-  }, [loadDbFavorites])
+  }, [loadDbFavorites, pathname])
 
   useEffect(() => {
     const onStorage = (e) => {

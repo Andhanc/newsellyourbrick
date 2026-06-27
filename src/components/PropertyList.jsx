@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
@@ -9,10 +9,8 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
-import PropertySearchModal from './PropertySearchModal'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
-import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import AuctionDesktopFilters from './AuctionDesktopFilters'
 import PageBreadcrumbs from './PageBreadcrumbs'
 import AuctionPropertyCard from './AuctionPropertyCard'
@@ -50,6 +48,9 @@ import {
 } from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
+
+const PropertySearchModalLazy = lazy(() => import('./PropertySearchModal'))
+const AuctionMobileLayoutLazy = lazy(() => import('./ui/AuctionMobileLayout'))
 
 const MOBILE_BREAKPOINT = 768
 const AUCTION_DESKTOP_PAGE_SIZE = 20
@@ -763,7 +764,8 @@ const PropertyList = ({
           <>
             {isMobile && isAuctionPage ? (
               <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
-                <AuctionMobileLayout
+                <Suspense fallback={<AuctionMobileListingSkeleton />}>
+                  <AuctionMobileLayoutLazy
                   properties={displayedProperties}
                   formatPrice={formatPrice}
                   isFavorite={isPropertyLiked}
@@ -771,7 +773,8 @@ const PropertyList = ({
                   onOpen={openProperty}
                   onTooltip={setTooltip}
                   viewerHasVip={viewerHasVip}
-                />
+                  />
+                </Suspense>
               </div>
             ) : (
             <div
@@ -1368,12 +1371,14 @@ const PropertyList = ({
         </div>
       </div>
 
-      {!isAuctionDesktop && isSearchModalOpen && (
-        <PropertySearchModal
+      {!isAuctionDesktop && isSearchModalOpen ? (
+        <Suspense fallback={null}>
+          <PropertySearchModalLazy
           isOpen={isSearchModalOpen}
           onClose={() => setIsSearchModalOpen(false)}
-        />
-      )}
+          />
+        </Suspense>
+      ) : null}
     </section>
     </>
   )

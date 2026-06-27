@@ -11,7 +11,7 @@ import {
   getDebtRiskLabelKey,
   getDebtRiskTone,
   getDebtsCardPresentation,
-} from '../utils/debtsPageFilters'
+} from '../utils/debtsCardPresentation'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import './DebtsPropertyCard.css'
 

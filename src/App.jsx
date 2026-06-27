@@ -2,8 +2,13 @@ import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import ClerkAuthSync from './components/ClerkAuthSync'
-import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
+import {
+  ClerkAuthHandlerGate,
+  DeferredSiteAdsHost,
+  LoggedInVerificationGatesHost,
+  PrivateClubKickModalHost,
+} from './components/DeferredAppShellGates'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
@@ -18,26 +23,49 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
-import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import MainPage from './pages/MainPage'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
-import DepositRedirect from './components/DepositRedirect'
-import CabinetDataRedirect from './components/CabinetDataRedirect'
-import CabinetSubscriptionsRedirect from './components/CabinetSubscriptionsRedirect'
-import {
-  LegacyJetonRedirect,
-  LegacyOwnerCabinetRedirect,
-  LegacyProfileRedirect,
-} from './components/LegacyRouteRedirects'
-import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
-import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
-import NotFoundPage from './components/NotFoundPage'
+import { CO_INVESTMENT_PATH } from './utils/sectionPaths'
 import { PageSeoProvider } from './context/PageSeoContext'
 import SitePageSeo from './components/SitePageSeo'
-import { isAuctionRoute } from './utils/auctionFilterUrl'
+import { BuyerCabinetScrollStyles } from './components/RouteScopedStyles'
+
+function pathnameIsAuction(pathname) {
+  return pathname === '/auction' || pathname === '/main' || pathname.startsWith('/auction/')
+}
+
+const OwnerTestCabinetPageFallback = lazyWithRetry(() =>
+  import('./components/OwnerTestCabinetPageFallback'),
+)
+const DepositRedirect = lazyWithRetry(() => import('./components/DepositRedirect'))
+const CabinetDataRedirect = lazyWithRetry(() => import('./components/CabinetDataRedirect'))
+const CabinetSubscriptionsRedirect = lazyWithRetry(() =>
+  import('./components/CabinetSubscriptionsRedirect'),
+)
+const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
+const LegacyOwnerCabinetRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyOwnerCabinetRedirect })),
+)
+const LegacyProfileRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyProfileRedirect })),
+)
+const LegacySharesIndexRedirect = lazyWithRetry(() =>
+  import('./components/LegacySharesRedirect').then((m) => ({ default: m.LegacySharesIndexRedirect })),
+)
+const LegacySharesDetailRedirect = lazyWithRetry(() =>
+  import('./components/LegacySharesRedirect').then((m) => ({ default: m.LegacySharesDetailRedirect })),
+)
+
+function OwnerTestCabinetLazyFallback() {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <OwnerTestCabinetPageFallback />
+    </Suspense>
+  )
+}
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const TestDriveLandingPage = lazyWithRetry(() => import('./pages/TestDriveLandingPage'))
@@ -88,12 +116,6 @@ const Home = lazyWithRetry(() => import('./pages/Home'))
 const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
 const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
-const PrivateClubKickModalLazy = lazyWithRetry(() => import('./components/PrivateClubKickModal'))
-const GlobalVerificationSuccessGateLazy = lazyWithRetry(() =>
-  import('./components/GlobalVerificationSuccessGate'),
-)
-const VerificationRejectedGateLazy = lazyWithRetry(() => import('./components/VerificationRejectedGate'))
-const SiteAdsHostLazy = lazyWithRetry(() => import('./components/siteAds/SiteAdsHost'))
 const PageFallback = () => (
   <div
     className="app-page-fallback app-page-fallback--instant"
@@ -339,7 +361,7 @@ function AuctionMobileOverflowLock() {
 
   useEffect(() => {
     const apply = () => {
-      const on = isAuctionRoute(location.pathname) && window.matchMedia('(max-width: 768px)').matches
+      const on = pathnameIsAuction(location.pathname) && window.matchMedia('(max-width: 768px)').matches
       if (on) {
         document.documentElement.classList.add(CLASS)
         document.body.classList.add(CLASS)
@@ -374,33 +396,6 @@ function ReferralCapture() {
   return null
 }
 
-/** Сразу после гидрации подгружаем чанк нижней части главной (витрины и сетки). Только на `/`. */
-function MainPageChunkPrefetch() {
-  const { pathname } = useLocation()
-
-  useEffect(() => {
-    if (pathname !== '/') return undefined
-
-    let cancelled = false
-    const load = () => {
-      if (!cancelled) void import('./pages/MainPageBelowFold')
-    }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(load, { timeout: 1800 })
-      return () => {
-        cancelled = true
-        window.cancelIdleCallback(id)
-      }
-    }
-    const t = window.setTimeout(load, 0)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
-  }, [pathname])
-  return null
-}
-
 /**
  * Кэш списка аукциона: на /debts не запускаем — иначе батч запросов конкурирует с LCP и /properties/debts.
  * На `/` не запускаем — MainPage сам грузит approved/auctions/debts без test-timers и max-amounts.
@@ -421,7 +416,7 @@ function AuctionListPrefetch() {
     }
 
     const fastPaths = new Set(['/auction', '/main'])
-    if (fastPaths.has(pathname) || isAuctionRoute(pathname)) {
+    if (fastPaths.has(pathname) || pathnameIsAuction(pathname)) {
       if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
         const id = window.requestIdleCallback(run, { timeout: 2500 })
         return () => {
@@ -474,10 +469,6 @@ function AdminSessionCleaner() {
 
 function App() {
   const appLayoutRef = useRef(null)
-
-  useEffect(() => {
-    void import('./styles/buyer-cabinet-scroll.css')
-  }, [])
 
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
@@ -557,6 +548,7 @@ function App() {
   return (
     <div className="app-root-fill">
     <Router>
+      <BuyerCabinetScrollStyles />
       <PageSeoProvider>
       <SitePageSeo />
       <SiteNotificationsProvider>
@@ -569,28 +561,22 @@ function App() {
       <AuctionMobileOverflowLock />
       <ReferralCapture />
       <AuctionListPrefetch />
-      <MainPageChunkPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
-      <Suspense fallback={null}>
-        <PrivateClubKickModalLazy />
-        <GlobalVerificationSuccessGateLazy />
-        <VerificationRejectedGateLazy blockedUser={isBlocked} />
-      </Suspense>
+      <PrivateClubKickModalHost />
+      <LoggedInVerificationGatesHost isBlocked={isBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />
-      <ClerkAuthHandler />
+      <ClerkAuthHandlerGate />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <SiteFooterNearObserver />
       <ChatDockActiveBridge />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <SiteAdsErrorBoundary>
-          <Suspense fallback={null}>
-            <SiteAdsHostLazy />
-          </Suspense>
+          <DeferredSiteAdsHost />
         </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
@@ -741,7 +727,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/profile-legacy" element={<LegacyProfileRedirect />} />
+              <Route
+                path="/profile-legacy"
+                element={
+                  <LazyPage>
+                    <LegacyProfileRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/oauth-bridge"
                 element={
@@ -758,15 +751,24 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/data" element={<CabinetDataRedirect />} />
+              <Route
+                path="/data"
+                element={
+                  <LazyPage>
+                    <CabinetDataRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/subscriptions"
                 element={
-                  <CabinetSubscriptionsRedirect>
-                    <LazyPage>
-                      <Subscriptions />
-                    </LazyPage>
-                  </CabinetSubscriptionsRedirect>
+                  <LazyPage>
+                    <CabinetSubscriptionsRedirect>
+                      <LazyPage>
+                        <Subscriptions />
+                      </LazyPage>
+                    </CabinetSubscriptionsRedirect>
+                  </LazyPage>
                 }
               />
               <Route
@@ -809,7 +811,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/deposit" element={<DepositRedirect />} />
+              <Route
+                path="/deposit"
+                element={
+                  <LazyPage>
+                    <DepositRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/bonuses"
                 element={
@@ -826,7 +835,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/shares" element={<LegacySharesIndexRedirect />} />
+              <Route
+                path="/shares"
+                element={
+                  <LazyPage>
+                    <LegacySharesIndexRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path={`${CO_INVESTMENT_PATH}/:slugOrId`}
                 element={
@@ -843,7 +859,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/shares/:slugOrId" element={<LegacySharesDetailRedirect />} />
+              <Route
+                path="/shares/:slugOrId"
+                element={
+                  <LazyPage>
+                    <LegacySharesDetailRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/debts/property/:slugOrId"
                 element={
@@ -932,7 +955,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/jeton" element={<LegacyJetonRedirect />} />
+              <Route path="/jeton" element={<Navigate to="/" replace />} />
               <Route
                 path="/test"
                 element={
@@ -944,7 +967,7 @@ function App() {
               <Route
                 path="/owner-test"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -952,7 +975,7 @@ function App() {
               <Route
                 path="/owner-test/:view"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -960,7 +983,7 @@ function App() {
               <Route
                 path="/owner-test/:view/:propertyId"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -1045,7 +1068,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/owner" element={<LegacyOwnerCabinetRedirect />} />
+              <Route
+                path="/owner"
+                element={
+                  <LazyPage>
+                    <LegacyOwnerCabinetRedirect />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/property/:slugOrId/edit"
                 element={
@@ -1070,7 +1100,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route
+                path="*"
+                element={
+                  <LazyPage>
+                    <NotFoundPage />
+                  </LazyPage>
+                }
+              />
             </Routes>
           </RouteErrorBoundary>
         </div>

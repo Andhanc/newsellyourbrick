@@ -1,9 +1,7 @@
-import { isAuctionRoute } from './auctionFilterUrl'
-
 export const SITE_AD_PAGES = [
   { id: 'home', label: 'Главная' },
   { id: 'auction', label: 'Аукцион' },
-  { id: 'shares', label: 'Co-investment' },
+  { id: 'shares', label: 'Доли' },
   { id: 'test-drive', label: 'Test-drive' },
   { id: 'debts', label: 'Долги' },
 ]
@@ -16,7 +14,7 @@ export const SITE_AD_TYPE_LABELS = {
 /** @returns {'home'|'auction'|'shares'|'test-drive'|'debts'|null} */
 export function pathnameToAdPage(pathname) {
   if (pathname === '/') return 'home'
-  if (isAuctionRoute(pathname) || pathname === '/main') return 'auction'
+  if (pathname === '/main' || pathname.startsWith('/auction')) return 'auction'
   if (pathname.startsWith('/co-investment') || pathname.startsWith('/shares')) return 'shares'
   if (pathname === '/test-drive') return 'test-drive'
   if (pathname === '/debts') return 'debts'

@@ -1,11 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { getUserData } from '../services/authService'
-import {
-  ensureLiveChatSession,
-  fetchLiveChatMessagesSince,
-  normalizeLiveChatRows,
-  sendLiveChatUserMessage,
-} from '../services/liveChatApi'
 import { showNotification } from '../utils/toastHelper'
 
 function appendUniqueManagerMessages(prev, incoming) {
@@ -14,6 +8,10 @@ function appendUniqueManagerMessages(prev, incoming) {
   const existingIds = new Set((prev || []).map((m) => m?.id).filter((id) => id != null))
   const uniqueToAdd = nextList.filter((m) => m?.id != null && !existingIds.has(m.id))
   return uniqueToAdd.length ? [...(prev || []), ...uniqueToAdd] : prev
+}
+
+async function loadLiveChatApi() {
+  return import('../services/liveChatApi')
 }
 
 /**
@@ -26,6 +24,14 @@ export function useManagerLiveChat(chatUserId, t) {
   const managerPollRef = useRef(null)
   const lastManagerMsgIdRef = useRef(0)
   const managerMessagesRef = useRef(null)
+  const liveChatApiRef = useRef(null)
+
+  const getLiveChatApi = useCallback(async () => {
+    if (!liveChatApiRef.current) {
+      liveChatApiRef.current = await loadLiveChatApi()
+    }
+    return liveChatApiRef.current
+  }, [])
 
   const clearPoll = useCallback(() => {
     if (managerPollRef.current) {
@@ -39,6 +45,7 @@ export function useManagerLiveChat(chatUserId, t) {
       clearPoll()
       managerPollRef.current = setInterval(async () => {
         try {
+          const { fetchLiveChatMessagesSince, normalizeLiveChatRows } = await getLiveChatApi()
           const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
           if (chunk.length) {
             lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
@@ -49,7 +56,7 @@ export function useManagerLiveChat(chatUserId, t) {
         }
       }, 2500)
     },
-    [clearPoll]
+    [clearPoll, getLiveChatApi],
   )
 
   /** Остановить опрос; токен и история сохраняются — при следующем открытии панели enterLiveManagerChat подхватит сессию. */
@@ -69,6 +76,7 @@ export function useManagerLiveChat(chatUserId, t) {
     const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
     setManagerConnecting(true)
     try {
+      const { ensureLiveChatSession, normalizeLiveChatRows } = await getLiveChatApi()
       const { token, messages: rows } = await ensureLiveChatSession({
         assistantSessionId: chatUserId,
         userId: Number.isFinite(uid) ? uid : null,
@@ -87,13 +95,14 @@ export function useManagerLiveChat(chatUserId, t) {
     } finally {
       setManagerConnecting(false)
     }
-  }, [chatUserId, t, scheduleManagerPoll])
+  }, [chatUserId, t, scheduleManagerPoll, getLiveChatApi])
 
   const sendManagerMessage = useCallback(
     async (text) => {
       const trimmed = (text || '').trim()
       if (!trimmed || !liveChatToken) return
       try {
+        const { sendLiveChatUserMessage, normalizeLiveChatRows } = await getLiveChatApi()
         const row = await sendLiveChatUserMessage(liveChatToken, trimmed)
         lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
         setManagerChatMessages((prev) => appendUniqueManagerMessages(prev, normalizeLiveChatRows([row])))
@@ -101,7 +110,7 @@ export function useManagerLiveChat(chatUserId, t) {
         showNotification(err?.message || t('liveChatError'))
       }
     },
-    [liveChatToken, t]
+    [liveChatToken, t, getLiveChatApi],
   )
 
   const managerThreadUi = useMemo(
@@ -113,7 +122,7 @@ export function useManagerLiveChat(chatUserId, t) {
         time: m.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
         timestamp: m.timestamp,
       })),
-    [managerChatMessages]
+    [managerChatMessages],
   )
 
   useEffect(() => {

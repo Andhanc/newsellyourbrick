@@ -11,6 +11,10 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import {
+  PRIVATE_CLUB_KICKED_MODAL_EVENT,
+  SUBSCRIPTION_BILLING_UPDATED_EVENT,
+} from '../constants/cabinetEvents'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
@@ -50,10 +54,7 @@ async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
 }
 
 /** После оплаты / синхронизации Stripe — перечитать тариф в превью кабинета. */
-export const SUBSCRIPTION_BILLING_UPDATED_EVENT = 'subscription-billing-updated'
-
-/** Модератор снял доступ закрытого клуба по БД — показать модальное окно (слушатель в PrivateClubKickModal). */
-export const PRIVATE_CLUB_KICKED_MODAL_EVENT = 'private-club-kicked-modal'
+export { SUBSCRIPTION_BILLING_UPDATED_EVENT, PRIVATE_CLUB_KICKED_MODAL_EVENT } from '../constants/cabinetEvents'
 
 function formatShortDate(iso) {
   if (!iso) return '—'

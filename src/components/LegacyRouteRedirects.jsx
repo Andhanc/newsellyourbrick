@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { NEW_OWNER_CABINET_HOME_PATH } from '../utils/ownerTestProfile'
+
+const OWNER_CABINET_HOME_PATH = '/owner-test'
 
 /** Устаревший /owner → актуальный кабинет продавца. */
 export function LegacyOwnerCabinetRedirect() {
@@ -7,7 +8,7 @@ export function LegacyOwnerCabinetRedirect() {
   return (
     <Navigate
       to={{
-        pathname: NEW_OWNER_CABINET_HOME_PATH,
+        pathname: OWNER_CABINET_HOME_PATH,
         search: location.search,
         hash: location.hash,
       }}

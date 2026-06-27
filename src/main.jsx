@@ -9,7 +9,7 @@ import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import './index.css'
 import './styles/drawerDismiss.css'
-import './i18n/config'
+import { i18nReady } from './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 
 const CONFIG_FETCH_TIMEOUT_MS = 14_000
@@ -156,6 +156,7 @@ function RootGateFromServer({ initialGoogleId }) {
 }
 
 function RootGate() {
+  use(i18nReady)
   const initialClerkKey = useMemo(() => normalizeKey(getClerkPublishableKey()), [])
   const initialGoogleId = useMemo(() => normalizeKey(getGoogleClientId()), [])
 
@@ -176,7 +177,9 @@ const rootEl = document.getElementById('root')
 if (rootEl) {
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
-      <RootGate />
+      <Suspense fallback={<ConfigBootFallback />}>
+        <RootGate />
+      </Suspense>
     </React.StrictMode>,
   )
 }
