@@ -343,6 +343,8 @@
 .mot-hero-shell .mot-header {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  /* Выше .mot-metrics — иначе выпадающее меню профиля скрывается под карточками */
+  z-index: 10;
 }
 
 .mot-hero-shell .mot-header__title,

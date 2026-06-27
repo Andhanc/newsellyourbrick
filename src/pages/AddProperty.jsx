@@ -1905,7 +1905,7 @@ const AddProperty = ({
             `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
           )
           // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
-          if (!adminMode) navigate('/owner/dashboard')
+          if (!adminMode) navigate('/owner-test')
           return false
         }
       } else {
@@ -1935,7 +1935,7 @@ const AddProperty = ({
             showNotification(
               `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
             )
-            if (!adminMode) navigate('/owner/dashboard')
+            if (!adminMode) navigate('/owner-test')
             return false
           }
         }
@@ -2259,7 +2259,7 @@ const AddProperty = ({
         if (isEditMode) {
           showNotification(data.message || 'Изменения отправлены на модерацию')
           window.dispatchEvent(new CustomEvent('owner-properties-update'))
-          if (!adminMode) navigate('/owner')
+          if (!adminMode) navigate('/owner-test')
           return true
         }
         if (!skipSuccessModal) {
@@ -2989,7 +2989,7 @@ const AddProperty = ({
     } catch (error) {
       console.error('Ошибка загрузки данных объекта:', error)
       showNotification('Не удалось загрузить данные объекта для редактирования')
-      navigate('/owner')
+      navigate('/owner-test')
     } finally {
       setIsLoadingProperty(false)
     }
@@ -5632,7 +5632,7 @@ const AddProperty = ({
                   setCurrentStep('price')
                 } else {
                   if (adminMode && typeof onAdminBack === 'function') onAdminBack()
-                  else navigate('/owner')
+                  else navigate('/owner-test')
                 }
               }}
             >
@@ -10760,7 +10760,7 @@ const AddProperty = ({
       {showSuccessModal && (
         <div className="success-modal-overlay" onClick={() => {
           setShowSuccessModal(false)
-          if (!adminMode) navigate('/owner')
+          if (!adminMode) navigate('/owner-test')
         }}>
           <div className="success-modal" onClick={(e) => e.stopPropagation()}>
             <div className="success-modal__icon">
@@ -10778,7 +10778,7 @@ const AddProperty = ({
               className="success-modal__button"
               onClick={() => {
                 setShowSuccessModal(false)
-                if (!adminMode) navigate('/owner')
+                if (!adminMode) navigate('/owner-test')
               }}
             >
               Понятно

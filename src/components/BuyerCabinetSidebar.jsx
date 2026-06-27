@@ -4,8 +4,10 @@ import { getInterfaceLanguageNativeName } from '../utils/interfaceLanguages'
 import {
   getCabinetDataPath,
   getCabinetProfilePath,
+  getCabinetSubscriptionsPath,
   isCabinetDataPath,
   isCabinetProfilePath,
+  isCabinetSubscriptionsPath,
 } from '../utils/cabinetRoutes'
 
 const headerBtnStyle = {
@@ -45,6 +47,7 @@ export default function BuyerCabinetSidebar({
   const langName = getInterfaceLanguageNativeName(i18n.language)
   const profilePath = getCabinetProfilePath()
   const dataPath = getCabinetDataPath()
+  const subscriptionsPath = getCabinetSubscriptionsPath()
 
   const goBackFromCabinet = () => {
     // React Router (History API) кладёт в state.idx индекс записи; на первой странице сессии idx === 0
@@ -155,7 +158,7 @@ export default function BuyerCabinetSidebar({
           </svg>
           <span>{t('buyerCabinet_myBookings')}</span>
         </Link>
-        <Link to="/subscriptions" className={navClass('/subscriptions')}>
+        <Link to={subscriptionsPath} className={isCabinetSubscriptionsPath(pathname, search) ? 'nav-item active' : 'nav-item'}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor" />
           </svg>

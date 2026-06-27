@@ -8,7 +8,6 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-export const LEGACY_OWNER_CABINET_PATH = '/owner'
 export const NEW_OWNER_CABINET_HOME_PATH = '/owner-test'
 
 const EMPTY_PROFILE = {

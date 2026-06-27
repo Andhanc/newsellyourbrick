@@ -146,14 +146,14 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
     return [home, { to: null, label: t('privateClubPageTitle') }]
   }
 
-  if (pathname === '/owner') {
+  if (pathname === '/owner-test') {
     return [home, { to: null, label: t('ownerDashboard') }]
   }
 
   if (pathname === '/owner/property/new') {
     return [
       home,
-      { to: '/owner', label: t('ownerDashboard') },
+      { to: '/owner-test', label: t('ownerDashboard') },
       { to: null, label: t('addProperty') },
     ]
   }

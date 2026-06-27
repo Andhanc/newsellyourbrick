@@ -79,7 +79,7 @@ const SELLER_SECTIONS = [
   {
     sectionTitleKey: 'sectionsGroupSellerObjects',
     items: [
-      { titleKey: 'ownerDashboard', path: '/owner', requiresAuth: true },
+      { titleKey: 'ownerDashboard', path: '/owner-test', requiresAuth: true },
       { titleKey: 'addProperty', path: '/owner/property/new', requiresAuth: true },
       { titleKey: 'auction', path: '/auction' },
       { titleKey: 'coInvestment', path: CO_INVESTMENT_PATH },

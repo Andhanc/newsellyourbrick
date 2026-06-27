@@ -5,9 +5,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   getCabinetDataPath,
   getCabinetProfilePath,
+  getCabinetSubscriptionsPath,
   isCabinetDataPath,
   isCabinetProfilePath,
-  isSellerCabinetRole,
+  isCabinetSubscriptionsPath,
 } from '../utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
 
@@ -30,8 +31,6 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
       isAiChatRoute ||
       ((pathname === '/auction' || pathname === '/' || pathname === '/main') && aiConsultantOpen)
 
-    const sellerCabinet = isSellerCabinetRole()
-
     return {
       home: pathname === '/',
       auction: starts('/auction') || pathname === '/main',
@@ -46,7 +45,7 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
       moreSections: starts('/sections'),
       profile: isCabinetProfilePath(pathname),
       wallet: pathname === '/deposit' || pathname === '/wallet',
-      subscriptions: starts('/subscriptions'),
+      subscriptions: isCabinetSubscriptionsPath(pathname, search),
       data: isCabinetDataPath(pathname, search),
     }
   }, [pathname, search, isManagerChatOpen, aiConsultantOpen])
@@ -262,7 +261,7 @@ export default function SiteNavDrawer({
                       className={`menu-dropdown__item${drawerMenuActive.subscriptions ? ' menu-dropdown__item--active' : ''}`}
                       aria-current={drawerMenuActive.subscriptions ? 'page' : undefined}
                       onClick={() => {
-                        navigate('/subscriptions')
+                        navigate(getCabinetSubscriptionsPath())
                         closeAfterNav()
                       }}
                     >

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
@@ -17,7 +16,6 @@ import {
  * — новое in-app уведомление (напр. тест-драйв) → owner-notifications-refresh
  */
 export default function UserCabinetSseBridge() {
-  const location = useLocation()
   const esRef = useRef(null)
   const reconnectTimerRef = useRef(null)
 
@@ -116,7 +114,7 @@ export default function UserCabinetSseBridge() {
       document.removeEventListener('visibilitychange', onVisibility)
       closeEs()
     }
-  }, [location.pathname])
+  }, [])
 
   return null
 }

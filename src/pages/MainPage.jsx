@@ -56,28 +56,22 @@ import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
-import LoginModal from '../components/LoginModal'
-import HeroRolePitchModal from '../components/HeroRolePitchModal'
-import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import {
   getCabinetDataPath,
   getCabinetHomePath,
   getCabinetProfilePath,
+  getCabinetSubscriptionsPath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
-import SiteNavDrawer from '../components/SiteNavDrawer'
-import CookieConsentDrawer, {
-  COOKIE_CONSENT_ENABLED,
-  readCookieConsentChoice,
-} from '../components/CookieConsentDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -94,6 +88,44 @@ import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
+const LoginModalLazy = lazyWithRetry(() => import('../components/LoginModal'))
+const HeroRolePitchModalLazy = lazyWithRetry(() => import('../components/HeroRolePitchModal'))
+const SiteNavDrawerLazy = lazyWithRetry(() => import('../components/SiteNavDrawer'))
+const CookieConsentDrawerLazy = lazyWithRetry(() => import('../components/CookieConsentDrawer'))
+
+const COOKIE_CONSENT_ENABLED = false
+
+function readCookieConsentChoice() {
+  try {
+    return localStorage.getItem('syb_cookie_consent_v1')
+  } catch {
+    return null
+  }
+}
+
+function filterLandingPropertiesByLocation(properties) {
+  return properties.filter((property) => {
+    const location = property.location?.toLowerCase() || ''
+    const isSpain =
+      location.includes('spain') ||
+      location.includes('españa') ||
+      location.includes('испания') ||
+      location.includes('tenerife') ||
+      location.includes('costa adeje') ||
+      location.includes('barcelona') ||
+      location.includes('madrid') ||
+      location.includes('valencia') ||
+      location.includes('malaga') ||
+      location.includes('sevilla')
+    const isDubai =
+      location.includes('dubai') ||
+      location.includes('дубай') ||
+      location.includes('uae') ||
+      location.includes('оаэ') ||
+      location.includes('emirates')
+    return isSpain || isDubai
+  })
+}
 
 /** Фон hero-секции (вилла в public/images/external) */
 const HERO_BACKGROUND_URL = publicAsset('images/external/shares-hero-villa.jpg')
@@ -416,7 +448,7 @@ function MainPage() {
       ...townhousesData.map(p => ({ ...p, source: 'townhouse' }))
     ]
     // Фильтруем по Испании и Дубаю
-    return filterPropertiesByLocation(combined)
+    return filterLandingPropertiesByLocation(combined)
   }, [])
   
   // Функция для получения уникального идентификатора пользователя/сессии
@@ -844,6 +876,7 @@ function MainPage() {
   // Определение страниц для поиска
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetDataPath = getCabinetDataPath()
+  const cabinetSubscriptionsPath = getCabinetSubscriptionsPath()
   const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     {
@@ -914,11 +947,11 @@ function MainPage() {
       allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
-      path: '/subscriptions',
+      path: cabinetSubscriptionsPath,
       keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'],
       title: 'Подписки',
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: ['buyer', 'client', 'seller', 'owner', 'admin'],
     },
     {
       path: '/history',
@@ -928,7 +961,7 @@ function MainPage() {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
-      path: '/owner',
+      path: '/owner-test',
       keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
       title: 'Кабинет продавца',
       requiresAuth: true,
@@ -1035,6 +1068,18 @@ function MainPage() {
   }
 
   // Открытие LoginModal по глобальному запросу (например, клик из toast «Войти / Регистрация»)
+  useEffect(() => {
+    const preloadLoginModal = () => {
+      void import('../components/LoginModal')
+    }
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(preloadLoginModal, { timeout: 5000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(preloadLoginModal, 2500)
+    return () => window.clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     const openForcedLoginModal = () => {
       const forceOpen = sessionStorage.getItem('login_modal_force_open')
@@ -1231,9 +1276,9 @@ function MainPage() {
           ? `&viewer_user_id=${encodeURIComponent(String(viewerRaw).trim())}`
           : ''
       const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
-        fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetch(`${apiBase}/properties/debts`)
+        fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
+        fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
+        fetchDedupe(`${apiBase}/properties/debts`),
       ])
       let approved = []
       let auctions = []
@@ -1848,6 +1893,7 @@ function MainPage() {
 
     let wantsManager = false
     try {
+      const { detectManagerContactIntent } = await import('../services/aiService')
       wantsManager = await detectManagerContactIntent(userMessage)
     } catch {
       wantsManager = false
@@ -1918,7 +1964,7 @@ function MainPage() {
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
-      // Получаем ответ от AI
+      const { askPropertyAssistant } = await import('../services/aiService')
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         userPreferences,
@@ -2326,23 +2372,27 @@ function MainPage() {
             <span>{t('menu')}</span>
           </button>
         </div>
-        <SiteNavDrawer
-          menuRef={menuRef}
-          isMenuOpen={isMenuOpen}
-          isMenuClosing={isMenuClosing}
-          setIsMenuOpen={setIsMenuOpen}
-          setIsMenuClosing={setIsMenuClosing}
-          isLoggedIn={isLoggedIn}
-          isManagerChatOpen={isManagerChatOpen}
-          aiConsultantOpen={isChatOpen}
-          openLoginOrNavigate={openDrawerLoginOrNavigate}
-          openWalletFromMenu={openDrawerWalletFromMenu}
-          onOpenLoginWizard={() => {
-            setMainLoginModalAuthEntry('header_wizard')
-            setIsLoginModalOpen(true)
-            setIsMenuOpen(false)
-          }}
-        />
+        {isMenuOpen ? (
+          <Suspense fallback={null}>
+            <SiteNavDrawerLazy
+              menuRef={menuRef}
+              isMenuOpen={isMenuOpen}
+              isMenuClosing={isMenuClosing}
+              setIsMenuOpen={setIsMenuOpen}
+              setIsMenuClosing={setIsMenuClosing}
+              isLoggedIn={isLoggedIn}
+              isManagerChatOpen={isManagerChatOpen}
+              aiConsultantOpen={isChatOpen}
+              openLoginOrNavigate={openDrawerLoginOrNavigate}
+              openWalletFromMenu={openDrawerWalletFromMenu}
+              onOpenLoginWizard={() => {
+                setMainLoginModalAuthEntry('header_wizard')
+                setIsLoginModalOpen(true)
+                setIsMenuOpen(false)
+              }}
+            />
+          </Suspense>
+        ) : null}
         </div>
 
           <div className="new-header__filters">
@@ -3126,40 +3176,50 @@ function MainPage() {
       {/* Модальное окно успешной верификации */}
 
       {/* Модальное окно входа/регистрации */}
-      <HeroRolePitchModal
-        variant={heroRolePitch}
-        isOpen={heroRolePitch != null}
-        onClose={() => setHeroRolePitch(null)}
-        onPrimary={handleHeroRolePitchPrimary}
-        title={
-          heroRolePitch === 'seller'
-            ? t('heroPitchBecomeSellerTitle')
-            : t('heroPitchBecomeBuyerTitle')
-        }
-        body={
-          heroRolePitch === 'seller'
-            ? t('heroPitchBecomeSellerBody')
-            : t('heroPitchBecomeBuyerBody')
-        }
-        primaryLabel={
-          heroRolePitch === 'seller'
-            ? t('heroPitchBecomeSellerCta')
-            : t('heroPitchBecomeBuyerCta')
-        }
-        closeLabel={t('close')}
-      />
+      {heroRolePitch != null ? (
+        <Suspense fallback={null}>
+          <HeroRolePitchModalLazy
+            variant={heroRolePitch}
+            isOpen={heroRolePitch != null}
+            onClose={() => setHeroRolePitch(null)}
+            onPrimary={handleHeroRolePitchPrimary}
+            title={
+              heroRolePitch === 'seller'
+                ? t('heroPitchBecomeSellerTitle')
+                : t('heroPitchBecomeBuyerTitle')
+            }
+            body={
+              heroRolePitch === 'seller'
+                ? t('heroPitchBecomeSellerBody')
+                : t('heroPitchBecomeBuyerBody')
+            }
+            primaryLabel={
+              heroRolePitch === 'seller'
+                ? t('heroPitchBecomeSellerCta')
+                : t('heroPitchBecomeBuyerCta')
+            }
+            closeLabel={t('close')}
+          />
+        </Suspense>
+      ) : null}
 
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={closeLoginModalMain}
-        authEntryVariant={mainLoginModalAuthEntry}
-      />
+      {isLoginModalOpen ? (
+        <Suspense fallback={null}>
+          <LoginModalLazy
+            isOpen={isLoginModalOpen}
+            onClose={closeLoginModalMain}
+            authEntryVariant={mainLoginModalAuthEntry}
+          />
+        </Suspense>
+      ) : null}
 
-      {COOKIE_CONSENT_ENABLED ? (
-        <CookieConsentDrawer
-          open={cookieConsentOpen}
-          onClose={() => setCookieConsentOpen(false)}
-        />
+      {COOKIE_CONSENT_ENABLED && cookieConsentOpen ? (
+        <Suspense fallback={null}>
+          <CookieConsentDrawerLazy
+            open={cookieConsentOpen}
+            onClose={() => setCookieConsentOpen(false)}
+          />
+        </Suspense>
       ) : null}
     </div>
   )

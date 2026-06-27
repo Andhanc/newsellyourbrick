@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
 import { getApiBaseUrl } from '../utils/apiConfig'
 
 const VISITOR_STORAGE_KEY = 'visitor_global_id'
@@ -13,7 +12,6 @@ const HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30 секунд
 export default function VisitorHeartbeat() {
   const intervalRef = useRef(null)
   const ricIdRef = useRef(null)
-  const location = useLocation()
 
   useEffect(() => {
     let visitorId = localStorage.getItem(VISITOR_STORAGE_KEY)
@@ -42,7 +40,7 @@ export default function VisitorHeartbeat() {
       ricIdRef.current = null
       sendHeartbeat()
     }
-    const onDebts = location.pathname === '/debts'
+    const onDebts = window.location.pathname === '/debts'
     const ricTimeoutMs = onDebts ? 5000 : 3500
     if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
       ricIdRef.current = window.requestIdleCallback(runFirstHeartbeat, { timeout: ricTimeoutMs })
@@ -69,7 +67,7 @@ export default function VisitorHeartbeat() {
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [location.pathname])
+  }, [])
 
   return null
 }

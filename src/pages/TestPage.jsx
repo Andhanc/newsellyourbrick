@@ -1182,6 +1182,18 @@ function TestPage() {
     }
   }, [searchParams, navigate])
 
+  useEffect(() => {
+    if (searchParams.get('subscriptions') !== '1') return
+    setSubscriptionSheetOpen(true)
+    setDataSheetOpen(false)
+    setHistorySheetOpen(false)
+    setBookingsSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('subscriptions')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+  }, [searchParams, navigate])
+
   /** Возврат с Stripe Checkout Pro: подтверждение сессии и поздравление на профиле (как после верификации). */
   useEffect(() => {
     const celebrationFlag = searchParams.get('subscription_celebration') === '1'

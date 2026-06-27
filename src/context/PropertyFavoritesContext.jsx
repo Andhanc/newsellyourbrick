@@ -1,5 +1,7 @@
 import {
   createContext,
+  lazy,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -8,11 +10,8 @@ import {
 } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
-import CompareFavoritesDrawer from '../components/CompareFavoritesDrawer'
-import FirstFavoriteDrawer from '../components/FirstFavoriteDrawer'
 import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { fetchUserFavorites, invalidateUserFavoritesCache } from '../utils/favoritesApi'
 import {
   favoriteCompositeKey,
   hasDbBackedProperty,
@@ -20,6 +19,9 @@ import {
 } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+
+const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
+const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
 
 const PropertyFavoritesContext = createContext(null)
 
@@ -92,19 +94,24 @@ function PropertyFavoritesDrawersHost({
   onCloseCompare,
 }) {
   const navigate = useNavigate()
+  if (!firstOpen && !compareOpen) return null
   return (
-    <>
-      <FirstFavoriteDrawer
-        isOpen={firstOpen}
-        onClose={onCloseFirst}
-        onGoToFavorites={() => navigate('/favorites')}
-      />
-      <CompareFavoritesDrawer
-        isOpen={compareOpen}
-        onClose={onCloseCompare}
-        onCompare={() => navigate('/compare')}
-      />
-    </>
+    <Suspense fallback={null}>
+      {firstOpen ? (
+        <LazyFirstFavoriteDrawer
+          isOpen={firstOpen}
+          onClose={onCloseFirst}
+          onGoToFavorites={() => navigate('/favorites')}
+        />
+      ) : null}
+      {compareOpen ? (
+        <LazyCompareFavoritesDrawer
+          isOpen={compareOpen}
+          onClose={onCloseCompare}
+          onCompare={() => navigate('/compare')}
+        />
+      ) : null}
+    </Suspense>
   )
 }
 
@@ -127,6 +134,7 @@ export function PropertyFavoritesProvider({ children }) {
     setLoading(true)
     try {
       const base = await getApiBaseUrl()
+      const { fetchUserFavorites } = await import('../utils/favoritesApi')
       const rows = await fetchUserFavorites(base, uid, { ttlMs: 20000 })
       if (Array.isArray(rows)) {
         const next = new Set()
@@ -148,7 +156,7 @@ export function PropertyFavoritesProvider({ children }) {
   useEffect(() => {
     let cancelled = false
     const run = () => {
-      if (!cancelled) void loadDbFavorites()
+      if (!cancelled && getDbUserId()) void loadDbFavorites()
     }
     if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(run, { timeout: 4500 })
@@ -220,6 +228,7 @@ export function PropertyFavoritesProvider({ children }) {
 
         try {
           const base = await getApiBaseUrl()
+          const { invalidateUserFavoritesCache } = await import('../utils/favoritesApi')
           invalidateUserFavoritesCache(base, uid)
           const body = JSON.stringify({
             property_id: property.id,
@@ -244,6 +253,7 @@ export function PropertyFavoritesProvider({ children }) {
           }
         } catch (e) {
           const base = await getApiBaseUrl().catch(() => '/api')
+          const { invalidateUserFavoritesCache } = await import('../utils/favoritesApi')
           invalidateUserFavoritesCache(base, uid)
           setDbKeys((prev) => {
             const next = new Set(prev)

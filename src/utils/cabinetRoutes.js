@@ -1,5 +1,6 @@
 import { getUserData } from '../services/authService'
-import { LEGACY_OWNER_CABINET_PATH, NEW_OWNER_CABINET_HOME_PATH } from './ownerTestProfile'
+import { NEW_OWNER_CABINET_HOME_PATH } from './ownerTestProfile'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from './ownerTestNav'
 
 /** @returns {'admin' | 'seller' | 'owner' | 'buyer' | 'client'} */
 export function readStoredUserRole() {
@@ -32,11 +33,6 @@ export function getCabinetHomePath(role = readStoredUserRole()) {
   return '/profile'
 }
 
-/** Прямая ссылка на прежний кабинет продавца (/owner). */
-export function getLegacySellerCabinetPath() {
-  return LEGACY_OWNER_CABINET_PATH
-}
-
 /** Профиль / личный кабинет. */
 export function getCabinetProfilePath(role = readStoredUserRole()) {
   return getCabinetHomePath(role)
@@ -54,6 +50,23 @@ export function getCabinetWalletPath(role = readStoredUserRole()) {
   return '/wallet'
 }
 
+/** Подписки: покупатель — лист в /profile, продавец — /owner-test/subscriptions. */
+export function getCabinetSubscriptionsPath(role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) return OWNER_TEST_STANDALONE_HREF_MAP.subscriptions
+  return '/profile?subscriptions=1'
+}
+
+export function isCabinetSubscriptionsPath(pathname, search = '', role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) {
+    return (
+      pathname === OWNER_TEST_STANDALONE_HREF_MAP.subscriptions ||
+      pathname.startsWith('/owner-subscriptions-test')
+    )
+  }
+  const params = new URLSearchParams(search)
+  return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('subscriptions') === '1'
+}
+
 /** Ссылка на поле в разделе «Данные» (например из VerificationToast). */
 export function getCabinetDataFieldPath(field, role = readStoredUserRole()) {
   const encoded = encodeURIComponent(field)
@@ -63,12 +76,7 @@ export function getCabinetDataFieldPath(field, role = readStoredUserRole()) {
 
 export function isCabinetProfilePath(pathname, role = readStoredUserRole()) {
   if (isSellerCabinetRole(role)) {
-    return (
-      pathname === NEW_OWNER_CABINET_HOME_PATH ||
-      pathname.startsWith('/owner-') ||
-      pathname === LEGACY_OWNER_CABINET_PATH ||
-      pathname.startsWith(`${LEGACY_OWNER_CABINET_PATH}/`)
-    )
+    return pathname === NEW_OWNER_CABINET_HOME_PATH || pathname.startsWith('/owner-')
   }
   return pathname === '/profile' || pathname.startsWith('/profile/')
 }

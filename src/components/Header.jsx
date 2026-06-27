@@ -24,6 +24,7 @@ import {
   getCabinetDataPath,
   getCabinetHomePath,
   getCabinetProfilePath,
+  getCabinetSubscriptionsPath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
@@ -344,6 +345,7 @@ const Header = () => {
   // Определение страниц для поиска
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetDataPath = getCabinetDataPath()
+  const cabinetSubscriptionsPath = getCabinetSubscriptionsPath()
   const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
@@ -368,10 +370,10 @@ const Header = () => {
       allowedRoles: ['buyer', 'client', 'admin'],
     },
     { path: cabinetDataPath, keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
-    { path: '/subscriptions', keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: cabinetSubscriptionsPath, keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'seller', 'owner', 'admin'] },
     { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/bonuses', keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания'], titleKey: 'bonuses', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
-    { path: '/owner', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
+    { path: '/owner-test', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
     { path: '/owner/property/new', keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'], titleKey: 'addProperty', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
     { path: '/admin', keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'], titleKey: 'adminPanel', requiresAuth: true, requiresRole: ['admin'], allowedRoles: ['admin'] }
   ]

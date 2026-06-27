@@ -30,8 +30,6 @@ export const SEO_ROBOTS_DISALLOW_PREFIXES = [
   '/owner-wallet-test',
   '/owner-profile-test',
   '/owner-add-property-test',
-  '/jeton',
-  '/profile-legacy',
   '/documents',
 ]
 
