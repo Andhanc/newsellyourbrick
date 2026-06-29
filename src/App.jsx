@@ -51,7 +51,6 @@ const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyP
 const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveExitFeedbackPage'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
-const Profile = lazyWithRetry(() => import('./pages/Profile'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const History = lazyWithRetry(() => import('./pages/History'))
 const Chat = lazyWithRetry(() => import('./pages/Chat'))
@@ -59,7 +58,6 @@ const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
 const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
 const PrivateClub = lazyWithRetry(() => import('./pages/PrivateClub'))
-const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
@@ -70,7 +68,6 @@ const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticlePage'))
 const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
-const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
 const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
@@ -84,6 +81,12 @@ const OwnerTestLegacyRedirectWrapper = lazyWithRetry(() =>
 )
 const OwnerTestLegacyProfileRedirect = lazyWithRetry(() =>
   import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyProfileRedirect }))
+)
+const LegacyProfileRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyProfileRedirect }))
+)
+const LegacyOwnerCabinetRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyOwnerCabinetRedirect }))
 )
 const CabinetProfileRoute = lazyWithRetry(() => import('./components/CabinetProfileRoute'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
@@ -714,7 +717,7 @@ function App() {
                 path="/profile-legacy"
                 element={
                   <LazyPage>
-                    <Profile />
+                    <LegacyProfileRedirect />
                   </LazyPage>
                 }
               />
@@ -900,14 +903,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/jeton"
-                element={
-                  <LazyPage>
-                    <JetonPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="/jeton" element={<Navigate to="/" replace />} />
               <Route
                 path="/test"
                 element={
@@ -1016,7 +1012,7 @@ function App() {
                 path="/owner"
                 element={
                   <LazyPage>
-                    <OwnerDashboard />
+                    <LegacyOwnerCabinetRedirect />
                   </LazyPage>
                 }
               />
