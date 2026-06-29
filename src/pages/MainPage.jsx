@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
+import * as THREE from 'three'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import {
-  Home,
-  Heart,
-  Gavel,
-  MessageCircle,
-  User,
-  Building2,
-  Building,
-} from 'lucide-react'
+import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
@@ -34,25 +27,58 @@ import {
   FiMessageCircle,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
-import { WhatsAppIcon, TelegramIcon } from '../components/icons/ContactChannelIcons'
+import {
+  FaHome,
+  FaHeart,
+  FaHeart as FaHeartSolid,
+  FaGavel,
+  FaComment,
+  FaUser,
+  FaAndroid,
+  FaApple,
+  FaYoutube,
+  FaCar,
+  FaBolt,
+  FaGem,
+  FaWhatsapp,
+} from 'react-icons/fa'
+import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
+import {
+  PiHouseLine,
+  PiBuildings,
+  PiBuildingApartment,
+  PiBuilding,
+  PiWarehouse,
+} from 'react-icons/pi'
+import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
+import SybLandingSearchBar from '../components/SybLandingSearchBar'
+import { ScrollReveal, ScrollRevealItem, ScrollRevealStagger } from '../components/ScrollReveal'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import LoginModal from '../components/LoginModal'
+import HeroRolePitchModal from '../components/HeroRolePitchModal'
+import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import {
   getCabinetDataPath,
   getCabinetHomePath,
   getCabinetProfilePath,
-  getCabinetSubscriptionsPath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
+import { syncAssistantLead } from '../services/assistantLeadService'
+import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
+import SiteNavDrawer from '../components/SiteNavDrawer'
+import CookieConsentDrawer, {
+  COOKIE_CONSENT_ENABLED,
+  readCookieConsentChoice,
+} from '../components/CookieConsentDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
-import { fetchDedupe } from '../utils/fetchDedupe'
 import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -61,6 +87,7 @@ import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
 import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
@@ -68,59 +95,268 @@ import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
-const MainPageMidSectionLazy = lazyWithRetry(() => import('./MainPageMidSection'))
-const FrostedGlassCardLazy = lazyWithRetry(() =>
-  import('../components/ui/interactive-frosted-glass-card').then((m) => ({
-    default: m.FrostedGlassCard,
-  })),
-)
-const LoginModalLazy = lazyWithRetry(() => import('../components/LoginModal'))
-const HeroRolePitchModalLazy = lazyWithRetry(() => import('../components/HeroRolePitchModal'))
-const SiteNavDrawerLazy = lazyWithRetry(() => import('../components/SiteNavDrawer'))
-const CookieConsentDrawerLazy = lazyWithRetry(() => import('../components/CookieConsentDrawer'))
-
-const COOKIE_CONSENT_ENABLED = false
-
-function readCookieConsentChoice() {
-  try {
-    return localStorage.getItem('syb_cookie_consent_v1')
-  } catch {
-    return null
-  }
-}
-
-function filterLandingPropertiesByLocation(properties) {
-  return properties.filter((property) => {
-    const location = property.location?.toLowerCase() || ''
-    const isSpain =
-      location.includes('spain') ||
-      location.includes('españa') ||
-      location.includes('испания') ||
-      location.includes('tenerife') ||
-      location.includes('costa adeje') ||
-      location.includes('barcelona') ||
-      location.includes('madrid') ||
-      location.includes('valencia') ||
-      location.includes('malaga') ||
-      location.includes('sevilla')
-    const isDubai =
-      location.includes('dubai') ||
-      location.includes('дубай') ||
-      location.includes('uae') ||
-      location.includes('оаэ') ||
-      location.includes('emirates')
-    return isSpain || isDubai
-  })
-}
 
 /** Фон hero-секции (вилла в public/images/external) */
 const HERO_BACKGROUND_URL = publicAsset('images/external/shares-hero-villa.jpg')
+const LANDING_MODELS_RIBBON_IMAGE = publicAsset('images/sellyourbrick/landing-models-ribbon.png')
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
 
 const LISTING_IMAGE_FALLBACK =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
+
+const premiumStats = [
+  { value: '4', label: 'стратегии', text: 'аукцион, фиксированная цена, доли и долги' },
+  { value: '€1.4B+', label: 'активов', text: 'в объектной, долговой и инвестиционной витрине' },
+  { value: '34%', label: 'быстрее', text: 'путь от интереса к квалифицированному решению' },
+]
+
+const premiumModes = [
+  {
+    id: 'auction',
+    number: '01',
+    eyebrow: 'Аукцион',
+    title: 'Аукцион показывает реальный спрос',
+    text: 'Подходит объектам, где важно создать конкуренцию покупателей и получить рыночную цену без хаоса в переговорах.',
+    caption: 'Для продавца: управляемые торги. Для покупателя: прозрачная история ставок.',
+    actionText: 'Показать аукционы',
+    to: '/auction?filter=auction',
+    anchorId: 'strategy-auction',
+    objectsId: 'objects-auction',
+    image: '/images/sellyourbrick/about/about-category-auction.jpg',
+    Icon: FaGavel,
+  },
+  {
+    id: 'buy-now',
+    number: '02',
+    eyebrow: 'Купить сейчас',
+    title: 'Купить сейчас закрывает сделку быстрее',
+    text: 'Формат для понятных активов с фиксированной ценой: покупатель не ждет финала торгов, продавец быстрее получает решение.',
+    caption: 'Для тех, кто уже готов к сделке и хочет убрать лишние шаги.',
+    actionText: 'Показать объекты',
+    to: '/auction?filter=buy_now',
+    anchorId: 'strategy-buy-now',
+    objectsId: 'objects-buy-now',
+    image: '/images/sellyourbrick/about/about-category-buynow.jpg',
+    Icon: FaBolt,
+  },
+  {
+    id: 'shares',
+    number: '03',
+    eyebrow: 'Доли',
+    title: 'Доли открывают вход с меньшим чеком',
+    text: 'Инвестор может собрать портфель из долей в проверенных объектах, а собственник получает новый способ монетизации.',
+    caption: 'Четкая структура доли, объекта, доходности и выхода.',
+    actionText: 'Показать доли',
+    to: '/shares',
+    anchorId: 'strategy-shares',
+    objectsId: 'objects-shares',
+    image: '/images/sellyourbrick/about/about-category-shares.jpg',
+    Icon: FaGem,
+  },
+  {
+    id: 'debts',
+    number: '04',
+    eyebrow: 'Долги',
+    title: 'Долги превращают сложность в стратегию',
+    text: 'Долговые активы требуют отдельной логики: дисконт, документы, риск-профиль и сценарий выхода видны до решения.',
+    caption: 'Для инвесторов, которые умеют работать с асимметрией цены и риска.',
+    actionText: 'Показать долги',
+    to: '/debts',
+    anchorId: 'strategy-debts',
+    objectsId: 'objects-debts',
+    image: '/images/sellyourbrick/about/about-category-debts.jpg',
+    Icon: FiPieChart,
+  },
+]
+
+const premiumFlow = [
+  ['01', 'Собираем объект', 'фото, параметры, документы, ограничения и целевой сценарий продажи'],
+  ['02', 'Упаковываем спрос', 'позиционирование, витрина, торги, buy now или доли'],
+  ['03', 'Ведем сделку', 'чат, уведомления, депозит, история ставок и безопасное закрытие'],
+]
+
+const premiumProof = [
+  'Юридический контур сделки виден до решения',
+  'AI-консультант помогает сузить выбор без давления',
+  'Продавец и инвестор работают в одном интерфейсе',
+  'Каждый объект можно открыть как инвестиционный сценарий',
+]
+
+function TiffanyThreeScene() {
+  const mountRef = useRef(null)
+
+  useEffect(() => {
+    const mount = mountRef.current
+    if (!mount) return undefined
+
+    let renderer
+    let frameId = null
+    let resizeObserver = null
+
+    try {
+      const scene = new THREE.Scene()
+      const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100)
+      camera.position.set(0, 0.1, 7.4)
+
+      renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true,
+      })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+      renderer.outputColorSpace = THREE.SRGBColorSpace
+      renderer.toneMapping = THREE.ACESFilmicToneMapping
+      renderer.toneMappingExposure = 1.12
+      renderer.domElement.setAttribute('aria-hidden', 'true')
+      mount.appendChild(renderer.domElement)
+
+      const group = new THREE.Group()
+      scene.add(group)
+
+      const ambient = new THREE.HemisphereLight(0xf4fffd, 0x063433, 1.8)
+      const key = new THREE.PointLight(0x78fff3, 7.5, 18)
+      key.position.set(3.8, 4.2, 4.8)
+      const rim = new THREE.PointLight(0xffffff, 4.5, 14)
+      rim.position.set(-4.8, -1.6, 3.6)
+      scene.add(ambient, key, rim)
+
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x9ef8ef,
+        metalness: 0,
+        roughness: 0.08,
+        transmission: 0.58,
+        thickness: 1.18,
+        clearcoat: 1,
+        clearcoatRoughness: 0.06,
+        transparent: true,
+        opacity: 0.72,
+        iridescence: 0.32,
+        iridescenceIOR: 1.35,
+      })
+      const deepMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x0abab5,
+        metalness: 0.1,
+        roughness: 0.18,
+        clearcoat: 0.8,
+        transparent: true,
+        opacity: 0.82,
+      })
+      const lineMaterial = new THREE.MeshBasicMaterial({
+        color: 0xd9fffb,
+        transparent: true,
+        opacity: 0.44,
+      })
+
+      const heroSphere = new THREE.Mesh(new THREE.IcosahedronGeometry(1.46, 5), glassMaterial)
+      heroSphere.position.set(-0.72, 0.2, 0)
+      const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.76, 0.1, 180, 18), deepMaterial)
+      knot.position.set(1.36, -0.34, -0.32)
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.012, 16, 164), lineMaterial)
+      ring.rotation.set(1.16, 0.2, -0.42)
+      const smallOne = new THREE.Mesh(new THREE.SphereGeometry(0.28, 48, 32), glassMaterial)
+      smallOne.position.set(1.9, 1.05, 0.1)
+      const smallTwo = new THREE.Mesh(new THREE.SphereGeometry(0.2, 40, 24), deepMaterial)
+      smallTwo.position.set(-2.02, -1.08, 0.2)
+      group.add(heroSphere, knot, ring, smallOne, smallTwo)
+
+      const particleGeometry = new THREE.BufferGeometry()
+      const particleCount = 130
+      const positions = new Float32Array(particleCount * 3)
+      for (let i = 0; i < particleCount; i += 1) {
+        const radius = 2.2 + Math.random() * 2.7
+        const angle = Math.random() * Math.PI * 2
+        positions[i * 3] = Math.cos(angle) * radius
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 3.1
+        positions[i * 3 + 2] = Math.sin(angle) * radius - 1.3
+      }
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const particles = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({
+          color: 0xc7fffa,
+          size: 0.025,
+          transparent: true,
+          opacity: 0.52,
+          depthWrite: false,
+        }),
+      )
+      scene.add(particles)
+
+      const pointer = { x: 0, y: 0 }
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const clock = new THREE.Clock()
+
+      const resize = () => {
+        const rect = mount.getBoundingClientRect()
+        const width = Math.max(1, Math.floor(rect.width))
+        const height = Math.max(1, Math.floor(rect.height))
+        renderer.setSize(width, height, false)
+        camera.aspect = width / height
+        camera.updateProjectionMatrix()
+      }
+
+      const onPointerMove = (event) => {
+        const rect = mount.getBoundingClientRect()
+        pointer.x = ((event.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2
+        pointer.y = ((event.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2
+      }
+
+      const animate = () => {
+        const time = clock.getElapsedTime()
+        const speed = reducedMotion ? 0.16 : 1
+        group.rotation.y = time * 0.18 * speed + pointer.x * 0.16
+        group.rotation.x = Math.sin(time * 0.42) * 0.08 - pointer.y * 0.08
+        heroSphere.rotation.z = time * 0.12 * speed
+        knot.rotation.x = time * 0.28 * speed
+        knot.rotation.y = time * 0.36 * speed
+        ring.rotation.z = time * 0.08 * speed
+        particles.rotation.y = time * 0.028 * speed
+        camera.position.x += (pointer.x * 0.18 - camera.position.x) * 0.035
+        camera.position.y += (-pointer.y * 0.12 + 0.1 - camera.position.y) * 0.035
+        camera.lookAt(0, 0, 0)
+        renderer.render(scene, camera)
+        frameId = requestAnimationFrame(animate)
+      }
+
+      resize()
+      resizeObserver = new ResizeObserver(resize)
+      resizeObserver.observe(mount)
+      mount.addEventListener('pointermove', onPointerMove)
+      animate()
+
+      return () => {
+        if (frameId) cancelAnimationFrame(frameId)
+        mount.removeEventListener('pointermove', onPointerMove)
+        if (resizeObserver) resizeObserver.disconnect()
+        scene.traverse((object) => {
+          if (object.geometry) object.geometry.dispose()
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach((material) => material.dispose())
+            } else {
+              object.material.dispose()
+            }
+          }
+        })
+        renderer.dispose()
+        if (renderer.domElement.parentNode === mount) {
+          mount.removeChild(renderer.domElement)
+        }
+      }
+    } catch (error) {
+      console.warn('Premium hero 3D scene disabled:', error)
+      if (renderer?.domElement?.parentNode === mount) {
+        mount.removeChild(renderer.domElement)
+      }
+      return undefined
+    }
+  }, [])
+
+  return <div className="premium-hero__canvas" ref={mountRef} aria-hidden="true" />
+}
 
 function asFiniteNumberOrNull(value) {
   if (value == null || value === '') return null
@@ -389,6 +625,7 @@ function MainPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, i18n } = useTranslation()
+  const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [propertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
@@ -433,7 +670,7 @@ function MainPage() {
       ...townhousesData.map(p => ({ ...p, source: 'townhouse' }))
     ]
     // Фильтруем по Испании и Дубаю
-    return filterLandingPropertiesByLocation(combined)
+    return filterPropertiesByLocation(combined)
   }, [])
   
   // Функция для получения уникального идентификатора пользователя/сессии
@@ -455,7 +692,7 @@ function MainPage() {
       localStorage.setItem('chatSessionId', sessionId)
     }
     return sessionId
-  }, [isLoggedIn])
+  }, [isLoggedIn, user, userLoaded])
 
   const {
     managerMessagesRef,
@@ -523,41 +760,22 @@ function MainPage() {
     }
   }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage при каждом изменении
+  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
   useEffect(() => {
-    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return
-    try {
-      const historyKey = `aiChatHistory_${getChatUserId}`
-      localStorage.setItem(historyKey, JSON.stringify(chatMessages))
-    } catch (error) {
-      console.error('Ошибка при сохранении истории чата:', error)
-    }
-  }, [chatMessages, getChatUserId])
-
-  // Синхронизация с сервером — только когда чат открыт (не при первом mount / восстановлении истории)
-  useEffect(() => {
-    if (!isChatOpen) return undefined
-    if (!chatHistoryLoadedRef.current || chatMessages.length === 0) return undefined
-
-    const timer = window.setTimeout(() => {
+    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
         const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        // Сохраняем историю в localStorage с привязкой к пользователю
+        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+        // Синхронизация с сервером для админки «Умный помощник»
         const userData = getUserData()
-        import('../services/assistantLeadService').then(({ syncAssistantLead }) => {
-          syncAssistantLead(
-            chatUserId,
-            chatMessages,
-            userPreferences,
-            userData?.isLoggedIn ? userData : null,
-          )
-        })
+        syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
-        console.error('Ошибка при синхронизации умного помощника:', error)
+        console.error('Ошибка при сохранении истории чата:', error)
       }
-    }, 1500)
-
-    return () => window.clearTimeout(timer)
-  }, [isChatOpen, chatMessages, userPreferences, getChatUserId])
+    }
+  }, [chatMessages, userPreferences, getChatUserId])
 
   // Сохраняем предпочтения пользователя в localStorage
   useEffect(() => {
@@ -611,75 +829,125 @@ function MainPage() {
   // Загружаем фотографию пользователя и проверяем заполненность профиля
   useEffect(() => {
     const loadUserPhotoAndCheckProfile = async () => {
-      const userData = getUserData()
-      if (userData.isLoggedIn) {
+      // Проверяем авторизацию через Clerk
+      if (userLoaded && user) {
+        // Пользователь авторизован через Clerk
+        const clerkPhoto = user.imageUrl || user.profileImageUrl || null
+        setUserPhoto(clerkPhoto)
         setIsLoggedIn(true)
-
-        let photo = userData.picture || null
+        
+        // Пытаемся загрузить данные из БД для полной проверки
+        const userData = getUserData()
         let profileIncomplete = false
-
+        
+        // Используем числовой ID из БД (из localStorage), а не Clerk ID
         const dbUserId = localStorage.getItem('userId')
-        if (dbUserId && /^\d+$/.test(dbUserId)) {
+        if (userData && dbUserId && /^\d+$/.test(dbUserId)) {
           try {
-            const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
-
-            if (result.notFound) {
-              console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
-              clearUserData()
-              setIsLoggedIn(false)
-              setUserPhoto(null)
-              setHasIncompleteProfile(false)
-              return
-            }
-
-            if (result.ok && result.user) {
-              const dbUser = result.user
+            const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
+            if (dbUser) {
+              // Проверяем заполненность профиля из БД
               profileIncomplete = checkProfileCompleteness(dbUser)
               setHasIncompleteProfile(profileIncomplete)
-
-              if (dbUser.user_photo && !photo) {
-                const photoPath = dbUser.user_photo
-                photo = photoPath.startsWith('http')
-                  ? photoPath
-                  : `${API_BASE_URL.replace('/api', '')}${photoPath}`
-
-                const updatedUserData = {
-                  ...userData,
-                  picture: photo,
-                }
-                localStorage.setItem('userData', JSON.stringify(updatedUserData))
-              }
+            } else {
+              // Если запрос не удался, проверяем базовые поля Clerk
+              profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
+              setHasIncompleteProfile(profileIncomplete)
             }
           } catch (error) {
-            console.warn('⚠️ Не удалось загрузить данные из БД:', error)
-            profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+            console.warn('⚠️ Не удалось загрузить данные из БД для Clerk пользователя:', error)
+            // Если ошибка, проверяем базовые поля Clerk
+            profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
             setHasIncompleteProfile(profileIncomplete)
           }
         } else {
-          profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+          // Если нет ID в localStorage, проверяем базовые поля Clerk
+          profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
           setHasIncompleteProfile(profileIncomplete)
         }
-
-        setUserPhoto(photo)
       } else {
-        setIsLoggedIn(false)
-        setUserPhoto(null)
-        setHasIncompleteProfile(false)
+        // Проверяем старую систему авторизации
+        const userData = getUserData()
+        if (userData.isLoggedIn) {
+          setIsLoggedIn(true)
+          
+          // Сначала пытаемся получить фотографию из localStorage
+          let photo = userData.picture || null
+          let profileIncomplete = false
+          
+          // Загружаем данные из БД для проверки заполненности
+          // Используем числовой ID из БД (из localStorage), а не Clerk ID
+          const dbUserId = localStorage.getItem('userId')
+          if (dbUserId && /^\d+$/.test(dbUserId)) {
+            try {
+              const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
+              
+              // Если пользователь не найден в БД (404) — сессия устарела, очищаем её
+              if (result.notFound) {
+                console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
+                clearUserData()
+                setIsLoggedIn(false)
+                setUserPhoto(null)
+                setHasIncompleteProfile(false)
+                return
+              }
+              
+              if (result.ok && result.user) {
+                  const dbUser = result.user
+                  
+                  // Проверяем заполненность профиля
+                  profileIncomplete = checkProfileCompleteness(dbUser)
+                  setHasIncompleteProfile(profileIncomplete)
+                  
+                  // Если user_photo есть, используем его
+                  if (dbUser.user_photo && !photo) {
+                    const photoPath = dbUser.user_photo
+                    photo = photoPath.startsWith('http') 
+                      ? photoPath 
+                      : `${API_BASE_URL.replace('/api', '')}${photoPath}`
+                    
+                    // Обновляем localStorage с фотографией
+                    const updatedUserData = {
+                      ...userData,
+                      picture: photo
+                    }
+                    localStorage.setItem('userData', JSON.stringify(updatedUserData))
+                  }
+              }
+            } catch (error) {
+              console.warn('⚠️ Не удалось загрузить данные из БД:', error)
+              // Если не удалось загрузить из БД, проверяем localStorage
+              profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+              setHasIncompleteProfile(profileIncomplete)
+            }
+          } else {
+            // Если нет ID, проверяем только localStorage
+            profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+            setHasIncompleteProfile(profileIncomplete)
+          }
+          
+          setUserPhoto(photo)
+        } else {
+          setIsLoggedIn(false)
+          setUserPhoto(null)
+          setHasIncompleteProfile(false)
+        }
       }
     }
-
+    
     loadUserPhotoAndCheckProfile()
-
+    
+    // Обновляем данные при фокусе окна (когда пользователь возвращается на страницу)
     const handleFocus = () => {
       loadUserPhotoAndCheckProfile()
     }
-
+    
     window.addEventListener('focus', handleFocus)
-
+    
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [location.pathname])
+  }, [user, userLoaded, location.pathname]) // Обновляем при изменении маршрута
 
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
@@ -695,9 +963,6 @@ function MainPage() {
   const [cookieConsentOpen, setCookieConsentOpen] = useState(
     () => COOKIE_CONSENT_ENABLED && location.pathname === '/' && readCookieConsentChoice() == null,
   )
-  const [showMidSection, setShowMidSection] = useState(false)
-  const [showBelowFold, setShowBelowFold] = useState(false)
-  const belowFoldSentinelRef = useRef(null)
 
   useEffect(() => {
     if (!COOKIE_CONSENT_ENABLED) {
@@ -710,51 +975,6 @@ function MainPage() {
       setCookieConsentOpen(false)
     }
   }, [location.pathname])
-
-  useEffect(() => {
-    if (showMidSection) return undefined
-
-    let cancelled = false
-    const reveal = () => {
-      if (!cancelled) setShowMidSection(true)
-    }
-    const onInteraction = () => reveal()
-    const events = ['scroll', 'wheel', 'touchstart', 'keydown']
-    events.forEach((eventName) => {
-      const opts = eventName === 'keydown' ? { once: true } : { once: true, passive: true }
-      window.addEventListener(eventName, onInteraction, opts)
-    })
-    // Safety fallback: даже без интеракции покажем блок позже.
-    const t = window.setTimeout(reveal, 12000)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-      events.forEach((eventName) => {
-        window.removeEventListener(eventName, onInteraction)
-      })
-    }
-  }, [showMidSection])
-
-  /** Нижняя часть главной (витрины, FAQ, новости) — только при прокрутке к sentinel. */
-  useEffect(() => {
-    if (!showMidSection) return undefined
-    const node = belowFoldSentinelRef.current
-    if (!node || typeof IntersectionObserver === 'undefined') {
-      setShowBelowFold(true)
-      return undefined
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setShowBelowFold(true)
-          observer.disconnect()
-        }
-      },
-      { root: null, rootMargin: '-10% 0px -5% 0px', threshold: 0.01 },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [showMidSection])
 
   /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
   const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
@@ -878,7 +1098,6 @@ function MainPage() {
   // Определение страниц для поиска
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetDataPath = getCabinetDataPath()
-  const cabinetSubscriptionsPath = getCabinetSubscriptionsPath()
   const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     {
@@ -949,11 +1168,11 @@ function MainPage() {
       allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
-      path: cabinetSubscriptionsPath,
+      path: '/subscriptions',
       keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'],
       title: 'Подписки',
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'seller', 'owner', 'admin'],
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
       path: '/history',
@@ -963,7 +1182,7 @@ function MainPage() {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
-      path: '/owner-test',
+      path: '/owner',
       keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
       title: 'Кабинет продавца',
       requiresAuth: true,
@@ -1010,7 +1229,7 @@ function MainPage() {
   }
 
   const isMainSiteUserLoggedIn = () =>
-    isLoggedIn || getUserData().isLoggedIn
+    isLoggedIn || (userLoaded && !!user) || getUserData().isLoggedIn
 
   const goWalletIfAuthed = () => {
     if (!isMainSiteUserLoggedIn()) {
@@ -1117,7 +1336,7 @@ function MainPage() {
         // Фильтруем по роли пользователя
         // Если пользователь не авторизован, показываем только страницы без авторизации
         const userData = getUserData()
-        const isUserLoggedIn = isLoggedIn || userData.isLoggedIn
+        const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
         
         if (!isUserLoggedIn) {
           return !page.requiresAuth
@@ -1150,7 +1369,7 @@ function MainPage() {
 
     // Проверяем авторизацию
     const userData = getUserData()
-    const isUserLoggedIn = isLoggedIn || userData.isLoggedIn
+    const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
 
     if (!isUserLoggedIn) {
       return { 
@@ -1266,9 +1485,9 @@ function MainPage() {
           ? `&viewer_user_id=${encodeURIComponent(String(viewerRaw).trim())}`
           : ''
       const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
-        fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
-        fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetchDedupe(`${apiBase}/properties/debts`),
+        fetch(`${apiBase}/properties/approved?lang=${lang}`),
+        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
+        fetch(`${apiBase}/properties/debts`)
       ])
       let approved = []
       let auctions = []
@@ -1342,7 +1561,6 @@ function MainPage() {
           item &&
           (item.isAuction === true || item.is_auction === 1 || item.is_auction === true),
       )
-      const { fetchAuctionMaxBidsBatch, getMaxBidForProperty } = await import('../utils/fetchAuctionMaxBids')
       const bidByKey = await fetchAuctionMaxBidsBatch(apiBase, auctionItems)
       if (bidByKey.size > 0) {
         merged = merged.map((item) => {
@@ -1364,35 +1582,16 @@ function MainPage() {
     }
   }, [i18n.language])
 
-  // Загрузка объявлений — только когда пользователь доскроллил до нижней части главной
+  // При смене языка в футере перезагружаем объявления с переводами
   useEffect(() => {
-    if (!showBelowFold) return undefined
-    let cancelled = false
-    const run = () => {
-      if (!cancelled) loadHomeProperties()
-    }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(run, { timeout: 2200 })
-      return () => {
-        cancelled = true
-        window.cancelIdleCallback(id)
-      }
-    }
-    const t = window.setTimeout(run, 400)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
-  }, [showBelowFold, i18n.language, loadHomeProperties])
+    loadHomeProperties()
+  }, [i18n.language, loadHomeProperties])
 
-  // SSE: новые лоты — только после появления нижней части главной
+  // SSE: новые лоты и тест-таймер с админки — без F5 (тот же канал, что на /auction)
   useEffect(() => {
-    if (!showBelowFold) return undefined
     let eventSource = null
     let reconnectTimer = null
     let cancelled = false
-    let idleId = null
-    let timeoutId = null
 
     const connect = async () => {
       const base = await getApiBaseUrl()
@@ -1430,32 +1629,13 @@ function MainPage() {
       }
     }
 
-    const scheduleConnect = () => {
-      if (cancelled) return
-      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(() => {
-          idleId = null
-          void connect()
-        }, { timeout: 4500 })
-      } else {
-        timeoutId = window.setTimeout(() => {
-          timeoutId = null
-          void connect()
-        }, 1200)
-      }
-    }
-
-    scheduleConnect()
+    void connect()
     return () => {
       cancelled = true
-      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId)
-      }
-      if (timeoutId != null) window.clearTimeout(timeoutId)
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (eventSource) eventSource.close()
     }
-  }, [showBelowFold, loadHomeProperties])
+  }, [loadHomeProperties])
 
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {
@@ -1922,14 +2102,12 @@ function MainPage() {
 
     let wantsManager = false
     try {
-      const { detectManagerContactIntent } = await import('../services/aiService')
       wantsManager = await detectManagerContactIntent(userMessage)
     } catch {
       wantsManager = false
     }
 
     if (wantsManager) {
-      const { getManagerContactButtons } = await import('../services/liveChatApi')
       const alreadyDone = userPreferences.preferredContact
       if (alreadyDone) {
         const methodLabel =
@@ -1994,7 +2172,7 @@ function MainPage() {
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
-      const { askPropertyAssistant } = await import('../services/aiService')
+      // Получаем ответ от AI
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         userPreferences,
@@ -2087,20 +2265,59 @@ function MainPage() {
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
-      { label: 'House', displayLabel: t('house'), icon: Home, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
+      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
       { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
-      { label: 'Apartment', displayLabel: t('apartment'), icon: Building2, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
-      { label: 'Villa', displayLabel: t('villa'), icon: Building, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
+      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
+      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
   ], [t, i18n.language])
   
   const navigationItems = useMemo(() => [
-      { id: 'home', label: t('home'), icon: Home },
-      { id: 'favourite', label: t('favorites'), icon: Heart, iconFilled: true },
-      { id: 'auction', label: t('auction'), icon: Gavel },
-      { id: 'chat', label: t('chat'), icon: MessageCircle },
-      { id: 'profile', label: t('profile'), icon: User },
+      { id: 'home', label: t('home'), icon: FaHome },
+      { id: 'favourite', label: t('favorites'), icon: FaHeartSolid },
+      { id: 'auction', label: t('auction'), icon: FaGavel },
+      { id: 'chat', label: t('chat'), icon: FaComment },
+      { id: 'profile', label: t('profile'), icon: FaUser },
   ], [t, i18n.language])
 
+  const salesStrategies = useMemo(() => [
+    {
+      id: 'auction',
+      label: t('auctionSectionTitle'),
+      title: t('auctionSectionTitle'),
+      text: t('auctionSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-auction.jpg',
+      to: '/auction?filter=auction',
+      metric: '01',
+    },
+    {
+      id: 'buy-now',
+      label: t('buyNowSectionTitle'),
+      title: t('buyNowSectionTitle'),
+      text: t('buyNowSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-buynow.jpg',
+      to: '/auction?filter=buy_now',
+      metric: '02',
+    },
+    {
+      id: 'shares',
+      label: t('fractionalSaleTitle'),
+      title: t('fractionalSaleTitle'),
+      text: t('fractionalSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-shares.jpg',
+      to: '/shares',
+      metric: '03',
+    },
+    {
+      id: 'debts',
+      label: t('debtsTitle'),
+      title: t('debtsTitle'),
+      text: t('debtsSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-debts.jpg',
+      to: '/debts',
+      metric: '04',
+    },
+  ], [t, i18n.language])
+  
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
 
@@ -2203,6 +2420,31 @@ function MainPage() {
     )
   }
 
+  const scrollToHomeAnchor = useCallback((anchorId) => {
+    const target = document.getElementById(anchorId)
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const handlePremiumSearchSubmit = useCallback(
+    (event) => {
+      event.preventDefault()
+      const formData = new FormData(event.currentTarget)
+      const dealType = String(formData.get('dealType') || 'auction')
+      const query = String(formData.get('query') || '').trim()
+      const routeByDealType = {
+        auction: '/auction?filter=auction',
+        buy_now: '/auction?filter=buy_now',
+        shares: '/shares',
+        debts: '/debts',
+      }
+      const baseRoute = routeByDealType[dealType] || '/auction'
+      const separator = baseRoute.includes('?') ? '&' : '?'
+      navigate(query ? `${baseRoute}${separator}q=${encodeURIComponent(query)}` : baseRoute)
+    },
+    [navigate],
+  )
+
   const handlePropertyClick = (
     category,
     propertyId,
@@ -2288,7 +2530,7 @@ function MainPage() {
   }
 
   return (
-    <div className="app">
+    <div className="app app--premium-home">
       <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
         <div className="new-header__left">
@@ -2363,27 +2605,23 @@ function MainPage() {
             <span>{t('menu')}</span>
           </button>
         </div>
-        {isMenuOpen ? (
-          <Suspense fallback={null}>
-            <SiteNavDrawerLazy
-              menuRef={menuRef}
-              isMenuOpen={isMenuOpen}
-              isMenuClosing={isMenuClosing}
-              setIsMenuOpen={setIsMenuOpen}
-              setIsMenuClosing={setIsMenuClosing}
-              isLoggedIn={isLoggedIn}
-              isManagerChatOpen={isManagerChatOpen}
-              aiConsultantOpen={isChatOpen}
-              openLoginOrNavigate={openDrawerLoginOrNavigate}
-              openWalletFromMenu={openDrawerWalletFromMenu}
-              onOpenLoginWizard={() => {
-                setMainLoginModalAuthEntry('header_wizard')
-                setIsLoginModalOpen(true)
-                setIsMenuOpen(false)
-              }}
-            />
-          </Suspense>
-        ) : null}
+        <SiteNavDrawer
+          menuRef={menuRef}
+          isMenuOpen={isMenuOpen}
+          isMenuClosing={isMenuClosing}
+          setIsMenuOpen={setIsMenuOpen}
+          setIsMenuClosing={setIsMenuClosing}
+          isLoggedIn={isLoggedIn}
+          isManagerChatOpen={isManagerChatOpen}
+          aiConsultantOpen={isChatOpen}
+          openLoginOrNavigate={openDrawerLoginOrNavigate}
+          openWalletFromMenu={openDrawerWalletFromMenu}
+          onOpenLoginWizard={() => {
+            setMainLoginModalAuthEntry('header_wizard')
+            setIsLoginModalOpen(true)
+            setIsMenuOpen(false)
+          }}
+        />
         </div>
 
           <div className="new-header__filters">
@@ -2531,7 +2769,9 @@ function MainPage() {
               return
             }
 
-            if (isLoggedIn || userData.isLoggedIn) {
+            if (userLoaded && user) {
+              navigate(getCabinetProfilePath())
+            } else if (userData.isLoggedIn) {
               navigate(getCabinetProfilePath())
             } else {
               setMainLoginModalAuthEntry('header_wizard')
@@ -2571,202 +2811,222 @@ function MainPage() {
         </div>
       </header>
 
-      <section
-        className="hero-section"
-        // CSS-переменная для фонового изображения в pseudo-element'ах
-        style={{ ['--hero-bg']: `url("${heroImage}")` }}
-      >
-        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.rent}")` }}></div>
-        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.buy}")` }}></div>
-        <div className="hero-section__film" aria-hidden="true">
-          <video
-            ref={heroVideoRef}
-            className="hero-section__video"
-            src="https://storage.googleapis.com/webild/default/templates/hotel/hero.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-          />
-          <span
-            className="hero-section__film-frame hero-section__film-frame--one"
-            style={{ backgroundImage: 'url("/images/new-home/new-home-hero-villa.jpg")' }}
-          />
-          <span
-            className="hero-section__film-frame hero-section__film-frame--two"
-            style={{ backgroundImage: 'url("/images/sellyourbrick/canary-islands-hero.jpg")' }}
-          />
-          <span
-            className="hero-section__film-frame hero-section__film-frame--three"
-            style={{ backgroundImage: 'url("/images/external/shares-hero-villa.jpg")' }}
-          />
-        </div>
-        <div className="hero-section__overlay"></div>
+      <section className="hero-section premium-hero" aria-labelledby="premium-home-title">
+        <div className="premium-hero__ambient" aria-hidden="true" />
         <div className="new-header-spacer" aria-hidden="true" />
 
-        <div className="hero-section__inner">
-        <div className="hero-section__col1">
-        <div className="hero-section__content">
-          {/* Старый хедер для мобильной версии */}
-          <header className="header">
-            <div className="header__location">
-              <span className="header__location-icon">
-                <FiGlobe size={20} aria-hidden />
-              </span>
-              <div className="header__location-info" ref={languageDropdownMobileRef}>
-                <span className="header__location-label">{t('headerLanguage')}</span>
+        <div className="premium-hero__inner">
+          <div className="premium-hero__copy">
+            <div className="premium-hero__badge">
+              <span className="premium-hero__badge-dot" aria-hidden="true" />
+              Единая платформа. 4 стратегии продажи.
+            </div>
+            <h1 id="premium-home-title" className="premium-hero__title">
+              Продайте объект через{' '}
+              <span>правильную стратегию сделки.</span>
+            </h1>
+            <p className="premium-hero__lead">
+              SellYourBrick подбирает механику под актив: аукцион, фиксированная цена,
+              доли или долговой сценарий. Покупатель видит понятную витрину, продавец —
+              управляемый путь к сделке.
+            </p>
+
+            <form className="premium-search" onSubmit={handlePremiumSearchSubmit}>
+              <label className="premium-search__field premium-search__field--wide">
+                <span>Поиск объекта</span>
+                <span className="premium-search__input-wrap">
+                  <FiSearch size={19} aria-hidden />
+                  <input
+                    name="query"
+                    type="search"
+                    placeholder="Вилла, апартаменты, район или ID лота"
+                    autoComplete="off"
+                  />
+                </span>
+              </label>
+              <label className="premium-search__field">
+                <span>Стратегия</span>
+                <select name="dealType" defaultValue="auction">
+                  <option value="auction">Аукцион</option>
+                  <option value="buy_now">Купить сейчас</option>
+                  <option value="shares">Доли</option>
+                  <option value="debts">Долги</option>
+                </select>
+              </label>
+              <label className="premium-search__field">
+                <span>Локация</span>
+                <select name="location" defaultValue="tenerife">
+                  <option value="tenerife">Тенерифе</option>
+                  <option value="spain">Испания</option>
+                  <option value="global">Все рынки</option>
+                </select>
+              </label>
+              <button type="submit" className="premium-search__submit">
+                <span>Найти</span>
+                <FiArrowRight size={18} strokeWidth={2.4} aria-hidden />
+              </button>
+            </form>
+
+            <div className="premium-search__filters" aria-label="Быстрые фильтры по стратегиям">
+              {premiumModes.map((mode) => (
                 <button
                   type="button"
-                  className="header__location-select"
-                  onClick={() => setIsLanguageOpen((prev) => !prev)}
-                  aria-haspopup="listbox"
-                  aria-expanded={isLanguageOpen}
-                  aria-label={t('selectLanguageAria')}
+                  key={mode.id}
+                  className="premium-search__filter"
+                  onClick={() => scrollToHomeAnchor(mode.objectsId)}
                 >
-                  <span className="header__location-value">{currentHeaderLanguage.name}</span>
-                  <FiChevronDown
-                    size={16}
-                    className={`header__location-select-icon ${
-                      isLanguageOpen ? 'header__location-select-icon--open' : ''
-                    }`}
-                  />
+                  {mode.eyebrow}
                 </button>
-                {isLanguageOpen && (
-                  <div className="header__location-dropdown">
-                    {UI_LANGUAGES.map((lang) => (
-                      <button
-                        type="button"
-                        className={`header__location-option ${
-                          lang.code === headerLangCode ? 'header__location-option--active' : ''
-                        }`}
-                        key={lang.code}
-                        onClick={() => handleHeaderLanguageSelect(lang.code)}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              ))}
+            </div>
+
+          </div>
+
+          <div className="premium-hero__object" aria-label="Featured real estate object">
+            <div className="premium-object-card">
+              <img
+                src="/images/new-home/new-home-hero-villa.jpg"
+                alt="Современная вилла у океана"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+              <div className="premium-object-card__top">
+                <span>Объект недели</span>
+                <strong>Villa Atlantic</strong>
+              </div>
+              <div className="premium-object-card__bottom">
+                <div>
+                  <span>Стратегия</span>
+                  <strong>Auction + Buy Now</strong>
+                </div>
+                <div>
+                  <span>Ориентир</span>
+                  <strong>€1.82M</strong>
+                </div>
               </div>
             </div>
 
-            <div className="header__actions">
-              <NotificationsBell variant="mobile" />
-              <button 
-                type="button" 
-                className={`header__action-btn ${isLoggedIn ? 'header__action-btn--avatar' : ''}`}
-                onClick={() => {
-                  // Всегда сначала проверяем локальные данные (роль, флаги)
-                  const userData = getUserData()
-                  const localRole = localStorage.getItem('userRole')
-                  const storedRole = userData.role || localRole
-                  const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
-                  const isOwner =
-                    storedRole === 'seller' ||
-                    storedRole === 'owner' ||
-                    isOwnerFlag
-
-                  // Продавца ведем в кабинет продавца
-                  if (isOwner) {
-                    navigate(getCabinetHomePath('seller'))
-                    return
-                  }
-
-                  // Дальше обычная логика профиля покупателя
-                  if (isLoggedIn || userData.isLoggedIn) {
-                    navigate(getCabinetProfilePath())
-                  } else {
-                    setMainLoginModalAuthEntry('header_wizard')
-                    setIsLoginModalOpen(true)
-                  }
-                }}
-                aria-label={t('profile')}
-              >
-                {isLoggedIn ? (
-                  <div className="header__avatar-wrapper">
-                    {userPhoto ? (
-                      <img loading="lazy" 
-                        src={userPhoto} 
-                        alt="Profile" 
-                        className="header__avatar-img"
-                        onError={(e) => {
-                          // Если фото не загрузилось, показываем placeholder
-                          setUserPhoto(null)
-                        }}
-                      />
-                    ) : (
-                      <div className="header__avatar-placeholder">
-                        <FiUser size={18} />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <FiUser size={18} />
-                )}
-                {isLoggedIn && hasIncompleteProfile && (
-                  <span className="header__profile-indicator" />
-                )}
-              </button>
+            <div className="premium-object-note premium-object-note--seller">
+              <span>Кабинет продавца</span>
+              <strong>Цена, документы, спрос и переговоры в одном контуре.</strong>
             </div>
-          </header>
+            <div className="premium-object-note premium-object-note--buyer">
+              <span>Шортлист покупателя</span>
+              <strong>Фильтры по стратегии, бюджету и типу сделки.</strong>
+            </div>
+          </div>
+
+          <div className="premium-role-grid">
+            <button type="button" className="premium-role-card" onClick={handleHeroInvestorCardClick}>
+              <span className="premium-role-card__icon">
+                <FiShoppingCart size={18} aria-hidden />
+              </span>
+              <strong>Я покупатель</strong>
+              <span>Подобрать объект, сравнить стратегии и открыть безопасный путь к сделке.</span>
+            </button>
+            <button type="button" className="premium-role-card" onClick={handleHeroSellerCardClick}>
+              <span className="premium-role-card__icon">
+                <FaHome size={18} aria-hidden />
+              </span>
+              <strong>Я продавец</strong>
+              <span>Упаковать объект, выбрать механику продажи и получить квалифицированный спрос.</span>
+            </button>
+          </div>
         </div>
 
-          <p className="hero-headline__brand hero-headline__brand--mobile">SellYourBrick</p>
-
-          <div className="hero-headline">
-            <span className="hero-headline__accent" aria-hidden="true" />
-            <p className="hero-headline__brand hero-headline__brand--desktop">SellYourBrick</p>
-            <h1 className="hero-headline__title">SellYourBrick</h1>
-            <p className="hero-headline__subtitle">
-              {t('heroTitle')}. {t('heroSubtitle')}
-            </p>
-            <div className="hero-headline__actions">
-              <Link to="/auction" className="hero-headline__cta hero-headline__cta--primary">
-                <span>{t('sybLandingHeroCta')}</span>
-                <span className="hero-headline__cta-icon" aria-hidden>
-                  <FiArrowRight size={18} />
+        <nav className="premium-hero__strategy-rail" aria-label="Стратегии SellYourBrick">
+          {premiumModes.map((mode) => {
+            const Icon = mode.Icon
+            return (
+              <button
+                type="button"
+                key={mode.id}
+                className="premium-strategy-pill"
+                onClick={() => scrollToHomeAnchor(mode.anchorId)}
+              >
+                <span className="premium-strategy-pill__number">{mode.number}</span>
+                <span className="premium-strategy-pill__icon">
+                  <Icon size={17} aria-hidden />
                 </span>
-              </Link>
-              <Link to="/sections" className="hero-headline__cta hero-headline__cta--ghost">
-                {t('sybLandingHeroSecondaryCta')}
-              </Link>
-            </div>
-          </div>
-        </div>
+                <span>
+                  <strong>{mode.eyebrow}</strong>
+                  <small>{mode.title}</small>
+                </span>
+              </button>
+            )
+          })}
+        </nav>
+      </section>
 
-          <div className="hero-section__cta">
-            <Suspense fallback={null}>
-              <FrostedGlassCardLazy
-                variant="investor"
-                title={t('becomeInvestor')}
-                buttonText={t('startBtn')}
-                onButtonClick={handleHeroInvestorCardClick}
-              >
-                {t('investorCardText')}
-              </FrostedGlassCardLazy>
-              <FrostedGlassCardLazy
-                variant="seller"
-                title={t('becomeSeller')}
-                buttonText={isHeroCtaAdaptive ? t('startBtn') : t('listProperty')}
-                onButtonClick={handleHeroSellerCardClick}
-              >
-                {t('sellerCardText')}
-              </FrostedGlassCardLazy>
-            </Suspense>
-          </div>
+      <section id="landing-models" className="landing-models premium-models">
+        <div className="landing-models__container premium-models__container">
+          <ScrollReveal className="premium-section-heading" y={32}>
+            <p className="premium-kicker">4 стратегии</p>
+            <h2>
+              Сначала выбираем <span>механику сделки</span>, затем показываем подходящие объекты.
+            </h2>
+            <p>
+              Главная больше не выглядит как набор разрозненных разделов. Это маршрут:
+              стратегия вверху, объяснение в карточке, ниже — реальная витрина объектов
+              в этой же логике.
+            </p>
+          </ScrollReveal>
+
+          <ScrollRevealStagger className="premium-models__grid" aria-label="SellYourBrick sale models">
+            {premiumModes.map((mode) => {
+              const Icon = mode.Icon
+              return (
+                <ScrollRevealItem key={mode.id}>
+                  <article
+                    id={mode.anchorId}
+                    className={`premium-model-card premium-model-card--${mode.id}`}
+                  >
+                    <div className="premium-model-card__media">
+                      <img src={mode.image} alt="" loading="lazy" decoding="async" />
+                      <span className="premium-model-card__number">{mode.number}</span>
+                    </div>
+                    <div className="premium-model-card__content">
+                      <span className="premium-model-card__topline">
+                        <Icon size={17} aria-hidden />
+                        {mode.eyebrow}
+                      </span>
+                      <h3>{mode.title}</h3>
+                      <p>{mode.text}</p>
+                      <small>{mode.caption}</small>
+                      <div className="premium-model-card__actions">
+                        <button
+                          type="button"
+                          className="premium-model-card__primary"
+                          onClick={() => scrollToHomeAnchor(mode.objectsId)}
+                        >
+                          {mode.actionText}
+                          <FiArrowRight size={17} strokeWidth={2.4} aria-hidden />
+                        </button>
+                        <Link className="premium-model-card__secondary" to={mode.to}>
+                          Открыть раздел
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                </ScrollRevealItem>
+              )
+            })}
+          </ScrollRevealStagger>
+
+          <ScrollReveal className="premium-strategy-note" y={26}>
+            <div>
+              <strong>Для продавца</strong>
+              <span>Мы выбираем формат продажи под объект, а не заставляем каждый актив жить в одном шаблоне.</span>
+            </div>
+            <div>
+              <strong>Для покупателя</strong>
+              <span>Каждая витрина ниже уже отсортирована по логике сделки: торги, fixed price, доли или долг.</span>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
-      {showMidSection ? (
-        <Suspense fallback={null}>
-          <MainPageMidSectionLazy />
-        </Suspense>
-      ) : null}
-
-      <div ref={belowFoldSentinelRef} className="main-page-below-fold-sentinel" aria-hidden="true" />
-
-      {showBelowFold ? (
       <MainPageDeferredContext.Provider
         value={{
           t,
@@ -2807,7 +3067,6 @@ function MainPage() {
           <MainPageBelowFoldLazy />
         </Suspense>
       </MainPageDeferredContext.Provider>
-      ) : null}
 
 
       <nav className="bottom-nav">
@@ -2835,7 +3094,7 @@ function MainPage() {
                 onClick={() => navigate(route)}
                 aria-label={item.label}
               >
-                <IconComponent size={28} fill={item.iconFilled ? 'currentColor' : 'none'} />
+                <IconComponent size={28} />
               </button>
             )
           }
@@ -2851,7 +3110,7 @@ function MainPage() {
               }}
               aria-label={item.label}
             >
-              <IconComponent size={26} fill={item.iconFilled ? 'currentColor' : 'none'} />
+              <IconComponent size={26} />
             </button>
           )
         })}
@@ -2959,9 +3218,9 @@ function MainPage() {
                             : button.value === 'email'
                               ? FiMail
                               : button.value === 'whatsapp'
-                                ? WhatsAppIcon
+                                ? FaWhatsapp
                                 : button.value === 'telegram'
-                                  ? TelegramIcon
+                                  ? FaTelegram
                                   : FiMessageCircle
                         return (
                           <button
@@ -3131,50 +3390,40 @@ function MainPage() {
       {/* Модальное окно успешной верификации */}
 
       {/* Модальное окно входа/регистрации */}
-      {heroRolePitch != null ? (
-        <Suspense fallback={null}>
-          <HeroRolePitchModalLazy
-            variant={heroRolePitch}
-            isOpen={heroRolePitch != null}
-            onClose={() => setHeroRolePitch(null)}
-            onPrimary={handleHeroRolePitchPrimary}
-            title={
-              heroRolePitch === 'seller'
-                ? t('heroPitchBecomeSellerTitle')
-                : t('heroPitchBecomeBuyerTitle')
-            }
-            body={
-              heroRolePitch === 'seller'
-                ? t('heroPitchBecomeSellerBody')
-                : t('heroPitchBecomeBuyerBody')
-            }
-            primaryLabel={
-              heroRolePitch === 'seller'
-                ? t('heroPitchBecomeSellerCta')
-                : t('heroPitchBecomeBuyerCta')
-            }
-            closeLabel={t('close')}
-          />
-        </Suspense>
-      ) : null}
+      <HeroRolePitchModal
+        variant={heroRolePitch}
+        isOpen={heroRolePitch != null}
+        onClose={() => setHeroRolePitch(null)}
+        onPrimary={handleHeroRolePitchPrimary}
+        title={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerTitle')
+            : t('heroPitchBecomeBuyerTitle')
+        }
+        body={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerBody')
+            : t('heroPitchBecomeBuyerBody')
+        }
+        primaryLabel={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerCta')
+            : t('heroPitchBecomeBuyerCta')
+        }
+        closeLabel={t('close')}
+      />
 
-      {isLoginModalOpen && !isMainSiteUserLoggedIn() ? (
-        <Suspense fallback={null}>
-          <LoginModalLazy
-            isOpen={isLoginModalOpen}
-            onClose={closeLoginModalMain}
-            authEntryVariant={mainLoginModalAuthEntry}
-          />
-        </Suspense>
-      ) : null}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={closeLoginModalMain}
+        authEntryVariant={mainLoginModalAuthEntry}
+      />
 
-      {COOKIE_CONSENT_ENABLED && cookieConsentOpen ? (
-        <Suspense fallback={null}>
-          <CookieConsentDrawerLazy
-            open={cookieConsentOpen}
-            onClose={() => setCookieConsentOpen(false)}
-          />
-        </Suspense>
+      {COOKIE_CONSENT_ENABLED ? (
+        <CookieConsentDrawer
+          open={cookieConsentOpen}
+          onClose={() => setCookieConsentOpen(false)}
+        />
       ) : null}
     </div>
   )

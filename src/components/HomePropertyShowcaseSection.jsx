@@ -30,6 +30,7 @@ function HomeShowcaseSlot({ children }) {
 }
 
 export default function HomePropertyShowcaseSection({
+  sectionId,
   sectionClassName,
   title,
   titleTo,
@@ -156,7 +157,7 @@ export default function HomePropertyShowcaseSection({
   }
 
   return (
-    <section className={sectionClassName}>
+    <section id={sectionId} className={sectionClassName}>
       <div className={containerClassName}>
         <header className="auction-showcase__header">
           <div className="auction-showcase__intro">

@@ -797,13 +797,6 @@ const Header = () => {
                 ) : (
                   <>
                     <button 
-                      type="button"
-                      className="new-header__auction-btn"
-                      onClick={() => navigate('/auction')}
-                    >
-                      {t('auction')}
-                    </button>
-                    <button 
                       className="new-header__search-btn"
                       onClick={() => {
                         setIsSearchOpen(true)
@@ -813,6 +806,13 @@ const Header = () => {
                       aria-label={t('openSearch')}
                     >
                       <FiSearch size={20} />
+                    </button>
+                    <button 
+                      type="button"
+                      className="new-header__auction-btn"
+                      aria-current="page"
+                    >
+                      {t('home')}
                     </button>
                   </>
                 )}

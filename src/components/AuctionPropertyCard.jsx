@@ -404,7 +404,7 @@ export default function AuctionPropertyCard({
                 }}
                 disabled={state.isReserved}
               >
-                {state.isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
+                {state.isReserved ? t('objectReserved') : t('buyNowModalTitle')}
               </button>
             ) : null}
           </div>

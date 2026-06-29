@@ -45,6 +45,7 @@ export default function MainPageBelowFold() {
     <>
       <BelowFoldBlock>
         <HomePropertyShowcaseSection
+          sectionId="objects-auction"
           sectionClassName="apartments-section apartments-section--auction apartments-section--auction-showcase"
           title={t('auctionSectionTitle')}
           titleTo="/auction?filter=auction"
@@ -68,6 +69,7 @@ export default function MainPageBelowFold() {
 
       <BelowFoldBlock>
         <HomePropertyShowcaseSection
+          sectionId="objects-buy-now"
           sectionClassName="apartments-section apartments-section--buy-now-showcase"
           containerClassName="apartments-section__container apartments-section__container--mint-panel"
           title={t('buyNowSectionTitle')}
@@ -92,6 +94,7 @@ export default function MainPageBelowFold() {
 
       <BelowFoldBlock>
         <HomePropertyShowcaseSection
+          sectionId="objects-debts"
           sectionClassName="apartments-section apartments-section--debts-showcase"
           title={t('debtsTitle')}
           titleTo="/debts"
@@ -114,6 +117,7 @@ export default function MainPageBelowFold() {
 
       <BelowFoldBlock>
         <HomePropertyShowcaseSection
+          sectionId="objects-shares"
           sectionClassName="apartments-section apartments-section--shares-showcase"
           title={t('fractionalSaleTitle')}
           titleTo="/shares"

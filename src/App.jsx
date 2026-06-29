@@ -2,16 +2,16 @@ import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import ClerkAuthSync from './components/ClerkAuthSync'
+import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
-import {
-  ClerkAuthHandlerGate,
-  DeferredSiteAdsHost,
-  LoggedInVerificationGatesHost,
-  PrivateClubKickModalHost,
-} from './components/DeferredAppShellGates'
+import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
+import PrivateClubKickModal from './components/PrivateClubKickModal'
+
+import VerificationRejectedGate from './components/VerificationRejectedGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
+import { prefetchAuctionList } from './services/auctionListCache'
 import { fetchUserById } from './utils/usersApi'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
@@ -23,49 +23,25 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
+import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
-import MainPage from './pages/MainPage'
+import InvestorHomePage from './pages/InvestorHomePage'
+import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
+import SiteAdsHost from './components/siteAds/SiteAdsHost'
 import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
-import { CO_INVESTMENT_PATH } from './utils/sectionPaths'
+import DebtsPage from './pages/Debts'
+import SearchResults from './pages/SearchResults'
+import PropertyDetailPage from './pages/PropertyDetailPage'
+import DepositRedirect from './components/DepositRedirect'
+import CabinetDataRedirect from './components/CabinetDataRedirect'
+import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
+import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
+import NotFoundPage from './components/NotFoundPage'
 import { PageSeoProvider } from './context/PageSeoContext'
 import SitePageSeo from './components/SitePageSeo'
-import { BuyerCabinetScrollStyles } from './components/RouteScopedStyles'
-
-function pathnameIsAuction(pathname) {
-  return pathname === '/auction' || pathname === '/main' || pathname.startsWith('/auction/')
-}
-
-const OwnerTestCabinetPageFallback = lazyWithRetry(() =>
-  import('./components/OwnerTestCabinetPageFallback'),
-)
-const DepositRedirect = lazyWithRetry(() => import('./components/DepositRedirect'))
-const CabinetDataRedirect = lazyWithRetry(() => import('./components/CabinetDataRedirect'))
-const CabinetSubscriptionsRedirect = lazyWithRetry(() =>
-  import('./components/CabinetSubscriptionsRedirect'),
-)
-const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
-const LegacyOwnerCabinetRedirect = lazyWithRetry(() =>
-  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyOwnerCabinetRedirect })),
-)
-const LegacyProfileRedirect = lazyWithRetry(() =>
-  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyProfileRedirect })),
-)
-const LegacySharesIndexRedirect = lazyWithRetry(() =>
-  import('./components/LegacySharesRedirect').then((m) => ({ default: m.LegacySharesIndexRedirect })),
-)
-const LegacySharesDetailRedirect = lazyWithRetry(() =>
-  import('./components/LegacySharesRedirect').then((m) => ({ default: m.LegacySharesDetailRedirect })),
-)
-
-function OwnerTestCabinetLazyFallback() {
-  return (
-    <Suspense fallback={<PageFallback />}>
-      <OwnerTestCabinetPageFallback />
-    </Suspense>
-  )
-}
+import { isAuctionRoute } from './utils/auctionFilterUrl'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const TestDriveLandingPage = lazyWithRetry(() => import('./pages/TestDriveLandingPage'))
@@ -75,6 +51,7 @@ const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyP
 const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveExitFeedbackPage'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
+const Profile = lazyWithRetry(() => import('./pages/Profile'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const History = lazyWithRetry(() => import('./pages/History'))
 const Chat = lazyWithRetry(() => import('./pages/Chat'))
@@ -82,6 +59,7 @@ const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
 const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
 const PrivateClub = lazyWithRetry(() => import('./pages/PrivateClub'))
+const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
@@ -92,8 +70,10 @@ const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticlePage'))
 const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
+const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
+const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
 const SellerPage = lazyWithRetry(() => import('./pages/SellerPage'))
 const OwnerTestRoute = lazyWithRetry(() => import('./pages/OwnerTestRoute'), 'OwnerTestRoute')
 const OwnerTestLegacyRedirect = lazyWithRetry(() =>
@@ -112,10 +92,6 @@ const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
 const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
 const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const CatalogCityPage = lazyWithRetry(() => import('./pages/CatalogCityPage'))
-const Home = lazyWithRetry(() => import('./pages/Home'))
-const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
-const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
-const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const PageFallback = () => (
   <div
     className="app-page-fallback app-page-fallback--instant"
@@ -138,8 +114,11 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
     pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
+  const investorHomeScroll = pathname === '/'
 
-  const routeClass = addPropertySingleScroll
+  const routeClass = investorHomeScroll
+    ? 'app-layout--investor-home'
+    : addPropertySingleScroll
     ? 'app-layout--add-property-single-scroll'
     : calculatorSingleScroll
       ? 'app-layout--calculator-single-scroll'
@@ -361,7 +340,7 @@ function AuctionMobileOverflowLock() {
 
   useEffect(() => {
     const apply = () => {
-      const on = pathnameIsAuction(location.pathname) && window.matchMedia('(max-width: 768px)').matches
+      const on = isAuctionRoute(location.pathname) && window.matchMedia('(max-width: 768px)').matches
       if (on) {
         document.documentElement.classList.add(CLASS)
         document.body.classList.add(CLASS)
@@ -396,27 +375,86 @@ function ReferralCapture() {
   return null
 }
 
+/** Сразу после гидрации подгружаем чанк нижней части главной (витрины и сетки). */
+function MainPageChunkPrefetch() {
+  useEffect(() => {
+    let cancelled = false
+    const load = () => {
+      if (!cancelled) void import('./pages/MainPageBelowFold')
+    }
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(load, { timeout: 1800 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(id)
+      }
+    }
+    const t = window.setTimeout(load, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [])
+  return null
+}
+
+/** После первого кадра подгружаем чанк карты в idle — реже однотонный fallback при первом заходе на /map. */
+function HeavyRouteChunksPrefetch() {
+  useEffect(() => {
+    let cancelled = false
+    let idleId = null
+    let timeoutId = null
+    const rafIds = []
+
+    const run = () => {
+      if (cancelled) return
+      void import('./pages/MapPage')
+    }
+
+    const schedule = () => {
+      if (cancelled) return
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(run, { timeout: 600 })
+      } else {
+        timeoutId = window.setTimeout(run, 0)
+      }
+    }
+
+    rafIds.push(
+      requestAnimationFrame(() => {
+        rafIds.push(requestAnimationFrame(schedule))
+      }),
+    )
+
+    return () => {
+      cancelled = true
+      rafIds.forEach((id) => cancelAnimationFrame(id))
+      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId != null) window.clearTimeout(timeoutId)
+    }
+  }, [])
+  return null
+}
+
 /**
  * Кэш списка аукциона: на /debts не запускаем — иначе батч запросов конкурирует с LCP и /properties/debts.
- * На `/` не запускаем — MainPage сам грузит approved/auctions/debts без test-timers и max-amounts.
- * На /auction — в idle, чтобы не блокировать первую отрисовку.
+ * На главных маршрутах — в idle, чтобы не блокировать первую отрисовку.
  */
 function AuctionListPrefetch() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    if (pathname === '/debts' || pathname === '/') return undefined
+    if (pathname === '/debts') return undefined
 
     let cancelled = false
     const run = () => {
-      if (cancelled) return
-      import('./services/auctionListCache')
-        .then((m) => m.prefetchAuctionList())
-        .catch((err) => console.error('❌ Prefetch auction list:', err))
+      if (!cancelled) prefetchAuctionList()
     }
 
-    const fastPaths = new Set(['/auction', '/main'])
-    if (fastPaths.has(pathname) || pathnameIsAuction(pathname)) {
+    const fastPaths = new Set(['/', '/auction', '/main'])
+    if (fastPaths.has(pathname)) {
       if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
         const id = window.requestIdleCallback(run, { timeout: 2500 })
         return () => {
@@ -469,6 +507,10 @@ function AdminSessionCleaner() {
 
 function App() {
   const appLayoutRef = useRef(null)
+
+  useEffect(() => {
+    void import('./styles/buyer-cabinet-scroll.css')
+  }, [])
 
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
@@ -548,7 +590,6 @@ function App() {
   return (
     <div className="app-root-fill">
     <Router>
-      <BuyerCabinetScrollStyles />
       <PageSeoProvider>
       <SitePageSeo />
       <SiteNotificationsProvider>
@@ -561,51 +602,33 @@ function App() {
       <AuctionMobileOverflowLock />
       <ReferralCapture />
       <AuctionListPrefetch />
+      <MainPageChunkPrefetch />
+      <HeavyRouteChunksPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
-      <PrivateClubKickModalHost />
-      <LoggedInVerificationGatesHost isBlocked={isBlocked} />
+      <PrivateClubKickModal />
+      <GlobalVerificationSuccessGate />
+      <VerificationRejectedGate blockedUser={isBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />
-      <ClerkAuthHandlerGate />
+      <ClerkAuthHandler />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <SiteFooterNearObserver />
       <ChatDockActiveBridge />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <SiteAdsErrorBoundary>
-          <DeferredSiteAdsHost />
+          <SiteAdsHost />
         </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <Routes>
-              <Route path="/" element={<MainPage />} />
-              <Route
-                path="/auction"
-                element={
-                  <LazyPage>
-                    <Home />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/auction/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/auction/:segment1/:segment2?"
-                element={
-                  <LazyPage>
-                    <Home />
-                  </LazyPage>
-                }
-              />
+              <Route path="/" element={<InvestorHomePage />} />
+              <Route path="/auction" element={<Home />} />
+              <Route path="/auction/property/:slugOrId" element={<PropertyDetailPage />} />
+              <Route path="/auction/:segment1/:segment2?" element={<Home />} />
               <Route path="/main" element={<Navigate to="/auction" replace />} />
               <Route
                 path="/property/:slugOrId/test-drive"
@@ -647,62 +670,22 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="/property/:slugOrId" element={<PropertyDetailPage />} />
               <Route
                 path="/auction/:country/:city/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
+                element={<PropertyDetailPage />}
               />
               <Route
                 path="/debts/:country/:city/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
+                element={<PropertyDetailPage />}
               />
               <Route
                 path="/search-results/:country/:city/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
+                element={<PropertyDetailPage />}
               />
-              <Route
-                path="/search-results/:country"
-                element={
-                  <LazyPage>
-                    <SearchResults />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/search-results/:country/:city"
-                element={
-                  <LazyPage>
-                    <SearchResults />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/search-results"
-                element={
-                  <LazyPage>
-                    <SearchResults />
-                  </LazyPage>
-                }
-              />
+              <Route path="/search-results/:country" element={<SearchResults />} />
+              <Route path="/search-results/:country/:city" element={<SearchResults />} />
+              <Route path="/search-results" element={<SearchResults />} />
               <Route
                 path="/map"
                 element={
@@ -731,7 +714,7 @@ function App() {
                 path="/profile-legacy"
                 element={
                   <LazyPage>
-                    <LegacyProfileRedirect />
+                    <Profile />
                   </LazyPage>
                 }
               />
@@ -751,23 +734,12 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/data"
-                element={
-                  <LazyPage>
-                    <CabinetDataRedirect />
-                  </LazyPage>
-                }
-              />
+              <Route path="/data" element={<CabinetDataRedirect />} />
               <Route
                 path="/subscriptions"
                 element={
                   <LazyPage>
-                    <CabinetSubscriptionsRedirect>
-                      <LazyPage>
-                        <Subscriptions />
-                      </LazyPage>
-                    </CabinetSubscriptionsRedirect>
+                    <Subscriptions />
                   </LazyPage>
                 }
               />
@@ -811,14 +783,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/deposit"
-                element={
-                  <LazyPage>
-                    <DepositRedirect />
-                  </LazyPage>
-                }
-              />
+              <Route path="/deposit" element={<DepositRedirect />} />
               <Route
                 path="/bonuses"
                 element={
@@ -835,14 +800,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/shares"
-                element={
-                  <LazyPage>
-                    <LegacySharesIndexRedirect />
-                  </LazyPage>
-                }
-              />
+              <Route path="/shares" element={<LegacySharesIndexRedirect />} />
               <Route
                 path={`${CO_INVESTMENT_PATH}/:slugOrId`}
                 element={
@@ -859,30 +817,9 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/shares/:slugOrId"
-                element={
-                  <LazyPage>
-                    <LegacySharesDetailRedirect />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/debts/property/:slugOrId"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/debts"
-                element={
-                  <LazyPage>
-                    <DebtsPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="/shares/:slugOrId" element={<LegacySharesDetailRedirect />} />
+              <Route path="/debts/property/:slugOrId" element={<PropertyDetailPage />} />
+              <Route path="/debts" element={<DebtsPage />} />
               <Route
                 path="/private-club"
                 element={
@@ -912,6 +849,14 @@ function App() {
                 element={
                   <LazyPage>
                     <SellYourBrickLandingPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/buyer"
+                element={
+                  <LazyPage>
+                    <BuyerPage />
                   </LazyPage>
                 }
               />
@@ -955,7 +900,14 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/jeton" element={<Navigate to="/" replace />} />
+              <Route
+                path="/jeton"
+                element={
+                  <LazyPage>
+                    <JetonPage />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/test"
                 element={
@@ -967,7 +919,7 @@ function App() {
               <Route
                 path="/owner-test"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -975,7 +927,7 @@ function App() {
               <Route
                 path="/owner-test/:view"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -983,7 +935,7 @@ function App() {
               <Route
                 path="/owner-test/:view/:propertyId"
                 element={
-                  <LazyPage fallback={<OwnerTestCabinetLazyFallback />}>
+                  <LazyPage fallback={<OwnerTestCabinetPageFallback />}>
                     <OwnerTestRoute />
                   </LazyPage>
                 }
@@ -1061,18 +1013,18 @@ function App() {
                 }
               />
               <Route
-                path="/owner/property/new"
+                path="/owner"
                 element={
                   <LazyPage>
-                    <AddProperty />
+                    <OwnerDashboard />
                   </LazyPage>
                 }
               />
               <Route
-                path="/owner"
+                path="/owner/property/new"
                 element={
                   <LazyPage>
-                    <LegacyOwnerCabinetRedirect />
+                    <AddProperty />
                   </LazyPage>
                 }
               />
@@ -1100,14 +1052,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="*"
-                element={
-                  <LazyPage>
-                    <NotFoundPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </RouteErrorBoundary>
         </div>

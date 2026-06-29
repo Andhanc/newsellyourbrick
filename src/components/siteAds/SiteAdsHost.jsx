@@ -45,7 +45,7 @@ export default function SiteAdsHost({ initialAds = null }) {
     setDismissedBlockIds([])
   }, [pathname, pageKey])
 
-  const isHiddenRoute = HIDDEN_PATH_PREFIXES.some((p) => pathname.startsWith(p))
+  const isHiddenRoute = pathname === '/' || HIDDEN_PATH_PREFIXES.some((p) => pathname.startsWith(p))
 
   const pageAds = useMemo(() => {
     if (!pageKey) return []
