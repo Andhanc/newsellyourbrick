@@ -19,6 +19,7 @@ import { FaBuilding, FaCoins, FaGavel, FaHome } from 'react-icons/fa'
 import Header from '../components/Header'
 import InvestorHomeShowcases from '../components/InvestorHomeShowcases'
 import InvestorCommunitySection from '../components/InvestorCommunitySection'
+import InvestorFooter from '../components/InvestorFooter'
 import { InvestHeroStatGlassCard } from '../components/InvestHeroStatGlassCard'
 import './InvestorHomePage.css'
 
@@ -406,6 +407,7 @@ function InvestorHomePage() {
         {!yieldValue.startsWith('Любая') ? <span><FiPieChart aria-hidden /> {yieldValue}</span> : null}
       </div>
       </main>
+      <InvestorFooter />
     </div>
   )
 }

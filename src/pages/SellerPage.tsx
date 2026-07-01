@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { publicAsset } from '@/utils/publicAsset'
 import { scrollMainTo } from '@/utils/mainScroll'
+import Header from '@/components/Header'
 import './SellerPage.css'
 
 type SellerCard = {
@@ -54,232 +55,232 @@ type Plan = {
 
 const HERO_CARDS: SellerCard[] = [
   {
-    title: 'Ocean Villa',
-    metric: '148 buyer saves',
+    title: 'Вилла у моря',
+    metric: '148 в избранном',
     image: 'images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg',
-    logo: 'OV',
+    logo: 'ВМ',
   },
   {
-    title: 'Palm Residence',
-    metric: '32 qualified leads',
+    title: 'Резиденция «Палм»',
+    metric: '32 целевые заявки',
     image: 'images/external/photo-1512917774080-9991f1c4c750-82ecd9c8d5.jpg',
-    logo: 'PR',
+    logo: 'РП',
   },
   {
-    title: 'Marina Loft',
-    metric: '€1.2M reserve',
+    title: 'Лофт «Марина»',
+    metric: 'резерв €1.2M',
     image: 'images/external/photo-1560448204-e02f11c3d0e2-d2972f440a.jpg',
-    logo: 'ML',
+    logo: 'ЛМ',
   },
   {
-    title: 'Cliff House',
-    metric: '9 active offers',
+    title: 'Дом на скале',
+    metric: '9 активных ставок',
     image: 'images/external/photo-1600596542815-ffad4c1539a9-ee898bce64.jpg',
-    logo: 'CH',
+    logo: 'ДС',
   },
   {
-    title: 'Garden Suite',
-    metric: '24h launch',
+    title: 'Садовая студия',
+    metric: 'запуск за 24 ч',
     image: 'images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
-    logo: 'GS',
+    logo: 'СС',
   },
   {
-    title: 'Azure Penthouse',
-    metric: '3.4K views',
+    title: 'Пентхаус «Азур»',
+    metric: '3.4K просмотров',
     image: 'images/external/photo-1600566753190-17f0baa2a6c3-fadfb56f04.jpg',
-    logo: 'AP',
+    logo: 'ПА',
   },
 ]
 
 const STATS: StatCard[] = [
   {
-    label: 'Seller Requests',
+    label: 'Заявок от продавцов',
     countTo: 12,
     suffix: 'K+',
     icon: <Users size={18} />,
   },
   {
-    label: 'Listed Value',
+    label: 'Объём объектов',
     countTo: 480,
     prefix: '€',
     suffix: 'M+',
     icon: <BadgeDollarSign size={18} />,
   },
   {
-    label: 'Avg. Launch',
+    label: 'Средний запуск',
     countTo: 24,
-    suffix: 'h',
+    suffix: ' ч',
     icon: <Gauge size={18} />,
   },
 ]
 
 const STEPS: ProcessStep[] = [
   {
-    title: 'Discover',
+    title: 'Анализ',
     copy:
-      'Compare similar villas, apartments, auctions, and buy-now listings. We surface price bands, buyer intent, and the angle that makes your property stand out.',
+      'Сравните похожие виллы, квартиры, аукционы и объекты с фиксированной ценой. Мы покажем ценовые диапазоны, спрос покупателей и угол, который выделит ваш объект.',
     visual: 'discover',
   },
   {
-    title: 'Generate',
+    title: 'Подготовка',
     copy:
-      'Create a polished seller pack from one property brief: listing copy, buyer highlights, media checklist, and a launch-ready presentation.',
+      'Соберите готовый пакет продавца из одного брифа объекта: продающее описание, ключевые преимущества, чек-лист для съёмки и презентацию для запуска.',
     visual: 'generate',
   },
   {
-    title: 'Launch',
+    title: 'Запуск',
     copy:
-      'Publish directly into SellYourBrick flows: auction, buy now, shares, debts, private club, and targeted buyer campaigns.',
+      'Публикуйте сразу в форматы SellYourBrick: аукцион, покупка сейчас, доли, долги, закрытый клуб и таргетированные кампании для покупателей.',
     visual: 'launch',
   },
   {
-    title: 'Optimize',
+    title: 'Аналитика',
     copy:
-      'Watch saves, inquiries, visits, and offer quality in one dashboard. Adjust reserve price, promotion, and timing without rebuilding the listing.',
+      'Следите за добавлениями в избранное, заявками, показами и качеством предложений в одном дашборде. Меняйте резервную цену, продвижение и тайминг без пересборки объявления.',
     visual: 'optimize',
   },
 ]
 
 const TESTIMONIALS = [
   {
-    quote: 'We had a clean launch plan the same day. The buyer list felt curated instead of random traffic.',
-    name: 'Elena',
-    role: 'Villa owner',
+    quote: 'План запуска был готов в тот же день. Список покупателей выглядел подобранным, а не случайным трафиком.',
+    name: 'Елена',
+    role: 'Владелица виллы',
     avatar: 'images/external/photo-1494790108377-be9c29b29330-89f0c4a88f.jpg',
   },
   {
-    quote: 'The valuation range and presentation saved our team a week of back-and-forth before going live.',
-    name: 'Mateo',
-    role: 'Agency partner',
+    quote: 'Диапазон оценки и презентация сэкономили команде неделю переписки до выхода объекта в продажу.',
+    name: 'Матео',
+    role: 'Партнёр-агентство',
     avatar: 'images/external/photo-1472099645785-5658abf4ff4e-066a8445b1.jpg',
   },
   {
-    quote: 'I could see which buyers were serious before accepting viewings. That changed the whole sale.',
-    name: 'Nadia',
-    role: 'Apartment seller',
+    quote: 'Я видела, кто из покупателей настроен серьёзно, ещё до показов. Это изменило всю сделку.',
+    name: 'Надя',
+    role: 'Продавец квартиры',
     avatar: 'images/external/photo-1525134479668-1bee5c7c6845-966b578ed7.jpg',
   },
   {
-    quote: 'Our auction reserve was clearer, the media brief was sharper, and the listing looked premium.',
-    name: 'Arthur',
-    role: 'Private seller',
+    quote: 'Резерв на аукционе стал понятнее, бриф для съёмки — точнее, а объявление выглядело премиально.',
+    name: 'Артур',
+    role: 'Частный продавец',
     avatar: 'images/external/photo-1507003211169-0a1dd7228f2d-94d7ce3808.jpg',
   },
   {
-    quote: 'The system caught details we normally lose: floor plan gaps, proof docs, and investor questions.',
-    name: 'Priya',
-    role: 'Portfolio manager',
+    quote: 'Система ловила детали, которые мы обычно теряем: пробелы в планировке, документы и вопросы инвесторов.',
+    name: 'Прия',
+    role: 'Управляющий портфелем',
     avatar: 'images/external/photo-1494790108377-be9c29b29330-e7e855964a.jpg',
   },
   {
-    quote: 'Instead of listing and waiting, we launched with a story, comparables, and a real buyer funnel.',
-    name: 'Jon',
-    role: 'Owner, Tenerife',
+    quote: 'Вместо «разместил и жди» мы вышли с историей объекта, аналогами и реальной воронкой покупателей.',
+    name: 'Джон',
+    role: 'Владелец, Тенерифе',
     avatar: 'images/external/photo-1506794778202-cad84cf45f1d-7fea972b45.jpg',
   },
   {
-    quote: 'The private club route found a buyer we would never have reached through standard portals.',
-    name: 'Ramona',
-    role: 'Estate advisor',
+    quote: 'Через закрытый клуб мы нашли покупателя, до которого не дотянулись бы через обычные порталы.',
+    name: 'Рамона',
+    role: 'Консультант по недвижимости',
     avatar: 'images/external/photo-1522771739844-6a9f6d5f14af-c11365faed.jpg',
   },
   {
-    quote: 'Every document, photo, and price decision had a next step. No messy launch spreadsheet.',
-    name: 'Alex',
-    role: 'Penthouse seller',
+    quote: 'У каждого документа, фото и решения по цене был следующий шаг. Никаких хаотичных таблиц для запуска.',
+    name: 'Алекс',
+    role: 'Продавец пентхауса',
     avatar: 'images/external/photo-1502672260266-1c1ef2d93688-97c7b765e8.jpg',
   },
   {
-    quote: 'The analytics made it obvious when to promote and when to hold firm on the offer.',
-    name: 'Mira',
-    role: 'Co-owner',
+    quote: 'Аналитика ясно показывала, когда продвигать объект, а когда держать цену.',
+    name: 'Мира',
+    role: 'Совладелец',
     avatar: 'images/external/photo-1525134479668-1bee5c7c6845-966b578ed7.jpg',
   },
 ]
 
 const PLANS: Plan[] = [
   {
-    title: 'Free',
-    price: '€0/mo',
-    cta: 'Get Started',
+    title: 'Бесплатный',
+    price: '€0/мес',
+    cta: 'Начать',
     features: [
-      '1 seller workspace',
-      'Basic listing checklist',
-      'Auction or buy-now draft',
-      'Document readiness scan',
-      'Watermark on exports',
+      '1 рабочее пространство продавца',
+      'Базовый чек-лист объявления',
+      'Черновик аукциона или продажи сейчас',
+      'Проверка готовности документов',
+      'Водяной знак на экспортах',
     ],
   },
   {
-    title: 'Pro',
-    price: '€49/mo',
-    tag: 'Most Popular',
-    cta: 'Choose Pro',
+    title: 'Профи',
+    price: '€49/мес',
+    tag: 'Популярный',
+    cta: 'Выбрать Профи',
     features: [
-      'Unlimited seller packs',
-      'AI valuation narrative',
-      'Premium buyer targeting',
-      'Private club preparation',
-      'Analytics dashboard',
-      'Team seats up to 5 members',
-      'Watermark-free exports',
+      'Безлимит пакетов продавца',
+      'AI-история оценки',
+      'Премиум-таргетинг покупателей',
+      'Подготовка к закрытому клубу',
+      'Дашборд аналитики',
+      'До 5 участников команды',
+      'Экспорт без водяных знаков',
     ],
   },
   {
-    title: 'Starter',
-    price: '€33/mo',
-    cta: 'Choose Starter',
+    title: 'Старт',
+    price: '€33/мес',
+    cta: 'Выбрать Старт',
     features: [
-      '3 property launches',
-      'Media and docs checklist',
-      'Seller presentation builder',
-      'Offer quality tracking',
-      'Priority publishing review',
-      'Multilingual listing support',
+      '3 запуска объектов',
+      'Чек-лист медиа и документов',
+      'Конструктор презентации продавца',
+      'Отслеживание качества предложений',
+      'Приоритетная проверка перед публикацией',
+      'Поддержка объявлений на нескольких языках',
     ],
   },
 ]
 
 const FAQS = [
   {
-    question: 'What exactly does the seller page do?',
+    question: 'Что именно делает страница продавца?',
     answer:
-      'It turns a property brief into a launch plan: listing positioning, documents, pricing context, media checklist, publishing flow, and buyer follow-up.',
+      'Она превращает бриф объекта в план запуска: позиционирование объявления, документы, контекст по цене, чек-лист медиа, схему публикации и работу с покупателями.',
   },
   {
-    question: 'Do I need real estate marketing experience?',
+    question: 'Нужен ли опыт в маркетинге недвижимости?',
     answer:
-      'No. The flow is built for owners and teams who want clear next steps, while still giving experienced sellers enough detail to tune the launch.',
+      'Нет. Сценарий рассчитан на владельцев и команды, которым нужны понятные шаги, и при этом даёт опытным продавцам достаточно деталей для тонкой настройки запуска.',
   },
   {
-    question: 'Which sale formats can I create?',
+    question: 'Какие форматы продажи можно создать?',
     answer:
-      'You can prepare auction, buy-now, share-sale, debt, and private club launches from the same property workspace.',
+      'Из одного рабочего пространства объекта можно подготовить аукцион, продажу сейчас, продажу долей, долги и запуск в закрытом клубе.',
   },
   {
-    question: 'Can I publish directly from the platform?',
+    question: 'Можно ли публиковать прямо с платформы?',
     answer:
-      'Yes. The page routes each launch into the right SellYourBrick flow, including owner cabinet publishing and promotion tools.',
+      'Да. Страница направляет каждый запуск в нужный поток SellYourBrick, включая публикацию из кабинета владельца и инструменты продвижения.',
   },
   {
-    question: 'Is there a way to try it for free?',
+    question: 'Есть ли возможность попробовать бесплатно?',
     answer:
-      'Yes. The free plan lets you build a basic seller workspace and prepare the first listing checklist before choosing a paid plan.',
+      'Да. Бесплатный тариф позволяет собрать базовое рабочее пространство продавца и подготовить первый чек-лист объявления до выбора платного плана.',
   },
   {
-    question: 'How does buyer targeting work?',
+    question: 'Как работает таргетинг покупателей?',
     answer:
-      'We match property type, price range, location, yield profile, and buyer intent signals to suggest the strongest audience for launch.',
+      'Мы сопоставляем тип объекта, ценовой диапазон, локацию, профиль доходности и сигналы намерений покупателей, чтобы подобрать сильнейшую аудиторию для запуска.',
   },
   {
-    question: 'How fast can I go live?',
+    question: 'Как быстро можно выйти в продажу?',
     answer:
-      'A complete property can be prepared within a day. Missing documents or media are flagged early so you know what blocks launch.',
+      'Готовый объект можно подготовить за день. Недостающие документы или медиа подсвечиваются заранее, чтобы вы знали, что блокирует запуск.',
   },
   {
-    question: 'Which languages are supported?',
+    question: 'Какие языки поддерживаются?',
     answer:
-      'The seller flow is designed for multilingual listings and buyer communication across the same languages used by SellYourBrick.',
+      'Сценарий продавца рассчитан на мультиязычные объявления и общение с покупателями на тех же языках, что и SellYourBrick.',
   },
 ]
 
@@ -400,26 +401,6 @@ function SectionHeader({
   )
 }
 
-function SellerNav() {
-  return (
-    <div className="seller-nav-wrap">
-      <div className="seller-nav seller-glass">
-        <Link to="/" onClick={() => scrollMainTo(0, 0, 'instant')} className="seller-nav__brand">
-          SELLYOURBRICK
-        </Link>
-        <Link
-          to="/owner/property/new"
-          onClick={() => scrollMainTo(0, 0, 'instant')}
-          aria-label="Create seller listing"
-          className="seller-nav__plus seller-primary"
-        >
-          <Plus size={18} strokeWidth={2.5} />
-        </Link>
-      </div>
-    </div>
-  )
-}
-
 function VerifiedDot() {
   return (
     <span className="seller-verified">
@@ -441,7 +422,7 @@ function SellerHeroCard({ card }: { card: SellerCard }) {
         decoding="async"
       />
       <span className="seller-hero-card__badge">
-        Seller-ready
+        Готов к продаже
       </span>
       <div className="seller-hero-card__meta">
         <div className="seller-hero-card__logo">
@@ -482,28 +463,28 @@ function HeroSection() {
   return (
     <section className="seller-hero">
       <Reveal className="seller-hero__copy">
-        <span className="seller-eyebrow seller-glass mb-4">AI Seller Engine</span>
+        <span className="seller-eyebrow seller-glass mb-4">Платформа для продавца</span>
         <h1 className="seller-hero__title">
-          Sell Property That{' '}
+          Продайте объект{' '}
           <span className="seller-gradient-text italic">
-            Moves.
+            по реальной цене.
           </span>
         </h1>
         <p className="seller-hero__subtitle">
-          Turn any property into a premium seller pack in minutes — powered by smart pricing, launch scripts, buyer intent, and proven sale frameworks.
+          Превратите любой объект в премиальный пакет для продажи за считанные минуты — умная оценка, сценарии запуска, спрос покупателей и доступ к верифицированным инвесторам.
         </p>
         <Link
           to="/owner/property/new"
           onClick={() => scrollMainTo(0, 0, 'instant')}
           className="seller-cta seller-primary seller-hero__cta"
         >
-          Start Selling for Free
+          Начать продавать бесплатно
         </Link>
         <div className="seller-hero__note">
           <span className="seller-hero__note-icon seller-primary">
             <Check size={10} strokeWidth={3} />
           </span>
-          No upfront fee required
+          Без оплаты на старте
         </div>
       </Reveal>
       <HeroCarousel />
@@ -515,15 +496,15 @@ function StatsSection() {
   return (
     <section className="seller-section">
       <SectionHeader
-        eyebrow="Platform Stats"
-        title="Built on Seller Data."
-        accent="Proven by Results."
-        copy="Our seller engine learns from live listings, buyer behavior, and launch outcomes to create sharper property campaigns."
+        eyebrow="Статистика платформы"
+        title="Основано на данных."
+        accent="Доказано результатом."
+        copy="Наш движок продаж учится на реальных объявлениях, поведении покупателей и итогах сделок, чтобы делать кампании точнее."
       />
       <div className="seller-content seller-stats">
         {STATS.map((stat, index) => (
           <Reveal key={stat.label} delay={index * 0.08}>
-            <div className="seller-stat-card seller-glass">
+            <div className="seller-stat-card">
               <span className="seller-stat-card__icon seller-primary">
                 {stat.icon}
               </span>
@@ -547,11 +528,11 @@ function BrowserListVisual() {
 
   return (
     <div className="seller-visual seller-visual--discover">
-      <h4 className="seller-visual__title">Discover <span className="seller-text-accent-soft">Demand</span></h4>
+      <h4 className="seller-visual__title">Анализ <span className="seller-text-accent-soft">спроса</span></h4>
       <div className="seller-search">
         <Search size={14} className="ml-2 seller-text-muted-icon" />
-        <span className="seller-search__placeholder">Search buyer demand</span>
-        <span className="seller-search__button seller-primary">Search</span>
+        <span className="seller-search__placeholder">Поиск спроса покупателей</span>
+        <span className="seller-search__button seller-primary">Найти</span>
       </div>
       <div className="seller-list">
         {rows.map((row, index) => (
@@ -573,8 +554,8 @@ function GenerateVisual() {
   return (
     <div className="seller-visual seller-visual--generate">
       <div className="seller-generate__blur-text">
-        <span>Create studio-quality seller pack</span>
-        <span>AI Listing Narrative</span>
+        <span>Соберите пакет продавца</span>
+        <span>AI-описание объекта</span>
       </div>
       <motion.div
         className="seller-generate__button"
@@ -582,7 +563,7 @@ function GenerateVisual() {
         transition={{ repeat: Infinity, duration: 3.4, ease: 'easeInOut' }}
       >
         <Sparkles size={23} className="mr-3" />
-        <strong>Generate</strong>
+        <strong>Собрать</strong>
         <span>
           <Home size={17} />
         </span>
@@ -595,7 +576,7 @@ function LaunchVisual() {
   return (
     <div className="seller-visual seller-visual--launch">
       <div className="seller-launch__rows">
-        {['Private Club', 'Auction', 'Buy Now'].map((label, index) => (
+        {['Закрытый клуб', 'Аукцион', 'Купить сейчас'].map((label, index) => (
           <div key={label} className="seller-launch__row">
             <span className="seller-launch__row-label">{label}</span>
             <span className="seller-launch__row-icon seller-primary">
@@ -606,7 +587,7 @@ function LaunchVisual() {
       </div>
       <div className="seller-launch__button seller-primary">
         <Send size={25} />
-        <strong>Launch</strong>
+        <strong>Запуск</strong>
       </div>
     </div>
   )
@@ -617,7 +598,7 @@ function OptimizeVisual() {
     <div className="seller-visual seller-visual--optimize">
       <div className="seller-optimize__panel">
         <div className="seller-optimize__head">
-          <span>Performance</span>
+          <span>Эффективность</span>
           <LineChart size={22} className="seller-text-accent" />
         </div>
         <div className="seller-chart">
@@ -634,7 +615,7 @@ function OptimizeVisual() {
         </div>
       </div>
       <div className="seller-optimize__metrics">
-        {['Saves', 'Leads', 'Offers'].map((label, index) => (
+        {['Избранное', 'Заявки', 'Оферты'].map((label, index) => (
           <div key={label} className="seller-optimize__metric">
             <p>{label}</p>
             <strong>{[148, 32, 9][index]}</strong>
@@ -656,10 +637,10 @@ function ProcessSection() {
   return (
     <section className="seller-section">
       <SectionHeader
-        eyebrow="How It Works"
-        title="Your Seller Engine in"
-        accent="Four Steps"
-        copy="Go from blank property brief to live sale campaign without juggling a dozen tools."
+        eyebrow="Как это работает"
+        title="4 шага"
+        accent="до продажи"
+        copy="От пустого брифа объекта до живой кампании продажи — без десятка разных инструментов."
       />
       <div className="seller-content seller-steps">
         {STEPS.map((step, index) => (
@@ -699,10 +680,10 @@ function TestimonialsSection() {
   return (
     <section className="seller-section">
       <SectionHeader
-        eyebrow="Wall of Love"
-        title="What Our Sellers Are"
-        accent="Saying"
-        copy="Join owners and agency teams already launching cleaner property campaigns with SellYourBrick."
+        eyebrow="Отзывы"
+        title="Что говорят наши"
+        accent="продавцы"
+        copy="Присоединяйтесь к владельцам и агентствам, которые уже запускают более чистые кампании продаж с SellYourBrick."
       />
       <div className="seller-content seller-testimonials">
         <div className="seller-testimonials__columns">
@@ -748,10 +729,10 @@ function PricingSection() {
   return (
     <section className="seller-section">
       <SectionHeader
-        eyebrow="Pricing"
-        title="Pick Your"
-        accent="Plan"
-        copy="No hidden fees. Upgrade, downgrade, or cancel anytime."
+        eyebrow="Тарифы"
+        title="Выберите свой"
+        accent="тариф"
+        copy="Без скрытых платежей. Повышайте, понижайте тариф или отменяйте в любой момент."
       />
       <div className="seller-content seller-plans">
         {PLANS.map((plan, index) => (
@@ -796,10 +777,10 @@ function FAQSection() {
   return (
     <section className="seller-section">
       <SectionHeader
-        eyebrow="FAQ"
-        title="Got"
-        accent="Questions?"
-        copy="Here are the answers to the most common ones."
+        eyebrow="Вопросы"
+        title="Остались"
+        accent="вопросы?"
+        copy="Здесь ответы на самые частые из них."
       />
       <div className="seller-content seller-faq seller-glass">
         {FAQS.map((item, index) => {
@@ -842,19 +823,23 @@ function BottomCTA() {
   return (
     <section className="seller-bottom">
       <Reveal>
-        <div className="seller-bottom__panel seller-glass">
-          <span className="seller-bottom__icon seller-primary">
+        <div className="seller-bottom__panel">
+          <span className="seller-bottom__icon">
             <BarChart3 size={22} />
           </span>
+          <span className="seller-bottom__eyebrow">Старт за пару минут</span>
           <h2 className="seller-bottom__title">
-            Ready to turn your property into a live sale campaign?
+            Продавайте объект легко
           </h2>
+          <p className="seller-bottom__subtitle">
+            Соберите пакет продавца, выберите формат сделки и откройте объект верифицированным инвесторам.
+          </p>
           <Link
             to="/owner/property/new"
             onClick={() => scrollMainTo(0, 0, 'instant')}
-            className="seller-cta seller-primary seller-bottom__cta"
+            className="seller-cta seller-bottom__cta"
           >
-            Create Seller Pack
+            Стать продавцом
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -876,7 +861,7 @@ export default function SellerPage() {
 
   return (
     <main className="seller-page">
-      <SellerNav />
+      <Header />
       <HeroSection />
       <StatsSection />
       <ProcessSection />

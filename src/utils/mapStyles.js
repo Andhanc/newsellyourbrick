@@ -45,3 +45,45 @@ export const STREET_MAP_STYLE = {
     },
   ],
 }
+
+/** Светлая карта для декоративных фонов (лендинги, hero-блоки). */
+export const LIGHT_MAP_STYLE = {
+  version: 8,
+  sources: {
+    light: {
+      type: 'raster',
+      tiles: ['https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© CARTO © OpenStreetMap',
+      maxzoom: STREET_MAP_MAX_ZOOM,
+    },
+  },
+  layers: [
+    {
+      id: 'light',
+      type: 'raster',
+      source: 'light',
+    },
+  ],
+}
+
+/** Минималистичная карта для hero-блока покупателя. */
+export const BUYER_HERO_MAP_STYLE = {
+  version: 8,
+  sources: {
+    voyager: {
+      type: 'raster',
+      tiles: ['https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© CARTO © OpenStreetMap',
+      maxzoom: STREET_MAP_MAX_ZOOM,
+    },
+  },
+  layers: [
+    {
+      id: 'voyager',
+      type: 'raster',
+      source: 'voyager',
+    },
+  ],
+}

@@ -174,14 +174,14 @@ const Footer = () => {
     { to: '/test', label: 'Тест' },
   ]
 
-  /** @type {Array<Array<{ to?: string; onClick?: () => void; label: string }>>} */
+  /** @type {Array<{ title?: string | null; links: Array<{ to?: string; onClick?: () => void; label: string }> }>} */
   const desktopColumns = [
-    footerSiteLinks,
-    footerObjectLinksCol1,
-    footerObjectLinksCol2,
-    footerProfileLinks,
-    footerAccountLinks,
-    footerServiceLinks,
+    { title: t('footerColSite'), links: footerSiteLinks },
+    { title: t('footerColListings'), links: footerObjectLinksCol1 },
+    { title: null, links: footerObjectLinksCol2 },
+    { title: t('footerColProfile'), links: footerProfileLinks },
+    { title: t('footerColCompany'), links: footerAccountLinks },
+    { title: t('footerColServices'), links: footerServiceLinks },
   ]
 
   const mobileCol1 = [
@@ -252,7 +252,12 @@ const Footer = () => {
                 <div className="footer__menu footer__menu--desktop">
                   {desktopColumns.map((col, ci) => (
                     <div key={ci} className="footer__menu-column">
-                      {col.map((item, i) => renderLink(item, i, `d${ci}`))}
+                      {col.title ? (
+                        <p className="footer__menu-heading">{col.title}</p>
+                      ) : (
+                        <span className="footer__menu-heading footer__menu-heading--spacer" aria-hidden="true" />
+                      )}
+                      {col.links.map((item, i) => renderLink(item, i, `d${ci}`))}
                     </div>
                   ))}
                 </div>
@@ -273,6 +278,7 @@ const Footer = () => {
                   loading="lazy"
                   decoding="async"
                 />
+                <p className="footer__qr-caption">{t('footerWhatsappScan')}</p>
               </div>
 
               {renderFooterBrand('footer__brand footer__brand--mobile')}
@@ -366,6 +372,12 @@ const Footer = () => {
             </div>
           </div>
         </div>
+        </div>
+
+        <div className="footer__legal">
+          <p className="footer__copyright">
+            {t('footerCopyright', { year: new Date().getFullYear() })}
+          </p>
         </div>
       </div>
 

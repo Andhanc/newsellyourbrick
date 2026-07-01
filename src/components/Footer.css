@@ -1109,6 +1109,10 @@ body.admin-panel-active .footer .footer__upper {
     grid-template-columns: unset !important;
   }
 
+  #site-footer.footer:not(.footer--deposit) .footer__menu.footer__menu--desktop {
+    justify-content: flex-start !important;
+  }
+
   #site-footer.footer .footer__menu.footer__menu--mobile {
     display: none !important;
   }
@@ -1315,5 +1319,221 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 #site-footer.footer.footer--deposit .footer__store-btn:hover {
   background: rgba(10, 186, 181, 0.14) !important;
   border-color: rgba(10, 186, 181, 0.38) !important;
+}
+
+/* ── Light theme (default) — editorial footer per DESIGN.md ── */
+#site-footer.footer:not(.footer--deposit) {
+  --footer-surface: #f8fafc;
+  --footer-ink: #0f172a;
+  --footer-ink-soft: #475569;
+  --footer-ink-muted: #64748b;
+  --footer-line: #e2e8f0;
+  --footer-tiffany: #0abab5;
+  --footer-tiffany-dark: #089a95;
+
+  background: var(--footer-surface);
+  color: var(--footer-ink-soft);
+  padding: clamp(40px, 5vw, 56px) 0 clamp(28px, 3vw, 40px);
+  margin-top: 0;
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__container {
+  max-width: 1160px;
+  padding: 0 clamp(20px, 4vw, 32px);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__upper {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+  gap: clamp(28px, 4vw, 48px);
+  align-items: flex-start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__upper-left .footer__menu.footer__menu--desktop {
+  gap: clamp(20px, 2.8vw, 36px);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-column {
+  gap: 10px;
+  min-width: 118px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-heading {
+  margin: 0 0 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--footer-ink);
+  line-height: 1.2;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-heading--spacer {
+  display: block;
+  min-height: 1.2em;
+  margin-bottom: 6px;
+  visibility: hidden;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-link {
+  color: var(--footer-ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  transition: color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-link:hover {
+  color: var(--footer-tiffany);
+  text-decoration: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand-text {
+  color: var(--footer-ink);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand-icon {
+  background: var(--footer-tiffany);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr {
+  gap: clamp(20px, 3vw, 36px);
+  align-items: flex-start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__whatsapp-qr {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__qr-image {
+  border: 1px solid var(--footer-line);
+  box-shadow: none;
+  border-radius: 12px;
+  padding: 6px;
+  background: #ffffff;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__qr-caption {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--footer-ink-muted);
+  text-align: center;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__upper-right {
+  padding-left: 0;
+  margin-left: 0;
+  width: 100%;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-buttons {
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: clamp(20px, 2.5vw, 28px);
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand--inline {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn {
+  background: #ffffff !important;
+  color: var(--footer-ink) !important;
+  border: 1px solid var(--footer-line) !important;
+  border-radius: 999px;
+  min-width: 124px;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn:hover {
+  background: #ffffff !important;
+  border-color: rgba(10, 186, 181, 0.55) !important;
+  transform: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-name,
+#site-footer.footer:not(.footer--deposit) .footer__store-btn span {
+  color: var(--footer-ink) !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon {
+  color: var(--footer-ink) !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon--whatsapp {
+  color: #25d366 !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-selector-btn {
+  border-radius: 999px;
+  border-color: var(--footer-line);
+  background: #ffffff;
+  color: var(--footer-ink);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-selector-btn:hover {
+  border-color: rgba(10, 186, 181, 0.45);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-option--active {
+  background: #f0fdfa;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-option--active:hover {
+  background: #ccfbf1;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-check {
+  color: var(--footer-tiffany);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__legal {
+  margin-top: clamp(24px, 3vw, 36px);
+  padding-top: 20px;
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__copyright {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--footer-ink-muted);
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  #site-footer.footer:not(.footer--deposit) .footer__upper {
+    flex-direction: column;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__upper-right {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  #site-footer.footer:not(.footer--deposit) {
+    padding-bottom: 32px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-buttons {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__legal {
+    text-align: center;
+  }
 }
 

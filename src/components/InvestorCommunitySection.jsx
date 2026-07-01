@@ -82,7 +82,7 @@ export default function InvestorCommunitySection() {
           columns={18}
           tilt={16}
           speed={22}
-          height={440}
+          height={560}
           showHeader={false}
           pauseOnHover={false}
           showTooltip={false}

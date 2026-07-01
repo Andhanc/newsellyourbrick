@@ -1,43 +1,54 @@
 **Findings**
-- No P0/P1/P2 issues found.
-  Location: `/about` page.
-  Evidence: source visual `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5339073274886954150-y.jpg`; implementation screenshot `/tmp/about-final-1280.png`; side-by-side evidence `/tmp/about-qa-side-by-side.png`; focused hero evidence `/tmp/about-qa-hero.png`.
-  Impact: implementation matches the supplied section order, dark Dubai hero, floating trust bar, platform split section, dark process band, Dubai/team row, CTA image band, and bottom proof row without the previous oversized landing-page scale.
-  Fix: none required for handoff.
-
-**Required Fidelity Surfaces**
-- Fonts and typography: matched the bold geometric sans feel with the app/system font stack, strong display weights, compact nav text, and restrained desktop heading sizes. No text overflow observed at 1280, 1024, or 390 widths.
-- Spacing and layout rhythm: desktop container is capped at 1128px, medium screens stay compact, section heights are stable, and global footer was hidden on the About route to match the reference endpoint. No horizontal scroll observed.
-- Colors and visual tokens: dark navy, teal, white, and gold palette matches the reference; CTA and trust panels preserve the high-contrast investment look.
-- Image quality and asset fidelity: visible imagery is sourced from the provided reference into real raster assets for hero, market, process, Burj/Dubai, CTA, and team cards. Icons use `react-icons`, not custom SVG drawings or placeholder shapes.
-- Copy and content: Russian copy follows the reference intent and preserves the same platform, process, team, and CTA messaging.
+- No actionable P0/P1/P2 findings.
 
 **Open Questions**
-- None blocking. The implementation is slightly more compact vertically than the source when normalized to the same width; this is intentional to address the requested scale issue on medium desktop screens.
+- The first reference uses a monochrome city map; the implementation uses the existing raster world-map asset with object thumbnails to keep the same airy map/card composition while staying in the requested white/black/ocean-blue palette.
 
 **Implementation Checklist**
-- Replaced the old multi-section luxury About page with a faithful Dubai investment About page.
-- Rebuilt page-specific CSS with controlled container widths, section heights, and responsive breakpoints.
-- Added reference-derived raster assets in `public/images/sellyourbrick/about/`.
-- Hid the global site footer only while the About route is mounted.
-- Verified build, captured desktop, medium, and mobile screenshots, and checked the mobile menu interaction.
+- Desktop hero checked against reference 1: centered headline, pill label, filter bar, map area, floating property card, circular object pins, platform metric row, and service-description block are present.
+- Benefits section checked against reference 2: rounded ocean-blue panel, three white cards, icon buttons, strong left headline, and spacious card rhythm are present.
+- Subscription section checked against reference 3: full-bleed lifestyle/property background, large overlaid headline, three staggered plan cards, selected-plan state, and subscription CTA are present.
+- Interactions checked: nav scroll buttons, search/filter buttons, map pins, benefit buttons, plan selection, subscription CTA, and modal close/open states.
+- Responsive check completed at 390x900: no horizontal overflow, search stacks correctly, hero card remains readable, and text stays within containers.
 
 **Follow-up Polish**
-- P3: Replace the cropped reference-derived photos with higher-resolution final Dubai renders if brand production assets become available.
-- P3: Add an actual mobile drawer menu interaction if the About header becomes the permanent navigation pattern.
+- P3: A future pass could replace the world-map asset with a custom ocean-blue city-map raster if the product needs a closer match to the exact first screenshot.
 
-source visual truth path: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5339073274886954150-y.jpg`
+source visual truth path:
+- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5341449529967974730-y.jpg
+- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-ebca112c-0248-40b9-8584-d43eaf3a7b36.png
+- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-005a1ea3-f178-449d-8bd2-886624e0dad7.png
 
-implementation screenshot path: `/tmp/about-final-1280.png`
+implementation screenshot path:
+- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-desktop.png
+- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-benefits.png
+- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-plans.png
+- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-mobile.png
 
-viewport: `1280x720`, with responsive checks at `1024x720` and `390x844`
+viewport:
+- desktop: 1440x1200, deviceScaleFactor 1
+- section captures: 1440x1000, deviceScaleFactor 1
+- mobile: 390x900, deviceScaleFactor 1
 
-state: default unauthenticated About page
+state:
+- desktop default page at /buyer
+- benefits section scrolled into view
+- subscription section scrolled into view
+- plan interaction verified by selecting Private and confirming the subscription panel updates to Private
 
-full-view comparison evidence: `/tmp/about-qa-side-by-side.png`
+full-view comparison evidence:
+- Reference 1 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-desktop.png.
+- Reference 2 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-benefits.png.
+- Reference 3 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-plans.png.
 
-focused region comparison evidence: `/tmp/about-qa-hero.png`
+focused region comparison evidence:
+- Hero map/card area inspected in the desktop screenshot for headline wrapping, search pill layout, floating card scale, object pins, and stats row.
+- Benefits card group inspected in the benefits screenshot for rounded ocean-blue section, card spacing, icon treatment, and readable body copy.
+- Subscription cards inspected in the plans screenshot for three-card hierarchy, large white heading, background image contrast, and selected state.
 
-patches made since previous QA pass: hid global footer on About route, corrected logo text, added functional mobile menu, verified no horizontal scroll
+patches made since previous QA pass:
+- Replaced the old calculator/catalog-oriented buyer page with a three-scene reference-led page.
+- Tightened hero typography and vertical rhythm after the first capture.
+- Added responsive CSS for stacked search filters, cards, and plans.
 
 final result: passed
