@@ -44,9 +44,10 @@ import {
 } from '../components/OwnerCabinetOverviewSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import {
   formatOwnerTestDays,
   getOwnerTestIntlLocale,
@@ -799,10 +800,6 @@ export default function MainOwnerTestPage() {
   const lang = i18n.language
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
-    activeId: 'home',
-    ...(isEmbedded ? {} : { hrefMap: OWNER_TEST_STANDALONE_HREF_MAP }),
-  })
-  const tabItems = useOwnerTestTabItems({
     activeId: 'home',
     ...(isEmbedded ? {} : { hrefMap: OWNER_TEST_STANDALONE_HREF_MAP }),
   })
@@ -1856,31 +1853,11 @@ export default function MainOwnerTestPage() {
 
       {mainColumn}
 
-      <nav className="mot-tabbar mot-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-        {tabItems.map((item) => {
-          if (item.fab) {
-            return (
-              <div key="fab" className="mot-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="mot-tabbar__fab" aria-label={t('ownerTest_ariaAdd')}>
-                  <Plus size={28} strokeWidth={2.5} />
-                </Link>
-              </div>
-            )
-          }
-          const Icon = item.icon
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`mot-tabbar__item${item.active ? ' mot-tabbar__item--active' : ''}`}
-            >
-              <Icon size={22} strokeWidth={item.active ? 2.25 : 2} aria-hidden />
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
-
+      <OwnerFloatingMobileNav
+        view={OWNER_VIEWS.HOME}
+        onOpenMenu={() => setMenuOpen(true)}
+        menuOpen={menuOpen}
+      />
     </div>
   )
 }

@@ -6,11 +6,8 @@ import {
   FiDollarSign,
   FiFileText,
   FiHome,
-  FiMail,
   FiMapPin,
-  FiMinus,
   FiPieChart,
-  FiPlus,
   FiSearch,
   FiTrendingUp,
   FiUsers,
@@ -20,6 +17,7 @@ import Header from '../components/Header'
 import InvestorHomeShowcases from '../components/InvestorHomeShowcases'
 import InvestorCommunitySection from '../components/InvestorCommunitySection'
 import InvestorFooter from '../components/InvestorFooter'
+import InvestorQuestionsSection from '../components/InvestorQuestionsSection'
 import { InvestHeroStatGlassCard } from '../components/InvestHeroStatGlassCard'
 import './InvestorHomePage.css'
 
@@ -105,13 +103,6 @@ const filters = {
   yields: ['Любая доходность', 'от 5%', 'от 8%', 'от 10%', 'от 12%', 'от 15%+'],
 }
 
-const faqs = [
-  ['Как участвовать в аукционе на SellYourBrick?', 'Зарегистрируйтесь, пройдите верификацию и внесите депозит — после этого вы сможете делать ставки на любой активный лот.'],
-  ['Какие объекты доступны для покупки «сейчас»?', 'Это готовые объекты с фиксированной ценой без торгов — оформление проходит быстро, без ожидания финала аукциона.'],
-  ['Можно ли инвестировать в доли недвижимости?', 'Да, вы можете приобрести долю крупного объекта от минимальной суммы и получать доход пропорционально вашей доле.'],
-  ['Как разместить объект на платформе?', 'Подайте заявку с документами на объект — наша команда проверит право собственности и поможет выбрать стратегию продажи.'],
-]
-
 function FilterChip({ label, value, options, onChange, icon: Icon }) {
   const isActive = value !== options[0]
 
@@ -149,9 +140,6 @@ function InvestorHomePage() {
   const [strategy, setStrategy] = useState(filters.strategies[0])
   const [price, setPrice] = useState(filters.prices[0])
   const [yieldValue, setYieldValue] = useState(filters.yields[0])
-  const [openFaq, setOpenFaq] = useState(0)
-  const [contactEmail, setContactEmail] = useState('')
-  const [formSent, setFormSent] = useState(false)
   const [activeStrategyTab, setActiveStrategyTab] = useState('all')
 
   const selectedSummary = useMemo(() => {
@@ -160,12 +148,6 @@ function InvestorHomePage() {
 
   const handleSearch = () => {
     navigate('/auction')
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    setFormSent(true)
-    window.setTimeout(() => setFormSent(false), 2400)
   }
 
   return (
@@ -330,75 +312,7 @@ function InvestorHomePage() {
 
       <InvestorCommunitySection />
 
-      <section className="invest-questions" id="contact" aria-labelledby="invest-questions-title">
-        <div className="invest-shell invest-questions__inner">
-          <div className="invest-questions__contact">
-            <h2 id="invest-questions-title" className="invest-questions__title">
-              Остались вопросы?
-            </h2>
-            <p className="invest-questions__subtitle">
-              Вы можете задать его, позвонив или написав сообщение
-            </p>
-            <form className="invest-questions__form" onSubmit={handleSubmit}>
-              <div className="invest-questions__field">
-                <FiMail className="invest-questions__field-icon" size={18} aria-hidden />
-                <input
-                  type="email"
-                  className="invest-questions__input"
-                  placeholder="Введите свою почту"
-                  value={contactEmail}
-                  onChange={(event) => setContactEmail(event.target.value)}
-                  autoComplete="email"
-                  required
-                  disabled={formSent}
-                />
-              </div>
-              <button className="invest-questions__btn" type="submit" disabled={formSent}>
-                {formSent ? 'Отправлено' : 'Отправить'}
-              </button>
-            </form>
-          </div>
-
-          <div className="invest-questions__faq">
-            <ul className="invest-questions__faq-list">
-              {faqs.map(([question, answer], index) => {
-                const isOpen = openFaq === index
-                const triggerId = `invest-faq-q-${index}`
-                const panelId = `invest-faq-a-${index}`
-
-                return (
-                  <li key={question} className="invest-questions__faq-item">
-                    <h3 className="invest-questions__faq-heading">
-                      <button
-                        type="button"
-                        id={triggerId}
-                        className={`invest-questions__faq-trigger${isOpen ? ' is-open' : ''}`}
-                        aria-expanded={isOpen}
-                        aria-controls={panelId}
-                        onClick={() => setOpenFaq(isOpen ? -1 : index)}
-                      >
-                        <span className="invest-questions__faq-question">{question}</span>
-                        <span className="invest-questions__faq-icon" aria-hidden>
-                          {isOpen ? <FiMinus size={18} /> : <FiPlus size={18} />}
-                        </span>
-                      </button>
-                    </h3>
-                    <div
-                      id={panelId}
-                      role="region"
-                      aria-labelledby={triggerId}
-                      className="invest-questions__faq-panel"
-                      hidden={!isOpen}
-                    >
-                      <p className="invest-questions__faq-answer">{answer}</p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        </div>
-      </section>
+      <InvestorQuestionsSection />
 
       <div className="invest-floating-summary" aria-live="polite">
         <FiMapPin aria-hidden />

@@ -30,6 +30,7 @@ import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { validateLocationForm } from '../utils/oapLocationGeocode'
 import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
+import { applyPricingFieldChange } from '../utils/oapAuctionPriceAuto'
 import {
   getAuctionEndDateError,
   getPricingCrossFieldErrors,
@@ -150,6 +151,7 @@ const INITIAL_FORM = {
   totalShares: '',
   listingCurrency: 'EUR',
   calculatorApplied: false,
+  pricingFieldSource: {},
   auctionStartingPrice: '',
   auctionStartDate: '',
   auctionEndDate: '',
@@ -1484,28 +1486,27 @@ export default function OwnerAddPropertyTestPage() {
     )
   }
 
-  const handlePricingFieldChange = useCallback(
-    (key, value) => {
-      const nextForm = { ...form, [key]: value }
-      updateField(key, value)
-      setPricingErrors((prev) => {
-        const next = { ...prev }
-        delete next[key]
+  const handlePricingFieldChange = useCallback((key, value) => {
+    setForm((prev) => {
+      const next = applyPricingFieldChange(prev, key, value)
+      setPricingErrors((prevErr) => {
+        const nextErr = { ...prevErr }
+        delete nextErr[key]
 
         const crossKeys = ['minimumSalePrice', 'price', 'auctionStartingPrice']
         if (crossKeys.includes(key)) {
-          const cross = getPricingCrossFieldErrors(nextForm)
+          const cross = getPricingCrossFieldErrors(next)
           for (const crossKey of crossKeys) {
-            if (cross[crossKey]) next[crossKey] = cross[crossKey]
-            else delete next[crossKey]
+            if (cross[crossKey]) nextErr[crossKey] = cross[crossKey]
+            else delete nextErr[crossKey]
           }
         }
 
-        return next
+        return nextErr
       })
-    },
-    [form, updateField]
-  )
+      return next
+    })
+  }, [])
 
   const renderStepFinance = (options = {}) => {
     const { hideWizardChrome = false } = options
@@ -1534,6 +1535,7 @@ export default function OwnerAddPropertyTestPage() {
       auctionEndDate={form.auctionEndDate}
       currency={form.listingCurrency}
       pricingErrors={pricingErrors}
+      pricingFieldSource={form.pricingFieldSource}
       onPricingFieldChange={handlePricingFieldChange}
     />
     )

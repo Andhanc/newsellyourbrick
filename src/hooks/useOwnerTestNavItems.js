@@ -10,10 +10,10 @@ import {
   Settings,
   Home,
   Briefcase,
-  SlidersHorizontal,
+  Bot,
+  Menu,
   User,
 } from 'lucide-react'
-import OwnerAiTabIcon from '../components/OwnerAiTabIcon'
 
 /** Sidebar navigation for owner-test cabinet (desktop + mobile drawer). */
 export function useOwnerTestNavItems(options = {}) {
@@ -111,14 +111,14 @@ export function useOwnerTestTabItems(options = {}) {
       {
         id: 'home',
         label: t('ownerTest_tabAnalytics'),
-        icon: Home,
+        icon: LayoutDashboard,
         active: activeId === 'home',
         href: options.hrefMap?.home,
       },
       {
         id: 'properties',
         label: t('ownerTest_tabProperties'),
-        icon: Briefcase,
+        icon: Building2,
         active: activeId === 'properties',
         href: options.hrefMap?.properties,
       },
@@ -126,14 +126,14 @@ export function useOwnerTestTabItems(options = {}) {
       {
         id: 'ai',
         label: t('ownerTest_tabAi'),
-        icon: OwnerAiTabIcon,
+        icon: Bot,
         action: 'aiChat',
         active: activeId === 'ai',
       },
       {
         id: 'more',
         label: t('ownerTest_tabMore'),
-        icon: SlidersHorizontal,
+        icon: Menu,
       },
     ]
   }, [t, activeId, variant, options.hrefMap])

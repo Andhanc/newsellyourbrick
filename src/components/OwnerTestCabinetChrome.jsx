@@ -31,7 +31,6 @@ export default function OwnerTestCabinetChrome({ children }) {
   const { view, goTo } = useOwnerTestNav()
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [aiChatOpen, setAiChatOpen] = useState(false)
   const [managerChatOpen, setManagerChatOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const showTabbar = isTabbarView(view)
@@ -48,12 +47,9 @@ export default function OwnerTestCabinetChrome({ children }) {
   }, [menuOpen])
 
   useEffect(() => {
-    const onAi = (event) => setAiChatOpen(Boolean(event.detail?.isOpen))
     const onManager = (event) => setManagerChatOpen(Boolean(event.detail?.isOpen))
-    window.addEventListener('aiChatStateChange', onAi)
     window.addEventListener('managerChatStateChange', onManager)
     return () => {
-      window.removeEventListener('aiChatStateChange', onAi)
       window.removeEventListener('managerChatStateChange', onManager)
     }
   }, [])
@@ -240,7 +236,6 @@ export default function OwnerTestCabinetChrome({ children }) {
           view={view}
           goTo={goTo}
           onOpenMenu={() => setMenuOpen(true)}
-          aiChatOpen={aiChatOpen}
           menuOpen={menuOpen}
         />
       ) : null}

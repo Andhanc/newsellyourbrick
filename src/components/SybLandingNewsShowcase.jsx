@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiArrowUpRight } from 'react-icons/fi'
 import { scrollMainTo } from '@/utils/mainScroll'
 
+const MOSAIC_IMAGE_FALLBACK = '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg'
+
 const STATIC_NEWS_KEYS = [
   {
     id: 'syb-static-news-1',
@@ -32,6 +34,113 @@ const STATIC_NEWS_KEYS = [
     excerptKey: 'sybLandingNews4Excerpt',
   },
 ]
+
+function MosaicBackdrop({ src }) {
+  return (
+    <>
+      <img
+        className="syb-news-mosaic__bg"
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        aria-hidden
+        onError={(event) => {
+          event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
+        }}
+      />
+      <div className="syb-news-mosaic__shade" aria-hidden />
+    </>
+  )
+}
+
+function SybMosaicHeroCell({ item, onOpen }) {
+  return (
+    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--hero syb-news-mosaic__cell--dark">
+      <MosaicBackdrop src={item.image} />
+      <div className="syb-news-mosaic__content">
+        <h3 className="syb-news-mosaic__title">{item.title}</h3>
+        <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
+      </div>
+      <button
+        type="button"
+        className="syb-news-mosaic__fab"
+        onClick={() => onOpen(item)}
+        aria-label={item.title}
+      >
+        <FiArrowRight size={18} aria-hidden />
+      </button>
+    </article>
+  )
+}
+
+function SybMosaicTextCell({ item, onOpen }) {
+  return (
+    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--text syb-news-mosaic__cell--dark">
+      <MosaicBackdrop src={item.image} />
+      <button type="button" className="syb-news-mosaic__text-hit" onClick={() => onOpen(item)}>
+        <h3 className="syb-news-mosaic__title">{item.title}</h3>
+        <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
+      </button>
+    </article>
+  )
+}
+
+function SybMosaicPhotoCell({ item, onOpen, tall = false }) {
+  return (
+    <article
+      className={`syb-news-mosaic__cell syb-news-mosaic__cell--photo${tall ? ' syb-news-mosaic__cell--tall' : ''}`}
+    >
+      <button type="button" className="syb-news-mosaic__photo-hit" onClick={() => onOpen(item)}>
+        <img
+          src={item.image}
+          alt=""
+          loading="eager"
+          decoding="async"
+          aria-hidden
+          onError={(event) => {
+            event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
+          }}
+        />
+        <span className="syb-news-mosaic__shade" aria-hidden />
+        <span className="syb-news-mosaic__photo-caption">
+          <span className="syb-news-mosaic__photo-title">{item.title}</span>
+          <span className="syb-news-mosaic__photo-excerpt">{item.excerpt}</span>
+        </span>
+      </button>
+    </article>
+  )
+}
+
+function SybFeatureCard({ item, ctaLabel, onOpen }) {
+  return (
+    <article className="syb-news-card syb-news-card--feature">
+      <div className="syb-news-card__copy">
+        {item.tags?.length > 0 ? (
+          <div className="syb-news-card__tag-row" aria-hidden>
+            {item.tags.map((tag) => (
+              <span key={tag} className="syb-news-card__tag">
+                <span className="syb-news-card__tag-dot" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <h3 className="syb-news-card__title">{item.title}</h3>
+        <p className="syb-news-card__excerpt">{item.excerpt}</p>
+        <button type="button" className="syb-news-card__cta" onClick={() => onOpen(item)}>
+          <span>{ctaLabel}</span>
+          <FiArrowRight size={14} aria-hidden />
+        </button>
+      </div>
+      <div className="syb-news-card__stage" aria-hidden>
+        <div className="syb-news-card__visual">
+          <img src={item.image} alt="" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </article>
+  )
+}
 
 function SybNewsCard({ item, ctaLabel, onOpen }) {
   const isFeatured = Boolean(item.featured)
@@ -75,12 +184,14 @@ function SybNewsCard({ item, ctaLabel, onOpen }) {
   )
 }
 
-export default function SybLandingNewsShowcase() {
+export default function SybLandingNewsShowcase({ maxItems, layout = 'default' }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const isMosaic = layout === 'mosaic'
+  const isFeatures = layout === 'features' || layout === 'bento'
 
   const articles = useMemo(() => {
-    return STATIC_NEWS_KEYS.map((item) => ({
+    const items = STATIC_NEWS_KEYS.map((item) => ({
       id: item.id,
       slug: null,
       featured: item.featured,
@@ -89,7 +200,24 @@ export default function SybLandingNewsShowcase() {
       excerpt: t(item.excerptKey),
       tags: (item.tagKeys || []).map((key) => t(key)),
     }))
-  }, [t])
+
+    if (typeof maxItems === 'number' && maxItems > 0) {
+      return items.slice(0, maxItems)
+    }
+
+    return items
+  }, [maxItems, t])
+
+
+  const mosaicArticles = useMemo(() => {
+    if (articles.length < 4) return null
+    return {
+      hero: articles[0],
+      photo: articles[1],
+      text: articles[2],
+      tall: articles[3],
+    }
+  }, [articles])
 
   const handleOpen = useCallback(
     (item) => {
@@ -103,34 +231,74 @@ export default function SybLandingNewsShowcase() {
   )
 
   return (
-    <section className="syb-news" aria-labelledby="syb-news-title">
-      <div className="syb-news__head">
-        <div className="syb-news__intro">
+    <section
+      className={`syb-news${isMosaic ? ' syb-news--mosaic' : ''}${isFeatures ? ' syb-news--features' : ''}`}
+      aria-labelledby="syb-news-title"
+    >
+      <div className={`syb-news__head${isMosaic ? ' syb-news__head--mosaic' : ''}`}>
+        {isMosaic ? (
           <h2 id="syb-news-title" className="syb-news__title">
             {t('sybLandingNewsTitle')}
           </h2>
-          <p className="syb-news__subtitle">{t('sybLandingNewsSubtitle')}</p>
-        </div>
-        <Link
-          to="/news"
-          className="syb-news__all"
-          onClick={() => scrollMainTo(0, 0, 'instant')}
-        >
-          {t('sybLandingNewsViewAll')}
-          <FiArrowRight size={16} aria-hidden />
-        </Link>
+        ) : (
+          <>
+            <div className="syb-news__intro">
+              <h2 id="syb-news-title" className="syb-news__title">
+                {t('sybLandingNewsTitle')}
+              </h2>
+              <p className="syb-news__subtitle">{t('sybLandingNewsSubtitle')}</p>
+            </div>
+            <Link
+              to="/news"
+              className="syb-news__all"
+              onClick={() => scrollMainTo(0, 0, 'instant')}
+            >
+              {t('sybLandingNewsViewAll')}
+              <FiArrowRight size={16} aria-hidden />
+            </Link>
+          </>
+        )}
       </div>
 
-      <div className="syb-news__grid">
-        {articles.map((item) => (
-          <SybNewsCard
-            key={item.id}
-            item={item}
-            ctaLabel={t('sybLandingNewsCta')}
-            onOpen={handleOpen}
-          />
-        ))}
-      </div>
+      {isMosaic && mosaicArticles ? (
+        <>
+          <div className="syb-news__mosaic">
+            <SybMosaicHeroCell item={mosaicArticles.hero} onOpen={handleOpen} />
+            <SybMosaicPhotoCell item={mosaicArticles.photo} onOpen={handleOpen} />
+            <SybMosaicTextCell item={mosaicArticles.text} onOpen={handleOpen} />
+            <SybMosaicPhotoCell item={mosaicArticles.tall} onOpen={handleOpen} tall />
+          </div>
+          <div className="syb-news__mosaic-foot">
+            <Link
+              to="/news"
+              className="syb-news__mosaic-more"
+              onClick={() => scrollMainTo(0, 0, 'instant')}
+            >
+              {t('sybLandingNewsViewAll')}
+            </Link>
+          </div>
+        </>
+      ) : (
+        <div className="syb-news__grid">
+          {isFeatures
+            ? articles.map((item) => (
+                <SybFeatureCard
+                  key={item.id}
+                  item={item}
+                  ctaLabel={t('sybLandingNewsCta')}
+                  onOpen={handleOpen}
+                />
+              ))
+            : articles.map((item) => (
+                <SybNewsCard
+                  key={item.id}
+                  item={item}
+                  ctaLabel={t('sybLandingNewsCta')}
+                  onOpen={handleOpen}
+                />
+              ))}
+        </div>
+      )}
     </section>
   )
 }

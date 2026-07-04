@@ -25,6 +25,7 @@ export default function OwnerAddPropertyFinanceStep({
   auctionEndDate,
   currency,
   pricingErrors,
+  pricingFieldSource = {},
   onPricingFieldChange,
 }) {
   const { t } = useTranslation()
@@ -43,6 +44,7 @@ export default function OwnerAddPropertyFinanceStep({
       auctionEndDate={auctionEndDate}
       currency={currency}
       errors={pricingErrors}
+      pricingFieldSource={pricingFieldSource}
       onChangeField={onPricingFieldChange}
     />
   )

@@ -61,6 +61,10 @@
     gap: 0;
   }
 
+  .opa:not(.opa--embedded) .opa-workspace {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
   .opa-mob-topbar {
     display: none !important;
   }

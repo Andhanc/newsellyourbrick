@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -22,6 +22,7 @@ import { publicAsset } from '../utils/publicAsset'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
+import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import './Shares.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -200,6 +201,7 @@ function mapApiShare(share, index) {
 
 export default function Shares() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [apiShares, setApiShares] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
@@ -231,6 +233,17 @@ export default function Shares() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const prefilter = readHeroSearchPrefilter(location.state)
+    if (!prefilter?.shareCountry) return
+
+    setSelectedLocations([prefilter.shareCountry])
+    navigate(`${location.pathname}${location.search}`, {
+      replace: true,
+      state: null,
+    })
+  }, [location.pathname, location.search, location.state, navigate])
 
   const shares = useMemo(() => {
     if (!apiShares.length) return GENERATED_SHARES

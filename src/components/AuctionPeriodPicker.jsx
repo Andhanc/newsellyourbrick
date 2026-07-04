@@ -81,6 +81,15 @@ const AuctionPeriodPicker = ({
     return startOfMonth(anchor)
   }, [effectiveStart, minEndDate])
 
+  const minEndFormatted = useMemo(() => {
+    if (!minEndDate) return ''
+    return minEndDate.toLocaleDateString(locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }, [locale, minEndDate])
+
   const weekDays = useMemo(() => {
     const monday = new Date(2024, 0, 1)
     return Array.from({ length: 7 }, (_, index) => {
@@ -339,8 +348,33 @@ const AuctionPeriodPicker = ({
     </div>
   )
 
+  const minDurationHint =
+    !disableMinConstraints ? (
+      <aside className="auction-period-hint" aria-label={t('auctionPeriodMinDurationTitle')}>
+        <p className="auction-period-hint__title">{t('auctionPeriodMinDurationTitle')}</p>
+        <p className="auction-period-hint__text">{t('auctionPeriodMinDurationLead')}</p>
+        <ul className="auction-period-hint__list">
+          <li>{t('auctionPeriodMinDurationReasonBuyers')}</li>
+          <li>{t('auctionPeriodMinDurationReasonSellers')}</li>
+          <li>{t('auctionPeriodMinDurationReasonTrust')}</li>
+        </ul>
+        {minEndFormatted ? (
+          <p className="auction-period-hint__earliest">
+            {t('auctionPeriodMinDurationEarliest', { date: minEndFormatted })}
+          </p>
+        ) : null}
+      </aside>
+    ) : null
+
+  const inlineCalendarWithHint = (
+    <>
+      {minDurationHint}
+      {inlineCalendar}
+    </>
+  )
+
   if (isJourney) {
-    return <div className={pickerClassName}>{inlineCalendar}</div>
+    return <div className={pickerClassName}>{inlineCalendarWithHint}</div>
   }
 
   return (
@@ -354,7 +388,7 @@ const AuctionPeriodPicker = ({
         </div>
       ) : null}
 
-      <div className="auction-period-content">{inlineCalendar}</div>
+      <div className="auction-period-content">{inlineCalendarWithHint}</div>
     </div>
   )
 }

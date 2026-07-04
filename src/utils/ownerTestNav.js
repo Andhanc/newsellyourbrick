@@ -51,6 +51,25 @@ export function isTabbarView(view) {
   return view !== OWNER_VIEWS.ADD_PROPERTY
 }
 
+const STANDALONE_VIEW_HREF = {
+  [OWNER_VIEWS.HOME]: OWNER_TEST_STANDALONE_HREF_MAP.home,
+  [OWNER_VIEWS.PROPERTIES]: OWNER_TEST_STANDALONE_HREF_MAP.properties,
+  [OWNER_VIEWS.PROPERTY_ANALYTICS]: OWNER_TEST_STANDALONE_HREF_MAP.properties,
+  [OWNER_VIEWS.TEST_DRIVE]: OWNER_TEST_STANDALONE_HREF_MAP.testdrive,
+  [OWNER_VIEWS.SUBSCRIPTIONS]: OWNER_TEST_STANDALONE_HREF_MAP.subscriptions,
+  [OWNER_VIEWS.SALES]: OWNER_TEST_STANDALONE_HREF_MAP.sales,
+  [OWNER_VIEWS.WALLET]: OWNER_TEST_STANDALONE_HREF_MAP.wallet,
+  [OWNER_VIEWS.PROFILE]: OWNER_TEST_STANDALONE_HREF_MAP.settings,
+  [OWNER_VIEWS.ADD_PROPERTY]: '/owner-add-property-test',
+}
+
+/** Навигация по разделам кабинета на legacy standalone-маршрутах. */
+export function navigateToOwnerView(navigate, view) {
+  if (typeof navigate !== 'function') return
+  const href = STANDALONE_VIEW_HREF[view] || OWNER_TEST_PATH
+  navigate(href)
+}
+
 const OWNER_CABINET_SCROLL_ROOTS = [
   '.app-layout',
   '.app-layout__content',

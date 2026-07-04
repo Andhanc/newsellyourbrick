@@ -46,13 +46,14 @@ import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
 import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
 import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
@@ -566,10 +567,6 @@ export default function OwnerPropertiesTestPage() {
   const { fullName, roleLabel } = useOwnerTestProfile()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
-    activeId: 'properties',
-    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
-  })
-  const tabItems = useOwnerTestTabItems({
     activeId: 'properties',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
   })
@@ -1187,40 +1184,11 @@ export default function OwnerPropertiesTestPage() {
 
       {mainColumn}
 
-      <nav className="op-tabbar op-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-        {tabItems.map((item) => {
-          if (item.fab) {
-            return (
-              <div key="fab" className="op-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="op-tabbar__fab" aria-label={t('ownerTest_ariaAddProperty')}>
-                  <Plus size={28} strokeWidth={2.5} />
-                </Link>
-              </div>
-            )
-          }
-          const Icon = item.icon
-          const className = `op-tabbar__item${item.active ? ' op-tabbar__item--active' : ''}`
-          if (item.href) {
-            return (
-              <Link key={item.id} to={item.href} className={className}>
-                <Icon size={22} strokeWidth={2} aria-hidden />
-                <span>{item.label}</span>
-              </Link>
-            )
-          }
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={className}
-              onClick={item.id === 'more' ? () => setMenuOpen(true) : undefined}
-            >
-              <Icon size={22} strokeWidth={item.active ? 2.25 : 2} aria-hidden />
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
+      <OwnerFloatingMobileNav
+        view={OWNER_VIEWS.PROPERTIES}
+        onOpenMenu={() => setMenuOpen(true)}
+        menuOpen={menuOpen}
+      />
     </div>
   )
 }

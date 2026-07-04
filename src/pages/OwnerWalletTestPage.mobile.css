@@ -13,7 +13,7 @@
   .owl {
     flex-direction: column;
     background: #fff;
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
   .owl.owl--embedded {

@@ -85,6 +85,11 @@
   color: #9ca3af;
 }
 
+.oap-pricing-step__field-hint--auto {
+  color: #0f766e;
+  font-weight: 500;
+}
+
 .oap-pricing-step--embedded .oap-pricing-step__subsection {
   display: flex;
   flex-direction: column;

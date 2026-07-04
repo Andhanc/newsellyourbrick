@@ -69,6 +69,7 @@ const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
+const HomeRedesignPage = lazyWithRetry(() => import('./pages/home-redesign/HomeRedesignPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
 const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
 const SellerPage = lazyWithRetry(() => import('./pages/SellerPage'))
@@ -909,6 +910,14 @@ function App() {
                 element={
                   <LazyPage>
                     <TestPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/home-redesign"
+                element={
+                  <LazyPage>
+                    <HomeRedesignPage />
                   </LazyPage>
                 }
               />

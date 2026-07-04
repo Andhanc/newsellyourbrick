@@ -16,9 +16,11 @@ import {
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
+import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import OwnerWalletMetricChart from '../components/OwnerWalletMetricChart'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
@@ -135,12 +137,6 @@ export default function OwnerWalletTestPage() {
   const navItems = useOwnerTestNavItems({
     activeId: 'wallet',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
-  })
-  const tabItems = useOwnerTestTabItems({
-    variant: 'wallet',
-    hrefMap: isEmbedded
-      ? undefined
-      : { ...OWNER_TEST_STANDALONE_HREF_MAP, profile: OWNER_TEST_STANDALONE_HREF_MAP.settings },
   })
   const metricDefs = useMemo(
     () => [
@@ -528,31 +524,11 @@ export default function OwnerWalletTestPage() {
 
       {mainColumn}
 
-      <nav className="owl-tabbar owl-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-        {tabItems.map((item) => {
-          const Icon = item.icon
-          const className = `owl-tabbar__item${item.active ? ' owl-tabbar__item--active' : ''}`
-          if (item.href) {
-            return (
-              <Link key={item.id} to={item.href} className={className}>
-                <span className="owl-tabbar__icon-wrap">
-                  <Icon size={22} strokeWidth={2} aria-hidden />
-                  {item.badge != null ? (
-                    <span className="owl-tabbar__badge">{item.badge}</span>
-                  ) : null}
-                </span>
-                <span>{item.label}</span>
-              </Link>
-            )
-          }
-          return (
-            <button key={item.id} type="button" className={className}>
-              <Icon size={22} strokeWidth={2} aria-hidden />
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
+      <OwnerFloatingMobileNav
+        view={OWNER_VIEWS.WALLET}
+        onOpenMenu={() => setMenuOpen(true)}
+        menuOpen={menuOpen}
+      />
     </div>
   )
 }

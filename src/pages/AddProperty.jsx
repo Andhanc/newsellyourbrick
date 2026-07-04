@@ -759,6 +759,8 @@ import {
   confirmListingPublicationFeeSession,
   startListingPublicationCheckout,
 } from '../utils/subscriptionCheckout'
+import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
+import { applyPricingFieldChange } from '../utils/oapAuctionPriceAuto'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
@@ -780,6 +782,7 @@ const INITIAL_FORM_DATA = {
   auctionEndDate: '',
   auctionStartingPrice: '',
   minimumSalePrice: '',
+  pricingFieldSource: {},
   area: '',
   livingArea: '',
   buildingType: '',
@@ -1599,72 +1602,54 @@ const AddProperty = ({
 
   // Обработчик для поля цены с форматированием
   const handlePriceChange = (e) => {
-    const value = e.target.value
-    // Сохраняем числовое значение без запятых
-    const numericValue = removeCommas(value)
-    setFormData(prev => ({
-      ...prev,
-      price: numericValue
-    }))
-
-    const err = getAuctionStartingVsBuyNowError(numericValue, formData.auctionStartingPrice)
-    if (err) {
-      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.auctionStartingPrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'price', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        const minVsBuyErr = getMinimumSaleVsBuyNowError(next.minimumSalePrice, next.price)
+        if (minVsBuyErr) err.minimumSalePrice = minVsBuyErr
+        else delete err.minimumSalePrice
+        return err
       })
-    }
-    const minVsBuyErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, numericValue)
-    if (minVsBuyErr) {
-      setValidationErrors(prev => ({ ...prev, minimumSalePrice: minVsBuyErr }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.minimumSalePrice
-        return next
-      })
-    }
+      return next
+    })
   }
 
   const handleMinimumSalePriceChange = (e) => {
-    const value = e.target.value
-    const numericValue = removeCommas(value)
-    setFormData((prev) => ({ ...prev, minimumSalePrice: numericValue }))
-    const minVsBuyErr = getMinimumSaleVsBuyNowError(numericValue, formData.price)
-    if (minVsBuyErr) {
-      setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVsBuyErr }))
-    } else {
-      setValidationErrors((prev) => {
-        const next = { ...prev }
-        delete next.minimumSalePrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'minimumSalePrice', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const minVsBuyErr = getMinimumSaleVsBuyNowError(next.minimumSalePrice, next.price)
+        if (minVsBuyErr) err.minimumSalePrice = minVsBuyErr
+        else delete err.minimumSalePrice
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        return err
       })
-    }
+      return next
+    })
   }
 
-  // Обработчик для стартовой цены аукциона с форматированием
   const handleAuctionPriceChange = (e) => {
-    const value = e.target.value
-    // Сохраняем числовое значение без запятых
-    const numericValue = removeCommas(value)
-    setFormData(prev => ({
-      ...prev,
-      auctionStartingPrice: numericValue
-    }))
-
-    const err = getAuctionStartingVsBuyNowError(formData.price, numericValue)
-    if (err) {
-      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.auctionStartingPrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'auctionStartingPrice', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        return err
       })
-    }
+      return next
+    })
   }
 
   const handleDetailChange = (field, value) => {
@@ -5273,47 +5258,7 @@ const AddProperty = ({
   }
 
   const handleApplyCalculatedPrice = useCallback((recommendedPrice) => {
-    const rec = Math.max(0, Math.round(Number(recommendedPrice) || 0))
-    if (!rec) return
-
-    /** От рекомендации: −15% → «Продать сейчас»; от неё −10% → минимум; старт ≤30% от «Продать сейчас». */
-    const buyNowFromRec = Math.round(rec * 0.85)
-    const minSaleFromRec = Math.round(buyNowFromRec * 0.9)
-    const startingFromRec = Math.round(buyNowFromRec * 0.3)
-
-    setFormData((prev) => {
-      const mode = prev.listingMode || 'auction'
-
-      if (mode === 'shares') {
-        return { ...prev, price: String(rec) }
-      }
-      if (mode === 'debt') {
-        return { ...prev, debtAmount: String(rec) }
-      }
-
-      if (mode === 'auction_buy_now' || mode === 'debt_auction') {
-        return {
-          ...prev,
-          price: String(buyNowFromRec),
-          minimumSalePrice: String(minSaleFromRec),
-          auctionStartingPrice: String(startingFromRec)
-        }
-      }
-
-      if (mode === 'auction') {
-        return {
-          ...prev,
-          minimumSalePrice: String(minSaleFromRec),
-          auctionStartingPrice: String(startingFromRec)
-        }
-      }
-
-      const next = { ...prev, auctionStartingPrice: String(startingFromRec) }
-      if (!prev.price || Number(removeCommas(String(prev.price))) <= 0) {
-        next.price = String(buyNowFromRec || rec)
-      }
-      return next
-    })
+    setFormData((prev) => applyCalculatedPriceToForm(prev, recommendedPrice))
 
     setValidationErrors((prev) => {
       const next = { ...prev }
@@ -5323,7 +5268,6 @@ const AddProperty = ({
       return next
     })
 
-    // Не закрываем модалку: пользователь видит рекомендацию, похожие объявления и источники; закрытие — «Закрыть» / крестик.
     setCalculatorGuidanceApplied(true)
     showNotification(t('addPropertyCalculatorAppliedFromRecommended'), 'success')
   }, [t])

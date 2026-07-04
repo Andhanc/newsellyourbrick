@@ -40,6 +40,7 @@ import {
   isAuctionRoute,
   parseAuctionFilterPath,
 } from '../utils/auctionFilterUrl'
+import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { getAuctionContextPropertyPath } from '../utils/listingContextUrl'
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import {
@@ -186,6 +187,27 @@ const PropertyList = ({
       }, 300)
     }
   }, [location.pathname, location.search, navigate])
+
+  useEffect(() => {
+    const prefilter = readHeroSearchPrefilter(location.state)
+    if (!prefilter || !isAuctionRoute(location.pathname)) return
+
+    if (prefilter.country) {
+      setCountryFilter(String(prefilter.country))
+    }
+    if (prefilter.minPrice !== undefined && prefilter.minPrice !== '') {
+      setMinPriceFilter(String(prefilter.minPrice))
+    }
+    if (prefilter.maxPrice !== undefined && prefilter.maxPrice !== '') {
+      setMaxPriceFilter(String(prefilter.maxPrice))
+    }
+
+    navigate(`${location.pathname}${location.search}`, {
+      replace: true,
+      state: null,
+    })
+  }, [location.pathname, location.search, location.state, navigate])
+
   const [visibleCount, setVisibleCount] = useState(9)
   const [auctionPage, setAuctionPage] = useState(1)
 

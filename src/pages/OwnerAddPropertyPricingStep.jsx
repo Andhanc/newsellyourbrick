@@ -5,6 +5,12 @@ import AuctionPeriodPicker from '../components/AuctionPeriodPicker'
 import { PROPERTY_CURRENCIES, QUICK_LISTING_CURRENCY_CODES } from '../utils/currency'
 import { formatMoneyInputDisplay, sanitizeMoneyInputRaw } from '../utils/moneyInputFormat'
 import { parseMoneyDigits } from '../utils/oapPricingValidation'
+import {
+  isPricingFieldAuto,
+  PRICING_SOURCE_BUY_NOW,
+  PRICING_SOURCE_CALCULATOR,
+  PRICING_SOURCE_MINIMUM_SALE,
+} from '../utils/oapAuctionPriceAuto'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_PRICING_IMAGES } from './oapPricingImages'
 import './OwnerAddPropertyPricingStep.css'
@@ -33,6 +39,7 @@ export default function OwnerAddPropertyPricingStep({
   auctionEndDate,
   currency = 'EUR',
   errors = {},
+  pricingFieldSource = {},
   onChangeField,
 }) {
   const { t } = useTranslation()
@@ -81,7 +88,18 @@ export default function OwnerAddPropertyPricingStep({
     selectId,
     errorKey = fieldKey,
     hint,
-  }) => (
+    autoSource,
+  }) => {
+    const autoHint =
+      autoSource === PRICING_SOURCE_BUY_NOW
+        ? t('oap_pricingAutoFromBuyNow')
+        : autoSource === PRICING_SOURCE_MINIMUM_SALE
+          ? t('oap_pricingAutoFromMinimumSale')
+          : autoSource === PRICING_SOURCE_CALCULATOR
+            ? t('oap_pricingAutoFromCalculator')
+            : null
+
+    return (
     <label className="oap-pricing-step__field oap-pricing-step__field--compact" key={fieldKey}>
       <span className="oap-pricing-step__field-label">{label}</span>
       <div className="oap-pricing-step__field-control">
@@ -101,12 +119,18 @@ export default function OwnerAddPropertyPricingStep({
         />
         {renderCurrencySelect(selectId)}
       </div>
+      {autoHint ? (
+        <span className="oap-pricing-step__field-hint oap-pricing-step__field-hint--auto">
+          {autoHint}
+        </span>
+      ) : null}
       {hint && <span className="oap-pricing-step__field-hint">{hint}</span>}
       {errors[errorKey] && (
         <span className="oap-pricing-step__field-error">{errors[errorKey]}</span>
       )}
     </label>
-  )
+    )
+  }
 
   const priceFields = (
     <>
@@ -180,14 +204,16 @@ export default function OwnerAddPropertyPricingStep({
 
       {isAuctionMode && (
         <div className="oap-pricing-step__prices-row">
-          {renderPriceField({
-            fieldKey: 'auctionStartingPrice',
-            label: t('oap_pricingStartingBid'),
-            value: auctionStartingPrice,
-            icon: Gavel,
-            iconTone: 'auction',
-            selectId: 'oap-pricing-currency-starting',
-          })}
+          {showBuyNow &&
+            renderPriceField({
+              fieldKey: 'price',
+              label: t('oap_pricingBuyNow'),
+              value: price,
+              icon: Zap,
+              iconTone: 'buynow',
+              selectId: 'oap-pricing-currency-buy-now',
+              hint: t('oap_pricingBuyNowAutoAnchorHint'),
+            })}
 
           {renderPriceField({
             fieldKey: 'minimumSalePrice',
@@ -197,17 +223,22 @@ export default function OwnerAddPropertyPricingStep({
             iconTone: 'minimum',
             selectId: 'oap-pricing-currency-min',
             hint: t('oap_pricingMinimumSaleHint'),
+            autoSource: isPricingFieldAuto(pricingFieldSource, 'minimumSalePrice')
+              ? pricingFieldSource.minimumSalePrice
+              : null,
           })}
 
-          {showBuyNow &&
-            renderPriceField({
-              fieldKey: 'price',
-              label: t('oap_pricingBuyNow'),
-              value: price,
-              icon: Zap,
-              iconTone: 'buynow',
-              selectId: 'oap-pricing-currency-buy-now',
-            })}
+          {renderPriceField({
+            fieldKey: 'auctionStartingPrice',
+            label: t('oap_pricingStartingBid'),
+            value: auctionStartingPrice,
+            icon: Gavel,
+            iconTone: 'auction',
+            selectId: 'oap-pricing-currency-starting',
+            autoSource: isPricingFieldAuto(pricingFieldSource, 'auctionStartingPrice')
+              ? pricingFieldSource.auctionStartingPrice
+              : null,
+          })}
         </div>
       )}
     </>

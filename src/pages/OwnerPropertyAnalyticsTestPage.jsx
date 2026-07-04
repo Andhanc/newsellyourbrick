@@ -46,11 +46,12 @@ import { showNotification } from '../utils/toastHelper'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import OwnerPropertyAnalyticsSkeleton from '../components/OwnerPropertyAnalyticsSkeleton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import {
   formatOwnerAuctionTimerFullCountdown,
@@ -565,10 +566,6 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const { propertyId: routePropertyId } = useParams()
   const { isEmbedded, goTo, propertyId: embeddedPropertyId } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
-    activeId: 'properties',
-    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
-  })
-  const tabItems = useOwnerTestTabItems({
     activeId: 'properties',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
   })
@@ -1139,35 +1136,11 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
       {mainColumn}
 
-      <nav className="opa-tabbar opa-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-        {tabItems.map((item) => {
-          if (item.fab) {
-            return (
-              <div key="fab" className="opa-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="opa-tabbar__fab" aria-label={t('ownerTest_ariaAddProperty')}>
-                  <Plus size={28} strokeWidth={2.5} />
-                </Link>
-              </div>
-            )
-          }
-          const Icon = item.icon
-          const className = `opa-tabbar__item${item.active ? ' opa-tabbar__item--active' : ''}`
-          if (item.href) {
-            return (
-              <Link key={item.id} to={item.href} className={className}>
-                <Icon size={22} strokeWidth={2} aria-hidden />
-                <span>{item.label}</span>
-              </Link>
-            )
-          }
-          return (
-            <button key={item.id} type="button" className={className}>
-              <Icon size={22} strokeWidth={item.active ? 2.25 : 2} aria-hidden />
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
+      <OwnerFloatingMobileNav
+        view={OWNER_VIEWS.PROPERTY_ANALYTICS}
+        onOpenMenu={() => setMenuOpen(true)}
+        menuOpen={menuOpen}
+      />
     </div>
   )
 }
