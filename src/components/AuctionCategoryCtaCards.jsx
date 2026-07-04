@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiBriefcase } from 'react-icons/fi'
-import { FaChartPie, FaFileInvoiceDollar } from 'react-icons/fa'
+import { FaChartPie, FaFileInvoiceDollar, FaGavel } from 'react-icons/fa'
 import { publicAsset } from '../utils/publicAsset'
 import './AuctionCategoryCtaCards.css'
 
 const CTA_IMAGES = {
   shares: publicAsset('images/test-drive/cta-shares.png'),
   debts: publicAsset('images/test-drive/cta-debts.png'),
+  auction: publicAsset('images/test-drive/cta-auction.png'),
   testDrive: publicAsset('images/test-drive/cta-auction.png'),
 }
 
@@ -33,6 +34,16 @@ const AUCTION_CTA_CARDS = [
     accent: 'mint',
   },
   {
+    id: 'auction',
+    titleKey: 'auctionPageCtaAuctionTitle',
+    textKey: 'auctionPageCtaAuctionText',
+    ctaKey: 'auctionPageCtaAuctionButton',
+    to: '/auction',
+    icon: FaGavel,
+    image: CTA_IMAGES.auction,
+    accent: 'teal',
+  },
+  {
     id: 'test-drive',
     titleKey: 'auctionPageCtaTestDriveTitle',
     textKey: 'auctionPageCtaTestDriveText',
@@ -44,14 +55,20 @@ const AUCTION_CTA_CARDS = [
   },
 ]
 
-function AuctionCategoryCtaCards() {
+const DEBTS_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'test-drive']
+
+function AuctionCategoryCtaCards({ variant = 'default' }) {
   const { t } = useTranslation()
+  const cards =
+    variant === 'debtsPage'
+      ? DEBTS_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+      : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
 
   return (
     <section className="auction-cta-cards" aria-label={t('auctionPageCtaAria')}>
       <div className="auction-cta-cards__inner">
         <div className="auction-cta-cards__grid">
-          {AUCTION_CTA_CARDS.map(({ id, titleKey, textKey, ctaKey, to, icon: Icon, image, accent }) => (
+          {cards.map(({ id, titleKey, textKey, ctaKey, to, icon: Icon, image, accent }) => (
             <Link key={id} to={to} className="auction-cta-cards__card">
               <img src={image} alt="" />
               <span className="auction-cta-cards__card-overlay" aria-hidden />

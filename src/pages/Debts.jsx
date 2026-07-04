@@ -8,6 +8,7 @@ import AuctionListingSaleToggle from '../components/AuctionListingSaleToggle'
 import '../components/AuctionListingSaleToggle.css'
 import DebtsListingMeta from '../components/DebtsListingMeta'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from '../components/DebtsPropertyCard'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
@@ -44,6 +45,7 @@ const AuctionMobileLayoutLazy = lazy(() => import('../components/ui/AuctionMobil
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
+const DEBTS_DESKTOP_PAGE_SIZE = 20
 const DEBTS_HERO_BG = '/images/sellyourbrick/about/about-category-debts.jpg'
 
 const Debts = () => {
@@ -65,6 +67,7 @@ const Debts = () => {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
+  const [debtsPage, setDebtsPage] = useState(1)
 
   const [showChatDock, setShowChatDock] = useState(false)
 
@@ -347,6 +350,46 @@ const Debts = () => {
     () => sortDebts(applyDebtsPageFilters(apiDebts, debtsFilters, searchQuery), sortKey),
     [apiDebts, debtsFilters, searchQuery, sortKey],
   )
+
+  const debtsTotalPages = Math.max(1, Math.ceil(filtered.length / DEBTS_DESKTOP_PAGE_SIZE))
+  const safeDebtsPage = Math.min(debtsPage, debtsTotalPages)
+
+  useEffect(() => {
+    if (isDebtsDesktop && debtsPage > debtsTotalPages) {
+      setDebtsPage(debtsTotalPages)
+    }
+  }, [isDebtsDesktop, debtsPage, debtsTotalPages])
+
+  useEffect(() => {
+    setDebtsPage(1)
+  }, [
+    searchQuery,
+    sortKey,
+    debtsPropertyTypes,
+    debtsRisks,
+    debtsFilters.country,
+    debtsFilters.city,
+    debtsFilters.minDebt,
+    debtsFilters.maxDebt,
+    debtsFilters.minPrice,
+    debtsFilters.maxPrice,
+    debtsFilters.showAuction,
+    debtsFilters.showBuyNow,
+  ])
+
+  const displayedDebts = useMemo(() => {
+    if (!isDebtsDesktop) return filtered
+    const start = (safeDebtsPage - 1) * DEBTS_DESKTOP_PAGE_SIZE
+    return filtered.slice(start, start + DEBTS_DESKTOP_PAGE_SIZE)
+  }, [filtered, isDebtsDesktop, safeDebtsPage])
+
+  const goToDebtsPage = (page) => {
+    const next = Math.max(1, Math.min(page, debtsTotalPages))
+    setDebtsPage(next)
+    requestAnimationFrame(() => {
+      document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const riskStats = useMemo(() => getDebtsRiskStats(apiDebts), [apiDebts])
   const filterOptions = useMemo(() => getDebtsFilterOptions(apiDebts), [apiDebts])
@@ -652,7 +695,7 @@ const Debts = () => {
                       ) : null}
 
                       {!loadingDebts
-                        ? filtered.map((property) => (
+                        ? displayedDebts.map((property) => (
                             <DebtsPropertyCard
                               key={auctionListingDedupeKey(property)}
                               property={property}
@@ -667,6 +710,44 @@ const Debts = () => {
                           ))
                         : null}
                     </div>
+
+                    {isDebtsDesktop && !loadingDebts && filtered.length > 0 ? (
+                      <nav className="auction-desktop-pagination" aria-label={t('auctionPaginationLabel')}>
+                        <button
+                          type="button"
+                          className="auction-desktop-pagination__arrow"
+                          disabled={safeDebtsPage <= 1}
+                          onClick={() => goToDebtsPage(safeDebtsPage - 1)}
+                          aria-label={t('auctionPaginationPrev')}
+                        >
+                          ←
+                        </button>
+                        <div className="auction-desktop-pagination__pages">
+                          {Array.from({ length: debtsTotalPages }, (_, index) => index + 1).map((page) => (
+                            <button
+                              key={page}
+                              type="button"
+                              className={`auction-desktop-pagination__page${
+                                page === safeDebtsPage ? ' auction-desktop-pagination__page--active' : ''
+                              }`}
+                              onClick={() => goToDebtsPage(page)}
+                              aria-current={page === safeDebtsPage ? 'page' : undefined}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="auction-desktop-pagination__arrow"
+                          disabled={safeDebtsPage >= debtsTotalPages}
+                          onClick={() => goToDebtsPage(safeDebtsPage + 1)}
+                          aria-label={t('auctionPaginationNext')}
+                        >
+                          →
+                        </button>
+                      </nav>
+                    ) : null}
                   </section>
                 ) : (
                   <div className="shares-grid" aria-busy={loadingDebts}>
@@ -712,6 +793,7 @@ const Debts = () => {
           </div>
         </div>
       </main>
+      <AuctionCategoryCtaCards variant="debtsPage" />
       {showChatDock ? (
         <Suspense fallback={null}>
           <SiteChatDockLazy wrapperClassName="shares-floats" recommendationProperties={apiDebts}>

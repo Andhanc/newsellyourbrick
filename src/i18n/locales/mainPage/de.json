@@ -729,6 +729,8 @@
   "calculator": "Intelligentes Investoren-Dashboard",
   "downloadGooglePlay": "Bei Google Play herunterladen",
   "selectLanguageAria": "Sprache wählen",
+  "headerCatalogNavToggleAria": "Katalogbereiche öffnen",
+  "headerCatalogNavPinAria": "„{{section}}“ im Menü anheften",
   "modalPriceLabel": "Preis (€)",
   "modalFrom": "Von",
   "modalTo": "Bis",

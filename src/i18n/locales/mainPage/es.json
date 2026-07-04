@@ -728,6 +728,8 @@
   "calculator": "Panel inteligente del inversor",
   "downloadGooglePlay": "Descargar en Google Play",
   "selectLanguageAria": "Seleccionar idioma",
+  "headerCatalogNavToggleAria": "Abrir secciones del catálogo",
+  "headerCatalogNavPinAria": "Fijar «{{section}}» en el menú",
   "modalPriceLabel": "Precio (€)",
   "modalFrom": "Desde",
   "modalTo": "Hasta",

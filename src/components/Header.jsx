@@ -28,6 +28,7 @@ import {
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import HeaderPinnedCatalogNav from './HeaderPinnedCatalogNav'
 
 const LoginModalLazy = lazy(() => import('./LoginModal'))
 const SiteNavDrawerLazy = lazy(() => import('./SiteNavDrawer'))
@@ -773,49 +774,18 @@ const Header = () => {
               </div>
             ) : (
               <>
-                {location.pathname !== '/' ? (
-                  <>
-                    <button 
-                      className="new-header__search-btn"
-                      onClick={() => {
-                        setIsSearchOpen(true)
-                        setSearchQuery('')
-                        setSearchResults([])
-                      }}
-                      aria-label={t('openSearch')}
-                    >
-                      <FiSearch size={20} />
-                    </button>
-                    <button 
-                      type="button"
-                      className="new-header__auction-btn"
-                      onClick={() => navigate('/')}
-                    >
-                      {t('home')}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button 
-                      className="new-header__search-btn"
-                      onClick={() => {
-                        setIsSearchOpen(true)
-                        setSearchQuery('')
-                        setSearchResults([])
-                      }}
-                      aria-label={t('openSearch')}
-                    >
-                      <FiSearch size={20} />
-                    </button>
-                    <button 
-                      type="button"
-                      className="new-header__auction-btn"
-                      aria-current="page"
-                    >
-                      {t('home')}
-                    </button>
-                  </>
-                )}
+                <button 
+                  className="new-header__search-btn"
+                  onClick={() => {
+                    setIsSearchOpen(true)
+                    setSearchQuery('')
+                    setSearchResults([])
+                  }}
+                  aria-label={t('openSearch')}
+                >
+                  <FiSearch size={20} />
+                </button>
+                <HeaderPinnedCatalogNav />
                 <button 
                   className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
                   onClick={() => {

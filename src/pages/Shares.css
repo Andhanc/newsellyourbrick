@@ -1318,6 +1318,8 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 .shares-page--debts-redesign {
   background: #f8f9fb;
+  --debts-page-column-width: min(1250px, calc(100vw - 120px));
+  --debts-page-inline-inset: max(60px, calc((100vw - 1250px) / 2));
 }
 
 /* Долги: фото-hero под меню — без белой полосы от spacer */
@@ -1330,7 +1332,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   position: relative;
   overflow: hidden;
   margin-top: 0;
-  padding: calc(env(safe-area-inset-top, 0px) + 124px) 16px 40px;
+  padding: calc(env(safe-area-inset-top, 0px) + 124px) var(--debts-page-inline-inset, 16px) 40px;
   background: #050505;
   color: #ffffff;
 }
@@ -1367,8 +1369,8 @@ html.site-footer-near .shares-floats > button.ai-button {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
+  max-width: var(--debts-page-column-width, 1320px);
+  margin: 0;
   box-sizing: border-box;
 }
 
@@ -1403,17 +1405,18 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 769px) {
   .debts-hero-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 136px) 24px 48px;
-  }
-
-  .debts-hero-scene__inner {
-    max-width: 1440px;
+    padding: calc(env(safe-area-inset-top, 0px) + 136px) var(--debts-page-inline-inset, 24px) 48px;
   }
 }
 
 @media (max-width: 768px) {
+  .shares-page--debts-redesign {
+    --debts-page-column-width: min(92vw, 420px);
+    --debts-page-inline-inset: calc((100vw - min(92vw, 420px)) / 2);
+  }
+
   .debts-hero-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 108px) 12px 24px;
+    padding: calc(env(safe-area-inset-top, 0px) + 108px) var(--debts-page-inline-inset, 12px) 24px;
   }
 
   .debts-hero-scene__header {
@@ -1545,6 +1548,24 @@ html.site-footer-near .shares-floats > button.ai-button {
   padding-top: 24px;
 }
 
+.shares-page--debts-redesign .shares-container--debts-main {
+  width: var(--debts-page-column-width);
+  max-width: 1250px;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+.shares-page--debts-redesign .auction-cta-cards {
+  padding-bottom: clamp(2rem, 4vw, 2.75rem);
+}
+
+.shares-page--debts-redesign .auction-cta-cards__inner {
+  width: var(--debts-page-column-width);
+  max-width: 1250px;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
 /* Листинг с фильтрами — Долги и Доли */
 .shares-page .shares-listing-shell {
   width: 100%;
@@ -1593,7 +1614,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 769px) {
   .shares-page--catalog .shares-container,
-  .shares-page--debts .shares-container {
+  .shares-page--debts:not(.shares-page--debts-redesign) .shares-container {
     max-width: 1440px;
     padding-left: 24px;
     padding-right: 24px;

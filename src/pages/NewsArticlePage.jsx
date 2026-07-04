@@ -162,16 +162,20 @@ export default function NewsArticlePage() {
       <div className="news-page news-page--article">
         <Header />
         <main className="news-article-page__main">
-          <div ref={stickyHeadRef} className="news-article-page__sticky-head">
-            <div ref={toolbarRef} className="news-article-page__toolbar">
-              <PageBackButton
-                className="news-article-page__back-btn"
-                onClick={goToNewsList}
-              />
+          <div ref={layoutRef} className="news-article-page__layout">
+            <div ref={stickyHeadRef} className="news-article-page__sticky-head">
+              <aside className="news-article-page__sidebar">
+                <div ref={toolbarRef} className="news-article-page__toolbar">
+                  <PageBackButton
+                    className="news-article-page__back-btn"
+                    onClick={goToNewsList}
+                  />
+                </div>
+              </aside>
             </div>
+            <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
+            <p className="news-article-page__status news-article-page__content">Загрузка…</p>
           </div>
-          <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
-          <p className="news-article-page__status">Загрузка…</p>
         </main>
       </div>
     )
@@ -189,15 +193,20 @@ export default function NewsArticlePage() {
       <main className="news-article-page__main">
         <div ref={layoutRef} className="news-article-page__layout">
           <div ref={stickyHeadRef} className="news-article-page__sticky-head">
-            <div ref={toolbarRef} className="news-article-page__toolbar">
-              <PageBackButton
-                className="news-article-page__back-btn"
-                onClick={goToNewsList}
-              />
-            </div>
+            <aside
+              className={`news-article-page__sidebar${
+                hasToc ? '' : ' news-article-page__sidebar--no-toc'
+              }`}
+              aria-label={hasToc ? 'Навигация по статье' : undefined}
+            >
+              <div ref={toolbarRef} className="news-article-page__toolbar">
+                <PageBackButton
+                  className="news-article-page__back-btn"
+                  onClick={goToNewsList}
+                />
+              </div>
 
-            {hasToc ? (
-              <aside className="news-article-page__toc" aria-label="Содержание">
+              {hasToc ? (
                 <div ref={tocPanelRef} className="news-article-page__toc-panel">
                   <h2 className="news-article-page__toc-title">Содержание</h2>
                   <nav ref={tocNavRef} className="news-article-page__toc-nav">
@@ -231,8 +240,8 @@ export default function NewsArticlePage() {
                     </ul>
                   </nav>
                 </div>
-              </aside>
-            ) : null}
+              ) : null}
+            </aside>
           </div>
 
           <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />

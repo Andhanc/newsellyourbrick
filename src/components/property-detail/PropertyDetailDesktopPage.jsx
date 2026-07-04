@@ -1,73 +1,50 @@
 import './PropertyDetailDesktopPage.css'
 
 /**
- * Десктопная страница объекта — единая логичная структура (≥961px).
- *
- * @param {{
- *   topBar?: import('react').ReactNode
- *   gallery?: import('react').ReactNode
- *   badges?: import('react').ReactNode
- *   title: string
- *   location?: string | null
- *   meta?: import('react').ReactNode
- *   highlights?: import('react').ReactNode
- *   sidebar: import('react').ReactNode
- *   sections?: Array<{ id: string, title: string, kicker?: string, content: import('react').ReactNode }>
- *   promos?: import('react').ReactNode
- *   afterSections?: import('react').ReactNode
- *   geoLinks?: import('react').ReactNode
- * }} props
+ * Desktop property page — clean layout, no legacy chrome.
  */
 export default function PropertyDetailDesktopPage({
-  topBar,
+  header,
   gallery,
-  badges,
   title,
-  location,
-  meta,
-  highlights,
+  subtitle,
+  stats,
+  toolbar,
   sidebar,
-  sections = [],
-  promos,
-  afterSections,
-  geoLinks,
+  children,
+  belowGrid,
+  footer,
 }) {
   return (
-    <div className="pdd-page property-detail-desktop-v4-root">
-      {topBar ? <div className="pdd-page__topbar">{topBar}</div> : null}
-
-      <div className="pdd-page__hero">{gallery}</div>
-
-      <div className="pdd-page__shell">
-        <main className="pdd-page__main">
-          <header className="pdd-page__intro">
-            {badges ? <div className="pdd-page__badges">{badges}</div> : null}
-            <h1 className="pdd-page__title">{title}</h1>
-            {location ? <p className="pdd-page__location">{location}</p> : null}
-            {meta ? <div className="pdd-page__meta">{meta}</div> : null}
-            {highlights ? <div className="pdd-page__highlights">{highlights}</div> : null}
-            {geoLinks ? <div className="pdd-page__geo">{geoLinks}</div> : null}
+    <div className="pdx-page property-detail-desktop-v4-root">
+      <div className="pdx-page__container">
+        {(header || toolbar) ? (
+          <header className="pdx-page__topline">
+            <div className="pdx-page__topline-main">{header}</div>
+            {toolbar ? <div className="pdx-page__toolbar">{toolbar}</div> : null}
           </header>
+        ) : null}
 
-          <div className="pdd-page__sections">
-            {sections.map((section) =>
-              section.content ? (
-                <section key={section.id} id={section.id} className="pdd-section">
-                  {section.kicker ? (
-                    <p className="pdd-section__kicker">{section.kicker}</p>
-                  ) : null}
-                  <h2 className="pdd-section__title">{section.title}</h2>
-                  <div className="pdd-section__body">{section.content}</div>
-                </section>
-              ) : null,
-            )}
+        <div className="pdx-page__grid">
+          <div className="pdx-page__main">
+            <div className="pdx-page__gallery">{gallery}</div>
+
+            <div className="pdx-page__head">
+              <div className="pdx-page__head-copy">
+                {subtitle ? <p className="pdx-page__subtitle">{subtitle}</p> : null}
+                <h1 className="pdx-page__title">{title}</h1>
+                {stats ? <div className="pdx-page__stats">{stats}</div> : null}
+              </div>
+            </div>
+
+            <div className="pdx-page__content">{children}</div>
+            {footer ? <footer className="pdx-page__footer">{footer}</footer> : null}
           </div>
 
-          {promos ? <div className="pdd-page__promos">{promos}</div> : null}
-          {afterSections ? <div className="pdd-page__after">{afterSections}</div> : null}
-        </main>
+          <aside className="pdx-page__aside">{sidebar}</aside>
+        </div>
 
-        <aside className="pdd-page__aside">{sidebar}</aside>
+        {belowGrid ? <div className="pdx-page__below-grid">{belowGrid}</div> : null}
       </div>
     </div>
   )

@@ -27,6 +27,7 @@ import {
   FiMessageCircle,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
+import HeaderPinnedCatalogNav from '../components/HeaderPinnedCatalogNav'
 import {
   FaHome,
   FaHeart,
@@ -2738,13 +2739,7 @@ function MainPage() {
             >
               <FiSearch size={20} />
             </button>
-        <button 
-          type="button"
-          className="new-header__auction-btn"
-          onClick={() => navigate('/')}
-        >
-          {t('home')}
-        </button>
+        <HeaderPinnedCatalogNav />
         <button 
           className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
           onClick={() => {

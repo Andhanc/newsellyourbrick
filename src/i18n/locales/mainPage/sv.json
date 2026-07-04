@@ -728,6 +728,8 @@
   "calculator": "Smart investerarpanel",
   "downloadGooglePlay": "Ladda ner från Google Play",
   "selectLanguageAria": "Välj språk",
+  "headerCatalogNavToggleAria": "Öppna katalogavsnitt",
+  "headerCatalogNavPinAria": "Fäst «{{section}}» i menyn",
   "modalPriceLabel": "Pris (€)",
   "modalFrom": "Från",
   "modalTo": "Till",
