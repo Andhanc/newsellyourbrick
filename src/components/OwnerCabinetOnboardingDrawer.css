@@ -192,12 +192,12 @@
   margin: 0 0.06em;
   padding: 0.08em 0.52em 0.14em;
   border-radius: 999px;
-  background: var(--oc-gradient-brand, linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%));
+  background: var(--oc-gradient-brand, linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%));
   color: #ffffff;
   font-weight: 800;
   line-height: 1.05;
   box-shadow:
-    0 10px 24px var(--oc-tiffany-ring, rgba(10, 186, 181, 0.28)),
+    0 10px 24px var(--oc-tiffany-ring, rgba(0, 153, 169, 0.28)),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transform: rotate(-2deg);
 }

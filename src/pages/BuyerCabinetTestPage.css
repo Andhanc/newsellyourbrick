@@ -1,7 +1,7 @@
 /* Страница-макет кошелька (тест): изоляция стилей, не трогаем Profile.css */
 .buyer-wallet-test-page {
-  /* «Тиффани» / бирюза кабинета (#0ABAB5 — как в основном UI) */
-  --bwt-blue: #0abab5;
+  /* «Тиффани» / бирюза кабинета (#0099A9 — как в основном UI) */
+  --bwt-blue: #0099A9;
   --bwt-blue-soft: #e4f7f6;
   --bwt-text: #1a1a1a;
   --bwt-muted: #8a94a6;
@@ -257,7 +257,7 @@
 .bwt-identity-panel__avatar-wrap .bwt-avatar {
   width: 64px;
   height: 64px;
-  box-shadow: 0 4px 18px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 4px 18px rgba(0, 153, 169, 0.22);
 }
 
 .bwt-identity-panel__intro {
@@ -300,7 +300,7 @@
 }
 
 .bwt-identity-chip__value {
-  color: #0d9488;
+  color: #007580;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -311,9 +311,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(10, 186, 181, 0.18) 20%,
-    rgba(10, 186, 181, 0.22) 50%,
-    rgba(10, 186, 181, 0.18) 80%,
+    rgba(0, 153, 169, 0.18) 20%,
+    rgba(0, 153, 169, 0.22) 50%,
+    rgba(0, 153, 169, 0.18) 80%,
     transparent 100%
   );
 }
@@ -387,7 +387,7 @@
 
 .bwt-subscription-card--plan-starter .bwt-subscription-card__icon-wrap {
   background: linear-gradient(145deg, #9ae8e2 0%, #58d6cd 70%, #45ccc3 100%);
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.3);
 }
 
 .bwt-subscription-card--plan-vip .bwt-subscription-card__icon-wrap {
@@ -409,7 +409,7 @@
 }
 
 .bwt-subscription-card--plan-starter:not(.bwt-subscription-card--embedded) {
-  border-color: rgba(10, 186, 181, 0.22);
+  border-color: rgba(0, 153, 169, 0.22);
   background: linear-gradient(165deg, rgba(232, 250, 249, 0.95) 0%, #ffffff 42%, #fafefe 100%);
 }
 
@@ -424,7 +424,7 @@
 }
 
 .bwt-subscription-card--embedded.bwt-subscription-card--plan-starter {
-  border-color: rgba(10, 186, 181, 0.2);
+  border-color: rgba(0, 153, 169, 0.2);
   background: linear-gradient(145deg, rgba(232, 250, 249, 0.65) 0%, rgba(255, 255, 255, 0.92) 55%, rgba(250, 254, 254, 0.88) 100%);
 }
 
@@ -448,7 +448,7 @@
 }
 
 .bwt-subscription-card--plan-starter .bwt-subscription-eyebrow {
-  color: #0d9488;
+  color: #007580;
 }
 
 .bwt-subscription-card--plan-vip .bwt-subscription-eyebrow {
@@ -510,7 +510,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d9488;
+  color: #007580;
 }
 
 .bwt-subscription-features__check svg {
@@ -568,13 +568,13 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(10, 186, 181, 0.12);
-  color: #0d9488;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007580;
 }
 
 .bwt-subscription-card--plan-starter .bwt-subscription-status-pill {
-  background: rgba(10, 186, 181, 0.14);
-  color: #0f766e;
+  background: rgba(0, 153, 169, 0.14);
+  color: #00605a;
 }
 
 .bwt-subscription-card--plan-vip .bwt-subscription-status-pill {
@@ -627,7 +627,7 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: linear-gradient(135deg, #7ee0da 0%, #42c9c2 100%);
   box-shadow:
-    0 4px 14px rgba(10, 186, 181, 0.28),
+    0 4px 14px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition:
     transform 0.2s ease,
@@ -638,7 +638,7 @@
 .bwt-subscription-card--plan-starter .bwt-subscription-manage {
   background: linear-gradient(135deg, #7ee0da 0%, #42c9c2 100%);
   box-shadow:
-    0 4px 14px rgba(10, 186, 181, 0.28),
+    0 4px 14px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
@@ -700,7 +700,7 @@
 
 .bwt-zone--deal-types .bwt-zone__title {
   margin-bottom: 10px;
-  color: #0f766e;
+  color: #00605a;
   opacity: 0.88;
 }
 
@@ -875,7 +875,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #0abab5;
+  background: #0099A9;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -960,12 +960,12 @@ button.bwt-action--tile {
   box-sizing: border-box;
   overflow: hidden;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1001,12 +1001,12 @@ button.bwt-action--tile {
 }
 
 .bwt-action--tile:hover .bwt-action-tile {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -1107,18 +1107,18 @@ button.bwt-action--tile {
  * аукцион — тиффани; доли — голубой; долги — жёлто-оранжевый.
  */
 .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--investor {
-  border-color: rgba(10, 186, 181, 0.42);
+  border-color: rgba(0, 153, 169, 0.42);
 }
 
 .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--investor .frosted-glass-card__icon-wrap {
   background: linear-gradient(145deg, #9ae8e2 0%, #76e0d8 35%, #58d6cd 70%, #45ccc3 100%);
-  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.28);
 }
 
 .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--investor {
   background: linear-gradient(135deg, #7ee0da 0%, #5dd5cf 40%, #42c9c2 100%);
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.26),
+    0 4px 16px rgba(0, 153, 169, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
     inset 0 -1px 0 rgba(8, 120, 115, 0.12);
   color: #fff;
@@ -1127,7 +1127,7 @@ button.bwt-action--tile {
 
 .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--investor:hover {
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.32),
+    0 6px 20px rgba(0, 153, 169, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
     inset 0 -1px 0 rgba(8, 120, 115, 0.14);
   border-color: rgba(255, 255, 255, 0.55);
@@ -1619,7 +1619,7 @@ button.bwt-action--tile {
 .bwt-payments__amount {
   font-size: 16px;
   font-weight: 700;
-  color: #059669;
+  color: #007d8a;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
@@ -1673,12 +1673,12 @@ button.bwt-action--tile {
   position: relative;
   overflow: hidden;
   z-index: 0;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1715,12 +1715,12 @@ button.bwt-action--tile {
 }
 
 .bwt-legal-links__card:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);

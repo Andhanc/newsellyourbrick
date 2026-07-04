@@ -19,8 +19,8 @@ export type BidChartPoint = {
 
 type ChartType = 'line' | 'area'
 
-const EMERALD = '#10b981'
-const EMERALD_SOFT = '#34d399'
+const EMERALD = '#0099A9'
+const EMERALD_SOFT = '#33adbb'
 const DOWN = '#ef4444'
 const GRID_STROKE = 'rgba(15, 23, 42, 0.055)'
 const CURSOR_STROKE = 'rgba(100, 116, 139, 0.45)'
@@ -113,7 +113,7 @@ function LastPointDot(props: Record<string, unknown> & { dataLength: number }) {
   if (cx == null || cy == null || index !== dataLength - 1) return null
   return (
     <g>
-      <circle cx={cx} cy={cy} r={9} fill="rgba(16, 185, 129, 0.15)" />
+      <circle cx={cx} cy={cy} r={9} fill="rgba(0, 153, 169, 0.15)" />
       <circle cx={cx} cy={cy} r={5.5} fill={EMERALD} stroke="#0f172a" strokeWidth={1.75} />
     </g>
   )

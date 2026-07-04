@@ -12,7 +12,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .share-purchase-panel__preview-hint {
@@ -65,7 +65,7 @@
   margin-top: 2px;
   font-size: 0.5625rem;
   font-weight: 600;
-  color: #0abab5;
+  color: #0099A9;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -100,7 +100,7 @@
 }
 
 .share-purchase-panel__legend-item--mine .share-purchase-panel__legend-dot {
-  background: #0abab5;
+  background: #0099A9;
 }
 
 .share-purchase-panel__legend-item--others .share-purchase-panel__legend-dot {
@@ -176,7 +176,7 @@
   padding: 12px 16px;
   border: none;
   border-radius: 12px;
-  background: #0abab5;
+  background: #0099A9;
   color: #ffffff;
   font-family: 'Montserrat', system-ui, sans-serif;
   font-size: 0.875rem;
@@ -186,7 +186,7 @@
 }
 
 .share-purchase-panel__cta:hover:not(:disabled) {
-  background: #089a95;
+  background: #007d8a;
 }
 
 .share-purchase-panel__cta:disabled {
@@ -209,7 +209,7 @@
 }
 
 .share-purchase-panel__sold-icon {
-  color: #0abab5;
+  color: #0099A9;
   margin-bottom: 8px;
 }
 

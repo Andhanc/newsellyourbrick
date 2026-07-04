@@ -19,14 +19,14 @@
 }
 
 .page-breadcrumbs__link {
-  color: #0d9488;
+  color: #007580;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 .page-breadcrumbs__link:hover {
-  color: #0f766e;
+  color: #00605a;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -43,7 +43,7 @@
   font-weight: 500;
 }
 
-/* Тиффани (#81D8D0 / #0ABAB5), без «изумрудных» ссылок как у дефолтных крошек */
+/* Тиффани (#81D8D0 / #0099A9), без «изумрудных» ссылок как у дефолтных крошек */
 .page-breadcrumbs--tiffany .page-breadcrumbs__link {
   color: #81d8d0;
   text-decoration: none;
@@ -52,7 +52,7 @@
 }
 
 .page-breadcrumbs--tiffany .page-breadcrumbs__link:hover {
-  color: #0abab5;
+  color: #0099A9;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -62,7 +62,7 @@
 }
 
 .page-breadcrumbs--tiffany .page-breadcrumbs__current {
-  color: #0abab5;
+  color: #0099A9;
   font-weight: 600;
 }
 
@@ -85,7 +85,7 @@
   border-radius: 9999px;
   box-shadow:
     0 1px 2px rgba(15, 23, 42, 0.05),
-    0 6px 18px -8px rgba(10, 186, 181, 0.18);
+    0 6px 18px -8px rgba(0, 153, 169, 0.18);
 }
 
 .page-breadcrumbs--auction-strip .page-breadcrumbs__sep {

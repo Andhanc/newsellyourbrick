@@ -29,7 +29,7 @@
   font-size: clamp(2.5rem, 8vw, 3.5rem);
   font-weight: 800;
   line-height: 1;
-  color: #0d9488;
+  color: #007580;
   letter-spacing: -0.04em;
 }
 
@@ -66,19 +66,19 @@
 }
 
 .not-found-page__link:hover {
-  border-color: #0d9488;
-  color: #0f766e;
+  border-color: #007580;
+  color: #00605a;
 }
 
 .not-found-page__link--primary {
-  background: #0d9488;
-  border-color: #0d9488;
+  background: #007580;
+  border-color: #007580;
   color: #fff;
 }
 
 .not-found-page__link--primary:hover {
-  background: #0f766e;
-  border-color: #0f766e;
+  background: #00605a;
+  border-color: #00605a;
   color: #fff;
 }
 

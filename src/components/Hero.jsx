@@ -35,7 +35,9 @@ function measureCopyHeight(element) {
 
 const MOBILE_BREAKPOINT_PX = 768
 
-const Hero = ({ staticMobileCards = false }) => {
+const AUCTION_HERO_BG = '/images/sellyourbrick/about/about-category-auction.jpg'
+
+const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
   const { t } = useTranslation()
   const [isMobile, setIsMobile] = useState(
     () =>
@@ -48,6 +50,7 @@ const Hero = ({ staticMobileCards = false }) => {
   const copyRefs = useRef([])
 
   const isStaticMobile = staticMobileCards && isMobile
+  const isStaticCards = isStaticMobile
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
@@ -108,7 +111,7 @@ const Hero = ({ staticMobileCards = false }) => {
   }
 
   useEffect(() => {
-    if (isStaticMobile) return undefined
+    if (isStaticCards) return undefined
     if (expandedIndex === null || typeof window === 'undefined') return undefined
 
     const remeasure = () => {
@@ -122,7 +125,7 @@ const Hero = ({ staticMobileCards = false }) => {
 
     window.addEventListener('resize', remeasure, { passive: true })
     return () => window.removeEventListener('resize', remeasure)
-  }, [expandedIndex, isStaticMobile, t])
+  }, [expandedIndex, isStaticCards, t])
 
   const handleCopyTransitionEnd = (index) => (event) => {
     if (event.target !== event.currentTarget || event.propertyName !== 'max-height') return
@@ -130,12 +133,26 @@ const Hero = ({ staticMobileCards = false }) => {
   }
 
   return (
-    <section className="hero">
+    <section
+      className={['hero', auctionScene && 'hero--auction-scene'].filter(Boolean).join(' ')}
+    >
+      {auctionScene ? (
+        <>
+          <img className="hero--auction-scene__bg" src={AUCTION_HERO_BG} alt="" aria-hidden />
+          <div className="hero--auction-scene__overlay" aria-hidden />
+        </>
+      ) : null}
       <div className="hero-container">
+        {auctionScene ? (
+          <header className="hero-auction-header">
+            <h1 className="hero-auction-header__title">{t('auctionSectionTitle')}</h1>
+            <p className="hero-auction-header__lead">{t('auctionSectionSubtitle')}</p>
+          </header>
+        ) : null}
         <div
           className={[
             'hero-features',
-            isStaticMobile && 'hero-features--static-mobile',
+            isStaticCards && 'hero-features--static-mobile',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -149,13 +166,13 @@ const Hero = ({ staticMobileCards = false }) => {
               key={feature.titleKey}
               className={[
                 'hero-feature-card',
-                isStaticMobile && 'hero-feature-card--static',
-                !isStaticMobile && isExpanded && 'hero-feature-card--expanded',
-                !isStaticMobile && isCollapsing && 'hero-feature-card--collapsing',
+                isStaticCards && 'hero-feature-card--static',
+                !isStaticCards && isExpanded && 'hero-feature-card--expanded',
+                !isStaticCards && isCollapsing && 'hero-feature-card--collapsing',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              {...(!isStaticMobile
+              {...(!isStaticCards
                 ? {
                     onClick: () => handleToggle(index),
                     role: 'button',
@@ -179,7 +196,7 @@ const Hero = ({ staticMobileCards = false }) => {
               </div>
               <div className="hero-feature-content">
                 <h3>{t(feature.titleKey)}</h3>
-                {!isStaticMobile ? (
+                {!isStaticCards ? (
                   <div
                     ref={(el) => {
                       copyRefs.current[index] = el

@@ -12691,8 +12691,9 @@ app.get('/api/properties/:id', async (req, res) => {
     }
     
     // Проверяем резервацию объекта
-    console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${id}`);
-    const reservationInfo = await propertyQueries.isReserved(id);
+    const propertyId = Number(property.id);
+    console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${propertyId}`);
+    const reservationInfo = await propertyQueries.isReserved(propertyId);
     console.log(`🔍 GET /api/properties/:id - Результат проверки резервации:`, reservationInfo);
     
     formatted.is_reserved = reservationInfo.isReserved || false;
@@ -12708,7 +12709,7 @@ app.get('/api/properties/:id', async (req, res) => {
         const tr = await getPrisma().property_translations.findUnique({
           where: {
             property_id_property_table_lang_code: {
-              property_id: Number(id),
+              property_id: propertyId,
               property_table: String(table),
               lang_code: String(lang),
             },

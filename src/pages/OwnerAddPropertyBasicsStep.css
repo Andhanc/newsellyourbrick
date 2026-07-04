@@ -13,7 +13,7 @@
 .oap-basics-step__rows > .oap-basics-step__row:first-child {
   margin-top: 28px;
   padding-top: 28px;
-  border-top: 1px solid rgba(10, 186, 181, 0.28);
+  border-top: 1px solid rgba(0, 153, 169, 0.28);
 }
 
 .oap-basics-step__row {
@@ -26,7 +26,7 @@
 .oap-basics-step__row:not(:first-child) {
   margin-top: 24px;
   padding-top: 28px;
-  border-top: 1px solid rgba(10, 186, 181, 0.28);
+  border-top: 1px solid rgba(0, 153, 169, 0.28);
 }
 
 .oap-basics-step__row--split {
@@ -66,9 +66,9 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #fff;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   border: none;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.22);
 }
 
 .oap-basics-step__section-meta {
@@ -148,12 +148,12 @@
 .oap-basics-type-card:hover {
   border-color: var(--oap-primary-ring);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(10, 186, 181, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.08);
 }
 
 .oap-basics-type-card--active {
   border-color: var(--oap-primary);
-  background: rgba(10, 186, 181, 0.06);
+  background: rgba(0, 153, 169, 0.06);
   box-shadow: 0 0 0 3px var(--oap-primary-ring);
 }
 
@@ -170,7 +170,7 @@
 }
 
 .oap-basics-type-card--active .oap-basics-type-card__icon {
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   color: #fff;
 }
 
@@ -496,8 +496,8 @@
 
 .oap-basics-count-picker__option:focus-visible {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.25);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 2px rgba(0, 153, 169, 0.25);
 }
 
 .oap-basics-count-picker__error {
@@ -545,7 +545,7 @@
   .oap-basics-step__rows > .oap-basics-step__row:first-child {
     margin-top: 20px;
     padding-top: 22px;
-    border-top: 1px solid rgba(10, 186, 181, 0.28);
+    border-top: 1px solid rgba(0, 153, 169, 0.28);
   }
 
   .oap-basics-step__card {
@@ -574,7 +574,7 @@
   .oap-basics-step__section-head {
     padding-bottom: 12px;
     margin-bottom: 2px;
-    border-bottom: 1px solid rgba(10, 186, 181, 0.18);
+    border-bottom: 1px solid rgba(0, 153, 169, 0.18);
   }
 
   .oap-basics-step__section-title {

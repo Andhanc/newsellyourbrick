@@ -121,7 +121,7 @@
 
 .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--active {
   border-color: var(--oap-primary);
-  background: rgba(10, 186, 181, 0.06);
+  background: rgba(0, 153, 169, 0.06);
   box-shadow: 0 0 0 3px var(--oap-primary-ring);
 }
 
@@ -136,7 +136,7 @@
 }
 
 .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--active .oap-listing-step__mode-icon {
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   color: #fff;
 }
 
@@ -195,7 +195,7 @@
   font-size: 12px;
   line-height: 1.4;
   color: var(--oap-primary-dark);
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
   border: 1px solid var(--oap-primary-ring);
   border-radius: 10px;
 }
@@ -210,17 +210,17 @@
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__card {
   max-width: 520px;
-  border: 1px solid rgba(10, 186, 181, 0.18);
+  border: 1px solid rgba(0, 153, 169, 0.18);
   border-radius: 14px;
-  background: linear-gradient(165deg, rgba(10, 186, 181, 0.07) 0%, #fff 42%);
-  box-shadow: 0 4px 18px rgba(10, 186, 181, 0.08);
+  background: linear-gradient(165deg, rgba(0, 153, 169, 0.07) 0%, #fff 42%);
+  box-shadow: 0 4px 18px rgba(0, 153, 169, 0.08);
   overflow: hidden;
 }
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__toggle-row {
   padding: 14px 16px;
   gap: 12px;
-  border-bottom: 1px solid rgba(10, 186, 181, 0.12);
+  border-bottom: 1px solid rgba(0, 153, 169, 0.12);
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -231,12 +231,12 @@
   border-radius: 10px;
   color: var(--oap-primary-dark);
   background: var(--oap-primary-soft);
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  border: 1px solid rgba(0, 153, 169, 0.2);
 }
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded.oap-testdrive-step--on .oap-testdrive-step__toggle-icon,
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded:has(.oap-testdrive-step__switch--on) .oap-testdrive-step__toggle-icon {
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   color: #fff;
   border-color: transparent;
 }
@@ -280,7 +280,7 @@
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__price-card:focus-within {
   border-color: var(--oap-primary);
-  background: rgba(10, 186, 181, 0.04);
+  background: rgba(0, 153, 169, 0.04);
   box-shadow: 0 0 0 3px var(--oap-primary-ring);
 }
 
@@ -289,13 +289,13 @@
   height: 34px;
   color: var(--oap-primary-dark);
   background: var(--oap-primary-soft);
-  border-color: rgba(10, 186, 181, 0.2);
+  border-color: rgba(0, 153, 169, 0.2);
 }
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__price-icon--shield {
   color: #0e7490;
-  background: rgba(10, 186, 181, 0.1);
-  border-color: rgba(10, 186, 181, 0.22);
+  background: rgba(0, 153, 169, 0.1);
+  border-color: rgba(0, 153, 169, 0.22);
 }
 
 .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__price-label {

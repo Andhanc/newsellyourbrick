@@ -4,8 +4,8 @@
   --invest-footer-ink-soft: #475569;
   --invest-footer-ink-muted: #64748b;
   --invest-footer-line: #e2e8f0;
-  --invest-footer-tiffany: #0abab5;
-  --invest-footer-tiffany-dark: #089a95;
+  --invest-footer-tiffany: #0099A9;
+  --invest-footer-tiffany-dark: #007d8a;
 
   position: relative;
   background: var(--invest-footer-surface);
@@ -123,7 +123,7 @@
 }
 
 .invest-footer__social:hover {
-  border-color: rgba(10, 186, 181, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   color: var(--invest-footer-tiffany);
 }
 
@@ -175,8 +175,8 @@
   margin: clamp(28px, 3.6dvh, 44px) 0;
   padding: clamp(22px, 2.8vw, 32px);
   border-radius: 16px;
-  background: #f0fdfa;
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  background: #f0fafb;
+  border: 1px solid rgba(0, 153, 169, 0.22);
 }
 
 .invest-footer__cta-title {

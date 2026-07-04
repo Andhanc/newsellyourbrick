@@ -35,7 +35,7 @@
   width: 100%;
   background-color: var(--oc-surface-warm);
   background-image:
-    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
     var(--oc-gradient-page);
   color: var(--otc-text);
@@ -72,8 +72,8 @@
   flex-direction: column;
   padding: 24px 12px 20px;
   background: linear-gradient(180deg, #ffffff 0%, #fafffe 100%);
-  border-right: 1px solid rgba(10, 186, 181, 0.08);
-  box-shadow: 18px 0 42px rgba(10, 186, 181, 0.045);
+  border-right: 1px solid rgba(0, 153, 169, 0.08);
+  box-shadow: 18px 0 42px rgba(0, 153, 169, 0.045);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -111,9 +111,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(10, 186, 181, 0.2) 8%,
-    rgba(10, 186, 181, 0.36) 50%,
-    rgba(10, 186, 181, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -201,8 +201,8 @@
 }
 
 .otc-nav__item:hover {
-  background: rgba(10, 186, 181, 0.05);
-  border-color: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.05);
+  border-color: rgba(0, 153, 169, 0.08);
   color: #334155;
   transform: translateY(-1px);
 }
@@ -212,14 +212,14 @@
   background: var(--otc-gradient-active);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 16px 30px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 16px 30px rgba(0, 153, 169, 0.24);
 }
 
 .otc-nav__item--active:hover {
   background: var(--otc-gradient-active);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 16px 30px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 16px 30px rgba(0, 153, 169, 0.24);
 }
 
 .otc-nav__badge {
@@ -254,14 +254,14 @@
   background: linear-gradient(135deg, #47d9d5 0%, #328bd1 48%, #5134df 100%);
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 22px 42px rgba(37, 99, 235, 0.18), 0 16px 32px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 22px 42px rgba(37, 99, 235, 0.18), 0 16px 32px rgba(0, 153, 169, 0.22);
   isolation: isolate;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .otc-vip-promo:hover {
   transform: translateY(-3px);
-  box-shadow: 0 28px 52px rgba(37, 99, 235, 0.22), 0 20px 38px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 28px 52px rgba(37, 99, 235, 0.22), 0 20px 38px rgba(0, 153, 169, 0.24);
 }
 
 .otc-vip-promo:active {
@@ -328,7 +328,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d9488;
+  color: #007580;
   font-style: normal;
   font-size: 12px;
   font-weight: 800;
@@ -357,13 +357,13 @@
 
 .otc-btn--white {
   background: #fff;
-  color: #0d9488;
+  color: #007580;
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
 }
 
 .otc-btn--white:hover {
-  background: #f0fdfa;
+  background: #f0fafb;
 }
 
 @media (min-width: 901px) {

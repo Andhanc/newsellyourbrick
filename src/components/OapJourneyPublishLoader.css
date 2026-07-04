@@ -29,9 +29,9 @@
   padding: 28px 32px;
   border-radius: 22px;
   background: #ffffff;
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   box-shadow:
-    0 16px 40px rgba(10, 186, 181, 0.1),
+    0 16px 40px rgba(0, 153, 169, 0.1),
     0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
@@ -39,8 +39,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 3px solid rgba(10, 186, 181, 0.18);
-  border-top-color: #0abab5;
+  border: 3px solid rgba(0, 153, 169, 0.18);
+  border-top-color: #0099A9;
   animation: oap-journey-publish-loader-spin 0.75s linear infinite;
 }
 

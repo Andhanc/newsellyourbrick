@@ -70,7 +70,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #0ABAB5;
+  border-color: #0099A9;
 }
 
 .search-clear {
@@ -184,7 +184,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
   border-radius: 10px;
   font-size: 12px;
@@ -258,39 +258,39 @@
 }
 
 .type-button:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.9) 0%, rgba(8, 154, 149, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.9) 0%, rgba(0, 125, 138, 0.9) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   color: white;
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 
-    0 4px 20px rgba(10, 186, 181, 0.4),
+    0 4px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
 .type-button.active {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   color: white;
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 
-    0 4px 20px rgba(10, 186, 181, 0.5), 
-    0 0 0 3px rgba(10, 186, 181, 0.1),
+    0 4px 20px rgba(0, 153, 169, 0.5), 
+    0 0 0 3px rgba(0, 153, 169, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
 .type-button.active:hover {
-  background: linear-gradient(135deg, rgba(8, 154, 149, 0.95) 0%, rgba(7, 122, 118, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 125, 138, 0.95) 0%, rgba(7, 122, 118, 0.95) 100%);
   backdrop-filter: blur(30px) saturate(220%);
   -webkit-backdrop-filter: blur(30px) saturate(220%);
   box-shadow: 
-    0 6px 25px rgba(10, 186, 181, 0.6), 
-    0 0 0 3px rgba(10, 186, 181, 0.15),
+    0 6px 25px rgba(0, 153, 169, 0.6), 
+    0 0 0 3px rgba(0, 153, 169, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -332,7 +332,7 @@ a.property-card {
 
 .property-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(10, 186, 181, 0.28);
+  border-color: rgba(0, 153, 169, 0.28);
   box-shadow: var(--site-card-shadow-hover);
 }
 
@@ -379,13 +379,13 @@ a.property-card {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ccfbf1;
+  color: #e6f6f8;
   background: linear-gradient(145deg, #1e293b 0%, #0f172a 48%, #020617 100%);
   box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(10, 186, 181, 0.45),
+    0 0 0 1px rgba(0, 153, 169, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(10, 186, 181, 0.42);
+  border: 1px solid rgba(0, 153, 169, 0.42);
   pointer-events: auto;
   cursor: default;
   -webkit-tap-highlight-color: transparent;
@@ -395,7 +395,7 @@ a.property-card {
   opacity: 0.85;
 }
 
-/* Мобильный аукцион: VIP «закрытый клуб» — тёмно-серый/чёрный + акцент тиффани (#0ABAB5), перелив + «Перейти». */
+/* Мобильный аукцион: VIP «закрытый клуб» — тёмно-серый/чёрный + акцент тиффани (#0099A9), перелив + «Перейти». */
 .property-club-mobile-hero {
   position: absolute;
   left: 8px;
@@ -414,10 +414,10 @@ a.property-card {
   );
   background-size: 200% 200%;
   animation: propertyClubMobileHeroBg 5s ease-in-out infinite;
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
   box-shadow:
     0 4px 22px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(10, 186, 181, 0.12),
+    0 0 0 1px rgba(0, 153, 169, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
@@ -497,8 +497,8 @@ a.property-card {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #042f2e;
-  background: linear-gradient(145deg, #99f6e4 0%, #5eead4 28%, #0ABAB5 62%, #0f766e 100%);
+  color: #003d44;
+  background: linear-gradient(145deg, #cce9ed 0%, #5eead4 28%, #0099A9 62%, #00605a 100%);
   box-shadow:
     0 2px 10px rgba(0, 0, 0, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -524,7 +524,7 @@ a.property-card {
   letter-spacing: 0.02em;
   cursor: pointer;
   color: #f8fafc;
-  background: linear-gradient(180deg, #14b8a6 0%, #0ABAB5 38%, #0d9488 100%);
+  background: linear-gradient(180deg, #33adbb 0%, #0099A9 38%, #007580 100%);
   box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -676,12 +676,12 @@ a.property-card {
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0abab5 0%, #089a96 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
   text-shadow: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -689,7 +689,7 @@ a.property-card {
 .property-auction-ended-overlay__result-link:hover {
   color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.34);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.34);
 }
 
 @keyframes pulse {
@@ -707,7 +707,7 @@ a.property-card {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
   padding: 6px 12px;
   border-radius: 4px;
@@ -1184,12 +1184,12 @@ a.property-card {
 }
 
 .property-icon-buy:hover svg {
-  color: #0ABAB5;
+  color: #0099A9;
   transform: scale(1.1);
 }
 
 .property-icon-testdrive:hover svg {
-  color: #0ABAB5;
+  color: #0099A9;
   transform: scale(1.1);
 }
 
@@ -1315,7 +1315,7 @@ a.property-card {
 .property-card-buy-now-winner {
   font-size: 12px;
   font-weight: 600;
-  color: #0f766e;
+  color: #00605a;
   margin: 2px 0 10px;
   line-height: 1.35;
 }
@@ -1376,18 +1376,18 @@ a.property-card {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(10, 186, 181, 0.08);
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  background: rgba(0, 153, 169, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.22);
   border-radius: 6px;
   font-size: 13px;
-  color: #0f766e;
+  color: #00605a;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .property-specs--auction .spec-item:hover {
-  background: rgba(10, 186, 181, 0.12);
-  border-color: rgba(10, 186, 181, 0.36);
+  background: rgba(0, 153, 169, 0.12);
+  border-color: rgba(0, 153, 169, 0.36);
   transform: translateY(-1px);
 }
 
@@ -1429,8 +1429,8 @@ a.property-card {
   justify-content: space-between;
   align-items: center;
   padding: 8px 10px;
-  background: rgba(10, 186, 181, 0.07);
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  background: rgba(0, 153, 169, 0.07);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 12px;
   margin-bottom: 6px;
   flex-shrink: 0;
@@ -1484,12 +1484,12 @@ a.property-card {
 }
 
 .property-actions .btn-primary {
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
 }
 
 .property-actions .btn-primary:hover {
-  background: #089a95;
+  background: #007d8a;
 }
 
 /* Эффект жидкого стекла для кнопки "Сделать ставку" */
@@ -1497,7 +1497,7 @@ a.property-card {
   padding: 10px 16px;
   min-height: 44px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -1514,7 +1514,7 @@ a.property-card {
   position: relative;
   overflow: hidden;
   box-shadow: 
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   font-family: inherit;
@@ -1558,12 +1558,12 @@ a.property-card {
 }
 
 .property-actions .btn-liquid-glass:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow: 
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -1648,12 +1648,12 @@ a.property-card {
 
 .property-actions .btn-secondary {
   background: #fff;
-  color: #0ABAB5;
-  border: 2px solid #0ABAB5;
+  color: #0099A9;
+  border: 2px solid #0099A9;
 }
 
 .property-actions .btn-secondary:hover {
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
 }
 
@@ -1667,7 +1667,7 @@ a.property-card {
 .load-more-button {
   background: none;
   border: none;
-  color: #0ABAB5;
+  color: #0099A9;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -1679,8 +1679,8 @@ a.property-card {
 }
 
 .load-more-button:hover {
-  color: #089a95;
-  text-decoration-color: #089a95;
+  color: #007d8a;
+  text-decoration-color: #007d8a;
 }
 
 .no-results {
@@ -1800,10 +1800,10 @@ a.property-card {
   }
 
   .search-filters-bar .search-box:focus-within {
-    border-color: rgba(10, 186, 181, 0.55);
+    border-color: rgba(0, 153, 169, 0.55);
     box-shadow:
-      0 2px 10px rgba(10, 186, 181, 0.12),
-      0 0 0 3px rgba(10, 186, 181, 0.16);
+      0 2px 10px rgba(0, 153, 169, 0.12),
+      0 0 0 3px rgba(0, 153, 169, 0.16);
   }
 
   .search-filters-bar .search-icon {
@@ -2581,7 +2581,7 @@ a.property-card {
   background: linear-gradient(
     120deg,
     transparent 30%,
-    rgba(10, 186, 181, 0.12) 50%,
+    rgba(0, 153, 169, 0.12) 50%,
     transparent 70%
   );
   background-size: 200% 100%;
@@ -2595,7 +2595,7 @@ a.property-card {
     90deg,
     #e8edf2 0%,
     #eef2f6 45%,
-    rgba(10, 186, 181, 0.1) 50%,
+    rgba(0, 153, 169, 0.1) 50%,
     #eef2f6 55%,
     #e8edf2 100%
   );
@@ -2830,8 +2830,8 @@ a.property-card {
   .auction-desktop-layout-loader__spinner {
     width: 36px;
     height: 36px;
-    border: 3px solid rgba(10, 186, 181, 0.18);
-    border-top-color: #0abab5;
+    border: 3px solid rgba(0, 153, 169, 0.18);
+    border-top-color: #0099A9;
     border-radius: 50%;
     animation: auction-desktop-layout-spin 0.75s linear infinite;
   }
@@ -2882,7 +2882,7 @@ a.property-card {
     border: 1.5px solid rgba(15, 23, 42, 0.1);
     border-radius: 12px;
     background: #ffffff;
-    color: #0abab5;
+    color: #0099A9;
     cursor: pointer;
     transition:
       border-color 0.2s ease,
@@ -2893,9 +2893,9 @@ a.property-card {
   }
 
   .auction-desktop-filters-toggle:hover {
-    border-color: rgba(10, 186, 181, 0.45);
-    background: rgba(10, 186, 181, 0.08);
-    box-shadow: 0 4px 14px rgba(10, 186, 181, 0.14);
+    border-color: rgba(0, 153, 169, 0.45);
+    background: rgba(0, 153, 169, 0.08);
+    box-shadow: 0 4px 14px rgba(0, 153, 169, 0.14);
   }
 
   .search-filters-bar--auction-desktop .search-box {
@@ -2910,8 +2910,8 @@ a.property-card {
   }
 
   .search-filters-bar--auction-desktop .search-input:focus {
-    border-color: #0abab5;
-    box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.16);
+    border-color: #0099A9;
+    box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.16);
   }
 
   .property-list--auction-desktop .properties-grid {
@@ -2930,13 +2930,13 @@ a.property-card {
   }
 
   .property-list--auction-desktop .load-more-button {
-    background: #0abab5;
-    border-color: #0abab5;
+    background: #0099A9;
+    border-color: #0099A9;
   }
 
   .property-list--auction-desktop .load-more-button:hover {
-    background: #089a96;
-    border-color: #089a96;
+    background: #007d8a;
+    border-color: #007d8a;
   }
 
   .auction-desktop-pagination {
@@ -2981,16 +2981,16 @@ a.property-card {
 
   .auction-desktop-pagination__page:hover:not(.auction-desktop-pagination__page--active),
   .auction-desktop-pagination__arrow:hover:not(:disabled) {
-    border-color: rgba(10, 186, 181, 0.4);
-    color: #0f766e;
-    background: rgba(10, 186, 181, 0.06);
+    border-color: rgba(0, 153, 169, 0.4);
+    color: #00605a;
+    background: rgba(0, 153, 169, 0.06);
   }
 
   .auction-desktop-pagination__page--active {
-    border-color: #0abab5;
-    background: #0abab5;
+    border-color: #0099A9;
+    background: #0099A9;
     color: #ffffff;
-    box-shadow: 0 6px 18px rgba(10, 186, 181, 0.28);
+    box-shadow: 0 6px 18px rgba(0, 153, 169, 0.28);
     cursor: default;
   }
 

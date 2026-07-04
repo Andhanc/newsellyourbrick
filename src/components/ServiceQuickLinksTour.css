@@ -21,9 +21,9 @@
 }
 
 .service-quick-links-tour__ring {
-  stroke: rgba(10, 186, 181, 0.95);
+  stroke: rgba(0, 153, 169, 0.95);
   stroke-width: 2.5;
-  filter: drop-shadow(0 0 6px rgba(10, 186, 181, 0.35));
+  filter: drop-shadow(0 0 6px rgba(0, 153, 169, 0.35));
 }
 
 .service-quick-links-tour__panel {
@@ -73,9 +73,9 @@
   font-family: 'Montserrat', system-ui, sans-serif;
   cursor: pointer;
   color: #ffffff;
-  background: linear-gradient(135deg, #5ec9c4 0%, #0abab5 48%, #089a96 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.4),
+    0 4px 16px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
@@ -90,7 +90,7 @@
 }
 
 .service-quick-links-tour__ok:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 2px;
 }
 

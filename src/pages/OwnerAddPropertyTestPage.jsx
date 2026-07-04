@@ -1896,10 +1896,10 @@ export default function OwnerAddPropertyTestPage() {
           <div className="success-modal" onClick={(e) => e.stopPropagation()}>
             <div className="success-modal__icon">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#0ABAB5" strokeWidth="2" />
+                <circle cx="12" cy="12" r="10" stroke="#0099A9" strokeWidth="2" />
                 <path
                   d="M8 12L11 15L16 9"
-                  stroke="#0ABAB5"
+                  stroke="#0099A9"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"

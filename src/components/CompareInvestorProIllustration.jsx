@@ -24,9 +24,9 @@ export default function CompareInvestorProIllustration({ className = '' }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="48" cy="112" r="4" fill="#0abab5" />
-      <circle cx="68" cy="84" r="4" fill="#0abab5" />
-      <circle cx="86" cy="98" r="4" fill="#0abab5" />
+      <circle cx="48" cy="112" r="4" fill="#0099A9" />
+      <circle cx="68" cy="84" r="4" fill="#0099A9" />
+      <circle cx="86" cy="98" r="4" fill="#0099A9" />
       <circle cx="112" cy="62" r="4" fill="#8b5cf6" />
       <circle cx="144" cy="112" r="5" fill="#7c3aed" />
       <rect x="118" y="36" width="56" height="40" rx="8" fill="url(#compare-inv-panel)" stroke="#a78bfa" strokeWidth="1.5" />
@@ -46,14 +46,14 @@ export default function CompareInvestorProIllustration({ className = '' }) {
       <path d="M48 58h20M48 66h14" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
       <path
         d="M92 44l8 8 14-14"
-        stroke="#0d9488"
+        stroke="#007580"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <defs>
         <linearGradient id="compare-inv-chart" x1="44" y1="110" x2="150" y2="60" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#53d8d3" />
+          <stop stopColor="#33adbb" />
           <stop offset="1" stopColor="#8b5cf6" />
         </linearGradient>
         <linearGradient id="compare-inv-panel" x1="118" y1="36" x2="174" y2="76" gradientUnits="userSpaceOnUse">

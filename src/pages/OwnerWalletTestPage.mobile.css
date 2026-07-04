@@ -464,7 +464,7 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(10, 186, 181, 0.32);
+    box-shadow: 0 6px 20px rgba(0, 153, 169, 0.32);
   }
 
   .owl-mob-withdraw-bar__btn:disabled {

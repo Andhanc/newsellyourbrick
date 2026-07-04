@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
-import DebtsPageHeader from '../components/DebtsPageHeader'
-import DebtsPageFilters from '../components/DebtsPageFilters'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
+import '../components/DebtsDesktopFilters.css'
+import AuctionListingSaleToggle from '../components/AuctionListingSaleToggle'
+import '../components/AuctionListingSaleToggle.css'
 import DebtsListingMeta from '../components/DebtsListingMeta'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from '../components/DebtsPropertyCard'
 import Header from '../components/Header'
@@ -31,7 +33,6 @@ import {
   getDebtsPriceBounds,
   getDebtsDebtBounds,
   getDebtsFilterOptions,
-  getDebtsPurchaseCounts,
   DEBTS_MOBILE_FILTER_ITEMS,
 } from '../utils/debtsPageFilters'
 import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
@@ -43,6 +44,7 @@ const AuctionMobileLayoutLazy = lazy(() => import('../components/ui/AuctionMobil
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
+const DEBTS_HERO_BG = '/images/sellyourbrick/about/about-category-debts.jpg'
 
 const Debts = () => {
   const { t } = useTranslation()
@@ -52,6 +54,7 @@ const Debts = () => {
   const [sortKey, setSortKey] = useState('newest')
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [debtsFilters, setDebtsFilters] = useState(EMPTY_DEBTS_FILTERS)
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const searchFiltersBarRef = useRef(null)
   const [apiDebts, setApiDebts] = useState([])
@@ -82,8 +85,10 @@ const Debts = () => {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  const isDebtsDesktop = !isMobile
+
   useEffect(() => {
-    if (!isMobile || !mobileFiltersOpen) return
+    if (!isMobile || !mobileFiltersOpen) return undefined
     const handlePointerDown = (e) => {
       if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
         setMobileFiltersOpen(false)
@@ -97,22 +102,61 @@ const Debts = () => {
     }
   }, [isMobile, mobileFiltersOpen])
 
-  const isDebtsDesktop = !isMobile
+  const debtsPropertyTypes = useMemo(
+    () =>
+      debtsFilters.propertyTypes?.length
+        ? debtsFilters.propertyTypes
+        : debtsFilters.propertyType !== 'все'
+          ? [debtsFilters.propertyType]
+          : [],
+    [debtsFilters.propertyTypes, debtsFilters.propertyType],
+  )
 
-  const setPropertyType = (propertyType) => {
-    setDebtsFilters((prev) => ({ ...prev, propertyType }))
+  const debtsRisks = useMemo(
+    () =>
+      debtsFilters.risks?.length
+        ? debtsFilters.risks
+        : debtsFilters.risk !== 'all'
+          ? [debtsFilters.risk]
+          : [],
+    [debtsFilters.risks, debtsFilters.risk],
+  )
+
+  const setDebtsPropertyTypes = (updater) => {
+    setDebtsFilters((prev) => {
+      const current =
+        prev.propertyTypes?.length
+          ? prev.propertyTypes
+          : prev.propertyType !== 'все'
+            ? [prev.propertyType]
+            : []
+      const next = typeof updater === 'function' ? updater(current) : updater
+      return { ...prev, propertyTypes: next, propertyType: 'все' }
+    })
   }
 
-  const setRiskFilter = (risk) => {
-    setDebtsFilters((prev) => ({ ...prev, risk }))
+  const setDebtsRisks = (updater) => {
+    setDebtsFilters((prev) => {
+      const current =
+        prev.risks?.length ? prev.risks : prev.risk !== 'all' ? [prev.risk] : []
+      const next = typeof updater === 'function' ? updater(current) : updater
+      return { ...prev, risks: next, risk: 'all' }
+    })
   }
 
-  const setMinPriceFilter = (minPrice) => {
-    setDebtsFilters((prev) => ({ ...prev, minPrice }))
+  const scrollToDebtsGrid = () => {
+    document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const setMaxPriceFilter = (maxPrice) => {
-    setDebtsFilters((prev) => ({ ...prev, maxPrice }))
+  const debtsSaleToggleMode =
+    !debtsFilters.showAuction && debtsFilters.showBuyNow ? 'buy_now' : 'all'
+
+  const handleDebtsSaleToggleChange = (mode) => {
+    setDebtsFilters((prev) =>
+      mode === 'buy_now'
+        ? { ...prev, showAuction: false, showBuyNow: true }
+        : { ...prev, showAuction: true, showBuyNow: true },
+    )
   }
 
   useEffect(() => {
@@ -275,10 +319,16 @@ const Debts = () => {
       дом: 'houses',
       коммерческая: 'commercial',
     }
+    const singleType =
+      debtsFilters.propertyTypes?.length === 1
+        ? debtsFilters.propertyTypes[0]
+        : debtsFilters.propertyType !== 'все'
+          ? debtsFilters.propertyType
+          : ''
     const path = buildCatalogCityPath({
       country: debtsFilters.country,
       city: debtsFilters.city,
-      typePlural: typeToCatalogPlural[debtsFilters.propertyType] || undefined,
+      typePlural: typeToCatalogPlural[singleType] || undefined,
       sale: 'debts',
     })
     if (path) navigate(path)
@@ -286,6 +336,7 @@ const Debts = () => {
     debtsFilters.country,
     debtsFilters.city,
     debtsFilters.propertyType,
+    debtsFilters.propertyTypes,
     navigate,
   ])
 
@@ -299,7 +350,6 @@ const Debts = () => {
 
   const riskStats = useMemo(() => getDebtsRiskStats(apiDebts), [apiDebts])
   const filterOptions = useMemo(() => getDebtsFilterOptions(apiDebts), [apiDebts])
-  const purchaseCounts = useMemo(() => getDebtsPurchaseCounts(apiDebts), [apiDebts])
 
   const openProperty = (property) => {
     const targetPath = getDebtsContextPropertyPath(property, {
@@ -326,9 +376,17 @@ const Debts = () => {
   return (
     <div className="shares-page shares-page--debts shares-page--debts-redesign">
       <Header />
-      <div className="shares-page__bg" />
-      <main className="shares-container">
-        <div className="shares-flip-cards shares-flip-cards--debts">
+      <section className="debts-hero-scene" aria-labelledby="debts-hero-title">
+        <img className="debts-hero-scene__bg" src={DEBTS_HERO_BG} alt="" aria-hidden />
+        <div className="debts-hero-scene__overlay" aria-hidden />
+        <div className="debts-hero-scene__inner">
+          <header className="debts-hero-scene__header">
+            <h1 id="debts-hero-title" className="debts-hero-scene__title">
+              {t('debtsTitle')}
+            </h1>
+            <p className="debts-hero-scene__lead">{t('debtsSectionSubtitle')}</p>
+          </header>
+          <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"
             icon={ShieldQuestionMark}
@@ -380,80 +438,123 @@ const Debts = () => {
             isFlipped={openRiskCard === 'low'}
             onFlipChange={(next) => setOpenRiskCard(next ? 'low' : null)}
           />
+          </div>
         </div>
+      </section>
 
-        <DebtsPageHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-
+      <main className="shares-container shares-container--debts-main">
         <div className="debts-page-body">
-          {isDebtsDesktop ? (
-            <div className="debts-page-layout">
-              <DebtsPageFilters
-                filters={debtsFilters}
-                onFiltersChange={setDebtsFilters}
-                priceBounds={priceBounds}
-                debtBounds={debtBounds}
-                riskStats={riskStats}
-                purchaseCounts={purchaseCounts}
-                filterOptions={filterOptions}
-              />
+          <div
+            className={
+              isDebtsDesktop
+                ? `shares-listing-shell${
+                    desktopFiltersOpen
+                      ? ' shares-listing-shell--with-filters'
+                      : ' shares-listing-shell--filters-hidden'
+                  }`
+                : 'shares-listing-shell'
+            }
+          >
+            <div
+              className={`${
+                isDebtsDesktop
+                  ? `shares-listing-layout auction-desktop-layout${
+                      desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
+                    }`
+                  : 'shares-listing-layout'
+              }`.trim()}
+            >
+              {isDebtsDesktop && desktopFiltersOpen ? (
+                <DebtsDesktopFilters
+                  propertyTypes={debtsPropertyTypes}
+                  setPropertyTypes={setDebtsPropertyTypes}
+                  risks={debtsRisks}
+                  setRisks={setDebtsRisks}
+                  locationOptions={filterOptions.locations}
+                  country={debtsFilters.country}
+                  city={debtsFilters.city}
+                  setCountry={(value) => setDebtsFilters((prev) => ({ ...prev, country: value }))}
+                  setCity={(value) => setDebtsFilters((prev) => ({ ...prev, city: value }))}
+                  minDebt={debtsFilters.minDebt}
+                  maxDebt={debtsFilters.maxDebt}
+                  setMinDebt={(value) => setDebtsFilters((prev) => ({ ...prev, minDebt: value }))}
+                  setMaxDebt={(value) => setDebtsFilters((prev) => ({ ...prev, maxDebt: value }))}
+                  minPrice={debtsFilters.minPrice}
+                  maxPrice={debtsFilters.maxPrice}
+                  setMinPrice={(value) => setDebtsFilters((prev) => ({ ...prev, minPrice: value }))}
+                  setMaxPrice={(value) => setDebtsFilters((prev) => ({ ...prev, maxPrice: value }))}
+                  debtBounds={debtBounds}
+                  priceBounds={priceBounds}
+                  riskStats={riskStats}
+                  onApply={scrollToDebtsGrid}
+                />
+              ) : null}
 
-              <div className="debts-page-layout__main">
-                <section className="debts-listing-section" aria-label={t('debtsTitle')}>
-                  <DebtsListingMeta
-                    total={filtered.length}
-                    sortKey={sortKey}
-                    onSortChange={setSortKey}
-                  />
-
-                  <div
-                    id="properties-grid"
-                    className="debts-listing-grid debts-listing-grid--grid"
-                    aria-busy={loadingDebts}
-                  >
-                  {loadingDebts
-                    ? Array.from({ length: 6 }, (_, i) => <DebtsPropertyCardSkeleton key={`sk-${i}`} />)
-                    : null}
-
-                  {!loadingDebts && filtered.length === 0 ? (
-                    <div className="debts-listing-empty">
-                      <p>{t('debtsEmpty')}</p>
-                    </div>
-                  ) : null}
-
-                  {!loadingDebts
-                    ? filtered.map((property) => (
-                        <DebtsPropertyCard
-                          key={auctionListingDedupeKey(property)}
-                          property={property}
-                          isFavorite={isPropertyLiked(property)}
-                          onFavoriteToggle={handleFavoriteToggle}
-                          href={getDebtsContextPropertyPath(property, {
-                            country: debtsFilters.country,
-                            city: debtsFilters.city,
-                          })}
-                          onOpen={openProperty}
-                        />
-                      ))
-                    : null}
-                  </div>
-                </section>
-              </div>
-            </div>
-          ) : (
-            <div className="shares-listing-shell">
-              <div className="shares-listing-layout">
-                <div className="shares-listing-layout__main">
-                  <div
-                    ref={searchFiltersBarRef}
-                    className={`search-filters-bar search-filters-bar--auction-mobile${
-                      mobileFiltersOpen
+              <div
+                className={`${
+                  isDebtsDesktop ? 'auction-desktop-layout__main' : 'shares-listing-layout__main'
+                }${
+                  isDebtsDesktop && !desktopFiltersOpen
+                    ? ' auction-desktop-layout__main--filters-hidden'
+                    : ''
+                }`.trim()}
+              >
+                <div className="auction-listing-search-stack">
+                <div
+                  ref={searchFiltersBarRef}
+                  className={`search-filters-bar${
+                    isDebtsDesktop ? ' search-filters-bar--auction-desktop' : ''
+                  }${
+                    !isDebtsDesktop ? ' search-filters-bar--auction-mobile' : ''
+                  }${
+                    !isDebtsDesktop
+                      ? mobileFiltersOpen
                         ? ' search-filters-bar--types-expanded'
                         : ' search-filters-bar--types-collapsed'
-                    }`}
-                  >
+                      : ''
+                  }`}
+                >
+                  {isDebtsDesktop ? (
+                    <button
+                      type="button"
+                      className="auction-desktop-filters-toggle"
+                      onClick={() => setDesktopFiltersOpen((open) => !open)}
+                      aria-label={
+                        desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
+                      }
+                      aria-expanded={desktopFiltersOpen}
+                    >
+                      {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                    </button>
+                  ) : null}
+                  <div className="search-box">
+                    <svg
+                      className="search-icon"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder={t('searchPlaceholderLong')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery ? (
+                      <button type="button" className="search-clear" onClick={() => setSearchQuery('')}>
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                  {!isDebtsDesktop ? (
                     <div className="filters-and-types-grid">
                       <button
                         type="button"
@@ -481,18 +582,34 @@ const Debts = () => {
                             type="button"
                             className={`type-button ${
                               item.kind === 'type'
-                                ? debtsFilters.propertyType === item.value
-                                  ? 'active'
-                                  : ''
-                                : debtsFilters.risk === item.value
+                                ? item.value === 'все'
+                                  ? debtsPropertyTypes.length === 0
+                                    ? 'active'
+                                    : ''
+                                  : debtsPropertyTypes.includes(item.value)
+                                    ? 'active'
+                                    : ''
+                                : debtsRisks.includes(item.value)
                                   ? 'active'
                                   : ''
                             }`}
                             onClick={() => {
                               if (item.kind === 'type') {
-                                setPropertyType(item.value)
+                                if (item.value === 'все') {
+                                  setDebtsPropertyTypes([])
+                                  return
+                                }
+                                setDebtsPropertyTypes((prev) =>
+                                  prev.includes(item.value)
+                                    ? prev.filter((value) => value !== item.value)
+                                    : [...prev, item.value],
+                                )
                               } else {
-                                setRiskFilter(debtsFilters.risk === item.value ? 'all' : item.value)
+                                setDebtsRisks((prev) =>
+                                  prev.includes(item.value)
+                                    ? prev.filter((value) => value !== item.value)
+                                    : [...prev, item.value],
+                                )
                               }
                             }}
                           >
@@ -501,10 +618,59 @@ const Debts = () => {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  ) : null}
+                </div>
+                <AuctionListingSaleToggle
+                  value={debtsSaleToggleMode}
+                  onChange={handleDebtsSaleToggleChange}
+                />
+                </div>
 
+                {isDebtsDesktop ? (
+                  <section className="debts-listing-section" aria-label={t('debtsTitle')}>
+                    <DebtsListingMeta
+                      total={filtered.length}
+                      sortKey={sortKey}
+                      onSortChange={setSortKey}
+                    />
+
+                    <div
+                      id="properties-grid"
+                      className="debts-listing-grid debts-listing-grid--grid"
+                      aria-busy={loadingDebts}
+                    >
+                      {loadingDebts
+                        ? Array.from({ length: 6 }, (_, i) => (
+                            <DebtsPropertyCardSkeleton key={`sk-${i}`} />
+                          ))
+                        : null}
+
+                      {!loadingDebts && filtered.length === 0 ? (
+                        <div className="debts-listing-empty">
+                          <p>{t('debtsEmpty')}</p>
+                        </div>
+                      ) : null}
+
+                      {!loadingDebts
+                        ? filtered.map((property) => (
+                            <DebtsPropertyCard
+                              key={auctionListingDedupeKey(property)}
+                              property={property}
+                              isFavorite={isPropertyLiked(property)}
+                              onFavoriteToggle={handleFavoriteToggle}
+                              href={getDebtsContextPropertyPath(property, {
+                                country: debtsFilters.country,
+                                city: debtsFilters.city,
+                              })}
+                              onOpen={openProperty}
+                            />
+                          ))
+                        : null}
+                    </div>
+                  </section>
+                ) : (
                   <div className="shares-grid" aria-busy={loadingDebts}>
-                    {loadingDebts && (
+                    {loadingDebts ? (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <div
                           className="properties-grid properties-grid--mobile-auction"
@@ -516,34 +682,34 @@ const Debts = () => {
                           />
                         </div>
                       </div>
-                    )}
+                    ) : null}
 
-                    {!loadingDebts && filtered.length === 0 && (
+                    {!loadingDebts && filtered.length === 0 ? (
                       <div className="shares-no-results">
                         <p>{t('debtsEmpty')}</p>
                       </div>
-                    )}
+                    ) : null}
 
-                    {!loadingDebts && filtered.length > 0 && isMobile ? (
+                    {!loadingDebts && filtered.length > 0 ? (
                       <div style={{ gridColumn: '1 / -1' }}>
-                        <div className="properties-grid properties-grid--mobile-auction">
-                          <Suspense fallback={<AuctionMobileListingSkeleton />}>
+                        <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
+                          <Suspense fallback={<AuctionMobileListingSkeleton debtsCards />}>
                             <AuctionMobileLayoutLazy
-                            properties={filtered}
-                            formatPrice={formatPrice}
-                            isFavorite={isPropertyLiked}
-                            onFavoriteToggle={handleFavoriteToggle}
-                            debtsCards
+                              properties={filtered}
+                              formatPrice={formatPrice}
+                              isFavorite={isPropertyLiked}
+                              onFavoriteToggle={handleFavoriteToggle}
+                              debtsCards
                             />
                           </Suspense>
                         </div>
                       </div>
                     ) : null}
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       </main>
       {showChatDock ? (

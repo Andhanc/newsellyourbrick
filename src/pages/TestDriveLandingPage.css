@@ -1,10 +1,10 @@
 .test-drive-landing {
   --test-drive-header-offset: 104px;
-  --td-tiffany: #0abab5;
-  --td-tiffany-dark: #089a95;
-  --td-tiffany-deep: #067a76;
-  --td-tiffany-soft: #f0fdfa;
-  --td-tiffany-ring: rgba(10, 186, 181, 0.28);
+  --td-tiffany: #4a99a8;
+  --td-tiffany-dark: #3d8493;
+  --td-tiffany-deep: #2f6773;
+  --td-tiffany-soft: #edf4f6;
+  --td-tiffany-ring: rgba(74, 153, 168, 0.28);
   min-height: 100dvh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(246, 250, 248, 0.92) 72%, #ffffff 100%),
@@ -721,7 +721,7 @@
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(19, 38, 45, 0.06) 0%, rgba(14, 36, 42, 0.58) 48%, rgba(11, 28, 36, 0.82) 100%),
-    linear-gradient(90deg, rgba(10, 186, 181, 0.55), rgba(255, 128, 110, 0.14));
+    linear-gradient(90deg, rgba(74, 153, 168, 0.55), rgba(255, 128, 110, 0.14));
 }
 
 .test-drive-next-card__icon {

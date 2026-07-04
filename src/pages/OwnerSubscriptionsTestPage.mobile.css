@@ -566,17 +566,17 @@
   }
 
   .ost-plan-card--current:not(.ost-plan-card--current-paid) {
-    border: 2px solid rgba(10, 186, 181, 0.34);
+    border: 2px solid rgba(0, 153, 169, 0.34);
     box-shadow:
-      0 0 0 3px rgba(10, 186, 181, 0.08),
-      0 12px 28px rgba(10, 186, 181, 0.12);
+      0 0 0 3px rgba(0, 153, 169, 0.08),
+      0 12px 28px rgba(0, 153, 169, 0.12);
   }
 
   .ost-plan-card--current-paid {
-    border: 2px solid rgba(10, 186, 181, 0.45);
+    border: 2px solid rgba(0, 153, 169, 0.45);
     box-shadow:
-      0 0 0 4px rgba(10, 186, 181, 0.1),
-      0 18px 44px rgba(10, 186, 181, 0.16);
+      0 0 0 4px rgba(0, 153, 169, 0.1),
+      0 18px 44px rgba(0, 153, 169, 0.16);
     padding-bottom: 26px !important;
   }
 
@@ -615,7 +615,7 @@
   }
 
   .ost-plan-card--current .ost-plan-feat-icon--inverted {
-    box-shadow: 0 4px 12px rgba(10, 186, 181, 0.24);
+    box-shadow: 0 4px 12px rgba(0, 153, 169, 0.24);
   }
 
   .ost-plan-card__name {
@@ -686,7 +686,7 @@
     grid-template-columns: 1fr;
     border: 1.5px solid #e5e7eb;
     border-radius: 18px;
-    box-shadow: 0 10px 28px rgba(10, 186, 181, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 153, 169, 0.1);
   }
 
   .ost-save-banner__visual {

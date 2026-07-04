@@ -37,7 +37,7 @@
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(10, 186, 181, 0.6) 0%,
+    rgba(0, 153, 169, 0.6) 0%,
     rgba(59, 130, 246, 0.35) 45%,
     rgba(148, 163, 184, 0.4) 100%
   );
@@ -56,7 +56,7 @@
   bottom: -7px;
   height: 20px;
   border-radius: 999px;
-  background: radial-gradient(ellipse at center, rgba(10, 186, 181, 0.22) 0%, rgba(10, 186, 181, 0) 72%);
+  background: radial-gradient(ellipse at center, rgba(0, 153, 169, 0.22) 0%, rgba(0, 153, 169, 0) 72%);
   filter: blur(6px);
   pointer-events: none;
 }
@@ -85,19 +85,19 @@
 }
 
 .property-search-filters-panel__chip:hover:not(:disabled):not(.is-active) {
-  border-color: rgba(10, 186, 181, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   background: linear-gradient(180deg, #ffffff 0%, #eff8f8 100%);
   color: #25324a;
   box-shadow:
-    0 4px 10px rgba(10, 186, 181, 0.14),
+    0 4px 10px rgba(0, 153, 169, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .property-search-filters-panel__chip.is-active {
-  background: #0abab5;
-  border-color: #0abab5;
+  background: #0099A9;
+  border-color: #0099A9;
   color: #ffffff;
-  box-shadow: 0 6px 14px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 6px 14px rgba(0, 153, 169, 0.28);
 }
 
 .property-search-filters-panel__chip:disabled {
@@ -142,8 +142,8 @@
 }
 
 .property-search-filters-panel__input:focus {
-  border-color: rgba(10, 186, 181, 0.75);
-  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.15);
+  border-color: rgba(0, 153, 169, 0.75);
+  box-shadow: 0 0 0 2px rgba(0, 153, 169, 0.15);
 }
 
 .property-search-filters-panel__input:disabled {
@@ -168,8 +168,8 @@
 
 .psf-currency-input-wrap.is-open {
   z-index: 40;
-  border-color: rgba(10, 186, 181, 0.75);
-  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.15);
+  border-color: rgba(0, 153, 169, 0.75);
+  box-shadow: 0 0 0 2px rgba(0, 153, 169, 0.15);
 }
 
 .psf-currency-button {
@@ -196,7 +196,7 @@
 
 .psf-currency-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.45);
+  box-shadow: 0 0 0 2px rgba(0, 153, 169, 0.45);
 }
 
 .psf-currency-chevron {
@@ -251,8 +251,8 @@
 
 .psf-currency-option:hover,
 .psf-currency-option.is-active {
-  background: rgba(10, 186, 181, 0.12);
-  color: #0f766e;
+  background: rgba(0, 153, 169, 0.12);
+  color: #00605a;
 }
 
 .property-search-filters-panel__button {
@@ -262,7 +262,7 @@
   border: none;
   grid-column: 1 / -1;
   padding: 0 14px;
-  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
@@ -270,7 +270,7 @@
   font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 6px 14px rgba(10, 186, 181, 0.3);
+  box-shadow: 0 6px 14px rgba(0, 153, 169, 0.3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -291,7 +291,7 @@
 
 .property-search-filters-panel__button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(10, 186, 181, 0.34);
+  box-shadow: 0 8px 18px rgba(0, 153, 169, 0.34);
 }
 
 .property-search-filters-panel__button:active {
@@ -321,9 +321,9 @@
 }
 
 .property-search-filters-panel__room-pill.is-active {
-  border-color: rgba(10, 186, 181, 0.7);
-  background: rgba(10, 186, 181, 0.12);
-  color: #0f766e;
+  border-color: rgba(0, 153, 169, 0.7);
+  background: rgba(0, 153, 169, 0.12);
+  color: #00605a;
 }
 
 .property-search-filters-panel__price-error {

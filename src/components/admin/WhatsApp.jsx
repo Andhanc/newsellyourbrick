@@ -416,7 +416,7 @@ const WhatsApp = () => {
                     style={{
                       margin: '8px 0 0 0',
                       fontSize: '0.85rem',
-                      color: pairingNotice.type === 'success' ? '#059669' : '#dc2626',
+                      color: pairingNotice.type === 'success' ? '#007d8a' : '#dc2626',
                     }}
                   >
                     {pairingNotice.text}
@@ -461,7 +461,7 @@ const WhatsApp = () => {
                       {whatsappStatus.waDiag.remoteWebCache ?? '—'}
                     </div>
                     {whatsappStatus.waDiag.lastQrAt ? (
-                      <div style={{ marginTop: '4px', color: '#059669' }}>
+                      <div style={{ marginTop: '4px', color: '#007d8a' }}>
                         QR хотя бы раз приходил на сервер:{' '}
                         {new Date(whatsappStatus.waDiag.lastQrAt).toLocaleString()}
                       </div>
@@ -575,7 +575,7 @@ const WhatsApp = () => {
         )}
         {whatsappStatus.ready && (
           <div className="whatsapp-status-success">
-            <span style={{ color: '#10b981', fontWeight: '600' }}>✅ WhatsApp клиент готов</span>
+            <span style={{ color: '#0099A9', fontWeight: '600' }}>✅ WhatsApp клиент готов</span>
           </div>
         )}
       </div>

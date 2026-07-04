@@ -1,54 +1,35 @@
 **Findings**
-- No actionable P0/P1/P2 findings.
+- No actionable P0/P1/P2 findings remain.
+  Location: `/seller` at `614x1080`.
+  Evidence: source and implementation were compared side by side in `/private/tmp/seller-page-qa-comparison.png`. The implementation keeps the same centered hero stack, pill label, two-button CTA row, trusted avatar row, large person-in-circle hero image, three floating UI cards, slim divider bar, six partner logos, and rounded feature panel with three cards.
+  Impact: the page reads as the supplied reference while applying the requested substitutions.
+  Fix: none required.
+
+**Required Fidelity Surfaces**
+- Fonts and typography: heavy rounded SaaS-style headline, smaller muted body text, compact pill/button labels, and dense card text match the reference hierarchy. Copy is adapted for the seller page rather than the education/payment source text.
+- Spacing and layout rhythm: hero, partner row, and feature section are aligned to the same `614x1080` reference viewport. The first feature cards are visible in the first viewport like the source.
+- Colors and visual tokens: primary accent is the requested teal/cyan from the second reference (`#0099A9`) with pale teal supporting surfaces.
+- Image quality and asset fidelity: generated hero man in suit replaces the original girl; generated teal abstract feature background replaces the green lower-section artwork. Existing avatar photos and icon-library icons are used for small UI details.
+- Copy and content: seller-page content is intentionally localized/adapted for SellYourBrick while preserving the visual structure of the source.
 
 **Open Questions**
-- The first reference uses a monochrome city map; the implementation uses the existing raster world-map asset with object thumbnails to keep the same airy map/card composition while staying in the requested white/black/ocean-blue palette.
+- None blocking. The partner names remain stylized text marks rather than exact image logos, which is acceptable for this product adaptation.
 
 **Implementation Checklist**
-- Desktop hero checked against reference 1: centered headline, pill label, filter bar, map area, floating property card, circular object pins, platform metric row, and service-description block are present.
-- Benefits section checked against reference 2: rounded ocean-blue panel, three white cards, icon buttons, strong left headline, and spacious card rhythm are present.
-- Subscription section checked against reference 3: full-bleed lifestyle/property background, large overlaid headline, three staggered plan cards, selected-plan state, and subscription CTA are present.
-- Interactions checked: nav scroll buttons, search/filter buttons, map pins, benefit buttons, plan selection, subscription CTA, and modal close/open states.
-- Responsive check completed at 390x900: no horizontal overflow, search stacks correctly, hero card remains readable, and text stays within containers.
+- Rebuilt `src/pages/SellerPage.tsx` around the reference layout.
+- Rebuilt `src/pages/SellerPage.css` with reference-like spacing, responsive behavior, and teal palette.
+- Added project assets in `public/images/seller-page/`.
+- Verified local render with Chrome at `614x1080`.
+- Verified production build with `npm run build`.
 
 **Follow-up Polish**
-- P3: A future pass could replace the world-map asset with a custom ocean-blue city-map raster if the product needs a closer match to the exact first screenshot.
+- P3: exact brand-logo image assets could replace the text partner marks if final brand partners are provided.
 
-source visual truth path:
-- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5341449529967974730-y.jpg
-- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-ebca112c-0248-40b9-8584-d43eaf3a7b36.png
-- /var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-005a1ea3-f178-449d-8bd2-886624e0dad7.png
-
-implementation screenshot path:
-- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-desktop.png
-- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-benefits.png
-- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-plans.png
-- /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-mobile.png
-
-viewport:
-- desktop: 1440x1200, deviceScaleFactor 1
-- section captures: 1440x1000, deviceScaleFactor 1
-- mobile: 390x900, deviceScaleFactor 1
-
-state:
-- desktop default page at /buyer
-- benefits section scrolled into view
-- subscription section scrolled into view
-- plan interaction verified by selecting Private and confirming the subscription panel updates to Private
-
-full-view comparison evidence:
-- Reference 1 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-puppeteer-desktop.png.
-- Reference 2 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-benefits.png.
-- Reference 3 compared with /Users/vtichonenko/newsellyourbrick/public/images/buyer-page/buyer-page-redesign-plans.png.
-
-focused region comparison evidence:
-- Hero map/card area inspected in the desktop screenshot for headline wrapping, search pill layout, floating card scale, object pins, and stats row.
-- Benefits card group inspected in the benefits screenshot for rounded ocean-blue section, card spacing, icon treatment, and readable body copy.
-- Subscription cards inspected in the plans screenshot for three-card hierarchy, large white heading, background image contrast, and selected state.
-
-patches made since previous QA pass:
-- Replaced the old calculator/catalog-oriented buyer page with a three-scene reference-led page.
-- Tightened hero typography and vertical rhythm after the first capture.
-- Added responsive CSS for stacked search filters, cards, and plans.
-
+source visual truth path: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5341449529967974722-y.jpg`
+implementation screenshot path: `/private/tmp/seller-page-mobile-check.png`
+viewport: `614x1080`
+state: default `/seller` page, top of page
+full-view comparison evidence: `/private/tmp/seller-page-qa-comparison.png`
+focused region comparison evidence: focused review was covered by the side-by-side full viewport because the target is a single landing composition with readable hero/cards/logos in-frame.
+patches made since previous QA pass: shortened H1, reduced hero vertical rhythm, kept six-logo row and three feature cards at reference width, removed hero viewport animation dependency.
 final result: passed

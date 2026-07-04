@@ -14,10 +14,6 @@
   scroll-snap-align: start;
 }
 
-.app-layout--investor-home > footer {
-  display: none !important;
-}
-
 .invest-home-page {
   --invest-header-offset: 104px;
   min-height: 100dvh;
@@ -107,7 +103,7 @@
   --teal: #22b8b3;
   --teal-dark: #0b9f9a;
   --orange: #f48a5d;
-  --deep: #062f39;
+  --deep: #003d44;
   min-height: 100dvh;
   padding-bottom: 26px;
   background: linear-gradient(180deg, #fbfcfd 0%, #ffffff 46%, #fbfcfd 100%);
@@ -615,9 +611,9 @@
     #fbfcfd 0%,
     #f9fdfc 8%,
     #f4fbf9 16%,
-    #f0fdfa 28%,
+    #f0fafb 28%,
     #f6fcfb 44%,
-    #f0fdfa 62%,
+    #f0fafb 62%,
     #f8fefd 78%,
     #fbfcfd 100%
   );
@@ -655,8 +651,8 @@
   padding: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(10, 186, 181, 0.16);
-  box-shadow: 0 12px 32px rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 153, 169, 0.08);
   backdrop-filter: blur(8px);
 }
 
@@ -679,13 +675,13 @@
 
 .invest-strategy-tabs__item:hover:not(.is-active) {
   color: #15182b;
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
 }
 
 .invest-strategy-tabs__item.is-active {
   color: #ffffff;
-  background: linear-gradient(135deg, #0abab5, #089a95);
-  box-shadow: 0 8px 22px rgba(10, 186, 181, 0.28);
+  background: linear-gradient(135deg, #0099A9, #007d8a);
+  box-shadow: 0 8px 22px rgba(0, 153, 169, 0.28);
 }
 
 .invest-strategy-tabs__item.is-active:hover {
@@ -712,10 +708,10 @@
 }
 
 .invest-strategy-card:hover {
-  border-color: rgba(10, 186, 181, 0.24);
+  border-color: rgba(0, 153, 169, 0.24);
   box-shadow:
-    0 22px 48px rgba(10, 186, 181, 0.1),
-    0 0 0 1px rgba(10, 186, 181, 0.14);
+    0 22px 48px rgba(0, 153, 169, 0.1),
+    0 0 0 1px rgba(0, 153, 169, 0.14);
 }
 
 .invest-strategy-card img {
@@ -1486,20 +1482,20 @@
 /* Auction card mint accents -> tiffany inside showcases */
 .invest-home-page .invest-showcase .auction-card {
   --ac-mint: #5eead4;
-  --ac-mint-bright: #0abab5;
-  --ac-mint-deep: #067a76;
-  --ac-mint-soft: rgba(10, 186, 181, 0.16);
-  --ac-mint-glow: rgba(10, 186, 181, 0.4);
+  --ac-mint-bright: #0099A9;
+  --ac-mint-deep: #006672;
+  --ac-mint-soft: rgba(0, 153, 169, 0.16);
+  --ac-mint-glow: rgba(0, 153, 169, 0.4);
 }
 
 .invest-home-page .invest-showcase .auction-card__price-panel {
-  background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
-  border-color: rgba(10, 186, 181, 0.22);
-  box-shadow: 0 1px 3px rgba(10, 186, 181, 0.08);
+  background: linear-gradient(135deg, #f0fafb 0%, #f8fafc 100%);
+  border-color: rgba(0, 153, 169, 0.22);
+  box-shadow: 0 1px 3px rgba(0, 153, 169, 0.08);
 }
 
 .invest-home-page .invest-showcase .auction-card__price-label {
-  color: #067a76;
+  color: #006672;
 }
 
 .invest-home-page .invest-showcase .shares-v2-card__body,
@@ -1615,14 +1611,14 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.22);
+  background: rgba(0, 153, 169, 0.22);
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease, width 180ms ease;
 }
 
 .invest-showcase__dot.is-active {
   width: 24px;
-  background: #0abab5;
+  background: #0099A9;
 }
 
 .invest-showcase--shares {
@@ -1632,7 +1628,7 @@
 /* Dark teal sections: Buy now + Debts */
 .invest-showcase--buy-now,
 .invest-showcase--debts {
-  background: linear-gradient(180deg, #073640 0%, #062f39 100%);
+  background: linear-gradient(180deg, #003d44 0%, #003d44 100%);
 }
 
 .invest-showcase--buy-now .invest-showcase__title,
@@ -1667,7 +1663,7 @@
 .invest-showcase--debts .invest-showcase__nav-btn:hover:not(:disabled) {
   background: #ffffff;
   border-color: #ffffff;
-  color: #062f39;
+  color: #003d44;
 }
 
 .invest-showcase--buy-now .invest-showcase__dot,
@@ -1771,8 +1767,8 @@
   margin-bottom: 14px;
   padding: 7px 16px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.1);
-  border: 1px solid rgba(10, 186, 181, 0.26);
+  background: rgba(0, 153, 169, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.26);
   color: #0a8f8a;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1790,7 +1786,7 @@
 }
 
 .invest-community__title span {
-  background: linear-gradient(135deg, #0abab5, #067a76);
+  background: linear-gradient(135deg, #0099A9, #006672);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1886,8 +1882,8 @@
 
 .invest-community__input:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.22);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
 }
 
 .invest-community__input:disabled {
@@ -2095,8 +2091,8 @@
 
 .invest-questions__input:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.22);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
 }
 
 .invest-questions__input:disabled {
@@ -2172,11 +2168,11 @@
 }
 
 .invest-questions__faq-trigger:hover {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .invest-questions__faq-trigger:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -2196,7 +2192,7 @@
 }
 
 .invest-questions__faq-trigger.is-open .invest-questions__faq-icon {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .invest-questions__faq-panel:not([hidden]) {

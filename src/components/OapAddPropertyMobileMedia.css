@@ -17,8 +17,8 @@
   margin: 0;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(10, 186, 181, 0.1);
-  color: #0f766e;
+  background: rgba(0, 153, 169, 0.1);
+  color: #00605a;
   font-size: 0.88rem;
   line-height: 1.4;
 }
@@ -40,7 +40,7 @@
   width: 100%;
   min-height: 168px;
   padding: 1.25rem 1rem;
-  border: 1.5px dashed rgba(10, 186, 181, 0.55);
+  border: 1.5px dashed rgba(0, 153, 169, 0.55);
   border-radius: 18px;
   background: #fff;
   color: #111827;
@@ -52,8 +52,8 @@
 }
 
 .oap-mobile-media__add-card:hover:not(:disabled) {
-  border-color: #0abab5;
-  background: rgba(10, 186, 181, 0.04);
+  border-color: #0099A9;
+  background: rgba(0, 153, 169, 0.04);
 }
 
 .oap-mobile-media__add-card:active:not(:disabled) {
@@ -73,8 +73,8 @@
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: rgba(10, 186, 181, 0.1);
-  color: #0abab5;
+  background: rgba(0, 153, 169, 0.1);
+  color: #0099A9;
 }
 
 .oap-mobile-media__add-card-title {
@@ -124,10 +124,10 @@
   justify-content: center;
   aspect-ratio: 1;
   padding: 0;
-  border: 1.5px dashed rgba(10, 186, 181, 0.55);
+  border: 1.5px dashed rgba(0, 153, 169, 0.55);
   border-radius: 14px;
   background: #fff;
-  color: #0abab5;
+  color: #0099A9;
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -135,8 +135,8 @@
 }
 
 .oap-mobile-media__add-tile:hover:not(:disabled) {
-  border-color: #0abab5;
-  background: rgba(10, 186, 181, 0.04);
+  border-color: #0099A9;
+  background: rgba(0, 153, 169, 0.04);
 }
 
 .oap-mobile-media__add-tile--video {
@@ -145,8 +145,8 @@
 }
 
 .oap-mobile-media__add-tile--video:hover:not(:disabled) {
-  border-color: rgba(10, 186, 181, 0.45);
-  color: #0abab5;
+  border-color: rgba(0, 153, 169, 0.45);
+  color: #0099A9;
 }
 
 .oap-mobile-media__tile {
@@ -390,8 +390,8 @@
 }
 
 .oap-mobile-media-drawer__action:hover:not(:disabled) {
-  border-color: rgba(10, 186, 181, 0.45);
-  background: rgba(10, 186, 181, 0.04);
+  border-color: rgba(0, 153, 169, 0.45);
+  background: rgba(0, 153, 169, 0.04);
 }
 
 .oap-mobile-media-drawer__action:disabled {
@@ -411,8 +411,8 @@
 }
 
 .oap-mobile-media-drawer__action-icon--gallery {
-  background: rgba(10, 186, 181, 0.12);
-  color: #089a95;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007d8a;
 }
 
 .oap-mobile-media-drawer__action-icon--camera {
@@ -466,7 +466,7 @@
   font: inherit;
   font-size: 0.88rem;
   font-weight: 600;
-  color: #0abab5;
+  color: #0099A9;
   cursor: pointer;
 }
 
@@ -499,8 +499,8 @@
 
 .oap-mobile-media-drawer__link-input:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.18);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.18);
 }
 
 .oap-mobile-media-drawer__link-submit {

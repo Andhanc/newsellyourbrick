@@ -102,7 +102,7 @@ const PropertyTimer = ({
   }
 
   let digitColor = '#dc2626'
-  if (days >= 90) digitColor = '#16a34a'
+  if (days >= 90) digitColor = '#0099A9'
   else if (days >= 60) digitColor = '#f97316'
 
   const flipStyle = showUnitLabels

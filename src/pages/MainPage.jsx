@@ -237,7 +237,7 @@ function TiffanyThreeScene() {
         iridescenceIOR: 1.35,
       })
       const deepMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x0abab5,
+        color: 0x0099A9,
         metalness: 0.1,
         roughness: 0.18,
         clearcoat: 0.8,

@@ -66,7 +66,7 @@ export default function ShareDetailPurchasePanel({
             style={{
               background: `conic-gradient(
                 #5b6ee1 0% ${pctOthers}%,
-                #0abab5 ${pctOthers}% ${pctOthers + pctMyShares}%,
+                #0099A9 ${pctOthers}% ${pctOthers + pctMyShares}%,
                 #dff7ff ${pctOthers + pctMyShares}% 100%
               )`,
             }}

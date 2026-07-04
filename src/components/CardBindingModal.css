@@ -144,22 +144,22 @@
 }
 
 .card-preview--front {
-  background: linear-gradient(135deg, #0ABAB5 0%, #1a237e 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 100%);
 }
 
 .card-preview--back {
-  background: linear-gradient(135deg, #0ABAB5 0%, #1a237e 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 100%);
   transform: rotateY(180deg);
 }
 
 .card-preview--visa.card-preview--front {
-  background: linear-gradient(135deg, #0ABAB5 0%, #1a237e 50%, #283593 100%);
-  box-shadow: 0 10px 40px rgba(10, 186, 181, 0.4);
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 50%, #283593 100%);
+  box-shadow: 0 10px 40px rgba(0, 153, 169, 0.4);
 }
 
 .card-preview--visa.card-preview--back {
-  background: linear-gradient(135deg, #0ABAB5 0%, #1a237e 50%, #283593 100%);
-  box-shadow: 0 10px 40px rgba(10, 186, 181, 0.4);
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 50%, #283593 100%);
+  box-shadow: 0 10px 40px rgba(0, 153, 169, 0.4);
 }
 
 .card-preview--mastercard.card-preview--front {
@@ -460,8 +460,8 @@
 
 .form-field__input:focus {
   outline: none;
-  border-color: #0ABAB5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.1);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.1);
 }
 
 .form-field__input.error {
@@ -473,12 +473,12 @@
 }
 
 .form-field__input.valid {
-  border-color: #0ABAB5;
+  border-color: #0099A9;
 }
 
 .form-field__input.valid:focus {
-  border-color: #0ABAB5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.1);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.1);
 }
 
 .form-field__error {
@@ -505,7 +505,7 @@
 .card-binding-form__submit {
   width: 100%;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -520,9 +520,9 @@
 }
 
 .card-binding-form__submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #089C97 0%, #067a75 100%);
+  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
 }
 
 .card-binding-form__submit:disabled {

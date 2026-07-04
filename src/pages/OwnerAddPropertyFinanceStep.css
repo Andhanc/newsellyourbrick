@@ -20,7 +20,7 @@
 .oap-finance-step__row:not(:first-child) {
   margin-top: 24px;
   padding-top: 28px;
-  border-top: 1px solid rgba(10, 186, 181, 0.28);
+  border-top: 1px solid rgba(0, 153, 169, 0.28);
 }
 
 .oap-finance-step__row--split {

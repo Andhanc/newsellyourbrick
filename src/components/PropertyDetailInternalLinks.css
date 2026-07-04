@@ -30,7 +30,7 @@
 
 .property-internal-links__city-cta,
 .property-internal-links__inline-link {
-  color: var(--site-color-primary, #0abab5);
+  color: var(--site-color-primary, #0099A9);
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
@@ -69,7 +69,7 @@
 }
 
 .property-internal-links__geo-link:hover {
-  color: var(--site-color-primary, #0abab5);
+  color: var(--site-color-primary, #0099A9);
   text-decoration: underline;
 }
 

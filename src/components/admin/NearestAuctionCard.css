@@ -172,10 +172,10 @@
 
 /* Цвета цифр и обводки в зависимости от оставшихся дней (для некритичных таймеров) */
 .nearest-auction-timer.timer-long .timer-value {
-  color: #16a34a; /* зелёный, > 28 дней */
+  color: #0099A9; /* зелёный, > 28 дней */
 }
 .nearest-auction-timer.timer-long {
-  border-color: #16a34a;
+  border-color: #0099A9;
 }
 
 .nearest-auction-timer.timer-medium .timer-value {

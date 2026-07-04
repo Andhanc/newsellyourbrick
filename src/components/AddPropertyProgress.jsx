@@ -45,7 +45,7 @@ const AddPropertyProgress = ({
     ? Math.round((filled.length / docFields.length) * 100)
     : 0
 
-  const color = progress === 100 ? '#10b981' : progress >= 60 ? '#f59e0b' : '#ef4444'
+  const color = progress === 100 ? '#0099A9' : progress >= 60 ? '#f59e0b' : '#ef4444'
 
   return (
     <div className={`ap-progress ${isExpanded ? 'ap-progress--expanded' : ''}`}>

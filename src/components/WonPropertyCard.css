@@ -112,9 +112,9 @@
   margin: 0;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #f0fdfa;
-  border: 1px solid #ccfbf1;
-  color: #0f766e;
+  background: #f0fafb;
+  border: 1px solid #e6f6f8;
+  color: #00605a;
   font-size: 12px;
   line-height: 1.45;
 }
@@ -146,7 +146,7 @@
 }
 
 .quick-info__value.price {
-  color: #059669;
+  color: #007d8a;
   font-size: 15px;
 }
 
@@ -158,7 +158,7 @@
 /* Кнопка оплаты */
 .won-property-card__pay-button {
   padding: 12px 24px;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -172,7 +172,7 @@
   flex: 0 1 320px;
   min-width: 220px;
   box-shadow:
-    0 2px 8px rgba(10, 186, 181, 0.3),
+    0 2px 8px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -180,12 +180,12 @@
 }
 
 .won-property-card__pay-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-1px);
   box-shadow:
-    0 4px 12px rgba(10, 186, 181, 0.4),
+    0 4px 12px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -275,7 +275,7 @@
 .won-property-card__sell-button {
   padding: 8px 12px;
   background: #ffffff;
-  border: 1px solid #0abab5;
+  border: 1px solid #0099A9;
   border-radius: 8px;
   color: #0b7d79;
   font-size: 14px;
@@ -287,7 +287,7 @@
 
 .won-property-card__sell-button:hover {
   background: #ecfeff;
-  border-color: #089a95;
+  border-color: #007d8a;
 }
 
 /* Раскрывающийся блок с деталями */
@@ -341,7 +341,7 @@
 }
 
 .details-panel__value.price {
-  color: #059669;
+  color: #007d8a;
   font-size: 14px;
 }
 
@@ -402,7 +402,7 @@
 
 /* Статусы */
 .status-badge.status-success {
-  background: #10b981;
+  background: #0099A9;
   color: #fff;
 }
 

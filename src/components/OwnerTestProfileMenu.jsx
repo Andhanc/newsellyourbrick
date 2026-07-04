@@ -108,8 +108,8 @@ export default function OwnerTestProfileMenu({
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#53d8d3" />
-                  <stop offset="100%" stopColor="#089a95" />
+                  <stop offset="0%" stopColor="#33adbb" />
+                  <stop offset="100%" stopColor="#007d8a" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />

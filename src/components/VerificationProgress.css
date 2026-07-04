@@ -1,10 +1,10 @@
 .verification-progress {
-  background: linear-gradient(135deg, #f0fdfa 0%, #e0f7f7 100%);
-  border: 2px solid #0ABAB5;
+  background: linear-gradient(135deg, #f0fafb 0%, #e0f7f7 100%);
+  border: 2px solid #0099A9;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.15);
 }
 
 .verification-progress__header {
@@ -29,7 +29,7 @@
 }
 
 .verification-progress__icon--success {
-  color: #10b981;
+  color: #0099A9;
 }
 
 .verification-progress__icon--warning {
@@ -39,7 +39,7 @@
 .verification-progress__percentage {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .verification-progress__bar-container {
@@ -53,7 +53,7 @@
 
 .verification-progress__bar {
   height: 100%;
-  background: #0ABAB5;
+  background: #0099A9;
   border-radius: 6px;
   transition: width 0.5s ease, background-color 0.3s ease;
 }
@@ -79,7 +79,7 @@
 }
 
 .verification-progress__stat-icon {
-  color: #0ABAB5;
+  color: #0099A9;
   font-size: 1.125rem;
 }
 
@@ -120,8 +120,8 @@
 }
 
 .verification-progress__ready {
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+  background: #e6f6f8;
+  border: 1px solid #e6f6f8;
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -130,7 +130,7 @@
 }
 
 .verification-progress__ready-icon {
-  color: #166534;
+  color: #007d8a;
   font-size: 1.25rem;
   flex-shrink: 0;
   margin-top: 0.125rem;
@@ -138,7 +138,7 @@
 
 .verification-progress__ready p {
   margin: 0;
-  color: #166534;
+  color: #007d8a;
   font-size: 0.9375rem;
   line-height: 1.5;
 }
@@ -151,7 +151,7 @@
   width: 100%;
   padding: 0.875rem 1.5rem;
   margin-top: 1rem;
-  background: #0ABAB5;
+  background: #0099A9;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -159,13 +159,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.3);
 }
 
 .verification-progress__start-btn:hover {
-  background: #089C97;
+  background: #007d8a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.4);
 }
 
 .verification-progress__start-btn:active {

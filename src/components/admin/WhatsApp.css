@@ -177,10 +177,10 @@
 .whatsapp-status-success {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: #f0fafb;
+  border: 1px solid #e6f6f8;
   border-radius: 8px;
-  border-left: 4px solid #10b981;
+  border-left: 4px solid #0099A9;
 }
 
 .whatsapp-content {
@@ -247,8 +247,8 @@
 
 .send-result--success {
   background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
+  color: #007d8a;
+  border: 1px solid #0099A9;
 }
 
 .send-result--error {
@@ -330,7 +330,7 @@
 }
 
 .stat-icon--total {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
 }
 
 .stat-info {
@@ -568,7 +568,7 @@
 }
 
 .user-card--selected {
-  background: #f0fdf4;
+  background: #f0fafb;
   border-color: #25D366;
   box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
 }
@@ -634,8 +634,8 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -667,12 +667,12 @@
 
 .user-role--buyer {
   background: #e0f7f7;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .user-role--seller {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .user-status {
@@ -683,8 +683,8 @@
 }
 
 .user-status--active {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .user-status--pending {

@@ -2,9 +2,9 @@
 
 /* Цвет тиффани (Tiffany) */
 :root {
-  --timeline-tiffany: #0ABAB5;
+  --timeline-tiffany: #0099A9;
   --timeline-tiffany-light: #5dd9d5;
-  --timeline-tiffany-dark: #089a96;
+  --timeline-tiffany-dark: #007d8a;
 }
 
 .timeline-about {
@@ -58,7 +58,7 @@
 
 .timeline-about--dark .timeline-about__dot-check {
   background: linear-gradient(135deg, var(--timeline-tiffany-light), var(--timeline-tiffany));
-  box-shadow: 0 1px 8px rgba(10, 186, 181, 0.5);
+  box-shadow: 0 1px 8px rgba(0, 153, 169, 0.5);
 }
 
 .timeline-about__header {
@@ -254,7 +254,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 8px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 1px 8px rgba(0, 153, 169, 0.4);
 }
 
 .timeline-about__dot-check svg {

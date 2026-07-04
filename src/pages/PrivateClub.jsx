@@ -1,16 +1,14 @@
-import { Link } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import {
   RiArrowRightLine,
-  RiCloseLine,
   RiLockLine,
-  RiMenuLine,
   RiNotification3Line,
   RiUserStarLine,
   RiVipDiamondLine,
   RiWechatLine,
 } from 'react-icons/ri'
+import Header from '../components/Header'
 import PrivateClubVipGate from '../components/PrivateClubVipGate'
 import PrivateClubVipCelebrationModal from '../components/PrivateClubVipCelebrationModal'
 import { getUserData } from '../services/authService'
@@ -18,7 +16,7 @@ import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './PrivateClub.css'
 
-const HERO_IMAGE = '/images/vip-club/vip-hero-phone.png?v=3'
+const HERO_IMAGE = '/images/vip-club/vip-hero-monex-transparent.png?v=2'
 const WHATSAPP_IMAGE = '/images/vip-club/vip-whatsapp-community.png'
 
 const chatAvatars = [
@@ -39,13 +37,6 @@ const infoCards = [
     title: 'Доход, пока вы отдыхаете',
     text: 'Получайте выплаты от аренды и роста стоимости объектов — портфель работает без вашего постоянного участия.',
   },
-]
-
-const navItems = [
-  { label: 'Аукционы', href: '/auctions' },
-  { label: 'Доли в объектах', href: '/shares' },
-  { label: 'Долговые объекты', href: '/debts' },
-  { label: 'VIP клуб', href: '/private-club', active: true },
 ]
 
 const benefits = [
@@ -86,6 +77,7 @@ const storyCards = [
     image: '/images/vip-club/vip-story-community.png',
     title: 'Закрытый чат в WhatsApp',
     text: 'Живое сообщество инвесторов, обмен опытом и быстрые ответы от экспертов клуба.',
+    visualFill: true,
   },
   {
     image: '/images/vip-club/vip-story-access.png',
@@ -94,21 +86,11 @@ const storyCards = [
   },
 ]
 
-function AukcionLogo({ compact = false }) {
-  return (
-    <Link to="/" className={`vip-club-logo${compact ? ' vip-club-logo--compact' : ''}`} aria-label="Aukcion">
-      <span className="vip-club-logo__mark">A</span>
-      <span className="vip-club-logo__word">Aukcion</span>
-    </Link>
-  )
-}
-
 export default function PrivateClub() {
   const { user, isLoaded: clerkLoaded } = useUser()
   const [vipGateOpen, setVipGateOpen] = useState(false)
   const [vipCelebrationOpen, setVipCelebrationOpen] = useState(false)
   const [storyIndex, setStoryIndex] = useState(0)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const storyCardRefs = useRef([])
   const [numericUserId, setNumericUserId] = useState(() => {
     const raw = getUserData()?.id ?? localStorage.getItem('userId')
@@ -134,7 +116,6 @@ export default function PrivateClub() {
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    setMobileMenuOpen(false)
   }
 
   const scrollStory = (direction) => {
@@ -144,7 +125,9 @@ export default function PrivateClub() {
   }
 
   return (
-    <div className="vip-club-page">
+    <>
+      <Header />
+      <div className="vip-club-page">
       <PrivateClubVipGate
         open={vipGateOpen}
         onClose={() => setVipGateOpen(false)}
@@ -156,94 +139,55 @@ export default function PrivateClub() {
       />
       <PrivateClubVipCelebrationModal open={vipCelebrationOpen} onClose={() => setVipCelebrationOpen(false)} />
 
-      <header className="vip-club-header">
-        <div className="vip-club-shell vip-club-header__inner">
-          <AukcionLogo />
-          <nav className="vip-club-nav" aria-label="Основная навигация">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                to={item.href}
-                className={`vip-club-nav__link${item.active ? ' vip-club-nav__link--active' : ''}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <button type="button" className="vip-club-header__login" onClick={() => requestOpenLoginModal({ wizard: true })}>
-            Войти / Регистрация
-          </button>
-          <button
-            type="button"
-            className="vip-club-header__menu"
-            onClick={() => setMobileMenuOpen((value) => !value)}
-            aria-label={mobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <RiCloseLine /> : <RiMenuLine />}
-          </button>
-        </div>
-        <div className={`vip-club-mobile-nav${mobileMenuOpen ? ' vip-club-mobile-nav--open' : ''}`}>
-          {navItems.map((item) => (
-            <Link key={item.label} to={item.href} onClick={() => setMobileMenuOpen(false)}>
-              {item.label}
-            </Link>
-          ))}
-          <button type="button" onClick={() => requestOpenLoginModal({ wizard: true })}>
-            Войти / Регистрация
-          </button>
-        </div>
-      </header>
-
       <main>
         <div className="vip-club-fold">
-        <section className="vip-club-hero">
-          <div className="vip-club-shell vip-club-hero__stack">
-            <div className="vip-club-hero__intro">
-              <h1>
-                VIP клуб Aukcion — простой доступ
-                <br />
-                к закрытым объектам и сделкам
-              </h1>
-              <p>
-                Закрытые лоты, персональный менеджер и сообщество инвесторов — всё в одном кабинете.
-                Безопасный доступ к премиальным предложениям, которых нет в открытом каталоге.
-              </p>
-              <div className="vip-club-hero__actions">
-                <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
-                  <span>Стать VIP участником</span>
-                  <span className="vip-club-btn__arrow" aria-hidden>
-                    <RiArrowRightLine />
-                  </span>
-                </button>
-                <button type="button" className="vip-club-btn vip-club-btn--soft" onClick={() => scrollToSection('vip-club-about')}>
-                  Узнать больше
-                </button>
+          <section className="vip-club-hero">
+            <div className="vip-club-shell vip-club-hero__stack">
+              <div className="vip-club-hero__intro">
+                <h1>
+                  <span>Закрытый клуб — простой доступ</span>
+                  <span>к премиальным сделкам.</span>
+                </h1>
+                <p>
+                  Закрытые лоты, персональный менеджер и сообщество инвесторов — всё в одном кабинете.
+                  Получайте ранний доступ к предложениям, которых нет в открытом каталоге.
+                </p>
+                <div className="vip-club-hero__actions">
+                  <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
+                    Стать VIP участником
+                  </button>
+                  <button type="button" className="vip-club-btn vip-club-btn--soft" onClick={() => scrollToSection('vip-club-about')}>
+                    Узнать больше
+                  </button>
+                </div>
+              </div>
+              <div className="vip-club-hero__stage">
+                <div className="vip-club-hero__backdrop" aria-hidden>
+                  <div className="vip-club-hero__glow" />
+                </div>
+                <div className="vip-club-hero__scene">
+                  <figure className="vip-club-hero-figure">
+                    <img
+                      src={HERO_IMAGE}
+                      alt="Закрытый VIP-клуб — телефон с премиальными объектами, доходностью и карточками аналитики"
+                      decoding="async"
+                      draggable={false}
+                    />
+                  </figure>
+                </div>
               </div>
             </div>
-            <div className="vip-club-hero__stage">
-              <div className="vip-club-hero__backdrop" aria-hidden>
-                <div className="vip-club-hero__glow" />
-                <div className="vip-club-hero__rings" />
-              </div>
-              <figure className="vip-club-hero-figure">
-                <img
-                  src={HERO_IMAGE}
-                  alt="VIP Club — телефон с закрытыми объектами, аналитикой и карточками портфеля"
-                  decoding="async"
-                  draggable={false}
-                />
-              </figure>
-            </div>
-          </div>
-        </section>
+          </section>
         </div>
 
         <section className="vip-club-section vip-club-about" id="vip-club-about">
           <div className="vip-club-shell">
             <div className="vip-club-section-head">
               <span className="vip-club-pill">Что такое VIP клуб?</span>
-              <h2>VIP клуб — особый уровень доступа и персонального сервиса</h2>
+              <h2>
+                <span>VIP клуб — особый уровень доступа</span>
+                <span>и персонального сервиса</span>
+              </h2>
               <p>
                 Мы объединили лучших инвесторов и экспертов на одной платформе, чтобы вы могли получать больше
                 возможностей и выше доходность.
@@ -270,28 +214,26 @@ export default function PrivateClub() {
           <div className="vip-club-shell">
             <div className="vip-club-whatsapp__card">
               <img src={WHATSAPP_IMAGE} alt="" className="vip-club-whatsapp__bg" loading="lazy" decoding="async" />
-              <div className="vip-club-whatsapp__content">
-                <h2 id="vip-club-whatsapp-title">Закрытое сообщество в WhatsApp</h2>
-                <p>Общайтесь с участниками клуба, задавайте вопросы, делитесь опытом и получайте рекомендации от экспертов и инвесторов.</p>
-              </div>
-              <div className="vip-club-chat-card">
-                <h3>
-                  VIP чат клуба <RiLockLine aria-hidden />
-                </h3>
-                <p>Только для участников клуба</p>
-                <div className="vip-club-chat-card__avatars" aria-hidden>
-                  {chatAvatars.map((avatar) => (
-                    <img key={avatar} src={avatar} alt="" />
-                  ))}
-                  <span>+127</span>
+              <div className="vip-club-whatsapp__layout">
+                <div className="vip-club-whatsapp__content">
+                  <h2 id="vip-club-whatsapp-title">Закрытое сообщество в WhatsApp</h2>
+                  <p>Общайтесь с участниками клуба, задавайте вопросы, делитесь опытом и получайте рекомендации от экспертов и инвесторов.</p>
                 </div>
-                <button type="button" disabled>
-                  Перейти в чат
-                </button>
-              </div>
-              <div className="vip-club-whatsapp__note" aria-hidden>
-                <RiArrowRightLine />
-                <span>Доступ откроется после покупки подписки</span>
+                <div className="vip-club-chat-card">
+                  <h3>
+                    VIP чат клуба <RiLockLine aria-hidden />
+                  </h3>
+                  <p>Только для участников клуба</p>
+                  <div className="vip-club-chat-card__avatars" aria-hidden>
+                    {chatAvatars.map((avatar) => (
+                      <img key={avatar} src={avatar} alt="" />
+                    ))}
+                    <span>+127</span>
+                  </div>
+                  <button type="button" disabled>
+                    Перейти в чат
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -318,8 +260,12 @@ export default function PrivateClub() {
         <section className="vip-club-stories">
           <div className="vip-club-shell vip-club-stories__layout">
             <div className="vip-club-stories__aside">
-              <span className="vip-club-stories__label">Истории участников</span>
-              <h2>VIP — ваше преимущество на рынке недвижимости</h2>
+              <h2>
+                <span>VIP — ваше</span>
+                <span>преимущество</span>
+                <span>на рынке</span>
+                <span>недвижимости</span>
+              </h2>
               <p className="vip-club-stories__lead">
                 Реальные сценарии: закрытые объекты, персональный сервис и сообщество, которое помогает принимать
                 решения быстрее.
@@ -356,7 +302,11 @@ export default function PrivateClub() {
                     }}
                     className="vip-club-story-card"
                   >
-                    <div className="vip-club-story-card__visual">
+                    <div
+                      className={`vip-club-story-card__visual${
+                        card.visualFill ? ' vip-club-story-card__visual--fill' : ''
+                      }`}
+                    >
                       <img src={card.image} alt="" loading="lazy" decoding="async" />
                     </div>
                     <div className="vip-club-story-card__body">
@@ -373,7 +323,24 @@ export default function PrivateClub() {
             </div>
           </div>
         </section>
+
+        <section className="vip-club-join" aria-label="Вступить в VIP клуб">
+          <div className="vip-club-shell">
+            <div className="vip-club-join-panel">
+              <div className="vip-club-join-panel__copy">
+                <span>Закрытый доступ</span>
+                <strong>VIP клуб Aukcion</strong>
+                <p>Премиальные объекты, персональный менеджер и закрытое сообщество инвесторов — всё в одном кабинете.</p>
+              </div>
+              <button type="button" className="vip-club-join-panel__cta" onClick={openJoinGate}>
+                <RiVipDiamondLine aria-hidden />
+                Стать VIP участником
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

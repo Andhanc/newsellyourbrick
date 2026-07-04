@@ -1,6 +1,6 @@
 .shares-page-sidebar {
-  --shares-sidebar-purple: #0abab5;
-  --shares-sidebar-purple-soft: rgba(10, 186, 181, 0.12);
+  --shares-sidebar-purple: #0099A9;
+  --shares-sidebar-purple-soft: rgba(0, 153, 169, 0.12);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -126,7 +126,7 @@
   width: 100%;
   min-height: 40px;
   padding: 10px 16px;
-  border: 1px solid rgba(10, 186, 181, 0.28);
+  border: 1px solid rgba(0, 153, 169, 0.28);
   border-radius: 10px;
   background: #ffffff;
   color: var(--shares-sidebar-purple);
@@ -143,13 +143,13 @@
 }
 
 .shares-sidebar-card__btn:hover {
-  background: rgba(10, 186, 181, 0.06);
-  border-color: rgba(10, 186, 181, 0.45);
-  color: #089a95;
+  background: rgba(0, 153, 169, 0.06);
+  border-color: rgba(0, 153, 169, 0.45);
+  color: #007d8a;
 }
 
 .shares-sidebar-card__btn:focus-visible {
-  outline: 2px solid rgba(10, 186, 181, 0.45);
+  outline: 2px solid rgba(0, 153, 169, 0.45);
   outline-offset: 2px;
 }
 

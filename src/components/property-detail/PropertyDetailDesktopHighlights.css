@@ -1,0 +1,81 @@
+@media (max-width: 960px) {
+  .pd-desktop-highlights {
+    display: none !important;
+  }
+}
+
+@media (min-width: 961px) {
+  .pd-desktop-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0;
+    margin: 0 0 20px;
+    padding: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+  }
+
+  .pd-desktop-highlights__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1 1 140px;
+    min-width: 0;
+    padding: 18px 22px;
+  }
+
+  .pd-desktop-highlights__divider {
+    position: absolute;
+    right: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 1px;
+    background: #e2e8f0;
+  }
+
+  .pd-desktop-highlights__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    color: #0099A9;
+    background: #f0fafb;
+  }
+
+  .pd-desktop-highlights__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .pd-desktop-highlights__value {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pd-desktop-highlights__label {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+}

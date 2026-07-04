@@ -144,13 +144,13 @@
 }
 
 .passport-recognition-modal__button--primary {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #fff;
 }
 
 .passport-recognition-modal__button--primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.4);
 }
 
 .passport-recognition-modal__button--secondary {

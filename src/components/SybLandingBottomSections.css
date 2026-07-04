@@ -1,7 +1,7 @@
 /* Newsletter + FAQ bottom — shared by main page and SYB landing */
 
 .syb-bottom {
-  --syb-sage: #b8cf9a;
+  --syb-sage: #0099A9;
   --syb-sage-hover: #a8c088;
   background: #f0f2f5;
   padding: clamp(2rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) clamp(4rem, 8vw, 5.5rem);

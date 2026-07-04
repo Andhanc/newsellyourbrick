@@ -64,7 +64,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #0099A9, #007d8a);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   flex-shrink: 0;
@@ -167,7 +167,7 @@
   right: 2px;
   width: 12px;
   height: 12px;
-  background: #10b981;
+  background: #0099A9;
   border: 2px solid white;
   border-radius: 50%;
 }

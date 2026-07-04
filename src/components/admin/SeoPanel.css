@@ -76,8 +76,8 @@
 
 .seo-panel__toast {
   background: #ecfdf3;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
+  border: 1px solid #cce9ed;
+  color: #007d8a;
   padding: 0.6rem 0.9rem;
   border-radius: 8px;
   margin-bottom: 0.75rem;
@@ -285,8 +285,8 @@
 }
 
 .seo-panel__step.is-done {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .seo-panel__toolbar {
@@ -379,8 +379,8 @@
 }
 
 .seo-badge--index {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .seo-badge--noindex {
@@ -395,8 +395,8 @@
 }
 
 .seo-panel__hint--ok {
-  color: #166534;
-  background: #f0fdf4;
+  color: #007d8a;
+  background: #f0fafb;
   padding: 0.75rem 1rem;
   border-radius: 8px;
 }
@@ -470,7 +470,7 @@
 }
 
 .seo-length--ok {
-  color: #16a34a;
+  color: #0099A9;
 }
 
 .seo-length--warn {

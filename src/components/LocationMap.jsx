@@ -15,7 +15,7 @@ const LocationMap = ({
   allowFullscreen = true,
   controlsLayout = 'default',
   mapStyle = SATELLITE_MAP_STYLE,
-  markerColor = '#0ABAB5',
+  markerColor = '#0099A9',
   maxZoom = null,
 }) => {
   const containerRef = useRef(null)
@@ -298,7 +298,7 @@ const LocationMap = ({
 
     try {
       const m = new maplibregl.Marker({
-        color: markerColorRef.current || '#0ABAB5',
+        color: markerColorRef.current || '#0099A9',
         pitchAlignment: 'map',
         rotationAlignment: 'viewport',
         subpixelPositioning: true,

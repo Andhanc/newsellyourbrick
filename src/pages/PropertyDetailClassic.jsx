@@ -43,6 +43,16 @@ import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
+import PropertyDetailDesktopPage from '../components/property-detail/PropertyDetailDesktopPage'
+import PropertyDetailDesktopHighlights from '../components/property-detail/PropertyDetailDesktopHighlights'
+import {
+  PropertyDetailDesktopTrustPromo,
+  PropertyDetailDesktopConciergePromo,
+  PropertyDetailDesktopInvestStrip,
+  PropertyDetailDesktopVipPromo,
+} from '../components/property-detail/PropertyDetailDesktopPromos'
+import '../components/property-detail/PropertyDetailDesktopPromos.css'
+import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
@@ -982,6 +992,7 @@ function PropertyDetailClassic({
   }, [currentImageIndex])
 
   const propertyInfo = displayProperty.title || displayProperty.name
+  const isDesktopProperty = useIsDesktopProperty()
 
   const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
@@ -1250,38 +1261,7 @@ function PropertyDetailClassic({
     Number(auctionUserDeposit) <= 0 &&
     !roleSkipsAuctionKyc(userRoleForAuction)
 
-  const wrapDepositGatedBlock = (block, { desktopCard = false } = {}) => {
-    if (!block) return null
-    if (!aboutDepositContentLocked) return block
-
-    const openDepositGateModal = () => setIsDepositRequiredOpen(true)
-
-    return (
-      <div
-        className={`property-detail-mobile-deposit-gate property-detail-mobile-deposit-gate--locked${
-          desktopCard ? ' property-detail-deposit-gate--desktop-card' : ''
-        }`}
-      >
-        <div className="property-detail-mobile-deposit-gate__content" aria-hidden="true">
-          {block}
-        </div>
-        <button
-          type="button"
-          className="property-detail-mobile-deposit-gate__overlay"
-          onClick={openDepositGateModal}
-          aria-label={t('propertyDetailDepositGateAria')}
-        >
-          <span className="property-detail-mobile-deposit-gate__prompt">
-            <FiLock size={18} strokeWidth={2.25} aria-hidden />
-            <span className="property-detail-mobile-deposit-gate__prompt-text">
-              {t('propertyDetailDepositGateTitle')}
-            </span>
-            <FiArrowRight size={18} aria-hidden />
-          </span>
-        </button>
-      </div>
-    )
-  }
+  const wrapDepositGatedBlock = (block) => block
 
   /** @deprecated use wrapDepositGatedBlock */
   const wrapMobileDepositGatedBlock = (block) => wrapDepositGatedBlock(block)
@@ -3680,6 +3660,25 @@ function PropertyDetailClassic({
     return CircleDot
   }
 
+  const getDesktopHighlightItems = () => {
+    const fromSpecs = getDesktopV3CharacteristicItems()
+    const priority = ['property_type', 'area', 'bedrooms', 'rooms', 'bathrooms', 'year_built']
+    const picked = []
+    for (const key of priority) {
+      const item = fromSpecs.find((row) => row.key === key)
+      if (item) picked.push(item)
+      if (picked.length >= 4) break
+    }
+    if (picked.length < 4) {
+      for (const item of fromSpecs) {
+        if (picked.some((row) => row.key === item.key)) continue
+        picked.push(item)
+        if (picked.length >= 4) break
+      }
+    }
+    return picked
+  }
+
   const renderDesktopV3SpecsGrid = (items, title) => {
     if (!items.length) return null
     return (
@@ -5382,6 +5381,60 @@ function PropertyDetailClassic({
       )
     }
 
+    if (mediaCount >= 4) {
+      const sideCells = galleryMedia.slice(1, 5)
+      const moreCount = Math.max(0, mediaCount - 5)
+
+      return (
+        <section
+          className="property-detail-auction-hero property-detail-auction-hero--mosaic property-detail-auction-desktop-only"
+          aria-label={t('gallery')}
+        >
+          <div className="property-detail-auction-hero__mosaic">
+            <button
+              type="button"
+              className={`property-detail-auction-hero__mosaic-cell property-detail-auction-hero__mosaic-cell--primary${
+                currentImageIndex === 0 ? ' property-detail-auction-hero__mosaic-cell--active' : ''
+              }`}
+              onClick={() => handleThumbnailClick(0)}
+              aria-label={t('propertyDetailGalleryItemLabel', { n: 1, total: mediaCount })}
+            >
+              {renderMosaicCell(galleryMedia[0], 0)}
+            </button>
+            <div className="property-detail-auction-hero__mosaic-side">
+              {sideCells.map((media, idx) => {
+                const index = idx + 1
+                const isLastSide = idx === sideCells.length - 1
+                return (
+                  <button
+                    key={`mosaic-${index}`}
+                    type="button"
+                    className={`property-detail-auction-hero__mosaic-cell${
+                      currentImageIndex === index
+                        ? ' property-detail-auction-hero__mosaic-cell--active'
+                        : ''
+                    }`}
+                    onClick={() => handleThumbnailClick(index)}
+                    aria-label={t('propertyDetailGalleryItemLabel', {
+                      n: index + 1,
+                      total: mediaCount,
+                    })}
+                  >
+                    {renderMosaicCell(media, index, {
+                      showMoreOverlay: isLastSide && moreCount > 0,
+                      moreCount,
+                    })}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          {renderHeroActions()}
+          {renderHeroFooter()}
+        </section>
+      )
+    }
+
     if (mediaCount >= 2) {
       return (
       <section
@@ -5692,7 +5745,7 @@ function PropertyDetailClassic({
             zoom: 14,
             mapFrame: null,
             mapStyle: STREET_MAP_STYLE,
-            markerColor: '#0abab5',
+            markerColor: '#0099A9',
             loadingClassName: 'pd-v3-map__loading',
           })}
         </div>
@@ -5981,9 +6034,450 @@ function PropertyDetailClassic({
     )
   }
 
+  const renderPropertyDetailDesktopV4 = () => {
+    const descriptionText = displayProperty.description
+      ? String(displayProperty.description).trim()
+      : ''
+
+    const mergeSpecItems = () => {
+      const seen = new Set()
+      const merged = []
+      const push = (item) => {
+        if (!item?.key || seen.has(item.key)) return
+        if (item.value == null || item.value === '' || item.value === '—') return
+        seen.add(item.key)
+        merged.push(item)
+      }
+      getPropertyMainDetailItems().forEach(push)
+      getPropertyAdditionalDetailItems().forEach(push)
+      getDesktopV3CharacteristicItems().forEach(push)
+      return merged
+    }
+
+    const specItems = mergeSpecItems()
+    const amenityLabels = getPropertyAmenityLabels()
+
+    const renderPddSpecs = (items) => (
+      <div className="pdd-specs" role="list">
+        {items.map((item) => (
+          <div key={item.key} className="pdd-specs__item" role="listitem">
+            <span className="pdd-specs__label">{item.label}</span>
+            <span className="pdd-specs__value">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    )
+
+    const renderPddAmenities = () =>
+      amenityLabels.length ? (
+        <ul className="pdd-amenities">
+          {amenityLabels.map((label, index) => (
+            <li key={`${label}-${index}`} className="pdd-amenities__item">
+              {label}
+            </li>
+          ))}
+        </ul>
+      ) : null
+
+    const renderPddDocuments = () =>
+      processedDocuments.length ? (
+        <ul className="pdd-docs">
+          {processedDocuments.map((doc, index) => (
+            <li key={`${doc.url}-${index}`}>
+              <button
+                type="button"
+                className="pdd-docs__item"
+                onClick={() => setSelectedDocument(doc)}
+              >
+                <span>{doc.name}</span>
+                <FiChevronRight size={18} aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null
+
+    const placeLabel = (() => {
+      const city = String(displayProperty?.city || property?.city || '').trim()
+      const country = String(displayProperty?.country || property?.country || '').trim()
+      if (city && country) return `${city}, ${country}`
+      return String(displayProperty?.location || property?.location || '').trim() || t('location')
+    })()
+
+    const googleMapsUrl = (() => {
+      if (hasExactMapCoords) {
+        const [lat, lng] = finalCoordinates
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
+      }
+      const query = String(displayProperty?.location || property?.location || '').trim()
+      if (query) {
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+      }
+      return 'https://www.google.com/maps'
+    })()
+
+    const renderPddMap = () => (
+      <>
+        <div className="pdd-map-wrap">
+          {renderPropertyLocationMap({
+            zoom: 14,
+            mapFrame: null,
+            mapStyle: STREET_MAP_STYLE,
+            markerColor: '#0099A9',
+            loadingClassName: 'pdd-map-wrap',
+          })}
+        </div>
+        <div className="pdd-map-footer">
+          <span className="pdd-map-place">{placeLabel}</span>
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pdd-map-link"
+          >
+            {t('propertyDetailOpenInGoogleMaps')}
+          </a>
+        </div>
+      </>
+    )
+
+    const sections = []
+    if (descriptionText) {
+      sections.push({
+        id: 'pdd-desc',
+        kicker: t('propertyDetailTabAbout'),
+        title: t('addPropertyNameLabelDescription'),
+        content: <p>{descriptionText}</p>,
+      })
+    }
+    if (specItems.length) {
+      sections.push({
+        id: 'pdd-specs',
+        title: t('propertyDetailCharacteristicsTitle'),
+        content: renderPddSpecs(specItems),
+      })
+    }
+    if (!isDebtProperty && amenityLabels.length) {
+      sections.push({
+        id: 'pdd-amenities',
+        title: t('propertyDetailAmenitiesTitle'),
+        content: renderPddAmenities(),
+      })
+    }
+    if (processedDocuments.length) {
+      sections.push({
+        id: 'pdd-docs',
+        title: t('propertyDetailDocumentsTitle'),
+        content: renderPddDocuments(),
+      })
+    }
+    sections.push({
+      id: 'pdd-map',
+      title: t('propertyDetailLocationTitle'),
+      content: renderPddMap(),
+    })
+
+    const badges = (
+      <>
+        <span className="pdd-badge pdd-badge--type">{auctionPropertyTypeLabel}</span>
+        {isAuctionProperty && auctionEndTime && !auctionEndedForSidebar ? (
+          <span className="pdd-badge pdd-badge--live">
+            {t('propertyDetailAuctionLive') || 'Live auction'}
+          </span>
+        ) : null}
+        {isAuctionProperty && auctionEndedForSidebar ? (
+          <span className="pdd-badge pdd-badge--ended">{t('propertyDetailAuctionCompleted')}</span>
+        ) : null}
+      </>
+    )
+
+    const headActions = (
+      <div className="pdd-head-actions">
+        <button
+          type="button"
+          className="pdd-icon-btn"
+          onClick={handleShare}
+          disabled={isReservedActive}
+        >
+          <FiShare2 size={16} />
+          {t('share')}
+        </button>
+        <button
+          type="button"
+          className={`pdd-icon-btn${isFavorite ? ' pdd-icon-btn--active' : ''}`}
+          onClick={handleToggleFavorite}
+          disabled={isReservedActive}
+        >
+          {isFavorite ? <FaHeartSolid size={16} /> : <FiHeart size={16} />}
+          {t('propertyDetailAddToFavorites')}
+        </button>
+      </div>
+    )
+
+    const renderClassicGallery = () => (
+      <div className="property-detail-gallery">
+        <div className="property-detail-gallery__main" {...gallerySwipeHandlers}>
+          {currentMedia?.type === 'video' ? (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                paddingBottom: '56.25%',
+                backgroundColor: '#000',
+              }}
+            >
+              <iframe
+                src={
+                  currentMedia.videoType === 'youtube'
+                    ? getYouTubeEmbedUrl(currentMedia.videoId || currentMedia.url)
+                    : currentMedia.videoType === 'googledrive'
+                      ? getGoogleDriveEmbedUrl(currentMedia.videoId || currentMedia.url)
+                      : currentMedia.url
+                }
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                title={displayProperty.name}
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <img
+              src={currentMedia?.url}
+              alt={displayProperty.name}
+              className="property-detail-gallery__main-image"
+            />
+          )}
+          {galleryMedia.length > 1 ? (
+            <>
+              <button
+                type="button"
+                className="property-detail-gallery__nav property-detail-gallery__nav--prev"
+                onClick={handlePreviousImage}
+                disabled={isReservedActive}
+                aria-label={t('previousImage')}
+              >
+                <FiChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                className="property-detail-gallery__nav property-detail-gallery__nav--next"
+                onClick={handleNextImage}
+                disabled={isReservedActive}
+                aria-label={t('nextImage')}
+              >
+                <FiChevronRight size={24} />
+              </button>
+              <div className="property-detail-gallery__counter">
+                {currentImageIndex + 1} / {galleryMedia.length}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    )
+
+    const auctionStartingPrice = displayProperty?.auction_starting_price || 0
+    const displayBidAmount = currentBid !== null ? currentBid : auctionStartingPrice
+    const effectiveCurrentBid =
+      currentBid !== null ? currentBid : displayProperty.currentBid || auctionStartingPrice
+    const minimumBid = effectiveCurrentBid + getAuctionMinBidStep(effectiveCurrentBid)
+
+    const renderAuctionSidebar = () => (
+      <>
+        <div className="pdd-aside-card pdd-aside-card--accent">
+          <PropertyCurrencySelector
+            baseCurrency={currencyView.baseCurrency}
+            displayCurrency={currencyView.displayCurrency}
+            onChange={currencyView.setDisplayCurrency}
+            options={currencyView.options}
+            loading={currencyView.loading}
+            isConverted={currencyView.isConverted}
+          />
+          {isAuctionProperty && auctionEndTime ? (
+            <div style={{ marginTop: 16 }}>
+              {isReservedActive ? (
+                <p role="status">{t('propertyDetailBidsPaused')}</p>
+              ) : !auctionEndedForSidebar ? (
+                renderAuctionTimerVisual()
+              ) : (
+                <p role="status">{t('propertyDetailAuctionCompleted')}</p>
+              )}
+            </div>
+          ) : null}
+          {!auctionEndedForSidebar && isAuctionProperty ? (
+            <>
+              <span className="pdd-aside-card__label">{t('propertyDetailCurrentBidLabel')}</span>
+              <span className="pdd-aside-card__bid-value">{fmtListingBidPrice(displayBidAmount)}</span>
+              <div className="pdd-aside-card__row">
+                <span className="pdd-aside-card__row-label">{t('propertyDetailMinBidLabel')}</span>
+                <span className="pdd-aside-card__row-value">{fmtListingBidPrice(minimumBid)}</span>
+              </div>
+              <div className="pd-v3-bidding pd-v3-bidding--quick-only" style={{ marginTop: 12 }}>
+                <PropertyDetailAuctionBiddingForm
+                  {...auctionBiddingFormProps}
+                  variant="desktop-v3-quick"
+                  showCurrencySelector={false}
+                  alwaysShowCurrentBid={false}
+                  suppressCurrentBidDisplay
+                  showSubmitButton={false}
+                />
+              </div>
+              <div className="pd-v3-bidding pd-v3-bidding--actions" style={{ marginTop: 8 }}>
+                <PropertyDetailAuctionBiddingForm
+                  {...auctionBiddingFormProps}
+                  variant="desktop-v3-actions"
+                  showCurrencySelector={false}
+                  alwaysShowCurrentBid={false}
+                  suppressCurrentBidDisplay
+                  showBidCeilingButton={false}
+                />
+              </div>
+              {renderDesktopBuyNowButton()}
+            </>
+          ) : null}
+          {renderAuctionEndedState()}
+          {renderDesktopWinnerPurchaseButton()}
+        </div>
+        {renderDesktopV3LeaderCard()}
+        {renderDesktopV3BidHistoryCard()}
+      </>
+    )
+
+    const renderClassicSidebar = () => (
+      <>
+        <div className="pdd-aside-card pdd-aside-card--accent">
+          <PropertyCurrencySelector
+            baseCurrency={currencyView.baseCurrency}
+            displayCurrency={currencyView.displayCurrency}
+            onChange={currencyView.setDisplayCurrency}
+            options={currencyView.options}
+            loading={currencyView.loading}
+            isConverted={currencyView.isConverted}
+          />
+          {displayProperty.price && Number(displayProperty.price) > 0 ? (
+            <>
+              <span className="pdd-aside-card__label">{t('propertyDetailPrice')}</span>
+              <span className="pdd-aside-card__price">{fmtPrice(displayProperty.price)}</span>
+              <button
+                type="button"
+                className="pdd-btn-primary"
+                onClick={handleBookNow}
+                disabled={isReservedActive || !buyNowEmailOk}
+              >
+                {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+              </button>
+            </>
+          ) : null}
+        </div>
+        <PropertyDetailDesktopConciergePromo
+          onContact={() => {
+            if (isAuthenticated() || (userLoaded && user)) {
+              navigate(getCabinetProfilePath())
+              return
+            }
+            requestOpenLoginModal({ wizard: true })
+          }}
+        />
+      </>
+    )
+
+    const scrollToYield = () => {
+      document.getElementById('pdd-yield')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    return (
+      <PropertyDetailDesktopPage
+        topBar={
+          isAuctionLayout ? (
+            renderDesktopAuctionTopBar()
+          ) : (
+            <div
+              className="pdd-page__topbar-inner"
+              style={{
+                maxWidth: 1280,
+                margin: '0 auto',
+                padding: '12px 28px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+              }}
+            >
+              <PageBackButton onClick={handleBackClick} />
+              <PropertyGeoLinks property={displayProperty} />
+            </div>
+          )
+        }
+        gallery={isAuctionLayout ? renderDesktopAuctionHeroGallery() : renderClassicGallery()}
+        badges={badges}
+        title={propertyInfo}
+        location={displayProperty.location || null}
+        meta={headActions}
+        highlights={<PropertyDetailDesktopHighlights items={getDesktopHighlightItems()} />}
+        geoLinks={isAuctionLayout ? <PropertyGeoLinks property={displayProperty} /> : null}
+        sections={sections}
+        promos={
+          <>
+            <div className="pdd-promo-grid">
+              <PropertyDetailDesktopTrustPromo moderationStatus={displayProperty.moderation_status} />
+              <PropertyDetailDesktopConciergePromo
+                onContact={() => {
+                  if (isAuthenticated() || (userLoaded && user)) {
+                    navigate(getCabinetProfilePath())
+                    return
+                  }
+                  requestOpenLoginModal({ wizard: true })
+                }}
+              />
+            </div>
+            {!isDebtProperty ? (
+              <PropertyDetailDesktopInvestStrip
+                yieldPercent={
+                  desktopYieldCalcDefaults.rent && desktopYieldCalcDefaults.investment
+                    ? (
+                        (desktopYieldCalcDefaults.rent / desktopYieldCalcDefaults.investment) *
+                        100
+                      ).toFixed(1)
+                    : null
+                }
+                onOpenCalc={scrollToYield}
+              />
+            ) : null}
+          </>
+        }
+        afterSections={
+          <>
+            {!isDebtProperty ? (
+              <div id="pdd-yield">
+                <PropertyDetailDesktopYieldCalc
+                  defaultInvestment={desktopYieldCalcDefaults.investment}
+                  defaultRentAnnual={desktopYieldCalcDefaults.rent}
+                  onCalculateClick={openInvestorPanelForProperty}
+                />
+              </div>
+            ) : null}
+            {isAuctionProperty && showsTestDriveSection ? renderDesktopAuctionTestDriveBlock() : null}
+            {isDebtProperty ? renderDesktopAuctionDebtRisk() : null}
+            <PropertyDetailDesktopVipPromo onLearnMore={() => navigate('/subscriptions')} />
+            <PropertyDetailDesktopAppBanner />
+            <PropertyDetailInternalLinks property={displayProperty} />
+          </>
+        }
+        sidebar={
+          isShareListing
+            ? renderShareListingSidebar()
+            : isAuctionProperty
+              ? renderAuctionSidebar()
+              : renderClassicSidebar()
+        }
+      />
+    )
+  }
+
   return (
     <div
       className={`property-detail-page-new${
+        isDesktopProperty ? ' property-detail-page-new--desktop-v4' : ''
+      }${
         isAuctionLayout
           ? ` property-detail-page-new--auction-mobile-v2 property-detail-page-new--auction property-detail-page-new--auction-desktop-v3 property-detail-mobile-tab-${auctionMobileTab}${
               isMobileBidBarNearFooter ? ' property-detail-page-new--bid-bar-hidden' : ''
@@ -6003,7 +6497,7 @@ function PropertyDetailClassic({
               numberOfPieces={500}
               gravity={0.1}
               wind={0.02}
-              colors={['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#fbbf24']}
+              colors={['#0099A9', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#33adbb', '#fbbf24']}
               confettiSource={{
                 x: 0,
                 y: 0,
@@ -6067,9 +6561,13 @@ function PropertyDetailClassic({
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {isAuctionLayout ? renderAuctionMobileHeader() : null}
-      {isAuctionLayout ? renderDesktopAuctionTopBar() : null}
+      {isDesktopProperty ? renderPropertyDetailDesktopV4() : null}
+
+      <div className="property-detail-legacy-shell">
+      {!isDesktopProperty && isAuctionLayout ? renderAuctionMobileHeader() : null}
+      {!isDesktopProperty && isAuctionLayout ? renderDesktopAuctionTopBar() : null}
       {/* Заголовок (на мобильном аукционе скрыт — «Назад» в галерее) */}
+      {!isDesktopProperty ? (
       <div
         className={`property-detail-header${
           isAuctionLayout ? ' property-detail-header--auction-desktop' : ''
@@ -6094,6 +6592,7 @@ function PropertyDetailClassic({
           ) : null}
         </div>
       </div>
+      ) : null}
 
       {/* Баннер резервации */}
       {(() => {
@@ -6770,6 +7269,7 @@ function PropertyDetailClassic({
         </div>
 
         <PropertyDetailInternalLinks property={displayProperty} />
+      </div>
       </div>
 
       {/* Модальное окно истории ставок для всех объектов */}

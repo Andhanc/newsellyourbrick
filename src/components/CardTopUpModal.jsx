@@ -61,7 +61,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
 
   const getCardColor = () => {
     if (cardType === 'VISA') {
-      return 'linear-gradient(135deg, #0ABAB5 0%, #089a95 50%, #0ABAB5 100%)'
+      return 'linear-gradient(135deg, #0099A9 0%, #007d8a 50%, #0099A9 100%)'
     }
     if (cardType === 'MASTERCARD') {
       return 'linear-gradient(135deg, #EB001B 0%, #F79E1B 50%, #EB001B 100%)'

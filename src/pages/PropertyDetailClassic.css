@@ -283,14 +283,14 @@
 .winner-celebration__title {
   font-size: 48px;
   font-weight: 800;
-  color: #10b981;
+  color: #0099A9;
   margin: 0 0 12px 0;
   font-family: 'Montserrat', sans-serif;
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 50%, #007d8a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  text-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
 }
 
 .winner-celebration__subtitle {
@@ -825,13 +825,13 @@
 
 .property-detail-sidebar__document-item:hover {
   background: #f9fafb;
-  border-color: #0ABAB5;
+  border-color: #0099A9;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.1);
 }
 
 .property-detail-sidebar__document-icon {
-  color: #0ABAB5;
+  color: #0099A9;
   flex-shrink: 0;
 }
 
@@ -881,19 +881,19 @@
   }
 }
 
-/* Чипы удобств: насыщённый Tiffany (#0ABAB5), обводка в тон, блик по фону при hover */
+/* Чипы удобств: насыщённый Tiffany (#0099A9), обводка в тон, блик по фону при hover */
 .amenity-tag {
   display: inline-flex;
   align-items: center;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #1bbdb7 0%, #0ABAB5 42%, #08928e 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 42%, #007d8a 100%);
   border: 1px solid #5eead4;
   border-radius: 8px;
   font-size: 14px;
   color: #ffffff;
   font-weight: 600;
   transition: border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.35);
   max-width: 100%;
   white-space: normal;
   text-align: left;
@@ -909,7 +909,7 @@
       transparent 62%,
       transparent 100%
     ),
-    linear-gradient(135deg, #1bbdb7 0%, #0ABAB5 42%, #08928e 100%);
+    linear-gradient(135deg, #33adbb 0%, #0099A9 42%, #007d8a 100%);
   background-size: 220% 100%, 100% 100%;
   background-position: -160% 0, 0 0;
   background-repeat: no-repeat;
@@ -935,7 +935,7 @@
   border-color: #a7f3f0;
   transform: translateY(-1px);
   box-shadow:
-    0 2px 12px rgba(10, 186, 181, 0.45),
+    0 2px 12px rgba(0, 153, 169, 0.45),
     0 0 0 1px rgba(167, 243, 240, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
@@ -1545,7 +1545,7 @@
 }
 
 .current-bid-value-wrapper--animated .current-bid-value {
-  color: #10b981 !important;
+  color: #0099A9 !important;
   font-weight: 700;
   transition: color 0.3s ease;
 }
@@ -1554,7 +1554,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #10b981;
+  color: #0099A9;
   animation: arrowBounce 0.6s ease-out;
   margin-left: 4px;
 }
@@ -1634,13 +1634,13 @@
 .price-overlay__value {
   font-size: 32px;
   font-weight: 700;
-  color: #10b981;
+  color: #0099A9;
   font-family: 'Montserrat', sans-serif;
   animation: priceOverlayValuePulse 0.6s ease-out;
 }
 
 .price-overlay__arrow {
-  color: #10b981;
+  color: #0099A9;
   animation: arrowBounce 0.6s ease-out;
   flex-shrink: 0;
 }
@@ -1675,11 +1675,11 @@
   }
   50% {
     transform: scale(1.15);
-    color: #10b981;
+    color: #0099A9;
   }
   100% {
     transform: scale(1);
-    color: #10b981;
+    color: #0099A9;
   }
 }
 
@@ -1787,7 +1787,7 @@
   border-color: transparent;
   border-width: 1px;
   box-shadow:
-    0 10px 24px rgba(10, 186, 181, 0.45),
+    0 10px 24px rgba(0, 153, 169, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -1927,7 +1927,7 @@
   padding: 10px 8px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -1941,16 +1941,16 @@
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .bidding-section__quick-btn:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   transform: translateY(-1px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -1971,7 +1971,7 @@
   cursor: not-allowed !important;
   transform: none !important;
   box-shadow:
-    0 2px 10px rgba(10, 186, 181, 0.2),
+    0 2px 10px rgba(0, 153, 169, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
@@ -2054,7 +2054,7 @@
   padding: 12px 20px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -2064,7 +2064,7 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -2085,7 +2085,7 @@
 .bidding-section__submit-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4fcfca 0%, #18b6b1 52%, #0e9d98 100%);
   box-shadow:
-    0 10px 24px rgba(10, 186, 181, 0.45),
+    0 10px 24px rgba(0, 153, 169, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
@@ -2100,7 +2100,7 @@
 .bidding-section__submit-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow:
-    0 2px 10px rgba(10, 186, 181, 0.28),
+    0 2px 10px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -2150,12 +2150,12 @@
   width: 52px;
   min-width: 52px;
   padding: 0;
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
   border-radius: 14px;
   background: linear-gradient(145deg, #ecfeff 0%, #ffffff 100%);
-  color: #089a95;
+  color: #007d8a;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.18);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -2169,9 +2169,9 @@
 
 .bidding-section__ceiling-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: #0abab5;
+  border-color: #0099A9;
   background: linear-gradient(145deg, #d5faf9 0%, #ecfeff 100%);
-  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.28);
 }
 
 .bidding-section__ceiling-btn:disabled {
@@ -2181,10 +2181,10 @@
 }
 
 .bidding-section__ceiling-btn--active {
-  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   border-color: transparent;
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.35);
 }
 
 .property-detail-sidebar__buy-now-btn {
@@ -2261,7 +2261,7 @@
   box-sizing: border-box;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -2275,7 +2275,7 @@
   margin: 16px 0 20px;
   display: block;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -2310,12 +2310,12 @@
 }
 
 .property-detail-sidebar__buy-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -2394,7 +2394,7 @@
   padding: 12px 20px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  border: 1px solid rgba(0, 153, 169, 0.22);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
   font-family: 'Montserrat', system-ui, sans-serif;
   font-size: 13px;
@@ -2791,12 +2791,12 @@
 @keyframes property-test-drive-highlight {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(10, 186, 181, 0);
+    box-shadow: 0 0 0 0 rgba(0, 153, 169, 0);
     border-color: rgba(148, 163, 184, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.22);
-    border-color: rgba(10, 186, 181, 0.55);
+    box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.22);
+    border-color: rgba(0, 153, 169, 0.55);
   }
 }
 
@@ -2826,11 +2826,11 @@
 }
 
 .property-detail-test-drive__conditions li.is-done {
-  color: #15803d;
+  color: #007d8a;
 }
 
 .property-detail-test-drive__check {
-  color: #16a34a;
+  color: #0099A9;
   flex-shrink: 0;
 }
 
@@ -2848,15 +2848,15 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 52%, #089d98 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 52%, #007d8a 100%);
   color: #fff;
-  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .property-detail-test-drive__cta:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.45);
 }
 
 .property-detail-test-drive__cta:disabled {
@@ -2874,7 +2874,7 @@
 
 /* Ожидание верификации для ставок — Tiffany, белый текст */
 .auction-verification-pending-banner {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   padding: 12px;
@@ -2904,12 +2904,12 @@
 /* ——— Мобильный редизайн аукциона (референс, ≤960px) ——— */
 @media (max-width: 960px) {
   .property-detail-page-new--auction-mobile-v2 {
-    --pd-tiffany: #0abab5;
-    --pd-tiffany-deep: #089a95;
+    --pd-tiffany: #0099A9;
+    --pd-tiffany-deep: #007d8a;
     --pd-tiffany-soft: #ecfeff;
-    --pd-tiffany-soft-border: rgba(10, 186, 181, 0.35);
-    --pd-tiffany-ring: rgba(10, 186, 181, 0.14);
-    --pd-tiffany-glow: rgba(10, 186, 181, 0.32);
+    --pd-tiffany-soft-border: rgba(0, 153, 169, 0.35);
+    --pd-tiffany-ring: rgba(0, 153, 169, 0.14);
+    --pd-tiffany-glow: rgba(0, 153, 169, 0.32);
     background: #ffffff;
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
@@ -3685,7 +3685,7 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-extra-amenities__check {
     flex-shrink: 0;
     margin-top: 3px;
-    color: #0abab5;
+    color: #0099A9;
     stroke-width: 2.75;
   }
 
@@ -3748,10 +3748,10 @@
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    color: #0abab5;
+    color: #0099A9;
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.2);
-    box-shadow: 0 2px 8px rgba(10, 186, 181, 0.1);
+    border: 1px solid rgba(0, 153, 169, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 153, 169, 0.1);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-documents__meta {
@@ -3776,8 +3776,8 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #0d9488;
-    background: rgba(10, 186, 181, 0.12);
+    color: #007580;
+    background: rgba(0, 153, 169, 0.12);
     padding: 3px 8px;
     border-radius: 6px;
   }
@@ -3845,9 +3845,9 @@
     padding: 14px 20px;
     border-radius: 999px;
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.28);
+    border: 1px solid rgba(0, 153, 169, 0.28);
     box-shadow:
-      0 8px 28px rgba(10, 186, 181, 0.18),
+      0 8px 28px rgba(0, 153, 169, 0.18),
       0 2px 6px rgba(15, 23, 42, 0.06);
     color: var(--pd-tiffany-deep);
     transition: transform 0.15s ease;
@@ -3905,7 +3905,7 @@
   }
 
   .property-detail-mobile-about-bid__price-col--animated .property-detail-mobile-about-bid__value {
-    color: #059669;
+    color: #007d8a;
   }
 
   .property-detail-mobile-about-bid__value {
@@ -3919,7 +3919,7 @@
   }
 
   .property-detail-mobile-about-bid__arrow {
-    color: #059669;
+    color: #007d8a;
     flex-shrink: 0;
     margin-bottom: 2px;
   }
@@ -3942,11 +3942,11 @@
   }
 
   .property-detail-mobile-about-leader--you {
-    border-color: rgba(16, 185, 129, 0.35);
-    background: linear-gradient(145deg, #ffffff 0%, #ecfdf5 100%);
+    border-color: rgba(0, 153, 169, 0.35);
+    background: linear-gradient(145deg, #ffffff 0%, #e6f6f8 100%);
     box-shadow:
-      0 4px 16px rgba(16, 185, 129, 0.12),
-      inset 0 0 0 1px rgba(16, 185, 129, 0.08);
+      0 4px 16px rgba(0, 153, 169, 0.12),
+      inset 0 0 0 1px rgba(0, 153, 169, 0.08);
   }
 
   .property-detail-mobile-about-leader__flag-wrap {
@@ -3962,7 +3962,7 @@
   }
 
   .property-detail-mobile-about-leader--you .property-detail-mobile-about-leader__flag-wrap {
-    background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+    background: linear-gradient(180deg, #e6f6f8 0%, #d1fae5 100%);
   }
 
   .property-detail-mobile-about-leader__flag {
@@ -4255,7 +4255,7 @@
     font-weight: 600;
     color: var(--pd-tiffany-deep);
     background: var(--pd-tiffany-soft);
-    border: 1px solid rgba(10, 186, 181, 0.22);
+    border: 1px solid rgba(0, 153, 169, 0.22);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-gallery__pill--video {
@@ -4299,7 +4299,7 @@
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-gallery__thumb--active {
     border-color: var(--pd-tiffany);
-    box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.2);
+    box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.2);
     transform: scale(1.02);
   }
 
@@ -4382,10 +4382,10 @@
     border-radius: 22px;
     background:
       radial-gradient(120% 80% at 100% 0%, rgba(255, 255, 255, 0.55) 0%, transparent 55%),
-      linear-gradient(145deg, #0abab5 0%, #089a96 48%, #067a77 100%);
+      linear-gradient(145deg, #0099A9 0%, #007d8a 48%, #006672 100%);
     border: 1px solid rgba(255, 255, 255, 0.28);
     box-shadow:
-      0 16px 40px rgba(10, 186, 181, 0.28),
+      0 16px 40px rgba(0, 153, 169, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.35);
     color: #ffffff;
   }
@@ -4393,9 +4393,9 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__leader-hero--you {
     background:
       radial-gradient(120% 80% at 100% 0%, rgba(255, 255, 255, 0.6) 0%, transparent 55%),
-      linear-gradient(145deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%);
+      linear-gradient(145deg, #33adbb 0%, #007580 50%, #00605a 100%);
     box-shadow:
-      0 18px 44px rgba(13, 148, 136, 0.32),
+      0 18px 44px rgba(0, 153, 169, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 
@@ -4430,7 +4430,7 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #0f766e;
+    color: #00605a;
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
   }
@@ -4629,7 +4629,7 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__cta--secondary {
     color: var(--pd-tiffany-deep);
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.35);
+    border: 1px solid rgba(0, 153, 169, 0.35);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__cta:active:not(:disabled) {
@@ -4755,7 +4755,7 @@
 
   .property-detail-page-new--auction-mobile-v2 .bidding-section__input:focus {
     border-color: var(--pd-tiffany);
-    box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.12);
+    box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.12);
   }
 
   .property-detail-page-new--auction-mobile-v2 .recent-bid-item__amount {
@@ -4930,12 +4930,12 @@
 
 @media (min-width: 961px) {
   .property-detail-page-new--auction-mobile-v2 {
-    --pd-tiffany: #0abab5;
-    --pd-tiffany-deep: #089a95;
+    --pd-tiffany: #0099A9;
+    --pd-tiffany-deep: #007d8a;
     --pd-tiffany-soft: #ecfeff;
-    --pd-tiffany-soft-border: rgba(10, 186, 181, 0.35);
-    --pd-tiffany-ring: rgba(10, 186, 181, 0.14);
-    --pd-tiffany-glow: rgba(10, 186, 181, 0.32);
+    --pd-tiffany-soft-border: rgba(0, 153, 169, 0.35);
+    --pd-tiffany-ring: rgba(0, 153, 169, 0.14);
+    --pd-tiffany-glow: rgba(0, 153, 169, 0.32);
     --pd-card-radius: 20px;
     --pd-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.06);
     --pd-auction-header-h: 56px;
@@ -5517,7 +5517,7 @@
     padding: 24px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(10, 186, 181, 0.28);
+    border: 1px solid rgba(0, 153, 169, 0.28);
     box-shadow: var(--pd-card-shadow);
   }
 
@@ -5567,8 +5567,8 @@
 
   .property-detail-auction-desktop-gallery__item:hover {
     transform: translateY(-3px);
-    border-color: rgba(10, 186, 181, 0.45);
-    box-shadow: 0 16px 32px rgba(10, 186, 181, 0.14);
+    border-color: rgba(0, 153, 169, 0.45);
+    box-shadow: 0 16px 32px rgba(0, 153, 169, 0.14);
   }
 
   .property-detail-auction-desktop-gallery__item img {
@@ -5765,7 +5765,7 @@
     padding: 24px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(10, 186, 181, 0.28);
+    border: 1px solid rgba(0, 153, 169, 0.28);
     box-shadow: var(--pd-card-shadow);
   }
 
@@ -5881,9 +5881,9 @@
   .property-detail-auction-desktop-bids-leader--you {
     background:
       radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 58%),
-      linear-gradient(135deg, #26cfc9 0%, #0abab5 45%, #089a95 100%);
+      linear-gradient(135deg, #26cfc9 0%, #0099A9 45%, #007d8a 100%);
     box-shadow:
-      0 16px 40px rgba(10, 186, 181, 0.28),
+      0 16px 40px rgba(0, 153, 169, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.35);
   }
 
@@ -6120,7 +6120,7 @@
     margin-top: 6px;
     min-height: 24px;
     border-radius: 1px;
-    background: linear-gradient(180deg, rgba(10, 186, 181, 0.45) 0%, #e2e8f0 100%);
+    background: linear-gradient(180deg, rgba(0, 153, 169, 0.45) 0%, #e2e8f0 100%);
   }
 
   .property-detail-auction-desktop-bids-item__card {
@@ -6141,8 +6141,8 @@
   }
 
   .property-detail-auction-desktop-bids-item:hover .property-detail-auction-desktop-bids-item__card {
-    border-color: rgba(10, 186, 181, 0.35);
-    box-shadow: 0 8px 22px rgba(10, 186, 181, 0.1);
+    border-color: rgba(0, 153, 169, 0.35);
+    box-shadow: 0 8px 22px rgba(0, 153, 169, 0.1);
     transform: translateY(-1px);
   }
 
@@ -6164,7 +6164,7 @@
     background: linear-gradient(180deg, #f8fafc 0%, var(--pd-tiffany-soft) 100%);
     color: #64748b;
     font-size: 1.15rem;
-    border: 1px solid rgba(10, 186, 181, 0.12);
+    border: 1px solid rgba(0, 153, 169, 0.12);
   }
 
   .property-detail-auction-desktop-bids-item__user-meta {
@@ -6378,7 +6378,7 @@
     color: var(--pd-tiffany-deep);
     background: var(--pd-tiffany-soft);
     border: 1px solid var(--pd-tiffany-soft-border);
-    box-shadow: 0 2px 8px rgba(10, 186, 181, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 153, 169, 0.1);
   }
 
   .property-detail-auction-desktop-amenities__list--extra .property-detail-auction-desktop-amenities__item {
@@ -6473,9 +6473,9 @@
   }
 
   .property-detail-auction-desktop-documents__item:hover {
-    border-color: rgba(10, 186, 181, 0.4);
+    border-color: rgba(0, 153, 169, 0.4);
     background: linear-gradient(180deg, #ffffff 0%, var(--pd-tiffany-soft) 100%);
-    box-shadow: 0 8px 22px rgba(10, 186, 181, 0.1);
+    box-shadow: 0 8px 22px rgba(0, 153, 169, 0.1);
     transform: translateY(-1px);
   }
 
@@ -6489,8 +6489,8 @@
     border-radius: 12px;
     color: var(--pd-tiffany-deep);
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.22);
-    box-shadow: 0 2px 10px rgba(10, 186, 181, 0.1);
+    border: 1px solid rgba(0, 153, 169, 0.22);
+    box-shadow: 0 2px 10px rgba(0, 153, 169, 0.1);
   }
 
   .property-detail-auction-desktop-documents__meta {
@@ -6563,7 +6563,7 @@
     padding: 16px 24px;
     font-size: 15px;
     box-shadow:
-      0 12px 36px rgba(10, 186, 181, 0.2),
+      0 12px 36px rgba(0, 153, 169, 0.2),
       0 4px 12px rgba(15, 23, 42, 0.08);
   }
 
@@ -6643,7 +6643,7 @@
     padding: 12px 18px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(10, 186, 181, 0.22);
+    border: 1px solid rgba(0, 153, 169, 0.22);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     z-index: 1000;
     font-size: 13px;
@@ -6859,9 +6859,9 @@
     padding: 22px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(10, 186, 181, 0.28);
+    border: 1px solid rgba(0, 153, 169, 0.28);
     box-shadow:
-      0 4px 24px rgba(10, 186, 181, 0.1),
+      0 4px 24px rgba(0, 153, 169, 0.1),
       0 12px 36px rgba(15, 23, 42, 0.08);
     overflow: visible;
     transition: box-shadow 0.25s ease;
@@ -6870,7 +6870,7 @@
   .property-detail-auction-desktop__bid-panel:hover,
   .property-detail-auction-desktop__bid-card:hover {
     box-shadow:
-      0 6px 28px rgba(10, 186, 181, 0.14),
+      0 6px 28px rgba(0, 153, 169, 0.14),
       0 16px 44px rgba(15, 23, 42, 0.1);
   }
 
@@ -7092,10 +7092,10 @@
     .property-detail-auction-desktop-leader.property-detail-mobile-about-leader--you,
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader.property-detail-mobile-about-leader--you {
-    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-    border-color: rgba(16, 185, 129, 0.32);
+    background: linear-gradient(135deg, #e6f6f8 0%, #d1fae5 100%);
+    border-color: rgba(0, 153, 169, 0.32);
     box-shadow:
-      0 4px 16px rgba(16, 185, 129, 0.12),
+      0 4px 16px rgba(0, 153, 169, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
@@ -7246,7 +7246,7 @@
     min-width: 0;
     min-height: 46px;
     border-radius: 12px;
-    border: 1px solid rgba(8, 154, 149, 0.35) !important;
+    border: 1px solid rgba(0, 125, 138, 0.35) !important;
     background: linear-gradient(
       180deg,
       var(--pd-tiffany) 0%,

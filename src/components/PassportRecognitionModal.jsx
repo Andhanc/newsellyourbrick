@@ -27,7 +27,7 @@ const PassportRecognitionModal = ({ isOpen, onClose, onConfirm, extractedData })
 
         <div className="passport-recognition-modal__content">
           <div className="passport-recognition-modal__icon">
-            <FiCheckCircle size={64} color="#0ABAB5" />
+            <FiCheckCircle size={64} color="#0099A9" />
           </div>
           
           <h2 className="passport-recognition-modal__title">

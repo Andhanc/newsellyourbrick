@@ -1,123 +1,153 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ElementType, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  FiArrowRight,
-  FiBarChart2,
-  FiBriefcase,
-  FiCheck,
-  FiMenu,
-  FiShield,
-  FiTrendingUp,
-  FiUsers,
-} from 'react-icons/fi';
-import {
-  PiBank,
-  PiChartLineUp,
-  PiHandshake,
-  PiHouseLine,
-  PiMedal,
-  PiShieldCheck,
-  PiUserCircleGear,
-  PiWallet,
-} from 'react-icons/pi';
+  HiArrowUpRight,
+  HiBars3,
+  HiChartBarSquare,
+  HiCheckCircle,
+  HiGlobeAlt,
+  HiShieldCheck,
+  HiSparkles,
+  HiXMark,
+} from 'react-icons/hi2';
 import { publicAsset } from '@/utils/publicAsset';
 import { CO_INVESTMENT_PATH } from '@/utils/sectionRoutes';
 import { scrollMainTo } from '@/utils/mainScroll';
 import './about-luxury.css';
 
 const ASSETS = {
-  hero: publicAsset('images/sellyourbrick/about/dubai-hero-ref.jpg'),
-  market: publicAsset('images/sellyourbrick/about/dubai-market-ref.jpg'),
-  process: publicAsset('images/sellyourbrick/about/dubai-process-ref.jpg'),
-  burj: publicAsset('images/sellyourbrick/about/dubai-burj-ref.jpg'),
-  cta: publicAsset('images/sellyourbrick/about/dubai-cta-ref.jpg'),
-  teamAlex: publicAsset('images/sellyourbrick/about/team-alex.jpg'),
-  teamMaria: publicAsset('images/sellyourbrick/about/team-maria.jpg'),
-  teamDmitry: publicAsset('images/sellyourbrick/about/team-dmitry.jpg'),
+  hero: publicAsset('images/sellyourbrick/about-corporate/overview-hero-building.png'),
+  analyticsTeam: publicAsset('images/sellyourbrick/about-corporate/analytics-team.png'),
+  workshopTeam: publicAsset('images/sellyourbrick/about-corporate/workshop-team.png'),
+  botanical: publicAsset('images/sellyourbrick/about-corporate/botanical-leaves.png'),
+  meeting: publicAsset('images/sellyourbrick/about-corporate/enterprise-meeting.png'),
+  blueLoop: publicAsset('images/sellyourbrick/about-corporate/blue-glass-loop.png'),
 };
 
 const navItems = [
-  { label: 'Инвестиционные стратегии', to: CO_INVESTMENT_PATH },
-  { label: 'Как это работает', to: '#process' },
-  { label: 'Калькулятор', to: '/calculator' },
-  { label: 'О нас', to: '/about', active: true },
-  { label: 'Контакты', to: '#contacts' },
+  { label: 'Overview', to: '#overview' },
+  { label: 'Analytics', to: '#analytics' },
+  { label: 'Scale', to: '#scale' },
+  { label: 'Systems', to: '#systems' },
+  { label: 'Contact', to: '#contacts' },
 ];
 
-const heroStats = [
-  { icon: FiBarChart2, value: '€41.5м+', label: 'инвестировано всего' },
-  { icon: FiUsers, value: '24м+', label: 'выплачено инвесторам' },
-  { icon: FiShield, value: '46', label: 'проектов успешно завершено' },
-  { icon: PiHandshake, value: '35к+', label: 'доверяющих инвесторов' },
-];
-
-const trustItems = [
-  { icon: PiMedal, title: 'Лицензированная', text: 'компания в ОАЭ' },
-  { icon: PiBank, title: 'Регулируется', text: 'международными стандартами' },
-  { icon: PiShieldCheck, title: 'Прозрачность', text: 'на всех этапах' },
-  { icon: PiWallet, title: 'Выплаты отчеты', text: 'и собственности' },
-  { icon: FiShield, title: 'Защита капитала', text: 'и управление рисками' },
-];
-
-const platformBenefits = [
-  'Доступ к лучшим объектам на рынке',
-  'Профессиональный анализ и управление',
-  'Прозрачная отчетность и выплаты',
-  'Фокус на долгосрочной доходности',
-];
-
-const processSteps = [
+const analyticsCards = [
   {
-    icon: PiHouseLine,
-    title: 'Анализ и отбор',
-    text: 'Наши эксперты отбирают лучшие объекты с описанием потенциальной доходности.',
+    label: 'Average ROI',
+    eyebrow: '09-02',
+    value: '2.50x',
+    image: ASSETS.analyticsTeam,
   },
   {
-    icon: PiChartLineUp,
-    title: 'Инвестирование',
-    text: 'Вы инвестируете онлайн от минимальной суммы с полным юридическим оформлением.',
-  },
-  {
-    icon: PiUserCircleGear,
-    title: 'Управление',
-    text: 'Мы берем на себя все процессы: строительство, аренду, управление и контроль.',
-  },
-  {
-    icon: FiUsers,
-    title: 'Доход',
-    text: 'Вы получаете регулярный доход от аренды и рост стоимости актива.',
+    label: 'Monthly Users',
+    eyebrow: '09-11',
+    value: '75,00+',
+    image: ASSETS.workshopTeam,
   },
 ];
 
-const dubaiReasons = [
-  ['Стабильная экономика', 'и политическая безопасность'],
-  ['Налоговые преимущества', '0% на доход и прирост капитала'],
-  ['Высокий спрос', 'со стороны арендаторов'],
-  ['Мировой центр', 'бизнеса и туризма'],
+const capabilities = [
+  { label: 'Global Scalability', active: true },
+  { label: 'Smart Analytics' },
+  { label: 'Efficient Workflows' },
 ];
 
-const team = [
+const metricCards = [
   {
-    name: 'Александр Петров',
-    role: 'CEO & Co-Founder',
-    text: 'Более 10 лет в инвестициях и управлении активами',
-    image: ASSETS.teamAlex,
+    value: 150,
+    suffix: '+',
+    text: 'We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions.',
   },
   {
-    name: 'Мария Иванова',
-    role: 'Head of Investments',
-    text: 'Эксперт в недвижимости и структурировании сделок',
-    image: ASSETS.teamMaria,
-  },
-  {
-    name: 'Дмитрий Смирнов',
-    role: 'Head of Asset Management',
-    text: 'Опыт в управлении проектами недвижимости в Дубае',
-    image: ASSETS.teamDmitry,
+    value: 1200,
+    suffix: '+',
+    text: 'Our operating model connects data, capital, and property workflows into one measurable ecosystem.',
   },
 ];
+
+const systemNotes = [
+  {
+    title: 'Smart System',
+    text: 'Our approach combines strategic thinking with modern tools to deliver impactful results.',
+  },
+  {
+    title: 'Cost Efficiency',
+    text: 'We design lean workflows that reduce friction and keep every stakeholder aligned.',
+  },
+];
+
+function ArrowBadge({ className = '', label = 'Explore' }: { className?: string; label?: string }) {
+  return (
+    <span className={`al-arrow-badge ${className}`} aria-label={label}>
+      <HiArrowUpRight aria-hidden />
+    </span>
+  );
+}
+
+function Reveal({
+  as: Tag = 'div',
+  className = '',
+  delay = 0,
+  children,
+}: {
+  as?: ElementType;
+  className?: string;
+  delay?: number;
+  children: ReactNode;
+}) {
+  return (
+    <Tag className={`al-reveal ${className}`} style={{ '--al-delay': `${delay}ms` } as CSSProperties}>
+      {children}
+    </Tag>
+  );
+}
+
+function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const ref = useRef<HTMLStrongElement>(null);
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+
+    let frame = 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        const start = performance.now();
+        const duration = 1400;
+
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - (1 - progress) ** 3;
+          setDisplay(Math.round(value * eased));
+          if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+
+        frame = requestAnimationFrame(tick);
+        observer.disconnect();
+      },
+      { threshold: 0.35 },
+    );
+
+    observer.observe(node);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [value]);
+
+  return (
+    <strong ref={ref}>
+      {display.toLocaleString('en-US')}
+      {suffix}
+    </strong>
+  );
+}
 
 export default function About() {
   const location = useLocation();
@@ -133,49 +163,66 @@ export default function About() {
   }, []);
 
   useEffect(() => {
-    if (!location.hash) return;
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('.al-reveal'));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' },
+    );
+
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!location.hash) return undefined;
     setMobileMenuOpen(false);
     const timer = window.setTimeout(() => {
       document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
+    }, 160);
     return () => window.clearTimeout(timer);
   }, [location.hash]);
 
   return (
     <div className="al-page">
-      <header className="al-topbar" aria-label="Основная навигация">
+      <header className="al-topbar" aria-label="About page navigation">
         <div className="al-shell al-topbar__inner">
           <Link className="al-logo" to="/" aria-label="Sell Your Brick">
             <span>SELL YOUR</span>
-            <strong>YOURBRICK</strong>
+            <strong>BRICK</strong>
           </Link>
 
-          <nav className="al-nav" aria-label="Разделы страницы">
+          <nav className="al-nav" aria-label="Page sections">
             {navItems.map((item) => (
-              <Link key={item.label} className={item.active ? 'is-active' : undefined} to={item.to}>
+              <a key={item.label} href={item.to}>
                 {item.label}
-              </Link>
+              </a>
             ))}
           </nav>
 
           <div className="al-topbar__actions">
             <Link className="al-auth al-auth--login" to="/profile">
-              Войти
+              Log in
             </Link>
-            <Link className="al-auth al-auth--register" to="/profile">
-              Регистрация
+            <Link className="al-auth al-auth--register" to={CO_INVESTMENT_PATH}>
+              Start
             </Link>
           </div>
 
           <button
             className="al-mobile-menu"
             type="button"
-            aria-label="Открыть меню"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
             aria-controls="about-mobile-menu"
             onClick={() => setMobileMenuOpen((open) => !open)}
           >
-            <FiMenu aria-hidden />
+            {mobileMenuOpen ? <HiXMark aria-hidden /> : <HiBars3 aria-hidden />}
           </button>
         </div>
 
@@ -186,21 +233,16 @@ export default function About() {
         >
           <div className="al-shell">
             {navItems.map((item) => (
-              <Link
-                key={item.label}
-                className={item.active ? 'is-active' : undefined}
-                to={item.to}
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <a key={item.label} href={item.to} onClick={() => setMobileMenuOpen(false)}>
                 {item.label}
-              </Link>
+              </a>
             ))}
             <div className="al-mobile-panel__actions">
               <Link className="al-auth al-auth--login" to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                Войти
+                Log in
               </Link>
-              <Link className="al-auth al-auth--register" to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                Регистрация
+              <Link className="al-auth al-auth--register" to={CO_INVESTMENT_PATH} onClick={() => setMobileMenuOpen(false)}>
+                Start
               </Link>
             </div>
           </div>
@@ -208,188 +250,177 @@ export default function About() {
       </header>
 
       <main>
-        <section className="al-hero" aria-labelledby="about-hero-title">
-          <img className="al-hero__image" src={ASSETS.hero} alt="" aria-hidden />
-          <div className="al-hero__veil" aria-hidden />
-          <div className="al-shell al-hero__content">
-            <div className="al-hero__copy">
-              <h1 id="about-hero-title">
-                Мы превращаем недвижимость Дубая в возможности{' '}
-                <span>для каждого инвестора</span>
-              </h1>
-              <p>
-                SellYourBrick - инвестиционная платформа, которая открывает доступ к
-                премиальной недвижимости Дубая и обеспечивает стабильный доход с
-                максимальной прозрачностью.
-              </p>
-            </div>
+        <section className="al-hero" id="overview" aria-labelledby="about-hero-title">
+          <div className="al-shell al-hero__grid">
+            <Reveal className="al-hero__copy">
+              <div className="al-hero__title-row">
+                <h1 id="about-hero-title">Corporate Overview</h1>
+                <span className="al-pill">Company</span>
+              </div>
+              <div className="al-hero__subcopy">
+                <h2>Global Reach</h2>
+                <p>Our expertise allows us to streamline operations and unlock new opportunities.</p>
+              </div>
+            </Reveal>
 
-            <div className="al-hero__stats" aria-label="Ключевые показатели">
-              {heroStats.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <article className="al-hero-stat" key={stat.value}>
-                    <Icon aria-hidden />
-                    <strong>{stat.value}</strong>
-                    <span>{stat.label}</span>
-                  </article>
-                );
-              })}
-            </div>
+            <Reveal className="al-hero__visual" delay={120}>
+              <img src={ASSETS.hero} alt="Modern residential tower with soft green foreground leaves" />
+              <ArrowBadge className="al-hero__arrow" />
+            </Reveal>
           </div>
         </section>
 
-        <section className="al-trust" aria-label="Гарантии платформы">
-          <div className="al-shell al-trust__bar">
-            {trustItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <article className="al-trust__item" key={item.title}>
-                  <span className="al-icon-ring">
-                    <Icon aria-hidden />
-                  </span>
-                  <p>
-                    <strong>{item.title}</strong>
-                    <span>{item.text}</span>
-                  </p>
+        <section className="al-analytics" id="analytics" aria-labelledby="analytics-title">
+          <div className="al-shell al-analytics__grid">
+            <Reveal className="al-analytics__intro">
+              <p>Our approach combines strategic thinking with modern tools to deliver impactful results.</p>
+              <ArrowBadge />
+              <h2 id="analytics-title">Smart Analytics</h2>
+            </Reveal>
+
+            <Reveal className="al-analytics__cards" delay={90}>
+              {analyticsCards.map((card) => (
+                <article className="al-analytics-card" key={card.label}>
+                  <img src={card.image} alt="" aria-hidden />
+                  <div>
+                    <span>{card.label}</span>
+                    <small>{card.eyebrow}</small>
+                    <strong>{card.value}</strong>
+                  </div>
                 </article>
-              );
-            })}
+              ))}
+            </Reveal>
           </div>
         </section>
 
-        <section className="al-platform" id="about-intro" aria-labelledby="platform-title">
-          <div className="al-shell al-platform__grid">
-            <div className="al-copy-block">
-              <p className="al-kicker">О платформе</p>
-              <h2 id="platform-title">
-                SellYourBrick - мост между инвесторами и премиальной недвижимостью Дубая
-              </h2>
-              <p>
-                Мы объединяем экспертизу в недвижимости, современные технологии и
-                глубокое понимание рынка, чтобы каждый инвестор мог получать
-                максимальную выгоду.
+        <section className="al-partner" aria-labelledby="partner-title">
+          <div className="al-shell al-partner__stage">
+            <img className="al-partner__plant" src={ASSETS.botanical} alt="" aria-hidden />
+            <Reveal className="al-partner-card">
+              <div className="al-partner-card__top">
+                <h2 id="partner-title">Trusted Partner</h2>
+                <p>Collaborating with partners to create measurable outcomes.</p>
+              </div>
+              <img src={ASSETS.analyticsTeam} alt="Strategy team portrait" />
+              <div className="al-partner-card__main">
+                <ArrowBadge />
+                <div>
+                  <h3>Enterprise Overview</h3>
+                  <p>Empowering businesses with modern technology.</p>
+                </div>
+              </div>
+            </Reveal>
+            <div className="al-partner__notes" aria-label="Operating highlights">
+              <span>Smart Systems</span>
+              <strong>The Overview</strong>
+              <span>Business Insights</span>
+              <span>24/7 Support</span>
+              <strong>Secure Systems</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="al-scale" id="scale" aria-labelledby="scale-title">
+          <div className="al-shell al-scale__grid">
+            <Reveal className="al-scale__image-card">
+              <img src={ASSETS.meeting} alt="Business team reviewing enterprise strategy" />
+              <div className="al-scale__overlay">
+                <h2>Enterprise Overview</h2>
+                <strong>2.5x</strong>
+                <p>Empowering businesses with modern technology.</p>
+              </div>
+            </Reveal>
+
+            <Reveal className="al-scale__copy" delay={120}>
+              <p className="al-section-note">
+                We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions
+                across industries by integrating
               </p>
-
-              <ul className="al-check-list">
-                {platformBenefits.map((benefit) => (
-                  <li key={benefit}>
-                    <span>
-                      <FiCheck aria-hidden />
-                    </span>
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <figure className="al-market-card">
-              <img src={ASSETS.market} alt="Небоскребы Дубая и отчет по рынку недвижимости" />
-            </figure>
+              <span className="al-code">09-02</span>
+              <div className="al-capabilities">
+                <HiArrowUpRight aria-hidden />
+                <ul aria-labelledby="scale-title">
+                  {capabilities.map((item) => (
+                    <li key={item.label} id={item.active ? 'scale-title' : undefined} className={item.active ? 'is-active' : undefined}>
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        <section className="al-process" id="process" aria-labelledby="process-title">
-          <div className="al-shell al-process__grid">
-            <div className="al-process__main">
-              <p className="al-kicker">Как это работает</p>
-              <h2 id="process-title">Простой процесс - надежный результат</h2>
+        <section className="al-metrics" aria-labelledby="metrics-title">
+          <div className="al-shell">
+            <Reveal className="al-metrics__intro">
+              <h2 id="metrics-title">Driving Innovation Through Scalable Solutions</h2>
+              <p>
+                We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions
+                across industries by integrating strategy, design, and advanced technology into a unified ecosystem
+                that drives measurable growth and long-term value.
+              </p>
+            </Reveal>
 
-              <div className="al-steps">
-                {processSteps.map((step, index) => {
-                  const Icon = step.icon;
-                  return (
-                    <article className="al-step" key={step.title}>
-                      <span className="al-step__number">{String(index + 1).padStart(2, '0')}</span>
-                      <span className="al-step__icon">
-                        <Icon aria-hidden />
-                      </span>
-                      <h3>{step.title}</h3>
-                      <p>{step.text}</p>
-                    </article>
-                  );
-                })}
-              </div>
+            <div className="al-metrics__grid">
+              {metricCards.map((metric, index) => (
+                <Reveal as="article" className="al-metric-card" delay={index * 90} key={metric.value}>
+                  <div className="al-metric-card__value">
+                    <AnimatedNumber value={metric.value} suffix={metric.suffix} />
+                    <ArrowBadge />
+                  </div>
+                  <p>{metric.text}</p>
+                </Reveal>
+              ))}
             </div>
-
-            <aside className="al-process-card" aria-label="Ожидаемые показатели">
-              <img src={ASSETS.process} alt="Интерьер с бассейном и видом на Дубай" />
-            </aside>
           </div>
         </section>
 
-        <section className="al-dubai-team" aria-labelledby="dubai-title">
-          <div className="al-shell al-dubai-team__grid">
-            <div className="al-dubai-card">
-              <div className="al-dubai-card__list">
-                <h2 id="dubai-title">Почему Дубай?</h2>
-                {dubaiReasons.map(([title, text]) => (
-                  <article key={title}>
-                    <span>
-                      <PiShieldCheck aria-hidden />
-                    </span>
-                    <p>
-                      <strong>{title}</strong>
-                      <small>{text}</small>
-                    </p>
-                  </article>
-                ))}
+        <section className="al-systems" id="systems" aria-labelledby="systems-title">
+          <div className="al-shell al-systems__grid">
+            <Reveal className="al-systems__copy">
+              {systemNotes.map((note) => (
+                <article key={note.title}>
+                  <h2 id={note.title === 'Smart System' ? 'systems-title' : undefined}>{note.title}</h2>
+                  <p>{note.text}</p>
+                </article>
+              ))}
+              <div className="al-system-tags">
+                <span>Company</span>
+                <span>Updated 2026</span>
               </div>
-              <img src={ASSETS.burj} alt="Вид на Burj Al Arab и береговую линию Дубая" />
-            </div>
+            </Reveal>
 
-            <div className="al-team" id="about-agents">
-              <p className="al-kicker">Наша команда</p>
-              <h2>Эксперты с международным опытом</h2>
-
-              <div className="al-team__grid">
-                {team.map((member) => (
-                  <article className="al-member" key={member.name}>
-                    <img src={member.image} alt={member.name} />
-                    <div>
-                      <h3>{member.name}</h3>
-                      <p>{member.role}</p>
-                      <span>{member.text}</span>
-                      <a href="https://www.linkedin.com" aria-label={`${member.name} в LinkedIn`}>
-                        in
-                      </a>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
+            <Reveal className="al-system-visual" delay={120}>
+              <img src={ASSETS.blueLoop} alt="" aria-hidden />
+              <article className="al-system-card">
+                <h2>User-centered Design</h2>
+                <p>Our approach combines strategic thinking with modern tools to deliver impactful results.</p>
+                <div className="al-system-card__footer">
+                  <ArrowBadge />
+                  <span>09-02</span>
+                </div>
+              </article>
+            </Reveal>
           </div>
         </section>
 
         <section className="al-cta" id="contacts" aria-labelledby="cta-title">
-          <img src={ASSETS.cta} alt="" aria-hidden />
-          <div className="al-shell al-cta__content">
-            <p className="al-kicker">Станьте частью будущего</p>
-            <h2 id="cta-title">Присоединяйтесь к сообществу умных инвесторов</h2>
-            <p>Мы объединяем капитал с возможностями и создаем реальные результаты.</p>
-            <Link className="al-gold-btn" to={CO_INVESTMENT_PATH}>
-              Начать инвестировать
-              <FiArrowRight aria-hidden />
-            </Link>
-          </div>
-        </section>
-
-        <section className="al-footer-proof" aria-label="Финальные преимущества">
-          <div className="al-shell al-footer-proof__grid">
-            {[
-              ['Проверенные сделки', 'Каждый объект проходит строгий отбор и юридическую проверку.'],
-              ['Прозрачность', 'Все данные открыты: от плана до финансового результата.'],
-              ['Стабильный доход', 'Стратегия с фокусом на возврат капитала и прибыль.'],
-              ['Защита капитала', 'Комплексный анализ и управление рисками.'],
-            ].map(([title, text]) => (
-              <article key={title}>
-                <FiBriefcase aria-hidden />
-                <p>
-                  <strong>{title}</strong>
-                  <span>{text}</span>
-                </p>
-              </article>
-            ))}
+          <div className="al-shell al-cta__inner">
+            <Reveal className="al-cta__copy">
+              <span className="al-pill al-pill--dark">Corporate systems</span>
+              <h2 id="cta-title">Build a smarter property investment workflow.</h2>
+              <p>Connect analytics, operational discipline, and scalable acquisition tools inside one modern platform.</p>
+            </Reveal>
+            <Reveal className="al-cta__actions" delay={90}>
+              <Link className="al-primary-link" to={CO_INVESTMENT_PATH}>
+                Start investing
+                <HiArrowUpRight aria-hidden />
+              </Link>
+              <Link className="al-secondary-link" to="/seller">
+                For sellers
+              </Link>
+            </Reveal>
           </div>
         </section>
       </main>

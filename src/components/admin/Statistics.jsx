@@ -569,7 +569,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       '#4cc9f0',
       '#f8961e',
       '#f72585',
-      '#10b981'
+      '#0099A9'
     ];
 
     return {
@@ -611,7 +611,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     const labelKey = isType ? 'type' : 'section';
     const labels = list.map((item) => (isType ? typeLabels[item.type] : sectionLabels[item.section]) || item[labelKey]);
     const data = list.map((item) => item.count);
-    const colors = ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0', '#10b981'];
+    const colors = ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0', '#0099A9'];
     return {
       labels: labels.length ? labels : (isType ? ['Виллы', 'Дома', 'Квартиры', 'Апартаменты'] : ['Аукцион', 'Купить сейчас', 'Доли', 'Долги']),
       datasets: [{

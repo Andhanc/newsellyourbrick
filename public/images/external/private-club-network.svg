@@ -1,12 +1,12 @@
 <svg width="360" height="240" viewBox="0 0 360 240" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="24" y="32" width="312" height="176" rx="34" fill="#E7FAF8"/>
   <path d="M116 122l64-48 64 48M116 122l64 50 64-50" stroke="#0A8F8A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="116" cy="122" r="28" fill="#FFFFFF" stroke="#0ABAB5" stroke-width="8"/>
+  <circle cx="116" cy="122" r="28" fill="#FFFFFF" stroke="#0099A9" stroke-width="8"/>
   <circle cx="180" cy="74" r="28" fill="#FFFFFF" stroke="#81D8D0" stroke-width="8"/>
-  <circle cx="244" cy="122" r="28" fill="#FFFFFF" stroke="#0ABAB5" stroke-width="8"/>
+  <circle cx="244" cy="122" r="28" fill="#FFFFFF" stroke="#0099A9" stroke-width="8"/>
   <circle cx="180" cy="172" r="28" fill="#FFFFFF" stroke="#81D8D0" stroke-width="8"/>
-  <circle cx="116" cy="122" r="8" fill="#0ABAB5"/>
-  <circle cx="180" cy="74" r="8" fill="#0ABAB5"/>
-  <circle cx="244" cy="122" r="8" fill="#0ABAB5"/>
-  <circle cx="180" cy="172" r="8" fill="#0ABAB5"/>
+  <circle cx="116" cy="122" r="8" fill="#0099A9"/>
+  <circle cx="180" cy="74" r="8" fill="#0099A9"/>
+  <circle cx="244" cy="122" r="8" fill="#0099A9"/>
+  <circle cx="180" cy="172" r="8" fill="#0099A9"/>
 </svg>

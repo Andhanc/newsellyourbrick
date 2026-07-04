@@ -2315,7 +2315,7 @@ function TestPage() {
                   cy={profileRingCenter}
                   r={profileRingR}
                   fill="none"
-                  stroke={profileCompletionStats.pct >= 100 ? '#10b981' : '#0abab5'}
+                  stroke={profileCompletionStats.pct >= 100 ? '#0099A9' : '#0099A9'}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   transform={`rotate(-90 ${profileRingCenter} ${profileRingCenter})`}
@@ -3655,9 +3655,9 @@ function TestPage() {
                   gravity={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.11 : 0.1}
                   wind={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.03 : 0.02}
                   colors={[
-                    '#10b981',
-                    '#0abab5',
-                    '#14b8a6',
+                    '#0099A9',
+                    '#0099A9',
+                    '#33adbb',
                     '#a78bfa',
                     '#8b5cf6',
                     '#f59e0b',
@@ -3686,7 +3686,7 @@ function TestPage() {
                     numberOfPieces={420}
                     gravity={0.14}
                     wind={-0.025}
-                    colors={['#a78bfa', '#8b5cf6', '#0abab5', '#34d399', '#fbbf24', '#f472b6']}
+                    colors={['#a78bfa', '#8b5cf6', '#0099A9', '#33adbb', '#fbbf24', '#f472b6']}
                     confettiSource={{
                       x: Math.max(0, windowSize.width * 0.15),
                       y: windowSize.height * 0.85,

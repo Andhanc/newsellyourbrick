@@ -340,15 +340,15 @@
   border-radius: 24px;
   background: linear-gradient(
     128deg,
-    #0abab5 0%,
+    #0099A9 0%,
     #3dd9d2 28%,
     #81e6df 52%,
-    #0abab5 78%,
-    #089a95 100%
+    #0099A9 78%,
+    #007d8a 100%
   );
   color: #fff;
   box-shadow:
-    0 22px 50px rgba(10, 186, 181, 0.28),
+    0 22px 50px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
@@ -459,7 +459,7 @@
   height: 44px;
   border-radius: 50%;
   background: #fff;
-  color: #089a95;
+  color: #007d8a;
   box-shadow: 0 4px 14px rgba(0, 50, 48, 0.12);
 }
 

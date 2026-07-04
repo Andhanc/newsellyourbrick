@@ -222,9 +222,9 @@
 }
 
 .notification-modal.success .notification-content {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: white;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.4);
 }
 
 .notification-modal.error .notification-content {
@@ -621,14 +621,14 @@
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  border-color: #a7f3d0;
-  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-  color: #047857;
+  border-color: #cce9ed;
+  background: linear-gradient(135deg, #e6f6f8 0%, #f0fafb 100%);
+  color: #007d8a;
 }
 
 .chat-msg-button--contact:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
-  border-color: #34d399;
+  background: linear-gradient(135deg, #d1fae5 0%, #e6f6f8 100%);
+  border-color: #33adbb;
 }
 
 .chat-msg-loading {

@@ -14,21 +14,14 @@ import {
   FiSearch,
   FiShield,
   FiSliders,
-  FiStar,
   FiTrendingUp,
   FiZap,
 } from 'react-icons/fi'
-import { Link } from 'react-router-dom'
 import BuyerMapScene from '@/components/BuyerMapScene'
-import { SiteBrandIcon } from '@/components/SiteBrandLogo'
+import Header from '@/components/Header'
 import { publicAsset } from '@/utils/publicAsset'
 import './BuyerPage.css'
-
-const navItems = [
-  ['Карта', 'buyer-map'],
-  ['Преимущества', 'buyer-benefits'],
-  ['Подписка', 'buyer-plans'],
-]
+import './SellerPage.css'
 
 const platformStats = [
   { value: '$1B+', label: 'сделок на платформе' },
@@ -99,26 +92,26 @@ const showcaseCards = [
 
 const plans = [
   {
-    name: 'Start',
-    price: '4 990 ₽',
-    subtitle: 'Для первого отбора объектов',
+    name: 'Starter',
+    price: '€0',
+    subtitle: 'Быстрый старт',
     height: 'short',
-    features: ['Каталог и карта объектов', 'Базовые фильтры', 'Расчет доходности', 'Еженедельный обзор'],
+    features: ['Аукцион', 'Покупка недвижимости', 'AI-помощник'],
   },
   {
     name: 'Pro',
-    price: '9 990 ₽',
-    subtitle: 'Лучший выбор для активного покупателя',
+    price: '€149',
+    subtitle: 'Больше функций, аналитика и персональный менеджер',
     height: 'medium',
     badge: 'Выбор покупателей',
-    features: ['Все возможности Start', 'Ранний доступ к объектам', 'Сравнение сценариев', 'Расширенная аналитика', 'Уведомления о новых лотах'],
+    features: ['Все возможности Starter', 'Аналитика', 'Калькулятор', 'Персональный менеджер'],
   },
   {
-    name: 'Private',
-    price: '19 990 ₽',
-    subtitle: 'Для персонального подбора',
+    name: 'VIP',
+    price: '€499',
+    subtitle: 'Максимум функций и приоритет на каждом этапе',
     height: 'tall',
-    features: ['Все возможности Pro', 'Персональный менеджер', 'Закрытые предложения', 'Юридический чек-лист', 'Индивидуальные подборки'],
+    features: ['Все возможности Pro', 'Приоритет в аукционах', 'VIP-менеджер', 'Закрытые лоты'],
   },
 ]
 
@@ -136,46 +129,32 @@ export default function BuyerPage() {
   )
 
   return (
-    <main className="buyer-page" aria-label="Информационная страница покупателя SellYourBrick">
-      <header className="buyer-nav">
-        <div className="buyer-nav__inner">
-          <Link className="buyer-brand" to="/" aria-label="SellYourBrick">
-            <SiteBrandIcon />
-            <span>SellYourBrick</span>
-          </Link>
-          <nav className="buyer-nav__links" aria-label="Навигация по странице">
-            {navItems.map(([label, id]) => (
-              <button type="button" key={label} onClick={() => scrollTo(id)}>
-                {label}
-              </button>
-            ))}
-          </nav>
-          <button type="button" className="buyer-pill-button buyer-nav__cta" onClick={() => setModalTitle('Стать покупателем')}>
-            Стать покупателем
-          </button>
-        </div>
-      </header>
-
+    <>
+      <Header />
+      <main className="buyer-page" aria-label="Информационная страница покупателя SellYourBrick">
       <section className="buyer-hero-viewport" id="buyer-map">
-        <div className="buyer-container buyer-hero__head">
-          <h1>
-            Покупайте недвижимость
-            <span>и растите свое будущее</span>
-          </h1>
+        <div className="buyer-hero__stage-wrap">
+          <div className="buyer-hero__stage">
+            <BuyerMapScene
+              onCardClick={(title) => setModalTitle(title)}
+            />
+          </div>
+
+          <div className="buyer-stats" aria-label="Цифры платформы">
+            {platformStats.map((stat) => (
+              <article className="buyer-stat" key={stat.label}>
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </article>
+            ))}
+          </div>
         </div>
 
-        <BuyerMapScene
-          onPinClick={(label) => setModalTitle(`Объекты: ${label}`)}
-          onCardClick={(title) => setModalTitle(title)}
-        />
-
-        <div className="buyer-stats" aria-label="Цифры платформы">
-          {platformStats.map((stat) => (
-            <article className="buyer-stat" key={stat.label}>
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </article>
-          ))}
+        <div className="buyer-hero__head">
+          <h1>Покупайте объект легко!</h1>
+          <p className="buyer-hero__lead">
+            Подбор под бюджет и цель, доходность и проверка на карте — без хаоса в поиске.
+          </p>
         </div>
       </section>
 
@@ -183,7 +162,9 @@ export default function BuyerPage() {
         <div className="buyer-container buyer-service">
           <div className="buyer-service__copy">
             <span>Reason to choose us</span>
-            <h2 id="buyer-service-title">Ценность умной покупки недвижимости</h2>
+            <h2 id="buyer-service-title">
+              Ценность умной покупки
+            </h2>
             <p>
               Мы берем на себя тяжелую работу: проверяем объект, считаем доходность, сравниваем сценарии и показываем покупателю только сильные варианты.
             </p>
@@ -208,28 +189,36 @@ export default function BuyerPage() {
       </section>
 
       <section className="buyer-benefits-wrap" id="buyer-benefits" aria-labelledby="buyer-benefits-title">
-        <div className="buyer-container buyer-benefits">
-          <span className="buyer-eyebrow buyer-eyebrow--dark">
-            <FiStar aria-hidden />
-            Features
-          </span>
-          <h2 id="buyer-benefits-title">Что получает покупатель на платформе</h2>
-          <div className="buyer-benefits__grid">
-            {benefits.map(({ Icon, title, text }) => (
-              <article className="buyer-benefit-card" key={title}>
-                <span>
-                  <Icon aria-hidden />
-                </span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-                <button type="button" onClick={() => setModalTitle(title)}>
-                  Узнать больше
-                  <FiArrowRight aria-hidden />
-                </button>
-              </article>
-            ))}
+        <section className="seller-features">
+          <img
+            className="seller-features__bg"
+            src={publicAsset('images/seller-page/seller-feature-bg.png')}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="seller-features__content">
+            <h2 id="buyer-benefits-title">
+              Что получает покупатель
+              <span>на платформе</span>
+            </h2>
+            <div className="seller-features__grid">
+              {benefits.map(({ Icon, title, text }) => (
+                <article className="seller-feature-card" key={title}>
+                  <span className="seller-feature-card__icon">
+                    <Icon aria-hidden />
+                  </span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                  <button type="button" className="seller-feature-card__link" onClick={() => setModalTitle(title)}>
+                    Узнать больше
+                    <FiArrowRight aria-hidden />
+                  </button>
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       </section>
 
       <section className="buyer-showcase-section" aria-labelledby="buyer-showcase-title">
@@ -238,7 +227,7 @@ export default function BuyerPage() {
             <h2 id="buyer-showcase-title">
               Как покупать
               <span>недвижимость</span>
-              <span>в SellYourBrick</span>
+              <span className="buyer-showcase__title-line">в SellYourBrick</span>
             </h2>
             <p>
               Забудьте о хаотичном поиске и десятках созвонов без цифр. Умные подборки дают покупателю понятный маршрут от интереса до сделки.
@@ -249,22 +238,6 @@ export default function BuyerPage() {
           </div>
 
           <div className="buyer-showcase__panel">
-            <svg className="buyer-showcase__blob" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden>
-              <defs>
-                <linearGradient id="buyer-showcase-blob-fill" x1="4%" y1="18%" x2="96%" y2="82%">
-                  <stop offset="0%" stopColor="#00b8cc" />
-                  <stop offset="52%" stopColor="#0099aa" />
-                  <stop offset="100%" stopColor="#007f8f" />
-                </linearGradient>
-              </defs>
-              <g className="buyer-showcase__blob-shadow" transform="translate(10 14)">
-                <path d="M-30 168C70 108 170 228 270 148C370 68 470 208 570 138C670 68 770 198 870 128C940 78 1010 168 1040 148L1040 292C940 352 840 262 740 312C640 362 540 272 440 322C340 372 240 282 140 332C70 372 0 302 -30 272Z" />
-              </g>
-              <path
-                className="buyer-showcase__blob-main"
-                d="M-40 152C55 92 165 212 260 132C355 52 455 192 555 122C655 52 755 182 855 112C935 62 1005 152 1035 132L1035 276C935 336 835 246 735 296C635 346 535 256 435 306C335 356 235 266 135 316C65 356 -5 286 -40 256Z"
-              />
-            </svg>
             <div className="buyer-showcase__grid">
               {showcaseCards.map(({ Icon, title, text }) => (
                 <article className="buyer-showcase-card" key={title}>
@@ -347,5 +320,6 @@ export default function BuyerPage() {
         </div>
       )}
     </main>
+    </>
   )
 }

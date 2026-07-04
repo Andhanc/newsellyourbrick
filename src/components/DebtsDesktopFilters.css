@@ -1,0 +1,33 @@
+.debts-desktop-filters__risk-check {
+  width: 100%;
+}
+
+.debts-desktop-filters__risk-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.debts-desktop-filters__risk-dot--high {
+  background: #ef4444;
+}
+
+.debts-desktop-filters__risk-dot--medium {
+  background: #f59e0b;
+}
+
+.debts-desktop-filters__risk-dot--low {
+  background: #0099A9;
+}
+
+.debts-desktop-filters__risk-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.debts-desktop-filters__risk-list .auction-desktop-filters__check {
+  gap: 10px;
+}

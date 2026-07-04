@@ -159,8 +159,8 @@
 }
 
 .ap-progress__section-header--success {
-  color: #16a34a;
-  background: #f0fdf4;
+  color: #0099A9;
+  background: #f0fafb;
 }
 
 .ap-progress__section-header--warning {
@@ -207,7 +207,7 @@
 }
 
 .ap-progress__item-check {
-  color: #16a34a;
+  color: #0099A9;
   flex-shrink: 0;
 }
 

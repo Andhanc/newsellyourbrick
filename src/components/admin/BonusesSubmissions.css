@@ -22,7 +22,7 @@
 }
 
 .bonuses-submissions-admin__header svg {
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .bonuses-submissions-admin__loading,
@@ -74,7 +74,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #0ABAB5;
+  color: #0099A9;
   text-decoration: none;
 }
 
@@ -108,11 +108,11 @@
 
 .bonuses-submissions-admin__btn--approve {
   background: #d1fae5;
-  color: #059669;
+  color: #007d8a;
 }
 
 .bonuses-submissions-admin__btn--approve:hover:not(:disabled) {
-  background: #a7f3d0;
+  background: #cce9ed;
 }
 
 .bonuses-submissions-admin__btn--reject {

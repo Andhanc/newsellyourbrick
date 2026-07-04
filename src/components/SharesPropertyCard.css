@@ -68,7 +68,7 @@ a.shares-v2-card {
 }
 
 .shares-v2-card__badge--stable {
-  background: #10b981;
+  background: #0099A9;
 }
 
 .shares-v2-card__badge--new {
@@ -76,7 +76,7 @@ a.shares-v2-card {
 }
 
 .shares-v2-card__badge--commercial {
-  background: var(--site-color-accent-dark, #2d5a36);
+  background: var(--site-color-accent-dark, #007d8a);
 }
 
 .shares-v2-card__favorite {
@@ -214,7 +214,7 @@ a.shares-v2-card {
 }
 
 .shares-v2-card__progress-percent {
-  color: var(--site-color-accent-dark, #2d5a36);
+  color: var(--site-color-accent-dark, #007d8a);
 }
 
 .shares-v2-card__progress-track {
@@ -228,7 +228,7 @@ a.shares-v2-card {
 .shares-v2-card__progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--site-color-accent, #b8cf9a) 0%, #9be181 100%);
+  background: linear-gradient(90deg, var(--site-color-accent, #0099A9) 0%, #66c1cc 100%);
   transition: width 0.3s ease;
 }
 
@@ -267,7 +267,7 @@ a.shares-v2-card {
   border: 1px solid rgba(184, 207, 154, 0.45);
   border-radius: 10px;
   background: #ffffff;
-  color: var(--site-color-accent-dark, #2d5a36);
+  color: var(--site-color-accent-dark, #007d8a);
   font-family: var(--site-font-family);
   font-size: 0.75rem;
   font-weight: 600;
@@ -278,7 +278,7 @@ a.shares-v2-card {
 
 .shares-v2-card__invest-btn:hover:not(:disabled) {
   background: rgba(200, 255, 130, 0.22);
-  border-color: var(--site-color-accent, #b8cf9a);
+  border-color: var(--site-color-accent, #0099A9);
 }
 
 .shares-v2-card__invest-btn:disabled {

@@ -253,7 +253,7 @@
     display: block;
     padding: 0 var(--opr-mob-pad) calc(24px + env(safe-area-inset-bottom, 0px));
     background:
-      radial-gradient(ellipse 92% 36% at 100% 0%, rgba(10, 186, 181, 0.08) 0%, transparent 58%),
+      radial-gradient(ellipse 92% 36% at 100% 0%, rgba(0, 153, 169, 0.08) 0%, transparent 58%),
       #f8fbfb;
   }
 
@@ -297,8 +297,8 @@
   }
 
   .opr-profile-tabs__item--active {
-    background: rgba(10, 186, 181, 0.12);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.12);
+    color: #007d8a;
   }
 
   .opr-profile-card,
@@ -342,7 +342,7 @@
   .opr-profile-overview__eyebrow {
     display: block;
     margin-bottom: 3px;
-    color: #089a95;
+    color: #007d8a;
     font-size: 11px;
     font-weight: 800;
   }
@@ -382,7 +382,7 @@
     padding: 0 14px 0 16px;
     border: 0;
     border-radius: 999px;
-    background: var(--opr-gradient-brand, linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%));
+    background: var(--opr-gradient-brand, linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%));
     color: #ffffff;
     font: inherit;
     font-size: 12px;
@@ -390,7 +390,7 @@
     line-height: 1;
     text-decoration: none;
     cursor: pointer;
-    box-shadow: 0 10px 22px rgba(10, 186, 181, 0.22);
+    box-shadow: 0 10px 22px rgba(0, 153, 169, 0.22);
   }
 
   .opr-profile-overview__badge {
@@ -400,8 +400,8 @@
     gap: 6px;
     padding: 0 10px;
     border-radius: 999px;
-    background: rgba(10, 186, 181, 0.12);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.12);
+    color: #007d8a;
     font-size: 11px;
     font-weight: 800;
   }
@@ -438,8 +438,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: rgba(10, 186, 181, 0.11);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.11);
+    color: #007d8a;
   }
 
   .opr-profile-overview__fact-label,
@@ -478,7 +478,7 @@
     position: absolute;
     inset: 0 0 auto;
     height: 76px;
-    background: linear-gradient(135deg, rgba(10, 186, 181, 0.17), rgba(83, 216, 211, 0.08), transparent);
+    background: linear-gradient(135deg, rgba(0, 153, 169, 0.17), rgba(83, 216, 211, 0.08), transparent);
     pointer-events: none;
   }
 
@@ -492,7 +492,7 @@
 
   .opr-avatar--lg {
     border: 4px solid #ffffff;
-    box-shadow: 0 12px 24px rgba(10, 186, 181, 0.18);
+    box-shadow: 0 12px 24px rgba(0, 153, 169, 0.18);
   }
 
   .opr-profile-card__role {
@@ -502,8 +502,8 @@
     min-height: 28px;
     padding: 0 12px;
     border-radius: 999px;
-    background: rgba(10, 186, 181, 0.1);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.1);
+    color: #007d8a;
     font-size: 12px;
     font-weight: 800;
   }
@@ -579,8 +579,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 13px;
-    background: rgba(10, 186, 181, 0.12);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.12);
+    color: #007d8a;
   }
 
   .opr-form-section__title {
