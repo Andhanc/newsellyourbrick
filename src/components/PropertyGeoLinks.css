@@ -37,7 +37,7 @@
 }
 
 .property-geo-links__link:hover {
-  color: var(--site-color-primary, #0abab5);
+  color: var(--site-color-primary, #0099A9);
   text-decoration: underline;
 }
 

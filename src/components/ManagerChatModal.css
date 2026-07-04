@@ -82,7 +82,7 @@
 
 .manager-chat-modal-root .chat-widget__status {
   font-size: 12px;
-  color: #10b981;
+  color: #0099A9;
   font-weight: 500;
   font-family: 'Montserrat', sans-serif;
   display: flex;
@@ -95,7 +95,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
+  background: #0099A9;
   display: inline-block;
 }
 

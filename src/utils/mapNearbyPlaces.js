@@ -33,9 +33,9 @@ export const MAP_POI_CATEGORIES = [
   {
     id: 'recreation',
     labelKey: 'propertyDetailMapRecreation',
-    color: '#059669',
-    softColor: '#ecfdf5',
-    borderColor: '#a7f3d0',
+    color: '#007d8a',
+    softColor: '#e6f6f8',
+    borderColor: '#cce9ed',
   },
   {
     id: 'shops',

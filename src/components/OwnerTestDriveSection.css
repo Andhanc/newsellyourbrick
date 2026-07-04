@@ -180,8 +180,8 @@
 }
 
 .owner-test-drive-card--approved {
-  border-color: #bbf7d0;
-  background: linear-gradient(180deg, #f0fdf4 0%, #fafafa 100%);
+  border-color: #e6f6f8;
+  background: linear-gradient(180deg, #f0fafb 0%, #fafafa 100%);
 }
 
 .owner-test-drive-card--pending {
@@ -220,7 +220,7 @@
 
 .owner-test-drive-badge--approved {
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
 }
 
 .owner-test-drive-badge--rejected {
@@ -457,8 +457,8 @@
 }
 
 .owner-td-metric--month {
-  border-color: #a7f3d0;
-  background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
+  border-color: #cce9ed;
+  background: linear-gradient(135deg, #e6f6f8 0%, #f8fafc 100%);
 }
 
 .owner-td-metric--quarter {
@@ -670,8 +670,8 @@
 
 .owner-td-bcard--approved,
 .owner-td-bcard--paid {
-  border-color: #bbf7d0;
-  background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+  border-color: #e6f6f8;
+  background: linear-gradient(180deg, #f0fafb 0%, #fff 100%);
 }
 
 .owner-td-bcard--pending {

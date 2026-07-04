@@ -90,7 +90,7 @@
 .user-detail-modal__error button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
   border: none;
   border-radius: 6px;
@@ -99,7 +99,7 @@
 }
 
 .user-detail-modal__error button:hover {
-  background: #089a95;
+  background: #007d8a;
 }
 
 .user-detail-section {
@@ -119,7 +119,7 @@
   color: #111827;
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #0ABAB5;
+  border-bottom: 2px solid #0099A9;
 }
 
 .user-detail-grid {
@@ -160,16 +160,16 @@
 
 .detail-value--buyer {
   background: #e0f7f7;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .detail-value--seller {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .status-verified {
-  color: #166534;
+  color: #007d8a;
   font-weight: 600;
 }
 
@@ -184,7 +184,7 @@
 }
 
 .status-active {
-  color: #166534;
+  color: #007d8a;
   font-weight: 600;
 }
 
@@ -289,8 +289,8 @@
 }
 
 .status-approved {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .status-rejected {
@@ -362,12 +362,12 @@
 }
 
 .btn-action--unblock {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .btn-action--unblock:hover {
-  background: #bbf7d0;
+  background: #e6f6f8;
   color: #14532d;
 }
 

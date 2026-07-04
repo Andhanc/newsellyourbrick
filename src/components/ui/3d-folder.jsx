@@ -455,11 +455,11 @@ function AnimatedFolder({
 
   const backBg =
     gradient ||
-    'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)';
-  const tabBg = gradient || '#0f766e';
+    'linear-gradient(135deg, #007580 0%, #00605a 100%)';
+  const tabBg = gradient || '#00605a';
   const frontBg =
     gradient ||
-    'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)';
+    'linear-gradient(135deg, #33adbb 0%, #007580 100%)';
 
   const isMobile = viewportWidth <= 768
   const isXs = viewportWidth <= 360
@@ -547,8 +547,8 @@ function AnimatedFolder({
           className="absolute inset-0 rounded-2xl transition-opacity duration-700"
           style={{
             background: gradient
-              ? `radial-gradient(circle at 50% 70%, ${gradient.match(/#[a-fA-F0-9]{3,6}/)?.[0] || '#0d9488'} 0%, transparent 70%)`
-              : 'radial-gradient(circle at 50% 70%, #0d9488 0%, transparent 70%)',
+              ? `radial-gradient(circle at 50% 70%, ${gradient.match(/#[a-fA-F0-9]{3,6}/)?.[0] || '#007580'} 0%, transparent 70%)`
+              : 'radial-gradient(circle at 50% 70%, #007580 0%, transparent 70%)',
             opacity: isHovered ? 0.12 : 0,
           }}
         />

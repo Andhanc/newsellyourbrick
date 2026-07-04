@@ -1,0 +1,104 @@
+.auction-listing-search-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.auction-listing-search-stack .search-filters-bar {
+  margin-bottom: 0;
+  width: 100%;
+  align-self: stretch;
+}
+
+.auction-listing-search-stack .search-filters-bar.search-filters-bar--auction-desktop {
+  margin-bottom: 0;
+}
+
+.auction-listing-sale-toggle {
+  display: inline-flex;
+  align-self: center;
+  flex-wrap: nowrap;
+  gap: 3px;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.auction-listing-sale-toggle__btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #475569;
+  background: transparent;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition:
+    background 0.2s ease,
+    color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.auction-listing-sale-toggle__btn:focus {
+  outline: none;
+}
+
+.auction-listing-sale-toggle__btn:not(.auction-listing-sale-toggle__btn--active):hover {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.auction-listing-sale-toggle__btn:not(.auction-listing-sale-toggle__btn--active):focus-visible {
+  outline: 2px solid rgba(0, 153, 169, 0.55);
+  outline-offset: 2px;
+}
+
+.auction-listing-sale-toggle__btn--active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #007a87 0%, #0099a9 100%);
+  box-shadow:
+    0 4px 14px -6px rgba(0, 153, 169, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.auction-listing-sale-toggle__btn--active:hover,
+.auction-listing-sale-toggle__btn--active:focus-visible {
+  color: #ffffff;
+  filter: brightness(1.03);
+}
+
+@media (max-width: 768px) {
+  .auction-listing-search-stack {
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: stretch;
+  }
+
+  .auction-listing-sale-toggle {
+    align-self: center;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .auction-listing-sale-toggle__btn {
+    min-width: 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    text-align: center;
+  }
+}

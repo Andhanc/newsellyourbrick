@@ -270,7 +270,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     'delete': 'Запрос на удаление'
   };
   const requestTypeColors = {
-    'publication': '#0ABAB5',
+    'publication': '#0099A9',
     'edit': '#f59e0b',
     'delete': '#ef4444'
   };
@@ -704,7 +704,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 <span style={{ color: '#111827', fontWeight: 500 }}>
                   {isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}
                 </span>{' '}
-                <span style={{ color: '#0ABAB5', fontWeight: 600 }}>
+                <span style={{ color: '#0099A9', fontWeight: 600 }}>
                   {Number(property.price).toLocaleString('ru-RU')} {property.currency || 'USD'}
                 </span>
               </div>
@@ -734,7 +734,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   {[
                     { id: 'red', label: 'Высокий', bg: '#ef4444' },
                     { id: 'yellow', label: 'Средний', bg: '#eab308' },
-                    { id: 'green', label: 'Низкий', bg: '#16a34a' }
+                    { id: 'green', label: 'Низкий', bg: '#0099A9' }
                   ].map(option => {
                     const isActive = debtSeverity === option.id;
                     return (
@@ -807,7 +807,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   {property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) && (
                     <div style={{ fontSize: '14px', color: '#111827' }}>
                       <strong>Ориентировочная сумма долга:</strong>{' '}
-                      <span style={{ color: '#0ABAB5', fontWeight: 600 }}>
+                      <span style={{ color: '#0099A9', fontWeight: 600 }}>
                         {Number(property.debt_amount).toLocaleString('ru-RU')} {property.currency || 'USD'}
                       </span>
                     </div>
@@ -1013,7 +1013,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             onClick={() => setMediaType('photos')}
             style={{
               padding: '8px 16px',
-              backgroundColor: mediaType === 'photos' ? '#0ABAB5' : '#f0f0f0',
+              backgroundColor: mediaType === 'photos' ? '#0099A9' : '#f0f0f0',
               color: mediaType === 'photos' ? 'white' : '#333',
               border: 'none',
               borderRadius: '4px',
@@ -1031,7 +1031,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               onClick={() => setMediaType('videos')}
               style={{
                 padding: '8px 16px',
-                backgroundColor: mediaType === 'videos' ? '#0ABAB5' : '#f0f0f0',
+                backgroundColor: mediaType === 'videos' ? '#0099A9' : '#f0f0f0',
                 color: mediaType === 'videos' ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '4px',
@@ -1470,14 +1470,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                           {change.old}
                         </div>
                       </div>
-                      <div style={{ fontSize: '1.5rem', color: '#0ABAB5', fontWeight: 'bold' }}>→</div>
+                      <div style={{ fontSize: '1.5rem', color: '#0099A9', fontWeight: 'bold' }}>→</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', fontWeight: '500' }}>Стало:</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#d1fae5', 
                           borderRadius: '4px',
-                          color: '#065f46',
+                          color: '#007d8a',
                           fontWeight: '500',
                           fontSize: '0.875rem'
                         }}>
@@ -1505,7 +1505,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 onClick={() => setShowChangesModal(false)}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  backgroundColor: '#0ABAB5',
+                  backgroundColor: '#0099A9',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -1515,10 +1515,10 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#089a95';
+                  e.target.style.backgroundColor = '#007d8a';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0ABAB5';
+                  e.target.style.backgroundColor = '#0099A9';
                 }}
               >
                 Закрыть

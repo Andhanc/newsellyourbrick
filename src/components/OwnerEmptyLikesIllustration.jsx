@@ -9,7 +9,7 @@ export default function OwnerEmptyLikesIllustration({ className = '' }) {
       role="img"
       aria-hidden="true"
     >
-      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#0abab5" fillOpacity="0.14" />
+      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#0099A9" fillOpacity="0.14" />
       <rect x="40" y="88" width="140" height="44" rx="12" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
       <path
         d="M52 118 L78 104 L98 112 L118 96 L138 108 L168 92"

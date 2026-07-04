@@ -160,7 +160,7 @@ const VerificationToast = ({ userId }) => {
 
   const getProgressColor = () => {
     const progress = status?.progress || 0;
-    if (progress === 100) return '#10b981';
+    if (progress === 100) return '#0099A9';
     if (progress >= 75) return '#f59e0b';
     return '#ef4444';
   };

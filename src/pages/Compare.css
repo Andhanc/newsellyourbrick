@@ -376,13 +376,13 @@
 
 /* Как у «Рассчитать стоимость» в калькуляторе добавления объекта */
 .compare-calculator-btn--liquid {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -427,10 +427,10 @@
 }
 
 .compare-calculator-btn--liquid:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -450,7 +450,7 @@
   cursor: not-allowed;
   transform: none;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.15),
+    0 4px 16px rgba(0, 153, 169, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
@@ -493,7 +493,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 500;
-  color: #0f766e;
+  color: #00605a;
 }
 
 .compare-calculator-trigger-spin {
@@ -543,7 +543,7 @@
 .compare-calculator-similar-price {
   display: block;
   font-weight: 700;
-  color: #0f766e;
+  color: #00605a;
 }
 
 .compare-calculator-similar-source {

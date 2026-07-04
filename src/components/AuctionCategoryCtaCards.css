@@ -1,0 +1,133 @@
+.auction-cta-cards {
+  width: 100%;
+  padding: clamp(2rem, 4vw, 2.75rem) 0 0;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.auction-cta-cards__inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
+}
+
+.auction-cta-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.auction-cta-cards__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 358px;
+  overflow: hidden;
+  border-radius: 10px;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 22px 46px rgba(42, 56, 68, 0.16);
+  isolation: isolate;
+}
+
+.auction-cta-cards__card img,
+.auction-cta-cards__card-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.auction-cta-cards__card img {
+  object-fit: cover;
+  transition: transform 0.32s ease;
+  z-index: -2;
+}
+
+.auction-cta-cards__card:hover img {
+  transform: scale(1.045);
+}
+
+.auction-cta-cards__card-overlay {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(19, 38, 45, 0.06) 0%, rgba(14, 36, 42, 0.58) 48%, rgba(11, 28, 36, 0.82) 100%),
+    linear-gradient(90deg, rgba(74, 153, 168, 0.55), rgba(255, 128, 110, 0.14));
+}
+
+.auction-cta-cards__icon {
+  position: absolute;
+  top: 32px;
+  left: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.auction-cta-cards__icon--teal {
+  background: #0099a9;
+}
+
+.auction-cta-cards__icon--coral {
+  background: #ff7f51;
+}
+
+.auction-cta-cards__icon--mint {
+  background: #4a99a8;
+}
+
+.auction-cta-cards__content {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 0 28px 98px;
+}
+
+.auction-cta-cards__content strong {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.auction-cta-cards__content span {
+  max-width: 260px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  line-height: 1.48;
+  font-weight: 600;
+}
+
+.auction-cta-cards__button {
+  position: absolute;
+  left: 28px;
+  bottom: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 22px;
+  border-radius: 8px;
+  background: #fff;
+  color: #2d3542;
+  font-size: 0.93rem;
+  font-weight: 800;
+  font-style: normal;
+}
+
+@media (max-width: 1024px) {
+  .auction-cta-cards__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auction-cta-cards__card {
+    min-height: 322px;
+  }
+}

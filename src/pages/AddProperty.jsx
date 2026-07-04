@@ -9914,7 +9914,7 @@ const AddProperty = ({
                     </p>
                   </div>
                   {formData.price && formData.totalShares && parseInt(formData.totalShares, 10) > 0 && (
-                    <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(10, 186, 181, 0.1)', borderRadius: '12px', border: '1px solid rgba(10, 186, 181, 0.25)' }}>
+                    <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(0, 153, 169, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 153, 169, 0.25)' }}>
                       <strong>{t('addPropertyPriceSharesPerUnit')}</strong>{' '}
                       <span>{currencies.find(c => c.code === currency)?.symbol || '$'}{(Number(removeCommas(String(formData.price))) / parseInt(formData.totalShares, 10)).toLocaleString('en-US')}</span>
                     </div>
@@ -10709,8 +10709,8 @@ const AddProperty = ({
           <div className="success-modal" onClick={(e) => e.stopPropagation()}>
             <div className="success-modal__icon">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#0ABAB5" strokeWidth="2"/>
-                <path d="M8 12L11 15L16 9" stroke="#0ABAB5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="12" r="10" stroke="#0099A9" strokeWidth="2"/>
+                <path d="M8 12L11 15L16 9" stroke="#0099A9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <h2 className="success-modal__title">Ваш объект отправлен на модерацию</h2>
@@ -10810,14 +10810,14 @@ const AddProperty = ({
                           {change.old}
                         </div>
                       </div>
-                      <div style={{ fontSize: '1.5rem', color: '#0ABAB5' }}>→</div>
+                      <div style={{ fontSize: '1.5rem', color: '#0099A9' }}>→</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Стало:</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#d1fae5', 
                           borderRadius: '4px',
-                          color: '#065f46',
+                          color: '#007d8a',
                           fontWeight: '500'
                         }}>
                           {change.new}
@@ -10844,7 +10844,7 @@ const AddProperty = ({
                 onClick={() => setShowChangesModal(false)}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  backgroundColor: '#0ABAB5',
+                  backgroundColor: '#0099A9',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',

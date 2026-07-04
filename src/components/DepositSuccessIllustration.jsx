@@ -9,11 +9,11 @@ export default function DepositSuccessIllustration({ className = '' }) {
       role="img"
       aria-hidden="true"
     >
-      <ellipse cx="100" cy="148" rx="72" ry="8" fill="#0abab5" fillOpacity="0.12" />
-      <circle cx="148" cy="44" r="22" fill="#ecfdf5" stroke="#0abab5" strokeWidth="2" />
+      <ellipse cx="100" cy="148" rx="72" ry="8" fill="#0099A9" fillOpacity="0.12" />
+      <circle cx="148" cy="44" r="22" fill="#e6f6f8" stroke="#0099A9" strokeWidth="2" />
       <path
         d="M140 44l6 6 14-14"
-        stroke="#0d9488"
+        stroke="#007580"
         strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -50,21 +50,21 @@ export default function DepositSuccessIllustration({ className = '' }) {
       />
       <path
         d="M76 78c-4 6-6 14-6 22v28h60V100c0-8-2-16-6-22"
-        fill="#53d8d3"
+        fill="#33adbb"
       />
       <path
         d="M76 78h48c4 6 6 14 6 22v28H70V100c0-8 2-16 6-22z"
-        fill="#0abab5"
+        fill="#0099A9"
       />
       <path
         d="M62 92c-8-2-14 4-14 12 0 6 4 10 10 12"
-        stroke="#0d9488"
+        stroke="#007580"
         strokeWidth="4"
         strokeLinecap="round"
       />
       <path
         d="M138 88c8-2 14 4 14 12 0 6-4 10-10 12"
-        stroke="#0d9488"
+        stroke="#007580"
         strokeWidth="4"
         strokeLinecap="round"
       />

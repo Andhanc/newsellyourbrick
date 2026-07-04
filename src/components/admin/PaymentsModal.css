@@ -166,7 +166,7 @@
 
 .payments-modal__amount {
   font-weight: 700;
-  color: #059669;
+  color: #007d8a;
   white-space: nowrap;
 }
 
@@ -218,7 +218,7 @@
 
 .payments-modal__pill--ok {
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
 }
 
 .payments-modal__pill--wait {

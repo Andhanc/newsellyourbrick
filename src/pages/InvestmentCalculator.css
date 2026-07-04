@@ -253,7 +253,7 @@
 
 .summary-card__icon--green {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(34, 197, 94, 0.15) 100%);
-  color: #6ee7b7;
+  color: #99d5dd;
 }
 
 .summary-card__icon--purple {
@@ -286,7 +286,7 @@
 }
 
 .summary-card__value--positive {
-  color: #6ee7b7;
+  color: #99d5dd;
 }
 
 .summary-card__value--negative {
@@ -953,7 +953,7 @@ select.parameter-input option {
 
 .calc-strategy-card--rent .calc-strategy-card__icon {
   background: rgba(52, 211, 153, 0.15);
-  color: #6ee7b7;
+  color: #99d5dd;
 }
 .calc-strategy-card--resale .calc-strategy-card__icon {
   background: rgba(56, 189, 248, 0.15);

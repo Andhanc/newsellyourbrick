@@ -33,9 +33,9 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #fff;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   border: none;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.22);
 }
 
 .oap-wizard-section__meta {

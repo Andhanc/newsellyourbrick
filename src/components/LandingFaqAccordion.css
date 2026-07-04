@@ -97,7 +97,7 @@
 }
 
 .landing-faq__trigger:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 3px;
   border-radius: 2px;
 }

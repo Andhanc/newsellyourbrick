@@ -5,7 +5,7 @@
   gap: 8px;
   padding: 16px 16px 14px;
   border-radius: 16px;
-  background: rgba(10, 186, 181, 0.14);
+  background: rgba(0, 153, 169, 0.14);
   border: none;
   position: sticky;
   top: 16px;
@@ -27,14 +27,14 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  color: #089a95;
+  color: #007d8a;
   background: rgba(255, 255, 255, 0.55);
 }
 
 .oap-step-sidebar__title {
   font-size: 15px;
   font-weight: 700;
-  color: #065f5c;
+  color: #006672;
   letter-spacing: -0.01em;
 }
 

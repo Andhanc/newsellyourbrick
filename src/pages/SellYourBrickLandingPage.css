@@ -312,7 +312,7 @@
   border: 0;
   border-radius: 999px;
   padding: 0.9rem 1.35rem;
-  background: #b8cf9a;
+  background: #0099A9;
   color: #ffffff;
   font: inherit;
   font-size: 0.95rem;
@@ -372,13 +372,13 @@
   height: 2rem;
   border-radius: 50%;
   background: #dff5d4;
-  color: #2d5a36;
+  color: #007d8a;
   flex-shrink: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .syb-search__chip--active .syb-search__chip-icon {
-  background: #9be181;
+  background: #66c1cc;
   color: #101928;
 }
 

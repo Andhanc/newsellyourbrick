@@ -132,11 +132,11 @@
    Для критического (`timer-critical`) цветом управляет анимация, поэтому исключаем его. */
 .property-timer.timer-long:not(.timer-critical) .time-value,
 .property-timer.timer-long:not(.timer-critical) .timer-compact-time {
-  color: #16a34a;
+  color: #0099A9;
 }
 .property-timer.timer-long:not(.timer-critical),
 .property-timer.compact.timer-long:not(.timer-critical) .timer-compact-time {
-  border-color: #16a34a;
+  border-color: #0099A9;
 }
 
 .property-timer.timer-medium:not(.timer-critical) .time-value,
@@ -253,6 +253,77 @@
   user-select: none;
   padding: 0;
   margin-top: -3px;
+}
+
+.property-timer--plain {
+  border: none !important;
+  padding: 0;
+}
+
+.property-timer--plain .property-timer-plain-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.property-timer-plain-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 2.4ch;
+}
+
+.property-timer-plain-value {
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.property-timer-plain-label {
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #94a3b8;
+  text-transform: none;
+}
+
+.property-timer-plain-sep {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.property-timer-plain-sep--dot {
+  font-size: 20px;
+  color: #94a3b8;
+}
+
+.property-timer--plain.timer-long .property-timer-plain-value,
+.property-timer--plain.timer-medium .property-timer-plain-value,
+.property-timer--plain.timer-short .property-timer-plain-value,
+.property-timer--plain.timer-critical .property-timer-plain-value,
+.property-timer--plain.timer-long .property-timer-plain-sep,
+.property-timer--plain.timer-medium .property-timer-plain-sep,
+.property-timer--plain.timer-short .property-timer-plain-sep,
+.property-timer--plain.timer-critical .property-timer-plain-sep {
+  color: #0f172a;
 }
 
 .property-timer--detail .flip-unit {

@@ -6,8 +6,8 @@
   width: 100%;
   padding: 28px 22px;
   border-radius: 20px;
-  border: 1px dashed rgba(10, 186, 181, 0.24);
-  background: rgba(10, 186, 181, 0.06);
+  border: 1px dashed rgba(0, 153, 169, 0.24);
+  background: rgba(0, 153, 169, 0.06);
   text-align: center;
   box-sizing: border-box;
 }

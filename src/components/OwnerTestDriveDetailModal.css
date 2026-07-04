@@ -92,8 +92,8 @@
   padding: 4px 10px;
   margin-bottom: 6px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.12);
-  color: #089a95;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007d8a;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -131,10 +131,10 @@
   padding: 14px 12px;
   border-radius: 14px;
   background: linear-gradient(160deg, #ffffff 0%, #f8fffe 100%);
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   box-shadow:
     0 1px 2px rgba(15, 23, 42, 0.04),
-    0 4px 14px rgba(10, 186, 181, 0.07);
+    0 4px 14px rgba(0, 153, 169, 0.07);
   min-width: 0;
 }
 
@@ -145,8 +145,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(83, 216, 211, 0.35) 0%, rgba(10, 186, 181, 0.18) 100%);
-  color: #089a95;
+  background: linear-gradient(135deg, rgba(83, 216, 211, 0.35) 0%, rgba(0, 153, 169, 0.18) 100%);
+  color: #007d8a;
   flex-shrink: 0;
 }
 
@@ -156,13 +156,13 @@
 }
 
 .otd-detail-modal__stat--dates .otd-detail-modal__stat-icon {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.28) 0%, rgba(8, 154, 149, 0.14) 100%);
-  color: #089a95;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.28) 0%, rgba(0, 125, 138, 0.14) 100%);
+  color: #007d8a;
 }
 
 .otd-detail-modal__stat--deposit .otd-detail-modal__stat-icon {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%);
-  color: #059669;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%);
+  color: #007d8a;
 }
 
 .otd-detail-modal__stat-label {
@@ -192,7 +192,7 @@
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #089a95;
+  color: #007d8a;
 }
 
 .otd-detail-modal__status-row {
@@ -214,7 +214,7 @@
 
 .otd-detail-modal__status-row .otd-status--confirmed {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #007d8a;
 }
 
 .otd-detail-modal__status-row .otd-status--pending {
@@ -241,7 +241,7 @@
 
 .otd-detail-modal__checkin--ok {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #007d8a;
 }
 
 .otd-detail-modal__checkin--warn {
@@ -253,8 +253,8 @@
   margin-bottom: 16px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%);
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  background: linear-gradient(135deg, #e6f6f8 0%, #f0fafb 100%);
+  border: 1px solid rgba(0, 153, 169, 0.22);
 }
 
 .otd-detail-modal__comment-head {
@@ -263,7 +263,7 @@
   gap: 8px;
   margin-bottom: 8px;
   font-size: 13px;
-  color: #089a95;
+  color: #007d8a;
 }
 
 .otd-detail-modal__comment-body {
@@ -343,8 +343,8 @@
 
 .otd-detail-modal__textarea:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.18);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.18);
 }
 
 .otd-detail-modal__actions {
@@ -376,7 +376,7 @@
 }
 
 .otd-detail-modal__btn--primary {
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   color: #fff;
 }
 

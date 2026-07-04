@@ -41,9 +41,9 @@ export default function OapAddPropertyJourneyProgress({ currentStep = 1, totalSt
           >
             <defs>
               <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#53d8d3" />
-                <stop offset="52%" stopColor="#0abab5" />
-                <stop offset="100%" stopColor="#089a95" />
+                <stop offset="0%" stopColor="#33adbb" />
+                <stop offset="52%" stopColor="#0099A9" />
+                <stop offset="100%" stopColor="#007d8a" />
               </linearGradient>
             </defs>
             <circle

@@ -20,6 +20,7 @@ export default function PropertyDetailDesktopYieldCalc({
   defaultRentAnnual = null,
   currencySymbol = '€',
   className = '',
+  embedded = false,
   onCalculateClick,
 }) {
   const { t } = useTranslation()
@@ -70,10 +71,12 @@ export default function PropertyDetailDesktopYieldCalc({
 
   return (
     <section
-      className={`pd-v3-yield-calc property-detail-auction-desktop-only${className ? ` ${className}` : ''}`}
+      className={`pd-v3-yield-calc${embedded ? '' : ' property-detail-auction-desktop-only'}${className ? ` ${className}` : ''}`}
       aria-label={t('propertyDetailYieldCalcTitle')}
     >
-      <h2 className="pd-v3-yield-calc__title">{t('propertyDetailYieldCalcTitle')}</h2>
+      {!embedded ? (
+        <h2 className="pd-v3-yield-calc__title">{t('propertyDetailYieldCalcTitle')}</h2>
+      ) : null}
 
       <div className="pd-v3-yield-calc__body">
         <div className="pd-v3-yield-calc__fields">

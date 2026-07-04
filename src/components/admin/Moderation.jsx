@@ -1270,7 +1270,7 @@ const Moderation = () => {
                   'delete': 'Запрос на удаление'
                 };
                 const requestTypeColors = {
-                  'publication': '#0ABAB5',
+                  'publication': '#0099A9',
                   'edit': '#f59e0b',
                   'delete': '#ef4444'
                 };

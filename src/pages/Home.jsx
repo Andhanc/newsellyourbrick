@@ -37,7 +37,7 @@ import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 
-const FAQLazy = lazy(() => import('../components/FAQ'))
+const AuctionBelowFoldLazy = lazy(() => import('../components/AuctionPageBottomSections'))
 
 const MOBILE_BREAKPOINT = 768
 
@@ -1235,13 +1235,10 @@ function Home() {
       </div>
 
       <Header />
-      <Hero staticMobileCards={isAuctionRoute} />
+      <Hero staticMobileCards={isAuctionRoute} auctionScene={isAuctionRoute} />
       {isAuctionRoute && isMobileViewport && (
         <div className="page-context-heading page-context-heading--home-auction">
           <div className="page-context-heading--home-auction-inner">
-            <h1 className="page-context-heading__title page-context-heading__title--auction-script">
-              {t('auction')}
-            </h1>
             <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
           </div>
         </div>
@@ -1255,11 +1252,15 @@ function Home() {
           viewerHasVip={cabinetVipActive}
         />
       </div>
-      <div ref={faqSentinelRef} aria-hidden="true" />
-      {showFaq ? (
-        <Suspense fallback={null}>
-          <FAQLazy />
-        </Suspense>
+      {isAuctionRoute ? (
+        <>
+          <div ref={faqSentinelRef} aria-hidden="true" />
+          {showFaq ? (
+            <Suspense fallback={null}>
+              <AuctionBelowFoldLazy onContactClick={openManagerChatDock} />
+            </Suspense>
+          ) : null}
+        </>
       ) : null}
     </div>
   )

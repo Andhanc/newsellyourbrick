@@ -70,7 +70,7 @@
   flex-direction: column;
   padding: 24px 16px 20px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fffe 100%);
-  border-right: 1px solid rgba(10, 186, 181, 0.1);
+  border-right: 1px solid rgba(0, 153, 169, 0.1);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -90,9 +90,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(10, 186, 181, 0.2) 8%,
-    rgba(10, 186, 181, 0.36) 50%,
-    rgba(10, 186, 181, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -149,7 +149,7 @@
 }
 
 .mot-nav__item--active:hover {
-  background: linear-gradient(135deg, #159a95 0%, #0abab5 42%, #078f8a 100%);
+  background: linear-gradient(135deg, #159a95 0%, #0099A9 42%, #078f8a 100%);
   color: #fff;
 }
 
@@ -172,21 +172,21 @@
   margin-top: auto;
   padding-top: 0;
   border-radius: var(--mot-radius-sm);
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0) 50%, rgba(15, 23, 42, 0.34) 100%),
-    linear-gradient(145deg, #0f172a 0%, #134e4a 52%, #0d9488 100%);
+    linear-gradient(145deg, #0f172a 0%, #134e4a 52%, #007580 100%);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
 }
 
 .mot-sidebar-promo__glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 30%, rgba(10, 186, 181, 0.22) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 30%, rgba(0, 153, 169, 0.22) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -201,9 +201,9 @@
   margin-bottom: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.22);
+  background: rgba(0, 153, 169, 0.22);
   border: 1px solid rgba(94, 234, 212, 0.32);
-  color: #99f6e4;
+  color: #cce9ed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -288,12 +288,12 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    #53d8d3 0%,
+    #33adbb 0%,
     #7ee8e4 16%,
     #2ec9c4 38%,
-    #0abab5 62%,
-    #089a95 82%,
-    #067a76 100%
+    #0099A9 62%,
+    #007d8a 82%,
+    #006672 100%
   );
   background-size: 220% 220%;
   animation: mot-hero-shell-gradient 10s ease-in-out infinite;
@@ -324,7 +324,7 @@
   background: linear-gradient(
     180deg,
     rgba(6, 122, 118, 0) 0%,
-    rgba(8, 154, 149, 0.16) 38%,
+    rgba(0, 125, 138, 0.16) 38%,
     rgba(6, 95, 92, 0.42) 100%
   );
   border-radius: inherit;
@@ -350,7 +350,7 @@
 .mot-hero-shell .mot-header__title,
 .mot-hero-shell .mot-mob-hero__greeting {
   color: #ffffff;
-  text-shadow: 0 1px 12px rgba(8, 154, 149, 0.22);
+  text-shadow: 0 1px 12px rgba(0, 125, 138, 0.22);
 }
 
 .mot-hero-copy__line {
@@ -444,7 +444,7 @@
   align-items: center;
   gap: 10px;
   padding: 0 16px;
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.86);
   color: #94a3b8;
@@ -493,10 +493,10 @@
 }
 
 .mot-date-pill--active {
-  border-color: rgba(10, 186, 181, 0.42);
+  border-color: rgba(0, 153, 169, 0.42);
   background: #ffffff;
   box-shadow:
-    0 12px 24px rgba(10, 186, 181, 0.12),
+    0 12px 24px rgba(0, 153, 169, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
@@ -507,14 +507,14 @@
   z-index: 35;
   width: min(380px, calc(100vw - 32px));
   padding: 18px;
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 248, 245, 0.98) 100%),
-    radial-gradient(ellipse at 100% 0%, rgba(10, 186, 181, 0.16), transparent 52%);
+    radial-gradient(ellipse at 100% 0%, rgba(0, 153, 169, 0.16), transparent 52%);
   box-shadow:
     0 22px 46px rgba(15, 23, 42, 0.14),
-    0 8px 20px rgba(10, 186, 181, 0.08);
+    0 8px 20px rgba(0, 153, 169, 0.08);
   opacity: 0;
   transform: translateY(-8px) scale(0.98);
   transform-origin: top right;
@@ -536,11 +536,11 @@
   gap: 6px;
   margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(10, 186, 181, 0.1);
+  border-bottom: 1px solid rgba(0, 153, 169, 0.1);
 }
 
 .mot-date-popover__eyebrow {
-  color: #0d9488;
+  color: #007580;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -582,16 +582,16 @@
 }
 
 .mot-date-popover__preset:hover:not(.mot-date-popover__preset--active) {
-  border-color: rgba(10, 186, 181, 0.32);
-  background: rgba(10, 186, 181, 0.06);
-  color: #0f766e;
+  border-color: rgba(0, 153, 169, 0.32);
+  background: rgba(0, 153, 169, 0.06);
+  color: #00605a;
 }
 
 .mot-date-popover__preset--active {
   border-color: transparent;
   background: var(--mot-gradient-brand);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.28);
 }
 
 .mot-date-popover__fields {
@@ -632,8 +632,8 @@
 
 .mot-date-popover__fields input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.45);
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+  border-color: rgba(0, 153, 169, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 .mot-date-popover__actions {
@@ -672,14 +672,14 @@
 
 .mot-date-popover__apply {
   border: 0 !important;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%) !important;
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%) !important;
   color: #fff !important;
-  box-shadow: 0 10px 22px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.24);
 }
 
 .mot-date-popover__apply:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(10, 186, 181, 0.3);
+  box-shadow: 0 14px 28px rgba(0, 153, 169, 0.3);
 }
 
 .mot-icon-btn {
@@ -781,7 +781,7 @@
   background: rgba(255, 255, 255, 0.86);
   border-radius: 24px;
   box-shadow: var(--oc-shadow-sm);
-  border: 1px solid rgba(10, 186, 181, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.1);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -810,12 +810,12 @@
   background: var(--mot-gradient-brand);
   color: #fff;
   font-size: 13px;
-  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 153, 169, 0.28);
 }
 
 .mot-btn--primary:hover {
-  background: linear-gradient(135deg, #45d4cf 0%, #0abab5 48%, #078f8a 100%);
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.38);
+  background: linear-gradient(135deg, #45d4cf 0%, #0099A9 48%, #078f8a 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.38);
 }
 
 .mot-btn--white {
@@ -828,7 +828,7 @@
 }
 
 .mot-btn--white:hover {
-  background: #f0fdfa;
+  background: #f0fafb;
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }
@@ -853,7 +853,7 @@
 }
 
 .mot-btn--soft:hover {
-  background: linear-gradient(180deg, #ecfdf5 0%, #ccfbf1 100%);
+  background: linear-gradient(180deg, #e6f6f8 0%, #e6f6f8 100%);
 }
 
 .mot-btn--block {
@@ -918,7 +918,7 @@
   right: 0;
   min-width: 210px;
   padding: 6px;
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
@@ -951,8 +951,8 @@
 
 .mot-chart-filter__option:hover,
 .mot-chart-filter__option--active {
-  background: rgba(10, 186, 181, 0.1);
-  color: #0d9488;
+  background: rgba(0, 153, 169, 0.1);
+  color: #007580;
 }
 
 /* ——— Metrics ——— */
@@ -969,7 +969,7 @@
 .mot-metric {
   padding: 20px 22px;
   background: #ffffff;
-  border-color: rgba(10, 186, 181, 0.12);
+  border-color: rgba(0, 153, 169, 0.12);
   border-radius: 22px;
   position: relative;
 }
@@ -982,7 +982,7 @@
   gap: 18px;
   padding: 20px;
   border-radius: 22px;
-  border: 1px solid rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.08);
   box-shadow: var(--oc-shadow-sm);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -993,7 +993,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.05) 0%, transparent 46%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.05) 0%, transparent 46%);
   pointer-events: none;
 }
 
@@ -1036,13 +1036,13 @@
 }
 
 .mot-metric__link:focus-visible {
-  outline: 2px solid rgba(10, 186, 181, 0.45);
+  outline: 2px solid rgba(0, 153, 169, 0.45);
   outline-offset: 2px;
 }
 
 .mot-metrics.mot-desktop-only .mot-metric--stat:hover {
   transform: translateY(-4px);
-  border-color: rgba(10, 186, 181, 0.18);
+  border-color: rgba(0, 153, 169, 0.18);
   box-shadow: var(--oc-shadow-md);
 }
 
@@ -1063,7 +1063,7 @@
 
 .mot-metrics.mot-desktop-only .mot-metric__icon--tiffany {
   background: linear-gradient(135deg, #55d7d2 0%, #209fbd 100%);
-  box-shadow: 0 14px 26px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 14px 26px rgba(0, 153, 169, 0.22);
 }
 
 .mot-metrics.mot-desktop-only .mot-metric__icon--pink {
@@ -1107,7 +1107,7 @@
 }
 
 .mot-metric__icon--tiffany {
-  background: rgba(10, 186, 181, 0.14);
+  background: rgba(0, 153, 169, 0.14);
   color: var(--mot-tiffany);
 }
 
@@ -1133,12 +1133,12 @@
 
 .mot-metric__icon--teal {
   background: rgba(20, 184, 166, 0.14);
-  color: #14b8a6;
+  color: #33adbb;
 }
 
 .mot-metric__icon--green {
   background: rgba(34, 197, 94, 0.14);
-  color: #22c55e;
+  color: #0099A9;
 }
 
 .mot-metric__spark--mobile {
@@ -1221,7 +1221,7 @@
   padding: 0 9px;
   border-radius: 999px;
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -1296,7 +1296,7 @@
 .mot-chart-mode__btn--active {
   background: var(--mot-gradient-active);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
 }
 
 .mot-chart-card__legend {
@@ -1365,8 +1365,8 @@
   width: 100%;
   max-width: 30px;
   border-radius: 12px 12px 6px 6px;
-  background: linear-gradient(180deg, #69d8d2 0%, #0abab5 100%);
-  box-shadow: 0 12px 22px rgba(10, 186, 181, 0.18);
+  background: linear-gradient(180deg, #69d8d2 0%, #0099A9 100%);
+  box-shadow: 0 12px 22px rgba(0, 153, 169, 0.18);
 }
 
 .mot-bars-card__value {
@@ -1442,7 +1442,7 @@
   overflow: hidden;
   aspect-ratio: 4 / 5;
   margin-bottom: 0;
-  background: linear-gradient(135deg, #ecfdf5 0%, #ccfbf1 100%);
+  background: linear-gradient(135deg, #e6f6f8 0%, #e6f6f8 100%);
 }
 
 .mot-ending-card__photo {
@@ -1598,11 +1598,11 @@
 
 .mot-ending-card--more {
   padding: 0;
-  border: 1.5px dashed rgba(10, 186, 181, 0.42);
+  border: 1.5px dashed rgba(0, 153, 169, 0.42);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 18% 12%, rgba(10, 186, 181, 0.16) 0%, rgba(10, 186, 181, 0) 42%),
-    linear-gradient(165deg, rgba(10, 186, 181, 0.1) 0%, #ffffff 58%, #f8fffe 100%);
+    radial-gradient(circle at 18% 12%, rgba(0, 153, 169, 0.16) 0%, rgba(0, 153, 169, 0) 42%),
+    linear-gradient(165deg, rgba(0, 153, 169, 0.1) 0%, #ffffff 58%, #f8fffe 100%);
   text-align: center;
   cursor: pointer;
   align-self: stretch;
@@ -1613,10 +1613,10 @@
 
 .mot-ending-card--more:hover {
   transform: translateY(-1px);
-  border-color: rgba(10, 186, 181, 0.62);
+  border-color: rgba(0, 153, 169, 0.62);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 24px rgba(10, 186, 181, 0.12);
+    0 10px 24px rgba(0, 153, 169, 0.12);
 }
 
 .mot-ending-card--more:active {
@@ -1639,7 +1639,7 @@
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 1;
-  color: #089a95;
+  color: #007d8a;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -1658,7 +1658,7 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
-  color: #0f766e;
+  color: #00605a;
 }
 
 /* ——— Best property ——— */
@@ -1678,8 +1678,8 @@
   overflow: hidden;
   margin-bottom: 14px;
   aspect-ratio: 16 / 10;
-  background: linear-gradient(135deg, #ecfdf5 0%, #ccfbf1 100%);
-  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.12);
+  background: linear-gradient(135deg, #e6f6f8 0%, #e6f6f8 100%);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.12);
 }
 
 .mot-best__photo {
@@ -1704,7 +1704,7 @@
 }
 
 .mot-best__badge--long {
-  background: #22c55e;
+  background: #0099A9;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
 }
 
@@ -1782,8 +1782,8 @@
   gap: 8px;
   padding: 18px;
   border-radius: 18px;
-  background: rgba(10, 186, 181, 0.07);
-  border: 1px dashed rgba(10, 186, 181, 0.24);
+  background: rgba(0, 153, 169, 0.07);
+  border: 1px dashed rgba(0, 153, 169, 0.24);
 }
 
 /* ——— Triple row ——— */
@@ -1878,8 +1878,8 @@
   margin: 16px 0 12px;
   padding: 24px;
   border-radius: 20px;
-  background: rgba(10, 186, 181, 0.06);
-  border: 1px dashed rgba(10, 186, 181, 0.24);
+  background: rgba(0, 153, 169, 0.06);
+  border: 1px dashed rgba(0, 153, 169, 0.24);
   text-align: center;
 }
 
@@ -2054,7 +2054,7 @@
 .mot-status-buyer-ad .oad-buyer__icon {
   width: 24px;
   height: 24px;
-  background: rgba(10, 186, 181, 0.12);
+  background: rgba(0, 153, 169, 0.12);
 }
 
 .mot-status-buyer-ad .oad-buyer__actions {
@@ -2071,10 +2071,10 @@
   min-height: 36px;
   padding: 0 18px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   color: #fff;
   font-size: 12px;
-  box-shadow: 0 10px 18px rgba(10, 186, 181, 0.18);
+  box-shadow: 0 10px 18px rgba(0, 153, 169, 0.18);
 }
 
 .mot-status-buyer-ad .oad-buyer__link {
@@ -2090,11 +2090,11 @@
 .mot-rating-promo__surface {
   --mot-rating-promo-gradient: linear-gradient(
     120deg,
-    #0f766e 0%,
-    #0d9488 22%,
-    #14b8a6 48%,
-    #089a95 72%,
-    #0abab5 100%
+    #00605a 0%,
+    #007580 22%,
+    #33adbb 48%,
+    #007d8a 72%,
+    #0099A9 100%
   );
   position: relative;
   display: block;
@@ -2114,14 +2114,14 @@
   background-size: 260% 260%;
   animation: mot-rating-promo-gradient 8s ease-in-out infinite;
   box-shadow:
-    0 12px 36px rgba(13, 148, 136, 0.28),
+    0 12px 36px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .mot-rating-promo__surface:hover {
   box-shadow:
-    0 16px 40px rgba(13, 148, 136, 0.34),
+    0 16px 40px rgba(0, 153, 169, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
@@ -2316,7 +2316,7 @@
   bottom: -28px;
   width: 66%;
   height: 62%;
-  filter: drop-shadow(0 18px 24px rgba(10, 186, 181, 0.2));
+  filter: drop-shadow(0 18px 24px rgba(0, 153, 169, 0.2));
 }
 
 .mot-promo-card__visual--listing img {
@@ -2363,8 +2363,8 @@
 
 .mot-promo-card--light {
   background:
-    radial-gradient(ellipse at 100% 100%, rgba(10, 186, 181, 0.22) 0%, transparent 58%),
-    linear-gradient(135deg, #ecfdf5 0%, #f8fffe 48%, #ffffff 100%);
+    radial-gradient(ellipse at 100% 100%, rgba(0, 153, 169, 0.22) 0%, transparent 58%),
+    linear-gradient(135deg, #e6f6f8 0%, #f8fffe 48%, #ffffff 100%);
   border: 1px solid var(--mot-tiffany-ring);
   box-shadow: var(--mot-shadow);
 }
@@ -2390,19 +2390,19 @@
 }
 
 .mot-promo-card--light .mot-btn--primary {
-  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.24);
 }
 
 .mot-promo-card--dark .mot-btn--white {
-  color: #0f766e;
+  color: #00605a;
   background: #ffffff;
 }
 
 .mot-promo-card--light .mot-promo-card__tag {
-  background: rgba(10, 186, 181, 0.12);
-  border: 1px solid rgba(10, 186, 181, 0.28);
+  background: rgba(0, 153, 169, 0.12);
+  border: 1px solid rgba(0, 153, 169, 0.28);
   color: var(--mot-tiffany-deep);
 }
 
@@ -2417,8 +2417,8 @@
 .mot-promo-card--dark {
   background:
     linear-gradient(90deg, rgba(15, 23, 42, 0) 52%, rgba(15, 23, 42, 0.42) 100%),
-    linear-gradient(128deg, #0f172a 0%, #134e4a 48%, #0d9488 100%);
-  border: 1px solid rgba(10, 186, 181, 0.38);
+    linear-gradient(128deg, #0f172a 0%, #134e4a 48%, #007580 100%);
+  border: 1px solid rgba(0, 153, 169, 0.38);
   box-shadow: 0 10px 36px rgba(15, 23, 42, 0.2);
   color: #fff;
   min-height: 270px;
@@ -2444,15 +2444,15 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 14% 50%, rgba(10, 186, 181, 0.26) 0%, transparent 44%),
+    radial-gradient(circle at 14% 50%, rgba(0, 153, 169, 0.26) 0%, transparent 44%),
     radial-gradient(circle at 92% 18%, rgba(94, 234, 212, 0.12) 0%, transparent 36%);
   pointer-events: none;
 }
 
 .mot-promo-card--dark .mot-promo-card__tag {
-  background: rgba(10, 186, 181, 0.22);
+  background: rgba(0, 153, 169, 0.22);
   border: 1px solid rgba(94, 234, 212, 0.35);
-  color: #99f6e4;
+  color: #cce9ed;
 }
 
 .mot-promo-card--dark .mot-promo-card__title,

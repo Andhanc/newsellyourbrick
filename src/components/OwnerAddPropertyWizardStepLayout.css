@@ -29,7 +29,7 @@
 .oap-wizard-step__progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(90deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
   transition: width 0.35s ease;
 }
 
@@ -67,9 +67,9 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #089a95;
-  background: rgba(10, 186, 181, 0.1);
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  color: #007d8a;
+  background: rgba(0, 153, 169, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.2);
   white-space: nowrap;
 }
 

@@ -201,8 +201,8 @@ function LogoMark({ className = '' }) {
     <svg className={`opr-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="opr-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#opr-logo-grad)" />
@@ -227,8 +227,8 @@ function ProfileAvatar({ large = false }) {
       <svg viewBox="0 0 80 80">
         <defs>
           <linearGradient id="opr-avatar-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#53d8d3" />
-            <stop offset="100%" stopColor="#089a95" />
+            <stop offset="0%" stopColor="#33adbb" />
+            <stop offset="100%" stopColor="#007d8a" />
           </linearGradient>
         </defs>
         <circle cx="40" cy="40" r="40" fill="url(#opr-avatar-grad)" />

@@ -11,7 +11,7 @@
   z-index: 3;
   width: clamp(148px, 19vw, 188px);
   padding: 14px 15px 13px;
-  border: 1px solid rgba(10, 186, 181, 0.12);
+  border: 1px solid rgba(0, 153, 169, 0.12);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 22px 44px rgba(15, 27, 45, 0.1);
@@ -64,7 +64,7 @@
   height: 6px;
   margin-top: 10px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.12);
+  background: rgba(0, 153, 169, 0.12);
   overflow: hidden;
 }
 
@@ -72,7 +72,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #0abab5, #6ee7d8);
+  background: linear-gradient(90deg, #0099A9, #6ee7d8);
 }
 
 .vip-club-hero-float__delta {
@@ -94,7 +94,7 @@
   width: 100%;
   height: 36px;
   margin-top: 8px;
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .vip-club-hero-float__avatars {
@@ -205,7 +205,7 @@
 }
 
 .vip-club-hero-phone__header svg:first-child {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .vip-club-hero-phone__header svg:last-child {
@@ -233,7 +233,7 @@
   left: 8px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.92);
+  background: rgba(0, 153, 169, 0.92);
   color: #fff;
   font-size: 8px;
   font-weight: 800;
@@ -285,7 +285,7 @@
 }
 
 .vip-club-hero-phone__portfolio-row strong {
-  color: #0abab5;
+  color: #0099A9;
   font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.04em;
@@ -301,7 +301,7 @@
   width: 100%;
   height: 34px;
   margin-top: 6px;
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .vip-club-hero-phone__nav {
@@ -317,7 +317,7 @@
 }
 
 .vip-club-hero-phone__nav .is-active {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 @media (max-width: 720px) {

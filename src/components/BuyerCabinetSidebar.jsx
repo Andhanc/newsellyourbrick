@@ -18,7 +18,7 @@ const headerBtnStyle = {
   backgroundColor: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  color: '#0ABAB5',
+  color: '#0099A9',
   fontSize: '18px',
   fontWeight: '600',
   transition: 'opacity 0.2s',

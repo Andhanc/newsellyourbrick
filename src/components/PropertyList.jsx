@@ -12,6 +12,8 @@ import CircularTimer from './CircularTimer'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionDesktopFilters from './AuctionDesktopFilters'
+import AuctionListingSaleToggle from './AuctionListingSaleToggle'
+import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
 import AuctionPropertyCard from './AuctionPropertyCard'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
@@ -62,7 +64,6 @@ const PROPERTY_FILTER_ITEMS = [
   { kind: 'type', value: 'апартаменты', labelKey: 'propertyTypeApartment' },
   { kind: 'type', value: 'вилла', labelKey: 'propertyTypeVilla' },
   { kind: 'type', value: 'дом', labelKey: 'propertyTypeHouse' },
-  { kind: 'sale', value: 'buy_now', labelKey: 'buyNowSectionTitle' },
   { kind: 'sale', value: 'ended', labelKey: 'auctionFilterEnded' },
 ]
 
@@ -362,6 +363,15 @@ const PropertyList = ({
   const isAuctionPage = isAuctionRoute(location.pathname)
   const isAuctionMobileFilters = isMobile && isAuctionPage
   const isAuctionDesktop = isAuctionPage && !isMobile
+  const auctionSaleToggleMode = saleFilters.includes('buy_now') ? 'buy_now' : 'all'
+
+  const handleAuctionSaleToggleChange = (mode) => {
+    if (mode === 'buy_now') {
+      setSaleFilters(['buy_now'])
+      return
+    }
+    setSaleFilters((prev) => prev.filter((value) => value !== 'buy_now'))
+  }
 
   useEffect(() => {
     const root = document.querySelector('.home-page--auction')
@@ -552,9 +562,6 @@ const PropertyList = ({
         {isAuctionDesktop ? (
           <div className="page-context-heading page-context-heading--listing-auction">
             <div className="page-context-heading--listing-auction-inner">
-              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
-                {t('auction')}
-              </h1>
               <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
             </div>
           </div>
@@ -632,6 +639,7 @@ const PropertyList = ({
                 : ''
             }`.trim() || undefined}
           >
+        <div className={isAuctionPage ? 'auction-listing-search-stack' : undefined}>
         <div
           ref={searchFiltersBarRef}
           className={`search-filters-bar${
@@ -747,6 +755,13 @@ const PropertyList = ({
             </div>
           </div>
           ) : null}
+        </div>
+        {isAuctionPage ? (
+          <AuctionListingSaleToggle
+            value={auctionSaleToggleMode}
+            onChange={handleAuctionSaleToggleChange}
+          />
+        ) : null}
         </div>
 
         {isAuctionDesktop && desktopFiltersTransitioning ? (

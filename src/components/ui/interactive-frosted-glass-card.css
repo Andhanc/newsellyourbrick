@@ -70,7 +70,7 @@
 }
 
 .frosted-glass-card--investor .frosted-glass-card__icon-wrap {
-  background: #9be181;
+  background: #66c1cc;
   box-shadow:
     0 8px 20px rgba(77, 150, 58, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -127,7 +127,7 @@
 }
 
 .frosted-glass-card__btn--investor {
-  background: #9be181;
+  background: #66c1cc;
   color: #101928;
   box-shadow:
     0 8px 20px rgba(77, 150, 58, 0.22),

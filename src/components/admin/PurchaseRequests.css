@@ -21,7 +21,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #0abab5, #089a96);
+  background: linear-gradient(135deg, #0099A9, #007d8a);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -66,9 +66,9 @@
 
 .filter-input:focus {
   outline: none;
-  border-color: #0ABAB5;
+  border-color: #0099A9;
   background: white;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.15);
 }
 
 .clear-search {
@@ -129,13 +129,13 @@
 }
 
 .filter-btn:hover {
-  border-color: #0ABAB5;
-  color: #0ABAB5;
+  border-color: #0099A9;
+  color: #0099A9;
 }
 
 .filter-btn.active {
-  background: #0ABAB5;
-  border-color: #0ABAB5;
+  background: #0099A9;
+  border-color: #0099A9;
   color: white;
 }
 
@@ -186,7 +186,7 @@
 }
 
 .purchase-request-card__title svg {
-  color: #0ABAB5;
+  color: #0099A9;
   flex-shrink: 0;
 }
 
@@ -218,7 +218,7 @@
 
 .info-value--price {
   font-weight: 600;
-  color: #0ABAB5;
+  color: #0099A9;
   font-size: 0.95rem;
 }
 
@@ -248,8 +248,8 @@
 }
 
 .status-badge--completed {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .status-badge--cancelled {
@@ -269,7 +269,7 @@
 .purchase-requests-error button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
   border: none;
   border-radius: 6px;
@@ -279,7 +279,7 @@
 }
 
 .purchase-requests-error button:hover {
-  background: #089a95;
+  background: #007d8a;
 }
 
 .purchase-requests-empty {
@@ -466,8 +466,8 @@
 
 .modal-notes-textarea:focus {
   outline: none;
-  border-color: #0ABAB5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.1);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.1);
 }
 
 .purchase-request-modal__actions {
@@ -512,12 +512,12 @@
 }
 
 .modal-action-btn--completed {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .modal-action-btn--completed:hover:not(:disabled) {
-  background: #bbf7d0;
+  background: #e6f6f8;
 }
 
 .modal-action-btn--cancelled {

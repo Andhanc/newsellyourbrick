@@ -15,17 +15,17 @@ html.owner-test-cabinet-active,
 .oap,
 .owl {
   /* Tiffany / brand */
-  --oc-tiffany: #0abab5;
-  --oc-tiffany-dark: #089a95;
-  --oc-tiffany-deep: #0d9488;
-  --oc-tiffany-darker: #0f766e;
-  --oc-tiffany-ink: #042f2e;
-  --oc-tiffany-light: #53d8d3;
-  --oc-tiffany-pale: #99f6e4;
-  --oc-tiffany-soft: #eefdfb;
-  --oc-tiffany-mint: #ccfbf1;
-  --oc-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --oc-tiffany-ring: rgba(10, 186, 181, 0.28);
+  --oc-tiffany: #0099A9;
+  --oc-tiffany-dark: #007d8a;
+  --oc-tiffany-deep: #007580;
+  --oc-tiffany-darker: #00605a;
+  --oc-tiffany-ink: #003d44;
+  --oc-tiffany-light: #33adbb;
+  --oc-tiffany-pale: #99d5dd;
+  --oc-tiffany-soft: #f0fafb;
+  --oc-tiffany-mint: #e6f6f8;
+  --oc-tiffany-muted: rgba(0, 153, 169, 0.14);
+  --oc-tiffany-ring: rgba(0, 153, 169, 0.28);
 
   /* Neutrals — contrast with brand teal */
   --oc-slate: #0f172a;
@@ -42,27 +42,27 @@ html.owner-test-cabinet-active,
   --oc-text-light: #9ca3af;
 
   /* Gradients */
-  --oc-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-  --oc-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
-  --oc-gradient-deep: linear-gradient(145deg, #042f2e 0%, #0f766e 42%, #0d9488 78%, #14b8a6 100%);
+  --oc-gradient-brand: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
+  --oc-gradient-active: linear-gradient(135deg, #008da0 0%, #0099A9 42%, #007d8a 100%);
+  --oc-gradient-deep: linear-gradient(145deg, #003d44 0%, #00605a 42%, #007580 78%, #33adbb 100%);
   --oc-gradient-deep-soft: linear-gradient(
     180deg,
-    rgba(4, 47, 46, 0.08) 0%,
-    rgba(15, 118, 110, 0.04) 38%,
+    rgba(0, 61, 68, 0.08) 0%,
+    rgba(0, 96, 90, 0.04) 38%,
     rgba(255, 255, 255, 0) 72%
   );
   --oc-gradient-page: linear-gradient(135deg, #f7fbfb 0%, #f0fffd 48%, #fbfff8 100%);
   --oc-gradient-promo-shade: linear-gradient(
     115deg,
-    rgba(4, 47, 46, 0.9) 0%,
-    rgba(8, 154, 149, 0.75) 45%,
-    rgba(10, 186, 181, 0.35) 100%
+    rgba(0, 61, 68, 0.9) 0%,
+    rgba(0, 125, 138, 0.75) 45%,
+    rgba(0, 153, 169, 0.35) 100%
   );
 
   /* Elevation */
-  --oc-shadow-sm: 0 16px 36px rgba(15, 23, 42, 0.06), 0 18px 34px rgba(10, 186, 181, 0.07);
-  --oc-shadow-md: 0 22px 46px rgba(15, 23, 42, 0.08), 0 18px 36px rgba(10, 186, 181, 0.08);
-  --oc-shadow-current: 0 0 0 1px rgba(15, 118, 110, 0.22), 0 20px 48px rgba(4, 47, 46, 0.14);
+  --oc-shadow-sm: 0 16px 36px rgba(15, 23, 42, 0.06), 0 18px 34px rgba(0, 153, 169, 0.07);
+  --oc-shadow-md: 0 22px 46px rgba(15, 23, 42, 0.08), 0 18px 36px rgba(0, 153, 169, 0.08);
+  --oc-shadow-current: 0 0 0 1px rgba(0, 96, 90, 0.22), 0 20px 48px rgba(0, 61, 68, 0.14);
   --oc-radius: 22px;
   --oc-radius-sm: 16px;
   --oc-radius-lg: 28px;
@@ -116,7 +116,7 @@ html.owner-test-cabinet-active,
       [class*='__surface']
     ) {
     border-radius: var(--oc-radius) !important;
-    border-color: rgba(10, 186, 181, 0.1) !important;
+    border-color: rgba(0, 153, 169, 0.1) !important;
     box-shadow: var(--oc-shadow-sm) !important;
   }
 

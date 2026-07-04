@@ -70,7 +70,7 @@
 }
 
 .debts-property-card__risk--low {
-  background: #22c55e;
+  background: #0099A9;
 }
 
 .debts-property-card__favorite {
@@ -121,7 +121,7 @@
 }
 
 .debts-property-card__status--buy svg {
-  color: #16a34a;
+  color: #0099A9;
 }
 
 .debts-property-card__body {
@@ -259,7 +259,7 @@
 .debts-property-card__btn--secondary:hover:not(:disabled) {
   border-color: rgba(184, 207, 154, 0.45);
   background: #f8fafc;
-  color: #2d5a36;
+  color: #007d8a;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(45, 90, 54, 0.12);
 }

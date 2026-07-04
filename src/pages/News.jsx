@@ -301,7 +301,6 @@ function NewsSocialBanner() {
   return (
     <section className="news-social" aria-label="SellYourBrick в соцсетях">
       <div className="news-social__inner">
-        <div className="news-social__glow" aria-hidden />
         <div className="news-social__copy">
           <p className="news-social__eyebrow">Следите за нами</p>
           <h2 className="news-social__brand" aria-label="SellYourBrick">

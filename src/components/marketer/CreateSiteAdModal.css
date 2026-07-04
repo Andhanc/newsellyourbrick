@@ -277,7 +277,7 @@
 }
 
 .create-site-ad-modal__preview--block .create-site-ad-modal__preview-cta {
-  color: #0f766e;
+  color: #00605a;
 }
 
 .create-site-ad-modal__preview-wrap {
@@ -319,7 +319,7 @@
 
 .create-site-ad-modal__preview--block {
   text-align: left;
-  background: linear-gradient(120deg, #0f766e, #14b8a6, #0284c7);
+  background: linear-gradient(120deg, #00605a, #33adbb, #0284c7);
 }
 
 .create-site-ad-modal__preview-badge,

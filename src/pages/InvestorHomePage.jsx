@@ -321,7 +321,6 @@ function InvestorHomePage() {
         {!yieldValue.startsWith('Любая') ? <span><FiPieChart aria-hidden /> {yieldValue}</span> : null}
       </div>
       </main>
-      <InvestorFooter />
     </div>
   )
 }

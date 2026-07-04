@@ -87,12 +87,12 @@
 }
 
 .tdbuyer-cancel-dialog__option:has(input:focus-visible) {
-  outline: 2px solid #0d9488;
+  outline: 2px solid #007580;
   outline-offset: 1px;
 }
 
 .tdbuyer-cancel-dialog__option:has(input:checked) {
-  border-color: rgba(13, 148, 136, 0.55);
+  border-color: rgba(0, 153, 169, 0.55);
   background: rgba(240, 253, 250, 0.65);
 }
 
@@ -116,8 +116,8 @@
 
 .tdbuyer-cancel-dialog__textarea:focus {
   outline: none;
-  border-color: rgba(13, 148, 136, 0.55);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+  border-color: rgba(0, 153, 169, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.12);
 }
 
 .tdbuyer-cancel-dialog__err {

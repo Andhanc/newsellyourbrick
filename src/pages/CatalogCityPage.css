@@ -19,7 +19,7 @@
 }
 
 .catalog-city__breadcrumbs a {
-  color: #0d9488;
+  color: #007580;
   text-decoration: none;
 }
 
@@ -54,9 +54,9 @@
 }
 
 .catalog-city__tab--active {
-  border-color: #0d9488;
-  background: #ecfdf5;
-  color: #0f766e;
+  border-color: #007580;
+  background: #e6f6f8;
+  color: #00605a;
 }
 
 .catalog-city__status {

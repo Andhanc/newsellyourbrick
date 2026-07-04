@@ -1,8 +1,8 @@
 .debts-page-filters {
-  --debts-filter-accent: #0abab5;
-  --debts-filter-accent-dark: #089a96;
-  --debts-filter-accent-soft: rgba(10, 186, 181, 0.14);
-  --debts-filter-accent-ring: rgba(10, 186, 181, 0.22);
+  --debts-filter-accent: #0099A9;
+  --debts-filter-accent-dark: #007d8a;
+  --debts-filter-accent-soft: rgba(0, 153, 169, 0.14);
+  --debts-filter-accent-ring: rgba(0, 153, 169, 0.22);
   position: sticky;
   top: calc(env(safe-area-inset-top, 0px) + 96px);
   align-self: start;
@@ -166,7 +166,7 @@
 }
 
 .debts-page-filters__dot--low {
-  background: #22c55e;
+  background: #0099A9;
 }
 
 .debts-page-filters__check-label {

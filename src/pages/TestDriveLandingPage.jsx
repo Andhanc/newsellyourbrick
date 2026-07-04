@@ -48,7 +48,7 @@ const BASE_LISTINGS = [
   {
     title: 'Вилла в Марбелье',
     location: 'Испания, Коста-дель-Соль',
-    city: 'Испания',
+    city: 'Марбелья',
     type: 'Вилла',
     bedrooms: 3,
     bathrooms: 3,
@@ -59,9 +59,9 @@ const BASE_LISTINGS = [
     stayDays: 3,
   },
   {
-    title: 'Апартаменты в Ницце',
-    location: 'Франция, Лазурный берег',
-    city: 'Франция',
+    title: 'Апартаменты в Мадриде',
+    location: 'Испания, Мадрид',
+    city: 'Мадрид',
     type: 'Апартаменты',
     bedrooms: 2,
     bathrooms: 2,
@@ -72,9 +72,9 @@ const BASE_LISTINGS = [
     stayDays: 3,
   },
   {
-    title: 'Вилла в Пафосе',
-    location: 'Кипр, Пафос',
-    city: 'Кипр',
+    title: 'Вилла в Малаге',
+    location: 'Испания, Малага',
+    city: 'Малага',
     type: 'Вилла',
     bedrooms: 3,
     bathrooms: 2,
@@ -85,9 +85,9 @@ const BASE_LISTINGS = [
     stayDays: 3,
   },
   {
-    title: 'Дом в Сорренто',
-    location: 'Италия, Амальфитанское побережье',
-    city: 'Италия',
+    title: 'Дом в Валенсии',
+    location: 'Испания, Валенсия',
+    city: 'Валенсия',
     type: 'Дом',
     bedrooms: 2,
     bathrooms: 2,
@@ -100,7 +100,7 @@ const BASE_LISTINGS = [
   {
     title: 'Апартаменты в Барселоне',
     location: 'Испания, Барселона',
-    city: 'Испания',
+    city: 'Барселона',
     type: 'Апартаменты',
     bedrooms: 1,
     bathrooms: 1,
@@ -111,9 +111,9 @@ const BASE_LISTINGS = [
     stayDays: 3,
   },
   {
-    title: 'Вилла в Санторини',
-    location: 'Греция, Санторини',
-    city: 'Греция',
+    title: 'Вилла в Аликанте',
+    location: 'Испания, Аликанте',
+    city: 'Аликанте',
     type: 'Вилла',
     bedrooms: 2,
     bathrooms: 2,
@@ -140,7 +140,7 @@ const GENERATED_LISTINGS = Array.from({ length: 42 }, (_, index) => {
 })
 
 const TYPE_FILTERS = ['Вилла', 'Апартаменты', 'Таунхаус', 'Дом', 'Пентхаус']
-const DIRECTION_FILTERS = ['Испания', 'Италия', 'Греция', 'Кипр', 'Португалия']
+const CITY_FILTERS = ['Марбелья', 'Барселона', 'Мадрид', 'Валенсия', 'Малага', 'Аликанте', 'Севилья', 'Пальма']
 const DURATION_FILTERS = ['3-7 дней', '1-2 недели', '2-4 недели', '1-3 месяца', 'Более 3 месяцев']
 const AMENITY_FILTERS = ['Бассейн', 'Вид на море', 'Терраса', 'Wi-Fi', 'Парковка']
 
@@ -360,9 +360,9 @@ const TestDriveLandingPage = () => {
             <p className="test-drive-hero__lead">
               Поживите в объекте до сделки и примите взвешенное решение
             </p>
-            <a href="#test-drive-catalog" className="test-drive-hero__button">
-              Подобрать объект
-            </a>
+            <Link to="/profile/bookings" className="test-drive-hero__button">
+              Мои брони
+            </Link>
           </div>
         </section>
 
@@ -397,8 +397,8 @@ const TestDriveLandingPage = () => {
                 onToggle={(value) => toggleValue(value, setSelectedTypes)}
               />
               <FilterGroup
-                title="Направление"
-                options={DIRECTION_FILTERS}
+                title="Город"
+                options={CITY_FILTERS}
                 values={selectedDirections}
                 onToggle={(value) => toggleValue(value, setSelectedDirections)}
                 moreLabel="Показать ещё"

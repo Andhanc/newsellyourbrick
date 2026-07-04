@@ -3,7 +3,11 @@
  */
 import { getPrisma } from './prismaClient.js';
 import { propertySlugQueries } from './propertySlugPrisma.js';
-import { isNumericPropertyRouteParam } from '../../shared/propertySlug.js';
+import {
+  isNumericPropertyRouteParam,
+  parseIdFromPropertySlug,
+  propertyTypeHintFromSlug,
+} from '../../shared/propertySlug.js';
 
 function parseJsonSafe(val, fallback) {
   if (val == null || val === '') return fallback;
@@ -1043,30 +1047,55 @@ export const propertyQueries = {
     }
 
     const hit = await propertySlugQueries.getBySlug(raw);
-    if (!hit) return null;
-
-    const nid = hit.row.id;
-    if (hit.source_table === 'properties_apartments') {
-      const property = await apartmentQueries.getById(nid);
-      if (property) {
-        property.source_table = 'properties_apartments';
-        property.slug = hit.row.slug || property.slug;
-        return property;
+    if (hit) {
+      const nid = hit.row.id;
+      if (hit.source_table === 'properties_apartments') {
+        const property = await apartmentQueries.getById(nid);
+        if (property) {
+          property.source_table = 'properties_apartments';
+          property.slug = hit.row.slug || property.slug;
+          return property;
+        }
+        return null;
       }
-      return null;
-    }
-    if (hit.source_table === 'properties_houses') {
-      const property = await houseQueries.getById(nid);
-      if (property) {
-        property.source_table = 'properties_houses';
-        property.slug = hit.row.slug || property.slug;
-        return property;
+      if (hit.source_table === 'properties_houses') {
+        const property = await houseQueries.getById(nid);
+        if (property) {
+          property.source_table = 'properties_houses';
+          property.slug = hit.row.slug || property.slug;
+          return property;
+        }
+        return null;
       }
-      return null;
+
+      return { ...hit.row, source_table: 'properties' };
     }
 
-    const legacy = { ...hit.row, source_table: 'properties' };
-    return legacy;
+    // Slug мог быть сгенерирован на клиенте (type-title-id), но ещё не сохранён в БД.
+    const parsedId = parseIdFromPropertySlug(raw);
+    if (parsedId == null) return null;
+
+    const typeHint = propertyType || propertyTypeHintFromSlug(raw) || null;
+    const property = await propertyQueries.getById(parsedId, typeHint);
+    if (!property) return null;
+
+    if (String(property.moderation_status || '').toLowerCase() === 'approved') {
+      const table =
+        property.source_table ||
+        (property.property_type === 'house' || property.property_type === 'villa'
+          ? 'properties_houses'
+          : 'properties_apartments');
+      const persisted = await propertySlugQueries.ensureSlug({
+        id: property.id,
+        property_type: property.property_type,
+        title: property.title,
+        slug: property.slug,
+        source_table: table,
+      });
+      if (persisted) property.slug = persisted;
+    }
+
+    return property;
   },
 
   updateModerationStatus: async (

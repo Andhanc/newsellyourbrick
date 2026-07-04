@@ -11,16 +11,16 @@ import './PrivateClubVipCelebrationModal.css'
 const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
 
 const CONFETTI_COLORS = [
-  '#10b981',
-  '#0abab5',
-  '#14b8a6',
+  '#0099A9',
+  '#0099A9',
+  '#33adbb',
   '#a78bfa',
   '#8b5cf6',
   '#f59e0b',
   '#fbbf24',
   '#ec4899',
   '#06b6d4',
-  '#34d399',
+  '#33adbb',
 ]
 
 /** Новые частицы только первые 5 с; затем recycle выключается и салют затухает. */
@@ -112,7 +112,7 @@ export default function PrivateClubVipCelebrationModal({ open, onClose }) {
           <span>🎊</span>
         </div>
         <div className="private-club-vip-celebration__icon-wrap" aria-hidden>
-          <FaGem size={34} color="#0abab5" />
+          <FaGem size={34} color="#0099A9" />
         </div>
         <h2 id="private-club-vip-celebration-title" className="private-club-vip-celebration__title">
           {t('privateClubVipCelebrationTitle')}

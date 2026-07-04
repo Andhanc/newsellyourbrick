@@ -139,10 +139,10 @@
 }
 
 .map-page-grid-card--selected {
-  border-color: rgba(10, 186, 181, 0.45) !important;
+  border-color: rgba(0, 153, 169, 0.45) !important;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.14),
-    0 0 0 2px rgba(10, 186, 181, 0.18) !important;
+    0 4px 16px rgba(0, 153, 169, 0.14),
+    0 0 0 2px rgba(0, 153, 169, 0.18) !important;
 }
 
 .map-page-grid-card__price {
@@ -409,7 +409,7 @@
   font-weight: 700;
   line-height: 18px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 153, 169, 0.35);
 }
 
 .map-list-inline-count {
@@ -464,8 +464,8 @@
 
 .map-page-search-box__input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.65);
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+  border-color: rgba(0, 153, 169, 0.65);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 /* Скрываем встроенный крестик браузера у type="search" — остаётся только наша кнопка */
@@ -481,7 +481,7 @@
 }
 
 .map-page-search-box:focus-within .map-page-search-box__icon {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .map-page-search-box__clear {
@@ -1011,7 +1011,7 @@
   margin: 4px 0 0;
   font-size: 15px;
   font-weight: 700;
-  color: #0f766e;
+  color: #00605a;
 }
 
 .map-open-hint__cta {
@@ -1020,19 +1020,19 @@
   padding: 10px 18px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0abab5, #0d9488);
+  background: linear-gradient(135deg, #0099A9, #007580);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.35);
   transition: transform 0.15s ease, box-shadow 0.2s ease;
   white-space: nowrap;
 }
 
 .map-open-hint__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.45);
 }
 
 @media (max-width: 520px) {
@@ -1079,9 +1079,9 @@
 }
 
 .map-pin-cluster:hover {
-  border-color: rgba(10, 186, 181, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.24),
+    0 6px 20px rgba(0, 153, 169, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.9) inset;
 }
 
@@ -1145,10 +1145,10 @@
 }
 
 .map-pin-mini--active .map-pin-mini__inner {
-  border-color: rgba(10, 186, 181, 0.65);
+  border-color: rgba(0, 153, 169, 0.65);
   box-shadow:
-    0 6px 22px rgba(10, 186, 181, 0.35),
-    0 0 0 2px rgba(10, 186, 181, 0.25),
+    0 6px 22px rgba(0, 153, 169, 0.35),
+    0 0 0 2px rgba(0, 153, 169, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.9);
   cursor: pointer;
 }
@@ -1197,7 +1197,7 @@
 }
 
 .map-pin-mini--active .map-pin-mini__price {
-  color: #0f766e;
+  color: #00605a;
 }
 
 @media (max-width: 480px) {
@@ -1236,9 +1236,9 @@
   font-family: inherit;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #0abab5 0%, #0d9488 52%, #0891b2 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007580 52%, #007d8a 100%);
   box-shadow:
-    0 4px 14px rgba(10, 186, 181, 0.38),
+    0 4px 14px rgba(0, 153, 169, 0.38),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
@@ -1251,7 +1251,7 @@
 .map-booking-card__show-btn:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.48),
+    0 6px 20px rgba(0, 153, 169, 0.48),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
   filter: brightness(1.04);
 }
@@ -1420,10 +1420,10 @@
   }
 
   .map-booking-card.selected {
-    border-color: rgba(10, 186, 181, 0.35);
+    border-color: rgba(0, 153, 169, 0.35);
     box-shadow:
       0 1px 2px rgba(15, 23, 42, 0.04),
-      0 4px 16px rgba(10, 186, 181, 0.12);
+      0 4px 16px rgba(0, 153, 169, 0.12);
   }
 
   .map-booking-card.map-booking-card--skeleton:hover {
@@ -1545,7 +1545,7 @@
 }
 
 .map-float-map-btn:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 3px;
 }
 

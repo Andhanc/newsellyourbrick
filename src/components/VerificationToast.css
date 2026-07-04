@@ -30,8 +30,8 @@
 
 /* Успех: всё заполнено */
 .verification-toast--success {
-  border-color: #86efac;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #99d5dd;
+  background: linear-gradient(135deg, #f0fafb 0%, #e6f6f8 100%);
 }
 
 .verification-toast__success-inner {
@@ -44,7 +44,7 @@
   height: 64px;
   margin: 0 auto 1rem;
   border-radius: 50%;
-  background: #22c55e;
+  background: #0099A9;
   color: white;
   display: flex;
   align-items: center;
@@ -81,13 +81,13 @@
 .verification-toast__success-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #166534;
+  color: #007d8a;
   margin: 0 0 0.5rem 0;
 }
 
 .verification-toast__success-text {
   font-size: 0.9375rem;
-  color: #15803d;
+  color: #007d8a;
   line-height: 1.5;
   margin: 0;
 }
@@ -261,7 +261,7 @@
 }
 
 .verification-toast__stat-icon {
-  color: #0ABAB5;
+  color: #0099A9;
   flex-shrink: 0;
 }
 
@@ -285,8 +285,8 @@
 }
 
 .verification-toast__section-title--success {
-  color: #166534;
-  background: #dcfce7;
+  color: #007d8a;
+  background: #e6f6f8;
 }
 
 .verification-toast__section-title--warning {
@@ -314,8 +314,8 @@
 }
 
 .verification-toast__field-item--filled {
-  background: #f0fdf4;
-  color: #166534;
+  background: #f0fafb;
+  color: #007d8a;
 }
 
 .verification-toast__field-item--missing {
@@ -345,7 +345,7 @@
 
 .verification-toast__check-icon {
   margin-left: auto;
-  color: #10b981;
+  color: #0099A9;
   flex-shrink: 0;
 }
 

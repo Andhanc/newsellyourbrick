@@ -24,8 +24,8 @@
 
 .oap-select__trigger:hover:not(:disabled),
 .oap-select--open .oap-select__trigger {
-  border-color: var(--oap-primary, #0abab5);
-  box-shadow: 0 0 0 3px var(--oap-primary-ring, rgba(10, 186, 181, 0.28));
+  border-color: var(--oap-primary, #0099A9);
+  box-shadow: 0 0 0 3px var(--oap-primary-ring, rgba(0, 153, 169, 0.28));
 }
 
 .oap-select__trigger:disabled {
@@ -68,7 +68,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(10, 186, 181, 0.45) transparent;
+  scrollbar-color: rgba(0, 153, 169, 0.45) transparent;
 }
 
 .oap-select--drop-up .oap-select__menu {
@@ -107,8 +107,8 @@
 }
 
 .oap-select__option--active {
-  background: var(--oap-primary-soft, rgba(10, 186, 181, 0.12));
-  color: var(--oap-primary-dark, #089a95);
+  background: var(--oap-primary-soft, rgba(0, 153, 169, 0.12));
+  color: var(--oap-primary-dark, #007d8a);
   font-weight: 600;
 }
 

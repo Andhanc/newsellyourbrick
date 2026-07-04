@@ -279,7 +279,7 @@
 }
 
 .marketer-panel__item--ad-block {
-  border-left: 4px solid #14b8a6;
+  border-left: 4px solid #33adbb;
 }
 
 .marketer-panel__ad-type-icon {
@@ -301,8 +301,8 @@
 }
 
 .marketer-panel__item--ad-block .marketer-panel__ad-type-icon {
-  background: #ccfbf1;
-  color: #0f766e;
+  background: #e6f6f8;
+  color: #00605a;
 }
 
 .marketer-panel__ad-type-icon--svg {

@@ -768,7 +768,7 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
                             setIsDetailModalOpen(false);
                           }}
                           style={{
-                            color: '#0ABAB5',
+                            color: '#0099A9',
                             textDecoration: 'none',
                             display: 'inline-flex',
                             alignItems: 'center',

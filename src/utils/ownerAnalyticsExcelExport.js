@@ -3,8 +3,8 @@
  */
 
 const BRAND_NAVY = '#1e3a5f'
-/** Фирменный тиффани, как в UI (#0ABAB5) */
-const BRAND_TIFFANY = '#0ABAB5'
+/** Фирменный тиффани, как в UI (#0099A9) */
+const BRAND_TIFFANY = '#0099A9'
 /** Светлый фон под итоги (в тон тиффани) */
 const FILL_TIFFANY_SOFT = 'FFE6FAF9'
 
@@ -218,7 +218,7 @@ export async function exportOwnerAnalyticsExcel({
   totalBanner.getCell(1).fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FF0ABAB5' },
+    fgColor: { argb: 'FF0099A9' },
   }
   totalBanner.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' }
   totalBanner.height = 24

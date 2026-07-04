@@ -14,16 +14,16 @@
   font-family: 'Montserrat', system-ui, sans-serif;
   background: linear-gradient(
     120deg,
-    #0f766e 0%,
-    #0d9488 22%,
-    #14b8a6 48%,
-    #0891b2 72%,
+    #00605a 0%,
+    #007580 22%,
+    #33adbb 48%,
+    #007d8a 72%,
     #0284c7 100%
   );
   background-size: 260% 260%;
   animation: site-ad-block-gradient 8s ease-in-out infinite;
   box-shadow:
-    0 12px 36px rgba(13, 148, 136, 0.28),
+    0 12px 36px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -179,7 +179,7 @@
   border: none;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.95);
-  color: #0f766e;
+  color: #00605a;
   font-family: inherit;
   font-size: 0.8125rem;
   font-weight: 800;

@@ -46,13 +46,13 @@
   box-sizing: border-box;
   pointer-events: auto;
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f0fafb 100%);
   border-radius: 20px 20px 0 0;
   padding: 0;
   text-align: center;
   box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.18);
   border: none;
-  border-top: 1px solid rgba(10, 186, 181, 0.22);
+  border-top: 1px solid rgba(0, 153, 169, 0.22);
   touch-action: pan-y;
 }
 
@@ -168,9 +168,9 @@
   height: 32px;
   margin: 0 auto 10px;
   border-radius: 50%;
-  color: #0d9488;
-  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.25);
+  color: #007580;
+  background: linear-gradient(135deg, #e6f6f8 0%, #cce9ed 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.25);
 }
 
 .test-drive-promo-drawer__title {
@@ -207,14 +207,14 @@
   font-weight: 700;
   color: #ffffff;
   cursor: pointer;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 52%, #089d98 100%);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 52%, #007d8a 100%);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.35);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .test-drive-promo-drawer__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(10, 186, 181, 0.42);
+  box-shadow: 0 12px 32px rgba(0, 153, 169, 0.42);
 }
 
 .test-drive-promo-drawer__cta:active {
@@ -240,7 +240,7 @@
     max-height: min(90vh, 640px) !important;
     transform: none !important;
     border-radius: 24px;
-    border: 1px solid rgba(10, 186, 181, 0.22);
+    border: 1px solid rgba(0, 153, 169, 0.22);
     box-shadow:
       0 24px 48px -12px rgba(17, 24, 39, 0.28),
       0 12px 24px -8px rgba(17, 24, 39, 0.16);

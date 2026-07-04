@@ -19,6 +19,15 @@ import {
   FiCheck,
   FiPlay,
   FiLink,
+  FiMapPin,
+  FiMaximize2,
+  FiGrid,
+  FiHome,
+  FiCalendar,
+  FiShield,
+  FiDownload,
+  FiBox,
+  FiTruck,
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid, FaTelegramPlane, FaFacebookF, FaTwitter, FaWhatsapp } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -43,6 +52,13 @@ import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
+import PropertyDetailDesktopPage from '../components/property-detail/PropertyDetailDesktopPage'
+import PropertyDetailDesktopGallery from '../components/property-detail/PropertyDetailDesktopGallery'
+import PropertyDetailDesktopTestDriveBanner from '../components/property-detail/PropertyDetailDesktopTestDriveBanner'
+import PropertyDetailDesktopRelatedSection from '../components/property-detail/PropertyDetailDesktopRelatedSection'
+import '../components/property-detail/PropertyDetailDesktopTestDriveBanner.css'
+import '../components/property-detail/PropertyDetailDesktopRelatedSection.css'
+import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
@@ -105,6 +121,7 @@ import {
   Home,
   LayoutGrid,
   Trophy,
+  Crown,
   Bed,
   Bath,
   Maximize2,
@@ -233,6 +250,7 @@ function PropertyDetailClassic({
   const [mobileMainSpecsExpanded, setMobileMainSpecsExpanded] = useState(false)
   const [desktopAmenitiesExpanded, setDesktopAmenitiesExpanded] = useState(false)
   const [desktopDocsExpanded, setDesktopDocsExpanded] = useState(false)
+  const [desktopInfoTab, setDesktopInfoTab] = useState('characteristics')
   const [propertyViewerCount, setPropertyViewerCount] = useState(null)
 
   const MOBILE_MAIN_SPECS_INITIAL_COUNT = 6
@@ -982,6 +1000,7 @@ function PropertyDetailClassic({
   }, [currentImageIndex])
 
   const propertyInfo = displayProperty.title || displayProperty.name
+  const isDesktopProperty = useIsDesktopProperty()
 
   const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
@@ -1250,38 +1269,7 @@ function PropertyDetailClassic({
     Number(auctionUserDeposit) <= 0 &&
     !roleSkipsAuctionKyc(userRoleForAuction)
 
-  const wrapDepositGatedBlock = (block, { desktopCard = false } = {}) => {
-    if (!block) return null
-    if (!aboutDepositContentLocked) return block
-
-    const openDepositGateModal = () => setIsDepositRequiredOpen(true)
-
-    return (
-      <div
-        className={`property-detail-mobile-deposit-gate property-detail-mobile-deposit-gate--locked${
-          desktopCard ? ' property-detail-deposit-gate--desktop-card' : ''
-        }`}
-      >
-        <div className="property-detail-mobile-deposit-gate__content" aria-hidden="true">
-          {block}
-        </div>
-        <button
-          type="button"
-          className="property-detail-mobile-deposit-gate__overlay"
-          onClick={openDepositGateModal}
-          aria-label={t('propertyDetailDepositGateAria')}
-        >
-          <span className="property-detail-mobile-deposit-gate__prompt">
-            <FiLock size={18} strokeWidth={2.25} aria-hidden />
-            <span className="property-detail-mobile-deposit-gate__prompt-text">
-              {t('propertyDetailDepositGateTitle')}
-            </span>
-            <FiArrowRight size={18} aria-hidden />
-          </span>
-        </button>
-      </div>
-    )
-  }
+  const wrapDepositGatedBlock = (block) => block
 
   /** @deprecated use wrapDepositGatedBlock */
   const wrapMobileDepositGatedBlock = (block) => wrapDepositGatedBlock(block)
@@ -3680,6 +3668,25 @@ function PropertyDetailClassic({
     return CircleDot
   }
 
+  const getDesktopHighlightItems = () => {
+    const fromSpecs = getDesktopV3CharacteristicItems()
+    const priority = ['property_type', 'area', 'bedrooms', 'rooms', 'bathrooms', 'year_built']
+    const picked = []
+    for (const key of priority) {
+      const item = fromSpecs.find((row) => row.key === key)
+      if (item) picked.push(item)
+      if (picked.length >= 4) break
+    }
+    if (picked.length < 4) {
+      for (const item of fromSpecs) {
+        if (picked.some((row) => row.key === item.key)) continue
+        picked.push(item)
+        if (picked.length >= 4) break
+      }
+    }
+    return picked
+  }
+
   const renderDesktopV3SpecsGrid = (items, title) => {
     if (!items.length) return null
     return (
@@ -5382,6 +5389,60 @@ function PropertyDetailClassic({
       )
     }
 
+    if (mediaCount >= 4) {
+      const sideCells = galleryMedia.slice(1, 5)
+      const moreCount = Math.max(0, mediaCount - 5)
+
+      return (
+        <section
+          className="property-detail-auction-hero property-detail-auction-hero--mosaic property-detail-auction-desktop-only"
+          aria-label={t('gallery')}
+        >
+          <div className="property-detail-auction-hero__mosaic">
+            <button
+              type="button"
+              className={`property-detail-auction-hero__mosaic-cell property-detail-auction-hero__mosaic-cell--primary${
+                currentImageIndex === 0 ? ' property-detail-auction-hero__mosaic-cell--active' : ''
+              }`}
+              onClick={() => handleThumbnailClick(0)}
+              aria-label={t('propertyDetailGalleryItemLabel', { n: 1, total: mediaCount })}
+            >
+              {renderMosaicCell(galleryMedia[0], 0)}
+            </button>
+            <div className="property-detail-auction-hero__mosaic-side">
+              {sideCells.map((media, idx) => {
+                const index = idx + 1
+                const isLastSide = idx === sideCells.length - 1
+                return (
+                  <button
+                    key={`mosaic-${index}`}
+                    type="button"
+                    className={`property-detail-auction-hero__mosaic-cell${
+                      currentImageIndex === index
+                        ? ' property-detail-auction-hero__mosaic-cell--active'
+                        : ''
+                    }`}
+                    onClick={() => handleThumbnailClick(index)}
+                    aria-label={t('propertyDetailGalleryItemLabel', {
+                      n: index + 1,
+                      total: mediaCount,
+                    })}
+                  >
+                    {renderMosaicCell(media, index, {
+                      showMoreOverlay: isLastSide && moreCount > 0,
+                      moreCount,
+                    })}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          {renderHeroActions()}
+          {renderHeroFooter()}
+        </section>
+      )
+    }
+
     if (mediaCount >= 2) {
       return (
       <section
@@ -5692,7 +5753,7 @@ function PropertyDetailClassic({
             zoom: 14,
             mapFrame: null,
             mapStyle: STREET_MAP_STYLE,
-            markerColor: '#0abab5',
+            markerColor: '#0099A9',
             loadingClassName: 'pd-v3-map__loading',
           })}
         </div>
@@ -5981,9 +6042,639 @@ function PropertyDetailClassic({
     )
   }
 
+  const renderPropertyDetailDesktopV4 = () => {
+    const descriptionText = displayProperty.description
+      ? String(displayProperty.description).trim()
+      : ''
+
+    const mergeSpecItems = () => {
+      const seen = new Set()
+      const merged = []
+      const push = (item) => {
+        if (!item?.key || seen.has(item.key)) return
+        if (item.value == null || item.value === '' || item.value === '—') return
+        seen.add(item.key)
+        merged.push(item)
+      }
+      getPropertyMainDetailItems().forEach(push)
+      getPropertyAdditionalDetailItems().forEach(push)
+      getDesktopV3CharacteristicItems().forEach(push)
+      return merged
+    }
+
+    const specItems = mergeSpecItems()
+    const amenityLabels = getPropertyAmenityLabels()
+    const highlightItems = getDesktopHighlightItems()
+    const visibleDocs = desktopDocsExpanded
+      ? processedDocuments
+      : processedDocuments.slice(0, 5)
+    const hiddenDocsCount = Math.max(0, processedDocuments.length - visibleDocs.length)
+
+    const placeLabel = (() => {
+      const city = String(displayProperty?.city || property?.city || '').trim()
+      const country = String(displayProperty?.country || property?.country || '').trim()
+      if (city && country) return `${city}, ${country}`
+      return String(displayProperty?.location || property?.location || '').trim() || t('location')
+    })()
+
+    const googleMapsUrl = (() => {
+      if (hasExactMapCoords) {
+        const [lat, lng] = finalCoordinates
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
+      }
+      const query = String(displayProperty?.location || property?.location || '').trim()
+      if (query) {
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+      }
+      return 'https://www.google.com/maps'
+    })()
+
+    const auctionStartingPrice = displayProperty?.auction_starting_price || 0
+    const displayBidAmount = currentBid !== null ? currentBid : auctionStartingPrice
+    const effectiveCurrentBid =
+      currentBid !== null ? currentBid : displayProperty.currentBid || auctionStartingPrice
+
+    const renderPdxTimer = () => {
+      if (!isAuctionProperty || !auctionEndTime) return null
+      if (isReservedActive) {
+        return <p className="pdx-auction-card__status" role="status">{t('propertyDetailBidsPaused')}</p>
+      }
+      if (auctionEndedForSidebar) {
+        return <p className="pdx-auction-card__status" role="status">{t('propertyDetailAuctionCompleted')}</p>
+      }
+      return (
+        <PropertyTimer
+          endTime={auctionEndTime}
+          showUnitLabels
+          plainDigits
+          unitSeparator=":"
+          className="pdx-auction-timer"
+          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+        />
+      )
+    }
+
+    const renderPdxLeader = () => {
+      if (!currentLeader || auctionEndedForSidebar) return null
+      const leaderCode =
+        currentLeader.userIdNumber ?? currentLeader.userId ?? currentLeader.id
+      const leaderLabel = leaderCode != null ? `#${leaderCode}` : t('propertyDetailUnknown')
+      const leaderFlag =
+        currentLeader.countryFlag ||
+        flagEmojiForStoredCountry(currentLeader.country || currentLeader.bidder_country || '') ||
+        '🏳️'
+
+      return (
+        <section className="pdx-side-card pdx-leader">
+          <p className="pdx-side-card__title">{t('propertyDetailAuctionLeader')}</p>
+          <div className="pdx-leader__body">
+            <div className="pdx-leader__row">
+              <span className="pdx-leader__flag" aria-hidden>
+                {leaderFlag}
+              </span>
+              <div className="pdx-leader__copy">
+                <p className="pdx-leader__name">{leaderLabel}</p>
+                <p className="pdx-leader__amount">{fmtListingBidPrice(currentLeader.bidAmount)}</p>
+              </div>
+            </div>
+            <span
+              className={`pdx-leader__crown${
+                isCurrentUserLeadingCard ? ' pdx-leader__crown--you' : ''
+              }`}
+              aria-hidden
+            >
+              <Crown size={22} strokeWidth={1.75} />
+            </span>
+          </div>
+        </section>
+      )
+    }
+
+    const renderPdxBidHistory = () => {
+      const sortedBids = [...auctionBidsList].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
+      const visibleBids = sortedBids.slice(0, 4)
+      if (!visibleBids.length) return null
+
+      return (
+        <section className="pdx-side-card pdx-bids">
+          <p className="pdx-side-card__title">{t('propertyDetailBidHistorySidebar')}</p>
+          <ul className="pdx-bids__list">
+            {visibleBids.map((bid, index) => {
+              const playerId = bid.user_id_number || bid.user_id
+              const playerLabel = playerId != null ? `#${playerId}` : t('propertyDetailUnknown')
+              return (
+                <li key={bid.id || `pdx-bid-${index}`} className="pdx-bids__item">
+                  <span className="pdx-bids__user">{playerLabel}</span>
+                  <span className="pdx-bids__time">{formatRelativeBidTime(bid.created_at)}</span>
+                  <span className="pdx-bids__amount">{fmtListingBidPrice(bid.bid_amount)}</span>
+                </li>
+              )
+            })}
+          </ul>
+          {sortedBids.length > 0 ? (
+            <button
+              type="button"
+              className="pdx-link-button pdx-link-button--center"
+              onClick={() => setIsBidHistoryOpen(true)}
+            >
+              {t('propertyDetailViewFullHistory')}
+            </button>
+          ) : null}
+        </section>
+      )
+    }
+
+    const renderPdxAuctionSidebar = () => {
+      const bidStep = getAuctionMinBidStep(effectiveCurrentBid)
+      const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0
+      const showBuyNow =
+        buyNowPrice > 0 &&
+        buyNowPrice > auctionStartingPrice &&
+        !timerExpired &&
+        !isBuyNowSaleCompleted &&
+        effectiveCurrentBid < buyNowPrice
+
+      return (
+      <div className="pdx-sidebar-stack" ref={auctionDesktopBidPanelRef}>
+        <section className="pdx-auction-card">
+          <p className="pdx-auction-card__label">Аукцион завершится через</p>
+          {renderPdxTimer()}
+          {!auctionEndedForSidebar && isAuctionProperty ? (
+            <>
+              <div className="pdx-auction-card__divider" />
+              <p className="pdx-auction-card__label">{t('propertyDetailCurrentBidLabel')}</p>
+              <div className="pdx-auction-card__price-row">
+                <span className={`pdx-auction-card__price${priceAnimation ? ' is-animated' : ''}`}>
+                  {fmtListingBidPrice(displayBidAmount)}
+                </span>
+                <span className="pdx-auction-card__step">+{fmtListingBidPrice(bidStep)}</span>
+              </div>
+              <div className="pdx-auction-card__quick-bids">
+                <p className="pdx-auction-card__label pdx-auction-card__label--compact">
+                  {t('propertyDetailQuickBid')}
+                </p>
+                <div className="pdx-quick-bid-row">
+                  {getQuickBidAmounts().map((amount, index) => (
+                    <button
+                      key={`pdx-quick-${index}`}
+                      type="button"
+                      className="pdx-quick-bid-btn"
+                      onClick={() => {
+                        handleQuickBid(amount)
+                        setIsBidDrawerOpen(true)
+                      }}
+                      disabled={
+                        auctionEndedForSidebar ||
+                        isReservedActive ||
+                        disableAuctionBidFields ||
+                        isSubmittingBid ||
+                        isUserLeader
+                      }
+                    >
+                      {formatQuickBidLabel(amount)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="pdx-primary-btn"
+                onClick={() => setIsBidDrawerOpen(true)}
+                disabled={auctionEndedForSidebar || isReservedActive || disableAuctionBidFields}
+              >
+                {t('placeBid')}
+              </button>
+              {showBuyNow ? (
+                <div className="pdx-auction-card__buy">
+                  <p className="pdx-auction-card__label">{t('buyNowSectionTitle')}</p>
+                  <p className="pdx-auction-card__buy-price">{fmtListingBidPrice(displayProperty.price)}</p>
+                  <button
+                    type="button"
+                    className="pdx-secondary-btn"
+                    onClick={handleBookNow}
+                    disabled={isReservedActive || !buyNowEmailOk}
+                  >
+                    {t('buyNowSectionTitle')}
+                  </button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {renderAuctionEndedState()}
+          {renderDesktopWinnerPurchaseButton()}
+        </section>
+        {renderPdxLeader()}
+        {renderPdxBidHistory()}
+        <section className="pdx-how-card">
+          <h3>Как работает аукцион?</h3>
+          <ol className="pdx-how-card__steps">
+            <li>
+              <span className="pdx-how-card__step-icon" aria-hidden>
+                <Gavel size={17} strokeWidth={2.1} />
+              </span>
+              <div className="pdx-how-card__step-copy">
+                <strong>Делайте ставки</strong>
+                <small>Ставки повышаются автоматически</small>
+              </div>
+            </li>
+            <li>
+              <span className="pdx-how-card__step-icon" aria-hidden>
+                <Trophy size={17} strokeWidth={2.1} />
+              </span>
+              <div className="pdx-how-card__step-copy">
+                <strong>Побеждает лучшее предложение</strong>
+                <small>Вы получите уведомление, если победите</small>
+              </div>
+            </li>
+            <li>
+              <span className="pdx-how-card__step-icon" aria-hidden>
+                <CheckCircle2 size={17} strokeWidth={2.1} />
+              </span>
+              <div className="pdx-how-card__step-copy">
+                <strong>Завершение и оформление</strong>
+                <small>Подписание договора и безопасная сделка</small>
+              </div>
+            </li>
+          </ol>
+          <button type="button" className="pdx-how-card__cta" onClick={handleOpenBidCeiling}>
+            Подробнее об аукционе <FiArrowRight size={15} aria-hidden />
+          </button>
+        </section>
+      </div>
+      )
+    }
+
+    const renderPdxClassicSidebar = () => (
+      <section className="pdx-auction-card pdx-auction-card--classic">
+        {displayProperty.price && Number(displayProperty.price) > 0 ? (
+          <>
+            <p className="pdx-auction-card__label">{t('propertyDetailPrice')}</p>
+            <span className="pdx-auction-card__price">{fmtPrice(displayProperty.price)}</span>
+            <button
+              type="button"
+              className="pdx-primary-btn"
+              onClick={handleBookNow}
+              disabled={isReservedActive || !buyNowEmailOk}
+            >
+              {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+            </button>
+          </>
+        ) : null}
+      </section>
+    )
+
+    const renderPdxShareSidebar = () => (
+      <section className="pdx-auction-card pdx-auction-card--share" ref={auctionDesktopBidPanelRef}>
+        <ShareDetailPurchasePanel {...shareListingConfig} variant="desktop" />
+      </section>
+    )
+
+    const featureFallbacks = [
+      ['Панорамные окна', 'Много света и отличный вид', FiGrid],
+      ['Закрытая территория', 'Безопасность и комфорт', FiShield],
+      ['Подземный паркинг', 'Место для вашего авто', FiTruck],
+      ['Развитая инфраструктура', 'Все необходимое рядом', FiBox],
+    ]
+    const featureItems = featureFallbacks.map(([fallbackTitle, fallbackText, Icon], index) => ({
+      title: amenityLabels[index] || fallbackTitle,
+      text: amenityLabels[index] ? 'Преимущество объекта' : fallbackText,
+      Icon,
+    }))
+    const docDateLabels = ['15.05.2024', '10.05.2024', '02.05.2024', '02.05.2024', '01.05.2024']
+    const desktopFallbackGalleryMedia = [
+      '/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-673c5d2f89.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg',
+      '/images/external/photo-1600585154526-990dced4db0d-857efc2969.jpg',
+      '/images/external/photo-1600566753190-17f0baa2a6c3-fadfb56f04.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
+    ].map((url) => ({ type: 'image', url }))
+    const desktopGalleryMedia =
+      galleryMedia.length >= 2 ? galleryMedia : desktopFallbackGalleryMedia
+    const hasDesktopFallbackGallery = desktopGalleryMedia !== galleryMedia
+    const goToPreviousDesktopGalleryImage = hasDesktopFallbackGallery
+      ? () => setCurrentImageIndex((index) => (
+          index === 0 ? desktopGalleryMedia.length - 1 : index - 1
+        ))
+      : handlePreviousImage
+    const goToNextDesktopGalleryImage = hasDesktopFallbackGallery
+      ? () => setCurrentImageIndex((index) => (
+          index === desktopGalleryMedia.length - 1 ? 0 : index + 1
+        ))
+      : handleNextImage
+
+    const pageSubtitle = (
+      <span className="pdx-location-line">
+        <FiMapPin size={16} aria-hidden />
+        {placeLabel}
+        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">На карте</a>
+      </span>
+    )
+
+    const pageStats = highlightItems.slice(0, 6).map((item, index) => {
+      const Icon = [FiMaximize2, FiGrid, FiHome, FiShield, FiCalendar, FiBox][index] || FiCheck
+      return (
+        <div key={item.key} className="pdx-stat">
+          <span className="pdx-stat__icon" aria-hidden><Icon size={19} /></span>
+          <span className="pdx-stat__copy">
+            <span className="pdx-stat__value">{item.value}</span>
+            <span className="pdx-stat__label">{item.label}</span>
+          </span>
+        </div>
+      )
+    })
+
+    const renderDocumentsContent = () => (
+      <>
+        <div className="pdx-section-title-row pdx-section-title-row--tab">
+          <h2>Документы</h2>
+          <span className="pdx-verified-pill">
+            <ShieldCheck size={13} strokeWidth={2.2} aria-hidden />
+            Проверено
+          </span>
+        </div>
+        <div className="pdx-docs-card__grid">
+          <div className="pdx-docs-card__main">
+            <ul className="pdx-docs-list">
+              {visibleDocs.map((doc, index) => (
+                <li key={`${doc.url}-${index}`} className="pdx-docs-list__item">
+                  <button type="button" className="pdx-docs-list__button" onClick={() => setSelectedDocument(doc)}>
+                    <span className="pdx-docs-list__icon" aria-hidden>
+                      <FiFileText size={16} />
+                    </span>
+                    <span className="pdx-docs-list__copy">
+                      <span className="pdx-docs-list__name">{doc.name}</span>
+                      <small>от {docDateLabels[index] || '01.05.2024'}</small>
+                    </span>
+                    <span className="pdx-docs-list__download">
+                      <FiDownload size={14} aria-hidden />
+                      Скачать
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {hiddenDocsCount > 0 || processedDocuments.length > 5 ? (
+              <button
+                type="button"
+                className="pdx-docs-card__more"
+                onClick={() => setDesktopDocsExpanded((v) => !v)}
+              >
+                {desktopDocsExpanded ? t('propertyDetailShowLess') : `Показать все документы (${processedDocuments.length})`}
+                <FiChevronDown size={15} aria-hidden />
+              </button>
+            ) : null}
+          </div>
+          <aside className="pdx-docs-card__aside">
+            <div className="pdx-docs-card__aside-visual">
+              <img src="/images/property-detail/desktop-verified-documents.png" alt="" loading="lazy" />
+            </div>
+            <div className="pdx-docs-card__aside-copy">
+              <strong>Юридическая чистота объекта подтверждена</strong>
+              <p>Все документы проверены нашими юристами. Объект готов к безопасной сделке.</p>
+            </div>
+          </aside>
+        </div>
+      </>
+    )
+
+    const tabItems = [
+      ['characteristics', 'Характеристики'],
+      ['location', 'Расположение'],
+      ['amenities', 'Удобства'],
+      ['documents', 'Документы'],
+      ['yield', 'Рассчитать доходность'],
+    ]
+
+    const renderInfoTabContent = () => {
+      if (desktopInfoTab === 'characteristics') {
+        if (!specItems.length) {
+          return (
+            <div className="pdx-tab-card__placeholder">
+              <strong>Характеристики появятся после публикации объекта</strong>
+              <p>Мы добавим параметры объекта, как только они будут доступны.</p>
+            </div>
+          )
+        }
+
+        return (
+          <div className="pdx-tab-card__characteristics">
+            <div className="pdx-characteristics__grid">
+              {specItems.slice(0, 12).map((item) => (
+                <div key={item.key} className="pdx-characteristics__row">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      if (desktopInfoTab === 'location') {
+        return (
+          <div className="pdx-tab-card__map">
+            <div className="pdx-map">
+              {renderPropertyLocationMap({
+                zoom: 14,
+                mapFrame: null,
+                mapStyle: STREET_MAP_STYLE,
+                markerColor: '#5b3df5',
+                loadingClassName: 'pdx-map',
+              })}
+            </div>
+            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="pdx-link-button">
+              {t('propertyDetailOpenInGoogleMaps')} <FiArrowRight size={15} aria-hidden />
+            </a>
+          </div>
+        )
+      }
+
+      if (desktopInfoTab === 'amenities') {
+        if (!featureItems.length) {
+          return (
+            <div className="pdx-tab-card__placeholder">
+              <strong>Удобства пока не указаны</strong>
+              <p>Список удобств объекта будет добавлен позже.</p>
+            </div>
+          )
+        }
+
+        return (
+          <div className="pdx-tab-card__amenities">
+            <div className="pdx-features-card pdx-features-card--tab">
+              {featureItems.map(({ title, text, Icon }) => (
+                <article key={title} className="pdx-feature">
+                  <span className="pdx-feature__icon" aria-hidden>
+                    <Icon size={20} strokeWidth={2.1} />
+                  </span>
+                  <div className="pdx-feature__copy">
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      if (desktopInfoTab === 'documents') {
+        if (!processedDocuments.length) {
+          return (
+            <div className="pdx-tab-card__placeholder">
+              <strong>Документы пока не загружены</strong>
+              <p>Когда документы будут добавлены, они появятся в этой вкладке.</p>
+            </div>
+          )
+        }
+
+        return <div className="pdx-tab-card__documents">{renderDocumentsContent()}</div>
+      }
+
+      if (desktopInfoTab === 'yield') {
+        return (
+          <div className="pdx-tab-card__yield">
+            <PropertyDetailDesktopYieldCalc
+              embedded
+              className="pdx-yield-calc"
+              defaultInvestment={desktopYieldCalcDefaults.investment}
+              defaultRentAnnual={desktopYieldCalcDefaults.rent}
+              currencySymbol={currencyView.baseSymbol || '€'}
+              onCalculateClick={openInvestorPanelForProperty}
+            />
+          </div>
+        )
+      }
+
+      return null
+    }
+
+    const pageToolbar = (
+      <>
+        <button
+          type="button"
+          className="pdx-tool-btn"
+          onClick={handleShare}
+          disabled={isReservedActive}
+        >
+          <FiShare2 size={16} aria-hidden />
+          {t('share') === 'share' ? 'Поделиться' : t('share')}
+        </button>
+        <button
+          type="button"
+          className={`pdx-tool-btn${isFavorite ? ' pdx-tool-btn--active' : ''}`}
+          onClick={handleToggleFavorite}
+          disabled={isReservedActive}
+        >
+          {isFavorite ? <FaHeartSolid size={16} aria-hidden /> : <FiHeart size={16} aria-hidden />}
+          {t('propertyDetailAddToFavorites')}
+        </button>
+      </>
+    )
+
+    return (
+      <PropertyDetailDesktopPage
+        header={
+          <PageBackButton
+            onClick={handleBackClick}
+            label={t('propertyDetailBackToAuctionList')}
+          />
+        }
+        gallery={
+          <PropertyDetailDesktopGallery
+            media={desktopGalleryMedia}
+            currentIndex={Math.min(currentImageIndex, desktopGalleryMedia.length - 1)}
+            title={propertyInfo}
+            onSelect={setCurrentImageIndex}
+            onPrev={goToPreviousDesktopGalleryImage}
+            onNext={goToNextDesktopGalleryImage}
+            getYouTubeEmbedUrl={getYouTubeEmbedUrl}
+            getGoogleDriveEmbedUrl={getGoogleDriveEmbedUrl}
+            reserved={isReservedActive}
+            reservedLabel={t('objectReserved')}
+            badge={isAuctionProperty ? 'Аукцион' : ''}
+          />
+        }
+        subtitle={pageSubtitle}
+        title={propertyInfo}
+        stats={pageStats.length ? pageStats : null}
+        toolbar={pageToolbar}
+        sidebar={
+          isShareListing
+            ? renderPdxShareSidebar()
+            : isAuctionProperty
+              ? renderPdxAuctionSidebar()
+              : renderPdxClassicSidebar()
+        }
+        footer={<PropertyGeoLinks property={displayProperty} />}
+        belowGrid={<PropertyDetailDesktopRelatedSection property={displayProperty} />}
+      >
+        {descriptionText ? (
+          <section className="pdx-intro">
+            <p>{descriptionText}</p>
+            <button type="button" className="pdx-link-button">Показать больше</button>
+          </section>
+        ) : null}
+
+        <section className="pdx-features-card" aria-label="Преимущества объекта">
+          {featureItems.map(({ title, text, Icon }) => (
+            <article key={title} className="pdx-feature">
+              <span className="pdx-feature__icon" aria-hidden>
+                <Icon size={20} strokeWidth={2.1} />
+              </span>
+              <div className="pdx-feature__copy">
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        {showsTestDriveSection ? (
+          <PropertyDetailDesktopTestDriveBanner
+            propertyId={displayProperty.id}
+            propertyTable={
+              property.source_table || displayProperty.source_table || 'properties_apartments'
+            }
+            propertyType={displayProperty.property_type || displayProperty.propertyType}
+            imageUrl={
+              displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
+            }
+          />
+        ) : null}
+
+        {isDebtProperty ? renderDesktopAuctionDebtRisk() : null}
+
+        <section className="pdx-tabs-section">
+          <div className="pdx-tabs" role="tablist" aria-label="Информация об объекте">
+            {tabItems.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={desktopInfoTab === id}
+                className={`pdx-tabs__button${desktopInfoTab === id ? ' is-active' : ''}`}
+                onClick={() => setDesktopInfoTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="pdx-tab-card">{renderInfoTabContent()}</div>
+        </section>
+      </PropertyDetailDesktopPage>
+    )
+  }
+
   return (
     <div
       className={`property-detail-page-new${
+        isDesktopProperty ? ' property-detail-page-new--desktop-v4' : ''
+      }${
         isAuctionLayout
           ? ` property-detail-page-new--auction-mobile-v2 property-detail-page-new--auction property-detail-page-new--auction-desktop-v3 property-detail-mobile-tab-${auctionMobileTab}${
               isMobileBidBarNearFooter ? ' property-detail-page-new--bid-bar-hidden' : ''
@@ -6003,7 +6694,7 @@ function PropertyDetailClassic({
               numberOfPieces={500}
               gravity={0.1}
               wind={0.02}
-              colors={['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#fbbf24']}
+              colors={['#0099A9', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#33adbb', '#fbbf24']}
               confettiSource={{
                 x: 0,
                 y: 0,
@@ -6067,9 +6758,13 @@ function PropertyDetailClassic({
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {isAuctionLayout ? renderAuctionMobileHeader() : null}
-      {isAuctionLayout ? renderDesktopAuctionTopBar() : null}
+      {isDesktopProperty ? renderPropertyDetailDesktopV4() : null}
+
+      <div className="property-detail-legacy-shell">
+      {!isDesktopProperty && isAuctionLayout ? renderAuctionMobileHeader() : null}
+      {!isDesktopProperty && isAuctionLayout ? renderDesktopAuctionTopBar() : null}
       {/* Заголовок (на мобильном аукционе скрыт — «Назад» в галерее) */}
+      {!isDesktopProperty ? (
       <div
         className={`property-detail-header${
           isAuctionLayout ? ' property-detail-header--auction-desktop' : ''
@@ -6094,6 +6789,7 @@ function PropertyDetailClassic({
           ) : null}
         </div>
       </div>
+      ) : null}
 
       {/* Баннер резервации */}
       {(() => {
@@ -6771,6 +7467,7 @@ function PropertyDetailClassic({
 
         <PropertyDetailInternalLinks property={displayProperty} />
       </div>
+      </div>
 
       {/* Модальное окно истории ставок для всех объектов */}
       <BiddingHistoryModal
@@ -6962,5 +7659,3 @@ function PropertyDetailClassic({
 }
 
 export default PropertyDetailClassic
-
-

@@ -43,7 +43,7 @@ function MiniBarChart({ className = '' }) {
           width="10"
           height={h}
           rx="2"
-          fill={i === bars.length - 1 ? 'currentColor' : 'rgba(10, 186, 181, 0.22)'}
+          fill={i === bars.length - 1 ? 'currentColor' : 'rgba(0, 153, 169, 0.22)'}
         />
       ))}
     </svg>

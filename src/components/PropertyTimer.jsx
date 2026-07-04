@@ -13,6 +13,7 @@ const PropertyTimer = ({
   useFullUnitLabels = false,
   unitSeparator = ':',
   flipUnitSize = 'default',
+  plainDigits = false,
 }) => {
   const { t } = useTranslation()
   const resolvedFullUnitLabels = fullUnitLabels || useFullUnitLabels
@@ -102,7 +103,7 @@ const PropertyTimer = ({
   }
 
   let digitColor = '#dc2626'
-  if (days >= 90) digitColor = '#16a34a'
+  if (days >= 90) digitColor = '#0099A9'
   else if (days >= 60) digitColor = '#f97316'
 
   const flipStyle = showUnitLabels
@@ -153,6 +154,19 @@ const PropertyTimer = ({
     </div>
   )
 
+  const renderPlainUnit = (value, shortKey, fullKey, padTo = 2) => (
+    <div className="property-timer-plain-unit">
+      <span className="property-timer-plain-value">
+        {String(value).padStart(padTo, '0')}
+      </span>
+      {showUnitLabels ? (
+        <span className="property-timer-plain-label">
+          {t(labelKey(shortKey, fullKey))}
+        </span>
+      ) : null}
+    </div>
+  )
+
   if (isEnded && auctionEndedLabel) {
     return (
       <div
@@ -160,6 +174,35 @@ const PropertyTimer = ({
         role="status"
       >
         <div className="property-timer-ended-detail">{auctionEndedLabel}</div>
+      </div>
+    )
+  }
+
+  if (plainDigits) {
+    const plainSepClass =
+      unitSeparator === 'dot'
+        ? 'property-timer-plain-sep property-timer-plain-sep--dot'
+        : 'property-timer-plain-sep'
+
+    return (
+      <div
+        className={`property-timer property-timer--detail property-timer--plain ${statusClass} ${className}`.trim()}
+      >
+        <div className="property-timer-plain-row">
+          {renderPlainUnit(timeLeft.days, 'timerDay', 'timerDayFull', hasThreeDigitDays ? 3 : 2)}
+          <span className={plainSepClass} aria-hidden="true">
+            {sepChar}
+          </span>
+          {renderPlainUnit(timeLeft.hours, 'timerHour', 'timerHourFull')}
+          <span className={plainSepClass} aria-hidden="true">
+            {sepChar}
+          </span>
+          {renderPlainUnit(timeLeft.minutes, 'timerMin', 'timerMinFull')}
+          <span className={plainSepClass} aria-hidden="true">
+            {sepChar}
+          </span>
+          {renderPlainUnit(timeLeft.seconds, 'timerSec', 'timerSecFull')}
+        </div>
       </div>
     )
   }

@@ -75,7 +75,7 @@ ChartJS.register(
   Legend
 )
 
-const MOT_TIFFANY = '#0abab5'
+const MOT_TIFFANY = '#0099A9'
 const MOT_EVENT_FALLBACK_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 const CHART_LINE_TENSION = 0.42
@@ -445,8 +445,8 @@ function LogoMark({ className = '' }) {
     <svg className={`mot-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="mot-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#mot-logo-grad)" />
@@ -485,9 +485,9 @@ function Sparkline({ variant, className = '', filled = false }) {
 }
 
 const ACTIVITY_TONES = {
-  blue: { bg: '#ecfdf5', fg: MOT_TIFFANY },
+  blue: { bg: '#e6f6f8', fg: MOT_TIFFANY },
   teal: { bg: MOT_TIFFANY, fg: '#ffffff' },
-  green: { bg: '#ecfdf5', fg: '#22C55E' },
+  green: { bg: '#e6f6f8', fg: '#22C55E' },
   orange: { bg: '#fff7ed', fg: '#F59E0B' },
   red: { bg: '#fef2f2', fg: '#EF4444' },
 }
@@ -765,8 +765,8 @@ function MotMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#53d8d3" />
-                <stop offset="100%" stopColor="#089a95" />
+                <stop offset="0%" stopColor="#33adbb" />
+                <stop offset="100%" stopColor="#007d8a" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -884,7 +884,7 @@ export default function MainOwnerTestPage() {
         key: 'views',
         label: t('ownerTest_chartFilterViews'),
         color: MOT_TIFFANY,
-        backgroundColor: 'rgba(10, 186, 181, 0.12)',
+        backgroundColor: 'rgba(0, 153, 169, 0.12)',
         fill: true,
       },
       {

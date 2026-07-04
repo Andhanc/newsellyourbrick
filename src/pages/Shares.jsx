@@ -3,14 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   FiArrowLeft,
   FiArrowRight,
-  FiBarChart2,
   FiBriefcase,
   FiChevronDown,
   FiHeart,
   FiHome,
   FiPieChart,
   FiSearch,
-  FiShield,
   FiSliders,
   FiTrendingUp,
   FiUsers,
@@ -73,7 +71,8 @@ const DEMO_SHARES = [
   {
     title: 'Апартаменты в Валенсии',
     location: 'Испания, Валенсия',
-    type: 'Вилла',
+    city: 'Валенсия',
+    type: 'Апартаменты',
     country: 'Испания',
     status: 'Сбор открыт',
     collectedPercent: 65,
@@ -83,10 +82,11 @@ const DEMO_SHARES = [
     sharePrice: 250,
   },
   {
-    title: 'Вилла в Ханье',
-    location: 'Греция, Крит',
-    type: 'Вилла',
-    country: 'Греция',
+    title: 'Пентхаус в Мадриде',
+    location: 'Испания, Мадрид',
+    city: 'Мадрид',
+    type: 'Пентхаус',
+    country: 'Испания',
     status: 'Сбор открыт',
     collectedPercent: 48,
     collected: 240000,
@@ -95,10 +95,11 @@ const DEMO_SHARES = [
     sharePrice: 200,
   },
   {
-    title: 'Пентхаус в Милане',
-    location: 'Италия, Милан',
-    type: 'Пентхаус',
-    country: 'Италия',
+    title: 'Лофт в Барселоне',
+    location: 'Испания, Барселона',
+    city: 'Барселона',
+    type: 'Апартаменты',
+    country: 'Испания',
     status: 'Почти собрано',
     collectedPercent: 91,
     collected: 910000,
@@ -107,10 +108,11 @@ const DEMO_SHARES = [
     sharePrice: 500,
   },
   {
-    title: 'Вилла в Пафосе',
-    location: 'Кипр, Пафос',
+    title: 'Вилла в Малаге',
+    location: 'Испания, Малага',
+    city: 'Малага',
     type: 'Вилла',
-    country: 'Кипр',
+    country: 'Испания',
     status: 'Сбор открыт',
     collectedPercent: 37,
     collected: 185000,
@@ -119,10 +121,11 @@ const DEMO_SHARES = [
     sharePrice: 150,
   },
   {
-    title: 'Апартаменты в Ницце',
-    location: 'Франция, Лазурный берег',
+    title: 'Апартаменты в Аликанте',
+    location: 'Испания, Аликанте',
+    city: 'Аликанте',
     type: 'Апартаменты',
-    country: 'Франция',
+    country: 'Испания',
     status: 'Сбор открыт',
     collectedPercent: 58,
     collected: 290000,
@@ -132,7 +135,8 @@ const DEMO_SHARES = [
   },
   {
     title: 'Таунхаусы в Марбелье',
-    location: 'Испания, Коста-дель-Соль',
+    location: 'Испания, Марбелья',
+    city: 'Марбелья',
     type: 'Таунхаус',
     country: 'Испания',
     status: 'Почти собрано',
@@ -161,7 +165,7 @@ const GENERATED_SHARES = Array.from({ length: 87 }, (_, index) => {
 })
 
 const TYPE_FILTERS = ['Вилла', 'Апартаменты', 'Пентхаус', 'Таунхаус', 'Коммерческая']
-const LOCATION_FILTERS = ['Испания', 'Италия', 'Греция', 'Кипр', 'Португалия']
+const LOCATION_FILTERS = ['Мадрид', 'Барселона', 'Валенсия', 'Малага', 'Марбелья']
 const STATUS_FILTERS = ['Сбор открыт', 'Почти собрано', 'Сбор завершён']
 
 function normalizeText(value) {
@@ -170,6 +174,12 @@ function normalizeText(value) {
 
 function formatEuro(value) {
   return `€${Math.round(Number(value) || 0).toLocaleString('ru-RU')}`
+}
+
+function extractCityFromLocation(location) {
+  const parts = String(location || '').split(',').map((part) => part.trim()).filter(Boolean)
+  if (parts.length >= 2) return parts[parts.length - 1]
+  return parts[0] || ''
 }
 
 function mapApiShare(share, index) {
@@ -186,6 +196,7 @@ function mapApiShare(share, index) {
     id: share.shareId || `${share.property_type || 'share'}-${share.id || index}`,
     title: formatted.title || base.title,
     location: formatted.location || base.location,
+    city: share.city || extractCityFromLocation(formatted.location) || base.city,
     type: base.type,
     country: base.country,
     status: percent >= 82 ? 'Почти собрано' : 'Сбор открыт',
@@ -261,7 +272,7 @@ export default function Shares() {
     const list = shares.filter((share) => {
       const haystack = normalizeText(`${share.title} ${share.location} ${share.type} ${share.status}`)
       const typeOk = selectedTypes.length === 0 || selectedTypes.includes(share.type)
-      const locationOk = selectedLocations.length === 0 || selectedLocations.includes(share.country)
+      const locationOk = selectedLocations.length === 0 || selectedLocations.includes(share.city)
       const statusOk = selectedStatuses.length === 0 || selectedStatuses.includes(share.status)
       return (
         (!text || haystack.includes(text)) &&
@@ -337,15 +348,14 @@ export default function Shares() {
           </div>
           <div className="shares-invest-hero__inner">
             <div className="shares-invest-hero__copy">
-              <span className="shares-invest-pill">Долевые инвестиции</span>
               <h1>Доли в недвижимости</h1>
               <p className="shares-invest-hero__subtitle">Соберите портфель по частям</p>
               <p className="shares-invest-hero__lead">
                 Покупайте доли в проверенных объектах и получайте доход от аренды и роста стоимости.
               </p>
-              <button type="button" className="shares-invest-hero__cta" onClick={() => document.getElementById('shares-invest-catalog')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FiShield size={18} aria-hidden />
-                Вход от €100
+              <button type="button" className="shares-invest-hero__cta" onClick={() => navigate('/profile')}>
+                <FiBriefcase size={18} aria-hidden />
+                Мои доли
               </button>
             </div>
 
@@ -378,9 +388,9 @@ export default function Shares() {
                 <span className="shares-portfolio-card__donut" aria-hidden />
                 <div>
                   <p>Диверсификация</p>
-                  <span>Испания 48%</span>
-                  <span>Греция 26%</span>
-                  <span>Италия 16%</span>
+                  <span>Мадрид 32%</span>
+                  <span>Барселона 24%</span>
+                  <span>Марбелья 18%</span>
                 </div>
               </div>
               <button type="button">
@@ -397,13 +407,6 @@ export default function Shares() {
             <Metric icon={FiHome} label="Активных объектов" value={loading ? '...' : filtered.length || 87} note="+6 за месяц" />
             <Metric icon={FiPieChart} label="Объём инвестиций" value="€128,6 млн" note="+8,7% за месяц" />
             <Metric icon={FiTrendingUp} label="Средняя доходность" value="11,6%" note="за 12 месяцев" />
-          </section>
-
-          <section className="shares-invest-benefits" aria-label="Преимущества долей">
-            <Metric icon={FiShield} label="Надёжные объекты" value="Проверка" note="тщательная проверка и защита" compact />
-            <Metric icon={FiBarChart2} label="Пассивный доход" value="Квартально" note="арендные выплаты каждый квартал" compact />
-            <Metric icon={FiTrendingUp} label="Рост стоимости" value="Капитал" note="потенциал увеличения цены объекта" compact />
-            <Metric icon={FiBriefcase} label="Инвесторский клуб" value="Доступ" note="прозрачность, отчёты и предложения" compact />
           </section>
 
           <section className="shares-invest-catalog" id="shares-invest-catalog">
@@ -499,9 +502,9 @@ export default function Shares() {
   )
 }
 
-function Metric({ icon: Icon, label, value, note, compact = false }) {
+function Metric({ icon: Icon, label, value, note }) {
   return (
-    <article className={compact ? 'shares-invest-metric shares-invest-metric--compact' : 'shares-invest-metric'}>
+    <article className="shares-invest-metric">
       <span className="shares-invest-metric__icon"><Icon size={22} aria-hidden /></span>
       <div>
         <p>{label}</p>
@@ -580,7 +583,6 @@ function ShareCard({ share, favorite, onFavorite, onInvest }) {
         <div className="shares-invest-card__funding">
           <span className="shares-invest-card__ring" style={{ '--value': `${share.collectedPercent}%` }}>
             <strong>{share.collectedPercent}%</strong>
-            <small>собрано</small>
           </span>
           <div className="shares-invest-card__amounts">
             <span>

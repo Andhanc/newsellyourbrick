@@ -42,7 +42,7 @@
 }
 
 .otsb__menu-item:hover {
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
 }
 
 .otsb__menu-icon {
@@ -56,8 +56,8 @@
 }
 
 .otsb__menu-icon--chat {
-  background: rgba(10, 186, 181, 0.12);
-  color: #089a95;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007d8a;
 }
 
 .otsb__menu-icon--ai {

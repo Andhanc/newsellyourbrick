@@ -151,7 +151,7 @@
   background: linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%);
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.2);
-  border-top: 1px solid rgba(10, 186, 181, 0.12);
+  border-top: 1px solid rgba(0, 153, 169, 0.12);
   touch-action: pan-y;
 }
 
@@ -350,13 +350,13 @@
 
 .role-switch-btn--primary {
   color: #fff;
-  background: linear-gradient(135deg, #0abab5 0%, #069a96 100%);
-  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(135deg, #0099A9 0%, #069a96 100%);
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.35);
 }
 
 .role-switch-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(10, 186, 181, 0.42);
+  box-shadow: 0 12px 28px rgba(0, 153, 169, 0.42);
 }
 
 .role-switch-btn--ghost {
@@ -393,8 +393,8 @@
   margin-bottom: 22px;
   padding: 16px;
   border-radius: 14px;
-  background: rgba(10, 186, 181, 0.06);
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  background: rgba(0, 153, 169, 0.06);
+  border: 1px solid rgba(0, 153, 169, 0.14);
 }
 
 .role-switch-profile__row {
@@ -441,8 +441,8 @@
 
 .role-switch-field input:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.18);
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.18);
 }
 
 .role-switch-field__password-wrap {
@@ -495,7 +495,7 @@
   border: none;
   background: none;
   padding: 4px 0;
-  color: #0abab5;
+  color: #0099A9;
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -564,15 +564,15 @@
 }
 
 .role-switch-cabinet-card:hover:not(:disabled) {
-  border-color: #0abab5;
-  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.12);
+  border-color: #0099A9;
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.12);
   transform: translateY(-1px);
 }
 
 .role-switch-cabinet-card--active {
-  border-color: #0abab5;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.08) 0%, rgba(10, 186, 181, 0.03) 100%);
-  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.1);
+  border-color: #0099A9;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.08) 0%, rgba(0, 153, 169, 0.03) 100%);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.1);
 }
 
 .role-switch-cabinet-card:disabled {
@@ -590,8 +590,8 @@
 }
 
 .role-switch-cabinet-card__icon--buyer {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.2), rgba(6, 122, 118, 0.1));
-  color: #067a76;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.2), rgba(6, 122, 118, 0.1));
+  color: #006672;
 }
 
 .role-switch-cabinet-card__icon--seller {
@@ -626,8 +626,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #067a76;
-  background: rgba(10, 186, 181, 0.14);
+  color: #006672;
+  background: rgba(0, 153, 169, 0.14);
 }
 
 .role-switch-bottom-cta {
@@ -649,14 +649,14 @@
   font-weight: 600;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #0abab5 0%, #069a96 100%);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.32);
+  background: linear-gradient(135deg, #0099A9 0%, #069a96 100%);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.32);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .role-switch-bottom-cta__btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 14px 32px rgba(0, 153, 169, 0.4);
 }
 
 .role-switch-bottom-cta__btn:disabled {
@@ -692,7 +692,7 @@
   width: 48px;
   height: 48px;
   border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #0abab5;
+  border-top-color: #0099A9;
   border-radius: 50%;
   animation: role-switch-spin 0.75s linear infinite;
 }

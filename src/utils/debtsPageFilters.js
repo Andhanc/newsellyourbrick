@@ -11,6 +11,7 @@ export {
 } from './debtsCardPresentation'
 
 export const EMPTY_DEBTS_FILTERS = {
+  propertyTypes: [],
   propertyType: 'все',
   risk: 'all',
   risks: [],
@@ -97,7 +98,12 @@ export function getDebtsPurchaseCounts(properties = []) {
 
 export function countActiveDebtsFilters(filters = EMPTY_DEBTS_FILTERS) {
   let count = 0
-  if (filters.propertyType && filters.propertyType !== 'все') count += 1
+  const types = filters.propertyTypes?.length
+    ? filters.propertyTypes
+    : filters.propertyType && filters.propertyType !== 'все'
+      ? [filters.propertyType]
+      : []
+  if (types.length) count += 1
   if (filters.risks?.length) count += 1
   else if (filters.risk && filters.risk !== 'all') count += 1
   if (filters.minPrice !== '' || filters.maxPrice !== '') count += 1
@@ -143,6 +149,16 @@ function matchesPropertyType(property, propertyType) {
     дом: titleLower.includes('дом') || titleLower.includes('таунхаус'),
   }
   return Boolean(typeMatch[propertyType])
+}
+
+function matchesPropertyTypes(property, filters) {
+  const types = filters.propertyTypes?.length
+    ? filters.propertyTypes
+    : filters.propertyType && filters.propertyType !== 'все'
+      ? [filters.propertyType]
+      : []
+  if (!types.length) return true
+  return types.some((type) => matchesPropertyType(property, type))
 }
 
 function getActiveRisks(filters) {
@@ -274,7 +290,7 @@ export function applyDebtsPageFilters(properties = [], filters = EMPTY_DEBTS_FIL
   return properties.filter(
     (property) =>
       matchesSearch(property, searchQuery) &&
-      matchesPropertyType(property, filters.propertyType) &&
+      matchesPropertyTypes(property, filters) &&
       matchesRisk(property, filters) &&
       matchesPrice(property, filters) &&
       matchesDebt(property, filters) &&

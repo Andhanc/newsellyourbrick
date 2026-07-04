@@ -127,13 +127,13 @@
 
 .login-modal--buyer .login-modal__change-role--side {
   color: rgba(6, 122, 118, 0.92);
-  border-color: rgba(10, 186, 181, 0.28);
+  border-color: rgba(0, 153, 169, 0.28);
 }
 
 .login-modal--buyer .login-modal__change-role--side:hover {
   color: #055a57;
-  background-color: rgba(10, 186, 181, 0.08);
-  border-color: rgba(10, 186, 181, 0.4);
+  background-color: rgba(0, 153, 169, 0.08);
+  border-color: rgba(0, 153, 169, 0.4);
 }
 
 .login-modal--seller .login-modal__change-role--side {
@@ -168,7 +168,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(90deg, #0099A9 0%, #007d8a 100%);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: 1;
@@ -176,7 +176,7 @@
 
 .login-modal--buyer .login-modal__form-panel::before {
   opacity: 1;
-  background: linear-gradient(90deg, #0ABAB5 0%, #25d366 100%);
+  background: linear-gradient(90deg, #0099A9 0%, #25d366 100%);
 }
 
 .login-modal--seller .login-modal__form-panel::before {
@@ -225,7 +225,7 @@
 }
 
 .login-modal--buyer .login-modal__header {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.03) 0%, rgba(37, 211, 102, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.03) 0%, rgba(37, 211, 102, 0.03) 100%);
 }
 
 .login-modal--seller .login-modal__header {
@@ -242,8 +242,8 @@
 }
 
 .login-modal--buyer .login-modal__title {
-  color: #0ABAB5;
-  text-shadow: 0 2px 10px rgba(10, 186, 181, 0.2);
+  color: #0099A9;
+  text-shadow: 0 2px 10px rgba(0, 153, 169, 0.2);
 }
 
 .login-modal--seller .login-modal__title {
@@ -273,8 +273,8 @@
 /* Регистрация: дорожка в цвет темы; снизу без лишнего отступа — зона роли даёт разрыв */
 .login-modal--buyer .login-modal__mode-switch {
   margin-bottom: 0;
-  background: rgba(10, 186, 181, 0.12);
-  box-shadow: inset 0 1px 2px rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0, 153, 169, 0.08);
 }
 
 .login-modal--seller .login-modal__mode-switch {
@@ -319,11 +319,11 @@
 }
 
 .login-modal--buyer .login-modal__mode-tab--active {
-  color: #067a76;
+  color: #006672;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 1px 6px rgba(10, 186, 181, 0.18),
-    0 0 0 1px rgba(10, 186, 181, 0.22);
+    0 1px 6px rgba(0, 153, 169, 0.18),
+    0 0 0 1px rgba(0, 153, 169, 0.22);
 }
 
 .login-modal--seller .login-modal__mode-tab--active {
@@ -336,11 +336,11 @@
 
 /* Режим «Вход»: на корне нет buyer/seller — подсветка активной вкладки в фирменном цвете */
 .login-modal:not(.login-modal--buyer):not(.login-modal--seller) .login-modal__mode-tab--active {
-  color: #067a76;
+  color: #006672;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 1px 6px rgba(10, 186, 181, 0.18),
-    0 0 0 1px rgba(10, 186, 181, 0.2);
+    0 1px 6px rgba(0, 153, 169, 0.18),
+    0 0 0 1px rgba(0, 153, 169, 0.2);
 }
 
 .login-modal__role-section {
@@ -355,8 +355,8 @@
 }
 
 .login-modal--buyer .login-modal__role-section {
-  border-top-color: rgba(10, 186, 181, 0.22);
-  background: linear-gradient(180deg, rgba(10, 186, 181, 0.06) 0%, transparent 56px);
+  border-top-color: rgba(0, 153, 169, 0.22);
+  background: linear-gradient(180deg, rgba(0, 153, 169, 0.06) 0%, transparent 56px);
 }
 
 .login-modal--seller .login-modal__role-section {
@@ -423,10 +423,10 @@
 }
 
 .login-modal--buyer .login-modal__role-card--active {
-  border-color: #0ABAB5;
-  background: rgba(10, 186, 181, 0.08);
-  color: #067a76;
-  box-shadow: 0 2px 14px rgba(10, 186, 181, 0.18);
+  border-color: #0099A9;
+  background: rgba(0, 153, 169, 0.08);
+  color: #006672;
+  box-shadow: 0 2px 14px rgba(0, 153, 169, 0.18);
 }
 
 .login-modal--seller .login-modal__role-card--active {
@@ -437,8 +437,8 @@
 }
 
 .login-modal--buyer .login-modal__role-card--active:hover:not(:disabled) {
-  border-color: #089a95;
-  background: rgba(10, 186, 181, 0.11);
+  border-color: #007d8a;
+  background: rgba(0, 153, 169, 0.11);
 }
 
 .login-modal--seller .login-modal__role-card--active:hover:not(:disabled) {
@@ -640,7 +640,7 @@
 }
 
 .login-modal--buyer .login-modal__form {
-  background: linear-gradient(180deg, rgba(10, 186, 181, 0.01) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(0, 153, 169, 0.01) 0%, transparent 100%);
 }
 
 .login-modal--seller .login-modal__form {
@@ -681,8 +681,8 @@
 }
 
 .login-modal--buyer .login-modal__input:focus {
-  border-color: #0ABAB5;
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.3);
+  border-color: #0099A9;
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
 }
 
 .login-modal--seller .login-modal__input:focus {
@@ -758,12 +758,12 @@
 }
 
 .login-modal__password-toggle:hover {
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .login-modal__password-toggle:focus {
   outline: none;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .login-modal--seller .login-modal__password-toggle:hover {
@@ -783,7 +783,7 @@
 .login-modal__footer-link {
   background: none;
   border: none;
-  color: #0ABAB5;
+  color: #0099A9;
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
@@ -804,7 +804,7 @@
 
 .login-modal__forgot-link:hover,
 .login-modal__footer-link:hover {
-  color: #067a76;
+  color: #006672;
   text-decoration: underline;
 }
 
@@ -858,12 +858,12 @@
 }
 
 .login-modal--buyer .login-modal__submit {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
 }
 
 .login-modal--buyer .login-modal__submit:hover {
-  background: linear-gradient(135deg, #089a95 0%, #067a76 100%);
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.4);
+  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
 }
 
 .login-modal--seller .login-modal__submit {
@@ -884,7 +884,7 @@
   padding: 16px;
   min-height: 48px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -896,7 +896,7 @@
   margin-left: 0;
   margin-right: 0;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -937,12 +937,12 @@
 }
 
 .login-modal__submit--liquid-glass:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -956,7 +956,7 @@
   opacity: 0.65;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.15);
 }
 
 .login-modal__footer {
@@ -967,7 +967,7 @@
 }
 
 .login-modal--buyer .login-modal__footer {
-  background: linear-gradient(180deg, transparent 0%, rgba(10, 186, 181, 0.02) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 153, 169, 0.02) 100%);
 }
 
 .login-modal--seller .login-modal__footer {
@@ -1036,12 +1036,12 @@
 
   .login-modal--buyer .login-modal__change-role--mobile {
     color: rgba(6, 122, 118, 0.9);
-    border-color: rgba(10, 186, 181, 0.22);
+    border-color: rgba(0, 153, 169, 0.22);
   }
 
   .login-modal--buyer .login-modal__change-role--mobile:hover {
-    background-color: rgba(10, 186, 181, 0.05);
-    border-color: rgba(10, 186, 181, 0.32);
+    background-color: rgba(0, 153, 169, 0.05);
+    border-color: rgba(0, 153, 169, 0.32);
   }
 
   .login-modal--seller .login-modal__change-role--mobile {
@@ -1070,8 +1070,8 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(90deg, #0ABAB5 0%, #089a95 100%);
-  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(90deg, #0099A9 0%, #007d8a 100%);
+  box-shadow: 0 2px 10px rgba(0, 153, 169, 0.35);
 }
 
 .login-modal--seller .login-modal__step-badge {
@@ -1091,7 +1091,7 @@
 }
 
 .login-modal--buyer .login-modal__role-inline {
-  color: #067a76;
+  color: #006672;
 }
 
 .login-modal--seller .login-modal__role-inline {
@@ -1144,7 +1144,7 @@
 }
 
 .login-modal__wizard-tile--buyer:hover {
-  border-color: rgba(10, 186, 181, 0.55);
+  border-color: rgba(0, 153, 169, 0.55);
 }
 
 .login-modal__wizard-tile--seller:hover {
@@ -1170,8 +1170,8 @@
 }
 
 .login-modal__wizard-tile--buyer .login-modal__wizard-tile-icon {
-  color: #0ABAB5;
-  background: rgba(10, 186, 181, 0.12);
+  color: #0099A9;
+  background: rgba(0, 153, 169, 0.12);
 }
 
 .login-modal__wizard-tile--seller .login-modal__wizard-tile-icon {

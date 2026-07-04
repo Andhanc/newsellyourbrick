@@ -2,9 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus } from 'react-icons/fi'
-import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
-import { MdCardGiftcard } from 'react-icons/md'
+import { FiChevronDown, FiCheck, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus, FiArrowUpRight } from 'react-icons/fi'
+import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import Header from '../components/Header'
 import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import { getUserData } from '../services/authService'
@@ -29,6 +28,9 @@ const SELLER_TASKS = [
   { id: 7, titleKey: 'bonus7Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus7Step1', 'bonus7Step2', 'bonus7Step3', 'bonus7Step4'], linkPlaceholderKey: 'bonus7Placeholder', linkHintKey: 'bonus7Hint' },
   { id: 8, titleKey: 'bonus8Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus8Step1', 'bonus8Step2', 'bonus8Step3', 'bonus8Step4'], linkPlaceholderKey: 'bonus8Placeholder', linkHintKey: 'bonus8Hint' },
 ]
+
+const ALL_TASKS = [...BUYER_TASKS, ...SELLER_TASKS]
+const ALL_SOCIAL_TASKS = [...BUYER_TASKS.filter((task) => !task.referral), ...SELLER_TASKS]
 
 const Bonuses = () => {
   const { t, i18n } = useTranslation()
@@ -140,7 +142,7 @@ const Bonuses = () => {
       setError(t('bonusesErrorLink'))
       return
     }
-    const task = currentTasks.find((x) => x.id === taskId)
+    const task = ALL_TASKS.find((x) => x.id === taskId)
     if (!task) return
     if (!/^https?:\/\/.+/i.test(link)) {
       setError(t('bonusesErrorInvalidLink'))
@@ -200,6 +202,8 @@ const Bonuses = () => {
 
   const isLoggedIn = userId !== null && userId !== ''
 
+  const displayTasks = ALL_SOCIAL_TASKS
+
   const bonusesBreadcrumbTrail = useMemo(() => {
     const home = { to: '/', label: t('home') }
     if (bonusMode === 'seller') {
@@ -208,81 +212,88 @@ const Bonuses = () => {
     return [home, { to: null, label: t('bonuses') }]
   }, [bonusMode, t, i18n.language])
 
+  const heroStats = useMemo(() => [
+    {
+      id: 'discount',
+      value: t('bonusesHeroStat1Value'),
+      label: t('bonusesHeroStat1Label'),
+      description: t('bonusesHeroStat1Desc'),
+      featured: true,
+    },
+    {
+      id: 'tasks',
+      value: t('bonusesHeroStat2Value'),
+      label: t('bonusesHeroStat2Label'),
+    },
+    {
+      id: 'social',
+      value: t('bonusesHeroStat3Value'),
+      label: t('bonusesHeroStat3Label'),
+    },
+    {
+      id: 'review',
+      value: t('bonusesHeroStat4Value'),
+      label: t('bonusesHeroStat4Label'),
+    },
+  ], [t, i18n.language, bonusMode])
+
   return (
     <div className={`bonuses-page ${bonusMode === 'seller' ? 'bonuses-page--seller' : ''}`}>
       <Header />
-      <div className="bonuses-page__bg" />
-      <div className="bonuses-page__floats" aria-hidden>
-        <FaGift className="bonuses-page__float bonuses-page__float--1" />
-        <FaStar className="bonuses-page__float bonuses-page__float--2" />
-        <MdCardGiftcard className="bonuses-page__float bonuses-page__float--3" />
-        <FaStar className="bonuses-page__float bonuses-page__float--4" />
-        <FaGift className="bonuses-page__float bonuses-page__float--5" />
-        <FaStar className="bonuses-page__float bonuses-page__float--6" />
-        <FaGift className="bonuses-page__float bonuses-page__float--7" />
-        <FaStar className="bonuses-page__float bonuses-page__float--8" />
-        <MdCardGiftcard className="bonuses-page__float bonuses-page__float--9" />
-        <FaStar className="bonuses-page__float bonuses-page__float--10" />
-        <FaGift className="bonuses-page__float bonuses-page__float--11" />
-        <FaStar className="bonuses-page__float bonuses-page__float--12" />
-        <MdCardGiftcard className="bonuses-page__float bonuses-page__float--13" />
-        <FaGift className="bonuses-page__float bonuses-page__float--14" />
-        <FaStar className="bonuses-page__float bonuses-page__float--15" />
-        <FaGift className="bonuses-page__float bonuses-page__float--16" />
-        <FaStar className="bonuses-page__float bonuses-page__float--17" />
-        <MdCardGiftcard className="bonuses-page__float bonuses-page__float--18" />
-        <FaStar className="bonuses-page__float bonuses-page__float--19" />
-        <FaGift className="bonuses-page__float bonuses-page__float--20" />
-        <FaStar className="bonuses-page__float bonuses-page__float--21" />
-        <MdCardGiftcard className="bonuses-page__float bonuses-page__float--22" />
-        <FaGift className="bonuses-page__float bonuses-page__float--23" />
-        <FaStar className="bonuses-page__float bonuses-page__float--24" />
-        <FaGift className="bonuses-page__float bonuses-page__float--25" />
-        <FaStar className="bonuses-page__float bonuses-page__float--26" />
-      </div>
-      <div className="bonuses-page__heading-strip">
-        <div className="page-context-heading page-context-heading--strip-auction-style">
-          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--bonuses-page-top">
-            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
-              {t('bonuses')}
-            </h1>
-            <PageBreadcrumbs
-              trail={bonusesBreadcrumbTrail}
-              className="page-breadcrumbs--flat-club"
-              separator=">"
-            />
-          </div>
-        </div>
-      </div>
-      <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
-        <div className="bonuses-header">
-          <div className="bonuses-header__icon-row">
-            <div className="bonuses-header__deco bonuses-header__deco--left">
-              <FaStar size={20} />
-              <FaGift size={18} />
-            </div>
-            <div className="bonuses-header__icon">
-              {bonusMode === 'seller' ? <FiUser size={32} /> : <FiGift size={32} />}
-            </div>
-            <div className="bonuses-header__deco bonuses-header__deco--right">
-              <FaGift size={18} />
-              <FaStar size={20} />
-            </div>
-          </div>
-          <h2 className="bonuses-header__title">
-            {bonusMode === 'seller' ? t('bonusesTitleSeller') : t('bonusesTitleBuyer')}
-          </h2>
-          <p className="bonuses-header__subtitle">
+      <section className="bonuses-hero" aria-labelledby="bonuses-hero-title">
+        <div className="bonuses-hero__inner">
+          <PageBreadcrumbs
+            trail={bonusesBreadcrumbTrail}
+            className="page-breadcrumbs--flat-club bonuses-hero__breadcrumbs"
+            separator=">"
+          />
+          <h1 id="bonuses-hero-title" className="bonuses-hero__title">
+            <span className="bonuses-hero__title-line">
+              {bonusMode === 'seller' ? t('bonusesHeroTitleLine1Seller') : t('bonusesHeroTitleLine1')}
+            </span>
+            <span className="bonuses-hero__title-line bonuses-hero__title-line--bottom">
+              {bonusMode === 'seller' ? t('bonusesHeroTitleLine2Seller') : t('bonusesHeroTitleLine2')}
+              {' '}
+              <span className="bonuses-hero__title-accent">
+                {bonusMode === 'seller' ? t('bonusesHeroTitleAccentSeller') : t('bonusesHeroTitleAccent')}
+              </span>
+            </span>
+          </h1>
+          <p className="bonuses-hero__subtitle">
             {bonusMode === 'seller' ? t('bonusesSubtitleSeller') : t('bonusesSubtitleBuyer')}
           </p>
-          <div className="bonuses-header__strip" aria-hidden>
-            <FaStar size={14} />
-            <FaGift size={12} />
-            <FaStar size={14} />
-            <MdCardGiftcard size={14} />
-            <FaStar size={14} />
+          <div className="bonuses-hero__visual">
+            <img
+              className="bonuses-hero__gift"
+              src="/images/bonuses/bonuses-hero-gift-transparent.png"
+              alt=""
+              width={520}
+              height={520}
+              decoding="async"
+            />
+          </div>
+          <div className="bonuses-hero__stats" aria-label={t('bonusesHeroStatsAria')}>
+            {heroStats.map((stat) => (
+              <article
+                key={stat.id}
+                className={`bonuses-hero__stat ${stat.featured ? 'bonuses-hero__stat--featured' : ''}`}
+              >
+                {stat.featured && (
+                  <span className="bonuses-hero__stat-icon" aria-hidden>
+                    <FiArrowUpRight size={18} strokeWidth={2.25} />
+                  </span>
+                )}
+                <strong className="bonuses-hero__stat-value">{stat.value}</strong>
+                <span className="bonuses-hero__stat-label">{stat.label}</span>
+                {stat.description && (
+                  <p className="bonuses-hero__stat-desc">{stat.description}</p>
+                )}
+              </article>
+            ))}
           </div>
         </div>
+      </section>
+      <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
 
         {fromListingFee && (
           <button
@@ -344,8 +355,8 @@ const Bonuses = () => {
                 </button>
               </div>
             )}
-            <div className={`bonuses-tasks bonuses-tasks--${bonusMode}`} id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'} role="tabpanel" aria-labelledby={bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller'}>
-          {[...currentTasks]
+            <div className="bonuses-tasks" id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'} role="tabpanel" aria-labelledby={bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller'}>
+          {[...displayTasks]
             .sort((a, b) => {
               const usedA = submissions[a.id]?.used_at ? 1 : 0
               const usedB = submissions[b.id]?.used_at ? 1 : 0
@@ -358,11 +369,12 @@ const Bonuses = () => {
             const isApproved = status === 'approved'
             const isPending = status === 'pending'
             const submission = submissions[task.id]
+            const isWideCard = isExpanded || isApproved
 
             return (
               <article
                 key={task.id}
-                className={`bonuses-task ${isApproved ? 'bonuses-task--done' : ''} ${isPending ? 'bonuses-task--pending' : ''} ${bonusMode === 'seller' ? 'bonuses-task--seller' : ''}`}
+                className={`bonuses-task ${isApproved ? 'bonuses-task--done' : ''} ${isPending ? 'bonuses-task--pending' : ''} ${isWideCard ? 'bonuses-task--wide' : ''}`}
               >
                 <div className="bonuses-task__header">
                   <div className="bonuses-task__icon-wrap">

@@ -3,6 +3,83 @@
   padding: 60px 20px;
 }
 
+/* Аукцион: фото-фон, заголовок и три карточки */
+.hero--auction-scene {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 124px) 20px 44px;
+  background: #050505;
+  color: #ffffff;
+}
+
+.hero--auction-scene__bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.62;
+}
+
+.hero--auction-scene__overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(5, 5, 5, 0.82) 0%,
+    rgba(5, 5, 5, 0.58) 42%,
+    rgba(0, 103, 119, 0.22) 100%
+  );
+  pointer-events: none;
+}
+
+.hero--auction-scene .hero-container {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-auction-header {
+  text-align: left;
+  margin: 0 0 32px;
+  max-width: 42rem;
+}
+
+.hero-auction-header__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.hero-auction-header__lead {
+  margin: 12px 0 0;
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.hero--auction-scene .hero-features {
+  margin-bottom: 0;
+}
+
+@media (min-width: 769px) {
+  .hero--auction-scene {
+    padding: calc(env(safe-area-inset-top, 0px) + 136px) 24px 52px;
+  }
+}
+
 .hero-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -290,6 +367,23 @@
 }
 
 @media (max-width: 768px) {
+  .hero--auction-scene {
+    padding: calc(env(safe-area-inset-top, 0px) + 108px) 12px 20px;
+  }
+
+  .hero-auction-header {
+    margin-bottom: 18px;
+  }
+
+  .hero-auction-header__title {
+    font-size: clamp(1.45rem, 6.8vw, 2rem);
+  }
+
+  .hero-auction-header__lead {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .hero {
     padding: 20px 12px;
     --hero-expand-duration: 1.05s;
@@ -510,7 +604,7 @@
   }
 
   .hero-feature-card--expanded {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 24px rgba(10, 186, 181, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 24px rgba(0, 153, 169, 0.12);
   }
 
   .hero-feature-card--expanded .hero-feature-content {

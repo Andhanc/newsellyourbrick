@@ -2,20 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
-import {
-  FiArrowRight,
-  FiBarChart2,
-  FiBriefcase,
-  FiChevronDown,
-  FiCreditCard,
-  FiGrid,
-  FiHeart,
-  FiHeadphones,
-  FiHome,
-  FiShoppingBag,
-  FiUser,
-} from 'react-icons/fi'
-import { FaInstagram, FaTelegramPlane, FaWhatsapp, FaYoutube } from 'react-icons/fa'
+import { FiChevronDown, FiHeart } from 'react-icons/fi'
 import { SiteBrandIcon } from '@/components/SiteBrandLogo'
 import { scrollMainTo } from '@/utils/mainScroll'
 import { isSiteUserSignedIn } from '@/utils/siteAuthGate'
@@ -23,71 +10,88 @@ import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
 import { navigateToWallet } from '@/utils/walletNavigation'
 import { getCabinetDataPath, getCabinetProfilePath } from '@/utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '@/utils/sectionRoutes'
-import './MainPage.css'
 import './SectionsPage.css'
 
 /** @typedef {{ titleKey: string, path: string, requiresAuth?: boolean, wallet?: boolean }} SectionLink */
 
-/** @typedef {{ sectionTitleKey: string, icon: import('react').ComponentType<{ size?: number, strokeWidth?: number }>, items: SectionLink[] }} SectionGroup */
+/** @typedef {{ sectionTitleKey: string, items: SectionLink[] }} SectionGroup */
 
 /** @type {SectionGroup[]} */
-const INVESTOR_SECTIONS = [
+const MAIN_SECTIONS = [
   {
-    sectionTitleKey: 'sectionsGroupInvestorPurchase',
-    icon: FiShoppingBag,
+    sectionTitleKey: 'footerColSite',
     items: [
-      { titleKey: 'auction', path: '/auction' },
-      { titleKey: 'coInvestment', path: CO_INVESTMENT_PATH },
-      { titleKey: 'debtsTitle', path: '/debts' },
-      { titleKey: 'testDrive', path: TEST_DRIVE_PATH },
-      { titleKey: 'mapLink', path: '/map', requiresAuth: true },
+      { titleKey: 'home', path: '/' },
+      { titleKey: 'sybLandingFooterLink', path: '/sellyourbrick' },
+      { titleKey: 'sectionsBuyerPageLink', path: '/buyer' },
+      { titleKey: 'sellerPageFooterLink', path: '/seller' },
+      { titleKey: 'news', path: '/news' },
+      { titleKey: 'aboutUs', path: '/about' },
+      { titleKey: 'footerAllSections', path: '/sections' },
     ],
   },
   {
-    sectionTitleKey: 'sectionsGroupInvestorTools',
-    icon: FiBarChart2,
+    sectionTitleKey: 'footerColListings',
     items: [
-      { titleKey: 'favorites', path: '/favorites', requiresAuth: true },
-      { titleKey: 'buyerCabinet_compare', path: '/compare', requiresAuth: true },
+      { titleKey: 'auction', path: '/auction' },
+      { titleKey: 'auctionFilterPreAuction', path: '/auction/pre-auction' },
+      { titleKey: 'buyNowSectionTitle', path: '/auction/buy-now' },
+      { titleKey: 'sectionsAuctionBidding', path: '/auction/bidding' },
+      { titleKey: 'auctionFilterEnded', path: '/auction/ended' },
+      { titleKey: 'coInvestment', path: CO_INVESTMENT_PATH },
+      { titleKey: 'debtsTitle', path: '/debts' },
+      { titleKey: 'testDrive', path: TEST_DRIVE_PATH },
+    ],
+  },
+  {
+    sectionTitleKey: 'sectionsGroupDiscovery',
+    items: [
+      { titleKey: 'mapLink', path: '/map', requiresAuth: true },
+      { titleKey: 'search', path: '/search-results' },
+      { titleKey: 'footerCompareObjects', path: '/compare', requiresAuth: true },
+      { titleKey: 'footerLiked', path: '/favorites', requiresAuth: true },
       { titleKey: 'calculator', path: '/calculator', requiresAuth: true },
+      { titleKey: 'privateClubPageTitle', path: '/private-club' },
     ],
   },
   {
     sectionTitleKey: 'sectionsGroupInvestorSubscriptions',
-    icon: FiBriefcase,
     items: [
       { titleKey: 'subscriptions', path: '/subscriptions', requiresAuth: true },
       { titleKey: 'bonuses', path: '/bonuses', requiresAuth: true },
-      { titleKey: 'privateClubPageTitle', path: '/private-club', requiresAuth: false },
+      { titleKey: 'privateClubPageTitle', path: '/private-club' },
+      { titleKey: 'tariffs', path: '/subscriptions#subscriptions-pricing-section', requiresAuth: true },
     ],
   },
   {
-    sectionTitleKey: 'sectionsGroupInvestorProfile',
-    icon: FiUser,
+    sectionTitleKey: 'footerColProfile',
     items: [
       { titleKey: 'profile', path: '/profile', requiresAuth: true },
       { titleKey: 'history', path: '/history', requiresAuth: true },
+      { titleKey: 'wallet', path: '/wallet', requiresAuth: true, wallet: true },
       { titleKey: 'buyerCabinet_tileDepositTitle', path: '/deposit', requiresAuth: true, wallet: true },
-      { titleKey: 'data', path: '/data', requiresAuth: true },
+      { titleKey: 'footerPersonalData', path: '/data', requiresAuth: true },
       { titleKey: 'buyerCabinet_myBookings', path: '/profile/bookings', requiresAuth: true },
     ],
   },
   {
-    sectionTitleKey: 'sectionsGroupInvestorSupport',
-    icon: FiHeadphones,
+    sectionTitleKey: 'footerColServices',
     items: [
+      { titleKey: 'calculator', path: '/calculator', requiresAuth: true },
       { titleKey: 'chat', path: '/chat?manager=1', requiresAuth: true },
       { titleKey: 'aiAssistant', path: '/chat', requiresAuth: true },
+      { titleKey: 'footerTechSupport', path: '/chat?manager=1', requiresAuth: true },
     ],
   },
   {
-    sectionTitleKey: 'sectionsGroupInvestorOther',
-    icon: FiGrid,
+    sectionTitleKey: 'footerColCompany',
     items: [
-      { titleKey: 'tariffs', path: '/subscriptions#subscriptions-pricing-section', requiresAuth: true },
-      { titleKey: 'sectionsForBanks', path: '/about', requiresAuth: false },
-      { titleKey: 'footerOurTeam', path: '/about', requiresAuth: false },
-      { titleKey: 'aboutUs', path: '/about#about-intro', requiresAuth: false },
+      { titleKey: 'aboutUs', path: '/about#about-intro' },
+      { titleKey: 'footerOurTeam', path: '/about' },
+      { titleKey: 'footerForInvestors', path: '/about#about-intro' },
+      { titleKey: 'sectionsForBanks', path: '/about' },
+      { titleKey: 'footerDocumentsSection', path: '/data', requiresAuth: true },
+      { titleKey: 'becomeSeller', path: '/seller' },
     ],
   },
 ]
@@ -96,8 +100,8 @@ const INVESTOR_SECTIONS = [
 const SELLER_SECTIONS = [
   {
     sectionTitleKey: 'sectionsGroupSellerObjects',
-    icon: FiHome,
     items: [
+      { titleKey: 'sellerPageFooterLink', path: '/seller' },
       { titleKey: 'ownerDashboard', path: '/owner-test', requiresAuth: true },
       { titleKey: 'addProperty', path: '/owner/property/new', requiresAuth: true },
       { titleKey: 'auction', path: '/auction' },
@@ -109,54 +113,37 @@ const SELLER_SECTIONS = [
   },
   {
     sectionTitleKey: 'sectionsGroupSellerFinance',
-    icon: FiCreditCard,
     items: [
       { titleKey: 'bonuses', path: '/bonuses?tab=seller', requiresAuth: true },
       { titleKey: 'subscriptions', path: '/subscriptions', requiresAuth: true },
-      { titleKey: 'privateClubPageTitle', path: '/private-club', requiresAuth: false },
+      { titleKey: 'privateClubPageTitle', path: '/private-club' },
       { titleKey: 'wallet', path: '/wallet', requiresAuth: true, wallet: true },
+      { titleKey: 'tariffs', path: '/subscriptions#subscriptions-pricing-section', requiresAuth: true },
     ],
   },
   {
     sectionTitleKey: 'sectionsGroupSellerAccount',
-    icon: FiUser,
-    items: [{ titleKey: 'history', path: '/history', requiresAuth: true }],
+    items: [
+      { titleKey: 'profile', path: '/profile', requiresAuth: true },
+      { titleKey: 'history', path: '/history', requiresAuth: true },
+      { titleKey: 'footerPersonalData', path: '/data', requiresAuth: true },
+    ],
   },
   {
     sectionTitleKey: 'sectionsGroupSellerSupport',
-    icon: FiHeadphones,
     items: [
       { titleKey: 'chat', path: '/chat?manager=1', requiresAuth: true },
       { titleKey: 'aiAssistant', path: '/chat', requiresAuth: true },
+      { titleKey: 'footerTechSupport', path: '/chat?manager=1', requiresAuth: true },
     ],
   },
 ]
 
 const SOCIAL_LINKS = [
-  {
-    title: 'Telegram',
-    href: 'https://t.me/',
-    icon: FaTelegramPlane,
-    className: 'sections-page__social-link--telegram',
-  },
-  {
-    title: 'YouTube',
-    href: 'https://youtube.com/',
-    icon: FaYoutube,
-    className: 'sections-page__social-link--youtube',
-  },
-  {
-    title: 'WhatsApp',
-    href: 'https://wa.me/79991234567',
-    icon: FaWhatsapp,
-    className: 'sections-page__social-link--whatsapp',
-  },
-  {
-    title: 'Instagram',
-    href: 'https://instagram.com/',
-    icon: FaInstagram,
-    className: 'sections-page__social-link--instagram',
-  },
+  { titleKey: 'sectionsSocialTelegram', href: 'https://t.me/' },
+  { titleKey: 'sectionsSocialYoutube', href: 'https://youtube.com/' },
+  { titleKey: 'sectionsSocialWhatsapp', href: 'https://wa.me/447700183959' },
+  { titleKey: 'sectionsSocialInstagram', href: 'https://instagram.com/' },
 ]
 
 const TOP_NAV_LINKS = [
@@ -195,44 +182,33 @@ export default function SectionsPage() {
       }
       let p = item.path.startsWith('/') ? item.path : `/${item.path}`
       if (item.titleKey === 'profile') p = getCabinetProfilePath()
-      if (item.titleKey === 'data') p = getCabinetDataPath()
+      if (item.titleKey === 'footerPersonalData' || item.titleKey === 'footerDocumentsSection') {
+        p = getCabinetDataPath()
+      }
       navigate(p)
     },
     [location.pathname, navigate, signedIn],
   )
 
-  const renderGroup = useCallback(
-    (group) => {
-      const Icon = group.icon
-      return (
-        <section
-          key={group.sectionTitleKey}
-          className="sections-page__card"
-          aria-label={t(group.sectionTitleKey)}
-        >
-          <header className="sections-page__card-head">
-            <span className="sections-page__card-icon" aria-hidden>
-              <Icon size={22} strokeWidth={2.15} />
-            </span>
-            <h2 className="sections-page__card-title">{t(group.sectionTitleKey)}</h2>
-          </header>
-          <ul className="sections-page__link-list">
-            {group.items.map((item) => (
-              <li key={`${group.sectionTitleKey}-${item.path}-${item.titleKey}`}>
-                <button
-                  type="button"
-                  className="sections-page__link"
-                  onClick={() => goTo(item)}
-                >
-                  <span>{t(item.titleKey)}</span>
-                  <FiArrowRight size={14} strokeWidth={2.25} aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )
-    },
+  const renderSection = useCallback(
+    (group) => (
+      <section
+        key={group.sectionTitleKey}
+        className="sections-page__section"
+        aria-label={t(group.sectionTitleKey)}
+      >
+        <h2 className="sections-page__section-title">{t(group.sectionTitleKey)}</h2>
+        <ul className="sections-page__btn-list">
+          {group.items.map((item) => (
+            <li key={`${group.sectionTitleKey}-${item.path}-${item.titleKey}`}>
+              <button type="button" className="sections-page__btn" onClick={() => goTo(item)}>
+                {t(item.titleKey)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ),
     [goTo, t],
   )
 
@@ -258,7 +234,12 @@ export default function SectionsPage() {
           </Link>
         </nav>
         <div className="sections-page__top-actions">
-          <button type="button" className="sections-page__heart" aria-label={t('favorites')} onClick={() => navigate('/favorites')}>
+          <button
+            type="button"
+            className="sections-page__heart"
+            aria-label={t('favorites')}
+            onClick={() => navigate('/favorites')}
+          >
             <FiHeart size={19} strokeWidth={2} aria-hidden />
           </button>
           <button type="button" className="sections-page__login" onClick={openAuth}>
@@ -269,70 +250,45 @@ export default function SectionsPage() {
           </button>
         </div>
       </header>
+
       <main className="sections-page__main">
         <header className="sections-page__hero">
-          <div className="sections-page__hero-inner">
-            <div className="sections-page__hero-copy">
-              <h1 className="sections-page__title">{t('sectionsSitemapTitle')}</h1>
-              <p className="sections-page__lead">{t('sectionsSitemapLead')}</p>
-            </div>
-            <Link className="sections-page__about-link" to="/about">
-              <span>{t('sectionsAboutLink')}</span>
-              <FiArrowRight size={15} strokeWidth={2.2} aria-hidden />
-            </Link>
-          </div>
+          <p className="sections-page__eyebrow">{t('sectionsHeroScript')}</p>
+          <h1 className="sections-page__title">{t('sectionsSitemapTitle')}</h1>
+          <p className="sections-page__lead">{t('sectionsSitemapLead')}</p>
         </header>
 
-        <div className="sections-page__body">
-          <div className="sections-page__groups sections-page__groups--investor">
-            {INVESTOR_SECTIONS.map(renderGroup)}
+        <div className="sections-page__grid">{MAIN_SECTIONS.map(renderSection)}</div>
+
+        <div className="sections-page__seller-band">
+          <h2 className="sections-page__seller-heading">{t('sectionsSellerAreaTitle')}</h2>
+          <div className="sections-page__grid sections-page__grid--seller">
+            {SELLER_SECTIONS.map(renderSection)}
           </div>
-
-          <section className="sections-page__seller" aria-labelledby="sections-seller-heading">
-            <h2 id="sections-seller-heading" className="sections-page__seller-title">
-              {t('sectionsSellerAreaTitle')}
-            </h2>
-            <div className="sections-page__groups sections-page__groups--seller">
-              {SELLER_SECTIONS.map(renderGroup)}
-            </div>
-          </section>
-
-          <section className="sections-page__social" aria-labelledby="sections-social-heading">
-            <div className="sections-page__social-copy">
-              <h2 id="sections-social-heading">{t('sectionsSocialTitle')}</h2>
-              <p>{t('sectionsSocialLead')}</p>
-              <a className="sections-page__social-cta" href="https://t.me/" target="_blank" rel="noreferrer">
-                {t('sectionsSocialCta')}
-              </a>
-            </div>
-            <div className="sections-page__social-links" aria-label={t('sectionsSocialAria')}>
-              {SOCIAL_LINKS.map((social) => {
-                const Icon = social.icon
-                return (
-                  <a
-                    key={social.title}
-                    className={`sections-page__social-link ${social.className}`}
-                    href={social.href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="sections-page__social-icon" aria-hidden>
-                      <Icon size={28} />
-                    </span>
-                    <span>{social.title}</span>
-                  </a>
-                )
-              })}
-            </div>
-            <img
-              className="sections-page__social-art"
-              src="/images/sections/sitemap-social-art.png"
-              alt=""
-              loading="eager"
-              aria-hidden
-            />
-          </section>
         </div>
+
+        <section className="sections-page__section sections-page__social" aria-labelledby="sections-social-heading">
+          <h2 id="sections-social-heading" className="sections-page__section-title">
+            {t('sectionsSocialTitle')}
+          </h2>
+          <div className="sections-page__section-content">
+            <p className="sections-page__social-lead">{t('sectionsSocialLead')}</p>
+            <ul className="sections-page__btn-list" aria-label={t('sectionsSocialAria')}>
+            {SOCIAL_LINKS.map((social) => (
+              <li key={social.titleKey}>
+                <a
+                  className="sections-page__btn sections-page__btn--social"
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t(social.titleKey)}
+                </a>
+              </li>
+            ))}
+            </ul>
+          </div>
+        </section>
       </main>
     </div>
   )

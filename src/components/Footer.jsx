@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useUser, useClerk } from '@clerk/clerk-react'
+import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { FaApple, FaWhatsapp } from 'react-icons/fa'
+import { FaApple, FaTelegramPlane, FaYoutube, FaWhatsapp, FaInstagram } from 'react-icons/fa'
 import { MdSentimentDissatisfied } from 'react-icons/md'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
 import whatsappQR from '../../6019556644745841501.png'
@@ -12,19 +12,28 @@ import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
-import { getUserData, logout } from '../services/authService'
 
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
+
+const SOCIAL_LINKS = [
+  { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', Icon: FaTelegramPlane },
+  { labelKey: 'sectionsSocialYoutube', href: 'https://youtube.com/', Icon: FaYoutube },
+  { labelKey: 'sectionsSocialWhatsapp', href: WHATSAPP_HREF, Icon: FaWhatsapp },
+  { labelKey: 'sectionsSocialInstagram', href: 'https://instagram.com/', Icon: FaInstagram },
+]
+
+/** @typedef {{ to?: string; onClick?: () => void; label: string; requiresAuth?: boolean }} FooterLinkItem */
+
+/** @typedef {{ title: string; links: FooterLinkItem[] }} FooterColumn */
 
 const Footer = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
-  const { signOut } = useClerk()
   const languageDropdownRef = useRef(null)
   const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
@@ -79,120 +88,73 @@ const Footer = () => {
     navigateToWallet(navigate, location.pathname)
   }
 
-  const roleRaw = String(localStorage.getItem('userRole') || getUserData()?.role || '').toLowerCase()
-  const isBuyerSignedIn = isSiteUserSignedIn(user, userLoaded) && roleRaw === 'buyer'
   const cabinetProfilePath = getCabinetProfilePath()
-  const cabinetDataPath = getCabinetDataPath()
 
-  const handleBecomeSellerRegister = useCallback(async () => {
+  const handleFooterProtectedNav = (to, requiresAuth = false) => {
     scrollToTop()
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      /* ignore storage errors */
-    }
-    sessionStorage.setItem('clerk_logout_in_progress', 'true')
-    try {
-      if (user && signOut) {
-        await signOut()
-      }
-    } catch (e) {
-      console.warn('Footer become seller signOut:', e)
-    }
-    try {
-      await logout()
-    } catch (e) {
-      console.warn('Footer become seller logout:', e)
-    } finally {
-      sessionStorage.removeItem('clerk_logout_in_progress')
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
-  }, [navigate, signOut, user])
-
-  const handleFooterProtectedNav = (to) => {
-    scrollToTop()
-    if (routeRequiresSiteLogin(to) && !isSiteUserSignedIn(user, userLoaded)) {
+    const needsLogin =
+      (requiresAuth || routeRequiresSiteLogin(to)) && !isSiteUserSignedIn(user, userLoaded)
+    if (needsLogin) {
       requestOpenLoginModal({ wizard: true })
       return
     }
     navigate(to)
   }
 
+  const linkNeedsAuth = (item) =>
+    item.requiresAuth || (item.to ? routeRequiresSiteLogin(item.to) : false)
 
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerSiteLinks = [
-    { to: '/', label: t('home') },
-    { to: '/sellyourbrick', label: t('sybLandingFooterLink') },
-    { to: '/seller', label: t('sellerPageFooterLink') },
-    { to: '/news', label: t('news') },
-    { to: '/sections', label: t('footerAllSections') },
-    { to: '/about#about-intro', label: t('aboutUs') },
-  ]
-
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerObjectLinksCol1 = [
-    { to: '/auction', label: t('auction') },
-    { to: '/auction/buy-now', label: t('buyNowSectionTitle') },
-    { to: CO_INVESTMENT_PATH, label: t('coInvestment') },
-    { to: '/debts', label: t('debtsTitle') },
-    { to: '/test-drive', label: t('testDrive') },
-  ]
-
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerObjectLinksCol2 = [
-    { to: '/map', label: t('mapLink') },
-    { to: '/compare', label: t('footerCompareObjects') },
-    { to: '/favorites', label: t('footerLiked') },
-    { to: '/private-club', label: t('privateClubPageTitle') },
-  ]
-
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerProfileLinks = [
-    { to: cabinetProfilePath, label: t('profile') },
-    { onClick: goWallet, label: t('wallet') },
-    { to: '/bonuses', label: t('bonuses') },
-    { to: cabinetDataPath, label: t('footerPersonalData') },
-  ]
-
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerAccountLinks = [
-    { to: cabinetDataPath, label: t('footerDocumentsSection') },
-    isBuyerSignedIn
-      ? { onClick: handleBecomeSellerRegister, label: t('becomeSeller') }
-      : { to: '/about#about-intro', label: t('footerForInvestors') },
-    { to: '/about#about-intro', label: t('footerOurTeam') },
-    { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
-  ]
-
-  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
-  const footerServiceLinks = [
-    { to: '/calculator', label: t('calculator') },
-    { to: '/chat?manager=1', label: t('chat') },
-    { to: '/chat?manager=1', label: t('footerTechSupport') },
-    { to: '/test', label: 'Тест' },
-  ]
-
-  /** @type {Array<{ title?: string | null; links: Array<{ to?: string; onClick?: () => void; label: string }> }>} */
-  const desktopColumns = [
-    { title: t('footerColSite'), links: footerSiteLinks },
-    { title: t('footerColListings'), links: footerObjectLinksCol1 },
-    { title: null, links: footerObjectLinksCol2 },
-    { title: t('footerColProfile'), links: footerProfileLinks },
-    { title: t('footerColCompany'), links: footerAccountLinks },
-    { title: t('footerColServices'), links: footerServiceLinks },
-  ]
-
-  const mobileCol1 = [
-    ...footerSiteLinks,
-    ...footerObjectLinksCol1,
-    ...footerObjectLinksCol2,
-  ]
-  const mobileCol2 = [
-    ...footerProfileLinks,
-    ...footerAccountLinks,
-    ...footerServiceLinks,
+  /** @type {FooterColumn[]} */
+  const footerColumns = [
+    {
+      title: t('footerColTrading'),
+      links: [
+        { to: '/', label: t('home') },
+        { to: '/auction', label: t('auction') },
+        { to: CO_INVESTMENT_PATH, label: t('footerShares') },
+        { to: '/debts', label: t('debtsTitle') },
+        { to: '/auction/buy-now', label: t('footerBuyNowShort') },
+      ],
+    },
+    {
+      title: t('footerColTools'),
+      links: [
+        { onClick: goWallet, label: t('buyerCabinet_tileDepositTitle'), requiresAuth: true },
+        { to: '/calculator', label: t('calculator'), requiresAuth: true },
+        { to: '/compare', label: t('footerCompareObjects'), requiresAuth: true },
+        { to: '/favorites', label: t('footerLiked'), requiresAuth: true },
+        { to: '/test-drive', label: t('testDrive') },
+      ],
+    },
+    {
+      title: t('footerColForYou'),
+      links: [
+        { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs'), requiresAuth: true },
+        { to: '/bonuses', label: t('bonuses'), requiresAuth: true },
+        { to: '/news', label: t('news') },
+        { to: '/chat', label: t('aiAssistant'), requiresAuth: true },
+        { to: '/sections', label: t('footerAllSections') },
+      ],
+    },
+    {
+      title: t('footerColProfile'),
+      links: [
+        { to: cabinetProfilePath, label: t('profile'), requiresAuth: true },
+        { to: '/wallet', label: t('footerAssets'), requiresAuth: true },
+        { to: '/profile/bookings', label: t('buyerCabinet_myBookings'), requiresAuth: true },
+        { to: '/history', label: t('history'), requiresAuth: true },
+      ],
+    },
+    {
+      title: t('footerColCompany'),
+      links: [
+        { to: '/about#about-intro', label: t('aboutUs') },
+        { to: '/seller', label: t('footerForSeller') },
+        { to: '/buyer', label: t('sectionsBuyerPageLink') },
+        { to: '/about#about-agents', label: t('footerOurTeam') },
+        { to: '/about#contacts', label: t('footerBecomePartner') },
+      ],
+    },
   ]
 
   const renderLink = (item, i, keyPrefix) => {
@@ -211,13 +173,13 @@ const Footer = () => {
         </button>
       )
     }
-    if (routeRequiresSiteLogin(item.to)) {
+    if (linkNeedsAuth(item) && !isSiteUserSignedIn(user, userLoaded)) {
       return (
         <button
           key={key}
           type="button"
           className="footer__menu-link"
-          onClick={() => handleFooterProtectedNav(item.to)}
+          onClick={() => handleFooterProtectedNav(item.to, item.requiresAuth)}
         >
           {item.label}
         </button>
@@ -245,57 +207,42 @@ const Footer = () => {
       className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}${isLanguageDropdownOpen ? ' footer--language-open' : ''}`}
     >
       <div className="footer__container">
-        <div className="footer__upper">
-          <div className="footer__upper-left">
-            <div className="footer__nav-qr">
-              <div className="footer__menus-inner">
-                <div className="footer__menu footer__menu--desktop">
-                  {desktopColumns.map((col, ci) => (
-                    <div key={ci} className="footer__menu-column">
-                      {col.title ? (
-                        <p className="footer__menu-heading">{col.title}</p>
-                      ) : (
-                        <span className="footer__menu-heading footer__menu-heading--spacer" aria-hidden="true" />
-                      )}
-                      {col.links.map((item, i) => renderLink(item, i, `d${ci}`))}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="footer__menu footer__menu--mobile">
-                  <div className="footer__menu-column">{mobileCol1.map((item, i) => renderLink(item, i, 'm1'))}</div>
-                  <div className="footer__menu-column">{mobileCol2.map((item, i) => renderLink(item, i, 'm2'))}</div>
-                </div>
-              </div>
-
-              <div className="footer__whatsapp-qr">
-                <img
-                  src={whatsappQR}
-                  alt="WhatsApp QR"
-                  className="footer__qr-image"
-                  width={130}
-                  height={130}
-                  loading="lazy"
-                  decoding="async"
-                />
-                <p className="footer__qr-caption">{t('footerWhatsappScan')}</p>
-              </div>
-
-              {renderFooterBrand('footer__brand footer__brand--mobile')}
+        <nav className="footer__nav-grid" aria-label={t('footerAllSections')}>
+          {footerColumns.map((col, ci) => (
+            <div key={col.title} className="footer__menu-column">
+              <p className="footer__menu-heading">{col.title}</p>
+              {col.links.map((item, i) => renderLink(item, i, `c${ci}`))}
             </div>
-          </div>
+          ))}
+        </nav>
 
-          <div className="footer__upper-right">
-            <div className="footer__store-buttons">
-            {renderFooterBrand('footer__brand footer__brand--inline footer__brand--desktop-inline')}
+        <div className="footer__bottom-panel">
+          {renderFooterBrand('footer__brand footer__brand--panel')}
+
+          <div className="footer__actions-row">
+            <div className="footer__socials" aria-label={t('sectionsSocialAria')}>
+              {SOCIAL_LINKS.map(({ labelKey, href, Icon }) => (
+                <a
+                  key={labelKey}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer__social-btn"
+                  aria-label={t(labelKey)}
+                >
+                  <Icon aria-hidden size={16} />
+                </a>
+              ))}
+            </div>
+
             <button
               type="button"
-              className="footer__store-btn"
+              className="footer__store-btn footer__store-btn--compact"
               onClick={openStoreComingSoon}
               aria-label={t('downloadGooglePlay')}
             >
               <div className="footer__store-icon footer__store-icon--google">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5Z" fill="#4285F4"/>
                   <path d="M16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12Z" fill="#EA4335"/>
                   <path d="M6.05 2.66L16.81 8.88L14.54 11.15L6.05 2.66Z" fill="#FBBC04"/>
@@ -309,37 +256,32 @@ const Footer = () => {
 
             <button
               type="button"
-              className="footer__store-btn"
+              className="footer__store-btn footer__store-btn--compact"
               onClick={openStoreComingSoon}
               aria-label={`${t('downloadIn')} App Store`}
             >
               <div className="footer__store-icon">
-                <FaApple size={18} />
+                <FaApple size={16} />
               </div>
               <div className="footer__store-text">
                 <span className="footer__store-name">App Store</span>
               </div>
             </button>
 
-            <a
-              href={WHATSAPP_HREF}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer__store-btn"
-              aria-label="WhatsApp"
-            >
-              <div className="footer__store-icon footer__store-icon--whatsapp">
-                <FaWhatsapp size={18} />
-              </div>
-              <div className="footer__store-text">
-                <span className="footer__store-name">WhatsApp</span>
-              </div>
-            </a>
+            <img
+              src={whatsappQR}
+              alt={t('footerQrApp')}
+              className="footer__qr-image footer__qr-image--inline"
+              width={40}
+              height={40}
+              loading="lazy"
+              decoding="async"
+            />
 
             <div className="footer__language-selector" ref={languageDropdownRef}>
               <button
                 type="button"
-                className="footer__language-selector-btn"
+                className="footer__language-selector-btn footer__language-selector-btn--compact"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                 aria-label={t('selectLanguageAria')}
                 aria-expanded={isLanguageDropdownOpen}
@@ -347,7 +289,7 @@ const Footer = () => {
                 <span className={`footer__language-flag ${currentLanguage.flagClass}`} />
                 <span className="footer__language-name">{currentLanguage.name}</span>
                 <FiChevronDown
-                  size={16}
+                  size={14}
                   className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
                 />
               </button>
@@ -371,7 +313,6 @@ const Footer = () => {
               )}
             </div>
           </div>
-        </div>
         </div>
 
         <div className="footer__legal">

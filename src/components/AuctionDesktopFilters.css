@@ -1,7 +1,7 @@
 .auction-desktop-filters {
-  --auction-tiffany: #0abab5;
-  --auction-tiffany-soft: rgba(10, 186, 181, 0.14);
-  --auction-tiffany-ring: rgba(10, 186, 181, 0.28);
+  --auction-tiffany: #0099A9;
+  --auction-tiffany-soft: rgba(0, 153, 169, 0.14);
+  --auction-tiffany-ring: rgba(0, 153, 169, 0.28);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -63,7 +63,7 @@
 .auction-desktop-filters__chip:hover {
   border-color: var(--auction-tiffany-ring);
   background: var(--auction-tiffany-soft);
-  color: #0f766e;
+  color: #00605a;
 }
 
 .auction-desktop-filters__sections {
@@ -223,10 +223,10 @@
 .auction-desktop-filters__slider-fill {
   left: var(--range-left, 0%);
   width: var(--range-width, 100%);
-  background: linear-gradient(90deg, #0abab5 0%, #14c4bf 52%, #089a96 100%);
+  background: linear-gradient(90deg, #0099A9 0%, #14c4bf 52%, #007d8a 100%);
   box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.18),
-    0 4px 14px rgba(10, 186, 181, 0.28);
+    0 0 0 1px rgba(0, 153, 169, 0.18),
+    0 4px 14px rgba(0, 153, 169, 0.28);
   transition:
     left 0.12s ease,
     width 0.12s ease;
@@ -275,10 +275,10 @@
   margin-top: calc((6px - var(--slider-thumb-size)) / 2);
   border-radius: 50%;
   border: 3px solid #fff;
-  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0abab5 55%, #089a96 100%);
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0099A9 55%, #007d8a 100%);
   box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.35),
-    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 0 0 1px rgba(0, 153, 169, 0.35),
+    0 4px 12px rgba(0, 153, 169, 0.35),
     0 2px 4px rgba(15, 23, 42, 0.12);
   pointer-events: auto;
   cursor: grab;
@@ -292,10 +292,10 @@
   height: var(--slider-thumb-size);
   border-radius: 50%;
   border: 3px solid #fff;
-  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0abab5 55%, #089a96 100%);
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0099A9 55%, #007d8a 100%);
   box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.35),
-    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 0 0 1px rgba(0, 153, 169, 0.35),
+    0 4px 12px rgba(0, 153, 169, 0.35),
     0 2px 4px rgba(15, 23, 42, 0.12);
   pointer-events: auto;
   cursor: grab;
@@ -309,16 +309,16 @@
   cursor: grabbing;
   transform: scale(1.08);
   box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.45),
-    0 6px 18px rgba(10, 186, 181, 0.42),
+    0 0 0 1px rgba(0, 153, 169, 0.45),
+    0 6px 18px rgba(0, 153, 169, 0.42),
     0 2px 6px rgba(15, 23, 42, 0.14);
 }
 
 .auction-desktop-filters__range:focus-visible::-webkit-slider-thumb,
 .auction-desktop-filters__range:focus-visible::-moz-range-thumb {
   box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.45),
-    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 0 0 1px rgba(0, 153, 169, 0.45),
+    0 4px 12px rgba(0, 153, 169, 0.35),
     0 0 0 5px var(--auction-tiffany-ring);
 }
 
@@ -357,12 +357,12 @@
     transform 0.15s ease,
     box-shadow 0.2s ease,
     background 0.2s ease;
-  box-shadow: 0 8px 22px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 8px 22px rgba(0, 153, 169, 0.28);
 }
 
 .auction-desktop-filters__apply:hover {
-  background: #089a96;
-  box-shadow: 0 10px 26px rgba(10, 186, 181, 0.34);
+  background: #007d8a;
+  box-shadow: 0 10px 26px rgba(0, 153, 169, 0.34);
 }
 
 .auction-desktop-filters__apply:active {
@@ -386,9 +386,9 @@
 }
 
 .auction-desktop-filters__clear:hover {
-  border-color: rgba(10, 186, 181, 0.35);
-  color: #0f766e;
-  background: rgba(10, 186, 181, 0.06);
+  border-color: rgba(0, 153, 169, 0.35);
+  color: #00605a;
+  background: rgba(0, 153, 169, 0.06);
 }
 
 .catalog-desktop-filters__location-fields {
@@ -434,12 +434,12 @@
 }
 
 .catalog-desktop-filters__room-pill:hover {
-  border-color: rgba(10, 186, 181, 0.45);
-  color: #0f766e;
+  border-color: rgba(0, 153, 169, 0.45);
+  color: #00605a;
 }
 
 .catalog-desktop-filters__room-pill.is-active {
-  border-color: rgba(10, 186, 181, 0.7);
-  background: rgba(10, 186, 181, 0.12);
-  color: #0f766e;
+  border-color: rgba(0, 153, 169, 0.7);
+  background: rgba(0, 153, 169, 0.12);
+  color: #00605a;
 }
