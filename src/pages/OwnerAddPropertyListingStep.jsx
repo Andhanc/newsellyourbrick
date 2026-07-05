@@ -27,7 +27,7 @@ const LISTING_MODE_META = {
   },
 }
 
-function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
+function ListingModesList({ listingModes, listingMode, errors, onSelectMode, journeyLayout = false }) {
   const { t } = useTranslation()
 
   return (
@@ -52,16 +52,33 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
               className={`oap-listing-step__mode oap-listing-step__mode--${tone}${isActive ? ' oap-listing-step__mode--active' : ''}`}
               onClick={() => onSelectMode(mode.id)}
             >
-              <span
-                className={`oap-listing-step__mode-icon oap-listing-step__mode-icon--${tone}`}
-                aria-hidden
-              >
-                <ModeIcon size={18} strokeWidth={1.75} />
-              </span>
-              <span className="oap-listing-step__mode-body">
-                <span className="oap-listing-step__mode-label">{mode.label}</span>
-                <span className="oap-listing-step__mode-desc">{mode.description}</span>
-              </span>
+              {journeyLayout ? (
+                <>
+                  <span className="oap-listing-step__mode-body">
+                    <span className="oap-listing-step__mode-label">{mode.label}</span>
+                    <span className="oap-listing-step__mode-desc">{mode.description}</span>
+                  </span>
+                  <span
+                    className={`oap-listing-step__mode-icon oap-listing-step__mode-icon--${tone}`}
+                    aria-hidden
+                  >
+                    <ModeIcon size={18} strokeWidth={1.75} />
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className={`oap-listing-step__mode-icon oap-listing-step__mode-icon--${tone}`}
+                    aria-hidden
+                  >
+                    <ModeIcon size={18} strokeWidth={1.75} />
+                  </span>
+                  <span className="oap-listing-step__mode-body">
+                    <span className="oap-listing-step__mode-label">{mode.label}</span>
+                    <span className="oap-listing-step__mode-desc">{mode.description}</span>
+                  </span>
+                </>
+              )}
               <span className="oap-listing-step__mode-mark" aria-hidden>
                 {isActive ? <Check size={12} strokeWidth={2.5} /> : null}
               </span>
@@ -76,6 +93,7 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
 
 export default function OwnerAddPropertyListingStep({
   embedded = false,
+  journeyLayout = false,
   listingModes,
   listingMode,
   errors = {},
@@ -87,6 +105,7 @@ export default function OwnerAddPropertyListingStep({
     return (
       <section className="oap-listing-step oap-listing-step--embedded">
         <ListingModesList
+          journeyLayout={journeyLayout}
           listingModes={listingModes}
           listingMode={listingMode}
           errors={errors}

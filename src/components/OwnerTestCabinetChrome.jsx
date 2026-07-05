@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Crown, X, Plus } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import OwnerTestProfileMenu from './OwnerTestProfileMenu'
 import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
@@ -147,22 +147,6 @@ export default function OwnerTestCabinetChrome({ children }) {
     </button>
   )
 
-  const renderVipPromo = () => (
-    <button
-      type="button"
-      className="otc-vip-promo"
-      onClick={() => {
-        goTo(OWNER_VIEWS.SUBSCRIPTIONS)
-        closeMenu()
-      }}
-    >
-      <Crown className="otc-vip-promo__crown" size={19} strokeWidth={2.3} aria-hidden />
-      <strong>{t('privateClubVipGateCtaVip', { defaultValue: 'Обновитесь до VIP' })}</strong>
-      <span>{t('ownerTest_adPremiumText')}</span>
-      <i aria-hidden />
-    </button>
-  )
-
   return (
     <SiteChatDock hideFab wrapperClassName="owner-cabinet-chat-dock">
       <div
@@ -212,7 +196,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav otc-nav--drawer">
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
-          {renderVipPromo()}
         </nav>
       </aside>
 
@@ -225,7 +208,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner />
-          {renderVipPromo()}
         </nav>
       </aside>
 

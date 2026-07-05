@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -27,6 +27,7 @@ import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import { getOwnerProfileFieldLabel, getOwnerSubscriptionPlanLabel, getOwnerTestIntlLocale, getNextOwnerSubscriptionPlanId, resolveProfileSubscriptionPlanId } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
@@ -201,8 +202,8 @@ function LogoMark({ className = '' }) {
     <svg className={`opr-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="opr-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#33adbb" />
-          <stop offset="100%" stopColor="#007d8a" />
+          <stop offset="0%" stopColor="#6ba3b2" />
+          <stop offset="100%" stopColor="#3a7586" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#opr-logo-grad)" />
@@ -222,19 +223,36 @@ function LogoMark({ className = '' }) {
 }
 
 function ProfileAvatar({ large = false }) {
+  const photoUrl = useOwnerTestUserPhoto()
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const gradientId = useId()
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [photoUrl])
+
   return (
     <span className={`opr-avatar${large ? ' opr-avatar--lg' : ''}`} aria-hidden>
-      <svg viewBox="0 0 80 80">
-        <defs>
-          <linearGradient id="opr-avatar-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#33adbb" />
-            <stop offset="100%" stopColor="#007d8a" />
-          </linearGradient>
-        </defs>
-        <circle cx="40" cy="40" r="40" fill="url(#opr-avatar-grad)" />
-        <circle cx="40" cy="32" r="14" fill="#F8FAFC" />
-        <ellipse cx="40" cy="68" rx="22" ry="16" fill="#F8FAFC" />
-      </svg>
+      {photoUrl && !photoFailed ? (
+        <img
+          src={photoUrl}
+          alt=""
+          className="opr-avatar__img"
+          onError={() => setPhotoFailed(true)}
+        />
+      ) : (
+        <svg viewBox="0 0 80 80">
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#6ba3b2" />
+              <stop offset="100%" stopColor="#3a7586" />
+            </linearGradient>
+          </defs>
+          <circle cx="40" cy="40" r="40" fill={`url(#${gradientId})`} />
+          <circle cx="40" cy="32" r="14" fill="#F8FAFC" />
+          <ellipse cx="40" cy="68" rx="22" ry="16" fill="#F8FAFC" />
+        </svg>
+      )}
     </span>
   )
 }
@@ -892,26 +910,29 @@ export default function OwnerProfileTestPage() {
                   </div>
                 </div>
 
-                <div className="opr-profile-overview__facts">
+                <div className="opr-profile-overview__cards">
                   {quickFacts.map((fact) => {
                     const Icon = fact.icon
                     return (
-                      <div key={fact.label} className="opr-profile-overview__fact">
+                      <div key={fact.label} className="opr-profile-overview__card opr-profile-overview__card--fact">
                         <span className="opr-profile-overview__fact-icon" aria-hidden>
                           <Icon size={16} strokeWidth={2.2} />
                         </span>
-                        <span className="opr-profile-overview__fact-label">{fact.label}</span>
-                        <strong className="opr-profile-overview__fact-value">{fact.value}</strong>
+                        <div className="opr-profile-overview__fact-body">
+                          <span className="opr-profile-overview__fact-label">{fact.label}</span>
+                          <strong className="opr-profile-overview__fact-value" title={fact.value}>
+                            {fact.value}
+                          </strong>
+                        </div>
                       </div>
                     )
                   })}
-                </div>
-
-                <div className="opr-profile-overview__completion-wrap">
-                  <OwnerProfileCompletionBanner
-                    variant="sidebar"
-                    onMissingFieldClick={focusProfileField}
-                  />
+                  <div className="opr-profile-overview__card opr-profile-overview__card--completion">
+                    <OwnerProfileCompletionBanner
+                      variant="card"
+                      onMissingFieldClick={focusProfileField}
+                    />
+                  </div>
                 </div>
               </section>
             )}

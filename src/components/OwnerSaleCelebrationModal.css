@@ -166,12 +166,12 @@
   margin: 0 0 6px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #007d8a;
+  color: #3a7586;
   line-height: 1.2;
 }
 
 .owner-sale-celebration-modal__headline--vip {
-  color: #0099A9;
+  color: #4a90a2;
 }
 
 .owner-sale-celebration-modal__subhead {
@@ -221,7 +221,7 @@
 }
 
 .owner-sale-celebration-modal__detail-fee {
-  color: #0099A9;
+  color: #4a90a2;
   font-weight: 700;
 }
 
@@ -229,7 +229,7 @@
   margin: 0 0 22px;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #007d8a;
+  color: #3a7586;
 }
 
 .owner-sale-celebration-modal__actions {
@@ -246,7 +246,7 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  background: #007580;
+  background: #356970;
   color: #fff;
   transition: filter 0.2s, transform 0.15s;
 }
@@ -266,14 +266,14 @@
   border-radius: 14px;
   font-size: 14px;
   font-weight: 700;
-  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(74, 144, 162, 0.85) 0%, rgba(53, 105, 112, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 4px 16px rgba(0, 153, 169, 0.3),
+    0 4px 16px rgba(74, 144, 162, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -313,12 +313,12 @@
 }
 
 .owner-sale-celebration-modal__btn-primary--vip:hover {
-  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(74, 144, 162, 0.95) 0%, rgba(53, 105, 112, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(0, 153, 169, 0.4),
+    0 6px 20px rgba(74, 144, 162, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);

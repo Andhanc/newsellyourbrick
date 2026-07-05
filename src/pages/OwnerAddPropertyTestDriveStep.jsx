@@ -48,31 +48,53 @@ export default function OwnerAddPropertyTestDriveStep({
     />
   )
 
+  const toggleIcon = (
+    <span className="oap-testdrive-step__toggle-icon" aria-hidden>
+      <Video size={embedded ? 18 : 20} strokeWidth={1.75} />
+    </span>
+  )
+
+  const toggleCopy = (
+    <div className="oap-testdrive-step__toggle-copy">
+      <span className="oap-testdrive-step__toggle-label">
+        {embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
+      </span>
+      <span className="oap-testdrive-step__toggle-hint">
+        {embedded
+          ? t('oap_testDriveHint')
+          : `${t('oap_testDriveHint')}${propertyTypeOption?.label ? ` · ${propertyTypeOption.label.toLowerCase()}` : ''}`}
+      </span>
+    </div>
+  )
+
+  const toggleSwitch = (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isEnabled}
+      aria-label={embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
+      className={`oap-testdrive-step__switch${isEnabled ? ' oap-testdrive-step__switch--on' : ''}`}
+      onClick={handleToggle}
+    >
+      <span className="oap-testdrive-step__switch-thumb" />
+    </button>
+  )
+
   const toggleRow = (
     <div className="oap-testdrive-step__toggle-row">
-      <span className="oap-testdrive-step__toggle-icon" aria-hidden>
-        <Video size={embedded ? 18 : 20} strokeWidth={1.75} />
-      </span>
-      <div className="oap-testdrive-step__toggle-copy">
-        <span className="oap-testdrive-step__toggle-label">
-          {embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
-        </span>
-        <span className="oap-testdrive-step__toggle-hint">
-          {embedded
-            ? t('oap_testDriveHint')
-            : `${t('oap_testDriveHint')}${propertyTypeOption?.label ? ` · ${propertyTypeOption.label.toLowerCase()}` : ''}`}
-        </span>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isEnabled}
-        aria-label={embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
-        className={`oap-testdrive-step__switch${isEnabled ? ' oap-testdrive-step__switch--on' : ''}`}
-        onClick={handleToggle}
-      >
-        <span className="oap-testdrive-step__switch-thumb" />
-      </button>
+      {journeyLayout ? (
+        <>
+          {toggleCopy}
+          {toggleSwitch}
+          {toggleIcon}
+        </>
+      ) : (
+        <>
+          {toggleIcon}
+          {toggleCopy}
+          {toggleSwitch}
+        </>
+      )}
     </div>
   )
 

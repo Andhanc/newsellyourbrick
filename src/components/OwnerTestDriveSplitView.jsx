@@ -23,12 +23,14 @@ import {
   getOwnerTestDriveUserId,
 } from '../utils/ownerTestDriveList'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '../hooks/useDrawerDismiss'
+import { publicAsset } from '../utils/publicAsset'
 import '../components/OwnerTestDriveSection.css'
 import './OwnerTestDriveSplitView.css'
 import OtdMobHeroArt from './OtdMobHeroArt'
 
 const FALLBACK_PROPERTY_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
+const SELECT_EMPTY_IMAGE = publicAsset('images/owner-properties-test/owner-testdrive-select-empty.png')
 
 function hasTestDriveFlag(prop) {
   const raw = prop?.raw ?? prop
@@ -262,7 +264,7 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
   })
 
   const showPropertyList = true
-  const showDetailPanel = !isMobile && Boolean(selectedKey)
+  const showDetailPanel = !isMobile
 
   useEffect(() => {
     if (!drawerVisible) return undefined
@@ -334,11 +336,23 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
 
   const renderSelectHint = () => (
     <div className="otd-split__empty otd-split__empty--hint">
-      <div className="otd-split__empty-icon otd-split__empty-icon--hint" aria-hidden>
-        <MousePointerClick size={40} strokeWidth={1.5} />
+      <div className="otd-split__empty-art" aria-hidden>
+        <img
+          src={SELECT_EMPTY_IMAGE}
+          alt=""
+          className="otd-split__empty-image"
+          loading="lazy"
+        />
       </div>
-      <p className="otd-split__empty-title">{t('ownerTestDriveSplitSelectTitle')}</p>
-      <p className="otd-split__empty-text">{t('ownerTestDriveSplitSelectText')}</p>
+      <div className="otd-split__empty-tip">
+        <span className="otd-split__empty-icon otd-split__empty-icon--hint" aria-hidden>
+          <MousePointerClick size={22} strokeWidth={1.8} />
+        </span>
+        <span className="otd-split__empty-copy">
+          <span className="otd-split__empty-title">{t('ownerTestDriveSplitSelectTitle')}</span>
+          <span className="otd-split__empty-text">{t('ownerTestDriveSplitSelectText')}</span>
+        </span>
+      </div>
     </div>
   )
 

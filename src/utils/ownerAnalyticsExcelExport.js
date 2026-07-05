@@ -3,10 +3,10 @@
  */
 
 const BRAND_NAVY = '#1e3a5f'
-/** Фирменный тиффани, как в UI (#0099A9) */
-const BRAND_TIFFANY = '#0099A9'
+/** Фирменный тиффани, как в UI (#4a90a2) */
+const BRAND_TIFFANY = '#4a90a2'
 /** Светлый фон под итоги (в тон тиффани) */
-const FILL_TIFFANY_SOFT = 'FFE6FAF9'
+const FILL_TIFFANY_SOFT = 'FFE8F1F4'
 
 const SALE_TYPE_LABELS = {
   auction: 'Аукцион',
@@ -218,7 +218,7 @@ export async function exportOwnerAnalyticsExcel({
   totalBanner.getCell(1).fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FF0099A9' },
+    fgColor: { argb: 'FF4A90A2' },
   }
   totalBanner.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' }
   totalBanner.height = 24

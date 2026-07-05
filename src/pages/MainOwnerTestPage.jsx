@@ -34,7 +34,6 @@ import {
 } from 'lucide-react'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
-import OwnerNoBidsIllustration from '../components/OwnerNoBidsIllustration'
 import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
 import OwnerEmptyLikesIllustration from '../components/OwnerEmptyLikesIllustration'
@@ -61,6 +60,7 @@ import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getOwnerProfileTabPath } from './ownerProfileTestTabs'
 import { OWNER_TEST_STANDALONE_HREF_MAP, OWNER_VIEWS, ownerTestHref } from '../utils/ownerTestNav'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { publicAsset } from '../utils/publicAsset'
 import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
 import './MainOwnerTestPage.css'
 import './MainOwnerTestPage.mobile.css'
@@ -75,9 +75,10 @@ ChartJS.register(
   Legend
 )
 
-const MOT_TIFFANY = '#0099A9'
+const MOT_TIFFANY = '#4a90a2'
 const MOT_EVENT_FALLBACK_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
+const MOT_EVENTS_EMPTY_IMAGE = publicAsset('images/owner-properties-test/owner-events-empty.png')
 const CHART_LINE_TENSION = 0.42
 
 const CHART_FILL_RGB = {
@@ -445,8 +446,8 @@ function LogoMark({ className = '' }) {
     <svg className={`mot-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="mot-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#33adbb" />
-          <stop offset="100%" stopColor="#007d8a" />
+          <stop offset="0%" stopColor="#6ba3b2" />
+          <stop offset="100%" stopColor="#3a7586" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#mot-logo-grad)" />
@@ -485,9 +486,9 @@ function Sparkline({ variant, className = '', filled = false }) {
 }
 
 const ACTIVITY_TONES = {
-  blue: { bg: '#e6f6f8', fg: MOT_TIFFANY },
+  blue: { bg: '#e8f1f4', fg: MOT_TIFFANY },
   teal: { bg: MOT_TIFFANY, fg: '#ffffff' },
-  green: { bg: '#e6f6f8', fg: '#22C55E' },
+  green: { bg: '#e8f1f4', fg: '#22C55E' },
   orange: { bg: '#fff7ed', fg: '#F59E0B' },
   red: { bg: '#fef2f2', fg: '#EF4444' },
 }
@@ -568,7 +569,9 @@ function EndingSoonPropertiesStrip({
   if (hasNoProperties) {
     return (
       <section className="mot-ending-strip mot-ending-strip--empty" aria-label={title}>
-        <h2 className="mot-ending-strip__title">{title}</h2>
+        <div className="mot-section-head">
+          <h2 className="mot-section-head__title">{title}</h2>
+        </div>
         <OwnerEmptyStatePanel
           illustration={OwnerEmptyPropertiesIllustration}
           title={t('ownerTest_emptyNoPropertiesTitle')}
@@ -582,7 +585,14 @@ function EndingSoonPropertiesStrip({
 
   return (
     <section className="mot-ending-strip" aria-label={title}>
-      <h2 className="mot-ending-strip__title">{title}</h2>
+      <div className="mot-section-head">
+        <h2 className="mot-section-head__title">{title}</h2>
+        {onViewAll ? (
+          <button type="button" className="mot-section-head__link mot-desktop-only" onClick={onViewAll}>
+            {t('ownerTest_propertiesTabAll')}
+          </button>
+        ) : null}
+      </div>
       <div className="mot-ending-strip__scroll" ref={scrollRef} onScroll={updateActiveDot}>
         {visibleProperties.map((property) => (
           <EndingSoonPropertyCard
@@ -671,13 +681,17 @@ function MotRatingPromoCard({ t, goTo }) {
     <>
       <span className="mot-rating-promo__bg" aria-hidden />
       <span className="mot-rating-promo__shine" aria-hidden />
+      <span className="mot-rating-promo__wash" aria-hidden />
       <div className="mot-rating-promo__copy">
+        <span className="mot-rating-promo__badge">{t('ownerTest_ratingPromoBadge')}</span>
         <h2 className="mot-rating-promo__title">{t('ownerTest_ratingPromoTitle')}</h2>
         <p className="mot-rating-promo__text">{t('ownerTest_ratingPromoText')}</p>
+        <span className="mot-rating-promo__cta">{t('ownerTest_ratingPromoBtn')}</span>
       </div>
       <div className="mot-rating-promo__art-wrap" aria-hidden>
+        <span className="mot-rating-promo__art-glow" />
         <img
-          src={MOT_PROMO_IMAGES.ratingTrophy}
+          src={MOT_PROMO_IMAGES.ratingBoostBanner}
           alt=""
           className="mot-rating-promo__art"
           loading="lazy"
@@ -765,8 +779,8 @@ function MotMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#33adbb" />
-                <stop offset="100%" stopColor="#007d8a" />
+                <stop offset="0%" stopColor="#6ba3b2" />
+                <stop offset="100%" stopColor="#3a7586" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -884,7 +898,7 @@ export default function MainOwnerTestPage() {
         key: 'views',
         label: t('ownerTest_chartFilterViews'),
         color: MOT_TIFFANY,
-        backgroundColor: 'rgba(0, 153, 169, 0.12)',
+        backgroundColor: 'rgba(74, 144, 162, 0.12)',
         fill: true,
       },
       {
@@ -1561,32 +1575,24 @@ export default function MainOwnerTestPage() {
           </div>
         </section>
 
-        <section className="mot-metrics mot-desktop-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
-          {metrics.map((m) => {
-            const Icon = m.icon
-            return (
-              <article key={m.id} className="mot-card mot-metric mot-metric--stat">
-                <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
-                <div className={`mot-metric__icon mot-metric__icon--${m.iconTone}`}>
-                  <Icon size={28} strokeWidth={2} aria-hidden />
+        <section className="mot-metrics mot-metrics--summary mot-desktop-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
+          {metrics.map((m) => (
+            <article key={m.id} className="mot-metric mot-metric--summary">
+              <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
+              <h3 className="mot-metric__label">{m.label}</h3>
+              {overviewLoading ? (
+                <>
+                  <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
+                  <span className="owner-cab-skel-line owner-cab-skel-line--metric-delta" aria-hidden />
+                </>
+              ) : (
+                <div className="mot-metric__figures">
+                  <p className="mot-metric__value">{m.value}</p>
+                  <p className="mot-metric__delta mot-metric__delta--summary">{m.delta}</p>
                 </div>
-                <div className="mot-metric__content">
-                  <h3 className="mot-metric__label">{m.label}</h3>
-                  {overviewLoading ? (
-                    <>
-                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
-                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-delta" aria-hidden />
-                    </>
-                  ) : (
-                    <>
-                      <p className="mot-metric__value">{m.value}</p>
-                      <p className="mot-metric__delta">{m.delta}</p>
-                    </>
-                  )}
-                </div>
-              </article>
-            )
-          })}
+              )}
+            </article>
+          ))}
         </section>
 
         <div className="mot-hero-shell__fade" aria-hidden />
@@ -1612,6 +1618,7 @@ export default function MainOwnerTestPage() {
 
         <MotRatingPromoCard t={t} goTo={goTo} />
 
+        <div className="mot-insights">
         <section className="mot-row mot-row--chart">
           <article className="mot-card mot-chart-card">
             <div className="mot-chart-card__head">
@@ -1718,17 +1725,26 @@ export default function MainOwnerTestPage() {
 
         <section className="mot-row mot-row--events">
           <article className="mot-card mot-activity-card">
-            <div className="mot-activity-card__head">
-              <h2 className="mot-card__title">{t('ownerTest_notificationsEyebrow')}</h2>
-              {activeBidNotifications.length > 0 && (
+            <div className="mot-activity-card__head mot-section-head">
+              <h2 className="mot-section-head__title">{t('ownerTest_notificationsEyebrow')}</h2>
+              {activeBidNotifications.length > 0 ? (
                 <button
                   type="button"
-                  className="mot-link-btn mot-link-btn--all mot-mobile-only"
+                  className="mot-section-head__link mot-link-btn mot-link-btn--all mot-mobile-only"
                   onClick={() => setBidDrawerOpen(true)}
                 >
                   {t('ownerTest_propertiesTabAllShort')}
                 </button>
-              )}
+              ) : null}
+              {activeBidNotifications.length > 0 ? (
+                <button
+                  type="button"
+                  className="mot-section-head__link mot-link-btn mot-desktop-only"
+                  onClick={() => setBidDrawerOpen(true)}
+                >
+                  {t('ownerTest_notificationsTitle')}
+                </button>
+              ) : null}
             </div>
             {visibleBidNotifications.length > 0 ? (
               <ul className="mot-activity">
@@ -1742,20 +1758,21 @@ export default function MainOwnerTestPage() {
               </ul>
             ) : (
               <div className="mot-activity__empty">
-                <OwnerNoBidsIllustration className="mot-activity__empty-illustration" />
+                <img
+                  className="mot-activity__empty-illustration"
+                  src={MOT_EVENTS_EMPTY_IMAGE}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  aria-hidden="true"
+                />
                 <strong>{t('ownerTest_notificationsEmptyTitle')}</strong>
                 <p>{t('ownerTest_notificationsEmptyText')}</p>
               </div>
             )}
-            <button
-              type="button"
-              className="mot-link-btn mot-desktop-only"
-              onClick={() => setBidDrawerOpen(true)}
-            >
-              {t('ownerTest_notificationsTitle')}
-            </button>
           </article>
         </section>
+        </div>
 
       </div>
 

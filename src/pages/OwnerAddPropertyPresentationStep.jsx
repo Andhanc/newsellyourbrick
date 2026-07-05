@@ -30,6 +30,8 @@ export default function OwnerAddPropertyPresentationStep({
   onAddVideo,
   onRemoveVideo,
   hideCopySection = false,
+  hideAmenitiesSection = false,
+  hideMediaSection = false,
   hideWizardChrome = false,
 }) {
   const { t } = useTranslation()
@@ -161,48 +163,52 @@ export default function OwnerAddPropertyPresentationStep({
         </div>
         ) : null}
 
-        <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">
-          <OwnerAddPropertyStepAside
-            layout="inline"
-            variant="compact"
-            {...OAP_PRESENTATION_ROW_ASIDES.amenities}
-          />
+        {!hideAmenitiesSection ? (
+          <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">
+            <OwnerAddPropertyStepAside
+              layout="inline"
+              variant="compact"
+              {...OAP_PRESENTATION_ROW_ASIDES.amenities}
+            />
 
-          <div className="oap-presentation-step__zone oap-presentation-step__zone--amenities">
+            <div className="oap-presentation-step__zone oap-presentation-step__zone--amenities">
+              <OwnerAddPropertyWizardSection
+                number={3}
+                title={t('oap_presentationAmenitiesTitle')}
+                hint={t('oap_presentationAmenitiesHint')}
+              >
+                <OwnerAddPropertyAmenitiesStep
+                  embedded
+                  typeProfile={typeProfile}
+                  additionalAmenities={form.additionalAmenities}
+                  selectedAmenities={selectedAmenities}
+                  onAdditionalChange={onAdditionalChange}
+                  onToggleAmenity={onToggleAmenity}
+                />
+              </OwnerAddPropertyWizardSection>
+            </div>
+          </div>
+        ) : null}
+
+        {!hideMediaSection ? (
+          <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--media">
             <OwnerAddPropertyWizardSection
-              number={3}
-              title={t('oap_presentationAmenitiesTitle')}
-              hint={t('oap_presentationAmenitiesHint')}
+              number={4}
+              title={t('oap_presentationMediaTitle')}
+              hint={t('oap_presentationMediaHint')}
             >
-              <OwnerAddPropertyAmenitiesStep
+              <OwnerAddPropertyMediaStep
                 embedded
-                typeProfile={typeProfile}
-                additionalAmenities={form.additionalAmenities}
-                selectedAmenities={selectedAmenities}
-                onAdditionalChange={onAdditionalChange}
-                onToggleAmenity={onToggleAmenity}
+                photos={photos}
+                videos={videos}
+                onAddPhotos={onAddPhotos}
+                onRemovePhoto={onRemovePhoto}
+                onAddVideo={onAddVideo}
+                onRemoveVideo={onRemoveVideo}
               />
             </OwnerAddPropertyWizardSection>
           </div>
-        </div>
-
-        <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--media">
-          <OwnerAddPropertyWizardSection
-            number={4}
-            title={t('oap_presentationMediaTitle')}
-            hint={t('oap_presentationMediaHint')}
-          >
-            <OwnerAddPropertyMediaStep
-              embedded
-              photos={photos}
-              videos={videos}
-              onAddPhotos={onAddPhotos}
-              onRemovePhoto={onRemovePhoto}
-              onAddVideo={onAddVideo}
-              onRemoveVideo={onRemoveVideo}
-            />
-          </OwnerAddPropertyWizardSection>
-        </div>
+        ) : null}
       </div>
 
       {showDescriptionCompareModal && (

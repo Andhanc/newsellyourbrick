@@ -4,7 +4,7 @@ export default function OwnerPropertiesTableSkeleton({ rowCount = 5 }) {
   return (
     <div className="owner-cab-skel-properties" aria-busy="true">
       <div className="owner-cab-skel-table-head owner-cab-skel-table-row op-desktop-only" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, i) => (
+        {Array.from({ length: 5 }, (_, i) => (
           <span key={`head-${i}`} className="owner-cab-skel-line owner-cab-skel-line--sm" />
         ))}
       </div>
@@ -18,7 +18,6 @@ export default function OwnerPropertiesTableSkeleton({ rowCount = 5 }) {
                 <span className="owner-cab-skel-line owner-cab-skel-line--sm" />
               </div>
             </div>
-            <span className="owner-cab-skel-line owner-cab-skel-line--sm" />
             <span className="owner-cab-skel-line owner-cab-skel-line--sm" />
             <span className="owner-cab-skel-line owner-cab-skel-line--md" />
             <span className="owner-cab-skel-line owner-cab-skel-line--xs" />

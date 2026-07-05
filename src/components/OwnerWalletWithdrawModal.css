@@ -18,7 +18,7 @@
   background: #fff;
   box-shadow:
     0 24px 48px rgba(15, 23, 42, 0.18),
-    0 0 0 1px rgba(0, 153, 169, 0.08);
+    0 0 0 1px rgba(74, 144, 162, 0.08);
 }
 
 .oww-modal__head {
@@ -84,8 +84,8 @@
 }
 
 .oww-modal__amount-row:focus-within {
-  border-color: rgba(0, 153, 169, 0.45);
-  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
+  border-color: rgba(74, 144, 162, 0.45);
+  box-shadow: 0 0 0 3px rgba(74, 144, 162, 0.14);
   background: #fff;
 }
 
@@ -113,7 +113,7 @@
 }
 
 .oww-modal__hint strong {
-  color: #007d8a;
+  color: #3a7586;
   font-weight: 600;
 }
 
@@ -145,8 +145,8 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(0, 153, 169, 0.12);
-  color: #007d8a;
+  background: rgba(74, 144, 162, 0.12);
+  color: #3a7586;
   flex-shrink: 0;
 }
 
@@ -194,16 +194,16 @@
   margin-bottom: 20px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: rgba(0, 153, 169, 0.08);
-  border: 1px solid rgba(0, 153, 169, 0.18);
-  color: #007d8a;
+  background: rgba(74, 144, 162, 0.08);
+  border: 1px solid rgba(74, 144, 162, 0.18);
+  color: #3a7586;
 }
 
 .oww-modal__info p {
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
-  color: #00605a;
+  color: #2d5763;
 }
 
 .oww-modal__submit {
@@ -211,12 +211,12 @@
   padding: 14px 16px;
   border: none;
   border-radius: 14px;
-  background: #0099A9;
+  background: #4a90a2;
   color: #fff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.32);
+  box-shadow: 0 4px 14px rgba(74, 144, 162, 0.32);
   transition: opacity 0.15s, transform 0.1s;
 }
 

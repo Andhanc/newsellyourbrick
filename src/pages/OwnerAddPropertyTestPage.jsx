@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, Fragment, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n/config'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
@@ -10,13 +10,6 @@ import {
   Building2,
   Store,
   TreePine,
-  LayoutGrid,
-  FileText,
-  FileCheck2,
-  Gavel,
-  TrendingUp,
-  Clock,
-  Check,
 } from 'lucide-react'
 import {
   FiX,
@@ -49,12 +42,10 @@ import {
   hasMeaningfulDraftData,
 } from '../utils/oapAddPropertyDraft'
 import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
-import OwnerAddPropertyPresentationStep from './OwnerAddPropertyPresentationStep'
 import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
 import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
 import OwnerAddPropertyVerificationStep from './OwnerAddPropertyVerificationStep'
 import SellerVerificationModal from '../components/SellerVerificationModal'
-import OwnerSupportButton from '../components/OwnerSupportButton'
 import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -70,6 +61,7 @@ import { preloadOapWizardImages } from './oapWizardImages'
 import { OapAddPropertyMobileWelcome } from '../components/OapAddPropertyMobileScreens'
 import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
 import OapJourneyPublishLoader from '../components/OapJourneyPublishLoader'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import OapAddPropertyMobileMedia from '../components/OapAddPropertyMobileMedia'
 import OwnerAddPropertyAmenitiesStep from './OwnerAddPropertyAmenitiesStep'
 import '../components/OapAddPropertyMobileScreens.css'
@@ -77,7 +69,6 @@ import '../components/OapAddPropertyMobileMedia.css'
 import '../components/OapAddPropertyJourneyStrip.css'
 import '../components/OapAddPropertyJourneyProgress.css'
 import './OwnerAddPropertyBasicsStep.css'
-import './OwnerAddPropertyPresentationStep.css'
 import './OwnerAddPropertyStrategyStep.css'
 import './OwnerAddPropertyFinanceStep.css'
 import './OwnerAddPropertyVerificationStep.css'
@@ -85,18 +76,22 @@ import '../components/OwnerAddPropertyWizardStepLayout.css'
 import '../components/OwnerAddPropertyStepAside.css'
 import './AddProperty.css'
 import './OwnerAddPropertyTestPage.css'
+import './OwnerAddPropertyJourney.css'
 import './OwnerAddPropertyTestPage.mobile.css'
 
-const DESKTOP_STEP_DEFS = [
-  { id: 1, labelKey: 'oap_wizardStepObject', Icon: LayoutGrid },
-  { id: 2, labelKey: 'oap_wizardStepListing', Icon: FileText },
-  { id: 3, labelKey: 'oap_wizardStepStrategy', Icon: Gavel },
-  { id: 4, labelKey: 'oap_wizardStepFinance', Icon: TrendingUp },
-  { id: 5, labelKey: 'oap_wizardStepDocuments', Icon: FileCheck2 },
-]
+function useOapMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 900px)').matches : false
+  )
 
-function mapWizardStepToDisplayProgress(wizardStep) {
-  return Math.min(wizardStep, 5)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const onChange = (e) => setMobile(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return mobile
 }
 
 function migrateWizardStep(step) {
@@ -105,13 +100,14 @@ function migrateWizardStep(step) {
   return migration[step] ?? 1
 }
 
-const MOBILE_STEP_DEFS = [
-  { id: 1, labelKey: 'oap_wizardStepObject' },
-  { id: 2, labelKey: 'oap_wizardStepListing' },
-  { id: 3, labelKey: 'oap_wizardStepStrategy' },
-  { id: 4, labelKey: 'oap_wizardStepFinance' },
-  { id: 5, labelKey: 'oap_wizardStepDocuments' },
-]
+function mapStepToJourneyScreen(wizardStep) {
+  if (wizardStep <= 1) return 2
+  if (wizardStep === 2) return 4
+  if (wizardStep === 3) return 5
+  if (wizardStep === 4) return 6
+  if (wizardStep >= 5) return 7
+  return 1
+}
 
 const TITLE_MAX_LENGTH = 80
 const DESCRIPTION_MAX_LENGTH = 2000
@@ -155,21 +151,6 @@ const INITIAL_FORM = {
   auctionStartingPrice: '',
   auctionStartDate: '',
   auctionEndDate: '',
-}
-
-function useOapMobile() {
-  const [mobile, setMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(max-width: 900px)').matches : false
-  )
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 900px)')
-    const onChange = (e) => setMobile(e.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
-
-  return mobile
 }
 
 function getTypeProfile(propertyType) {
@@ -365,11 +346,11 @@ const MOBILE_JOURNEY_SCREENS = 7
 
 export default function OwnerAddPropertyTestPage() {
   const { t } = useTranslation()
+  const isMobile = useOapMobile()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const isMobile = useOapMobile()
   const [step, setStep] = useState(1)
   const [mobileScreen, setMobileScreen] = useState(1)
   const journeyScrollRef = useRef(null)
@@ -380,9 +361,12 @@ export default function OwnerAddPropertyTestPage() {
   }, [])
 
   useEffect(() => {
-    if (!isMobile) return
-    scrollJourneyToTop()
-  }, [isMobile, mobileScreen, scrollJourneyToTop])
+    if (isMobile) {
+      scrollJourneyToTop()
+    } else {
+      scrollMainTo(0, 0, 'auto')
+    }
+  }, [mobileScreen, isMobile, scrollJourneyToTop])
 
   useEffect(() => {
     preloadOapWizardImages()
@@ -412,21 +396,10 @@ export default function OwnerAddPropertyTestPage() {
   const [listingFeePromoLoading, setListingFeePromoLoading] = useState(false)
   const [listingFeeStripeLoading, setListingFeeStripeLoading] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showJourneyPublishDrawer, setShowJourneyPublishDrawer] = useState(false)
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
   const saveDraftTimeoutRef = useRef(null)
-
-  const desktopSteps = useMemo(
-    () => DESKTOP_STEP_DEFS.map((stepDef) => ({ ...stepDef, label: t(stepDef.labelKey) })),
-    [t],
-  )
-
-  const mobileSteps = useMemo(
-    () => MOBILE_STEP_DEFS.map((stepDef) => ({ ...stepDef, label: t(stepDef.labelKey) })),
-    [t],
-  )
 
   const buildingTypeOptions = useMemo(
     () => [
@@ -754,11 +727,7 @@ export default function OwnerAddPropertyTestPage() {
     setShowVerificationModal(false)
     clearOapDraft()
     window.dispatchEvent(new CustomEvent('owner-properties-update'))
-    if (isMobile) {
-      setShowJourneyPublishDrawer(true)
-    } else {
-      setShowSuccessModal(true)
-    }
+    setShowJourneyPublishDrawer(true)
     setIsSubmitting(false)
     return true
   }, [
@@ -771,7 +740,6 @@ export default function OwnerAddPropertyTestPage() {
     selectedAmenities,
     goTo,
     navigate,
-    isMobile,
   ])
 
   const handleAfterListingFeeSuccess = useCallback(async () => {
@@ -914,86 +882,6 @@ export default function OwnerAddPropertyTestPage() {
     })
   }, [])
 
-  const handleNext = useCallback(() => {
-    if (step === 1) {
-      const nextLocationErrors = {}
-      if (!form.propertyType) nextLocationErrors.propertyType = t('oap_err_propertyType')
-      Object.assign(nextLocationErrors, validateLocationForm(form, form.address))
-      const paramValidation = validateParametersStep(form, getTypeProfile(form.propertyType))
-      if (Object.keys(nextLocationErrors).length > 0 || Object.keys(paramValidation).length > 0) {
-        setLocationErrors(nextLocationErrors)
-        setParamErrors(paramValidation)
-        scrollMainTo(0, 0, 'auto')
-        return
-      }
-      setLocationErrors({})
-      setParamErrors({})
-    }
-    if (step === 2 && !form.title.trim()) {
-      scrollMainTo(0, 0, 'auto')
-      return
-    }
-    if (step === 3) {
-      if (form.testDrive === 'yes') {
-        const errors = validateTestDriveDetails(form)
-        if (Object.keys(errors).length > 0) {
-          setTestDriveErrors(errors)
-          scrollMainTo(0, 0, 'auto')
-          return
-        }
-      }
-      const listingValidation = validateListingStep(form)
-      if (Object.keys(listingValidation).length > 0) {
-        setListingErrors(listingValidation)
-        scrollMainTo(0, 0, 'auto')
-        return
-      }
-      setTestDriveErrors({})
-      setListingErrors({})
-    }
-    if (step === 4) {
-      const errors = validatePricingStep(form)
-      if (Object.keys(errors).length > 0) {
-        setPricingErrors(errors)
-        scrollMainTo(0, 0, 'auto')
-        return
-      }
-      setPricingErrors({})
-    }
-    if (step === 5) {
-      const isDebtListing =
-        form.listingMode === 'debt' || form.listingMode === 'debt_auction'
-      const errors = {}
-      if (!isDebtListing) {
-        if (!requiredDocuments.ownership) {
-          errors.ownership = t('oap_err_ownership')
-        }
-        if (!requiredDocuments.noDebts) {
-          errors.noDebts = t('oap_err_noDebts')
-        }
-      }
-      if (Object.keys(errors).length > 0) {
-        setDocumentErrors(errors)
-        scrollMainTo(0, 0, 'auto')
-        return
-      }
-      setDocumentErrors({})
-    }
-    if (step < TOTAL_STEPS) {
-      setStep((s) => s + 1)
-    } else {
-      handlePriceContinue()
-    }
-  }, [step, form, requiredDocuments, handlePriceContinue])
-
-  const handleBack = useCallback(() => {
-    if (step > 1) {
-      setStep((s) => s - 1)
-    } else {
-      goToProperties()
-    }
-  }, [step, goToProperties])
-
   const validateJourneyBasicsLocation = useCallback(() => {
     const nextLocationErrors = {}
     if (!form.propertyType) nextLocationErrors.propertyType = t('oap_err_propertyType')
@@ -1120,14 +1008,6 @@ export default function OwnerAddPropertyTestPage() {
     syncStepFromMobileScreen(prevScreen)
   }, [isSubmitting, mobileScreen, syncStepFromMobileScreen])
 
-  const handleStepClick = useCallback(
-    (targetStep) => {
-      if (targetStep === step || isSubmitting) return
-      setStep(targetStep)
-    },
-    [step, isSubmitting],
-  )
-
   const handleTestDriveChoice = useCallback((choice) => {
     setForm((prev) => ({
       ...prev,
@@ -1250,6 +1130,7 @@ export default function OwnerAddPropertyTestPage() {
       const mergedForm = { ...INITIAL_FORM, ...restored.form }
       setForm(mergedForm)
       setStep(migrateWizardStep(restored.step))
+      setMobileScreen(mapStepToJourneyScreen(migrateWizardStep(restored.step)))
       setPhotos(restored.photos)
       setVideos(restored.videos)
       setRequiredDocuments(restored.requiredDocuments)
@@ -1320,13 +1201,6 @@ export default function OwnerAddPropertyTestPage() {
       })
     }
   }, [photos, requiredDocuments])
-
-  const progressSteps = isMobile ? mobileSteps : desktopSteps
-  const activeProgress = isMobile ? step : mapWizardStepToDisplayProgress(step)
-  const canProceed =
-    (step === 1 && Boolean(form.propertyType)) ||
-    (step === 2 && Boolean(form.title.trim())) ||
-    step > 2
 
   const canProceedJourney = useMemo(() => {
     switch (mobileScreen) {
@@ -1404,32 +1278,6 @@ export default function OwnerAddPropertyTestPage() {
           />
         </section>
       </>
-    )
-  }
-
-  const renderStepPresentation = (options = {}) => {
-    const { hideCopySection = false, hideWizardChrome = false } = options
-    const typeProfile = getTypeProfile(form.propertyType)
-
-    return (
-      <OwnerAddPropertyPresentationStep
-        form={form}
-        titleMaxLength={TITLE_MAX_LENGTH}
-        descriptionMaxLength={DESCRIPTION_MAX_LENGTH}
-        onFieldChange={updateField}
-        typeProfile={typeProfile}
-        selectedAmenities={selectedAmenities}
-        onToggleAmenity={toggleAmenity}
-        onAdditionalChange={(value) => updateField('additionalAmenities', value)}
-        photos={photos}
-        videos={videos}
-        onAddPhotos={addPhotos}
-        onRemovePhoto={removePhoto}
-        onAddVideo={addVideo}
-        onRemoveVideo={removeVideo}
-        hideCopySection={hideCopySection}
-        hideWizardChrome={hideWizardChrome}
-      />
     )
   }
 
@@ -1541,14 +1389,6 @@ export default function OwnerAddPropertyTestPage() {
     )
   }
 
-  const stepContent = {
-    1: () => renderStepBasics(),
-    2: renderStepPresentation,
-    3: renderStepStrategy,
-    4: renderStepFinance,
-    5: renderStepDocuments,
-  }
-
   const journeyScreenContent = {
     1: () => (
       <OapAddPropertyMobileWelcome
@@ -1571,12 +1411,12 @@ export default function OwnerAddPropertyTestPage() {
   const journeyPrimaryLabel =
     mobileScreen === MOBILE_JOURNEY_SCREENS ? t('oap_publishPublish') : t('oap_publishNext')
 
+  const stepClassSuffix = `${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`
+
   return (
     <>
       {isMobile ? (
-        <div
-          className={`oap oap--mobile oap--journey-mobile${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
-        >
+        <div className={`oap oap--journey-mobile oap--journey-flow${stepClassSuffix}`}>
           <div className="oap-shell oap-shell--journey">
             <header className="oap-journey-topbar">
               <button
@@ -1622,114 +1462,58 @@ export default function OwnerAddPropertyTestPage() {
           </div>
         </div>
       ) : (
-    <div
-      className={`oap${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
-    >
-      <div className="oap-shell">
-        <header className="oap-header">
-          <button
-            type="button"
-            className="oap-header__back"
-            aria-label={isMobile && step > 1 ? t('oap_publishBack') : t('oap_publishBackList')}
-            onClick={isMobile && step > 1 ? handleBack : goToProperties}
-          >
-            <ArrowLeft size={22} strokeWidth={2} />
-          </button>
-          <div className="oap-header__center">
-            <h1 className="oap-header__title">{t('oap_publishAddPropertyTitle')}</h1>
-            {isMobile && (
-              <span className="oap-header__progress">
-                {t('oap_wizardStepBadge', { current: step, total: TOTAL_STEPS })}
-              </span>
-            )}
-          </div>
-          <div className="oap-header__actions">
-            {isMobile ? (
+        <div className={`oap oap--journey-desktop oap--journey-flow${stepClassSuffix}`}>
+          <div className="oap-shell oap-shell--journey oap-shell--journey-desktop">
+            <header className="oap-journey-topbar oap-journey-topbar--desktop">
               <button
                 type="button"
-                className="oap-header__close"
-                aria-label={t('oap_publishClose')}
+                className="oap-journey-topbar__back"
+                aria-label={t('oap_publishBackList')}
                 onClick={goToProperties}
               >
-                <FiX size={22} />
+                <ArrowLeft size={22} strokeWidth={2} />
               </button>
-            ) : (
-              <OwnerSupportButton className="oap-header__support" iconSize={22} />
-            )}
-          </div>
-        </header>
-
-        <nav className="oap-stepper oap-stepper--icons" aria-label={t('oap_stepperAria')}>
-          {progressSteps.map((s, idx) => {
-            const num = idx + 1
-            const isActive = num === activeProgress
-            const isDone = num < activeProgress
-            const StepIcon = s.Icon
-            return (
-              <Fragment key={s.id}>
+              <OapAddPropertyJourneyProgress
+                currentStep={mobileScreen}
+                totalSteps={MOBILE_JOURNEY_SCREENS}
+              />
+              <OwnerSupportButton className="oap-journey-topbar__support" iconSize={22} />
+            </header>
+            <div
+              ref={journeyScrollRef}
+              className={`oap-content oap-content--journey oap-content--journey-desktop${mobileScreen === 1 || mobileScreen === 2 || mobileScreen === 3 || mobileScreen === 4 || mobileScreen === 5 || mobileScreen === 6 || mobileScreen === 7 ? ' oap-content--journey-strip-side' : ''}${mobileScreen === 2 ? ' oap-content--journey-type-map' : ''}`}
+            >
+              <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
+              {mobileScreen === 2 ? (
+                <div id="oap-journey-map-aside" className="oap-journey-type-map-aside" />
+              ) : null}
+              <div className="oap-content__body oap-content__body--journey oap-content__body--journey-desktop">
+                {journeyScreenContent[mobileScreen]?.()}
+              </div>
+            </div>
+            <footer className="oap-footer oap-footer--journey oap-footer--journey-desktop">
+              <div className="oap-journey-footer__actions">
                 <button
                   type="button"
-                  className={`oap-stepper__item${isActive ? ' oap-stepper__item--active' : ''}${isDone ? ' oap-stepper__item--done' : ''}`}
-                  onClick={() => handleStepClick(num)}
-                  disabled={isSubmitting}
-                  aria-current={isActive ? 'step' : undefined}
-                  aria-label={t('oap_wizardStepAria', { num, label: s.label })}
+                  className="oap-journey-footer__back"
+                  aria-label={t('oap_publishBack')}
+                  onClick={handleJourneyBack}
+                  disabled={mobileScreen === 1 || isSubmitting}
                 >
-                  <span className="oap-stepper__dot">
-                    {isMobile && isDone ? (
-                      <Check size={14} strokeWidth={2.5} />
-                    ) : isMobile ? (
-                      num
-                    ) : StepIcon ? (
-                      <StepIcon size={16} strokeWidth={1.85} />
-                    ) : (
-                      num
-                    )}
-                  </span>
-                  {!isMobile && (
-                    <span className="oap-stepper__label">
-                      <span className="oap-stepper__num">{num}</span> {s.label}
-                    </span>
-                  )}
+                  <ArrowLeft size={22} strokeWidth={2} />
                 </button>
-                {idx < progressSteps.length - 1 && (
-                  <span
-                    className={`oap-stepper__line${isDone ? ' oap-stepper__line--done' : ''}`}
-                    aria-hidden
-                  />
-                )}
-              </Fragment>
-            )
-          })}
-        </nav>
-
-        <div className="oap-content">
-          {stepContent[step]?.()}
-        </div>
-
-        <footer className="oap-footer oap-footer--wizard">
-          <button type="button" className="oap-btn oap-btn--ghost oap-btn--back" onClick={handleBack}>
-            {t('oap_publishBack')}
-          </button>
-          <div className="oap-footer__actions">
-            <button
-              type="button"
-              className={`oap-btn oap-btn--primary${isMobile ? ' oap-btn--full' : ''}`}
-              onClick={handleNext}
-              disabled={!canProceed || isSubmitting}
-            >
-              {isSubmitting
-                ? t('oap_publishSubmitting')
-                : step === TOTAL_STEPS
-                  ? isMobile
-                    ? t('oap_publishPublish')
-                    : t('oap_publishPublishListing')
-                  : t('oap_publishNext')}
-            </button>
+                <button
+                  type="button"
+                  className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                  onClick={handleJourneyNext}
+                  disabled={!canProceedJourney || isSubmitting}
+                >
+                  {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                </button>
+              </div>
+            </footer>
           </div>
-        </footer>
-      </div>
-    </div>
+        </div>
       )}
 
       <SellerVerificationModal
@@ -1886,46 +1670,6 @@ export default function OwnerAddPropertyTestPage() {
           goToHome()
         }}
       />
-
-      {showSuccessModal && (
-        <div
-          className="success-modal-overlay"
-          onClick={() => {
-            setShowSuccessModal(false)
-            goToProperties()
-          }}
-        >
-          <div className="success-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="success-modal__icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#0099A9" strokeWidth="2" />
-                <path
-                  d="M8 12L11 15L16 9"
-                  stroke="#0099A9"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <h2 className="success-modal__title">{t('oap_successModerationTitle')}</h2>
-            <p className="success-modal__message">
-              <Clock size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-              {t('oap_successModerationMessage')}
-            </p>
-            <button
-              type="button"
-              className="success-modal__button"
-              onClick={() => {
-                setShowSuccessModal(false)
-                goToProperties()
-              }}
-            >
-              {t('oap_successModerationBtn')}
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
 }

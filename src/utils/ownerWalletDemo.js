@@ -196,6 +196,24 @@ export function formatWalletDate(iso, locale) {
   return `${datePart}, ${timePart}`
 }
 
+export function formatWalletDateParts(iso, locale) {
+  const intlLocale = locale || getOwnerTestIntlLocale()
+  if (!iso) return { date: '—', time: '' }
+  const d = new Date(iso)
+  if (!Number.isFinite(d.getTime())) return { date: '—', time: '' }
+  return {
+    date: d.toLocaleDateString(intlLocale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+    time: d.toLocaleTimeString(intlLocale, {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  }
+}
+
 export function formatWalletDateShort(iso, locale) {
   const intlLocale = locale || getOwnerTestIntlLocale()
   if (!iso) return '—'
@@ -225,7 +243,7 @@ export function getWalletTxStatusLabel(status, t) {
 }
 
 export function shouldShowWalletTxStatus(status) {
-  return status !== 'completed' && status !== 'done'
+  return Boolean(status)
 }
 
 export function getWalletTxStatusTone(status) {

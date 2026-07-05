@@ -9,11 +9,11 @@ export default function OwnerNoBidsIllustration({ className = '' }) {
       role="img"
       aria-hidden="true"
     >
-      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#0099A9" fillOpacity="0.14" />
+      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#4a90a2" fillOpacity="0.14" />
 
       <rect x="46" y="28" width="128" height="102" rx="16" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
       <rect x="46" y="28" width="128" height="34" rx="16" fill="url(#owner-no-bids-header)" />
-      <rect x="46" y="54" width="128" height="8" fill="#007d8a" />
+      <rect x="46" y="54" width="128" height="8" fill="#3a7586" />
 
       <g transform="translate(62 40)">
         <rect x="0" y="7" width="16" height="6" rx="3" fill="#ffffff" fillOpacity="0.95" />
@@ -48,15 +48,15 @@ export default function OwnerNoBidsIllustration({ className = '' }) {
 
       <rect x="102" y="76" width="60" height="8" rx="4" fill="#f8fafc" />
       <rect x="102" y="88" width="44" height="6" rx="3" fill="#f1f5f9" />
-      <rect x="102" y="98" width="52" height="6" rx="3" fill="#e6f6f8" />
+      <rect x="102" y="98" width="52" height="6" rx="3" fill="#e8f1f4" />
 
       <rect x="58" y="118" width="104" height="10" rx="5" fill="#fafafa" stroke="#d1d5db" strokeWidth="1.5" strokeDasharray="5 4" />
       <rect x="58" y="132" width="104" height="10" rx="5" fill="#fafafa" stroke="#d1d5db" strokeWidth="1.5" strokeDasharray="5 4" />
 
       <defs>
         <linearGradient id="owner-no-bids-header" x1="46" y1="28" x2="174" y2="62" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#33adbb" />
-          <stop offset="1" stopColor="#0099A9" />
+          <stop stopColor="#6ba3b2" />
+          <stop offset="1" stopColor="#4a90a2" />
         </linearGradient>
       </defs>
     </svg>

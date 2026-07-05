@@ -23,8 +23,8 @@ function ProgressRing({ pct, size }) {
       <svg className="owner-pc__ring" viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#33adbb" />
-            <stop offset="100%" stopColor="#007d8a" />
+            <stop offset="0%" stopColor="#6ba3b2" />
+            <stop offset="100%" stopColor="#3a7586" />
           </linearGradient>
         </defs>
         <circle
@@ -40,7 +40,7 @@ function ProgressRing({ pct, size }) {
           cy={center}
           r={radius}
           fill="none"
-          stroke={complete ? '#0099A9' : `url(#${gradId})`}
+          stroke={complete ? '#4a90a2' : `url(#${gradId})`}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           transform={`rotate(-90 ${center} ${center})`}

@@ -20,6 +20,7 @@ import {
 import SiteBrandLogo from '../components/SiteBrandLogo'
 import { PricingInteraction } from '@/components/ui/pricing-interaction'
 import { SubscriptionScreen } from '@/components/ui/subscription-screen'
+import OwnerPricingCards from '../components/OwnerPricingCards'
 import './OwnerSubscriptionsTestPage.css'
 import './OwnerSubscriptionsTestPage.mobile.css'
 
@@ -83,6 +84,13 @@ export default function OwnerSubscriptionsTestPage() {
 
   const planDetails = useMemo(
     () => ({
+      basic: {
+        features: [
+          { icon: <Home size={20} strokeWidth={2} />, text: t('ownerTest_planFeatureBasic1') },
+          { icon: <BarChart3 size={20} strokeWidth={2} />, text: t('ownerTest_planFeatureBasic2') },
+          { icon: <Headphones size={20} strokeWidth={2} />, text: t('ownerTest_planFeatureBasic3') },
+        ],
+      },
       standard: {
         features: [
           { icon: <Home size={20} strokeWidth={2} />, text: t('ownerTest_planFeatureStandard1') },
@@ -123,6 +131,28 @@ export default function OwnerSubscriptionsTestPage() {
         }
       }),
     [plans]
+  )
+
+  const desktopPricingPlans = useMemo(
+    () =>
+      ['standard', 'pro', 'institutional'].map((planId) => {
+        const plan = plans.find((item) => item.id === planId)
+        return {
+          id: planId,
+          name: plan?.name || '',
+          monthlyPrice: plan?.price ?? 0,
+        }
+      }),
+    [plans]
+  )
+
+  const planTaglines = useMemo(
+    () => ({
+      standard: t('ownerTest_planTaglineStandard'),
+      pro: t('ownerTest_planTaglinePro'),
+      institutional: t('ownerTest_planTaglineInstitutional'),
+    }),
+    [t]
   )
 
   const checkoutErrorText = useMemo(
@@ -379,46 +409,73 @@ export default function OwnerSubscriptionsTestPage() {
 
   const mainColumn = (
       <div className="ost-body">
-        <div className="ost-workspace ost-workspace--pricing-mob">
-          <header className="ost-pricing-hero">
-            <div className="ost-pricing-hero__top">
-              <p className="ost-pricing-hero__brand">{t('ownerTest_subscriptionDrawerAppName')}</p>
-              <div className="ost-pricing-hero__actions">
-                <OwnerSupportButton className="ost-pricing-hero__icon" iconSize={22} />
-                <OwnerNotificationsButton
-                  className="ost-pricing-hero__icon"
-                  badgeClassName="ost-icon-btn__badge"
-                  iconSize={22}
-                />
+        <div className="ost-workspace ost-workspace--pricing">
+          <div className="ost-pricing-scene">
+            <header className="ost-pricing-hero">
+              <div className="ost-pricing-hero__top">
+                <p className="ost-pricing-hero__brand">{t('ownerTest_subscriptionDrawerAppName')}</p>
+                <div className="ost-pricing-hero__actions">
+                  <OwnerSupportButton className="ost-pricing-hero__icon" iconSize={22} />
+                  <OwnerNotificationsButton
+                    className="ost-pricing-hero__icon"
+                    badgeClassName="ost-icon-btn__badge"
+                    iconSize={22}
+                  />
+                </div>
               </div>
-            </div>
-            <h1 className="ost-pricing-hero__title">
-              <span className="ost-pricing-hero__line">{t('ownerTest_subscriptionsHeroBefore')}</span>
-              <span className="ost-pricing-hero__line">
-                <span className="ost-pricing-hero__pill">{t('ownerTest_subscriptionsHeroHighlight')}</span>{' '}
-                {t('ownerTest_subscriptionsHeroAfter')}
-              </span>
-            </h1>
-          </header>
+              <h1 className="ost-pricing-hero__title">
+                <span className="ost-pricing-hero__line">{t('ownerTest_subscriptionsHeroBefore')}</span>
+                <span className="ost-pricing-hero__line">
+                  <span className="ost-pricing-hero__pill">{t('ownerTest_subscriptionsHeroHighlight')}</span>{' '}
+                  {t('ownerTest_subscriptionsHeroAfter')}
+                </span>
+              </h1>
+            </header>
 
-          <div className="ost-content ost-content--pricing-mob">
-            <section className="ost-pricing-mob" aria-label={t('ownerTest_subscriptionsTitle')}>
-              <PricingInteraction
-                plans={pricingPlans}
-                monthlyLabel={t('ownerTest_subscriptionsBillingMonthly')}
-                yearlyLabel={t('ownerTest_subscriptionsBillingYearly')}
-                perMonthSuffix={perMonthSuffix}
-                ctaLabel={t('ownerTest_planBuy')}
-                activeCtaLabel={t('ownerTest_planActiveSubscription')}
-                popularLabel={t('ownerTest_planChipPopular')}
-                activePlanId={pricingActivePlanId}
-                loading={Boolean(startingPlanId)}
-                onGetStarted={handlePricingStart}
-              />
+            <div className="ost-content ost-content--pricing">
+              <section
+                className="ost-pricing-mob ost-mobile-only"
+                aria-label={t('ownerTest_subscriptionsTitle')}
+              >
+                <PricingInteraction
+                  plans={pricingPlans}
+                  monthlyLabel={t('ownerTest_subscriptionsBillingMonthly')}
+                  yearlyLabel={t('ownerTest_subscriptionsBillingYearly')}
+                  perMonthSuffix={perMonthSuffix}
+                  ctaLabel={t('ownerTest_planBuy')}
+                  activeCtaLabel={t('ownerTest_planActiveSubscription')}
+                  popularLabel={t('ownerTest_planChipPopular')}
+                  activePlanId={pricingActivePlanId}
+                  loading={Boolean(startingPlanId)}
+                  onGetStarted={handlePricingStart}
+                />
+              </section>
+
+              <section
+                className="ost-pricing-desk ost-desktop-only"
+                aria-label={t('ownerTest_subscriptionsTitle')}
+              >
+                <OwnerPricingCards
+                  plans={desktopPricingPlans}
+                  planDetails={planDetails}
+                  taglines={planTaglines}
+                  activePlanId={pricingActivePlanId}
+                  loading={Boolean(startingPlanId)}
+                  monthlyLabel={t('ownerTest_subscriptionsBillingMonthly')}
+                  yearlyLabel={t('ownerTest_subscriptionsBillingYearly')}
+                  yearlySaveLabel={t('ownerTest_planYearlySaving')}
+                  perMonthSuffix={perMonthSuffix}
+                  ctaLabel={t('ownerTest_planBuy')}
+                  activeCtaLabel={t('ownerTest_planActiveSubscription')}
+                  popularLabel={t('ownerTest_planChipPopular')}
+                  onSelectPlan={handlePricingStart}
+                />
+              </section>
+
               {checkoutError ? (
                 <p className="ost-checkout-message ost-checkout-message--error">{checkoutError}</p>
               ) : null}
-            </section>
+            </div>
           </div>
         </div>
       </div>

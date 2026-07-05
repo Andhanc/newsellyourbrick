@@ -9,7 +9,7 @@
 
   .otd {
     --otd-mob-pad: var(--oc-mob-pad, 16px);
-    --otd-tiffany: #0099A9;
+    --otd-tiffany: #4a90a2;
 
     flex-direction: column;
     width: 100%;
@@ -23,7 +23,7 @@
 
   .otd-body {
     --otd-mob-pad: 16px;
-    --otd-tiffany: #0099A9;
+    --otd-tiffany: #4a90a2;
 
     flex: 1;
     min-height: 0;

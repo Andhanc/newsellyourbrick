@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -45,6 +45,16 @@ export default function OapAddPropertyMobileMedia({
   const [drawerTab, setDrawerTab] = useState('photo')
   const [linkMode, setLinkMode] = useState(null)
   const [linkValue, setLinkValue] = useState('')
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 901px)').matches
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 901px)')
+    const onChange = () => setIsDesktop(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   const { visible, isClosing, requestClose } = useDrawerDismiss(drawerOpen, () => {
     setDrawerOpen(false)
@@ -63,7 +73,7 @@ export default function OapAddPropertyMobileMedia({
     onDragZonePointerUp,
     onDragZonePointerCancel,
   } = useBottomSheetDrag({
-    isOpen: drawerOpen,
+    isOpen: drawerOpen && !isDesktop,
     visible,
     isClosing,
     requestClose,
@@ -427,27 +437,29 @@ export default function OapAddPropertyMobileMedia({
               onClick={closeDrawer}
             />
             <div
-              className={`oap-mobile-media-drawer${isDragging ? ' oap-mobile-media-drawer--dragging' : ''}`}
+              className={`oap-mobile-media-drawer${isDesktop ? ' oap-mobile-media-drawer--modal' : ''}${isDragging ? ' oap-mobile-media-drawer--dragging' : ''}`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="oap-mobile-media-drawer-title"
             >
               <div
                 ref={panelRef}
-                className={`oap-mobile-media-drawer__panel${closingPanel}${isCollapsed ? ' oap-mobile-media-drawer__panel--collapsed' : ''}${isClosing ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing' : ''}`}
-                style={panelDragStyle}
+                className={`oap-mobile-media-drawer__panel${closingPanel}${isCollapsed ? ' oap-mobile-media-drawer__panel--collapsed' : ''}${isClosing ? (isDesktop ? ' drawer-dismiss-modal--closing' : ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing') : ''}`}
+                style={isDesktop ? undefined : panelDragStyle}
               >
-                <div
-                  className="oap-mobile-media-drawer__drag-zone"
-                  onPointerDown={onDragZonePointerDown}
-                  onPointerMove={onDragZonePointerMove}
-                  onPointerUp={onDragZonePointerUp}
-                  onPointerCancel={onDragZonePointerCancel}
-                >
-                  <div className="oap-mobile-media-drawer__handle" aria-hidden>
-                    <span className="oap-mobile-media-drawer__handle-pill" />
+                {!isDesktop ? (
+                  <div
+                    className="oap-mobile-media-drawer__drag-zone"
+                    onPointerDown={onDragZonePointerDown}
+                    onPointerMove={onDragZonePointerMove}
+                    onPointerUp={onDragZonePointerUp}
+                    onPointerCancel={onDragZonePointerCancel}
+                  >
+                    <div className="oap-mobile-media-drawer__handle" aria-hidden>
+                      <span className="oap-mobile-media-drawer__handle-pill" />
+                    </div>
                   </div>
-                </div>
+                ) : null}
                 <button
                   type="button"
                   className="oap-mobile-media-drawer__close"
@@ -518,11 +530,13 @@ export default function OapAddPropertyMobileMedia({
             onClick={() => openDrawer('photo')}
             disabled={photosFull}
           >
+            <span className="oap-mobile-media__add-card-body">
+              <span className="oap-mobile-media__add-card-title">{t('oap_journeyMediaAddCard')}</span>
+              <span className="oap-mobile-media__add-card-hint">{t('oap_journeyMediaAddCardHint')}</span>
+            </span>
             <span className="oap-mobile-media__add-card-icon" aria-hidden>
               <ImagePlus size={32} strokeWidth={1.75} />
             </span>
-            <span className="oap-mobile-media__add-card-title">{t('oap_journeyMediaAddCard')}</span>
-            <span className="oap-mobile-media__add-card-hint">{t('oap_journeyMediaAddCardHint')}</span>
           </button>
         ) : (
           <div className="oap-mobile-media__strip" role="list" aria-label={t('oap_journeyMediaAddCard')}>
@@ -563,11 +577,13 @@ export default function OapAddPropertyMobileMedia({
             onClick={() => openDrawer('video')}
             disabled={videosFull}
           >
+            <span className="oap-mobile-media__add-card-body">
+              <span className="oap-mobile-media__add-card-title">{t('oap_journeyMediaVideoEmpty')}</span>
+              <span className="oap-mobile-media__add-card-hint">{t('oap_journeyMediaAddCardHint')}</span>
+            </span>
             <span className="oap-mobile-media__add-card-icon oap-mobile-media__add-card-icon--video" aria-hidden>
               <Video size={28} strokeWidth={1.75} />
             </span>
-            <span className="oap-mobile-media__add-card-title">{t('oap_journeyMediaVideoEmpty')}</span>
-            <span className="oap-mobile-media__add-card-hint">{t('oap_journeyMediaAddCardHint')}</span>
           </button>
         ) : (
           <div className="oap-mobile-media__strip" role="list" aria-label={t('oap_journeyMediaVideoEmpty')}>

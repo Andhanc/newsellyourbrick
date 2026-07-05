@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { MapPin, Loader2, Check, Navigation } from 'lucide-react'
 import CountrySelect from '../components/CountrySelect'
@@ -37,7 +38,16 @@ function SuggestList({ items, onSelect, renderLabel }) {
   )
 }
 
-export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors = {}, embedded = false, wide = false }) {
+const JOURNEY_MAP_ASIDE_ID = 'oap-journey-map-aside'
+
+export default function OwnerAddPropertyLocationStep({
+  form,
+  onFormPatch,
+  errors = {},
+  embedded = false,
+  wide = false,
+  journeyMapAside = false,
+}) {
   const { t } = useTranslation()
   const [citySearch, setCitySearch] = useState(form.city || '')
   const [addressSearch, setAddressSearch] = useState(form.address || '')
@@ -285,12 +295,51 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
   const uniqueAddressSuggestions = getUniqueAddressSuggestions(addressSuggestions)
 
+  const [mapAsideTarget, setMapAsideTarget] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!journeyMapAside) {
+      setMapAsideTarget(null)
+      return undefined
+    }
+
+    const syncTarget = () => {
+      const isDesktop = window.matchMedia('(min-width: 901px)').matches
+      setMapAsideTarget(isDesktop ? document.getElementById(JOURNEY_MAP_ASIDE_ID) : null)
+    }
+
+    syncTarget()
+    const mediaQuery = window.matchMedia('(min-width: 901px)')
+    mediaQuery.addEventListener('change', syncTarget)
+    return () => mediaQuery.removeEventListener('change', syncTarget)
+  }, [journeyMapAside])
+
+  const mapColumn = (
+    <div className="oap-loc-step__map-col">
+      <p className="oap-loc-step__map-hint">
+        {mapCoords ? t('oap_locationMapDragHint') : t('oap_locationMapSelectHint')}
+      </p>
+      <div className="oap-loc-step__map">
+        <LocationMap
+          center={mapCoords || [55, 20]}
+          zoom={mapCoords ? mapZoom : 4}
+          marker={mapCoords}
+          markerDraggable={Boolean(mapCoords)}
+          onMarkerDragEnd={handleMarkerDragEnd}
+        />
+      </div>
+    </div>
+  )
+
+  const useAsideMap = journeyMapAside && mapAsideTarget
+
   const layout = (
       <div
         className={[
           'oap-loc-step__layout',
           embedded ? 'oap-loc-step__layout--embedded' : '',
-          embedded && wide ? 'oap-loc-step__layout--embedded-wide' : '',
+          embedded && wide && !useAsideMap ? 'oap-loc-step__layout--embedded-wide' : '',
+          useAsideMap ? 'oap-loc-step__layout--fields-only' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -463,24 +512,22 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
           </label>
         </div>
 
-        <div className="oap-loc-step__map-col">
-          <p className="oap-loc-step__map-hint">
-            {mapCoords ? t('oap_locationMapDragHint') : t('oap_locationMapSelectHint')}
-          </p>
-          <div className="oap-loc-step__map">
-            <LocationMap
-              center={mapCoords || [55, 20]}
-              zoom={mapCoords ? mapZoom : 4}
-              marker={mapCoords}
-              markerDraggable={Boolean(mapCoords)}
-              onMarkerDragEnd={handleMarkerDragEnd}
-            />
-          </div>
-        </div>
+        {!useAsideMap ? mapColumn : null}
       </div>
   )
 
-  if (embedded) return layout
+  const asideMapPortal =
+    useAsideMap &&
+    createPortal(<div className="oap-loc-step__map-aside-inner">{mapColumn}</div>, mapAsideTarget)
+
+  if (embedded) {
+    return (
+      <>
+        {layout}
+        {asideMapPortal}
+      </>
+    )
+  }
 
   return (
     <section className="oap-loc-step" aria-labelledby="oap-loc-step-title">

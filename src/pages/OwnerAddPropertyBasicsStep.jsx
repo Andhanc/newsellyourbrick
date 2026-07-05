@@ -188,6 +188,42 @@ export default function OwnerAddPropertyBasicsStep({
 
   const renderParamsFields = () => {
     if (typeProfile === 'apartment' || typeProfile === 'apartments') {
+      if (isJourneyParamsScreen) {
+        return (
+          <>
+            {renderNumberField('area', t('addPropertyDetailsAreaLabel'), {
+              placeholder: '0',
+              required: true,
+            })}
+            {renderNumberField('livingArea', t('addPropertyDetailsLivingAreaLabel'), {
+              placeholder: '0',
+              required: true,
+            })}
+            {renderNumberField('yearBuilt', t('addPropertyDetailsYearBuiltLabel'), {
+              placeholder: String(new Date().getFullYear()),
+              required: true,
+            })}
+            <div className="oap-basics-params__counts-row">
+              {renderCountPicker('rooms', Bed, t('addPropertyDetailsRoomsLabel'))}
+              {renderCountPicker('bathrooms', Bath, t('addPropertyDetailsBathroomsShortLabel'))}
+            </div>
+            {renderFloorCombinedField()}
+            {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
+              placeholder: t('addPropertyDetailsSelectMaterial'),
+              required: true,
+            })}
+            {renderSelectField(
+              'constructionType',
+              t('addPropertyConstructionTypePlaceholder'),
+              constructionTypeOptions,
+              {
+                placeholder: t('addPropertyConstructionTypePlaceholder'),
+              }
+            )}
+          </>
+        )
+      }
+
       return (
         <>
           {renderNumberField('area', t('addPropertyDetailsAreaLabel'), {
@@ -222,6 +258,45 @@ export default function OwnerAddPropertyBasicsStep({
     }
 
     if (typeProfile === 'house' || typeProfile === 'villa') {
+      if (isJourneyParamsScreen) {
+        return (
+          <>
+            {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
+              placeholder: '0',
+              required: true,
+            })}
+            {renderNumberField('area', t('oap_paramsHouseAreaTotal'), {
+              placeholder: '0',
+              required: true,
+            })}
+            {renderNumberField('yearBuilt', t('addPropertyDetailsYearBuiltLabel'), {
+              placeholder: String(new Date().getFullYear()),
+              required: true,
+            })}
+            <div className="oap-basics-params__counts-row">
+              {renderCountPicker('bedrooms', Bed, t('addPropertyDetailsRoomsLabel'))}
+              {renderCountPicker('bathrooms', Bath, t('addPropertyDetailsBathroomsShortLabel'))}
+            </div>
+            {renderNumberField('totalFloors', t('addPropertyDetailsFloorsCountLabel'), {
+              placeholder: '0',
+              required: true,
+            })}
+            {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
+              placeholder: t('addPropertyDetailsSelectMaterial'),
+              required: true,
+            })}
+            {renderSelectField(
+              'constructionType',
+              t('addPropertyConstructionTypePlaceholder'),
+              constructionTypeOptions,
+              {
+                placeholder: t('addPropertyConstructionTypePlaceholder'),
+              }
+            )}
+          </>
+        )
+      }
+
       return (
         <>
           {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
@@ -394,7 +469,8 @@ export default function OwnerAddPropertyBasicsStep({
                 )}
                 <OwnerAddPropertyLocationStep
                   embedded
-                  wide
+                  wide={!isJourneyTypeScreen}
+                  journeyMapAside={isJourneyTypeScreen}
                   form={form}
                   onFormPatch={onFormPatch}
                   errors={locationErrors}

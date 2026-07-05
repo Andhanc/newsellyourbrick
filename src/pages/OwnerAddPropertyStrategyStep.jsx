@@ -45,6 +45,7 @@ export default function OwnerAddPropertyStrategyStep({
   const listingBlock = (
     <OwnerAddPropertyListingStep
       embedded
+      journeyLayout={hideWizardChrome}
       listingModes={listingModes}
       listingMode={listingMode}
       errors={listingErrors}
@@ -69,7 +70,7 @@ export default function OwnerAddPropertyStrategyStep({
 
       <div className="oap-strategy-step__rows">
         <div
-          className={`oap-strategy-step__row oap-strategy-step__row--split oap-strategy-step__row--testdrive${hideWizardChrome ? ' oap-strategy-step__row--testdrive-journey' : ''}`}
+          className={`oap-strategy-step__row oap-strategy-step__row--testdrive${hideWizardChrome ? ' oap-strategy-step__row--testdrive-journey' : ' oap-strategy-step__row--split'}`}
         >
           <div
             className={`oap-strategy-step__zone${hideWizardChrome ? ' oap-strategy-step__zone--testdrive-journey' : ''}`}

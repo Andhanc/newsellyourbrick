@@ -38,8 +38,8 @@
   box-sizing: border-box;
   pointer-events: auto;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   background: #faf8f5;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.2);
@@ -82,8 +82,9 @@
 
 .owner-onboarding-drawer__hero {
   position: relative;
-  min-height: 0;
-  height: 100%;
+  flex: 0 1 auto;
+  min-height: 120px;
+  max-height: min(42vh, 360px);
   width: 100%;
   display: flex;
   align-items: stretch;
@@ -137,14 +138,18 @@
 }
 
 .owner-onboarding-drawer__content {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
   padding:
-    0.35rem max(24px, env(safe-area-inset-right, 0px))
-    calc(18px + env(safe-area-inset-bottom, 0px))
-    max(24px, env(safe-area-inset-left, 0px));
+    0.35rem 24px
+    calc(20px + env(safe-area-inset-bottom, 0px))
+    24px;
 }
 
 .owner-onboarding-drawer__copy {
@@ -153,6 +158,8 @@
   align-items: center;
   text-align: center;
   gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .owner-onboarding-drawer__step-label {
@@ -171,39 +178,41 @@
   align-items: center;
   gap: 0.08rem;
   width: 100%;
-  max-width: min(100%, 24rem);
+  max-width: 100%;
   font-size: clamp(1.65rem, 6.8vw, 2.05rem);
   font-weight: 800;
-  line-height: 1.06;
+  line-height: 1.12;
   letter-spacing: -0.04em;
   color: #111827;
 }
 
 .owner-onboarding-drawer__title-line {
   display: block;
+  max-width: 100%;
 }
 
 .owner-onboarding-drawer__title-line--compact {
-  white-space: nowrap;
+  white-space: normal;
+  text-wrap: balance;
 }
 
 .owner-onboarding-drawer__pill {
-  display: inline-block;
-  margin: 0 0.06em;
-  padding: 0.08em 0.52em 0.14em;
+  display: inline;
+  margin: 0 0.08em;
+  padding: 0.06em 0.48em 0.1em;
   border-radius: 999px;
-  background: var(--oc-gradient-brand, linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%));
+  background: var(--oc-gradient-brand, linear-gradient(135deg, #6ba3b2 0%, #4a90a2 48%, #3a7586 100%));
   color: #ffffff;
   font-weight: 800;
-  line-height: 1.05;
-  box-shadow:
-    0 10px 24px var(--oc-tiffany-ring, rgba(0, 153, 169, 0.28)),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  transform: rotate(-2deg);
+  line-height: 1.15;
+  box-shadow: 0 4px 14px rgba(74, 144, 162, 0.24);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .owner-onboarding-drawer__text {
   margin: 0;
+  width: 100%;
   max-width: 24rem;
   font-size: 1rem;
   line-height: 1.5;
@@ -213,9 +222,14 @@
 .owner-onboarding-drawer__footer {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 1rem;
   width: 100%;
+  min-width: 0;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .owner-onboarding-drawer__dots {
@@ -223,6 +237,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  align-self: center;
 }
 
 .owner-onboarding-drawer__dot {
@@ -242,7 +257,10 @@
 }
 
 .owner-onboarding-drawer__cta {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 17px 20px;
   border: none;
   border-radius: 999px;
@@ -278,10 +296,37 @@
 
   .owner-onboarding-drawer__panel {
     width: min(440px, 100%);
-    height: min(70vh, 680px);
-    max-height: min(70vh, 680px);
+    height: min(680px, 85vh);
+    max-height: min(680px, 85vh);
     border-radius: 24px;
     border: 1px solid rgba(17, 24, 39, 0.08);
+  }
+
+  .owner-onboarding-drawer__hero {
+    flex: 0 0 auto;
+    min-height: 180px;
+    height: min(280px, 38vh);
+    max-height: 280px;
+  }
+
+  .owner-onboarding-drawer__content {
+    flex: 1 1 auto;
+    padding:
+      0.85rem 28px
+      calc(24px + env(safe-area-inset-bottom, 0px))
+      28px;
+  }
+
+  .owner-onboarding-drawer__copy {
+    gap: 0.65rem;
+  }
+
+  .owner-onboarding-drawer__text {
+    margin-top: 0.65rem;
+  }
+
+  .owner-onboarding-drawer__footer {
+    padding-top: 1.5rem;
   }
 
   .owner-onboarding-drawer__panel--entering {

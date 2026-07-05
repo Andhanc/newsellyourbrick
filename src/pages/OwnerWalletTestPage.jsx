@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -16,11 +16,8 @@ import {
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
-import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
-import OwnerWalletMetricChart from '../components/OwnerWalletMetricChart'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
@@ -30,6 +27,7 @@ import {
   DEMO_WALLET_TRANSACTIONS,
   formatWalletAmount,
   formatWalletDate,
+  formatWalletDateParts,
   formatWalletDateMobile,
   getWalletTxTypeMeta,
   getWalletTxStatusLabel,
@@ -53,8 +51,8 @@ function LogoMark({ className = '' }) {
     <svg className={`owl-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="owl-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#33adbb" />
-          <stop offset="100%" stopColor="#007d8a" />
+          <stop offset="0%" stopColor="#6ba3b2" />
+          <stop offset="100%" stopColor="#3a7586" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#owl-logo-grad)" />
@@ -74,12 +72,33 @@ function LogoMark({ className = '' }) {
 }
 
 function MetricInfo({ text }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const close = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open])
+
   return (
-    <span className="owl-metric__info-wrap">
-      <button type="button" className="owl-metric__info" aria-label={text}>
-        <Info size={14} strokeWidth={2} aria-hidden />
+    <span className="owl-metric__info-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className={`owl-metric__info${open ? ' owl-metric__info--active' : ''}`}
+        aria-label={text}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Info size={13} strokeWidth={2.25} aria-hidden />
       </button>
-      <span className="owl-metric__info-tip" role="tooltip">
+      <span
+        className={`owl-metric__info-tip${open ? ' owl-metric__info-tip--visible' : ''}`}
+        role="tooltip"
+      >
         {text}
       </span>
     </span>
@@ -105,6 +124,16 @@ function MobTxThumb({ row }) {
     return <img src={row.propertyImage} alt="" className="owl-mob-list__thumb" loading="lazy" />
   }
   return <span className="owl-mob-list__thumb owl-mob-list__thumb--empty" aria-hidden />
+}
+
+function TxDateCell({ iso, locale }) {
+  const { date, time } = formatWalletDateParts(iso, locale)
+  return (
+    <div className="owl-tx-date-cell">
+      <span className="owl-tx-date-cell__date">{date}</span>
+      {time ? <span className="owl-tx-date-cell__time">{time}</span> : null}
+    </div>
+  )
 }
 
 function TxTypeCell({ typeId, t }) {
@@ -138,28 +167,36 @@ export default function OwnerWalletTestPage() {
     activeId: 'wallet',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
   })
+  const tabItems = useOwnerTestTabItems({
+    variant: 'wallet',
+    hrefMap: isEmbedded
+      ? undefined
+      : { ...OWNER_TEST_STANDALONE_HREF_MAP, profile: OWNER_TEST_STANDALONE_HREF_MAP.settings },
+  })
   const metricDefs = useMemo(
     () => [
       {
         id: 'available',
         label: t('ownerTest_walletAvailable'),
-        hint: t('ownerTest_walletAvailableHint'),
+        caption: t('ownerTest_walletAvailableCaption'),
+        tooltip: t('ownerTest_walletAvailableHint'),
         accent: 'green',
         decor: OWL_IMAGES.metricWallet,
       },
       {
         id: 'processing',
         label: t('ownerTest_walletProcessing'),
-        hint: t('ownerTest_withdrawInfo'),
+        caption: t('ownerTest_walletProcessingCaption'),
+        tooltip: t('ownerTest_walletProcessingHint'),
         accent: 'amber',
         decor: OWL_IMAGES.metricHourglass,
       },
       {
         id: 'withdrawnTotal',
         label: t('ownerTest_walletWithdrawnTotal'),
-        hint: t('ownerTest_walletWithdrawnHint'),
+        caption: t('ownerTest_walletWithdrawnHint'),
         accent: 'teal',
-        decor: 'chart',
+        decor: OWL_IMAGES.metricChart,
       },
     ],
     [t]
@@ -266,23 +303,19 @@ export default function OwnerWalletTestPage() {
 
         <div className="owl-content">
           <section className="owl-metrics" aria-label={t('ownerTest_ariaWalletBalance')}>
-            {metricDefs.map(({ id, label, hint, accent, decor }) => (
-              <article key={id} className={`owl-metric owl-metric--${accent}`}>
+            {metricDefs.map(({ id, label, caption, tooltip, accent, decor }) => (
+              <article key={id} className={`owl-metric owl-metric--${accent} owl-metric--${id}`}>
                 <div className="owl-metric__body">
                   <span className="owl-metric__label">
                     {label}
-                    {id !== 'withdrawnTotal' ? <MetricInfo text={hint} /> : null}
+                    {tooltip ? <MetricInfo text={tooltip} /> : null}
                   </span>
                   <strong className="owl-metric__value">
                     {formatWalletAmount(metricValues[id], { locale: intlLocale })}
                   </strong>
-                  <p className="owl-metric__hint owl-desktop-only">{hint}</p>
+                  {caption ? <p className="owl-metric__hint owl-desktop-only">{caption}</p> : null}
                 </div>
-                {decor === 'chart' ? (
-                  <OwnerWalletMetricChart className="owl-metric__decor owl-metric__decor--chart" />
-                ) : (
-                  <img src={decor} alt="" className="owl-metric__decor" loading="lazy" />
-                )}
+                <img src={decor} alt="" className="owl-metric__decor" loading="lazy" />
               </article>
             ))}
           </section>
@@ -317,8 +350,8 @@ export default function OwnerWalletTestPage() {
                           <th>{t('buyerHistory_date')}</th>
                           <th>{t('bidHistoryPropertyDefault')}</th>
                           <th>{t('ownerTest_walletTxOperation')}</th>
-                          <th>{t('propertyDetailSaleAmount')}</th>
-                          <th>{t('buyerCabinet_billingStatus')}</th>
+                          <th className="owl-table__col-amount">{t('propertyDetailSaleAmount')}</th>
+                          <th className="owl-table__col-status">{t('buyerCabinet_billingStatus')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -328,7 +361,7 @@ export default function OwnerWalletTestPage() {
                           return (
                             <tr key={row.id}>
                               <td>
-                                <span className="owl-tx-date">{formatWalletDate(row.date, intlLocale)}</span>
+                                <TxDateCell iso={row.date} locale={intlLocale} />
                               </td>
                               <td>
                                 <div className="owl-tx-object">
@@ -353,12 +386,12 @@ export default function OwnerWalletTestPage() {
                               <td>
                                 <TxTypeCell typeId={row.type} t={t} />
                               </td>
-                              <td>
+                              <td className="owl-table__col-amount">
                                 <span className={`owl-tx-amount owl-tx-amount--${amountTone}`}>
                                   {formatWalletAmount(row.amount, { signed: true, locale: intlLocale })}
                                 </span>
                               </td>
-                              <td>
+                              <td className="owl-table__col-status">
                                 {shouldShowWalletTxStatus(row.status) ? (
                                   <span className={`owl-tx-status owl-tx-status--${statusTone}`}>
                                     {getWalletTxStatusLabel(row.status, t)}
@@ -503,8 +536,8 @@ export default function OwnerWalletTestPage() {
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id="owl-user-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#33adbb" />
-                  <stop offset="100%" stopColor="#007d8a" />
+                  <stop offset="0%" stopColor="#6ba3b2" />
+                  <stop offset="100%" stopColor="#3a7586" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill="url(#owl-user-grad)" />
@@ -524,11 +557,31 @@ export default function OwnerWalletTestPage() {
 
       {mainColumn}
 
-      <OwnerFloatingMobileNav
-        view={OWNER_VIEWS.WALLET}
-        onOpenMenu={() => setMenuOpen(true)}
-        menuOpen={menuOpen}
-      />
+      <nav className="owl-tabbar owl-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
+        {tabItems.map((item) => {
+          const Icon = item.icon
+          const className = `owl-tabbar__item${item.active ? ' owl-tabbar__item--active' : ''}`
+          if (item.href) {
+            return (
+              <Link key={item.id} to={item.href} className={className}>
+                <span className="owl-tabbar__icon-wrap">
+                  <Icon size={22} strokeWidth={2} aria-hidden />
+                  {item.badge != null ? (
+                    <span className="owl-tabbar__badge">{item.badge}</span>
+                  ) : null}
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            )
+          }
+          return (
+            <button key={item.id} type="button" className={className}>
+              <Icon size={22} strokeWidth={2} aria-hidden />
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </nav>
     </div>
   )
 }

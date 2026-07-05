@@ -35,6 +35,7 @@ import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import {
+  formatOwnerAuctionTimerCountdown,
   formatOwnerAuctionTimerFullCountdown,
   getOwnerAuctionTimerFlags,
 } from '../utils/ownerTestTimer'
@@ -57,7 +58,7 @@ import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
-const MOT_TIFFANY = '#0099A9'
+const MOT_TIFFANY = '#4a90a2'
 
 const PAGE_SIZE = 10
 
@@ -336,7 +337,7 @@ function PropertiesFilterMenu({ filters, onChange }) {
 }
 
 function MiniSpark({ variant }) {
-  const colors = { tiffany: MOT_TIFFANY, green: '#0099A9', orange: '#f59e0b' }
+  const colors = { tiffany: MOT_TIFFANY, green: '#4a90a2', orange: '#f59e0b' }
   const stroke = colors[variant] || MOT_TIFFANY
   return (
     <svg className="op-mini-spark" viewBox="0 0 64 28" aria-hidden>
@@ -365,8 +366,8 @@ function OpMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#33adbb" />
-                <stop offset="100%" stopColor="#007d8a" />
+                <stop offset="0%" stopColor="#6ba3b2" />
+                <stop offset="100%" stopColor="#3a7586" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -384,8 +385,8 @@ function LogoMark({ className = '' }) {
     <svg className={`op-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="op-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#33adbb" />
-          <stop offset="100%" stopColor="#007d8a" />
+          <stop offset="0%" stopColor="#6ba3b2" />
+          <stop offset="100%" stopColor="#3a7586" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#op-logo-grad)" />
@@ -428,7 +429,7 @@ function AmountCell({ row }) {
   )
 }
 
-function getObjectTimerState(endTime, t, now = Date.now()) {
+function getObjectTimerState(endTime, t, now = Date.now(), { compact = false } = {}) {
   if (!endTime) return null
   const endMs = new Date(endTime).getTime()
   if (!Number.isFinite(endMs)) return null
@@ -453,19 +454,37 @@ function getObjectTimerState(endTime, t, now = Date.now()) {
     critical,
     urgent,
     caption: t('ownerTest_propertiesTimerLeft'),
-    label: formatOwnerAuctionTimerFullCountdown(remainingMs, t),
+    label: compact
+      ? formatOwnerAuctionTimerCountdown(remainingMs)
+      : formatOwnerAuctionTimerFullCountdown(remainingMs, t),
   }
 }
 
-function ObjectTimerBadge({ endTime, now }) {
+function ObjectTimerBadge({ endTime, now, compact = false, table = false }) {
   const { t } = useTranslation()
-  const timer = getObjectTimerState(endTime, t, now)
-  if (!timer) return <span className="op-object-timer op-object-timer--empty">—</span>
+  const useCompact = compact || table
+  const timer = getObjectTimerState(endTime, t, now, { compact: useCompact })
+  if (!timer) {
+    return (
+      <span
+        className={[
+          'op-object-timer',
+          'op-object-timer--empty',
+          table && 'op-object-timer--table',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        —
+      </span>
+    )
+  }
 
   return (
     <span
       className={[
         'op-object-timer',
+        table && 'op-object-timer--table',
         timer.expired && 'op-object-timer--expired',
         timer.warning && 'op-object-timer--warning',
         timer.critical && 'op-object-timer--critical',
@@ -478,7 +497,9 @@ function ObjectTimerBadge({ endTime, now }) {
         <Clock size={13} strokeWidth={2.4} />
       </span>
       <span className="op-object-timer__content">
-        <span className="op-object-timer__caption">{timer.caption}</span>
+        {!timer.expired && !table ? (
+          <span className="op-object-timer__caption">{timer.caption}</span>
+        ) : null}
         <span className="op-object-timer__value">{timer.label}</span>
       </span>
     </span>
@@ -978,9 +999,8 @@ export default function OwnerPropertiesTestPage() {
                   <thead>
                     <tr>
                       <th>{t('ownerTest_tabProperties')}</th>
-                      <th>{t('buyerCabinet_billingStatus')}</th>
                       <th>{t('oap_wizardStepListing')}</th>
-                      <th>{t('ownerTest_propertiesTimerCaption')}</th>
+                      <th>{t('ownerTest_propertiesTimerLeft')}</th>
                       <th>{t('ownerTest_metricViews')}</th>
                       <th>{t('propertyDetailPrice')}</th>
                     </tr>
@@ -1012,13 +1032,10 @@ export default function OwnerPropertiesTestPage() {
                           </div>
                         </td>
                         <td>
-                          <span className={`op-status op-status--${row.statusKey}`}>{row.status}</span>
-                        </td>
-                        <td>
                           <ListingTypeBadge type={row.listingType} />
                         </td>
                         <td>
-                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} />
+                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} table />
                         </td>
                         <td>
                           <div className="op-stat-cell">
@@ -1163,8 +1180,8 @@ export default function OwnerPropertiesTestPage() {
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id="op-user-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#33adbb" />
-                  <stop offset="100%" stopColor="#007d8a" />
+                  <stop offset="0%" stopColor="#6ba3b2" />
+                  <stop offset="100%" stopColor="#3a7586" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill="url(#op-user-grad)" />
