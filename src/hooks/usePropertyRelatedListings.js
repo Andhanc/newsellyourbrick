@@ -9,6 +9,55 @@ import {
 import { getCanonicalRegionLabel } from '../utils/propertySearchLocation'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 
+/** Общий кэш — один запрос на geo-ключ, даже при двух монтированиях хука. */
+const relatedListingsCache = new Map()
+const relatedListingsInflight = new Map()
+
+function buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit) {
+  return `${countrySlug}/${citySlug}/${typePlural || '_'}|${propertyId ?? '_'}|${limit}`
+}
+
+async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit }) {
+  const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit)
+  if (relatedListingsCache.has(cacheKey)) {
+    return relatedListingsCache.get(cacheKey)
+  }
+
+  const pending = relatedListingsInflight.get(cacheKey)
+  if (pending) return pending
+
+  const promise = (async () => {
+    const apiBase = getApiBaseUrlSync().replace(/\/$/, '')
+    let path = `${apiBase}/catalog/${countrySlug}/${citySlug}`
+    if (typePlural) path += `/${typePlural}`
+
+    const res = await fetch(path)
+    if (!res.ok) {
+      relatedListingsCache.set(cacheKey, [])
+      return []
+    }
+
+    const json = await res.json()
+    const rows = Array.isArray(json?.data?.properties) ? json.data.properties : []
+    const filtered = rows
+      .filter((row) => String(row.id) !== String(propertyId))
+      .slice(0, limit)
+
+    relatedListingsCache.set(cacheKey, filtered)
+    return filtered
+  })()
+    .catch(() => {
+      relatedListingsCache.set(cacheKey, [])
+      return []
+    })
+    .finally(() => {
+      relatedListingsInflight.delete(cacheKey)
+    })
+
+  relatedListingsInflight.set(cacheKey, promise)
+  return promise
+}
+
 /**
  * Похожие объекты из geo-каталога (тот же город и тип).
  * @param {object | null} property
@@ -40,49 +89,49 @@ export function usePropertyRelatedListings(property, { limit = 4 } = {}) {
       cityCatalogPath,
       typeCatalogPath,
     }
-  }, [property])
+  }, [
+    property?.country,
+    property?.city,
+    property?.location,
+    property?.property_type,
+  ])
+
+  const countrySlug = geo?.countrySlug
+  const citySlug = geo?.citySlug
+  const typePlural = geo?.typePlural
+  const propertyId = property?.id
 
   useEffect(() => {
-    if (!geo?.countrySlug || !geo?.citySlug) {
+    if (!countrySlug || !citySlug) {
       setItems([])
       setLoading(false)
       return undefined
     }
 
     let cancelled = false
-    const controller = new AbortController()
+    const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit)
+    const cached = relatedListingsCache.get(cacheKey)
 
-    const load = async () => {
-      setLoading(true)
-      try {
-        const apiBase = getApiBaseUrlSync().replace(/\/$/, '')
-        let path = `${apiBase}/catalog/${geo.countrySlug}/${geo.citySlug}`
-        if (geo.typePlural) path += `/${geo.typePlural}`
-
-        const res = await fetch(path, { signal: controller.signal })
-        if (!res.ok) {
-          if (!cancelled) setItems([])
-          return
-        }
-        const json = await res.json()
-        const rows = Array.isArray(json?.data?.properties) ? json.data.properties : []
-        const filtered = rows
-          .filter((row) => String(row.id) !== String(property?.id))
-          .slice(0, limit)
-        if (!cancelled) setItems(filtered)
-      } catch (err) {
-        if (err?.name !== 'AbortError' && !cancelled) setItems([])
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+    if (cached) {
+      setItems(cached)
+      setLoading(false)
+      return undefined
     }
 
-    void load()
+    setLoading(true)
+
+    void fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit })
+      .then((rows) => {
+        if (!cancelled) setItems(rows)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
     return () => {
       cancelled = true
-      controller.abort()
     }
-  }, [geo, property?.id, limit])
+  }, [countrySlug, citySlug, typePlural, propertyId, limit])
 
   return { items, loading, geo }
 }

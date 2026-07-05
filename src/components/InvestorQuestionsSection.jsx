@@ -24,12 +24,17 @@ const FAQS = [
 export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'invest' }) {
   const [openFaq, setOpenFaq] = useState(0)
   const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
   const [formSent, setFormSent] = useState(false)
 
   const handleSubmit = (event) => {
     event.preventDefault()
     setFormSent(true)
-    window.setTimeout(() => setFormSent(false), 2400)
+    window.setTimeout(() => {
+      setFormSent(false)
+      setContactEmail('')
+      setContactMessage('')
+    }, 2400)
   }
 
   return (
@@ -43,18 +48,33 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
             Вы можете задать его, позвонив или написав сообщение
           </p>
           <form className="invest-questions__form" onSubmit={handleSubmit}>
-            <div className="invest-questions__field">
-              <FiMail className="invest-questions__field-icon" size={18} aria-hidden />
-              <input
-                type="email"
-                className="invest-questions__input"
-                placeholder="Введите свою почту"
-                value={contactEmail}
-                onChange={(event) => setContactEmail(event.target.value)}
-                autoComplete="email"
-                required
-                disabled={formSent}
-              />
+            <div className="invest-questions__fields">
+              <div className="invest-questions__field">
+                <FiMail className="invest-questions__field-icon" size={18} aria-hidden />
+                <input
+                  id={`${idPrefix}-contact-email`}
+                  type="email"
+                  className="invest-questions__input"
+                  placeholder="Введите свою почту"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  autoComplete="email"
+                  required
+                  disabled={formSent}
+                />
+              </div>
+              <div className="invest-questions__field invest-questions__field--message">
+                <textarea
+                  id={`${idPrefix}-contact-message`}
+                  className="invest-questions__textarea"
+                  placeholder="Напишите ваш вопрос"
+                  value={contactMessage}
+                  onChange={(event) => setContactMessage(event.target.value)}
+                  rows={4}
+                  required
+                  disabled={formSent}
+                />
+              </div>
             </div>
             <button className="invest-questions__btn" type="submit" disabled={formSent}>
               {formSent ? 'Отправлено' : 'Отправить'}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
@@ -12,6 +12,7 @@ import CircularTimer from './CircularTimer'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionDesktopFilters from './AuctionDesktopFilters'
+import AuctionMobileFiltersDrawer from './AuctionMobileFiltersDrawer'
 import AuctionListingSaleToggle from './AuctionListingSaleToggle'
 import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
@@ -85,7 +86,7 @@ const PropertyList = ({
   const [saleFilters, setSaleFilters] = useState([])
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
-  const [mobileAuctionTypesOpen, setMobileAuctionTypesOpen] = useState(false)
+  const [mobileFiltersDrawerOpen, setMobileFiltersDrawerOpen] = useState(false)
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [desktopFiltersTransitioning, setDesktopFiltersTransitioning] = useState(false)
   const desktopFiltersTransitionTimerRef = useRef(null)
@@ -115,21 +116,6 @@ const PropertyList = ({
       }
     }
   }, [])
-
-  useEffect(() => {
-    if (!isMobile || !isAuctionRoute(location.pathname) || !mobileAuctionTypesOpen) return
-    const handlePointerDown = (e) => {
-      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
-        setMobileAuctionTypesOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('touchstart', handlePointerDown, { passive: true })
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('touchstart', handlePointerDown)
-    }
-  }, [isMobile, location.pathname, mobileAuctionTypesOpen])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
@@ -437,6 +423,95 @@ const PropertyList = ({
     }
   }, [propertiesToUse])
 
+  const applyAuctionFilters = useCallback(() => {
+    if (countryFilter && cityFilter) {
+      const typeToCatalogPlural = {
+        апартаменты: 'apartments',
+        квартира: 'apartments',
+        вилла: 'villas',
+        дом: 'houses',
+        коммерческая: 'commercial',
+      }
+      const singleType = propertyTypes.length === 1 ? propertyTypes[0] : ''
+      const path = buildCatalogCityPath({
+        country: countryFilter,
+        city: cityFilter,
+        typePlural: typeToCatalogPlural[singleType] || undefined,
+        sale: 'auction',
+      })
+      if (path) {
+        navigate(path)
+        return
+      }
+    }
+    document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [countryFilter, cityFilter, propertyTypes, navigate])
+
+  const auctionDesktopFilterProps = useMemo(
+    () => ({
+      propertyTypes,
+      setPropertyTypes,
+      saleFilters,
+      setSaleFilters,
+      locationOptions: auctionLocationOptions,
+      country: countryFilter,
+      city: cityFilter,
+      setCountry: setCountryFilter,
+      setCity: setCityFilter,
+      minArea: minAreaFilter,
+      maxArea: maxAreaFilter,
+      setMinArea: setMinAreaFilter,
+      setMaxArea: setMaxAreaFilter,
+      minPrice: minPriceFilter,
+      maxPrice: maxPriceFilter,
+      setMinPrice: setMinPriceFilter,
+      setMaxPrice: setMaxPriceFilter,
+      areaBounds: {
+        min: auctionFilterBounds.areaMin,
+        max: auctionFilterBounds.areaMax,
+      },
+      priceBounds: {
+        min: auctionFilterBounds.priceMin,
+        max: auctionFilterBounds.priceMax,
+      },
+      onApply: applyAuctionFilters,
+    }),
+    [
+      propertyTypes,
+      saleFilters,
+      auctionLocationOptions,
+      countryFilter,
+      cityFilter,
+      minAreaFilter,
+      maxAreaFilter,
+      minPriceFilter,
+      maxPriceFilter,
+      auctionFilterBounds.areaMin,
+      auctionFilterBounds.areaMax,
+      auctionFilterBounds.priceMin,
+      auctionFilterBounds.priceMax,
+      applyAuctionFilters,
+    ],
+  )
+
+  const mobileAuctionActiveFilterCount = useMemo(() => {
+    let count = propertyTypes.length + saleFilters.length
+    if (countryFilter) count += 1
+    if (cityFilter) count += 1
+    if (minAreaFilter !== '' || maxAreaFilter !== '') count += 1
+    if (minPriceFilter !== '' || maxPriceFilter !== '') count += 1
+    return count
+  }, [
+    propertyTypes,
+    saleFilters,
+    countryFilter,
+    cityFilter,
+    minAreaFilter,
+    maxAreaFilter,
+    minPriceFilter,
+    maxPriceFilter,
+  ])
+
   const handleFavoriteToggle = (property, e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -577,57 +652,7 @@ const PropertyList = ({
           }`.trim()}
         >
           {isAuctionDesktop && desktopFiltersOpen ? (
-            <AuctionDesktopFilters
-              propertyTypes={propertyTypes}
-              setPropertyTypes={setPropertyTypes}
-              saleFilters={saleFilters}
-              setSaleFilters={setSaleFilters}
-              locationOptions={auctionLocationOptions}
-              country={countryFilter}
-              city={cityFilter}
-              setCountry={setCountryFilter}
-              setCity={setCityFilter}
-              minArea={minAreaFilter}
-              maxArea={maxAreaFilter}
-              setMinArea={setMinAreaFilter}
-              setMaxArea={setMaxAreaFilter}
-              minPrice={minPriceFilter}
-              maxPrice={maxPriceFilter}
-              setMinPrice={setMinPriceFilter}
-              setMaxPrice={setMaxPriceFilter}
-              areaBounds={{
-                min: auctionFilterBounds.areaMin,
-                max: auctionFilterBounds.areaMax,
-              }}
-              priceBounds={{
-                min: auctionFilterBounds.priceMin,
-                max: auctionFilterBounds.priceMax,
-              }}
-              onApply={() => {
-                if (countryFilter && cityFilter) {
-                  const typeToCatalogPlural = {
-                    апартаменты: 'apartments',
-                    квартира: 'apartments',
-                    вилла: 'villas',
-                    дом: 'houses',
-                    коммерческая: 'commercial',
-                  }
-                  const singleType = propertyTypes.length === 1 ? propertyTypes[0] : ''
-                  const path = buildCatalogCityPath({
-                    country: countryFilter,
-                    city: cityFilter,
-                    typePlural: typeToCatalogPlural[singleType] || undefined,
-                    sale: 'auction',
-                  })
-                  if (path) {
-                    navigate(path)
-                    return
-                  }
-                }
-                const grid = document.getElementById('properties-grid')
-                grid?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
-            />
+            <AuctionDesktopFilters {...auctionDesktopFilterProps} />
           ) : null}
 
           <div
@@ -646,12 +671,6 @@ const PropertyList = ({
             isAuctionDesktop ? ' search-filters-bar--auction-desktop' : ''
           }${
             isAuctionMobileFilters ? ' search-filters-bar--auction-mobile' : ''
-          }${
-            isAuctionMobileFilters
-              ? mobileAuctionTypesOpen
-                ? ' search-filters-bar--types-expanded'
-                : ' search-filters-bar--types-collapsed'
-              : ''
           }`}
         >
           {isAuctionDesktop ? (
@@ -693,10 +712,10 @@ const PropertyList = ({
             <button
               type="button"
               className="filters-button"
-              aria-expanded={isAuctionMobileFilters ? mobileAuctionTypesOpen : undefined}
+              aria-expanded={isAuctionMobileFilters ? mobileFiltersDrawerOpen : undefined}
               onClick={() => {
                 if (isAuctionMobileFilters) {
-                  setMobileAuctionTypesOpen((o) => !o)
+                  setMobileFiltersDrawerOpen(true)
                 } else {
                   setIsSearchModalOpen(true)
                 }
@@ -706,12 +725,14 @@ const PropertyList = ({
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
               </svg>
               {t('filters')}
+              {isAuctionMobileFilters && mobileAuctionActiveFilterCount > 0 ? (
+                <span className="filters-badge" aria-hidden="true">
+                  {mobileAuctionActiveFilterCount}
+                </span>
+              ) : null}
             </button>
-            <div
-              className={`property-types${
-                isAuctionMobileFilters ? ' property-types--auction-mobile' : ''
-              }`}
-            >
+            {!isAuctionMobileFilters ? (
+            <div className="property-types">
               {PROPERTY_FILTER_ITEMS.map((item) => (
                 <button
                   key={`${item.kind}-${item.value}`}
@@ -753,10 +774,11 @@ const PropertyList = ({
                 </button>
               ))}
             </div>
+            ) : null}
           </div>
           ) : null}
         </div>
-        {isAuctionPage ? (
+        {isAuctionPage && !isMobile ? (
           <AuctionListingSaleToggle
             value={auctionSaleToggleMode}
             onChange={handleAuctionSaleToggleChange}
@@ -1415,6 +1437,14 @@ const PropertyList = ({
           onClose={() => setIsSearchModalOpen(false)}
           />
         </Suspense>
+      ) : null}
+
+      {isAuctionMobileFilters ? (
+        <AuctionMobileFiltersDrawer
+          isOpen={mobileFiltersDrawerOpen}
+          onClose={() => setMobileFiltersDrawerOpen(false)}
+          filterProps={auctionDesktopFilterProps}
+        />
       ) : null}
     </section>
     </>

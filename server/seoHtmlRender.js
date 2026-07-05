@@ -406,11 +406,16 @@ export async function buildSeoHtmlForPath(indexPath, pathname, options = {}) {
   const origin = options.origin || resolveRequestSiteOrigin();
   const apiOrigin = options.apiOrigin || origin;
   const lang = options.lang || 'ru';
-  const seo = await resolveSeoForPath(pathname, {
-    origin,
-    apiOrigin,
-    lang,
-    search: options.search || '',
-  });
-  return injectSeoIntoHtml(html, seo);
+  try {
+    const seo = await resolveSeoForPath(pathname, {
+      origin,
+      apiOrigin,
+      lang,
+      search: options.search || '',
+    });
+    return injectSeoIntoHtml(html, seo);
+  } catch (err) {
+    console.warn('[seo-html]', err?.message || err);
+    return html;
+  }
 }

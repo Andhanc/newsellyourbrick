@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { FiChevronDown, FiStar } from 'react-icons/fi'
 import {
   CATALOG_NAV_SECTIONS,
+  getActiveCatalogSection,
   getCatalogSectionById,
   isCatalogSectionActive,
   readPinnedCatalogSection,
@@ -20,7 +21,10 @@ export default function HeaderPinnedCatalogNav({ className = '' }) {
   const [pinnedSectionId, setPinnedSectionId] = useState(() => readPinnedCatalogSection())
 
   const pinnedSection = getCatalogSectionById(pinnedSectionId)
-  const isPinnedSectionCurrent = isCatalogSectionActive(pathname, pinnedSection)
+  const activeSection = getActiveCatalogSection(pathname)
+  const displaySection = activeSection || pinnedSection
+  const isDisplaySectionCurrent = activeSection != null
+  const highlightedStarSectionId = activeSection?.id ?? pinnedSectionId
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -70,10 +74,10 @@ export default function HeaderPinnedCatalogNav({ className = '' }) {
         <button
           type="button"
           className="header-pinned-catalog-nav__label"
-          onClick={() => handleNavigate(pinnedSection.path)}
-          aria-current={isPinnedSectionCurrent ? 'page' : undefined}
+          onClick={() => handleNavigate(displaySection.path)}
+          aria-current={isDisplaySectionCurrent ? 'page' : undefined}
         >
-          {t(pinnedSection.labelKey)}
+          {t(displaySection.labelKey)}
         </button>
         <button
           type="button"
@@ -94,6 +98,7 @@ export default function HeaderPinnedCatalogNav({ className = '' }) {
         <div className="header-pinned-catalog-nav__dropdown" role="listbox">
           {CATALOG_NAV_SECTIONS.map((section) => {
             const isPinned = section.id === pinnedSectionId
+            const isStarHighlighted = section.id === highlightedStarSectionId
             const isActive = isCatalogSectionActive(pathname, section)
 
             return (
@@ -112,7 +117,7 @@ export default function HeaderPinnedCatalogNav({ className = '' }) {
                 </button>
                 <button
                   type="button"
-                  className={`header-pinned-catalog-nav__pin${isPinned ? ' header-pinned-catalog-nav__pin--active' : ''}`}
+                  className={`header-pinned-catalog-nav__pin${isStarHighlighted ? ' header-pinned-catalog-nav__pin--active' : ''}`}
                   onClick={(event) => {
                     event.stopPropagation()
                     pinSection(section.id)

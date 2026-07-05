@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import './AuctionListingSaleToggle.css'
 
-function AuctionListingSaleToggle({ value = 'all', onChange }) {
+function AuctionListingSaleToggle({ value = 'all', onChange, className = '' }) {
   const { t } = useTranslation()
 
   return (
     <div
-      className="auction-listing-sale-toggle"
+      className={`auction-listing-sale-toggle${className ? ` ${className}` : ''}`}
       role="tablist"
       aria-label={t('auctionListingSaleToggleLabel')}
     >

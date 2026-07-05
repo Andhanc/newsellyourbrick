@@ -67,22 +67,28 @@ function AuctionCategoryCtaCards({ variant = 'default' }) {
   return (
     <section className="auction-cta-cards" aria-label={t('auctionPageCtaAria')}>
       <div className="auction-cta-cards__inner">
-        <div className="auction-cta-cards__grid">
-          {cards.map(({ id, titleKey, textKey, ctaKey, to, icon: Icon, image, accent }) => (
+        <div
+          className={`auction-cta-cards__grid${
+            cards.length === 2 ? ' auction-cta-cards__grid--duo' : ''
+          }${cards.length === 3 ? ' auction-cta-cards__grid--trio' : ''}`}
+        >
+          {cards.map(({ id, titleKey, textKey, to, icon: Icon, image, accent }) => (
             <Link key={id} to={to} className="auction-cta-cards__card">
               <img src={image} alt="" />
               <span className="auction-cta-cards__card-overlay" aria-hidden />
               <span className={`auction-cta-cards__icon auction-cta-cards__icon--${accent}`}>
                 <Icon size={27} aria-hidden />
               </span>
-              <span className="auction-cta-cards__content">
-                <strong>{t(titleKey)}</strong>
-                <span>{t(textKey)}</span>
-              </span>
-              <em className="auction-cta-cards__button">
-                {t(ctaKey)}
-                <FiArrowRight size={16} aria-hidden />
-              </em>
+              <div className="auction-cta-cards__footer">
+                <div className="auction-cta-cards__content">
+                  <strong>{t(titleKey)}</strong>
+                  <p>{t(textKey)}</p>
+                </div>
+                <em className="auction-cta-cards__button">
+                  <span>{t('goTo')}</span>
+                  <FiArrowRight className="auction-cta-cards__button-arrow" aria-hidden />
+                </em>
+              </div>
             </Link>
           ))}
         </div>

@@ -10,6 +10,7 @@ import { BiArea } from 'react-icons/bi'
 import { cn } from '@/lib/utils'
 import ListingCardAuctionTimer from '../ListingCardAuctionTimer'
 import CircularTimer from '../CircularTimer'
+import PropertyTimer from '../PropertyTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
@@ -132,7 +133,7 @@ export default function AuctionMobileLayout({
               'w-full',
               view === 'list' && 'auction-mobile-stack',
               view === 'card' &&
-                'auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards',
+                'auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards',
             )}
           >
             {properties.map((property) =>

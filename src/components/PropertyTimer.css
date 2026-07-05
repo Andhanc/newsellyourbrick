@@ -184,9 +184,16 @@
   animation: property-timer-blink 1s infinite, property-timer-shadow 1s infinite;
 }
 
-/* для полноразмерного таймера мигает только тень и цвет обводки */
-.property-timer.timer-critical:not(.compact) {
+/* для полноразмерного таймера мигает только тень и цвет обводки (не на странице объекта) */
+.property-timer.timer-critical:not(.compact):not(.property-timer--detail) {
   animation: property-timer-shadow 1s infinite;
+}
+
+.property-timer--detail.timer-critical,
+.property-timer--plain.timer-critical {
+  animation: none;
+  box-shadow: none;
+  border: none;
 }
 
 /* Стили для таймера на странице детального просмотра объекта */
@@ -315,15 +322,24 @@
   color: #94a3b8;
 }
 
-.property-timer--plain.timer-long .property-timer-plain-value,
-.property-timer--plain.timer-medium .property-timer-plain-value,
-.property-timer--plain.timer-short .property-timer-plain-value,
+.property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-sep {
+  color: #0099A9;
+}
+
+.property-timer--plain.timer-medium:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-medium:not(.timer-critical) .property-timer-plain-sep {
+  color: #f97316;
+}
+
+.property-timer--plain.timer-short:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-short:not(.timer-critical) .property-timer-plain-sep {
+  color: #dc2626;
+}
+
 .property-timer--plain.timer-critical .property-timer-plain-value,
-.property-timer--plain.timer-long .property-timer-plain-sep,
-.property-timer--plain.timer-medium .property-timer-plain-sep,
-.property-timer--plain.timer-short .property-timer-plain-sep,
 .property-timer--plain.timer-critical .property-timer-plain-sep {
-  color: #0f172a;
+  animation: property-timer-blink 1s infinite;
 }
 
 .property-timer--detail .flip-unit {

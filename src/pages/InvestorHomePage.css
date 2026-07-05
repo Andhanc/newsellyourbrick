@@ -1695,8 +1695,18 @@
   }
 
   .invest-showcase__cta-pill {
-    width: 100%;
-    justify-content: space-between;
+    width: fit-content;
+    max-width: 100%;
+    align-self: flex-start;
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 4px 4px 4px 16px;
+    gap: 10px;
+  }
+
+  .invest-showcase__cta-pill-icon {
+    width: 34px;
+    height: 34px;
   }
 
   .invest-home-page .invest-showcase .home-showcase__slot {
@@ -2052,15 +2062,26 @@
 
 .invest-questions__form {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.invest-questions__fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
 .invest-questions__field {
   position: relative;
-  flex: 1 1 240px;
+  width: 100%;
   min-width: 0;
+}
+
+.invest-questions__field--message {
+  position: static;
 }
 
 .invest-questions__field-icon {
@@ -2096,6 +2117,36 @@
 }
 
 .invest-questions__input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.invest-questions__textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invest-questions__textarea::placeholder {
+  color: #9ca3af;
+}
+
+.invest-questions__textarea:focus {
+  outline: none;
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
+}
+
+.invest-questions__textarea:disabled {
   opacity: 0.72;
   cursor: not-allowed;
 }
@@ -2219,13 +2270,53 @@
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 768px) {
+  .invest-questions {
+    padding: clamp(36px, 8vw, 48px) 0 clamp(44px, 9vw, 56px);
+  }
+
+  .invest-questions__contact {
+    padding: clamp(18px, 4.5vw, 24px);
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1.5px solid rgba(15, 23, 42, 0.14);
+    box-shadow:
+      0 12px 32px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .invest-questions__title {
+    font-size: clamp(1.625rem, 7vw, 2rem);
+  }
+
+  .invest-questions__subtitle {
+    max-width: none;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
   .invest-questions__form {
-    flex-direction: column;
-    align-items: stretch;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .invest-questions__input {
+    height: 48px;
+    font-size: 0.875rem;
+  }
+
+  .invest-questions__textarea {
+    min-height: 104px;
+    font-size: 0.875rem;
+    border-radius: 16px;
   }
 
   .invest-questions__btn {
-    width: 100%;
+    width: fit-content;
+    min-width: 148px;
+    height: 48px;
+    padding: 0 1.35rem;
+    font-size: 0.875rem;
   }
 }

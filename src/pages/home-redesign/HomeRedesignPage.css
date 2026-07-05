@@ -3,6 +3,7 @@
 .hr-page {
   --hr-ink: #000000;
   --hr-paper: #ffffff;
+  --hr-surface-muted: #f2f2f2;
   --hr-muted: #6b6b6b;
   --hr-accent: #3d3d3d;
   --hr-accent-hover: #1a1a1a;
@@ -122,9 +123,9 @@
   background: var(--hr-paper);
 }
 
-.hr-section--black {
-  background: var(--hr-ink);
-  color: var(--hr-paper);
+.hr-section--gray {
+  background: var(--hr-surface-muted);
+  color: var(--hr-ink);
 }
 
 /* Typography */
@@ -545,7 +546,7 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: clamp(16px, 2.2vw, 28px);
   pointer-events: none;
 }
@@ -605,22 +606,15 @@
   color: #0f172a;
 }
 
-.hr-hero-visual-copy__desc {
-  margin: clamp(10px, 1.2vw, 14px) 0 0;
-  max-width: min(100%, 26rem);
-  font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
-  line-height: 1.55;
-  font-weight: 400;
-  color: rgba(15, 23, 42, 0.55);
-  letter-spacing: 0;
-}
-
 .hr-hero-visual-copy__actions {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
   gap: clamp(10px, 1.1vw, 12px);
-  margin-top: clamp(18px, 2.2vw, 26px);
+  margin-top: calc(
+    clamp(10px, 1.2vw, 14px) + clamp(18px, 2.2vw, 26px) +
+      2.4 * clamp(0.8125rem, 0.95vw, 0.9375rem)
+  );
 }
 
 .hr-hero-visual-copy__actions .hr-btn {
@@ -761,8 +755,10 @@
 
 /* Hero role CTA cards — правая колонка поверх фото */
 .hr-hero-role-cards {
-  position: relative;
-  z-index: 3;
+  position: absolute;
+  top: calc(var(--hr-header-offset) + clamp(12px, 2vw, 20px));
+  right: clamp(20px, 3vw, 36px);
+  z-index: 4;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -770,6 +766,11 @@
   flex-shrink: 0;
   margin-left: auto;
   align-self: flex-start;
+  pointer-events: none;
+}
+
+.hr-hero-role-cards > * {
+  pointer-events: auto;
 }
 
 .hr-hero-role-cards .frosted-glass-card-container {
@@ -857,7 +858,7 @@
   white-space: nowrap;
 }
 
-/* Strategies — чёрный фон с середины hero-фото */
+/* Strategies — серый фон с середины hero-фото */
 .hr-strategies {
   position: relative;
   z-index: 1;
@@ -865,17 +866,23 @@
   margin-top: calc(-1 * var(--hr-visual-half));
   padding-top: calc(var(--hr-visual-half) + clamp(72px, 8vw, 104px));
   padding-bottom: clamp(64px, 9vw, 104px);
+  background:
+    linear-gradient(
+      165deg,
+      #f8fafc 0%,
+      #f1f5f9 42%,
+      #eef2ff 100%
+    );
 }
 
 .hr-strategies::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 55% 45% at 18% 22%, rgba(160, 196, 255, 0.14) 0%, transparent 58%),
-    radial-gradient(ellipse 80% 60% at 78% 42%, rgba(255, 255, 255, 0.09) 0%, transparent 58%),
-    radial-gradient(ellipse 50% 40% at 12% 88%, rgba(72, 202, 228, 0.08) 0%, transparent 55%);
   pointer-events: none;
+  background:
+    radial-gradient(ellipse 52% 38% at 88% 18%, rgba(99, 102, 241, 0.1), transparent 68%),
+    radial-gradient(ellipse 44% 34% at 8% 82%, rgba(0, 153, 169, 0.09), transparent 70%);
 }
 
 .hr-strategies__inner {
@@ -902,18 +909,21 @@
 }
 
 .hr-strategy-stat-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-height: clamp(196px, 19vw, 220px);
   padding: 18px 20px 20px;
   border-radius: 18px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: #fafafa;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  background: #ffffff;
   color: var(--hr-ink);
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  isolation: isolate;
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -921,37 +931,77 @@
     border-color 0.22s ease;
 }
 
+.hr-strategy-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 18px 18px 0 0;
+  background: var(--hr-strategy-accent, #cbd5e1);
+}
+
+.hr-strategy-stat-card::after {
+  content: '';
+  position: absolute;
+  right: -18%;
+  bottom: -28%;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--hr-strategy-glow, rgba(148, 163, 184, 0.14));
+  pointer-events: none;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
 .hr-strategy-stat-card:hover {
-  transform: translateY(-3px);
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transform: translateY(-4px);
+  border-color: var(--hr-strategy-border-hover, rgba(0, 0, 0, 0.1));
+  box-shadow: var(--hr-strategy-shadow-hover, 0 16px 36px rgba(0, 0, 0, 0.1));
+}
+
+.hr-strategy-stat-card:hover::after {
+  transform: scale(1.08);
+  opacity: 1;
 }
 
 .hr-strategy-stat-card:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid var(--hr-strategy-accent, var(--hr-brand-mid));
   outline-offset: 3px;
 }
 
 .hr-strategy-stat-card__icon {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   background: #ededed;
   color: #1a1a1a;
   flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.hr-strategy-stat-card:hover .hr-strategy-stat-card__icon {
+  transform: scale(1.06);
 }
 
 .hr-strategy-stat-card__icon svg {
-  width: 17px;
-  height: 17px;
-  stroke-width: 2;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.1;
 }
 
 .hr-strategy-stat-card__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -973,8 +1023,68 @@
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.62;
-  font-weight: 400;
+  font-weight: 500;
   color: #6b6b6b;
+}
+
+/* Фиолетовый — аукцион и доли (1-я и 3-я карточки) */
+.hr-strategy-stat-card--auction,
+.hr-strategy-stat-card--shares {
+  --hr-strategy-accent: #6366f1;
+  --hr-strategy-glow: rgba(99, 102, 241, 0.2);
+  --hr-strategy-border-hover: rgba(99, 102, 241, 0.34);
+  --hr-strategy-shadow-hover: 0 18px 40px rgba(99, 102, 241, 0.22);
+  background: linear-gradient(152deg, #ffffff 0%, #f5f3ff 52%, #ede9fe 100%);
+  border-color: rgba(99, 102, 241, 0.18);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.12);
+}
+
+.hr-strategy-stat-card--auction .hr-strategy-stat-card__icon,
+.hr-strategy-stat-card--shares .hr-strategy-stat-card__icon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(99, 102, 241, 0.38);
+}
+
+.hr-strategy-stat-card--auction .hr-strategy-stat-card__headline,
+.hr-strategy-stat-card--shares .hr-strategy-stat-card__headline {
+  color: #312e81;
+}
+
+.hr-strategy-stat-card--auction .hr-strategy-stat-card__text,
+.hr-strategy-stat-card--shares .hr-strategy-stat-card__text {
+  color: #4338ca;
+  opacity: 0.72;
+}
+
+/* Tiffany — купить сейчас и долги (2-я и 4-я карточки) */
+.hr-strategy-stat-card--buy_now,
+.hr-strategy-stat-card--debts {
+  --hr-strategy-accent: #0099a9;
+  --hr-strategy-glow: rgba(0, 153, 169, 0.2);
+  --hr-strategy-border-hover: rgba(0, 153, 169, 0.34);
+  --hr-strategy-shadow-hover: 0 18px 40px rgba(0, 153, 169, 0.22);
+  background: linear-gradient(152deg, #ffffff 0%, #f0fafb 52%, #ccfbf1 100%);
+  border-color: rgba(0, 153, 169, 0.2);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.12);
+}
+
+.hr-strategy-stat-card--buy_now .hr-strategy-stat-card__icon,
+.hr-strategy-stat-card--debts .hr-strategy-stat-card__icon {
+  background: linear-gradient(135deg, #40c5ad 0%, #0099a9 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.36);
+}
+
+.hr-strategy-stat-card--buy_now .hr-strategy-stat-card__headline,
+.hr-strategy-stat-card--debts .hr-strategy-stat-card__headline {
+  color: #0f4c5c;
+}
+
+.hr-strategy-stat-card--buy_now .hr-strategy-stat-card__text,
+.hr-strategy-stat-card--debts .hr-strategy-stat-card__text {
+  color: #0e7490;
+  opacity: 0.76;
 }
 
 .hr-strategies__title {
@@ -983,17 +1093,27 @@
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.03em;
-  color: var(--hr-paper);
+  color: var(--hr-ink);
+}
+
+.hr-strategies__title::after {
+  content: '';
+  display: block;
+  width: clamp(48px, 5vw, 72px);
+  height: 4px;
+  margin-top: clamp(14px, 2vw, 18px);
+  border-radius: 999px;
+  background: var(--hr-brand-gradient);
 }
 
 .hr-strategies__lead {
   margin: clamp(14px, 2vw, 20px) 0 0;
   font-size: clamp(0.9375rem, 1.05vw, 1.0625rem);
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--hr-muted);
 }
 
-/* Витрины объектов — стили как на текущей главной (InvestorHomePage) */
+/* Витрины объектов — стили карточек и лент (общие с home-redesign) */
 .hr-page .hr-showcases.invest-home-page {
   min-height: 0;
   background: #ffffff;
@@ -1007,7 +1127,42 @@
   scroll-margin-top: var(--invest-header-offset, 104px);
 }
 
-/* Витрины: после чёрных стратегий — белый → чёрный → белый → чёрный */
+/* Разделитель между витринами — линия с отступами по бокам */
+.hr-page .hr-showcases .invest-showcase + .invest-showcase {
+  position: relative;
+  padding-top: clamp(44px, 5dvh, 60px);
+}
+
+.hr-page .hr-showcases .invest-showcase + .invest-showcase::before,
+.hr-page .hr-showcases .hr-news::before {
+  content: '';
+  position: absolute;
+  top: clamp(18px, 2dvh, 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 104px), 1460px);
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 7%,
+    rgba(0, 0, 0, 0.16) 20%,
+    rgba(160, 196, 255, 0.72) 46%,
+    rgba(72, 202, 228, 0.65) 54%,
+    rgba(0, 0, 0, 0.16) 80%,
+    rgba(0, 0, 0, 0.1) 93%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+}
+
+.hr-page .hr-showcases .hr-news {
+  position: relative;
+}
+
+/* Витрины: единый белый фон для всех разделов */
 .hr-page .hr-showcases {
   --hr-showcase-accent: linear-gradient(90deg, var(--hr-brand-from) 0%, var(--hr-brand-to) 100%);
   --hr-showcase-accent-hover: linear-gradient(90deg, #8eb5f5 0%, #2dbde0 100%);
@@ -1035,72 +1190,22 @@
   padding: 0 0.08em 0.08em 0.16em;
 }
 
-/* Светлые: аукцион, доли */
 .hr-page .hr-showcases .invest-showcase--auction,
-.hr-page .hr-showcases .invest-showcase--shares {
+.hr-page .hr-showcases .invest-showcase--shares,
+.hr-page .hr-showcases .invest-showcase--buy-now,
+.hr-page .hr-showcases .invest-showcase--debts {
   background: #ffffff;
 }
 
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__subtitle,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle {
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle,
+.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__subtitle,
+.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__subtitle {
   color: #0a0a0a;
 }
 
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill {
-  background: var(--hr-showcase-accent);
-  color: #ffffff;
-  box-shadow: var(--hr-showcase-accent-shadow), inset 0 1px 0 var(--hr-brand-ring);
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill:hover,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill:hover {
-  background: var(--hr-showcase-accent-hover);
-  box-shadow: var(--hr-showcase-accent-shadow-hover), inset 0 1px 0 var(--hr-brand-ring);
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill-icon,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill-icon {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__nav-btn,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__nav-btn {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(10, 10, 10, 0.18);
-  color: #0a0a0a;
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__nav-btn:hover:not(:disabled),
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__nav-btn:hover:not(:disabled) {
-  background: var(--hr-showcase-accent);
-  border-color: transparent;
-  color: #ffffff;
-  box-shadow: var(--hr-showcase-accent-shadow);
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__dot,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__dot {
-  background: rgba(0, 0, 0, 0.14);
-}
-
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__dot.is-active,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__dot.is-active {
-  background: var(--hr-showcase-accent);
-}
-
-/* Тёмные: купить сейчас, долги */
-.hr-page .hr-showcases .invest-showcase--buy-now,
-.hr-page .hr-showcases .invest-showcase--debts {
-  background: linear-gradient(180deg, #141414 0%, #0a0a0a 100%);
-}
-
-.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__subtitle,
-.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__subtitle {
-  color: #ffffff;
-}
-
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__cta-pill,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__cta-pill {
   background: var(--hr-showcase-accent);
@@ -1108,41 +1213,53 @@
   box-shadow: var(--hr-showcase-accent-shadow), inset 0 1px 0 var(--hr-brand-ring);
 }
 
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill:hover,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill:hover,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__cta-pill:hover,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__cta-pill:hover {
   background: var(--hr-showcase-accent-hover);
   box-shadow: var(--hr-showcase-accent-shadow-hover), inset 0 1px 0 var(--hr-brand-ring);
 }
 
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill-icon,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill-icon,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__cta-pill-icon,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__cta-pill-icon {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
 
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__nav-btn,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__nav-btn,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__nav-btn,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__nav-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
-}
-
-.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__nav-btn:hover:not(:disabled),
-.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__nav-btn:hover:not(:disabled) {
-  background: #ffffff;
-  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(10, 10, 10, 0.18);
   color: #0a0a0a;
 }
 
-.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__dot,
-.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__dot {
-  background: rgba(255, 255, 255, 0.22);
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__nav-btn:hover:not(:disabled),
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__nav-btn:hover:not(:disabled),
+.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__nav-btn:hover:not(:disabled),
+.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__nav-btn:hover:not(:disabled) {
+  background: var(--hr-showcase-accent);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: var(--hr-showcase-accent-shadow);
 }
 
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__dot,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__dot,
+.hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__dot,
+.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__dot {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__dot.is-active,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__dot.is-active,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__dot.is-active,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__dot.is-active {
-  background: var(--hr-brand-to);
-  box-shadow: 0 0 10px rgba(72, 202, 228, 0.45);
+  background: var(--hr-showcase-accent);
 }
 
 .hr-page .hr-showcases .invest-showcase__dot {
@@ -1339,9 +1456,13 @@
 
 /* News — после блока «Долги» */
 .hr-page .hr-news {
-  background: #f2f2f2;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--hr-surface-muted);
   padding: clamp(28px, 3.5vw, 44px) 0 clamp(56px, 7vw, 88px);
+}
+
+.hr-page .hr-showcases .hr-news {
+  padding-top: clamp(44px, 5dvh, 60px);
+  padding-bottom: clamp(56px, 7vw, 88px);
 }
 
 .hr-page .hr-showcases .invest-showcase--debts {
@@ -1891,6 +2012,18 @@
   box-shadow: 0 0 0 3px var(--hr-brand-glow);
 }
 
+.hr-page .invest-questions__textarea:focus {
+  border-color: var(--hr-brand-to);
+  box-shadow: 0 0 0 3px var(--hr-brand-glow);
+}
+
+.hr-page .invest-questions__contact {
+  border-color: rgba(72, 202, 228, 0.38);
+  box-shadow:
+    0 12px 32px rgba(72, 202, 228, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
 .hr-page .invest-questions__faq-trigger:hover {
   color: var(--hr-brand-mid);
 }
@@ -1993,24 +2126,32 @@
   .hr-strategies__inner {
     grid-template-columns: 1fr;
     gap: clamp(28px, 5vw, 40px);
+    padding-inline: clamp(16px, 4vw, 24px);
   }
 
   .hr-strategies__copy {
-    max-width: none;
+    max-width: min(100%, 28rem);
+    margin-inline: auto;
+    padding-inline: clamp(12px, 3vw, 20px);
+    text-align: center;
+  }
+
+  .hr-strategies__title::after {
+    margin-inline: auto;
   }
 
   .hr-strategies__cards {
-    overflow-x: auto;
-    margin-inline: calc(-1 * var(--hr-gutter));
-    padding-inline: var(--hr-gutter);
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    grid-template-columns: repeat(4, minmax(248px, 1fr));
-    width: max(100%, calc(4 * 248px + 3 * 14px));
+    overflow-x: visible;
+    margin-inline: 0;
+    margin-left: 0;
+    padding-inline: clamp(8px, 2vw, 12px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: clamp(12px, 2vw, 16px);
   }
 
-  .hr-strategies__cards::-webkit-scrollbar {
-    display: none;
+  .hr-strategy-stat-card {
+    min-height: clamp(168px, 28vw, 200px);
   }
 
   .hr-hero__intro {
@@ -2110,10 +2251,6 @@
     padding: 12px 20px 0;
   }
 
-  .hr-hero-visual-copy__actions {
-    margin-top: 20px;
-  }
-
   .hr-hero-visual-copy__headline {
     font-size: clamp(1.875rem, 2.8vw, 2.5rem);
   }
@@ -2131,6 +2268,8 @@
   }
 
   .hr-hero-role-cards {
+    top: calc(var(--hr-header-offset) + clamp(10px, 2vw, 16px));
+    right: clamp(16px, 2.5vw, 28px);
     width: min(260px, 48%);
     gap: 12px;
   }
@@ -2150,6 +2289,7 @@
     --hr-visual-w: 100%;
     --hr-visual-ratio-h: 5;
     --hr-visual-half: max(140px, calc(100vw * var(--hr-visual-ratio-h) / 8));
+    --hr-hero-mobile-h: clamp(540px, 88vh, 760px);
   }
 
   .hr-hero__visual-wrap {
@@ -2157,55 +2297,156 @@
   }
 
   .hr-hero__visual {
-    aspect-ratio: 4 / 5;
-    min-height: clamp(340px, 62vh, 440px);
+    aspect-ratio: 3 / 4;
+    min-height: var(--hr-hero-mobile-h);
   }
 
   .hr-hero__visual::before {
     background:
-      radial-gradient(ellipse 130% 70% at 50% -8%, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.55) 42%, transparent 72%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.35) 38%, transparent 68%);
+      radial-gradient(ellipse 115% 95% at -6% 48%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.7) 34%, transparent 70%),
+      radial-gradient(ellipse 68% 58% at 10% 18%, rgba(255, 255, 255, 0.84) 0%, transparent 62%),
+      radial-gradient(ellipse 52% 48% at 6% 82%, rgba(255, 255, 255, 0.62) 0%, transparent 58%),
+      linear-gradient(98deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.42) 36%, transparent 64%);
   }
 
   .hr-hero-overlays {
-    position: relative;
-    inset: auto;
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: var(--hr-hero-mobile-h);
     flex-direction: column;
     align-items: stretch;
-    margin: -72px 16px 0;
-    gap: 14px;
+    justify-content: flex-start;
+    padding:
+      calc(var(--hr-header-offset) + clamp(10px, 2.5vw, 16px))
+      clamp(18px, 5vw, 24px)
+      clamp(16px, 4vw, 24px);
+    gap: 0;
   }
 
   .hr-hero-visual-copy {
     width: 100%;
-    order: 1;
-    margin-top: 0;
-    padding: 0 4px;
+    margin-top: clamp(28px, 6.5vw, 44px);
+    padding: 0;
+    text-align: left;
+    transform: none;
+  }
+
+  .hr-hero-visual-copy__overline {
+    margin-bottom: 10px;
+    font-size: 0.8125rem;
+    color: rgba(15, 23, 42, 0.58);
+  }
+
+  .hr-hero-visual-copy__headline {
+    font-size: clamp(1.75rem, 8.2vw, 2.35rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .hr-hero-visual-copy__subheadline {
+    margin-top: 12px;
+    max-width: 100%;
+    font-size: clamp(0.9375rem, 4vw, 1.0625rem);
+    line-height: 1.3;
   }
 
   .hr-hero-visual-copy__actions {
+    display: flex;
     flex-flow: row wrap;
-    margin-top: 20px;
+    align-items: center;
+    gap: 10px;
+    margin-top: calc(
+      clamp(10px, 2.5vw, 14px) + clamp(14px, 3.5vw, 18px) +
+        2.4 * clamp(0.75rem, 3.2vw, 0.875rem)
+    );
   }
 
   .hr-hero-visual-copy__actions .hr-btn {
     flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .hr-hero-visual-copy__headline {
-    font-size: clamp(1.875rem, 7.5vw, 2.5rem);
+    min-width: min(100%, 148px);
+    min-height: 42px;
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+    white-space: nowrap;
   }
 
   .hr-hero-role-cards {
+    position: relative;
+    z-index: 5;
+    top: auto;
+    right: auto;
+    flex-direction: row;
+    align-items: stretch;
+    width: calc(100% - 32px);
+    margin: clamp(-148px, -30vw, -188px) auto 0;
+    gap: 10px;
+  }
+
+  .hr-hero-role-cards > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card-container {
+    max-width: none;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card {
+    height: 100%;
+    min-height: 0;
+    padding: 14px 12px 12px;
+    border-radius: 18px;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__title {
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__content {
+    height: 100%;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__text {
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    flex: 1;
+  }
+
+  .hr-hero-role-cards .frosted-glass-card__btn {
     width: 100%;
-    margin: 0;
-    order: 2;
+    justify-content: center;
+    align-self: stretch;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 0.6875rem;
+    border-radius: 10px;
+    gap: 4px;
   }
 
   .hr-search-bar-bridge {
     width: calc(100% - 32px);
-    margin-top: -36px;
+    margin-top: clamp(12px, 3vw, 18px);
     padding-inline: 16px;
   }
 
@@ -2239,13 +2480,61 @@
     border-radius: 14px;
   }
 
-  .hr-hero-role-cards {
-    width: 100%;
-    margin: 0;
-  }
-
   .hr-hero__hotspot {
     display: none;
+  }
+
+  .hr-strategies__inner {
+    gap: clamp(20px, 5vw, 28px);
+    width: calc(100% - 32px);
+    padding-inline: 0;
+  }
+
+  .hr-strategies__copy {
+    padding-inline: clamp(16px, 5vw, 24px);
+  }
+
+  .hr-strategies__title {
+    font-size: clamp(1.5rem, 6.5vw, 1.875rem);
+  }
+
+  .hr-strategies__lead {
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  .hr-strategies__cards {
+    gap: 10px;
+    padding-inline: 0;
+  }
+
+  .hr-strategy-stat-card {
+    min-height: 0;
+    padding: 14px 12px 16px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .hr-strategy-stat-card__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .hr-strategy-stat-card__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hr-strategy-stat-card__headline {
+    min-height: 0;
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+
+  .hr-strategy-stat-card__text {
+    font-size: 0.6875rem;
+    line-height: 1.45;
   }
 }
 
@@ -2256,5 +2545,19 @@
 
   .hr-btn {
     transition: none;
+  }
+
+  .hr-strategy-stat-card,
+  .hr-strategy-stat-card__icon,
+  .hr-strategy-stat-card::after {
+    transition: none;
+  }
+
+  .hr-strategy-stat-card:hover {
+    transform: none;
+  }
+
+  .hr-strategy-stat-card:hover .hr-strategy-stat-card__icon {
+    transform: none;
   }
 }

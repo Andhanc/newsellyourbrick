@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react'
 import { useTranslation, Trans } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
@@ -80,6 +80,7 @@ import '../components/ShareDetailPurchasePanel.css'
 import PropertyDetailDesktopAppBanner from '../components/PropertyDetailDesktopAppBanner'
 import PropertyDetailDesktopYieldCalc from '../components/PropertyDetailDesktopYieldCalc'
 import PropertyDetailYieldPromo from '../components/PropertyDetailYieldPromo'
+import PropertyDetailInvestorPanelPromo from '../components/property-detail/PropertyDetailInvestorPanelPromo'
 import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
@@ -231,6 +232,8 @@ function PropertyDetailClassic({
   const auctionFinishedLatchRef = useRef(false)
   /** Последняя известная дата кругового таймера (если API убрал test_timer_end_date) */
   const lastTestTimerEndRef = useRef(null)
+  const testDriveBannerRef = useRef(null)
+  const investorPromoRef = useRef(null)
   const [auctionMobileTab, setAuctionMobileTab] = useState(
     shareListingConfig != null ? 'bids' : 'about',
   )
@@ -843,17 +846,8 @@ function PropertyDetailClassic({
       }, 2400)
     }, 400)
   }
-  
-  // Логируем данные о резервации для отладки
-  console.log('🔍 PropertyDetailClassic - Данные о резервации:', {
-    property_is_reserved: property.is_reserved,
-    property_reserved_until: property.reserved_until,
-    displayProperty_is_reserved: displayProperty.is_reserved,
-    displayProperty_reserved_until: displayProperty.reserved_until,
-    shouldShowBanner: isReservedActive
-  });
 
-  // Убрали лишние логи, которые вызывают бесконечный цикл
+  // Убрали отладочные логи — вызывали шум в консоли при каждом рендере
 
   const images =
     displayProperty.images && displayProperty.images.length > 0
@@ -1001,6 +995,44 @@ function PropertyDetailClassic({
 
   const propertyInfo = displayProperty.title || displayProperty.name
   const isDesktopProperty = useIsDesktopProperty()
+
+  useEffect(() => {
+    if (!isDesktopProperty || !showsTestDriveSection) return undefined
+
+    const syncInvestorPromoHeight = () => {
+      const banner = testDriveBannerRef.current
+      const promo = investorPromoRef.current
+      if (!banner || !promo) return
+      promo.style.minHeight = `${banner.offsetHeight}px`
+    }
+
+    let ro
+    const attachObserver = () => {
+      syncInvestorPromoHeight()
+      const banner = testDriveBannerRef.current
+      if (!banner || !ro) return
+      ro.observe(banner)
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(syncInvestorPromoHeight)
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      attachObserver()
+      window.requestAnimationFrame(attachObserver)
+    })
+
+    window.addEventListener('resize', syncInvestorPromoHeight)
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      ro?.disconnect()
+      window.removeEventListener('resize', syncInvestorPromoHeight)
+      if (investorPromoRef.current) {
+        investorPromoRef.current.style.minHeight = ''
+      }
+    }
+  }, [isDesktopProperty, showsTestDriveSection, displayProperty.id])
 
   const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
@@ -6046,6 +6078,14 @@ function PropertyDetailClassic({
     const descriptionText = displayProperty.description
       ? String(displayProperty.description).trim()
       : ''
+    const additionalAmenitiesText = (() => {
+      const raw =
+        displayProperty.additional_amenities ||
+        property.additional_amenities ||
+        property.additionalAmenities ||
+        ''
+      return String(raw).trim()
+    })()
 
     const mergeSpecItems = () => {
       const seen = new Set()
@@ -6302,33 +6342,52 @@ function PropertyDetailClassic({
             Подробнее об аукционе <FiArrowRight size={15} aria-hidden />
           </button>
         </section>
+        <PropertyDetailInvestorPanelPromo
+          ref={investorPromoRef}
+          matchTestDriveHeight={showsTestDriveSection}
+          onClick={() => openInvestorPanelForProperty()}
+        />
       </div>
       )
     }
 
     const renderPdxClassicSidebar = () => (
-      <section className="pdx-auction-card pdx-auction-card--classic">
-        {displayProperty.price && Number(displayProperty.price) > 0 ? (
-          <>
-            <p className="pdx-auction-card__label">{t('propertyDetailPrice')}</p>
-            <span className="pdx-auction-card__price">{fmtPrice(displayProperty.price)}</span>
-            <button
-              type="button"
-              className="pdx-primary-btn"
-              onClick={handleBookNow}
-              disabled={isReservedActive || !buyNowEmailOk}
-            >
-              {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
-            </button>
-          </>
-        ) : null}
-      </section>
+      <div className="pdx-sidebar-stack">
+        <section className="pdx-auction-card pdx-auction-card--classic">
+          {displayProperty.price && Number(displayProperty.price) > 0 ? (
+            <>
+              <p className="pdx-auction-card__label">{t('propertyDetailPrice')}</p>
+              <span className="pdx-auction-card__price">{fmtPrice(displayProperty.price)}</span>
+              <button
+                type="button"
+                className="pdx-primary-btn"
+                onClick={handleBookNow}
+                disabled={isReservedActive || !buyNowEmailOk}
+              >
+                {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+              </button>
+            </>
+          ) : null}
+        </section>
+        <PropertyDetailInvestorPanelPromo
+          ref={investorPromoRef}
+          matchTestDriveHeight={showsTestDriveSection}
+          onClick={() => openInvestorPanelForProperty()}
+        />
+      </div>
     )
 
     const renderPdxShareSidebar = () => (
-      <section className="pdx-auction-card pdx-auction-card--share" ref={auctionDesktopBidPanelRef}>
-        <ShareDetailPurchasePanel {...shareListingConfig} variant="desktop" />
-      </section>
+      <div className="pdx-sidebar-stack" ref={auctionDesktopBidPanelRef}>
+        <section className="pdx-auction-card pdx-auction-card--share">
+          <ShareDetailPurchasePanel {...shareListingConfig} variant="desktop" />
+        </section>
+        <PropertyDetailInvestorPanelPromo
+          ref={investorPromoRef}
+          matchTestDriveHeight={showsTestDriveSection}
+          onClick={() => openInvestorPanelForProperty()}
+        />
+      </div>
     )
 
     const featureFallbacks = [
@@ -6368,9 +6427,18 @@ function PropertyDetailClassic({
 
     const pageSubtitle = (
       <span className="pdx-location-line">
-        <FiMapPin size={16} aria-hidden />
-        {placeLabel}
-        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">На карте</a>
+        <span className="pdx-location-line__place">
+          <FiMapPin size={16} aria-hidden />
+          {placeLabel}
+        </span>
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pdx-location-line__map-link"
+        >
+          На карте <FiArrowRight size={15} aria-hidden />
+        </a>
       </span>
     )
 
@@ -6463,12 +6531,25 @@ function PropertyDetailClassic({
         return (
           <div className="pdx-tab-card__characteristics">
             <div className="pdx-characteristics__grid">
-              {specItems.slice(0, 12).map((item) => (
-                <div key={item.key} className="pdx-characteristics__row">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
+              {Array.from(
+                { length: Math.ceil(Math.min(specItems.length, 12) / 4) },
+                (_, rowIndex) => {
+                  const chunk = specItems.slice(rowIndex * 4, rowIndex * 4 + 4)
+                  return (
+                    <Fragment key={`spec-row-${rowIndex}`}>
+                      {rowIndex > 0 ? (
+                        <div className="pdx-characteristics__divider" aria-hidden />
+                      ) : null}
+                      {chunk.map((item) => (
+                        <div key={item.key} className="pdx-characteristics__row">
+                          <span>{item.label}</span>
+                          <strong>{item.value}</strong>
+                        </div>
+                      ))}
+                    </Fragment>
+                  )
+                },
+              )}
             </div>
           </div>
         )
@@ -6596,12 +6677,10 @@ function PropertyDetailClassic({
             getGoogleDriveEmbedUrl={getGoogleDriveEmbedUrl}
             reserved={isReservedActive}
             reservedLabel={t('objectReserved')}
-            badge={isAuctionProperty ? 'Аукцион' : ''}
           />
         }
         subtitle={pageSubtitle}
         title={propertyInfo}
-        stats={pageStats.length ? pageStats : null}
         toolbar={pageToolbar}
         sidebar={
           isShareListing
@@ -6620,22 +6699,24 @@ function PropertyDetailClassic({
           </section>
         ) : null}
 
-        <section className="pdx-features-card" aria-label="Преимущества объекта">
-          {featureItems.map(({ title, text, Icon }) => (
-            <article key={title} className="pdx-feature">
-              <span className="pdx-feature__icon" aria-hidden>
-                <Icon size={20} strokeWidth={2.1} />
-              </span>
-              <div className="pdx-feature__copy">
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            </article>
-          ))}
-        </section>
+        {pageStats.length ? (
+          <section className="pdx-stats-section" aria-label="Основные параметры объекта">
+            <div className="pdx-page__stats">{pageStats}</div>
+          </section>
+        ) : null}
+
+        {additionalAmenitiesText ? (
+          <section className="pdx-additional-amenities">
+            <h2 className="pdx-additional-amenities__title">{t('addPropertyAmenitiesOtherLabel')}</h2>
+            <div className="pdx-additional-amenities__body">
+              <p>{additionalAmenitiesText}</p>
+            </div>
+          </section>
+        ) : null}
 
         {showsTestDriveSection ? (
           <PropertyDetailDesktopTestDriveBanner
+            ref={testDriveBannerRef}
             propertyId={displayProperty.id}
             propertyTable={
               property.source_table || displayProperty.source_table || 'properties_apartments'
@@ -6678,7 +6759,7 @@ function PropertyDetailClassic({
         isAuctionLayout
           ? ` property-detail-page-new--auction-mobile-v2 property-detail-page-new--auction property-detail-page-new--auction-desktop-v3 property-detail-mobile-tab-${auctionMobileTab}${
               isMobileBidBarNearFooter ? ' property-detail-page-new--bid-bar-hidden' : ''
-            }${isBidDrawerOpen ? ' property-detail-page-new--bid-drawer-open' : ''}${
+            }${isBidDrawerOpen ? ' property-detail-page-new--bid-modal-open' : ''}${
               isShareListing ? ' property-detail-page-new--share-listing' : ''
             }`
           : ''
@@ -6796,20 +6877,7 @@ function PropertyDetailClassic({
         if (!displayProperty) return false;
         const isReserved = displayProperty.is_reserved === true || displayProperty.is_reserved === 1 || displayProperty.is_reserved === 'true';
         const reservedUntil = displayProperty.reserved_until ? new Date(displayProperty.reserved_until) : null;
-        const isValid = isReserved && reservedUntil && reservedUntil > new Date();
-        
-        console.log('🔍 PropertyDetailClassic - Проверка баннера:', {
-          displayProperty_exists: !!displayProperty,
-          is_reserved: displayProperty.is_reserved,
-          isReserved: isReserved,
-          reserved_until: displayProperty.reserved_until,
-          reservedUntil: reservedUntil ? reservedUntil.toISOString() : null,
-          now: new Date().toISOString(),
-          isValid: isValid,
-          hoursRemaining: isValid && reservedUntil ? Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60)) : 0
-        });
-        
-        return isValid;
+        return isReserved && reservedUntil && reservedUntil > new Date();
       })() && null}
 
       {/* Основной контент */}

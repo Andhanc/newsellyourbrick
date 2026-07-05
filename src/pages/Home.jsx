@@ -31,6 +31,7 @@ import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
@@ -364,6 +365,12 @@ function Home() {
     let cancelled = false
 
     const loadUserDeposit = async () => {
+      if (!canShowBuyerDeposit()) {
+        setUserDeposit(0)
+        setDepositLoading(false)
+        return
+      }
+
       if (!dbUserId) {
         if (!localStorage.getItem('isLoggedIn') || localStorage.getItem('isLoggedIn') !== 'true') {
           setUserDeposit(0)
@@ -759,14 +766,7 @@ function Home() {
     }
   }
 
-  const canShowDeposit = () => {
-    if (!isAuthenticated() && !getUserData()?.isLoggedIn) return false
-
-    const roleRaw = getUserData()?.role || localStorage.getItem('userRole') || 'buyer'
-    const userRole = String(roleRaw || 'buyer').toLowerCase()
-    if (userRole === 'seller' || userRole === 'owner' || userRole === 'admin') return false
-    return userRole === 'buyer' || userRole === 'client'
-  }
+  const canShowDeposit = canShowBuyerDeposit
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const chatHistoryLoadedRef = useRef(false)

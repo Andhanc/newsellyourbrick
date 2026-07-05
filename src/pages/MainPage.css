@@ -7234,9 +7234,29 @@ a.property-link {
   padding-left: clamp(96px, 12.5vw, 176px);
 }
 
-.apartments-section--auction-showcase,
+.apartments-section--auction-showcase {
+  background: #ffffff;
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+.apartments-section--buy-now-showcase {
+  background: linear-gradient(180deg, #dff7f2 0%, #f2fffc 48%, #e7fbf7 100%);
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
 .apartments-section--debts-showcase {
-  background: #f4f4f5;
+  background: #ffffff;
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+.apartments-section--shares-showcase {
+  background: linear-gradient(180deg, #dff7f2 0%, #f2fffc 48%, #e7fbf7 100%);
   margin-top: 0;
   padding-top: 44px;
   padding-bottom: 44px;
@@ -7626,27 +7646,12 @@ a.auction-showcase-card__link {
   }
 }
 
-/* Главная — «Купить сейчас»: мятный фон на всю ширину секции */
+/* Главная — «Купить сейчас»: серый фон как у блока стратегий */
 .apartments-section--buy-now-showcase {
-  --syb-mint-panel-bg:
-    radial-gradient(circle at 22% 18%, rgba(168, 255, 104, 0.52), transparent 28%),
-    radial-gradient(circle at 78% 70%, rgba(255, 255, 255, 0.82), transparent 34%),
-    repeating-linear-gradient(
-      135deg,
-      rgba(54, 103, 64, 0.04) 0,
-      rgba(54, 103, 64, 0.04) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
-    linear-gradient(180deg, #f3ffe9 0%, #d4ffb8 100%);
-  background: var(--syb-mint-panel-bg);
+  background: linear-gradient(180deg, #dff7f2 0%, #f2fffc 48%, #e7fbf7 100%);
   margin-top: 0;
   padding: clamp(44px, 5vw, 72px) clamp(16px, 4vw, 32px);
   color: #101928;
-  box-shadow:
-    0 34px 90px rgba(72, 140, 40, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1px 0 rgba(35, 68, 43, 0.08);
 }
 
 .apartments-section--buy-now-showcase.apartments-section {
@@ -7684,15 +7689,13 @@ a.auction-showcase-card__link {
 
 .apartments-section__container--mint-panel .auction-showcase__cta-icon {
   border: none;
-  background: #c8ff82;
+  background: rgba(0, 153, 169, 0.14);
   color: #101928;
-  box-shadow:
-    0 8px 20px rgba(96, 190, 48, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.12);
 }
 
 .apartments-section__container--mint-panel .auction-showcase__cta:hover .auction-showcase__cta-icon {
-  background: #b4f56a;
+  background: rgba(0, 153, 169, 0.22);
   color: #101928;
 }
 
@@ -7709,65 +7712,10 @@ a.auction-showcase-card__link {
   border-color: #0a0a0a;
 }
 
-/* Секция «Доли»: зелёный градиент вместо тиффани */
-.apartments-section--shares-showcase {
-  background: linear-gradient(
-    168deg,
-    #c8ff82 0%,
-    #0099A9 20%,
-    #66c1cc 45%,
-    #7ec96a 70%,
-    #007d8a 100%
-  );
-  margin-top: 0;
-  padding-top: 44px;
-  padding-bottom: 44px;
-}
-
-.apartments-section--shares-showcase .auction-showcase__title,
-.apartments-section--shares-showcase .auction-showcase__subtitle {
-  color: #ffffff;
-}
-
-.apartments-section--shares-showcase .auction-showcase__subtitle {
-  opacity: 0.94;
-}
-
-.apartments-section--shares-showcase .auction-showcase__cta {
-  color: #ffffff;
-}
-
-.apartments-section--shares-showcase .auction-showcase__cta-icon {
-  border: none;
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.apartments-section--shares-showcase .auction-showcase__cta:hover .auction-showcase__cta-icon {
-  background: #ffffff;
-  color: #007d8a;
-}
-
-.apartments-section--shares-showcase .auction-showcase__scroller {
-  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
-}
-
-.apartments-section--shares-showcase .auction-showcase__scroller::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.38);
-}
-
-.apartments-section--shares-showcase .auction-showcase__nav-btn {
-  border-color: rgba(255, 255, 255, 0.88);
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.12);
-}
-
-.apartments-section--shares-showcase .auction-showcase__nav-btn:hover {
-  background: #ffffff;
-  color: #007d8a;
-  border-color: #ffffff;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+/* Секция «Доли»: доп. отступы на широких экранах */
+.apartments-section--shares-showcase.apartments-section {
+  padding: clamp(44px, 5vw, 72px) clamp(16px, 4vw, 32px);
+  padding-left: clamp(16px, 4vw, 32px);
 }
 
 /* На телефоне: круглая стрелка без подписи «Перейти к …» (текст остаётся для скринридеров) */
@@ -14410,10 +14358,10 @@ body:has(.hero-section) .site-ads-host {
 }
 
 .app:has(.hero-section) .apartments-section--buy-now-showcase {
-  background: var(--syb-mint-panel-bg) !important;
+  background: linear-gradient(180deg, #dff7f2 0%, #f2fffc 48%, #e7fbf7 100%) !important;
   padding: clamp(44px, 5vw, 72px) clamp(16px, 4vw, 32px) !important;
   color: #101928 !important;
-  box-shadow: var(--syb-mint-panel-shadow) !important;
+  box-shadow: none !important;
 }
 
 .app:has(.hero-section) .apartments-section--buy-now-showcase.apartments-section {
@@ -15277,19 +15225,19 @@ body:has(.hero-section) .site-ads-host {
 }
 
 .app--premium-home .apartments-section--auction-showcase {
-  background: linear-gradient(180deg, #f8fffd 0%, #eafbfa 100%) !important;
+  background: var(--home-showcase-bg-white) !important;
 }
 
 .app--premium-home .apartments-section--buy-now-showcase {
-  background: linear-gradient(180deg, #eafbfa 0%, #def7f3 100%) !important;
+  background: var(--home-showcase-bg-gray) !important;
 }
 
 .app--premium-home .apartments-section--debts-showcase {
-  background: linear-gradient(180deg, #def7f3 0%, #effffc 100%) !important;
+  background: var(--home-showcase-bg-white) !important;
 }
 
 .app--premium-home .apartments-section--shares-showcase {
-  background: linear-gradient(180deg, #effffc 0%, #f8fffd 100%) !important;
+  background: var(--home-showcase-bg-gray) !important;
 }
 
 .app--premium-home .apartments-section__container {
@@ -15733,6 +15681,8 @@ body:has(.hero-section) .site-ads-host {
   --home-line: rgba(6, 88, 87, 0.15);
   --home-shadow: 0 28px 82px rgba(3, 63, 64, 0.14);
   --home-max: min(1320px, calc(100vw - 48px));
+  --home-showcase-bg-white: #ffffff;
+  --home-showcase-bg-gray: linear-gradient(180deg, #dff7f2 0%, #f2fffc 48%, #e7fbf7 100%);
   min-height: 100%;
   overflow-x: clip;
   background: var(--home-mint-25);
@@ -16471,19 +16421,19 @@ body:has(.hero-section) .site-ads-host {
 }
 
 .app--premium-home .apartments-section--auction-showcase {
-  background: linear-gradient(180deg, #e7fbf7 0%, #f8fffd 100%) !important;
+  background: var(--home-showcase-bg-white) !important;
 }
 
 .app--premium-home .apartments-section--buy-now-showcase {
-  background: linear-gradient(180deg, #f8fffd 0%, #d7f6f1 100%) !important;
+  background: var(--home-showcase-bg-gray) !important;
 }
 
 .app--premium-home .apartments-section--debts-showcase {
-  background: linear-gradient(180deg, #d7f6f1 0%, #004a52 100%) !important;
+  background: var(--home-showcase-bg-white) !important;
 }
 
 .app--premium-home .apartments-section--shares-showcase {
-  background: linear-gradient(180deg, #004a52 0%, #ebfbf8 100%) !important;
+  background: var(--home-showcase-bg-gray) !important;
 }
 
 .app--premium-home .apartments-section__container {
@@ -16527,18 +16477,6 @@ body:has(.hero-section) .site-ads-host {
   font-weight: 560 !important;
 }
 
-.app--premium-home .apartments-section--debts-showcase .auction-showcase__title-link,
-.app--premium-home .apartments-section--debts-showcase .auction-showcase__title,
-.app--premium-home .apartments-section--shares-showcase .auction-showcase__title-link,
-.app--premium-home .apartments-section--shares-showcase .auction-showcase__title {
-  color: var(--home-white) !important;
-}
-
-.app--premium-home .apartments-section--debts-showcase .auction-showcase__subtitle,
-.app--premium-home .apartments-section--shares-showcase .auction-showcase__subtitle {
-  color: rgba(251, 255, 254, 0.74) !important;
-}
-
 .app--premium-home .auction-showcase__cta,
 .app--premium-home .auction-showcase__nav-btn {
   border: 1px solid rgba(6, 88, 87, 0.14) !important;
@@ -16546,15 +16484,6 @@ body:has(.hero-section) .site-ads-host {
   background: rgba(251, 255, 254, 0.72) !important;
   box-shadow: 0 14px 40px rgba(3, 63, 64, 0.08) !important;
   color: var(--home-ink) !important;
-}
-
-.app--premium-home .apartments-section--debts-showcase .auction-showcase__cta,
-.app--premium-home .apartments-section--debts-showcase .auction-showcase__nav-btn,
-.app--premium-home .apartments-section--shares-showcase .auction-showcase__cta,
-.app--premium-home .apartments-section--shares-showcase .auction-showcase__nav-btn {
-  border-color: rgba(251, 255, 254, 0.2) !important;
-  background: rgba(251, 255, 254, 0.12) !important;
-  color: var(--home-white) !important;
 }
 
 .app--premium-home .auction-showcase__cta:hover,

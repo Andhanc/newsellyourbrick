@@ -54,12 +54,17 @@ export function viteSeoHtmlPlugin() {
           let html = await fs.promises.readFile(indexPath, 'utf8');
           html = await server.transformIndexHtml(url, html);
 
-          const finalHtml = await buildSeoHtmlForPath(indexPath, pathname, {
-            origin: siteOrigin.replace(/\/$/, ''),
-            apiOrigin: apiOrigin.replace(/\/$/, ''),
-            search,
-            html,
-          });
+          let finalHtml = html;
+          try {
+            finalHtml = await buildSeoHtmlForPath(indexPath, pathname, {
+              origin: siteOrigin.replace(/\/$/, ''),
+              apiOrigin: apiOrigin.replace(/\/$/, ''),
+              search,
+              html,
+            });
+          } catch (seoErr) {
+            console.warn('[vite-seo-html]', seoErr?.message || seoErr);
+          }
 
           res.statusCode = 200;
           res.setHeader('Content-Type', 'text/html; charset=utf-8');

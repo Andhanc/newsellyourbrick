@@ -36,6 +36,7 @@ export const SEO_ROBOTS_DISALLOW_PREFIXES = [
 export function normalizeSeoPathname(pathname = '') {
   const raw = String(pathname || '').split('?')[0].split('#')[0] || '/'
   if (raw === '/main') return '/auction'
+  if (raw === '/home-redesign') return '/'
   return raw.startsWith('/') ? raw : `/${raw}`
 }
 

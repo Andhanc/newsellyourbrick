@@ -12,6 +12,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
@@ -50,16 +51,7 @@ const PropertyDetail = () => {
   const userData = getUserData()
   const userId = userData?.id
 
-  // Функция для проверки, можно ли показывать депозит (только для авторизованных покупателей)
-  const canShowDeposit = () => {
-    // Проверяем, авторизован ли пользователь
-    if (!isAuthenticated() || !userData || !userData.isLoggedIn) {
-      return false
-    }
-    // Показываем депозит только для покупателей (не для продавцов)
-    const userRole = userData.role || 'buyer'
-    return userRole === 'buyer' || userRole === 'client'
-  }
+  const canShowDeposit = canShowBuyerDeposit
 
   // Проверка авторизации при загрузке компонента
   useEffect(() => {

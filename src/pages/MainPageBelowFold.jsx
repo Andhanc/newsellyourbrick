@@ -71,7 +71,6 @@ export default function MainPageBelowFold() {
         <HomePropertyShowcaseSection
           sectionId="objects-buy-now"
           sectionClassName="apartments-section apartments-section--buy-now-showcase"
-          containerClassName="apartments-section__container apartments-section__container--mint-panel"
           title={t('buyNowSectionTitle')}
           titleTo="/auction?filter=buy_now"
           subtitle={t('buyNowSectionSubtitle')}

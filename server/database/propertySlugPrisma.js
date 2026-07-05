@@ -56,24 +56,31 @@ export const propertySlugQueries = {
   getBySlug: async (slug) => {
     const s = String(slug || '').trim();
     if (!s) return null;
-    const prisma = getPrisma();
+    if (!(process.env.DATABASE_URL || '').trim()) return null;
 
-    const apt = await prisma.properties_apartments.findFirst({ where: { slug: s } });
-    if (apt) {
-      return { row: apt, source_table: sourceTableForApartment() };
+    try {
+      const prisma = getPrisma();
+
+      const apt = await prisma.properties_apartments.findFirst({ where: { slug: s } });
+      if (apt) {
+        return { row: apt, source_table: sourceTableForApartment() };
+      }
+
+      const house = await prisma.properties_houses.findFirst({ where: { slug: s } });
+      if (house) {
+        return { row: house, source_table: sourceTableForHouse() };
+      }
+
+      const legacy = await prisma.properties.findFirst({ where: { slug: s } });
+      if (legacy) {
+        return { row: legacy, source_table: 'properties' };
+      }
+
+      return null;
+    } catch (err) {
+      console.warn('[propertySlugQueries.getBySlug]', err?.message || err);
+      return null;
     }
-
-    const house = await prisma.properties_houses.findFirst({ where: { slug: s } });
-    if (house) {
-      return { row: house, source_table: sourceTableForHouse() };
-    }
-
-    const legacy = await prisma.properties.findFirst({ where: { slug: s } });
-    if (legacy) {
-      return { row: legacy, source_table: 'properties' };
-    }
-
-    return null;
   },
 
   /** Backfill approved rows without slug. */

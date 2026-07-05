@@ -15,11 +15,12 @@ import type { IconType } from 'react-icons'
 import { useAnimatedCounter } from '@/components/about/hooks/useAnimatedCounter'
 import { useInView } from '@/components/about/hooks/useInView'
 import Header from '@/components/Header'
-import sellerAboutChartBadgeSrc from '@/assets/seller-page/seller-about-chart-badge.png'
-import sellerAboutPortraitSrc from '@/assets/seller-page/seller-about-portrait.png'
 import { publicAsset } from '@/utils/publicAsset'
 import { scrollMainTo } from '@/utils/mainScroll'
 import './SellerPage.css'
+
+const sellerAboutChartBadgeSrc = publicAsset('images/seller-page/seller-about-chart-badge.png')
+const sellerAboutPortraitSrc = publicAsset('images/seller-page/seller-about-portrait.png')
 
 type SellerCard = {
   icon: IconType

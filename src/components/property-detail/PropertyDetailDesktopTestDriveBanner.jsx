@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowRight } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
@@ -66,13 +66,16 @@ function TestDriveMiniCalendar() {
   )
 }
 
-export default function PropertyDetailDesktopTestDriveBanner({
-  propertyId,
-  propertySlug,
-  propertyTable,
-  propertyType,
-  imageUrl = '',
-}) {
+const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailDesktopTestDriveBanner(
+  {
+    propertyId,
+    propertySlug,
+    propertyTable,
+    propertyType,
+    imageUrl = '',
+  },
+  ref,
+) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -127,6 +130,7 @@ export default function PropertyDetailDesktopTestDriveBanner({
 
   return (
     <section
+      ref={ref}
       id="property-test-drive-section"
       className="pdx-test-drive-banner"
       aria-labelledby="pdx-test-drive-banner-title"
@@ -165,4 +169,6 @@ export default function PropertyDetailDesktopTestDriveBanner({
       </div>
     </section>
   )
-}
+})
+
+export default PropertyDetailDesktopTestDriveBanner

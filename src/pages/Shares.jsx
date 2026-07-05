@@ -45,7 +45,6 @@ const CTA_CARDS = [
     icon: FaGavel,
     image: publicAsset('images/test-drive/cta-auction.png'),
     tone: 'teal',
-    cta: 'Перейти к аукциону',
   },
   {
     title: 'Тест-драйв',
@@ -54,7 +53,6 @@ const CTA_CARDS = [
     icon: FiBriefcase,
     image: publicAsset('images/test-drive/cta-shares.png'),
     tone: 'coral',
-    cta: 'Перейти к тест-драйву',
   },
   {
     title: 'Долги',
@@ -63,7 +61,6 @@ const CTA_CARDS = [
     icon: FaFileInvoiceDollar,
     image: publicAsset('images/test-drive/cta-debts.png'),
     tone: 'gold',
-    cta: 'Перейти к долгам',
   },
 ]
 
@@ -364,15 +361,19 @@ export default function Shares() {
                 <span>Мой портфель</span>
                 <strong>+12,4%</strong>
               </div>
-              <p>Общая стоимость</p>
-              <h2>€52 480</h2>
-              <div className="shares-portfolio-card__chart" aria-hidden>
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
+              <div className="shares-portfolio-card__overview">
+                <div className="shares-portfolio-card__value">
+                  <p>Общая стоимость</p>
+                  <h2>€52 480</h2>
+                </div>
+                <div className="shares-portfolio-card__chart" aria-hidden>
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
               <div className="shares-portfolio-card__grid">
                 <div>
@@ -388,9 +389,11 @@ export default function Shares() {
                 <span className="shares-portfolio-card__donut" aria-hidden />
                 <div>
                   <p>Диверсификация</p>
-                  <span>Мадрид 32%</span>
-                  <span>Барселона 24%</span>
-                  <span>Марбелья 18%</span>
+                  <div className="shares-portfolio-card__cities">
+                    <span>Мадрид 32%</span>
+                    <span>Барселона 24%</span>
+                    <span>Марбелья 18%</span>
+                  </div>
                 </div>
               </div>
               <button type="button">
@@ -483,16 +486,21 @@ export default function Shares() {
           </section>
 
           <section className="shares-invest-next" aria-label="Другие разделы">
-            {CTA_CARDS.map(({ title, text, to, icon: Icon, image, tone, cta }) => (
+            {CTA_CARDS.map(({ title, text, to, icon: Icon, image, tone }) => (
               <Link to={to} className="shares-invest-next-card" key={title}>
                 <img src={image} alt="" />
                 <span className="shares-invest-next-card__shade" aria-hidden />
                 <span className={`shares-invest-next-card__icon shares-invest-next-card__icon--${tone}`}>
                   <Icon size={25} aria-hidden />
                 </span>
-                <strong>{title}</strong>
-                <span>{text}</span>
-                <em>{cta}<FiArrowRight size={15} aria-hidden /></em>
+                <div className="shares-invest-next-card__content">
+                  <strong>{title}</strong>
+                  <span>{text}</span>
+                </div>
+                <em>
+                  <span>Перейти</span>
+                  <FiArrowRight aria-hidden />
+                </em>
               </Link>
             ))}
           </section>
@@ -506,10 +514,10 @@ function Metric({ icon: Icon, label, value, note }) {
   return (
     <article className="shares-invest-metric">
       <span className="shares-invest-metric__icon"><Icon size={22} aria-hidden /></span>
-      <div>
+      <div className="shares-invest-metric__body">
         <p>{label}</p>
         <strong>{value}</strong>
-        <span>{note}</span>
+        <span className="shares-invest-metric__note">{note}</span>
       </div>
     </article>
   )

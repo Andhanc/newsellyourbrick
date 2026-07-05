@@ -97,6 +97,7 @@ export function registerSeoRedirects(app) {
   });
 
   app.get('/main', (_req, res) => res.redirect(301, '/auction'));
+  app.get('/home-redesign', (_req, res) => res.redirect(301, '/'));
 
   app.get('/auction', (req, res, next) => {
     const q = new URLSearchParams();

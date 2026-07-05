@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { FaApple, FaTelegramPlane, FaYoutube, FaWhatsapp, FaInstagram } from 'react-icons/fa'
 import { MdSentimentDissatisfied } from 'react-icons/md'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
-import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -217,9 +216,8 @@ const Footer = () => {
         </nav>
 
         <div className="footer__bottom-panel">
-          {renderFooterBrand('footer__brand footer__brand--panel')}
-
-          <div className="footer__actions-row">
+          <div className="footer__bottom-row footer__bottom-row--brand-socials">
+            {renderFooterBrand('footer__brand footer__brand--panel')}
             <div className="footer__socials" aria-label={t('sectionsSocialAria')}>
               {SOCIAL_LINKS.map(({ labelKey, href, Icon }) => (
                 <a
@@ -234,7 +232,9 @@ const Footer = () => {
                 </a>
               ))}
             </div>
+          </div>
 
+          <div className="footer__bottom-row footer__bottom-row--stores">
             <button
               type="button"
               className="footer__store-btn footer__store-btn--compact"
@@ -268,17 +268,10 @@ const Footer = () => {
               </div>
             </button>
 
-            <img
-              src={whatsappQR}
-              alt={t('footerQrApp')}
-              className="footer__qr-image footer__qr-image--inline"
-              width={40}
-              height={40}
-              loading="lazy"
-              decoding="async"
-            />
-
-            <div className="footer__language-selector" ref={languageDropdownRef}>
+            <div
+              className="footer__language-selector footer__language-selector--inline"
+              ref={languageDropdownRef}
+            >
               <button
                 type="button"
                 className="footer__language-selector-btn footer__language-selector-btn--compact"

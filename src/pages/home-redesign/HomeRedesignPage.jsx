@@ -70,7 +70,7 @@ const HERO_ROLE_CARDS = [
     variant: 'seller',
     title: 'Стать продавцом',
     text: 'Узнайте, сколько верифицированных инвесторов готовы бороться за ваш объект прямо сейчас.',
-    buttonText: 'Разместить объект',
+    buttonText: 'Продать',
     to: '/seller',
   },
 ]
@@ -83,12 +83,6 @@ function HeroVisualCopy({ onNavigate }) {
         <span className="hr-hero-visual-copy__headline-line">Инвестиционная</span>
         <span className="hr-hero-visual-copy__headline-line">платформа недвижимости</span>
       </h1>
-      <p className="hr-hero-visual-copy__subheadline">
-        Аукционы, доли, долги и готовые лоты
-      </p>
-      <p className="hr-hero-visual-copy__desc">
-        Верифицированные объекты и прозрачные сделки онлайн — от открытых торгов до долевых вложений.
-      </p>
       <div className="hr-hero-visual-copy__actions">
         <button
           type="button"
@@ -233,7 +227,7 @@ function HeroSearchBar({ onNavigate }) {
 
 function StrategiesSection({ onNavigate }) {
   return (
-    <section className="hr-section hr-section--black hr-strategies" aria-labelledby="hr-strategies-title">
+    <section className="hr-section hr-section--gray hr-strategies" aria-labelledby="hr-strategies-title">
       <div className="hr-container hr-strategies__inner">
         <div className="hr-strategies__copy">
           <h2 id="hr-strategies-title" className="hr-strategies__title">
@@ -250,7 +244,7 @@ function StrategiesSection({ onNavigate }) {
             return (
               <article
                 key={item.id}
-                className="hr-strategy-stat-card"
+                className={`hr-strategy-stat-card hr-strategy-stat-card--${item.id}`}
                 role="listitem"
                 tabIndex={0}
                 onClick={() => onNavigate(item.to)}
@@ -295,11 +289,11 @@ export default function HomeRedesignPage() {
                 alt="Современная вилла с бассейном"
                 loading="eager"
               />
-              <div className="hr-hero-overlays">
-                <HeroVisualCopy onNavigate={navigate} />
-                <HeroRoleCards onNavigate={navigate} />
-              </div>
             </div>
+            <div className="hr-hero-overlays">
+              <HeroVisualCopy onNavigate={navigate} />
+            </div>
+            <HeroRoleCards onNavigate={navigate} />
           </div>
 
           <HeroSearchBar onNavigate={(pathname, options) => navigate(pathname, options)} />

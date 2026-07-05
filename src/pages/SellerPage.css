@@ -1190,25 +1190,83 @@
 }
 
 .seller-about__button {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 48px;
   margin-top: 28px;
-  padding: 0 22px;
+  padding: 12px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 12px;
-  background: var(--seller-cyan);
+  background: linear-gradient(135deg, rgba(92, 168, 182, 0.9) 0%, rgba(72, 148, 164, 0.92) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
   font-size: 13px;
-  font-weight: 820;
+  font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 16px 36px rgba(77, 150, 169, 0.24);
-  transition: transform 0.18s ease;
+  box-shadow:
+    0 4px 16px rgba(82, 162, 176, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(52, 118, 132, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seller-about__button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  pointer-events: none;
+}
+
+.seller-about__button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  transform: rotate(45deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
 }
 
 .seller-about__button:hover,
 .seller-about__button:focus-visible {
+  background: linear-gradient(135deg, rgba(102, 178, 192, 0.96) 0%, rgba(82, 158, 174, 0.98) 100%);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 6px 20px rgba(82, 162, 176, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+
+.seller-about__button:hover::before,
+.seller-about__button:focus-visible::before {
+  width: 300px;
+  height: 300px;
+}
+
+.seller-about__button:hover::after,
+.seller-about__button:focus-visible::after {
+  left: 100%;
+}
+
+.seller-about__button:active {
+  transform: translateY(0);
 }
 
 .seller-services {

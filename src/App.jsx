@@ -26,7 +26,7 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
-import InvestorHomePage from './pages/InvestorHomePage'
+import HomeRedesignPage from './pages/home-redesign/HomeRedesignPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import SiteAdsHost from './components/siteAds/SiteAdsHost'
@@ -69,7 +69,6 @@ const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
-const HomeRedesignPage = lazyWithRetry(() => import('./pages/home-redesign/HomeRedesignPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
 const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
 const SellerPage = lazyWithRetry(() => import('./pages/SellerPage'))
@@ -118,9 +117,9 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
     pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
-  const investorHomeScroll = pathname === '/'
+  const homePageScroll = pathname === '/'
 
-  const routeClass = investorHomeScroll
+  const routeClass = homePageScroll
     ? 'app-layout--investor-home'
     : addPropertySingleScroll
     ? 'app-layout--add-property-single-scroll'
@@ -379,29 +378,6 @@ function ReferralCapture() {
   return null
 }
 
-/** Сразу после гидрации подгружаем чанк нижней части главной (витрины и сетки). */
-function MainPageChunkPrefetch() {
-  useEffect(() => {
-    let cancelled = false
-    const load = () => {
-      if (!cancelled) void import('./pages/MainPageBelowFold')
-    }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(load, { timeout: 1800 })
-      return () => {
-        cancelled = true
-        window.cancelIdleCallback(id)
-      }
-    }
-    const t = window.setTimeout(load, 0)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
-  }, [])
-  return null
-}
-
 /** После первого кадра подгружаем чанк карты в idle — реже однотонный fallback при первом заходе на /map. */
 function HeavyRouteChunksPrefetch() {
   useEffect(() => {
@@ -606,7 +582,6 @@ function App() {
       <AuctionMobileOverflowLock />
       <ReferralCapture />
       <AuctionListPrefetch />
-      <MainPageChunkPrefetch />
       <HeavyRouteChunksPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
@@ -629,7 +604,7 @@ function App() {
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <Routes>
-              <Route path="/" element={<InvestorHomePage />} />
+              <Route path="/" element={<HomeRedesignPage />} />
               <Route path="/auction" element={<Home />} />
               <Route path="/auction/property/:slugOrId" element={<PropertyDetailPage />} />
               <Route path="/auction/:segment1/:segment2?" element={<Home />} />
@@ -913,14 +888,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/home-redesign"
-                element={
-                  <LazyPage>
-                    <HomeRedesignPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="/home-redesign" element={<Navigate to="/" replace />} />
               <Route
                 path="/owner-test"
                 element={

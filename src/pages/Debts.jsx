@@ -18,6 +18,7 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { formatPropertyPrice } from '../utils/currency'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
@@ -195,7 +196,8 @@ const Debts = () => {
   }, [])
 
   useEffect(() => {
-    if (!dbUserId) {
+    if (!dbUserId || !canShowBuyerDeposit()) {
+      setUserDeposit(0)
       setDepositLoading(false)
       return
     }
@@ -663,10 +665,12 @@ const Debts = () => {
                     </div>
                   ) : null}
                 </div>
-                <AuctionListingSaleToggle
-                  value={debtsSaleToggleMode}
-                  onChange={handleDebtsSaleToggleChange}
-                />
+                {isDebtsDesktop ? (
+                  <AuctionListingSaleToggle
+                    value={debtsSaleToggleMode}
+                    onChange={handleDebtsSaleToggleChange}
+                  />
+                ) : null}
                 </div>
 
                 {isDebtsDesktop ? (
@@ -797,7 +801,7 @@ const Debts = () => {
       {showChatDock ? (
         <Suspense fallback={null}>
           <SiteChatDockLazy wrapperClassName="shares-floats" recommendationProperties={apiDebts}>
-            {dbUserId ? (
+            {dbUserId && canShowBuyerDeposit() ? (
               depositLoading ? (
                 <DepositButtonSkeleton />
               ) : (

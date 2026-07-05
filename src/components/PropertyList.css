@@ -1848,7 +1848,12 @@ a.property-card {
     margin-bottom: 0;
   }
 
-  /* Аукцион, мобилка: только кнопка «Фильтры», типы — по тапу, без модалки */
+  /* Аукцион, мобилка: кнопка «Фильтры» на всю ширину, типы — в drawer */
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button {
+    grid-column: 1 / -1;
+  }
+
+  /* legacy: раскрытие типов по тапу (если где-то ещё используется) */
   .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-collapsed .property-types {
     display: none !important;
   }

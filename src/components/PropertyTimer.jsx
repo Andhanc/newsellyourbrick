@@ -186,7 +186,7 @@ const PropertyTimer = ({
 
     return (
       <div
-        className={`property-timer property-timer--detail property-timer--plain ${statusClass} ${className}`.trim()}
+        className={`property-timer property-timer--detail property-timer--plain ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
       >
         <div className="property-timer-plain-row">
           {renderPlainUnit(timeLeft.days, 'timerDay', 'timerDayFull', hasThreeDigitDays ? 3 : 2)}

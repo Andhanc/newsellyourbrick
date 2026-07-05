@@ -4746,7 +4746,7 @@
     box-shadow: 0 4px 14px var(--pd-tiffany-glow);
   }
 
-  .property-detail-page-new--auction-mobile-v2.property-detail-page-new--bid-drawer-open
+  .property-detail-page-new--auction-mobile-v2.property-detail-page-new--bid-modal-open
     .property-detail-mobile-bottom-bar {
     visibility: hidden;
     opacity: 0;

@@ -46,7 +46,7 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list', debtsCards = f
       <div
         className={cn(
           isCard
-            ? 'auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
+            ? 'auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
             : 'auction-mobile-stack',
         )}
       >
