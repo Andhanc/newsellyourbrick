@@ -2275,16 +2275,6 @@
     padding: clamp(36px, 8vw, 48px) 0 clamp(44px, 9vw, 56px);
   }
 
-  .invest-questions__contact {
-    padding: clamp(18px, 4.5vw, 24px);
-    border-radius: 20px;
-    background: #ffffff;
-    border: 1.5px solid rgba(15, 23, 42, 0.14);
-    box-shadow:
-      0 12px 32px rgba(15, 23, 42, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  }
-
   .invest-questions__title {
     font-size: clamp(1.625rem, 7vw, 2rem);
   }

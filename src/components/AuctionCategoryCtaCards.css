@@ -61,7 +61,7 @@
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(19, 38, 45, 0.04) 0%, rgba(14, 36, 42, 0.42) 42%, rgba(11, 28, 36, 0.9) 100%),
-    linear-gradient(90deg, rgba(74, 153, 168, 0.45), rgba(255, 128, 110, 0.12));
+    linear-gradient(90deg, rgba(74, 150, 166, 0.45), rgba(139, 92, 246, 0.14));
 }
 
 .auction-cta-cards__icon {
@@ -80,16 +80,14 @@
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
 }
 
+.auction-cta-cards__icon--lilac {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.32);
+}
+
 .auction-cta-cards__icon--teal {
-  background: #0099a9;
-}
-
-.auction-cta-cards__icon--coral {
-  background: #ff7f51;
-}
-
-.auction-cta-cards__icon--mint {
-  background: #4a99a8;
+  background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 100%);
+  box-shadow: 0 8px 24px rgba(74, 150, 166, 0.32);
 }
 
 .auction-cta-cards__footer {
@@ -203,7 +201,7 @@
         rgba(11, 28, 36, 0.72) 42%,
         rgba(11, 28, 36, 0.38) 100%
       ),
-      linear-gradient(90deg, rgba(74, 153, 168, 0.35), rgba(255, 128, 110, 0.1));
+      linear-gradient(90deg, rgba(74, 150, 166, 0.35), rgba(139, 92, 246, 0.12));
   }
 
   .auction-cta-cards__icon {

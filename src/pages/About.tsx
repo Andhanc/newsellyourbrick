@@ -3,18 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ElementType, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  HiArrowUpRight,
-  HiBars3,
-  HiChartBarSquare,
-  HiCheckCircle,
-  HiGlobeAlt,
-  HiShieldCheck,
-  HiSparkles,
-  HiXMark,
-} from 'react-icons/hi2';
+import { HiArrowUpRight } from 'react-icons/hi2';
+import Header from '@/components/Header';
 import { publicAsset } from '@/utils/publicAsset';
-import { CO_INVESTMENT_PATH } from '@/utils/sectionRoutes';
 import { scrollMainTo } from '@/utils/mainScroll';
 import './about-luxury.css';
 
@@ -27,60 +18,60 @@ const ASSETS = {
   blueLoop: publicAsset('images/sellyourbrick/about-corporate/blue-glass-loop.png'),
 };
 
-const navItems = [
-  { label: 'Overview', to: '#overview' },
-  { label: 'Analytics', to: '#analytics' },
-  { label: 'Scale', to: '#scale' },
-  { label: 'Systems', to: '#systems' },
-  { label: 'Contact', to: '#contacts' },
-];
-
 const analyticsCards = [
   {
-    label: 'Average ROI',
-    eyebrow: '09-02',
-    value: '2.50x',
+    label: 'Всего инвестировано',
+    eyebrow: 'капитал',
+    value: '€41.5млн',
     image: ASSETS.analyticsTeam,
   },
   {
-    label: 'Monthly Users',
-    eyebrow: '09-11',
-    value: '75,00+',
+    label: 'Возвращено инвесторам',
+    eyebrow: 'выплаты',
+    value: '€24млн',
     image: ASSETS.workshopTeam,
   },
 ];
 
 const capabilities = [
-  { label: 'Global Scalability', active: true },
-  { label: 'Smart Analytics' },
-  { label: 'Efficient Workflows' },
+  { label: 'Анализ и отбор объектов', active: true },
+  { label: 'Инвестирование онлайн' },
+  { label: 'Управление и доход' },
 ];
 
 const metricCards = [
   {
-    value: 150,
-    suffix: '+',
-    text: 'We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions.',
+    value: 131,
+    suffix: '',
+    text: 'Профинансированные проекты — реальные сделки и объекты, каждый проверен и одобрен до публикации на платформе.',
   },
   {
-    value: 1200,
-    suffix: '+',
-    text: 'Our operating model connects data, capital, and property workflows into one measurable ecosystem.',
+    value: 46,
+    suffix: '',
+    text: 'Завершённые выходы — проекты полностью закрыты, капитал возвращён, прибыль распределена инвесторам.',
   },
 ];
 
 const systemNotes = [
   {
-    title: 'Smart System',
-    text: 'Our approach combines strategic thinking with modern tools to deliver impactful results.',
+    title: 'Актив в реестре',
+    text: 'Каждая позиция привязана к конкретному объекту с юридическим титулом — не к обещанию в презентации.',
   },
   {
-    title: 'Cost Efficiency',
-    text: 'We design lean workflows that reduce friction and keep every stakeholder aligned.',
+    title: 'Проверка до сделки',
+    text: 'Due diligence, оценка и стресс-сценарии — до того, как проект появится у инвесторов.',
   },
 ];
 
-function ArrowBadge({ className = '', label = 'Explore' }: { className?: string; label?: string }) {
+const partnerNotes = [
+  'Лицензированная компания',
+  'SellYourBrick',
+  'Прозрачная отчётность',
+  'Защита капитала',
+  'Проверенные объекты',
+];
+
+function ArrowBadge({ className = '', label = 'Подробнее' }: { className?: string; label?: string }) {
   return (
     <span className={`al-arrow-badge ${className}`} aria-label={label}>
       <HiArrowUpRight aria-hidden />
@@ -143,7 +134,7 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
 
   return (
     <strong ref={ref}>
-      {display.toLocaleString('en-US')}
+      {display.toLocaleString('ru-RU')}
       {suffix}
     </strong>
   );
@@ -151,7 +142,6 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
 
 export default function About() {
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     document.body.classList.add('al-about-route');
@@ -181,7 +171,6 @@ export default function About() {
 
   useEffect(() => {
     if (!location.hash) return undefined;
-    setMobileMenuOpen(false);
     const timer = window.setTimeout(() => {
       document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 160);
@@ -190,81 +179,28 @@ export default function About() {
 
   return (
     <div className="al-page">
-      <header className="al-topbar" aria-label="About page navigation">
-        <div className="al-shell al-topbar__inner">
-          <Link className="al-logo" to="/" aria-label="Sell Your Brick">
-            <span>SELL YOUR</span>
-            <strong>BRICK</strong>
-          </Link>
-
-          <nav className="al-nav" aria-label="Page sections">
-            {navItems.map((item) => (
-              <a key={item.label} href={item.to}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="al-topbar__actions">
-            <Link className="al-auth al-auth--login" to="/profile">
-              Log in
-            </Link>
-            <Link className="al-auth al-auth--register" to={CO_INVESTMENT_PATH}>
-              Start
-            </Link>
-          </div>
-
-          <button
-            className="al-mobile-menu"
-            type="button"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="about-mobile-menu"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-          >
-            {mobileMenuOpen ? <HiXMark aria-hidden /> : <HiBars3 aria-hidden />}
-          </button>
-        </div>
-
-        <div
-          id="about-mobile-menu"
-          className={`al-mobile-panel${mobileMenuOpen ? ' is-open' : ''}`}
-          hidden={!mobileMenuOpen}
-        >
-          <div className="al-shell">
-            {navItems.map((item) => (
-              <a key={item.label} href={item.to} onClick={() => setMobileMenuOpen(false)}>
-                {item.label}
-              </a>
-            ))}
-            <div className="al-mobile-panel__actions">
-              <Link className="al-auth al-auth--login" to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                Log in
-              </Link>
-              <Link className="al-auth al-auth--register" to={CO_INVESTMENT_PATH} onClick={() => setMobileMenuOpen(false)}>
-                Start
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main>
-        <section className="al-hero" id="overview" aria-labelledby="about-hero-title">
+        <section className="al-hero" id="about-intro" aria-labelledby="about-hero-title">
           <div className="al-shell al-hero__grid">
             <Reveal className="al-hero__copy">
               <div className="al-hero__title-row">
-                <h1 id="about-hero-title">Corporate Overview</h1>
-                <span className="al-pill">Company</span>
+                <h1 id="about-hero-title">О платформе SellYourBrick</h1>
+                <span className="al-pill">Инвестиции</span>
               </div>
               <div className="al-hero__subcopy">
-                <h2>Global Reach</h2>
-                <p>Our expertise allows us to streamline operations and unlock new opportunities.</p>
+                <h2>Недвижимость без лишних барьеров</h2>
+                <p>
+                  SellYourBrick — инвестиционная платформа, которая открывает доступ к премиальной
+                  недвижимости и обеспечивает стабильный доход с максимальной прозрачностью на каждом
+                  этапе сделки.
+                </p>
               </div>
             </Reveal>
 
             <Reveal className="al-hero__visual" delay={120}>
-              <img src={ASSETS.hero} alt="Modern residential tower with soft green foreground leaves" />
+              <img src={ASSETS.hero} alt="Современный жилой комплекс SellYourBrick" />
               <ArrowBadge className="al-hero__arrow" />
             </Reveal>
           </div>
@@ -273,9 +209,12 @@ export default function About() {
         <section className="al-analytics" id="analytics" aria-labelledby="analytics-title">
           <div className="al-shell al-analytics__grid">
             <Reveal className="al-analytics__intro">
-              <p>Our approach combines strategic thinking with modern tools to deliver impactful results.</p>
+              <p>
+                Мы работаем на рынке Испании и объединяем экспертизу в недвижимости, современные
+                технологии и глубокое понимание локального рынка.
+              </p>
               <ArrowBadge />
-              <h2 id="analytics-title">Smart Analytics</h2>
+              <h2 id="analytics-title">Реальные цифры</h2>
             </Reveal>
 
             <Reveal className="al-analytics__cards" delay={90}>
@@ -298,24 +237,28 @@ export default function About() {
             <img className="al-partner__plant" src={ASSETS.botanical} alt="" aria-hidden />
             <Reveal className="al-partner-card">
               <div className="al-partner-card__top">
-                <h2 id="partner-title">Trusted Partner</h2>
-                <p>Collaborating with partners to create measurable outcomes.</p>
+                <h2 id="partner-title">Надёжный партнёр</h2>
+                <p>
+                  Каждый инвестор входит в сделки с ясностью, а мы сопровождаем процесс от первого
+                  шага до подписания документов.
+                </p>
               </div>
-              <img src={ASSETS.analyticsTeam} alt="Strategy team portrait" />
+              <img src={ASSETS.analyticsTeam} alt="Команда экспертов SellYourBrick" />
               <div className="al-partner-card__main">
                 <ArrowBadge />
                 <div>
-                  <h3>Enterprise Overview</h3>
-                  <p>Empowering businesses with modern technology.</p>
+                  <h3>SellYourBrick</h3>
+                  <p>
+                    Доступ к лучшим объектам, профессиональный анализ, прозрачная отчётность и
+                    полное сопровождение на каждом этапе.
+                  </p>
                 </div>
               </div>
             </Reveal>
-            <div className="al-partner__notes" aria-label="Operating highlights">
-              <span>Smart Systems</span>
-              <strong>The Overview</strong>
-              <span>Business Insights</span>
-              <span>24/7 Support</span>
-              <strong>Secure Systems</strong>
+            <div className="al-partner__notes" aria-label="Гарантии платформы">
+              {partnerNotes.map((note, index) =>
+                index === 1 ? <strong key={note}>{note}</strong> : <span key={note}>{note}</span>,
+              )}
             </div>
           </div>
         </section>
@@ -323,25 +266,29 @@ export default function About() {
         <section className="al-scale" id="scale" aria-labelledby="scale-title">
           <div className="al-shell al-scale__grid">
             <Reveal className="al-scale__image-card">
-              <img src={ASSETS.meeting} alt="Business team reviewing enterprise strategy" />
+              <img src={ASSETS.meeting} alt="Команда SellYourBrick на стратегической сессии" />
               <div className="al-scale__overlay">
-                <h2>Enterprise Overview</h2>
-                <strong>2.5x</strong>
-                <p>Empowering businesses with modern technology.</p>
+                <h2>Как это работает</h2>
+                <strong>12–18%</strong>
+                <p>Средняя годовая доходность по проектам платформы.</p>
               </div>
             </Reveal>
 
             <Reveal className="al-scale__copy" delay={120}>
               <p className="al-section-note">
-                We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions
-                across industries by integrating
+                Простой процесс — надёжный результат: от анализа и отбора объектов до управления
+                активом и регулярных выплат инвесторам.
               </p>
-              <span className="al-code">09-02</span>
+              <span className="al-code">6–18 мес.</span>
               <div className="al-capabilities">
                 <HiArrowUpRight aria-hidden />
                 <ul aria-labelledby="scale-title">
                   {capabilities.map((item) => (
-                    <li key={item.label} id={item.active ? 'scale-title' : undefined} className={item.active ? 'is-active' : undefined}>
+                    <li
+                      key={item.label}
+                      id={item.active ? 'scale-title' : undefined}
+                      className={item.active ? 'is-active' : undefined}
+                    >
                       {item.label}
                     </li>
                   ))}
@@ -354,17 +301,17 @@ export default function About() {
         <section className="al-metrics" aria-labelledby="metrics-title">
           <div className="al-shell">
             <Reveal className="al-metrics__intro">
-              <h2 id="metrics-title">Driving Innovation Through Scalable Solutions</h2>
+              <h2 id="metrics-title">Мы не просто говорим о доходности. Мы её обеспечиваем.</h2>
               <p>
-                We are a forward-thinking company focused on delivering scalable, efficient, and impactful solutions
-                across industries by integrating strategy, design, and advanced technology into a unified ecosystem
-                that drives measurable growth and long-term value.
+                41 миллион евро в работе, 35 тысяч доверяющих инвесторов и десятки успешно
+                завершённых проектов — цифры, которые подтверждаются банковскими выписками, а не
+                презентациями.
               </p>
             </Reveal>
 
             <div className="al-metrics__grid">
               {metricCards.map((metric, index) => (
-                <Reveal as="article" className="al-metric-card" delay={index * 90} key={metric.value}>
+                <Reveal as="article" className="al-metric-card" delay={index * 90} key={metric.text}>
                   <div className="al-metric-card__value">
                     <AnimatedNumber value={metric.value} suffix={metric.suffix} />
                     <ArrowBadge />
@@ -381,24 +328,27 @@ export default function About() {
             <Reveal className="al-systems__copy">
               {systemNotes.map((note) => (
                 <article key={note.title}>
-                  <h2 id={note.title === 'Smart System' ? 'systems-title' : undefined}>{note.title}</h2>
+                  <h2 id={note.title === 'Актив в реестре' ? 'systems-title' : undefined}>{note.title}</h2>
                   <p>{note.text}</p>
                 </article>
               ))}
               <div className="al-system-tags">
-                <span>Company</span>
-                <span>Updated 2026</span>
+                <span>Испания · реестр</span>
+                <span>SellYourBrick</span>
               </div>
             </Reveal>
 
             <Reveal className="al-system-visual" delay={120}>
               <img src={ASSETS.blueLoop} alt="" aria-hidden />
               <article className="al-system-card">
-                <h2>User-centered Design</h2>
-                <p>Our approach combines strategic thinking with modern tools to deliver impactful results.</p>
+                <h2>Инвестируйте в кирпичи, а не в обещания</h2>
+                <p>
+                  Возврат капитала подтверждается банковскими выписками. Задержки и риски публикуем
+                  так же открыто, как успехи.
+                </p>
                 <div className="al-system-card__footer">
                   <ArrowBadge />
-                  <span>09-02</span>
+                  <span>LTV 61.5%</span>
                 </div>
               </article>
             </Reveal>
@@ -408,17 +358,20 @@ export default function About() {
         <section className="al-cta" id="contacts" aria-labelledby="cta-title">
           <div className="al-shell al-cta__inner">
             <Reveal className="al-cta__copy">
-              <span className="al-pill al-pill--dark">Corporate systems</span>
-              <h2 id="cta-title">Build a smarter property investment workflow.</h2>
-              <p>Connect analytics, operational discipline, and scalable acquisition tools inside one modern platform.</p>
+              <span className="al-pill al-pill--dark">Следующий шаг</span>
+              <h2 id="cta-title">Покупка или продажа — на одной платформе</h2>
+              <p>
+                Выберите раздел под вашу задачу. Регистрация бесплатна — сопровождаем сделку от
+                первого шага до оформления документов.
+              </p>
             </Reveal>
             <Reveal className="al-cta__actions" delay={90}>
-              <Link className="al-primary-link" to={CO_INVESTMENT_PATH}>
-                Start investing
+              <Link className="al-primary-link" to="/buyer">
+                Искать недвижимость
                 <HiArrowUpRight aria-hidden />
               </Link>
               <Link className="al-secondary-link" to="/seller">
-                For sellers
+                Разместить объект
               </Link>
             </Reveal>
           </div>

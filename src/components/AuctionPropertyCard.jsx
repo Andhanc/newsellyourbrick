@@ -329,16 +329,18 @@ export default function AuctionPropertyCard({
       ) : null}
 
       <div className="auction-card__body">
-        {property.location ? (
-          <p className="auction-card__location">
-            <MapPin size={14} strokeWidth={2.2} aria-hidden />
-            <span>{property.location}</span>
-          </p>
-        ) : null}
+        <div className="auction-card__meta">
+          {property.location ? (
+            <p className="auction-card__location">
+              <MapPin size={14} strokeWidth={2.2} aria-hidden />
+              <span>{property.location}</span>
+            </p>
+          ) : (
+            <p className="auction-card__location auction-card__location--empty" aria-hidden />
+          )}
 
-        <h3 className="auction-card__title">{propertyTitle}</h3>
+          <h3 className="auction-card__title">{propertyTitle}</h3>
 
-        {(property.area || property.sqft || property.rooms || property.bathrooms) ? (
           <div className="auction-card__specs">
             {(property.area || property.sqft) ? (
               <span className="auction-card__spec">
@@ -364,39 +366,32 @@ export default function AuctionPropertyCard({
               </span>
             ) : null}
           </div>
-        ) : null}
 
-        {state.buyNowWinnerId != null && !state.listingEnded ? (
-          <p className="auction-card__winner-note" role="status">
-            {t('propertyCardBuyNowWinner', { id: state.buyNowWinnerId })}
-          </p>
-        ) : null}
-
-        <div className="auction-card__price-panel">
-          <span className="auction-card__price-label">
-            {state.hasTimer ? t('currentBid').replace(/:$/, '') : t('propertyDetailPrice').replace(/:$/, '')}
-          </span>
-          <span className="auction-card__price-value">{formatPrice(displayPrice, property.currency)}</span>
+          {state.buyNowWinnerId != null && !state.listingEnded ? (
+            <p className="auction-card__winner-note" role="status">
+              {t('propertyCardBuyNowWinner', { id: state.buyNowWinnerId })}
+            </p>
+          ) : null}
         </div>
 
-        {!showPrivateClubBand && !state.isAuctionEndedCard ? (
-          <div className="auction-card__actions" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="auction-card__btn auction-card__btn--primary"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onOpen(property)
-              }}
-              disabled={state.isReserved}
+        <div className="auction-card__footer">
+          <div className="auction-card__price-panel">
+            <span className="auction-card__price-label">
+              {state.hasTimer ? t('currentBid').replace(/:$/, '') : t('propertyDetailPrice').replace(/:$/, '')}
+            </span>
+            <span className="auction-card__price-value">{formatPrice(displayPrice, property.currency)}</span>
+          </div>
+
+          {!showPrivateClubBand && !state.isAuctionEndedCard ? (
+            <div
+              className={`auction-card__actions${
+                state.hasBuyNowPrice && !state.listingEnded ? '' : ' auction-card__actions--single'
+              }`}
+              onClick={(e) => e.stopPropagation()}
             >
-              {state.isReserved ? t('objectReserved') : t('placeBid')}
-            </button>
-            {state.hasBuyNowPrice && !state.listingEnded ? (
               <button
                 type="button"
-                className="auction-card__btn auction-card__btn--secondary"
+                className="auction-card__btn auction-card__btn--primary"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -404,11 +399,25 @@ export default function AuctionPropertyCard({
                 }}
                 disabled={state.isReserved}
               >
-                {state.isReserved ? t('objectReserved') : t('buyNowModalTitle')}
+                {state.isReserved ? t('objectReserved') : t('placeBid')}
               </button>
-            ) : null}
-          </div>
-        ) : null}
+              {state.hasBuyNowPrice && !state.listingEnded ? (
+                <button
+                  type="button"
+                  className="auction-card__btn auction-card__btn--secondary"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onOpen(property)
+                  }}
+                  disabled={state.isReserved}
+                >
+                  {state.isReserved ? t('objectReserved') : t('buyNowModalTitle')}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </a>
   )

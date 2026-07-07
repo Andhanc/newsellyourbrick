@@ -7,15 +7,15 @@
   --hr-muted: #6b6b6b;
   --hr-accent: #3d3d3d;
   --hr-accent-hover: #1a1a1a;
-  --hr-brand-from: #a0c4ff;
-  --hr-brand-to: #48cae4;
-  --hr-brand-mid: #74b8ee;
-  --hr-brand-gradient: linear-gradient(90deg, var(--hr-brand-from) 0%, var(--hr-brand-to) 100%);
-  --hr-brand-gradient-hover: linear-gradient(90deg, #8eb5f5 0%, #2dbde0 100%);
-  --hr-brand-shadow: 0 10px 28px rgba(72, 202, 228, 0.32);
-  --hr-brand-shadow-hover: 0 14px 36px rgba(72, 202, 228, 0.42);
+  --hr-brand-from: #4a96a6;
+  --hr-brand-to: #4a96a6;
+  --hr-brand-mid: #4a96a6;
+  --hr-brand-gradient: #4a96a6;
+  --hr-brand-gradient-hover: #3f8798;
+  --hr-brand-shadow: 0 10px 28px rgba(74, 150, 166, 0.32);
+  --hr-brand-shadow-hover: 0 14px 36px rgba(74, 150, 166, 0.42);
   --hr-brand-ring: rgba(255, 255, 255, 0.55);
-  --hr-brand-glow: rgba(160, 196, 255, 0.22);
+  --hr-brand-glow: rgba(74, 150, 166, 0.22);
   --hr-radius: 22px;
   --hr-radius-sm: 16px;
   --hr-container: 1240px;
@@ -370,7 +370,7 @@
 }
 
 .hr-trust-stat:not(:last-child) {
-  border-right: 1px solid rgba(160, 196, 255, 0.5);
+  border-right: 1px solid rgba(74, 150, 166, 0.35);
 }
 
 .hr-trust-stat__icon {
@@ -818,8 +818,22 @@
 }
 
 .hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__icon-wrap {
-  background: linear-gradient(135deg, #7c8cff 0%, #48cae4 100%);
-  box-shadow: var(--hr-brand-shadow), inset 0 1px 0 var(--hr-brand-ring);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__icon {
+  color: #ffffff;
+}
+
+.hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__btn:hover {
+  background: linear-gradient(135deg, #9d6ff8 0%, #6d28d9 100%);
+  box-shadow: 0 14px 36px rgba(124, 58, 237, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .hr-hero__hotspot {
@@ -839,7 +853,7 @@
   background: var(--hr-brand-gradient);
   box-shadow:
     0 0 0 3px rgba(255, 255, 255, 0.35),
-    0 0 12px rgba(72, 202, 228, 0.55);
+    0 0 12px rgba(74, 150, 166, 0.55);
 }
 
 .hr-hero__hotspot-line {
@@ -1027,63 +1041,63 @@
   color: #6b6b6b;
 }
 
-/* Фиолетовый — аукцион и доли (1-я и 3-я карточки) */
+/* Лиловый — аукцион и доли (1-я и 3-я карточки) */
 .hr-strategy-stat-card--auction,
 .hr-strategy-stat-card--shares {
-  --hr-strategy-accent: #6366f1;
-  --hr-strategy-glow: rgba(99, 102, 241, 0.2);
-  --hr-strategy-border-hover: rgba(99, 102, 241, 0.34);
-  --hr-strategy-shadow-hover: 0 18px 40px rgba(99, 102, 241, 0.22);
+  --hr-strategy-accent: #8b5cf6;
+  --hr-strategy-glow: rgba(139, 92, 246, 0.2);
+  --hr-strategy-border-hover: rgba(139, 92, 246, 0.34);
+  --hr-strategy-shadow-hover: 0 18px 40px rgba(124, 58, 237, 0.22);
   background: linear-gradient(152deg, #ffffff 0%, #f5f3ff 52%, #ede9fe 100%);
-  border-color: rgba(99, 102, 241, 0.18);
-  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.12);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.12);
 }
 
 .hr-strategy-stat-card--auction .hr-strategy-stat-card__icon,
 .hr-strategy-stat-card--shares .hr-strategy-stat-card__icon {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(99, 102, 241, 0.38);
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.38);
 }
 
 .hr-strategy-stat-card--auction .hr-strategy-stat-card__headline,
 .hr-strategy-stat-card--shares .hr-strategy-stat-card__headline {
-  color: #312e81;
+  color: #4c1d95;
 }
 
 .hr-strategy-stat-card--auction .hr-strategy-stat-card__text,
 .hr-strategy-stat-card--shares .hr-strategy-stat-card__text {
-  color: #4338ca;
+  color: #6d28d9;
   opacity: 0.72;
 }
 
-/* Tiffany — купить сейчас и долги (2-я и 4-я карточки) */
+/* Бирюзовый — купить сейчас и долги (2-я и 4-я карточки) */
 .hr-strategy-stat-card--buy_now,
 .hr-strategy-stat-card--debts {
-  --hr-strategy-accent: #0099a9;
-  --hr-strategy-glow: rgba(0, 153, 169, 0.2);
-  --hr-strategy-border-hover: rgba(0, 153, 169, 0.34);
-  --hr-strategy-shadow-hover: 0 18px 40px rgba(0, 153, 169, 0.22);
-  background: linear-gradient(152deg, #ffffff 0%, #f0fafb 52%, #ccfbf1 100%);
-  border-color: rgba(0, 153, 169, 0.2);
-  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.12);
+  --hr-strategy-accent: #4a96a6;
+  --hr-strategy-glow: rgba(74, 150, 166, 0.2);
+  --hr-strategy-border-hover: rgba(74, 150, 166, 0.34);
+  --hr-strategy-shadow-hover: 0 18px 40px rgba(74, 150, 166, 0.22);
+  background: linear-gradient(152deg, #ffffff 0%, #f0f7f9 52%, #e3f0f3 100%);
+  border-color: rgba(74, 150, 166, 0.2);
+  box-shadow: 0 10px 28px rgba(74, 150, 166, 0.12);
 }
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__icon,
 .hr-strategy-stat-card--debts .hr-strategy-stat-card__icon {
-  background: linear-gradient(135deg, #40c5ad 0%, #0099a9 100%);
+  background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 100%);
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.36);
+  box-shadow: 0 10px 22px rgba(74, 150, 166, 0.36);
 }
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__headline,
 .hr-strategy-stat-card--debts .hr-strategy-stat-card__headline {
-  color: #0f4c5c;
+  color: #1e4a54;
 }
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__text,
 .hr-strategy-stat-card--debts .hr-strategy-stat-card__text {
-  color: #0e7490;
+  color: #3f8798;
   opacity: 0.76;
 }
 
@@ -1148,8 +1162,8 @@
     transparent 0%,
     rgba(0, 0, 0, 0.1) 7%,
     rgba(0, 0, 0, 0.16) 20%,
-    rgba(160, 196, 255, 0.72) 46%,
-    rgba(72, 202, 228, 0.65) 54%,
+    rgba(74, 150, 166, 0.72) 46%,
+    rgba(74, 150, 166, 0.65) 54%,
     rgba(0, 0, 0, 0.16) 80%,
     rgba(0, 0, 0, 0.1) 93%,
     transparent 100%
@@ -1164,10 +1178,10 @@
 
 /* Витрины: единый белый фон для всех разделов */
 .hr-page .hr-showcases {
-  --hr-showcase-accent: linear-gradient(90deg, var(--hr-brand-from) 0%, var(--hr-brand-to) 100%);
-  --hr-showcase-accent-hover: linear-gradient(90deg, #8eb5f5 0%, #2dbde0 100%);
-  --hr-showcase-accent-shadow: 0 12px 28px rgba(72, 202, 228, 0.28);
-  --hr-showcase-accent-shadow-hover: 0 16px 34px rgba(72, 202, 228, 0.36);
+  --hr-showcase-accent: #4a96a6;
+  --hr-showcase-accent-hover: #3f8798;
+  --hr-showcase-accent-shadow: 0 12px 28px rgba(74, 150, 166, 0.28);
+  --hr-showcase-accent-shadow-hover: 0 16px 34px rgba(74, 150, 166, 0.36);
 }
 
 /* Заголовки витрин — Playfair italic + брендовый градиент */
@@ -1271,11 +1285,11 @@
 }
 
 .hr-page .hr-showcases .invest-showcase .auction-card {
-  --ac-mint: rgba(160, 196, 255, 0.28);
+  --ac-mint: rgba(74, 150, 166, 0.28);
   --ac-mint-bright: var(--hr-brand-to);
-  --ac-mint-deep: #2dbde0;
-  --ac-mint-soft: rgba(72, 202, 228, 0.1);
-  --ac-mint-glow: rgba(72, 202, 228, 0.22);
+  --ac-mint-deep: #3f8798;
+  --ac-mint-soft: rgba(74, 150, 166, 0.1);
+  --ac-mint-glow: rgba(74, 150, 166, 0.22);
 }
 
 .hr-page .hr-showcases .invest-showcase .auction-card__price-panel {
@@ -1401,7 +1415,7 @@
   border-radius: 50%;
   border: 1.5px solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(160, 196, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(74, 150, 166, 0.22);
 }
 
 .hr-stat-flip__front-icon {
@@ -1993,8 +2007,33 @@
 }
 
 .hr-page .invest-questions {
-  background: #ffffff;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  position: relative;
+  background: var(--hr-surface-muted);
+  border-top: none;
+}
+
+.hr-page .invest-questions::before {
+  content: '';
+  position: absolute;
+  top: clamp(18px, 2dvh, 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 104px), 1460px);
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 7%,
+    rgba(0, 0, 0, 0.16) 20%,
+    rgba(74, 150, 166, 0.72) 46%,
+    rgba(74, 150, 166, 0.65) 54%,
+    rgba(0, 0, 0, 0.16) 80%,
+    rgba(0, 0, 0, 0.1) 93%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  pointer-events: none;
 }
 
 .hr-page .invest-questions__btn {
@@ -2018,10 +2057,9 @@
 }
 
 .hr-page .invest-questions__contact {
-  border-color: rgba(72, 202, 228, 0.38);
-  box-shadow:
-    0 12px 32px rgba(72, 202, 228, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .hr-page .invest-questions__faq-trigger:hover {
@@ -2056,7 +2094,7 @@
 
   .hr-trust-stat:nth-child(1),
   .hr-trust-stat:nth-child(2) {
-    border-bottom: 1px solid rgba(160, 196, 255, 0.5);
+    border-bottom: 1px solid rgba(74, 150, 166, 0.35);
     padding-bottom: 16px;
   }
 }
@@ -2074,7 +2112,7 @@
 
   .hr-trust-stat:not(:last-child) {
     border-right: none;
-    border-bottom: 1px solid rgba(160, 196, 255, 0.35);
+    border-bottom: 1px solid rgba(74, 150, 166, 0.25);
   }
 }
 

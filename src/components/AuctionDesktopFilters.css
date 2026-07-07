@@ -1,5 +1,5 @@
 .auction-desktop-filters {
-  --auction-tiffany: #0099A9;
+  --auction-tiffany: #4a96a6;
   --auction-tiffany-soft: rgba(0, 153, 169, 0.14);
   --auction-tiffany-ring: rgba(0, 153, 169, 0.28);
   display: flex;
@@ -223,7 +223,7 @@
 .auction-desktop-filters__slider-fill {
   left: var(--range-left, 0%);
   width: var(--range-width, 100%);
-  background: linear-gradient(90deg, #0099A9 0%, #14c4bf 52%, #007d8a 100%);
+  background: linear-gradient(90deg, #4a96a6 0%, #14c4bf 52%, #3f8798 100%);
   box-shadow:
     0 0 0 1px rgba(0, 153, 169, 0.18),
     0 4px 14px rgba(0, 153, 169, 0.28);
@@ -275,7 +275,7 @@
   margin-top: calc((6px - var(--slider-thumb-size)) / 2);
   border-radius: 50%;
   border: 3px solid #fff;
-  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0099A9 55%, #007d8a 100%);
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #4a96a6 55%, #3f8798 100%);
   box-shadow:
     0 0 0 1px rgba(0, 153, 169, 0.35),
     0 4px 12px rgba(0, 153, 169, 0.35),
@@ -292,7 +292,7 @@
   height: var(--slider-thumb-size);
   border-radius: 50%;
   border: 3px solid #fff;
-  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0099A9 55%, #007d8a 100%);
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #4a96a6 55%, #3f8798 100%);
   box-shadow:
     0 0 0 1px rgba(0, 153, 169, 0.35),
     0 4px 12px rgba(0, 153, 169, 0.35),
@@ -361,7 +361,7 @@
 }
 
 .auction-desktop-filters__apply:hover {
-  background: #007d8a;
+  background: #3f8798;
   box-shadow: 0 10px 26px rgba(0, 153, 169, 0.34);
 }
 

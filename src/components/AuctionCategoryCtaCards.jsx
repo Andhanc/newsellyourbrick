@@ -21,7 +21,7 @@ const AUCTION_CTA_CARDS = [
     to: '/shares',
     icon: FaChartPie,
     image: CTA_IMAGES.shares,
-    accent: 'coral',
+    accent: 'lilac',
   },
   {
     id: 'debts',
@@ -31,7 +31,7 @@ const AUCTION_CTA_CARDS = [
     to: '/debts',
     icon: FaFileInvoiceDollar,
     image: CTA_IMAGES.debts,
-    accent: 'mint',
+    accent: 'teal',
   },
   {
     id: 'auction',
@@ -41,7 +41,7 @@ const AUCTION_CTA_CARDS = [
     to: '/auction',
     icon: FaGavel,
     image: CTA_IMAGES.auction,
-    accent: 'teal',
+    accent: 'lilac',
   },
   {
     id: 'test-drive',
@@ -51,7 +51,7 @@ const AUCTION_CTA_CARDS = [
     to: '/test-drive',
     icon: FiBriefcase,
     image: CTA_IMAGES.testDrive,
-    accent: 'teal',
+    accent: 'lilac',
   },
 ]
 

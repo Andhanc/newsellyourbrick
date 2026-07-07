@@ -407,7 +407,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 
 .chat-widget__status {
   font-size: 12px;
-  color: #0099A9;
+  color: #4a96a6;
   font-weight: 500;
   font-family: 'Montserrat', sans-serif;
   display: flex;
@@ -420,7 +420,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #0099A9;
+  background: #4a96a6;
   display: inline-block;
 }
 
@@ -765,7 +765,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 .chat-widget__recommendation-price {
   font-size: 15px;
   font-weight: 600;
-  color: #0099A9;
+  color: #4a96a6;
   font-family: 'Montserrat', sans-serif;
   margin-top: 4px;
 }
@@ -801,7 +801,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   color: #6b7280;
   background: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
-  border-left: 3px solid #0099A9;
+  border-left: 3px solid #4a96a6;
 }
 
 @keyframes typing {

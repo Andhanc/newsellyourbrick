@@ -18,9 +18,77 @@
   scroll-behavior: smooth;
 }
 
-body.al-about-route #site-footer,
-body.al-about-route .app-footer-skeleton {
-  display: none;
+.al-page .new-header {
+  background: transparent;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+.al-page .new-header__container {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.36), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-radius: 16px;
+  width: calc(100% - 120px);
+  max-width: 1250px;
+  gap: 8px;
+}
+
+.al-page .new-header-spacer {
+  height: 96px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.al-page .new-header--menu-open {
+  z-index: 10001 !important;
+}
+
+.al-page .new-header__container--menu-open {
+  z-index: 10002;
+}
+
+.al-page .menu-dropdown {
+  top: calc(20px + 63px + 8px) !important;
+}
+
+@media (max-width: 768px) {
+  .al-page .menu-dropdown {
+    top: 0 !important;
+  }
+
+  .al-page .new-header {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .al-page .new-header__container {
+    width: 92%;
+    max-width: 420px;
+    margin: 12px auto 0;
+    padding: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    border-radius: 20px;
+    box-sizing: border-box;
+  }
+
+  .al-page .new-header-spacer {
+    height: 84px;
+  }
 }
 
 .al-page *,
