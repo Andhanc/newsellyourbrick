@@ -3,8 +3,8 @@
  */
 
 const BRAND_NAVY = '#1e3a5f'
-/** Фирменный тиффани, как в UI (#4a90a2) */
-const BRAND_TIFFANY = '#4a90a2'
+/** Фирменный тиффани, как в UI (#0099a9) */
+const BRAND_TIFFANY = '#0099a9'
 /** Светлый фон под итоги (в тон тиффани) */
 const FILL_TIFFANY_SOFT = 'FFE8F1F4'
 

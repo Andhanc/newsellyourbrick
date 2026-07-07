@@ -289,3 +289,63 @@
     animation: none !important;
   }
 }
+
+/* Desktop: centered modal instead of bottom sheet */
+@media (min-width: 901px) {
+  .subscription-screen-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .subscription-screen {
+    width: min(100%, 28rem);
+    max-height: min(90dvh, 640px);
+    margin: 0;
+    border-radius: 1.5rem;
+    box-shadow:
+      0 28px 80px rgba(15, 23, 42, 0.28),
+      0 0 0 1px rgba(15, 23, 42, 0.04);
+  }
+
+  .subscription-screen--open {
+    animation: subscription-screen-modal-in 0.32s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .subscription-screen--closing {
+    animation: subscription-screen-modal-out 0.28s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .subscription-screen__sheet {
+    padding: 1.5rem 1.75rem 1.75rem;
+  }
+}
+
+@keyframes subscription-screen-modal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes subscription-screen-modal-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.96);
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
+  .subscription-screen--open,
+  .subscription-screen--closing {
+    animation: none !important;
+  }
+}

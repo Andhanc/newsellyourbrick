@@ -75,7 +75,7 @@ ChartJS.register(
   Legend
 )
 
-const MOT_TIFFANY = '#4a90a2'
+const MOT_TIFFANY = '#0099a9'
 const MOT_EVENT_FALLBACK_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 const MOT_EVENTS_EMPTY_IMAGE = publicAsset('images/owner-properties-test/owner-events-empty.png')
@@ -446,8 +446,8 @@ function LogoMark({ className = '' }) {
     <svg className={`mot-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="mot-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ba3b2" />
-          <stop offset="100%" stopColor="#3a7586" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#mot-logo-grad)" />
@@ -779,8 +779,8 @@ function MotMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#6ba3b2" />
-                <stop offset="100%" stopColor="#3a7586" />
+                <stop offset="0%" stopColor="#33adbb" />
+                <stop offset="100%" stopColor="#007d8a" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -898,7 +898,7 @@ export default function MainOwnerTestPage() {
         key: 'views',
         label: t('ownerTest_chartFilterViews'),
         color: MOT_TIFFANY,
-        backgroundColor: 'rgba(74, 144, 162, 0.12)',
+        backgroundColor: 'rgba(0, 153, 169, 0.12)',
         fill: true,
       },
       {

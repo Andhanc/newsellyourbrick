@@ -10,7 +10,7 @@
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   background:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(74, 144, 162, 0.18), transparent 55%),
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0, 153, 169, 0.18), transparent 55%),
     radial-gradient(ellipse 80% 50% at 100% 50%, rgba(99, 102, 241, 0.08), transparent 45%),
     linear-gradient(165deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.92) 100%);
   backdrop-filter: blur(20px) saturate(1.35);
@@ -70,7 +70,7 @@
   border-radius: inherit;
   background: linear-gradient(
     135deg,
-    rgba(74, 144, 162, 0.08) 0%,
+    rgba(0, 153, 169, 0.08) 0%,
     transparent 40%,
     rgba(99, 102, 241, 0.06) 100%
   );
@@ -165,12 +165,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  color: #2d5763;
-  background: linear-gradient(145deg, rgba(74, 144, 162, 0.18) 0%, rgba(74, 144, 162, 0.06) 100%);
-  border: 1px solid rgba(74, 144, 162, 0.22);
+  color: #005a63;
+  background: linear-gradient(145deg, rgba(0, 153, 169, 0.18) 0%, rgba(0, 153, 169, 0.06) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.22);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 8px 20px -8px rgba(74, 144, 162, 0.35);
+    0 8px 20px -8px rgba(0, 153, 169, 0.35);
 }
 
 .owner-bid-analytics-modal__titles {
@@ -235,7 +235,7 @@
     160deg,
     rgba(196, 163, 90, 0.2) 0%,
     rgba(15, 23, 42, 0.06) 40%,
-    rgba(74, 144, 162, 0.12) 100%
+    rgba(0, 153, 169, 0.12) 100%
   );
   box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.08);
 }
@@ -289,7 +289,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #4a90a2, #3a7586);
+  background: linear-gradient(180deg, #0099a9, #007d8a);
   animation: oba-dot 1.2s ease-in-out infinite;
 }
 

@@ -60,8 +60,8 @@
   min-height: 22px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(16, 185, 129, 0.22);
-  color: #6ee7b7;
+  background: #ffffff;
+  color: #0099a9;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -69,8 +69,8 @@
 }
 
 .opc-billing__tab[data-active='true'] .opc-billing__save {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: #ffffff;
+  color: #0099a9;
 }
 
 .opc-plan-grid {
@@ -116,24 +116,6 @@
   font-weight: 900;
 }
 
-.opc-plan__ribbon {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  border-radius: 14px 14px 0 0;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #008da0 0%, #0099a9 45%, #007d8a 100%);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.opc-plan--current .opc-plan__name {
-  margin-top: 28px;
-}
-
 .opc-plan__name {
   margin: 0;
   font-size: clamp(26px, 2.4vw, 34px);
@@ -164,6 +146,18 @@
   letter-spacing: -0.02em;
 }
 
+.opc-plan__price-block--discounted {
+  align-items: baseline;
+  gap: 2px 6px;
+}
+
+.opc-plan__price--discounted {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #050505;
+}
+
 .opc-plan__price--free {
   color: #007d8a;
 }
@@ -183,8 +177,14 @@
 }
 
 .opc-plan__price-was--red {
-  color: #ef4444;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: rgba(239, 68, 68, 0.92);
+  text-decoration: line-through;
   text-decoration-color: #ef4444;
+  text-decoration-thickness: 2.5px;
+  text-decoration-skip-ink: none;
 }
 
 .opc-plan__yearly-note {

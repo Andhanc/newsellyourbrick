@@ -34,8 +34,8 @@ function LogoMark({ className = '' }) {
     <svg className={`otd-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="otd-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ba3b2" />
-          <stop offset="100%" stopColor="#3a7586" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#otd-logo-grad)" />

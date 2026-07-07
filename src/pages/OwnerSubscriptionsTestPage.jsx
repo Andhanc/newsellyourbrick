@@ -122,11 +122,14 @@ export default function OwnerSubscriptionsTestPage() {
     () =>
       ['standard', 'pro', 'institutional'].map((planId) => {
         const plan = plans.find((item) => item.id === planId)
+        const isPromoFree = planId === 'standard'
+        const catalogPrice = plan?.price ?? 0
         return {
           id: planId,
           name: plan?.name || '',
-          monthlyPrice: plan ? getPeriodPrice(plan, 'monthly') : 0,
-          yearlyPrice: plan ? getPeriodPrice(plan, 'yearly') : 0,
+          monthlyPrice: isPromoFree ? 0 : plan ? getPeriodPrice(plan, 'monthly') : 0,
+          yearlyPrice: isPromoFree ? 0 : plan ? getPeriodPrice(plan, 'yearly') : 0,
+          compareAtPrice: isPromoFree ? catalogPrice : undefined,
           popular: planId === 'pro',
         }
       }),
@@ -137,10 +140,13 @@ export default function OwnerSubscriptionsTestPage() {
     () =>
       ['standard', 'pro', 'institutional'].map((planId) => {
         const plan = plans.find((item) => item.id === planId)
+        const catalogPrice = plan?.price ?? 0
+        const isPromoFree = planId === 'standard'
         return {
           id: planId,
           name: plan?.name || '',
-          monthlyPrice: plan?.price ?? 0,
+          monthlyPrice: isPromoFree ? 0 : catalogPrice,
+          compareAtPrice: isPromoFree ? catalogPrice : undefined,
         }
       }),
     [plans]
@@ -463,7 +469,6 @@ export default function OwnerSubscriptionsTestPage() {
                   loading={Boolean(startingPlanId)}
                   monthlyLabel={t('ownerTest_subscriptionsBillingMonthly')}
                   yearlyLabel={t('ownerTest_subscriptionsBillingYearly')}
-                  yearlySaveLabel={t('ownerTest_planYearlySaving')}
                   perMonthSuffix={perMonthSuffix}
                   ctaLabel={t('ownerTest_planBuy')}
                   activeCtaLabel={t('ownerTest_planActiveSubscription')}

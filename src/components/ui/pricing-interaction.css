@@ -197,6 +197,21 @@
   font-weight: 600;
 }
 
+.pricing-interaction__plan-price--discounted .pricing-interaction__plan-amount {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.pricing-interaction__plan-was {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: rgba(239, 68, 68, 0.92);
+  text-decoration: line-through;
+  text-decoration-color: #ef4444;
+  text-decoration-thickness: 2px;
+  text-decoration-skip-ink: none;
+}
+
 .pricing-interaction__plan-suffix {
   color: #64748b;
   font-weight: 500;

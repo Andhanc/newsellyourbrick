@@ -1,21 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .otd {
-  --otd-tiffany: #4a90a2;
-  --otd-tiffany-dark: #3a7586;
-  --otd-tiffany-light: #6ba3b2;
+  --otd-tiffany: #0099a9;
+  --otd-tiffany-dark: #007d8a;
+  --otd-tiffany-light: #33adbb;
   --otd-tiffany-soft: #e8f1f4;
-  --otd-tiffany-muted: rgba(74, 144, 162, 0.14);
-  --otd-tiffany-ring: rgba(74, 144, 162, 0.28);
-  --otd-gradient-brand: linear-gradient(135deg, #6ba3b2 0%, #4a90a2 48%, #3a7586 100%);
-  --otd-gradient-active: linear-gradient(135deg, #428799 0%, #4a90a2 42%, #3a7586 100%);
+  --otd-tiffany-muted: rgba(0, 153, 169, 0.14);
+  --otd-tiffany-ring: rgba(0, 153, 169, 0.28);
+  --otd-gradient-brand: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
+  --otd-gradient-active: linear-gradient(135deg, #008da0 0%, #0099a9 42%, #007d8a 100%);
 
   --otd-surface: #ffffff;
   --otd-text: #111827;
   --otd-text-muted: #6b7280;
   --otd-text-light: #9ca3af;
   --otd-border: #e5e7eb;
-  --otd-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(74, 144, 162, 0.06);
+  --otd-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(0, 153, 169, 0.06);
   --otd-radius: 16px;
   --otd-radius-sm: 12px;
   --otd-sidebar-w: 252px;
@@ -24,7 +24,7 @@
   min-height: 100vh;
   background-color: #f4fbfb;
   background-image:
-    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(74, 144, 162, 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
     linear-gradient(180deg, #f8fafc 0%, #f3f7f9 55%, #e8f1f4 100%);
   color: var(--otd-text);
@@ -48,7 +48,7 @@
   flex-direction: column;
   padding: 24px 16px 20px;
   background: linear-gradient(180deg, #ffffff 0%, #f6fafb 100%);
-  border-right: 1px solid rgba(74, 144, 162, 0.1);
+  border-right: 1px solid rgba(0, 153, 169, 0.1);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -74,9 +74,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(74, 144, 162, 0.2) 8%,
-    rgba(74, 144, 162, 0.36) 50%,
-    rgba(74, 144, 162, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -126,7 +126,7 @@
 }
 
 .otd-nav__item--active {
-  background: rgba(74, 144, 162, 0.1);
+  background: rgba(0, 153, 169, 0.1);
   color: var(--otd-tiffany-dark);
   font-weight: 600;
   position: relative;
@@ -166,7 +166,7 @@
   position: relative;
   padding: 16px 16px 0;
   background: linear-gradient(180deg, #fff 0%, #f3f7f9 55%, rgba(236, 253, 245, 0.95) 100%);
-  box-shadow: 0 4px 22px rgba(74, 144, 162, 0.12);
+  box-shadow: 0 4px 22px rgba(0, 153, 169, 0.12);
 }
 
 .otd-sidebar-promo__title {
@@ -459,7 +459,7 @@
 }
 
 .otd-table tbody tr:hover {
-  background: rgba(74, 144, 162, 0.04);
+  background: rgba(0, 153, 169, 0.04);
 }
 
 .otd-table__row--clickable {
@@ -490,7 +490,7 @@
 }
 
 .otd-table__row--clickable:hover .otd-row-open {
-  background: rgba(74, 144, 162, 0.1);
+  background: rgba(0, 153, 169, 0.1);
   color: var(--otd-tiffany-dark);
 }
 
@@ -587,7 +587,7 @@
 
 .otd-status--checked-in {
   background: rgba(34, 197, 94, 0.12);
-  color: #4a90a2;
+  color: #0099a9;
 }
 
 .otd-btn {
@@ -611,7 +611,7 @@
 }
 
 .otd-btn--primary:hover {
-  box-shadow: 0 6px 18px rgba(74, 144, 162, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.35);
 }
 
 .otd-btn--sm {

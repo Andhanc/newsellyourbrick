@@ -58,7 +58,7 @@ import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
-const MOT_TIFFANY = '#4a90a2'
+const MOT_TIFFANY = '#0099a9'
 
 const PAGE_SIZE = 10
 
@@ -337,7 +337,7 @@ function PropertiesFilterMenu({ filters, onChange }) {
 }
 
 function MiniSpark({ variant }) {
-  const colors = { tiffany: MOT_TIFFANY, green: '#4a90a2', orange: '#f59e0b' }
+  const colors = { tiffany: MOT_TIFFANY, green: '#0099a9', orange: '#f59e0b' }
   const stroke = colors[variant] || MOT_TIFFANY
   return (
     <svg className="op-mini-spark" viewBox="0 0 64 28" aria-hidden>
@@ -366,8 +366,8 @@ function OpMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#6ba3b2" />
-                <stop offset="100%" stopColor="#3a7586" />
+                <stop offset="0%" stopColor="#33adbb" />
+                <stop offset="100%" stopColor="#007d8a" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -385,8 +385,8 @@ function LogoMark({ className = '' }) {
     <svg className={`op-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="op-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ba3b2" />
-          <stop offset="100%" stopColor="#3a7586" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#op-logo-grad)" />
@@ -1180,8 +1180,8 @@ export default function OwnerPropertiesTestPage() {
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id="op-user-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#6ba3b2" />
-                  <stop offset="100%" stopColor="#3a7586" />
+                  <stop offset="0%" stopColor="#33adbb" />
+                  <stop offset="100%" stopColor="#007d8a" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill="url(#op-user-grad)" />

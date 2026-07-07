@@ -8,6 +8,7 @@ export type PricingInteractionPlan = {
   name: string
   monthlyPrice: number
   yearlyPrice: number
+  compareAtPrice?: number
   popular?: boolean
 }
 
@@ -92,6 +93,14 @@ export function PricingInteraction({
       <div className="pricing-interaction__plans">
         {plans.map((plan, index) => {
           const price = period === 0 ? plan.monthlyPrice : plan.yearlyPrice
+          const compareAt = plan.compareAtPrice
+          const showPromoFree = compareAt != null && compareAt > price
+          const yearlyCompare =
+            period === 1 && plan.monthlyPrice > 0 && plan.yearlyPrice < plan.monthlyPrice
+              ? plan.monthlyPrice
+              : null
+          const strikethroughPrice = showPromoFree ? compareAt : yearlyCompare
+          const showDiscountLayout = strikethroughPrice != null && strikethroughPrice > price
           const isSelected = active === index
 
           return (
@@ -113,10 +122,20 @@ export function PricingInteraction({
                     <span className="pricing-interaction__plan-badge">{popularLabel}</span>
                   ) : null}
                 </span>
-                <p className="pricing-interaction__plan-price">
+                <p
+                  className={cn(
+                    'pricing-interaction__plan-price',
+                    showDiscountLayout && 'pricing-interaction__plan-price--discounted',
+                  )}
+                >
+                  {showDiscountLayout ? (
+                    <span className="pricing-interaction__plan-was" aria-hidden="true">
+                      €{strikethroughPrice.toLocaleString('ru-RU')}
+                    </span>
+                  ) : null}
                   <span className="pricing-interaction__plan-amount">
                     {price === 0 ? (
-                      <>0 €</>
+                      <>€0</>
                     ) : (
                       <>
                         <NumberFlow value={price} />

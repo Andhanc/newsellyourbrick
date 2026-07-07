@@ -9,7 +9,7 @@ export default function OwnerEmptyPropertiesIllustration({ className = '' }) {
       role="img"
       aria-hidden="true"
     >
-      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#4a90a2" fillOpacity="0.14" />
+      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#0099a9" fillOpacity="0.14" />
       <rect x="52" y="34" width="116" height="92" rx="14" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
       <path
         d="M52 58h116"

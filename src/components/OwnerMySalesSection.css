@@ -7,15 +7,15 @@
   --oms-radius: 16px;
   --oms-radius-sm: 12px;
   --oms-radius-pill: 999px;
-  --oms-teal: #356970;
-  --oms-teal-soft: rgba(74, 144, 162, 0.12);
-  --oms-teal-mid: rgba(74, 144, 162, 0.2);
-  --oms-emerald: #3a7586;
+  --oms-teal: #006672;
+  --oms-teal-soft: rgba(0, 153, 169, 0.12);
+  --oms-teal-mid: rgba(0, 153, 169, 0.2);
+  --oms-emerald: #007d8a;
   --oms-text: #0f172a;
   --oms-text-muted: #64748b;
   --oms-border: rgba(15, 23, 42, 0.08);
   --oms-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
-  --oms-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.08), 0 20px 40px rgba(74, 144, 162, 0.1);
+  --oms-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.08), 0 20px 40px rgba(0, 153, 169, 0.1);
   --oms-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-family: var(--oms-font);
 }
@@ -53,7 +53,7 @@
   background: linear-gradient(145deg, var(--oms-teal-soft), #fff);
   border: 1px solid var(--oms-teal-mid);
   color: var(--oms-teal);
-  box-shadow: 0 2px 8px rgba(74, 144, 162, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.12);
 }
 
 .owner-my-sales__hero-text {
@@ -130,8 +130,8 @@
 
 .owner-my-sales__filter-pill--active {
   color: #fff;
-  background: linear-gradient(135deg, #2d5763 0%, var(--oms-teal) 100%);
-  box-shadow: 0 2px 8px rgba(74, 144, 162, 0.35);
+  background: linear-gradient(135deg, #005a63 0%, var(--oms-teal) 100%);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.35);
 }
 
 .owner-my-sales__filter-pill--active:hover {
@@ -267,7 +267,7 @@
 .owner-my-sales .owner-my-sales__card:hover {
   transform: translateY(-5px);
   box-shadow: var(--oms-shadow-hover);
-  border-color: rgba(74, 144, 162, 0.25);
+  border-color: rgba(0, 153, 169, 0.25);
 }
 
 .owner-my-sales .owner-my-sales__card:focus {
@@ -375,9 +375,9 @@
   width: 100%;
   min-height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(74, 144, 162, 0.5);
+  border: 1px solid rgba(0, 153, 169, 0.5);
   background: #ecfeff;
-  color: #2d5763;
+  color: #005a63;
   font-size: 0.85rem;
   font-weight: 700;
   margin-bottom: 8px;
@@ -407,7 +407,7 @@
 
 .owner-my-sales__status-chip--approved {
   background: #e8f1f4;
-  color: #3a7586;
+  color: #007d8a;
 }
 
 .owner-my-sales__comment-btn {

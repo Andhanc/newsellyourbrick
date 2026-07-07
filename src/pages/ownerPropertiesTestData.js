@@ -33,7 +33,7 @@ export function getOwnerPropertyAuctionTimer(row) {
 
 const TRAFFIC_SOURCES = [
   { label: 'Поиск', pct: 45, color: '#3b82f6' },
-  { label: 'Соцсети', pct: 25, color: '#4a90a2' },
+  { label: 'Соцсети', pct: 25, color: '#0099a9' },
   { label: 'Прямые заходы', pct: 15, color: '#6366f1' },
   { label: 'Реклама', pct: 10, color: '#f59e0b' },
   { label: 'Другие', pct: 5, color: '#a855f7' },

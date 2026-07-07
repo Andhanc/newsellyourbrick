@@ -70,7 +70,7 @@
   flex-direction: column;
   padding: 24px 16px 20px;
   background: linear-gradient(180deg, #ffffff 0%, #f6fafb 100%);
-  border-right: 1px solid rgba(74, 144, 162, 0.1);
+  border-right: 1px solid rgba(0, 153, 169, 0.1);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -90,9 +90,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(74, 144, 162, 0.2) 8%,
-    rgba(74, 144, 162, 0.36) 50%,
-    rgba(74, 144, 162, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -149,7 +149,7 @@
 }
 
 .mot-nav__item--active:hover {
-  background: linear-gradient(135deg, #45929f 0%, #4a90a2 42%, #3a7586 100%);
+  background: linear-gradient(135deg, #45929f 0%, #0099a9 42%, #007d8a 100%);
   color: #fff;
 }
 
@@ -172,21 +172,21 @@
   margin-top: auto;
   padding-top: 0;
   border-radius: var(--mot-radius-sm);
-  border: 1px solid rgba(74, 144, 162, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0) 50%, rgba(15, 23, 42, 0.34) 100%),
-    linear-gradient(145deg, #0f172a 0%, #134e4a 52%, #356970 100%);
+    linear-gradient(145deg, #0f172a 0%, #134e4a 52%, #006672 100%);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
 }
 
 .mot-sidebar-promo__glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 30%, rgba(74, 144, 162, 0.22) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 30%, rgba(0, 153, 169, 0.22) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -201,7 +201,7 @@
   margin-bottom: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(74, 144, 162, 0.22);
+  background: rgba(0, 153, 169, 0.22);
   border: 1px solid rgba(94, 234, 212, 0.32);
   color: #cce9ed;
   font-size: 9px;
@@ -288,11 +288,11 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    #6ba3b2 0%,
+    #33adbb 0%,
     #7ee8e4 16%,
     #2ec9c4 38%,
-    #4a90a2 62%,
-    #3a7586 82%,
+    #0099a9 62%,
+    #007d8a 82%,
     #006672 100%
   );
   background-size: 220% 220%;
@@ -324,7 +324,7 @@
   background: linear-gradient(
     180deg,
     rgba(6, 122, 118, 0) 0%,
-    rgba(53, 105, 112, 0.16) 38%,
+    rgba(0, 102, 114, 0.16) 38%,
     rgba(6, 95, 92, 0.42) 100%
   );
   border-radius: inherit;
@@ -350,7 +350,7 @@
 .mot-hero-shell .mot-header__title,
 .mot-hero-shell .mot-mob-hero__greeting {
   color: #ffffff;
-  text-shadow: 0 1px 12px rgba(53, 105, 112, 0.22);
+  text-shadow: 0 1px 12px rgba(0, 102, 114, 0.22);
 }
 
 .mot-hero-copy__line {
@@ -447,7 +447,7 @@
   align-items: center;
   gap: 10px;
   padding: 0 16px;
-  border: 1px solid rgba(74, 144, 162, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.86);
   color: #94a3b8;
@@ -496,10 +496,10 @@
 }
 
 .mot-date-pill--active {
-  border-color: rgba(74, 144, 162, 0.42);
+  border-color: rgba(0, 153, 169, 0.42);
   background: #ffffff;
   box-shadow:
-    0 12px 24px rgba(74, 144, 162, 0.12),
+    0 12px 24px rgba(0, 153, 169, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
@@ -510,14 +510,14 @@
   z-index: 35;
   width: min(380px, calc(100vw - 32px));
   padding: 18px;
-  border: 1px solid rgba(74, 144, 162, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 248, 245, 0.98) 100%),
-    radial-gradient(ellipse at 100% 0%, rgba(74, 144, 162, 0.16), transparent 52%);
+    radial-gradient(ellipse at 100% 0%, rgba(0, 153, 169, 0.16), transparent 52%);
   box-shadow:
     0 22px 46px rgba(15, 23, 42, 0.14),
-    0 8px 20px rgba(74, 144, 162, 0.08);
+    0 8px 20px rgba(0, 153, 169, 0.08);
   opacity: 0;
   transform: translateY(-8px) scale(0.98);
   transform-origin: top right;
@@ -539,11 +539,11 @@
   gap: 6px;
   margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(74, 144, 162, 0.1);
+  border-bottom: 1px solid rgba(0, 153, 169, 0.1);
 }
 
 .mot-date-popover__eyebrow {
-  color: #356970;
+  color: #006672;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -585,16 +585,16 @@
 }
 
 .mot-date-popover__preset:hover:not(.mot-date-popover__preset--active) {
-  border-color: rgba(74, 144, 162, 0.32);
-  background: rgba(74, 144, 162, 0.06);
-  color: #2d5763;
+  border-color: rgba(0, 153, 169, 0.32);
+  background: rgba(0, 153, 169, 0.06);
+  color: #005a63;
 }
 
 .mot-date-popover__preset--active {
   border-color: transparent;
   background: var(--mot-gradient-brand);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.28);
 }
 
 .mot-date-popover__fields {
@@ -635,8 +635,8 @@
 
 .mot-date-popover__fields input:focus {
   outline: none;
-  border-color: rgba(74, 144, 162, 0.45);
-  box-shadow: 0 0 0 3px rgba(74, 144, 162, 0.14);
+  border-color: rgba(0, 153, 169, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 .mot-date-popover__actions {
@@ -675,14 +675,14 @@
 
 .mot-date-popover__apply {
   border: 0 !important;
-  background: linear-gradient(135deg, #6ba3b2 0%, #4a90a2 48%, #3a7586 100%) !important;
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%) !important;
   color: #fff !important;
-  box-shadow: 0 10px 22px rgba(74, 144, 162, 0.24);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.24);
 }
 
 .mot-date-popover__apply:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(74, 144, 162, 0.3);
+  box-shadow: 0 14px 28px rgba(0, 153, 169, 0.3);
 }
 
 .mot-icon-btn {
@@ -784,7 +784,7 @@
   background: rgba(255, 255, 255, 0.86);
   border-radius: 24px;
   box-shadow: var(--oc-shadow-sm);
-  border: 1px solid rgba(74, 144, 162, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.1);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -813,12 +813,12 @@
   background: var(--mot-gradient-brand);
   color: #fff;
   font-size: 13px;
-  box-shadow: 0 2px 10px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 153, 169, 0.28);
 }
 
 .mot-btn--primary:hover {
-  background: linear-gradient(135deg, #7fb3c0 0%, #4a90a2 48%, #3a7586 100%);
-  box-shadow: 0 4px 14px rgba(74, 144, 162, 0.38);
+  background: linear-gradient(135deg, #7fb3c0 0%, #0099a9 48%, #007d8a 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.38);
 }
 
 .mot-btn--white {
@@ -921,7 +921,7 @@
   right: 0;
   min-width: 210px;
   padding: 6px;
-  border: 1px solid rgba(74, 144, 162, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
@@ -954,8 +954,8 @@
 
 .mot-chart-filter__option:hover,
 .mot-chart-filter__option--active {
-  background: rgba(74, 144, 162, 0.1);
-  color: #356970;
+  background: rgba(0, 153, 169, 0.1);
+  color: #006672;
 }
 
 /* ——— Metrics ——— */
@@ -972,7 +972,7 @@
 .mot-metric {
   padding: 20px 22px;
   background: #ffffff;
-  border-color: rgba(74, 144, 162, 0.12);
+  border-color: rgba(0, 153, 169, 0.12);
   border-radius: 22px;
   position: relative;
 }
@@ -985,7 +985,7 @@
   gap: 18px;
   padding: 20px;
   border-radius: 22px;
-  border: 1px solid rgba(74, 144, 162, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.08);
   box-shadow: var(--oc-shadow-sm);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -996,7 +996,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(74, 144, 162, 0.05) 0%, transparent 46%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.05) 0%, transparent 46%);
   pointer-events: none;
 }
 
@@ -1039,13 +1039,13 @@
 }
 
 .mot-metric__link:focus-visible {
-  outline: 2px solid rgba(74, 144, 162, 0.45);
+  outline: 2px solid rgba(0, 153, 169, 0.45);
   outline-offset: 2px;
 }
 
 .mot-metrics.mot-desktop-only .mot-metric--stat:hover {
   transform: translateY(-4px);
-  border-color: rgba(74, 144, 162, 0.18);
+  border-color: rgba(0, 153, 169, 0.18);
   box-shadow: var(--oc-shadow-md);
 }
 
@@ -1066,7 +1066,7 @@
 
 .mot-metrics.mot-desktop-only .mot-metric__icon--tiffany {
   background: linear-gradient(135deg, #55d7d2 0%, #209fbd 100%);
-  box-shadow: 0 14px 26px rgba(74, 144, 162, 0.22);
+  box-shadow: 0 14px 26px rgba(0, 153, 169, 0.22);
 }
 
 .mot-metrics.mot-desktop-only .mot-metric__icon--pink {
@@ -1110,7 +1110,7 @@
 }
 
 .mot-metric__icon--tiffany {
-  background: rgba(74, 144, 162, 0.14);
+  background: rgba(0, 153, 169, 0.14);
   color: var(--mot-tiffany);
 }
 
@@ -1136,12 +1136,12 @@
 
 .mot-metric__icon--teal {
   background: rgba(20, 184, 166, 0.14);
-  color: #6ba3b2;
+  color: #33adbb;
 }
 
 .mot-metric__icon--green {
   background: rgba(34, 197, 94, 0.14);
-  color: #4a90a2;
+  color: #0099a9;
 }
 
 .mot-metric__spark--mobile {
@@ -1224,7 +1224,7 @@
   padding: 0 9px;
   border-radius: 999px;
   background: #d1fae5;
-  color: #3a7586;
+  color: #007d8a;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -1299,7 +1299,7 @@
 .mot-chart-mode__btn--active {
   background: var(--mot-gradient-active);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
 }
 
 .mot-chart-card__legend {
@@ -1368,8 +1368,8 @@
   width: 100%;
   max-width: 30px;
   border-radius: 12px 12px 6px 6px;
-  background: linear-gradient(180deg, #8fc4ce 0%, #4a90a2 100%);
-  box-shadow: 0 12px 22px rgba(74, 144, 162, 0.18);
+  background: linear-gradient(180deg, #8fc4ce 0%, #0099a9 100%);
+  box-shadow: 0 12px 22px rgba(0, 153, 169, 0.18);
 }
 
 .mot-bars-card__value {
@@ -1601,11 +1601,11 @@
 
 .mot-ending-card--more {
   padding: 0;
-  border: 1.5px dashed rgba(74, 144, 162, 0.42);
+  border: 1.5px dashed rgba(0, 153, 169, 0.42);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 18% 12%, rgba(74, 144, 162, 0.16) 0%, rgba(74, 144, 162, 0) 42%),
-    linear-gradient(165deg, rgba(74, 144, 162, 0.1) 0%, #ffffff 58%, #f6fafb 100%);
+    radial-gradient(circle at 18% 12%, rgba(0, 153, 169, 0.16) 0%, rgba(0, 153, 169, 0) 42%),
+    linear-gradient(165deg, rgba(0, 153, 169, 0.1) 0%, #ffffff 58%, #f6fafb 100%);
   text-align: center;
   cursor: pointer;
   align-self: stretch;
@@ -1616,10 +1616,10 @@
 
 .mot-ending-card--more:hover {
   transform: translateY(-1px);
-  border-color: rgba(74, 144, 162, 0.62);
+  border-color: rgba(0, 153, 169, 0.62);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 24px rgba(74, 144, 162, 0.12);
+    0 10px 24px rgba(0, 153, 169, 0.12);
 }
 
 .mot-ending-card--more:active {
@@ -1642,7 +1642,7 @@
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 1;
-  color: #3a7586;
+  color: #007d8a;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -1661,7 +1661,7 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
-  color: #2d5763;
+  color: #005a63;
 }
 
 /* ——— Best property ——— */
@@ -1682,7 +1682,7 @@
   margin-bottom: 14px;
   aspect-ratio: 16 / 10;
   background: linear-gradient(135deg, #e8f1f4 0%, #e8f1f4 100%);
-  box-shadow: 0 4px 16px rgba(74, 144, 162, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.12);
 }
 
 .mot-best__photo {
@@ -1707,7 +1707,7 @@
 }
 
 .mot-best__badge--long {
-  background: #4a90a2;
+  background: #0099a9;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
 }
 
@@ -1785,8 +1785,8 @@
   gap: 8px;
   padding: 18px;
   border-radius: 18px;
-  background: rgba(74, 144, 162, 0.07);
-  border: 1px dashed rgba(74, 144, 162, 0.24);
+  background: rgba(0, 153, 169, 0.07);
+  border: 1px dashed rgba(0, 153, 169, 0.24);
 }
 
 /* ——— Triple row ——— */
@@ -2061,7 +2061,7 @@
 .mot-status-buyer-ad .oad-buyer__icon {
   width: 24px;
   height: 24px;
-  background: rgba(74, 144, 162, 0.12);
+  background: rgba(0, 153, 169, 0.12);
 }
 
 .mot-status-buyer-ad .oad-buyer__actions {
@@ -2078,10 +2078,10 @@
   min-height: 36px;
   padding: 0 18px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6ba3b2 0%, #4a90a2 48%, #3a7586 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
   color: #fff;
   font-size: 12px;
-  box-shadow: 0 10px 18px rgba(74, 144, 162, 0.18);
+  box-shadow: 0 10px 18px rgba(0, 153, 169, 0.18);
 }
 
 .mot-status-buyer-ad .oad-buyer__link {
@@ -2115,18 +2115,18 @@
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 252, 252, 0.96) 48%, rgba(231, 245, 246, 0.92) 100%),
     radial-gradient(ellipse at 82% 26%, rgba(245, 158, 11, 0.16) 0%, transparent 38%),
-    radial-gradient(ellipse at 18% 82%, rgba(74, 144, 162, 0.18) 0%, transparent 42%);
-  border: 1px solid rgba(74, 144, 162, 0.16);
+    radial-gradient(ellipse at 18% 82%, rgba(0, 153, 169, 0.18) 0%, transparent 42%);
+  border: 1px solid rgba(0, 153, 169, 0.16);
   box-shadow:
-    0 18px 44px rgba(74, 144, 162, 0.16),
+    0 18px 44px rgba(0, 153, 169, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .mot-rating-promo__surface:hover {
-  border-color: rgba(74, 144, 162, 0.28);
+  border-color: rgba(0, 153, 169, 0.28);
   box-shadow:
-    0 22px 54px rgba(74, 144, 162, 0.2),
+    0 22px 54px rgba(0, 153, 169, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
@@ -2140,7 +2140,7 @@
   z-index: 0;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.74) 36%, rgba(255, 255, 255, 0.12) 70%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse at 12% 18%, rgba(74, 144, 162, 0.12) 0%, transparent 38%);
+    radial-gradient(ellipse at 12% 18%, rgba(0, 153, 169, 0.12) 0%, transparent 38%);
   pointer-events: none;
 }
 
@@ -2169,7 +2169,7 @@
   width: 42%;
   aspect-ratio: 1;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(74, 144, 162, 0.14) 0%, transparent 66%);
+  background: radial-gradient(circle, rgba(0, 153, 169, 0.14) 0%, transparent 66%);
   pointer-events: none;
 }
 
@@ -2192,9 +2192,9 @@
   min-height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(74, 144, 162, 0.1);
-  border: 1px solid rgba(74, 144, 162, 0.18);
-  color: #356970;
+  background: rgba(0, 153, 169, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.18);
+  color: #006672;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -2228,12 +2228,12 @@
   margin-top: 6px;
   padding: 0 18px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #4a90a2 0%, #2f6f7d 100%);
+  background: linear-gradient(135deg, #0099a9 0%, #2f6f7d 100%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 750;
   line-height: 1;
-  box-shadow: 0 12px 24px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 12px 24px rgba(0, 153, 169, 0.28);
 }
 
 .mot-rating-promo__art-wrap {
@@ -2258,7 +2258,7 @@
   border-radius: 999px;
   background:
     radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 58%),
-    radial-gradient(circle, rgba(74, 144, 162, 0.2) 0%, transparent 72%);
+    radial-gradient(circle, rgba(0, 153, 169, 0.2) 0%, transparent 72%);
   filter: blur(2px);
 }
 
@@ -2381,7 +2381,7 @@
   bottom: -28px;
   width: 66%;
   height: 62%;
-  filter: drop-shadow(0 18px 24px rgba(74, 144, 162, 0.2));
+  filter: drop-shadow(0 18px 24px rgba(0, 153, 169, 0.2));
 }
 
 .mot-promo-card__visual--listing img {
@@ -2428,7 +2428,7 @@
 
 .mot-promo-card--light {
   background:
-    radial-gradient(ellipse at 100% 100%, rgba(74, 144, 162, 0.22) 0%, transparent 58%),
+    radial-gradient(ellipse at 100% 100%, rgba(0, 153, 169, 0.22) 0%, transparent 58%),
     linear-gradient(135deg, #e8f1f4 0%, #f6fafb 48%, #ffffff 100%);
   border: 1px solid var(--mot-tiffany-ring);
   box-shadow: var(--mot-shadow);
@@ -2455,19 +2455,19 @@
 }
 
 .mot-promo-card--light .mot-btn--primary {
-  background: linear-gradient(135deg, #4a90a2 0%, #3a7586 100%);
+  background: linear-gradient(135deg, #0099a9 0%, #007d8a 100%);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(74, 144, 162, 0.24);
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.24);
 }
 
 .mot-promo-card--dark .mot-btn--white {
-  color: #2d5763;
+  color: #005a63;
   background: #ffffff;
 }
 
 .mot-promo-card--light .mot-promo-card__tag {
-  background: rgba(74, 144, 162, 0.12);
-  border: 1px solid rgba(74, 144, 162, 0.28);
+  background: rgba(0, 153, 169, 0.12);
+  border: 1px solid rgba(0, 153, 169, 0.28);
   color: var(--mot-tiffany-deep);
 }
 
@@ -2482,8 +2482,8 @@
 .mot-promo-card--dark {
   background:
     linear-gradient(90deg, rgba(15, 23, 42, 0) 52%, rgba(15, 23, 42, 0.42) 100%),
-    linear-gradient(128deg, #0f172a 0%, #134e4a 48%, #356970 100%);
-  border: 1px solid rgba(74, 144, 162, 0.38);
+    linear-gradient(128deg, #0f172a 0%, #134e4a 48%, #006672 100%);
+  border: 1px solid rgba(0, 153, 169, 0.38);
   box-shadow: 0 10px 36px rgba(15, 23, 42, 0.2);
   color: #fff;
   min-height: 270px;
@@ -2509,13 +2509,13 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 14% 50%, rgba(74, 144, 162, 0.26) 0%, transparent 44%),
+    radial-gradient(circle at 14% 50%, rgba(0, 153, 169, 0.26) 0%, transparent 44%),
     radial-gradient(circle at 92% 18%, rgba(94, 234, 212, 0.12) 0%, transparent 36%);
   pointer-events: none;
 }
 
 .mot-promo-card--dark .mot-promo-card__tag {
-  background: rgba(74, 144, 162, 0.22);
+  background: rgba(0, 153, 169, 0.22);
   border: 1px solid rgba(94, 234, 212, 0.35);
   color: #cce9ed;
 }
@@ -2663,7 +2663,7 @@
   }
 
   .mot-metrics.mot-metrics--summary .mot-metric--summary:hover {
-    background: rgba(74, 144, 162, 0.03);
+    background: rgba(0, 153, 169, 0.03);
     transform: none;
     border-color: transparent;
     box-shadow: none;
@@ -2830,9 +2830,9 @@
   }
 
   .mot-ending-card--more:hover {
-    border-color: rgba(74, 144, 162, 0.45);
+    border-color: rgba(0, 153, 169, 0.45);
     background: #f3f7f9;
-    box-shadow: 0 8px 20px rgba(74, 144, 162, 0.08);
+    box-shadow: 0 8px 20px rgba(0, 153, 169, 0.08);
   }
 
   .mot-rating-promo__surface {
@@ -2840,7 +2840,7 @@
     min-height: 232px;
     border-radius: 20px;
     animation: none;
-    box-shadow: 0 14px 38px rgba(74, 144, 162, 0.14);
+    box-shadow: 0 14px 38px rgba(0, 153, 169, 0.14);
   }
 
   .mot-rating-promo__shine {
@@ -2944,14 +2944,14 @@
     margin: 0;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(74, 144, 162, 0.08);
+    background: rgba(0, 153, 169, 0.08);
     color: var(--mot-tiffany-dark);
     text-decoration: none;
     transition: background 0.15s ease;
   }
 
   .mot-activity-card .mot-section-head__link.mot-desktop-only:hover {
-    background: rgba(74, 144, 162, 0.14);
+    background: rgba(0, 153, 169, 0.14);
     text-decoration: none;
     color: var(--mot-tiffany-dark);
   }
@@ -3025,7 +3025,7 @@
   }
 
   .mot-activity__go:hover {
-    border-color: rgba(74, 144, 162, 0.35);
+    border-color: rgba(0, 153, 169, 0.35);
     color: var(--mot-tiffany);
     background: #f3f7f9;
   }

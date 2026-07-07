@@ -113,7 +113,7 @@ export default function OwnerSaleCelebrationModal({ celebration, onClose, onGoTo
               numberOfPieces={280}
               gravity={0.12}
               wind={0.02}
-              colors={['#4a90a2', '#f59e0b', '#3b82f6', '#6ba3b2', '#fbbf24', '#8b5cf6', '#ec4899']}
+              colors={['#0099a9', '#f59e0b', '#3b82f6', '#33adbb', '#fbbf24', '#8b5cf6', '#ec4899']}
               confettiSource={{
                 x: 0,
                 y: 0,
@@ -193,7 +193,7 @@ export default function OwnerSaleCelebrationModal({ celebration, onClose, onGoTo
             numberOfPieces={280}
             gravity={0.12}
             wind={0.02}
-            colors={['#4a90a2', '#f59e0b', '#3b82f6', '#6ba3b2', '#fbbf24', '#8b5cf6', '#ec4899']}
+            colors={['#0099a9', '#f59e0b', '#3b82f6', '#33adbb', '#fbbf24', '#8b5cf6', '#ec4899']}
             confettiSource={{
               x: 0,
               y: 0,

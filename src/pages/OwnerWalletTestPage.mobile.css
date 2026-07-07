@@ -193,7 +193,7 @@
     background:
       radial-gradient(circle at 100% 100%, rgba(34, 197, 94, 0.14), transparent 46%),
       #f1faf8;
-    border-color: rgba(74, 144, 162, 0.16);
+    border-color: rgba(0, 153, 169, 0.16);
   }
 
   .owl-metric--amber {
@@ -447,7 +447,7 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(74, 144, 162, 0.32);
+    box-shadow: 0 6px 20px rgba(0, 153, 169, 0.32);
   }
 
   .owl-mob-withdraw-bar__btn:disabled {

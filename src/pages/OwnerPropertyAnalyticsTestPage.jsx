@@ -74,7 +74,7 @@ ChartJS.register(
   Legend
 )
 
-const OPA_TIFFANY = '#4a90a2'
+const OPA_TIFFANY = '#0099a9'
 const AUCTION_CROWN_IMAGE = '/images/owner-properties-test/owner-auction-crown-3d.png'
 
 const EMPTY_OWNER_SALES = {
@@ -207,8 +207,8 @@ function LogoMark({ className = '' }) {
     <svg className={`opa-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="opa-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ba3b2" />
-          <stop offset="100%" stopColor="#3a7586" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#opa-logo-grad)" />
@@ -702,7 +702,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
           label: selectedChartMetric.label,
           data: metricSeries,
           borderColor: OPA_TIFFANY,
-          backgroundColor: 'rgba(74, 144, 162, 0.14)',
+          backgroundColor: 'rgba(0, 153, 169, 0.14)',
           fill: true,
           tension: 0.42,
           pointRadius: isMobile ? 4 : 3,
@@ -1115,8 +1115,8 @@ export default function OwnerPropertyAnalyticsTestPage() {
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id="opa-user-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#6ba3b2" />
-                  <stop offset="100%" stopColor="#3a7586" />
+                  <stop offset="0%" stopColor="#33adbb" />
+                  <stop offset="100%" stopColor="#007d8a" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill="url(#opa-user-grad)" />

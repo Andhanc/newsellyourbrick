@@ -78,11 +78,11 @@
     inset: 0;
     background: linear-gradient(
       180deg,
-      #6ba3b2 0%,
+      #33adbb 0%,
       #7ee8e4 16%,
       #2ec9c4 38%,
-      #4a90a2 62%,
-      #3a7586 82%,
+      #0099a9 62%,
+      #007d8a 82%,
       #006672 100%
     );
     background-size: 220% 220%;
@@ -114,7 +114,7 @@
     background: linear-gradient(
       180deg,
       rgba(6, 122, 118, 0) 0%,
-      rgba(53, 105, 112, 0.18) 36%,
+      rgba(0, 102, 114, 0.18) 36%,
       rgba(6, 95, 92, 0.45) 100%
     );
     border-radius: inherit;
@@ -215,7 +215,7 @@
     letter-spacing: -0.03em;
     color: #ffffff;
     line-height: 1.15;
-    text-shadow: 0 1px 10px rgba(53, 105, 112, 0.2);
+    text-shadow: 0 1px 10px rgba(0, 102, 114, 0.2);
   }
 
   .op-mob-hero__search {
@@ -297,8 +297,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(74, 144, 162, 0.12);
-    color: #3a7586;
+    background: rgba(0, 153, 169, 0.12);
+    color: #007d8a;
     transition:
       background 0.18s ease,
       color 0.18s ease,
@@ -306,9 +306,9 @@
   }
 
   .op-listing-filter--active .op-listing-filter__icon {
-    background: #4a90a2;
+    background: #0099a9;
     color: #ffffff;
-    box-shadow: 0 6px 16px rgba(74, 144, 162, 0.28);
+    box-shadow: 0 6px 16px rgba(0, 153, 169, 0.28);
   }
 
   .op-listing-filter__label {
@@ -764,10 +764,10 @@
   }
 
   .op-page-btn--active {
-    background: var(--op-tiffany, #4a90a2);
-    border-color: var(--op-tiffany, #4a90a2);
+    background: var(--op-tiffany, #0099a9);
+    border-color: var(--op-tiffany, #0099a9);
     color: #ffffff;
-    box-shadow: 0 4px 14px rgba(74, 144, 162, 0.28);
+    box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
   }
 
   /* —— Mobile list —— */
@@ -875,8 +875,8 @@
   }
 
   .op-mob-list .op-type--buy_now {
-    background: rgba(74, 144, 162, 0.14);
-    color: #356970;
+    background: rgba(0, 153, 169, 0.14);
+    color: #006672;
   }
 
   .op-mob-list .op-type--shares {
@@ -1100,7 +1100,7 @@
     justify-content: center;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(74, 144, 162, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 153, 169, 0.35);
   }
 
   .op-tabbar__fab svg {

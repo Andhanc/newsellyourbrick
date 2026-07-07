@@ -35,7 +35,7 @@
   min-height: 100vh;
   background-color: var(--oc-surface-warm);
   background-image:
-    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(74, 144, 162, 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
     var(--oc-gradient-page);
   color: var(--ost-text);
@@ -59,7 +59,7 @@
   flex-direction: column;
   padding: 24px 16px 20px;
   background: linear-gradient(180deg, #ffffff 0%, #f6fafb 100%);
-  border-right: 1px solid rgba(74, 144, 162, 0.1);
+  border-right: 1px solid rgba(0, 153, 169, 0.1);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -85,9 +85,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(74, 144, 162, 0.2) 8%,
-    rgba(74, 144, 162, 0.36) 50%,
-    rgba(74, 144, 162, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -137,7 +137,7 @@
 }
 
 .ost-nav__item--active {
-  background: rgba(74, 144, 162, 0.1);
+  background: rgba(0, 153, 169, 0.1);
   color: var(--ost-tiffany-dark);
   font-weight: 600;
   position: relative;
@@ -177,7 +177,7 @@
   position: relative;
   padding: 16px 16px 0;
   background: linear-gradient(180deg, #fff 0%, #f3f7f9 55%, rgba(236, 253, 245, 0.95) 100%);
-  box-shadow: 0 4px 22px rgba(74, 144, 162, 0.12);
+  box-shadow: 0 4px 22px rgba(0, 153, 169, 0.12);
 }
 
 .ost-sidebar-promo__title {
@@ -360,7 +360,7 @@
   margin-bottom: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(74, 144, 162, 0.12);
+  background: rgba(0, 153, 169, 0.12);
   color: var(--ost-tiffany-dark);
   font-size: 11px;
   font-weight: 700;
@@ -447,7 +447,7 @@
 }
 
 .ost-period-tabs__item:hover:not(.ost-period-tabs__item--active) {
-  background: rgba(74, 144, 162, 0.08);
+  background: rgba(0, 153, 169, 0.08);
 }
 
 .ost-period-tabs__item--active {
@@ -509,7 +509,7 @@
 .ost-period-tabs__badge {
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(74, 144, 162, 0.14);
+  background: rgba(0, 153, 169, 0.14);
   color: var(--ost-tiffany-dark);
   font-size: 11px;
   font-weight: 700;
@@ -623,10 +623,10 @@
 }
 
 .ost-plan-card--current {
-  border-color: rgba(74, 144, 162, 0.32);
+  border-color: rgba(0, 153, 169, 0.32);
   box-shadow:
-    0 0 0 1px rgba(74, 144, 162, 0.14),
-    0 16px 40px rgba(74, 144, 162, 0.14);
+    0 0 0 1px rgba(0, 153, 169, 0.14),
+    0 16px 40px rgba(0, 153, 169, 0.14);
 }
 
 .ost-plan-card__current-ribbon {
@@ -643,34 +643,34 @@
   border-radius: 0 0 14px 14px;
   background: linear-gradient(
     180deg,
-    var(--ost-tiffany-light, #6ba3b2) 0%,
-    var(--ost-tiffany, #4a90a2) 52%,
-    var(--ost-tiffany-dark, #3a7586) 100%
+    var(--ost-tiffany-light, #33adbb) 0%,
+    var(--ost-tiffany, #0099a9) 52%,
+    var(--ost-tiffany-dark, #007d8a) 100%
   );
   color: #fff;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 2px solid var(--ost-tiffany-dark, #3a7586);
+  border: 2px solid var(--ost-tiffany-dark, #007d8a);
   border-top: none;
   box-shadow:
-    0 8px 22px rgba(74, 144, 162, 0.38),
+    0 8px 22px rgba(0, 153, 169, 0.38),
     inset 0 1px 0 rgba(255, 255, 255, 0.42);
-  text-shadow: 0 1px 1px rgba(35, 66, 72, 0.18);
+  text-shadow: 0 1px 1px rgba(0, 74, 82, 0.18);
 }
 
 .ost-plan-card__current-ribbon svg {
   flex-shrink: 0;
-  filter: drop-shadow(0 1px 1px rgba(35, 66, 72, 0.15));
+  filter: drop-shadow(0 1px 1px rgba(0, 74, 82, 0.15));
 }
 
 .ost-plan-card--current-paid {
   border-width: 2.5px;
-  border-color: rgba(74, 144, 162, 0.62) !important;
+  border-color: rgba(0, 153, 169, 0.62) !important;
   box-shadow:
-    0 0 0 5px rgba(74, 144, 162, 0.14),
-    0 22px 48px rgba(74, 144, 162, 0.22) !important;
+    0 0 0 5px rgba(0, 153, 169, 0.14),
+    0 22px 48px rgba(0, 153, 169, 0.22) !important;
 }
 
 /* legacy alias */
@@ -728,7 +728,7 @@
   flex-wrap: nowrap;
   white-space: nowrap;
   gap: 4px;
-  color: var(--ost-tiffany-dark, #3a7586);
+  color: var(--ost-tiffany-dark, #007d8a);
 }
 
 .ost-plan-card__billing-period {
@@ -745,7 +745,7 @@
 }
 
 .ost-plan-card--featured:hover {
-  border-color: rgba(74, 144, 162, 0.28);
+  border-color: rgba(0, 153, 169, 0.28);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
 }
 
@@ -1005,9 +1005,9 @@
 }
 
 .ost-plan-feat-icon--inverted {
-  background: linear-gradient(135deg, #6ba3b2 0%, #4a90a2 48%, #3a7586 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
   border: none;
-  box-shadow: 0 4px 12px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.28);
 }
 
 .ost-plan-card__feature-text {
@@ -1034,7 +1034,7 @@
 }
 
 .ost-plan-card__btn--select:hover {
-  box-shadow: 0 6px 18px rgba(74, 144, 162, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.35);
 }
 
 .ost-plan-card__btn:disabled {
@@ -1070,7 +1070,7 @@
 }
 
 .ost-plan-card--featured .ost-plan-card__btn--select {
-  box-shadow: 0 6px 20px rgba(74, 144, 162, 0.32);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.32);
 }
 
 /* ——— Tier priority: unified monochrome cards ——— */
@@ -1154,7 +1154,7 @@
 .ost-plan-card--tier-standard .ost-plan-card__btn--select:hover,
 .ost-plan-card--tier-pro .ost-plan-card__btn--select:hover,
 .ost-plan-card--tier-institutional .ost-plan-card__btn--select:hover {
-  box-shadow: 0 6px 18px rgba(74, 144, 162, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.35);
 }
 
 .ost-plan-card--tier-pro .ost-plan-card__btn--current,
@@ -1166,11 +1166,11 @@
 
 .ost-plan-card--tier-pro.ost-plan-card--current-paid,
 .ost-plan-card--tier-institutional.ost-plan-card--current-paid {
-  border-color: rgba(74, 144, 162, 0.62) !important;
+  border-color: rgba(0, 153, 169, 0.62) !important;
   background: #ffffff;
   box-shadow:
-    0 0 0 5px rgba(74, 144, 162, 0.14),
-    0 22px 48px rgba(74, 144, 162, 0.18) !important;
+    0 0 0 5px rgba(0, 153, 169, 0.14),
+    0 22px 48px rgba(0, 153, 169, 0.18) !important;
 }
 
 .ost-plan-card--tier-pro.ost-plan-card--current-paid .ost-plan-card__btn--current,
@@ -1194,14 +1194,14 @@
   background: linear-gradient(135deg, #ffffff 0%, #f3f7f9 58%, #ecfeff 100%);
   border: 1.5px solid #e5e7eb;
   box-shadow:
-    0 12px 32px rgba(74, 144, 162, 0.1),
+    0 12px 32px rgba(0, 153, 169, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .ost-save-banner__visual {
   position: relative;
   min-height: 100%;
-  background: linear-gradient(165deg, rgba(74, 144, 162, 0.1) 0%, rgba(204, 251, 241, 0.45) 100%);
+  background: linear-gradient(165deg, rgba(0, 153, 169, 0.1) 0%, rgba(204, 251, 241, 0.45) 100%);
 }
 
 .ost-save-banner__art {
@@ -1225,7 +1225,7 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
-  box-shadow: 0 6px 16px rgba(74, 144, 162, 0.32);
+  box-shadow: 0 6px 16px rgba(0, 153, 169, 0.32);
 }
 
 .ost-save-banner__body {
@@ -1269,7 +1269,7 @@
 }
 
 .ost-save-banner__btn:hover {
-  box-shadow: 0 6px 18px rgba(74, 144, 162, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1720,42 +1720,42 @@
 }
 
 .ost-plan-card--current-paid:not(.ost-plan-card--tier-pro):not(.ost-plan-card--tier-institutional) {
-  border: 2.5px solid rgba(74, 144, 162, 0.62);
+  border: 2.5px solid rgba(0, 153, 169, 0.62);
   background:
-    linear-gradient(180deg, rgba(74, 144, 162, 0.12) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, rgba(0, 153, 169, 0.12) 0%, rgba(255, 255, 255, 0) 48%),
     #ffffff;
   box-shadow:
-    0 0 0 5px rgba(74, 144, 162, 0.14),
-    0 22px 48px rgba(74, 144, 162, 0.22);
+    0 0 0 5px rgba(0, 153, 169, 0.14),
+    0 22px 48px rgba(0, 153, 169, 0.22);
 }
 
 .ost-plan-card--current-paid:hover {
   box-shadow:
-    0 0 0 4px rgba(74, 144, 162, 0.14),
-    0 22px 48px rgba(74, 144, 162, 0.2);
+    0 0 0 4px rgba(0, 153, 169, 0.14),
+    0 22px 48px rgba(0, 153, 169, 0.2);
 }
 
 .ost-plan-card--current:not(.ost-plan-card--current-paid) {
-  border: 2px solid rgba(74, 144, 162, 0.34);
+  border: 2px solid rgba(0, 153, 169, 0.34);
   background:
     linear-gradient(180deg, rgba(236, 253, 245, 0.75) 0%, #ffffff 42%),
     #ffffff;
   box-shadow:
-    0 0 0 3px rgba(74, 144, 162, 0.08),
-    0 12px 28px rgba(74, 144, 162, 0.12);
+    0 0 0 3px rgba(0, 153, 169, 0.08),
+    0 12px 28px rgba(0, 153, 169, 0.12);
 }
 
 .ost-plan-card--current .ost-plan-feat-icon--inverted {
-  box-shadow: 0 4px 14px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
 }
 
 .ost-plan-card--current-paid .ost-plan-card__billing {
-  background: linear-gradient(180deg, rgba(74, 144, 162, 0.07) 0%, rgba(248, 250, 252, 0.95) 100%);
-  border-color: rgba(74, 144, 162, 0.2);
+  background: linear-gradient(180deg, rgba(0, 153, 169, 0.07) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border-color: rgba(0, 153, 169, 0.2);
 }
 
 .ost-plan-card--current-paid .ost-plan-card__billing-item + .ost-plan-card__billing-item {
-  border-top-color: rgba(74, 144, 162, 0.12);
+  border-top-color: rgba(0, 153, 169, 0.12);
 }
 
 .ost-plan-card--current-paid .ost-plan-card__billing-value--amount {
@@ -1833,7 +1833,7 @@
   min-height: 26px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(83, 216, 211, 0.24) 0%, rgba(74, 144, 162, 0.16) 100%);
+  background: linear-gradient(135deg, rgba(83, 216, 211, 0.24) 0%, rgba(0, 153, 169, 0.16) 100%);
   color: var(--ost-tiffany-dark);
   font-size: 11px;
   font-weight: 850;
@@ -1872,7 +1872,7 @@
 }
 
 .ost-plan-card__btn--select:hover {
-  box-shadow: 0 14px 28px rgba(74, 144, 162, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 153, 169, 0.35);
 }
 }
 
@@ -1908,7 +1908,7 @@
   border: 1.5px solid #e5e7eb;
   border-radius: 24px;
   box-shadow:
-    0 18px 40px rgba(74, 144, 162, 0.12),
+    0 18px 40px rgba(0, 153, 169, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
@@ -1984,7 +1984,7 @@
   z-index: 10004;
   width: min(430px, 100%);
   border-radius: 24px;
-  border: 1px solid rgba(74, 144, 162, 0.2);
+  border: 1px solid rgba(0, 153, 169, 0.2);
   background:
     linear-gradient(180deg, rgba(240, 253, 250, 0.86) 0%, rgba(255, 255, 255, 0.98) 42%),
     #ffffff;
@@ -2020,7 +2020,7 @@
   border-radius: 22px;
   background: var(--ost-gradient-brand);
   color: #ffffff;
-  box-shadow: 0 18px 30px rgba(74, 144, 162, 0.28);
+  box-shadow: 0 18px 30px rgba(0, 153, 169, 0.28);
 }
 
 .ost-success-modal__title {
@@ -2051,7 +2051,7 @@
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(74, 144, 162, 0.22);
+  box-shadow: 0 12px 24px rgba(0, 153, 169, 0.22);
 }
 
 @media (max-width: 760px) {

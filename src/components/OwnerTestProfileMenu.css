@@ -54,8 +54,8 @@
 }
 
 .otpm--current .otpm__pill {
-  border-color: var(--otpm-ring, rgba(74, 144, 162, 0.28));
-  box-shadow: 0 0 0 1px rgba(74, 144, 162, 0.12);
+  border-color: var(--otpm-ring, rgba(0, 153, 169, 0.28));
+  box-shadow: 0 0 0 1px rgba(0, 153, 169, 0.12);
 }
 
 .otpm__identity {
@@ -71,7 +71,7 @@
 }
 
 .otpm__identity:hover .otpm__name {
-  color: var(--otpm-tiffany-dark, #3a7586);
+  color: var(--otpm-tiffany-dark, #007d8a);
 }
 
 .otpm__avatar {
@@ -138,8 +138,8 @@
 
 .otpm__toggle:hover,
 .otpm__toggle--open {
-  color: var(--otpm-tiffany-dark, #3a7586);
-  background: rgba(74, 144, 162, 0.06);
+  color: var(--otpm-tiffany-dark, #007d8a);
+  background: rgba(0, 153, 169, 0.06);
 }
 
 .otpm__toggle svg {
@@ -195,12 +195,12 @@
 
 .otpm__item:hover {
   background: #f3f7f9;
-  color: var(--otpm-tiffany-dark, #3a7586);
+  color: var(--otpm-tiffany-dark, #007d8a);
 }
 
 .otpm__item--active {
-  background: rgba(74, 144, 162, 0.1);
-  color: var(--otpm-tiffany-dark, #3a7586);
+  background: rgba(0, 153, 169, 0.1);
+  color: var(--otpm-tiffany-dark, #007d8a);
   font-weight: 600;
 }
 

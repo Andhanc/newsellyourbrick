@@ -9,11 +9,11 @@ export default function OwnerNoBidsIllustration({ className = '' }) {
       role="img"
       aria-hidden="true"
     >
-      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#4a90a2" fillOpacity="0.14" />
+      <ellipse cx="110" cy="138" rx="78" ry="7" fill="#0099a9" fillOpacity="0.14" />
 
       <rect x="46" y="28" width="128" height="102" rx="16" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
       <rect x="46" y="28" width="128" height="34" rx="16" fill="url(#owner-no-bids-header)" />
-      <rect x="46" y="54" width="128" height="8" fill="#3a7586" />
+      <rect x="46" y="54" width="128" height="8" fill="#007d8a" />
 
       <g transform="translate(62 40)">
         <rect x="0" y="7" width="16" height="6" rx="3" fill="#ffffff" fillOpacity="0.95" />
@@ -55,8 +55,8 @@ export default function OwnerNoBidsIllustration({ className = '' }) {
 
       <defs>
         <linearGradient id="owner-no-bids-header" x1="46" y1="28" x2="174" y2="62" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#6ba3b2" />
-          <stop offset="1" stopColor="#4a90a2" />
+          <stop stopColor="#33adbb" />
+          <stop offset="1" stopColor="#0099a9" />
         </linearGradient>
       </defs>
     </svg>

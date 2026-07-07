@@ -17,27 +17,31 @@ function formatEuro(amount) {
   return amount.toLocaleString('ru-RU')
 }
 
-function PlanPrice({ monthlyPrice, isYearly, perMonthSuffix }) {
-  const isFree = monthlyPrice === 0
+function PlanPrice({ monthlyPrice, compareAtPrice, isYearly, perMonthSuffix }) {
   const displayPrice = isYearly ? getYearlyMonthlyPrice(monthlyPrice) : monthlyPrice
+  const promoCompare =
+    compareAtPrice ?? (monthlyPrice === 0 && displayPrice === 0 ? FREE_COMPARE_PRICE : null)
+  const showPromoFree = promoCompare != null && promoCompare > displayPrice
+  const yearlyCompare = isYearly && monthlyPrice > 0 ? monthlyPrice : null
+  const comparePrice = showPromoFree ? promoCompare : yearlyCompare
+  const showDiscountLayout = comparePrice != null && comparePrice > displayPrice
 
   return (
-    <div className="opc-plan__price-block">
-      {isFree ? (
+    <div
+      className={`opc-plan__price-block${showDiscountLayout ? ' opc-plan__price-block--discounted' : ''}`}
+    >
+      {showDiscountLayout ? (
         <>
-          <strong className="opc-plan__price opc-plan__price--free">€0</strong>
-          <span className="opc-plan__period">{perMonthSuffix}</span>
           <span className="opc-plan__price-was opc-plan__price-was--red" aria-hidden="true">
-            €{formatEuro(FREE_COMPARE_PRICE)}
+            €{formatEuro(comparePrice)}
           </span>
+          <strong className="opc-plan__price opc-plan__price--discounted">
+            €{formatEuro(displayPrice)}
+          </strong>
+          <span className="opc-plan__period">{perMonthSuffix}</span>
         </>
       ) : (
         <>
-          {isYearly ? (
-            <span className="opc-plan__price-was" aria-hidden="true">
-              €{formatEuro(monthlyPrice)}
-            </span>
-          ) : null}
           <strong className="opc-plan__price">€{formatEuro(displayPrice)}</strong>
           <span className="opc-plan__period">{perMonthSuffix}</span>
         </>
@@ -54,7 +58,6 @@ export default function OwnerPricingCards({
   loading = false,
   monthlyLabel,
   yearlyLabel,
-  yearlySaveLabel,
   perMonthSuffix,
   activeCtaLabel,
   popularLabel,
@@ -139,24 +142,16 @@ export default function OwnerPricingCards({
                 .join(' ')}
             >
               {isFeatured ? <span className="opc-plan__badge">{popularLabel}</span> : null}
-              {isCurrent ? (
-                <span className="opc-plan__ribbon" role="status">
-                  {activeCtaLabel}
-                </span>
-              ) : null}
 
               <h3 className="opc-plan__name">{plan.name}</h3>
               {taglines[plan.id] ? <p className="opc-plan__desc">{taglines[plan.id]}</p> : null}
 
               <PlanPrice
                 monthlyPrice={plan.monthlyPrice}
+                compareAtPrice={plan.compareAtPrice}
                 isYearly={isYearly}
                 perMonthSuffix={perMonthSuffix}
               />
-
-              {isYearly && plan.monthlyPrice > 0 ? (
-                <p className="opc-plan__yearly-note">{yearlySaveLabel}</p>
-              ) : null}
 
               <ul className="opc-plan__features">
                 {features.map((feature) => (
