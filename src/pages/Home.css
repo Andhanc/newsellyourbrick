@@ -37,60 +37,6 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   margin-bottom: 0;
 }
 
-/* Аукцион: та же колонка, что у Hero — без двойного max-width+padding у .page-context-heading */
-.home-page--auction .page-context-heading.page-context-heading--home-auction {
-  max-width: none;
-  width: 100%;
-  margin: 0;
-  padding: 0 20px 28px;
-  background: var(--site-color-bg);
-  box-sizing: border-box;
-}
-
-.home-page--auction .page-context-heading--home-auction-inner {
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-@media (min-width: 769px) {
-  /* Когда открыт сайдбар фильтров — та же колонка, что у .property-list-container--auction-desktop */
-  .home-page--auction.home-page--auction-filters-open .page-context-heading.page-context-heading--home-auction {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner {
-    max-width: 1440px;
-    padding-left: 24px;
-    padding-right: 24px;
-    display: grid;
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-    gap: 24px;
-    align-items: end;
-  }
-
-  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner > * {
-    grid-column: 1;
-  }
-}
-
-.home-page--auction .page-context-heading__title--auction-script {
-  font-family: var(--site-font-family);
-  font-weight: 800;
-  font-style: normal;
-  font-size: clamp(2rem, 4.4vw, 3rem);
-  line-height: 1.08;
-  color: var(--site-color-text);
-  margin: 0.25rem 0 0.55rem;
-  letter-spacing: -0.035em;
-  text-align: left;
-  font-synthesis: none;
-}
-
 @media (max-width: 768px) {
   .home-page.home-page--auction {
     overflow-x: clip;
@@ -102,12 +48,6 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     order: -1;
   }
 
-  /* Крошки — сразу под hero-сценой */
-  .home-page--auction > .page-context-heading.page-context-heading--home-auction {
-    order: 2;
-    padding: 10px 16px 6px;
-  }
-
   .home-page--auction > .hero--auction-scene {
     order: 1;
     margin-top: 0;
@@ -116,24 +56,19 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   }
 
   .home-page--auction > .home-list-wrap {
-    order: 3;
+    order: 2;
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
   }
 
   .home-page--auction > .auction-cta-cards {
-    order: 4;
+    order: 3;
   }
 
   .home-page--auction > .faq,
   .home-page--auction > .auction-faq-section {
-    order: 5;
-  }
-
-  .home-page--auction .page-context-heading__title--auction-script {
-    margin: 0 0 0.3rem;
-    font-size: clamp(2rem, 8vw, 2.5rem);
+    order: 4;
   }
 
   .home-page--auction .hero-features {

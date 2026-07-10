@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
 import { WhatsAppIcon, TelegramIcon } from '../components/icons/ContactChannelIcons'
 import Header from '../components/Header'
-import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
 import DepositButton from '../components/DepositButton'
@@ -39,8 +38,6 @@ import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 
 const AuctionBelowFoldLazy = lazy(() => import('../components/AuctionPageBottomSections'))
-
-const MOBILE_BREAKPOINT = 768
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -83,9 +80,6 @@ function Home() {
   const navigate = useNavigate()
   const location = useLocation()
   const isAuctionRoute = checkAuctionRoute(location.pathname)
-  const [isMobileViewport, setIsMobileViewport] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
-  )
   const { cabinetVipActive, numericUserId } = useViewerVipAccess()
   const cabinetVipRef = useRef(false)
   const viewerUserIdRef = useRef(null)
@@ -116,13 +110,6 @@ function Home() {
     managerContactPendingChoice: false,
     preferredContact: null
   })
-
-  useEffect(() => {
-    const check = () => setIsMobileViewport(window.innerWidth <= MOBILE_BREAKPOINT)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   useEffect(() => {
     cabinetVipRef.current = cabinetVipActive
@@ -1236,13 +1223,6 @@ function Home() {
 
       <Header />
       <Hero staticMobileCards={isAuctionRoute} auctionScene={isAuctionRoute} />
-      {isAuctionRoute && isMobileViewport && (
-        <div className="page-context-heading page-context-heading--home-auction">
-          <div className="page-context-heading--home-auction-inner">
-            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-          </div>
-        </div>
-      )}
       <div ref={homeListRef} className="home-list-wrap">
         <PropertyList
           auctionProperties={auctionProperties}
