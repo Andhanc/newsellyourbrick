@@ -11,6 +11,11 @@ test('renders each format as one fully clickable route card', () => {
   assert.match(jsx, /Смотреть объекты/)
 })
 
+test('uses a flow content wrapper for the card heading', () => {
+  assert.match(jsx, /<div className="sale-formats__content">/)
+  assert.doesNotMatch(jsx, /<span className="sale-formats__content">/)
+})
+
 test('provides mobile scroll snap, focus visibility, and reduced motion', () => {
   assert.match(css, /scroll-snap-type:\s*x mandatory/)
   assert.match(css, /\.sale-formats__card:focus-visible/)

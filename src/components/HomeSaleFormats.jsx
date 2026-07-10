@@ -27,7 +27,7 @@ function HomeSaleFormats({ modes }) {
               loading="lazy"
             />
             <span className="sale-formats__shade" aria-hidden="true" />
-            <span className="sale-formats__content">
+            <div className="sale-formats__content">
               <span className="sale-formats__eyebrow">
                 <span>{mode.number}</span> {mode.eyebrow}
               </span>
@@ -36,7 +36,7 @@ function HomeSaleFormats({ modes }) {
               <span className="sale-formats__cta">
                 Смотреть объекты <span aria-hidden="true">→</span>
               </span>
-            </span>
+            </div>
           </Link>
         ))}
       </div>
