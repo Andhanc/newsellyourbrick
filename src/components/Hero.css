@@ -441,16 +441,16 @@
     );
     opacity: 0;
     transform: translateX(-140%);
-    animation: hero-auction-card-shimmer 9s ease-in-out infinite;
+    animation: hero-auction-card-shimmer 7.5s ease-in-out infinite;
     pointer-events: none;
   }
 
   .hero-features--static-mobile .hero-feature-card--static:nth-child(2)::after {
-    animation-delay: 3s;
+    animation-delay: 2.5s;
   }
 
   .hero-features--static-mobile .hero-feature-card--static:nth-child(3)::after {
-    animation-delay: 6s;
+    animation-delay: 5s;
   }
 
   .hero-features--static-mobile .hero-feature-card--static > * {

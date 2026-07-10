@@ -43,9 +43,9 @@ const homeJsx = await readFile(new URL('../pages/Home.jsx', import.meta.url), 'u
 
 test('adds an occasional staggered shimmer to static mobile auction cards', () => {
   assert.match(heroCss, /@keyframes hero-auction-card-shimmer/)
-  assert.match(heroCss, /animation:\s*hero-auction-card-shimmer 9s/)
-  assert.match(heroCss, /nth-child\(2\)[\s\S]*animation-delay:\s*3s/)
-  assert.match(heroCss, /nth-child\(3\)[\s\S]*animation-delay:\s*6s/)
+  assert.match(heroCss, /animation:\s*hero-auction-card-shimmer 7\.5s/)
+  assert.match(heroCss, /nth-child\(2\)[\s\S]*animation-delay:\s*2\.5s/)
+  assert.match(heroCss, /nth-child\(3\)[\s\S]*animation-delay:\s*5s/)
   assert.match(heroCss, /prefers-reduced-motion:\s*reduce[\s\S]*animation:\s*none/)
 })
 
@@ -72,7 +72,7 @@ Delete the `PageBreadcrumbs` import, `MOBILE_BREAKPOINT`, `isMobileViewport` sta
 
 - [x] **Step 4: Add the auction-only surface shimmer and larger images**
 
-In the mobile `.hero-features--static-mobile .hero-feature-card--static` rules, use an absolutely positioned `::after` pseudo-element with a low-opacity diagonal turquoise-blue-white gradient. Animate its horizontal translation for a short portion of a 9-second cycle, set 3s and 6s delays on cards two and three, keep it behind the content using explicit stacking, and disable the pseudo-element animation inside the reduced-motion query. Set the responsive image dimensions to 82px and 68px.
+In the mobile `.hero-features--static-mobile .hero-feature-card--static` rules, use an absolutely positioned `::after` pseudo-element with a low-opacity diagonal turquoise-blue-white gradient. Animate its horizontal translation for a short portion of a 7.5-second cycle, set 2.5s and 5s delays on cards two and three, keep it above the surface with non-interactive stacking, and disable the pseudo-element animation inside the reduced-motion query. Set the responsive image dimensions to 82px and 68px.
 
 - [x] **Step 5: Run the focused test and verify GREEN**
 

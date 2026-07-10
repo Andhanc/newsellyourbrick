@@ -7,9 +7,9 @@ const homeJsx = await readFile(new URL('../pages/Home.jsx', import.meta.url), 'u
 
 test('adds an occasional staggered shimmer to static mobile auction cards', () => {
   assert.match(heroCss, /@keyframes hero-auction-card-shimmer/)
-  assert.match(heroCss, /animation:\s*hero-auction-card-shimmer 9s/)
-  assert.match(heroCss, /nth-child\(2\)[\s\S]*animation-delay:\s*3s/)
-  assert.match(heroCss, /nth-child\(3\)[\s\S]*animation-delay:\s*6s/)
+  assert.match(heroCss, /animation:\s*hero-auction-card-shimmer 7\.5s/)
+  assert.match(heroCss, /nth-child\(2\)[\s\S]*animation-delay:\s*2\.5s/)
+  assert.match(heroCss, /nth-child\(3\)[\s\S]*animation-delay:\s*5s/)
   assert.match(
     heroCss,
     /hero-feature-card--static::after[\s\S]*z-index:\s*2;[\s\S]*pointer-events:\s*none/,
