@@ -165,7 +165,7 @@ export default function InvestorPropertyShowcaseSection({
       return
     }
 
-    const gap = 16
+    const gap = Number.parseFloat(getComputedStyle(scroller).columnGap) || 0
     const slotWidth = slot.getBoundingClientRect().width + gap
     const visible = Math.max(1, Math.floor((scroller.clientWidth + gap) / slotWidth))
     const total = loading ? skeletonCount : items.length
@@ -206,7 +206,7 @@ export default function InvestorPropertyShowcaseSection({
     const scroller = scrollerRef.current
     if (!scroller) return
     const slot = scroller.querySelector('.home-showcase__slot')
-    const gap = 16
+    const gap = Number.parseFloat(getComputedStyle(scroller).columnGap) || 0
     const delta = slot ? slot.getBoundingClientRect().width + gap : Math.max(scroller.clientWidth * 0.72, 300)
     scroller.scrollBy({ left: direction * delta, behavior: 'smooth' })
   }, [])
@@ -243,7 +243,7 @@ export default function InvestorPropertyShowcaseSection({
             <p className="invest-showcase__subtitle">{subtitle}</p>
           </div>
           <button type="button" className="invest-showcase__cta-pill" onClick={onCtaClick}>
-            <span>{ctaLabel}</span>
+            <span className="invest-showcase__cta-pill-text">Перейти</span>
             <span className="invest-showcase__cta-pill-icon" aria-hidden>
               <FiArrowRight size={18} />
             </span>

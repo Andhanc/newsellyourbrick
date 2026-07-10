@@ -16,6 +16,12 @@
   --hr-brand-shadow-hover: 0 14px 36px rgba(74, 150, 166, 0.42);
   --hr-brand-ring: rgba(255, 255, 255, 0.55);
   --hr-brand-glow: rgba(74, 150, 166, 0.22);
+  --hr-sage: #d9dbae;
+  --hr-sage-hover: #cdd89e;
+  --hr-sage-shadow: 0 10px 28px rgba(77, 150, 58, 0.22);
+  --hr-sage-shadow-hover: 0 14px 36px rgba(77, 150, 58, 0.32);
+  --hr-sage-ring: rgba(255, 255, 255, 0.55);
+  --hr-sage-ink: #101928;
   --hr-radius: 22px;
   --hr-radius-sm: 16px;
   --hr-container: 1240px;
@@ -96,7 +102,7 @@
   .hr-page .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -712,6 +718,10 @@
   text-overflow: ellipsis;
 }
 
+.hr-search-bar__value--compact {
+  display: none;
+}
+
 .hr-search-bar__select {
   position: absolute;
   inset: 0;
@@ -756,7 +766,7 @@
 /* Hero role CTA cards — правая колонка поверх фото */
 .hr-hero-role-cards {
   position: absolute;
-  top: calc(var(--hr-header-offset) + clamp(12px, 2vw, 20px));
+  top: calc(var(--hr-header-offset) + clamp(4px, 1vw, 10px));
   right: clamp(20px, 3vw, 36px);
   z-index: 4;
   display: flex;
@@ -818,22 +828,24 @@
 }
 
 .hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__icon-wrap {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: var(--hr-sage);
+  box-shadow: var(--hr-sage-shadow), inset 0 1px 0 var(--hr-sage-ring);
 }
 
 .hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__icon {
-  color: #ffffff;
+  color: var(--hr-sage-ink);
 }
 
 .hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__btn {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: var(--hr-sage);
+  color: var(--hr-sage-ink);
+  box-shadow: var(--hr-sage-shadow), inset 0 1px 0 var(--hr-sage-ring);
 }
 
 .hr-hero-role-cards .frosted-glass-card--seller .frosted-glass-card__btn:hover {
-  background: linear-gradient(135deg, #9d6ff8 0%, #6d28d9 100%);
-  box-shadow: 0 14px 36px rgba(124, 58, 237, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: var(--hr-sage-hover);
+  color: var(--hr-sage-ink);
+  box-shadow: var(--hr-sage-shadow-hover), inset 0 1px 0 var(--hr-sage-ring);
 }
 
 .hr-hero__hotspot {
@@ -1041,6 +1053,12 @@
   color: #6b6b6b;
 }
 
+.hr-strategy-stat-card__visual,
+.hr-strategy-stat-card__number,
+.hr-strategy-stat-card__cta {
+  display: none;
+}
+
 /* Лиловый — аукцион и доли (1-я и 3-я карточки) */
 .hr-strategy-stat-card--auction,
 .hr-strategy-stat-card--shares {
@@ -1075,12 +1093,12 @@
 .hr-strategy-stat-card--buy_now,
 .hr-strategy-stat-card--debts {
   --hr-strategy-accent: #4a96a6;
-  --hr-strategy-glow: rgba(74, 150, 166, 0.2);
-  --hr-strategy-border-hover: rgba(74, 150, 166, 0.34);
-  --hr-strategy-shadow-hover: 0 18px 40px rgba(74, 150, 166, 0.22);
-  background: linear-gradient(152deg, #ffffff 0%, #f0f7f9 52%, #e3f0f3 100%);
-  border-color: rgba(74, 150, 166, 0.2);
-  box-shadow: 0 10px 28px rgba(74, 150, 166, 0.12);
+  --hr-strategy-glow: rgba(74, 150, 166, 0.28);
+  --hr-strategy-border-hover: rgba(74, 150, 166, 0.46);
+  --hr-strategy-shadow-hover: 0 18px 40px rgba(74, 150, 166, 0.3);
+  background: linear-gradient(152deg, #ffffff 0%, #c8e6ee 46%, #9fd0de 100%);
+  border-color: rgba(74, 150, 166, 0.34);
+  box-shadow: 0 10px 28px rgba(74, 150, 166, 0.2);
 }
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__icon,
@@ -1092,13 +1110,13 @@
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__headline,
 .hr-strategy-stat-card--debts .hr-strategy-stat-card__headline {
-  color: #1e4a54;
+  color: #0f3d47;
 }
 
 .hr-strategy-stat-card--buy_now .hr-strategy-stat-card__text,
 .hr-strategy-stat-card--debts .hr-strategy-stat-card__text {
-  color: #3f8798;
-  opacity: 0.76;
+  color: #1e5a66;
+  opacity: 0.88;
 }
 
 .hr-strategies__title {
@@ -1125,6 +1143,18 @@
   font-size: clamp(0.9375rem, 1.05vw, 1.0625rem);
   line-height: 1.65;
   color: var(--hr-muted);
+}
+
+.hr-strategies__title-mobile {
+  display: none;
+}
+
+.hr-strategies__carousel {
+  display: contents;
+}
+
+.hr-strategies__pager {
+  display: none;
 }
 
 /* Витрины объектов — стили карточек и лент (общие с home-redesign) */
@@ -1182,6 +1212,10 @@
   --hr-showcase-accent-hover: #3f8798;
   --hr-showcase-accent-shadow: 0 12px 28px rgba(74, 150, 166, 0.28);
   --hr-showcase-accent-shadow-hover: 0 16px 34px rgba(74, 150, 166, 0.36);
+  --hr-showcase-action: #0a0a0a;
+  --hr-showcase-action-hover: #1a1a1a;
+  --hr-showcase-action-shadow: 0 10px 24px rgba(10, 10, 10, 0.16);
+  --hr-showcase-action-shadow-hover: 0 14px 30px rgba(10, 10, 10, 0.22);
 }
 
 /* Заголовки витрин — Playfair italic + брендовый градиент */
@@ -1204,17 +1238,23 @@
   padding: 0 0.08em 0.08em 0.16em;
 }
 
-.hr-page .hr-showcases .invest-showcase--auction,
-.hr-page .hr-showcases .invest-showcase--shares,
 .hr-page .hr-showcases .invest-showcase--buy-now,
 .hr-page .hr-showcases .invest-showcase--debts {
+  background: linear-gradient(180deg, #ffffff 0%, #c8e6ee 52%, #9fd0de 100%);
+}
+
+.hr-page .hr-showcases .invest-showcase--auction,
+.hr-page .hr-showcases .invest-showcase--shares {
   background: #ffffff;
 }
 
-.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__subtitle,
-.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__subtitle,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__subtitle {
+  color: #0f3d47;
+}
+
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__subtitle,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle {
   color: #0a0a0a;
 }
 
@@ -1222,17 +1262,17 @@
 .hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__cta-pill,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__cta-pill {
-  background: var(--hr-showcase-accent);
+  background: var(--hr-showcase-action);
   color: #ffffff;
-  box-shadow: var(--hr-showcase-accent-shadow), inset 0 1px 0 var(--hr-brand-ring);
+  box-shadow: var(--hr-showcase-action-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill:hover,
 .hr-page .hr-showcases .invest-showcase--shares .invest-showcase__cta-pill:hover,
 .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__cta-pill:hover,
 .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__cta-pill:hover {
-  background: var(--hr-showcase-accent-hover);
-  box-shadow: var(--hr-showcase-accent-shadow-hover), inset 0 1px 0 var(--hr-brand-ring);
+  background: var(--hr-showcase-action-hover);
+  box-shadow: var(--hr-showcase-action-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill-icon,
@@ -1293,27 +1333,24 @@
 }
 
 .hr-page .hr-showcases .invest-showcase .auction-card__price-panel {
-  background: linear-gradient(135deg, #f6f6f6 0%, #f8fafc 100%);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .hr-page .hr-showcases .invest-showcase .auction-card__price-label {
   color: #6b6b6b;
+  font-weight: 600;
 }
 
 .hr-page .hr-showcases .auction-card__btn--primary {
-  background: var(--hr-showcase-accent);
-  box-shadow:
-    var(--hr-showcase-accent-shadow),
-    inset 0 1px 0 var(--hr-brand-ring);
+  background: var(--hr-showcase-action);
+  box-shadow: var(--hr-showcase-action-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hr-page .hr-showcases .auction-card__btn--primary:hover:not(:disabled) {
-  background: var(--hr-showcase-accent-hover);
-  box-shadow:
-    var(--hr-showcase-accent-shadow-hover),
-    inset 0 1px 0 var(--hr-brand-ring);
+  background: var(--hr-showcase-action-hover);
+  box-shadow: var(--hr-showcase-action-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hr-page .hr-showcases .auction-card__btn--secondary {
@@ -1331,22 +1368,22 @@
 }
 
 .hr-page .hr-showcases .property-actions .btn-primary,
-.hr-page .hr-showcases .property-actions .btn-liquid-glass {
-  background: var(--hr-showcase-accent);
+.hr-page .hr-showcases .property-actions .btn-liquid-glass,
+.hr-page .hr-showcases .shares-v2-card__invest-btn,
+.hr-page .hr-showcases .debts-property-card__btn {
+  background: var(--hr-showcase-action);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    var(--hr-showcase-accent-shadow),
-    inset 0 1px 0 var(--hr-brand-ring);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--hr-showcase-action-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hr-page .hr-showcases .property-actions .btn-primary:hover,
-.hr-page .hr-showcases .property-actions .btn-liquid-glass:hover {
-  background: var(--hr-showcase-accent-hover);
-  box-shadow:
-    var(--hr-showcase-accent-shadow-hover),
-    inset 0 1px 0 var(--hr-brand-ring);
+.hr-page .hr-showcases .property-actions .btn-liquid-glass:hover,
+.hr-page .hr-showcases .shares-v2-card__invest-btn:hover:not(:disabled),
+.hr-page .hr-showcases .debts-property-card__btn:hover:not(:disabled) {
+  background: var(--hr-showcase-action-hover);
+  box-shadow: var(--hr-showcase-action-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hr-stats__cards {
@@ -2306,7 +2343,7 @@
   }
 
   .hr-hero-role-cards {
-    top: calc(var(--hr-header-offset) + clamp(10px, 2vw, 16px));
+    top: calc(var(--hr-header-offset) + clamp(4px, 1vw, 10px));
     right: clamp(16px, 2.5vw, 28px);
     width: min(260px, 48%);
     gap: 12px;
@@ -2411,14 +2448,16 @@
   }
 
   .hr-hero-role-cards {
-    position: relative;
+    position: absolute;
     z-index: 5;
     top: auto;
-    right: auto;
+    right: clamp(18px, 5vw, 24px);
+    left: clamp(18px, 5vw, 24px);
+    bottom: clamp(108px, 24vw, 152px);
     flex-direction: row;
     align-items: stretch;
-    width: calc(100% - 32px);
-    margin: clamp(-148px, -30vw, -188px) auto 0;
+    width: auto;
+    margin: 0;
     gap: 10px;
   }
 
@@ -2489,33 +2528,73 @@
   }
 
   .hr-search-bar {
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
-    border-radius: 18px;
-    padding: 18px;
-    gap: 12px;
+    border-radius: 16px;
+    padding: 6px 6px 6px 2px;
+    gap: 0;
   }
 
   .hr-search-bar__fields {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .hr-search-bar__cell,
   .hr-search-bar__cell--divider,
   .hr-search-bar__cell:nth-child(odd) {
-    border-right: none;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.95);
-    padding: 12px 4px;
-  }
-
-  .hr-search-bar__cell:last-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 52px;
+    padding: 6px 2px;
+    text-align: center;
+    border-right: 1px solid rgba(226, 232, 240, 0.95);
     border-bottom: none;
   }
 
-  .hr-search-bar__submit {
+  .hr-search-bar__cell:last-child {
+    border-right: none;
+  }
+
+  .hr-search-bar__cell-head {
+    justify-content: center;
+  }
+
+  .hr-search-bar__label,
+  .hr-search-bar__value--full {
+    display: none;
+  }
+
+  .hr-search-bar__value--compact {
+    display: block;
     width: 100%;
-    height: 52px;
-    border-radius: 14px;
+    max-width: 100%;
+    font-size: clamp(0.5625rem, 2.8vw, 0.6875rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .hr-search-bar__cell-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .hr-search-bar__submit {
+    flex-shrink: 0;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin-left: 4px;
+    border-radius: 12px;
+  }
+
+  .hr-search-bar__submit svg {
+    width: 18px;
+    height: 18px;
   }
 
   .hr-hero__hotspot {
@@ -2532,47 +2611,948 @@
     padding-inline: clamp(16px, 5vw, 24px);
   }
 
-  .hr-strategies__title {
-    font-size: clamp(1.5rem, 6.5vw, 1.875rem);
+  .hr-strategies__title-desktop {
+    display: none;
+  }
+
+  .hr-strategies__title-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+  }
+
+  .hr-strategies__title-line {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .hr-strategies__title-pill {
+    display: inline-block;
+    margin: 0 0.08em;
+    padding: 0.08em 0.52em 0.14em;
+    border-radius: 999px;
+    background: var(--hr-brand-gradient);
+    color: #ffffff;
+    font-weight: 800;
+    line-height: 1.05;
+    box-shadow: var(--hr-brand-shadow), inset 0 1px 0 var(--hr-brand-ring);
+    transform: rotate(-2deg);
+  }
+
+  .hr-strategies__title::after {
+    display: none;
   }
 
   .hr-strategies__lead {
-    font-size: 0.875rem;
-    line-height: 1.55;
+    display: none;
+  }
+
+  .hr-strategies__carousel {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 4vw, 18px);
+    min-width: 0;
+  }
+
+  .hr-strategies__pager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-inline: clamp(16px, 5vw, 24px);
+  }
+
+  .hr-strategies__pager-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .hr-strategies__pager-dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.16);
+    cursor: pointer;
+    transition:
+      width 0.22s ease,
+      background 0.22s ease,
+      transform 0.22s ease;
+  }
+
+  .hr-strategies__pager-dot.is-active {
+    width: 26px;
+    background: var(--hr-brand-gradient);
+  }
+
+  .hr-strategies__pager-dot:focus-visible {
+    outline: 2px solid var(--hr-brand-mid);
+    outline-offset: 3px;
+  }
+
+  .hr-strategies__pager-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.52);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hr-strategies__pager-current {
+    color: var(--hr-ink);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+  }
+
+  .hr-strategies__pager-sep {
+    opacity: 0.45;
+  }
+
+  .hr-strategies__title {
+    font-size: clamp(1.75rem, 7.4vw, 2.25rem);
+    line-height: 1.06;
   }
 
   .hr-strategies__cards {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(16.5rem, 86vw, 24rem);
     gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
     padding-inline: 0;
+    padding-bottom: 8px;
+    scroll-padding-inline: 0;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .hr-strategies__cards::-webkit-scrollbar {
+    display: none;
   }
 
   .hr-strategy-stat-card {
+    height: clamp(20.5rem, 92vw, 24rem);
     min-height: 0;
-    padding: 14px 12px 16px;
-    gap: 10px;
-    border-radius: 16px;
+    padding: 18px;
+    gap: 0;
+    border: 0;
+    border-radius: 22px;
+    scroll-snap-align: start;
+    box-shadow: none;
+  }
+
+  .hr-strategy-stat-card::before,
+  .hr-strategy-stat-card::after {
+    display: none;
+  }
+
+  .hr-strategy-stat-card--auction {
+    background: #dce9a4;
+  }
+
+  .hr-strategy-stat-card--buy_now {
+    background: #7ec4d4;
+  }
+
+  .hr-strategy-stat-card--shares {
+    background: #cddce5;
+  }
+
+  .hr-strategy-stat-card--debts {
+    background: #6aabbc;
+  }
+
+  .hr-strategy-stat-card__visual {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.72;
+    filter: saturate(0.82) contrast(0.94);
+    pointer-events: none;
+  }
+
+  .hr-strategy-stat-card__number {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 6px 9px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.66);
+    color: rgba(15, 23, 42, 0.72);
+    font-size: 0.625rem;
+    font-weight: 750;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
   }
 
   .hr-strategy-stat-card__icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    display: none;
   }
 
-  .hr-strategy-stat-card__icon svg {
-    width: 16px;
-    height: 16px;
+  .hr-strategy-stat-card__content {
+    z-index: 2;
+    flex: 0 0 auto;
+    max-width: 75%;
+    gap: 8px;
+    margin-top: clamp(28px, 8vw, 40px);
+    pointer-events: none;
   }
 
-  .hr-strategy-stat-card__headline {
+  .hr-strategy-stat-card .hr-strategy-stat-card__headline {
     min-height: 0;
-    font-size: 0.875rem;
-    line-height: 1.25;
+    color: #11130f;
+    font-size: clamp(2rem, 9vw, 2.65rem);
+    font-weight: 780;
+    line-height: 0.96;
+    letter-spacing: -0.055em;
   }
 
-  .hr-strategy-stat-card__text {
-    font-size: 0.6875rem;
+  .hr-strategy-stat-card .hr-strategy-stat-card__text {
+    max-width: 20ch;
+    color: rgba(17, 19, 15, 0.68);
+    font-size: 0.75rem;
+    font-weight: 600;
     line-height: 1.45;
+    opacity: 1;
+  }
+
+  .hr-strategy-stat-card__cta {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 13px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #11130f;
+    font-size: 0.625rem;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Object showcases: alternating clean surfaces (no rgba overlays — they read muddy). */
+  .hr-page .hr-showcases {
+    --hr-showcase-white: #ffffff;
+    --hr-showcase-bridge: #f3f8f9;
+    --hr-showcase-mist: #e9f3f6;
+    --hr-showcase-mist-deep: #deebef;
+    background: var(--hr-showcase-white);
+  }
+
+  .hr-strategies {
+    padding-bottom: clamp(44px, 8vw, 68px);
+    background:
+      linear-gradient(
+        165deg,
+        #f8fafc 0%,
+        #f1f5f9 42%,
+        #f5f9fa 78%,
+        var(--hr-showcase-white) 100%
+      );
+  }
+
+  .hr-page .hr-showcases .invest-showcase + .invest-showcase::before,
+  .hr-page .hr-showcases .hr-news::before {
+    display: none;
+  }
+
+  .hr-page .hr-showcases .invest-showcase + .invest-showcase {
+    padding-top: clamp(28px, 6.5vw, 40px);
+  }
+
+  .hr-page .hr-showcases .invest-showcase--auction {
+    background:
+      linear-gradient(
+        180deg,
+        var(--hr-showcase-white) 0%,
+        var(--hr-showcase-white) 72%,
+        var(--hr-showcase-bridge) 92%,
+        var(--hr-showcase-mist) 100%
+      );
+  }
+
+  .hr-page .hr-showcases .invest-showcase--buy-now {
+    --hr-showcase-mist: #b5dce6;
+    --hr-showcase-mist-deep: #8ec5d3;
+    --hr-showcase-bridge: #a5d4de;
+    background:
+      linear-gradient(
+        180deg,
+        var(--hr-showcase-mist) 0%,
+        var(--hr-showcase-mist-deep) 22%,
+        var(--hr-showcase-mist-deep) 78%,
+        var(--hr-showcase-mist) 92%,
+        var(--hr-showcase-bridge) 100%
+      );
+  }
+
+  .hr-page .hr-showcases .invest-showcase--shares {
+    background:
+      linear-gradient(
+        180deg,
+        var(--hr-showcase-bridge) 0%,
+        var(--hr-showcase-white) 18%,
+        var(--hr-showcase-white) 82%,
+        var(--hr-showcase-bridge) 100%
+      );
+  }
+
+  .hr-page .hr-showcases .invest-showcase--debts {
+    --hr-showcase-mist: #a8d4de;
+    --hr-showcase-mist-deep: #7ab8c8;
+    --hr-showcase-bridge: #94ccd8;
+    background:
+      linear-gradient(
+        180deg,
+        var(--hr-showcase-bridge) 0%,
+        var(--hr-showcase-mist) 10%,
+        var(--hr-showcase-mist-deep) 24%,
+        var(--hr-showcase-mist-deep) 76%,
+        var(--hr-showcase-mist) 90%,
+        #c8e6ee 100%
+      );
+  }
+
+  .hr-page .hr-showcases .hr-news {
+    background:
+      linear-gradient(
+        180deg,
+        var(--hr-showcase-white) 0%,
+        var(--hr-surface-muted) 16%,
+        var(--hr-surface-muted) 100%
+      );
+  }
+
+  .hr-page .hr-showcases .invest-showcase__title {
+    font-family: Montserrat, system-ui, sans-serif;
+    font-style: normal;
+    font-weight: 800;
+    font-size: clamp(1.5rem, 6.5vw, 1.875rem);
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    color: var(--hr-ink);
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: var(--hr-ink);
+    display: block;
+    padding: 0;
+  }
+
+  .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__title,
+  .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__title {
+    color: #0f3d47;
+    -webkit-text-fill-color: #0f3d47;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__subtitle {
+    margin-top: clamp(8px, 2vw, 10px);
+    max-width: none;
+    font-family: Montserrat, system-ui, sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--hr-muted);
+  }
+
+  .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__subtitle,
+  .hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle,
+  .hr-page .hr-showcases .invest-showcase--buy-now .invest-showcase__subtitle,
+  .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__subtitle {
+    color: #1e5a66;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title cta'
+      'subtitle subtitle';
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 8px;
+    margin-bottom: clamp(16px, 4vw, 22px);
+  }
+
+  .hr-page .hr-showcases .invest-showcase__intro {
+    display: contents;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__title {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__subtitle {
+    grid-area: subtitle;
+    margin-top: 0;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__cta-pill {
+    grid-area: cta;
+    align-self: center;
+    justify-self: end;
+    width: auto;
+    max-width: none;
+    flex-shrink: 0;
+    min-height: 36px;
+    padding: 4px 4px 4px 12px;
+    gap: 6px;
+    background: var(--hr-showcase-action);
+    box-shadow: var(--hr-showcase-action-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    font-family: Montserrat, system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__cta-pill:hover {
+    background: var(--hr-showcase-action-hover);
+    box-shadow: var(--hr-showcase-action-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .hr-page .hr-showcases .invest-showcase__cta-pill-text {
+    flex-shrink: 0;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .invest-showcase__cta-pill-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .hr-page .hr-showcases .auction-card,
+  .hr-page .hr-showcases .shares-v2-card,
+  .hr-page .hr-showcases .debts-property-card,
+  .hr-page .hr-showcases .listing-card-auction-timer {
+    font-family: Montserrat, system-ui, sans-serif;
+  }
+
+  .hr-page .hr-showcases .invest-showcase {
+    --hr-property-card-width: clamp(8.4rem, 43vw, 15rem);
+  }
+
+  .hr-page .hr-showcases .invest-showcase__scroller {
+    align-items: stretch;
+    gap: 8px;
+    padding-right: 16px;
+  }
+
+  .hr-page .hr-showcases .home-showcase__slot {
+    flex: 0 0 var(--hr-property-card-width);
+    width: var(--hr-property-card-width);
+    min-width: var(--hr-property-card-width);
+    max-width: none;
+    scroll-snap-align: start;
+  }
+
+  .hr-page .hr-showcases .auction-card,
+  .hr-page .hr-showcases .shares-v2-card,
+  .hr-page .hr-showcases .debts-property-card {
+    border-radius: 14px;
+  }
+
+  .hr-page .hr-showcases .auction-card__media,
+  .hr-page .hr-showcases .shares-v2-card__media,
+  .hr-page .hr-showcases .debts-property-card__media {
+    aspect-ratio: 3 / 2;
+  }
+
+  .hr-page .hr-showcases .auction-card__media-actions {
+    top: 7px;
+    right: 7px;
+    gap: 5px;
+  }
+
+  .hr-page .hr-showcases .auction-card__favorite,
+  .hr-page .hr-showcases .auction-card__photo-icon,
+  .hr-page .hr-showcases .shares-v2-card__favorite,
+  .hr-page .hr-showcases .debts-property-card__favorite {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hr-page .hr-showcases .auction-card__favorite svg,
+  .hr-page .hr-showcases .auction-card__photo-icon svg,
+  .hr-page .hr-showcases .shares-v2-card__favorite svg,
+  .hr-page .hr-showcases .debts-property-card__favorite svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .hr-page .hr-showcases .auction-card__photo-icons {
+    gap: 5px;
+  }
+
+  .hr-page .hr-showcases .auction-card__timer-dock {
+    bottom: 6px;
+    transform: translateX(-50%) scale(0.72);
+  }
+
+  .hr-page .hr-showcases .auction-card__vip-strip {
+    gap: 4px;
+    padding: 5px 7px;
+  }
+
+  .hr-page .hr-showcases .auction-card__vip-strip-label,
+  .hr-page .hr-showcases .auction-card__vip-strip-cta {
+    font-size: 0.55rem;
+  }
+
+  .hr-page .hr-showcases .listing-card-auction-timer {
+    position: relative;
+    z-index: 4;
+    margin-top: -6px;
+    margin-right: 6px;
+    margin-bottom: 0;
+    margin-left: 6px;
+    padding: 5px 7px;
+    border: 1px solid rgba(226, 232, 240, 0.88);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+  }
+
+  .hr-page .hr-showcases .listing-card-auction-timer__prefix {
+    margin-bottom: 1px;
+    font-size: 0.55rem;
+  }
+
+  .hr-page .hr-showcases .listing-card-auction-timer__time {
+    gap: 3px;
+    font-size: 0.625rem;
+  }
+
+  .hr-page .hr-showcases .listing-card-auction-timer__time svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .hr-page .hr-showcases .auction-card__body {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .hr-page .hr-showcases .auction-card__meta {
+    gap: 5px;
+  }
+
+  .hr-page .hr-showcases .auction-card__location {
+    min-height: 0.9rem;
+    gap: 3px;
+    font-size: 0.58rem;
+  }
+
+  .hr-page .hr-showcases .auction-card__location svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .hr-page .hr-showcases .auction-card__title {
+    min-height: calc(1.25em * 2);
+    font-size: 0.72rem;
+    line-height: 1.25;
+    -webkit-line-clamp: 2;
+  }
+
+  .hr-page .hr-showcases .auction-card:has(.listing-card-auction-timer) .auction-card__title,
+  .hr-page .hr-showcases .debts-property-card:has(.listing-card-auction-timer) .debts-property-card__title {
+    display: none;
+  }
+
+  .hr-page .hr-showcases .auction-card:has(.listing-card-auction-timer) .auction-card__meta {
+    gap: 3px;
+  }
+
+  .hr-page .hr-showcases .auction-card__specs {
+    gap: 3px;
+    min-height: 0;
+  }
+
+  .hr-page .hr-showcases .auction-card__spec {
+    gap: 2px;
+    padding: 3px 4px;
+    font-size: 0.56rem;
+  }
+
+  .hr-page .hr-showcases .auction-card__spec svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .hr-page .hr-showcases .auction-card__footer {
+    gap: 6px;
+    min-height: 0;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-panel {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgba(74, 150, 166, 0.22);
+    background: linear-gradient(135deg, #f0f7f9 0%, #ffffff 100%);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-panel::before {
+    content: '';
+    position: absolute;
+    top: -120%;
+    bottom: -120%;
+    left: -70%;
+    width: 58%;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(74, 150, 166, 0.04) 36%,
+      rgba(74, 150, 166, 0.2) 50%,
+      rgba(74, 150, 166, 0.04) 64%,
+      transparent 100%
+    );
+    transform: skewX(-16deg);
+    animation: hr-showcase-bid-shimmer 3.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, transparent 42%);
+    pointer-events: none;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-label {
+    position: relative;
+    z-index: 1;
+    max-width: none;
+    overflow: visible;
+    text-overflow: unset;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+    line-height: 1.2;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-label-full {
+    display: none;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-label-short {
+    display: inline;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-value {
+    position: relative;
+    z-index: 1;
+    width: auto;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-align: right;
+    color: #0f172a;
+    text-shadow: none;
+  }
+
+  @keyframes hr-showcase-bid-shimmer {
+    0% {
+      transform: translateX(-145%) skewX(-16deg);
+      opacity: 0.35;
+    }
+
+    18% {
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateX(245%) skewX(-16deg);
+      opacity: 0.35;
+    }
+  }
+
+  .hr-page .hr-showcases .auction-card__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    min-height: 0;
+  }
+
+  .hr-page .hr-showcases .auction-card__actions--single {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-page .hr-showcases .auction-card__btn {
+    min-height: 30px;
+    padding: 6px 5px;
+    border-radius: 8px;
+    font-size: 0.625rem;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__badge,
+  .hr-page .hr-showcases .debts-property-card__risk {
+    top: 7px;
+    left: 7px;
+    max-width: calc(100% - 48px);
+    padding: 4px 6px;
+    font-size: 0.54rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__favorite,
+  .hr-page .hr-showcases .debts-property-card__favorite {
+    top: 7px;
+    right: 7px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__body,
+  .hr-page .hr-showcases .debts-property-card__body {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__title,
+  .hr-page .hr-showcases .debts-property-card__title {
+    display: -webkit-box;
+    min-height: calc(1.25em * 2);
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__location,
+  .hr-page .hr-showcases .debts-property-card__location {
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.56rem;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__location span,
+  .hr-page .hr-showcases .debts-property-card__location span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__location svg,
+  .hr-page .hr-showcases .debts-property-card__location svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__metrics {
+    gap: 4px;
+    margin: 1px 0 6px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__metric {
+    gap: 2px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__metric-label,
+  .hr-page .hr-showcases .shares-v2-card__progress-label,
+  .hr-page .hr-showcases .shares-v2-card__progress-percent {
+    font-size: 0.52rem;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__metric-value {
+    font-size: 0.66rem;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__progress-head {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__progress-track {
+    height: 4px;
+    margin-bottom: 6px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__amounts {
+    gap: 2px;
+    font-size: 0.58rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hr-page .hr-showcases .shares-v2-card__invest-btn {
+    width: 100%;
+    min-height: 30px;
+    padding: 6px 5px;
+    border-radius: 8px;
+    font-size: 0.625rem;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__status {
+    gap: 4px;
+    min-height: 28px;
+    padding: 5px 7px;
+    font-size: 0.54rem;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__status span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__pricing {
+    gap: 4px;
+    margin-top: 0;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__price-row {
+    gap: 1px;
+    overflow: hidden;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__price-label {
+    font-size: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__price-value {
+    font-size: 0.68rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__actions {
+    flex-direction: column;
+    gap: 5px;
+    margin-top: auto;
+  }
+
+  .hr-page .hr-showcases .debts-property-card__btn,
+  .hr-page .hr-showcases .debts-property-card__actions.property-actions .btn-liquid-glass {
+    width: 100%;
+    min-height: 30px;
+    padding: 6px 5px;
+    border-radius: 8px;
+    font-size: 0.625rem;
+    white-space: normal;
+  }
+
+  .hr-page .hr-showcases .auction-card--skeleton .auction-card__media,
+  .hr-page .hr-showcases .shares-v2-card--skeleton .shares-v2-card__media,
+  .hr-page .hr-showcases .debts-property-card--skeleton .debts-property-card__media {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 359px) {
+  .hr-strategies__inner {
+    width: calc(100% - 24px);
+  }
+
+  .hr-strategies__cards {
+    grid-auto-columns: min(86vw, 17.2rem);
+    gap: 8px;
+  }
+
+  .hr-strategy-stat-card {
+    height: 20.5rem;
+    padding: 16px;
+  }
+
+  .hr-strategy-stat-card__content {
+    margin-top: 24px;
+  }
+
+  .hr-strategy-stat-card .hr-strategy-stat-card__headline {
+    font-size: 1.9rem;
+  }
+
+  .hr-strategy-stat-card .hr-strategy-stat-card__text {
+    font-size: 0.6875rem;
+  }
+
+  .hr-strategy-stat-card__cta {
+    bottom: 14px;
+    left: 14px;
+    padding: 9px 11px;
+  }
+
+  .hr-search-bar {
+    padding: 4px 4px 4px 0;
+  }
+
+  .hr-search-bar__cell,
+  .hr-search-bar__cell--divider,
+  .hr-search-bar__cell:nth-child(odd) {
+    min-height: 48px;
+    padding: 4px 1px;
+  }
+
+  .hr-search-bar__value--compact {
+    font-size: 0.5625rem;
+  }
+
+  .hr-search-bar__submit {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
   }
 }
 
@@ -2597,5 +3577,11 @@
 
   .hr-strategy-stat-card:hover .hr-strategy-stat-card__icon {
     transform: none;
+  }
+
+  .hr-page .hr-showcases .invest-showcase .auction-card__price-panel::before {
+    animation: none;
+    opacity: 0.45;
+    transform: translateX(-20%) skewX(-16deg);
   }
 }

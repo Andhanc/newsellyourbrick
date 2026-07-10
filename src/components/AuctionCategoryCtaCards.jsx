@@ -21,7 +21,7 @@ const AUCTION_CTA_CARDS = [
     to: '/shares',
     icon: FaChartPie,
     image: CTA_IMAGES.shares,
-    accent: 'lilac',
+    accent: 'sage',
   },
   {
     id: 'debts',
@@ -41,7 +41,7 @@ const AUCTION_CTA_CARDS = [
     to: '/auction',
     icon: FaGavel,
     image: CTA_IMAGES.auction,
-    accent: 'lilac',
+    accent: 'sage',
   },
   {
     id: 'test-drive',
@@ -51,7 +51,7 @@ const AUCTION_CTA_CARDS = [
     to: '/test-drive',
     icon: FiBriefcase,
     image: CTA_IMAGES.testDrive,
-    accent: 'lilac',
+    accent: 'sage',
   },
 ]
 
@@ -65,15 +65,24 @@ function AuctionCategoryCtaCards({ variant = 'default' }) {
       : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
 
   return (
-    <section className="auction-cta-cards" aria-label={t('auctionPageCtaAria')}>
+    <section className="auction-cta-cards" aria-labelledby="auction-cta-heading">
       <div className="auction-cta-cards__inner">
+        <h2 id="auction-cta-heading" className="auction-cta-cards__title">
+          <span className="auction-cta-cards__title-desktop">{t('auctionPageCtaSectionTitle')}</span>
+          <span className="auction-cta-cards__title-mobile">
+            <span className="auction-cta-cards__title-line">
+              <span className="auction-cta-cards__title-pill">{t('auctionPageCtaSectionTitleMobilePill')}</span>
+            </span>
+            <span className="auction-cta-cards__title-line">{t('auctionPageCtaSectionTitleMobileLine2')}</span>
+          </span>
+        </h2>
         <div
           className={`auction-cta-cards__grid${
             cards.length === 2 ? ' auction-cta-cards__grid--duo' : ''
           }${cards.length === 3 ? ' auction-cta-cards__grid--trio' : ''}`}
         >
           {cards.map(({ id, titleKey, textKey, to, icon: Icon, image, accent }) => (
-            <Link key={id} to={to} className="auction-cta-cards__card">
+            <Link key={id} to={to} className={`auction-cta-cards__card auction-cta-cards__card--${accent}`}>
               <img src={image} alt="" />
               <span className="auction-cta-cards__card-overlay" aria-hidden />
               <span className={`auction-cta-cards__icon auction-cta-cards__icon--${accent}`}>

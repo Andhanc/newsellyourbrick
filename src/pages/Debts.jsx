@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import '../components/DebtsDesktopFilters.css'
 import AuctionListingSaleToggle from '../components/AuctionListingSaleToggle'
 import '../components/AuctionListingSaleToggle.css'
@@ -35,7 +36,6 @@ import {
   getDebtsPriceBounds,
   getDebtsDebtBounds,
   getDebtsFilterOptions,
-  DEBTS_MOBILE_FILTER_ITEMS,
 } from '../utils/debtsPageFilters'
 import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
@@ -58,7 +58,7 @@ const Debts = () => {
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [debtsFilters, setDebtsFilters] = useState(EMPTY_DEBTS_FILTERS)
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const searchFiltersBarRef = useRef(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
@@ -90,21 +90,6 @@ const Debts = () => {
   }, [])
 
   const isDebtsDesktop = !isMobile
-
-  useEffect(() => {
-    if (!isMobile || !mobileFiltersOpen) return undefined
-    const handlePointerDown = (e) => {
-      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
-        setMobileFiltersOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('touchstart', handlePointerDown, { passive: true })
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('touchstart', handlePointerDown)
-    }
-  }, [isMobile, mobileFiltersOpen])
 
   const debtsPropertyTypes = useMemo(
     () =>
@@ -396,6 +381,64 @@ const Debts = () => {
   const riskStats = useMemo(() => getDebtsRiskStats(apiDebts), [apiDebts])
   const filterOptions = useMemo(() => getDebtsFilterOptions(apiDebts), [apiDebts])
 
+  const mobileDebtsActiveFilterCount = useMemo(() => {
+    let count = debtsPropertyTypes.length + debtsRisks.length
+    if (debtsFilters.country && debtsFilters.country !== 'all') count += 1
+    if (debtsFilters.city && debtsFilters.city !== 'all') count += 1
+    if (debtsFilters.minDebt !== '' || debtsFilters.maxDebt !== '') count += 1
+    if (debtsFilters.minPrice !== '' || debtsFilters.maxPrice !== '') count += 1
+    return count
+  }, [
+    debtsPropertyTypes,
+    debtsRisks,
+    debtsFilters.country,
+    debtsFilters.city,
+    debtsFilters.minDebt,
+    debtsFilters.maxDebt,
+    debtsFilters.minPrice,
+    debtsFilters.maxPrice,
+  ])
+
+  const debtsDesktopFilterProps = useMemo(
+    () => ({
+      propertyTypes: debtsPropertyTypes,
+      setPropertyTypes: setDebtsPropertyTypes,
+      risks: debtsRisks,
+      setRisks: setDebtsRisks,
+      locationOptions: filterOptions.locations,
+      country: debtsFilters.country,
+      city: debtsFilters.city,
+      setCountry: (value) => setDebtsFilters((prev) => ({ ...prev, country: value })),
+      setCity: (value) => setDebtsFilters((prev) => ({ ...prev, city: value })),
+      minDebt: debtsFilters.minDebt,
+      maxDebt: debtsFilters.maxDebt,
+      setMinDebt: (value) => setDebtsFilters((prev) => ({ ...prev, minDebt: value })),
+      setMaxDebt: (value) => setDebtsFilters((prev) => ({ ...prev, maxDebt: value })),
+      minPrice: debtsFilters.minPrice,
+      maxPrice: debtsFilters.maxPrice,
+      setMinPrice: (value) => setDebtsFilters((prev) => ({ ...prev, minPrice: value })),
+      setMaxPrice: (value) => setDebtsFilters((prev) => ({ ...prev, maxPrice: value })),
+      debtBounds,
+      priceBounds,
+      riskStats,
+      onApply: scrollToDebtsGrid,
+    }),
+    [
+      debtsPropertyTypes,
+      debtsRisks,
+      filterOptions.locations,
+      debtsFilters.country,
+      debtsFilters.city,
+      debtsFilters.minDebt,
+      debtsFilters.maxDebt,
+      debtsFilters.minPrice,
+      debtsFilters.maxPrice,
+      debtBounds,
+      priceBounds,
+      riskStats,
+    ],
+  )
+
   const openProperty = (property) => {
     const targetPath = getDebtsContextPropertyPath(property, {
       country: debtsFilters.country,
@@ -510,29 +553,7 @@ const Debts = () => {
               }`.trim()}
             >
               {isDebtsDesktop && desktopFiltersOpen ? (
-                <DebtsDesktopFilters
-                  propertyTypes={debtsPropertyTypes}
-                  setPropertyTypes={setDebtsPropertyTypes}
-                  risks={debtsRisks}
-                  setRisks={setDebtsRisks}
-                  locationOptions={filterOptions.locations}
-                  country={debtsFilters.country}
-                  city={debtsFilters.city}
-                  setCountry={(value) => setDebtsFilters((prev) => ({ ...prev, country: value }))}
-                  setCity={(value) => setDebtsFilters((prev) => ({ ...prev, city: value }))}
-                  minDebt={debtsFilters.minDebt}
-                  maxDebt={debtsFilters.maxDebt}
-                  setMinDebt={(value) => setDebtsFilters((prev) => ({ ...prev, minDebt: value }))}
-                  setMaxDebt={(value) => setDebtsFilters((prev) => ({ ...prev, maxDebt: value }))}
-                  minPrice={debtsFilters.minPrice}
-                  maxPrice={debtsFilters.maxPrice}
-                  setMinPrice={(value) => setDebtsFilters((prev) => ({ ...prev, minPrice: value }))}
-                  setMaxPrice={(value) => setDebtsFilters((prev) => ({ ...prev, maxPrice: value }))}
-                  debtBounds={debtBounds}
-                  priceBounds={priceBounds}
-                  riskStats={riskStats}
-                  onApply={scrollToDebtsGrid}
-                />
+                <DebtsDesktopFilters {...debtsDesktopFilterProps} />
               ) : null}
 
               <div
@@ -551,12 +572,6 @@ const Debts = () => {
                     isDebtsDesktop ? ' search-filters-bar--auction-desktop' : ''
                   }${
                     !isDebtsDesktop ? ' search-filters-bar--auction-mobile' : ''
-                  }${
-                    !isDebtsDesktop
-                      ? mobileFiltersOpen
-                        ? ' search-filters-bar--types-expanded'
-                        : ' search-filters-bar--types-collapsed'
-                      : ''
                   }`}
                 >
                   {isDebtsDesktop ? (
@@ -603,9 +618,11 @@ const Debts = () => {
                     <div className="filters-and-types-grid">
                       <button
                         type="button"
-                        className="filters-button"
-                        aria-expanded={mobileFiltersOpen}
-                        onClick={() => setMobileFiltersOpen((open) => !open)}
+                        className={`filters-button${
+                          mobileDebtsActiveFilterCount > 0 ? ' is-active' : ''
+                        }`}
+                        aria-expanded={filtersDrawerOpen}
+                        onClick={() => setFiltersDrawerOpen(true)}
                       >
                         <svg
                           width="20"
@@ -618,50 +635,13 @@ const Debts = () => {
                         >
                           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                         </svg>
-                        {t('filters')}
+                        <span className="filters-button__label">{t('filters')}</span>
+                        {mobileDebtsActiveFilterCount > 0 ? (
+                          <span className="filters-badge" aria-hidden="true">
+                            {mobileDebtsActiveFilterCount}
+                          </span>
+                        ) : null}
                       </button>
-                      <div className="property-types property-types--auction-mobile">
-                        {DEBTS_MOBILE_FILTER_ITEMS.map((item) => (
-                          <button
-                            key={`${item.kind}-${item.value}`}
-                            type="button"
-                            className={`type-button ${
-                              item.kind === 'type'
-                                ? item.value === 'все'
-                                  ? debtsPropertyTypes.length === 0
-                                    ? 'active'
-                                    : ''
-                                  : debtsPropertyTypes.includes(item.value)
-                                    ? 'active'
-                                    : ''
-                                : debtsRisks.includes(item.value)
-                                  ? 'active'
-                                  : ''
-                            }`}
-                            onClick={() => {
-                              if (item.kind === 'type') {
-                                if (item.value === 'все') {
-                                  setDebtsPropertyTypes([])
-                                  return
-                                }
-                                setDebtsPropertyTypes((prev) =>
-                                  prev.includes(item.value)
-                                    ? prev.filter((value) => value !== item.value)
-                                    : [...prev, item.value],
-                                )
-                              } else {
-                                setDebtsRisks((prev) =>
-                                  prev.includes(item.value)
-                                    ? prev.filter((value) => value !== item.value)
-                                    : [...prev, item.value],
-                                )
-                              }
-                            }}
-                          >
-                            {t(item.labelKey)}
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -810,6 +790,18 @@ const Debts = () => {
             ) : null}
           </SiteChatDockLazy>
         </Suspense>
+      ) : null}
+
+      {!isDebtsDesktop ? (
+        <SharesMobileFiltersDrawer
+          isOpen={filtersDrawerOpen}
+          onClose={() => setFiltersDrawerOpen(false)}
+          title={t('filters')}
+          applyLabel={t('auctionApplyFilters')}
+          onApply={scrollToDebtsGrid}
+        >
+          <DebtsDesktopFilters {...debtsDesktopFilterProps} variant="drawer" />
+        </SharesMobileFiltersDrawer>
       ) : null}
     </div>
   )

@@ -1,0 +1,34 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const css = await readFile(new URL('./PropertyAiExperience.css', import.meta.url), 'utf8')
+const jsx = await readFile(new URL('./PropertyAiExperience.jsx', import.meta.url), 'utf8')
+const propertyDetail = await readFile(new URL('../pages/PropertyDetailClassic.jsx', import.meta.url), 'utf8')
+
+test('keeps the launcher fixed until the global footer observer marks the footer near', () => {
+  assert.match(css, /\.property-ai-launcher\s*\{[^}]*position:\s*fixed/)
+  assert.match(css, /html\.site-footer-near\s+\.property-ai-launcher/)
+})
+
+test('renders chat inside a right-side drawer layer', () => {
+  assert.match(jsx, /property-ai-drawer-layer/)
+  assert.match(css, /\.property-ai-chat\s*\{[^}]*right:\s*0/)
+  assert.match(css, /width:\s*min\(520px,\s*94vw\)/)
+})
+
+test('includes compact rules for short laptop and tablet viewports', () => {
+  assert.match(css, /@media\s*\(max-height:\s*800px\)/)
+  assert.match(css, /@media\s*\(min-width:\s*701px\) and \(max-width:\s*1100px\)/)
+})
+
+test('reveals answer lines progressively and keeps a pending PDF card visible', () => {
+  assert.match(jsx, /revealedLineCount/)
+  assert.match(jsx, /property-ai-answer-line/)
+  assert.match(jsx, /property-ai-pdf-card--pending/)
+  assert.match(css, /@keyframes property-ai-line-in/)
+})
+
+test('gives the Trans component replacement element a stable React key', () => {
+  assert.match(propertyDetail, /key="property-detail-terms-link"/)
+})

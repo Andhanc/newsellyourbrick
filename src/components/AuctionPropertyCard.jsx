@@ -377,7 +377,12 @@ export default function AuctionPropertyCard({
         <div className="auction-card__footer">
           <div className="auction-card__price-panel">
             <span className="auction-card__price-label">
-              {state.hasTimer ? t('currentBid').replace(/:$/, '') : t('propertyDetailPrice').replace(/:$/, '')}
+              <span className="auction-card__price-label-full">
+                {state.hasTimer ? t('currentBid').replace(/:$/, '') : t('propertyDetailPrice').replace(/:$/, '')}
+              </span>
+              <span className="auction-card__price-label-short">
+                {state.hasTimer ? 'Ставка' : 'Цена'}
+              </span>
             </span>
             <span className="auction-card__price-value">{formatPrice(displayPrice, property.currency)}</span>
           </div>
@@ -399,7 +404,14 @@ export default function AuctionPropertyCard({
                 }}
                 disabled={state.isReserved}
               >
-                {state.isReserved ? t('objectReserved') : t('placeBid')}
+                {state.isReserved ? (
+                  t('objectReserved')
+                ) : (
+                  <>
+                    <span className="auction-card__btn-text-full">{t('placeBid')}</span>
+                    <span className="auction-card__btn-text-short">{t('auctionCardBidShort')}</span>
+                  </>
+                )}
               </button>
               {state.hasBuyNowPrice && !state.listingEnded ? (
                 <button
@@ -412,7 +424,14 @@ export default function AuctionPropertyCard({
                   }}
                   disabled={state.isReserved}
                 >
-                  {state.isReserved ? t('objectReserved') : t('buyNowModalTitle')}
+                  {state.isReserved ? (
+                    t('objectReserved')
+                  ) : (
+                    <>
+                      <span className="auction-card__btn-text-full">{t('buyNowModalTitle')}</span>
+                      <span className="auction-card__btn-text-short">{t('auctionCardBuyShort')}</span>
+                    </>
+                  )}
                 </button>
               ) : null}
             </div>

@@ -469,6 +469,62 @@
   box-shadow: 0 16px 28px rgba(10, 113, 107, 0.2);
 }
 
+.shares-invest-filters--drawer {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shares-invest-filters--drawer .shares-invest-filters__apply--sidebar {
+  display: none;
+}
+
+.shares-invest-filters--drawer header {
+  display: none;
+}
+
+.shares-invest-filter-block--sort {
+  padding-bottom: 4px;
+}
+
+.shares-invest-filter-block__title--static {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: #1f2b3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shares-invest-sort--drawer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 9px;
+  padding: 0 14px;
+  border: 1px solid #dde7e3;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.shares-invest-sort--drawer select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #263246;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  appearance: none;
+}
+
 .shares-invest-results {
   min-width: 0;
 }
@@ -518,6 +574,14 @@
   grid-template-columns: minmax(0, 1fr) 230px;
   gap: 24px;
   margin-bottom: 26px;
+}
+
+.shares-invest-filters-btn {
+  display: none;
+}
+
+.shares-invest-sort--desktop {
+  display: flex;
 }
 
 .shares-invest-search,
@@ -1078,7 +1142,7 @@
 
 @media (max-width: 900px) {
   .shares-invest-main {
-    margin-top: calc(-1 * (max(12px, env(safe-area-inset-top, 0px)) + 96px));
+    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 84px));
   }
 
   .shares-invest-hero,
@@ -1087,7 +1151,7 @@
   }
 
   .shares-invest-hero__inner {
-    padding: calc(max(12px, env(safe-area-inset-top, 0px)) + 96px + 40px) 0 110px;
+    padding: calc(env(safe-area-inset-top, 0px) + 84px + 40px) 0 110px;
   }
 
   .shares-invest-stats,
@@ -1113,6 +1177,68 @@
 
   .shares-invest-toolbar {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-invest-filters--sidebar {
+    display: none;
+  }
+
+  .shares-invest-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .shares-invest-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-shrink: 0;
+    position: relative;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1.5px solid rgba(17, 24, 39, 0.08);
+    border-radius: 9999px;
+    background: #fff;
+    color: #1f2b3d;
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 4px 16px rgba(17, 24, 39, 0.07);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .shares-invest-filters-btn.is-active {
+    border-color: rgba(0, 153, 169, 0.42);
+    background: rgba(0, 153, 169, 0.08);
+    color: #007d8a;
+    box-shadow:
+      0 1px 2px rgba(0, 153, 169, 0.08),
+      0 4px 16px rgba(0, 153, 169, 0.12);
+  }
+
+  .shares-invest-filters-btn__label {
+    display: none;
+  }
+
+  .shares-invest-filters-btn__dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0099A9;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
+  .shares-invest-sort--desktop {
+    display: none;
   }
 }
 
@@ -1576,18 +1702,18 @@ html.site-footer-near .shares-floats > button.ai-button {
     width: 100%;
     display: flex;
     justify-content: center;
-    padding-top: max(12px, env(safe-area-inset-top, 0px));
-    padding-bottom: 12px;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: 0;
   }
 
   .shares-page .new-header-spacer {
-    height: calc(max(12px, env(safe-area-inset-top, 0px)) + 96px);
+    height: calc(env(safe-area-inset-top, 0px) + 84px);
   }
 
   .shares-page .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -1614,7 +1740,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   z-index: 1;
   width: 100%;
   box-sizing: border-box;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 80px);
   padding-left: 16px;
   padding-right: 16px;
 }
@@ -1635,7 +1761,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 /* Hero без центрального дубля заголовка — только описание и лента */
 .shares-page .animated-marquee-hero--shares-no-hero-title {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 80px) !important;
 }
 
 @media (min-width: 768px) {

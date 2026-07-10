@@ -56,7 +56,7 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: 12px 0;
+    padding: env(safe-area-inset-top, 0px) 0 0;
   }
 
   .search-results-page .new-header__container {

@@ -132,7 +132,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   .home-page .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -811,7 +811,6 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     min-height: 0;
   }
 }
-
 
 
 

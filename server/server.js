@@ -49,6 +49,7 @@ import { registerSeoNotFound } from './seoNotFound.js';
 import { registerSeoAdminRoutes } from './seoAdminRoutes.js';
 import { sendSeoSpaHtml } from './seoHtmlRender.js';
 import { registerCatalogRoutes } from './catalogRoutes.js';
+import { registerPropertyAiRoutes } from './propertyAiRoutes.js';
 import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 import { getCurrencySymbol } from './utils/currency.js';
@@ -980,6 +981,7 @@ app.use(cors({
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 /** Опрос тест-драйва может содержать base64-фото; дефолтный лимит 100kb рвёт такие запросы. */
 app.use(express.json({ limit: '18mb' }));
+registerPropertyAiRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
 

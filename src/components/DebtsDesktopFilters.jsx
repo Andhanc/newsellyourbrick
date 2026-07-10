@@ -49,6 +49,7 @@ function DebtsDesktopFilters({
   priceBounds,
   riskStats = [],
   onApply,
+  variant = 'sidebar',
 }) {
   const { t } = useTranslation()
   const [openSections, setOpenSections] = useState({
@@ -216,10 +217,17 @@ function DebtsDesktopFilters({
   }
 
   return (
-    <aside className="auction-desktop-filters debts-desktop-filters" aria-label={t('filters')}>
-      <div className="auction-desktop-filters__head">
-        <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
-      </div>
+    <aside
+      className={`auction-desktop-filters debts-desktop-filters${
+        variant === 'drawer' ? ' auction-desktop-filters--drawer' : ''
+      }`}
+      aria-label={t('filters')}
+    >
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__head">
+          <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
+        </div>
+      ) : null}
 
       {activeChips.length > 0 && (
         <div className="auction-desktop-filters__chips">
@@ -449,14 +457,16 @@ function DebtsDesktopFilters({
         </FilterSection>
       </div>
 
-      <div className="auction-desktop-filters__footer">
-        <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
-          {t('auctionApplyFilters')}
-        </button>
-        <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
-          {t('auctionClearAllFilters')}
-        </button>
-      </div>
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__footer">
+          <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
+            {t('auctionApplyFilters')}
+          </button>
+          <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
+            {t('auctionClearAllFilters')}
+          </button>
+        </div>
+      ) : null}
     </aside>
   )
 }

@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi'
 import { FaChartPie, FaFileInvoiceDollar, FaGavel, FaStar } from 'react-icons/fa'
 import Header from '../components/Header'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
@@ -238,6 +239,7 @@ const TestDriveLandingPage = () => {
   const [price, setPrice] = useState(500)
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const [favorites, setFavorites] = useState(() => new Set(['demo-1', 'demo-2']))
 
   useEffect(() => {
@@ -281,7 +283,9 @@ const TestDriveLandingPage = () => {
     selectedDirections.length +
     selectedDurations.length +
     selectedAmenities.length +
-    (query.trim() ? 1 : 0)
+    (price < 500 ? 1 : 0)
+
+  const hasActiveFilters = activeFilterCount > 0
 
   const filteredListings = useMemo(() => {
     const q = normalizeText(query)
@@ -382,68 +386,21 @@ const TestDriveLandingPage = () => {
           </section>
 
           <section className="test-drive-catalog" id="test-drive-catalog">
-            <aside className="test-drive-filter-panel" aria-label="Фильтры">
-              <div className="test-drive-filter-panel__head">
-                <h2>Фильтры</h2>
-                <button type="button" onClick={resetFilters}>
-                  Сбросить
-                </button>
-              </div>
-
-              <FilterGroup
-                title="Тип объекта"
-                options={TYPE_FILTERS}
-                values={selectedTypes}
-                onToggle={(value) => toggleValue(value, setSelectedTypes)}
-              />
-              <FilterGroup
-                title="Город"
-                options={CITY_FILTERS}
-                values={selectedDirections}
-                onToggle={(value) => toggleValue(value, setSelectedDirections)}
-                moreLabel="Показать ещё"
-              />
-              <FilterGroup
-                title="Длительность"
-                options={DURATION_FILTERS}
-                values={selectedDurations}
-                onToggle={(value) => toggleValue(value, setSelectedDurations)}
-              />
-
-              <div className="test-drive-filter-block">
-                <button type="button" className="test-drive-filter-block__title">
-                  <span>Цена за ночь</span>
-                  <FiChevronDown size={16} aria-hidden />
-                </button>
-                <div className="test-drive-price-filter">
-                  <input
-                    type="range"
-                    min="100"
-                    max="500"
-                    step="10"
-                    value={price}
-                    onChange={(event) => setPrice(Number(event.target.value))}
-                    aria-label="Цена за ночь"
-                  />
-                  <div>
-                    <span>€100</span>
-                    <strong>€{price}+</strong>
-                  </div>
-                </div>
-              </div>
-
-              <FilterGroup
-                title="Удобства"
-                options={AMENITY_FILTERS}
-                values={selectedAmenities}
-                onToggle={(value) => toggleValue(value, setSelectedAmenities)}
-                moreLabel="Показать ещё"
-              />
-
-              <button type="button" className="test-drive-filter-panel__apply">
-                Показать {filteredListings.length || listings.length} объектов
-              </button>
-            </aside>
+            <TestDriveFiltersPanel
+              className="test-drive-filter-panel test-drive-filter-panel--sidebar"
+              filteredCount={filteredListings.length || listings.length}
+              selectedTypes={selectedTypes}
+              selectedDirections={selectedDirections}
+              selectedDurations={selectedDurations}
+              selectedAmenities={selectedAmenities}
+              price={price}
+              onReset={resetFilters}
+              onToggleType={(value) => toggleValue(value, setSelectedTypes)}
+              onToggleDirection={(value) => toggleValue(value, setSelectedDirections)}
+              onToggleDuration={(value) => toggleValue(value, setSelectedDurations)}
+              onToggleAmenity={(value) => toggleValue(value, setSelectedAmenities)}
+              onPriceChange={setPrice}
+            />
 
             <div className="test-drive-results">
               <div className="test-drive-results__head">
@@ -474,7 +431,19 @@ const TestDriveLandingPage = () => {
                   ) : null}
                 </label>
 
-                <label className="test-drive-sort">
+                <button
+                  type="button"
+                  className={`test-drive-filters-btn${hasActiveFilters ? ' is-active' : ''}`}
+                  onClick={() => setFiltersDrawerOpen(true)}
+                  aria-label="Фильтры"
+                  aria-expanded={filtersDrawerOpen}
+                >
+                  <FiSliders size={18} aria-hidden />
+                  <span className="test-drive-filters-btn__label">Фильтры</span>
+                  {hasActiveFilters ? <span className="test-drive-filters-btn__dot" aria-hidden /> : null}
+                </button>
+
+                <label className="test-drive-sort test-drive-sort--desktop">
                   <FiSliders size={18} aria-hidden />
                   <select value={sort} onChange={(event) => setSort(event.target.value)}>
                     <option value="new">Сначала новые</option>
@@ -483,6 +452,33 @@ const TestDriveLandingPage = () => {
                   </select>
                 </label>
               </div>
+
+              <SharesMobileFiltersDrawer
+                isOpen={filtersDrawerOpen}
+                onClose={() => setFiltersDrawerOpen(false)}
+                title="Фильтры"
+                applyLabel={`Показать ${filteredListings.length || listings.length} объектов`}
+                onApply={() => setFiltersDrawerOpen(false)}
+              >
+                <TestDriveFiltersPanel
+                  className="test-drive-filter-panel test-drive-filter-panel--drawer"
+                  filteredCount={filteredListings.length || listings.length}
+                  selectedTypes={selectedTypes}
+                  selectedDirections={selectedDirections}
+                  selectedDurations={selectedDurations}
+                  selectedAmenities={selectedAmenities}
+                  price={price}
+                  sort={sort}
+                  onSortChange={setSort}
+                  onReset={resetFilters}
+                  onToggleType={(value) => toggleValue(value, setSelectedTypes)}
+                  onToggleDirection={(value) => toggleValue(value, setSelectedDirections)}
+                  onToggleDuration={(value) => toggleValue(value, setSelectedDurations)}
+                  onToggleAmenity={(value) => toggleValue(value, setSelectedAmenities)}
+                  onPriceChange={setPrice}
+                  showSort
+                />
+              </SharesMobileFiltersDrawer>
 
               {filteredListings.length === 0 ? (
                 <div className="test-drive-empty">
@@ -597,6 +593,105 @@ const TestDriveLandingPage = () => {
         </div>
       </main>
     </div>
+  )
+}
+
+function TestDriveFiltersPanel({
+  className = '',
+  filteredCount,
+  selectedTypes,
+  selectedDirections,
+  selectedDurations,
+  selectedAmenities,
+  price,
+  sort,
+  onSortChange,
+  onReset,
+  onToggleType,
+  onToggleDirection,
+  onToggleDuration,
+  onToggleAmenity,
+  onPriceChange,
+  showSort = false,
+}) {
+  return (
+    <aside className={className} aria-label="Фильтры">
+      <div className="test-drive-filter-panel__head">
+        <h2>Фильтры</h2>
+        <button type="button" onClick={onReset}>
+          Сбросить
+        </button>
+      </div>
+
+      <FilterGroup
+        title="Тип объекта"
+        options={TYPE_FILTERS}
+        values={selectedTypes}
+        onToggle={onToggleType}
+      />
+      <FilterGroup
+        title="Город"
+        options={CITY_FILTERS}
+        values={selectedDirections}
+        onToggle={onToggleDirection}
+        moreLabel="Показать ещё"
+      />
+      <FilterGroup
+        title="Длительность"
+        options={DURATION_FILTERS}
+        values={selectedDurations}
+        onToggle={onToggleDuration}
+      />
+
+      <div className="test-drive-filter-block">
+        <button type="button" className="test-drive-filter-block__title">
+          <span>Цена за ночь</span>
+          <FiChevronDown size={16} aria-hidden />
+        </button>
+        <div className="test-drive-price-filter">
+          <input
+            type="range"
+            min="100"
+            max="500"
+            step="10"
+            value={price}
+            onChange={(event) => onPriceChange(Number(event.target.value))}
+            aria-label="Цена за ночь"
+          />
+          <div>
+            <span>€100</span>
+            <strong>€{price}+</strong>
+          </div>
+        </div>
+      </div>
+
+      <FilterGroup
+        title="Удобства"
+        options={AMENITY_FILTERS}
+        values={selectedAmenities}
+        onToggle={onToggleAmenity}
+        moreLabel="Показать ещё"
+      />
+
+      {showSort ? (
+        <div className="test-drive-filter-block test-drive-filter-block--sort">
+          <span className="test-drive-filter-block__title test-drive-filter-block__title--static">
+            Сортировка
+          </span>
+          <label className="test-drive-sort test-drive-sort--drawer">
+            <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
+              <option value="new">Сначала новые</option>
+              <option value="price">Сначала дешевле</option>
+              <option value="rating">По рейтингу</option>
+            </select>
+          </label>
+        </div>
+      ) : null}
+
+      <button type="button" className="test-drive-filter-panel__apply test-drive-filter-panel__apply--sidebar">
+        Показать {filteredCount} объектов
+      </button>
+    </aside>
   )
 }
 

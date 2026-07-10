@@ -443,3 +443,12 @@
   background: rgba(0, 153, 169, 0.12);
   color: #00605a;
 }
+
+.auction-desktop-filters.auction-desktop-filters--drawer {
+  gap: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}

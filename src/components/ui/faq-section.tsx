@@ -38,7 +38,17 @@ function FaqSection({ onContactClick }: FaqSectionProps) {
           <div className="auction-faq-section__intro">
             <span className="auction-faq-section__badge">{t('aboutPage_faqEyebrow')}</span>
             <h2 id="auction-faq-heading" className="auction-faq-section__title">
-              {t('aboutPage_faqTitle')}
+              <span className="auction-faq-section__title-desktop">{t('aboutPage_faqTitle')}</span>
+              <span className="auction-faq-section__title-mobile">
+                <span className="auction-faq-section__title-line">
+                  {t('aboutPage_faqTitleMobileLine1')}
+                </span>
+                <span className="auction-faq-section__title-line">
+                  <span className="auction-faq-section__title-pill">
+                    {t('aboutPage_faqTitleMobilePill')}
+                  </span>
+                </span>
+              </span>
             </h2>
             <p className="auction-faq-section__lead">{t('aboutPage_faqSubtitle')}</p>
             <button type="button" className="auction-faq-section__cta" onClick={handleContactClick}>

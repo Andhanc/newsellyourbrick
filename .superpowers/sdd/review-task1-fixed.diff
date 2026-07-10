@@ -1,0 +1,303 @@
+# Review package: 749ae2c..66e8f01
+
+## Commits
+66e8f01 fix: use valid sale format content wrapper
+1096da7 feat: add home sale formats component contract
+
+## Files changed
+ src/components/HomeSaleFormats.css            | 202 ++++++++++++++++++++++++++
+ src/components/HomeSaleFormats.jsx            |  47 ++++++
+ src/components/HomeSaleFormats.layout.test.js |  23 +++
+ 3 files changed, 272 insertions(+)
+
+## Diff
+diff --git a/src/components/HomeSaleFormats.css b/src/components/HomeSaleFormats.css
+new file mode 100644
+index 0000000..7fed1d2
+--- /dev/null
++++ b/src/components/HomeSaleFormats.css
+@@ -0,0 +1,202 @@
++.sale-formats {
++  --sale-formats-ink: #f7f1e5;
++  --sale-formats-accent: #dfc792;
++  overflow: hidden;
++  padding: clamp(4rem, 8vw, 7.5rem) clamp(1rem, 5vw, 5rem);
++  background: #f2eee5;
++  color: #173f36;
++}
++
++.sale-formats__heading {
++  max-width: 58rem;
++  margin: 0 auto clamp(2rem, 4vw, 3.5rem);
++  text-align: center;
++}
++
++.sale-formats__heading h2 {
++  max-width: 48rem;
++  margin: 0 auto;
++  font-size: clamp(2rem, 4.2vw, 4.25rem);
++  line-height: 1.04;
++  text-wrap: balance;
++}
++
++.sale-formats__heading > p:not(.sale-formats__trust) {
++  max-width: 47rem;
++  margin: 1.25rem auto 0;
++  font-size: clamp(1rem, 1.5vw, 1.2rem);
++  line-height: 1.55;
++}
++
++.sale-formats__trust {
++  margin: 1rem 0 0;
++  font-size: 0.78rem;
++  font-weight: 700;
++  letter-spacing: 0.08em;
++  line-height: 1.6;
++  text-transform: uppercase;
++}
++
++.sale-formats__grid {
++  display: grid;
++  grid-template-columns: 1.12fr 0.88fr;
++  grid-template-rows: repeat(2, minmax(22rem, 34vw));
++  gap: clamp(0.75rem, 1.5vw, 1.5rem);
++  max-width: 90rem;
++  margin: 0 auto;
++}
++
++.sale-formats__card {
++  position: relative;
++  display: block;
++  min-width: 0;
++  overflow: hidden;
++  border-radius: clamp(1.25rem, 2vw, 2rem);
++  color: var(--sale-formats-ink);
++  background: #173f36;
++  text-decoration: none;
++  isolation: isolate;
++}
++
++.sale-formats__card:nth-child(2),
++.sale-formats__card:nth-child(3) {
++  margin: clamp(1rem, 3vw, 3rem) 0;
++}
++
++.sale-formats__image,
++.sale-formats__shade {
++  position: absolute;
++  inset: 0;
++  width: 100%;
++  height: 100%;
++}
++
++.sale-formats__image {
++  object-fit: cover;
++  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
++}
++
++.sale-formats__shade {
++  background: linear-gradient(180deg, rgba(8, 28, 23, 0.06) 15%, rgba(8, 28, 23, 0.88) 100%);
++  transition: opacity 300ms ease;
++  z-index: 1;
++}
++
++.sale-formats__content {
++  position: absolute;
++  inset: auto clamp(1.25rem, 3vw, 2.75rem) clamp(1.5rem, 3vw, 2.75rem);
++  display: flex;
++  flex-direction: column;
++  align-items: flex-start;
++  z-index: 2;
++}
++
++.sale-formats__eyebrow {
++  display: flex;
++  gap: 0.65rem;
++  color: var(--sale-formats-accent);
++  font-size: 0.75rem;
++  font-weight: 700;
++  letter-spacing: 0.12em;
++  text-transform: uppercase;
++}
++
++.sale-formats__benefit {
++  max-width: 18ch;
++  margin: 0.75rem 0 0;
++  font-size: clamp(1.6rem, 3vw, 3rem);
++  font-weight: 700;
++  line-height: 1.06;
++  text-wrap: balance;
++}
++
++.sale-formats__proof {
++  max-width: 34rem;
++  margin-top: 0.75rem;
++  color: rgba(247, 241, 229, 0.82);
++  font-size: clamp(0.9rem, 1.25vw, 1.05rem);
++  line-height: 1.45;
++}
++
++.sale-formats__cta {
++  margin-top: 1.25rem;
++  font-size: 0.78rem;
++  font-weight: 700;
++  letter-spacing: 0.08em;
++  text-transform: uppercase;
++  transition: transform 300ms ease;
++}
++
++.sale-formats__card:hover .sale-formats__image {
++  transform: scale(1.045);
++}
++
++.sale-formats__card:hover .sale-formats__shade {
++  opacity: 0.9;
++}
++
++.sale-formats__card:hover .sale-formats__cta {
++  transform: translateX(0.35rem);
++}
++
++.sale-formats__card:focus-visible {
++  outline: 3px solid #b7872d;
++  outline-offset: 4px;
++}
++
++@media (max-width: 767px) {
++  .sale-formats {
++    padding-inline: 0;
++  }
++
++  .sale-formats__heading {
++    padding-inline: 1rem;
++  }
++
++  .sale-formats__trust {
++    max-width: 22rem;
++    margin-inline: auto;
++  }
++
++  .sale-formats__grid {
++    display: flex;
++    gap: 0.85rem;
++    max-width: none;
++    overflow-x: auto;
++    padding: 0.25rem 1rem 1.25rem;
++    scroll-padding-inline: 1rem;
++    scroll-snap-type: x mandatory;
++    scrollbar-width: none;
++  }
++
++  .sale-formats__grid::-webkit-scrollbar {
++    display: none;
++  }
++
++  .sale-formats__card,
++  .sale-formats__card:nth-child(2),
++  .sale-formats__card:nth-child(3) {
++    flex: 0 0 min(82vw, 22rem);
++    height: 30rem;
++    margin: 0;
++    scroll-snap-align: start;
++  }
++
++  .sale-formats__content {
++    inset-inline: 1.25rem;
++    bottom: 1.5rem;
++  }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .sale-formats__image,
++  .sale-formats__shade,
++  .sale-formats__cta {
++    transition: none;
++  }
++
++  .sale-formats__card:hover .sale-formats__image,
++  .sale-formats__card:hover .sale-formats__cta {
++    transform: none;
++  }
++}
+diff --git a/src/components/HomeSaleFormats.jsx b/src/components/HomeSaleFormats.jsx
+new file mode 100644
+index 0000000..3a0869b
+--- /dev/null
++++ b/src/components/HomeSaleFormats.jsx
+@@ -0,0 +1,47 @@
++import { Link } from 'react-router-dom'
++
++import './HomeSaleFormats.css'
++
++function HomeSaleFormats({ modes }) {
++  return (
++    <section className="sale-formats" aria-labelledby="sale-formats-title">
++      <div className="sale-formats__heading">
++        <h2 id="sale-formats-title">4 способа купить недвижимость на своих условиях</h2>
++        <p>
++          Торгуйтесь за лучшую цену, забирайте объект сразу или начните с доли —
++          выберите формат под вашу цель
++        </p>
++        <p className="sale-formats__trust">
++          Проверенные объекты <span aria-hidden="true">·</span> прозрачные условия{' '}
++          <span aria-hidden="true">·</span> сопровождение сделки
++        </p>
++      </div>
++
++      <div className="sale-formats__grid">
++        {modes.map((mode) => (
++          <Link className="sale-formats__card" key={mode.id} to={mode.to}>
++            <img
++              className="sale-formats__image"
++              src={mode.image}
++              alt={`${mode.eyebrow}: ${mode.benefit}`}
++              loading="lazy"
++            />
++            <span className="sale-formats__shade" aria-hidden="true" />
++            <div className="sale-formats__content">
++              <span className="sale-formats__eyebrow">
++                <span>{mode.number}</span> {mode.eyebrow}
++              </span>
++              <h3 className="sale-formats__benefit">{mode.benefit}</h3>
++              <span className="sale-formats__proof">{mode.proof}</span>
++              <span className="sale-formats__cta">
++                Смотреть объекты <span aria-hidden="true">→</span>
++              </span>
++            </div>
++          </Link>
++        ))}
++      </div>
++    </section>
++  )
++}
++
++export default HomeSaleFormats
+diff --git a/src/components/HomeSaleFormats.layout.test.js b/src/components/HomeSaleFormats.layout.test.js
+new file mode 100644
+index 0000000..03ef27f
+--- /dev/null
++++ b/src/components/HomeSaleFormats.layout.test.js
+@@ -0,0 +1,23 @@
++import test from 'node:test'
++import assert from 'node:assert/strict'
++import { readFile } from 'node:fs/promises'
++
++const jsx = await readFile(new URL('./HomeSaleFormats.jsx', import.meta.url), 'utf8')
++const css = await readFile(new URL('./HomeSaleFormats.css', import.meta.url), 'utf8')
++
++test('renders each format as one fully clickable route card', () => {
++  assert.match(jsx, /sale-formats__card/)
++  assert.match(jsx, /to=\{mode\.to\}/)
++  assert.match(jsx, /Смотреть объекты/)
++})
++
++test('uses a flow content wrapper for the card heading', () => {
++  assert.match(jsx, /<div className="sale-formats__content">/)
++  assert.doesNotMatch(jsx, /<span className="sale-formats__content">/)
++})
++
++test('provides mobile scroll snap, focus visibility, and reduced motion', () => {
++  assert.match(css, /scroll-snap-type:\s*x mandatory/)
++  assert.match(css, /\.sale-formats__card:focus-visible/)
++  assert.match(css, /prefers-reduced-motion:\s*reduce/)
++})

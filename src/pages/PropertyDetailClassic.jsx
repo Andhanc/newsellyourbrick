@@ -69,6 +69,7 @@ import PropertyDetailTestDrivePromo from '../components/PropertyDetailTestDriveP
 import PageBackButton from '../components/PageBackButton'
 import PropertyGeoLinks from '../components/PropertyGeoLinks'
 import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
+import PropertyAiExperience from '../components/PropertyAiExperience'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { getCabinetProfilePath } from '../utils/cabinetRoutes'
 import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
@@ -6048,7 +6049,11 @@ function PropertyDetailClassic({
                       i18nKey="propertyDetailBidTermsNoteV3"
                       components={{
                         termsLink: (
-                          <button type="button" className="pd-v3-bid-terms__link" />
+                          <button
+                            key="property-detail-terms-link"
+                            type="button"
+                            className="pd-v3-bid-terms__link"
+                          />
                         ),
                       }}
                     />
@@ -6690,7 +6695,16 @@ function PropertyDetailClassic({
               : renderPdxClassicSidebar()
         }
         footer={<PropertyGeoLinks property={displayProperty} />}
-        belowGrid={<PropertyDetailDesktopRelatedSection property={displayProperty} />}
+        belowGrid={(
+          <>
+            <PropertyAiExperience
+              property={displayProperty}
+              onRequireLogin={onRequireLogin}
+              desktop
+            />
+            <PropertyDetailDesktopRelatedSection property={displayProperty} />
+          </>
+        )}
       >
         {descriptionText ? (
           <section className="pdx-intro">
@@ -7533,6 +7547,10 @@ function PropertyDetailClassic({
           </div>
         </div>
 
+        <PropertyAiExperience
+          property={displayProperty}
+          onRequireLogin={onRequireLogin}
+        />
         <PropertyDetailInternalLinks property={displayProperty} />
       </div>
       </div>

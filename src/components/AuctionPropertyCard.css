@@ -545,6 +545,14 @@
   white-space: nowrap;
 }
 
+.auction-card__price-label-short {
+  display: none;
+}
+
+.auction-card__btn-text-short {
+  display: none;
+}
+
 .auction-card__price-value {
   flex: 1;
   min-width: 0;

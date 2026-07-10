@@ -16,6 +16,8 @@
   --am-teal-dark: #3f8798;
   --am-teal-soft: rgba(0, 153, 169, 0.08);
   --am-teal-glow: rgba(0, 153, 169, 0.18);
+  --am-switch-active: #2c2c2c;
+  --am-switch-active-shadow: rgba(10, 10, 10, 0.18);
   --am-text: #0f172a;
   --am-muted: #64748b;
   --am-border: rgba(15, 23, 42, 0.08);
@@ -71,7 +73,7 @@
 }
 
 .auction-mobile-tab:focus-visible {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--am-teal);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(44, 44, 44, 0.45);
 }
 
 .auction-mobile-tab:hover {
@@ -90,10 +92,10 @@
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: linear-gradient(145deg, var(--am-teal) 0%, var(--am-teal-dark) 100%);
+  background: var(--am-switch-active);
   box-shadow:
-    0 4px 14px var(--am-teal-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 4px 14px var(--am-switch-active-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   z-index: 0;
 }
 
@@ -307,9 +309,14 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__actions {
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
   margin-top: 2px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__actions--single {
+  grid-template-columns: 1fr;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__btn {

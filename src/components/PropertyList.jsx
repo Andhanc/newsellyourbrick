@@ -12,7 +12,7 @@ import CircularTimer from './CircularTimer'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionDesktopFilters from './AuctionDesktopFilters'
-import AuctionMobileFiltersDrawer from './AuctionMobileFiltersDrawer'
+import SharesMobileFiltersDrawer from './SharesMobileFiltersDrawer'
 import AuctionListingSaleToggle from './AuctionListingSaleToggle'
 import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
@@ -52,6 +52,7 @@ import {
 } from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
+import '../styles/hrShowcaseAuctionCards.css'
 
 const PropertySearchModalLazy = lazy(() => import('./PropertySearchModal'))
 const AuctionMobileLayoutLazy = lazy(() => import('./ui/AuctionMobileLayout'))
@@ -711,7 +712,9 @@ const PropertyList = ({
           <div className="filters-and-types-grid">
             <button
               type="button"
-              className="filters-button"
+              className={`filters-button${
+                isAuctionMobileFilters && mobileAuctionActiveFilterCount > 0 ? ' is-active' : ''
+              }`}
               aria-expanded={isAuctionMobileFilters ? mobileFiltersDrawerOpen : undefined}
               onClick={() => {
                 if (isAuctionMobileFilters) {
@@ -724,7 +727,7 @@ const PropertyList = ({
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
               </svg>
-              {t('filters')}
+              <span className="filters-button__label">{t('filters')}</span>
               {isAuctionMobileFilters && mobileAuctionActiveFilterCount > 0 ? (
                 <span className="filters-badge" aria-hidden="true">
                   {mobileAuctionActiveFilterCount}
@@ -822,20 +825,25 @@ const PropertyList = ({
         ) : (
           <>
             {isMobile && isAuctionPage ? (
-              <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
-                <Suspense fallback={<AuctionMobileListingSkeleton />}>
-                  <AuctionMobileLayoutLazy
-                  properties={displayedProperties}
-                  formatPrice={formatPrice}
-                  isFavorite={isPropertyLiked}
-                  onFavoriteToggle={handleFavoriteToggle}
-                  onOpen={openProperty}
-                  onTooltip={setTooltip}
-                  viewerHasVip={viewerHasVip}
-                  />
-                </Suspense>
+              <div className="hr-showcases hr-showcases--auction-listing">
+                <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
+                  <Suspense fallback={<AuctionMobileListingSkeleton />}>
+                    <AuctionMobileLayoutLazy
+                    properties={displayedProperties}
+                    formatPrice={formatPrice}
+                    isFavorite={isPropertyLiked}
+                    onFavoriteToggle={handleFavoriteToggle}
+                    onOpen={openProperty}
+                    onTooltip={setTooltip}
+                    viewerHasVip={viewerHasVip}
+                    />
+                  </Suspense>
+                </div>
               </div>
             ) : (
+            <div
+              className={isAuctionPage ? 'hr-showcases hr-showcases--auction-listing' : undefined}
+            >
             <div
               id="properties-grid"
               className={`properties-grid${isAuctionPage ? ' properties-grid--auction-cards' : ''}`}
@@ -1373,6 +1381,7 @@ const PropertyList = ({
                 )
               })}
             </div>
+            </div>
             )}
 
             {isAuctionDesktop && filteredProperties.length > 0 ? (
@@ -1440,11 +1449,15 @@ const PropertyList = ({
       ) : null}
 
       {isAuctionMobileFilters ? (
-        <AuctionMobileFiltersDrawer
+        <SharesMobileFiltersDrawer
           isOpen={mobileFiltersDrawerOpen}
           onClose={() => setMobileFiltersDrawerOpen(false)}
-          filterProps={auctionDesktopFilterProps}
-        />
+          title={t('filters')}
+          applyLabel={t('auctionApplyFilters')}
+          onApply={applyAuctionFilters}
+        >
+          <AuctionDesktopFilters {...auctionDesktopFilterProps} variant="drawer" />
+        </SharesMobileFiltersDrawer>
       ) : null}
     </section>
     </>

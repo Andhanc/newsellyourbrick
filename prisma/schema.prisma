@@ -2,6 +2,48 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model property_ai_conversations {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  property_id    Int
+  property_table String   @default("properties")
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([user_id, property_id, property_table])
+  @@index([user_id, property_id, property_table], map: "idx_property_ai_conversations_owner")
+}
+
+model property_ai_reports {
+  id              Int       @id @default(autoincrement())
+  conversation_id Int
+  category        String
+  question        String
+  status          String    @default("queued")
+  short_answer    String?
+  report_json     Json?
+  pdf_data        Bytes?
+  model           String
+  error           String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at    DateTime? @db.Timestamptz(6)
+
+  @@index([conversation_id, created_at(sort: Desc)], map: "idx_property_ai_reports_conversation_created")
+  @@index([status, updated_at], map: "idx_property_ai_reports_status")
+}
+
+model property_ai_messages {
+  id              Int      @id @default(autoincrement())
+  conversation_id Int
+  report_id       Int?
+  role            String
+  content         String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([conversation_id, created_at], map: "idx_property_ai_messages_conversation_created")
+}
+
 datasource db {
   provider = "postgresql"
 }

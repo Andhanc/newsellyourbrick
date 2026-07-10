@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FiDollarSign,
   FiHome,
@@ -33,6 +33,7 @@ const STRATEGIES = [
     headline: 'Аукцион',
     text: 'Прозрачная история ставок — покупайте объекты по лучшей рыночной цене.',
     icon: FiTrendingUp,
+    mobileImage: '/images/home-sale-formats/mobile/sale-format-auction-3d.webp',
     to: '/auction?filter=auction',
   },
   {
@@ -40,6 +41,7 @@ const STRATEGIES = [
     headline: 'Купить сейчас',
     text: 'Готовые лоты без ожидания финала аукциона и лишних переговоров.',
     icon: FiShoppingBag,
+    mobileImage: '/images/home-sale-formats/mobile/sale-format-buy-now-3d.webp',
     to: '/auction?filter=buy_now',
   },
   {
@@ -47,6 +49,7 @@ const STRATEGIES = [
     headline: 'Доли',
     text: 'Входите в крупные объекты от $5 000 и получайте доход пропорционально доле.',
     icon: FiPieChart,
+    mobileImage: '/images/home-sale-formats/mobile/sale-format-shares-3d.webp',
     to: '/shares',
   },
   {
@@ -54,6 +57,7 @@ const STRATEGIES = [
     headline: 'Долги',
     text: 'Долговые инструменты под залог недвижимости с понятной структурой риска.',
     icon: FiDollarSign,
+    mobileImage: '/images/home-sale-formats/mobile/sale-format-debts-3d.webp',
     to: '/debts',
   },
 ]
@@ -127,10 +131,15 @@ function HeroSearchBar({ onNavigate }) {
   const [location, setLocation] = useState('uae')
   const [price, setPrice] = useState('mid')
 
-  const saleLabel = HERO_SALE_TYPE_OPTIONS.find((o) => o.value === saleType)?.label ?? ''
-  const propertyLabel = HERO_PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType)?.label ?? ''
-  const locationLabel = HERO_LOCATION_OPTIONS.find((o) => o.value === location)?.label ?? ''
-  const priceLabel = HERO_PRICE_OPTIONS.find((o) => o.value === price)?.label ?? ''
+  const saleOption = HERO_SALE_TYPE_OPTIONS.find((o) => o.value === saleType)
+  const propertyOption = HERO_PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType)
+  const locationOption = HERO_LOCATION_OPTIONS.find((o) => o.value === location)
+  const priceOption = HERO_PRICE_OPTIONS.find((o) => o.value === price)
+
+  const saleLabel = saleOption?.label ?? ''
+  const propertyLabel = propertyOption?.label ?? ''
+  const locationLabel = locationOption?.label ?? ''
+  const priceLabel = priceOption?.label ?? ''
 
   const handleSubmit = useCallback(
     (event) => {
@@ -153,6 +162,7 @@ function HeroSearchBar({ onNavigate }) {
       icon: FiTag,
       value: saleType,
       display: saleLabel,
+      displayCompact: saleOption?.shortLabel ?? saleLabel,
       onChange: setSaleType,
       options: HERO_SALE_TYPE_OPTIONS,
     },
@@ -162,6 +172,7 @@ function HeroSearchBar({ onNavigate }) {
       icon: FiHome,
       value: propertyType,
       display: propertyLabel,
+      displayCompact: propertyOption?.shortLabel ?? propertyLabel,
       onChange: setPropertyType,
       options: HERO_PROPERTY_TYPE_OPTIONS,
     },
@@ -171,6 +182,7 @@ function HeroSearchBar({ onNavigate }) {
       icon: FiMapPin,
       value: location,
       display: locationLabel,
+      displayCompact: locationOption?.shortLabel ?? locationLabel,
       onChange: setLocation,
       options: HERO_LOCATION_OPTIONS,
     },
@@ -180,6 +192,7 @@ function HeroSearchBar({ onNavigate }) {
       icon: FiDollarSign,
       value: price,
       display: priceLabel,
+      displayCompact: priceOption?.shortLabel ?? priceLabel,
       onChange: setPrice,
       options: HERO_PRICE_OPTIONS,
     },
@@ -200,7 +213,8 @@ function HeroSearchBar({ onNavigate }) {
                   <Icon className="hr-search-bar__cell-icon" aria-hidden />
                   <span className="hr-search-bar__label">{field.label}</span>
                 </span>
-                <span className="hr-search-bar__value">{field.display}</span>
+                <span className="hr-search-bar__value hr-search-bar__value--full">{field.display}</span>
+                <span className="hr-search-bar__value hr-search-bar__value--compact">{field.displayCompact}</span>
                 <select
                   className="hr-search-bar__select"
                   value={field.value}
@@ -226,45 +240,164 @@ function HeroSearchBar({ onNavigate }) {
 }
 
 function StrategiesSection({ onNavigate }) {
+  const railRef = useRef(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const updateActiveIndex = useCallback(() => {
+    const rail = railRef.current
+    if (!rail) return
+
+    const cards = rail.querySelectorAll('.hr-strategy-stat-card')
+    if (!cards.length) return
+
+    const railRect = rail.getBoundingClientRect()
+    const railCenter = railRect.left + railRect.width / 2
+
+    let closestIndex = 0
+    let minDistance = Number.POSITIVE_INFINITY
+
+    cards.forEach((card, index) => {
+      const cardRect = card.getBoundingClientRect()
+      const cardCenter = cardRect.left + cardRect.width / 2
+      const distance = Math.abs(cardCenter - railCenter)
+
+      if (distance < minDistance) {
+        minDistance = distance
+        closestIndex = index
+      }
+    })
+
+    setActiveIndex(closestIndex)
+  }, [])
+
+  useEffect(() => {
+    updateActiveIndex()
+
+    const rail = railRef.current
+    if (!rail) return undefined
+
+    const onScroll = () => updateActiveIndex()
+    rail.addEventListener('scroll', onScroll, { passive: true })
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => updateActiveIndex()) : null
+    resizeObserver?.observe(rail)
+    window.addEventListener('resize', updateActiveIndex)
+
+    return () => {
+      rail.removeEventListener('scroll', onScroll)
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', updateActiveIndex)
+    }
+  }, [updateActiveIndex])
+
+  const scrollToIndex = useCallback((index) => {
+    const rail = railRef.current
+    if (!rail) return
+
+    const card = rail.children[index]
+    if (!card) return
+
+    const railRect = rail.getBoundingClientRect()
+    const cardRect = card.getBoundingClientRect()
+
+    rail.scrollTo({
+      left: rail.scrollLeft + cardRect.left - railRect.left,
+      behavior: 'smooth',
+    })
+  }, [])
+
   return (
     <section className="hr-section hr-section--gray hr-strategies" aria-labelledby="hr-strategies-title">
       <div className="hr-container hr-strategies__inner">
         <div className="hr-strategies__copy">
           <h2 id="hr-strategies-title" className="hr-strategies__title">
-            Стратегии инвестирования
+            <span className="hr-strategies__title-desktop">Стратегии инвестирования</span>
+            <span className="hr-strategies__title-mobile">
+              <span className="hr-strategies__title-line">
+                <span className="hr-strategies__title-prefix">4</span>{' '}
+                <span className="hr-strategies__title-pill">стратегии</span>
+              </span>
+              <span className="hr-strategies__title-line">инвестирования</span>
+            </span>
           </h2>
           <p className="hr-strategies__lead">
             Четыре формата вложений в недвижимость — от открытых торгов до долговых инструментов.
           </p>
         </div>
 
-        <div className="hr-strategies__cards" role="list">
-          {STRATEGIES.map((item) => {
-            const Icon = item.icon
-            return (
-              <article
-                key={item.id}
-                className={`hr-strategy-stat-card hr-strategy-stat-card--${item.id}`}
-                role="listitem"
-                tabIndex={0}
-                onClick={() => onNavigate(item.to)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    onNavigate(item.to)
-                  }
-                }}
-              >
-                <span className="hr-strategy-stat-card__icon" aria-hidden>
-                  <Icon />
-                </span>
-                <div className="hr-strategy-stat-card__content">
-                  <h3 className="hr-strategy-stat-card__headline">{item.headline}</h3>
-                  <p className="hr-strategy-stat-card__text">{item.text}</p>
-                </div>
-              </article>
-            )
-          })}
+        <div className="hr-strategies__carousel">
+          <div className="hr-strategies__cards" ref={railRef} role="list">
+            {STRATEGIES.map((item, index) => {
+              const Icon = item.icon
+              return (
+                <article
+                  key={item.id}
+                  className={`hr-strategy-stat-card hr-strategy-stat-card--${item.id}`}
+                  role="listitem"
+                  tabIndex={0}
+                  onClick={() => onNavigate(item.to)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onNavigate(item.to)
+                    }
+                  }}
+                >
+                  <img
+                    className="hr-strategy-stat-card__visual"
+                    src={item.mobileImage}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="hr-strategy-stat-card__number" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')} · {item.headline}
+                  </span>
+                  <span className="hr-strategy-stat-card__icon" aria-hidden>
+                    <Icon />
+                  </span>
+                  <div className="hr-strategy-stat-card__content">
+                    <h3 className="hr-strategy-stat-card__headline">{item.headline}</h3>
+                    <p className="hr-strategy-stat-card__text">{item.text}</p>
+                  </div>
+                  <span className="hr-strategy-stat-card__cta" aria-hidden="true">
+                    Смотреть <span>→</span>
+                  </span>
+                </article>
+              )
+            })}
+          </div>
+
+          <div
+            className="hr-strategies__pager"
+            role="tablist"
+            aria-label="Навигация по стратегиям"
+          >
+            <div className="hr-strategies__pager-dots">
+              {STRATEGIES.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  className={`hr-strategies__pager-dot${index === activeIndex ? ' is-active' : ''}`}
+                  aria-selected={index === activeIndex}
+                  aria-label={`${index + 1} из ${STRATEGIES.length}: ${item.headline}`}
+                  onClick={() => scrollToIndex(index)}
+                />
+              ))}
+            </div>
+            <p className="hr-strategies__pager-label" aria-live="polite" aria-atomic="true">
+              <span className="hr-strategies__pager-current">
+                {String(activeIndex + 1).padStart(2, '0')}
+              </span>
+              <span className="hr-strategies__pager-sep">/</span>
+              <span className="hr-strategies__pager-total">
+                {String(STRATEGIES.length).padStart(2, '0')}
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </section>

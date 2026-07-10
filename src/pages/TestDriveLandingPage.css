@@ -387,6 +387,70 @@
   margin-bottom: 26px;
 }
 
+.test-drive-filters-btn {
+  display: none;
+}
+
+.test-drive-sort--desktop {
+  display: flex;
+}
+
+.test-drive-filter-panel--drawer {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.test-drive-filter-panel--drawer .test-drive-filter-panel__head {
+  display: none;
+}
+
+.test-drive-filter-panel--drawer .test-drive-filter-panel__apply--sidebar {
+  display: none;
+}
+
+.test-drive-filter-block--sort {
+  padding-bottom: 4px;
+}
+
+.test-drive-filter-block__title--static {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: #1f2b3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.test-drive-sort--drawer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 9px;
+  padding: 0 14px;
+  border: 1px solid #dfe7e4;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.test-drive-sort--drawer select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #2e3948;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  appearance: none;
+}
+
 .test-drive-search,
 .test-drive-sort {
   display: flex;
@@ -818,7 +882,7 @@
   .test-drive-landing .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -864,9 +928,67 @@
   .test-drive-filter-panel {
     position: static;
   }
+}
+
+@media (max-width: 768px) {
+  .test-drive-filter-panel--sidebar {
+    display: none;
+  }
 
   .test-drive-toolbar {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .test-drive-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-shrink: 0;
+    position: relative;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1.5px solid rgba(17, 24, 39, 0.08);
+    border-radius: 9999px;
+    background: #fff;
+    color: #1f2b3d;
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 4px 16px rgba(17, 24, 39, 0.07);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .test-drive-filters-btn.is-active {
+    border-color: rgba(0, 153, 169, 0.42);
+    background: rgba(0, 153, 169, 0.08);
+    color: #007d8a;
+    box-shadow:
+      0 1px 2px rgba(0, 153, 169, 0.08),
+      0 4px 16px rgba(0, 153, 169, 0.12);
+  }
+
+  .test-drive-filters-btn__label {
+    display: none;
+  }
+
+  .test-drive-filters-btn__dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0099A9;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
+  .test-drive-sort--desktop {
+    display: none;
   }
 }
 

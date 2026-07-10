@@ -3,28 +3,28 @@ import { buildAuctionFilterPath } from './auctionFilterUrl'
 export const HERO_SEARCH_STATE_KEY = 'heroSearchFilters'
 
 export const HERO_SALE_TYPE_OPTIONS = [
-  { value: 'auction', label: 'Аукцион' },
-  { value: 'buy_now', label: 'Купить сейчас' },
-  { value: 'shares', label: 'Доли' },
-  { value: 'debts', label: 'Долги' },
+  { value: 'auction', label: 'Аукцион', shortLabel: 'Аукцион' },
+  { value: 'buy_now', label: 'Купить сейчас', shortLabel: 'Сейчас' },
+  { value: 'shares', label: 'Доли', shortLabel: 'Доли' },
+  { value: 'debts', label: 'Долги', shortLabel: 'Долги' },
 ]
 
 export const HERO_PROPERTY_TYPE_OPTIONS = [
-  { value: 'villa', label: 'Вилла', categorySlug: 'villas' },
-  { value: 'apartment', label: 'Апартаменты', categorySlug: 'apartments' },
-  { value: 'commercial', label: 'Коммерция', categorySlug: 'commercial' },
+  { value: 'villa', label: 'Вилла', shortLabel: 'Вилла', categorySlug: 'villas' },
+  { value: 'apartment', label: 'Апартаменты', shortLabel: 'Апарт.', categorySlug: 'apartments' },
+  { value: 'commercial', label: 'Коммерция', shortLabel: 'Коммер.', categorySlug: 'commercial' },
 ]
 
 export const HERO_LOCATION_OPTIONS = [
-  { value: 'uae', label: 'ОАЭ', countryKey: 'uae' },
-  { value: 'spain', label: 'Испания', countryKey: 'spain' },
-  { value: 'usa', label: 'США', countryKey: 'usa' },
+  { value: 'uae', label: 'ОАЭ', shortLabel: 'ОАЭ', countryKey: 'uae' },
+  { value: 'spain', label: 'Испания', shortLabel: 'Исп.', countryKey: 'spain' },
+  { value: 'usa', label: 'США', shortLabel: 'США', countryKey: 'usa' },
 ]
 
 export const HERO_PRICE_OPTIONS = [
-  { value: 'low', label: 'до $50 000', minPrice: '', maxPrice: '50000' },
-  { value: 'mid', label: '$50 000 – $250 000', minPrice: '50000', maxPrice: '250000' },
-  { value: 'high', label: 'от $250 000', minPrice: '250000', maxPrice: '' },
+  { value: 'low', label: 'до $50 000', shortLabel: 'до 50K', minPrice: '', maxPrice: '50000' },
+  { value: 'mid', label: '$50 000 – $250 000', shortLabel: '50–250K', minPrice: '50000', maxPrice: '250000' },
+  { value: 'high', label: 'от $250 000', shortLabel: 'от 250K', minPrice: '250000', maxPrice: '' },
 ]
 
 const SHARES_COUNTRY_LABELS = {

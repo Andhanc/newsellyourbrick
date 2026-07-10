@@ -21,6 +21,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import './Shares.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -220,6 +221,7 @@ export default function Shares() {
   const [sharePriceMax, setSharePriceMax] = useState(5000)
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const [favorites, setFavorites] = useState(() => new Set(['demo-share-1', 'demo-share-3']))
 
   useEffect(() => {
@@ -310,6 +312,16 @@ export default function Shares() {
     setSharePriceMax(5000)
     setSort('new')
   }
+
+  const hasActiveFilters = useMemo(
+    () =>
+      selectedTypes.length > 0 ||
+      selectedLocations.length > 0 ||
+      selectedStatuses.length > 0 ||
+      yieldMax < 20 ||
+      sharePriceMax < 5000,
+    [selectedLocations, selectedStatuses, selectedTypes, sharePriceMax, yieldMax],
+  )
 
   const openShare = (share) => {
     if (share.originalShare) {
@@ -413,18 +425,21 @@ export default function Shares() {
           </section>
 
           <section className="shares-invest-catalog" id="shares-invest-catalog">
-            <aside className="shares-invest-filters" aria-label="Фильтры">
-              <header>
-                <h2>Фильтры</h2>
-                <button type="button" onClick={resetFilters}>Сбросить</button>
-              </header>
-              <FilterGroup title="Тип объекта" options={TYPE_FILTERS} values={selectedTypes} onToggle={(value) => toggleFilter(value, setSelectedTypes)} />
-              <FilterGroup title="Локация" options={LOCATION_FILTERS} values={selectedLocations} onToggle={(value) => toggleFilter(value, setSelectedLocations)} more />
-              <FilterGroup title="Статус сбора" options={STATUS_FILTERS} values={selectedStatuses} onToggle={(value) => toggleFilter(value, setSelectedStatuses)} />
-              <RangeFilter title="Доходность (годовых)" minLabel="от 6%" maxLabel={`до ${yieldMax}%`} value={yieldMax} min={6} max={20} onChange={setYieldMax} />
-              <RangeFilter title="Цена доли" minLabel="от €100" maxLabel={`до €${sharePriceMax}+`} value={sharePriceMax} min={100} max={5000} step={100} onChange={setSharePriceMax} />
-              <button type="button" className="shares-invest-filters__apply">Показать {filtered.length} объектов</button>
-            </aside>
+            <SharesFiltersPanel
+              className="shares-invest-filters shares-invest-filters--sidebar"
+              filteredCount={filtered.length}
+              selectedTypes={selectedTypes}
+              selectedLocations={selectedLocations}
+              selectedStatuses={selectedStatuses}
+              yieldMax={yieldMax}
+              sharePriceMax={sharePriceMax}
+              onReset={resetFilters}
+              onToggleType={(value) => toggleFilter(value, setSelectedTypes)}
+              onToggleLocation={(value) => toggleFilter(value, setSelectedLocations)}
+              onToggleStatus={(value) => toggleFilter(value, setSelectedStatuses)}
+              onYieldMaxChange={setYieldMax}
+              onSharePriceMaxChange={setSharePriceMax}
+            />
 
             <div className="shares-invest-results">
               <div className="shares-invest-results__title">
@@ -444,7 +459,18 @@ export default function Shares() {
                     </button>
                   ) : null}
                 </label>
-                <label className="shares-invest-sort">
+                <button
+                  type="button"
+                  className={`shares-invest-filters-btn${hasActiveFilters ? ' is-active' : ''}`}
+                  onClick={() => setFiltersDrawerOpen(true)}
+                  aria-label="Фильтры"
+                  aria-expanded={filtersDrawerOpen}
+                >
+                  <FiSliders size={18} aria-hidden />
+                  <span className="shares-invest-filters-btn__label">Фильтры</span>
+                  {hasActiveFilters ? <span className="shares-invest-filters-btn__dot" aria-hidden /> : null}
+                </button>
+                <label className="shares-invest-sort shares-invest-sort--desktop">
                   <FiSliders size={17} aria-hidden />
                   <select value={sort} onChange={(event) => setSort(event.target.value)}>
                     <option value="new">Сначала новые</option>
@@ -454,6 +480,33 @@ export default function Shares() {
                   </select>
                 </label>
               </div>
+
+              <SharesMobileFiltersDrawer
+                isOpen={filtersDrawerOpen}
+                onClose={() => setFiltersDrawerOpen(false)}
+                title="Фильтры"
+                applyLabel={`Показать ${filtered.length} объектов`}
+                onApply={() => setFiltersDrawerOpen(false)}
+              >
+                <SharesFiltersPanel
+                  className="shares-invest-filters shares-invest-filters--drawer"
+                  filteredCount={filtered.length}
+                  selectedTypes={selectedTypes}
+                  selectedLocations={selectedLocations}
+                  selectedStatuses={selectedStatuses}
+                  yieldMax={yieldMax}
+                  sharePriceMax={sharePriceMax}
+                  sort={sort}
+                  onSortChange={setSort}
+                  onReset={resetFilters}
+                  onToggleType={(value) => toggleFilter(value, setSelectedTypes)}
+                  onToggleLocation={(value) => toggleFilter(value, setSelectedLocations)}
+                  onToggleStatus={(value) => toggleFilter(value, setSelectedStatuses)}
+                  onYieldMaxChange={setYieldMax}
+                  onSharePriceMaxChange={setSharePriceMax}
+                  showSort
+                />
+              </SharesMobileFiltersDrawer>
 
               <div className="shares-invest-grid">
                 {pageItems.map((share) => (
@@ -520,6 +573,57 @@ function Metric({ icon: Icon, label, value, note }) {
         <span className="shares-invest-metric__note">{note}</span>
       </div>
     </article>
+  )
+}
+
+function SharesFiltersPanel({
+  className = '',
+  filteredCount,
+  selectedTypes,
+  selectedLocations,
+  selectedStatuses,
+  yieldMax,
+  sharePriceMax,
+  sort,
+  onSortChange,
+  onReset,
+  onToggleType,
+  onToggleLocation,
+  onToggleStatus,
+  onYieldMaxChange,
+  onSharePriceMaxChange,
+  showSort = false,
+}) {
+  return (
+    <aside className={className} aria-label="Фильтры">
+      <header>
+        <h2>Фильтры</h2>
+        <button type="button" onClick={onReset}>Сбросить</button>
+      </header>
+      <FilterGroup title="Тип объекта" options={TYPE_FILTERS} values={selectedTypes} onToggle={onToggleType} />
+      <FilterGroup title="Локация" options={LOCATION_FILTERS} values={selectedLocations} onToggle={onToggleLocation} more />
+      <FilterGroup title="Статус сбора" options={STATUS_FILTERS} values={selectedStatuses} onToggle={onToggleStatus} />
+      <RangeFilter title="Доходность (годовых)" minLabel="от 6%" maxLabel={`до ${yieldMax}%`} value={yieldMax} min={6} max={20} onChange={onYieldMaxChange} />
+      <RangeFilter title="Цена доли" minLabel="от €100" maxLabel={`до €${sharePriceMax}+`} value={sharePriceMax} min={100} max={5000} step={100} onChange={onSharePriceMaxChange} />
+      {showSort ? (
+        <div className="shares-invest-filter-block shares-invest-filter-block--sort">
+          <span className="shares-invest-filter-block__title shares-invest-filter-block__title--static">
+            Сортировка
+          </span>
+          <label className="shares-invest-sort shares-invest-sort--drawer">
+            <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
+              <option value="new">Сначала новые</option>
+              <option value="yield">По доходности</option>
+              <option value="collected">По сбору</option>
+              <option value="price">По цене доли</option>
+            </select>
+          </label>
+        </div>
+      ) : null}
+      <button type="button" className="shares-invest-filters__apply shares-invest-filters__apply--sidebar">
+        Показать {filteredCount} объектов
+      </button>
+    </aside>
   )
 }
 

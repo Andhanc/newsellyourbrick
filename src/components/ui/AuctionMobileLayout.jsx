@@ -34,6 +34,7 @@ import ImageWithSkeleton from '../ImageWithSkeleton'
 import AuctionPropertyCard from '../AuctionPropertyCard'
 import DebtsPropertyCard from '../DebtsPropertyCard'
 import '../PropertyList.css'
+import '../../styles/hrShowcaseAuctionCards.css'
 import './AuctionMobileLayout.css'
 
 const STORAGE_KEY = AUCTION_MOBILE_VIEW_STORAGE_KEY
@@ -133,7 +134,7 @@ export default function AuctionMobileLayout({
               'w-full',
               view === 'list' && 'auction-mobile-stack',
               view === 'card' &&
-                'auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards',
+                'hr-showcases hr-showcases--auction-listing auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards',
             )}
           >
             {properties.map((property) =>

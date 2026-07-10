@@ -448,14 +448,16 @@ function AuctionDesktopFilters({
         </FilterSection>
       </div>
 
-      <div className="auction-desktop-filters__footer">
-        <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
-          {t('auctionApplyFilters')}
-        </button>
-        <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
-          {t('auctionClearAllFilters')}
-        </button>
-      </div>
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__footer">
+          <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
+            {t('auctionApplyFilters')}
+          </button>
+          <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
+            {t('auctionClearAllFilters')}
+          </button>
+        </div>
+      ) : null}
     </aside>
   )
 }

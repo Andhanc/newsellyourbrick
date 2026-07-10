@@ -1311,7 +1311,7 @@
 
 @media (max-width: 768px) {
   .syb-landing .new-header-spacer {
-    height: calc(12px + 64px);
+    height: calc(env(safe-area-inset-top, 0px) + 64px);
   }
 
   .syb-hero__search-dock {

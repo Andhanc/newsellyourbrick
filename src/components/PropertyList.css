@@ -1848,9 +1848,77 @@ a.property-card {
     margin-bottom: 0;
   }
 
-  /* Аукцион, мобилка: кнопка «Фильтры» на всю ширину, типы — в drawer */
+  /* Аукцион / долги, мобилка: поиск + кнопка фильтров в одной строке */
+  .search-filters-bar.search-filters-bar--auction-mobile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-and-types-grid {
+    display: flex;
+    align-items: stretch;
+    width: auto;
+    padding: 0;
+    gap: 0;
+  }
+
   .search-filters-bar.search-filters-bar--auction-mobile .filters-button {
-    grid-column: 1 / -1;
+    grid-column: auto;
+    width: auto;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 14px;
+    justify-content: center;
+    gap: 0;
+    border-radius: 9999px;
+    background: #fff;
+    color: #1f2b3d;
+    border: 1.5px solid rgba(17, 24, 39, 0.08);
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 4px 16px rgba(17, 24, 39, 0.07);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button::before,
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button::after {
+    display: none;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button.is-active {
+    border-color: rgba(0, 153, 169, 0.42);
+    background: rgba(0, 153, 169, 0.08);
+    color: #007d8a;
+    box-shadow:
+      0 1px 2px rgba(0, 153, 169, 0.08),
+      0 4px 16px rgba(0, 153, 169, 0.12);
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button svg {
+    position: relative;
+    z-index: 1;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button > .filters-button__label {
+    display: none;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 16px;
+    box-shadow: 0 0 0 2px #fff;
   }
 
   /* legacy: раскрытие типов по тапу (если где-то ещё используется) */
