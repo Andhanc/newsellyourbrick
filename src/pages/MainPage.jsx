@@ -94,6 +94,7 @@ import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
+import HomeSaleFormats from '../components/HomeSaleFormats'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
 
@@ -118,6 +119,8 @@ const premiumModes = [
     id: 'auction',
     number: '01',
     eyebrow: 'Аукцион',
+    benefit: 'Поймайте цену ниже рынка',
+    proof: 'Прозрачные ставки и понятный финал торгов',
     title: 'Аукцион показывает реальный спрос',
     text: 'Подходит объектам, где важно создать конкуренцию покупателей и получить рыночную цену без хаоса в переговорах.',
     caption: 'Для продавца: управляемые торги. Для покупателя: прозрачная история ставок.',
@@ -125,13 +128,16 @@ const premiumModes = [
     to: '/auction?filter=auction',
     anchorId: 'strategy-auction',
     objectsId: 'objects-auction',
-    image: '/images/sellyourbrick/about/about-category-auction.jpg',
+    image: '/images/home-sale-formats/sale-format-auction.webp',
+    imageAlt: 'Современный европейский дом для продажи на аукционе',
     Icon: FaGavel,
   },
   {
     id: 'buy-now',
     number: '02',
     eyebrow: 'Купить сейчас',
+    benefit: 'Заберите подходящий объект без ожидания',
+    proof: 'Фиксированная цена и быстрый путь к сделке',
     title: 'Купить сейчас закрывает сделку быстрее',
     text: 'Формат для понятных активов с фиксированной ценой: покупатель не ждет финала торгов, продавец быстрее получает решение.',
     caption: 'Для тех, кто уже готов к сделке и хочет убрать лишние шаги.',
@@ -139,13 +145,16 @@ const premiumModes = [
     to: '/auction?filter=buy_now',
     anchorId: 'strategy-buy-now',
     objectsId: 'objects-buy-now',
-    image: '/images/sellyourbrick/about/about-category-buynow.jpg',
+    image: '/images/home-sale-formats/sale-format-buy-now.webp',
+    imageAlt: 'Светлая готовая вилла для быстрой покупки',
     Icon: FaBolt,
   },
   {
     id: 'shares',
     number: '03',
     eyebrow: 'Доли',
+    benefit: 'Начните с меньшего капитала',
+    proof: 'Доля в реальном объекте и доход пропорционально участию',
     title: 'Доли открывают вход с меньшим чеком',
     text: 'Инвестор может собрать портфель из долей в проверенных объектах, а собственник получает новый способ монетизации.',
     caption: 'Четкая структура доли, объекта, доходности и выхода.',
@@ -153,13 +162,16 @@ const premiumModes = [
     to: '/shares',
     anchorId: 'strategy-shares',
     objectsId: 'objects-shares',
-    image: '/images/sellyourbrick/about/about-category-shares.jpg',
+    image: '/images/home-sale-formats/sale-format-shares.webp',
+    imageAlt: 'Премиальный доходный объект для долевого участия',
     Icon: FaGem,
   },
   {
     id: 'debts',
     number: '04',
     eyebrow: 'Долги',
+    benefit: 'Используйте дисконт за сложность',
+    proof: 'Риск-профиль и условия известны до решения',
     title: 'Долги превращают сложность в стратегию',
     text: 'Долговые активы требуют отдельной логики: дисконт, документы, риск-профиль и сценарий выхода видны до решения.',
     caption: 'Для инвесторов, которые умеют работать с асимметрией цены и риска.',
@@ -167,7 +179,8 @@ const premiumModes = [
     to: '/debts',
     anchorId: 'strategy-debts',
     objectsId: 'objects-debts',
-    image: '/images/sellyourbrick/about/about-category-debts.jpg',
+    image: '/images/home-sale-formats/sale-format-debts.webp',
+    imageAlt: 'Недвижимость с инвестиционным потенциалом долгового актива',
     Icon: FiPieChart,
   },
 ]
@@ -2954,73 +2967,7 @@ function MainPage() {
         </nav>
       </section>
 
-      <section id="landing-models" className="landing-models premium-models">
-        <div className="landing-models__container premium-models__container">
-          <ScrollReveal className="premium-section-heading" y={32}>
-            <p className="premium-kicker">4 стратегии</p>
-            <h2>
-              Сначала выбираем <span>механику сделки</span>, затем показываем подходящие объекты.
-            </h2>
-            <p>
-              Главная больше не выглядит как набор разрозненных разделов. Это маршрут:
-              стратегия вверху, объяснение в карточке, ниже — реальная витрина объектов
-              в этой же логике.
-            </p>
-          </ScrollReveal>
-
-          <ScrollRevealStagger className="premium-models__grid" aria-label="SellYourBrick sale models">
-            {premiumModes.map((mode) => {
-              const Icon = mode.Icon
-              return (
-                <ScrollRevealItem key={mode.id}>
-                  <article
-                    id={mode.anchorId}
-                    className={`premium-model-card premium-model-card--${mode.id}`}
-                  >
-                    <div className="premium-model-card__media">
-                      <img src={mode.image} alt="" loading="lazy" decoding="async" />
-                      <span className="premium-model-card__number">{mode.number}</span>
-                    </div>
-                    <div className="premium-model-card__content">
-                      <span className="premium-model-card__topline">
-                        <Icon size={17} aria-hidden />
-                        {mode.eyebrow}
-                      </span>
-                      <h3>{mode.title}</h3>
-                      <p>{mode.text}</p>
-                      <small>{mode.caption}</small>
-                      <div className="premium-model-card__actions">
-                        <button
-                          type="button"
-                          className="premium-model-card__primary"
-                          onClick={() => scrollToHomeAnchor(mode.objectsId)}
-                        >
-                          {mode.actionText}
-                          <FiArrowRight size={17} strokeWidth={2.4} aria-hidden />
-                        </button>
-                        <Link className="premium-model-card__secondary" to={mode.to}>
-                          Открыть раздел
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                </ScrollRevealItem>
-              )
-            })}
-          </ScrollRevealStagger>
-
-          <ScrollReveal className="premium-strategy-note" y={26}>
-            <div>
-              <strong>Для продавца</strong>
-              <span>Мы выбираем формат продажи под объект, а не заставляем каждый актив жить в одном шаблоне.</span>
-            </div>
-            <div>
-              <strong>Для покупателя</strong>
-              <span>Каждая витрина ниже уже отсортирована по логике сделки: торги, fixed price, доли или долг.</span>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      <HomeSaleFormats modes={premiumModes} />
 
       <MainPageDeferredContext.Provider
         value={{
