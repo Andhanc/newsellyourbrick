@@ -1,11 +1,18 @@
 .test-drive-landing {
   --test-drive-header-offset: 104px;
-  --td-tiffany: #4a99a8;
-  --td-tiffany-dark: #3d8493;
+  --td-tiffany: #4a96a6;
+  --td-tiffany-dark: #3f8798;
   --td-tiffany-deep: #2f6773;
   --td-tiffany-soft: #edf4f6;
-  --td-tiffany-ring: rgba(74, 153, 168, 0.28);
+  --td-tiffany-ring: rgba(74, 150, 166, 0.28);
+  --td-sage: #d9dbae;
+  --td-sage-hover: #cdd89e;
+  --td-sage-ink: #101928;
+  --td-sage-shadow: 0 10px 28px rgba(77, 150, 58, 0.22);
+  --td-sage-shadow-hover: 0 14px 36px rgba(77, 150, 58, 0.32);
+  --td-sage-ring: rgba(255, 255, 255, 0.55);
   min-height: 100dvh;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(246, 250, 248, 0.92) 72%, #ffffff 100%),
     #fbf8f2;
@@ -54,6 +61,10 @@
   padding: 0 0 70px;
 }
 
+.test-drive-landing .auction-cta-cards {
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+}
+
 .test-drive-landing__container {
   max-width: 1280px;
   margin: 0 auto;
@@ -90,13 +101,13 @@
 
 .test-drive-hero__content {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   width: min(1280px, 100%);
   margin: 0 auto;
   padding:
     calc(var(--test-drive-header-offset) + 18px)
     28px
-    112px;
+    48px;
 }
 
 .test-drive-hero h1 {
@@ -126,45 +137,53 @@
   font-weight: 500;
 }
 
-.test-drive-hero__button {
+.test-drive-story {
+  position: relative;
+  z-index: 2;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: min(1340px, calc(100vw - 40px));
+  margin: -140px auto 64px;
+  padding: 28px 28px 26px;
+  border: 1px solid rgba(222, 230, 227, 0.92);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 52px rgba(42, 56, 68, 0.12);
+  transform: translateX(-50%);
+}
+
+.test-drive-story__items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+}
+
+.test-drive-story__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
-  margin-top: 18px;
+  min-height: 48px;
   padding: 0 28px;
-  border-radius: 8px;
-  background: #ff806e;
-  color: #fff;
+  border-radius: 999px;
+  background: var(--td-sage);
+  color: var(--td-sage-ink);
   font-size: 0.95rem;
   font-weight: 800;
-  box-shadow: 0 18px 30px rgba(255, 128, 110, 0.34);
+  box-shadow: var(--td-sage-shadow), inset 0 1px 0 var(--td-sage-ring);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
     background 0.2s ease;
 }
 
-.test-drive-hero__button:hover {
+.test-drive-story__button:hover {
   transform: translateY(-2px);
-  background: #f36e5c;
-  box-shadow: 0 22px 38px rgba(255, 128, 110, 0.42);
-}
-
-.test-drive-story {
-  position: relative;
-  z-index: 2;
-  left: 50%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(1340px, calc(100vw - 40px));
-  margin: -56px auto 88px;
-  padding: 30px 28px;
-  border: 1px solid rgba(222, 230, 227, 0.92);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 22px 52px rgba(42, 56, 68, 0.12);
-  transform: translateX(-50%);
+  background: var(--td-sage-hover);
+  color: var(--td-sage-ink);
+  box-shadow: var(--td-sage-shadow-hover), inset 0 1px 0 var(--td-sage-ring);
 }
 
 .test-drive-story__item {
@@ -513,12 +532,16 @@
 
 .test-drive-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px 25px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  align-items: stretch;
 }
 
 .test-drive-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   overflow: hidden;
   border: 1px solid #e8eeeb;
   border-radius: 10px;
@@ -587,19 +610,26 @@
 }
 
 .test-drive-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 15px 18px 17px;
 }
 
 .test-drive-card__body > button {
-  display: block;
+  display: -webkit-box;
   width: 100%;
+  min-height: calc(1.3em * 2);
   padding: 0;
+  overflow: hidden;
   background: transparent;
   color: #2e3644;
   text-align: left;
   font-size: 1rem;
   font-weight: 800;
   line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .test-drive-card__body p {
@@ -614,16 +644,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: 7px 12px;
+  min-height: 2.5em;
   color: #5d6876;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.test-drive-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .test-drive-card__price {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  margin-top: 12px;
+  min-width: 0;
   color: #2e3542;
 }
 
@@ -639,38 +679,19 @@
   font-weight: 700;
 }
 
-.test-drive-card__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
-}
-
 .test-drive-card__rating {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 5px;
   color: #384455;
   font-size: 0.82rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .test-drive-card__rating svg {
   color: #f4b13e;
-}
-
-.test-drive-card__badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  border-radius: 6px;
-  background: var(--td-tiffany-soft);
-  color: var(--td-tiffany-dark);
-  font-size: 0.72rem;
-  font-weight: 800;
-  white-space: nowrap;
 }
 
 .test-drive-pagination {
@@ -858,10 +879,6 @@
     gap: 24px;
   }
 
-  .test-drive-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .test-drive-card__image-button {
     height: 260px;
   }
@@ -892,11 +909,13 @@
   }
 
   .test-drive-hero {
-    min-height: clamp(520px, 58vh, 620px);
+    align-items: flex-start;
+    min-height: 0;
+    padding-bottom: 72px;
   }
 
   .test-drive-hero__content {
-    padding-bottom: 104px;
+    padding-bottom: 28px;
   }
 
   .test-drive-hero__shade {
@@ -912,7 +931,13 @@
   }
 
   .test-drive-story {
-    padding: 20px;
+    margin-top: -64px;
+    padding: 20px 20px 18px;
+    gap: 18px;
+  }
+
+  .test-drive-story__items {
+    grid-template-columns: 1fr;
   }
 
   .test-drive-story__item {
@@ -1004,9 +1029,13 @@
 
   .test-drive-story {
     width: calc(100vw - 24px);
-    margin-top: -40px;
+    margin-top: -64px;
     border-radius: 18px;
     transform: translateX(-50%);
+  }
+
+  .test-drive-story__button {
+    width: min(100%, 280px);
   }
 
   .test-drive-story__item {
@@ -1020,19 +1049,48 @@
   }
 
   .test-drive-card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
   }
 
   .test-drive-card__image-button {
-    height: 250px;
+    height: 132px;
   }
 
-  .test-drive-card__meta {
-    align-items: flex-start;
-    flex-direction: column;
+  .test-drive-card__body {
+    padding: 10px 10px 12px;
   }
 
-  .test-drive-next-card {
-    min-height: 322px;
+  .test-drive-card__body > button {
+    font-size: 0.78rem;
+  }
+
+  .test-drive-card__body p {
+    font-size: 0.62rem;
+  }
+
+  .test-drive-card__specs {
+    font-size: 0.58rem;
+    gap: 4px 8px;
+  }
+
+  .test-drive-card__price strong {
+    font-size: 0.82rem;
+  }
+
+  .test-drive-card__footer {
+    padding-top: 8px;
+    gap: 6px;
+  }
+
+  .test-drive-card__rating {
+    font-size: 0.58rem;
+  }
+
+  .test-drive-card__favorite {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
   }
 }

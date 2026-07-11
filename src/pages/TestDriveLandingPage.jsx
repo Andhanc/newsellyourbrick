@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import {
-  FiArrowLeft,
-  FiArrowRight,
   FiChevronDown,
   FiHeart,
   FiHome,
-  FiMapPin,
   FiSearch,
   FiShield,
   FiSliders,
@@ -15,9 +11,11 @@ import {
   FiUmbrella,
   FiX,
 } from 'react-icons/fi'
-import { FaChartPie, FaFileInvoiceDollar, FaGavel, FaStar } from 'react-icons/fa'
+import { FaStar } from 'react-icons/fa'
 import Header from '../components/Header'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import ListingPagePagination from '../components/ListingPagePagination'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
@@ -26,7 +24,7 @@ import { publicAsset } from '../utils/publicAsset'
 import './TestDriveLandingPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
-const PAGE_SIZE = 6
+const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/test-drive/hero-resort.png')
 
@@ -38,12 +36,6 @@ const CARD_IMAGES = [
   publicAsset('images/test-drive/property-barcelona.png'),
   publicAsset('images/test-drive/property-santorini.png'),
 ]
-
-const CTA_IMAGES = {
-  auction: publicAsset('images/test-drive/cta-auction.png'),
-  shares: publicAsset('images/test-drive/cta-shares.png'),
-  debts: publicAsset('images/test-drive/cta-debts.png'),
-}
 
 const BASE_LISTINGS = [
   {
@@ -163,36 +155,6 @@ const STORY_CARDS = [
   },
 ]
 
-const NEXT_LINKS = [
-  {
-    title: 'Аукцион',
-    text: 'Недвижимость по выгодным ценам на открытых торгах',
-    to: '/auction',
-    icon: FaGavel,
-    image: CTA_IMAGES.auction,
-    accent: 'teal',
-    cta: 'Перейти к аукциону',
-  },
-  {
-    title: 'Доли',
-    text: 'Инвестируйте в недвижимость совместно с другими',
-    to: '/shares',
-    icon: FaChartPie,
-    image: CTA_IMAGES.shares,
-    accent: 'coral',
-    cta: 'Перейти к долям',
-  },
-  {
-    title: 'Долги',
-    text: 'Приобретайте объекты с дисконтом до 70%',
-    to: '/debts',
-    icon: FaFileInvoiceDollar,
-    image: CTA_IMAGES.debts,
-    accent: 'mint',
-    cta: 'Перейти к долгам',
-  },
-]
-
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase()
 }
@@ -227,7 +189,6 @@ function mapApiPropertyToListing(property, index) {
 }
 
 const TestDriveLandingPage = () => {
-  const { t } = useTranslation()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [apiListings, setApiListings] = useState([])
@@ -313,8 +274,22 @@ const TestDriveLandingPage = () => {
   }, [filteredListings, safePage])
 
   useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
+
+  useEffect(() => {
     setPage(1)
   }, [query, selectedTypes, selectedDirections, selectedDurations, selectedAmenities, price, sort])
+
+  const goToPage = (nextPage) => {
+    const safeNext = Math.max(1, Math.min(nextPage, totalPages))
+    setPage(safeNext)
+    requestAnimationFrame(() => {
+      document.getElementById('test-drive-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const toggleValue = (value, setter) => {
     setter((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]))
@@ -345,12 +320,6 @@ const TestDriveLandingPage = () => {
     })
   }
 
-  const pagination = useMemo(() => {
-    const start = Math.max(1, safePage - 2)
-    const end = Math.min(totalPages, start + 4)
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index)
-  }, [safePage, totalPages])
-
   return (
     <div className="test-drive-landing">
       <Header />
@@ -364,25 +333,27 @@ const TestDriveLandingPage = () => {
             <p className="test-drive-hero__lead">
               Поживите в объекте до сделки и примите взвешенное решение
             </p>
-            <Link to="/profile/bookings" className="test-drive-hero__button">
-              Мои брони
-            </Link>
           </div>
         </section>
 
         <div className="test-drive-landing__container">
           <section className="test-drive-story" aria-label="Что такое тест-драйв недвижимости">
-            {STORY_CARDS.map(({ icon: Icon, title, text }) => (
-              <article className="test-drive-story__item" key={title}>
-                <span className="test-drive-story__icon" aria-hidden>
-                  <Icon size={25} />
-                </span>
-                <div>
-                  <h2>{title}</h2>
-                  <p>{text}</p>
-                </div>
-              </article>
-            ))}
+            <div className="test-drive-story__items">
+              {STORY_CARDS.map(({ icon: Icon, title, text }) => (
+                <article className="test-drive-story__item" key={title}>
+                  <span className="test-drive-story__icon" aria-hidden>
+                    <Icon size={25} />
+                  </span>
+                  <div>
+                    <h2>{title}</h2>
+                    <p>{text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <Link to="/profile/bookings" className="test-drive-story__button">
+              Мои брони
+            </Link>
           </section>
 
           <section className="test-drive-catalog" id="test-drive-catalog">
@@ -519,17 +490,14 @@ const TestDriveLandingPage = () => {
                             <span>{listing.bathrooms} ванные</span>
                             <span>{listing.area} м²</span>
                           </div>
-                          <div className="test-drive-card__price">
-                            <strong>€{listing.price}</strong>
-                            <span>/ ночь</span>
-                          </div>
-                          <div className="test-drive-card__meta">
+                          <div className="test-drive-card__footer">
+                            <div className="test-drive-card__price">
+                              <strong>€{listing.price}</strong>
+                              <span>/ ночь</span>
+                            </div>
                             <span className="test-drive-card__rating">
                               <FaStar size={13} aria-hidden />
                               {listing.rating.toFixed(1)} ({listing.reviews})
-                            </span>
-                            <span className="test-drive-card__badge">
-                              Тест-драйв от {listing.stayDays} дней
                             </span>
                           </div>
                         </div>
@@ -537,61 +505,18 @@ const TestDriveLandingPage = () => {
                     ))}
                   </div>
 
-                  <nav className="test-drive-pagination" aria-label="Пагинация объектов">
-                    <button
-                      type="button"
-                      onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                      disabled={safePage === 1}
-                      aria-label="Предыдущая страница"
-                    >
-                      <FiArrowLeft size={17} aria-hidden />
-                    </button>
-                    {pagination.map((pageNumber) => (
-                      <button
-                        type="button"
-                        key={pageNumber}
-                        className={pageNumber === safePage ? 'is-active' : ''}
-                        onClick={() => setPage(pageNumber)}
-                        aria-current={pageNumber === safePage ? 'page' : undefined}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={safePage === totalPages}
-                      aria-label="Следующая страница"
-                    >
-                      <FiArrowRight size={17} aria-hidden />
-                    </button>
-                  </nav>
+                  <ListingPagePagination
+                    currentPage={safePage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
                 </>
               )}
             </div>
           </section>
-
-          <section className="test-drive-next" aria-label="Другие сценарии покупки">
-            {NEXT_LINKS.map(({ title, text, to, icon: Icon, image, accent, cta }) => (
-              <Link className="test-drive-next-card" to={to} key={title}>
-                <img src={image} alt="" />
-                <span className="test-drive-next-card__overlay" aria-hidden />
-                <span className={`test-drive-next-card__icon test-drive-next-card__icon--${accent}`}>
-                  <Icon size={27} aria-hidden />
-                </span>
-                <span className="test-drive-next-card__content">
-                  <strong>{title}</strong>
-                  <span>{text}</span>
-                </span>
-                <span className="test-drive-next-card__button">
-                  {cta}
-                  <FiArrowRight size={16} aria-hidden />
-                </span>
-              </Link>
-            ))}
-          </section>
         </div>
       </main>
+      <AuctionCategoryCtaCards variant="testDrivePage" />
     </div>
   )
 }

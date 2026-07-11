@@ -10,6 +10,7 @@ import '../components/AuctionListingSaleToggle.css'
 import DebtsListingMeta from '../components/DebtsListingMeta'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from '../components/DebtsPropertyCard'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import ListingPagePagination from '../components/ListingPagePagination'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
@@ -29,6 +30,7 @@ import {
 } from '../components/AuctionMobileListingSkeleton'
 import './Shares.css'
 import '../components/PropertyList.css'
+import '../styles/hrShowcaseDebtsCards.css'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import {
   EMPTY_DEBTS_FILTERS,
@@ -46,7 +48,7 @@ const AuctionMobileLayoutLazy = lazy(() => import('../components/ui/AuctionMobil
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
-const DEBTS_DESKTOP_PAGE_SIZE = 20
+const DEBTS_PAGE_SIZE = 16
 const DEBTS_HERO_BG = '/images/sellyourbrick/about/about-category-debts.jpg'
 
 const Debts = () => {
@@ -338,14 +340,14 @@ const Debts = () => {
     [apiDebts, debtsFilters, searchQuery, sortKey],
   )
 
-  const debtsTotalPages = Math.max(1, Math.ceil(filtered.length / DEBTS_DESKTOP_PAGE_SIZE))
+  const debtsTotalPages = Math.max(1, Math.ceil(filtered.length / DEBTS_PAGE_SIZE))
   const safeDebtsPage = Math.min(debtsPage, debtsTotalPages)
 
   useEffect(() => {
-    if (isDebtsDesktop && debtsPage > debtsTotalPages) {
+    if (debtsPage > debtsTotalPages) {
       setDebtsPage(debtsTotalPages)
     }
-  }, [isDebtsDesktop, debtsPage, debtsTotalPages])
+  }, [debtsPage, debtsTotalPages])
 
   useEffect(() => {
     setDebtsPage(1)
@@ -365,10 +367,9 @@ const Debts = () => {
   ])
 
   const displayedDebts = useMemo(() => {
-    if (!isDebtsDesktop) return filtered
-    const start = (safeDebtsPage - 1) * DEBTS_DESKTOP_PAGE_SIZE
-    return filtered.slice(start, start + DEBTS_DESKTOP_PAGE_SIZE)
-  }, [filtered, isDebtsDesktop, safeDebtsPage])
+    const start = (safeDebtsPage - 1) * DEBTS_PAGE_SIZE
+    return filtered.slice(start, start + DEBTS_PAGE_SIZE)
+  }, [filtered, safeDebtsPage])
 
   const goToDebtsPage = (page) => {
     const next = Math.max(1, Math.min(page, debtsTotalPages))
@@ -654,7 +655,10 @@ const Debts = () => {
                 </div>
 
                 {isDebtsDesktop ? (
-                  <section className="debts-listing-section" aria-label={t('debtsTitle')}>
+                  <section
+                    className="debts-listing-section hr-showcases hr-showcases--debts-listing"
+                    aria-label={t('debtsTitle')}
+                  >
                     <DebtsListingMeta
                       total={filtered.length}
                       sortKey={sortKey}
@@ -663,7 +667,7 @@ const Debts = () => {
 
                     <div
                       id="properties-grid"
-                      className="debts-listing-grid debts-listing-grid--grid"
+                      className="debts-listing-grid debts-listing-grid--grid properties-grid properties-grid--auction-cards"
                       aria-busy={loadingDebts}
                     >
                       {loadingDebts
@@ -695,42 +699,12 @@ const Debts = () => {
                         : null}
                     </div>
 
-                    {isDebtsDesktop && !loadingDebts && filtered.length > 0 ? (
-                      <nav className="auction-desktop-pagination" aria-label={t('auctionPaginationLabel')}>
-                        <button
-                          type="button"
-                          className="auction-desktop-pagination__arrow"
-                          disabled={safeDebtsPage <= 1}
-                          onClick={() => goToDebtsPage(safeDebtsPage - 1)}
-                          aria-label={t('auctionPaginationPrev')}
-                        >
-                          ←
-                        </button>
-                        <div className="auction-desktop-pagination__pages">
-                          {Array.from({ length: debtsTotalPages }, (_, index) => index + 1).map((page) => (
-                            <button
-                              key={page}
-                              type="button"
-                              className={`auction-desktop-pagination__page${
-                                page === safeDebtsPage ? ' auction-desktop-pagination__page--active' : ''
-                              }`}
-                              onClick={() => goToDebtsPage(page)}
-                              aria-current={page === safeDebtsPage ? 'page' : undefined}
-                            >
-                              {page}
-                            </button>
-                          ))}
-                        </div>
-                        <button
-                          type="button"
-                          className="auction-desktop-pagination__arrow"
-                          disabled={safeDebtsPage >= debtsTotalPages}
-                          onClick={() => goToDebtsPage(safeDebtsPage + 1)}
-                          aria-label={t('auctionPaginationNext')}
-                        >
-                          →
-                        </button>
-                      </nav>
+                    {!loadingDebts ? (
+                      <ListingPagePagination
+                        currentPage={safeDebtsPage}
+                        totalPages={debtsTotalPages}
+                        onPageChange={goToDebtsPage}
+                      />
                     ) : null}
                   </section>
                 ) : (
@@ -756,11 +730,11 @@ const Debts = () => {
                     ) : null}
 
                     {!loadingDebts && filtered.length > 0 ? (
-                      <div style={{ gridColumn: '1 / -1' }}>
+                      <div className="hr-showcases hr-showcases--debts-listing" style={{ gridColumn: '1 / -1' }}>
                         <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
                           <Suspense fallback={<AuctionMobileListingSkeleton debtsCards />}>
                             <AuctionMobileLayoutLazy
-                              properties={filtered}
+                              properties={displayedDebts}
                               formatPrice={formatPrice}
                               isFavorite={isPropertyLiked}
                               onFavoriteToggle={handleFavoriteToggle}
@@ -768,6 +742,11 @@ const Debts = () => {
                             />
                           </Suspense>
                         </div>
+                        <ListingPagePagination
+                          currentPage={safeDebtsPage}
+                          totalPages={debtsTotalPages}
+                          onPageChange={goToDebtsPage}
+                        />
                       </div>
                     ) : null}
                   </div>

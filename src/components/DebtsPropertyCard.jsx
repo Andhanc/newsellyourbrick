@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { formatPropertyPrice } from '../utils/currency'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
-import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import ListingCardAuctionTimer from './ListingCardAuctionTimer'
 import {
@@ -39,7 +38,6 @@ function DebtsPropertyCard({
   const riskLabelKey = getDebtRiskLabelKey(property.debt_severity)
   const currency = property.currency || 'EUR'
   const isReserved = property.is_reserved === true || property.is_reserved === 1
-  const showBuyNow = hasBuyNowOption(property)
   const auctionEndTime = getEffectiveAuctionEndTime(property)
   const showAuctionTimer = property.isAuction === true && auctionEndTime
 
@@ -71,6 +69,14 @@ function DebtsPropertyCard({
     if (!ensureCanOpenProperty()) return
     onOpen?.(property)
   }
+
+  const auctionTimerSlot =
+    showAuctionTimer ? (
+      <ListingCardAuctionTimer
+        endTime={auctionEndTime}
+        endedLabel={t('propertyDetailAuctionCompleted')}
+      />
+    ) : null
 
   return (
     <a
@@ -108,23 +114,7 @@ function DebtsPropertyCard({
         <img {...imageProps} alt={title} className="debts-property-card__image" />
       </div>
 
-      {showAuctionTimer ? (
-        <ListingCardAuctionTimer
-          endTime={auctionEndTime}
-          endedLabel={t('propertyDetailAuctionCompleted')}
-        />
-      ) : (
-        <div
-          className={`debts-property-card__status${
-            showBuyNow ? ' debts-property-card__status--buy' : ''
-          }`}
-        >
-          <CheckCircle2 size={14} aria-hidden />
-          <span>
-            {showBuyNow ? t('debtsCardAvailableBuyNow') : t('debtsCardAvailableBuy')}
-          </span>
-        </div>
-      )}
+      {auctionTimerSlot}
 
       <div className="debts-property-card__body">
         <h3 className="debts-property-card__title">{title}</h3>

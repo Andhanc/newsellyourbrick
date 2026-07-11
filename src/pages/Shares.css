@@ -2085,6 +2085,80 @@ html.site-footer-near .shares-floats > button.ai-button {
   font-family: 'Montserrat', system-ui, sans-serif;
 }
 
+.debts-listing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-bottom: 8px;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__pages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(100%, 640px);
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page,
+.debts-listing-pagination .auction-desktop-pagination__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page:hover:not(.auction-desktop-pagination__page--active),
+.debts-listing-pagination .auction-desktop-pagination__arrow:hover:not(:disabled) {
+  border-color: rgba(74, 150, 166, 0.4);
+  color: #3f8798;
+  background: rgba(74, 150, 166, 0.06);
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page--active {
+  border-color: #4a96a6;
+  background: #4a96a6;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(74, 150, 166, 0.28);
+  cursor: default;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .debts-listing-pagination {
+    margin-top: 20px;
+    padding-inline: 4px;
+  }
+
+  .debts-listing-pagination .auction-desktop-pagination__page,
+  .debts-listing-pagination .auction-desktop-pagination__arrow {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+}
+
 @media (max-width: 1200px) {
   .debts-listing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

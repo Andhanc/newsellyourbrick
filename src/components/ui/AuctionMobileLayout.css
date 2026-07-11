@@ -221,7 +221,8 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card,
-.auction-mobile-stack.auction-mobile-stack--desktop-cards .auction-card {
+.auction-mobile-stack.auction-mobile-stack--desktop-cards .auction-card,
+.auction-mobile-stack--desktop-cards .debts-property-card {
   min-width: 0;
   min-height: 100%;
 }
@@ -409,93 +410,6 @@
 
 .auction-mobile-stack--desktop-cards .auction-card__timer-dock--live > .circular-timer {
   border: none;
-}
-
-/* Долги в сетке «Карточки»: таймер в полоске под фото, компактная карточка */
-.auction-mobile-stack--desktop-cards .debts-property-card {
-  border-radius: 12px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__media {
-  aspect-ratio: 3 / 2;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__risk {
-  top: 6px;
-  left: 6px;
-  padding: 3px 7px;
-  font-size: 0.55rem;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__favorite {
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__favorite svg {
-  width: 15px;
-  height: 15px;
-}
-
-.auction-mobile-stack--desktop-cards .listing-card-auction-timer {
-  padding: 7px 10px 6px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__body {
-  padding: 8px 8px 10px;
-  gap: 6px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__title {
-  font-size: 0.78rem;
-  line-height: 1.25;
-  -webkit-line-clamp: 2;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__location {
-  font-size: 0.62rem;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__location svg {
-  width: 11px;
-  height: 11px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__price-label {
-  font-size: 0.55rem;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__price-value {
-  font-size: 0.78rem;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__actions {
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__btn,
-.auction-mobile-stack--desktop-cards .debts-property-card__actions.property-actions .btn-liquid-glass {
-  width: 100%;
-  flex: none;
-  min-height: 38px;
-  padding: 10px 10px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  border-radius: 10px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.auction-mobile-stack--desktop-cards .debts-property-card__status {
-  min-height: 34px;
-  padding: 5px 8px;
-  font-size: 0.62rem;
 }
 
 /* Долги в режиме «Список»: компактный таймер в блоке данных */

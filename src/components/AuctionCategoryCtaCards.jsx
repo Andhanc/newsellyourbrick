@@ -41,7 +41,7 @@ const AUCTION_CTA_CARDS = [
     to: '/auction',
     icon: FaGavel,
     image: CTA_IMAGES.auction,
-    accent: 'sage',
+    accent: 'teal',
   },
   {
     id: 'test-drive',
@@ -56,24 +56,41 @@ const AUCTION_CTA_CARDS = [
 ]
 
 const DEBTS_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'test-drive']
+const TEST_DRIVE_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'debts']
+
+const CTA_SECTION_TITLES = {
+  default: {
+    desktop: 'auctionPageCtaSectionTitle',
+    pill: 'auctionPageCtaSectionTitleMobilePill',
+    line2: 'auctionPageCtaSectionTitleMobileLine2',
+  },
+  testDrivePage: {
+    desktop: 'auctionPageCtaSectionTitleOur',
+    pill: 'auctionPageCtaSectionTitleOurMobilePill',
+    line2: 'auctionPageCtaSectionTitleOurMobileLine2',
+  },
+}
 
 function AuctionCategoryCtaCards({ variant = 'default' }) {
   const { t } = useTranslation()
+  const titleKeys = variant === 'testDrivePage' ? CTA_SECTION_TITLES.testDrivePage : CTA_SECTION_TITLES.default
   const cards =
     variant === 'debtsPage'
       ? DEBTS_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
-      : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
+      : variant === 'testDrivePage'
+        ? TEST_DRIVE_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+        : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
 
   return (
     <section className="auction-cta-cards" aria-labelledby="auction-cta-heading">
       <div className="auction-cta-cards__inner">
         <h2 id="auction-cta-heading" className="auction-cta-cards__title">
-          <span className="auction-cta-cards__title-desktop">{t('auctionPageCtaSectionTitle')}</span>
+          <span className="auction-cta-cards__title-desktop">{t(titleKeys.desktop)}</span>
           <span className="auction-cta-cards__title-mobile">
             <span className="auction-cta-cards__title-line">
-              <span className="auction-cta-cards__title-pill">{t('auctionPageCtaSectionTitleMobilePill')}</span>
+              <span className="auction-cta-cards__title-pill">{t(titleKeys.pill)}</span>
             </span>
-            <span className="auction-cta-cards__title-line">{t('auctionPageCtaSectionTitleMobileLine2')}</span>
+            <span className="auction-cta-cards__title-line">{t(titleKeys.line2)}</span>
           </span>
         </h2>
         <div
