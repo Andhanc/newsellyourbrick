@@ -167,7 +167,9 @@ export default function AuctionPropertyCard({
             }}
           >
             <span>{t('auctionResultSummary')}</span>
-            <ArrowUpRight size={16} aria-hidden />
+            <span className="auction-card__ended-link-icon" aria-hidden>
+              <ArrowUpRight size={14} strokeWidth={2.4} />
+            </span>
           </button>
         </div>
       ) : null}

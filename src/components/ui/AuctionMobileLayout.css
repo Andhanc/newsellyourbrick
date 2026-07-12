@@ -370,32 +370,77 @@
 
 /* Оверлей SOLD OUT / «Итоги аукциона» — компактнее на 2 колонки */
 .auction-mobile-stack--desktop-cards .auction-card__ended-overlay {
-  gap: 5px;
-  padding: 6px 4px;
+  gap: 6px;
+  padding: 8px 6px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__ended-title {
-  font-size: 0.95rem;
-  letter-spacing: 0.05em;
-  line-height: 1.05;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__ended-link {
-  gap: 3px;
-  min-height: 0;
-  padding: 3px 7px;
-  font-size: 0.56rem;
-  line-height: 1.1;
-  max-width: calc(100% - 8px);
-  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+  position: relative;
+  gap: 7px;
+  min-height: 36px;
+  padding: 4px 4px 4px 11px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 12px;
+  font-size: clamp(0.58rem, 2.6vw, 0.72rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  max-width: calc(100% - 6px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(135deg, #55aab9 0%, #318393 100%);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.22);
+  box-shadow:
+    0 7px 16px rgba(16, 91, 106, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
-.auction-mobile-stack--desktop-cards .auction-card__ended-link svg {
-  width: 10px;
-  height: 10px;
-  flex-shrink: 0;
+.auction-mobile-stack--desktop-cards .auction-card__ended-link::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: -34px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 20px rgba(16, 91, 106, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 9px;
+  background: rgba(10, 75, 88, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 /* Мобильная сетка «Карточки»: компактный таймер в dock на фото */

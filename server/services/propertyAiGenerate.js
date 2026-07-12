@@ -6,7 +6,7 @@ import { propertyAiMediaBaseUrl, resolvePropertyAiImageUrl } from './propertyAiI
 import { enrichPropertyAiNeighborhood } from './propertyAiNeighborhood.js'
 
 export const PROPERTY_AI_MODEL = process.env.PROPERTY_AI_MODEL || 'google/gemini-3.5-flash'
-export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v4`
+export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v5`
 
 const REPORT_JSON_SCHEMA = {
   name: 'property_ai_report',

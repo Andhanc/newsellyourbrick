@@ -151,9 +151,9 @@
   border-radius: 21px;
   color: #eafffc;
   background:
-    radial-gradient(circle at 90% 10%, rgba(65, 220, 220, 0.28), transparent 38%),
-    linear-gradient(145deg, #063f3d, #006b69 62%, #008d97);
-  box-shadow: 0 18px 38px rgba(0, 96, 90, 0.24);
+    radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.2), transparent 38%),
+    linear-gradient(145deg, #007f8d, #0099a9 62%, #16afbd);
+  box-shadow: 0 18px 38px rgba(0, 153, 169, 0.24);
 }
 
 .purchase-drawer__payment-top {
@@ -323,14 +323,14 @@
 .purchase-drawer__primary {
   border: 0;
   color: #fff;
-  background: linear-gradient(135deg, #00605a, #0099a9);
+  background: #0099a9;
   box-shadow: 0 10px 24px rgba(0, 153, 169, 0.25);
 }
 
 .purchase-drawer__secondary {
-  border: 1px solid rgba(0, 96, 90, 0.22);
-  color: #005f5a;
-  background: #effaf8;
+  border: 1px solid rgba(0, 153, 169, 0.28);
+  color: #007f8d;
+  background: rgba(0, 153, 169, 0.09);
 }
 
 .purchase-drawer__body--sell {
@@ -467,6 +467,7 @@
   @keyframes purchase-sheet-in {
     from { transform: translateY(100%); }
   }
+
 }
 
 @media (max-width: 420px) {

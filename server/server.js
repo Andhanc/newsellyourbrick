@@ -11355,28 +11355,35 @@ async function enrichTestDriveBookingWithPropertyTitle(row) {
   const table = row.property_table || 'properties_apartments';
   let title = null;
   let property_cover_url = null;
+  let property_location = null;
   try {
     if (table === 'properties_houses') {
       const p = await prisma.properties_houses.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     } else if (table === 'properties_apartments') {
       const p = await prisma.properties_apartments.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     } else {
       const p = await prisma.properties.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     }
   } catch (e) {
     /* ignore */
@@ -11385,6 +11392,7 @@ async function enrichTestDriveBookingWithPropertyTitle(row) {
     ...row,
     property_title: title || `Объект #${row.property_id}`,
     property_cover_url,
+    property_location,
   };
 }
 

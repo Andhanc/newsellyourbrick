@@ -63,8 +63,14 @@ function PropertyMiniCard({ property }) {
   )
 }
 
-export default function PropertyAiExperience({ property, onRequireLogin, desktop = false }) {
+export default function PropertyAiExperience({
+  property,
+  onRequireLogin,
+  desktop = false,
+  deferLauncherCollapse = false,
+}) {
   const [view, setView] = useState('closed')
+  const [launcherExpanded, setLauncherExpanded] = useState(true)
   const [job, setJob] = useState(null)
   const [question, setQuestion] = useState('')
   const [customQuestion, setCustomQuestion] = useState('')
@@ -199,6 +205,13 @@ export default function PropertyAiExperience({ property, onRequireLogin, desktop
 
   useEffect(() => () => pollAbortRef.current?.abort(), [])
   useEffect(() => {
+    setLauncherExpanded(true)
+    if (deferLauncherCollapse) return undefined
+    const timer = window.setTimeout(() => setLauncherExpanded(false), 1400)
+    return () => window.clearTimeout(timer)
+  }, [deferLauncherCollapse, propertyId])
+
+  useEffect(() => {
     if (view !== 'closed') document.body.classList.add('property-ai-is-open')
     else document.body.classList.remove('property-ai-is-open')
     return () => document.body.classList.remove('property-ai-is-open')
@@ -220,12 +233,24 @@ export default function PropertyAiExperience({ property, onRequireLogin, desktop
   }, [answerLines])
 
   const statusCopy = STATUS_COPY[job?.status]
+  const handleLauncherClick = () => {
+    if (!launcherExpanded) {
+      setLauncherExpanded(true)
+      return
+    }
+    setView('picker')
+  }
 
   return (
     <section className={`property-ai-experience${desktop ? ' property-ai-experience--desktop' : ''}`}>
-      <button type="button" className="property-ai-launcher" onClick={() => setView('picker')}>
+      <button
+        type="button"
+        className={`property-ai-launcher${launcherExpanded ? '' : ' property-ai-launcher--collapsed'}`}
+        onClick={handleLauncherClick}
+        aria-label={launcherExpanded ? 'Открыть Недвижимость AI' : 'Развернуть Недвижимость AI'}
+      >
         <span className="property-ai-spark" aria-hidden>✦</span>
-        <span>НЕДВИЖИМОСТЬ AI</span>
+        <span className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
       </button>
 
       {view === 'picker' && (

@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUser, useClerk } from '@clerk/clerk-react'
-import { X, Plus, LogOut } from 'lucide-react'
+import { ArrowRight, Building2, X, Plus } from 'lucide-react'
 import OwnerTestProfileMenu from './OwnerTestProfileMenu'
 import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
@@ -10,8 +9,6 @@ import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
 import OwnerSupportButton from './OwnerSupportButton'
 import SiteChatDock from './SiteChatDock'
 import OwnerFloatingMobileNav from './OwnerFloatingMobileNav'
-import OwnerCabinetOnboardingDrawer from './OwnerCabinetOnboardingDrawer'
-import { logout } from '../services/authService'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
@@ -21,7 +18,10 @@ import {
   NAV_ID_TO_VIEW,
   OWNER_VIEWS,
 } from '../utils/ownerTestNav'
-import { preloadOwnerOnboardingImages } from './ownerOnboardingImages'
+import {
+  getPurchasedListingDraftMeta,
+  readPendingSellPurchasedProperty,
+} from '../utils/purchasedPropertyListingPrefill'
 import './OwnerTestCabinetChrome.css'
 
 function BrandLogo({ className = '' }) {
@@ -30,43 +30,19 @@ function BrandLogo({ className = '' }) {
 
 export default function OwnerTestCabinetChrome({ children }) {
   const { t } = useTranslation()
-  const { user } = useUser()
-  const { signOut } = useClerk()
   const { view, goTo } = useOwnerTestNav()
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
   const [managerChatOpen, setManagerChatOpen] = useState(false)
-  const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [pendingPurchasedListing] = useState(
+    () => readPendingSellPurchasedProperty() || getPurchasedListingDraftMeta(),
+  )
   const showTabbar = isTabbarView(view)
+  const showPurchasedDraftHint =
+    Boolean(pendingPurchasedListing?.id || pendingPurchasedListing?.propertyId) &&
+    (view === OWNER_VIEWS.HOME || view === OWNER_VIEWS.PROPERTIES)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
-
-  const handleLogout = useCallback(async () => {
-    closeMenu()
-
-    if (!window.confirm(t('ownerTest_logoutConfirm'))) {
-      return
-    }
-
-    sessionStorage.setItem('clerk_logout_in_progress', 'true')
-    try {
-      if (user && signOut) {
-        await signOut({ redirectUrl: `${window.location.origin}/` })
-      }
-    } catch (error) {
-      console.warn('OwnerTestCabinetChrome: Clerk signOut', error)
-    }
-
-    try {
-      await logout()
-    } catch (error) {
-      console.warn('OwnerTestCabinetChrome: logout()', error)
-    } finally {
-      sessionStorage.removeItem('clerk_logout_in_progress')
-    }
-
-    window.location.assign('/')
-  }, [closeMenu, signOut, t, user])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -83,19 +59,6 @@ export default function OwnerTestCabinetChrome({ children }) {
     return () => {
       window.removeEventListener('managerChatStateChange', onManager)
     }
-  }, [])
-
-  useEffect(() => {
-    preloadOwnerOnboardingImages()
-  }, [])
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setOnboardingOpen(true), 500)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  const completeOnboarding = useCallback(() => {
-    setOnboardingOpen(false)
   }, [])
 
   const handleNavClick = useCallback(
@@ -227,14 +190,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav otc-nav--drawer">
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
-          <button
-            type="button"
-            className="otc-nav__item otc-nav__item--logout"
-            onClick={handleLogout}
-          >
-            <LogOut size={20} strokeWidth={2} aria-hidden />
-            <span>{t('ownerTest_logout')}</span>
-          </button>
         </nav>
       </aside>
 
@@ -250,7 +205,28 @@ export default function OwnerTestCabinetChrome({ children }) {
         </nav>
       </aside>
 
-      <div className="otc-stage">{children}</div>
+      <div className="otc-stage">
+        {showPurchasedDraftHint ? (
+          <aside className="otc-purchased-draft-hint" aria-label="Незавершённый объект">
+            <span className="otc-purchased-draft-hint__icon" aria-hidden>
+              <Building2 size={20} strokeWidth={2.1} />
+            </span>
+            <span className="otc-purchased-draft-hint__copy">
+              <strong>У вас есть незаполненный объект</strong>
+              <small>
+                {pendingPurchasedListing.title
+                  ? `Продолжите оформление «${pendingPurchasedListing.title}»`
+                  : 'Данные покупки уже перенесены в черновик'}
+              </small>
+            </span>
+            <button type="button" onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}>
+              <span>Перейти</span>
+              <ArrowRight size={17} aria-hidden />
+            </button>
+          </aside>
+        ) : null}
+        {children}
+      </div>
 
       {showTabbar ? (
         <OwnerFloatingMobileNav
@@ -260,8 +236,6 @@ export default function OwnerTestCabinetChrome({ children }) {
           menuOpen={menuOpen}
         />
       ) : null}
-
-      <OwnerCabinetOnboardingDrawer isOpen={onboardingOpen} onComplete={completeOnboarding} />
 
       </div>
     </SiteChatDock>

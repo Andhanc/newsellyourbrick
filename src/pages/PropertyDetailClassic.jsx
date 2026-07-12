@@ -44,6 +44,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
+import DepositButton from '../components/DepositButton'
 import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
 import AuctionEndedSimilarPromo from '../components/AuctionEndedSimilarPromo'
 import PropertyDetailLocationMap from '../components/PropertyDetailLocationMap'
@@ -92,6 +93,7 @@ import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/p
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
+import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
@@ -121,6 +123,7 @@ import {
 } from '../utils/moneyInputFormat'
 import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
 import '../components/PropertyCurrencySelector.css'
+import PropertyDepositAccessDrawer from '../components/PropertyDepositAccessDrawer'
 import {
   ShieldCheck,
   Bell,
@@ -184,6 +187,7 @@ function PropertyDetailClassic({
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [bidAmount, setBidAmount] = useState('')
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
+  const [isPropertyDepositDrawerOpen, setIsPropertyDepositDrawerOpen] = useState(false)
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [currentBid, setCurrentBid] = useState(null)
   const [auctionSoldOutNoticeOpen, setAuctionSoldOutNoticeOpen] = useState(false)
@@ -1059,6 +1063,7 @@ function PropertyDetailClassic({
   }, [isDesktopProperty, showsTestDriveSection, displayProperty.id])
 
   const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
+  const [auctionUserDepositLoaded, setAuctionUserDepositLoaded] = useState(false)
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const { isFavorite: isFavoriteInStore, toggleFavorite } = usePropertyFavorites()
 
@@ -1263,8 +1268,9 @@ function PropertyDetailClassic({
   }, [displayProperty.test_timer_end_date, displayProperty.auction_end_date])
 
   useEffect(() => {
-    if (!isAuctionProperty || !displayProperty?.id) {
+    if (!displayProperty?.id) {
       setAuctionUserDeposit(0)
+      setAuctionUserDepositLoaded(true)
       setAuctionKycVerified(null)
       return
     }
@@ -1273,26 +1279,29 @@ function PropertyDetailClassic({
       const uid = getStoredNumericUserId()
       if (!uid) {
         setAuctionUserDeposit(0)
+        setAuctionUserDepositLoaded(true)
         setAuctionKycVerified(null)
         return
       }
+      setAuctionUserDepositLoaded(false)
       try {
         let base = API_BASE_URL
         if (!base || base.includes('localhost')) {
           base = await getApiBaseUrl()
           API_BASE_URL = base
         }
-        const [depRes, verRes] = await Promise.all([
-          fetch(`${base}/users/${uid}/deposit`),
-          fetch(`${base}/users/${uid}/verification-status`),
-        ])
+        const depRequest = fetch(`${base}/users/${uid}/deposit`)
+        const verRequest = isAuctionProperty
+          ? fetch(`${base}/users/${uid}/verification-status`)
+          : Promise.resolve(null)
+        const [depRes, verRes] = await Promise.all([depRequest, verRequest])
         if (depRes.ok) {
           const dj = await depRes.json()
           setAuctionUserDeposit(dj.success ? (dj.data?.depositAmount || 0) : 0)
         } else {
           setAuctionUserDeposit(0)
         }
-        if (verRes.ok) {
+        if (verRes?.ok) {
           const vj = await verRes.json()
           setAuctionKycVerified(
             vj.success && vj.data != null ? Boolean(vj.data.isVerified) : null
@@ -1303,6 +1312,8 @@ function PropertyDetailClassic({
       } catch {
         setAuctionUserDeposit(0)
         setAuctionKycVerified(null)
+      } finally {
+        setAuctionUserDepositLoaded(true)
       }
     }
 
@@ -1322,14 +1333,60 @@ function PropertyDetailClassic({
     auctionKycRequired && isAuctionDepositSufficient(auctionUserDeposit) && auctionKycVerified === false
   const disableAuctionBidFields = isReservedActive || kycBidBlocked
   const aboutDepositContentLocked =
-    isAuctionProperty &&
+    auctionUserDepositLoaded &&
+    (isAuctionProperty || isShareListing || isDebtProperty) &&
     Number(auctionUserDeposit) <= 0 &&
     !roleSkipsAuctionKyc(userRoleForAuction)
 
-  const wrapDepositGatedBlock = (block) => block
+  const wrapDepositGatedBlock = (
+    block,
+    { mobileOnly = false, wrapperClassName = '' } = {},
+  ) => {
+    if (!aboutDepositContentLocked || !mobileOnly) return block
 
-  /** @deprecated use wrapDepositGatedBlock */
-  const wrapMobileDepositGatedBlock = (block) => wrapDepositGatedBlock(block)
+    return (
+      <div
+        className={`property-detail-mobile-deposit-gate property-detail-mobile-deposit-gate--locked${
+          wrapperClassName ? ` ${wrapperClassName}` : ''
+        }`}
+      >
+        <div
+          className="property-detail-mobile-deposit-gate__content"
+          aria-hidden="true"
+          inert=""
+        >
+          {block}
+        </div>
+        <button
+          type="button"
+          className="property-detail-mobile-deposit-gate__overlay"
+          onClick={() => setIsPropertyDepositDrawerOpen(true)}
+          aria-label="Для просмотра пополните депозит"
+        >
+          <span className="property-detail-mobile-deposit-gate__prompt">
+            <span className="property-detail-mobile-deposit-gate__prompt-icon" aria-hidden>
+              <FiLock size={21} />
+            </span>
+            <span className="property-detail-mobile-deposit-gate__prompt-text">
+              Пополните депозит для просмотра
+            </span>
+            <span className="property-detail-mobile-deposit-gate__prompt-link">
+              Нажмите, чтобы перейти к пополнению
+              <FiArrowRight size={15} aria-hidden />
+            </span>
+          </span>
+        </button>
+      </div>
+    )
+  }
+
+  const wrapMobileDepositGatedBlock = (
+    block,
+    { requiresDeposit = false, wrapperClassName = '' } = {},
+  ) =>
+    requiresDeposit
+      ? wrapDepositGatedBlock(block, { mobileOnly: true, wrapperClassName })
+      : block
 
   // Сохраняем исходное значение тестового таймера и его длительность при первой загрузке
   useEffect(() => {
@@ -4445,10 +4502,10 @@ function PropertyDetailClassic({
     )
   }
 
-  const renderMobileAboutDocumentsBlock = () => {
+  const renderMobileAboutDocumentsContent = () => {
     if (!processedDocuments.length) return null
 
-    return wrapMobileDepositGatedBlock(
+    return (
       <section className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
@@ -4486,6 +4543,27 @@ function PropertyDetailClassic({
     )
   }
 
+  const renderMobileAboutRestrictedContent = () =>
+    wrapMobileDepositGatedBlock(
+      <div className="property-detail-mobile-restricted-content">
+        {renderMobileAboutDocumentsContent()}
+        <section className="property-detail-map-mobile property-detail-map-mobile--auction-sheet property-detail-mobile-restricted-content__map">
+          <div className="property-detail-sidebar__map">
+            <h2 className="property-detail-sidebar__map-title">
+              {displayProperty.location || t('location') || 'Местоположение'}
+            </h2>
+            <div className="property-detail-sidebar__map-stack">
+              {renderPropertyLocationMap()}
+            </div>
+          </div>
+        </section>
+      </div>,
+      {
+        requiresDeposit: true,
+        wrapperClassName: 'property-detail-mobile-deposit-gate--combined',
+      },
+    )
+
   const renderMobileAboutPropertyContent = () => {
     const descriptionText = displayProperty.description
       ? String(displayProperty.description).trim()
@@ -4506,7 +4584,7 @@ function PropertyDetailClassic({
         {renderPropertyAmenitiesBlock({ layout: 'mobile-about' })}
         <PropertyDetailYieldPromo onClick={openInvestorPanelForProperty} />
         {renderMobileAboutAdditionalAmenitiesBlock()}
-        {renderMobileAboutDocumentsBlock()}
+        {renderMobileAboutRestrictedContent()}
       </div>
     )
   }
@@ -6631,6 +6709,7 @@ function PropertyDetailClassic({
               property={displayProperty}
               onRequireLogin={onRequireLogin}
               desktop
+              deferLauncherCollapse={isTestDrivePromoOpen && shouldShowTestDrivePromo}
             />
             <PropertyDetailDesktopRelatedSection property={displayProperty} />
           </>
@@ -6783,6 +6862,9 @@ function PropertyDetailClassic({
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
+      {canShowBuyerDeposit() && Number(auctionUserDeposit) > 0 ? (
+        <DepositButton amount={auctionUserDeposit} />
+      ) : null}
       <AuctionSoldOutNotice
         open={auctionSoldOutNoticeOpen}
         onClose={() => setAuctionSoldOutNoticeOpen(false)}
@@ -7173,31 +7255,24 @@ function PropertyDetailClassic({
             </div>
 
             {/* Карта — для неаукционных объектов */}
-            {!isAuctionLayout ? (
-            <div className="property-detail-map-mobile">
-              <div className="property-detail-sidebar__map">
-                <h2 className="property-detail-sidebar__map-title">
-                  {displayProperty.location || t('location') || 'Местоположение'}
-                </h2>
-                <div className="property-detail-sidebar__map-stack">
-                  {renderPropertyLocationMap()}
-                </div>
-              </div>
-            </div>
-            ) : null}
-
-            {isAuctionLayout ? (
-              <div className="property-detail-map-mobile property-detail-map-mobile--auction-sheet property-detail-auction-tab-target property-detail-auction-tab-target--about property-detail-auction-mobile-about-left">
-                <div className="property-detail-sidebar__map">
-                  <h2 className="property-detail-sidebar__map-title">
-                    {displayProperty.location || t('location') || 'Местоположение'}
-                  </h2>
-                  <div className="property-detail-sidebar__map-stack">
-                    {renderPropertyLocationMap()}
+            {!isAuctionLayout
+              ? wrapMobileDepositGatedBlock(
+                <div className="property-detail-map-mobile">
+                  <div className="property-detail-sidebar__map">
+                    <h2 className="property-detail-sidebar__map-title">
+                      {displayProperty.location || t('location') || 'Местоположение'}
+                    </h2>
+                    <div className="property-detail-sidebar__map-stack">
+                      {renderPropertyLocationMap()}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : null}
+                </div>,
+                {
+                  requiresDeposit: true,
+                  wrapperClassName: 'property-detail-mobile-deposit-gate--map',
+                },
+              )
+              : null}
 
             {isAuctionProperty ? (
               <div className="property-detail-auction-tab-target property-detail-auction-tab-target--bids property-detail-auction-desktop-bids-target property-detail-auction-desktop-only">
@@ -7435,6 +7510,7 @@ function PropertyDetailClassic({
         <PropertyAiExperience
           property={displayProperty}
           onRequireLogin={onRequireLogin}
+          deferLauncherCollapse={isTestDrivePromoOpen && shouldShowTestDrivePromo}
         />
         <PropertyDetailInternalLinks property={displayProperty} />
       </div>
@@ -7533,6 +7609,17 @@ function PropertyDetailClassic({
           setIsDepositRequiredOpen(false)
           const from =
             typeof window !== 'undefined' ? window.location.pathname : '/auction'
+          navigateToWallet(navigate, from)
+        }}
+      />
+
+      <PropertyDepositAccessDrawer
+        isOpen={isPropertyDepositDrawerOpen}
+        onClose={() => setIsPropertyDepositDrawerOpen(false)}
+        onGoToDeposit={() => {
+          const from = typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search || ''}`
+            : '/auction'
           navigateToWallet(navigate, from)
         }}
       />

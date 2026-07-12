@@ -1,12 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  FiChevronDown,
   FiDollarSign,
   FiHome,
   FiMapPin,
   FiPieChart,
   FiSearch,
   FiShoppingBag,
+  FiSliders,
   FiTag,
   FiTrendingUp,
 } from 'react-icons/fi'
@@ -130,6 +132,11 @@ function HeroSearchBar({ onNavigate }) {
   const [propertyType, setPropertyType] = useState('villa')
   const [location, setLocation] = useState('uae')
   const [price, setPrice] = useState('mid')
+  const [mobileSaleType, setMobileSaleType] = useState('')
+  const [mobilePropertyType, setMobilePropertyType] = useState('')
+  const [mobileLocation, setMobileLocation] = useState('')
+  const [mobilePrice, setMobilePrice] = useState('')
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const saleOption = HERO_SALE_TYPE_OPTIONS.find((o) => o.value === saleType)
   const propertyOption = HERO_PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType)
@@ -153,6 +160,19 @@ function HeroSearchBar({ onNavigate }) {
       onNavigate(target.pathname, { state: target.state })
     },
     [location, onNavigate, price, propertyType, saleType],
+  )
+
+  const handleMobileSubmit = useCallback(
+    (event) => {
+      event.preventDefault()
+      const target = buildHeroSearchNavigation({
+        saleType: mobileSaleType,
+        propertyType: mobilePropertyType,
+        location: mobileLocation,
+        price: mobilePrice,
+      })
+      onNavigate(target.pathname, { state: target.state })
+    }, [mobileLocation, mobilePrice, mobilePropertyType, mobileSaleType, onNavigate],
   )
 
   const fields = [
@@ -198,9 +218,51 @@ function HeroSearchBar({ onNavigate }) {
     },
   ]
 
+  const mobileFields = [
+    {
+      id: 'mobile-sale',
+      label: 'Тип продажи',
+      value: mobileSaleType,
+      onChange: setMobileSaleType,
+      options: HERO_SALE_TYPE_OPTIONS,
+    },
+    {
+      id: 'mobile-property',
+      label: 'Тип объекта',
+      value: mobilePropertyType,
+      onChange: setMobilePropertyType,
+      options: HERO_PROPERTY_TYPE_OPTIONS,
+    },
+    {
+      id: 'mobile-location',
+      label: 'Локация',
+      value: mobileLocation,
+      onChange: setMobileLocation,
+      options: HERO_LOCATION_OPTIONS,
+    },
+    {
+      id: 'mobile-price',
+      label: 'Бюджет',
+      value: mobilePrice,
+      onChange: setMobilePrice,
+      options: HERO_PRICE_OPTIONS,
+    },
+  ]
+
+  const mobileActiveFilters = [
+    mobileSaleType,
+    mobilePropertyType,
+    mobileLocation,
+    mobilePrice,
+  ].filter(Boolean).length
+
   return (
     <div className="hr-search-bar-bridge">
-      <form className="hr-search-bar" onSubmit={handleSubmit} aria-label="Поиск объектов">
+      <form
+        className="hr-search-bar hr-search-bar--desktop"
+        onSubmit={handleSubmit}
+        aria-label="Поиск объектов"
+      >
         <div className="hr-search-bar__fields">
           {fields.map((field, index) => {
             const Icon = field.icon
@@ -234,6 +296,84 @@ function HeroSearchBar({ onNavigate }) {
         <button type="submit" className="hr-search-bar__submit" aria-label="Найти объекты">
           <FiSearch aria-hidden />
         </button>
+      </form>
+
+      <form
+        className="hr-search-bar hr-search-bar--mobile"
+        onSubmit={handleMobileSubmit}
+        aria-label="Поиск объектов в каталоге"
+      >
+        <div className="hr-search-mobile__primary">
+          <div className="hr-search-mobile__input-wrap">
+            <FiSearch className="hr-search-mobile__input-icon" aria-hidden />
+            <input
+              className="hr-search-mobile__input"
+              type="search"
+              value=""
+              placeholder="Поиск по каталогу"
+              aria-label="Поиск по каталогу"
+              readOnly
+            />
+          </div>
+          <button type="submit" className="hr-search-mobile__all-button">
+            Найдём всё!
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className={`hr-search-mobile__toggle${mobileFiltersOpen ? ' is-open' : ''}`}
+          aria-expanded={mobileFiltersOpen}
+          aria-controls="hr-search-mobile-drawer"
+          onClick={() => setMobileFiltersOpen((isOpen) => !isOpen)}
+        >
+          <span className="hr-search-mobile__toggle-label">
+            <FiSliders aria-hidden />
+            Фильтры
+          </span>
+          <span className="hr-search-mobile__toggle-meta">
+            {mobileActiveFilters ? `Выбрано: ${mobileActiveFilters}` : 'Все объекты'}
+          </span>
+          <FiChevronDown className="hr-search-mobile__toggle-chevron" aria-hidden />
+        </button>
+
+        <div
+          id="hr-search-mobile-drawer"
+          className={`hr-search-mobile__drawer${mobileFiltersOpen ? ' is-open' : ''}`}
+          aria-hidden={!mobileFiltersOpen}
+          inert={mobileFiltersOpen ? undefined : ''}
+        >
+          <div className="hr-search-mobile__drawer-clip">
+            <div className="hr-search-mobile__drawer-content">
+              <div className="hr-search-mobile__fields">
+                {mobileFields.map((field) => (
+                  <label key={field.id} className="hr-search-mobile__field">
+                    <span>{field.label}</span>
+                    <span className="hr-search-mobile__select-wrap">
+                      <select
+                        value={field.value}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        aria-label={field.label}
+                      >
+                        <option value="">Не важно</option>
+                        {field.options.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <FiChevronDown aria-hidden />
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button type="submit" className="hr-search-mobile__find-button">
+                <FiSearch aria-hidden />
+                Найти
+              </button>
+            </div>
+          </div>
+        </div>
       </form>
     </div>
   )

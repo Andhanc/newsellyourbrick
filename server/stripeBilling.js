@@ -2996,6 +2996,9 @@ export function registerStripeBillingRoutes(app) {
           let property_country = null;
           let property_price = null;
           let property_type = null;
+          let property_sale_type = null;
+          let property_is_debt = null;
+          let property_has_debt = null;
           if (pid != null) {
             try {
               const p = await propertyQueries.getById(pid, billing.property_type || null);
@@ -3008,6 +3011,9 @@ export function registerStripeBillingRoutes(app) {
                 property_country = p.country || null;
                 property_price = p.minimum_sale_price ?? p.price ?? null;
                 property_type = p.property_type || billing.property_type || null;
+                property_sale_type = p.sale_type || null;
+                property_is_debt = p.is_debt ?? null;
+                property_has_debt = p.has_debt ?? null;
               }
             } catch {
               /* ignore */
@@ -3024,6 +3030,9 @@ export function registerStripeBillingRoutes(app) {
             property_country,
             property_price,
             property_type,
+            property_sale_type,
+            property_is_debt,
+            property_has_debt,
           };
         })
       );

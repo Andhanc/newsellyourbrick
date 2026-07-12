@@ -63,5 +63,11 @@ export function mapReservationPurchase(row = {}) {
     purchaseDateRaw: row.paid_at || row.created_at || null,
     policyVersion: billing.policy_version || row.agreement_policy_version || null,
     purchaseChannel: 'buy_now',
+    isDebt:
+      String(row.property_sale_type || '').toLowerCase() === 'debt' ||
+      row.property_is_debt === 1 ||
+      row.property_is_debt === true ||
+      row.property_has_debt === 1 ||
+      row.property_has_debt === true,
   }
 }

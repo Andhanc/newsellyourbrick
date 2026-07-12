@@ -36,7 +36,7 @@ export const HERO_PRICE_OPTIONS = [
 export function buildHeroSearchNavigation(filters) {
   const propertyOption = HERO_PROPERTY_TYPE_OPTIONS.find((item) => item.value === filters.propertyType)
   const locationOption = HERO_LOCATION_OPTIONS.find((item) => item.value === filters.location)
-  const priceOption = HERO_PRICE_OPTIONS.find((item) => item.value === filters.price) ?? HERO_PRICE_OPTIONS[1]
+  const priceOption = HERO_PRICE_OPTIONS.find((item) => item.value === filters.price)
 
   const countryKey = locationOption?.countryKey ?? ''
   const purchaseType = filters.saleType === 'debts' ? 'debt' : filters.saleType
@@ -44,8 +44,8 @@ export function buildHeroSearchNavigation(filters) {
     country: countryKey,
     propertyType: propertyOption?.catalogLabel ?? '',
     purchaseTypes: purchaseType ? [purchaseType] : [],
-    minPrice: priceOption.minPrice,
-    maxPrice: priceOption.maxPrice,
+    minPrice: priceOption?.minPrice ?? '',
+    maxPrice: priceOption?.maxPrice ?? '',
   }
 
   return {

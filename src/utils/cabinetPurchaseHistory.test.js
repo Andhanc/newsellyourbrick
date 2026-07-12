@@ -76,3 +76,13 @@ test('prefers city and country over a raw address when location is absent', () =
 
   assert.equal(item.location, 'Palm-Mar, Spain')
 })
+
+test('marks purchased debt property for the separate history category', () => {
+  const item = mapReservationPurchase({
+    ...baseRow,
+    property_sale_type: 'debt',
+    property_is_debt: 1,
+  })
+
+  assert.equal(item.isDebt, true)
+})

@@ -54,6 +54,10 @@
   flex-direction: column;
 }
 
+.otc-purchased-draft-hint {
+  display: none;
+}
+
 .otc-desktop-only {
   display: block;
 }
@@ -349,6 +353,77 @@
     min-width: 0;
     overflow-x: clip;
     overflow-y: visible;
+  }
+
+  .otc-purchased-draft-hint {
+    position: relative;
+    z-index: 12;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    width: calc(100% - 24px);
+    margin: calc(10px + env(safe-area-inset-top, 0px)) 12px 8px;
+    padding: 12px;
+    border: 1px solid rgba(0, 153, 169, 0.2);
+    border-radius: 19px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 96% 0%, rgba(255, 255, 255, 0.2), transparent 34%),
+      linear-gradient(135deg, #007f8d, var(--otc-tiffany) 58%, #16afbd);
+    box-shadow: 0 14px 30px rgba(0, 153, 169, 0.22);
+  }
+
+  .otc-purchased-draft-hint__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .otc-purchased-draft-hint__copy {
+    min-width: 0;
+  }
+
+  .otc-purchased-draft-hint__copy strong,
+  .otc-purchased-draft-hint__copy small {
+    display: block;
+  }
+
+  .otc-purchased-draft-hint__copy strong {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .otc-purchased-draft-hint__copy small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .otc-purchased-draft-hint button {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 11px;
+    border: 0;
+    border-radius: 12px;
+    color: #007f8d;
+    background: #fff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 71, 80, 0.16);
   }
 
   .otc--tabbar .otc-stage {

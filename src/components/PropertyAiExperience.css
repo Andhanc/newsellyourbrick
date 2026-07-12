@@ -21,7 +21,8 @@ body.property-ai-is-open {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: min(360px, calc(100vw - 36px));
+  width: 360px;
+  max-width: calc(100vw - 36px);
   height: 62px;
   padding: 8px 24px;
   border: 1px solid rgba(255, 255, 255, .08);
@@ -31,9 +32,39 @@ body.property-ai-is-open {
   color: #fff;
   font: 900 20px/1 Arial, sans-serif;
   letter-spacing: -.035em;
+  white-space: nowrap;
+  overflow: hidden;
   cursor: pointer;
   transform: translateX(-50%);
-  transition: opacity .22s ease, transform .22s ease;
+  transition:
+    left .72s cubic-bezier(.22, 1, .36, 1),
+    width .72s cubic-bezier(.22, 1, .36, 1),
+    padding .62s cubic-bezier(.22, 1, .36, 1),
+    gap .48s ease,
+    opacity .22s ease,
+    transform .22s ease;
+}
+
+.property-ai-launcher.property-ai-launcher--collapsed {
+  left: calc(100% - 47px);
+  width: 62px;
+  padding-inline: 0;
+  gap: 0;
+}
+
+.property-ai-launcher__label {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  opacity: 1;
+  transition:
+    max-width .42s cubic-bezier(.22, 1, .36, 1),
+    opacity .18s ease;
+}
+
+.property-ai-launcher--collapsed .property-ai-launcher__label {
+  max-width: 0;
+  opacity: 0;
 }
 
 html.site-footer-near .property-ai-launcher {
@@ -678,10 +709,16 @@ html.site-footer-near .property-ai-launcher {
 @media (max-width: 700px) {
   .property-ai-launcher {
     bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(310px, calc(100vw - 28px));
+    width: 310px;
+    max-width: calc(100vw - 28px);
     height: 56px;
     padding-inline: 18px;
     font-size: 17px;
+  }
+
+  .property-ai-launcher.property-ai-launcher--collapsed {
+    left: calc(100% - 42px);
+    width: 56px;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-ai-launcher {

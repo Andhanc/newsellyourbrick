@@ -15,20 +15,16 @@ import {
 import {
   FiHash,
   FiShield,
-  FiCalendar,
   FiAlertCircle,
   FiHome,
   FiHeart,
   FiMap,
-  FiMapPin,
-  FiSearch,
   FiFileText,
   FiBookOpen,
   FiArrowRight,
   FiCheckCircle,
   FiMail,
   FiArrowLeft,
-  FiBell,
   FiUpload,
   FiChevronDown,
   FiChevronUp,
@@ -61,18 +57,24 @@ import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
+import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
 import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
-import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
-import PurchasedPropertyHistoryCard from '../components/PurchasedPropertyHistoryCard'
+import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
-import { navigateToSellPurchasedProperty } from '../utils/navigateToSellPurchasedProperty'
-import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
+import ProfileHistoryExperience from '../components/ProfileHistoryExperience'
+import ProfileBookingsExperience from '../components/ProfileBookingsExperience'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
+import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
+import { storePendingSellPurchasedProperty } from '../utils/purchasedPropertyListingPrefill'
 import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
+import {
+  hasCompletedOwnerCabinetOnboarding,
+  markOwnerCabinetOnboardingComplete,
+} from '../utils/ownerCabinetOnboarding'
 import './TestPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -667,38 +669,13 @@ function buildQuickLinks(t) {
   }
 }
 
-function formatDateRange(start, end, locale) {
-  try {
-    const s = new Date(`${start}T12:00:00`)
-    const e = new Date(`${end}T12:00:00`)
-    const o = { day: 'numeric', month: 'short', year: 'numeric' }
-    return `${s.toLocaleDateString(locale, o)} — ${e.toLocaleDateString(locale, o)}`
-  } catch {
-    return `${start} — ${end}`
-  }
-}
-
-/** Группирует элементы истории по календарному дню (уже отсортированы по дате убыв.). */
-function groupHistoryItemsByDay(items) {
-  const groups = []
-  for (const item of items) {
-    const dk = item.dayKey != null && item.dayKey !== undefined ? String(item.dayKey) : ''
-    const last = groups[groups.length - 1]
-    if (!last || last.dayKey !== dk) {
-      groups.push({ dayKey: dk, items: [item] })
-    } else {
-      last.items.push(item)
-    }
-  }
-  return groups
-}
-
 function TestPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
+  const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
   const {
     numericUserId,
     publicIdDisplay,
@@ -744,7 +721,6 @@ function TestPage() {
   const [subscriptionUpgradeLoading, setSubscriptionUpgradeLoading] = useState(false)
   const [bookingsSheetLoading, setBookingsSheetLoading] = useState(false)
   const [bookingsSheetRows, setBookingsSheetRows] = useState([])
-  const [ownerCommentCountsByBooking, setOwnerCommentCountsByBooking] = useState({})
   const [testDriveCancelBooking, setTestDriveCancelBooking] = useState(null)
   const [checkInBookingId, setCheckInBookingId] = useState(null)
   const visibleBookingsSheetRows = useMemo(
@@ -756,7 +732,6 @@ function TestPage() {
       }),
     [bookingsSheetRows],
   )
-  const [ownerCommentModalBooking, setOwnerCommentModalBooking] = useState(null)
   const [dbUserRow, setDbUserRow] = useState(null)
   const [dbUserLoading, setDbUserLoading] = useState(false)
   const [verificationStatusHydrated, setVerificationStatusHydrated] = useState(false)
@@ -785,6 +760,7 @@ function TestPage() {
   const [subscriptionConfettiRecycle, setSubscriptionConfettiRecycle] = useState(true)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
+  const [sellerOnboardingOpen, setSellerOnboardingOpen] = useState(false)
   const [selectedPurchasedProperty, setSelectedPurchasedProperty] = useState(null)
   const [purchaseDrawerView, setPurchaseDrawerView] = useState('details')
   const [windowSize, setWindowSize] = useState(() =>
@@ -926,119 +902,24 @@ function TestPage() {
     navigate('/', { replace: true })
   }, [user, signOut, navigate])
 
-  const promptSellerRegistration = useCallback(() => {
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      // ignore
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
-  }, [navigate])
-
-  const buildHistoryItemSnapshot = useCallback((item) => {
-    const propertyId = item?.propertyId ?? item?.id
-    if (!propertyId) return null
-    return {
-      id: propertyId,
-      propertyId,
-      title: item?.title || '',
-      image: item?.imageSrc || item?.image || '',
-      location: item?.location || '',
-    }
-  }, [])
-
-  const handleOpenPurchasedGuide = useCallback(
-    (item) => {
-      const pid = item?.propertyId ?? item?.id
-      if (!pid) return
-      setHistorySheetOpen(false)
-      setSelectedPurchasedProperty(null)
-      navigate(`/profile/purchased/${pid}`)
-    },
-    [navigate],
-  )
-
-  const handleSellObjectFromHistory = useCallback(
-    async (item) => {
-      const snapshot = buildHistoryItemSnapshot(item)
-      const propertyId = snapshot?.id ?? snapshot?.propertyId
-      if (!propertyId) return
-      await navigateToSellPurchasedProperty({
-        propertyId,
-        propertySnapshot: snapshot,
-        navigate,
-        onPromptSellerRegistration: promptSellerRegistration,
-        onBecomeSeller: handleBecomeSellerRegister,
+  const handleSellObjectFromHistory = useCallback(async (purchasedProperty) => {
+    if (purchasedProperty?.propertyId) {
+      storePendingSellPurchasedProperty({
+        id: purchasedProperty.propertyId,
+        title: purchasedProperty.title,
+        image: purchasedProperty.imageSrc,
       })
-    },
-    [buildHistoryItemSnapshot, handleBecomeSellerRegister, navigate, promptSellerRegistration],
-  )
-
-  const historyPurchaseTermsBySection = useCallback((sectionKey) => {
-    if (sectionKey === 'auction') {
-      return 'Условия: победа в торгах, оплата депозита в срок и завершение сделки.'
     }
-    if (sectionKey === 'reserve') {
-      return 'Условия: резерв 10% и последующая полная оплата объекта.'
+
+    const role = String(
+      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
+    ).toLowerCase()
+    if (role === 'seller' || role === 'owner') {
+      navigate('/owner-test')
+      return
     }
-    if (sectionKey === 'shares') {
-      return 'Условия: фиксируются количество долей и цена за долю на дату покупки.'
-    }
-    return ''
-  }, [])
-
-  const filteredHistorySections = useMemo(() => {
-    const q = historySearchQuery.trim().toLowerCase()
-    if (!q) return historySections
-    return historySections
-      .map((sec) => ({
-        ...sec,
-        items: sec.items.filter((item) => {
-          const hay = `${item.title || ''} ${item.subtitle || ''} ${item.location || ''}`.toLowerCase()
-          return hay.includes(q)
-        }),
-      }))
-      .filter((sec) => sec.items.length > 0)
-  }, [historySections, historySearchQuery])
-
-  const formatHistoryDayLabel = useCallback(
-    (dayKey) => {
-      if (!dayKey || !String(dayKey).trim()) {
-        return t('buyerCabinet_historyDateUnknown')
-      }
-      const d = new Date(`${dayKey}T12:00:00`)
-      if (!Number.isFinite(d.getTime())) {
-        return t('buyerCabinet_historyDateUnknown')
-      }
-      return d.toLocaleDateString(locale, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    },
-    [locale, t],
-  )
-
-  const historyTypeBadgeLabel = useCallback(
-    (sectionKey) => {
-      switch (sectionKey) {
-        case 'auction':
-          return t('buyerCabinet_historyBadgeAuction')
-        case 'reserve':
-          return t('buyerCabinet_historyBadgeReserve')
-        case 'shares':
-          return t('buyerCabinet_historyBadgeShares')
-        case 'bids':
-          return t('buyerCabinet_historyBadgeBids')
-        default:
-          return ''
-      }
-    },
-    [t],
-  )
+    await sellPurchasedPropertyRoleFlow.openCabinetPicker()
+  }, [navigate, sellPurchasedPropertyRoleFlow])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -1278,38 +1159,18 @@ function TestPage() {
   const refetchBookingsSheetRows = useCallback(() => {
     if (!numericUserId) {
       setBookingsSheetRows([])
-      setOwnerCommentCountsByBooking({})
       setBookingsSheetLoading(false)
       return Promise.resolve()
     }
     setBookingsSheetLoading(true)
-    return Promise.all([
-      fetch(`${API_BASE_URL}/test-drive-bookings/user/${numericUserId}`).then((r) =>
-        r.json().catch(() => ({})),
-      ),
-      fetch(`${API_BASE_URL}/notifications/user/${numericUserId}/unread`).then((r) =>
-        r.json().catch(() => ({})),
-      ),
-    ])
-      .then(([bookingsJson, notificationsJson]) => {
+    return fetch(`${API_BASE_URL}/test-drive-bookings/user/${numericUserId}`)
+      .then((response) => response.json().catch(() => ({})))
+      .then((bookingsJson) => {
         const rows = bookingsJson?.success && Array.isArray(bookingsJson.data) ? bookingsJson.data : []
-        const notifications =
-          notificationsJson?.success && Array.isArray(notificationsJson.data) ? notificationsJson.data : []
-        const ownerCommentCounts = {}
-        for (const n of notifications) {
-          if (String(n?.type || '') !== 'test_drive_result') continue
-          const data = n?.data || {}
-          const bookingId = data?.booking_id
-          if (!Boolean(String(data?.owner_comment || '').trim()) || bookingId == null) continue
-          const key = String(bookingId)
-          ownerCommentCounts[key] = (ownerCommentCounts[key] || 0) + 1
-        }
-        setOwnerCommentCountsByBooking(ownerCommentCounts)
         setBookingsSheetRows(rows)
       })
       .catch(() => {
         setBookingsSheetRows([])
-        setOwnerCommentCountsByBooking({})
       })
       .finally(() => {
         setBookingsSheetLoading(false)
@@ -1337,7 +1198,6 @@ function TestPage() {
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
         setIsManagerChatOpen(false)
-        setOwnerCommentModalBooking(null)
         setManagerChatInput('')
       }
     }
@@ -1969,6 +1829,24 @@ function TestPage() {
 
   const needsProfileOnboarding = profileCompletionStats.pct < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
 
+  useEffect(() => {
+    if (!isLoaded || !isSiteUserSignedIn(user, isLoaded) || !resolvedNumericUserId) return undefined
+    if (hasCompletedOwnerCabinetOnboarding(resolvedNumericUserId)) return undefined
+
+    const timer = window.setTimeout(() => setSellerOnboardingOpen(true), 500)
+    return () => window.clearTimeout(timer)
+  }, [isLoaded, resolvedNumericUserId, user])
+
+  const completeSellerOnboarding = useCallback(() => {
+    markOwnerCabinetOnboardingComplete(resolvedNumericUserId)
+    setSellerOnboardingOpen(false)
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    setDataSheetOpen(true)
+    scrollMainTo(0, 0, 'instant')
+  }, [resolvedNumericUserId])
+
   /** Пока профиль &lt; 78% — только сценарий подсказок, без обходных кликов по кабинету. */
   const profileGateActive =
     isLoaded &&
@@ -1983,7 +1861,8 @@ function TestPage() {
     !dataSheetOpen &&
     !showProfileCompleteCelebration &&
     !subscriptionCheckoutCelebration &&
-    !showServiceQuickLinksTour
+    !showServiceQuickLinksTour &&
+    !sellerOnboardingOpen
 
   /** Тост прогресса держим до 100%; порог 78% только для гейта и спотлайта (`needsProfileOnboarding`). */
   const showProfileCompletionWidget =
@@ -2990,205 +2869,18 @@ function TestPage() {
           >
             <div className="test-data-dropbox__measure">
               <div className="test-hero-pro__data-panel test-hero-pro__history-panel">
-                <div className="test-data-panel__toolbar">
-                  <button
-                    type="button"
-                    className="test-data-panel__back"
-                    aria-label={t('buyerCabinet_collapse')}
-                    onClick={() => setHistorySheetOpen(false)}
-                  >
-                    <FiArrowLeft size={18} aria-hidden />
-                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
-                  </button>
-                  <h3 id="test-history-panel-title" className="test-data-panel__title">
-                    {t('buyerHistory_title')}
-                  </h3>
-                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
-                </div>
-                <p className="test-data-panel__hint">
-                  {t('buyerCabinet_historySheetHint')}
-                </p>
-                {!historyLoading && historySections.length > 0 ? (
-                  <label className="test-history-dropbox__search">
-                    <FiSearch className="test-history-dropbox__search-icon" size={18} aria-hidden />
-                    <input
-                      type="search"
-                      className="test-history-dropbox__search-input"
-                      value={historySearchQuery}
-                      onChange={(e) => setHistorySearchQuery(e.target.value)}
-                      placeholder={t('buyerCabinet_historySearchPlaceholder')}
-                      aria-label={t('buyerCabinet_historySearchPlaceholder')}
-                      autoComplete="off"
-                      spellCheck={false}
-                      enterKeyHint="search"
-                    />
-                  </label>
-                ) : null}
-                {historyLoading ? (
-                  <TestSheetSkeletonHistory />
-                ) : historySections.length === 0 ? (
-                  <p className="test-history-dropbox__empty">
-                    {t('buyerCabinet_historyEmpty')}
-                  </p>
-                ) : filteredHistorySections.length === 0 ? (
-                  <p className="test-history-dropbox__empty test-history-dropbox__empty--muted">
-                    {t('buyerCabinet_historySearchNoResults')}
-                  </p>
-                ) : (
-                  <div className="test-history-dropbox__scroll">
-                    {filteredHistorySections.map((section) => (
-                      <section
-                        key={section.key}
-                        className="test-history-section"
-                        aria-labelledby={`hist-sec-${section.key}`}
-                      >
-                        <div className={`test-history-section__head test-history-section__head--${section.key}`}>
-                          <h4 id={`hist-sec-${section.key}`} className="test-history-section__title">
-                            {section.key === 'reserve' ? t('buyNowTitle') : section.title}
-                          </h4>
-                          {['auction', 'reserve', 'shares', 'bids'].includes(section.key) ? (
-                            <span className="test-history-section__pill">
-                              {section.key === 'auction'
-                                ? t('buyerCabinet_historyPillAuction')
-                                : section.key === 'reserve'
-                                  ? t('buyerCabinet_historyPillReserve')
-                                  : section.key === 'shares'
-                                    ? t('buyerCabinet_historyPillShares')
-                                    : t('buyerCabinet_historyPillBids')}
-                            </span>
-                          ) : null}
-                        </div>
-                        {groupHistoryItemsByDay(section.items).map((dayGroup, dayGroupIdx) => (
-                          <div
-                            key={`${section.key}-day-${dayGroupIdx}-${dayGroup.dayKey || 'na'}`}
-                            className="test-history-day-group"
-                          >
-                            <div
-                              className="test-history-day-divider"
-                              role="separator"
-                              aria-label={formatHistoryDayLabel(dayGroup.dayKey)}
-                            >
-                              <span className="test-history-day-divider__line" aria-hidden />
-                              <time
-                                className="test-history-day-divider__label"
-                                dateTime={dayGroup.dayKey || undefined}
-                              >
-                                {formatHistoryDayLabel(dayGroup.dayKey)}
-                              </time>
-                              <span className="test-history-day-divider__line" aria-hidden />
-                            </div>
-                            <div className="test-history-section__grid">
-                              {dayGroup.items.map((item) => {
-                                if (section.key === 'reserve') {
-                                  return (
-                                    <PurchasedPropertyHistoryCard
-                                      key={item.id}
-                                      item={item}
-                                      onOpenDetails={(selectedItem) => {
-                                        setSelectedPurchasedProperty(selectedItem)
-                                        setPurchaseDrawerView('details')
-                                      }}
-                                    />
-                                  )
-                                }
-                                const isPurchasedSection = ['auction', 'reserve', 'shares'].includes(section.key)
-                                const termsText = isPurchasedSection
-                                  ? historyPurchaseTermsBySection(section.key)
-                                  : ''
-                                const typeBadge = historyTypeBadgeLabel(section.key)
-                                const cardBody = (
-                                  <>
-                                    <div className="test-history-mini-card__body">
-                                      <div className="test-history-mini-card__thumb">
-                                        <span
-                                          className={`test-history-mini-card__type-badge test-history-mini-card__type-badge--${section.key}`}
-                                        >
-                                          {typeBadge}
-                                        </span>
-                                        <img
-                                          src={item.imageSrc}
-                                          alt=""
-                                          loading="lazy"
-                                          decoding="async"
-                                        />
-                                      </div>
-                                      <div className="test-history-mini-card__text">
-                                        <div className="test-history-mini-card__head">
-                                          <div className="test-history-mini-card__titles">
-                                            <span className="test-history-mini-card__title">{item.title}</span>
-                                            {(item.location || '').trim() ? (
-                                              <span className="test-history-mini-card__loc">
-                                                <FiMapPin
-                                                  size={14}
-                                                  className="test-history-mini-card__loc-icon"
-                                                  aria-hidden
-                                                />
-                                                <span className="test-history-mini-card__loc-text">
-                                                  {item.location}
-                                                </span>
-                                              </span>
-                                            ) : null}
-                                            {item.subtitle ? (
-                                              <span className="test-history-mini-card__sub">{item.subtitle}</span>
-                                            ) : null}
-                                          </div>
-                                          <div
-                                            className="test-history-mini-card__price"
-                                            title={`${t('buyerCabinet_amountLabel')}: ${item.amount || '—'}`}
-                                          >
-                                            <span className="test-history-mini-card__price-label">
-                                              {t('buyerCabinet_amountLabel')}
-                                            </span>
-                                            <span className="test-history-mini-card__price-value">
-                                              {item.amount || '—'}
-                                            </span>
-                                          </div>
-                                        </div>
-                                        {termsText ? (
-                                          <span className="test-history-mini-card__terms">{termsText}</span>
-                                        ) : null}
-                                        <div className="test-history-mini-card__actions">
-                                          {item.href ? (
-                                            <Link
-                                              to={item.href}
-                                              className="test-history-mini-card__action-btn test-history-mini-card__action-btn--primary"
-                                              onClick={() => setHistorySheetOpen(false)}
-                                            >
-                                              <span>{t('buyerCabinet_openProperty')}</span>
-                                              <FiArrowRight
-                                                size={16}
-                                                className="test-history-mini-card__action-chevron"
-                                                aria-hidden
-                                              />
-                                            </Link>
-                                          ) : null}
-                                          {isPurchasedSection ? (
-                                            <button
-                                              type="button"
-                                              className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
-                                              onClick={() => handleOpenPurchasedGuide(item)}
-                                            >
-                                              {t('buyerCabinet_sellProperty')}
-                                            </button>
-                                          ) : null}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </>
-                                )
-                                return (
-                                  <div key={item.id} className="test-history-mini-card">
-                                    {cardBody}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </section>
-                    ))}
-                  </div>
-                )}
+                <ProfileHistoryExperience
+                  sections={historySections}
+                  loading={historyLoading}
+                  query={historySearchQuery}
+                  onQueryChange={setHistorySearchQuery}
+                  onClose={() => setHistorySheetOpen(false)}
+                  locale={locale}
+                  onOpenPurchased={(item) => {
+                    setSelectedPurchasedProperty(item)
+                    setPurchaseDrawerView('details')
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -3240,203 +2932,18 @@ function TestPage() {
           >
             <div className="test-data-dropbox__measure">
               <div className="test-hero-pro__data-panel test-hero-pro__bookings-panel">
-                <div className="test-data-panel__toolbar">
-                  <button
-                    type="button"
-                    className="test-data-panel__back"
-                    aria-label={t('buyerCabinet_collapse')}
-                    onClick={() => setBookingsSheetOpen(false)}
-                  >
-                    <FiArrowLeft size={18} aria-hidden />
-                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
-                  </button>
-                  <h3 id="test-bookings-panel-title" className="test-data-panel__title">
-                    {t('buyerCabinet_cardBookingsTitle')}
-                  </h3>
-                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
-                </div>
-                <p className="test-data-panel__hint">
-                  {t('buyerCabinet_bookingsSheetHint')}
-                </p>
-                {bookingsSheetLoading ? (
-                  <TestSheetSkeletonBookings />
-                ) : visibleBookingsSheetRows.length === 0 ? (
-                  <p className="test-history-dropbox__empty">
-                    {t('buyerCabinet_bookingsEmpty')}
-                  </p>
-                ) : (
-                  <div className="test-booking-dropbox__list">
-                    {visibleBookingsSheetRows.slice(0, 5).map((b) => {
-                      const statusKey = (b.status || 'pending').toLowerCase()
-                      const bookingIdKey = String(b.id)
-                      const title =
-                        b.property_title || t('buyerCabinet_propertyWithId', { id: b.property_id })
-                      const ownerComment = String(b.owner_comment || '').trim()
-                      const ownerCommentNotificationsCount =
-                        ownerCommentCountsByBooking[bookingIdKey] != null
-                          ? Number(ownerCommentCountsByBooking[bookingIdKey]) || 0
-                          : ownerComment
-                            ? 1
-                            : 0
-                      const coverUrl =
-                        typeof b.property_cover_url === 'string' && b.property_cover_url.trim()
-                          ? b.property_cover_url.trim()
-                          : ''
-                      const badgeTone = ['pending', 'approved', 'rejected', 'paid'].includes(statusKey)
-                        ? statusKey
-                        : 'pending'
-                      const paidCents =
-                        b.paid_amount_cents != null && Number.isFinite(Number(b.paid_amount_cents))
-                          ? Number(b.paid_amount_cents)
-                          : null
-                      const paidLine =
-                        paidCents != null && paidCents > 0
-                          ? t('buyerBookings_paidLine', {
-                              amount: formatMoneyFromMinorUnits(
-                                paidCents,
-                                b.paid_currency || 'eur',
-                                moneyLocale,
-                              ),
-                            })
-                          : null
-                      const insAmt = b.insurance_deposit_amount
-                      const insLine =
-                        insAmt != null && Number.isFinite(Number(insAmt))
-                          ? t('buyerBookings_insuranceLine', {
-                              amount: formatMoneyMajorUnits(
-                                Number(insAmt),
-                                b.paid_currency || 'eur',
-                                moneyLocale,
-                              ),
-                            })
-                          : null
-                      const canCancel = ['pending', 'paid', 'approved'].includes(statusKey)
-                      const canCheckIn =
-                        statusKey === 'approved' &&
-                        (Boolean(String(b.owner_comment || '').trim()) ||
-                          Number(b.check_in_enabled) === 1)
-                      return (
-                        <div key={b.id} className="test-booking-mini-wrap">
-                          {ownerCommentNotificationsCount > 0 ? (
-                            <button
-                              type="button"
-                              className="test-booking-mini__owner-note-btn"
-                              onClick={() =>
-                                setOwnerCommentModalBooking({
-                                  title,
-                                  comment: ownerComment,
-                                  count: ownerCommentNotificationsCount,
-                                })
-                              }
-                              aria-label={t('buyerCabinet_bookingOwnerCommentOpen', {
-                                count: ownerCommentNotificationsCount,
-                              })}
-                            >
-                              <FiBell size={19} aria-hidden />
-                              <span className="test-booking-mini__owner-note-count">
-                                {ownerCommentNotificationsCount > 99
-                                  ? '99+'
-                                  : ownerCommentNotificationsCount}
-                              </span>
-                            </button>
-                          ) : null}
-                          <Link
-                            to={`/profile/bookings?booking=${b.id}`}
-                            className={`test-booking-mini test-booking-mini--${badgeTone}`}
-                            onClick={() => setBookingsSheetOpen(false)}
-                          >
-                            <div className="test-booking-mini__media">
-                              <span
-                                className={`test-booking-mini__badge test-booking-mini__badge--${badgeTone}`}
-                              >
-                                {t(
-                                  `buyerCabinet_bookingStatus_${statusKey}`,
-                                  t('buyerCabinet_bookingStatus_pending'),
-                                )}
-                              </span>
-                              {coverUrl ? (
-                                <img
-                                  src={coverUrl}
-                                  alt=""
-                                  className="test-booking-mini__media-img"
-                                  loading="lazy"
-                                  decoding="async"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none'
-                                  }}
-                                />
-                              ) : null}
-                              <div className="test-booking-mini__media-fallback" aria-hidden>
-                                <FiHome size={16} strokeWidth={1.35} aria-hidden />
-                              </div>
-                            </div>
-                            <div className="test-booking-mini__body">
-                              <span className="test-booking-mini__title">{title}</span>
-                              {paidLine || insLine ? (
-                                <div className="test-booking-mini__finance">
-                                  {paidLine ? (
-                                    <span className="test-booking-mini__money-line">{paidLine}</span>
-                                  ) : null}
-                                  {insLine ? (
-                                    <span className="test-booking-mini__money-line test-booking-mini__money-line--muted">
-                                      {insLine}
-                                    </span>
-                                  ) : null}
-                                </div>
-                              ) : null}
-                              <span className="test-booking-mini__meta">
-                                <span className="test-booking-mini__meta-icon-wrap" aria-hidden>
-                                  <FiCalendar size={14} className="test-booking-mini__meta-icon" />
-                                </span>
-                                {formatDateRange(b.start_date, b.end_date, locale)}
-                              </span>
-                              <span className="test-booking-mini__mobile-cta">
-                                {t('buyerBookings_cta')}
-                                <span className="test-booking-mini__mobile-cta-ring" aria-hidden>
-                                  <FiArrowRight size={12} aria-hidden />
-                                </span>
-                              </span>
-                            </div>
-                            <div className="test-booking-mini__cta">
-                              <span className="test-booking-mini__cta-label">{t('buyerBookings_cta')}</span>
-                              <FiArrowRight size={16} className="test-booking-mini__cta-arrow" aria-hidden />
-                            </div>
-                          </Link>
-                          {canCheckIn ? (
-                            <button
-                              type="button"
-                              className="test-booking-mini__checkin-btn"
-                              onClick={() => {
-                                setBookingsSheetOpen(false)
-                                setCheckInBookingId(b.id)
-                              }}
-                            >
-                              {t('buyerBookings_checkInCta')}
-                              <FiArrowRight size={17} aria-hidden />
-                            </button>
-                          ) : null}
-                          {canCancel ? (
-                            <button
-                              type="button"
-                              className="test-booking-mini__cancel-btn"
-                              onClick={() => setTestDriveCancelBooking(b)}
-                            >
-                              {t('buyerBookings_cancel')}
-                            </button>
-                          ) : null}
-                        </div>
-                      )
-                    })}
-                    {visibleBookingsSheetRows.length > 5 ? (
-                      <p className="test-booking-dropbox__more">
-                        {t('buyerCabinet_bookingsShownOfTotal', {
-                          shown: 5,
-                          total: visibleBookingsSheetRows.length,
-                        })}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
+                <ProfileBookingsExperience
+                  rows={visibleBookingsSheetRows}
+                  loading={bookingsSheetLoading}
+                  locale={locale}
+                  moneyLocale={moneyLocale}
+                  onClose={() => setBookingsSheetOpen(false)}
+                  onCheckIn={(booking) => {
+                    setBookingsSheetOpen(false)
+                    setCheckInBookingId(booking.id)
+                  }}
+                  onCancel={setTestDriveCancelBooking}
+                />
               </div>
             </div>
           </div>
@@ -3673,6 +3180,11 @@ function TestPage() {
         }}
         onConfirm={() => {}}
         extractedData={extractedPassportData}
+      />
+
+      <OwnerCabinetOnboardingDrawer
+        isOpen={sellerOnboardingOpen}
+        onComplete={completeSellerOnboarding}
       />
 
       <ProfileSpotlightOnboarding
@@ -3921,14 +3433,16 @@ function TestPage() {
             setSelectedPurchasedProperty(null)
             void openManagerChatModal()
           }}
-          onSell={() => handleOpenPurchasedGuide(selectedPurchasedProperty)}
+          onSell={() => setPurchaseDrawerView('sell')}
           onBecomeSeller={() => {
-            const item = selectedPurchasedProperty
+            const purchasedProperty = selectedPurchasedProperty
             setSelectedPurchasedProperty(null)
-            void handleSellObjectFromHistory(item)
+            void handleSellObjectFromHistory(purchasedProperty)
           }}
         />
       ) : null}
+
+      <RoleSwitchModals flow={sellPurchasedPropertyRoleFlow} />
 
       <TestDriveCheckInModal
         open={checkInBookingId != null}
@@ -3955,32 +3469,6 @@ function TestPage() {
         }}
       />
 
-      {ownerCommentModalBooking ? (
-        <div
-          className="test-owner-comment-modal__overlay"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setOwnerCommentModalBooking(null)
-          }}
-        >
-          <div className="test-owner-comment-modal" role="dialog" aria-modal="true">
-            <h3 className="test-owner-comment-modal__title">{t('buyerCabinet_bookingOwnerCommentTitle')}</h3>
-            <p className="test-owner-comment-modal__property">
-              <strong>{ownerCommentModalBooking.title}</strong>
-            </p>
-            <p className="test-owner-comment-modal__text">{ownerCommentModalBooking.comment}</p>
-            <div className="test-owner-comment-modal__actions">
-              <button
-                type="button"
-                className="test-owner-comment-modal__btn"
-                onClick={() => setOwnerCommentModalBooking(null)}
-              >
-                {t('buyerCabinet_bookingOwnerCommentClose')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

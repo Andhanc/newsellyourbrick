@@ -8,7 +8,7 @@ import {
 } from './propertyAiGenerate.js'
 
 test('versions generated reports so legacy cached PDFs are not reused', () => {
-  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v4$/)
+  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v5$/)
 })
 
 test('sends relative listing photos to the multimodal model as absolute URLs', async () => {

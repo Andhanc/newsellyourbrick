@@ -42,17 +42,30 @@ test('renders one controlled wrapper per report page', () => {
   assert.match(html, /Не является финансовой консультацией/)
 })
 
-test('uses the SellYourBrick palette with real photos and no concept or conclusion pages', () => {
+test('uses the warm editorial presentation system with real photos', () => {
   const html = renderPropertyAiReportHtml({ report, property: { title: 'Объект' } })
 
-  assert.match(html, /--report-tiffany:#0099a9/i)
-  assert.match(html, /--report-ink:#0f172a/i)
-  assert.match(html, /--report-tiffany-soft:#f0fafb/i)
+  assert.match(html, /--report-clay:#a45d3b/i)
+  assert.match(html, /--report-ink:#171717/i)
+  assert.match(html, /--report-paper:#fbfaf8/i)
+  assert.match(html, /@page\{size:A4 landscape/i)
+  assert.match(html, /width:297mm;height:210mm/i)
+  assert.match(html, /class="cover-photo-frame"/)
   assert.match(html, /class="listing-gallery"/)
   assert.match(html, /class="infrastructure-grid"/)
   assert.match(html, /Школа[\s\S]*320 м/)
   assert.doesNotMatch(html, /report-page--visual/)
   assert.doesNotMatch(html, /report-page--conclusion/)
+})
+
+test('uses a clearly labelled generic illustration only when listing photos are absent', () => {
+  const html = renderPropertyAiReportHtml({
+    report: { ...report, images: [], pages: report.pages.filter((page) => page.type !== 'gallery') },
+    property: { title: 'Объект без фотографий' },
+  })
+
+  assert.match(html, /images\/property-ai\/editorial-house-fallback\.png/)
+  assert.match(html, /ИЛЛЮСТРАЦИЯ · НЕ ФОТО ОБЪЕКТА/)
 })
 
 test('uses dedicated compact layouts for long analysis and infrastructure content', () => {

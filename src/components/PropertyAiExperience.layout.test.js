@@ -11,6 +11,27 @@ test('keeps the launcher fixed until the global footer observer marks the footer
   assert.match(css, /html\.site-footer-near\s+\.property-ai-launcher/)
 })
 
+test('collapses the launcher after entry and makes the first collapsed click expand it', () => {
+  assert.match(jsx, /const \[launcherExpanded, setLauncherExpanded\] = useState\(true\)/)
+  assert.match(jsx, /deferLauncherCollapse/)
+  assert.match(jsx, /setLauncherExpanded\(false\)/)
+  assert.match(jsx, /if \(!launcherExpanded\) \{\s*setLauncherExpanded\(true\)\s*return\s*\}/)
+  assert.match(jsx, /property-ai-launcher--collapsed/)
+  assert.match(css, /\.property-ai-launcher\.property-ai-launcher--collapsed\s*\{[^}]*width:\s*62px/)
+  assert.match(css, /\.property-ai-launcher__label/)
+})
+
+test('smoothly moves the collapsing launcher to the right edge', () => {
+  assert.match(css, /\.property-ai-launcher\s*\{[^}]*width:\s*360px/)
+  assert.match(css, /transition:[^}]*left\s+\.72s/s)
+  assert.match(css, /\.property-ai-launcher\.property-ai-launcher--collapsed\s*\{[^}]*left:\s*calc\(100% - 47px\)/)
+  assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*width:\s*min\(/)
+})
+
+test('defers the entry collapse while the initial property drawer is open', () => {
+  assert.match(propertyDetail, /<PropertyAiExperience[\s\S]*?deferLauncherCollapse=\{isTestDrivePromoOpen && shouldShowTestDrivePromo\}/)
+})
+
 test('keeps the launcher above the taller mobile share purchase bar', () => {
   assert.match(css, /@media \(max-width: 960px\)[\s\S]*?\.property-detail-page-new--auction-mobile-v2\.property-detail-page-new--share-listing \.property-ai-launcher\s*\{[\s\S]*?bottom:\s*calc\(146px \+ env\(safe-area-inset-bottom\)\)/)
 })

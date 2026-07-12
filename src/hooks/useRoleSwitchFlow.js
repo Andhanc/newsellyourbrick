@@ -190,6 +190,33 @@ export function useRoleSwitchFlow(targetRole) {
     }
   }, [targetRole])
 
+  const openCabinetPicker = useCallback(async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const userId = getStoredUserId()
+      if (!userId) {
+        showNotification('Войдите в аккаунт, чтобы переключить кабинет', 'error')
+        return
+      }
+
+      const preview = await loadProfilePreview()
+      setProfilePreview(preview)
+      if (!preview.email || preview.email === '—') {
+        showNotification('Добавьте email в профиле, чтобы создать связанный кабинет', 'error')
+        return
+      }
+
+      const status = await fetchLinkedRoles({ userId })
+      setLinkedStatus(status)
+      setPhase('cabinet')
+    } catch (e) {
+      showNotification(e.message || 'Не удалось открыть переключение кабинета', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const continueFromPitch = useCallback(async () => {
     setError('')
     setLoading(true)
@@ -225,9 +252,8 @@ export function useRoleSwitchFlow(targetRole) {
       setLoading(true)
       try {
         await createLinkedRole({ userId, targetRole, password })
-        const status = await refreshLinkedStatus()
-        setPhase('cabinet')
-        return true
+        await refreshLinkedStatus()
+        return await switchToRole(targetRole, password)
       } catch (e) {
         if (e.passwordValidation) {
           setPasswordHints(e.passwordValidation)
@@ -238,7 +264,7 @@ export function useRoleSwitchFlow(targetRole) {
         setLoading(false)
       }
     },
-    [targetRole, refreshLinkedStatus],
+    [targetRole, refreshLinkedStatus, switchToRole],
   )
 
   const selectCabinet = useCallback(
@@ -251,11 +277,19 @@ export function useRoleSwitchFlow(targetRole) {
         return
       }
 
+      const targetExists =
+        normalized === 'seller' ? Boolean(linkedStatus?.seller) : Boolean(linkedStatus?.buyer)
+      if (!targetExists && normalized === targetRole) {
+        setPhase('pitch')
+        setError('')
+        return
+      }
+
       setPendingSwitchRole(normalized)
       setPhase('switch-password')
       setError('')
     },
-    [isCurrentSeller, closeAll],
+    [isCurrentSeller, closeAll, linkedStatus, targetRole],
   )
 
   const submitSwitchPassword = useCallback(
@@ -324,6 +358,7 @@ export function useRoleSwitchFlow(targetRole) {
     isCurrentSeller,
     targetRole,
     openFlow,
+    openCabinetPicker,
     closeAll,
     continueFromPitch,
     submitSetup,

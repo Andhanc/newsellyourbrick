@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -36,6 +36,7 @@ export default function PurchasedPropertyDrawer({
 }) {
   const closeButtonRef = useRef(null)
   const overlayRef = useRef(null)
+  const bodyRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
@@ -97,6 +98,12 @@ export default function PurchasedPropertyDrawer({
   const percent = Math.round(item.paymentPercent)
   const isSellView = view === 'sell'
 
+  useLayoutEffect(() => {
+    if (!bodyRef.current) return
+    bodyRef.current.scrollTop = 0
+    bodyRef.current.scrollLeft = 0
+  }, [view])
+
   return (
     <div
       ref={overlayRef}
@@ -126,7 +133,7 @@ export default function PurchasedPropertyDrawer({
         </header>
 
         {isSellView ? (
-          <div className="purchase-drawer__body purchase-drawer__body--sell">
+          <div ref={bodyRef} className="purchase-drawer__body purchase-drawer__body--sell">
             <div className="purchase-drawer__intro">
               <span className="purchase-drawer__intro-icon"><Store size={22} aria-hidden /></span>
               <div>
@@ -157,7 +164,7 @@ export default function PurchasedPropertyDrawer({
             </div>
           </div>
         ) : (
-          <div className="purchase-drawer__body">
+          <div ref={bodyRef} className="purchase-drawer__body">
             <div className="purchase-drawer__property-media">
               <img src={item.imageSrc} alt={item.title} />
               <span><Check size={15} aria-hidden /> Резерв подтверждён</span>

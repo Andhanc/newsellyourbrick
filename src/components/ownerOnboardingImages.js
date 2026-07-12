@@ -1,6 +1,6 @@
 import { publicAsset } from '../utils/publicAsset'
 
-/** Иллюстрации onboarding (public/images/owner-onboarding/) */
+/** 3D-иллюстрации маршрута продавца: профиль → объект и депозит → торги → старт. */
 export const OWNER_ONBOARDING_IMAGES = [
   publicAsset('images/owner-onboarding/owner-onboarding-step-1-cabinet.webp'),
   publicAsset('images/owner-onboarding/owner-onboarding-step-2-analytics.webp'),

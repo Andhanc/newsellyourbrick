@@ -1,9 +1,8 @@
-import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AUCTION_DEPOSIT_MIN_EUR } from '../utils/auctionDeposit'
-import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
-import { FiClock } from 'react-icons/fi'
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
+import { FiArrowLeft, FiBell, FiHelpCircle, FiLock, FiPlus } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
   TonConnectUIProvider,
@@ -19,10 +18,10 @@ import {
   getStoredNumericUserId,
 } from '../services/authService'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
-import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
+import DepositInfoDrawer from '../components/DepositInfoDrawer'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
@@ -35,7 +34,6 @@ import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../uti
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
-import PropertyListingCard from '../components/PropertyListingCard'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { enrichBidsWithPropertySpecs } from '../utils/enrichBidsWithPropertySpecs'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
@@ -229,13 +227,12 @@ const WalletInner = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
+  const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
   const [analytics, setAnalytics] = useState({
     totalDeposit: 0,
     totalWithdrawal: 0
   })
   const [userBids, setUserBids] = useState([])
-  const [bidForHistory, setBidForHistory] = useState(null)
-  const [showBidHistory, setShowBidHistory] = useState(false)
   const [wonProperty, setWonProperty] = useState(null) // Выигранный объект
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
   const [showTopUpPicker, setShowTopUpPicker] = useState(false)
@@ -724,51 +721,66 @@ const WalletInner = () => {
         <div className="wallet-page__footer-blend" aria-hidden />
       ) : null}
 
-      <div className="wallet-container">
-        {/* Заголовок */}
-        <div className="wallet-header">
-          <button type="button" onClick={handleWalletBack} className="wallet-back-button">
-            <FaArrowLeft />
+      <div className="wallet-container wallet-reference-shell">
+        <header className="wallet-reference-topbar">
+          <button type="button" className="wallet-reference-back" onClick={handleWalletBack}>
+            <FiArrowLeft aria-hidden />
             <span>{t('walletPage_back')}</span>
           </button>
-          <h1 className="wallet-title">{t('walletPage_title')}</h1>
-        </div>
+          <span className="wallet-reference-bell" aria-label={t('ownerTest_notificationsTitle')} role="img">
+            <FiBell aria-hidden />
+          </span>
+        </header>
 
-        {/* Инструкция о депозите */}
-        <div className="deposit-instruction">
-          <div className="deposit-instruction__content">
-            <h2>{t('walletPage_whatIsDepositTitle')}</h2>
-            <p>{t('walletPage_whatIsDepositText', { amount: AUCTION_DEPOSIT_MIN_EUR })}</p>
-          </div>
-        </div>
-
-        {/* Блок депозита и пополнения — карта скрыта, пополнение через Picker */}
-        <div className="wallet-card-section deposit-main-block">
-          <div className="deposit-info-block">
-            <div className="deposit-info-label">{t('walletPage_depositLabel')}</div>
-            <div className="deposit-info-amount">{formatAmount(depositAmount)}</div>
-          </div>
-          <div className="wallet-actions">
+        <section className="wallet-reference-assets" aria-labelledby="wallet-balance-title">
+          <div className="wallet-reference-assets__heading">
+            <span id="wallet-balance-title" className="wallet-reference-assets__label">
+              {t('walletPage_totalAsset', { defaultValue: 'Общий баланс' })}
+            </span>
             <button
-              className="wallet-action-btn deposit-action"
-              onClick={() => setShowTopUpPicker(true)}
+              type="button"
+              className="wallet-reference-assets__help"
+              onClick={() => setIsDepositInfoOpen(true)}
+              aria-label={t('walletPage_whatIsDepositTitle')}
             >
-              <div className="wallet-action-icon-wrapper">
-                <FaArrowUp className="wallet-action-icon" />
-              </div>
-              <span>{t('walletPage_topUp')}</span>
-            </button>
-            <button
-              className="wallet-action-btn withdraw-action"
-              onClick={handleWithdraw}
-            >
-              <div className="wallet-action-icon-wrapper">
-                <FaArrowDown className="wallet-action-icon" />
-              </div>
-              <span>{t('walletPage_withdraw')}</span>
+              <FiHelpCircle aria-hidden />
             </button>
           </div>
-        </div>
+          <div className="wallet-reference-assets__amount-row">
+            <strong>{formatAmount(depositAmount)}</strong>
+            <span className="wallet-reference-assets__lock" aria-hidden><FiLock /></span>
+          </div>
+
+          <div className="wallet-reference-metrics">
+            <div className="wallet-reference-metric">
+              <span className="wallet-reference-metric__icon" aria-hidden><FaArrowUp /></span>
+              <span>
+                <small>{t('walletPage_totalDeposited')}</small>
+                <strong>{formatAmount(analytics.totalDeposit)}</strong>
+              </span>
+            </div>
+            <button type="button" className="wallet-reference-metric" onClick={handleWithdraw}>
+              <span className="wallet-reference-metric__icon" aria-hidden><FaArrowDown /></span>
+              <span>
+                <small>{t('walletPage_totalWithdrawn')}</small>
+                <strong>{formatAmount(analytics.totalWithdrawal)}</strong>
+              </span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="wallet-reference-deposit"
+            onClick={() => setShowTopUpPicker(true)}
+          >
+            {t('walletPage_topUp')}
+          </button>
+        </section>
+
+        <DepositInfoDrawer
+          isOpen={isDepositInfoOpen}
+          onClose={() => setIsDepositInfoOpen(false)}
+        />
 
         {/* Picker и модалки пополнения */}
         <DepositTopUpPicker
@@ -805,172 +817,85 @@ const WalletInner = () => {
           />
         )}
 
-        {/* Выигранный объект */}
-        {wonProperty && (
-          <div className="wallet-won-object">
-            <div className="wallet-won-object__badge">
-              <span className="wallet-won-object__badge-icon">🏆</span>
-              <span className="wallet-won-object__badge-text">{t('walletPage_wonAuctionBadge')}</span>
-            </div>
-            <div className="wallet-won-object__content">
-              <div className="wallet-won-object__image-wrapper">
-                {(() => {
-                  const photoUrl = getPropertyCardImage(wonProperty, null)
-                  const imageProps = buildResponsiveImageProps(photoUrl, {
-                    widths: [220, 320, 420],
-                    sizes: '220px',
-                    fit: 'cover',
-                    quality: 72,
-                    format: 'webp',
-                  })
-                  
-                  return photoUrl ? (
+        <section className="wallet-reference-bids" aria-labelledby="wallet-bids-title">
+          <h2 id="wallet-bids-title">{t('walletPage_myBids', { defaultValue: 'Мои ставки' })}</h2>
+          <div className="wallet-reference-bids__rail">
+            <button type="button" className="wallet-reference-bid" onClick={() => navigate('/auction')}>
+              <span className="wallet-reference-bid__thumb wallet-reference-bid__add"><FiPlus aria-hidden /></span>
+              <strong>{t('walletPage_addBid', { defaultValue: 'Добавить' })}</strong>
+              <small>&nbsp;</small>
+            </button>
+
+            {wonProperty ? (() => {
+              const photoUrl = getPropertyCardImage(wonProperty, null)
+              const imageProps = buildResponsiveImageProps(photoUrl, {
+                widths: [72, 96, 144],
+                sizes: '52px',
+                fit: 'cover',
+                quality: 76,
+                format: 'webp',
+              })
+              return (
+                <button type="button" className="wallet-reference-bid" onClick={handleBookNow}>
+                  {photoUrl ? (
                     <ImageWithSkeleton
                       imgProps={imageProps}
                       alt={wonProperty.title || t('walletPage_propertyAlt')}
-                      className="wallet-won-object__image"
-                      containerClassName="wallet-won-object__image"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
+                      className="wallet-reference-bid__image"
+                      containerClassName="wallet-reference-bid__thumb"
                     />
                   ) : (
-                    <div className="wallet-won-object__image-placeholder">
-                      {t('walletPage_noPhoto')}
-                    </div>
-                  )
-                })()}
-              </div>
-              <div className="wallet-won-object__info">
-                <h3 className="wallet-won-object__title">{wonProperty.title}</h3>
-                {wonProperty.location && (
-                  <p className="wallet-won-object__location">{wonProperty.location}</p>
-                )}
-                <div className="wallet-won-object__bid-info">
-                  <span className="wallet-won-object__bid-label">{t('walletPage_winningBidLabel')}</span>
-                  <span className="wallet-won-object__bid-amount">
-                    {getCurrencySymbol(wonProperty.currency)}
-                    {wonProperty.bid_amount.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
+                    <span className="wallet-reference-bid__thumb wallet-reference-bid__add" aria-hidden><FiPlus /></span>
+                  )}
+                  <strong>{t('walletPage_wonAuctionBadge')}</strong>
+                  <small>{getCurrencySymbol(wonProperty.currency)}{Number(wonProperty.bid_amount || 0).toLocaleString(i18n.language, { maximumFractionDigits: 0 })}</small>
+                </button>
+              )
+            })() : null}
+
+            {userBids.map((bid) => {
+              const listingProperty = formatBidAsListingProperty(bid)
+              const photoUrl = getPropertyCardImage(listingProperty, null)
+              const imageProps = buildResponsiveImageProps(photoUrl, {
+                widths: [72, 96, 144],
+                sizes: '52px',
+                fit: 'cover',
+                quality: 76,
+                format: 'webp',
+              })
+              return (
                 <button
-                  className="wallet-won-object__buy-btn"
-                  onClick={handleBookNow}
-                  disabled={!buyNowEmailOk}
-                  title={!buyNowEmailOk ? t('walletPage_emailRequiredTitle') : undefined}
-                  style={{
-                    opacity: !buyNowEmailOk ? 0.5 : 1,
-                    cursor: !buyNowEmailOk ? 'not-allowed' : 'pointer',
+                  type="button"
+                  key={bidPropertyKey(bid)}
+                  className="wallet-reference-bid"
+                  onClick={() => {
+                    if (!ensureCanOpenProperty()) return
+                    navigate(
+                      getPropertyDetailPath(bid.property_id, { property: listingProperty }),
+                      { state: { property: listingProperty } },
+                    )
                   }}
                 >
-                  {t('walletPage_goToPurchase')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Объекты с активными ставками */}
-        {userBids.length > 0 && !wonProperty && (
-          <div className="wallet-bid-object">
-            <h3 className="wallet-bid-object__heading">
-              {userBids.length > 1
-                ? t('walletPage_activeBidsHeading')
-                : t('walletPage_activeBidHeading')}
-            </h3>
-            <div className="wallet-bid-objects properties-grid property-listing-grid">
-              {userBids.map((bid) => {
-                const listingProperty = formatBidAsListingProperty(bid)
-                return (
-                  <div key={bidPropertyKey(bid)} className="wallet-bid-object__panel">
-                    <PropertyListingCard
-                      property={listingProperty}
-                      onOpen={() => {
-                        if (!ensureCanOpenProperty()) return
-                        navigate(
-                          getPropertyDetailPath(bid.property_id, { property: listingProperty }),
-                          { state: { property: listingProperty } }
-                        )
-                      }}
-                      showFavorite={false}
-                      showDescription={false}
-                      showTimer={false}
-                      showActions={false}
-                      pinFooter
-                      bidInfoLabel={t('walletPage_yourBidLabel')}
-                      bidInfoAmount={bid.bid_amount}
-                      imageTopRightAction={{
-                        ariaLabel: t('walletPage_history'),
-                        icon: <FiClock size={18} aria-hidden />,
-                        onClick: () => {
-                          setBidForHistory(bid)
-                          setShowBidHistory(true)
-                        },
-                      }}
-                      footerAction={
-                        <Link
-                          to={getPropertyDetailPath(bid.property_id, { property: listingProperty })}
-                          className="wallet-bid-object__btn wallet-bid-object__btn--primary"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (!ensureCanOpenProperty()) {
-                              e.preventDefault()
-                            }
-                          }}
-                        >
-                          {t('walletPage_goToProperty')}
-                        </Link>
-                      }
+                  {photoUrl ? (
+                    <ImageWithSkeleton
+                      imgProps={imageProps}
+                      alt={listingProperty.title || t('walletPage_propertyAlt')}
+                      className="wallet-reference-bid__image"
+                      containerClassName="wallet-reference-bid__thumb"
                     />
-                  </div>
-                )
-              })}
-            </div>
+                  ) : (
+                    <span className="wallet-reference-bid__thumb wallet-reference-bid__add" aria-hidden><FiPlus /></span>
+                  )}
+                  <strong>{listingProperty.title || t('walletPage_propertyAlt')}</strong>
+                  <small>{getCurrencySymbol(bid.currency)}{Number(bid.bid_amount || 0).toLocaleString(i18n.language, { maximumFractionDigits: 0 })}</small>
+                </button>
+              )
+            })}
           </div>
-        )}
+        </section>
 
-        {/* Модальное окно истории ставок */}
-        {bidForHistory && (
-          <UserBidHistoryModal
-            isOpen={showBidHistory}
-            onClose={() => setShowBidHistory(false)}
-            property={{
-              id: bidForHistory.property_id,
-              title: bidForHistory.title,
-              location: bidForHistory.location,
-            }}
-            userId={dbUserId}
-          />
-        )}
-
-        {/* Аналитика и Транзакции в одной строке */}
-        <div className="wallet-stats-transactions">
-          {/* Аналитика */}
-          <div className="wallet-analytics-block">
-            <h2 className="wallet-analytics-title">{t('walletPage_analyticsTitle')}</h2>
-            <div className="wallet-stats">
-              <div className="wallet-stat-card">
-                <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">{t('walletPage_totalWithdrawn')}</div>
-                  <div className="wallet-stat-icon">
-                    <FaArrowDown />
-                  </div>
-                </div>
-                <div className="wallet-stat-amount">{formatAmount(analytics.totalWithdrawal)}</div>
-              </div>
-              <div className="wallet-stat-card">
-                <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">{t('walletPage_totalDeposited')}</div>
-                  <div className="wallet-stat-icon">
-                    <FaArrowUp />
-                  </div>
-                </div>
-                <div className="wallet-stat-amount">{formatAmount(analytics.totalDeposit)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Транзакции */}
+        {/* Транзакции идут отдельным блоком под ставками */}
+        <div className="wallet-stats-transactions wallet-stats-transactions--transactions-only wallet-reference-transactions">
           <div className="wallet-transactions-block">
             <div className="wallet-transactions-header">
               <h3 className="wallet-transactions-title">{t('walletPage_transactionsTitle')}</h3>
@@ -982,6 +907,9 @@ const WalletInner = () => {
               ) : (
                 transactions.map((transaction, index) => (
                   <div key={transaction.id || index} className="wallet-transaction-item">
+                    <div className="wallet-transaction-avatar" aria-hidden>
+                      {transaction.amount > 0 ? <FaArrowUp /> : <FaArrowDown />}
+                    </div>
                     <div className="wallet-transaction-info">
                       <div className="wallet-transaction-name">{transaction.description || transaction.type}</div>
                       <div className="wallet-transaction-time">

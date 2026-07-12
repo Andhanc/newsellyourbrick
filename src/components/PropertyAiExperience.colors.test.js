@@ -8,15 +8,16 @@ const pdfRenderer = await readFile(
   'utf8',
 )
 
-test('uses the SellYourBrick Tiffany accent throughout Property AI', () => {
+test('keeps the chat Tiffany while the PDF uses the warm editorial palette', () => {
   assert.doesNotMatch(css, /#ffe000/i)
   assert.doesNotMatch(pdfRenderer, /#ffe000/i)
   assert.match(css, /--property-ai-accent:\s*#0099a9/i)
   assert.match(css, /--property-ai-accent-soft:\s*rgba\(0,\s*153,\s*169,\s*0\.18\)/i)
-  assert.match(pdfRenderer, /#0099a9/i)
+  assert.match(pdfRenderer, /--report-clay:#a45d3b/i)
+  assert.match(pdfRenderer, /--report-paper:#fbfaf8/i)
 })
 
-test('uses white content on solid Tiffany surfaces', () => {
+test('uses white content on solid accent surfaces', () => {
   const solidSurfaceSelectors = [
     'property-ai-picker__thumbs span',
     'property-ai-user-message',
@@ -35,6 +36,6 @@ test('uses white content on solid Tiffany surfaces', () => {
   }
 
   assert.match(css, /\.property-ai-pdf-spinner\s*\{[^}]*border:\s*3px solid rgba\(255,\s*255,\s*255,[^}]*border-top-color:\s*#fff/s)
-  assert.match(pdfRenderer, /\.ai-pill\{[^}]*background:var\(--report-tiffany\);color:#fff/)
-  assert.match(pdfRenderer, /\.risk\{background:var\(--report-tiffany\);color:#fff\}/)
+  assert.match(pdfRenderer, /\.risk\{background:var\(--report-clay\);color:#fff\}/)
+  assert.match(pdfRenderer, /\.editorial>div:first-child\{[^}]*background:var\(--report-clay\);color:#fff/)
 })

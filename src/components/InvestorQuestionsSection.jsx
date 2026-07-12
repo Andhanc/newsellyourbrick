@@ -42,7 +42,7 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
       <div className="invest-shell invest-questions__inner">
         <div className="invest-questions__contact">
           <h2 id={`${idPrefix}-questions-title`} className="invest-questions__title">
-            Остались вопросы?
+            Остались{' '}<span className="invest-questions__title-accent">вопросы?</span>
           </h2>
           <p className="invest-questions__subtitle">
             Вы можете задать его, позвонив или написав сообщение

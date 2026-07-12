@@ -110,6 +110,17 @@ function pickLocationFromProperty(prop) {
   return String(prop.location || prop.address || '').trim()
 }
 
+function isDebtProperty(prop) {
+  if (!prop || typeof prop !== 'object') return false
+  return (
+    String(prop.sale_type || '').toLowerCase() === 'debt' ||
+    prop.is_debt === 1 ||
+    prop.is_debt === true ||
+    prop.has_debt === 1 ||
+    prop.has_debt === true
+  )
+}
+
 /** Ключ календарного дня в локальной зоне (группировка в UI). */
 function dayKeyFromRawDate(raw) {
   if (!raw) return ''
@@ -219,6 +230,9 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      amountValue: Number(winner.winning_bid_amount) || 0,
+      currency: String(winner.currency || prop.currency || 'EUR').toUpperCase(),
+      isDebt: isDebtProperty(prop),
     })
   }
 
@@ -258,6 +272,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       location: loc,
       dayKey: dayKeyFromRawDate(date),
       ...purchase,
+      amountValue: paid,
+      isDebt: Boolean(purchase.isDebt),
     })
   }
 
@@ -300,6 +316,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      amountValue: Number(row.total_paid) || 0,
+      currency: cur,
     })
   }
 
@@ -339,6 +357,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(bidDate),
+      amountValue: Number(latest.bid_amount) || 0,
+      currency: String(latest.currency || prop.currency || 'EUR').toUpperCase(),
     })
   }
 

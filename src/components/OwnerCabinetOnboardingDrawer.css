@@ -155,8 +155,8 @@
 .owner-onboarding-drawer__copy {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   gap: 0.55rem;
   width: 100%;
   min-width: 0;
@@ -175,7 +175,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.08rem;
   width: 100%;
   max-width: 100%;
