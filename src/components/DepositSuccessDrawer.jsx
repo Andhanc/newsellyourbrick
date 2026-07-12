@@ -2,13 +2,11 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiX } from 'react-icons/fi'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
-import DepositSuccessIllustration from './DepositSuccessIllustration'
 import './DepositSuccessDrawer.css'
 
 export default function DepositSuccessDrawer({
   isOpen,
   onClose,
-  balanceFormatted,
   onContinue,
 }) {
   const { t } = useTranslation()
@@ -54,15 +52,17 @@ export default function DepositSuccessDrawer({
             <span className="deposit-success-drawer__handle-pill" />
           </div>
 
-          <DepositSuccessIllustration className="deposit-success-drawer__illustration" />
+          <img
+            className="deposit-success-drawer__illustration"
+            src="/images/property-detail/deposit-success-check-3d.png"
+            alt=""
+            aria-hidden="true"
+          />
 
           <h2 id="deposit-success-drawer-title" className="deposit-success-drawer__title">
             {t('depositSuccessDrawer_title')}
           </h2>
           <p className="deposit-success-drawer__lead">{t('depositSuccessDrawer_lead')}</p>
-          <p className="deposit-success-drawer__balance">
-            {t('depositSuccessDrawer_balance', { amount: balanceFormatted })}
-          </p>
 
           <button
             type="button"

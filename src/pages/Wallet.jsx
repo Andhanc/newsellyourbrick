@@ -799,7 +799,6 @@ const WalletInner = () => {
         <DepositSuccessDrawer
           isOpen={showDepositSuccessDrawer}
           onClose={() => setShowDepositSuccessDrawer(false)}
-          balanceFormatted={formatAmount(depositAmount)}
           onContinue={handleDepositSuccessContinue}
         />
         {dbUserId && (

@@ -98,8 +98,10 @@
 .deposit-success-drawer__illustration {
   display: block;
   width: min(200px, 72vw);
+  aspect-ratio: 1;
   height: auto;
   margin: 0 auto 8px;
+  object-fit: contain;
 }
 
 .deposit-success-drawer__title {
@@ -112,21 +114,11 @@
 }
 
 .deposit-success-drawer__lead {
-  margin: 0 0 12px;
+  margin: 0 0 24px;
   font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 15px;
   line-height: 1.45;
   color: #64748b;
-}
-
-.deposit-success-drawer__balance {
-  margin: 0 0 24px;
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
-  font-size: clamp(1.5rem, 5vw, 1.85rem);
-  font-weight: 700;
-  line-height: 1.2;
-  color: #007580;
-  letter-spacing: -0.02em;
 }
 
 .deposit-success-drawer__cta {
@@ -155,6 +147,73 @@
 
 .deposit-success-drawer__cta:active {
   transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .deposit-success-drawer {
+    padding: 0;
+  }
+
+  .deposit-success-drawer__panel {
+    max-width: none;
+    max-height: 94dvh;
+    overflow-y: auto;
+    padding: 8px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 28px 28px 0 0;
+    background: #ffffff;
+    text-align: left;
+    box-shadow: 0 -16px 52px rgba(7, 28, 32, 0.24);
+  }
+
+  .deposit-success-drawer__handle {
+    padding-top: 5px;
+  }
+
+  .deposit-success-drawer__handle-pill {
+    width: 42px;
+    background: #d6dddc;
+  }
+
+  .deposit-success-drawer__close {
+    top: 17px;
+    right: 17px;
+    width: 38px;
+    height: 38px;
+    background: #eef3f2;
+    color: #244246;
+  }
+
+  .deposit-success-drawer__illustration {
+    width: 168px;
+    height: 150px;
+    margin: 0 auto -2px;
+    object-fit: contain;
+  }
+
+  .deposit-success-drawer__title {
+    margin-bottom: 8px;
+    font-size: clamp(25px, 7vw, 30px);
+    line-height: 1.05;
+    letter-spacing: -0.045em;
+  }
+
+  .deposit-success-drawer__lead {
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #607174;
+  }
+
+  .deposit-success-drawer__cta {
+    min-height: 52px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: #0099a9;
+    box-shadow: 0 10px 26px rgba(0, 153, 169, 0.28);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
