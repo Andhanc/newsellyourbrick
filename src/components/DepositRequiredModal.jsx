@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiChevronLeft, FiShield, FiX } from 'react-icons/fi'
 import './DepositRequiredModal.css'
@@ -23,9 +24,18 @@ const DepositRequiredModal = ({
     if (!isOpen) setShowDepositInfo(false)
   }, [isOpen])
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen])
 
-  return (
+  if (!isOpen || typeof document === 'undefined') return null
+
+  return createPortal(
     <div className="deposit-required-modal__overlay" onClick={onClose}>
       <div
         className={`deposit-required-modal__panel ${showDepositInfo ? 'deposit-required-modal__panel--expanded' : ''}`}
@@ -104,7 +114,8 @@ const DepositRequiredModal = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

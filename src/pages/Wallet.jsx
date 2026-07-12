@@ -612,7 +612,8 @@ const WalletInner = () => {
     const from = isSafeWalletFromPath(fromState) ? fromState : getWalletEntryFrom()
     if (from) {
       clearWalletEntryFrom()
-      navigate(from)
+      // replace убирает /deposit из history, иначе «Назад» на объекте зацикливается deposit ↔ object
+      navigate(from, { replace: true })
       return true
     }
     return false

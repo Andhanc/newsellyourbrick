@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
-import DepositButton from '../components/DepositButton'
 import DepositRequiredModal from '../components/DepositRequiredModal'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
@@ -12,7 +11,6 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { fetchUserDeposit } from '../utils/depositApi'
-import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
@@ -50,8 +48,6 @@ const PropertyDetail = () => {
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const userData = getUserData()
   const userId = userData?.id
-
-  const canShowDeposit = canShowBuyerDeposit
 
   // Проверка авторизации при загрузке компонента
   useEffect(() => {
@@ -541,7 +537,6 @@ const PropertyDetail = () => {
   if (isLoading) {
     return (
       <div className="property-detail-page">
-        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="loading" style={{ 
             display: 'flex', 
@@ -582,7 +577,6 @@ const PropertyDetail = () => {
             onGoToProperty={handleGoToPropertyFromNotification}
           />
         )}
-        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="not-found">
             <h2>Объект не найден</h2>
@@ -815,7 +809,6 @@ const PropertyDetail = () => {
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <div className="property-detail">
         <div className="detail-header">
           <button onClick={handleBackClick} className="back-button">

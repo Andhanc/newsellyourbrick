@@ -44,7 +44,6 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
-import DepositButton from '../components/DepositButton'
 import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
 import AuctionEndedSimilarPromo from '../components/AuctionEndedSimilarPromo'
 import PropertyDetailLocationMap from '../components/PropertyDetailLocationMap'
@@ -93,7 +92,6 @@ import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/p
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
-import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
@@ -1338,6 +1336,25 @@ function PropertyDetailClassic({
     Number(auctionUserDeposit) <= 0 &&
     !roleSkipsAuctionKyc(userRoleForAuction)
 
+  const requiresAuctionDeposit = useCallback(() => {
+    if (!isAuctionProperty) return false
+    if (roleSkipsAuctionKyc(userData?.role || userRoleForAuction || 'buyer')) return false
+    return !isAuctionDepositSufficient(auctionUserDeposit)
+  }, [isAuctionProperty, userData?.role, userRoleForAuction, auctionUserDeposit])
+
+  const openDepositRequiredModal = useCallback(() => {
+    setIsBidDrawerOpen(false)
+    setIsDepositRequiredOpen(true)
+  }, [])
+
+  const tryOpenBidDrawer = useCallback(() => {
+    if (requiresAuctionDeposit()) {
+      openDepositRequiredModal()
+      return
+    }
+    setIsBidDrawerOpen(true)
+  }, [requiresAuctionDeposit, openDepositRequiredModal])
+
   const wrapDepositGatedBlock = (
     block,
     { mobileOnly = false, wrapperClassName = '' } = {},
@@ -2432,7 +2449,7 @@ function PropertyDetailClassic({
 
     if (isAuctionProperty && !roleSkipsAuctionKyc(userRole)) {
       if (!isAuctionDepositSufficient(auctionUserDeposit)) {
-        setIsDepositRequiredOpen(true)
+        openDepositRequiredModal()
         return
       }
     }
@@ -2523,7 +2540,7 @@ function PropertyDetailClassic({
 
     if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
       if (!isAuctionDepositSufficient(auctionUserDeposit)) {
-        setIsDepositRequiredOpen(true)
+        openDepositRequiredModal()
         return
       }
       if (auctionKycVerified === false) {
@@ -2607,7 +2624,7 @@ function PropertyDetailClassic({
 
     if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
       if (!isAuctionDepositSufficient(auctionUserDeposit)) {
-        setIsDepositRequiredOpen(true)
+        openDepositRequiredModal()
         return
       }
       if (auctionKycVerified === false) {
@@ -2690,7 +2707,7 @@ function PropertyDetailClassic({
           if (errorData.code === 'VERIFICATION_PENDING') {
             errorMessage = t('propertyDetailBidVerificationPending')
           } else if (errorData.code === 'INSUFFICIENT_AUCTION_DEPOSIT') {
-            setIsDepositRequiredOpen(true)
+            openDepositRequiredModal()
             errorMessage = errorData.error || errorMessage
           } else if (errorData.error) {
             errorMessage = errorData.error
@@ -4729,7 +4746,7 @@ function PropertyDetailClassic({
     if (isReservedActive) return
     if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
       if (!isAuctionDepositSufficient(auctionUserDeposit)) {
-        setIsDepositRequiredOpen(true)
+        openDepositRequiredModal()
         return
       }
       if (auctionKycVerified === false) {
@@ -6276,7 +6293,9 @@ function PropertyDetailClassic({
                       className="pdx-quick-bid-btn"
                       onClick={() => {
                         handleQuickBid(amount)
-                        setIsBidDrawerOpen(true)
+                        if (!requiresAuctionDeposit()) {
+                          setIsBidDrawerOpen(true)
+                        }
                       }}
                       disabled={
                         auctionEndedForSidebar ||
@@ -6294,7 +6313,7 @@ function PropertyDetailClassic({
               <button
                 type="button"
                 className="pdx-primary-btn"
-                onClick={() => setIsBidDrawerOpen(true)}
+                onClick={tryOpenBidDrawer}
                 disabled={auctionEndedForSidebar || isReservedActive || disableAuctionBidFields}
               >
                 {t('placeBid')}
@@ -6862,9 +6881,6 @@ function PropertyDetailClassic({
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {canShowBuyerDeposit() && Number(auctionUserDeposit) > 0 ? (
-        <DepositButton amount={auctionUserDeposit} />
-      ) : null}
       <AuctionSoldOutNotice
         open={auctionSoldOutNoticeOpen}
         onClose={() => setAuctionSoldOutNoticeOpen(false)}
@@ -7645,7 +7661,7 @@ function PropertyDetailClassic({
           <button
             type="button"
             className="property-detail-mobile-bottom-bar__cta"
-            onClick={() => setIsBidDrawerOpen(true)}
+            onClick={tryOpenBidDrawer}
             disabled={auctionEndedForSidebar || isReservedActive}
           >
             {t('placeBid')}

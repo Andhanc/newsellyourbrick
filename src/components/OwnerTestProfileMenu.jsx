@@ -9,6 +9,31 @@ import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import './OwnerTestProfileMenu.css'
 
+export async function performOwnerTestLogout({ t, user, signOut, confirm = true }) {
+  if (confirm && !window.confirm(t('ownerTest_logoutConfirm'))) {
+    return
+  }
+
+  sessionStorage.setItem('clerk_logout_in_progress', 'true')
+  try {
+    if (user && signOut) {
+      await signOut({ redirectUrl: `${window.location.origin}/` })
+    }
+  } catch (error) {
+    console.warn('OwnerTestProfileMenu: Clerk signOut', error)
+  }
+
+  try {
+    await logout()
+  } catch (error) {
+    console.warn('OwnerTestProfileMenu: logout()', error)
+  } finally {
+    sessionStorage.removeItem('clerk_logout_in_progress')
+  }
+
+  window.location.assign('/')
+}
+
 export function resolveOwnerTestDisplayName({ name, fullName, fallback } = {}) {
   if (name?.trim()) return name.trim()
   if (fullName?.trim()) return fullName.trim()
@@ -77,29 +102,7 @@ export default function OwnerTestProfileMenu({
       onLogout()
       return
     }
-
-    if (!window.confirm(t('ownerTest_logoutConfirm'))) {
-      return
-    }
-
-    sessionStorage.setItem('clerk_logout_in_progress', 'true')
-    try {
-      if (user && signOut) {
-        await signOut({ redirectUrl: `${window.location.origin}/` })
-      }
-    } catch (error) {
-      console.warn('OwnerTestProfileMenu: Clerk signOut', error)
-    }
-
-    try {
-      await logout()
-    } catch (error) {
-      console.warn('OwnerTestProfileMenu: logout()', error)
-    } finally {
-      sessionStorage.removeItem('clerk_logout_in_progress')
-    }
-
-    window.location.assign('/')
+    await performOwnerTestLogout({ t, user, signOut })
   }, [onLogout, signOut, user, t])
 
   return (

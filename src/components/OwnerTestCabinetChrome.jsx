@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Building2, X, Plus } from 'lucide-react'
-import OwnerTestProfileMenu from './OwnerTestProfileMenu'
+import { useUser, useClerk } from '@clerk/clerk-react'
+import { ArrowRight, Building2, LogOut, Plus, X } from 'lucide-react'
+import OwnerTestProfileMenu, { performOwnerTestLogout } from './OwnerTestProfileMenu'
 import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
 import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
@@ -30,6 +31,8 @@ function BrandLogo({ className = '' }) {
 
 export default function OwnerTestCabinetChrome({ children }) {
   const { t } = useTranslation()
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const { view, goTo } = useOwnerTestNav()
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -43,6 +46,11 @@ export default function OwnerTestCabinetChrome({ children }) {
     (view === OWNER_VIEWS.HOME || view === OWNER_VIEWS.PROPERTIES)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const handleLogout = useCallback(async () => {
+    closeMenu()
+    await performOwnerTestLogout({ t, user, signOut })
+  }, [closeMenu, signOut, t, user])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -190,6 +198,17 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav otc-nav--drawer">
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
+          <div className="otc-drawer__logout-foot">
+            <div className="otc-drawer__logout-divider" aria-hidden />
+            <button
+              type="button"
+              className="otc-nav__item otc-nav__item--logout"
+              onClick={handleLogout}
+            >
+              <LogOut size={20} strokeWidth={2} aria-hidden />
+              <span>{t('ownerTest_logout')}</span>
+            </button>
+          </div>
         </nav>
       </aside>
 
