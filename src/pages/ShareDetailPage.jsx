@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import SharePurchaseModal from '../components/SharePurchaseModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
@@ -15,6 +15,7 @@ import { getPropertyCardImage, normalizePropertyMediaFields } from '../utils/pro
 import { buildDisplayProperty } from '../utils/buildDisplayProperty'
 import { formatPropertyPrice } from '../utils/currency'
 import { getCoInvestmentDetailPath, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
 import { getPropertySlugFromRecord, isNumericPropertyRouteParam } from '../utils/propertySlug'
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
@@ -99,7 +100,6 @@ const ShareDetailPage = () => {
   const { slugOrId: id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
   const fromState = location.state?.shareObject
   const { user, isLoaded: userLoaded } = useUser()
 
@@ -307,58 +307,31 @@ const ShareDetailPage = () => {
     }
   }, [userId])
 
-  const checkoutFlag = searchParams.get('share_checkout')
-  const sessionIdQ = searchParams.get('session_id')
-
   useEffect(() => {
-    if (checkoutFlag !== 'success' || !sessionIdQ || !sessionIdQ.startsWith('cs_')) return undefined
-    const sessionId = sessionIdQ
-    const uid = localStorage.getItem('userId')
-    if (!uid || !/^\d+$/.test(uid)) {
-      requestOpenLoginModal({ wizard: true })
-      return undefined
-    }
-    const routeMatch = id?.match(/^(apartment|commercial|house|villa)-(\d+)$/)
-    let cancelled = false
-    ;(async () => {
-      try {
-        const res = await fetch(`${API_BASE}/billing/confirm-share-purchase`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId, userId: uid }),
-        })
-        const data = await res.json().catch(() => ({}))
-        if (cancelled) return
-        const next = new URLSearchParams(searchParams)
-        next.delete('share_checkout')
-        next.delete('session_id')
-        setSearchParams(next, { replace: true })
-        if (res.ok && data.success) {
-          showNotification(t('shareDetailPurchaseSuccess'))
-          await loadPropertyFromApi()
-          if (routeMatch) {
-            const propertyType = routeMatch[1]
-            const propertyIdNum = parseInt(routeMatch[2], 10)
-            const r2 = await fetch(`${API_BASE}/users/${uid}/share-purchases`)
-            const j2 = await r2.json().catch(() => ({}))
-            if (j2.success && Array.isArray(j2.data)) {
-              const sum = j2.data
-                .filter((row) => row.property_id === propertyIdNum && row.property_type === propertyType)
-                .reduce((acc, row) => acc + (Number(row.shares_count) || 0), 0)
-              setMySharesOwned(sum)
-            }
-          }
-        } else {
-          showNotification(data.error || t('shareDetailPurchaseConfirmError'))
-        }
-      } catch (e) {
-        if (!cancelled) showNotification(e?.message || t('shareDetailPurchaseConfirmError'))
+    const onPurchaseConfirmed = async (event) => {
+      const propertyId = event?.detail?.propertyId
+      const routeMatch = id?.match(/^(apartment|commercial|house|villa)-(\d+)$/)
+      if (!routeMatch) return
+      const propertyType = routeMatch[1]
+      const propertyIdNum = parseInt(routeMatch[2], 10)
+      if (propertyId != null && propertyIdNum !== Number(propertyId)) return
+
+      await loadPropertyFromApi()
+      const uid = localStorage.getItem('userId')
+      if (!uid || !/^\d+$/.test(uid)) return
+      const r2 = await fetch(`${API_BASE}/users/${uid}/share-purchases`)
+      const j2 = await r2.json().catch(() => ({}))
+      if (j2.success && Array.isArray(j2.data)) {
+        const sum = j2.data
+          .filter((row) => row.property_id === propertyIdNum && row.property_type === propertyType)
+          .reduce((acc, row) => acc + (Number(row.shares_count) || 0), 0)
+        setMySharesOwned(sum)
       }
-    })()
-    return () => {
-      cancelled = true
     }
-  }, [id, loadPropertyFromApi, checkoutFlag, sessionIdQ, searchParams, setSearchParams, t])
+
+    window.addEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, onPurchaseConfirmed)
+    return () => window.removeEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, onPurchaseConfirmed)
+  }, [id, loadPropertyFromApi])
 
   const userEmail =
     user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || getUserData()?.email || ''

@@ -2277,7 +2277,18 @@ app.put('/api/users/:id/card-bound', async (req, res) => {
  */
 app.get('/api/users/email/:email', async (req, res) => {
   try {
-    const user = await userQueries.getByEmail(req.params.email);
+    const emailLower = String(req.params.email || '').trim().toLowerCase();
+    const roleRaw = req.query.role ? String(req.query.role).toLowerCase() : null;
+
+    let user = null;
+    if (roleRaw === 'buyer' || roleRaw === 'seller') {
+      const rows = await userQueries.getAllByEmail(emailLower);
+      const matches = usersForCabinetRole(rows, roleRaw);
+      user = matches[0] || null;
+    } else {
+      user = await userQueries.getByEmail(emailLower);
+    }
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }

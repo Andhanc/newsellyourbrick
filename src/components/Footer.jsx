@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { FaApple, FaTelegramPlane, FaYoutube, FaWhatsapp, FaInstagram } from 'react-icons/fa'
 import { MdSentimentDissatisfied } from 'react-icons/md'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
+import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -207,12 +208,34 @@ const Footer = () => {
     >
       <div className="footer__container">
         <nav className="footer__nav-grid" aria-label={t('footerAllSections')}>
-          {footerColumns.map((col, ci) => (
+          {footerColumns.slice(0, 4).map((col, ci) => (
             <div key={col.title} className="footer__menu-column">
               <p className="footer__menu-heading">{col.title}</p>
               {col.links.map((item, i) => renderLink(item, i, `c${ci}`))}
             </div>
           ))}
+
+          <div className="footer__nav-bottom">
+            <div className="footer__menu-column footer__menu-column--company">
+              <p className="footer__menu-heading">{footerColumns[4].title}</p>
+              {footerColumns[4].links.map((item, i) => renderLink(item, i, 'company'))}
+            </div>
+
+            <aside className="footer__nav-qr-slot" aria-label={t('footerQrApp')}>
+              <div className="footer__whatsapp-qr">
+                <img
+                  src={whatsappQR}
+                  alt={t('footerQrApp')}
+                  className="footer__qr-image"
+                  width={130}
+                  height={130}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p className="footer__qr-caption">{t('footerQrApp')}</p>
+              </div>
+            </aside>
+          </div>
         </nav>
 
         <div className="footer__bottom-panel">

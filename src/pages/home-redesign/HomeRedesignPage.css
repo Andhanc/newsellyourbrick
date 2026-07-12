@@ -27,7 +27,7 @@
   --hr-container: 1240px;
   --hr-gutter: clamp(20px, 4vw, 48px);
   --hr-section-pad: clamp(72px, 10vw, 120px);
-  --hr-header-offset: 104px;
+  --hr-header-offset: 112px;
 
   background: var(--hr-paper);
   color: var(--hr-ink);
@@ -38,14 +38,14 @@
 
 @media (max-width: 768px) {
   .hr-page {
-    --hr-header-offset: 88px;
+    --hr-header-offset: 100px;
   }
 }
 
 /* Site header — как на главной инвестора */
 .hr-page .new-header {
   background: transparent;
-  padding: 20px 0;
+  padding: 28px 0 16px;
   position: fixed;
   top: 0;
   left: 0;
@@ -84,7 +84,7 @@
 }
 
 .hr-page .menu-dropdown {
-  top: calc(20px + 65px + 8px) !important;
+  top: calc(28px + 65px + 8px) !important;
 }
 
 @media (max-width: 768px) {
@@ -97,7 +97,7 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: env(safe-area-inset-top, 0px) 0 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 0 0;
   }
 
   .hr-page .new-header__container {
@@ -1217,6 +1217,14 @@
   --hr-showcase-action-hover: #1a1a1a;
   --hr-showcase-action-shadow: 0 10px 24px rgba(10, 10, 10, 0.16);
   --hr-showcase-action-shadow-hover: 0 14px 30px rgba(10, 10, 10, 0.22);
+  --hr-showcase-card-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.08),
+    0 6px 16px rgba(15, 23, 42, 0.1),
+    0 14px 32px rgba(15, 23, 42, 0.08);
+  --hr-showcase-card-shadow-hover:
+    0 2px 6px rgba(15, 23, 42, 0.1),
+    0 10px 24px rgba(15, 23, 42, 0.14),
+    0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
 /* Заголовки витрин — Playfair italic + брендовый градиент */
@@ -1257,6 +1265,22 @@
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__subtitle,
 .hr-page .hr-showcases .invest-showcase--shares .invest-showcase__subtitle {
   color: #0a0a0a;
+}
+
+/* Витрины «Аукцион», «Доли», «Долги» — опускаем заголовок секции */
+.hr-page .hr-showcases .invest-showcase--auction {
+  padding-top: clamp(52px, 5.5dvh, 72px);
+}
+
+.hr-page .hr-showcases .invest-showcase--shares,
+.hr-page .hr-showcases .invest-showcase--debts {
+  padding-top: clamp(56px, 6dvh, 76px);
+}
+
+.hr-page .hr-showcases .invest-showcase--auction .invest-showcase__header,
+.hr-page .hr-showcases .invest-showcase--shares .invest-showcase__header,
+.hr-page .hr-showcases .invest-showcase--debts .invest-showcase__header {
+  margin-top: clamp(12px, 1.8vw, 20px);
 }
 
 .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__cta-pill,
@@ -1331,6 +1355,19 @@
   --ac-mint-deep: #3f8798;
   --ac-mint-soft: rgba(74, 150, 166, 0.1);
   --ac-mint-glow: rgba(74, 150, 166, 0.22);
+}
+
+.hr-page .hr-showcases .auction-card,
+.hr-page .hr-showcases .shares-v2-card,
+.hr-page .hr-showcases .debts-property-card {
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: var(--hr-showcase-card-shadow);
+}
+
+.hr-page .hr-showcases .auction-card:hover,
+.hr-page .hr-showcases .shares-v2-card:hover,
+.hr-page .hr-showcases .debts-property-card:hover {
+  box-shadow: var(--hr-showcase-card-shadow-hover);
 }
 
 .hr-page .hr-showcases .invest-showcase .auction-card__price-panel {
@@ -2868,6 +2905,14 @@
     --hr-showcase-white: #ffffff;
     --hr-showcase-buy-now: #e5f2f5;
     --hr-showcase-debts: #eef1df;
+    --hr-showcase-card-shadow:
+      0 2px 4px rgba(15, 23, 42, 0.1),
+      0 8px 18px rgba(15, 23, 42, 0.12),
+      0 16px 28px rgba(15, 23, 42, 0.1);
+    --hr-showcase-card-shadow-hover:
+      0 3px 8px rgba(15, 23, 42, 0.12),
+      0 12px 24px rgba(15, 23, 42, 0.16),
+      0 22px 36px rgba(15, 23, 42, 0.14);
     background: var(--hr-showcase-white);
   }
 
@@ -2893,7 +2938,19 @@
   }
 
   .hr-page .hr-showcases .invest-showcase--auction {
+    padding-top: clamp(40px, 8vw, 52px);
     background: var(--hr-showcase-white);
+  }
+
+  .hr-page .hr-showcases .invest-showcase--shares,
+  .hr-page .hr-showcases .invest-showcase--debts {
+    padding-top: clamp(44px, 9vw, 56px);
+  }
+
+  .hr-page .hr-showcases .invest-showcase--auction .invest-showcase__header,
+  .hr-page .hr-showcases .invest-showcase--shares .invest-showcase__header,
+  .hr-page .hr-showcases .invest-showcase--debts .invest-showcase__header {
+    margin-top: clamp(16px, 4vw, 24px);
   }
 
   .hr-page .hr-showcases .invest-showcase--buy-now {
@@ -3040,7 +3097,7 @@
   .hr-page .hr-showcases .invest-showcase__scroller {
     align-items: stretch;
     gap: 8px;
-    padding-right: 16px;
+    padding: 6px 16px 10px 2px;
   }
 
   .hr-page .hr-showcases .home-showcase__slot {
@@ -3055,6 +3112,40 @@
   .hr-page .hr-showcases .shares-v2-card,
   .hr-page .hr-showcases .debts-property-card {
     border-radius: 14px;
+    border-color: rgba(15, 23, 42, 0.11);
+    box-shadow: var(--hr-showcase-card-shadow);
+  }
+
+  .hr-page .hr-showcases .auction-card:hover,
+  .hr-page .hr-showcases .shares-v2-card:hover,
+  .hr-page .hr-showcases .debts-property-card:hover {
+    box-shadow: var(--hr-showcase-card-shadow-hover);
+  }
+
+  .hr-page .hr-showcases .auction-card__ended-overlay {
+    gap: 4px;
+    padding: 5px 4px;
+    border-radius: 14px;
+  }
+
+  .hr-page .hr-showcases .auction-card__ended-title {
+    font-size: clamp(1rem, 5vw, 1.1875rem);
+    letter-spacing: 0.05em;
+    line-height: 1.05;
+  }
+
+  .hr-page .hr-showcases .auction-card__ended-link {
+    min-height: 0;
+    padding: 3px 8px;
+    font-size: clamp(0.5rem, 2.35vw, 0.625rem);
+    gap: 3px;
+    box-shadow: 0 2px 8px rgba(79, 158, 176, 0.24);
+  }
+
+  .hr-page .hr-showcases .auction-card__ended-link svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
   }
 
   .hr-page .hr-showcases .auction-card__media,

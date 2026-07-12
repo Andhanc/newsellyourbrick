@@ -23,7 +23,7 @@
 }
 
 .shares-invest-main {
-  margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 104px));
+  margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 112px));
   padding: 0 0 72px;
   overflow: hidden;
 }
@@ -71,7 +71,7 @@
   gap: 54px;
   align-items: center;
   min-height: 560px;
-  padding: calc(env(safe-area-inset-top, 0px) + 104px + 42px) 0 122px;
+  padding: calc(env(safe-area-inset-top, 0px) + 112px + 42px) 0 122px;
 }
 
 .shares-invest-hero__copy h1 {
@@ -1142,7 +1142,7 @@
 
 @media (max-width: 900px) {
   .shares-invest-main {
-    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 84px));
+    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 96px));
   }
 
   .shares-invest-hero,
@@ -1151,7 +1151,7 @@
   }
 
   .shares-invest-hero__inner {
-    padding: calc(env(safe-area-inset-top, 0px) + 84px + 40px) 0 110px;
+    padding: calc(env(safe-area-inset-top, 0px) + 96px + 40px) 0 110px;
   }
 
   .shares-invest-stats,
@@ -1655,7 +1655,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 /* Новый header на странице долей — такой же, как на Главной/домашней */
 .shares-page .new-header {
   background: transparent;
-  padding: 20px 0;
+  padding: 28px 0 16px;
   position: fixed;
   top: 0;
   left: 0;
@@ -1667,7 +1667,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .new-header-spacer {
-  height: calc(env(safe-area-inset-top, 0px) + 104px);
+  height: calc(env(safe-area-inset-top, 0px) + 112px);
   width: 100%;
   flex-shrink: 0;
 }
@@ -1687,7 +1687,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .menu-dropdown {
-  top: calc(20px + 63px + 8px) !important;
+  top: calc(28px + 63px + 8px) !important;
 }
 
 @media (max-width: 768px) {
@@ -1702,12 +1702,11 @@ html.site-footer-near .shares-floats > button.ai-button {
     width: 100%;
     display: flex;
     justify-content: center;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 0 0;
   }
 
   .shares-page .new-header-spacer {
-    height: calc(env(safe-area-inset-top, 0px) + 84px);
+    height: calc(env(safe-area-inset-top, 0px) + 96px);
   }
 
   .shares-page .new-header__container {
@@ -1740,14 +1739,14 @@ html.site-footer-near .shares-floats > button.ai-button {
   z-index: 1;
   width: 100%;
   box-sizing: border-box;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 80px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
   padding-left: 16px;
   padding-right: 16px;
 }
 
 @media (min-width: 768px) {
   .shares-page__heading-strip {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 102px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 110px);
     padding-left: 20px;
     padding-right: 20px;
   }
@@ -1761,12 +1760,12 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 /* Hero без центрального дубля заголовка — только описание и лента */
 .shares-page .animated-marquee-hero--shares-no-hero-title {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 80px) !important;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
 }
 
 @media (min-width: 768px) {
   .shares-page .animated-marquee-hero--shares-no-hero-title {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 102px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 110px) !important;
     min-height: 42vh !important;
   }
 }
@@ -1913,7 +1912,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   position: relative;
   overflow: hidden;
   margin-top: 0;
-  padding: calc(env(safe-area-inset-top, 0px) + 124px) var(--debts-page-inline-inset, 16px) 40px;
+  padding: calc(env(safe-area-inset-top, 0px) + 136px) var(--debts-page-inline-inset, 16px) 40px;
   background: #050505;
   color: #ffffff;
 }
@@ -1986,7 +1985,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 769px) {
   .debts-hero-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 136px) var(--debts-page-inline-inset, 24px) 48px;
+    padding: calc(env(safe-area-inset-top, 0px) + 144px) var(--debts-page-inline-inset, 24px) 48px;
   }
 }
 
@@ -1997,7 +1996,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 
   .debts-hero-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 108px) var(--debts-page-inline-inset, 12px) 24px;
+    padding: calc(env(safe-area-inset-top, 0px) + 120px) var(--debts-page-inline-inset, 12px) 24px;
   }
 
   .debts-hero-scene__header {

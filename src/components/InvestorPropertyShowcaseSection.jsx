@@ -6,6 +6,7 @@ import SharesPropertyCard, { SharesPropertyCardSkeleton } from './SharesProperty
 import { mapShareFromApiResponse } from '../utils/sharesListing'
 import { formatPropertyPrice } from '../utils/currency'
 import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import '../components/PropertyList.css'
 import '../components/AuctionPropertyCard.css'
@@ -130,9 +131,7 @@ export default function InvestorPropertyShowcaseSection({
                   showPropertyAuthRequiredToast()
                   return
                 }
-                const routeId =
-                  obj.shareId || obj.routeId || `${obj.property_type || 'apartment'}-${obj.id}`
-                navigate(`/shares/${routeId}`, { state: { shareObject: obj } })
+                navigate(getCoInvestmentDetailPath(obj), { state: { shareObject: obj } })
               }}
               imageFallback={SHARE_FALLBACK}
             />

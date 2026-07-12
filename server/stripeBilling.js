@@ -2333,7 +2333,17 @@ export function registerStripeBillingRoutes(app) {
       if (!result.ok) {
         return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
       }
-      return res.json({ success: true, data: { already: !!result.already } });
+      const propertyId = parseInt(ready.metadata?.property_id || '', 10);
+      const propertyType =
+        ready.metadata?.property_type != null ? String(ready.metadata.property_type).trim() : '';
+      return res.json({
+        success: true,
+        data: {
+          already: !!result.already,
+          propertyId: Number.isFinite(propertyId) ? propertyId : null,
+          propertyType: propertyType || null,
+        },
+      });
     } catch (err) {
       console.error('[Stripe] confirm-property-reservation:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
@@ -2760,7 +2770,17 @@ export function registerStripeBillingRoutes(app) {
       if (!result.ok) {
         return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
       }
-      return res.json({ success: true, data: { already: !!result.already } });
+      const propertyId = parseInt(ready.metadata?.property_id || '', 10);
+      const propertyType =
+        ready.metadata?.property_type != null ? String(ready.metadata.property_type).trim() : '';
+      return res.json({
+        success: true,
+        data: {
+          already: !!result.already,
+          propertyId: Number.isFinite(propertyId) ? propertyId : null,
+          propertyType: propertyType || null,
+        },
+      });
     } catch (err) {
       console.error('[Stripe] confirm-share-purchase:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });

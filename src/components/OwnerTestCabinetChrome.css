@@ -234,6 +234,18 @@
   justify-content: center;
 }
 
+.otc-nav__item--logout {
+  margin-top: 12px;
+  color: #dc2626;
+}
+
+.otc-nav__item--logout:hover {
+  background: #fef2f2;
+  border-color: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+  transform: none;
+}
+
 .otc-btn {
   display: inline-flex;
   align-items: center;
@@ -539,6 +551,15 @@
   }
 
   .otc-nav--drawer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
+  }
+
+  .otc-nav--drawer .otc-nav__item--logout {
+    margin-top: auto;
+    padding-top: 14px;
   }
 }

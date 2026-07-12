@@ -19,7 +19,8 @@ import {
   buildPurchasedPropertySnapshot,
   fetchPropertySnapshot,
 } from '../utils/purchasedPropertyListingPrefill'
-import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
+import { RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import './PurchasedObjectGuidePage.css'
 
 const STEPS = [
@@ -37,6 +38,8 @@ export default function PurchasedObjectGuidePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [sellerPromptOpen, setSellerPromptOpen] = useState(false)
+  const [sellerPromptMode, setSellerPromptMode] = useState('register')
+  const roleSwitchFlow = useRoleSwitchFlow('seller')
 
   useEffect(() => {
     let cancelled = false
@@ -80,21 +83,17 @@ export default function PurchasedObjectGuidePage() {
       propertyId: snapshot.id,
       propertySnapshot: snapshot,
       navigate,
-      onPromptSellerRegistration: () => setSellerPromptOpen(true),
+      onPromptSellerAction: ({ mode }) => {
+        setSellerPromptMode(mode === 'switch' ? 'switch' : 'register')
+        setSellerPromptOpen(true)
+      },
     })
   }, [navigate, snapshot])
 
   const handleSellerPromptConfirm = useCallback(() => {
     setSellerPromptOpen(false)
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      // ignore
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
-  }, [navigate])
+    void roleSwitchFlow.openSellCabinetFlow(sellerPromptMode)
+  }, [roleSwitchFlow, sellerPromptMode])
 
   const title = property?.title || property?.name || t('purchasedGuide_defaultTitle')
 
@@ -184,8 +183,16 @@ export default function PurchasedObjectGuidePage() {
         <div className="purchased-guide-seller-prompt" role="dialog" aria-modal="true">
           <div className="purchased-guide-seller-prompt__backdrop" onClick={() => setSellerPromptOpen(false)} />
           <div className="purchased-guide-seller-prompt__panel">
-            <h3>{t('purchasedGuide_sellerPromptTitle')}</h3>
-            <p>{t('purchasedGuide_sellerPromptText')}</p>
+            <h3>
+              {sellerPromptMode === 'switch'
+                ? t('purchasedGuide_switchPromptTitle')
+                : t('purchasedGuide_sellerPromptTitle')}
+            </h3>
+            <p>
+              {sellerPromptMode === 'switch'
+                ? t('purchasedGuide_switchPromptText')
+                : t('purchasedGuide_sellerPromptText')}
+            </p>
             <div className="purchased-guide-seller-prompt__actions">
               <button type="button" className="purchased-guide-seller-prompt__ghost" onClick={() => setSellerPromptOpen(false)}>
                 {t('purchasedGuide_sellerPromptCancel')}
@@ -197,6 +204,8 @@ export default function PurchasedObjectGuidePage() {
           </div>
         </div>
       ) : null}
+
+      <RoleSwitchModals flow={roleSwitchFlow} />
     </div>
   )
 }

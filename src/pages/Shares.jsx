@@ -19,6 +19,7 @@ import SharesPropertyCard from '../components/SharesPropertyCard'
 import { publicAsset } from '../utils/publicAsset'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
@@ -319,11 +320,11 @@ export default function Shares() {
   )
 
   const openShare = (share) => {
-    if (share.originalShare) {
-      navigate(getCoInvestmentContextPropertyPath(share.originalShare), { state: { shareObject: share.originalShare } })
-      return
-    }
-    navigate('/co-investment')
+    const payload = share.originalShare || share
+    const path = share.originalShare
+      ? getCoInvestmentContextPropertyPath(payload)
+      : getCoInvestmentDetailPath(payload)
+    navigate(path, { state: { shareObject: payload } })
   }
 
   const pageNumbers = useMemo(() => {

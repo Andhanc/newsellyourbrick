@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
+import {
+  fetchCabinetUserByEmail,
+  mapDbUserToSessionUser,
+  normalizeOAuthCabinetRole,
+} from '../utils/resolveCabinetUserByEmail'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -104,22 +109,23 @@ const ClerkAuthSync = () => {
         try {
           let dbUserId = null
           
-          // Сначала пытаемся найти пользователя по email
+          // Сначала пытаемся найти пользователя по email и выбранному кабинету
           let foundUser = null
+          const intendedCabinetRole = normalizeOAuthCabinetRole(userRole)
           if (userEmail) {
-            const emailResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail.toLowerCase())}`)
-            if (emailResponse.ok) {
-              const emailData = await emailResponse.json()
-              if (emailData.success && emailData.data) {
-                foundUser = emailData.data
-                dbUserId = foundUser.id
-                console.log('✅ ClerkAuthSync: Пользователь найден в БД по email:', dbUserId)
-              }
+            foundUser = await fetchCabinetUserByEmail(userEmail, intendedCabinetRole, API_BASE_URL)
+            if (foundUser?.id) {
+              dbUserId = foundUser.id
+              console.log(
+                '✅ ClerkAuthSync: Пользователь найден в БД по email и кабинету:',
+                dbUserId,
+                intendedCabinetRole,
+              )
             }
           }
           
-          // Если не нашли по email, пытаемся по телефону
-          if (!dbUserId && userPhone) {
+          // Если не нашли по email, пытаемся по телефону только если email не задан
+          if (!dbUserId && userPhone && !userEmail) {
             const phoneDigits = userPhone.replace(/\D/g, '')
             if (phoneDigits) {
               const phoneResponse = await fetch(`${API_BASE_URL}/users/phone/${phoneDigits}`)
@@ -222,11 +228,13 @@ const ClerkAuthSync = () => {
               }
             }
             // Обновляем localStorage с правильным ID из БД
-            const updatedUserData = {
-              ...clerkUserData,
-              id: dbUserId.toString()
-            }
-            saveUserData(updatedUserData, 'clerk')
+            const sessionUser =
+              mapDbUserToSessionUser(foundUser, clerkUserData) || {
+                ...clerkUserData,
+                id: dbUserId.toString(),
+                role: intendedCabinetRole,
+              }
+            saveUserData(sessionUser, 'clerk')
             localStorage.setItem('userId', String(dbUserId))
             console.log('✅ ClerkAuthSync: Данные синхронизированы с БД, ID:', dbUserId)
           }

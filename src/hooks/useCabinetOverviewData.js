@@ -7,6 +7,8 @@ import {
   CLERK_DB_USER_SYNCED,
 } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
+import { fetchCabinetUserByEmail } from '../utils/resolveCabinetUserByEmail'
+import { isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
@@ -18,7 +20,15 @@ import {
 import { mapReservationPurchase } from '../utils/cabinetPurchaseHistory'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-const CABINET_JSON_CACHE = new Map()
+function clearCabinetHistoryCacheForUser(uid) {
+  if (!uid) return
+  const base = `${API_BASE_URL}/users/${uid}`
+  CABINET_JSON_CACHE.delete(`${base}/reservation-purchases`)
+  CABINET_JSON_CACHE.delete(`${base}/share-purchases`)
+  CABINET_JSON_CACHE.delete(`${API_BASE_URL}/auction-winners/user/${uid}`)
+  CABINET_JSON_CACHE.delete(`${API_BASE_URL}/bids/user/${uid}`)
+}
+
 const HISTORY_CACHE_TTL_MS = 45000
 const SUBSCRIPTION_CACHE_TTL_MS = 30000
 
@@ -377,8 +387,9 @@ export function useCabinetOverviewData() {
   const [cabinetVipActive, setCabinetVipActive] = useState(false)
 
   useEffect(() => {
-    const applyFromStorage = () => {
+    const applyFromStorage = (event) => {
       const n = getStoredNumericUserId()
+      if (event?.detail?.userId) clearCabinetHistoryCacheForUser(event.detail.userId)
       setNumericUserId((prev) => (prev === n ? prev : n))
     }
     applyFromStorage()
@@ -402,12 +413,10 @@ export function useCabinetOverviewData() {
           const userEmail =
             user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
           if (userEmail) {
-            const userResponse = await fetchJsonCached(
-              `${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`,
-              { ttlMs: 20000 }
-            )
-            if (userResponse?.success && userResponse?.data?.id) {
-              const numericId = userResponse.data.id
+            const cabinetRole = isSellerCabinetRole(readStoredUserRole()) ? 'seller' : 'buyer'
+            const dbUser = await fetchCabinetUserByEmail(userEmail, cabinetRole, API_BASE_URL)
+            if (dbUser?.id) {
+              const numericId = dbUser.id
               setNumericUserId(numericId)
               localStorage.setItem('userId', String(numericId))
               return

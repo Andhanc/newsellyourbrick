@@ -30,7 +30,6 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   startDepositWalletCheckout,
   confirmWalletDepositSession,
-  confirmPropertyReservationSession,
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
@@ -178,7 +177,6 @@ const WalletInner = () => {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
-  const walletReservationHandledRef = useRef(null)
   const lastFocusReloadAtRef = useRef(0)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
@@ -552,40 +550,6 @@ const WalletInner = () => {
       } finally {
         const next = new URLSearchParams(searchParams)
         next.delete('deposit_checkout')
-        next.delete('session_id')
-        setSearchParams(next, { replace: true })
-      }
-    }
-    run()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbUserId, searchParams, setSearchParams])
-
-  useEffect(() => {
-    if (!dbUserId) return
-    const rc = searchParams.get('reservation_checkout')
-    const sessionId = searchParams.get('session_id')
-    if (rc !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
-    if (walletReservationHandledRef.current === sessionId) return
-    walletReservationHandledRef.current = sessionId
-
-    const run = async () => {
-      try {
-        const result = await confirmPropertyReservationSession(sessionId, dbUserId)
-        if (result.ok) {
-          if (result.data?.already) {
-            showNotification(t('walletPage_reservationAlreadyRecorded'))
-          } else {
-            showNotification(t('walletPage_reservationSuccess'))
-          }
-          await loadUserData(false)
-        } else {
-          showNotification(result.error || t('walletPage_reservationConfirmError'), 'error')
-        }
-      } catch (e) {
-        showNotification(e?.message || t('walletPage_networkError'), 'error')
-      } finally {
-        const next = new URLSearchParams(searchParams)
-        next.delete('reservation_checkout')
         next.delete('session_id')
         setSearchParams(next, { replace: true })
       }

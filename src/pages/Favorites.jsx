@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Header from '../components/Header'
-import PropertyListingCard from '../components/PropertyListingCard'
-import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
+import FavoritePropertyCard from '../components/FavoritePropertyCard'
 import {
   PiArrowRight,
   PiHeartStraight,
@@ -12,12 +11,20 @@ import {
 } from 'react-icons/pi'
 import './Favorites.css'
 import '../components/PropertyList.css'
+import '../components/AuctionPropertyCard.css'
+import '../components/DebtsPropertyCard.css'
+import '../components/SharesPropertyCard.css'
+import '../styles/hrShowcaseAuctionCards.css'
+import '../styles/hrShowcaseDebtsCards.css'
+import '../components/ui/AuctionMobileLayout.css'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
+import { formatPropertyPrice } from '../utils/currency'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 const EMPTY_ILLUSTRATION = '/images/favorites-empty-reference-style.png'
@@ -46,21 +53,44 @@ const recommendedProperties = [
   },
 ]
 
-function FavoritesGrid({ items, onOpen }) {
+function FavoritesCardSkeleton() {
   return (
-    <div className="properties-grid favorites-page__grid">
-      {items.map((item) => (
-        <PropertyListingCard
-          key={item.key || auctionListingDedupeKey(item.property)}
-          property={item.property}
-          favoriteMockCategory={
-            hasDbBackedProperty(item.property) ? undefined : item.mockCategory
-          }
-          onOpen={onOpen}
-          showActions={false}
-          pinFooter
-        />
-      ))}
+    <div className="auction-card auction-card--skeleton" aria-hidden>
+      <div className="auction-card__media auction-card-skeleton__media" />
+      <div className="auction-card__body auction-card-skeleton__body">
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--short" />
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--title" />
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--specs" />
+        <div className="auction-card-skeleton__price-panel" />
+        <div className="auction-card-skeleton__btn" />
+      </div>
+    </div>
+  )
+}
+
+function FavoritesGrid({
+  items,
+  onOpen,
+  onOpenShare,
+  isFavorite,
+  onToggleFavorite,
+  formatPrice,
+}) {
+  return (
+    <div className="hr-showcases hr-showcases--auction-listing">
+      <div className="properties-grid favorites-page__grid properties-grid--auction-cards auction-mobile-stack--desktop-cards">
+        {items.map((item) => (
+          <FavoritePropertyCard
+            key={item.key || auctionListingDedupeKey(item.property)}
+            item={item}
+            isFavorite={isFavorite}
+            onToggleFavorite={onToggleFavorite}
+            onOpen={onOpen}
+            onOpenShare={onOpenShare}
+            formatPrice={formatPrice}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -68,10 +98,15 @@ function FavoritesGrid({ items, onOpen }) {
 const Favorites = () => {
   const navigate = useNavigate()
   const [guideOpen, setGuideOpen] = useState(false)
-  const { favoritesLoading } = usePropertyFavorites()
+  const { favoritesLoading, isFavorite, toggleFavorite } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
 
   const listLoading = catalogLoading || favoritesLoading
+  const formatPrice = useMemo(
+    () => (price, currency = 'USD') =>
+      formatPropertyPrice(price ?? 0, currency, { compact: true }),
+    [],
+  )
 
   const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
     const timerList = []
@@ -99,6 +134,16 @@ const Favorites = () => {
     navigate(pathname, { state })
   }
 
+  const openShare = (share) => {
+    if (!ensureCanOpenProperty()) return
+    navigate(getCoInvestmentDetailPath(share), { state: { shareObject: share } })
+  }
+
+  const handleToggleFavorite = (property, mockCategory) => {
+    const category = hasDbBackedProperty(property) ? undefined : (mockCategory || 'property')
+    return toggleFavorite(property, category)
+  }
+
   return (
     <div className="favorites-page">
       <Header />
@@ -116,21 +161,46 @@ const Favorites = () => {
         </div>
 
         {listLoading ? (
-          <div
-            className="properties-grid favorites-page__grid favorites-page__grid--skeleton"
-            aria-busy="true"
-          >
-            <PropertyListingSkeletonGrid count={FAVORITES_CARD_SKELETON_COUNT} />
+          <div className="hr-showcases hr-showcases--auction-listing">
+            <div
+              className="properties-grid favorites-page__grid favorites-page__grid--skeleton properties-grid--auction-cards auction-mobile-stack--desktop-cards"
+              aria-busy="true"
+            >
+              {Array.from({ length: FAVORITES_CARD_SKELETON_COUNT }, (_, index) => (
+                <FavoritesCardSkeleton key={`favorites-skeleton-${index}`} />
+              ))}
+            </div>
           </div>
         ) : favoriteAuctions.length > 0 ? (
           splitByTimer ? (
             <div className="favorites-page__sections">
-              <FavoritesGrid items={withTimer} onOpen={openProperty} />
+              <FavoritesGrid
+                items={withTimer}
+                onOpen={openProperty}
+                onOpenShare={openShare}
+                isFavorite={isFavorite}
+                onToggleFavorite={handleToggleFavorite}
+                formatPrice={formatPrice}
+              />
               <div className="favorites-page__divider" role="separator" aria-hidden="true" />
-              <FavoritesGrid items={withoutTimer} onOpen={openProperty} />
+              <FavoritesGrid
+                items={withoutTimer}
+                onOpen={openProperty}
+                onOpenShare={openShare}
+                isFavorite={isFavorite}
+                onToggleFavorite={handleToggleFavorite}
+                formatPrice={formatPrice}
+              />
             </div>
           ) : (
-            <FavoritesGrid items={favoriteAuctions} onOpen={openProperty} />
+            <FavoritesGrid
+              items={favoriteAuctions}
+              onOpen={openProperty}
+              onOpenShare={openShare}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+              formatPrice={formatPrice}
+            />
           )
         ) : (
           <section className="favorites-empty" aria-labelledby="favorites-empty-title">

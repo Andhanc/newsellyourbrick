@@ -1,10 +1,17 @@
 import { createPortal } from 'react-dom'
 import { FiArrowRight, FiX } from 'react-icons/fi'
 import { getNotificationItemClass } from '../utils/notificationItemClass'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
 
 const LIST_FALLBACK_IMG =
   '/images/external/photo-1560448204-e02f11c3d0e2-1ff5809f2f.jpg'
+
+function getNotificationThumbSrc(image) {
+  if (!image || typeof image !== 'string') return LIST_FALLBACK_IMG
+  const trimmed = image.trim()
+  if (!trimmed) return LIST_FALLBACK_IMG
+  if (trimmed.startsWith('/api/uploads/')) return trimmed.replace(/^\/api/, '')
+  return trimmed
+}
 
 function parseNotificationData(data) {
   if (data == null) return null
@@ -69,13 +76,7 @@ export default function SiteNotificationsPanel({
               notifications.map((notification) => {
                 const propertyMeta = getNotificationPropertyMeta(notification)
                 const dataObj = parseNotificationData(notification?.data)
-                const propertyImageProps = buildResponsiveImageProps(propertyMeta.image, {
-                  widths: [120, 180, 240],
-                  sizes: '72px',
-                  fit: 'cover',
-                  quality: 70,
-                  format: 'webp',
-                })
+                const propertyThumbSrc = getNotificationThumbSrc(propertyMeta.image)
 
                 return (
                   <div
@@ -136,10 +137,13 @@ export default function SiteNotificationsPanel({
                         <div className="notification-item__property">
                           <div className="notification-item__image">
                             <img
-                              {...propertyImageProps}
+                              src={propertyThumbSrc}
                               alt={propertyMeta.name || 'Property'}
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => {
-                                e.target.src = LIST_FALLBACK_IMG
+                                e.currentTarget.onerror = null
+                                e.currentTarget.src = LIST_FALLBACK_IMG
                               }}
                             />
                           </div>

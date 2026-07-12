@@ -31,14 +31,16 @@ export function useFavoriteAuctionItems() {
         uidRaw && /^\d+$/.test(String(uidRaw).trim())
           ? `&viewer_user_id=${encodeURIComponent(String(uidRaw).trim())}`
           : ''
-      const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
+      const [approvedRes, auctionsRes, debtsRes, sharesRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
         fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
         fetch(`${apiBase}/properties/debts`),
+        fetch(`${apiBase}/properties/shares?lang=${lang}`),
       ])
       let approved = []
       let auctions = []
       let debts = []
+      let shares = []
       if (approvedRes.ok) {
         const json = await approvedRes.json()
         if (json?.success && Array.isArray(json.data)) approved = json.data
@@ -98,6 +100,7 @@ export function useFavoriteAuctionItems() {
       approved.forEach((p) => add(p, {}))
       auctions.forEach((p) => add(p, { forceAuction: true }))
       debts.forEach((p) => add(p, { forceAuction: p?.is_auction === 1 || p?.is_auction === true }))
+      shares.forEach((p) => add(p, {}))
       setCatalogByKey(byKey)
       setCatalogVersion((v) => v + 1)
     } catch (e) {

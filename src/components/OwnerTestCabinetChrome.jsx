@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { X, Plus } from 'lucide-react'
+import { useUser, useClerk } from '@clerk/clerk-react'
+import { X, Plus, LogOut } from 'lucide-react'
 import OwnerTestProfileMenu from './OwnerTestProfileMenu'
 import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
@@ -10,6 +11,7 @@ import OwnerSupportButton from './OwnerSupportButton'
 import SiteChatDock from './SiteChatDock'
 import OwnerFloatingMobileNav from './OwnerFloatingMobileNav'
 import OwnerCabinetOnboardingDrawer from './OwnerCabinetOnboardingDrawer'
+import { logout } from '../services/authService'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
@@ -28,6 +30,8 @@ function BrandLogo({ className = '' }) {
 
 export default function OwnerTestCabinetChrome({ children }) {
   const { t } = useTranslation()
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const { view, goTo } = useOwnerTestNav()
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -36,6 +40,33 @@ export default function OwnerTestCabinetChrome({ children }) {
   const showTabbar = isTabbarView(view)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const handleLogout = useCallback(async () => {
+    closeMenu()
+
+    if (!window.confirm(t('ownerTest_logoutConfirm'))) {
+      return
+    }
+
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+    try {
+      if (user && signOut) {
+        await signOut({ redirectUrl: `${window.location.origin}/` })
+      }
+    } catch (error) {
+      console.warn('OwnerTestCabinetChrome: Clerk signOut', error)
+    }
+
+    try {
+      await logout()
+    } catch (error) {
+      console.warn('OwnerTestCabinetChrome: logout()', error)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
+    }
+
+    window.location.assign('/')
+  }, [closeMenu, signOut, t, user])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -196,6 +227,14 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav otc-nav--drawer">
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
+          <button
+            type="button"
+            className="otc-nav__item otc-nav__item--logout"
+            onClick={handleLogout}
+          >
+            <LogOut size={20} strokeWidth={2} aria-hidden />
+            <span>{t('ownerTest_logout')}</span>
+          </button>
         </nav>
       </aside>
 

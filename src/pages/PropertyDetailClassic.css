@@ -1596,6 +1596,151 @@
   margin-bottom: 12px;
 }
 
+.property-detail-mobile-ended-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 4px 0 18px;
+}
+
+@media (max-width: 960px) {
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history.pd-v3-card {
+    background: #ffffff;
+    border: 1px solid #e8edf5;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    padding: 16px 16px 18px;
+    box-sizing: border-box;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-card__title {
+    margin: 0 0 14px;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__avatar {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #64748b;
+    overflow: hidden;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__flag {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__time {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #94a3b8;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__empty {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.55;
+    color: #94a3b8;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__footer {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #eef2f7;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0099a9;
+    cursor: pointer;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-link-btn--center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-blocks .auction-completed-no-bids {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-blocks .pd-v3-btn--winner {
+    width: 100%;
+    min-height: 46px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0099a9 0%, #007d8a 100%);
+    color: #ffffff;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 153, 169, 0.22);
+  }
+}
+
 .auction-winner-label {
   font-size: 14px;
   font-weight: 700;

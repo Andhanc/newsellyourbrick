@@ -45,17 +45,14 @@ export async function resolveReserveTermsPdfUrl() {
 }
 
 /**
- * @returns {Promise<{ url: string, found: boolean }>}
+ * Открыть PDF в новой вкладке. Синхронно — иначе браузер блокирует popup после await.
+ * @returns {{ url: string, openedInNewTab: boolean }}
  */
-export async function openReserveTermsPdf() {
-  const candidates = RESERVE_TERMS_FILES.map(getReserveTermsPdfUrl)
-  for (const url of candidates) {
-    try {
-      const resp = await fetch(url, { method: 'HEAD' })
-      if (isPdfResponse(resp)) return { url, found: true }
-    } catch {
-      /* пробуем следующий */
-    }
+export function launchReserveTermsPdf() {
+  const url = getReserveTermsPdfUrl()
+  if (typeof window === 'undefined') {
+    return { url, openedInNewTab: false }
   }
-  return { url: candidates[0], found: false }
+  const opened = window.open(url, '_blank', 'noopener,noreferrer')
+  return { url, openedInNewTab: Boolean(opened) }
 }

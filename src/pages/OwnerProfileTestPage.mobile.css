@@ -414,27 +414,31 @@
   .opr-profile-overview__cards {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
+  }
+
+  .opr-profile-overview__card {
+    width: 100%;
+    min-height: 0;
   }
 
   .opr-profile-overview__card--fact {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
-    column-gap: 10px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    column-gap: 12px;
     align-items: center;
     min-width: 0;
-    min-height: 0;
-    padding: 12px;
+    padding: 12px 14px;
     border: 1px solid #edf2f7;
     border-radius: 14px;
     background: #fbfdfd;
   }
 
   .opr-profile-overview__fact-icon {
-    grid-row: span 2;
-    width: 34px;
-    height: 34px;
+    grid-row: auto;
+    width: 38px;
+    height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -448,7 +452,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
 
   .opr-profile-overview__fact-label {
@@ -458,12 +462,15 @@
   }
 
   .opr-profile-overview__fact-value {
-    overflow: hidden;
+    display: block;
+    overflow: visible;
+    margin: 0;
     color: #111827;
-    font-size: 13px;
-    font-weight: 900;
-    line-height: 1.35;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.4;
     word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .opr-profile-overview__card--completion {
@@ -479,7 +486,23 @@
 
   .opr-profile-overview__card--completion .owner-pc__header {
     min-height: 0;
-    padding: 10px 12px;
+    padding: 12px 14px;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .opr-profile-overview__card--completion .owner-pc__title,
+  .opr-profile-overview__card--completion .owner-pc__meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .opr-profile-overview__card--completion .owner-pc__title {
+    font-size: 14px;
+  }
+
+  .opr-profile-overview__card--completion .owner-pc__meta {
+    font-size: 12px;
   }
 
   .opr-profile-side .opr-profile-card {
@@ -849,7 +872,58 @@
   }
 
   .opr-body .opr-profile-overview__cards {
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .opr-body .opr-profile-overview__card {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .opr-body .opr-profile-overview__card--fact {
+    align-items: center;
+    padding: 12px 14px;
+  }
+
+  .opr-body .opr-profile-overview__fact-icon {
+    grid-row: auto;
+  }
+
+  .opr-body .opr-profile-overview__fact-value {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .opr-body .opr-profile-overview__card--completion .owner-pc,
+  .opr-body .opr-profile-overview__card--completion .owner-pc__header {
+    min-height: 0;
+  }
+
+  .opr-body .opr-profile-overview__card--completion .owner-pc__header {
+    padding: 12px 14px;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .opr-body .opr-profile-overview__card--completion .owner-pc__title,
+  .opr-body .opr-profile-overview__card--completion .owner-pc__meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .opr-body .opr-profile-overview__card--completion .owner-pc__title {
+    font-size: 14px;
+  }
+
+  .opr-body .opr-profile-overview__card--completion .owner-pc__meta {
+    font-size: 12px;
   }
 
   .opr-body .opr-profile-overview__meta {

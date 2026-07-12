@@ -6,6 +6,7 @@ import SharesPropertyCard, { SharesPropertyCardSkeleton } from './SharesProperty
 import { mapShareFromApiResponse } from '../utils/shareCardDisplay'
 import { formatPropertyPrice } from '../utils/currency'
 import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 
 const SHARE_FALLBACK = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -132,9 +133,7 @@ export default function HomePropertyShowcaseSection({
                   showPropertyAuthRequiredToast()
                   return
                 }
-                const routeId =
-                  obj.shareId || obj.routeId || `${obj.property_type || 'apartment'}-${obj.id}`
-                navigate(`/shares/${routeId}`, { state: { shareObject: obj } })
+                navigate(getCoInvestmentDetailPath(obj), { state: { shareObject: obj } })
               }}
               imageFallback={SHARE_FALLBACK}
             />

@@ -80,6 +80,17 @@
   margin-top: 54px;
 }
 
+.favorites-page__grid.properties-grid--auction-cards {
+  align-items: stretch;
+}
+
+.favorites-page__grid.properties-grid--auction-cards .auction-card,
+.favorites-page__grid.properties-grid--auction-cards .debts-property-card,
+.favorites-page__grid.properties-grid--auction-cards .shares-v2-card {
+  height: 100%;
+  min-width: 0;
+}
+
 .favorites-page__grid--skeleton {
   margin-top: 80px;
 }
@@ -546,7 +557,31 @@
 
 @media (max-width: 768px) {
   .favorites-container {
-    padding: calc(env(safe-area-inset-top, 0px) + 106px) 16px 52px;
+    padding: calc(env(safe-area-inset-top, 0px) + 114px) 16px 52px;
+  }
+
+  .favorites-page__grid.properties-grid--auction-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+    row-gap: 14px;
+  }
+
+  .favorites-page__grid .auction-card,
+  .favorites-page__grid .debts-property-card,
+  .favorites-page__grid .shares-v2-card {
+    box-shadow:
+      0 2px 4px rgba(15, 23, 42, 0.1),
+      0 8px 18px rgba(15, 23, 42, 0.12),
+      0 16px 28px rgba(15, 23, 42, 0.1);
+  }
+
+  .favorites-page__grid .auction-card:hover,
+  .favorites-page__grid .debts-property-card:hover,
+  .favorites-page__grid .shares-v2-card:hover {
+    box-shadow:
+      0 3px 8px rgba(15, 23, 42, 0.12),
+      0 12px 24px rgba(15, 23, 42, 0.16),
+      0 22px 36px rgba(15, 23, 42, 0.14);
   }
 
   .favorites-title {

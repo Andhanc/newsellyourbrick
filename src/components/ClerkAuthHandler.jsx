@@ -10,6 +10,14 @@ import {
 } from '../services/authService'
 import AuthAlertModal from './AuthAlertModal'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
+import { completePendingSellAfterSellerLogin } from '../utils/navigateToSellPurchasedProperty'
+import { invalidateUserByIdCache } from '../utils/usersApi'
+import {
+  fetchCabinetUserByEmail,
+  hasAnyCabinetUserByEmail,
+  mapDbUserToSessionUser,
+  normalizeOAuthCabinetRole,
+} from '../utils/resolveCabinetUserByEmail'
 
 /** После редиректа на главную состояние модалки может сброситься (Strict Mode / навигация) — поднимаем из sessionStorage. */
 const PENDING_DUPLICATE_REGISTER_ALERT = 'pending_duplicate_register_alert'
@@ -83,7 +91,9 @@ const ClerkAuthHandler = () => {
     const oauthRedirectKey = 'clerk_oauth_redirect_started'
     const oauthRedirectStarted = sessionStorage.getItem(oauthRedirectKey)
     const needsRegisterPrompted = sessionStorage.getItem('clerk_oauth_needs_register_prompted') === 'true'
-    const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode') || 'register'
+    const storedOAuthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode')
+    const oauthFlowMode =
+      storedOAuthFlowMode || (oauthRedirectStarted === 'true' ? 'login' : 'register')
     
     // Проверяем, были ли мы на Clerk домене (проверяем document.referrer)
     const wasOnClerkDomain = document.referrer.includes('clerk.accounts.dev') ||
@@ -207,24 +217,25 @@ const ClerkAuthHandler = () => {
           /** Уже есть запись в нашей БД до попытки POST /users (важно для «Регистрация» + OAuth). */
           let foundExistingInDb = false
           
-          // Сначала пытаемся найти пользователя по email
+          // Сначала пытаемся найти пользователя по email и выбранному кабинету (покупатель / продавец)
           let foundUser = null
+          const intendedCabinetRole = normalizeOAuthCabinetRole(userRole)
           if (userEmail) {
-            const emailResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail.toLowerCase())}`)
-            if (emailResponse.ok) {
-              const emailData = await emailResponse.json()
-              if (emailData.success && emailData.data) {
-                foundUser = emailData.data
-                dbUserId = foundUser.id
-                foundExistingInDb = true
-                if (foundUser.role) roleFromDatabase = normalizeDbRole(foundUser.role)
-                console.log('✅ ClerkAuthHandler: Пользователь найден в БД по email:', dbUserId)
-              }
+            foundUser = await fetchCabinetUserByEmail(userEmail, intendedCabinetRole, API_BASE_URL)
+            if (foundUser?.id) {
+              dbUserId = foundUser.id
+              foundExistingInDb = true
+              if (foundUser.role) roleFromDatabase = normalizeDbRole(foundUser.role)
+              console.log(
+                '✅ ClerkAuthHandler: Пользователь найден в БД по email и кабинету:',
+                dbUserId,
+                intendedCabinetRole,
+              )
             }
           }
           
-          // Если не нашли по email, пытаемся по телефону
-          if (!dbUserId && userPhone) {
+          // Если не нашли по email, пытаемся по телефону только если email не задан
+          if (!dbUserId && userPhone && !userEmail) {
             const phoneDigits = userPhone.replace(/\D/g, '')
             if (phoneDigits) {
               const phoneResponse = await fetch(`${API_BASE_URL}/users/phone/${phoneDigits}`)
@@ -273,6 +284,15 @@ const ClerkAuthHandler = () => {
           // Если пользователь не найден, создаем его
           if (!dbUserId) {
             if (oauthFlowMode === 'login') {
+              const anyCabinetExists = userEmail
+                ? await hasAnyCabinetUserByEmail(userEmail, API_BASE_URL)
+                : false
+              if (anyCabinetExists) {
+                console.log(
+                  'ClerkAuthHandler: OAuth login — кабинет не найден для роли:',
+                  intendedCabinetRole,
+                )
+              }
               // В режиме "вход" новый пользователь в нашей БД не создаём:
               // вместо этого открываем регистрацию.
               shouldOpenRegister = true
@@ -342,6 +362,7 @@ const ClerkAuthHandler = () => {
           // возврате с провайдера. После успешной регистрации clerk_oauth_flow_mode снимается, а default
           // 'register' давал ложное срабатывание на каждом F5 (сессия Clerk + пользователь уже в БД).
           if (
+            storedOAuthFlowMode === 'register' &&
             oauthFlowMode === 'register' &&
             foundExistingInDb &&
             dbUserId &&
@@ -359,14 +380,22 @@ const ClerkAuthHandler = () => {
           // Используем ID из БД для обновления localStorage (effectiveCabinetRole здесь недоступен — он объявлен ниже по коду)
           if (dbUserId) {
             await saveClerkProfilePhoto(dbUserId)
-            const resolvedCabinetRole = roleFromDatabase || clerkUserData.role
-            const updatedUserData = {
-              ...clerkUserData,
-              id: dbUserId.toString(),
-              role: resolvedCabinetRole === 'seller' || resolvedCabinetRole === 'owner' ? 'seller' : 'buyer'
-            }
-            saveUserData(updatedUserData, 'clerk')
+            const sessionUser =
+              mapDbUserToSessionUser(foundUser, clerkUserData) || {
+                ...clerkUserData,
+                id: dbUserId.toString(),
+                role:
+                  roleFromDatabase === 'seller' || roleFromDatabase === 'owner'
+                    ? 'seller'
+                    : intendedCabinetRole,
+              }
+            saveUserData(sessionUser, 'clerk')
             localStorage.setItem('userId', String(dbUserId))
+            try {
+              invalidateUserByIdCache(API_BASE_URL, dbUserId)
+            } catch {
+              /* ignore cache errors */
+            }
             if (typeof window !== 'undefined') {
               window.dispatchEvent(
                 new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: Number(dbUserId) } })
@@ -476,6 +505,7 @@ const ClerkAuthHandler = () => {
           sessionStorage.removeItem(oauthRedirectKey)
         }
         sessionStorage.removeItem('clerk_oauth_flow_mode')
+        sessionStorage.removeItem('clerk_oauth_user_role')
 
         // Очищаем OAuth параметры из URL
         if (hasOAuthParams) {
@@ -489,7 +519,7 @@ const ClerkAuthHandler = () => {
         // (includes('__clerk')) — иначе F5 и посторонние фрагменты в URL давали ложный редирект на /profile.
         if (isOAuthCompletionContext) {
           // Определяем куда редиректить в зависимости от роли пользователя
-          const savedUserRole = effectiveCabinetRole || localStorage.getItem('userRole') || 'buyer'
+          const savedUserRole = effectiveCabinetRole || normalizeOAuthCabinetRole(userRole)
           const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner')
             ? getCabinetHomePath(savedUserRole)
             : '/profile'
@@ -503,6 +533,11 @@ const ClerkAuthHandler = () => {
           }
         } else {
           console.log('ClerkAuthHandler: No OAuth return context — stay on', window.location.pathname)
+        }
+
+        const syncedRole = effectiveCabinetRole || normalizeOAuthCabinetRole(userRole)
+        if (syncedRole === 'seller' || syncedRole === 'owner') {
+          void completePendingSellAfterSellerLogin(navigate)
         }
       })()
 

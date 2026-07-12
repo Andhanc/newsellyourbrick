@@ -1,6 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import TestDriveSection from './TestDriveSection'
+import { publicAsset } from '../utils/publicAsset'
 import './PropertyDetailTestDrivePromo.css'
+
+export const PROPERTY_TEST_DRIVE_PROMO_IMAGE = publicAsset(
+  'images/property-detail/desktop-test-drive.png',
+)
 
 export default function PropertyDetailTestDrivePromo({
   propertyId,
@@ -11,7 +16,8 @@ export default function PropertyDetailTestDrivePromo({
   imageUrl = '',
 }) {
   const { t } = useTranslation()
-  const promoPhoto = typeof imageUrl === 'string' ? imageUrl.trim() : ''
+  const promoPhoto =
+    (typeof imageUrl === 'string' && imageUrl.trim()) || PROPERTY_TEST_DRIVE_PROMO_IMAGE
 
   return (
     <section

@@ -42,7 +42,6 @@ import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
-import PurchaseSuccessModal from '../components/PurchaseSuccessModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
 import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
@@ -69,7 +68,9 @@ import DebtAuctionInsight from '../components/DebtAuctionInsight'
 import PropertyDebtRiskBanner from '../components/PropertyDebtRiskBanner'
 import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
-import PropertyDetailTestDrivePromo from '../components/PropertyDetailTestDrivePromo'
+import PropertyDetailTestDrivePromo, {
+  PROPERTY_TEST_DRIVE_PROMO_IMAGE,
+} from '../components/PropertyDetailTestDrivePromo'
 import PageBackButton from '../components/PageBackButton'
 import PropertyGeoLinks from '../components/PropertyGeoLinks'
 import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
@@ -108,8 +109,6 @@ import {
 } from '../utils/auctionReminderBounds'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
-import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
-import { buildPurchasedPropertySnapshot } from '../utils/purchasedPropertyListingPrefill'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
@@ -233,9 +232,6 @@ function PropertyDetailClassic({
   /** Объект хотя бы раз показывался с круговым таймером — не переключаемся на линейный после его окончания */
   const [hadCircularTimerAuction, setHadCircularTimerAuction] = useState(false)
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
-  const reservationCheckoutHandledRef = useRef(null)
-  const [purchaseSuccessModalOpen, setPurchaseSuccessModalOpen] = useState(false)
-  const [purchaseSuccessProperty, setPurchaseSuccessProperty] = useState(null)
   const [isTestDrivePromoOpen, setIsTestDrivePromoOpen] = useState(false)
   const testDrivePromoDismissedRef = useRef(false)
   /** После окончания аукциона не даём сбросить timerExpired, если сервер подставил другую дату окончания */
@@ -1334,129 +1330,6 @@ function PropertyDetailClassic({
 
   /** @deprecated use wrapDepositGatedBlock */
   const wrapMobileDepositGatedBlock = (block) => wrapDepositGatedBlock(block)
-
-  // После оплаты резерва в Stripe — подтвердить сессию (если webhook ещё не обработал)
-  useEffect(() => {
-    const checkout = searchParams.get('reservation_checkout')
-    const sessionId = searchParams.get('session_id')
-    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
-    if (reservationCheckoutHandledRef.current === sessionId) return
-
-    let cancelled = false
-
-    const run = async () => {
-      if (!userLoaded) {
-        return
-      }
-
-      let uid = localStorage.getItem('userId')
-      if (!uid || !/^\d+$/.test(uid)) {
-        const legacy = getUserData()
-        if (legacy?.id != null && /^\d+$/.test(String(legacy.id))) {
-          uid = String(legacy.id)
-          localStorage.setItem('userId', uid)
-        }
-      }
-      if (!uid || !/^\d+$/.test(uid)) {
-        if (user?.primaryEmailAddress?.emailAddress) {
-          try {
-            if (!API_BASE_URL || API_BASE_URL.includes('localhost')) {
-              API_BASE_URL = await getApiBaseUrl()
-            }
-            const r = await fetch(
-              `${API_BASE_URL}/users/email/${encodeURIComponent(user.primaryEmailAddress.emailAddress)}`
-            )
-            if (r.ok) {
-              const j = await r.json()
-              if (j.success && j.data?.id) {
-                uid = String(j.data.id)
-                localStorage.setItem('userId', uid)
-              }
-            }
-          } catch (e) {
-            console.warn('PropertyDetailClassic: reservation confirm user id', e)
-          }
-        }
-      }
-      if (!uid || !/^\d+$/.test(uid)) {
-        requestOpenLoginModal({ wizard: true })
-        const next = new URLSearchParams(searchParams)
-        next.delete('reservation_checkout')
-        next.delete('session_id')
-        setSearchParams(next, { replace: true })
-        return
-      }
-
-      reservationCheckoutHandledRef.current = sessionId
-      try {
-        const result = await confirmPropertyReservationSession(sessionId, uid)
-        if (cancelled) return
-        if (result.ok) {
-          if (result.data?.already) {
-            showNotification('Резерв уже был учтён ранее.')
-          } else {
-            let propertyForModal = displayProperty
-            try {
-              let base = API_BASE_URL
-              if (!base || base.includes('localhost')) {
-                base = await getApiBaseUrl()
-              }
-              const fromPath =
-                typeof window !== 'undefined'
-                  ? window.location.pathname.match(/\/property\/(\d+)/)
-                  : null
-              const pid = displayProperty?.id || (fromPath ? parseInt(fromPath[1], 10) : null)
-              if (pid) {
-                const propResponse = await fetch(
-                  appendViewerUserIdToPropertyApiUrl(`${base}/properties/${pid}?lang=${currentLang}`)
-                )
-                if (propResponse.ok) {
-                  const propData = await propResponse.json()
-                  if (propData.success && propData.data) {
-                    propertyForModal = { ...displayProperty, ...propData.data }
-                    setProperty((prev) => ({ ...prev, ...propData.data }))
-                  }
-                }
-              }
-            } catch (refetchErr) {
-              console.warn('PropertyDetailClassic: refetch property after reservation', refetchErr)
-            }
-
-            const snapshot = buildPurchasedPropertySnapshot(propertyForModal)
-            if (snapshot?.id) {
-              setPurchaseSuccessProperty(snapshot)
-              setPurchaseSuccessModalOpen(true)
-            } else {
-              showNotification(
-                'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
-              )
-            }
-          }
-        } else {
-          showNotification(result.error || 'Не удалось подтвердить резерв', 'error')
-          reservationCheckoutHandledRef.current = null
-        }
-      } catch (e) {
-        if (!cancelled) {
-          showNotification(e?.message || 'Ошибка подтверждения', 'error')
-          reservationCheckoutHandledRef.current = null
-        }
-      } finally {
-        if (!cancelled) {
-          const next = new URLSearchParams(searchParams)
-          next.delete('reservation_checkout')
-          next.delete('session_id')
-          setSearchParams(next, { replace: true })
-        }
-      }
-    }
-
-    run()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, userLoaded, user?.primaryEmailAddress?.emailAddress])
 
   // Сохраняем исходное значение тестового таймера и его длительность при первой загрузке
   useEffect(() => {
@@ -3968,16 +3841,24 @@ function PropertyDetailClassic({
     )
   }
 
-  const renderDesktopV3BidHistoryCard = () => {
+  const renderAuctionBidHistoryCard = ({ mobile = false } = {}) => {
     const sortedBids = [...auctionBidsList].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     )
-    const visibleBids = getBidHistoryPreviewBids(sortedBids, 5)
+    const visibleBids = getBidHistoryPreviewBids(sortedBids, mobile ? 4 : 5)
 
     if (!showAuctionCompletedWinner && !sortedBids.length) return null
 
     return (
-      <section className="pd-v3-card pd-v3-card--history property-detail-auction-desktop-only">
+      <section
+        className={[
+          'pd-v3-card',
+          'pd-v3-card--history',
+          mobile ? 'property-detail-mobile-ended-history' : 'property-detail-auction-desktop-only',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <h3 className="pd-v3-card__title">{t('propertyDetailBidHistorySidebar')}</h3>
         {renderAuctionWinnerHistoryInset()}
         {!visibleBids.length ? (
@@ -4025,6 +3906,20 @@ function PropertyDetailClassic({
           </div>
         ) : null}
       </section>
+    )
+  }
+
+  const renderDesktopV3BidHistoryCard = () => renderAuctionBidHistoryCard({ mobile: false })
+
+  const renderMobileAuctionEndedBlocks = () => {
+    if (!auctionEndedForSidebar) return null
+
+    return (
+      <div className="property-detail-mobile-ended-blocks">
+        {renderAuctionEndedState()}
+        {renderAuctionBidHistoryCard({ mobile: true })}
+        {renderDesktopWinnerPurchaseButton()}
+      </div>
     )
   }
 
@@ -4537,9 +4432,6 @@ function PropertyDetailClassic({
 
     const propertyTable =
       property.source_table || displayProperty.source_table || 'properties_apartments'
-    const promoImage =
-      displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
-
     return (
       <div className="property-detail-mobile-test-drive">
         <PropertyDetailTestDrivePromo
@@ -4547,7 +4439,7 @@ function PropertyDetailClassic({
           propertyTable={propertyTable}
           hasTestDrive
           i18nLang={currentLang}
-          imageUrl={promoImage}
+          imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
         />
       </div>
     )
@@ -5623,9 +5515,6 @@ function PropertyDetailClassic({
 
     const propertyTable =
       property.source_table || displayProperty.source_table || 'properties_apartments'
-    const promoImage =
-      displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
-
     return (
       <PropertyDetailTestDrivePromo
         className="property-detail-auction-desktop-test-drive"
@@ -5633,7 +5522,7 @@ function PropertyDetailClassic({
         propertyTable={propertyTable}
         hasTestDrive
         i18nLang={currentLang}
-        imageUrl={promoImage}
+        imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
       />
     )
   }
@@ -7408,6 +7297,7 @@ function PropertyDetailClassic({
                   {isAuctionProperty && auctionEndTime && !isReservedActive && !auctionEndedForSidebar && (
                     renderMobileAboutBidSummary()
                   )}
+                  {isAuctionProperty && auctionEndedForSidebar ? renderMobileAuctionEndedBlocks() : null}
                   {isAuctionProperty ? renderAuctionBuyNowBlock({ variant: 'mobile-about' }) : null}
                   {renderMobileAboutPropertyContent()}
                 </div>
@@ -7611,17 +7501,6 @@ function PropertyDetailClassic({
       />
         )
       })()}
-
-      <PurchaseSuccessModal
-        isOpen={purchaseSuccessModalOpen}
-        property={purchaseSuccessProperty}
-        onClose={() => setPurchaseSuccessModalOpen(false)}
-        onGoToGuide={() => {
-          const pid = purchaseSuccessProperty?.id
-          setPurchaseSuccessModalOpen(false)
-          if (pid) navigate(`/profile/purchased/${pid}`)
-        }}
-      />
 
       <AuctionReminderModal
         property={displayProperty}

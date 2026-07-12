@@ -1352,17 +1352,35 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   border-bottom: 1px solid var(--footer-line);
 }
 
-#site-footer.footer:not(.footer--deposit) .footer__nav-grid .footer__menu-column:nth-child(5) {
+#site-footer.footer:not(.footer--deposit) .footer__nav-bottom {
   grid-column: 1 / -1;
-  justify-self: center;
-  align-items: center;
-  text-align: center;
-  width: auto;
-  max-width: min(100%, 320px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  align-items: start;
 }
 
-#site-footer.footer:not(.footer--deposit) .footer__nav-grid .footer__menu-column:nth-child(5) .footer__menu-link {
-  text-align: center;
+#site-footer.footer:not(.footer--deposit) .footer__menu-column--company {
+  justify-self: stretch;
+  align-items: flex-start;
+  text-align: left;
+  width: auto;
+  max-width: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-column--company .footer__menu-link {
+  text-align: left;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-image {
+  position: static;
+  bottom: auto;
 }
 
 #site-footer.footer:not(.footer--deposit) .footer__bottom-panel {
@@ -1509,13 +1527,30 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   border-bottom: 1px solid rgba(0, 153, 169, 0.18);
 }
 
-#site-footer.footer.footer--deposit .footer__nav-grid .footer__menu-column:nth-child(5) {
+#site-footer.footer.footer--deposit .footer__nav-bottom {
   grid-column: 1 / -1;
-  justify-self: center;
-  align-items: center;
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  align-items: start;
+}
+
+#site-footer.footer.footer--deposit .footer__menu-column--company {
+  justify-self: stretch;
+  align-items: flex-start;
+  text-align: left;
   width: auto;
-  max-width: min(100%, 320px);
+  max-width: none;
+}
+
+#site-footer.footer.footer--deposit .footer__menu-column--company .footer__menu-link {
+  text-align: left;
+}
+
+#site-footer.footer.footer--deposit .footer__nav-qr-slot {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 
 #site-footer.footer.footer--deposit .footer__menu-heading {
@@ -1774,7 +1809,11 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
     gap: clamp(16px, 2vw, 24px);
   }
 
-  #site-footer.footer:not(.footer--deposit) .footer__nav-grid .footer__menu-column:nth-child(5) {
+  #site-footer.footer:not(.footer--deposit) .footer__nav-bottom {
+    display: contents;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__menu-column--company {
     grid-column: auto;
     justify-self: stretch;
     align-items: flex-start;
@@ -1782,8 +1821,8 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
     max-width: none;
   }
 
-  #site-footer.footer:not(.footer--deposit) .footer__nav-grid .footer__menu-column:nth-child(5) .footer__menu-link {
-    text-align: left;
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot {
+    display: none;
   }
 
   #site-footer.footer.footer--deposit .footer__nav-grid {
@@ -1791,12 +1830,20 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
     gap: clamp(16px, 2.5vw, 28px);
   }
 
-  #site-footer.footer.footer--deposit .footer__nav-grid .footer__menu-column:nth-child(5) {
+  #site-footer.footer.footer--deposit .footer__nav-bottom {
+    display: contents;
+  }
+
+  #site-footer.footer.footer--deposit .footer__menu-column--company {
     grid-column: auto;
     justify-self: stretch;
     align-items: flex-start;
     text-align: left;
     max-width: none;
+  }
+
+  #site-footer.footer.footer--deposit .footer__nav-qr-slot {
+    display: none;
   }
 }
 
@@ -1818,6 +1865,15 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   #site-footer.footer:not(.footer--deposit) .footer__menu-link {
     font-size: 0.75rem;
     line-height: 1.4;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-image {
+    width: 108px;
+    height: 108px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-caption {
+    font-size: 0.6875rem;
   }
 
   #site-footer.footer .footer__bottom-panel {

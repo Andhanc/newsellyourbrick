@@ -3,7 +3,9 @@ import { useClerk, useUser } from '@clerk/clerk-react'
 import { getUserData, loginWithEmail, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
+import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { createLinkedRole, fetchLinkedRoles } from '../utils/roleSwitchApi'
+import { readPendingSellPurchasedProperty } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
 
 const PROFILE_API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -119,7 +121,12 @@ export function useRoleSwitchFlow(targetRole) {
           setError('Неверный пароль для выбранного кабинета')
           return false
         }
-        const targetPath = getCabinetHomePath(newRole)
+
+        const pendingSell = readPendingSellPurchasedProperty()
+        const targetPath =
+          pendingSell?.id && gotSeller
+            ? buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
+            : getCabinetHomePath(newRole)
 
         if (result.user?.id) {
           try {
@@ -265,6 +272,46 @@ export function useRoleSwitchFlow(targetRole) {
     setError('')
   }, [])
 
+  /** Открыть флоу продажи купленного объекта: переключение или создание кабинета продавца. */
+  const openSellCabinetFlow = useCallback(
+    async (mode = 'register') => {
+      setError('')
+      setLoading(true)
+      try {
+        const userId = getStoredUserId()
+        if (!userId) {
+          showNotification('Войдите в аккаунт, чтобы продать объект', 'error')
+          return
+        }
+
+        const preview = await loadProfilePreview()
+        setProfilePreview(preview)
+
+        const status = await fetchLinkedRoles({ userId })
+        setLinkedStatus(status)
+
+        if (mode === 'switch' && status.seller) {
+          setPendingSwitchRole('seller')
+          setPhase('switch-password')
+          return
+        }
+
+        if (status.seller) {
+          setPendingSwitchRole('seller')
+          setPhase('switch-password')
+          return
+        }
+
+        setPhase('pitch')
+      } catch (e) {
+        showNotification(e.message || 'Не удалось открыть кабинет продавца', 'error')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [],
+  )
+
   return {
     phase,
     linkedStatus,
@@ -283,6 +330,7 @@ export function useRoleSwitchFlow(targetRole) {
     selectCabinet,
     submitSwitchPassword,
     goBackToCabinet,
+    openSellCabinetFlow,
     clerkLoaded,
     switching,
   }

@@ -51,7 +51,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   .home-page--auction > .hero--auction-scene {
     order: 1;
     margin-top: 0;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 88px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
     padding-bottom: 20px;
   }
 
@@ -78,7 +78,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 
 .home-page .new-header {
   background: transparent;
-  padding: 20px 0;
+  padding: 28px 0 16px;
   position: fixed;
   top: 0;
   z-index: 1000;
@@ -103,7 +103,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 }
 
 .home-page .menu-dropdown {
-  top: calc(20px + 65px + 8px) !important; /* под хедером с небольшим отступом */
+  top: calc(28px + 65px + 8px) !important; /* под хедером с небольшим отступом */
 }
 
 @media (max-width: 768px) {
@@ -127,7 +127,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: env(safe-area-inset-top, 0px) 0 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 0 0;
   }
 
   .home-page .new-header__container {

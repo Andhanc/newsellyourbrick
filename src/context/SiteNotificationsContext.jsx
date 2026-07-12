@@ -160,7 +160,6 @@ export function SiteNotificationsProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false
-    let pollId = null
 
     const loadNotifications = async (options = {}) => {
       if (cancelled) return
@@ -223,50 +222,44 @@ export function SiteNotificationsProvider({ children }) {
       }
     }
 
-    const startPolling = () => {
-      if (pollId != null) return
+    const startListeners = () => {
       loadNotifications()
       const onFocus = () => loadNotifications()
       const handleSse = () => loadNotifications({ force: true })
       window.addEventListener('focus', onFocus)
       window.addEventListener('owner-notifications-refresh', handleSse)
       window.addEventListener('verification-status-update', handleSse)
-      pollId = window.setInterval(() => {
-        if (document.visibilityState === 'visible') loadNotifications()
-      }, 120000)
       return () => {
         window.removeEventListener('focus', onFocus)
         window.removeEventListener('owner-notifications-refresh', handleSse)
         window.removeEventListener('verification-status-update', handleSse)
-        if (pollId != null) clearInterval(pollId)
-        pollId = null
       }
     }
 
-    let stopPolling = null
+    let stopListeners = null
     const onClerkSynced = () => {
-      stopPolling?.()
-      stopPolling = startPolling()
+      stopListeners?.()
+      stopListeners = startListeners()
     }
 
     if (hasStoredDbUserId()) {
       const schedule = () => {
         if (cancelled) return
-        stopPolling = startPolling()
+        stopListeners = startListeners()
       }
       if (typeof window.requestIdleCallback === 'function') {
         const ricId = window.requestIdleCallback(schedule, { timeout: 5000 })
         return () => {
           cancelled = true
           window.cancelIdleCallback(ricId)
-          stopPolling?.()
+          stopListeners?.()
         }
       }
       const tId = window.setTimeout(schedule, 1200)
       return () => {
         cancelled = true
         window.clearTimeout(tId)
-        stopPolling?.()
+        stopListeners?.()
       }
     }
 
@@ -274,7 +267,7 @@ export function SiteNotificationsProvider({ children }) {
     return () => {
       cancelled = true
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
-      stopPolling?.()
+      stopListeners?.()
     }
   }, [API_BASE_URL, t])
 
@@ -308,10 +301,17 @@ export function SiteNotificationsProvider({ children }) {
           const response = await fetch(
             `${API_BASE_URL}/properties/${propertyId}?lang=${encodeURIComponent(lang)}`,
           )
-          if (!response.ok || cancelled) return
+          if (cancelled) return
+          if (!response.ok) {
+            propertyMetaLoadedKeysRef.current.add(dedupeKey)
+            return
+          }
           const json = await response.json().catch(() => null)
           const data = json?.data
-          if (!data?.id || cancelled) return
+          if (!data?.id || cancelled) {
+            propertyMetaLoadedKeysRef.current.add(dedupeKey)
+            return
+          }
           const firstPhoto = getPropertyCardImage(data, null)
           propertyMetaLoadedKeysRef.current.add(dedupeKey)
           setNotificationProperties((prev) => ({
@@ -324,7 +324,7 @@ export function SiteNotificationsProvider({ children }) {
             },
           }))
         } catch {
-          /* ignore */
+          propertyMetaLoadedKeysRef.current.add(dedupeKey)
         } finally {
           propertyMetaInflightRef.current.delete(dedupeKey)
         }

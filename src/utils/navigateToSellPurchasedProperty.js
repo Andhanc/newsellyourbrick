@@ -1,6 +1,6 @@
 import { getUserData } from '../services/authService'
-import { requestOpenLoginModal } from './requestOpenLoginModal'
 import { OWNER_VIEWS, buildOwnerTestPath } from './ownerTestNav'
+import { fetchLinkedRoles } from './roleSwitchApi'
 import {
   applyPurchasedPropertyListingPrefill,
   buildPurchasedPropertySnapshot,
@@ -17,12 +17,30 @@ function isSellerRole(role) {
   return role === 'seller' || role === 'owner'
 }
 
+function getStoredUserId() {
+  const raw = localStorage.getItem('userId') || getUserData()?.id
+  const n = parseInt(String(raw), 10)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
+export async function resolveSellCabinetMode() {
+  const userId = getStoredUserId()
+  if (!userId) return 'register'
+  try {
+    const status = await fetchLinkedRoles({ userId })
+    return status?.seller ? 'switch' : 'register'
+  } catch {
+    return 'register'
+  }
+}
+
 /**
  * @param {object} options
  * @param {number|string} options.propertyId
  * @param {object} [options.propertySnapshot]
  * @param {import('react-router-dom').NavigateFunction} options.navigate
  * @param {() => Promise<void>} [options.onBecomeSeller]
+ * @param {(ctx: { mode: 'register' | 'switch', propertyId: number, snapshot: object }) => void} [options.onPromptSellerAction]
  * @param {() => void} [options.onPromptSellerRegistration]
  */
 export async function navigateToSellPurchasedProperty({
@@ -30,6 +48,7 @@ export async function navigateToSellPurchasedProperty({
   propertySnapshot,
   navigate,
   onBecomeSeller,
+  onPromptSellerAction,
   onPromptSellerRegistration,
 }) {
   const pid = propertyId != null ? Number(propertyId) : null
@@ -58,24 +77,31 @@ export async function navigateToSellPurchasedProperty({
     return
   }
 
+  const cabinetMode = await resolveSellCabinetMode()
+
+  if (typeof onPromptSellerAction === 'function') {
+    onPromptSellerAction({ mode: cabinetMode, propertyId: pid, snapshot })
+    return
+  }
+
   if (typeof onPromptSellerRegistration === 'function') {
-    onPromptSellerRegistration({ propertyId: pid, snapshot })
+    onPromptSellerRegistration({ mode: cabinetMode, propertyId: pid, snapshot })
     return
   }
 
   if (typeof onBecomeSeller === 'function') {
-    await onBecomeSeller()
+    await onBecomeSeller({ mode: cabinetMode, propertyId: pid, snapshot })
     return
   }
 
   try {
-    sessionStorage.setItem('login_modal_mode', 'register')
-    sessionStorage.setItem('login_modal_user_role', 'seller')
+    sessionStorage.setItem('pending_sell_role_switch_mode', cabinetMode)
+    window.dispatchEvent(
+      new CustomEvent('openRoleSwitchForSell', { detail: { mode: cabinetMode, targetRole: 'seller' } }),
+    )
   } catch {
     // ignore
   }
-  requestOpenLoginModal({ wizard: false })
-  navigate('/', { replace: true })
 }
 
 export async function completePendingSellAfterSellerLogin(navigate) {

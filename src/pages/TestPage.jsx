@@ -68,6 +68,7 @@ import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
 import PurchasedPropertyHistoryCard from '../components/PurchasedPropertyHistoryCard'
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
+import { navigateToSellPurchasedProperty } from '../utils/navigateToSellPurchasedProperty'
 import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
@@ -925,16 +926,55 @@ function TestPage() {
     navigate('/', { replace: true })
   }, [user, signOut, navigate])
 
-  const handleSellObjectFromHistory = useCallback(async () => {
-    const role = String(
-      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
-    ).toLowerCase()
-    if (role === 'seller' || role === 'owner') {
-      navigate('/owner/property/new')
-      return
+  const promptSellerRegistration = useCallback(() => {
+    try {
+      sessionStorage.setItem('login_modal_mode', 'register')
+      sessionStorage.setItem('login_modal_user_role', 'seller')
+    } catch {
+      // ignore
     }
-    await handleBecomeSellerRegister()
-  }, [handleBecomeSellerRegister, navigate])
+    requestOpenLoginModal({ wizard: false })
+    navigate('/', { replace: true })
+  }, [navigate])
+
+  const buildHistoryItemSnapshot = useCallback((item) => {
+    const propertyId = item?.propertyId ?? item?.id
+    if (!propertyId) return null
+    return {
+      id: propertyId,
+      propertyId,
+      title: item?.title || '',
+      image: item?.imageSrc || item?.image || '',
+      location: item?.location || '',
+    }
+  }, [])
+
+  const handleOpenPurchasedGuide = useCallback(
+    (item) => {
+      const pid = item?.propertyId ?? item?.id
+      if (!pid) return
+      setHistorySheetOpen(false)
+      setSelectedPurchasedProperty(null)
+      navigate(`/profile/purchased/${pid}`)
+    },
+    [navigate],
+  )
+
+  const handleSellObjectFromHistory = useCallback(
+    async (item) => {
+      const snapshot = buildHistoryItemSnapshot(item)
+      const propertyId = snapshot?.id ?? snapshot?.propertyId
+      if (!propertyId) return
+      await navigateToSellPurchasedProperty({
+        propertyId,
+        propertySnapshot: snapshot,
+        navigate,
+        onPromptSellerRegistration: promptSellerRegistration,
+        onBecomeSeller: handleBecomeSellerRegister,
+      })
+    },
+    [buildHistoryItemSnapshot, handleBecomeSellerRegister, navigate, promptSellerRegistration],
+  )
 
   const historyPurchaseTermsBySection = useCallback((sectionKey) => {
     if (sectionKey === 'auction') {
@@ -3126,10 +3166,7 @@ function TestPage() {
                                             <button
                                               type="button"
                                               className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
-                                              onClick={() => {
-                                                setSelectedPurchasedProperty(item)
-                                                setPurchaseDrawerView('sell')
-                                              }}
+                                              onClick={() => handleOpenPurchasedGuide(item)}
                                             >
                                               {t('buyerCabinet_sellProperty')}
                                             </button>
@@ -3884,10 +3921,11 @@ function TestPage() {
             setSelectedPurchasedProperty(null)
             void openManagerChatModal()
           }}
-          onSell={() => setPurchaseDrawerView('sell')}
+          onSell={() => handleOpenPurchasedGuide(selectedPurchasedProperty)}
           onBecomeSeller={() => {
+            const item = selectedPurchasedProperty
             setSelectedPurchasedProperty(null)
-            void handleSellObjectFromHistory()
+            void handleSellObjectFromHistory(item)
           }}
         />
       ) : null}

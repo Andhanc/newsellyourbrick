@@ -4,7 +4,7 @@ import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
 import './SharePurchaseModal.css'
-import { openReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
+import { launchReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
 import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
 import { formatPropertyPrice } from '../utils/currency'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
@@ -109,17 +109,13 @@ const SharePurchaseModal = ({
 
   const formatPrice = (n) => formatPropertyPrice(n, currency, { compact: true })
 
-  const openPdf = async () => {
+  const openPdf = () => {
     try {
-      const { url, found } = await openReserveTermsPdf()
-      setPdfViewerUrl(url)
-      setIsPdfViewerOpen(true)
+      const { url, openedInNewTab } = launchReserveTermsPdf()
       setPdfOpened(true)
-      if (!found) {
-        showNotification(
-          'Не удалось проверить файл условий. Если документ не открылся, обновите страницу или обратитесь в поддержку.',
-          'error'
-        )
+      if (!openedInNewTab) {
+        setPdfViewerUrl(url)
+        setIsPdfViewerOpen(true)
       }
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
@@ -131,6 +127,7 @@ const SharePurchaseModal = ({
   }
 
   const handlePay = async () => {
+    if (submitting) return
     setError(null)
     if (!userId || !propertyId || !propertyType) {
       setError('Недостаточно данных для оплаты')
@@ -151,54 +148,81 @@ const SharePurchaseModal = ({
     }
 
     setSubmitting(true)
+    setError(null)
     try {
-      const intentRes = await fetch(`${API_BASE}/billing/share-purchase-signature-intent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          propertyId,
-          propertyType,
-          sharesCount: buyCount,
-          signatureDataUrl: signaturePng,
-        }),
-      })
-      const intentData = await intentRes.json().catch(() => ({}))
-      if (!intentRes.ok || !intentData.success || !intentData.signingIntentId) {
+      const controller = new AbortController()
+      const timer = window.setTimeout(() => controller.abort(), 45000)
+      let intentRes
+      let intentData = {}
+      try {
+        intentRes = await fetch(`${API_BASE}/billing/share-purchase-signature-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            userId,
+            propertyId,
+            propertyType,
+            sharesCount: buyCount,
+            signatureDataUrl: signaturePng,
+          }),
+        })
+        intentData = await intentRes.json().catch(() => ({}))
+      } finally {
+        window.clearTimeout(timer)
+      }
+      if (!intentRes?.ok || !intentData.success || !intentData.signingIntentId) {
         setError(intentData.error || 'Не удалось сохранить подпись')
-        setSubmitting(false)
         return
       }
 
-      const res = await fetch(`${API_BASE}/billing/create-share-purchase-checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          propertyId,
-          propertyType,
-          sharesCount: buyCount,
-          signingIntentId: intentData.signingIntentId,
-          useDeposit: !!(useWalletDeposit && canUseWallet),
-          customerEmail: userEmail || undefined,
-          returnPath: returnPath || undefined,
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.success) {
+      const checkoutController = new AbortController()
+      const checkoutTimer = window.setTimeout(() => checkoutController.abort(), 45000)
+      let data = {}
+      let res
+      try {
+        res = await fetch(`${API_BASE}/billing/create-share-purchase-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: checkoutController.signal,
+          body: JSON.stringify({
+            userId,
+            propertyId,
+            propertyType,
+            sharesCount: buyCount,
+            signingIntentId: intentData.signingIntentId,
+            useDeposit: !!(useWalletDeposit && canUseWallet),
+            customerEmail: userEmail || undefined,
+            returnPath: returnPath || undefined,
+          }),
+        })
+        data = await res.json().catch(() => ({}))
+      } finally {
+        window.clearTimeout(checkoutTimer)
+      }
+      if (!res?.ok || !data.success) {
         setError(data.error || 'Не удалось создать оплату')
-        setSubmitting(false)
         return
       }
-      if (data.url) {
-        navigateToStripeCheckout(data.url)
+      const checkoutUrl =
+        typeof data.url === 'string'
+          ? data.url
+          : typeof data?.data?.url === 'string'
+            ? data.data.url
+            : ''
+      if (checkoutUrl && navigateToStripeCheckout(checkoutUrl)) {
         return
       }
       setError('Сервер не вернул ссылку на оплату')
     } catch (e) {
-      setError(e?.message || 'Ошибка сети')
+      const msg =
+        e?.name === 'AbortError'
+          ? 'Превышено время ожидания ответа сервера. Проверьте, что API запущен.'
+          : e?.message || 'Ошибка сети'
+      setError(msg)
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
   }
 
   return (

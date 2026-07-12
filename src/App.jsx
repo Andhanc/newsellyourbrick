@@ -29,6 +29,8 @@ import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import HomeRedesignPage from './pages/home-redesign/HomeRedesignPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
+import { PurchaseSuccessProvider } from './context/PurchaseSuccessContext'
+import PurchaseCheckoutSuccessBridge from './components/PurchaseCheckoutSuccessBridge'
 import SiteAdsHost from './components/siteAds/SiteAdsHost'
 import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
 import DebtsPage from './pages/Debts'
@@ -574,6 +576,8 @@ function App() {
       <PageSeoProvider>
       <SitePageSeo />
       <SiteNotificationsProvider>
+      <PurchaseSuccessProvider>
+      <PurchaseCheckoutSuccessBridge />
       <div className="app-shell">
       <PropertyFavoritesProvider>
       <RouteHistoryTracker />
@@ -1064,6 +1068,7 @@ function App() {
       <ToastContainer />
       </PropertyFavoritesProvider>
       </div>
+      </PurchaseSuccessProvider>
       </SiteNotificationsProvider>
       </PageSeoProvider>
     </Router>

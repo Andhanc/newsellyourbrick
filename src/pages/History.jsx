@@ -10,7 +10,6 @@ import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { navigateToSellPurchasedProperty } from '../utils/navigateToSellPurchasedProperty'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
@@ -326,21 +325,8 @@ const History = () => {
   const [isLoadingBids, setIsLoadingBids] = useState(true)
 
   const handleSellObject = (snapshot) => {
-    void navigateToSellPurchasedProperty({
-      propertyId: snapshot?.id ?? snapshot?.propertyId,
-      propertySnapshot: snapshot,
-      navigate,
-      onPromptSellerRegistration: () => {
-        try {
-          sessionStorage.setItem('login_modal_mode', 'register')
-          sessionStorage.setItem('login_modal_user_role', 'seller')
-        } catch {
-          /* ignore */
-        }
-        requestOpenLoginModal({ wizard: false })
-        navigate('/', { replace: true })
-      },
-    })
+    const pid = snapshot?.id ?? snapshot?.propertyId
+    if (pid) navigate(`/profile/purchased/${pid}`)
   }
 
   const loadReservationPurchases = async () => {
