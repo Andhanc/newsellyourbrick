@@ -379,6 +379,7 @@
   flex-direction: unset;
 }
 
+.hr-showcases.hr-showcases--auction-listing.auction-mobile-stack--desktop-cards .auction-card__actions--single,
 .hr-showcases.hr-showcases--auction-listing .auction-card__actions--single {
   grid-template-columns: 1fr;
 }

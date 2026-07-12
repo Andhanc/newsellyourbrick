@@ -139,6 +139,10 @@ const Debts = () => {
     document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const resetDebtsFilters = useCallback(() => {
+    setDebtsFilters({ ...EMPTY_DEBTS_FILTERS })
+  }, [])
+
   const debtsSaleToggleMode =
     !debtsFilters.showAuction && debtsFilters.showBuyNow ? 'buy_now' : 'all'
 
@@ -778,6 +782,8 @@ const Debts = () => {
           title={t('filters')}
           applyLabel={t('auctionApplyFilters')}
           onApply={scrollToDebtsGrid}
+          resetLabel={t('catalogResetFilters')}
+          onReset={resetDebtsFilters}
         >
           <DebtsDesktopFilters {...debtsDesktopFilterProps} variant="drawer" />
         </SharesMobileFiltersDrawer>
@@ -787,4 +793,3 @@ const Debts = () => {
 }
 
 export default Debts
-

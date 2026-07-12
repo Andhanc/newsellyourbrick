@@ -1,5 +1,3 @@
-import { buildAuctionFilterPath } from './auctionFilterUrl'
-
 export const HERO_SEARCH_STATE_KEY = 'heroSearchFilters'
 
 export const HERO_SALE_TYPE_OPTIONS = [
@@ -10,9 +8,14 @@ export const HERO_SALE_TYPE_OPTIONS = [
 ]
 
 export const HERO_PROPERTY_TYPE_OPTIONS = [
-  { value: 'villa', label: 'Вилла', shortLabel: 'Вилла', categorySlug: 'villas' },
-  { value: 'apartment', label: 'Апартаменты', shortLabel: 'Апарт.', categorySlug: 'apartments' },
-  { value: 'commercial', label: 'Коммерция', shortLabel: 'Коммер.', categorySlug: 'commercial' },
+  { value: 'villa', label: 'Вилла', shortLabel: 'Вилла', catalogLabel: 'Вилла' },
+  { value: 'apartment', label: 'Апартаменты', shortLabel: 'Апарт.', catalogLabel: 'Апартаменты' },
+  {
+    value: 'commercial',
+    label: 'Коммерция',
+    shortLabel: 'Коммер.',
+    catalogLabel: 'Коммерческая недвижимость',
+  },
 ]
 
 export const HERO_LOCATION_OPTIONS = [
@@ -27,12 +30,6 @@ export const HERO_PRICE_OPTIONS = [
   { value: 'high', label: 'от $250 000', shortLabel: 'от 250K', minPrice: '250000', maxPrice: '' },
 ]
 
-const SHARES_COUNTRY_LABELS = {
-  uae: 'ОАЭ',
-  spain: 'Испания',
-  usa: 'США',
-}
-
 /**
  * @param {{ saleType: string, propertyType: string, location: string, price: string }} filters
  */
@@ -41,36 +38,18 @@ export function buildHeroSearchNavigation(filters) {
   const locationOption = HERO_LOCATION_OPTIONS.find((item) => item.value === filters.location)
   const priceOption = HERO_PRICE_OPTIONS.find((item) => item.value === filters.price) ?? HERO_PRICE_OPTIONS[1]
 
-  const categorySlug = propertyOption?.categorySlug ?? null
   const countryKey = locationOption?.countryKey ?? ''
+  const purchaseType = filters.saleType === 'debts' ? 'debt' : filters.saleType
   const prefilter = {
     country: countryKey,
+    propertyType: propertyOption?.catalogLabel ?? '',
+    purchaseTypes: purchaseType ? [purchaseType] : [],
     minPrice: priceOption.minPrice,
     maxPrice: priceOption.maxPrice,
   }
 
-  if (filters.saleType === 'shares') {
-    const shareCountry = SHARES_COUNTRY_LABELS[countryKey]
-    return {
-      pathname: '/shares',
-      state: shareCountry
-        ? { [HERO_SEARCH_STATE_KEY]: { shareCountry } }
-        : undefined,
-    }
-  }
-
-  if (filters.saleType === 'debts') {
-    return {
-      pathname: '/debts',
-      state: { [HERO_SEARCH_STATE_KEY]: prefilter },
-    }
-  }
-
-  const saleFilter = filters.saleType === 'buy_now' ? 'buy_now' : 'auction'
-  const pathname = buildAuctionFilterPath({ saleFilter, categorySlug })
-
   return {
-    pathname,
+    pathname: '/search-results',
     state: { [HERO_SEARCH_STATE_KEY]: prefilter },
   }
 }

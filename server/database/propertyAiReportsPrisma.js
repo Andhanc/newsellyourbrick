@@ -70,13 +70,14 @@ export async function updatePropertyAiReport(reportId, patch = {}) {
   return reportSelect(rows[0])
 }
 
-export async function findReusablePropertyAiReport({ conversationId, category, question }) {
+export async function findReusablePropertyAiReport({ conversationId, category, question, model }) {
   const prisma = getPrisma()
   const rows = await prisma.$queryRaw`
     SELECT * FROM property_ai_reports
     WHERE conversation_id = ${conversationId}
       AND category = ${category}
       AND question = ${question}
+      AND model = ${model}
       AND status IN ('queued', 'analyzing', 'rendering', 'completed')
       AND created_at > NOW() - INTERVAL '24 hours'
     ORDER BY created_at DESC

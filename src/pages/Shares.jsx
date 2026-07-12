@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
   FiChevronDown,
-  FiHeart,
   FiHome,
   FiPieChart,
   FiSearch,
@@ -14,8 +13,9 @@ import {
   FiUsers,
   FiX,
 } from 'react-icons/fi'
-import { FaFileInvoiceDollar, FaGavel, FaStar } from 'react-icons/fa'
 import Header from '../components/Header'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import SharesPropertyCard from '../components/SharesPropertyCard'
 import { publicAsset } from '../utils/publicAsset'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
@@ -25,7 +25,7 @@ import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import './Shares.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
-const PAGE_SIZE = 6
+const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/external/shares-hero-estate.jpg')
 
@@ -36,33 +36,6 @@ const CARD_IMAGES = [
   publicAsset('images/external/photo-1600566753190-17f0baa2a6c3-fadfb56f04.jpg'),
   publicAsset('images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg'),
   publicAsset('images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg'),
-]
-
-const CTA_CARDS = [
-  {
-    title: 'Аукцион',
-    text: 'Недвижимость по выгодным ценам на открытых торгах',
-    to: '/auction',
-    icon: FaGavel,
-    image: publicAsset('images/test-drive/cta-auction.png'),
-    tone: 'teal',
-  },
-  {
-    title: 'Тест-драйв',
-    text: 'Поживите в объекте до сделки и примите взвешенное решение',
-    to: '/test-drive',
-    icon: FiBriefcase,
-    image: publicAsset('images/test-drive/cta-shares.png'),
-    tone: 'coral',
-  },
-  {
-    title: 'Долги',
-    text: 'Приобретайте объекты с дисконтом до 70%',
-    to: '/debts',
-    icon: FaFileInvoiceDollar,
-    image: publicAsset('images/test-drive/cta-debts.png'),
-    tone: 'gold',
-  },
 ]
 
 const DEMO_SHARES = [
@@ -170,14 +143,36 @@ function normalizeText(value) {
   return String(value || '').trim().toLowerCase()
 }
 
-function formatEuro(value) {
-  return `€${Math.round(Number(value) || 0).toLocaleString('ru-RU')}`
-}
-
 function extractCityFromLocation(location) {
   const parts = String(location || '').split(',').map((part) => part.trim()).filter(Boolean)
   if (parts.length >= 2) return parts[parts.length - 1]
   return parts[0] || ''
+}
+
+function toHomeShareCardModel(share) {
+  const totalPrice = Number(share.target || share.totalPrice) || 0
+  const pricePerShare = Number(share.sharePrice || share.pricePerShare) || 0
+  const totalShares = Math.max(
+    1,
+    Number(share.totalShares) || Math.round(totalPrice / Math.max(1, pricePerShare)),
+  )
+  const sharesSold = Math.min(
+    totalShares,
+    Number(share.sharesSold) || Math.round((totalShares * Number(share.collectedPercent || 0)) / 100),
+  )
+
+  return {
+    ...share,
+    shareId: share.shareId || share.id,
+    routeId: share.routeId || share.id,
+    totalPrice,
+    pricePerShare,
+    totalShares,
+    sharesSold,
+    currency: share.currency || 'EUR',
+    sale_type: 'share',
+    is_shared_ownership: true,
+  }
 }
 
 function mapApiShare(share, index) {
@@ -332,10 +327,13 @@ export default function Shares() {
   }
 
   const pageNumbers = useMemo(() => {
-    const start = Math.max(1, currentPage - 2)
-    const end = Math.min(totalPages, start + 4)
+    const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2))
+    const end = Math.min(totalPages, start + 2)
     return Array.from({ length: end - start + 1 }, (_, index) => start + index)
   }, [currentPage, totalPages])
+  const showLastPage = !pageNumbers.includes(totalPages)
+  const showTrailingEllipsis =
+    showLastPage && pageNumbers[pageNumbers.length - 1] < totalPages - 1
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => {
@@ -344,6 +342,10 @@ export default function Shares() {
       else next.add(id)
       return next
     })
+  }
+
+  const scrollToCatalog = () => {
+    document.getElementById('shares-invest-catalog')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
@@ -417,11 +419,34 @@ export default function Shares() {
         </section>
 
         <div className="shares-invest-container">
-          <section className="shares-invest-stats" aria-label="Статистика платформы">
-            <Metric icon={FiUsers} label="Инвесторов" value="12 842" note="+320 за месяц" />
-            <Metric icon={FiHome} label="Активных объектов" value={loading ? '...' : filtered.length || 87} note="+6 за месяц" />
-            <Metric icon={FiPieChart} label="Объём инвестиций" value="€128,6 млн" note="+8,7% за месяц" />
-            <Metric icon={FiTrendingUp} label="Средняя доходность" value="11,6%" note="за 12 месяцев" />
+          <section className="shares-invest-stats" aria-label="Почему инвестируют в доли">
+            <div className="shares-invest-stats__intro">
+              <span className="shares-invest-stats__badge">Доступно от €100</span>
+              <h2>
+                <span className="shares-invest-stats__title-line">Соберите портфель</span>
+                <span className="shares-invest-stats__title-pill">недвижимости</span>
+                <span className="shares-invest-stats__title-line">по частям</span>
+              </h2>
+              <p>
+                Выбирайте проверенные объекты, распределяйте вложения и получайте потенциальный
+                доход без покупки всей недвижимости.
+              </p>
+              <div className="shares-invest-stats__benefits" aria-label="Преимущества долей">
+                <span><FiHome aria-hidden /> Доход от аренды</span>
+                <span><FiTrendingUp aria-hidden /> Рост стоимости</span>
+                <span><FiPieChart aria-hidden /> Диверсификация</span>
+              </div>
+              <button type="button" className="shares-invest-stats__cta" onClick={scrollToCatalog}>
+                Подобрать долю
+                <FiArrowRight aria-hidden />
+              </button>
+            </div>
+            <div className="shares-invest-stats__metrics">
+              <Metric icon={FiUsers} label="Инвесторов" value="12 842" note="+320 за месяц" />
+              <Metric icon={FiHome} label="Активных объектов" value={loading ? '...' : filtered.length || 87} note="+6 за месяц" />
+              <Metric icon={FiPieChart} label="Объём инвестиций" value="€128,6 млн" note="+8,7% за месяц" />
+              <Metric icon={FiTrendingUp} label="Средняя доходность" value="11,6%" note="за 12 месяцев" />
+            </div>
           </section>
 
           <section className="shares-invest-catalog" id="shares-invest-catalog">
@@ -487,6 +512,7 @@ export default function Shares() {
                 title="Фильтры"
                 applyLabel={`Показать ${filtered.length} объектов`}
                 onApply={() => setFiltersDrawerOpen(false)}
+                onReset={resetFilters}
               >
                 <SharesFiltersPanel
                   className="shares-invest-filters shares-invest-filters--drawer"
@@ -509,15 +535,19 @@ export default function Shares() {
               </SharesMobileFiltersDrawer>
 
               <div className="shares-invest-grid">
-                {pageItems.map((share) => (
-                  <ShareCard
-                    key={share.id}
-                    share={share}
-                    favorite={favorites.has(share.id)}
-                    onFavorite={() => toggleFavorite(share.id)}
-                    onInvest={() => openShare(share)}
-                  />
-                ))}
+                {pageItems.map((share) => {
+                  const cardShare = toHomeShareCardModel(share)
+                  return (
+                    <SharesPropertyCard
+                      key={share.id}
+                      share={cardShare}
+                      isFavorite={favorites.has(share.id)}
+                      onFavoriteToggle={() => toggleFavorite(share.id)}
+                      onInvest={() => openShare(share)}
+                      imageFallback={CARD_IMAGES[0]}
+                    />
+                  )
+                })}
               </div>
 
               <nav className="shares-invest-pagination" aria-label="Пагинация долей">
@@ -529,8 +559,8 @@ export default function Shares() {
                     {item}
                   </button>
                 ))}
-                {totalPages > 6 ? <span>...</span> : null}
-                {totalPages > 6 ? <button type="button" onClick={() => setPage(totalPages)}>{totalPages}</button> : null}
+                {showTrailingEllipsis ? <span>...</span> : null}
+                {showLastPage ? <button type="button" onClick={() => setPage(totalPages)}>{totalPages}</button> : null}
                 <button type="button" disabled={currentPage === totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}>
                   <FiArrowRight size={16} aria-hidden />
                 </button>
@@ -538,26 +568,8 @@ export default function Shares() {
             </div>
           </section>
 
-          <section className="shares-invest-next" aria-label="Другие разделы">
-            {CTA_CARDS.map(({ title, text, to, icon: Icon, image, tone }) => (
-              <Link to={to} className="shares-invest-next-card" key={title}>
-                <img src={image} alt="" />
-                <span className="shares-invest-next-card__shade" aria-hidden />
-                <span className={`shares-invest-next-card__icon shares-invest-next-card__icon--${tone}`}>
-                  <Icon size={25} aria-hidden />
-                </span>
-                <div className="shares-invest-next-card__content">
-                  <strong>{title}</strong>
-                  <span>{text}</span>
-                </div>
-                <em>
-                  <span>Перейти</span>
-                  <FiArrowRight aria-hidden />
-                </em>
-              </Link>
-            ))}
-          </section>
         </div>
+        <AuctionCategoryCtaCards variant="sharesPage" />
       </main>
     </div>
   )
@@ -668,62 +680,5 @@ function RangeFilter({ title, minLabel, maxLabel, value, min, max, step = 1, onC
         onChange={(event) => onChange(Number(event.target.value))}
       />
     </div>
-  )
-}
-
-function ShareCard({ share, favorite, onFavorite, onInvest }) {
-  return (
-    <article className="shares-invest-card">
-      <div className="shares-invest-card__media">
-        <img
-          src={share.image}
-          alt={share.title}
-          onError={(event) => {
-            event.currentTarget.src = CARD_IMAGES[0]
-          }}
-        />
-        <span className={`shares-invest-card__status${share.status === 'Почти собрано' ? ' shares-invest-card__status--gold' : ''}`}>
-          {share.status}
-        </span>
-        <button type="button" className={favorite ? 'is-active' : ''} onClick={onFavorite} aria-label="Добавить в избранное">
-          <FiHeart size={22} aria-hidden />
-        </button>
-      </div>
-      <div className="shares-invest-card__body">
-        <h3>{share.title}</h3>
-        <p>{share.location}</p>
-        <div className="shares-invest-card__funding">
-          <span className="shares-invest-card__ring" style={{ '--value': `${share.collectedPercent}%` }}>
-            <strong>{share.collectedPercent}%</strong>
-          </span>
-          <div className="shares-invest-card__amounts">
-            <span>
-              <small>Собрано</small>
-              <strong>{formatEuro(share.collected)}</strong>
-            </span>
-            <span>
-              <small>Цель</small>
-              <strong>{formatEuro(share.target)}</strong>
-            </span>
-          </div>
-        </div>
-        <div className="shares-invest-card__bar" aria-hidden>
-          <span style={{ width: `${share.collectedPercent}%` }} />
-        </div>
-        <div className="shares-invest-card__metrics">
-          <span>
-            <small>Доходность</small>
-            <strong>{share.annualYield}%</strong>
-          </span>
-          <span>
-            <small>Цена доли</small>
-            <strong>{formatEuro(share.sharePrice)}</strong>
-          </span>
-        </div>
-        <button type="button" className="shares-invest-card__invest" onClick={onInvest}>
-          Инвестировать
-        </button>
-      </div>
-    </article>
   )
 }

@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiAlertCircle } from 'react-icons/fi'
+import { FiAlertCircle, FiSliders } from 'react-icons/fi'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import {
@@ -14,6 +15,7 @@ import {
   filterPropertiesBySearchQuery,
   getCatalogFilterBounds,
   loadCatalogFiltersFromSession,
+  mergeCatalogFilters,
   persistCatalogFilters,
   sanitizeCatalogFilters,
 } from '../utils/catalogFilters'
@@ -30,6 +32,7 @@ import {
 } from '../utils/propertySearchFilters'
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
 import { getSearchResultsPropertyPath, parseSearchResultsGeoRoute } from '../utils/searchResultsGeoUrl'
+import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -67,11 +70,16 @@ const SearchResults = () => {
   )
   const routeCountry = routeGeo.country
   const routeCity = routeGeo.region
+  const heroSearchPrefilter = useMemo(
+    () => readHeroSearchPrefilter(location.state),
+    [location.state],
+  )
   const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
   const [searchQuery, setSearchQuery] = useState('')
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
@@ -88,6 +96,10 @@ const SearchResults = () => {
   }, [])
 
   useEffect(() => {
+    if (isSearchDesktop) setMobileFiltersOpen(false)
+  }, [isSearchDesktop])
+
+  useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
@@ -99,7 +111,12 @@ const SearchResults = () => {
           .map((prop) => formatPropertyForListingCard(prop))
           .filter((property) => !isHiddenSoldListing(property))
         const bounds = getCatalogFilterBounds(formatted)
-        const initialFilters = sanitizeCatalogFilters(loadCatalogFiltersFromSession(bounds), bounds)
+        const initialFilters = sanitizeCatalogFilters(
+          heroSearchPrefilter
+            ? mergeCatalogFilters(heroSearchPrefilter, EMPTY_CATALOG_FILTERS)
+            : loadCatalogFiltersFromSession(bounds),
+          bounds,
+        )
         if (routeCountry && routeCity) {
           initialFilters.country = routeCountry
           initialFilters.region = routeCity
@@ -117,7 +134,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true
     }
-  }, [routeCountry, routeCity])
+  }, [heroSearchPrefilter, routeCountry, routeCity])
 
   const filterBounds = useMemo(
     () => getCatalogFilterBounds(catalogProperties),
@@ -153,6 +170,18 @@ const SearchResults = () => {
     }
     return seen.size
   }, [filteredProperties])
+
+  const activeFilterCount = useMemo(() => {
+    let count = Array.isArray(activeFilters.purchaseTypes)
+      ? activeFilters.purchaseTypes.length
+      : 0
+    if (activeFilters.country) count += 1
+    if (activeFilters.region) count += 1
+    if (activeFilters.propertyType) count += 1
+    if (activeFilters.rooms) count += 1
+    if (activeFilters.minPrice !== '' || activeFilters.maxPrice !== '') count += 1
+    return count
+  }, [activeFilters])
 
   useEffect(() => {
     if (!location.state?.fromPropertySearchBlock) return
@@ -239,7 +268,7 @@ const SearchResults = () => {
                 : ''
             }`}
           >
-            {!isSearchDesktop || desktopFiltersOpen ? (
+            {isSearchDesktop && desktopFiltersOpen ? (
               <CatalogDesktopFilters
                 filters={activeFilters}
                 onChange={handleDesktopFilterChange}
@@ -289,6 +318,22 @@ const SearchResults = () => {
                       </button>
                     ) : null}
                   </div>
+                  <button
+                    type="button"
+                    className={`search-results__mobile-filters-btn${
+                      activeFilterCount > 0 ? ' is-active' : ''
+                    }`}
+                    onClick={() => setMobileFiltersOpen(true)}
+                    aria-label={t('filters')}
+                    aria-expanded={mobileFiltersOpen}
+                  >
+                    <FiSliders size={20} aria-hidden />
+                    {activeFilterCount > 0 ? (
+                      <span className="search-results__mobile-filters-count" aria-hidden>
+                        {activeFilterCount}
+                      </span>
+                    ) : null}
+                  </button>
                 </div>
               ) : (
                 <div
@@ -377,6 +422,25 @@ const SearchResults = () => {
                   </div>
                 )}
               </div>
+
+              {!isSearchDesktop ? (
+                <SharesMobileFiltersDrawer
+                  isOpen={mobileFiltersOpen}
+                  onClose={() => setMobileFiltersOpen(false)}
+                  title={t('filters')}
+                  applyLabel={`${t('auctionApplyFilters')} · ${totalUniqueCount}`}
+                  onApply={() => setMobileFiltersOpen(false)}
+                  resetLabel={t('catalogResetFilters')}
+                  onReset={handleResetFilters}
+                >
+                  <CatalogDesktopFilters
+                    filters={activeFilters}
+                    onChange={handleDesktopFilterChange}
+                    priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
+                    variant="drawer"
+                  />
+                </SharesMobileFiltersDrawer>
+              ) : null}
             </div>
           </div>
         </div>

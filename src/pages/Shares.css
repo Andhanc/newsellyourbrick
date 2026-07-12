@@ -3545,3 +3545,774 @@ html.site-footer-near .shares-floats > button.ai-button {
     border-radius: 8px;
   }
 }
+
+/* Каталог долей: направления и компактный smartphone layout */
+.shares-invest-next {
+  display: block;
+}
+
+.shares-invest-next__head {
+  margin-bottom: 22px;
+}
+
+.shares-invest-next__eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #0099a9;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shares-invest-next__head h2 {
+  margin: 0;
+  color: #1f2b3d;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.shares-invest-next__head p {
+  margin: 8px 0 0;
+  color: #687589;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shares-invest-next__rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-hero {
+    min-height: 500px;
+    overflow: visible;
+    border-radius: 0 0 30px 30px;
+  }
+
+  .shares-invest-page .shares-invest-hero__media {
+    overflow: hidden;
+    border-radius: 0 0 30px 30px;
+  }
+
+  .shares-invest-page .shares-invest-hero__media img {
+    object-position: 64% center;
+  }
+
+  .shares-invest-page .shares-invest-hero__wash {
+    background:
+      linear-gradient(180deg, rgba(248, 247, 242, 0.72) 0%, rgba(248, 247, 242, 0.35) 38%, rgba(247, 250, 248, 0.9) 100%),
+      linear-gradient(90deg, rgba(249, 247, 241, 0.84), rgba(249, 247, 241, 0.08));
+  }
+
+  .shares-invest-page .shares-invest-hero__inner {
+    display: block;
+    min-height: 500px;
+    padding: calc(env(safe-area-inset-top, 0px) + 112px) 0 96px;
+  }
+
+  .shares-invest-page .shares-invest-hero__copy {
+    max-width: 360px;
+    padding: 22px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.66);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 20px 50px rgba(42, 56, 68, 0.14);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .shares-invest-page .shares-invest-hero__copy h1 {
+    font-size: clamp(1.8rem, 8.5vw, 2.35rem);
+  }
+
+  .shares-invest-page .shares-invest-hero__lead {
+    max-width: 300px;
+  }
+
+  .shares-invest-page .shares-invest-hero__cta {
+    width: 100%;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  .shares-invest-page .shares-portfolio-card {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: -58px 0 26px;
+    padding: 10px;
+    border-radius: 22px;
+    box-shadow: 0 18px 44px rgba(42, 56, 68, 0.12);
+  }
+
+  .shares-invest-page .shares-invest-metric {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    padding: 11px 8px;
+    border: 0;
+  }
+
+  .shares-invest-page .shares-invest-metric:nth-child(odd) {
+    border-right: 1px solid #e7eeea;
+  }
+
+  .shares-invest-page .shares-invest-metric:nth-child(-n + 2) {
+    border-bottom: 1px solid #e7eeea;
+  }
+
+  .shares-invest-page .shares-invest-metric__body {
+    display: block;
+  }
+
+  .shares-invest-page .shares-invest-metric__body p {
+    overflow: hidden;
+    font-size: 10px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .shares-invest-page .shares-invest-metric__body strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 13px;
+  }
+
+  .shares-invest-page .shares-invest-metric__note {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-results__title {
+    margin-bottom: 16px;
+  }
+
+  .shares-invest-page .shares-invest-results__title h2 {
+    font-size: 1.55rem;
+  }
+
+  .shares-invest-page .shares-invest-results__title p {
+    max-width: 330px;
+  }
+
+  .shares-invest-page .shares-invest-pagination {
+    gap: 5px;
+    margin-top: 26px;
+  }
+
+  .shares-invest-page .shares-invest-pagination button {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .shares-invest-page .shares-invest-pagination span {
+    padding: 0 2px;
+    font-size: 12px;
+  }
+
+  .shares-invest-next {
+    margin-top: 46px;
+  }
+
+  .shares-invest-next__head {
+    margin-bottom: 16px;
+  }
+
+  .shares-invest-next__head h2 {
+    font-size: 1.65rem;
+  }
+
+  .shares-invest-next__head p {
+    max-width: 310px;
+    font-size: 13px;
+  }
+
+  .shares-invest-next__rail {
+    display: flex;
+    gap: 12px;
+    margin-right: -16px;
+    padding-right: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .shares-invest-next__rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shares-invest-next__rail .shares-invest-next-card {
+    flex: 0 0 min(82vw, 310px);
+    min-height: 150px;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .shares-invest-page .shares-invest-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card {
+    min-width: 0;
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(35, 49, 63, 0.08);
+  }
+
+  .shares-invest-page .shares-invest-card__media {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .shares-invest-page .shares-invest-card__status {
+    left: 7px;
+    bottom: 7px;
+    min-height: 20px;
+    max-width: calc(100% - 14px);
+    overflow: hidden;
+    padding: 0 7px;
+    font-size: 8px;
+    line-height: 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .shares-invest-page .shares-invest-card__media button {
+    top: 7px;
+    right: 7px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .shares-invest-page .shares-invest-card__media button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .shares-invest-page .shares-invest-card__body {
+    padding: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card h3 {
+    min-height: calc(1.25em * 2);
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .shares-invest-page .shares-invest-card p {
+    display: -webkit-box;
+    min-height: 2.5em;
+    margin: 4px 0 8px;
+    overflow: hidden;
+    color: #718092;
+    font-size: 9px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .shares-invest-page .shares-invest-card__funding {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__ring {
+    width: 42px;
+    height: 42px;
+  }
+
+  .shares-invest-page .shares-invest-card__ring strong {
+    font-size: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts small,
+  .shares-invest-page .shares-invest-card__metrics small {
+    font-size: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts strong,
+  .shares-invest-page .shares-invest-card__metrics strong {
+    margin-top: 0;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-invest-card__bar {
+    height: 5px;
+    margin: 8px 0 9px;
+  }
+
+  .shares-invest-page .shares-invest-card__metrics {
+    gap: 5px;
+    margin-bottom: 10px;
+    padding-top: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__invest {
+    min-height: 36px;
+    padding: 0 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+}
+
+/* Продающий блок перед каталогом */
+.shares-invest-page .shares-invest-stats {
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.92fr);
+  gap: 26px;
+  align-items: stretch;
+  margin-top: -82px;
+  padding: 26px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(217, 219, 174, 0.34), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 248, 247, 0.94));
+  box-shadow: 0 24px 58px rgba(35, 49, 63, 0.13);
+}
+
+.shares-invest-stats__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 8px 8px 4px;
+}
+
+.shares-invest-stats__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #d9dbae;
+  color: #101928;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.shares-invest-stats__intro h2 {
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: #172235;
+  font-size: clamp(1.6rem, 2.8vw, 2.35rem);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.shares-invest-stats__intro > p {
+  max-width: 570px;
+  margin: 10px 0 0;
+  color: #5e6b7c;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.shares-invest-stats__benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.shares-invest-stats__benefits span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(74, 150, 166, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #405165;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.shares-invest-stats__benefits svg {
+  color: #4a96a6;
+}
+
+.shares-invest-stats__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  margin-top: 17px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a96a6, #3f8798);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 12px 26px rgba(74, 150, 166, 0.27);
+  cursor: pointer;
+}
+
+.shares-invest-stats__cta svg {
+  transition: transform 0.2s ease;
+}
+
+.shares-invest-stats__cta:hover svg {
+  transform: translateX(3px);
+}
+
+.shares-invest-stats__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(222, 230, 227, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.shares-invest-stats__metrics .shares-invest-metric {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 18px 14px;
+  border: 0;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric:nth-child(odd) {
+  border-right: 1px solid #e7eeea;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric:nth-child(-n + 2) {
+  border-bottom: 1px solid #e7eeea;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__icon {
+  width: 42px;
+  height: 42px;
+  background: #f7fbfa;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__body {
+  min-width: 0;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric p {
+  overflow: hidden;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric strong {
+  margin-top: 4px;
+  font-size: 17px;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__note {
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.shares-invest-page > .auction-cta-cards,
+.shares-invest-main > .auction-cta-cards {
+  margin-top: 54px;
+}
+
+@media (max-width: 900px) {
+  .shares-invest-page .shares-invest-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-stats {
+    display: block;
+    margin: -58px 0 26px;
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .shares-invest-stats__intro {
+    padding: 0;
+  }
+
+  .shares-invest-stats__intro h2 {
+    margin-top: 10px;
+    font-size: clamp(1.45rem, 7vw, 1.9rem);
+  }
+
+  .shares-invest-stats__intro > p {
+    font-size: 12px;
+  }
+
+  .shares-invest-stats__benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 7px;
+    margin-top: 13px;
+  }
+
+  .shares-invest-stats__benefits span {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .shares-invest-stats__benefits span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .shares-invest-stats__cta {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .shares-invest-stats__metrics {
+    margin-top: 18px;
+    border-radius: 18px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 7px;
+    padding: 12px 9px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric p {
+    font-size: 9px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric strong {
+    font-size: 13px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__note {
+    display: block;
+    margin-top: 3px;
+    font-size: 8px;
+    text-align: left;
+  }
+
+  .shares-invest-main > .auction-cta-cards {
+    margin-top: 38px;
+    padding-top: 0;
+  }
+}
+.shares-invest-stats__intro h2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.shares-invest-stats__title-pill {
+  display: inline-block;
+  width: max-content;
+  padding: 0.08em 0.48em 0.14em;
+  border-radius: 999px;
+  background: #4a96a6;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(74, 150, 166, 0.24);
+  transform: rotate(-2deg);
+}
+
+.shares-invest-stats__title-line {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-hero {
+    min-height: 280px;
+  }
+
+  .shares-invest-page .shares-invest-hero__inner {
+    min-height: 280px;
+    padding: 0;
+  }
+
+  .shares-invest-page .shares-invest-hero__copy {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-stats {
+    margin: -152px 0 26px;
+  }
+}
+
+/* Mobile shares catalog: use the same compact card density as the home showcase. */
+@media (max-width: 640px) {
+  .shares-invest-page .shares-v2-card {
+    min-width: 0;
+    border-radius: 14px;
+    font-family: Montserrat, system-ui, sans-serif;
+  }
+
+  .shares-invest-page .shares-v2-card:hover {
+    transform: none;
+  }
+
+  .shares-invest-page .shares-v2-card__media {
+    aspect-ratio: 3 / 2;
+  }
+
+  .shares-invest-page .shares-v2-card__badge {
+    top: 7px;
+    left: 7px;
+    max-width: calc(100% - 48px);
+    padding: 4px 6px;
+    overflow: hidden;
+    font-size: 0.54rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__favorite {
+    top: 7px;
+    right: 7px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .shares-invest-page .shares-v2-card__favorite svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .shares-invest-page .shares-v2-card__body {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .shares-invest-page .shares-v2-card__title {
+    display: -webkit-box;
+    min-height: calc(1.25em * 2);
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .shares-invest-page .shares-v2-card__location {
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.56rem;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__location span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__location svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .shares-invest-page .shares-v2-card__metrics {
+    gap: 4px;
+    margin: 1px 0 6px;
+  }
+
+  .shares-invest-page .shares-v2-card__metric {
+    gap: 2px;
+  }
+
+  .shares-invest-page .shares-v2-card__metric-label,
+  .shares-invest-page .shares-v2-card__progress-label,
+  .shares-invest-page .shares-v2-card__progress-percent {
+    font-size: 0.52rem;
+  }
+
+  .shares-invest-page .shares-v2-card__metric-value {
+    font-size: 0.66rem;
+  }
+
+  .shares-invest-page .shares-v2-card__progress-head {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .shares-invest-page .shares-v2-card__progress-track {
+    height: 4px;
+    margin-bottom: 6px;
+  }
+
+  .shares-invest-page .shares-v2-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  .shares-invest-page .shares-v2-card__amounts {
+    gap: 2px;
+    overflow: hidden;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__invest-btn {
+    width: 100%;
+    min-height: 30px;
+    padding: 6px 5px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: #0a0a0a;
+    color: #fff;
+    font-size: 0.625rem;
+    box-shadow: 0 10px 24px rgba(10, 10, 10, 0.16);
+  }
+
+  .shares-invest-page .shares-v2-card__invest-btn:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: #fff;
+  }
+}

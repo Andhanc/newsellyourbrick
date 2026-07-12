@@ -57,6 +57,7 @@ const AUCTION_CTA_CARDS = [
 
 const DEBTS_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'test-drive']
 const TEST_DRIVE_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'debts']
+const SHARES_PAGE_CTA_CARD_IDS = ['auction', 'debts', 'test-drive']
 
 const CTA_SECTION_TITLES = {
   default: {
@@ -77,6 +78,8 @@ function AuctionCategoryCtaCards({ variant = 'default' }) {
   const cards =
     variant === 'debtsPage'
       ? DEBTS_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+      : variant === 'sharesPage'
+        ? SHARES_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
       : variant === 'testDrivePage'
         ? TEST_DRIVE_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
         : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')

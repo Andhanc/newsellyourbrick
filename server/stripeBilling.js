@@ -2970,18 +2970,41 @@ export function registerStripeBillingRoutes(app) {
           const pid = billing.property_id;
           let property_image = null;
           let property_title = null;
+          let property_location = null;
+          let property_address = null;
+          let property_city = null;
+          let property_country = null;
+          let property_price = null;
+          let property_type = null;
           if (pid != null) {
             try {
               const p = await propertyQueries.getById(pid, billing.property_type || null);
               if (p) {
                 property_title = p.title || null;
                 property_image = firstReservationPropertyPhotoUrl(p);
+                property_location = p.location || null;
+                property_address = p.address || null;
+                property_city = p.city || null;
+                property_country = p.country || null;
+                property_price = p.minimum_sale_price ?? p.price ?? null;
+                property_type = p.property_type || billing.property_type || null;
               }
             } catch {
               /* ignore */
             }
           }
-          return { ...row, billing, property_image, property_title };
+          return {
+            ...row,
+            billing,
+            property_image,
+            property_title,
+            property_location,
+            property_address,
+            property_city,
+            property_country,
+            property_price,
+            property_type,
+          };
         })
       );
       return res.json({ success: true, data: items });

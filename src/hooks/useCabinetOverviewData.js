@@ -15,6 +15,7 @@ import {
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
 } from '../constants/cabinetEvents'
+import { mapReservationPurchase } from '../utils/cabinetPurchaseHistory'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
@@ -212,19 +213,20 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
 
   const rArr = Array.isArray(reservations) ? reservations : []
   for (const row of rArr) {
-    const title = row.property_title || `Объект #${row.billing?.property_id ?? '—'}`
-    const date = row.paid_at
+    const purchase = mapReservationPurchase(row)
+    const title = purchase.title
+    const date = purchase.purchaseDateRaw
     const sort = new Date(date || 0).getTime()
-    const cur = (row.currency || 'eur').toUpperCase()
-    const paid = (row.amount_cents || 0) / 100
-    const pid = row.billing?.property_id
-    const img = sharePurchaseImageSrc(row.property_image)
+    const cur = purchase.currency
+    const paid = purchase.paidAmount
+    const pid = purchase.propertyId
+    const img = purchase.imageSrc
     const reserveProp =
       pid != null
-        ? { id: pid, property_type: row.property_type || row.billing?.property_type }
+        ? { id: pid, property_type: purchase.propertyType }
         : null
     const href = pid != null ? getPropertyDetailPath(pid, { property: reserveProp }) : null
-    const loc = String(row.property_location || row.property_address || '').trim()
+    const loc = purchase.location
     events.push({
       sort,
       id: `rv-${row.id ?? row.dedupe_key}`,
@@ -243,6 +245,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      ...purchase,
     })
   }
 

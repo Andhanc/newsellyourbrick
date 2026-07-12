@@ -97,6 +97,7 @@
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: env(safe-area-inset-top, 0px) 0 0;
   }
 
   .hr-page .new-header__container {
@@ -1378,12 +1379,20 @@
   box-shadow: var(--hr-showcase-action-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.hr-page .hr-showcases .shares-v2-card__invest-btn {
+  color: #fff;
+}
+
 .hr-page .hr-showcases .property-actions .btn-primary:hover,
 .hr-page .hr-showcases .property-actions .btn-liquid-glass:hover,
 .hr-page .hr-showcases .shares-v2-card__invest-btn:hover:not(:disabled),
 .hr-page .hr-showcases .debts-property-card__btn:hover:not(:disabled) {
   background: var(--hr-showcase-action-hover);
   box-shadow: var(--hr-showcase-action-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.hr-page .hr-showcases .shares-v2-card__invest-btn:hover:not(:disabled) {
+  color: #fff;
 }
 
 .hr-stats__cards {
@@ -2857,9 +2866,8 @@
   /* Object showcases: alternating clean surfaces (no rgba overlays — they read muddy). */
   .hr-page .hr-showcases {
     --hr-showcase-white: #ffffff;
-    --hr-showcase-bridge: #f3f8f9;
-    --hr-showcase-mist: #e9f3f6;
-    --hr-showcase-mist-deep: #deebef;
+    --hr-showcase-buy-now: #e5f2f5;
+    --hr-showcase-debts: #eef1df;
     background: var(--hr-showcase-white);
   }
 
@@ -2885,56 +2893,25 @@
   }
 
   .hr-page .hr-showcases .invest-showcase--auction {
-    background:
-      linear-gradient(
-        180deg,
-        var(--hr-showcase-white) 0%,
-        var(--hr-showcase-white) 72%,
-        var(--hr-showcase-bridge) 92%,
-        var(--hr-showcase-mist) 100%
-      );
+    background: var(--hr-showcase-white);
   }
 
   .hr-page .hr-showcases .invest-showcase--buy-now {
-    --hr-showcase-mist: #b5dce6;
-    --hr-showcase-mist-deep: #8ec5d3;
-    --hr-showcase-bridge: #a5d4de;
-    background:
-      linear-gradient(
-        180deg,
-        var(--hr-showcase-mist) 0%,
-        var(--hr-showcase-mist-deep) 22%,
-        var(--hr-showcase-mist-deep) 78%,
-        var(--hr-showcase-mist) 92%,
-        var(--hr-showcase-bridge) 100%
-      );
+    background: var(--hr-showcase-buy-now);
+    box-shadow:
+      inset 0 1px 0 rgba(74, 150, 166, 0.16),
+      inset 0 -1px 0 rgba(74, 150, 166, 0.12);
   }
 
   .hr-page .hr-showcases .invest-showcase--shares {
-    background:
-      linear-gradient(
-        180deg,
-        var(--hr-showcase-bridge) 0%,
-        var(--hr-showcase-white) 18%,
-        var(--hr-showcase-white) 82%,
-        var(--hr-showcase-bridge) 100%
-      );
+    background: var(--hr-showcase-white);
   }
 
   .hr-page .hr-showcases .invest-showcase--debts {
-    --hr-showcase-mist: #a8d4de;
-    --hr-showcase-mist-deep: #7ab8c8;
-    --hr-showcase-bridge: #94ccd8;
-    background:
-      linear-gradient(
-        180deg,
-        var(--hr-showcase-bridge) 0%,
-        var(--hr-showcase-mist) 10%,
-        var(--hr-showcase-mist-deep) 24%,
-        var(--hr-showcase-mist-deep) 76%,
-        var(--hr-showcase-mist) 90%,
-        #c8e6ee 100%
-      );
+    background: var(--hr-showcase-debts);
+    box-shadow:
+      inset 0 1px 0 rgba(143, 153, 93, 0.18),
+      inset 0 -1px 0 rgba(143, 153, 93, 0.14);
   }
 
   .hr-page .hr-showcases .hr-news {

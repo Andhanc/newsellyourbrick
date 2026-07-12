@@ -367,6 +367,8 @@ const PropertyDetailPage = () => {
                 debt_arrest: prop.debt_arrest,
                 debt_inherited: prop.debt_inherited,
                 debt_third_party: prop.debt_third_party,
+                debt_other: prop.debt_other || null,
+                debt_amount: prop.debt_amount,
                 // Резервация
                 is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
                 reserved_until: prop.reserved_until || null,
@@ -495,5 +497,4 @@ const PropertyDetailPage = () => {
 }
 
 export default PropertyDetailPage
-
 

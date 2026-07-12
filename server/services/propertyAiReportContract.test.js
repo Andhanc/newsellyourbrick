@@ -20,9 +20,10 @@ test('requires a meaningful custom question', () => {
   )
 })
 
-test('parses fenced JSON and normalizes it into six report pages', () => {
+test('parses fenced JSON into a compact seven-page report', () => {
   const content = `\`\`\`json
   {
+    "directAnswer":"Объект выглядит интересно, но требует проверки документов.",
     "shortAnswer":"Объект выглядит интересно, но требует проверки документов.",
     "title":"Разбор объекта",
     "summary":"Краткое резюме",
@@ -31,20 +32,63 @@ test('parses fenced JSON and normalizes it into six report pages', () => {
     "metrics":[{"label":"Цена за м²","value":"250 000 ₽"}],
     "sections":[{"title":"Главное","body":"Факты объявления","bullets":["39 м²"]}],
     "conclusion":"Проверить документы до сделки",
-    "assumptions":["Расчёты ориентировочные"]
+    "assumptions":["Расчёты ориентировочные"],
+    "visualPrompt":"premium isometric 3D apartment interior",
+    "neighborhoodSummary":"Рядом есть базовая инфраструктура.",
+    "infrastructureHighlights":["Школа — 320 м","Возможный вывод: удобно для семьи"]
   }
   \`\`\``
 
   const report = parsePropertyAiModelContent(content, {
     category: 'risks',
     question: 'Какие плюсы и риски?',
-    property: { title: 'Петровский парк', images: ['https://img.example/home.jpg'] },
+    property: {
+      title: 'Петровский парк', area: 39, rooms: 2, price: 26878012,
+      images: ['https://img.example/home.jpg'],
+      nearbyInfrastructure: [{ category: 'schools', label: 'Образование', places: [{ name: 'Школа', distanceMeters: 320 }] }],
+    },
   })
 
-  assert.equal(report.pages.length, 6)
+  assert.equal(report.pages.length, 7)
   assert.equal(report.shortAnswer, 'Объект выглядит интересно, но требует проверки документов.')
   assert.equal(report.images[0], 'https://img.example/home.jpg')
+  assert.ok(report.pages.some((page) => page.type === 'answer'))
+  assert.ok(report.pages.some((page) => page.type === 'gallery'))
+  assert.ok(!report.pages.some((page) => page.type === 'visual'))
+  assert.ok(!report.pages.some((page) => page.type === 'conclusion'))
+  assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
   assert.match(report.disclaimer, /не является финансовой/i)
+})
+
+test('fills sparse reports with factual strengths, checks, metrics, and a direct answer', () => {
+  const report = parsePropertyAiModelContent(JSON.stringify({
+    shortAnswer: 'Предварительный ответ по данным объявления.',
+    sections: [],
+  }), {
+    category: 'custom',
+    question: 'Подойдёт ли объект семье?',
+    property: {
+      title: 'Семейная квартира',
+      area: 82,
+      rooms: 3,
+      location: 'Минск',
+      year_built: 2021,
+      price: 175000,
+      currency: 'USD',
+      images: ['/uploads/one.jpg', '/uploads/two.jpg'],
+      nearbyInfrastructure: [{ category: 'transport', label: 'Транспорт', places: [{ name: 'Остановка', distanceMeters: 180 }] }],
+    },
+  })
+
+  assert.match(report.directAnswer, /Предварительный ответ/)
+  assert.ok(report.strengths.length >= 2)
+  assert.ok(report.risks.length >= 2)
+  assert.ok(report.metrics.length >= 4)
+  assert.equal(report.pages.length, 7)
+  assert.ok(report.pages.some((page) => page.type === 'gallery'))
+  assert.ok(!report.pages.some((page) => page.type === 'visual'))
+  assert.ok(!report.pages.some((page) => page.type === 'conclusion'))
+  assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
 })
 
 test('uses listing images only and removes unsafe URLs', () => {

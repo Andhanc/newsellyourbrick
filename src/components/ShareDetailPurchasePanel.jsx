@@ -16,8 +16,11 @@ export default function ShareDetailPurchasePanel({
   isDbShare = false,
   onPurchase,
   variant = 'desktop',
+  mode = 'full',
 }) {
   const { t, i18n } = useTranslation()
+  const showChart = mode !== 'purchase'
+  const showPurchase = mode !== 'chart'
 
   const othersSold = Math.max(0, sharesSold - myShares)
   const previewMyShares = myShares + Math.min(buyCount, availableToBuy)
@@ -34,7 +37,7 @@ export default function ShareDetailPurchasePanel({
       locale: i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US',
     })
 
-  if (isSoldOut) {
+  if (isSoldOut && mode !== 'chart') {
     return (
       <div className={`share-purchase-panel share-purchase-panel--${variant} share-purchase-panel--sold-out`}>
         <div className="share-purchase-panel__sold-icon" aria-hidden>
@@ -52,8 +55,8 @@ export default function ShareDetailPurchasePanel({
   }
 
   return (
-    <div className={`share-purchase-panel share-purchase-panel--${variant}`}>
-      <div className="share-purchase-panel__chart">
+    <div className={`share-purchase-panel share-purchase-panel--${variant} share-purchase-panel--${mode}`}>
+      {showChart ? <div className="share-purchase-panel__chart">
         <span className="share-purchase-panel__label">{t('shareDetailChartTitle')}</span>
         {buyCount > 0 && availableToBuy > 0 ? (
           <p className="share-purchase-panel__preview-hint">
@@ -100,9 +103,9 @@ export default function ShareDetailPurchasePanel({
             </li>
           ) : null}
         </ul>
-      </div>
+      </div> : null}
 
-      <div className="share-purchase-panel__buy">
+      {showPurchase ? <div className="share-purchase-panel__buy">
         <span className="share-purchase-panel__label">{t('shareDetailBuyCountLabel')}</span>
         <div className="share-purchase-panel__stepper-row">
           <div className="share-purchase-panel__stepper">
@@ -145,7 +148,7 @@ export default function ShareDetailPurchasePanel({
         {!isDbShare ? (
           <p className="share-purchase-panel__demo-hint">{t('shareDetailDemoHint')}</p>
         ) : null}
-      </div>
+      </div> : null}
     </div>
   )
 }

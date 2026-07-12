@@ -1908,16 +1908,14 @@ a.property-card {
     display: none;
   }
 
-  .search-filters-bar.search-filters-bar--auction-mobile .filters-badge {
+  .search-filters-bar.search-filters-bar--auction-mobile .filters-button__dot {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    border-radius: 999px;
-    font-size: 10px;
-    line-height: 16px;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0099A9;
     box-shadow: 0 0 0 2px #fff;
   }
 

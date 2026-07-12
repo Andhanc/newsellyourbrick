@@ -10,7 +10,8 @@ import {
   userExistsForPropertyAi,
 } from './database/propertyAiReportsPrisma.js'
 import { normalizePropertyAiRequest } from './services/propertyAiReportContract.js'
-import { PROPERTY_AI_MODEL, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
+import { PROPERTY_AI_REPORT_MODEL, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
+import { normalizePropertyAiImages } from './services/propertyAiImages.js'
 
 const ALLOWED_PROPERTY_TABLES = ['properties', 'properties_apartments', 'properties_houses']
 
@@ -19,27 +20,12 @@ function positiveInt(value) {
   return Number.isSafeInteger(number) && number > 0 ? number : null
 }
 
-function parseJsonArray(value) {
-  if (Array.isArray(value)) return value
-  if (typeof value !== 'string' || !value.trim()) return []
-  try {
-    const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return value.split(',').map((item) => item.trim()).filter(Boolean)
-  }
-}
-
 function normalizeProperty(row, table) {
-  const images = [
-    ...parseJsonArray(row.images),
-    ...parseJsonArray(row.photos),
-    row.image,
-  ].filter(Boolean)
+  const images = normalizePropertyAiImages([row.images, row.photos, row.image])
   return {
     ...row,
     title: row.title || row.name || `Объект №${row.id}`,
-    images: [...new Set(images.map(String))].slice(0, 8),
+    images: images.slice(0, 8),
     source_table: table,
   }
 }
@@ -107,6 +93,7 @@ export function registerPropertyAiRoutes(app) {
         conversationId: conversation.id,
         category: request.category,
         question: request.question,
+        model: PROPERTY_AI_REPORT_MODEL,
       })
       if (reusable) return res.status(200).json({ success: true, reused: true, data: reusable })
 
@@ -114,7 +101,7 @@ export function registerPropertyAiRoutes(app) {
         conversationId: conversation.id,
         category: request.category,
         question: request.question,
-        model: PROPERTY_AI_MODEL,
+        model: PROPERTY_AI_REPORT_MODEL,
       })
       await appendPropertyAiMessage({
         conversationId: conversation.id,

@@ -51,7 +51,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   .home-page--auction > .hero--auction-scene {
     order: 1;
     margin-top: 0;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 88px);
     padding-bottom: 20px;
   }
 
@@ -127,6 +127,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: env(safe-area-inset-top, 0px) 0 0;
   }
 
   .home-page .new-header__container {
@@ -811,7 +812,5 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     min-height: 0;
   }
 }
-
-
 
 

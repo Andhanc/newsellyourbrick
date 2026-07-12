@@ -2914,6 +2914,71 @@
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
+  .property-detail-page-new--auction-mobile-v2.property-detail-page-new--share-listing {
+    padding-bottom: calc(164px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .property-detail-mobile-share-chart {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(0, 153, 169, 0.2);
+    border-radius: 20px;
+    background: linear-gradient(145deg, #ffffff 0%, #f3fcfd 100%);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__chart {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-areas:
+      'label label'
+      'hint hint'
+      'pie legend';
+    align-items: center;
+    gap: 0 16px;
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__label {
+    grid-area: label;
+    margin-bottom: 5px;
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__preview-hint {
+    grid-area: hint;
+    margin-bottom: 12px;
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__pie-wrap {
+    grid-area: pie;
+    margin: 0;
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__legend {
+    grid-area: legend;
+    gap: 9px;
+  }
+
+  .property-detail-mobile-share-chart .share-purchase-panel__legend-item {
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 360px) {
+    .property-detail-mobile-share-chart {
+      padding: 14px;
+    }
+
+    .property-detail-mobile-share-chart .share-purchase-panel__chart {
+      grid-template-columns: 116px minmax(0, 1fr);
+      gap: 0 12px;
+    }
+
+    .property-detail-mobile-share-chart .share-purchase-panel__pie-wrap {
+      width: 116px;
+      height: 116px;
+    }
+  }
+
   .property-detail-page-new--auction-mobile-v2 .property-detail-header--auction-desktop {
     display: none;
   }
@@ -3327,7 +3392,8 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-sheet__badge-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 14px;
   }
@@ -3349,6 +3415,7 @@
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge--live {
+    margin-left: auto;
     background: #fef3c7;
     color: #b45309;
   }
@@ -7426,5 +7493,3 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-
-

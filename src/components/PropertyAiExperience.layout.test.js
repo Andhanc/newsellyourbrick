@@ -11,6 +11,10 @@ test('keeps the launcher fixed until the global footer observer marks the footer
   assert.match(css, /html\.site-footer-near\s+\.property-ai-launcher/)
 })
 
+test('keeps the launcher above the taller mobile share purchase bar', () => {
+  assert.match(css, /@media \(max-width: 960px\)[\s\S]*?\.property-detail-page-new--auction-mobile-v2\.property-detail-page-new--share-listing \.property-ai-launcher\s*\{[\s\S]*?bottom:\s*calc\(146px \+ env\(safe-area-inset-bottom\)\)/)
+})
+
 test('renders chat inside a right-side drawer layer', () => {
   assert.match(jsx, /property-ai-drawer-layer/)
   assert.match(css, /\.property-ai-chat\s*\{[^}]*right:\s*0/)
@@ -27,6 +31,19 @@ test('reveals answer lines progressively and keeps a pending PDF card visible', 
   assert.match(jsx, /property-ai-answer-line/)
   assert.match(jsx, /property-ai-pdf-card--pending/)
   assert.match(css, /@keyframes property-ai-line-in/)
+})
+
+test('renders a direct answer with structured strengths and risks', () => {
+  assert.match(jsx, /job\?\.report\?\.directAnswer/)
+  assert.match(jsx, /property-ai-answer-summary/)
+  assert.match(jsx, /Плюсы/)
+  assert.match(jsx, /Риски/)
+  assert.match(jsx, /job\?\.report\?\.strengths/)
+  assert.match(jsx, /job\?\.report\?\.risks/)
+})
+
+test('describes the PDF as a compact six-to-seven-page report', () => {
+  assert.match(jsx, /PDF · 6–7 страниц/)
 })
 
 test('gives the Trans component replacement element a stable React key', () => {

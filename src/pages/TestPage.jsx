@@ -66,6 +66,8 @@ import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
+import PurchasedPropertyHistoryCard from '../components/PurchasedPropertyHistoryCard'
+import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
 import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
@@ -782,7 +784,8 @@ function TestPage() {
   const [subscriptionConfettiRecycle, setSubscriptionConfettiRecycle] = useState(true)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
-  const [isSellObjectPromptOpen, setIsSellObjectPromptOpen] = useState(false)
+  const [selectedPurchasedProperty, setSelectedPurchasedProperty] = useState(null)
+  const [purchaseDrawerView, setPurchaseDrawerView] = useState('details')
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
   )
@@ -996,11 +999,6 @@ function TestPage() {
     },
     [t],
   )
-
-  const handleSellObjectPromptConfirm = useCallback(async () => {
-    setIsSellObjectPromptOpen(false)
-    await handleSellObjectFromHistory()
-  }, [handleSellObjectFromHistory])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -3041,6 +3039,18 @@ function TestPage() {
                             </div>
                             <div className="test-history-section__grid">
                               {dayGroup.items.map((item) => {
+                                if (section.key === 'reserve') {
+                                  return (
+                                    <PurchasedPropertyHistoryCard
+                                      key={item.id}
+                                      item={item}
+                                      onOpenDetails={(selectedItem) => {
+                                        setSelectedPurchasedProperty(selectedItem)
+                                        setPurchaseDrawerView('details')
+                                      }}
+                                    />
+                                  )
+                                }
                                 const isPurchasedSection = ['auction', 'reserve', 'shares'].includes(section.key)
                                 const termsText = isPurchasedSection
                                   ? historyPurchaseTermsBySection(section.key)
@@ -3116,7 +3126,10 @@ function TestPage() {
                                             <button
                                               type="button"
                                               className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
-                                              onClick={() => setIsSellObjectPromptOpen(true)}
+                                              onClick={() => {
+                                                setSelectedPurchasedProperty(item)
+                                                setPurchaseDrawerView('sell')
+                                              }}
                                             >
                                               {t('buyerCabinet_sellProperty')}
                                             </button>
@@ -3861,38 +3874,22 @@ function TestPage() {
         </div>
       ) : null}
 
-      {isSellObjectPromptOpen ? (
-        <div className="test-sell-prompt-modal-root">
-          <div
-            className="test-sell-prompt-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="test-sell-prompt-title"
-          >
-            <h3 id="test-sell-prompt-title" className="test-sell-prompt-modal__title">
-              Чтобы продать объект зарегистрируйтесь как продавец
-            </h3>
-            <p className="test-sell-prompt-modal__text">
-              Ваш объект автоматически перенесется в новый кабинет.
-            </p>
-            <div className="test-sell-prompt-modal__actions">
-              <button
-                type="button"
-                className="test-sell-prompt-modal__btn test-sell-prompt-modal__btn--ghost"
-                onClick={() => setIsSellObjectPromptOpen(false)}
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                className="test-sell-prompt-modal__btn"
-                onClick={handleSellObjectPromptConfirm}
-              >
-                Продолжить
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedPurchasedProperty ? (
+        <PurchasedPropertyDrawer
+          item={selectedPurchasedProperty}
+          view={purchaseDrawerView}
+          onClose={() => setSelectedPurchasedProperty(null)}
+          onBack={() => setPurchaseDrawerView('details')}
+          onContactManager={() => {
+            setSelectedPurchasedProperty(null)
+            void openManagerChatModal()
+          }}
+          onSell={() => setPurchaseDrawerView('sell')}
+          onBecomeSeller={() => {
+            setSelectedPurchasedProperty(null)
+            void handleSellObjectFromHistory()
+          }}
+        />
       ) : null}
 
       <TestDriveCheckInModal

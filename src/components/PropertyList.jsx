@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
+import { FiSliders } from 'react-icons/fi'
 import { properties } from '../data/properties'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -448,6 +449,17 @@ const PropertyList = ({
     document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [countryFilter, cityFilter, propertyTypes, navigate])
 
+  const resetAuctionFilters = useCallback(() => {
+    setPropertyTypes([])
+    setSaleFilters([])
+    setCountryFilter('')
+    setCityFilter('')
+    setMinAreaFilter('')
+    setMaxAreaFilter('')
+    setMinPriceFilter('')
+    setMaxPriceFilter('')
+  }, [])
+
   const auctionDesktopFilterProps = useMemo(
     () => ({
       propertyTypes,
@@ -724,14 +736,14 @@ const PropertyList = ({
                 }
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-              </svg>
+              {isAuctionMobileFilters ? <FiSliders size={18} aria-hidden /> : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+              )}
               <span className="filters-button__label">{t('filters')}</span>
               {isAuctionMobileFilters && mobileAuctionActiveFilterCount > 0 ? (
-                <span className="filters-badge" aria-hidden="true">
-                  {mobileAuctionActiveFilterCount}
-                </span>
+                <span className="filters-button__dot" aria-hidden="true" />
               ) : null}
             </button>
             {!isAuctionMobileFilters ? (
@@ -1455,6 +1467,8 @@ const PropertyList = ({
           title={t('filters')}
           applyLabel={t('auctionApplyFilters')}
           onApply={applyAuctionFilters}
+          resetLabel={t('catalogResetFilters')}
+          onReset={resetAuctionFilters}
         >
           <AuctionDesktopFilters {...auctionDesktopFilterProps} variant="drawer" />
         </SharesMobileFiltersDrawer>
@@ -1465,4 +1479,3 @@ const PropertyList = ({
 }
 
 export default PropertyList
-

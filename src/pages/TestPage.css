@@ -5201,65 +5201,6 @@ button.test-doc-row {
   justify-content: center;
 }
 
-.test-sell-prompt-modal-root {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1400;
-  padding: 16px;
-}
-
-.test-sell-prompt-modal {
-  width: min(560px, 100%);
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
-  padding: 20px;
-}
-
-.test-sell-prompt-modal__title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.test-sell-prompt-modal__text {
-  margin: 10px 0 0;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #334155;
-}
-
-.test-sell-prompt-modal__actions {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.test-sell-prompt-modal__btn {
-  min-width: 126px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #0099A9;
-  background: #0099A9;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.test-sell-prompt-modal__btn--ghost {
-  border-color: rgba(15, 23, 42, 0.15);
-  background: #fff;
-  color: #0f172a;
-}
-
 .test-owner-comment-modal__overlay {
   position: fixed;
   inset: 0;

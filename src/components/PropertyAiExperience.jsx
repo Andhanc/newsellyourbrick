@@ -77,7 +77,10 @@ export default function PropertyAiExperience({ property, onRequireLogin, desktop
   const propertyId = property?.id
   const propertyTable = property?.source_table || property?.property_table || property?.table || ''
   const images = useMemo(() => propertyImages(property).slice(0, 2), [property])
-  const answerLines = useMemo(() => splitAnswerLines(job?.shortAnswer), [job?.shortAnswer])
+  const directAnswer = job?.report?.directAnswer || job?.shortAnswer
+  const answerLines = useMemo(() => splitAnswerLines(directAnswer), [directAnswer])
+  const answerStrengths = job?.report?.strengths || []
+  const answerRisks = job?.report?.risks || []
   const answerRevealComplete = answerLines.length > 0 && revealedLineCount >= answerLines.length
 
   const requireUser = useCallback(() => {
@@ -280,6 +283,23 @@ export default function PropertyAiExperience({ property, onRequireLogin, desktop
               </div>
             )}
 
+            {answerRevealComplete && (answerStrengths.length > 0 || answerRisks.length > 0) && (
+              <div className="property-ai-answer-summary">
+                {answerStrengths.length > 0 && (
+                  <section className="property-ai-answer-summary__group property-ai-answer-summary__group--strengths">
+                    <strong><span aria-hidden>+</span> Плюсы</strong>
+                    <ul>{answerStrengths.slice(0, 4).map((item, index) => <li key={`strength-${index}`}>{item}</li>)}</ul>
+                  </section>
+                )}
+                {answerRisks.length > 0 && (
+                  <section className="property-ai-answer-summary__group property-ai-answer-summary__group--risks">
+                    <strong><span aria-hidden>!</span> Риски</strong>
+                    <ul>{answerRisks.slice(0, 4).map((item, index) => <li key={`risk-${index}`}>{item}</li>)}</ul>
+                  </section>
+                )}
+              </div>
+            )}
+
             {job?.shortAnswer && answerRevealComplete && (
               <article className={`property-ai-pdf-card${job.status !== 'completed' ? ' property-ai-pdf-card--pending' : ''}`}>
                 <div className="property-ai-pdf-card__icon">
@@ -288,7 +308,7 @@ export default function PropertyAiExperience({ property, onRequireLogin, desktop
                 <div>
                   <span>
                     {job.status === 'completed'
-                      ? 'PDF · 6–8 страниц'
+                      ? 'PDF · 6–7 страниц'
                       : job.status === 'failed'
                         ? 'PDF не создан'
                         : 'Собираем PDF-презентацию'}

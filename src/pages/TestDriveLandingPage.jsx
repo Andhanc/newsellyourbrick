@@ -21,116 +21,18 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { auctionListingDedupeKey, getPropertyTestDrivePath } from '../utils/propertyDetailUrl'
 import { publicAsset } from '../utils/publicAsset'
+import {
+  isWithinSelectedTestDrivePrice,
+  mapRealTestDriveListing,
+  matchesSelectedTestDriveType,
+  realTestDriveListings,
+} from './testDriveListingData'
 import './TestDriveLandingPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/test-drive/hero-resort.png')
-
-const CARD_IMAGES = [
-  publicAsset('images/test-drive/property-marbella.png'),
-  publicAsset('images/test-drive/property-nice.png'),
-  publicAsset('images/test-drive/property-paphos.png'),
-  publicAsset('images/test-drive/property-sorrento.png'),
-  publicAsset('images/test-drive/property-barcelona.png'),
-  publicAsset('images/test-drive/property-santorini.png'),
-]
-
-const BASE_LISTINGS = [
-  {
-    title: 'Вилла в Марбелье',
-    location: 'Испания, Коста-дель-Соль',
-    city: 'Марбелья',
-    type: 'Вилла',
-    bedrooms: 3,
-    bathrooms: 3,
-    area: 180,
-    price: 450,
-    rating: 4.9,
-    reviews: 23,
-    stayDays: 3,
-  },
-  {
-    title: 'Апартаменты в Мадриде',
-    location: 'Испания, Мадрид',
-    city: 'Мадрид',
-    type: 'Апартаменты',
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 120,
-    price: 280,
-    rating: 4.8,
-    reviews: 18,
-    stayDays: 3,
-  },
-  {
-    title: 'Вилла в Малаге',
-    location: 'Испания, Малага',
-    city: 'Малага',
-    type: 'Вилла',
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 160,
-    price: 320,
-    rating: 4.7,
-    reviews: 16,
-    stayDays: 3,
-  },
-  {
-    title: 'Дом в Валенсии',
-    location: 'Испания, Валенсия',
-    city: 'Валенсия',
-    type: 'Дом',
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 110,
-    price: 350,
-    rating: 4.9,
-    reviews: 21,
-    stayDays: 3,
-  },
-  {
-    title: 'Апартаменты в Барселоне',
-    location: 'Испания, Барселона',
-    city: 'Барселона',
-    type: 'Апартаменты',
-    bedrooms: 1,
-    bathrooms: 1,
-    area: 80,
-    price: 220,
-    rating: 4.6,
-    reviews: 14,
-    stayDays: 3,
-  },
-  {
-    title: 'Вилла в Аликанте',
-    location: 'Испания, Аликанте',
-    city: 'Аликанте',
-    type: 'Вилла',
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 100,
-    price: 400,
-    rating: 4.9,
-    reviews: 27,
-    stayDays: 4,
-  },
-]
-
-const GENERATED_LISTINGS = Array.from({ length: 42 }, (_, index) => {
-  const base = BASE_LISTINGS[index % BASE_LISTINGS.length]
-  const lap = Math.floor(index / BASE_LISTINGS.length)
-  return {
-    ...base,
-    id: `demo-${index + 1}`,
-    image: CARD_IMAGES[index % CARD_IMAGES.length],
-    price: Math.min(500, base.price + lap * 25),
-    reviews: base.reviews + lap,
-    area: base.area + lap * 4,
-    title: lap ? `${base.title} ${lap + 1}` : base.title,
-  }
-})
 
 const TYPE_FILTERS = ['Вилла', 'Апартаменты', 'Таунхаус', 'Дом', 'Пентхаус']
 const CITY_FILTERS = ['Марбелья', 'Барселона', 'Мадрид', 'Валенсия', 'Малага', 'Аликанте', 'Севилья', 'Пальма']
@@ -160,8 +62,7 @@ function normalizeText(value) {
 }
 
 function mapApiPropertyToListing(property, index) {
-  const image = getPropertyCardImage(property) || CARD_IMAGES[index % CARD_IMAGES.length]
-  const base = BASE_LISTINGS[index % BASE_LISTINGS.length]
+  const image = getPropertyCardImage(property) || ''
   const formatted = formatPropertyForListingCard({
     ...property,
     image,
@@ -169,23 +70,10 @@ function mapApiPropertyToListing(property, index) {
     title: property.title || property.name || '',
   })
 
-  return {
-    ...formatted,
+  return mapRealTestDriveListing(formatted, index, {
     id: auctionListingDedupeKey(formatted),
-    image: CARD_IMAGES[index % CARD_IMAGES.length],
-    title: base.title,
-    location: base.location,
-    city: base.city,
-    type: base.type,
-    bedrooms: base.bedrooms,
-    bathrooms: base.bathrooms,
-    area: base.area,
-    price: base.price,
-    rating: 4.6 + (index % 4) / 10,
-    reviews: 14 + index,
-    stayDays: index % 6 === 5 ? 4 : 3,
-    originalProperty: formatted,
-  }
+    image,
+  })
 }
 
 const TestDriveLandingPage = () => {
@@ -201,7 +89,7 @@ const TestDriveLandingPage = () => {
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
-  const [favorites, setFavorites] = useState(() => new Set(['demo-1', 'demo-2']))
+  const [favorites, setFavorites] = useState(() => new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -210,7 +98,7 @@ const TestDriveLandingPage = () => {
         const res = await fetch(`${API_BASE}/properties/test-drive`)
         const json = await (res.ok ? res.json() : { success: false, data: [] })
         if (!cancelled && json.success && Array.isArray(json.data)) {
-          setApiListings(json.data.map(mapApiPropertyToListing))
+          setApiListings(json.data)
         } else if (!cancelled) {
           setApiListings([])
         }
@@ -225,19 +113,10 @@ const TestDriveLandingPage = () => {
     }
   }, [])
 
-  const listings = useMemo(() => {
-    if (!apiListings.length) return GENERATED_LISTINGS
-    const merged = [...apiListings]
-    let demoIndex = 0
-    while (merged.length < 42) {
-      merged.push({
-        ...GENERATED_LISTINGS[demoIndex % GENERATED_LISTINGS.length],
-        id: `visual-${demoIndex + 1}`,
-      })
-      demoIndex += 1
-    }
-    return merged.slice(0, 42)
-  }, [apiListings])
+  const listings = useMemo(
+    () => realTestDriveListings(apiListings, mapApiPropertyToListing),
+    [apiListings],
+  )
 
   const activeFilterCount =
     selectedTypes.length +
@@ -252,12 +131,12 @@ const TestDriveLandingPage = () => {
     const q = normalizeText(query)
     const filtered = listings.filter((item) => {
       const haystack = normalizeText(`${item.title} ${item.location} ${item.type}`)
-      const typeOk = selectedTypes.length === 0 || selectedTypes.includes(item.type)
+      const typeOk = matchesSelectedTestDriveType(item.type, selectedTypes)
       const directionOk = selectedDirections.length === 0 || selectedDirections.includes(item.city)
       const durationOk =
         selectedDurations.length === 0 ||
         selectedDurations.includes(item.stayDays <= 7 ? '3-7 дней' : '1-2 недели')
-      const priceOk = Number(item.price) <= price
+      const priceOk = isWithinSelectedTestDrivePrice(item.price, price)
       return (!q || haystack.includes(q)) && typeOk && directionOk && durationOk && priceOk
     })
 
@@ -430,6 +309,7 @@ const TestDriveLandingPage = () => {
                 title="Фильтры"
                 applyLabel={`Показать ${filteredListings.length || listings.length} объектов`}
                 onApply={() => setFiltersDrawerOpen(false)}
+                onReset={resetFilters}
               >
                 <TestDriveFiltersPanel
                   className="test-drive-filter-panel test-drive-filter-panel--drawer"
@@ -451,7 +331,7 @@ const TestDriveLandingPage = () => {
                 />
               </SharesMobileFiltersDrawer>
 
-              {filteredListings.length === 0 ? (
+              {loading ? null : filteredListings.length === 0 ? (
                 <div className="test-drive-empty">
                   <FiSun size={34} aria-hidden />
                   <h3>По этим условиям пока нет объектов</h3>

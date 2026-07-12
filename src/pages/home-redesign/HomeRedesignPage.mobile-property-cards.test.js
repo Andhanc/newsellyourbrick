@@ -67,3 +67,14 @@ test('uses the rendered mobile gap for pagination and arrow scrolling', () => {
   assert.match(showcase, /getComputedStyle\(scroller\)\.columnGap/)
   assert.doesNotMatch(showcase, /const gap = 16/)
 })
+
+test('keeps the shares investment button label white on the home showcase', () => {
+  assert.match(
+    css,
+    /\.hr-page \.hr-showcases \.shares-v2-card__invest-btn\s*\{[\s\S]*?color:\s*#fff/,
+  )
+  assert.match(
+    css,
+    /\.hr-page \.hr-showcases \.shares-v2-card__invest-btn:hover:not\(:disabled\)\s*\{[\s\S]*?color:\s*#fff/,
+  )
+})

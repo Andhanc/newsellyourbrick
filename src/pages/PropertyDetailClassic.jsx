@@ -62,7 +62,8 @@ import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
-import FlipCard from '../components/ui/FlipCard'
+import DebtAuctionInsight from '../components/DebtAuctionInsight'
+import PropertyDebtRiskBanner from '../components/PropertyDebtRiskBanner'
 import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import PropertyDetailTestDrivePromo from '../components/PropertyDetailTestDrivePromo'
@@ -77,6 +78,7 @@ import AuctionBidDrawer from '../components/AuctionBidDrawer'
 import AuctionBidCeilingModal from '../components/AuctionBidCeilingModal'
 import PropertyDetailAuctionBiddingForm from '../components/PropertyDetailAuctionBiddingForm'
 import ShareDetailPurchasePanel from '../components/ShareDetailPurchasePanel'
+import ShareMobilePurchaseBar from '../components/ShareMobilePurchaseBar'
 import '../components/ShareDetailPurchasePanel.css'
 import PropertyDetailDesktopAppBanner from '../components/PropertyDetailDesktopAppBanner'
 import PropertyDetailDesktopYieldCalc from '../components/PropertyDetailDesktopYieldCalc'
@@ -116,8 +118,6 @@ import {
 import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
 import '../components/PropertyCurrencySelector.css'
 import {
-  ShieldQuestionMark,
-  ShieldAlert,
   ShieldCheck,
   Bell,
   Home,
@@ -235,9 +235,7 @@ function PropertyDetailClassic({
   const lastTestTimerEndRef = useRef(null)
   const testDriveBannerRef = useRef(null)
   const investorPromoRef = useRef(null)
-  const [auctionMobileTab, setAuctionMobileTab] = useState(
-    shareListingConfig != null ? 'bids' : 'about',
-  )
+  const [auctionMobileTab, setAuctionMobileTab] = useState('about')
 
   useEffect(() => {
     if (location.state?.auctionTab === PROPERTY_DETAIL_AUCTION_TAB_BIDS) {
@@ -247,7 +245,7 @@ function PropertyDetailClassic({
 
   useEffect(() => {
     if (shareListingConfig != null) {
-      setAuctionMobileTab('bids')
+      setAuctionMobileTab('about')
     }
   }, [property?.id, shareListingConfig])
   const [isBidDrawerOpen, setIsBidDrawerOpen] = useState(false)
@@ -815,6 +813,14 @@ function PropertyDetailClassic({
     displayProperty.has_debt === 1 ||
     displayProperty.has_debt === true;
 
+  const debtAuctionBidValue =
+    currentBid ||
+    displayProperty.currentBid ||
+    displayProperty.current_bid ||
+    displayProperty.auction_starting_price ||
+    displayProperty.price ||
+    null
+
   const showsTestDriveSection =
     propertyShowsTestDrive(displayProperty) &&
     (property.test_drive === 1 ||
@@ -1042,6 +1048,7 @@ function PropertyDetailClassic({
   // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный).
   // Тестовый круговой таймер задаётся без is_auction — всё равно показываем аукционный блок.
   const isAuctionProperty =
+    isDebtProperty ||
     displayProperty.isAuction === true ||
     displayProperty.is_auction === true ||
     displayProperty.is_auction === 1 ||
@@ -1051,7 +1058,7 @@ function PropertyDetailClassic({
     hadCircularTimerAuction
 
   const isShareListing = shareListingConfig != null
-  const isAuctionLayout = isAuctionProperty || isShareListing
+  const isAuctionLayout = isAuctionProperty || isShareListing || isDebtProperty
 
   useEffect(() => {
     const titleEl = auctionDesktopTitleRef.current
@@ -2892,7 +2899,7 @@ function PropertyDetailClassic({
     const type = displayProperty?.property_type || displayProperty?.propertyType
     if (type === 'house') return t('propertyTypeHouse')
     if (type === 'villa') return t('propertyTypeVilla')
-    if (type === 'commercial') return t('propertyTypeFlat')
+    if (type === 'commercial') return t('propertyTypeCommercial')
     return t('propertyTypeApartment')
   }, [displayProperty?.property_type, displayProperty?.propertyType, t])
 
@@ -2901,7 +2908,7 @@ function PropertyDetailClassic({
   const auctionStickyPriceValue = fmtBidPrice(
     currentBid !== null
       ? currentBid
-      : displayProperty?.auction_starting_price || 0,
+      : displayProperty?.auction_starting_price || displayProperty?.price || 0,
   )
 
   const desktopYieldCalcDefaults = useMemo(() => {
@@ -4851,56 +4858,14 @@ function PropertyDetailClassic({
 
   const renderDesktopAuctionDebtRisk = () => {
     if (!isDebtProperty) return null
-    const sev = displayProperty.debt_severity
-    const accentColor =
-      sev === 'red' ? '#DC2626' : sev === 'yellow' ? '#CA8A04' : '#16A34A'
-    const riskIcon =
-      sev === 'red' ? ShieldQuestionMark : sev === 'yellow' ? ShieldAlert : ShieldCheck
-    const riskTitle =
-      sev === 'red' ? 'Высокий риск' : sev === 'yellow' ? 'Средний риск' : 'Низкий риск'
-    const riskSubtitle =
-      sev === 'red'
-        ? 'Красный — существенные задолженности'
-        : sev === 'yellow'
-          ? 'Жёлтый — требуют времени и расходов'
-          : 'Зелёный — технические и процедурные моменты'
-    const riskDescription =
-      sev === 'red'
-        ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
-        : sev === 'yellow'
-          ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
-          : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
-    const ctaText =
-      sev === 'red'
-        ? 'Высокий шанс заработать'
-        : sev === 'yellow'
-          ? 'Средний шанс заработать'
-          : 'Стабильный шанс заработать'
-    const debtFeatures = [
-      displayProperty.debt_utilities && 'Долги по коммунальным услугам',
-      displayProperty.debt_mortgage_pledge && 'Залог у банка',
-      displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
-      displayProperty.debt_arrest && 'Арест / ограничения',
-      displayProperty.debt_inherited && 'Долги наследодателя',
-      displayProperty.debt_third_party && 'Долги перед третьими лицами',
-      displayProperty.debt_other && displayProperty.debt_other,
-      displayProperty.debt_amount
-        ? `Сумма долга: ${fmtPrice(displayProperty.debt_amount)}`
-        : null,
-    ].filter(Boolean)
-    if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
-
     return (
-      <div className="property-detail-debt-risk-card property-detail-auction-desktop__debt">
-        <FlipCard
-          color={accentColor}
-          icon={riskIcon}
-          title={riskTitle}
-          subtitle={riskSubtitle}
-          description={riskDescription}
-          features={debtFeatures.slice(0, 4)}
-          ctaText={ctaText}
-          clickToFlip
+      <div className="property-detail-auction-desktop__debt">
+        <DebtAuctionInsight
+          property={displayProperty}
+          currentBid={debtAuctionBidValue}
+          formatPrice={fmtPrice}
+          onRequireLogin={onRequireLogin}
+          isAuction={isAuctionProperty}
         />
       </div>
     )
@@ -4956,7 +4921,7 @@ function PropertyDetailClassic({
 
     return (
       <div className={tabsClass} role="tablist">
-        {isShareListing ? [actionTab, aboutTab, galleryTab] : [aboutTab, galleryTab, actionTab]}
+        {isShareListing ? [aboutTab, galleryTab] : [aboutTab, galleryTab, actionTab]}
       </div>
     )
   }
@@ -7294,13 +7259,22 @@ function PropertyDetailClassic({
               {isAuctionLayout ? (
                 <div className="property-detail-mobile-sheet__head">
                   <div className="property-detail-mobile-sheet__badge-row">
-                    <span className="property-detail-mobile-badge property-detail-mobile-badge--type">
-                      {auctionPropertyTypeLabel}
-                    </span>
-                    {isAuctionProperty && auctionEndTime && !auctionEndedForSidebar && (
-                      <span className="property-detail-mobile-badge property-detail-mobile-badge--live">
-                        {t('propertyDetailAuctionLive') || 'Live auction'}
-                      </span>
+                    {isDebtProperty ? (
+                      <PropertyDebtRiskBanner
+                        property={displayProperty}
+                        onRequireLogin={onRequireLogin}
+                      />
+                    ) : (
+                      <>
+                        <span className="property-detail-mobile-badge property-detail-mobile-badge--type">
+                          {auctionPropertyTypeLabel}
+                        </span>
+                        {isAuctionProperty && auctionEndTime && !auctionEndedForSidebar && (
+                          <span className="property-detail-mobile-badge property-detail-mobile-badge--live">
+                            {t('propertyDetailAuctionLive') || 'Live auction'}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                   <h1
@@ -7313,12 +7287,21 @@ function PropertyDetailClassic({
                     <p className="property-detail-mobile-sheet__address">{displayProperty.location}</p>
                   ) : null}
                   {renderAuctionContentTabs()}
+                  {isShareListing ? (
+                    <div className="property-detail-mobile-share-chart">
+                      <ShareDetailPurchasePanel
+                        {...shareListingConfig}
+                        variant="mobile"
+                        mode="chart"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
               )}
 
-              {(isAuctionProperty || isShareListing) && (
+              {isAuctionLayout && (
                 <div
                   className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--about${
                     auctionMobileTab === 'about' ? ' is-active' : ''
@@ -7412,72 +7395,6 @@ function PropertyDetailClassic({
                 </div>
               )}
 
-              {/* Блок риска и долговых обязательств — FlipCard */}
-              {isDebtProperty && (() => {
-                const sev = displayProperty.debt_severity
-                const accentColor =
-                  sev === 'red' ? '#DC2626' :
-                  sev === 'yellow' ? '#CA8A04' :
-                  '#16A34A'
-
-                const riskIcon =
-                  sev === 'red' ? ShieldQuestionMark :
-                  sev === 'yellow' ? ShieldAlert :
-                  ShieldCheck
-
-                const riskTitle =
-                  sev === 'red' ? 'Высокий риск' :
-                  sev === 'yellow' ? 'Средний риск' :
-                  'Низкий риск'
-
-                const riskSubtitle =
-                  sev === 'red' ? 'Красный — существенные задолженности' :
-                  sev === 'yellow' ? 'Жёлтый — требуют времени и расходов' :
-                  'Зелёный — технические и процедурные моменты'
-
-                const riskDescription =
-                  sev === 'red'
-                    ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
-                    : sev === 'yellow'
-                    ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
-                    : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
-
-                const ctaText =
-                  sev === 'red' ? 'Высокий шанс заработать' :
-                  sev === 'yellow' ? 'Средний шанс заработать' :
-                  'Стабильный шанс заработать'
-
-                const debtFeatures = [
-                  displayProperty.debt_utilities && 'Долги по коммунальным услугам',
-                  displayProperty.debt_mortgage_pledge && 'Залог у банка',
-                  displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
-                  displayProperty.debt_arrest && 'Арест / ограничения',
-                  displayProperty.debt_inherited && 'Долги наследодателя',
-                  displayProperty.debt_third_party && 'Долги перед третьими лицами',
-                  displayProperty.debt_other && displayProperty.debt_other,
-                  displayProperty.debt_amount
-                    ? `Сумма долга: ${fmtPrice(displayProperty.debt_amount)}`
-                    : null,
-                ].filter(Boolean)
-
-                if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
-
-                return (
-                  <div className="property-detail-debt-risk-card">
-                    <FlipCard
-                      color={accentColor}
-                      icon={riskIcon}
-                      title={riskTitle}
-                      subtitle={riskSubtitle}
-                      description={riskDescription}
-                      features={debtFeatures.slice(0, 4)}
-                      ctaText={ctaText}
-                      clickToFlip
-                    />
-                  </div>
-                )
-              })()}
-
               {/* Местоположение */}
               <div
                 className={`property-detail-sidebar__location${
@@ -7488,17 +7405,13 @@ function PropertyDetailClassic({
               </div>
 
               {/* Блок ставок (аукцион) или покупки долей */}
-              {isShareListing || (isAuctionProperty && auctionEndTime) ? (
+              {isAuctionProperty && auctionEndTime ? (
                 <div
                   className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--bids${
                     auctionMobileTab === 'bids' ? ' is-active' : ''
                   }`}
                 >
-                  {isShareListing ? (
-                    <ShareDetailPurchasePanel {...shareListingConfig} variant="mobile" />
-                  ) : (
-                    renderMobileBidsTab()
-                  )}
+                  {renderMobileBidsTab()}
                 </div>
               ) : null}
 
@@ -7566,7 +7479,12 @@ function PropertyDetailClassic({
           end_date: displayProperty.auction_end_date,
           auction_starting_price: displayProperty.auction_starting_price,
           price: displayProperty.price,
-          currentBid: currentBid || displayProperty.currentBid || (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price) || 0
+          currentBid:
+            currentBid ||
+            displayProperty.currentBid ||
+            displayProperty.auction_starting_price ||
+            displayProperty.price ||
+            0
         }}
       />
 
@@ -7653,49 +7571,28 @@ function PropertyDetailClassic({
         onGoToSection={scrollToTestDriveSection}
       />
 
-      {(isAuctionProperty || isShareListing) && (
+      {isShareListing ? (
+        <ShareMobilePurchaseBar config={shareListingConfig} />
+      ) : isAuctionProperty ? (
         <div
           className={`property-detail-mobile-bottom-bar${
             isMobileBidBarNearFooter ? ' property-detail-mobile-bottom-bar--footer-near' : ''
           }`}
         >
-          {isShareListing ? (
-            <>
-              <div className="property-detail-mobile-bottom-bar__price">
-                <span className="property-detail-mobile-bottom-bar__label">
-                  {t('shareDetailTotal')}
-                </span>
-                <span className="property-detail-mobile-bottom-bar__value">
-                  {shareListingConfig?.formatStickyTotal?.() ?? ''}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="property-detail-mobile-bottom-bar__cta"
-                onClick={() => shareListingConfig?.onPurchase?.()}
-                disabled={shareListingConfig?.isSoldOut}
-              >
-                {t('shareDetailBuyShare')}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="property-detail-mobile-bottom-bar__price">
-                <span className="property-detail-mobile-bottom-bar__label">{auctionStickyPriceLabel}</span>
-                <span className="property-detail-mobile-bottom-bar__value">{auctionStickyPriceValue}</span>
-              </div>
-              <button
-                type="button"
-                className="property-detail-mobile-bottom-bar__cta"
-                onClick={() => setIsBidDrawerOpen(true)}
-                disabled={auctionEndedForSidebar || isReservedActive}
-              >
-                {t('placeBid')}
-              </button>
-            </>
-          )}
+          <div className="property-detail-mobile-bottom-bar__price">
+            <span className="property-detail-mobile-bottom-bar__label">{auctionStickyPriceLabel}</span>
+            <span className="property-detail-mobile-bottom-bar__value">{auctionStickyPriceValue}</span>
+          </div>
+          <button
+            type="button"
+            className="property-detail-mobile-bottom-bar__cta"
+            onClick={() => setIsBidDrawerOpen(true)}
+            disabled={auctionEndedForSidebar || isReservedActive}
+          >
+            {t('placeBid')}
+          </button>
         </div>
-      )}
+      ) : null}
 
       <AuctionBidDrawer
         isOpen={isBidDrawerOpen && isAuctionProperty}

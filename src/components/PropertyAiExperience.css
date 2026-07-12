@@ -3,6 +3,8 @@ body.property-ai-is-open {
 }
 
 .property-ai-experience {
+  --property-ai-accent: #0099a9;
+  --property-ai-accent-soft: rgba(0, 153, 169, 0.18);
   position: relative;
   width: 0;
   height: 0;
@@ -116,8 +118,8 @@ html.site-footer-near .property-ai-launcher {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: #ffe000;
-  color: #000;
+  background: var(--property-ai-accent);
+  color: #fff;
   font-weight: 900;
 }
 
@@ -148,7 +150,7 @@ html.site-footer-near .property-ai-launcher {
 }
 
 .property-ai-picker__actions button:hover {
-  background: #ffe000;
+  background: var(--property-ai-accent-soft);
   color: #000;
   transform: translateX(3px);
 }
@@ -239,7 +241,7 @@ html.site-footer-near .property-ai-launcher {
   display: grid;
   place-items: center;
   background: #111;
-  color: #ffe000;
+  color: var(--property-ai-accent);
   font-size: 24px;
   font-weight: 900;
 }
@@ -275,7 +277,8 @@ html.site-footer-near .property-ai-launcher {
   margin: 16px 0 22px auto;
   padding: 12px 17px;
   border-radius: 22px 6px 22px 22px;
-  background: #ffe000;
+  background: var(--property-ai-accent);
+  color: #fff;
   font-size: 14px;
   line-height: 1.4;
 }
@@ -300,8 +303,8 @@ html.site-footer-near .property-ai-launcher {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #ffe000;
-  color: #000;
+  background: var(--property-ai-accent);
+  color: #fff;
   font-size: 20px;
 }
 
@@ -321,7 +324,7 @@ html.site-footer-near .property-ai-launcher {
   bottom: 0;
   width: 38%;
   height: 3px;
-  background: #ffe000;
+  background: var(--property-ai-accent);
   animation: property-ai-progress 1.8s ease-in-out infinite;
 }
 
@@ -333,6 +336,57 @@ html.site-footer-near .property-ai-launcher {
 .property-ai-answer-line {
   margin: 0 0 10px;
   animation: property-ai-line-in .38s ease-out both;
+}
+
+.property-ai-answer-summary {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+
+.property-ai-answer-summary__group {
+  padding: 14px 15px;
+  border: 1px solid rgba(0, 153, 169, .18);
+  border-radius: 17px;
+  background: rgba(0, 153, 169, .09);
+}
+
+.property-ai-answer-summary__group > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #006672;
+  font-size: 14px;
+}
+
+.property-ai-answer-summary__group > strong span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--property-ai-accent);
+  color: #fff;
+}
+
+.property-ai-answer-summary__group ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.property-ai-answer-summary__group li {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.property-ai-answer-summary__group--risks {
+  border-color: rgba(15, 23, 42, .12);
+  background: #f8fafc;
+}
+
+.property-ai-answer-summary__group--risks > strong {
+  color: #0f172a;
 }
 
 .property-ai-pdf-card {
@@ -353,8 +407,8 @@ html.site-footer-near .property-ai-launcher {
   width: 50px;
   height: 62px;
   border-radius: 8px;
-  background: #ffe000;
-  color: #111;
+  background: var(--property-ai-accent);
+  color: #fff;
   font-size: 25px;
 }
 
@@ -365,8 +419,8 @@ html.site-footer-near .property-ai-launcher {
 .property-ai-pdf-spinner {
   width: 23px;
   height: 23px;
-  border: 3px solid rgba(0, 0, 0, .22);
-  border-top-color: #000;
+  border: 3px solid rgba(255, 255, 255, .38);
+  border-top-color: #fff;
   border-radius: 50%;
   animation: property-ai-spin .75s linear infinite;
 }
@@ -415,7 +469,8 @@ html.site-footer-near .property-ai-launcher {
 }
 
 .property-ai-pdf-card__actions button:last-child {
-  background: #ffe000;
+  background: var(--property-ai-accent);
+  color: #fff;
 }
 
 .property-ai-pdf-wait {
@@ -431,7 +486,7 @@ html.site-footer-near .property-ai-launcher {
   width: 42%;
   height: 100%;
   border-radius: inherit;
-  background: #ffe000;
+  background: var(--property-ai-accent);
   animation: property-ai-file-progress 1.45s ease-in-out infinite;
 }
 
@@ -662,6 +717,12 @@ html.site-footer-near .property-ai-launcher {
 
   .property-ai-chat__body {
     padding-inline: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .property-detail-page-new--auction-mobile-v2.property-detail-page-new--share-listing .property-ai-launcher {
+    bottom: calc(146px + env(safe-area-inset-bottom));
   }
 }
 

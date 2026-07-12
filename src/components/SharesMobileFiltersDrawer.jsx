@@ -12,6 +12,8 @@ export default function SharesMobileFiltersDrawer({
   children,
   onApply,
   applyLabel,
+  onReset,
+  resetLabel = 'Сбросить',
 }) {
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.panel,
@@ -72,6 +74,15 @@ export default function SharesMobileFiltersDrawer({
             >
               {applyLabel}
             </button>
+            {onReset ? (
+              <button
+                type="button"
+                className="shares-mobile-filters-drawer__reset"
+                onClick={onReset}
+              >
+                {resetLabel}
+              </button>
+            ) : null}
           </div>
         ) : null}
       </aside>

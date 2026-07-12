@@ -30,34 +30,34 @@ const infoCards = [
   {
     image: '/images/vip-club/vip-info-portfolio.png',
     title: 'Инвестируйте от €100*',
-    text: 'Начните формировать портфель недвижимости с любой суммы — VIP-клуб открывает доступ к долям и закрытым лотам.',
+    text: 'Собирайте портфель недвижимости с любой суммы и получайте доступ к закрытым лотам.',
   },
   {
     image: '/images/vip-club/vip-info-income.png',
     title: 'Доход, пока вы отдыхаете',
-    text: 'Получайте выплаты от аренды и роста стоимости объектов — портфель работает без вашего постоянного участия.',
+    text: 'Получайте доход от аренды и роста стоимости — без постоянного участия.',
   },
 ]
 
 const benefits = [
   {
     title: 'Премиальные объекты',
-    text: 'Доступ к закрытым лотам, которых нет в общем доступе. Только проверенные и перспективные предложения.',
+    text: 'Проверенные закрытые лоты, которых нет в общем каталоге.',
     icon: RiVipDiamondLine,
   },
   {
     title: 'Персональный менеджер',
-    text: 'Индивидуальное сопровождение на всех этапах. Поможем найти лучшие варианты и провести сделку под ключ.',
+    text: 'Личное сопровождение: от подбора объекта до завершения сделки.',
     icon: RiUserStarLine,
   },
   {
     title: 'Закрытый чат в WhatsApp',
-    text: 'Общение с участниками клуба, обмен опытом, инсайты и ответы на вопросы в закрытом сообществе.',
+    text: 'Обмен опытом, инсайты и ответы экспертов в закрытом сообществе.',
     icon: RiWechatLine,
   },
   {
     title: 'Ранний доступ к новостям',
-    text: 'Первыми получайте информацию о новых объектах, изменениях на рынке и специальных предложениях.',
+    text: 'Новые объекты и специальные предложения раньше других.',
     icon: RiNotification3Line,
   },
 ]
@@ -66,23 +66,23 @@ const storyCards = [
   {
     image: '/images/vip-club/vip-story-premium.png',
     title: 'Премиальные объекты',
-    text: 'Доступ к закрытым лотам, которых нет в открытом каталоге — только проверенные и перспективные предложения.',
+    text: 'Проверенные закрытые лоты с сильным инвестиционным потенциалом.',
   },
   {
     image: '/images/vip-club/vip-story-manager.png',
     title: 'Персональный менеджер',
-    text: 'Индивидуальное сопровождение на всех этапах: подбор, переговоры и сделка под ключ.',
+    text: 'Подбор, переговоры и сопровождение сделки под ключ.',
   },
   {
     image: '/images/vip-club/vip-story-community.png',
     title: 'Закрытый чат в WhatsApp',
-    text: 'Живое сообщество инвесторов, обмен опытом и быстрые ответы от экспертов клуба.',
+    text: 'Обмен опытом и быстрые ответы экспертов клуба.',
     visualFill: true,
   },
   {
     image: '/images/vip-club/vip-story-access.png',
     title: 'Ранний доступ к новостям',
-    text: 'Первыми узнавайте о новых объектах, изменениях на рынке и специальных предложениях.',
+    text: 'Новые объекты и специальные предложения раньше других.',
   },
 ]
 
@@ -114,10 +114,6 @@ export default function PrivateClub() {
     setVipGateOpen(true)
   }
 
-  const scrollToSection = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   const scrollStory = (direction) => {
     const next = (storyIndex + direction + storyCards.length) % storyCards.length
     setStoryIndex(next)
@@ -145,21 +141,12 @@ export default function PrivateClub() {
             <div className="vip-club-shell vip-club-hero__stack">
               <div className="vip-club-hero__intro">
                 <h1>
-                  <span>Закрытый клуб — простой доступ</span>
-                  <span>к премиальным сделкам.</span>
+                  <span>Закрытый клуб</span>
+                  <span>премиальных сделок.</span>
                 </h1>
                 <p>
-                  Закрытые лоты, персональный менеджер и сообщество инвесторов — всё в одном кабинете.
-                  Получайте ранний доступ к предложениям, которых нет в открытом каталоге.
+                  Закрытые лоты, личный менеджер и сообщество инвесторов — всё для быстрых и уверенных сделок.
                 </p>
-                <div className="vip-club-hero__actions">
-                  <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
-                    Стать VIP участником
-                  </button>
-                  <button type="button" className="vip-club-btn vip-club-btn--soft" onClick={() => scrollToSection('vip-club-about')}>
-                    Узнать больше
-                  </button>
-                </div>
               </div>
               <div className="vip-club-hero__stage">
                 <div className="vip-club-hero__backdrop" aria-hidden>
@@ -176,6 +163,11 @@ export default function PrivateClub() {
                   </figure>
                 </div>
               </div>
+              <div className="vip-club-hero__actions">
+                <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
+                  Стать VIP участником
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -185,13 +177,10 @@ export default function PrivateClub() {
             <div className="vip-club-section-head">
               <span className="vip-club-pill">Что такое VIP клуб?</span>
               <h2>
-                <span>VIP клуб — особый уровень доступа</span>
-                <span>и персонального сервиса</span>
+                <span>Больше возможностей</span>
+                <span>с VIP-доступом</span>
               </h2>
-              <p>
-                Мы объединили лучших инвесторов и экспертов на одной платформе, чтобы вы могли получать больше
-                возможностей и выше доходность.
-              </p>
+              <p>Закрытые возможности, экспертиза и личное сопровождение — для уверенных решений.</p>
             </div>
             <div className="vip-club-benefits">
               {benefits.map((item) => {
@@ -217,7 +206,7 @@ export default function PrivateClub() {
               <div className="vip-club-whatsapp__layout">
                 <div className="vip-club-whatsapp__content">
                   <h2 id="vip-club-whatsapp-title">Закрытое сообщество в WhatsApp</h2>
-                  <p>Общайтесь с участниками клуба, задавайте вопросы, делитесь опытом и получайте рекомендации от экспертов и инвесторов.</p>
+                  <p>Общайтесь с инвесторами и получайте рекомендации экспертов клуба.</p>
                 </div>
                 <div className="vip-club-chat-card">
                   <h3>
@@ -261,14 +250,11 @@ export default function PrivateClub() {
           <div className="vip-club-shell vip-club-stories__layout">
             <div className="vip-club-stories__aside">
               <h2>
-                <span>VIP — ваше</span>
-                <span>преимущество</span>
-                <span>на рынке</span>
-                <span>недвижимости</span>
+                <span>Ваше преимущество</span>
+                <span>на рынке недвижимости</span>
               </h2>
               <p className="vip-club-stories__lead">
-                Реальные сценарии: закрытые объекты, персональный сервис и сообщество, которое помогает принимать
-                решения быстрее.
+                Закрытые объекты, личный сервис и сильное сообщество — чтобы решать быстрее.
               </p>
               <div className="vip-club-stories__nav" aria-label="Навигация по карточкам">
                 <span className="vip-club-stories__counter">
@@ -330,7 +316,7 @@ export default function PrivateClub() {
               <div className="vip-club-join-panel__copy">
                 <span>Закрытый доступ</span>
                 <strong>VIP клуб Aukcion</strong>
-                <p>Премиальные объекты, персональный менеджер и закрытое сообщество инвесторов — всё в одном кабинете.</p>
+                <p>Закрытые объекты, личный менеджер и сообщество инвесторов — в одном кабинете.</p>
               </div>
               <button type="button" className="vip-club-join-panel__cta" onClick={openJoinGate}>
                 <RiVipDiamondLine aria-hidden />

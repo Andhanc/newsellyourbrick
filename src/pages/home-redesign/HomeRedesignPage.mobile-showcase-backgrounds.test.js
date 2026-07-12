@@ -10,12 +10,16 @@ const showcase = await readFile(
 const mobile = css.slice(css.indexOf('@media (max-width: 600px)'))
 
 test('uses clean solid showcase surfaces instead of muddy rgba overlays', () => {
-  assert.match(mobile, /--hr-showcase-mist:\s*#e9f3f6/)
-  assert.match(mobile, /--hr-showcase-mist-deep:\s*#deebef/)
+  assert.match(mobile, /--hr-showcase-buy-now:\s*#e5f2f5/)
+  assert.match(mobile, /--hr-showcase-debts:\s*#eef1df/)
   assert.doesNotMatch(mobile, /--hr-showcase-tint:\s*rgba\(/)
   assert.match(
     mobile,
-    /\.hr-page \.hr-showcases \.invest-showcase--buy-now[\s\S]*?var\(--hr-showcase-mist-deep\)/,
+    /\.hr-page \.hr-showcases \.invest-showcase--buy-now[\s\S]*?background:\s*var\(--hr-showcase-buy-now\)[\s\S]*?box-shadow:\s*inset/,
+  )
+  assert.match(
+    mobile,
+    /\.hr-page \.hr-showcases \.invest-showcase--debts[\s\S]*?background:\s*var\(--hr-showcase-debts\)[\s\S]*?box-shadow:\s*inset/,
   )
 })
 

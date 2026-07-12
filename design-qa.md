@@ -1,35 +1,54 @@
-**Findings**
-- No actionable P0/P1/P2 findings remain.
-  Location: `/seller` at `614x1080`.
-  Evidence: source and implementation were compared side by side in `/private/tmp/seller-page-qa-comparison.png`. The implementation keeps the same centered hero stack, pill label, two-button CTA row, trusted avatar row, large person-in-circle hero image, three floating UI cards, slim divider bar, six partner logos, and rounded feature panel with three cards.
-  Impact: the page reads as the supplied reference while applying the requested substitutions.
-  Fix: none required.
+**Comparison Target**
 
-**Required Fidelity Surfaces**
-- Fonts and typography: heavy rounded SaaS-style headline, smaller muted body text, compact pill/button labels, and dense card text match the reference hierarchy. Copy is adapted for the seller page rather than the education/payment source text.
-- Spacing and layout rhythm: hero, partner row, and feature section are aligned to the same `614x1080` reference viewport. The first feature cards are visible in the first viewport like the source.
-- Colors and visual tokens: primary accent is the requested teal/cyan from the second reference (`#0099A9`) with pale teal supporting surfaces.
-- Image quality and asset fidelity: generated hero man in suit replaces the original girl; generated teal abstract feature background replaces the green lower-section artwork. Existing avatar photos and icon-library icons are used for small UI details.
-- Copy and content: seller-page content is intentionally localized/adapted for SellYourBrick while preserving the visual structure of the source.
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-7edd6985-b791-4fa7-869b-4ec2e87519e1.png`
+- Implementation screenshot: `/private/tmp/debt-risk-mobile.png`
+- Combined comparison: `/private/tmp/debt-risk-comparison.png`
+- Viewport: 390 × 844, mobile, authenticated buyer state
+- State: medium debt risk card visible above the title; fixed bid action visible; PRO dialog closed for the main capture
+
+**Findings**
+
+- No actionable P0, P1, or P2 mismatch remains. The implementation preserves the source card hierarchy, white rounded surface, amber semantic color, shield icon, title/body copy, compact “Нажмите” affordance, lightning accent, border, and elevation while fitting the narrower product viewport.
+- Fonts and typography: existing product font is retained; title, supporting copy, and CTA weights match the reference hierarchy without clipping.
+- Spacing and layout rhythm: the card is 350 × 109 px with 20 px page margins; internal tracks remain aligned and no horizontal overflow occurs.
+- Colors and visual tokens: medium risk uses an amber icon tile, border, CTA, and accent consistently with the source semantic state.
+- Image quality and asset fidelity: the card contains standard library icons rather than placeholder or handcrafted assets. Listing-image failures visible in the test data are outside this component and this change.
+- Copy and content: “Средний риск”, the yellow-risk explanation, and “Нажмите” match the selected source card’s meaning and structure.
 
 **Open Questions**
-- None blocking. The partner names remain stylized text marks rather than exact image logos, which is acceptable for this product adaptation.
+
+- None for this component.
+
+**Full-view Comparison Evidence**
+
+- The combined image shows the full reference card set beside the rendered 390 × 844 property page. The selected medium-risk card replaces both former badges and keeps the page title and auction controls readable.
+
+**Focused Region Comparison Evidence**
+
+- No additional crop was needed because the card text, iconography, border, radius, and action treatment are legible in the combined comparison at original resolution.
+
+**Interaction and Responsive Checks**
+
+- One risk card rendered; the old property-type badge is absent for debt objects.
+- “Сделать ставку” is visible in the fixed mobile action bar.
+- Tapping the card opens “Полный анализ долга” with the “Купить PRO” action.
+- Document width equals the 390 px viewport; no horizontal overflow.
+- Fresh browser run reported no console or page errors.
+
+**Comparison History**
+
+- Initial implementation exposed an unavailable icon export, which blanked the page. Replaced it with the installed `Pointer` icon and recaptured the implementation.
+- Source-copy drift (“Подробнее” and generic risk descriptions) was corrected to “Нажмите” and the source-aligned red/yellow/green explanations before the passing comparison.
 
 **Implementation Checklist**
-- Rebuilt `src/pages/SellerPage.tsx` around the reference layout.
-- Rebuilt `src/pages/SellerPage.css` with reference-like spacing, responsive behavior, and teal palette.
-- Added project assets in `public/images/seller-page/`.
-- Verified local render with Chrome at `614x1080`.
-- Verified production build with `npm run build`.
+
+- [x] Replace the two mobile badges with one semantic risk card.
+- [x] Preserve responsive width and fixed bid action.
+- [x] Open the existing PRO subscription dialog from the card.
+- [x] Verify 390 × 844 rendering, interaction, overflow, and browser console.
 
 **Follow-up Polish**
-- P3: exact brand-logo image assets could replace the text partner marks if final brand partners are provided.
 
-source visual truth path: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/telegram-cloud-photo-size-2-5341449529967974722-y.jpg`
-implementation screenshot path: `/private/tmp/seller-page-mobile-check.png`
-viewport: `614x1080`
-state: default `/seller` page, top of page
-full-view comparison evidence: `/private/tmp/seller-page-qa-comparison.png`
-focused region comparison evidence: focused review was covered by the side-by-side full viewport because the target is a single landing composition with readable hero/cards/logos in-frame.
-patches made since previous QA pass: shortened H1, reduced hero vertical rhythm, kept six-logo row and three feature cards at reference width, removed hero viewport animation dependency.
+- None required for acceptance.
+
 final result: passed
