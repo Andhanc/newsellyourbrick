@@ -28,12 +28,14 @@ import {
   getMapPriceBounds,
   countActiveMapFilters,
 } from '../utils/mapPageFilters'
+import { isSoldPropertyListing } from '../utils/auctionReminderBounds'
 
 const MAP_LIST_SKELETON_COUNT = 6
-const MAP_PIN_MINI_ZOOM = 16
+const MAP_PIN_MINI_ZOOM = 15
 const MAP_PIN_CLUSTER_RADIUS_PX = 84
 const MAP_PIN_MINI_APPEAR_DELAY_MS = 280
 const MAP_PIN_MINI_STAGGER_MS = 40
+const MAP_PIN_THUMB_FALLBACK = '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
 
 const GEOCODE_RESULT_PRIORITY = [
   'building',
@@ -108,17 +110,116 @@ function resolveMapMarkerItems(map, items) {
     return items.map((item) => ({ type: 'point', ...item }))
   }
 
-  const clustered = clusterMapPoints(map, items, MAP_PIN_CLUSTER_RADIUS_PX)
-  return clustered.map((item) => {
-    if (item.type !== 'point') return item
-    return {
-      type: 'cluster',
-      lat: item.lat,
-      lng: item.lng,
-      count: 1,
-      properties: [item.property],
-    }
+  return clusterMapPoints(map, items, MAP_PIN_CLUSTER_RADIUS_PX)
+}
+
+function getPropertyThumbSrc(property) {
+  return (Array.isArray(property?.images) && property.images[0]) || MAP_PIN_THUMB_FALLBACK
+}
+
+function getMapMarkerPriceStr(property, formatPrice) {
+  const isAuction =
+    property?.isAuction === true ||
+    property?.is_auction === 1 ||
+    property?.is_auction === true
+
+  const amount = isAuction
+    ? property?.currentBid ??
+      property?.auction_current_bid ??
+      property?.auction_starting_price ??
+      property?.price ??
+      0
+    : property?.price ?? property?.currentBid ?? 0
+
+  return formatPrice(amount, property?.currency || 'USD')
+}
+
+function createMapPinThumbImg() {
+  const img = document.createElement('img')
+  img.className = 'map-pin-mini__img'
+  img.alt = ''
+  img.decoding = 'async'
+  img.addEventListener('error', () => {
+    img.src = MAP_PIN_THUMB_FALLBACK
   })
+  return img
+}
+
+function buildMapPinClusterElement(item, onActivate) {
+  const el = document.createElement('div')
+  el.className = 'map-pin-thumb-stack map-pin-thumb-stack--enter'
+  el.setAttribute('role', 'button')
+  el.title = `${item.count} объектов`
+
+  const properties = item.properties || []
+  const preview = properties.slice(0, Math.min(3, properties.length))
+
+  preview.forEach((property, index) => {
+    const thumb = document.createElement('div')
+    thumb.className = 'map-pin-thumb-stack__thumb'
+    if (index > 0) {
+      thumb.classList.add('map-pin-thumb-stack__thumb--stacked')
+      thumb.dataset.stackIndex = String(index)
+    }
+
+    const img = createMapPinThumbImg()
+    img.src = getPropertyThumbSrc(property)
+    thumb.appendChild(img)
+    el.appendChild(thumb)
+  })
+
+  if (item.count > 1) {
+    const badge = document.createElement('span')
+    badge.className = 'map-pin-thumb-stack__badge'
+    badge.textContent = item.count > 99 ? '99+' : String(item.count)
+    el.appendChild(badge)
+  }
+
+  bindMarkerActivate(el, onActivate)
+  return el
+}
+
+function buildMapPinPointElement({
+  property,
+  isSelected,
+  compact,
+  priceStr,
+  onActivate,
+}) {
+  const el = document.createElement('div')
+  el.className = [
+    'map-pin-mini',
+    'map-pin-mini--enter',
+    isSelected ? 'map-pin-mini--active' : '',
+    compact ? 'map-pin-mini--compact' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  el.setAttribute('role', 'button')
+  el.title = property.title || 'Показать на карте'
+
+  const inner = document.createElement('div')
+  inner.className = 'map-pin-mini__inner'
+
+  const imgWrap = document.createElement('div')
+  imgWrap.className = 'map-pin-mini__img-wrap'
+  const img = createMapPinThumbImg()
+  img.src = getPropertyThumbSrc(property)
+  imgWrap.appendChild(img)
+  if (isSelected) {
+    imgWrap.classList.add('map-pin-mini__img-wrap--openable')
+  }
+
+  inner.appendChild(imgWrap)
+
+  const priceEl = document.createElement('span')
+  priceEl.className = 'map-pin-mini__price'
+  priceEl.textContent = priceStr
+  inner.appendChild(priceEl)
+
+  el.appendChild(inner)
+  bindMarkerActivate(el, onActivate)
+  return el
 }
 
 function scoreGeocodeHit(hit) {
@@ -360,11 +461,15 @@ const MapPage = () => {
 
   // ─── Поиск, фильтры и сортировка ─────────────────────────────────────────
   const searchNormalized = searchQuery.trim().toLowerCase()
-  const priceBounds = useMemo(() => getMapPriceBounds(propertiesList), [propertiesList])
+  const activeListings = useMemo(
+    () => propertiesList.filter((property) => !isSoldPropertyListing(property)),
+    [propertiesList],
+  )
+  const priceBounds = useMemo(() => getMapPriceBounds(activeListings), [activeListings])
   const activeFilterCount = useMemo(() => countActiveMapFilters(mapFilters), [mapFilters])
 
   const filteredProperties = useMemo(() => {
-    let list = applyMapPageFilters(propertiesList, mapFilters, { isFavorite })
+    let list = applyMapPageFilters(activeListings, mapFilters, { isFavorite })
 
     if (searchNormalized) {
       list = list.filter((p) => {
@@ -375,7 +480,7 @@ const MapPage = () => {
     }
 
     return list
-  }, [propertiesList, mapFilters, searchNormalized, isFavorite])
+  }, [activeListings, mapFilters, searchNormalized, isFavorite])
 
   const sortedProperties = useMemo(
     () => [...filteredProperties].sort((a, b) => ((b.id || 0) % 10) - ((a.id || 0) % 10)),
@@ -461,6 +566,7 @@ const MapPage = () => {
       let hasPoints = false
 
       let miniCardIndex = 0
+      const compactPins = map.getZoom() < MAP_PIN_MINI_ZOOM
 
       markerItems.forEach((item) => {
         const lngLat = [item.lng, item.lat]
@@ -468,16 +574,7 @@ const MapPage = () => {
         bounds.extend(lngLat)
 
         if (item.type === 'cluster') {
-          const el = document.createElement('div')
-          el.className = 'map-pin-cluster'
-          el.setAttribute('role', 'button')
-          el.title = String(item.count)
-          const countEl = document.createElement('span')
-          countEl.className = 'map-pin-cluster__count'
-          countEl.textContent = item.count > 99 ? '99+' : String(item.count)
-          el.appendChild(countEl)
-
-          bindMarkerActivate(el, () => {
+          const el = buildMapPinClusterElement(item, () => {
             const targetZoom = Math.min(
               Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
               SATELLITE_MAP_MAX_ZOOM,
@@ -487,6 +584,9 @@ const MapPage = () => {
               setSelectedProperty(item.properties[0])
             }
           })
+
+          scheduleMapPinMiniReveal(el, miniCardIndex)
+          miniCardIndex += 1
 
           const marker = new maplibregl.Marker({
             element: el,
@@ -502,10 +602,7 @@ const MapPage = () => {
         const property = item.property
         const isSelected =
           selectedProperty != null && String(selectedProperty.id) === String(property.id)
-        const priceStr = formatPrice(property.price ?? property.currentBid ?? 0, property.currency)
-        const thumbSrc =
-          (Array.isArray(property.images) && property.images[0]) ||
-          '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
+        const priceStr = getMapMarkerPriceStr(property, formatPrice)
 
         const focusProperty = () => {
           setSelectedProperty(property)
@@ -517,41 +614,16 @@ const MapPage = () => {
           setMapOpenHintProperty(property)
         }
 
-        const el = document.createElement('div')
-        el.className = `map-pin-mini map-pin-mini--enter${isSelected ? ' map-pin-mini--active' : ''}`
-        el.setAttribute('role', 'button')
-
-        const inner = document.createElement('div')
-        inner.className = 'map-pin-mini__inner'
-
-        const imgWrap = document.createElement('div')
-        imgWrap.className = 'map-pin-mini__img-wrap'
-        const img = document.createElement('img')
-        img.className = 'map-pin-mini__img'
-        img.src = thumbSrc
-        img.alt = ''
-        img.decoding = 'async'
-        img.addEventListener('error', () => {
-          img.src = '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
+        const el = buildMapPinPointElement({
+          property,
+          isSelected,
+          compact: compactPins,
+          priceStr,
+          onActivate: focusProperty,
         })
-        imgWrap.appendChild(img)
-        if (isSelected) {
-          imgWrap.classList.add('map-pin-mini__img-wrap--openable')
-        }
-        el.title = 'Показать на карте'
-
-        const priceEl = document.createElement('span')
-        priceEl.className = 'map-pin-mini__price'
-        priceEl.textContent = priceStr
-
-        inner.appendChild(imgWrap)
-        inner.appendChild(priceEl)
-        el.appendChild(inner)
 
         scheduleMapPinMiniReveal(el, miniCardIndex)
         miniCardIndex += 1
-
-        bindMarkerActivate(el, focusProperty)
 
         const marker = new maplibregl.Marker({
           element: el,
@@ -812,7 +884,7 @@ const MapPage = () => {
                 type="button"
                 className="map-expand-btn"
                 onClick={() => setMapExpanded(true)}
-                aria-label={t('mapExpandBtnAriaLabel')}
+                aria-label={t('mapExpandBtnAriaLabel', { defaultValue: 'Развернуть карту' })}
               >
                 <HiOutlineArrowsExpand size={18} aria-hidden />
               </button>
@@ -889,10 +961,10 @@ const MapPage = () => {
         ].filter(Boolean).join(' ')}
         onClick={scrollToMap}
         onAnimationEnd={handleMapFabAnimationEnd}
-        aria-label={t('mapFloatBtnAriaLabel')}
+        aria-label={t('mapFloatBtnAriaLabel', { defaultValue: 'Перейти к карте' })}
         aria-hidden={mapFabPhase === 'hidden'}
       >
-        <span className="map-float-map-btn__label">{t('mapFloatBtnLabel')}</span>
+        <span className="map-float-map-btn__label">{t('mapFloatBtnLabel', { defaultValue: 'Карта' })}</span>
         <FiMap size={18} aria-hidden />
       </button>
     </div>

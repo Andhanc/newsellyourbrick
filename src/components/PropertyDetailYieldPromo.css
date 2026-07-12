@@ -12,9 +12,9 @@
   text-align: left;
   color: #ffffff;
   isolation: isolate;
-  background: linear-gradient(135deg, #0ec4be 0%, #0099A9 46%, #078f8a 100%);
+  background: linear-gradient(135deg, #0ec4be 0%, #4a96a6 46%, #078f8a 100%);
   box-shadow:
-    0 14px 40px rgba(0, 153, 169, 0.22),
+    0 14px 40px rgba(74, 150, 166, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
   transition:
     transform 0.22s ease,
@@ -49,7 +49,7 @@
 .property-detail-yield-promo--banner:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 18px 44px rgba(0, 153, 169, 0.28),
+    0 18px 44px rgba(74, 150, 166, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
@@ -93,7 +93,7 @@
   padding: 0 22px;
   border-radius: 12px;
   background: #ffffff;
-  color: var(--pd-tiffany-deep, #007d8a);
+  color: var(--pd-tiffany-deep, #3f8798);
   font-size: 14px;
   font-weight: 700;
   line-height: 1;

@@ -269,8 +269,8 @@
 .al-hero__grid {
   display: grid;
   min-height: clamp(520px, 57vw, 675px);
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.82fr);
-  gap: clamp(22px, 4vw, 68px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.72fr);
+  gap: clamp(32px, 5vw, 80px);
   align-items: stretch;
   overflow: hidden;
   padding: clamp(54px, 7vw, 92px);
@@ -284,22 +284,31 @@
   justify-content: space-between;
   min-width: 0;
   color: #fff;
+  position: relative;
+  z-index: 2;
 }
 
 .al-hero__title-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(20px, 2.4vw, 28px);
+  max-width: min(100%, 620px);
 }
 
 .al-hero h1 {
-  max-width: 650px;
+  max-width: 100%;
   margin: 0;
   color: #fff;
-  font-size: clamp(70px, 8.5vw, 132px);
+  font-size: clamp(56px, 6.2vw, 108px);
   font-weight: 950;
-  line-height: 0.93;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.al-hero__title-lead,
+.al-hero__title-tail {
+  white-space: nowrap;
 }
 
 .al-pill {
@@ -353,11 +362,12 @@
 
 .al-hero__subcopy p {
   color: rgba(255, 255, 255, 0.7);
-  font-size: clamp(21px, 2.2vw, 29px);
+  font-size: clamp(18px, 1.85vw, 24px);
 }
 
 .al-hero__visual {
   position: relative;
+  z-index: 1;
   align-self: stretch;
   min-height: 430px;
   overflow: hidden;
@@ -403,13 +413,15 @@
 
 .al-hero__arrow {
   position: absolute;
-  left: 15%;
-  top: 50%;
-  transform: translateY(-50%);
+  right: clamp(22px, 3.2vw, 36px);
+  bottom: clamp(22px, 3.2vw, 36px);
+  left: auto;
+  top: auto;
+  transform: none;
 }
 
 .al-hero__arrow:hover {
-  transform: translateY(-50%) rotate(8deg) scale(1.04);
+  transform: rotate(8deg) scale(1.04);
 }
 
 .al-analytics {
@@ -432,8 +444,8 @@
 
 .al-analytics__intro p {
   max-width: 365px;
-  font-size: 15px;
-  line-height: 1.25;
+  font-size: 17px;
+  line-height: 1.3;
 }
 
 .al-analytics__intro h2,
@@ -557,7 +569,7 @@
 .al-partner-card__top p,
 .al-partner-card__main p {
   margin: 12px 0 0;
-  color: rgba(8, 10, 15, 0.26);
+  color: rgba(8, 10, 15, 0.48);
   font-size: 14px;
   font-weight: 750;
   line-height: 1.32;
@@ -589,9 +601,9 @@
   display: grid;
   gap: 8px;
   color: rgba(8, 10, 15, 0.56);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 750;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .al-partner__notes strong {
@@ -630,7 +642,7 @@
   position: absolute;
   left: 17%;
   top: 18%;
-  width: min(250px, 62%);
+  width: min(300px, 68%);
   padding: 30px 28px 26px;
   border-radius: 18px;
   background: var(--al-lime);
@@ -638,7 +650,8 @@
 }
 
 .al-scale__overlay h2 {
-  font-size: 28px;
+  font-size: 24px;
+  white-space: nowrap;
 }
 
 .al-scale__overlay strong {
@@ -653,9 +666,9 @@
 .al-scale__overlay p {
   margin: 0;
   color: rgba(8, 10, 15, 0.58);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 850;
-  line-height: 1.28;
+  line-height: 1.32;
 }
 
 .al-scale__copy {
@@ -701,7 +714,7 @@
 }
 
 .al-capabilities li {
-  color: rgba(8, 10, 15, 0.2);
+  color: rgba(8, 10, 15, 0.38);
   font-size: clamp(26px, 3.2vw, 42px);
   font-weight: 900;
   line-height: 1;
@@ -721,9 +734,13 @@
 }
 
 .al-metrics__intro h2 {
-  max-width: 760px;
-  font-size: clamp(38px, 5vw, 66px);
-  line-height: 1.02;
+  max-width: 100%;
+  font-size: clamp(30px, 3.4vw, 46px);
+  line-height: 1.08;
+}
+
+.al-metrics__title-lead {
+  white-space: nowrap;
 }
 
 .al-metrics__intro p {
@@ -793,12 +810,13 @@
 }
 
 .al-systems__copy article {
-  max-width: 410px;
+  max-width: 520px;
 }
 
 .al-systems__copy h2 {
-  font-size: clamp(34px, 4.3vw, 54px);
+  font-size: clamp(32px, 4vw, 50px);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .al-systems__copy p {
@@ -852,35 +870,46 @@
   left: 18%;
   top: 18%;
   display: grid;
-  width: min(390px, 66%);
-  min-height: 395px;
-  align-content: space-between;
-  padding: 48px 54px 44px;
+  width: min(420px, 68%);
+  min-height: 420px;
+  align-content: start;
+  padding: 44px 48px 28px;
   border-radius: 34px;
   background: #fff;
   box-shadow: 0 26px 54px rgba(28, 76, 134, 0.13);
+  overflow: hidden;
 }
 
 .al-system-card h2 {
-  font-size: clamp(34px, 4.1vw, 50px);
+  max-width: 100%;
+  font-size: clamp(28px, 3.1vw, 36px);
+  line-height: 1.1;
 }
 
 .al-system-card p {
-  margin-top: 28px;
+  margin-top: 24px;
   color: rgba(8, 10, 15, 0.72);
-  font-size: clamp(16px, 1.55vw, 21px);
+  font-size: clamp(15px, 1.45vw, 19px);
+  line-height: 1.34;
 }
 
 .al-system-card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  justify-content: flex-start;
+  margin-top: auto;
+  padding-top: 36px;
+  padding-right: 78px;
+  padding-bottom: 2px;
 }
 
-.al-system-card__footer .al-arrow-badge {
+.al-system-card__arrow {
+  position: absolute;
+  right: clamp(22px, 3.2vw, 36px);
+  bottom: clamp(12px, 1.8vw, 18px);
   width: 62px;
   height: 62px;
+  flex: 0 0 62px;
 }
 
 .al-system-card__footer span {
@@ -911,6 +940,15 @@
   color: #fff;
   font-size: clamp(42px, 5vw, 76px);
   line-height: 0.98;
+}
+
+.al-cta__title-lead,
+.al-cta__title-tail {
+  white-space: nowrap;
+}
+
+.al-cta__title-mobile-break {
+  display: none;
 }
 
 .al-cta__copy p {
@@ -1006,11 +1044,41 @@
   .al-hero__grid {
     min-height: auto;
     padding: 36px 24px 24px;
+    gap: 28px;
+  }
+
+  .al-hero__visual {
+    order: -1;
+    min-height: 360px;
+    border-radius: 70px 70px 0 70px;
+  }
+
+  .al-hero__copy {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .al-hero__subcopy {
+    padding-top: 28px;
+  }
+
+  .al-hero h1 {
+    font-size: clamp(32px, 10vw, 46px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
   }
 
   .al-hero__title-row {
-    grid-template-columns: 1fr;
-    align-items: start;
+    max-width: 100%;
+    gap: 18px;
+  }
+
+  .al-hero__title-lead,
+  .al-hero__title-tail {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
   }
 
   .al-pill {
@@ -1019,9 +1087,66 @@
     font-size: 16px;
   }
 
-  .al-hero__visual {
-    min-height: 360px;
-    border-radius: 70px 70px 0 70px;
+  .al-analytics__intro {
+    justify-items: center;
+    text-align: center;
+    gap: 32px;
+  }
+
+  .al-analytics__intro p {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .al-analytics__intro h2 {
+    text-align: center;
+  }
+
+  .al-scale__copy .al-code {
+    display: block;
+    width: 100%;
+    font-size: clamp(20px, 5.5vw, 26px);
+    text-align: center;
+  }
+
+  .al-cta__copy h2 {
+    font-size: clamp(30px, 8.5vw, 40px);
+    line-height: 1.06;
+  }
+
+  .al-cta__title-mobile-break {
+    display: inline;
+  }
+
+  .al-cta__title-lead,
+  .al-cta__title-tail {
+    white-space: nowrap;
+  }
+
+  .al-cta__actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .al-cta__actions .al-primary-link,
+  .al-cta__actions .al-secondary-link {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    padding: 0 14px;
+    font-size: 12px;
+    min-height: 46px;
+  }
+
+  .al-cta__actions .al-primary-link {
+    white-space: nowrap;
+    gap: 0;
+  }
+
+  .al-cta__actions .al-primary-link svg {
+    display: none;
   }
 
   .al-analytics-card {
@@ -1029,6 +1154,18 @@
     gap: 18px;
     padding: 16px;
     border-radius: 22px;
+  }
+
+  .al-analytics-card span {
+    font-size: 18px;
+  }
+
+  .al-analytics-card small {
+    font-size: 13px;
+  }
+
+  .al-analytics-card strong {
+    font-size: clamp(32px, 8vw, 38px);
   }
 
   .al-analytics-card img {
@@ -1062,7 +1199,11 @@
   }
 
   .al-partner__notes {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 8px 0 4px;
   }
 
   .al-metrics__grid {
@@ -1081,7 +1222,15 @@
   }
 
   .al-hero h1 {
-    font-size: clamp(50px, 16vw, 72px);
+    font-size: clamp(30px, 9.2vw, 40px);
+  }
+
+  .al-systems__copy h2 {
+    white-space: normal;
+  }
+
+  .al-metrics__title-lead {
+    white-space: normal;
   }
 
   .al-hero__subcopy p,
@@ -1111,7 +1260,11 @@
   }
 
   .al-analytics-card span {
-    font-size: 14px;
+    font-size: 18px;
+  }
+
+  .al-analytics-card small {
+    font-size: 13px;
   }
 
   .al-analytics-card strong {
@@ -1126,7 +1279,12 @@
   .al-scale__overlay {
     left: 18px;
     top: 18px;
-    width: min(220px, calc(100% - 36px));
+    width: min(240px, calc(100% - 36px));
+  }
+
+  .al-scale__overlay h2 {
+    white-space: normal;
+    font-size: 22px;
   }
 
   .al-system-card {
@@ -1134,7 +1292,7 @@
     top: 18px;
     width: calc(100% - 36px);
     min-height: 340px;
-    padding: 34px;
+    padding: 34px 34px 22px;
   }
 
   .al-system-visual > img {
@@ -1144,6 +1302,15 @@
   .al-primary-link,
   .al-secondary-link {
     width: 100%;
+  }
+
+  .al-cta__actions .al-primary-link,
+  .al-cta__actions .al-secondary-link {
+    width: auto;
+    flex: 1 1 0;
+    padding: 0 10px;
+    font-size: 11px;
+    min-height: 44px;
   }
 }
 

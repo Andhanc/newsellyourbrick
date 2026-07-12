@@ -11,6 +11,7 @@ export default function AuctionMobileFiltersDrawer({
   isOpen,
   onClose,
   filterProps,
+  children,
 }) {
   const { t } = useTranslation()
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
@@ -106,7 +107,9 @@ export default function AuctionMobileFiltersDrawer({
           </div>
 
           <div className="auction-mobile-filters-drawer__scroll">
-            <AuctionDesktopFilters {...filterProps} variant="drawer" onApply={handleApply} />
+            {children ?? (
+              <AuctionDesktopFilters {...filterProps} variant="drawer" onApply={handleApply} />
+            )}
           </div>
         </div>
       </div>

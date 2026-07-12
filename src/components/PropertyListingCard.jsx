@@ -246,7 +246,7 @@ const PropertyListingCard = ({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onOpen?.(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
+              onOpen?.(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
             }}
           >
             <span>{t('auctionResultSummary')}</span>

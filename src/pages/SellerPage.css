@@ -735,8 +735,8 @@
 
 .seller-savings__badge svg,
 .seller-savings__lifestyle-badge svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
   color: var(--seller-cyan-dark);
 }
@@ -805,14 +805,14 @@
   top: 22px;
   right: clamp(22px, 7vw, 112px);
   z-index: 1;
-  min-height: 32px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0 16px;
   color: rgba(5, 5, 5, 0.68);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 780;
 }
 
@@ -888,9 +888,9 @@
 .seller-savings-plan p {
   margin: 18px 0 0;
   color: rgba(5, 5, 5, 0.66);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 650;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .seller-savings-plan a {
@@ -1192,12 +1192,13 @@
 .seller-about__button {
   position: relative;
   overflow: hidden;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  margin-top: 28px;
-  padding: 12px 22px;
+  min-width: 176px;
+  margin: 28px auto 0;
+  padding: 12px 34px;
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(92, 168, 182, 0.9) 0%, rgba(72, 148, 164, 0.92) 100%);
@@ -1328,9 +1329,10 @@
 }
 
 .seller-services-card {
-  min-height: 300px;
+  min-height: 248px;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   border-radius: 20px;
   padding: 28px 26px 24px;
   background: rgba(255, 255, 255, 0.97);
@@ -1341,6 +1343,8 @@
 .seller-services-card--accent {
   background: var(--seller-cyan);
   color: #ffffff;
+  transform: translateY(-6px);
+  box-shadow: 0 28px 68px rgba(5, 5, 5, 0.24);
 }
 
 .seller-services-card__icon {
@@ -1365,18 +1369,24 @@
 }
 
 .seller-services-card h3 {
-  margin: 18px 0 0;
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  margin: 16px 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
   font-weight: 900;
-  line-height: 1.05;
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
 .seller-services-card p {
   margin: 14px 0 0;
-  font-size: 0.88rem;
+  max-width: 26ch;
+  font-size: 0.94rem;
   font-weight: 560;
-  line-height: 1.55;
-  color: rgba(5, 5, 5, 0.68);
+  line-height: 1.48;
+  color: rgba(5, 5, 5, 0.62);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .seller-services-card--accent p {
@@ -1388,9 +1398,9 @@
   align-items: center;
   gap: 8px;
   margin-top: auto;
-  padding-top: 22px;
+  padding-top: 24px;
   color: #050505;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 820;
   letter-spacing: 0.06em;
   text-decoration: none;
@@ -1535,8 +1545,58 @@
   }
 
   .seller-services__grid {
-    grid-template-columns: 1fr;
-    width: min(520px, 100%);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .seller-services-card {
+    align-items: center;
+    min-height: 0;
+    height: 100%;
+    padding: 18px 14px 16px;
+    text-align: center;
+  }
+
+  .seller-services-card--accent {
+    transform: none;
+  }
+
+  .seller-services-card__icon {
+    margin-top: 2px;
+  }
+
+  .seller-services-card h3 {
+    width: 100%;
+    margin-top: 14px;
+    font-size: clamp(1.08rem, 3.4vw, 1.5rem);
+    line-height: 1.15;
+    min-height: 0;
+    -webkit-line-clamp: unset;
+    display: block;
+    overflow: visible;
+  }
+
+  .seller-services-card p {
+    width: 100%;
+    max-width: none;
+    margin-top: 12px;
+    font-size: clamp(0.76rem, 2.3vw, 0.88rem);
+    line-height: 1.48;
+    flex: 0 1 auto;
+    min-height: 0;
+    -webkit-line-clamp: unset;
+    display: block;
+    overflow: visible;
+  }
+
+  .seller-services-card a {
+    align-self: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: auto;
+    padding-top: 18px;
   }
 }
 
@@ -1719,7 +1779,9 @@
   .seller-savings__hero-content {
     grid-template-columns: 1fr;
     gap: 28px;
-    padding: 96px 26px 34px;
+    align-items: start;
+    align-content: start;
+    padding: 128px 26px 34px;
   }
 
   .seller-savings__copy h2 {
@@ -1770,7 +1832,15 @@
     left: 18px;
     right: 18px;
     justify-content: center;
-    font-size: 10px;
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  .seller-savings__lifestyle-badge svg {
+    width: 17px;
+    height: 17px;
   }
 
   .seller-savings__lifestyle-head {
@@ -1782,19 +1852,122 @@
   }
 
   .seller-savings__plans {
-    grid-template-columns: 1fr;
-    width: calc(100% - 36px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 10px;
+    width: calc(100% - 24px);
     margin-top: 34px;
   }
 
   .seller-savings-plan,
   .seller-savings-plan:nth-child(2),
   .seller-savings-plan:nth-child(3) {
-    min-height: 220px;
+    min-height: 0;
+    height: 100%;
+    padding: 16px 12px 14px;
+    border-radius: 16px;
+    box-shadow: 0 14px 34px rgba(5, 5, 5, 0.14);
+  }
+
+  .seller-savings-plan h3 {
+    font-size: clamp(1.05rem, 4.4vw, 1.45rem);
+  }
+
+  .seller-savings-plan p {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+    flex: 1 1 auto;
+  }
+
+  .seller-savings-plan a {
+    min-height: 32px;
+    margin-top: 12px;
+    padding: 0 10px;
+    font-size: 10px;
   }
 
   .seller-toolkit__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .seller-toolkit-card {
+    min-height: 0;
+    height: 100%;
+    gap: 10px;
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .seller-toolkit-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .seller-toolkit-card__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .seller-toolkit-card h3 {
+    font-size: 0.92rem;
+  }
+
+  .seller-toolkit-card p {
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .seller-services {
+    padding-inline: 16px;
+  }
+
+  .seller-services__grid {
+    gap: 10px;
+    margin-top: 32px;
+  }
+
+  .seller-services-card {
+    min-height: 0;
+    height: 100%;
+    padding: 16px 12px 14px;
+    border-radius: 16px;
+  }
+
+  .seller-services-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .seller-services-card__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .seller-services-card h3 {
+    margin-top: 12px;
+    font-size: clamp(1rem, 4.4vw, 1.28rem);
+    min-height: 0;
+  }
+
+  .seller-services-card p {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    line-height: 1.48;
+    min-height: 0;
+  }
+
+  .seller-services-card a {
+    padding-top: 16px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .seller-services-card a svg {
+    width: 11px;
+    height: 11px;
   }
 
   .seller-about__media {
@@ -1853,11 +2026,104 @@
   }
 
   .seller-savings__stats {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 18px 10px 20px;
+  }
+
+  .seller-savings__stats strong {
+    font-size: clamp(1.35rem, 6.2vw, 1.85rem);
   }
 
   .seller-savings__stats span {
-    max-width: 260px;
+    max-width: none;
+    width: 100%;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .seller-savings__plans {
+    gap: 8px;
+    width: calc(100% - 16px);
+  }
+
+  .seller-savings-plan,
+  .seller-savings-plan:nth-child(2),
+  .seller-savings-plan:nth-child(3) {
+    padding: 14px 10px 12px;
+    border-radius: 14px;
+  }
+
+  .seller-savings-plan h3 {
+    font-size: clamp(0.95rem, 4vw, 1.2rem);
+  }
+
+  .seller-savings-plan p {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .seller-savings-plan a {
+    min-height: 28px;
+    margin-top: 10px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .seller-toolkit {
+    padding-inline: 16px;
+  }
+
+  .seller-toolkit__grid {
+    gap: 10px;
+  }
+
+  .seller-toolkit-card {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .seller-toolkit-card__icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .seller-toolkit-card h3 {
+    font-size: 0.85rem;
+  }
+
+  .seller-toolkit-card p {
+    font-size: 0.68rem;
+  }
+
+  .seller-services__grid {
+    gap: 8px;
+  }
+
+  .seller-services-card {
+    padding: 14px 10px 12px;
+    border-radius: 14px;
+  }
+
+  .seller-services-card__icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .seller-services-card h3 {
+    font-size: clamp(0.96rem, 4vw, 1.14rem);
+    min-height: 0;
+  }
+
+  .seller-services-card p {
+    margin-top: 10px;
+    font-size: 0.74rem;
+    line-height: 1.48;
+    min-height: 0;
+  }
+
+  .seller-services-card a {
+    padding-top: 14px;
+    font-size: 9px;
   }
 }

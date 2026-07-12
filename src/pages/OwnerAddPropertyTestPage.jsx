@@ -41,6 +41,11 @@ import {
   restoreOapDraftState,
   hasMeaningfulDraftData,
 } from '../utils/oapAddPropertyDraft'
+import {
+  PURCHASED_LISTING_DRAFT_FLAG,
+  applyPurchasedPropertyListingPrefill,
+  readPendingSellPurchasedProperty,
+} from '../utils/purchasedPropertyListingPrefill'
 import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
 import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
 import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
@@ -60,6 +65,7 @@ import OapAddPropertyJourneyProgress from '../components/OapAddPropertyJourneyPr
 import { preloadOapWizardImages } from './oapWizardImages'
 import { OapAddPropertyMobileWelcome } from '../components/OapAddPropertyMobileScreens'
 import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
+import OapPurchasedListingBanner from '../components/OapPurchasedListingBanner'
 import OapJourneyPublishLoader from '../components/OapJourneyPublishLoader'
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import OapAddPropertyMobileMedia from '../components/OapAddPropertyMobileMedia'
@@ -397,6 +403,7 @@ export default function OwnerAddPropertyTestPage() {
   const [listingFeeStripeLoading, setListingFeeStripeLoading] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [showJourneyPublishDrawer, setShowJourneyPublishDrawer] = useState(false)
+  const [purchasedListingMeta, setPurchasedListingMeta] = useState(null)
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
   const saveDraftTimeoutRef = useRef(null)
@@ -1115,14 +1122,33 @@ export default function OwnerAddPropertyTestPage() {
     let cancelled = false
 
     ;(async () => {
+      const pending = readPendingSellPurchasedProperty()
+      const role = String(localStorage.getItem('userRole') || getUserData()?.role || '').toLowerCase()
+      if (pending?.id && (role === 'seller' || role === 'owner')) {
+        try {
+          const result = await applyPurchasedPropertyListingPrefill(pending.id)
+          if (!cancelled && result?.draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
+            setPurchasedListingMeta(result.draft[PURCHASED_LISTING_DRAFT_FLAG])
+          }
+        } catch (e) {
+          console.warn('OwnerAddPropertyTestPage pending purchased prefill:', e)
+        }
+      }
+
       const draft = loadOapDraft()
       if (!draft || !hasMeaningfulDraftData(draft)) {
+        if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
+          setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
+        }
         draftReadyRef.current = true
         return
       }
 
       const restored = await restoreOapDraftState(draft)
       if (cancelled || !restored) {
+        if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
+          setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
+        }
         draftReadyRef.current = true
         return
       }
@@ -1131,11 +1157,32 @@ export default function OwnerAddPropertyTestPage() {
       setForm(mergedForm)
       setStep(migrateWizardStep(restored.step))
       setMobileScreen(mapStepToJourneyScreen(migrateWizardStep(restored.step)))
-      setPhotos(restored.photos)
+      const restoredPhotos =
+        restored.photos?.length > 0
+          ? restored.photos
+          : (Array.isArray(draft.photos)
+              ? draft.photos
+                  .filter(
+                    (photo) =>
+                      typeof photo?.preview === 'string' &&
+                      (photo.preview.startsWith('http') ||
+                        photo.preview.startsWith('https') ||
+                        photo.preview.startsWith('/')),
+                  )
+                  .map((photo, index) => ({
+                    id: photo.id || `purchased-photo-${index}`,
+                    preview: photo.preview,
+                    fromPurchased: true,
+                  }))
+              : [])
+      setPhotos(restoredPhotos)
       setVideos(restored.videos)
       setRequiredDocuments(restored.requiredDocuments)
       setAdditionalDocuments(restored.additionalDocuments)
       setSelectedAmenities(restored.selectedAmenities)
+      if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
+        setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
+      }
       draftReadyRef.current = true
     })()
 
@@ -1411,6 +1458,16 @@ export default function OwnerAddPropertyTestPage() {
   const journeyPrimaryLabel =
     mobileScreen === MOBILE_JOURNEY_SCREENS ? t('oap_publishPublish') : t('oap_publishNext')
 
+  const handlePurchasedBannerContinue = useCallback(() => {
+    setStep(3)
+    setMobileScreen(5)
+    scrollJourneyToTop()
+  }, [scrollJourneyToTop])
+
+  const purchasedBanner = purchasedListingMeta ? (
+    <OapPurchasedListingBanner meta={purchasedListingMeta} onContinue={handlePurchasedBannerContinue} />
+  ) : null
+
   const stepClassSuffix = `${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`
 
   return (
@@ -1433,6 +1490,7 @@ export default function OwnerAddPropertyTestPage() {
               totalSteps={MOBILE_JOURNEY_SCREENS}
             />
             <div ref={journeyScrollRef} className="oap-content oap-content--journey">
+              {purchasedBanner}
               <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
               <div className="oap-content__body oap-content__body--journey">
                 {journeyScreenContent[mobileScreen]?.()}
@@ -1488,6 +1546,7 @@ export default function OwnerAddPropertyTestPage() {
                 <div id="oap-journey-map-aside" className="oap-journey-type-map-aside" />
               ) : null}
               <div className="oap-content__body oap-content__body--journey oap-content__body--journey-desktop">
+                {purchasedBanner}
                 {journeyScreenContent[mobileScreen]?.()}
               </div>
             </div>

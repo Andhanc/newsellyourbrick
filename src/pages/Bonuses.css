@@ -91,11 +91,6 @@
   text-align: center;
 }
 
-.bonuses-hero__breadcrumbs {
-  justify-content: center;
-  margin-bottom: 22px;
-}
-
 .bonuses-hero__title {
   margin: 0 auto;
   max-width: 960px;
@@ -113,6 +108,44 @@
 
 .bonuses-hero__title-line--bottom {
   white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .bonuses-hero__title-line--bottom {
+    white-space: normal;
+  }
+
+  .bonuses-hero {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+  }
+
+  .bonuses-hero__visual {
+    margin-bottom: 16px;
+  }
+
+  .bonuses-hero__gift {
+    transform: none;
+  }
+
+  .bonuses-hero__stats {
+    margin-top: 20px;
+  }
+
+  .bonuses-hero__stat-desc {
+    display: none;
+  }
+
+  .bonuses-hero__stat--featured {
+    justify-content: flex-start;
+  }
+
+  .bonuses-hero__stat-value {
+    font-size: clamp(1.7rem, 7.2vw, 2.25rem);
+  }
+
+  .bonuses-hero__stat-label {
+    font-size: clamp(0.8125rem, 3.2vw, 0.9375rem);
+  }
 }
 
 .bonuses-hero__title-accent {
@@ -165,10 +198,10 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 1.5fr repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: -76px auto 0;
-  max-width: 1100px;
+  max-width: 760px;
   padding: 18px;
   border-radius: 28px;
   background: #202126;
@@ -181,18 +214,23 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
-  min-height: 150px;
-  padding: 26px 24px;
+  min-height: 156px;
+  padding: 24px 22px;
   border-radius: 18px;
   background: #ffffff;
   text-align: left;
   box-shadow: inset 0 0 0 1px rgba(8, 11, 18, 0.04);
 }
 
+.bonuses-hero__stat:not(.bonuses-hero__stat--featured) {
+  justify-content: flex-start;
+}
+
 .bonuses-hero__stat--featured {
   background: var(--bonuses-brand);
   color: #ffffff;
   overflow: hidden;
+  min-height: 168px;
 }
 
 .bonuses-page--seller .bonuses-hero__stat--featured {
@@ -241,11 +279,11 @@
 }
 
 .bonuses-hero__stat-desc {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   font-family: Montserrat, system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .bonuses-container {
@@ -277,25 +315,30 @@
   }
 
   .bonuses-hero__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: -48px;
+    max-width: min(100%, 560px);
+    gap: 12px;
   }
 
+  .bonuses-hero__stat,
   .bonuses-hero__stat--featured {
-    grid-column: 1 / -1;
     min-height: 132px;
   }
 }
 
 @media (max-width: 600px) {
   .bonuses-hero {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
-    padding-inline: 16px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+    padding-inline: 20px;
     padding-bottom: 32px;
   }
 
-  .bonuses-hero__breadcrumbs {
-    margin-bottom: 18px;
+  .bonuses-hero__title {
+    font-size: clamp(1.625rem, 7.5vw, 2rem);
+    line-height: 1.15;
+    max-width: 100%;
+    padding-inline: 4px;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   .bonuses-hero__subtitle {
@@ -305,38 +348,44 @@
 
   .bonuses-hero__visual {
     max-width: 390px;
-    margin: 8px auto -16px;
+    margin: 8px auto 16px;
   }
 
   .bonuses-hero__gift {
-    transform: translateY(12px);
+    transform: none;
   }
 
   .bonuses-hero__stats {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
     border-radius: 22px;
-    margin-top: -24px;
+    margin-top: 20px;
+    max-width: 100%;
   }
 
-  .bonuses-hero__stat {
-    min-height: 112px;
-    padding: 18px 16px;
-    border-radius: 16px;
-  }
-
+  .bonuses-hero__stat,
   .bonuses-hero__stat--featured {
-    min-height: 128px;
+    min-height: 104px;
+    padding: 14px 12px;
+    border-radius: 14px;
   }
 
   .bonuses-hero__stat-icon {
-    width: 46px;
-    height: 46px;
+    width: 38px;
+    height: 38px;
+    top: 12px;
+    right: 12px;
   }
 
   .bonuses-hero__stat-value {
-    font-size: 38px;
+    font-size: clamp(1.85rem, 8.2vw, 2.5rem);
+  }
+
+  .bonuses-hero__stat-label {
+    margin-top: 8px;
+    font-size: clamp(0.875rem, 3.8vw, 1rem);
+    line-height: 1.25;
   }
 
   .bonuses-container {
@@ -1062,13 +1111,55 @@
 
 @media (max-width: 768px) {
   .bonuses-tasks {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .bonuses-task__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    min-height: 0;
+  }
+
+  .bonuses-task__icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .bonuses-task__title {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .bonuses-task__badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .bonuses-task__toggle {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .bonuses-task__link-out {
+    width: 100%;
+    justify-content: center;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 600px) {
   .bonuses-container {
     padding: 16px 14px 32px;
+  }
+
+  .bonuses-tasks {
+    gap: 8px;
   }
 
   .bonuses-tabs {
@@ -1104,20 +1195,21 @@
   }
 
   .bonuses-task__header {
-    padding: 14px 16px;
+    padding: 10px;
+    gap: 8px;
   }
 
   .bonuses-task__title {
-    font-size: 15px;
+    font-size: 11px;
   }
 
   .bonuses-task__toggle {
-    padding: 9px 14px;
-    font-size: 13px;
+    padding: 7px 8px;
+    font-size: 11px;
   }
 
   .bonuses-task__body {
-    padding: 0 16px 16px;
+    padding: 0 12px 12px;
   }
 }
 

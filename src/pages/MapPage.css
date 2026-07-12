@@ -121,21 +121,34 @@
   text-align: center;
 }
 
-/* Сетка карточек — стиль как на мобильном аукционе (2 в ряд) */
-.map-page-property-grid.auction-mobile-layout {
+/* Сетка карточек — тот же auction-card grid, что на странице аукциона (2 в ряд) */
+.map-page-property-grid {
   width: 100%;
   max-width: none;
   padding: 0;
   margin: 0;
 }
 
-.map-list-scroll .map-page-property-grid .auction-mobile-stack--grid {
-  gap: 10px;
+.map-page-property-grid .auction-mobile-stack--desktop-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 14px;
+  width: 100%;
 }
 
-.map-page-grid-card {
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+@media (min-width: 480px) {
+  .map-page-property-grid .auction-mobile-stack--desktop-cards {
+    column-gap: 12px;
+    row-gap: 16px;
+  }
+}
+
+@media (min-width: 640px) {
+  .map-page-property-grid .auction-mobile-stack--desktop-cards {
+    column-gap: 20px;
+    row-gap: 24px;
+  }
 }
 
 .map-page-grid-card--selected {
@@ -145,49 +158,141 @@
     0 0 0 2px rgba(0, 153, 169, 0.18) !important;
 }
 
-.map-page-grid-card__price {
-  margin: 4px 0 0;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #0f172a;
-  letter-spacing: -0.01em;
+/* Единая внутрянка карточек на странице карты */
+.map-page-property-grid .auction-card--map {
+  height: 100%;
 }
 
-.map-page-grid-card--skeleton {
-  pointer-events: none;
+.map-page-property-grid .auction-card--map .auction-card__timer-slot {
+  flex: 0 0 auto;
 }
 
-.map-page-grid-card__media-skel {
+.map-page-property-grid .auction-card--map .listing-card-auction-timer--placeholder {
+  min-height: 48px;
+  padding: 7px 10px 6px;
+  border-top: 1px solid #eef0f3;
+  border-bottom: 1px solid #eef0f3;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  min-height: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__meta {
+  flex: 1 1 auto;
+  gap: 5px;
+  min-height: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location {
+  align-items: flex-start;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  min-height: calc(0.68rem * 1.3 * 2);
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location svg {
+  width: 12px;
+  height: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__title {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  min-height: calc(0.78rem * 1.25 * 2);
+}
+
+.map-page-property-grid .auction-card--map .auction-card__specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
   width: 100%;
-  aspect-ratio: 3 / 2;
-  background: linear-gradient(90deg, #e8ebed 0%, #f3f4f6 45%, #e8ebed 90%);
-  background-size: 200% 100%;
-  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+  min-height: calc(0.62rem * 1.2 + 6px);
 }
 
-.map-page-grid-card__line {
-  border-radius: 8px;
-  background: linear-gradient(90deg, #e8ebed 0%, #f3f4f6 45%, #e8ebed 90%);
-  background-size: 200% 100%;
-  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+.map-page-property-grid .auction-card--map .auction-card__spec {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 4px;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.map-page-grid-card__line--title {
-  height: 14px;
-  width: 72%;
-  margin-bottom: 8px;
-}
-
-.map-page-grid-card__line--loc {
+.map-page-property-grid .auction-card--map .auction-card__spec svg {
+  width: 11px;
   height: 11px;
-  width: 90%;
-  margin-bottom: 8px;
 }
 
-.map-page-grid-card__line--price {
-  height: 16px;
-  width: 48%;
+.map-page-property-grid .auction-card--map .auction-card__actions {
+  margin-top: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__btn {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 0.6875rem;
+  border-radius: 9px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer {
+  padding: 7px 10px 6px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__prefix {
+  font-size: 0.625rem;
+  margin-bottom: 2px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__time {
+  font-size: 0.75rem;
+  gap: 4px;
+  color: #ea580c;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__time svg {
+  width: 13px;
+  height: 13px;
+  color: #ea580c;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-long .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-medium .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-short .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-critical .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-long .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-medium .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-short .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-critical .listing-card-auction-timer__time svg {
+  color: #ea580c;
 }
 
 .map-list-count-skel {
@@ -1055,7 +1160,129 @@
   }
 }
 
+/* Маркеры-кластеры — миниатюры объектов вместо цифр */
+.map-pin-thumb-stack {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  opacity: 0;
+  transition: opacity 0.38s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.map-pin-thumb-stack--enter {
+  opacity: 0;
+}
+
+.map-pin-thumb-stack.map-pin-mini--visible,
+.map-pin-thumb-stack--visible {
+  opacity: 1;
+}
+
+.map-pin-thumb-stack__thumb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1.5px solid #fff;
+  background: #e5e7eb;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(17, 24, 39, 0.08);
+  transform: translate(-50%, -50%);
+}
+
+.map-pin-thumb-stack__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-pin-thumb-stack__thumb--stacked {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  opacity: 0.92;
+}
+
+.map-pin-thumb-stack__thumb--stacked[data-stack-index='1'] {
+  transform: translate(calc(-50% - 8px), calc(-50% - 6px));
+  z-index: 1;
+}
+
+.map-pin-thumb-stack__thumb--stacked[data-stack-index='2'] {
+  transform: translate(calc(-50% + 8px), calc(-50% - 6px));
+  z-index: 1;
+}
+
+.map-pin-thumb-stack__badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  z-index: 3;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #0099a9;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.map-pin-thumb-stack:hover .map-pin-thumb-stack__thumb,
+.map-pin-thumb-stack:focus-visible .map-pin-thumb-stack__thumb {
+  border-color: rgba(0, 153, 169, 0.55);
+}
+
 /* Маркеры на карте — мини-карточка: фото + цена (без transform на корне — не конфликтует с позицией MapLibre) */
+.map-pin-mini--compact {
+  width: max-content;
+  max-width: max-content;
+}
+
+.map-pin-mini--compact .map-pin-mini__inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 4px;
+  min-height: 48px;
+  max-width: 158px;
+  width: max-content;
+  border-radius: 11px;
+  transform: scale(1);
+}
+
+.map-pin-mini--compact.map-pin-mini--visible .map-pin-mini__inner {
+  transform: scale(1);
+}
+
+.map-pin-mini--compact .map-pin-mini__img-wrap {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 9px;
+}
+
+.map-pin-mini--compact .map-pin-mini__price {
+  display: block;
+  font-size: 10px;
+  max-width: 6.75rem;
+}
+
 .map-pin-cluster {
   display: inline-flex;
   align-items: center;
@@ -1114,20 +1341,20 @@
 .map-pin-mini__inner {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 8px 4px 4px;
+  gap: 6px;
+  padding: 5px 9px 5px 5px;
   box-sizing: border-box;
   background: #fff;
   border-radius: 12px;
   border: 1px solid rgba(17, 24, 39, 0.12);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.18),
+    0 3px 12px rgba(0, 0, 0, 0.16),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   cursor: pointer;
   user-select: none;
-  max-width: 156px;
+  max-width: 164px;
   width: max-content;
-  min-height: 44px;
+  min-height: 50px;
   transform: scale(0.9);
   transform-origin: center bottom;
   transition:
@@ -1155,11 +1382,11 @@
 
 .map-pin-mini__img-wrap {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 9px;
   overflow: hidden;
   background: #e5e7eb;
   border: 1px solid rgba(17, 24, 39, 0.06);
@@ -1193,7 +1420,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 8.5rem;
+  max-width: 7.25rem;
 }
 
 .map-pin-mini--active .map-pin-mini__price {
@@ -1202,23 +1429,36 @@
 
 @media (max-width: 480px) {
   .map-pin-mini__inner {
-    gap: 6px;
-    padding: 3px 6px 3px 3px;
-    max-width: 142px;
-    min-height: 40px;
+    gap: 5px;
+    padding: 4px 8px 4px 4px;
+    max-width: 148px;
+    min-height: 46px;
   }
 
   .map-pin-mini__img-wrap {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    border-radius: 7px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 8px;
   }
 
-  .map-pin-mini__price {
+  .map-pin-mini--compact .map-pin-mini__inner {
+    min-height: 44px;
+    max-width: 144px;
+  }
+
+  .map-pin-mini--compact .map-pin-mini__img-wrap {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .map-pin-mini__price,
+  .map-pin-mini--compact .map-pin-mini__price {
     font-size: 10px;
-    max-width: 7rem;
+    max-width: 6.25rem;
   }
 }
 

@@ -28,7 +28,7 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.35;
-  color: var(--pd-tiffany, #0099A9);
+  color: var(--pd-tiffany, #4a96a6);
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
@@ -38,14 +38,14 @@
 }
 
 .property-detail-expandable-description__toggle:focus-visible {
-  outline: 2px solid rgba(0, 153, 169, 0.35);
+  outline: 2px solid rgba(74, 150, 166, 0.35);
   outline-offset: 3px;
   border-radius: 4px;
 }
 
 .property-detail-expandable-description__chevron {
   flex-shrink: 0;
-  color: var(--pd-tiffany, #0099A9);
+  color: var(--pd-tiffany, #4a96a6);
   transition: transform 0.2s ease;
 }
 

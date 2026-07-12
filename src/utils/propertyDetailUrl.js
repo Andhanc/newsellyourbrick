@@ -61,12 +61,13 @@ export function getPropertyTestDrivePath(propertyOrId, options = {}) {
 /** Вкладка «История ставок» на странице объекта (PropertyDetailClassic). */
 export const PROPERTY_DETAIL_AUCTION_TAB_BIDS = 'bids'
 
-export function buildPropertyDetailNavigation(property, { auctionTab, ...pathOptions } = {}) {
+export function buildPropertyDetailNavigation(property, { auctionTab, auctionSoldOutNotice, ...pathOptions } = {}) {
   if (!property || property.id == null) {
     return { pathname: '/', state: {} }
   }
   const state = { property }
   if (auctionTab) state.auctionTab = auctionTab
+  if (auctionSoldOutNotice) state.auctionSoldOutNotice = true
   return {
     pathname: getPropertyDetailPath(property, pathOptions),
     state,

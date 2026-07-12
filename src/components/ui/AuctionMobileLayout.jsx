@@ -672,7 +672,7 @@ function AuctionMobileItem({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
+                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
               }}
             >
               <span>{t('auctionResultSummary')}</span>

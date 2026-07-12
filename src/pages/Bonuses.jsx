@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiCheck, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus, FiArrowUpRight } from 'react-icons/fi'
 import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import Header from '../components/Header'
-import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import { getUserData } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -204,14 +203,6 @@ const Bonuses = () => {
 
   const displayTasks = ALL_SOCIAL_TASKS
 
-  const bonusesBreadcrumbTrail = useMemo(() => {
-    const home = { to: '/', label: t('home') }
-    if (bonusMode === 'seller') {
-      return [home, { to: '/bonuses', label: t('bonuses') }, { to: null, label: t('bonusesTitleSeller') }]
-    }
-    return [home, { to: null, label: t('bonuses') }]
-  }, [bonusMode, t, i18n.language])
-
   const heroStats = useMemo(() => [
     {
       id: 'discount',
@@ -242,11 +233,6 @@ const Bonuses = () => {
       <Header />
       <section className="bonuses-hero" aria-labelledby="bonuses-hero-title">
         <div className="bonuses-hero__inner">
-          <PageBreadcrumbs
-            trail={bonusesBreadcrumbTrail}
-            className="page-breadcrumbs--flat-club bonuses-hero__breadcrumbs"
-            separator=">"
-          />
           <h1 id="bonuses-hero-title" className="bonuses-hero__title">
             <span className="bonuses-hero__title-line">
               {bonusMode === 'seller' ? t('bonusesHeroTitleLine1Seller') : t('bonusesHeroTitleLine1')}

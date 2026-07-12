@@ -26,7 +26,6 @@ import './SellerPage.css'
 const platformStats = [
   { value: '$1B+', label: 'сделок на платформе' },
   { value: '20K+', label: 'покупателей' },
-  { value: '150K+', label: 'объектов в базе' },
   { value: '8-12%', label: 'средняя доходность' },
 ]
 
@@ -54,16 +53,19 @@ const benefits = [
     Icon: FiGlobe,
     title: 'Глобальный доступ',
     text: 'Смотрите международные объекты, закрытые предложения и локации роста в одном кабинете.',
+    textShort: 'Мировые объекты и закрытые лоты в одном кабинете.',
   },
   {
     Icon: FiZap,
     title: 'Быстрые решения',
     text: 'Сравнивайте доходность, риски и ликвидность без ручных таблиц и долгих созвонов.',
+    textShort: 'Сравнивайте доходность и риски без созвонов.',
   },
   {
     Icon: FiLock,
     title: 'Прозрачная покупка',
     text: 'Каждый объект проходит проверку документов, продавца, истории цены и спроса.',
+    textShort: 'Проверка документов, продавца и цены.',
   },
 ]
 
@@ -71,22 +73,30 @@ const showcaseCards = [
   {
     Icon: FiLayers,
     title: 'Начните с умных шаблонов подбора',
-    text: 'Больше не нужно собирать объекты вручную. Мы наполнили платформу готовыми сценариями покупки под разные цели.',
+    titleShort: 'Умные шаблоны',
+    text: 'Не нужно собирать объекты вручную — платформа предлагает готовые сценарии покупки под разные цели.',
+    textShort: 'Готовые сценарии покупки без ручного поиска.',
   },
   {
     Icon: FiZap,
     title: 'Меняйте критерии — подбор адаптируется сам',
-    text: 'Идеальный инструмент покупателя должен думать за вас. Наш подбор перестраивается под бюджет, срок и риск.',
+    titleShort: 'Гибкий подбор',
+    text: 'Подбор перестраивается под ваш бюджет, срок и допустимый риск — без таблиц и долгих созвонов.',
+    textShort: 'Подбор подстраивается под бюджет, срок и риск.',
   },
   {
     Icon: FiEdit3,
     title: 'Оставайтесь в едином стандарте проверки',
-    text: 'Каждый объект проходит одинаковый чек-лист: документы, продавец, спрос и прозрачность сделки.',
+    titleShort: 'Единая проверка',
+    text: 'Каждый объект проходит один чек-лист: документы, продавец, спрос и прозрачность сделки.',
+    textShort: 'Один чек-лист: документы, продавец, спрос.',
   },
   {
     Icon: FiSliders,
     title: 'Редактируйте сценарий простыми контролами',
-    text: 'Пара кликов — и вы меняете фильтры, доходность или срок. Сравнение объектов остаётся наглядным и быстрым.',
+    titleShort: 'Простые контролы',
+    text: 'Пара кликов — и вы меняете фильтры, доходность или срок. Сравнение объектов остаётся наглядным.',
+    textShort: 'Фильтры и срок меняются в пару кликов.',
   },
 ]
 
@@ -95,23 +105,29 @@ const plans = [
     name: 'Starter',
     price: '€0',
     subtitle: 'Быстрый старт',
+    subtitleShort: 'Быстрый старт',
     height: 'short',
     features: ['Аукцион', 'Покупка недвижимости', 'AI-помощник'],
+    featuresShort: ['Аукцион', 'Покупка', 'AI-помощник'],
   },
   {
     name: 'Pro',
     price: '€149',
     subtitle: 'Больше функций, аналитика и персональный менеджер',
+    subtitleShort: 'Аналитика и менеджер',
     height: 'medium',
     badge: 'Выбор покупателей',
     features: ['Все возможности Starter', 'Аналитика', 'Калькулятор', 'Персональный менеджер'],
+    featuresShort: ['Всё из Starter', 'Аналитика', 'Калькулятор', 'Менеджер'],
   },
   {
     name: 'VIP',
     price: '€499',
     subtitle: 'Максимум функций и приоритет на каждом этапе',
+    subtitleShort: 'Приоритет и закрытые лоты',
     height: 'tall',
     features: ['Все возможности Pro', 'Приоритет в аукционах', 'VIP-менеджер', 'Закрытые лоты'],
+    featuresShort: ['Всё из Pro', 'Приоритет', 'VIP-менеджер', 'Закрытые лоты'],
   },
 ]
 
@@ -203,15 +219,18 @@ export default function BuyerPage() {
               <span>на платформе</span>
             </h2>
             <div className="seller-features__grid">
-              {benefits.map(({ Icon, title, text }) => (
+              {benefits.map(({ Icon, title, text, textShort }) => (
                 <article className="seller-feature-card" key={title}>
                   <span className="seller-feature-card__icon">
                     <Icon aria-hidden />
                   </span>
                   <h3>{title}</h3>
-                  <p>{text}</p>
+                  <p>
+                    <span className="seller-feature-card__text seller-feature-card__text--full">{text}</span>
+                    <span className="seller-feature-card__text seller-feature-card__text--short">{textShort}</span>
+                  </p>
                   <button type="button" className="seller-feature-card__link" onClick={() => setModalTitle(title)}>
-                    Узнать больше
+                    Перейти
                     <FiArrowRight aria-hidden />
                   </button>
                 </article>
@@ -239,13 +258,19 @@ export default function BuyerPage() {
 
           <div className="buyer-showcase__panel">
             <div className="buyer-showcase__grid">
-              {showcaseCards.map(({ Icon, title, text }) => (
+              {showcaseCards.map(({ Icon, title, titleShort, text, textShort }) => (
                 <article className="buyer-showcase-card" key={title}>
                   <span className="buyer-showcase-card__icon">
                     <Icon aria-hidden />
                   </span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
+                  <h3>
+                    <span className="buyer-showcase-card__title buyer-showcase-card__title--full">{title}</span>
+                    <span className="buyer-showcase-card__title buyer-showcase-card__title--short">{titleShort}</span>
+                  </h3>
+                  <p>
+                    <span className="buyer-showcase-card__text buyer-showcase-card__text--full">{text}</span>
+                    <span className="buyer-showcase-card__text buyer-showcase-card__text--short">{textShort}</span>
+                  </p>
                 </article>
               ))}
             </div>
@@ -266,17 +291,33 @@ export default function BuyerPage() {
               <article
                 className={`buyer-plan buyer-plan--${plan.height}${selectedPlan === plan.name ? ' is-selected' : ''}`}
                 key={plan.name}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedPlan === plan.name}
+                onClick={() => setSelectedPlan(plan.name)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setSelectedPlan(plan.name)
+                  }
+                }}
               >
                 {plan.badge && <span className="buyer-plan__badge">{plan.badge}</span>}
                 <h3>{plan.name}</h3>
-                <p>{plan.subtitle}</p>
+                <p>
+                  <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
+                  <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
+                </p>
                 <strong>{plan.price}</strong>
                 <span className="buyer-plan__period">в месяц</span>
                 <ul>
-                  {plan.features.map((feature) => (
+                  {plan.features.map((feature, index) => (
                     <li key={feature}>
                       <FiCheck aria-hidden />
-                      {feature}
+                      <span className="buyer-plan__feature buyer-plan__feature--full">{feature}</span>
+                      <span className="buyer-plan__feature buyer-plan__feature--short">
+                        {plan.featuresShort[index] ?? feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -284,8 +325,9 @@ export default function BuyerPage() {
                   type="button"
                   className={selectedPlan === plan.name ? 'buyer-plan__button is-selected' : 'buyer-plan__button'}
                   onClick={() => setSelectedPlan(plan.name)}
+                  aria-pressed={selectedPlan === plan.name}
                 >
-                  Выбрать
+                  {selectedPlan === plan.name ? 'Выбрано' : 'Выбрать'}
                   <FiArrowRight aria-hidden />
                 </button>
               </article>

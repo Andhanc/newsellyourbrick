@@ -1,9 +1,9 @@
 /* Property Detail Desktop v4 - HomeKey reference layout. */
 
 .pdx-page {
-  --pdx-accent: #5b35f5;
-  --pdx-accent-2: #7d64ff;
-  --pdx-accent-soft: #f1edff;
+  --pdx-accent: #4a96a6;
+  --pdx-accent-2: #5aa5b5;
+  --pdx-accent-soft: #f0f7f9;
   --pdx-mint: #40c5ad;
   --pdx-bg: #fbfcff;
   --pdx-card: #ffffff;
@@ -18,7 +18,7 @@
   min-height: 100%;
   color: var(--pdx-text);
   background:
-    radial-gradient(circle at 80% 8%, rgba(91, 53, 245, 0.05), transparent 30%),
+    radial-gradient(circle at 80% 8%, rgba(74, 150, 166, 0.05), transparent 30%),
     linear-gradient(180deg, #fbfcff 0%, #ffffff 34%, #fbfcff 100%);
   --pdx-font: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --pdx-ls-tight: -0.02em;
@@ -191,13 +191,13 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  color: #5b35f5;
+  color: #4a96a6;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 48%),
-    linear-gradient(145deg, #f3efff 0%, #e8e0ff 100%);
+    linear-gradient(145deg, #f0f7f9 0%, #e3f0f3 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 6px 14px rgba(91, 53, 245, 0.1);
+    0 6px 14px rgba(74, 150, 166, 0.1);
 }
 
 .pdx-stat__copy {
@@ -334,10 +334,10 @@
   height: 100%;
   min-width: 0;
   padding: 18px 16px;
-  border: 1px solid rgba(91, 53, 245, 0.08);
+  border: 1px solid rgba(74, 150, 166, 0.08);
   border-radius: 12px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(91, 53, 245, 0.04), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(74, 150, 166, 0.04), transparent 42%),
     rgba(255, 255, 255, 0.96);
   box-shadow: 0 10px 24px rgba(31, 42, 78, 0.045);
   transition:
@@ -348,8 +348,8 @@
 
 .pdx-feature:hover {
   transform: translateY(-2px);
-  border-color: rgba(91, 53, 245, 0.16);
-  box-shadow: 0 16px 32px rgba(91, 53, 245, 0.1);
+  border-color: rgba(74, 150, 166, 0.16);
+  box-shadow: 0 16px 32px rgba(74, 150, 166, 0.1);
 }
 
 .pdx-feature__icon {
@@ -360,13 +360,13 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  color: #5b35f5;
+  color: #4a96a6;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 48%),
-    linear-gradient(145deg, #f3efff 0%, #e8e0ff 100%);
+    linear-gradient(145deg, #f0f7f9 0%, #e3f0f3 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 8px 18px rgba(91, 53, 245, 0.1);
+    0 8px 18px rgba(74, 150, 166, 0.1);
 }
 
 .pdx-feature__copy {
@@ -458,7 +458,7 @@
 .pdx-docs-card {
   padding: 24px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(91, 53, 245, 0.05), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(74, 150, 166, 0.05), transparent 34%),
     rgba(255, 255, 255, 0.98);
 }
 
@@ -489,10 +489,10 @@
   width: 100%;
   min-height: 68px;
   padding: 12px 14px;
-  border: 1px solid rgba(91, 53, 245, 0.08);
+  border: 1px solid rgba(74, 150, 166, 0.08);
   border-radius: 12px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(91, 53, 245, 0.03), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(74, 150, 166, 0.03), transparent 42%),
     rgba(255, 255, 255, 0.96);
   color: #25304a;
   font: inherit;
@@ -507,8 +507,8 @@
 
 .pdx-docs-list__button:hover {
   transform: translateY(-1px);
-  border-color: rgba(91, 53, 245, 0.16);
-  box-shadow: 0 12px 26px rgba(91, 53, 245, 0.08);
+  border-color: rgba(74, 150, 166, 0.16);
+  box-shadow: 0 12px 26px rgba(74, 150, 166, 0.08);
 }
 
 .pdx-docs-list__icon {
@@ -518,13 +518,13 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  color: #5b35f5;
+  color: #4a96a6;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 48%),
-    linear-gradient(145deg, #f3efff 0%, #e8e0ff 100%);
+    linear-gradient(145deg, #f0f7f9 0%, #e3f0f3 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 8px 18px rgba(91, 53, 245, 0.1);
+    0 8px 18px rgba(74, 150, 166, 0.1);
 }
 
 .pdx-docs-list__copy {
@@ -555,9 +555,9 @@
   min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  color: #5b35f5;
-  background: linear-gradient(180deg, #ffffff 0%, #f6f2ff 100%);
-  border: 1px solid rgba(91, 53, 245, 0.14);
+  color: #4a96a6;
+  background: linear-gradient(180deg, #ffffff 0%, #f0f7f9 100%);
+  border: 1px solid rgba(74, 150, 166, 0.14);
   font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
@@ -571,10 +571,10 @@
   width: 100%;
   min-height: 40px;
   margin-top: 12px;
-  border: 1px solid rgba(91, 53, 245, 0.12);
+  border: 1px solid rgba(74, 150, 166, 0.12);
   border-radius: 11px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f6ff 100%);
-  color: #5b35f5;
+  background: linear-gradient(180deg, #ffffff 0%, #f4fafb 100%);
+  color: #4a96a6;
   font: inherit;
   font-size: 0.76rem;
   font-weight: 700;
@@ -587,8 +587,8 @@
 
 .pdx-docs-card__more:hover {
   transform: translateY(-1px);
-  border-color: rgba(91, 53, 245, 0.24);
-  box-shadow: 0 10px 22px rgba(91, 53, 245, 0.08);
+  border-color: rgba(74, 150, 166, 0.24);
+  box-shadow: 0 10px 22px rgba(74, 150, 166, 0.08);
 }
 
 .pdx-docs-card__aside {
@@ -598,13 +598,13 @@
   gap: 16px;
   min-height: 100%;
   padding: 18px 16px;
-  border: 1px solid rgba(91, 53, 245, 0.1);
+  border: 1px solid rgba(74, 150, 166, 0.1);
   border-radius: 14px;
   color: #1c2440;
   text-align: center;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.9), transparent 52%),
-    linear-gradient(180deg, #f7f3ff 0%, #eee7ff 100%);
+    linear-gradient(180deg, #f0f7f9 0%, #e3f0f3 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
@@ -797,7 +797,7 @@
     transparent 0%,
     rgba(138, 147, 170, 0.16) 10%,
     rgba(232, 235, 244, 0.95) 24%,
-    rgba(91, 53, 245, 0.18) 50%,
+    rgba(74, 150, 166, 0.18) 50%,
     rgba(232, 235, 244, 0.95) 76%,
     rgba(138, 147, 170, 0.16) 90%,
     transparent 100%
@@ -873,8 +873,8 @@
 .pdx-yield-calc .pd-v3-yield-calc__input:focus,
 .pdx-yield-calc .pd-v3-yield-calc__select:focus {
   outline: none;
-  border-color: rgba(91, 53, 245, 0.35);
-  box-shadow: 0 0 0 3px rgba(91, 53, 245, 0.12);
+  border-color: rgba(74, 150, 166, 0.35);
+  box-shadow: 0 0 0 3px rgba(74, 150, 166, 0.12);
 }
 
 .pdx-yield-calc .pd-v3-yield-calc__select-wrap {
@@ -919,7 +919,7 @@
   padding: 12px 14px;
   border: 1px solid rgba(64, 197, 173, 0.24);
   border-radius: 12px;
-  background: linear-gradient(180deg, #ecfdf8 0%, #e6faf9 100%);
+  background: linear-gradient(180deg, #f0f7f9 0%, #e3f0f3 100%);
   text-align: center;
 }
 
@@ -941,10 +941,10 @@
   width: 100%;
   min-height: 44px;
   padding: 11px 16px;
-  border: 1px solid rgba(91, 53, 245, 0.24);
+  border: 1px solid rgba(74, 150, 166, 0.24);
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #f6f2ff 100%);
-  color: #5b35f5;
+  background: linear-gradient(180deg, #ffffff 0%, #f0f7f9 100%);
+  color: #4a96a6;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 700;
@@ -952,8 +952,8 @@
 }
 
 .pdx-yield-calc .pd-v3-yield-calc__btn:hover {
-  border-color: rgba(91, 53, 245, 0.36);
-  background: linear-gradient(180deg, #faf7ff 0%, #eee6ff 100%);
+  border-color: rgba(74, 150, 166, 0.36);
+  background: linear-gradient(180deg, #f4fafb 0%, #e3f0f3 100%);
 }
 
 .pdx-page__aside {
@@ -973,6 +973,12 @@
   box-shadow: var(--pdx-shadow);
 }
 
+.pdx-auction-card--ended {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--pdx-border);
+  padding-top: 20px;
+}
+
 .pdx-auction-card__label {
   margin: 0 0 10px;
   color: #536079;
@@ -985,6 +991,45 @@
   color: #536079;
   font-size: 0.86rem;
   font-weight: 800;
+}
+
+.pdx-auction-card__label--muted {
+  margin-bottom: 6px;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pdx-auction-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: none;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.24), transparent 58%),
+    linear-gradient(135deg, #33adbb 0%, #0099a9 52%, #007d8a 100%);
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 153, 169, 0.35);
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.pdx-auction-card__cta:hover {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.32), transparent 58%),
+    linear-gradient(135deg, #3bb8c6 0%, #00a6b7 52%, #008794 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(0, 153, 169, 0.42);
 }
 
 .pdx-auction-card__divider {
@@ -1004,7 +1049,6 @@
 .pdx-auction-card__price,
 .pdx-auction-card__buy-price {
   display: block;
-  color: #12172d;
   font-size: clamp(1.35rem, 2.3vw, 1.85rem);
   line-height: 1.1;
   font-weight: 900;
@@ -1012,8 +1056,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.pdx-auction-card__price {
+  color: #12172d;
+}
+
+.pdx-auction-card__buy-price {
+  color: #12172d;
+}
+
 .pdx-auction-card__price.is-animated {
-  color: var(--pdx-accent);
+  color: #12172d;
 }
 
 .pdx-auction-card__step {
@@ -1049,12 +1101,12 @@
   justify-content: center;
   min-height: 42px;
   padding: 0 8px;
-  border: 1px solid rgba(91, 53, 245, 0.14);
+  border: 1px solid rgba(74, 150, 166, 0.14);
   border-radius: 11px;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95), transparent 58%),
-    linear-gradient(180deg, #ffffff 0%, #f6f2ff 100%);
-  color: #5b35f5;
+    linear-gradient(180deg, #ffffff 0%, #f0f7f9 100%);
+  color: #4a96a6;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 700;
@@ -1062,7 +1114,7 @@
   white-space: nowrap;
   cursor: pointer;
   box-shadow:
-    0 8px 18px rgba(91, 53, 245, 0.08),
+    0 8px 18px rgba(74, 150, 166, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition:
     transform 0.18s ease,
@@ -1073,12 +1125,12 @@
 
 .pdx-quick-bid-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(91, 53, 245, 0.28);
+  border-color: rgba(74, 150, 166, 0.28);
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.98), transparent 58%),
-    linear-gradient(180deg, #faf7ff 0%, #eee6ff 100%);
+    linear-gradient(180deg, #f4fafb 0%, #e3f0f3 100%);
   box-shadow:
-    0 12px 24px rgba(91, 53, 245, 0.14),
+    0 12px 24px rgba(74, 150, 166, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
@@ -1097,9 +1149,9 @@
   letter-spacing: 0.01em;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.18), transparent 52%),
-    linear-gradient(135deg, #8369ff 0%, #5b35f5 52%, #4525d8 100%);
+    linear-gradient(135deg, #5aa5b5 0%, #4a96a6 52%, #3f8798 100%);
   box-shadow:
-    0 16px 34px rgba(91, 53, 245, 0.28),
+    0 16px 34px rgba(74, 150, 166, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
   transition:
     transform 0.18s ease,
@@ -1109,7 +1161,7 @@
 .pdx-auction-card .pdx-primary-btn:not(.pdx-primary-btn--small):hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
-    0 20px 38px rgba(91, 53, 245, 0.34),
+    0 20px 38px rgba(74, 150, 166, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -1118,13 +1170,13 @@
   border-radius: 12px;
   font-size: 0.86rem;
   font-weight: 700;
-  color: #5b35f5;
+  color: #4a96a6;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95), transparent 58%),
-    linear-gradient(180deg, #ffffff 0%, #f7f3ff 100%);
-  border: 1px solid rgba(91, 53, 245, 0.2);
+    linear-gradient(180deg, #ffffff 0%, #f0f7f9 100%);
+  border: 1px solid rgba(74, 150, 166, 0.2);
   box-shadow:
-    0 10px 24px rgba(91, 53, 245, 0.08),
+    0 10px 24px rgba(74, 150, 166, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition:
     transform 0.18s ease,
@@ -1135,12 +1187,12 @@
 
 .pdx-auction-card .pdx-secondary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(91, 53, 245, 0.32);
+  border-color: rgba(74, 150, 166, 0.32);
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.98), transparent 58%),
-    linear-gradient(180deg, #faf7ff 0%, #eee6ff 100%);
+    linear-gradient(180deg, #f4fafb 0%, #e3f0f3 100%);
   box-shadow:
-    0 14px 28px rgba(91, 53, 245, 0.12),
+    0 14px 28px rgba(74, 150, 166, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
@@ -1163,8 +1215,8 @@
 
 .pdx-primary-btn {
   color: #fff;
-  background: linear-gradient(180deg, #6f51ff 0%, #4f2ce5 100%);
-  box-shadow: 0 12px 28px rgba(91, 53, 245, 0.22);
+  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+  box-shadow: 0 12px 28px rgba(74, 150, 166, 0.22);
   font-size: 1.08rem;
   min-height: 48px;
 }
@@ -1179,7 +1231,7 @@
 .pdx-secondary-btn {
   color: var(--pdx-accent);
   background: #fff;
-  border-color: rgba(91, 53, 245, 0.42);
+  border-color: rgba(74, 150, 166, 0.42);
 }
 
 .pdx-test-btn {
@@ -1294,9 +1346,9 @@
 .pdx-leader__crown--you {
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.42), transparent 42%),
-    linear-gradient(145deg, #7dd3cf 0%, #0099a9 100%);
+    linear-gradient(145deg, #7dd3cf 0%, #4a96a6 100%);
   box-shadow:
-    0 10px 22px rgba(0, 153, 169, 0.24),
+    0 10px 22px rgba(74, 150, 166, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
@@ -1306,6 +1358,10 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.pdx-bids .pdx-link-button {
+  margin-top: 16px;
 }
 
 .pdx-bids__item {
@@ -1339,7 +1395,7 @@
 
 .pdx-how-card,
 .pdx-promo-side {
-  border: 1px solid rgba(91, 53, 245, 0.08);
+  border: 1px solid rgba(74, 150, 166, 0.08);
   border-radius: var(--pdx-radius);
   box-shadow: 0 12px 30px rgba(24, 34, 67, 0.045);
 }
@@ -1347,7 +1403,7 @@
 .pdx-how-card {
   padding: 24px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(91, 53, 245, 0.06), transparent 38%),
+    radial-gradient(circle at 100% 0%, rgba(74, 150, 166, 0.06), transparent 38%),
     rgba(255, 255, 255, 0.98);
 }
 
@@ -1387,7 +1443,7 @@
   left: 21px;
   bottom: 4px;
   width: 1px;
-  background: linear-gradient(180deg, rgba(91, 53, 245, 0.22), rgba(91, 53, 245, 0.05));
+  background: linear-gradient(180deg, rgba(74, 150, 166, 0.22), rgba(74, 150, 166, 0.05));
 }
 
 .pdx-how-card__step-icon {
@@ -1398,13 +1454,13 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  color: #5b35f5;
+  color: #4a96a6;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 48%),
-    linear-gradient(145deg, #f3efff 0%, #e8e0ff 100%);
+    linear-gradient(145deg, #f0f7f9 0%, #e3f0f3 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 8px 18px rgba(91, 53, 245, 0.1);
+    0 8px 18px rgba(74, 150, 166, 0.1);
 }
 
 .pdx-how-card__step-copy {
@@ -1436,18 +1492,18 @@
   width: fit-content;
   min-height: 42px;
   padding: 0 14px;
-  border: 1px solid rgba(91, 53, 245, 0.14);
+  border: 1px solid rgba(74, 150, 166, 0.14);
   border-radius: 11px;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95), transparent 58%),
-    linear-gradient(180deg, #ffffff 0%, #f6f2ff 100%);
-  color: #5b35f5;
+    linear-gradient(180deg, #ffffff 0%, #f0f7f9 100%);
+  color: #4a96a6;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    0 8px 18px rgba(91, 53, 245, 0.08),
+    0 8px 18px rgba(74, 150, 166, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition:
     transform 0.18s ease,
@@ -1458,12 +1514,12 @@
 
 .pdx-how-card__cta:hover {
   transform: translateY(-1px);
-  border-color: rgba(91, 53, 245, 0.28);
+  border-color: rgba(74, 150, 166, 0.28);
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.98), transparent 58%),
-    linear-gradient(180deg, #faf7ff 0%, #eee6ff 100%);
+    linear-gradient(180deg, #f4fafb 0%, #e3f0f3 100%);
   box-shadow:
-    0 12px 24px rgba(91, 53, 245, 0.12),
+    0 12px 24px rgba(74, 150, 166, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
@@ -1495,7 +1551,7 @@
 }
 
 .pdx-promo-side--ai {
-  background: linear-gradient(135deg, #f6efff 0%, #fff 60%);
+  background: linear-gradient(135deg, #f0f7f9 0%, #fff 60%);
 }
 
 .pdx-promo-side--ai h3 span {
@@ -1504,7 +1560,7 @@
   padding: 0 7px;
   border-radius: 999px;
   color: #fff;
-  background: #8f6dff;
+  background: #4a96a6;
   font-size: 0.62rem;
   vertical-align: middle;
 }

@@ -35,78 +35,58 @@ const STATIC_NEWS_KEYS = [
   },
 ]
 
-function MosaicBackdrop({ src }) {
+function SybMosaicFeaturedCell({ item, onOpen }) {
   return (
-    <>
-      <img
-        className="syb-news-mosaic__bg"
-        src={src}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        aria-hidden
-        onError={(event) => {
-          event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
-        }}
-      />
-      <div className="syb-news-mosaic__shade" aria-hidden />
-    </>
-  )
-}
-
-function SybMosaicHeroCell({ item, onOpen }) {
-  return (
-    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--hero syb-news-mosaic__cell--dark">
-      <MosaicBackdrop src={item.image} />
-      <div className="syb-news-mosaic__content">
-        <h3 className="syb-news-mosaic__title">{item.title}</h3>
-        <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
-      </div>
+    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--split syb-news-mosaic__cell--featured">
       <button
         type="button"
-        className="syb-news-mosaic__fab"
+        className="syb-news-mosaic__split-hit syb-news-mosaic__split-hit--featured"
         onClick={() => onOpen(item)}
-        aria-label={item.title}
       >
-        <FiArrowRight size={18} aria-hidden />
+        <div className="syb-news-mosaic__media">
+          <img
+            src={item.image}
+            alt=""
+            loading="eager"
+            decoding="async"
+            aria-hidden
+            onError={(event) => {
+              event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
+            }}
+          />
+        </div>
+        <div className="syb-news-mosaic__copy">
+          <h3 className="syb-news-mosaic__title">{item.title}</h3>
+          <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
+          <span className="syb-news-mosaic__read" aria-hidden>
+            <FiArrowRight size={18} />
+          </span>
+        </div>
       </button>
     </article>
   )
 }
 
-function SybMosaicTextCell({ item, onOpen }) {
+function SybMosaicCardCell({ item, onOpen }) {
   return (
-    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--text syb-news-mosaic__cell--dark">
-      <MosaicBackdrop src={item.image} />
-      <button type="button" className="syb-news-mosaic__text-hit" onClick={() => onOpen(item)}>
-        <h3 className="syb-news-mosaic__title">{item.title}</h3>
-        <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
-      </button>
-    </article>
-  )
-}
-
-function SybMosaicPhotoCell({ item, onOpen, tall = false }) {
-  return (
-    <article
-      className={`syb-news-mosaic__cell syb-news-mosaic__cell--photo${tall ? ' syb-news-mosaic__cell--tall' : ''}`}
-    >
-      <button type="button" className="syb-news-mosaic__photo-hit" onClick={() => onOpen(item)}>
-        <img
-          src={item.image}
-          alt=""
-          loading="eager"
-          decoding="async"
-          aria-hidden
-          onError={(event) => {
-            event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
-          }}
-        />
-        <span className="syb-news-mosaic__shade" aria-hidden />
-        <span className="syb-news-mosaic__photo-caption">
-          <span className="syb-news-mosaic__photo-title">{item.title}</span>
-          <span className="syb-news-mosaic__photo-excerpt">{item.excerpt}</span>
-        </span>
+    <article className="syb-news-mosaic__cell syb-news-mosaic__cell--split syb-news-mosaic__cell--card">
+      <button type="button" className="syb-news-mosaic__split-hit" onClick={() => onOpen(item)}>
+        <div className="syb-news-mosaic__media">
+          <img
+            src={item.image}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            aria-hidden
+            onError={(event) => {
+              event.currentTarget.src = MOSAIC_IMAGE_FALLBACK
+            }}
+          />
+        </div>
+        <div className="syb-news-mosaic__copy">
+          <h3 className="syb-news-mosaic__title">{item.title}</h3>
+          <p className="syb-news-mosaic__excerpt">{item.excerpt}</p>
+        </div>
       </button>
     </article>
   )
@@ -212,10 +192,8 @@ export default function SybLandingNewsShowcase({ maxItems, layout = 'default' })
   const mosaicArticles = useMemo(() => {
     if (articles.length < 4) return null
     return {
-      hero: articles[0],
-      photo: articles[1],
-      text: articles[2],
-      tall: articles[3],
+      featured: articles[0],
+      cards: articles.slice(1, 4),
     }
   }, [articles])
 
@@ -262,11 +240,11 @@ export default function SybLandingNewsShowcase({ maxItems, layout = 'default' })
 
       {isMosaic && mosaicArticles ? (
         <>
-          <div className="syb-news__mosaic">
-            <SybMosaicHeroCell item={mosaicArticles.hero} onOpen={handleOpen} />
-            <SybMosaicPhotoCell item={mosaicArticles.photo} onOpen={handleOpen} />
-            <SybMosaicTextCell item={mosaicArticles.text} onOpen={handleOpen} />
-            <SybMosaicPhotoCell item={mosaicArticles.tall} onOpen={handleOpen} tall />
+          <div className="syb-news__mosaic syb-news__mosaic--editorial">
+            <SybMosaicFeaturedCell item={mosaicArticles.featured} onOpen={handleOpen} />
+            {mosaicArticles.cards.map((item) => (
+              <SybMosaicCardCell key={item.id} item={item} onOpen={handleOpen} />
+            ))}
           </div>
           <div className="syb-news__mosaic-foot">
             <Link

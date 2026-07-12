@@ -11,11 +11,11 @@
   -webkit-backdrop-filter: blur(6px);
   animation: auction-bid-modal-backdrop-in 0.28s ease-out both;
   font-family: 'Montserrat', system-ui, sans-serif;
-  --pd-tiffany: #0099A9;
-  --pd-tiffany-deep: #007d8a;
-  --pd-tiffany-soft: #ecfeff;
-  --pd-tiffany-soft-border: rgba(0, 153, 169, 0.35);
-  --pd-tiffany-glow: rgba(0, 153, 169, 0.32);
+  --pd-tiffany: #4a96a6;
+  --pd-tiffany-deep: #3f8798;
+  --pd-tiffany-soft: #f0f7f9;
+  --pd-tiffany-soft-border: rgba(74, 150, 166, 0.35);
+  --pd-tiffany-glow: rgba(74, 150, 166, 0.32);
 }
 
 @keyframes auction-bid-modal-backdrop-in {
@@ -192,7 +192,7 @@
 .auction-bid-modal__body .bidding-section__input-wrapper:focus-within {
   border-color: var(--pd-tiffany);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.12);
+  box-shadow: 0 0 0 3px rgba(74, 150, 166, 0.12);
 }
 
 .auction-bid-modal__body .bidding-section__input:focus {
@@ -266,7 +266,7 @@
     min-height: 46px;
     padding: 13px 8px;
     border-radius: 12px;
-    border: 1px solid rgba(0, 125, 138, 0.35) !important;
+    border: 1px solid rgba(63, 135, 152, 0.35) !important;
     background: linear-gradient(180deg, var(--pd-tiffany) 0%, var(--pd-tiffany-deep) 100%) !important;
     color: #ffffff !important;
     font-size: 14px;

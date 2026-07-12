@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import FilterCollapsibleSection from './FilterCollapsibleSection'
+import useFilterSectionState from '../hooks/useFilterSectionState'
 import {
   AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
   AUCTION_DESKTOP_SALE_TYPE_ITEMS,
@@ -43,13 +45,27 @@ function AuctionDesktopFilters({
   variant = 'sidebar',
 }) {
   const { t } = useTranslation()
-  const [openSections, setOpenSections] = useState({
-    location: true,
-    type: true,
-    sale: true,
-    area: true,
-    price: true,
-  })
+
+  const activeSectionKeys = useMemo(() => {
+    const keys = []
+    if (country || city) keys.push('location')
+    if (propertyTypes.length > 0) keys.push('type')
+    if (saleFilters.length > 0) keys.push('sale')
+    if (minArea !== '' || maxArea !== '') keys.push('area')
+    if (minPrice !== '' || maxPrice !== '') keys.push('price')
+    return keys
+  }, [country, city, propertyTypes, saleFilters, minArea, maxArea, minPrice, maxPrice])
+
+  const [openSections, toggleSection] = useFilterSectionState(
+    {
+      location: true,
+      type: true,
+      sale: true,
+      area: true,
+      price: true,
+    },
+    activeSectionKeys,
+  )
   const selectedCountry = useMemo(
     () => locationOptions.find((item) => item.key === country) || null,
     [locationOptions, country],
@@ -157,9 +173,7 @@ function AuctionDesktopFilters({
   const priceFillLeft = ((sliderPriceMin - priceBounds.min) / priceSpan) * 100
   const priceFillWidth = ((sliderPriceMax - sliderPriceMin) / priceSpan) * 100
 
-  const toggleSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+  const toggleSectionKey = toggleSection
 
   const handleReset = () => {
     setPropertyTypes([])
@@ -228,10 +242,10 @@ function AuctionDesktopFilters({
       )}
 
       <div className="auction-desktop-filters__sections">
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('catalogFilterLocation')}
           open={openSections.location}
-          onToggle={() => toggleSection('location')}
+          onToggle={() => toggleSectionKey('location')}
         >
           <div className="catalog-desktop-filters__location-fields">
             <label className="catalog-desktop-filters__select-label">
@@ -269,12 +283,12 @@ function AuctionDesktopFilters({
               </select>
             </label>
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterPropertyType')}
           open={openSections.type}
-          onToggle={() => toggleSection('type')}
+          onToggle={() => toggleSectionKey('type')}
         >
           <ul className="auction-desktop-filters__checklist">
             {PROPERTY_TYPE_ITEMS.map((item) => (
@@ -295,12 +309,12 @@ function AuctionDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterSaleType')}
           open={openSections.sale}
-          onToggle={() => toggleSection('sale')}
+          onToggle={() => toggleSectionKey('sale')}
         >
           <ul className="auction-desktop-filters__checklist">
             {SALE_TYPE_ITEMS.map((item) => (
@@ -317,12 +331,12 @@ function AuctionDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterArea')}
           open={openSections.area}
-          onToggle={() => toggleSection('area')}
+          onToggle={() => toggleSectionKey('area')}
         >
           <div className="auction-desktop-filters__range-inputs">
             <input
@@ -381,12 +395,12 @@ function AuctionDesktopFilters({
               unit: t('squareMeters'),
             })}
           </p>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterPrice')}
           open={openSections.price}
-          onToggle={() => toggleSection('price')}
+          onToggle={() => toggleSectionKey('price')}
         >
           <div className="auction-desktop-filters__range-inputs">
             <input
@@ -445,7 +459,7 @@ function AuctionDesktopFilters({
               unit: '',
             })}
           </p>
-        </FilterSection>
+        </FilterCollapsibleSection>
       </div>
 
       {variant !== 'drawer' ? (
@@ -459,18 +473,6 @@ function AuctionDesktopFilters({
         </div>
       ) : null}
     </aside>
-  )
-}
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <section className={`auction-desktop-filters__section${open ? ' is-open' : ''}`}>
-      <button type="button" className="auction-desktop-filters__section-toggle" onClick={onToggle}>
-        <span>{title}</span>
-        <ChevronDown size={18} className="auction-desktop-filters__chevron" aria-hidden />
-      </button>
-      {open ? <div className="auction-desktop-filters__section-body">{children}</div> : null}
-    </section>
   )
 }
 

@@ -199,6 +199,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionAuction.push({
       id: `aw-${winner.id}`,
+      propertyId: pid,
       title: t,
       subtitle: `Победа в аукционе`,
       amount: formatMoney(winner.winning_bid_amount, winner.currency || prop.currency),
@@ -236,6 +237,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionReserve.push({
       id: `rv-${row.id ?? row.dedupe_key}`,
+      propertyId: pid,
       title,
       subtitle: 'Купить сейчас',
       amount: formatMoney(paid, cur),
@@ -278,6 +280,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionShares.push({
       id: `sp-${row.id}`,
+      propertyId: pid,
       title,
       subtitle: row.shares_count != null ? `Куплено долей: ${row.shares_count}` : 'Покупка долей',
       amount: line,

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown } from 'lucide-react'
+import FilterCollapsibleSection from './FilterCollapsibleSection'
+import useFilterSectionState from '../hooks/useFilterSectionState'
 import {
   DEBTS_RISK_OPTIONS,
   EMPTY_DEBTS_FILTERS,
@@ -21,12 +22,25 @@ function DebtsPageFilters({
   filterOptions = { locations: [] },
 }) {
   const { t } = useTranslation()
-  const [openSections, setOpenSections] = useState({
-    risk: true,
-    price: true,
-    debt: true,
-    purchase: true,
-  })
+
+  const activeSectionKeys = useMemo(() => {
+    const keys = []
+    if (filters.risks.length > 0) keys.push('risk')
+    if (filters.minPrice !== '' || filters.maxPrice !== '') keys.push('price')
+    if (filters.minDebt !== '' || filters.maxDebt !== '') keys.push('debt')
+    if (filters.showAuction || filters.showBuyNow) keys.push('purchase')
+    return keys
+  }, [filters])
+
+  const [openSections, toggleSection] = useFilterSectionState(
+    {
+      risk: true,
+      price: true,
+      debt: true,
+      purchase: true,
+    },
+    activeSectionKeys,
+  )
 
   const statsByRisk = useMemo(
     () => Object.fromEntries(riskStats.map((item) => [item.id, item.count])),
@@ -74,10 +88,6 @@ function DebtsPageFilters({
 
   const handleReset = () => onFiltersChange({ ...EMPTY_DEBTS_FILTERS })
 
-  const toggleSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
   return (
     <aside className="debts-page-filters" aria-label={t('filters')}>
       <div className="debts-page-filters__head">
@@ -88,7 +98,8 @@ function DebtsPageFilters({
       </div>
 
       <div className="debts-page-filters__sections">
-        <FilterSection
+        <FilterCollapsibleSection
+          classPrefix="debts-page-filters"
           title={t('debtsFilterObjectRisk')}
           open={openSections.risk}
           onToggle={() => toggleSection('risk')}
@@ -110,9 +121,10 @@ function DebtsPageFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
+          classPrefix="debts-page-filters"
           title={t('debtsFilterPrice')}
           open={openSections.price}
           onToggle={() => toggleSection('price')}
@@ -166,9 +178,10 @@ function DebtsPageFilters({
               aria-label={t('auctionFilterPriceMax')}
             />
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
+          classPrefix="debts-page-filters"
           title={t('debtsFilterDebtAmount')}
           open={openSections.debt}
           onToggle={() => toggleSection('debt')}
@@ -222,9 +235,10 @@ function DebtsPageFilters({
               aria-label={t('debtsFilterDebtMax')}
             />
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
+          classPrefix="debts-page-filters"
           title={t('debtsFilterPurchaseMethod')}
           open={openSections.purchase}
           onToggle={() => toggleSection('purchase')}
@@ -255,21 +269,9 @@ function DebtsPageFilters({
               </label>
             </li>
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
       </div>
     </aside>
-  )
-}
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <section className={`debts-page-filters__section${open ? ' is-open' : ''}`}>
-      <button type="button" className="debts-page-filters__section-toggle" onClick={onToggle}>
-        <span>{title}</span>
-        <ChevronDown size={18} className="debts-page-filters__chevron" aria-hidden />
-      </button>
-      {open ? <div className="debts-page-filters__section-body">{children}</div> : null}
-    </section>
   )
 }
 

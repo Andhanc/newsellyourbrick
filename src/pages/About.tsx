@@ -186,7 +186,11 @@ export default function About() {
           <div className="al-shell al-hero__grid">
             <Reveal className="al-hero__copy">
               <div className="al-hero__title-row">
-                <h1 id="about-hero-title">О платформе SellYourBrick</h1>
+                <h1 id="about-hero-title">
+                  <span className="al-hero__title-lead">О платформе</span>
+                  <br />
+                  <span className="al-hero__title-tail">SellYourBrick</span>
+                </h1>
                 <span className="al-pill">Инвестиции</span>
               </div>
               <div className="al-hero__subcopy">
@@ -301,7 +305,11 @@ export default function About() {
         <section className="al-metrics" aria-labelledby="metrics-title">
           <div className="al-shell">
             <Reveal className="al-metrics__intro">
-              <h2 id="metrics-title">Мы не просто говорим о доходности. Мы её обеспечиваем.</h2>
+              <h2 id="metrics-title">
+                <span className="al-metrics__title-lead">Мы не просто говорим о доходности.</span>
+                <br />
+                Мы её обеспечиваем.
+              </h2>
               <p>
                 41 миллион евро в работе, 35 тысяч доверяющих инвесторов и десятки успешно
                 завершённых проектов — цифры, которые подтверждаются банковскими выписками, а не
@@ -341,15 +349,21 @@ export default function About() {
             <Reveal className="al-system-visual" delay={120}>
               <img src={ASSETS.blueLoop} alt="" aria-hidden />
               <article className="al-system-card">
-                <h2>Инвестируйте в кирпичи, а не в обещания</h2>
+                <h2>
+                  Инвестируйте в
+                  <br />
+                  кирпичи, а не в
+                  <br />
+                  обещания
+                </h2>
                 <p>
                   Возврат капитала подтверждается банковскими выписками. Задержки и риски публикуем
                   так же открыто, как успехи.
                 </p>
                 <div className="al-system-card__footer">
-                  <ArrowBadge />
                   <span>LTV 61.5%</span>
                 </div>
+                <ArrowBadge className="al-system-card__arrow" />
               </article>
             </Reveal>
           </div>
@@ -359,7 +373,13 @@ export default function About() {
           <div className="al-shell al-cta__inner">
             <Reveal className="al-cta__copy">
               <span className="al-pill al-pill--dark">Следующий шаг</span>
-              <h2 id="cta-title">Покупка или продажа — на одной платформе</h2>
+              <h2 id="cta-title">
+                <span className="al-cta__title-lead">
+                  Покупка или<span className="al-cta__title-mobile-break"><br /></span> продажа —
+                </span>
+                <br />
+                <span className="al-cta__title-tail">на одной платформе</span>
+              </h2>
               <p>
                 Выберите раздел под вашу задачу. Регистрация бесплатна — сопровождаем сделку от
                 первого шага до оформления документов.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
@@ -52,11 +52,15 @@ import {
   propertyMatchesLocationFilter,
 } from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import './PropertyList.css'
 import '../styles/hrShowcaseAuctionCards.css'
 
-const PropertySearchModalLazy = lazy(() => import('./PropertySearchModal'))
-const AuctionMobileLayoutLazy = lazy(() => import('./ui/AuctionMobileLayout'))
+const PropertySearchModalLazy = lazyWithRetry(() => import('./PropertySearchModal'))
+const AuctionMobileLayoutLazy = lazyWithRetry(
+  () => import('./ui/AuctionMobileLayout'),
+  'AuctionMobileLayout',
+)
 
 const MOBILE_BREAKPOINT = 768
 const AUCTION_DESKTOP_PAGE_SIZE = 20
@@ -532,7 +536,7 @@ const PropertyList = ({
     return toggleFavorite(property, mockCat || 'property')
   }
 
-  const openProperty = (property, { auctionTab } = {}) => {
+  const openProperty = (property, { auctionTab, auctionSoldOutNotice } = {}) => {
     if (!ensureCanOpenProperty()) {
       showNotification(
         <span>
@@ -557,6 +561,7 @@ const PropertyList = ({
     }
     const { state } = buildPropertyDetailNavigation(property, {
       auctionTab: auctionTab || undefined,
+      auctionSoldOutNotice: auctionSoldOutNotice || undefined,
     })
     const targetPath = getAuctionContextPropertyPath(property, {
       country: countryFilter,
@@ -1014,7 +1019,7 @@ const PropertyList = ({
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      openProperty(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
+                      openProperty(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
                     }}
                   >
                     <span>{t('auctionResultSummary')}</span>

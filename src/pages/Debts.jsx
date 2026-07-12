@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
@@ -44,7 +45,10 @@ import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import { getDebtsContextPropertyPath } from '../utils/listingContextUrl'
 
 const SiteChatDockLazy = lazy(() => import('../components/SiteChatDock'))
-const AuctionMobileLayoutLazy = lazy(() => import('../components/ui/AuctionMobileLayout'))
+const AuctionMobileLayoutLazy = lazyWithRetry(
+  () => import('../components/ui/AuctionMobileLayout'),
+  'AuctionMobileLayout',
+)
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768

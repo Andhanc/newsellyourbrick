@@ -42,8 +42,11 @@ import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
+import PurchaseSuccessModal from '../components/PurchaseSuccessModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
+import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
+import AuctionEndedSimilarPromo from '../components/AuctionEndedSimilarPromo'
 import PropertyDetailLocationMap from '../components/PropertyDetailLocationMap'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
@@ -91,6 +94,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import { getPropertyShareUrl, sharePropertyListing } from '../utils/shareProperty'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { collectAmenityKeys, getAmenityLabelRu, getResolvedAmenityLabels } from '../utils/tzAmenityLabels'
@@ -105,6 +109,7 @@ import {
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
+import { buildPurchasedPropertySnapshot } from '../utils/purchasedPropertyListingPrefill'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
@@ -182,6 +187,8 @@ function PropertyDetailClassic({
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [currentBid, setCurrentBid] = useState(null)
+  const [auctionSoldOutNoticeOpen, setAuctionSoldOutNoticeOpen] = useState(false)
+  const auctionSoldOutNoticeShownRef = useRef(false)
   const [recentBids, setRecentBids] = useState([])
   const [auctionBidsList, setAuctionBidsList] = useState([])
   const [userLastBid, setUserLastBid] = useState(null) // Последняя ставка пользователя
@@ -227,6 +234,8 @@ function PropertyDetailClassic({
   const [hadCircularTimerAuction, setHadCircularTimerAuction] = useState(false)
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
   const reservationCheckoutHandledRef = useRef(null)
+  const [purchaseSuccessModalOpen, setPurchaseSuccessModalOpen] = useState(false)
+  const [purchaseSuccessProperty, setPurchaseSuccessProperty] = useState(null)
   const [isTestDrivePromoOpen, setIsTestDrivePromoOpen] = useState(false)
   const testDrivePromoDismissedRef = useRef(false)
   /** После окончания аукциона не даём сбросить timerExpired, если сервер подставил другую дату окончания */
@@ -242,6 +251,14 @@ function PropertyDetailClassic({
       setAuctionMobileTab(PROPERTY_DETAIL_AUCTION_TAB_BIDS)
     }
   }, [location.state?.auctionTab, property?.id])
+
+  useEffect(() => {
+    if (location.state?.auctionSoldOutNotice !== true) return
+    if (auctionSoldOutNoticeShownRef.current) return
+    if (!property?.id) return
+    auctionSoldOutNoticeShownRef.current = true
+    setAuctionSoldOutNoticeOpen(true)
+  }, [location.state?.auctionSoldOutNotice, property?.id])
 
   useEffect(() => {
     if (shareListingConfig != null) {
@@ -718,6 +735,10 @@ function PropertyDetailClassic({
     reservation_time_remaining: property.reservation_time_remaining || null,
     debt_severity: property.debt_severity || null,
   }
+
+  const openSearchCatalog = useCallback(() => {
+    navigateToSearchCatalog(navigate, { property: displayProperty })
+  }, [navigate, displayProperty])
 
   const priceLocale = currentLang === 'ru' ? 'ru-RU' : 'en-US'
   const propertySourceTable = useMemo(
@@ -1374,33 +1395,42 @@ function PropertyDetailClassic({
           if (result.data?.already) {
             showNotification('Резерв уже был учтён ранее.')
           } else {
-            showNotification(
-              'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
-            )
-          }
-          try {
-            let base = API_BASE_URL
-            if (!base || base.includes('localhost')) {
-              base = await getApiBaseUrl()
-            }
-            const fromPath =
-              typeof window !== 'undefined'
-                ? window.location.pathname.match(/\/property\/(\d+)/)
-                : null
-            const pid = displayProperty?.id || (fromPath ? parseInt(fromPath[1], 10) : null)
-            if (pid) {
-              const propResponse = await fetch(
-                appendViewerUserIdToPropertyApiUrl(`${base}/properties/${pid}?lang=${currentLang}`)
-              )
-              if (propResponse.ok) {
-                const propData = await propResponse.json()
-                if (propData.success && propData.data) {
-                  setProperty((prev) => ({ ...prev, ...propData.data }))
+            let propertyForModal = displayProperty
+            try {
+              let base = API_BASE_URL
+              if (!base || base.includes('localhost')) {
+                base = await getApiBaseUrl()
+              }
+              const fromPath =
+                typeof window !== 'undefined'
+                  ? window.location.pathname.match(/\/property\/(\d+)/)
+                  : null
+              const pid = displayProperty?.id || (fromPath ? parseInt(fromPath[1], 10) : null)
+              if (pid) {
+                const propResponse = await fetch(
+                  appendViewerUserIdToPropertyApiUrl(`${base}/properties/${pid}?lang=${currentLang}`)
+                )
+                if (propResponse.ok) {
+                  const propData = await propResponse.json()
+                  if (propData.success && propData.data) {
+                    propertyForModal = { ...displayProperty, ...propData.data }
+                    setProperty((prev) => ({ ...prev, ...propData.data }))
+                  }
                 }
               }
+            } catch (refetchErr) {
+              console.warn('PropertyDetailClassic: refetch property after reservation', refetchErr)
             }
-          } catch (refetchErr) {
-            console.warn('PropertyDetailClassic: refetch property after reservation', refetchErr)
+
+            const snapshot = buildPurchasedPropertySnapshot(propertyForModal)
+            if (snapshot?.id) {
+              setPurchaseSuccessProperty(snapshot)
+              setPurchaseSuccessModalOpen(true)
+            } else {
+              showNotification(
+                'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
+              )
+            }
           }
         } else {
           showNotification(result.error || 'Не удалось подтвердить резерв', 'error')
@@ -3902,19 +3932,60 @@ function PropertyDetailClassic({
     )
   }
 
+  const isWinningHistoryBid = (bid) => {
+    if (!showAuctionCompletedWinner) return false
+    const playerId = bid.user_id_number ?? bid.user_id
+    return (
+      String(playerId) === String(displayEndedAuctionPlayerId) &&
+      Number(bid.bid_amount) === resolvedWinningBid
+    )
+  }
+
+  const getBidHistoryPreviewBids = (sortedBids, limit) => {
+    const filtered = showAuctionCompletedWinner
+      ? sortedBids.filter((bid) => !isWinningHistoryBid(bid))
+      : sortedBids
+    return filtered.slice(0, limit)
+  }
+
+  const renderAuctionWinnerHistoryInset = (priceFormatter = fmtBidPrice) => {
+    if (!showAuctionCompletedWinner) return null
+    const winnerLabel =
+      displayEndedAuctionPlayerId != null
+        ? `#${displayEndedAuctionPlayerId}`
+        : t('propertyDetailUnknown')
+
+    return (
+      <div className="auction-winner-card auction-winner-card--settled auction-winner-card--inset">
+        <div className="auction-winner-label">{t('propertyDetailAuctionWinner')}</div>
+        <div className="auction-winner-card__inset-row">
+          <div className="auction-winner-name">{winnerLabel}</div>
+          {resolvedWinningBid != null ? (
+            <div className="auction-winner-bid">{priceFormatter(resolvedWinningBid)}</div>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
   const renderDesktopV3BidHistoryCard = () => {
     const sortedBids = [...auctionBidsList].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     )
-    const visibleBids = sortedBids.slice(0, 5)
+    const visibleBids = getBidHistoryPreviewBids(sortedBids, 5)
+
+    if (!showAuctionCompletedWinner && !sortedBids.length) return null
 
     return (
       <section className="pd-v3-card pd-v3-card--history property-detail-auction-desktop-only">
         <h3 className="pd-v3-card__title">{t('propertyDetailBidHistorySidebar')}</h3>
+        {renderAuctionWinnerHistoryInset()}
         {!visibleBids.length ? (
-          <p className="pd-v3-bid-history__empty" role="status">
-            {t('propertyDetailBidsEmpty')}
-          </p>
+          !showAuctionCompletedWinner ? (
+            <p className="pd-v3-bid-history__empty" role="status">
+              {t('propertyDetailBidsEmpty')}
+            </p>
+          ) : null
         ) : (
           <ul className="pd-v3-bid-history">
             {visibleBids.map((bid, index) => {
@@ -4831,29 +4902,24 @@ function PropertyDetailClassic({
 
   const renderAuctionEndedState = () => {
     if (!auctionEndedForSidebar) return null
+    const similarListingsCta = (
+      <AuctionEndedSimilarPromo onBrowseSimilar={openSearchCatalog} />
+    )
+
     if (showAuctionCompletedWinner) {
-      return (
-        <div className="auction-winner-card auction-winner-card--settled property-detail-auction-desktop__winner">
-          <div className="auction-winner-label">{t('propertyDetailAuctionWinner')}</div>
-          <div className="auction-winner-name">
-            {displayEndedAuctionPlayerId != null
-              ? `#${displayEndedAuctionPlayerId}`
-              : t('propertyDetailUnknown')}
-          </div>
-          {resolvedWinningBid != null ? (
-            <div className="auction-winner-bid">{fmtBidPrice(resolvedWinningBid)}</div>
-          ) : null}
-        </div>
-      )
+      return similarListingsCta
     }
     if (showAuctionCompletedNoBids) {
       return (
-        <div className="auction-completed-no-bids property-detail-auction-desktop__no-bids">
-          {t('propertyDetailAuctionNoBids')}
-        </div>
+        <>
+          <div className="auction-completed-no-bids property-detail-auction-desktop__no-bids">
+            {t('propertyDetailAuctionNoBids')}
+          </div>
+          {similarListingsCta}
+        </>
       )
     }
-    return null
+    return similarListingsCta
   }
 
   const renderDesktopAuctionDebtRisk = () => {
@@ -5751,7 +5817,7 @@ function PropertyDetailClassic({
             zoom: 14,
             mapFrame: null,
             mapStyle: STREET_MAP_STYLE,
-            markerColor: '#0099A9',
+            markerColor: '#4a96a6',
             loadingClassName: 'pd-v3-map__loading',
           })}
         </div>
@@ -5937,7 +6003,7 @@ function PropertyDetailClassic({
       <div className="property-detail-auction-desktop pd-v3-sidebar" ref={auctionDesktopBidPanelRef}>
         <div className="property-detail-auction-desktop__sticky pd-v3-sidebar__stack">
           <section className="pd-v3-card pd-v3-card--bid property-detail-auction-desktop__bid-panel pd-v3-bid-card">
-            {auctionEndTime ? (
+            {auctionEndTime && !auctionEndedForSidebar ? (
               <div className="pd-v3-bid-section pd-v3-bid-section--timer">
                 <span className="pd-v3-bid-section__label">{t('propertyDetailTimerUntilEnd')}</span>
                 {isReservedActive ? (
@@ -5945,12 +6011,8 @@ function PropertyDetailClassic({
                     <FiLock size={18} aria-hidden />
                     <span>{t('propertyDetailBidsPaused')}</span>
                   </div>
-                ) : !auctionEndedForSidebar ? (
-                  renderDesktopTimer()
                 ) : (
-                  <div className="auction-completed-banner auction-completed-banner--page" role="status">
-                    {t('propertyDetailAuctionCompleted')}
-                  </div>
+                  renderDesktopTimer()
                 )}
               </div>
             ) : null}
@@ -6164,12 +6226,14 @@ function PropertyDetailClassic({
       const sortedBids = [...auctionBidsList].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       )
-      const visibleBids = sortedBids.slice(0, 4)
-      if (!visibleBids.length) return null
+      const visibleBids = getBidHistoryPreviewBids(sortedBids, 4)
+      if (!showAuctionCompletedWinner && !sortedBids.length) return null
 
       return (
         <section className="pdx-side-card pdx-bids">
           <p className="pdx-side-card__title">{t('propertyDetailBidHistorySidebar')}</p>
+          {renderAuctionWinnerHistoryInset(fmtListingBidPrice)}
+          {visibleBids.length ? (
           <ul className="pdx-bids__list">
             {visibleBids.map((bid, index) => {
               const playerId = bid.user_id_number || bid.user_id
@@ -6183,6 +6247,7 @@ function PropertyDetailClassic({
               )
             })}
           </ul>
+          ) : null}
           {sortedBids.length > 0 ? (
             <button
               type="button"
@@ -6206,11 +6271,22 @@ function PropertyDetailClassic({
         !isBuyNowSaleCompleted &&
         effectiveCurrentBid < buyNowPrice
 
+      const auctionCardClassName = [
+        'pdx-auction-card',
+        (auctionEndedForSidebar || timerExpired) && 'pdx-auction-card--ended',
+      ]
+        .filter(Boolean)
+        .join(' ')
+
       return (
-      <div className="pdx-sidebar-stack" ref={auctionDesktopBidPanelRef}>
-        <section className="pdx-auction-card">
-          <p className="pdx-auction-card__label">Аукцион завершится через</p>
-          {renderPdxTimer()}
+        <div className="pdx-sidebar-stack" ref={auctionDesktopBidPanelRef}>
+          <section className={auctionCardClassName}>
+            {auctionEndedForSidebar || timerExpired ? null : (
+              <>
+                <p className="pdx-auction-card__label">Аукцион завершится через</p>
+                {renderPdxTimer()}
+              </>
+            )}
           {!auctionEndedForSidebar && isAuctionProperty ? (
             <>
               <div className="pdx-auction-card__divider" />
@@ -6754,7 +6830,7 @@ function PropertyDetailClassic({
               numberOfPieces={500}
               gravity={0.1}
               wind={0.02}
-              colors={['#0099A9', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#33adbb', '#fbbf24']}
+              colors={['#4a96a6', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#5aa5b5', '#fbbf24']}
               confettiSource={{
                 x: 0,
                 y: 0,
@@ -6818,6 +6894,12 @@ function PropertyDetailClassic({
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
+      <AuctionSoldOutNotice
+        open={auctionSoldOutNoticeOpen}
+        onClose={() => setAuctionSoldOutNoticeOpen(false)}
+        property={displayProperty}
+        isMobile={windowSize.width <= 768}
+      />
       {isDesktopProperty ? renderPropertyDetailDesktopV4() : null}
 
       <div className="property-detail-legacy-shell">
@@ -7529,6 +7611,17 @@ function PropertyDetailClassic({
       />
         )
       })()}
+
+      <PurchaseSuccessModal
+        isOpen={purchaseSuccessModalOpen}
+        property={purchaseSuccessProperty}
+        onClose={() => setPurchaseSuccessModalOpen(false)}
+        onGoToGuide={() => {
+          const pid = purchaseSuccessProperty?.id
+          setPurchaseSuccessModalOpen(false)
+          if (pid) navigate(`/profile/purchased/${pid}`)
+        }}
+      />
 
       <AuctionReminderModal
         property={displayProperty}

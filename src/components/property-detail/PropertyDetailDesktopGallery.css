@@ -42,7 +42,7 @@
   border-radius: 7px;
   color: #fff;
   background: linear-gradient(180deg, #7b60ff 0%, #5532ee 100%);
-  box-shadow: 0 10px 24px rgba(91, 53, 245, 0.28);
+  box-shadow: 0 10px 24px rgba(74, 150, 166, 0.28);
   font-size: 0.76rem;
   font-weight: 800;
 }
@@ -134,7 +134,7 @@
 
 .pdx-gallery__thumb--active {
   border-color: #ffffff;
-  box-shadow: 0 0 0 2px #5b35f5;
+  box-shadow: 0 0 0 2px #4a96a6;
 }
 
 .pdx-gallery__thumb img {

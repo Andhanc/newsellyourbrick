@@ -1749,8 +1749,7 @@ a.property-card {
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
-    /* Узкий стык hero/крошки → строка поиска */
-    padding-top: 4px;
+    padding-top: clamp(16px, 3vw, 24px);
     padding-bottom: 28px;
   }
 
@@ -1786,6 +1785,10 @@ a.property-card {
     flex-direction: column;
     gap: 12px;
     margin-bottom: 20px;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile {
+    margin-top: clamp(20px, 5vw, 32px);
   }
 
   .search-filters-bar .search-box {

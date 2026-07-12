@@ -33,8 +33,8 @@
 .owner-onboarding-drawer__panel {
   position: relative;
   width: 100%;
-  height: 70vh;
-  max-height: 70dvh;
+  height: auto;
+  max-height: min(620px, 78dvh);
   box-sizing: border-box;
   pointer-events: auto;
   overflow: hidden;
@@ -82,9 +82,10 @@
 
 .owner-onboarding-drawer__hero {
   position: relative;
-  flex: 0 1 auto;
-  min-height: 120px;
-  max-height: min(42vh, 360px);
+  flex: 0 0 auto;
+  height: min(28vh, 210px);
+  min-height: 140px;
+  max-height: 210px;
   width: 100%;
   display: flex;
   align-items: stretch;
@@ -138,14 +139,13 @@
 }
 
 .owner-onboarding-drawer__content {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
-  min-height: 0;
   width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1.5rem;
   padding:
     0.35rem 24px
     calc(20px + env(safe-area-inset-bottom, 0px))
@@ -223,11 +223,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 1rem;
+  gap: 1.1rem;
   width: 100%;
   min-width: 0;
-  margin-top: auto;
-  padding-top: 1.25rem;
   box-sizing: border-box;
   flex-shrink: 0;
 }

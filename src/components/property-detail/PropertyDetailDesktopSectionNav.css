@@ -52,12 +52,12 @@
 
   .pd-desktop-section-nav__tab--active {
     color: #ffffff;
-    background: #0099A9;
-    box-shadow: 0 4px 12px rgba(0, 153, 169, 0.28);
+    background: #4a96a6;
+    box-shadow: 0 4px 12px rgba(74, 150, 166, 0.28);
   }
 
   .pd-desktop-section-nav__tab:focus-visible {
-    outline: 2px solid #0099A9;
+    outline: 2px solid #4a96a6;
     outline-offset: 2px;
   }
 }

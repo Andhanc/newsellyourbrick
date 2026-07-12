@@ -140,6 +140,16 @@
   fill: currentColor;
 }
 
+@media (max-width: 768px) {
+  .header-pinned-catalog-nav__label {
+    padding: 10px 0 10px 12px;
+  }
+
+  .header-pinned-catalog-nav__toggle {
+    padding: 10px 10px 10px 2px;
+  }
+}
+
 @media (min-width: 1024px) {
   .header-pinned-catalog-nav__label {
     padding: 14px 0 14px 24px;

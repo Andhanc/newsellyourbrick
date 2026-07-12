@@ -53,6 +53,7 @@ const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const History = lazyWithRetry(() => import('./pages/History'))
+const PurchasedObjectGuidePage = lazyWithRetry(() => import('./pages/PurchasedObjectGuidePage'))
 const Chat = lazyWithRetry(() => import('./pages/Chat'))
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
@@ -678,6 +679,14 @@ function App() {
                 element={
                   <LazyPage>
                     <MyBookingsPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/profile/purchased/:propertyId"
+                element={
+                  <LazyPage>
+                    <PurchasedObjectGuidePage />
                   </LazyPage>
                 }
               />

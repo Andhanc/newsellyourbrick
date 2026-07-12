@@ -6023,11 +6023,11 @@ a.property-link {
     margin-left: 0;
   }
 
-  /* Кнопка «Главная»/«Аукцион» и иконка профиля прижаты к правому краю */
+  /* Бургер слева, блок действий справа */
   .new-header__right {
     display: flex !important;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     margin-left: auto !important;
     flex: 0 0 auto;
     margin-right: 0;
@@ -6096,9 +6096,9 @@ a.property-link {
       0 0 0 1px rgba(15, 23, 42, 0.12);
   }
 
-  /* Градиентная кнопка «Главная» / «Аукцион» справа от бургера */
+  /* Градиентная кнопка «Главная» / «Аукцион» */
   .new-header__auction-btn {
-    padding: 10px 18px;
+    padding: 10px 14px;
     min-width: auto;
     height: auto;
     border: none;
@@ -6113,6 +6113,15 @@ a.property-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .new-header__search-btn,
+  .new-header__notification-btn {
+    padding: 10px;
+  }
+
+  .new-header__notification-btn {
+    margin-right: 0;
   }
 
   /* Профиль на мобилке: как на десктопе (аватар/фото в круге) */
@@ -6239,6 +6248,16 @@ a.property-link {
     padding: 0 0 max(8px, env(safe-area-inset-bottom)) !important;
     max-height: none !important;
     overflow: hidden;
+  }
+
+  .menu-dropdown--mega .menu-dropdown__content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .menu-dropdown__top-row {

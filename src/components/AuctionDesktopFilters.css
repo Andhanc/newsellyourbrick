@@ -41,29 +41,83 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(74, 150, 166, 0.06) 0%,
+    rgba(248, 250, 252, 0.92) 100%
+  );
+  border: 1px solid rgba(74, 150, 166, 0.14);
 }
 
 .auction-desktop-filters__chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  gap: 8px;
+  max-width: 100%;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid rgba(74, 150, 166, 0.24);
   border-radius: 999px;
-  background: #f8fafc;
-  color: #334155;
+  background: #ffffff;
+  color: #0f172a;
   font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   cursor: pointer;
   transition:
     border-color 0.2s ease,
     background 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.auction-desktop-filters__chip > span {
+  min-width: 0;
+  text-align: left;
+}
+
+.auction-desktop-filters__chip > svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 50%;
+  background: rgba(74, 150, 166, 0.12);
+  color: #3f8798;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
 }
 
 .auction-desktop-filters__chip:hover {
-  border-color: var(--auction-tiffany-ring);
-  background: var(--auction-tiffany-soft);
-  color: #00605a;
+  border-color: rgba(74, 150, 166, 0.42);
+  background: #f0fafb;
+  color: #006672;
+  box-shadow:
+    0 2px 10px rgba(74, 150, 166, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.auction-desktop-filters__chip:hover > svg {
+  background: rgba(74, 150, 166, 0.2);
+  color: #006672;
+}
+
+.auction-desktop-filters__chip:active {
+  transform: translateY(0);
+}
+
+.auction-desktop-filters__chip:focus-visible {
+  outline: 2px solid rgba(74, 150, 166, 0.45);
+  outline-offset: 2px;
 }
 
 .auction-desktop-filters__sections {

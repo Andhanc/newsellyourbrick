@@ -17,7 +17,7 @@
   overflow: hidden;
   isolation: isolate;
   color: #ffffff;
-  background: linear-gradient(112deg, #0099A9 0%, #0aaea9 46%, #007d8a 100%);
+  background: linear-gradient(112deg, #4a96a6 0%, #0aaea9 46%, #3f8798 100%);
 }
 
 .property-detail-test-drive-promo__banner--no-photo {
@@ -187,7 +187,7 @@
   padding: 0 24px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
   color: #ffffff;
   font-family: inherit;
   font-size: 14px;

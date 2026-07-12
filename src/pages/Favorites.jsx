@@ -90,10 +90,11 @@ const Favorites = () => {
     }
   }, [favoriteAuctions])
 
-  const openProperty = (property, { auctionTab } = {}) => {
+  const openProperty = (property, { auctionTab, auctionSoldOutNotice } = {}) => {
     if (!ensureCanOpenProperty()) return
     const { pathname, state } = buildPropertyDetailNavigation(property, {
       auctionTab: auctionTab || undefined,
+      auctionSoldOutNotice: auctionSoldOutNotice || undefined,
     })
     navigate(pathname, { state })
   }

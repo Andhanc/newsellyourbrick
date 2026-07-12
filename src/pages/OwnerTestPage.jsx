@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { OwnerTestNavigationProvider, useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import OwnerTestCabinetChrome from '../components/OwnerTestCabinetChrome'
-import { OWNER_VIEWS, VIEW_PAGE_ACTIVE } from '../utils/ownerTestNav'
+import { OWNER_VIEWS, VIEW_PAGE_ACTIVE, buildOwnerTestPath } from '../utils/ownerTestNav'
+import { readPendingSellPurchasedProperty } from '../utils/purchasedPropertyListingPrefill'
 import MainOwnerTestPage from './MainOwnerTestPage'
 import OwnerPropertiesTestPage from './OwnerPropertiesTestPage'
 import OwnerPropertyAnalyticsTestPage from './OwnerPropertyAnalyticsTestPage'
@@ -43,6 +45,16 @@ function OwnerTestViewRouter() {
 
 function OwnerTestPageContent() {
   const { view } = useOwnerTestNav()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const pending = readPendingSellPurchasedProperty()
+    if (!pending?.id) return
+    const role = String(localStorage.getItem('userRole') || '').toLowerCase()
+    if (role !== 'seller' && role !== 'owner') return
+    if (view === OWNER_VIEWS.ADD_PROPERTY) return
+    navigate(buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY), { replace: true })
+  }, [view, navigate])
 
   if (view === OWNER_VIEWS.ADD_PROPERTY) {
     return <OwnerTestViewRouter />

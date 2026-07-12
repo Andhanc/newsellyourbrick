@@ -99,6 +99,7 @@
 }
 
 .search-results__mobile-search {
+  margin-top: clamp(20px, 5vw, 32px);
   margin-bottom: 16px;
 }
 
@@ -361,7 +362,7 @@
 
 @media (max-width: 768px) {
   .search-results {
-    padding: calc(env(safe-area-inset-top, 0px) + 90px) 12px 24px;
+    padding: calc(env(safe-area-inset-top, 0px) + 96px) 12px 24px;
   }
 
   .search-results__title {

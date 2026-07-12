@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import FilterCollapsibleSection from './FilterCollapsibleSection'
+import useFilterSectionState from '../hooks/useFilterSectionState'
 import { AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS } from '../utils/auctionDesktopFilterMatch'
 import { DEBTS_RISK_OPTIONS } from '../utils/debtsPageFilters'
 import './AuctionDesktopFilters.css'
@@ -52,16 +54,30 @@ function DebtsDesktopFilters({
   variant = 'sidebar',
 }) {
   const { t } = useTranslation()
-  const [openSections, setOpenSections] = useState({
-    location: true,
-    type: true,
-    risk: true,
-    debt: true,
-    price: true,
-  })
 
   const countryValue = normalizeCountry(country)
   const cityValue = normalizeCity(city)
+
+  const activeSectionKeys = useMemo(() => {
+    const keys = []
+    if (countryValue || cityValue) keys.push('location')
+    if (propertyTypes.length > 0) keys.push('type')
+    if (risks.length > 0) keys.push('risk')
+    if (minDebt !== '' || maxDebt !== '') keys.push('debt')
+    if (minPrice !== '' || maxPrice !== '') keys.push('price')
+    return keys
+  }, [countryValue, cityValue, propertyTypes, risks, minDebt, maxDebt, minPrice, maxPrice])
+
+  const [openSections, toggleSection] = useFilterSectionState(
+    {
+      location: true,
+      type: true,
+      risk: true,
+      debt: true,
+      price: true,
+    },
+    activeSectionKeys,
+  )
 
   const selectedCountry = useMemo(
     () => locationOptions.find((item) => item.key === countryValue) || null,
@@ -175,10 +191,6 @@ function DebtsDesktopFilters({
   const priceFillLeft = ((sliderPriceMin - priceBounds.min) / priceSpan) * 100
   const priceFillWidth = ((sliderPriceMax - sliderPriceMin) / priceSpan) * 100
 
-  const toggleSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
   const handleReset = () => {
     setPropertyTypes([])
     setRisks([])
@@ -246,7 +258,7 @@ function DebtsDesktopFilters({
       )}
 
       <div className="auction-desktop-filters__sections">
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('catalogFilterLocation')}
           open={openSections.location}
           onToggle={() => toggleSection('location')}
@@ -287,9 +299,9 @@ function DebtsDesktopFilters({
               </select>
             </label>
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterPropertyType')}
           open={openSections.type}
           onToggle={() => toggleSection('type')}
@@ -313,9 +325,9 @@ function DebtsDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('debtsFilterObjectRisk')}
           open={openSections.risk}
           onToggle={() => toggleSection('risk')}
@@ -340,9 +352,9 @@ function DebtsDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('debtsFilterDebtAmount')}
           open={openSections.debt}
           onToggle={() => toggleSection('debt')}
@@ -397,9 +409,9 @@ function DebtsDesktopFilters({
             <span>{debtBounds.min.toLocaleString()}</span>
             <span>{debtBounds.max.toLocaleString()}</span>
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterPrice')}
           open={openSections.price}
           onToggle={() => toggleSection('price')}
@@ -454,7 +466,7 @@ function DebtsDesktopFilters({
             <span>{priceBounds.min.toLocaleString()}</span>
             <span>{priceBounds.max.toLocaleString()}</span>
           </div>
-        </FilterSection>
+        </FilterCollapsibleSection>
       </div>
 
       {variant !== 'drawer' ? (
@@ -468,18 +480,6 @@ function DebtsDesktopFilters({
         </div>
       ) : null}
     </aside>
-  )
-}
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <section className={`auction-desktop-filters__section${open ? ' is-open' : ''}`}>
-      <button type="button" className="auction-desktop-filters__section-toggle" onClick={onToggle}>
-        <span>{title}</span>
-        <ChevronDown size={18} className="auction-desktop-filters__chevron" aria-hidden />
-      </button>
-      {open ? <div className="auction-desktop-filters__section-body">{children}</div> : null}
-    </section>
   )
 }
 

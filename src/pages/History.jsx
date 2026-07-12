@@ -10,6 +10,7 @@ import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { navigateToSellPurchasedProperty } from '../utils/navigateToSellPurchasedProperty'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
@@ -324,22 +325,22 @@ const History = () => {
   const [bidHistory, setBidHistory] = useState([])
   const [isLoadingBids, setIsLoadingBids] = useState(true)
 
-  const handleSellObject = () => {
-    const role = String(
-      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
-    ).toLowerCase()
-    if (role === 'seller' || role === 'owner') {
-      navigate('/owner/property/new')
-      return
-    }
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      /* ignore */
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
+  const handleSellObject = (snapshot) => {
+    void navigateToSellPurchasedProperty({
+      propertyId: snapshot?.id ?? snapshot?.propertyId,
+      propertySnapshot: snapshot,
+      navigate,
+      onPromptSellerRegistration: () => {
+        try {
+          sessionStorage.setItem('login_modal_mode', 'register')
+          sessionStorage.setItem('login_modal_user_role', 'seller')
+        } catch {
+          /* ignore */
+        }
+        requestOpenLoginModal({ wizard: false })
+        navigate('/', { replace: true })
+      },
+    })
   }
 
   const loadReservationPurchases = async () => {
@@ -971,7 +972,15 @@ const History = () => {
                             <button
                               type="button"
                               className="card-button card-button--secondary"
-                              onClick={handleSellObject}
+                              onClick={() =>
+                                handleSellObject({
+                                  id: row.property_id,
+                                  propertyId: row.property_id,
+                                  title,
+                                  image: sharePurchaseImageSrc(row.property_image),
+                                  location: row.property_location || '',
+                                })
+                              }
                             >
                               Продать объект
                             </button>

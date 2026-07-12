@@ -59,7 +59,7 @@
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.03em;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 
 .hero-auction-header__lead {
@@ -376,7 +376,7 @@
   }
 
   .hero-auction-header__title {
-    font-size: clamp(1.45rem, 6.8vw, 2rem);
+    font-size: clamp(1.12rem, 4.6vw, 2rem);
   }
 
   .hero-auction-header__lead {
