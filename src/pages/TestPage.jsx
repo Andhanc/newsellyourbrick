@@ -94,8 +94,8 @@ const SUBSCRIPTION_CONFETTI_ACTIVE_MS = 5000
 
 const PROFILE_SAVE_DEBOUNCE_MS = 500
 
-/** Показывать затемнённые подсказки, пока заполнено меньше этого процента полей (при перезагрузке снова, пока не достигнут порог). */
-const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 100
+/** Показывать затемнённые подсказки и блокировать разделы, пока заполнено меньше этого процента. */
+const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 78
 
 /** После перехода к полю из тоста — не крутим подсветку на тосте; при новом открытии панели «Данные» ключ сбрасывается в TestPage. */
 const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDone:'
@@ -2186,13 +2186,12 @@ function TestPage() {
     !subscriptionCheckoutCelebration &&
     !showServiceQuickLinksTour
 
+  /** Пока профиль <78% — блокируем клики по кабинету, кроме «Данные». */
   const onboardingGateUiLocked =
-    isLoaded &&
-    isSiteUserSignedIn(user, isLoaded) &&
-    Boolean(resolvedNumericUserId) &&
-    !serviceTourAcknowledged &&
+    profileGateActive &&
     !showProfileCompleteCelebration &&
-    !subscriptionCheckoutCelebration
+    !subscriptionCheckoutCelebration &&
+    !showServiceQuickLinksTour
 
   useEffect(() => {
     const bodyClass = 'profile-onboarding-gate-locked'
