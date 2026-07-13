@@ -4415,42 +4415,6 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     
     console.log(`✅ Статус запроса #${req.params.id} обновлен: ${status}`);
 
-    // Завершение сделки: перенос активов с аккаунта покупателя на продавца (один email), чтобы кабинет продавца видел покупки
-    if (status === 'completed') {
-      try {
-        const rawBuyerId = request.buyer_id;
-        const buyerIdNum =
-          rawBuyerId != null ? parseInt(String(rawBuyerId).trim(), 10) : NaN;
-        if (Number.isFinite(buyerIdNum)) {
-          const buyerUser = await userQueries.getById(buyerIdNum);
-          const email =
-            buyerUser?.email && String(buyerUser.email).trim().toLowerCase();
-          if (email) {
-            const sameEmail = await userQueries.getAllByEmail(email);
-            const sellerRow = sameEmail.find(
-              (u) =>
-                Number(u.id) !== buyerIdNum &&
-                String(u.role || '').toLowerCase() === 'seller'
-            );
-            if (sellerRow) {
-              await userQueries.migrateBuyerAssetsToSellerUser(
-                buyerIdNum,
-                Number(sellerRow.id)
-              );
-              console.log(
-                `✅ Перенос активов покупатель→продавец после завершения запроса #${req.params.id}: ${buyerIdNum} → ${sellerRow.id}`
-              );
-            }
-          }
-        }
-      } catch (migrateOnCompleteErr) {
-        console.error(
-          '❌ Ошибка переноса активов при завершении запроса на покупку:',
-          migrateOnCompleteErr
-        );
-      }
-    }
-    
     // Если статус "processing", отправляем уведомления покупателю
     if (status === 'processing') {
       try {
@@ -5289,6 +5253,7 @@ function linkedRolePublicUser(u) {
     name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Пользователь',
     email: u.email,
     role: u.role,
+    hasPassword: Boolean(u.password),
     phone: u.phone_number || null,
     country: u.country || null,
     address: u.address || null,
@@ -5469,28 +5434,6 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
     }
 
-    if (wantsSeller && isBuyerCabinetRole(sourceRole)) {
-      try {
-        await userQueries.migrateBuyerAssetsToSellerUser(sourceUser.id, createdUser.id);
-        const dep = Number(sourceUser.deposit_amount) || 0;
-        if (dep > 0) {
-          await userQueries.update(createdUser.id, { deposit_amount: dep });
-          await userQueries.update(sourceUser.id, { deposit_amount: 0 });
-        }
-      } catch (migErr) {
-        console.error('❌ Ошибка переноса данных покупателя → продавец:', migErr);
-        try {
-          await userQueries.delete(createdUser.id);
-        } catch (delErr) {
-          console.error('❌ Не удалось откатить создание продавца:', delErr);
-        }
-        return res.status(500).json({
-          success: false,
-          error: 'Не удалось перенести данные покупателя. Попробуйте позже или обратитесь в поддержку.',
-        });
-      }
-    }
-
     const createdUserFinal = await userQueries.getById(createdUser.id);
 
     res.status(201).json({
@@ -5646,28 +5589,6 @@ app.post('/api/auth/email/register', async (req, res) => {
         await grantReferralBonus(referrerId, createdUser.id);
       } catch (refErr) {
         console.warn('⚠️ Реферальный бонус не выдан:', refErr.message);
-      }
-    }
-
-    if (linkBuyer) {
-      try {
-        await userQueries.migrateBuyerAssetsToSellerUser(linkBuyer.id, createdUser.id);
-        const dep = Number(linkBuyer.deposit_amount) || 0;
-        if (dep > 0) {
-          await userQueries.update(createdUser.id, { deposit_amount: dep });
-          await userQueries.update(linkBuyer.id, { deposit_amount: 0 });
-        }
-      } catch (migErr) {
-        console.error('❌ Ошибка переноса данных покупателя → продавец:', migErr);
-        try {
-          await userQueries.delete(createdUser.id);
-        } catch (delErr) {
-          console.error('❌ Не удалось откатить создание продавца:', delErr);
-        }
-        return res.status(500).json({
-          success: false,
-          error: 'Не удалось перенести данные покупателя. Попробуйте позже или обратитесь в поддержку.',
-        });
       }
     }
 

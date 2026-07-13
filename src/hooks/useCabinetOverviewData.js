@@ -14,12 +14,20 @@ import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import {
+  CABINET_HISTORY_UPDATED_EVENT,
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
 } from '../constants/cabinetEvents'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
 import { mapReservationPurchase } from '../utils/cabinetPurchaseHistory'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const CABINET_JSON_CACHE = new Map()
+
+export function invalidateCabinetHistoryCache(userId) {
+  clearCabinetHistoryCacheForUser(userId)
+}
+
 function clearCabinetHistoryCacheForUser(uid) {
   if (!uid) return
   const base = `${API_BASE_URL}/users/${uid}`
@@ -36,7 +44,7 @@ async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
   const cached = CABINET_JSON_CACHE.get(url)
   const now = Date.now()
 
-  if (!force && cached?.data && now - cached.ts < ttlMs) {
+  if (!force && cached?.data != null && now - cached.ts < ttlMs) {
     return cached.data
   }
   if (!force && cached?.promise) {
@@ -405,6 +413,21 @@ export function useCabinetOverviewData() {
   const [subscriptionPlanLabel, setSubscriptionPlanLabel] = useState('Starter')
   const [cabinetSubscriptionTier, setCabinetSubscriptionTier] = useState('starter')
   const [cabinetVipActive, setCabinetVipActive] = useState(false)
+  const [historyRevision, setHistoryRevision] = useState(0)
+
+  useEffect(() => {
+    const bumpHistory = (event) => {
+      const uid = event?.detail?.userId ?? numericUserId ?? getStoredNumericUserId()
+      if (uid) clearCabinetHistoryCacheForUser(uid)
+      setHistoryRevision((n) => n + 1)
+    }
+    window.addEventListener(CABINET_HISTORY_UPDATED_EVENT, bumpHistory)
+    window.addEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, bumpHistory)
+    return () => {
+      window.removeEventListener(CABINET_HISTORY_UPDATED_EVENT, bumpHistory)
+      window.removeEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, bumpHistory)
+    }
+  }, [numericUserId])
 
   useEffect(() => {
     const applyFromStorage = (event) => {
@@ -552,7 +575,7 @@ export function useCabinetOverviewData() {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, userLoaded])
+  }, [numericUserId, userLoaded, historyRevision])
 
   useEffect(() => {
     const uid = numericUserId ?? getStoredNumericUserId()

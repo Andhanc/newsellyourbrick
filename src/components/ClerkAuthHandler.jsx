@@ -506,6 +506,7 @@ const ClerkAuthHandler = () => {
         }
         sessionStorage.removeItem('clerk_oauth_flow_mode')
         sessionStorage.removeItem('clerk_oauth_user_role')
+        sessionStorage.removeItem('role_switch_in_progress')
 
         // Очищаем OAuth параметры из URL
         if (hasOAuthParams) {

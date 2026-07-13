@@ -95,6 +95,10 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import {
+  PURCHASE_SUCCESS_CONFIRMED_EVENT,
+  refetchPropertyAfterCheckout,
+} from '../utils/purchaseSuccessFlow'
 import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import { getPropertyShareUrl, sharePropertyListing } from '../utils/shareProperty'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -850,6 +854,39 @@ function PropertyDetailClassic({
     testDrivePromoDismissedRef.current = false
     setIsTestDrivePromoOpen(false)
   }, [displayProperty.id])
+
+  useEffect(() => {
+    const onPurchaseConfirmed = async (event) => {
+      const { kind, propertyId: confirmedId } = event?.detail || {}
+      if (kind !== 'reservation') return
+      const currentId = Number(property?.id)
+      if (!currentId || Number(confirmedId) !== currentId) return
+
+      const optimisticUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      setProperty((prev) => ({
+        ...prev,
+        is_reserved: true,
+        reserved_until: prev.reserved_until || optimisticUntil,
+      }))
+
+      const fresh = await refetchPropertyAfterCheckout(currentId, currentLang)
+      if (!fresh) return
+      setProperty((prev) => ({
+        ...prev,
+        is_reserved:
+          fresh.is_reserved === true ||
+          fresh.is_reserved === 1 ||
+          fresh.is_reserved === 'true',
+        reserved_until: fresh.reserved_until || prev.reserved_until,
+        reserved_by: fresh.reserved_by ?? prev.reserved_by,
+        reservation_time_remaining:
+          fresh.reservation_time_remaining ?? prev.reservation_time_remaining,
+      }))
+    }
+
+    window.addEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, onPurchaseConfirmed)
+    return () => window.removeEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, onPurchaseConfirmed)
+  }, [property?.id, currentLang])
 
   useEffect(() => {
     setMobileMainSpecsExpanded(false)

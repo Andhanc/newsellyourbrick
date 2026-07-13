@@ -9,6 +9,8 @@ import {
   storePendingSellPurchasedProperty,
 } from './purchasedPropertyListingPrefill'
 
+export const OPEN_ROLE_SWITCH_FOR_SELL_EVENT = 'openRoleSwitchForSell'
+
 function readUserRole() {
   return String(localStorage.getItem('userRole') || getUserData()?.role || 'buyer').toLowerCase()
 }
@@ -97,7 +99,7 @@ export async function navigateToSellPurchasedProperty({
   try {
     sessionStorage.setItem('pending_sell_role_switch_mode', cabinetMode)
     window.dispatchEvent(
-      new CustomEvent('openRoleSwitchForSell', { detail: { mode: cabinetMode, targetRole: 'seller' } }),
+      new CustomEvent(OPEN_ROLE_SWITCH_FOR_SELL_EVENT, { detail: { mode: cabinetMode, targetRole: 'seller' } }),
     )
   } catch {
     // ignore

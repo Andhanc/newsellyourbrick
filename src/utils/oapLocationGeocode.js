@@ -231,6 +231,48 @@ export function buildFormattedLocation({ country, city, street, apartment }) {
   return country && city && tail ? `${country}, ${city}, ${tail}` : tail
 }
 
+/**
+ * Разбор строк вида «Беларусь, Минск, улица Киселёва, 12»
+ * в поля мастера добавления объекта.
+ */
+export function parseLocationComposite(raw) {
+  const parts = String(raw || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length === 0) {
+    return { country: '', city: '', address: '', apartment: '' }
+  }
+
+  if (parts.length === 1) {
+    return { country: '', city: '', address: parts[0], apartment: '' }
+  }
+
+  if (parts.length === 2) {
+    return { country: parts[0], city: parts[1], address: '', apartment: '' }
+  }
+
+  const last = parts[parts.length - 1]
+  const looksLikeHouse = /^(?:д\.?\s*)?\d+[а-яa-zA-ZёЁ/\-]*$/i.test(last) || /^\d+\s*к\.?\s*\d+/i.test(last)
+
+  if (looksLikeHouse && parts.length >= 4) {
+    return {
+      country: parts[0],
+      city: parts[1],
+      address: parts.slice(2, -1).join(', '),
+      apartment: last.replace(/^д\.?\s*/i, ''),
+    }
+  }
+
+  return {
+    country: parts[0],
+    city: parts[1],
+    address: parts.slice(2).join(', '),
+    apartment: '',
+  }
+}
+
 export function validateLocationForm(form, addressSearch) {
   const errors = {}
   if (!form.country?.trim()) errors.country = i18n.t('oap_err_country')

@@ -44,6 +44,8 @@ import {
 import {
   PURCHASED_LISTING_DRAFT_FLAG,
   applyPurchasedPropertyListingPrefill,
+  attachListingDraftMetadata,
+  clearStalePurchasedPrefillDraft,
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
@@ -677,22 +679,26 @@ export default function OwnerAddPropertyTestPage() {
   }, [goTo, navigate])
 
   const saveDraftNow = useCallback(async () => {
-    const payload = await buildOapDraftPayload({
-      form,
-      step,
-      photos,
-      videos,
-      requiredDocuments,
-      additionalDocuments,
-      selectedAmenities,
-    })
+    const existingDraft = loadOapDraft()
+    const payload = attachListingDraftMetadata(
+      await buildOapDraftPayload({
+        form,
+        step,
+        photos,
+        videos,
+        requiredDocuments,
+        additionalDocuments,
+        selectedAmenities,
+      }),
+      { purchasedMeta: purchasedListingMeta, existingDraft },
+    )
     if (hasMeaningfulDraftData(payload)) {
       saveOapDraftPayload(payload)
       showNotification(t('oap_publishDraftSaved'))
     } else {
       showNotification(t('oap_publishDraftNeedData'), 'error')
     }
-  }, [form, step, photos, videos, requiredDocuments, additionalDocuments, selectedAmenities])
+  }, [form, step, photos, videos, requiredDocuments, additionalDocuments, selectedAmenities, purchasedListingMeta, t])
 
   const handlePublish = useCallback(async () => {
     if (!userId) {
@@ -1133,22 +1139,18 @@ export default function OwnerAddPropertyTestPage() {
         } catch (e) {
           console.warn('OwnerAddPropertyTestPage pending purchased prefill:', e)
         }
+      } else {
+        clearStalePurchasedPrefillDraft()
       }
 
       const draft = loadOapDraft()
       if (!draft || !hasMeaningfulDraftData(draft)) {
-        if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
-          setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
-        }
         draftReadyRef.current = true
         return
       }
 
       const restored = await restoreOapDraftState(draft)
       if (cancelled || !restored) {
-        if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
-          setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
-        }
         draftReadyRef.current = true
         return
       }
@@ -1198,15 +1200,19 @@ export default function OwnerAddPropertyTestPage() {
     saveDraftTimeoutRef.current = setTimeout(() => {
       saveDraftTimeoutRef.current = null
       void (async () => {
-        const payload = await buildOapDraftPayload({
-          form,
-          step,
-          photos,
-          videos,
-          requiredDocuments,
-          additionalDocuments,
-          selectedAmenities,
-        })
+        const existingDraft = loadOapDraft()
+        const payload = attachListingDraftMetadata(
+          await buildOapDraftPayload({
+            form,
+            step,
+            photos,
+            videos,
+            requiredDocuments,
+            additionalDocuments,
+            selectedAmenities,
+          }),
+          { purchasedMeta: purchasedListingMeta, existingDraft },
+        )
         if (!hasMeaningfulDraftData(payload)) {
           clearOapDraft()
           return
@@ -1226,6 +1232,7 @@ export default function OwnerAddPropertyTestPage() {
     requiredDocuments,
     additionalDocuments,
     selectedAmenities,
+    purchasedListingMeta,
   ])
 
   useEffect(() => {

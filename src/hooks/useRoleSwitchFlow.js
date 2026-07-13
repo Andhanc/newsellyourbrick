@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react'
-import { useClerk, useUser } from '@clerk/clerk-react'
+import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
 import { getUserData, loginWithEmail, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { createLinkedRole, fetchLinkedRoles } from '../utils/roleSwitchApi'
-import { readPendingSellPurchasedProperty } from '../utils/purchasedPropertyListingPrefill'
+import {
+  applyPurchasedPropertyListingPrefill,
+  readPendingSellPurchasedProperty,
+} from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
 
 const PROFILE_API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -53,6 +56,7 @@ async function loadProfilePreview() {
 export function useRoleSwitchFlow(targetRole) {
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
   const { signOut } = useClerk()
+  const { signIn, isLoaded: signInLoaded } = useSignIn()
 
   const [phase, setPhase] = useState(null)
   const [linkedStatus, setLinkedStatus] = useState(null)
@@ -123,6 +127,14 @@ export function useRoleSwitchFlow(targetRole) {
         }
 
         const pendingSell = readPendingSellPurchasedProperty()
+        if (pendingSell?.id && gotSeller) {
+          try {
+            await applyPurchasedPropertyListingPrefill(pendingSell.id)
+          } catch (e) {
+            console.warn('switchToRole prefill:', e)
+          }
+        }
+
         const targetPath =
           pendingSell?.id && gotSeller
             ? buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
@@ -300,6 +312,36 @@ export function useRoleSwitchFlow(targetRole) {
     [pendingSwitchRole, switchToRole],
   )
 
+  const switchToBuyerViaGoogle = useCallback(async () => {
+    if (!signInLoaded || !signIn) {
+      setError('Система авторизации не готова. Обновите страницу.')
+      return false
+    }
+
+    setLoading(true)
+    setSwitching(true)
+    setError('')
+    try {
+      sessionStorage.setItem('role_switch_in_progress', '1')
+      sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
+      sessionStorage.setItem('clerk_oauth_user_role', 'buyer')
+      sessionStorage.setItem('clerk_oauth_flow_mode', 'login')
+
+      const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: getClerkOAuthReturnUrl(),
+      })
+      return true
+    } catch (e) {
+      sessionStorage.removeItem('role_switch_in_progress')
+      setError(e.message || 'Не удалось войти через Google')
+      setSwitching(false)
+      setLoading(false)
+      return false
+    }
+  }, [signIn, signInLoaded])
+
   const goBackToCabinet = useCallback(() => {
     setPhase('cabinet')
     setPendingSwitchRole(null)
@@ -320,6 +362,10 @@ export function useRoleSwitchFlow(targetRole) {
 
         const preview = await loadProfilePreview()
         setProfilePreview(preview)
+        if (!preview.email || preview.email === '—') {
+          showNotification('Добавьте email в профиле, чтобы создать кабинет продавца', 'error')
+          return
+        }
 
         const status = await fetchLinkedRoles({ userId })
         setLinkedStatus(status)
@@ -364,6 +410,7 @@ export function useRoleSwitchFlow(targetRole) {
     submitSetup,
     selectCabinet,
     submitSwitchPassword,
+    switchToBuyerViaGoogle,
     goBackToCabinet,
     openSellCabinetFlow,
     clerkLoaded,

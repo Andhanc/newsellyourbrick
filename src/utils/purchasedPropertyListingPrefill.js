@@ -1,9 +1,15 @@
 import { getApiBaseUrl } from './apiConfig'
-import { saveOapDraftPayload, clearOapDraft, getOapDraftKey } from './oapAddPropertyDraft'
+import { clearOapDraft, getOapDraftKey, loadOapDraft, saveOapDraftPayload } from './oapAddPropertyDraft'
 import { appendViewerUserIdToPropertyApiUrl } from './propertyDetailUrl'
+import {
+  buildFormattedLocation,
+  parseLocationComposite,
+} from './oapLocationGeocode'
 
 export const PENDING_SELL_PROPERTY_KEY = 'pendingSellPurchasedProperty'
 export const PURCHASED_LISTING_DRAFT_FLAG = 'purchasedSource'
+export const DRAFT_ORIGIN_PURCHASED_PREFILL = 'purchased-prefill'
+export const DRAFT_ORIGIN_USER = 'user'
 
 const BACKEND_TO_OAP_TYPE = {
   apartment: 'apartment',
@@ -54,15 +60,31 @@ export function buildOapFormFromPurchasedProperty(property) {
   const type = mapBackendPropertyTypeToOap(property?.property_type)
   const params = property?.parameters || property?.tz_parameters || {}
 
+  const compositeLocation = pickString(property?.location, property?.address)
+  const parsed = parseLocationComposite(compositeLocation)
+  const dedicatedAddress = pickString(property?.address)
+  const addressLooksComposite =
+    Boolean(dedicatedAddress) &&
+    (dedicatedAddress === compositeLocation || dedicatedAddress.split(',').length >= 3)
+
+  const country = pickString(property?.country, parsed.country)
+  const city = pickString(property?.city, property?.region, parsed.city)
+  const apartment = pickString(property?.apartment, parsed.apartment)
+  const address = addressLooksComposite
+    ? parsed.address
+    : pickString(dedicatedAddress, parsed.address)
+  const location =
+    buildFormattedLocation({ country, city, street: address, apartment }) || compositeLocation
+
   return {
     title: pickString(property?.title, property?.name),
     propertyType: type,
     price: '',
-    location: pickString(property?.location, property?.address),
-    country: pickString(property?.country),
-    city: pickString(property?.city, property?.region),
-    address: pickString(property?.address, property?.location),
-    apartment: pickString(property?.apartment),
+    location,
+    country,
+    city,
+    address,
+    apartment,
     cadastralNumber: pickString(property?.cadastral_number, property?.cadastralNumber),
     coordinates: property?.coordinates || property?.coords || null,
     area: pickNumberString(property?.area, property?.sqft, property?.living_area, params?.total_area_m2),
@@ -179,6 +201,7 @@ export async function applyPurchasedPropertyListingPrefill(propertyOrId, { lang 
     requiredDocuments: { ownership: null, noDebts: null },
     additionalDocuments: [],
     selectedAmenities,
+    draftOrigin: DRAFT_ORIGIN_PURCHASED_PREFILL,
     [PURCHASED_LISTING_DRAFT_FLAG]: {
       propertyId,
       title: form.title || pickString(property?.title, property?.name),
@@ -203,6 +226,79 @@ export function getPurchasedListingDraftMeta() {
   } catch {
     return null
   }
+}
+
+export function isUserOwnedListingDraft(draft) {
+  if (!draft) return false
+  if (draft.draftOrigin === DRAFT_ORIGIN_USER) return true
+
+  const form = draft.form || {}
+  if (form.listingMode || form.price || form.auctionStartingPrice || form.minimumSalePrice) return true
+  if (form.testDrive) return true
+  if ((draft.step || 1) > 2) return true
+  if (draft.requiredDocuments?.ownership || draft.requiredDocuments?.noDebts) return true
+  if (Array.isArray(draft.additionalDocuments) && draft.additionalDocuments.length > 0) return true
+  if (Array.isArray(draft.videos) && draft.videos.length > 0) return true
+  if (Array.isArray(draft.selectedAmenities) && draft.selectedAmenities.length > 0) return true
+
+  const photos = draft.photos || []
+  if (photos.some((photo) => photo.dataUrl || photo.file)) return true
+  if (photos.length > 0 && !photos.every((photo) => photo.fromPurchased)) return true
+
+  return false
+}
+
+export function attachListingDraftMetadata(payload, { purchasedMeta = null, existingDraft = null } = {}) {
+  const next = { ...payload }
+
+  if (purchasedMeta) {
+    next[PURCHASED_LISTING_DRAFT_FLAG] = purchasedMeta
+    next.draftOrigin = DRAFT_ORIGIN_PURCHASED_PREFILL
+  } else if (existingDraft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
+    next[PURCHASED_LISTING_DRAFT_FLAG] = existingDraft[PURCHASED_LISTING_DRAFT_FLAG]
+  }
+
+  if (existingDraft?.draftOrigin === DRAFT_ORIGIN_USER) {
+    next.draftOrigin = DRAFT_ORIGIN_USER
+  } else if (existingDraft?.draftOrigin === DRAFT_ORIGIN_PURCHASED_PREFILL && !isUserOwnedListingDraft(next)) {
+    next.draftOrigin = DRAFT_ORIGIN_PURCHASED_PREFILL
+  }
+
+  if (isUserOwnedListingDraft(next)) {
+    next.draftOrigin = DRAFT_ORIGIN_USER
+    delete next[PURCHASED_LISTING_DRAFT_FLAG]
+  }
+
+  return next
+}
+
+export function clearStalePurchasedPrefillDraft() {
+  try {
+    const draft = loadOapDraft(getOapDraftKey())
+    if (!draft) return false
+    if (isUserOwnedListingDraft(draft)) return false
+    clearOapDraft(getOapDraftKey())
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** @deprecated use clearStalePurchasedPrefillDraft */
+export function clearPurchasedListingDraft() {
+  return clearStalePurchasedPrefillDraft()
+}
+
+export function queueSellPurchasedPropertyListing(propertyOrSnapshot) {
+  const snapshot =
+    typeof propertyOrSnapshot === 'object' && propertyOrSnapshot != null
+      ? propertyOrSnapshot
+      : { id: propertyOrSnapshot }
+
+  if (!snapshot?.id) return null
+
+  storePendingSellPurchasedProperty(snapshot)
+  return snapshot
 }
 
 export function buildPurchasedPropertySnapshot(property) {

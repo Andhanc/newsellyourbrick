@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiHome, FiTrendingUp, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
+import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { publicAsset } from '../utils/publicAsset'
 import RoleSwitchDrawerShell from './RoleSwitchDrawerShell'
 import ForgotPasswordModal from './ForgotPasswordModal'
@@ -26,6 +27,7 @@ export function RoleSwitchModals({ flow }) {
   const { t } = useTranslation()
   const {
     phase,
+    linkedStatus,
     profilePreview,
     loading,
     error,
@@ -38,6 +40,7 @@ export function RoleSwitchModals({ flow }) {
     submitSetup,
     selectCabinet,
     submitSwitchPassword,
+    switchToBuyerViaGoogle,
     goBackToCabinet,
     switching,
   } = flow
@@ -90,6 +93,11 @@ export function RoleSwitchModals({ flow }) {
           <p className="role-switch-pitch__text">
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerBody') : t('roleSwitch_pitchSellerBody')}
           </p>
+          {targetRole === 'seller' &&
+          linkedStatus?.buyer &&
+          linkedStatus.buyer.hasPassword === false ? (
+            <p className="role-switch-pitch__note">{t('roleSwitch_pitchSellerGoogleNote')}</p>
+          ) : null}
           <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerCta') : t('roleSwitch_pitchSellerCta')}
           </button>
@@ -124,6 +132,11 @@ export function RoleSwitchModals({ flow }) {
             {t('roleSwitch_setupTitle')}
           </h2>
           <p className="role-switch-setup__subtitle">{t('roleSwitch_setupSubtitle')}</p>
+          {targetRole === 'seller' &&
+          linkedStatus?.buyer &&
+          linkedStatus.buyer.hasPassword === false ? (
+            <p className="role-switch-setup__google-note">{t('roleSwitch_setupGoogleNote')}</p>
+          ) : null}
 
           <div className="role-switch-profile" aria-label={t('roleSwitch_profileAria')}>
             <div className="role-switch-profile__row">
@@ -248,6 +261,42 @@ export function RoleSwitchModals({ flow }) {
     const forgotEmail =
       profilePreview.email && profilePreview.email !== '—' ? profilePreview.email : ''
 
+    const buyerUsesGoogle =
+      pendingSwitchRole === 'buyer' && linkedStatus?.buyer && linkedStatus.buyer.hasPassword === false
+
+    if (buyerUsesGoogle) {
+      return (
+        <>
+          {switchingOverlay}
+          <RoleSwitchDrawerShell
+            isOpen={!switching}
+            onClose={resetAndClose}
+            onBack={goBackToCabinet}
+            backLabel={t('roleSwitch_back')}
+            ariaLabelledBy="role-switch-switch-title"
+            maxHeightRatio={0.58}
+            closeLabel={closeLabel}
+          >
+            <div className="role-switch-setup__body">
+              <h2 id="role-switch-switch-title" className="role-switch-setup__title">
+                {t('roleSwitch_switchTitle', { cabinet: targetLabel })}
+              </h2>
+              <p className="role-switch-setup__subtitle">{t('roleSwitch_switchGoogleSubtitle')}</p>
+              {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
+              <button
+                type="button"
+                className="role-switch-btn role-switch-btn--primary role-switch-btn--google"
+                disabled={loading}
+                onClick={() => void switchToBuyerViaGoogle()}
+              >
+                {loading ? t('roleSwitch_switching') : t('roleSwitch_switchGoogleCta')}
+              </button>
+            </div>
+          </RoleSwitchDrawerShell>
+        </>
+      )
+    }
+
     return (
       <>
         {switchingOverlay}
@@ -327,11 +376,29 @@ export function RoleSwitchModals({ flow }) {
   return switchingOverlay
 }
 
-export function RoleSwitchBottomCta({ targetRole, className = '' }) {
+export function RoleSwitchBottomCta({
+  targetRole,
+  className = '',
+  flow: externalFlow = null,
+  renderModals = true,
+  onOpen,
+}) {
   const { t } = useTranslation()
-  const flow = useRoleSwitchFlow(targetRole)
+  const { hasBoth, loaded } = useHasBothLinkedRoles()
+  const internalFlow = useRoleSwitchFlow(targetRole)
+  const flow = externalFlow || internalFlow
   const isBuyer = targetRole === 'buyer'
   const Icon = isBuyer ? FiTrendingUp : FiHome
+
+  const handleOpen = async () => {
+    if (typeof onOpen === 'function') {
+      await onOpen(flow)
+      return
+    }
+    await flow.openFlow()
+  }
+
+  if (!loaded || hasBoth) return null
 
   return (
     <>
@@ -339,14 +406,14 @@ export function RoleSwitchBottomCta({ targetRole, className = '' }) {
         <button
           type="button"
           className="role-switch-bottom-cta__btn"
-          onClick={flow.openFlow}
+          onClick={() => void handleOpen()}
           disabled={flow.loading}
         >
           <Icon size={20} aria-hidden />
           {isBuyer ? t('heroPitchBecomeBuyerCta') : t('becomeSeller')}
         </button>
       </div>
-      <RoleSwitchModals flow={flow} />
+      {renderModals && !externalFlow ? <RoleSwitchModals flow={flow} /> : null}
     </>
   )
 }
@@ -354,6 +421,9 @@ export function RoleSwitchBottomCta({ targetRole, className = '' }) {
 /** Кнопка с тем же флоу — для сайдбара, рекламных блоков и т.д. */
 export function RoleSwitchButton({ targetRole, className = '', children }) {
   const flow = useRoleSwitchFlow(targetRole)
+  const { hasBoth, loaded } = useHasBothLinkedRoles()
+
+  if (!loaded || hasBoth) return null
 
   return (
     <>

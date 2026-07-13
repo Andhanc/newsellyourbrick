@@ -776,6 +776,73 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   }
 }
 
+function sessionPaidLike(session) {
+  const pi = session?.payment_intent && typeof session.payment_intent === 'object' ? session.payment_intent : null;
+  return (
+    session?.payment_status === 'paid' ||
+    session?.payment_status === 'no_payment_required' ||
+    pi?.status === 'succeeded'
+  );
+}
+
+/**
+ * Подтверждает оплаченные Stripe Checkout, если клиент не вызвал confirm после редиректа (локальная разработка без webhook).
+ */
+export async function reconcileOrphanedPropertyReservationCheckouts(stripe) {
+  if (!stripe) return { processed: 0, skipped: 0 };
+  const prisma = getPrisma();
+  const rows = await prisma.property_reservation_signature_intents.findMany({
+    where: {
+      consumed_at: null,
+      stripe_session_id: { not: null },
+    },
+    orderBy: { created_at: 'desc' },
+    take: 30,
+  });
+
+  let processed = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    const sessionId = String(row.stripe_session_id || '').trim();
+    if (!sessionId.startsWith('cs_')) {
+      skipped += 1;
+      continue;
+    }
+    try {
+      const already = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sessionId);
+      if (already) {
+        skipped += 1;
+        continue;
+      }
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent'],
+      });
+      if (session.metadata?.checkout_purpose !== 'property_reservation_deposit') {
+        skipped += 1;
+        continue;
+      }
+      if (!sessionPaidLike(session)) {
+        skipped += 1;
+        continue;
+      }
+      const result = await processPropertyReservationPaidSession(stripe, session);
+      if (result.ok) {
+        processed += 1;
+        console.log('[Stripe] reconcile: property reservation confirmed for session', sessionId);
+      } else {
+        skipped += 1;
+        console.warn('[Stripe] reconcile: session not processed', sessionId, result.error);
+      }
+    } catch (e) {
+      skipped += 1;
+      console.warn('[Stripe] reconcile:', sessionId, e?.message || e);
+    }
+  }
+
+  return { processed, skipped };
+}
+
 export async function processTestDriveBookingPaidSession(stripe, session) {
   if (!stripe || !session?.id) {
     return { ok: false, error: 'invalid_session' };
@@ -2301,29 +2368,33 @@ export function registerStripeBillingRoutes(app) {
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userIdRaw = req.body?.userId;
-      const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
+      const clientUserId =
+        userIdRaw != null && /^\d+$/.test(String(userIdRaw).trim())
+          ? parseInt(String(userIdRaw).trim(), 10)
+          : NaN;
       if (!sessionId || !sessionId.startsWith('cs_')) {
         return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
-      }
-      if (!userId || !/^\d+$/.test(userId)) {
-        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
       }
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent'],
       });
-      if (String(session.metadata?.app_user_id || '') !== userId) {
-        return res.status(403).json({ success: false, error: 'user_mismatch' });
+      const metaUserId = parseInt(String(session.metadata?.app_user_id || ''), 10);
+      const effectiveUserId = Number.isFinite(metaUserId) ? metaUserId : clientUserId;
+      if (!Number.isFinite(effectiveUserId)) {
+        return res.status(400).json({ success: false, error: 'Не удалось определить покупателя из сессии' });
+      }
+      if (
+        Number.isFinite(clientUserId) &&
+        Number.isFinite(metaUserId) &&
+        clientUserId !== metaUserId
+      ) {
+        console.warn(
+          '[Stripe] confirm-property-reservation: client userId differs from session metadata, using metadata',
+          { clientUserId, metaUserId, sessionId },
+        );
       }
       let ready = session;
       let attempts = 0;
-      const sessionPaidLike = (s) => {
-        const pi = s.payment_intent && typeof s.payment_intent === 'object' ? s.payment_intent : null;
-        return (
-          s.payment_status === 'paid' ||
-          s.payment_status === 'no_payment_required' ||
-          pi?.status === 'succeeded'
-        );
-      };
       while (!sessionPaidLike(ready) && attempts < 15) {
         await new Promise((r) => setTimeout(r, 400));
         ready = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] });
@@ -3104,4 +3175,14 @@ export function registerStripeBillingRoutes(app) {
       '[Stripe] Депозит Checkout отключён: задайте STRIPE_PRICE_ID_DEPOSIT (price_ или prod_ продукта Deposit)'
     );
   }
+
+  setTimeout(() => {
+    void reconcileOrphanedPropertyReservationCheckouts(stripe).then((stats) => {
+      if (stats?.processed > 0) {
+        console.log(
+          `[Stripe] reconcile: подтверждено ${stats.processed} пропущенных резервов (пропущено ${stats.skipped})`,
+        );
+      }
+    });
+  }, 5000);
 }

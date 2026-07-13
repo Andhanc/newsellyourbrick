@@ -45,6 +45,7 @@ import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
+import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
@@ -924,6 +925,8 @@ export default function OwnerPropertiesTestPage() {
             <OwnerTestProfileMenu />
           </div>
         </header>
+
+        <OwnerPurchasedAssets userId={getOwnerPropertiesUserId()} />
 
         <div className="op-workspace">
           <section className="op-mob-metrics op-mobile-only" aria-label={t('ownerTest_ariaPropertySummary')}>

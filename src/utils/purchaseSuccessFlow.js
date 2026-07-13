@@ -9,6 +9,7 @@ import { appendViewerUserIdToPropertyApiUrl } from './propertyDetailUrl'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const HANDLED_SESSIONS_KEY = 'purchaseCheckoutHandledSessions'
+const PENDING_CHECKOUT_SESSION_KEY = 'pendingPurchaseCheckoutSession'
 
 export const PURCHASE_SUCCESS_CONFIRMED_EVENT = 'purchase-success-confirmed'
 
@@ -39,6 +40,36 @@ export function wasPurchaseCheckoutSessionHandled(sessionId) {
   return sessionId ? readHandledSessions().has(sessionId) : false
 }
 
+export function storePendingPurchaseCheckoutSession({ sessionId, kind = 'reservation' }) {
+  if (!sessionId) return
+  try {
+    sessionStorage.setItem(
+      PENDING_CHECKOUT_SESSION_KEY,
+      JSON.stringify({ sessionId, kind, savedAt: Date.now() }),
+    )
+  } catch {
+    // ignore
+  }
+}
+
+export function readPendingPurchaseCheckoutSession() {
+  try {
+    const raw = sessionStorage.getItem(PENDING_CHECKOUT_SESSION_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+export function clearPendingPurchaseCheckoutSession() {
+  try {
+    sessionStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY)
+  } catch {
+    // ignore
+  }
+}
+
 export function parsePropertyIdFromPath(pathname = '') {
   const propertyMatch = pathname.match(/\/property\/(\d+)/)
   if (propertyMatch) return parseInt(propertyMatch[1], 10)
@@ -65,6 +96,8 @@ export async function resolveCheckoutUserId({ clerkUser } = {}) {
   const email =
     clerkUser?.primaryEmailAddress?.emailAddress ||
     clerkUser?.emailAddresses?.[0]?.emailAddress ||
+    legacy?.email ||
+    localStorage.getItem('userEmail') ||
     ''
   if (!email) return null
 
@@ -73,12 +106,21 @@ export async function resolveCheckoutUserId({ clerkUser } = {}) {
     if (!base || base.includes('localhost')) {
       base = await getApiBaseUrl()
     }
-    const res = await fetch(`${base}/users/email/${encodeURIComponent(email)}`)
+    const role =
+      String(localStorage.getItem('userRole') || legacy?.role || 'buyer').toLowerCase() === 'seller'
+        ? 'seller'
+        : 'buyer'
+    const res = await fetch(
+      `${base}/users/email/${encodeURIComponent(email)}?role=${role}`,
+    )
     if (!res.ok) return null
     const json = await res.json()
     if (json.success && json.data?.id) {
       uid = String(json.data.id)
       localStorage.setItem('userId', uid)
+      if (json.data.role) {
+        localStorage.setItem('userRole', json.data.role)
+      }
       return uid
     }
   } catch (e) {
@@ -179,10 +221,12 @@ export async function confirmPurchaseCheckoutAndBuildSnapshot({
   }
 
   markSessionHandled(sessionId)
+  clearPendingPurchaseCheckoutSession()
   dispatchPurchaseSuccessConfirmed({
     kind,
     propertyId: snapshot.id,
     already: !!result.data?.already,
+    userId: result.data?.userId ?? result.data?.user_id ?? userId,
   })
 
   return { ok: true, snapshot, already: !!result.data?.already }

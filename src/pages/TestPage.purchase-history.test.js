@@ -13,6 +13,8 @@ test('integrates the purchased-property card and sequential drawers in the new p
   assert.match(page, /setPurchaseDrawerView\('details'\)/)
   assert.match(page, /openManagerChatModal/)
   assert.match(page, /handleSellObjectFromHistory/)
+  assert.match(page, /openSellCabinetFlow/)
+  assert.match(page, /OPEN_ROLE_SWITCH_FOR_SELL_EVENT/)
 })
 
 test('reservation history endpoint exposes real property location fields', () => {

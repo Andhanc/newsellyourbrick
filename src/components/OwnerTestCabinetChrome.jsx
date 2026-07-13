@@ -20,7 +20,6 @@ import {
   OWNER_VIEWS,
 } from '../utils/ownerTestNav'
 import {
-  getPurchasedListingDraftMeta,
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import './OwnerTestCabinetChrome.css'
@@ -37,9 +36,7 @@ export default function OwnerTestCabinetChrome({ children }) {
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
   const [managerChatOpen, setManagerChatOpen] = useState(false)
-  const [pendingPurchasedListing] = useState(
-    () => readPendingSellPurchasedProperty() || getPurchasedListingDraftMeta(),
-  )
+  const [pendingPurchasedListing] = useState(() => readPendingSellPurchasedProperty())
   const showTabbar = isTabbarView(view)
   const showPurchasedDraftHint =
     Boolean(pendingPurchasedListing?.id || pendingPurchasedListing?.propertyId) &&

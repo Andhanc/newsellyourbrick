@@ -2,15 +2,8 @@ import React from 'react';
 import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel, FaGem, FaSearch } from 'react-icons/fa';
 import './Sidebar.css';
 
-const BADGE_SECTION_IDS = new Set(['test_drive', 'moderation', 'chat', 'purchase_requests', 'bonuses']);
-
-/** Красные бейджи: тест-драйв, запросы на покупку, чат */
-const BADGE_TONE_RED_IDS = new Set(['test_drive', 'purchase_requests', 'chat']);
-
-function sidebarBadgeToneClass(sectionId) {
-  return BADGE_TONE_RED_IDS.has(sectionId)
-    ? 'menu-item__badge menu-item__badge--tone-red'
-    : 'menu-item__badge menu-item__badge--tone-orange';
+function sidebarBadgeToneClass() {
+  return 'menu-item__badge menu-item__badge--tone-red';
 }
 
 const Sidebar = ({
@@ -104,7 +97,7 @@ const Sidebar = ({
       <div className="sidebar-menu">
         {menuItems.map(item => {
           const IconComponent = item.icon;
-          const rawBadge = BADGE_SECTION_IDS.has(item.id) ? Number(sectionBadges[item.id]) || 0 : 0;
+          const rawBadge = Number(sectionBadges[item.id]) || 0;
           const badge =
             rawBadge > 99 ? '99+' : rawBadge > 0 ? String(rawBadge) : null;
           return (
@@ -122,7 +115,7 @@ const Sidebar = ({
               <span className="menu-item__label">{item.label}</span>
               {badge ? (
                 <span
-                  className={sidebarBadgeToneClass(item.id)}
+                  className={sidebarBadgeToneClass()}
                   aria-label={`Необработано: ${rawBadge}`}
                 >
                   {badge}

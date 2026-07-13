@@ -14,6 +14,7 @@ import {
   searchStreets,
   searchHouses,
   buildFormattedLocation,
+  parseLocationComposite,
 } from '../utils/oapLocationGeocode'
 
 function SuggestList({ items, onSelect, renderLabel }) {
@@ -68,6 +69,41 @@ export default function OwnerAddPropertyLocationStep({
   const mapCoords = Array.isArray(form.coordinates) && form.coordinates.length === 2
     ? form.coordinates
     : null
+
+  const locationHealAttemptedRef = useRef(false)
+  useEffect(() => {
+    if (locationHealAttemptedRef.current) return
+    if (form.country?.trim() && form.city?.trim()) return
+
+    const source = String(form.location || form.address || '').trim()
+    if (!source || !source.includes(',')) return
+
+    const parsed = parseLocationComposite(source)
+    if (!parsed.country && !parsed.city) return
+
+    locationHealAttemptedRef.current = true
+    const nextCountry = form.country?.trim() || parsed.country
+    const nextCity = form.city?.trim() || parsed.city
+    const nextAddress = parsed.address || form.address || ''
+    const nextApartment = form.apartment?.trim() || parsed.apartment
+
+    onFormPatch({
+      country: nextCountry,
+      city: nextCity,
+      address: nextAddress,
+      apartment: nextApartment,
+      location:
+        buildFormattedLocation({
+          country: nextCountry,
+          city: nextCity,
+          street: nextAddress,
+          apartment: nextApartment,
+        }) || source,
+    })
+
+    if (nextCity) setCitySearch(nextCity)
+    if (nextAddress) setAddressSearch(nextAddress)
+  }, [form.address, form.apartment, form.city, form.country, form.location, onFormPatch])
 
   useEffect(() => {
     if (!citySearch && form.city) setCitySearch(form.city)

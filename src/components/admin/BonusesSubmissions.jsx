@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiExternalLink, FiCheck, FiX, FiGift } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { notifyBonusSubmissionsChanged } from '../../utils/bonusSubmissionsSync';
+import { requestAdminSidebarBadgesRefresh } from '../../utils/adminSidebarBadges';
 import { showNotification } from '../../utils/toastHelper';
 import './BonusesSubmissions.css';
 
@@ -48,6 +49,8 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
       if (data.success) {
         showNotification('Заявка одобрена');
         notifyBonusSubmissionsChanged();
+        const nextCount = Math.max(0, list.length - 1);
+        requestAdminSidebarBadgesRefresh({ patch: { bonuses: nextCount } });
         await fetchPending();
       } else {
         showNotification(data.message || 'Ошибка', 'error');
@@ -68,6 +71,8 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
       if (data.success) {
         showNotification('Заявка отклонена');
         notifyBonusSubmissionsChanged();
+        const nextCount = Math.max(0, list.length - 1);
+        requestAdminSidebarBadgesRefresh({ patch: { bonuses: nextCount } });
         await fetchPending();
       } else {
         showNotification(data.message || 'Ошибка', 'error');

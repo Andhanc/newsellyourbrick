@@ -327,6 +327,29 @@
   color: #475569;
 }
 
+.role-switch-pitch__note {
+  margin: -8px 0 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(0, 153, 169, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.18);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #0f4c5c;
+  text-align: left;
+}
+
+.role-switch-setup__google-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(0, 153, 169, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.18);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #0f4c5c;
+}
+
 .role-switch-btn {
   display: inline-flex;
   align-items: center;
@@ -367,6 +390,11 @@
 
 .role-switch-btn--ghost:hover:not(:disabled) {
   color: #334155;
+}
+
+.role-switch-btn--google {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .role-switch-setup__body {

@@ -248,11 +248,15 @@ export async function confirmPropertyReservationSession(sessionId, userId) {
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), 45000)
   try {
+    const body = { session_id: sessionId }
+    if (userId != null && /^\d+$/.test(String(userId))) {
+      body.userId = String(userId)
+    }
     const res = await fetch(`${API_BASE}/billing/confirm-property-reservation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
-      body: JSON.stringify({ session_id: sessionId, userId: String(userId) }),
+      body: JSON.stringify(body),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {

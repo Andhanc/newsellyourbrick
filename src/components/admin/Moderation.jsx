@@ -4,6 +4,10 @@ import { FaBuilding } from 'react-icons/fa';
 import ModerationPropertyDetail from './ModerationPropertyDetail';
 import ModerationUserDetail from './ModerationUserDetail';
 import { showNotification } from '../../utils/toastHelper';
+import {
+  buildModerationBadgesPatch,
+  requestAdminSidebarBadgesRefresh,
+} from '../../utils/adminSidebarBadges';
 import './Moderation.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 
@@ -166,7 +170,7 @@ const mockPropertiesForModeration = [
   }
 ];
 
-const Moderation = () => {
+const Moderation = ({ onAdminSectionBadgeRefresh }) => {
   const [activeTab, setActiveTab] = useState('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -176,6 +180,11 @@ const Moderation = () => {
   const [loading, setLoading] = useState(false);
   const [recentlyApprovedIds, setRecentlyApprovedIds] = useState(new Set()); // ID недавно одобренных объектов
   const [requestTypeFilter, setRequestTypeFilter] = useState('all'); // 'all', 'publication', 'edit', 'delete'
+
+  const syncModerationBadges = (docs, props) => {
+    requestAdminSidebarBadgesRefresh({ patch: buildModerationBadgesPatch(docs, props) });
+    void onAdminSectionBadgeRefresh?.();
+  };
 
   // Загрузка документов на верификацию
   useEffect(() => {
@@ -359,6 +368,7 @@ const Moderation = () => {
       });
       
       setPendingDocuments(usersWithPendingDocs);
+      syncModerationBadges(usersWithPendingDocs, pendingProperties);
     } catch (error) {
       console.error('❌ Ошибка загрузки документов:', error);
       setPendingDocuments([]);
@@ -517,6 +527,7 @@ const Moderation = () => {
       
       console.log(`📊 Итого объявлений для отображения: ${propertiesList.length}`);
       setPendingProperties(propertiesList);
+      syncModerationBadges(pendingDocuments, propertiesList);
     } catch (error) {
       console.error('Ошибка загрузки объявлений на модерации:', error);
       setPendingProperties([]);
@@ -865,7 +876,11 @@ const Moderation = () => {
             setSelectedProperty(null);
             
             // Удаляем объект из локального списка сразу, чтобы он не показывался
-            setPendingProperties(prev => prev.filter(p => String(p.id) !== String(id)));
+            setPendingProperties((prev) => {
+              const next = prev.filter((p) => String(p.id) !== String(id));
+              syncModerationBadges(pendingDocuments, next);
+              return next;
+            });
             
             // Обновляем список после задержки, чтобы дать серверу время обновить статус
             // Увеличиваем задержку, так как бэкенд может обрабатывать запрос асинхронно

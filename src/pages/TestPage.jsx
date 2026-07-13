@@ -69,7 +69,14 @@ import ProfileBookingsExperience from '../components/ProfileBookingsExperience'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
-import { storePendingSellPurchasedProperty } from '../utils/purchasedPropertyListingPrefill'
+import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
+import { resolveSellCabinetMode, OPEN_ROLE_SWITCH_FOR_SELL_EVENT } from '../utils/navigateToSellPurchasedProperty'
+import {
+  applyPurchasedPropertyListingPrefill,
+  readPendingSellPurchasedProperty,
+  storePendingSellPurchasedProperty,
+} from '../utils/purchasedPropertyListingPrefill'
+import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
 import {
   hasCompletedOwnerCabinetOnboarding,
@@ -676,6 +683,7 @@ function TestPage() {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
+  const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const {
     numericUserId,
     publicIdDisplay,
@@ -691,8 +699,11 @@ function TestPage() {
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
     const { primary, logout } = buildQuickLinks(t)
-    return { quickLinksPrimary: primary, quickLogoutLink: logout }
-  }, [t])
+    const filtered = hasBothLinkedRoles
+      ? primary.filter((link) => link.action !== 'becomeSeller')
+      : primary
+    return { quickLinksPrimary: filtered, quickLogoutLink: logout }
+  }, [t, hasBothLinkedRoles])
   const QuickLogoutIcon = quickLogoutLink.icon
   const locale = useMemo(() => (i18n.language === 'en' ? 'en-US' : i18n.language), [i18n.language])
   const moneyLocale = useMemo(() => {
@@ -877,30 +888,27 @@ function TestPage() {
   }, [user, signOut, t])
 
   const handleBecomeSellerRegister = useCallback(async () => {
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      /* ignore storage errors */
+    const pending = readPendingSellPurchasedProperty()
+    if (pending?.id) {
+      const mode = await resolveSellCabinetMode()
+      await sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
+      return
     }
-    sessionStorage.setItem('clerk_logout_in_progress', 'true')
-    try {
-      if (user && signOut) {
-        await signOut()
+    await sellPurchasedPropertyRoleFlow.openFlow()
+  }, [sellPurchasedPropertyRoleFlow])
+
+  const handleOpenSellerRoleFlow = useCallback(
+    async (flow) => {
+      const pending = readPendingSellPurchasedProperty()
+      if (pending?.id) {
+        const mode = await resolveSellCabinetMode()
+        await flow.openSellCabinetFlow(mode)
+        return
       }
-    } catch (e) {
-      console.warn('TestPage become seller signOut:', e)
-    }
-    try {
-      await logout()
-    } catch (e) {
-      console.warn('TestPage become seller logout:', e)
-    } finally {
-      sessionStorage.removeItem('clerk_logout_in_progress')
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
-  }, [user, signOut, navigate])
+      await flow.openFlow()
+    },
+    [],
+  )
 
   const handleSellObjectFromHistory = useCallback(async (purchasedProperty) => {
     if (purchasedProperty?.propertyId) {
@@ -915,11 +923,31 @@ function TestPage() {
       localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
     ).toLowerCase()
     if (role === 'seller' || role === 'owner') {
-      navigate('/owner-test')
+      const pid = purchasedProperty?.propertyId
+      if (pid) {
+        try {
+          await applyPurchasedPropertyListingPrefill(pid)
+        } catch (e) {
+          console.warn('handleSellObjectFromHistory prefill:', e)
+        }
+        navigate(buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY))
+      } else {
+        navigate('/owner-test')
+      }
       return
     }
-    await sellPurchasedPropertyRoleFlow.openCabinetPicker()
+    const mode = await resolveSellCabinetMode()
+    await sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
   }, [navigate, sellPurchasedPropertyRoleFlow])
+
+  useEffect(() => {
+    const onOpenRoleSwitchForSell = (event) => {
+      const mode = event?.detail?.mode === 'switch' ? 'switch' : 'register'
+      void sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
+    }
+    window.addEventListener(OPEN_ROLE_SWITCH_FOR_SELL_EVENT, onOpenRoleSwitchForSell)
+    return () => window.removeEventListener(OPEN_ROLE_SWITCH_FOR_SELL_EVENT, onOpenRoleSwitchForSell)
+  }, [sellPurchasedPropertyRoleFlow.openSellCabinetFlow])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -3166,7 +3194,12 @@ function TestPage() {
                 </aside>
               </div>
 
-              <RoleSwitchBottomCta targetRole="seller" />
+              <RoleSwitchBottomCta
+                targetRole="seller"
+                flow={sellPurchasedPropertyRoleFlow}
+                renderModals={false}
+                onOpen={handleOpenSellerRoleFlow}
+              />
                 </>
               )}
         </div>

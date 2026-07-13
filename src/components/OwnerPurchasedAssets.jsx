@@ -1,15 +1,21 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiShoppingBag } from 'react-icons/fi'
 import i18n from '../i18n/config'
-import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import './OwnerPurchasedAssets.css'
 import { getCurrencySymbol } from '../utils/currency'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { fetchLinkedRoles } from '../utils/roleSwitchApi'
+import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
+import { OWNER_VIEWS } from '../utils/ownerTestNav'
+import { queueSellPurchasedPropertyListing } from '../utils/purchasedPropertyListingPrefill'
+import { showNotification } from '../utils/toastHelper'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -32,11 +38,13 @@ function intlLocale() {
 }
 
 /**
- * Кабинет продавца: аукционы и доли как у покупателя; «Купить сейчас» / резерв — только после того,
- * как админ перевёл запрос на покупку в статус «Завершён» (полная сделка).
+ * Кабинет продавца: аукционы, доли и «Купить сейчас».
+ * Продажа Buy Now доступна только после статуса «Завершён» у purchase request в админке.
  */
-export default function OwnerPurchasedAssets({ userId }) {
+export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuyerIdProp = null }) {
   const { t, i18n: i18nApi } = useTranslation()
+  const { goTo } = useOwnerTestNav()
+  const [sellingPropertyId, setSellingPropertyId] = useState(null)
   const billingLocale = (() => {
     const code = (i18nApi.language || 'ru').split('-')[0]
     const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
@@ -57,8 +65,45 @@ export default function OwnerPurchasedAssets({ userId }) {
     return Number.isFinite(n) && n > 0 ? n : null
   }, [userId])
 
+  const [historyUserId, setHistoryUserId] = useState(() => {
+    if (linkedBuyerIdProp != null) {
+      const n = Number(linkedBuyerIdProp)
+      return Number.isFinite(n) && n > 0 ? n : null
+    }
+    return null
+  })
+
   useEffect(() => {
+    if (linkedBuyerIdProp != null) {
+      const n = Number(linkedBuyerIdProp)
+      setHistoryUserId(Number.isFinite(n) && n > 0 ? n : null)
+      return undefined
+    }
     if (!numericUserId) {
+      setHistoryUserId(null)
+      return undefined
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const status = await fetchLinkedRoles({ userId: numericUserId })
+        const buyerId = status?.buyer?.id
+        if (!cancelled) {
+          setHistoryUserId(buyerId ? Number(buyerId) : numericUserId)
+        }
+      } catch {
+        if (!cancelled) setHistoryUserId(numericUserId)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [numericUserId, linkedBuyerIdProp])
+
+  useEffect(() => {
+    if (!historyUserId) {
       setPurchaseHistory([])
       setReservationPurchases([])
       setSharePurchases([])
@@ -74,7 +119,7 @@ export default function OwnerPurchasedAssets({ userId }) {
     const loadWins = async () => {
       setLoadingPurchases(true)
       try {
-        const response = await fetch(`${API_BASE_URL}/auction-winners/user/${numericUserId}`)
+        const response = await fetch(`${API_BASE_URL}/auction-winners/user/${historyUserId}`)
         if (!response.ok || cancelled) {
           if (!cancelled) setPurchaseHistory([])
           return
@@ -114,7 +159,7 @@ export default function OwnerPurchasedAssets({ userId }) {
     const loadRes = async () => {
       setLoadingReservations(true)
       try {
-        const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/reservation-purchases`)
+        const response = await fetch(`${API_BASE_URL}/users/${historyUserId}/reservation-purchases`)
         if (!response.ok || cancelled) {
           if (!cancelled) setReservationPurchases([])
           return
@@ -133,7 +178,7 @@ export default function OwnerPurchasedAssets({ userId }) {
     const loadCompletedPr = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/purchase-requests/buyer/${numericUserId}?limit=200`
+          `${API_BASE_URL}/purchase-requests/buyer/${historyUserId}?limit=200`
         )
         if (!response.ok || cancelled) return
         const result = await response.json()
@@ -151,7 +196,7 @@ export default function OwnerPurchasedAssets({ userId }) {
     const loadShares = async () => {
       setLoadingShares(true)
       try {
-        const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/share-purchases`)
+        const response = await fetch(`${API_BASE_URL}/users/${historyUserId}/share-purchases`)
         if (!response.ok || cancelled) {
           if (!cancelled) setSharePurchases([])
           return
@@ -175,17 +220,16 @@ export default function OwnerPurchasedAssets({ userId }) {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, i18nApi.language])
+  }, [historyUserId, i18nApi.language])
 
-  const completedBuyNowReservations = useMemo(() => {
-    const completed = []
-    for (const row of reservationPurchases) {
+  const buyNowReservations = useMemo(() => {
+    return reservationPurchases.map((row) => {
       const b = row.billing || {}
       const prId = b.purchase_request_id != null ? Number(b.purchase_request_id) : null
-      const isDone = prId != null && !Number.isNaN(prId) && completedPurchaseRequestIds.has(prId)
-      if (isDone) completed.push(row)
-    }
-    return completed
+      const isDealCompleted =
+        prId != null && !Number.isNaN(prId) && completedPurchaseRequestIds.has(prId)
+      return { ...row, isDealCompleted }
+    })
   }, [reservationPurchases, completedPurchaseRequestIds])
 
   const formatPrice = (price, currency = 'USD') => {
@@ -210,13 +254,32 @@ export default function OwnerPurchasedAssets({ userId }) {
     })
   }
 
+  const handleSellProperty = useCallback(
+    ({ propertyId, title, image }) => {
+      const pid = propertyId != null ? Number(propertyId) : null
+      if (!pid || Number.isNaN(pid) || sellingPropertyId != null) return
+
+      setSellingPropertyId(pid)
+      try {
+        queueSellPurchasedPropertyListing({ id: pid, title: title || '', image: image || '' })
+        goTo(OWNER_VIEWS.ADD_PROPERTY)
+      } catch (e) {
+        console.warn('OwnerPurchasedAssets sell:', e)
+        showNotification(t('ownerPurchased_sellError'), 'error')
+      } finally {
+        setSellingPropertyId(null)
+      }
+    },
+    [goTo, sellingPropertyId, t],
+  )
+
   const loading = loadingPurchases || loadingReservations || loadingShares
   const hasAnything =
     purchaseHistory.length > 0 ||
     sharePurchases.length > 0 ||
-    completedBuyNowReservations.length > 0
+    buyNowReservations.length > 0
 
-  if (!numericUserId) return null
+  if (!historyUserId) return null
   if (!loading && !hasAnything) return null
 
   return (
@@ -245,39 +308,67 @@ export default function OwnerPurchasedAssets({ userId }) {
                     quality: 72,
                     format: 'webp',
                   })
+                  const detailPath =
+                    purchase.propertyId != null
+                      ? getPropertyDetailPath(purchase.propertyId)
+                      : null
                   return (
                   <article key={purchase.id} className="owner-purchased-card">
-                    <div className="owner-purchased-card__image">
-                      <ImageWithSkeleton imgProps={imageProps} alt="" />
-                    </div>
-                    <div className="owner-purchased-card__content">
-                      <h4 className="owner-purchased-card__title">
-                        {purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
-                      </h4>
-                      {purchase.location ? (
-                        <p className="owner-purchased-card__meta">{purchase.location}</p>
-                      ) : null}
-                      <dl className="owner-purchased-card__dl">
-                        <div>
-                          <dt>{t('buyerWon_winningBid')}</dt>
-                          <dd>{formatPrice(purchase.purchasePrice, purchase.currency)}</dd>
+                    {detailPath ? (
+                      <Link
+                        to={detailPath}
+                        className="owner-purchased-card__preview"
+                        onClick={(e) => {
+                          if (ensureCanOpenProperty()) return
+                          e.preventDefault()
+                        }}
+                      >
+                        <div className="owner-purchased-card__image">
+                          <ImageWithSkeleton imgProps={imageProps} alt="" />
                         </div>
-                        <div>
-                          <dt>{t('buyerHistory_date')}</dt>
-                          <dd>{formatDate(purchase.purchaseDate)}</dd>
+                        <div className="owner-purchased-card__preview-body">
+                          <h4 className="owner-purchased-card__title">
+                            {purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
+                          </h4>
+                          {purchase.location ? (
+                            <p className="owner-purchased-card__location">{purchase.location}</p>
+                          ) : null}
+                          <p className="owner-purchased-card__price">
+                            {formatPrice(purchase.purchasePrice, purchase.currency)}
+                          </p>
+                          <p className="owner-purchased-card__date">{formatDate(purchase.purchaseDate)}</p>
                         </div>
-                      </dl>
+                      </Link>
+                    ) : (
+                      <div className="owner-purchased-card__preview">
+                        <div className="owner-purchased-card__image">
+                          <ImageWithSkeleton imgProps={imageProps} alt="" />
+                        </div>
+                        <div className="owner-purchased-card__preview-body">
+                          <h4 className="owner-purchased-card__title">
+                            {purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
+                          </h4>
+                        </div>
+                      </div>
+                    )}
+                    <div className="owner-purchased-card__footer">
                       {purchase.propertyId != null && (
-                        <Link
-                          to={`/property/${purchase.propertyId}`}
-                          className="owner-purchased-card__link"
-                          onClick={(e) => {
-                            if (ensureCanOpenProperty()) return
-                            e.preventDefault()
-                          }}
+                        <button
+                          type="button"
+                          className="owner-purchased-card__sell"
+                          disabled={sellingPropertyId === purchase.propertyId}
+                          onClick={() =>
+                            void handleSellProperty({
+                              propertyId: purchase.propertyId,
+                              title: purchase.propertyTitle,
+                              image: purchase.image,
+                            })
+                          }
                         >
-                          {t('buyerWon_viewProperty')}
-                        </Link>
+                          {sellingPropertyId === purchase.propertyId
+                            ? t('ownerPurchased_selling')
+                            : t('buyerCabinet_sellProperty')}
+                        </button>
                       )}
                     </div>
                   </article>
@@ -287,13 +378,14 @@ export default function OwnerPurchasedAssets({ userId }) {
             </div>
           )}
 
-          {completedBuyNowReservations.length > 0 && (
+          {buyNowReservations.length > 0 && (
             <div className="owner-purchased__block">
-              <h3 className="owner-purchased__block-title">{t('ownerPurchasedSectionBuyNowCompleted')}</h3>
+              <h3 className="owner-purchased__block-title">{t('ownerPurchasedSectionBuyNow')}</h3>
               <div className="owner-purchased__grid">
-                {completedBuyNowReservations.map((row) => {
+                {buyNowReservations.map((row) => {
                   const b = row.billing || {}
                   const pid = b.property_id
+                  const isDealCompleted = Boolean(row.isDealCompleted)
                   const minSale = b.minimum_sale_price
                   const paidStripe = (row.amount_cents || 0) / 100
                   const walletEur = b.wallet_eur_applied || 0
@@ -307,6 +399,7 @@ export default function OwnerPurchasedAssets({ userId }) {
                     (pid != null
                       ? t('buyerHistory_propertyTitle', { id: pid })
                       : t('buyerHistory_propertyTitle', { id: '—' }))
+                  const location = row.property_location || ''
                   const imgSrc = sharePurchaseImageSrc(row.property_image)
                   const imageProps = buildResponsiveImageProps(imgSrc, {
                     widths: [240, 360, 540],
@@ -315,26 +408,58 @@ export default function OwnerPurchasedAssets({ userId }) {
                     quality: 72,
                     format: 'webp',
                   })
+                  const sellBlocked = !isDealCompleted
+                  const detailPath = pid != null ? getPropertyDetailPath(pid) : null
                   return (
-                    <article key={row.id || row.dedupe_key} className="owner-purchased-card">
-                      <div className="owner-purchased-card__image">
-                        <ImageWithSkeleton
-                          imgProps={imageProps}
-                          alt=""
-                          onError={(e) => {
-                            e.currentTarget.onerror = null
-                            e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER
+                    <article
+                      key={row.id || row.dedupe_key}
+                      className={`owner-purchased-card${sellBlocked ? ' owner-purchased-card--sell-locked' : ''}`}
+                    >
+                      {detailPath ? (
+                        <Link
+                          to={detailPath}
+                          className="owner-purchased-card__preview"
+                          onClick={(e) => {
+                            if (ensureCanOpenProperty()) return
+                            e.preventDefault()
                           }}
-                        />
-                      </div>
-                      <div className="owner-purchased-card__content">
-                        <h4 className="owner-purchased-card__title">{title}</h4>
-                        <p className="owner-purchased-card__meta">{t('buyerHistory_reserveBuyNowChannel')}</p>
-                        <dl className="owner-purchased-card__dl">
-                          <div>
-                            <dt>{t('buyerHistory_minSale')}</dt>
-                            <dd>{minSale != null ? formatPrice(minSale, cur) : '—'}</dd>
+                        >
+                          <div className="owner-purchased-card__image">
+                            <ImageWithSkeleton
+                              imgProps={imageProps}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.onerror = null
+                                e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER
+                              }}
+                            />
                           </div>
+                          <div className="owner-purchased-card__preview-body">
+                            <h4 className="owner-purchased-card__title">{title}</h4>
+                            {location ? (
+                              <p className="owner-purchased-card__location">{location}</p>
+                            ) : null}
+                            <p className="owner-purchased-card__badge">
+                              {isDealCompleted
+                                ? t('ownerPurchased_dealCompletedBadge')
+                                : t('buyerHistory_reserveBuyNowChannel')}
+                            </p>
+                            <p className="owner-purchased-card__date">{formatDate(row.paid_at)}</p>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div className="owner-purchased-card__preview">
+                          <div className="owner-purchased-card__image">
+                            <ImageWithSkeleton imgProps={imageProps} alt="" />
+                          </div>
+                          <div className="owner-purchased-card__preview-body">
+                            <h4 className="owner-purchased-card__title">{title}</h4>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isDealCompleted ? (
+                        <dl className="owner-purchased-card__dl owner-purchased-card__dl--payment">
                           <div>
                             <dt>{t('buyerHistory_totalPaid')}</dt>
                             <dd>
@@ -353,24 +478,38 @@ export default function OwnerPurchasedAssets({ userId }) {
                               <dd>€{walletEur.toLocaleString(billingLocale)}</dd>
                             </div>
                           )}
-                          <div>
-                            <dt>{t('buyerHistory_date')}</dt>
-                            <dd>{formatDate(row.paid_at)}</dd>
-                          </div>
                         </dl>
-                        {pid != null && (
-                          <Link
-                            to={`/property/${pid}`}
-                            className="owner-purchased-card__link"
-                            onClick={(e) => {
-                              if (ensureCanOpenProperty()) return
-                              e.preventDefault()
-                            }}
-                          >
-                            {t('buyerHistory_openProperty')}
-                          </Link>
-                        )}
-                      </div>
+                      ) : null}
+
+                      {pid != null && (
+                        <div className="owner-purchased-card__footer">
+                          <div className="owner-purchased-card__sell-wrap">
+                            <button
+                              type="button"
+                              className={`owner-purchased-card__sell${sellBlocked ? ' owner-purchased-card__sell--locked' : ''}`}
+                              disabled={sellBlocked || sellingPropertyId === pid}
+                              title={sellBlocked ? t('ownerPurchased_sellLockedHint') : undefined}
+                              onClick={() => {
+                                if (sellBlocked) return
+                                void handleSellProperty({
+                                  propertyId: pid,
+                                  title,
+                                  image: imgSrc,
+                                })
+                              }}
+                            >
+                              {sellingPropertyId === pid
+                                ? t('ownerPurchased_selling')
+                                : t('buyerCabinet_sellProperty')}
+                            </button>
+                            {sellBlocked ? (
+                              <p className="owner-purchased-card__sell-hint">
+                                {t('ownerPurchased_sellLockedHint')}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
                     </article>
                   )
                 })}

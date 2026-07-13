@@ -42,6 +42,7 @@ import {
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
 import { RoleSwitchButton } from '../components/RoleSwitchBottomCta'
+import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
 import {
@@ -262,6 +263,7 @@ export default function OwnerProfileTestPage() {
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
+  const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const { isEmbedded, goTo, tab: embeddedTab, highlight } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
     activeId: 'settings',
@@ -1342,19 +1344,21 @@ export default function OwnerProfileTestPage() {
         <nav className="opr-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
         </nav>
-        <div className="opr-sidebar-promo">
-          <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
-          <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
-          <RoleSwitchButton targetRole="buyer" className="opr-btn opr-btn--primary opr-btn--sm">
-            {t('heroPitchBecomeBuyerCta')}
-          </RoleSwitchButton>
-          <img
-            className="opr-sidebar-promo__img"
-            src={OPR_IMAGES.promoSidebarBuyer}
-            alt=""
-            loading="lazy"
-          />
-        </div>
+        {!hasBothLinkedRoles ? (
+          <div className="opr-sidebar-promo">
+            <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+            <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
+            <RoleSwitchButton targetRole="buyer" className="opr-btn opr-btn--primary opr-btn--sm">
+              {t('heroPitchBecomeBuyerCta')}
+            </RoleSwitchButton>
+            <img
+              className="opr-sidebar-promo__img"
+              src={OPR_IMAGES.promoSidebarBuyer}
+              alt=""
+              loading="lazy"
+            />
+          </div>
+        ) : null}
       </aside>
 
       {mainColumn}
