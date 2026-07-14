@@ -22,6 +22,7 @@ import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
+import DepositZeroState from '../components/deposit/DepositZeroState'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
@@ -223,6 +224,7 @@ const WalletInner = () => {
   }, [user, userLoaded, navigate])
 
   const [depositAmount, setDepositAmount] = useState(0)
+  const [depositResolved, setDepositResolved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -421,6 +423,7 @@ const WalletInner = () => {
             }
             return prev
           })
+          setDepositResolved(true)
         }
       }
 
@@ -733,6 +736,9 @@ const WalletInner = () => {
           </span>
         </header>
 
+        {depositResolved && depositAmount === 0 ? (
+          <DepositZeroState onTopUp={() => setShowTopUpPicker(true)} />
+        ) : (
         <section className="wallet-reference-assets" aria-labelledby="wallet-balance-title">
           <div className="wallet-reference-assets__heading">
             <span id="wallet-balance-title" className="wallet-reference-assets__label">
@@ -777,6 +783,7 @@ const WalletInner = () => {
             {t('walletPage_topUp')}
           </button>
         </section>
+        )}
 
         <DepositInfoDrawer
           isOpen={isDepositInfoOpen}

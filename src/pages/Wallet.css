@@ -3250,6 +3250,17 @@ button.wallet-reference-metric {
   transition: transform 0.16s ease, background 0.16s ease;
 }
 
+.wallet-reference-shell > .deposit-zero {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 767px) {
+  .wallet-reference-shell > .deposit-zero {
+    margin-inline: -2px;
+    margin-bottom: 16px;
+  }
+}
+
 .wallet-reference-deposit:hover {
   background: #008994;
 }
