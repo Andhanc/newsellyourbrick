@@ -20,6 +20,7 @@ import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 import './Compare.css'
 import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
+import { writeInvestorScenario } from '../utils/investorScenarioContext'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
 function compareInvestorDrawerSessionKey(leftKey, rightKey) {
@@ -668,6 +669,33 @@ const Compare = () => {
     return { left: a, right: b }
   }, [favoriteAuctions, selectedKeys])
 
+  const investorRouteState = useMemo(() => {
+    if (!pair) return null
+    return {
+      calculatorFromProperty: pair.left.property,
+      calculatorSelectedKey: pair.left.key,
+      calculatorStrategy: 'rent',
+    }
+  }, [pair])
+
+  const persistInvestorScenario = useCallback(() => {
+    if (!pair) return null
+    return writeInvestorScenario({
+      source: 'compare',
+      propertyKeys: [pair.left.key, pair.right.key],
+      selectedKey: pair.left.key,
+    })
+  }, [pair])
+
+  const openInvestorPanel = useCallback(() => {
+    if (!pair) {
+      navigate('/calculator')
+      return
+    }
+    persistInvestorScenario()
+    navigate('/calculator', { state: investorRouteState })
+  }, [investorRouteState, navigate, pair, persistInvestorScenario])
+
   const tableRows = useMemo(() => {
     if (!pair) return []
     return buildRows(pair.left.property, pair.right.property)
@@ -987,6 +1015,8 @@ const Compare = () => {
                       </div>
                       <Link
                         to="/calculator"
+                        state={investorRouteState}
+                        onClick={persistInvestorScenario}
                         className="compare-investor-cta-link"
                       >
                         Открыть Умную панель инвестора
@@ -1298,7 +1328,7 @@ const Compare = () => {
       <CompareInvestorProDrawer
         isOpen={compareInvestorDrawerOpen}
         onClose={() => setCompareInvestorDrawerOpen(false)}
-        onOpenInvestorPanel={() => navigate('/calculator')}
+        onOpenInvestorPanel={openInvestorPanel}
       />
     </div>
   )

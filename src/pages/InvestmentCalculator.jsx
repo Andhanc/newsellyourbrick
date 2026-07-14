@@ -32,6 +32,10 @@ import {
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems';
 import { subscriptionUnlocksCalculator } from '../utils/subscriptionAccess';
 import {
+  clearInvestorScenario,
+  readInvestorScenario,
+} from '../utils/investorScenarioContext';
+import {
   ChevronDown,
   Wallet,
   Home,
@@ -132,6 +136,7 @@ const InvestmentCalculator = () => {
   const favDropdownRef = useRef(null);
 
   const { favoriteAuctions, loadCatalog } = useFavoriteAuctionItems();
+  const [investorScenario, setInvestorScenario] = useState(() => readInvestorScenario());
 
   const [mortgageRates, setMortgageRates] = useState(null);
 
@@ -334,8 +339,11 @@ const InvestmentCalculator = () => {
         : 'rent';
 
     setInvestmentStrategy(strategy);
-    setDataSource('manual');
-    setSelectedFavoriteKey(null);
+    const selectedKey = location.state?.calculatorSelectedKey;
+    const comesFromComparison =
+      typeof selectedKey === 'string' && investorScenario?.propertyKeys?.includes(selectedKey);
+    setDataSource(comesFromComparison ? 'favorites' : 'manual');
+    setSelectedFavoriteKey(comesFromComparison ? selectedKey : null);
     applyPropertyPreset(property, strategy);
 
     const prefill = location.state?.calculatorPrefill;
@@ -354,7 +362,23 @@ const InvestmentCalculator = () => {
     setWizardStep(3);
 
     navigate(location.pathname, { replace: true, state: null });
-  }, [location.state, location.pathname, navigate, applyPropertyPreset]);
+  }, [location.state, location.pathname, navigate, applyPropertyPreset, investorScenario]);
+
+  useEffect(() => {
+    if (propertyEntryHandledRef.current || location.state?.calculatorFromProperty) return;
+    const selectedKey = investorScenario?.selectedKey;
+    if (!selectedKey) return;
+
+    const selectedItem = favoriteAuctions.find((item) => item.key === selectedKey);
+    if (!selectedItem) return;
+
+    propertyEntryHandledRef.current = true;
+    setInvestmentStrategy('rent');
+    setDataSource('favorites');
+    setSelectedFavoriteKey(selectedKey);
+    applyPropertyPreset(selectedItem.property, 'rent');
+    setWizardStep(3);
+  }, [applyPropertyPreset, favoriteAuctions, investorScenario, location.state]);
 
   const selectedFavoriteItem = useMemo(
     () => favoriteAuctions.find((x) => x.key === selectedFavoriteKey) ?? null,
@@ -761,6 +785,28 @@ const InvestmentCalculator = () => {
       <BackgroundIcons />
       <Header />
       <div className="calculator-container">
+        {investorScenario && (
+          <aside className="calc-context-banner" aria-label="Сценарий из сравнения">
+            <span className="calc-context-banner__icon" aria-hidden>
+              <Sparkles size={18} strokeWidth={2.2} />
+            </span>
+            <span className="calc-context-banner__copy">
+              <strong>Сценарий из сравнения · 2 объекта</strong>
+              <span>Мы сохранили пару и открыли расчёт для первого объекта.</span>
+            </span>
+            <button
+              type="button"
+              className="calc-context-banner__reset"
+              onClick={() => {
+                clearInvestorScenario();
+                setInvestorScenario(null);
+                resetWizard();
+              }}
+            >
+              Сбросить
+            </button>
+          </aside>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
