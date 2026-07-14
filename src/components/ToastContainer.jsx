@@ -1,25 +1,30 @@
 import { useState, useEffect, useCallback } from 'react'
 import Toast from './Toast'
+import { enqueueToast, normalizeToastEvent, removeToast as removeToastFromQueue } from '../utils/toastModel'
 import './ToastContainer.css'
 
 let toastId = 0
 let toastListeners = []
 
-export const showToast = (message, type = 'success', duration = 3000) => {
+export const showToast = (messageOrEvent, type = 'success', duration = 3000) => {
   const id = toastId++
-  toastListeners.forEach(listener => listener({ id, message, type, duration }))
+  const event =
+    messageOrEvent && typeof messageOrEvent === 'object'
+      ? normalizeToastEvent(messageOrEvent)
+      : normalizeToastEvent(messageOrEvent, type, duration)
+  toastListeners.forEach(listener => listener({ ...event, id }))
   return id
 }
 
 const ToastContainer = () => {
-  const [toasts, setToasts] = useState([])
+  const [{ visible, queued }, setQueue] = useState({ visible: [], queued: [] })
 
   const addToast = useCallback((toast) => {
-    setToasts(prev => [...prev, toast])
+    setQueue((previous) => enqueueToast(previous, toast))
   }, [])
 
   const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
+    setQueue((previous) => removeToastFromQueue(previous, id))
   }, [])
 
   useEffect(() => {
@@ -30,13 +35,11 @@ const ToastContainer = () => {
   }, [addToast])
 
   return (
-    <div className="toast-container">
-      {toasts.map(toast => (
+    <div className="toast-container" data-queued-count={queued.length}>
+      {visible.map(toast => (
         <Toast
           key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
+          {...toast}
           onClose={() => removeToast(toast.id)}
         />
       ))}
@@ -45,4 +48,3 @@ const ToastContainer = () => {
 }
 
 export default ToastContainer
-
