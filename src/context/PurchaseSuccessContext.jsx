@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PurchaseSuccessModal from '../components/PurchaseSuccessModal'
 
@@ -19,11 +19,28 @@ export function PurchaseSuccessProvider({ children }) {
     setIsOpen(false)
   }, [])
 
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === 'undefined') return
+    const preview = new URLSearchParams(window.location.search).get('buyer_success_preview')
+    if (preview !== 'reservation' && preview !== 'share') return
+    openPurchaseSuccess({
+      id: 900001,
+      purchaseKind: preview,
+      title: 'Вилла с панорамным видом на море',
+      location: 'Пафос, Кипр',
+      image: '/images/sellyourbrick/about/about-hero-villa.jpg',
+    })
+  }, [openPurchaseSuccess])
+
   const goToPurchasedGuide = useCallback(() => {
     const pid = property?.id
     setIsOpen(false)
+    if (property?.purchaseKind === 'share') {
+      navigate('/profile')
+      return
+    }
     if (pid) navigate(`/profile/purchased/${pid}`)
-  }, [navigate, property?.id])
+  }, [navigate, property?.id, property?.purchaseKind])
 
   const value = useMemo(
     () => ({

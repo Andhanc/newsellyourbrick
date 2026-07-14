@@ -117,7 +117,7 @@ export default function PurchaseCheckoutSuccessBridge() {
           )
         }
 
-        openPurchaseSuccess(result.snapshot)
+        openPurchaseSuccess({ ...result.snapshot, purchaseKind: kind })
       } catch (e) {
         if (!cancelled) {
           showNotification(
