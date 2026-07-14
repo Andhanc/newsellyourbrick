@@ -5,9 +5,11 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
 import { FiMapPin, FiX, FiMap, FiSearch } from 'react-icons/fi'
+import { MapPinned } from 'lucide-react'
 import PageBackButton from '../components/PageBackButton'
 import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
 import MapPageFilters from '../components/MapPageFilters'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -836,15 +838,26 @@ const MapPage = () => {
               {loading ? (
                 <MapPagePropertyGridSkeletons count={MAP_LIST_SKELETON_COUNT} />
               ) : sortedProperties.length === 0 ? (
-                <div className="map-list-empty">
-                  <p>
-                    {searchNormalized
-                      ? t('noResultsHint')
+                <BuyerEmptyState
+                  className="map-list-empty"
+                  icon={MapPinned}
+                  eyebrow="Карта остаётся полезной"
+                  title={mapFilters.likedOnly ? 'Избранное ещё не отмечено' : 'На карте пока пусто'}
+                  description={
+                    searchNormalized
+                      ? 'По этому запросу точек нет. Сбросим поиск и покажем все доступные объекты.'
                       : mapFilters.likedOnly
-                        ? 'Пока нет понравившихся объектов на карте. Добавьте сердечком из списка.'
-                        : 'Нет объектов для отображения'}
-                  </p>
-                </div>
+                        ? 'Добавьте сердечком интересные объекты — они появятся здесь для быстрого сравнения районов.'
+                        : 'Снимем фильтры и покажем весь доступный каталог с координатами.'
+                  }
+                  primaryLabel={mapFilters.likedOnly ? 'Показать все объекты' : 'Сбросить параметры'}
+                  onPrimary={() => {
+                    setMapFilters(EMPTY_MAP_FILTERS)
+                    setSearchQuery('')
+                  }}
+                  secondaryLabel="Открыть каталог"
+                  onSecondary={() => navigate('/auction')}
+                />
               ) : (
                 <MapPagePropertyGrid
                   properties={sortedProperties}

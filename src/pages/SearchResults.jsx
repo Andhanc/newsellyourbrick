@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiAlertCircle, FiSliders } from 'react-icons/fi'
+import { FiSliders } from 'react-icons/fi'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import {
@@ -387,18 +388,16 @@ const SearchResults = () => {
 
               <div id="search-results-grid" className="search-results__body">
                 {totalUniqueCount === 0 ? (
-                  <div className="search-results__empty">
-                    <FiAlertCircle size={48} />
-                    <h2>Ничего не найдено</h2>
-                    <p>Попробуйте изменить параметры поиска</p>
-                    <button
-                      type="button"
-                      className="search-results__button"
-                      onClick={handleResetFilters}
-                    >
-                      Показать все объекты
-                    </button>
-                  </div>
+                  <BuyerEmptyState
+                    className="search-results__empty"
+                    eyebrow="Новый шанс для выбора"
+                    title="Подходящих объектов пока нет"
+                    description="Снимем ограничения и снова покажем весь каталог — ваши параметры поиска не потеряются навсегда."
+                    primaryLabel="Показать весь каталог"
+                    onPrimary={handleResetFilters}
+                    secondaryLabel="Все направления"
+                    onSecondary={() => navigate('/sections')}
+                  />
                 ) : (
                   <div className="search-results__sections property-listing-grid-sections">
                     {groupedSections.map((section, index) => (

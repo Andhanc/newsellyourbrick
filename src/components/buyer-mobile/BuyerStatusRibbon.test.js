@@ -12,6 +12,9 @@ async function readOrEmpty(url) {
 
 const source = await readOrEmpty(new URL('./BuyerStatusRibbon.jsx', import.meta.url))
 const css = await readOrEmpty(new URL('./BuyerStatusRibbon.css', import.meta.url))
+const listingCard = await readOrEmpty(new URL('../PropertyListingCard.jsx', import.meta.url))
+const auctionCard = await readOrEmpty(new URL('../AuctionPropertyCard.jsx', import.meta.url))
+const mobileAuction = await readOrEmpty(new URL('../ui/AuctionMobileLayout.jsx', import.meta.url))
 
 test('buyer ribbon exposes readable final-state copy without blocking the card', () => {
   assert.match(source, /listingState/)
@@ -33,4 +36,18 @@ test('ribbon remains legible on narrow cards and under reduced motion', () => {
   assert.match(css, /text-wrap:\s*balance/)
   assert.match(css, /@media\s*\(max-width:\s*360px\)/)
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+})
+
+test('catalog cards consume the shared final-state resolver and ribbon', () => {
+  for (const card of [listingCard, auctionCard]) {
+    assert.match(card, /resolveBuyerListingState/)
+    assert.match(card, /BuyerStatusRibbon/)
+    assert.match(card, /blocksPurchase/)
+    assert.match(card, /blocksBid/)
+  }
+  assert.doesNotMatch(listingCard, /property-auction-ended-overlay--full-card/)
+  assert.doesNotMatch(auctionCard, /auction-card__ended-overlay/)
+  assert.match(mobileAuction, /resolveBuyerListingState/)
+  assert.match(mobileAuction, /BuyerStatusRibbon/)
+  assert.doesNotMatch(mobileAuction, /property-auction-ended-overlay--full-card/)
 })

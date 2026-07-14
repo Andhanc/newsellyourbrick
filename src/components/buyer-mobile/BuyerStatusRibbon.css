@@ -88,6 +88,53 @@
   color: var(--buyer-white);
 }
 
+.buyer-card-final-action {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--buyer-touch);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--buyer-teal) 22%, transparent);
+  border-radius: 14px;
+  background: var(--buyer-mint);
+  color: var(--buyer-ink);
+  cursor: pointer;
+  font-family: var(--buyer-font-display);
+  text-align: left;
+}
+
+.buyer-card-final-action > span {
+  color: var(--buyer-text-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.buyer-card-final-action > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--buyer-teal-deep);
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.property-card--buyer-sold .property-image-container,
+.property-card--buyer-auction-ended .property-image-container,
+.auction-card--buyer-sold .auction-card__media,
+.auction-card--buyer-auction-ended .auction-card__media {
+  background: var(--buyer-ink);
+}
+
+.property-card--buyer-sold .property-image,
+.property-card--buyer-auction-ended .property-image,
+.auction-card--buyer-sold .auction-card__image,
+.auction-card--buyer-auction-ended .auction-card__image {
+  filter: saturate(0.55) brightness(0.8);
+}
+
 @media (max-width: 360px) {
   .buyer-status-ribbon {
     top: 20px;

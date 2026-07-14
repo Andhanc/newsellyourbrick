@@ -5,6 +5,7 @@
   grid-template-columns: unset;
   row-gap: 0;
   column-gap: 0;
+  scroll-margin-top: calc(92px + env(safe-area-inset-top, 0px));
 }
 
 .auction-mobile-layout {
@@ -327,8 +328,8 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__favorite {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__favorite svg {
@@ -337,8 +338,26 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__photo-icon {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
+}
+
+@media (max-width: 374px) {
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__title {
+    font-size: 0.92rem;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__location,
+  .auction-mobile-stack--desktop-cards .auction-card__spec,
+  .auction-mobile-stack--desktop-cards .auction-card__btn {
+    font-size: 0.75rem;
+  }
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__vip-ribbon {

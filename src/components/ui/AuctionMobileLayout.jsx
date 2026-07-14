@@ -20,7 +20,6 @@ import {
   getEffectiveAuctionEndTime,
   hasTestTimerDateString,
   isBuyNowPurchaseCompleted,
-  isEffectiveAuctionTimerExpired,
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '@/utils/auctionReminderBounds'
@@ -32,6 +31,8 @@ import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileVi
 import { buildResponsiveImageProps } from '../../utils/responsiveImage'
 import ImageWithSkeleton from '../ImageWithSkeleton'
 import AuctionPropertyCard from '../AuctionPropertyCard'
+import BuyerStatusRibbon from '../buyer-mobile/BuyerStatusRibbon'
+import { resolveBuyerListingState } from '../../utils/resolveBuyerListingState'
 import DebtsPropertyCard from '../DebtsPropertyCard'
 import '../PropertyList.css'
 import '../../styles/hrShowcaseAuctionCards.css'
@@ -498,8 +499,10 @@ function AuctionMobileItem({
       ? testTimerDurationMs
       : null
 
-  const isTimerExpired = isEffectiveAuctionTimerExpired(property)
-  const isAuctionEndedCard = isTimerExpired && hasTimer
+  const listingState = resolveBuyerListingState(property)
+  const blocksPurchase = listingState.blocksPurchase
+  const blocksBid = listingState.blocksBid
+  const isAuctionEndedCard = listingState.state === 'sold' || listingState.state === 'auction-ended'
   const buyNowWinnerId = property.buy_now_winner_user_id
 
   const showMobilePrivateClubHero =
@@ -510,11 +513,12 @@ function AuctionMobileItem({
     !isReserved
 
   const greenOnImage =
-    hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd && !isDebtProperty
+    hasTimer && !blocksBid && !isReserved && !showCircularOnCard && effectiveAuctionEnd && !isDebtProperty
   const redOnImage =
-    hasTimer && !isReserved && showCircularOnCard && property.test_timer_end_date
+    hasTimer && !blocksBid && !isReserved && showCircularOnCard && property.test_timer_end_date
   const buyNowEndedSealOnImage =
     hasTimer &&
+    !blocksBid &&
     !isReserved &&
     buyNowPurchaseCompleted &&
     !showCircularOnCard &&
@@ -657,29 +661,13 @@ function AuctionMobileItem({
           view === 'list' && 'auction-mobile-item--list auction-mobile--list',
           view === 'card' && 'auction-mobile-item--card auction-mobile--card',
           isAuctionEndedCard && 'auction-mobile-item--ended',
+          `auction-mobile-item--buyer-${listingState.state}`,
           privateClubCard && 'auction-mobile-item--private-club-card',
         )}
         onClick={handleCardClick}
         style={{ cursor: 'pointer' }}
         whileTap={reduceMotion ? undefined : { scale: 0.992 }}
       >
-        {isAuctionEndedCard ? (
-          <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
-            <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
-            <button
-              type="button"
-              className="property-auction-ended-overlay__result-link"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
-              }}
-            >
-              <span>{t('auctionResultSummary')}</span>
-              <span aria-hidden>→</span>
-            </button>
-          </div>
-        ) : null}
         <div className="auction-mobile-item__media">
           <div className="auction-mobile-image-wrap">
             <ImageWithSkeleton
@@ -688,6 +676,7 @@ function AuctionMobileItem({
               className="rounded-[inherit]"
               containerClassName="rounded-[inherit]"
             />
+            <BuyerStatusRibbon listingState={listingState} />
             <button
               ref={favoriteBtnRef}
               type="button"
@@ -722,12 +711,6 @@ function AuctionMobileItem({
                 {t('auctionPrivateClubVipBadge')}
               </span>
             ) : null}
-            {isReserved && (
-              <div className="auction-mobile-reserved">
-                <span className="text-lg">🔒</span>
-                <span>{t('reserved')}</span>
-              </div>
-            )}
             {!isReserved &&
             !showMobilePrivateClubHero &&
             (showBuyNow || hasTestDrive) &&
@@ -849,7 +832,7 @@ function AuctionMobileItem({
                 <AuctionPrivateClubMobileHero t={t} layout="inline" onGo={goDetail} />
               ) : (
                 <>
-                  {!isAuctionEndedCard ? (
+                  {!blocksBid ? (
                     <button
                       type="button"
                       className={cn('btn btn-primary btn-liquid-glass')}
@@ -867,7 +850,7 @@ function AuctionMobileItem({
                       {isReserved ? t('objectReserved') : t('placeBid')}
                     </button>
                   ) : null}
-                  {showBuyNow && !isAuctionListingEnded(property) && (
+                  {showBuyNow && !blocksPurchase && !isAuctionListingEnded(property) && (
                     <button
                       type="button"
                       className="btn btn-buy-now btn-liquid-glass-buy"
@@ -899,6 +882,20 @@ function AuctionMobileItem({
               )}
             </div>
           )}
+          {isAuctionEndedCard ? (
+            <button
+              type="button"
+              className="buyer-card-final-action auction-mobile-final-action"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
+              }}
+            >
+              <span>{listingState.state === 'sold' ? 'Сделка завершена' : 'Торги завершены'}</span>
+              <strong>{t('auctionResultSummary')} <span aria-hidden>→</span></strong>
+            </button>
+          ) : null}
         </div>
       </motion.div>
     </div>

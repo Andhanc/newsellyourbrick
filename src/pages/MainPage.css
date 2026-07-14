@@ -5022,6 +5022,18 @@ a.property-link {
     min-width: fit-content;
   }
 
+  .new-header__menu-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .new-header__search-btn,
+  .new-header__notification-btn,
+  .new-header__user-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .new-header__search-btn {
     width: auto;
     height: auto;
@@ -5640,7 +5652,9 @@ a.property-link {
 
   .new-header__search-btn,
   .new-header__notification-btn {
-    padding: 10px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
   }
 
   .new-header__notification-btn {
@@ -5654,12 +5668,12 @@ a.property-link {
   }
 
   .new-header__user-btn--avatar {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
     aspect-ratio: 1 / 1;
     padding: 0 !important;
     border-radius: 50% !important;
@@ -5680,12 +5694,12 @@ a.property-link {
   }
 
   .new-header__avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    max-width: 40px;
-    max-height: 40px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
     aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%) !important;
     color: #ffffff;
@@ -16577,5 +16591,20 @@ body:has(.hero-section) .site-ads-host {
   .app--premium-home .premium-model-card__media img,
   .app--premium-home .syb-news-card__media img {
     transition: none !important;
+  }
+}
+@media (max-width: 768px) {
+  .new-header .new-header__menu-btn,
+  .new-header .new-header__search-btn,
+  .new-header .new-header__notification-btn,
+  .new-header .new-header__user-btn {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }

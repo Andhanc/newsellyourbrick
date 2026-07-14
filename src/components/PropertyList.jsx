@@ -53,6 +53,7 @@ import {
 } from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
+import BuyerEmptyState from './buyer-mobile/BuyerEmptyState'
 import './PropertyList.css'
 import '../styles/hrShowcaseAuctionCards.css'
 
@@ -834,11 +835,15 @@ const PropertyList = ({
             </div>
           )
         ) : filteredProperties.length === 0 ? (
-          <div className="no-results">
-            <div className="no-results-icon">🔍</div>
-            <h3 className="no-results-title">{t('nothingFound')}</h3>
-            <p className="no-results-text">{t('noResultsHint')}</p>
-          </div>
+          <BuyerEmptyState
+            eyebrow="Новый шанс для выбора"
+            title={t('nothingFound')}
+            description="Измените параметры или откройте все направления — мы сохраним понятный путь к подходящему объекту."
+            primaryLabel="Все направления"
+            onPrimary={() => navigate('/sections')}
+            secondaryLabel="Сбросить фильтры"
+            onSecondary={resetAuctionFilters}
+          />
         ) : (
           <>
             {isMobile && isAuctionPage ? (

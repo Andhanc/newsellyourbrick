@@ -14,13 +14,14 @@ import {
   hasPropertyListingTimer,
   isBuyNowPurchaseCompleted,
   isAuctionListingEnded,
-  isPropertyListingSoldOut,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { resolveBuyerListingState } from '../utils/resolveBuyerListingState'
+import BuyerStatusRibbon from './buyer-mobile/BuyerStatusRibbon'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -120,7 +121,10 @@ const PropertyListingCard = ({
       ? testTimerDurationMs
       : null
 
-  const isAuctionEndedCard = isPropertyListingSoldOut(property)
+  const listingState = resolveBuyerListingState(property)
+  const blocksPurchase = listingState.blocksPurchase
+  const blocksBid = listingState.blocksBid
+  const isAuctionEndedCard = listingState.state === 'sold' || listingState.state === 'auction-ended'
   const buyNowWinnerId = property.buy_now_winner_user_id
   const circularSize = isMobile ? 56 : 120
 
@@ -162,7 +166,7 @@ const PropertyListingCard = ({
   )
 
   const greenTimerBlock =
-    showTimer && hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd ? (
+    showTimer && hasTimer && !blocksBid && !isReserved && !showCircularOnCard && effectiveAuctionEnd ? (
       <div className="property-timer-wrapper">
         <PropertyTimer
           endTime={effectiveAuctionEnd}
@@ -173,7 +177,7 @@ const PropertyListingCard = ({
     ) : null
 
   const redTimerBlock =
-    showTimer && hasTimer && !isReserved && showCircularOnCard ? (
+    showTimer && hasTimer && !blocksBid && !isReserved && showCircularOnCard ? (
       <div className="property-timer-wrapper">
         <CircularTimer
           endTime={property.test_timer_end_date}
@@ -191,6 +195,7 @@ const PropertyListingCard = ({
   const buyNowCompletedEndedSeal =
     showTimer &&
     hasTimer &&
+    !blocksBid &&
     !isReserved &&
     buyNowPurchaseCompleted &&
     !showCircularOnCard &&
@@ -217,6 +222,7 @@ const PropertyListingCard = ({
   const cardClassName = [
     'property-card',
     isAuctionEndedCard && 'property-card--auction-ended',
+    `property-card--buyer-${listingState.state}`,
     className,
   ]
     .filter(Boolean)
@@ -237,23 +243,6 @@ const PropertyListingCard = ({
         handleCardClick(e)
       }}
     >
-      {isAuctionEndedCard ? (
-        <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
-          <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
-          <button
-            type="button"
-            className="property-auction-ended-overlay__result-link"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onOpen?.(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
-            }}
-          >
-            <span>{t('auctionResultSummary')}</span>
-            <span aria-hidden>→</span>
-          </button>
-        </div>
-      ) : null}
       <div className="property-link">
         <div className="property-image-container">
           <ImageWithSkeleton
@@ -262,12 +251,7 @@ const PropertyListingCard = ({
             className="property-image"
             containerClassName="property-image"
           />
-          {isReserved && (
-            <div className="property-reserved-overlay">
-              <div className="reserved-overlay-icon">🔒</div>
-              <div className="reserved-overlay-text">Забронировано</div>
-            </div>
-          )}
+          <BuyerStatusRibbon listingState={listingState} />
           {(hasBuyNowPrice || hasTestDrive) &&
             !isAuctionListingEnded(property) && (
               <div className="property-badges-center">
@@ -481,7 +465,7 @@ const PropertyListingCard = ({
 
             {showActions ? (
               <div className="property-actions" onClick={(e) => e.stopPropagation()}>
-                {!isAuctionEndedCard ? (
+                {!blocksBid ? (
                   <button
                     type="button"
                     className="btn btn-primary btn-liquid-glass"
@@ -499,7 +483,7 @@ const PropertyListingCard = ({
                     {isReserved ? t('objectReserved') : t('placeBid')}
                   </button>
                 ) : null}
-                {hasBuyNowPrice && !isAuctionListingEnded(property) && (
+                {hasBuyNowPrice && !blocksPurchase && !isAuctionListingEnded(property) && (
                   <button
                     type="button"
                     className="btn btn-buy-now btn-liquid-glass-buy"
@@ -518,6 +502,23 @@ const PropertyListingCard = ({
                   </button>
                 )}
               </div>
+            ) : null}
+            {isAuctionEndedCard ? (
+              <button
+                type="button"
+                className="buyer-card-final-action"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onOpen?.(property, {
+                    auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS,
+                    auctionSoldOutNotice: true,
+                  })
+                }}
+              >
+                <span>{listingState.state === 'sold' ? 'Сделка завершена' : 'Торги завершены'}</span>
+                <strong>{t('auctionResultSummary')} <span aria-hidden>→</span></strong>
+              </button>
             ) : null}
           </div>
         </div>
