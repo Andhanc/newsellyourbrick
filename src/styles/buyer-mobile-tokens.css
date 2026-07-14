@@ -1,0 +1,63 @@
+:root {
+  --buyer-ink: #050505;
+  --buyer-teal: #0099a9;
+  --buyer-teal-deep: #006f7b;
+  --buyer-mint: #eaf8f5;
+  --buyer-warm: #faf8f5;
+  --buyer-cloud: #f3f6f5;
+  --buyer-auction: #f4d63e;
+  --buyer-white: #ffffff;
+  --buyer-danger: #c7473a;
+  --buyer-success: #167568;
+  --buyer-text-muted: #66706e;
+  --buyer-line: rgba(5, 5, 5, 0.1);
+  --buyer-font-display: 'Montserrat', 'Inter', system-ui, sans-serif;
+  --buyer-font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --buyer-radius-sm: 12px;
+  --buyer-radius-md: 18px;
+  --buyer-radius-lg: 26px;
+  --buyer-radius-sheet: 30px;
+  --buyer-touch: 44px;
+  --buyer-gutter: clamp(14px, 4.1vw, 20px);
+  --buyer-section-gap: clamp(24px, 7vw, 36px);
+  --buyer-shadow-card: 0 18px 45px rgba(5, 45, 48, 0.1);
+  --buyer-shadow-float: 0 20px 60px rgba(3, 35, 38, 0.18);
+  --buyer-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --buyer-duration-fast: 180ms;
+  --buyer-duration-base: 320ms;
+}
+
+.buyer-mobile-only {
+  display: block;
+}
+
+.buyer-safe-bottom {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.buyer-touch-target {
+  min-width: var(--buyer-touch);
+  min-height: var(--buyer-touch);
+}
+
+@media (min-width: 768px) {
+  .buyer-mobile-only {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --buyer-duration-fast: 1ms;
+    --buyer-duration-base: 1ms;
+  }
+
+  .buyer-reduce-motion,
+  .buyer-reduce-motion::before,
+  .buyer-reduce-motion::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
