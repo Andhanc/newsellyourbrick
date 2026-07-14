@@ -1,0 +1,23 @@
+.property-detail-recovery {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 85% 14%, rgba(95, 175, 190, .12), transparent 30%),
+    var(--buyer-canvas);
+}
+
+.property-detail-recovery__main {
+  display: grid;
+  align-items: center;
+  min-height: 72dvh;
+  padding: calc(env(safe-area-inset-top, 0px) + 116px) 16px 40px;
+}
+
+.property-detail-recovery__main .buyer-empty-state {
+  margin-block: 0;
+}
+
+@media (max-width: 420px) {
+  .property-detail-recovery__main {
+    padding-inline: 16px;
+  }
+}

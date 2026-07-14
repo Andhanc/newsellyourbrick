@@ -1,10 +1,13 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Building2 } from 'lucide-react'
 import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
+import Header from '../components/Header'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
@@ -29,12 +32,66 @@ import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../ut
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
+import './PropertyDetailPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function normalizePropertyDetailType(prop) {
   if (!prop) return 'apartment'
   return prop.property_type || prop.propertyType || 'apartment'
+}
+
+function buildBuyerDetailPreview() {
+  const base = properties.find((item) => item.id === 11) || properties[0] || {}
+
+  return {
+    ...base,
+    id: 900001,
+    title: 'Вилла с видом на Средиземное море',
+    name: 'Вилла с видом на Средиземное море',
+    description:
+      'Современная вилла в Марбелье с панорамной террасой, приватным бассейном и готовым интерьером. Объект прошёл проверку документов и доступен для онлайн-бронирования.',
+    location: 'Марбелья, Испания',
+    country: 'Испания',
+    city: 'Марбелья',
+    price: 1240000,
+    currentBid: 1240000,
+    currency: 'EUR',
+    area: 238,
+    sqft: 238,
+    rooms: 5,
+    beds: 4,
+    bedrooms: 4,
+    bathrooms: 3,
+    baths: 3,
+    floor: 2,
+    total_floors: 2,
+    year_built: 2023,
+    property_type: 'house',
+    source_table: 'properties_houses',
+    coordinates: [36.5101, -4.8824],
+    images: base.images || [],
+    videos: [],
+    balcony: true,
+    parking: true,
+    garage: true,
+    pool: true,
+    garden: true,
+    security: true,
+    furniture: true,
+    test_drive: true,
+    testDrive: true,
+    is_auction: false,
+    isAuction: false,
+    endTime: null,
+    auction_end_date: null,
+    test_timer_end_date: null,
+    sale_type: 'buy_now',
+    seller: 'SellYourBrick Verified',
+    moderation_status: 'approved',
+    is_reserved: false,
+    amenities: ['Бассейн', 'Терраса', 'Охрана', 'Паркинг'],
+  }
 }
 
 // Обёртка над страницей объекта:
@@ -52,6 +109,11 @@ const PropertyDetailPage = () => {
   const [error, setError] = useState(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [notFound, setNotFound] = useState(false)
+
+  const buyerDetailPreview = useMemo(() => {
+    if (!import.meta.env.DEV) return false
+    return new URLSearchParams(location.search || '').get('buyer_detail_preview') === '1'
+  }, [location.search])
 
   const routeId = routeParam ?? ''
   const resolvedNumericId = useMemo(() => parseIdFromPropertySlug(routeId), [routeId])
@@ -120,6 +182,13 @@ const PropertyDetailPage = () => {
     let isActive = true
 
     const loadProperty = async () => {
+      if (buyerDetailPreview) {
+        setProperty(buildBuyerDetailPreview())
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+
       // Если объект передан из state, используем его один раз как начальные данные
       if (propertyFromState && !initializedFromStateRef.current) {
         setProperty({
@@ -421,7 +490,7 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state])
+  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
 
   if (notFound) {
     return <NotFoundPage />
@@ -433,8 +502,20 @@ const PropertyDetailPage = () => {
 
   if (error && !property) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p>{error}</p>
+      <div className="property-detail-recovery">
+        <Header />
+        <main className="property-detail-recovery__main">
+          <BuyerEmptyState
+            icon={Building2}
+            eyebrow="Продолжим выбор"
+            title="Объект временно недоступен"
+            description="Не удалось обновить данные этого объявления. Вернитесь к проверенным объектам — фильтры и навигация останутся под рукой."
+            primaryLabel="Вернуться к объектам"
+            onPrimary={() => navigate('/auction')}
+            secondaryLabel="Все направления"
+            onSecondary={() => navigate('/sections')}
+          />
+        </main>
       </div>
     )
   }
@@ -487,6 +568,7 @@ const PropertyDetailPage = () => {
         property={{ ...property, isAuction: finalIsAuction }}
         showDocuments={isOwnerDashboard}
         onRequireLogin={() => setIsLoginModalOpen(true)}
+        requireAuthOnLoad={false}
       />
       <LoginModal
         isOpen={isLoginModalOpen}
@@ -497,4 +579,3 @@ const PropertyDetailPage = () => {
 }
 
 export default PropertyDetailPage
-

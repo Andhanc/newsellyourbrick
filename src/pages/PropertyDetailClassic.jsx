@@ -2468,7 +2468,11 @@ function PropertyDetailClassic({
     const isOldAuth = isAuthenticated()
 
     if (!isClerkAuth && !isOldAuth) {
-      requestOpenLoginModal({ wizard: true })
+      if (onRequireLogin) {
+        onRequireLogin()
+      } else {
+        requestOpenLoginModal({ wizard: true })
+      }
       return
     }
 
@@ -4885,14 +4889,11 @@ function PropertyDetailClassic({
             paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
           }`}
           onClick={handleBookNow}
-          disabled={isReservedActive || !buyNowEmailOk}
-          title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+          disabled={isReservedActive}
+          title={isReservedActive ? t('objectReserved') : undefined}
           style={{
-            opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
-            cursor:
-              isReservedActive || !buyNowEmailOk || paymentActionsLocked
-                ? 'not-allowed'
-                : 'pointer',
+            opacity: isReservedActive ? 0.5 : 1,
+            cursor: isReservedActive ? 'not-allowed' : 'pointer',
           }}
         >
           {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
@@ -7189,11 +7190,11 @@ function PropertyDetailClassic({
             </div>
 
             <div
-              className={
+              className={`property-detail-about-section${
                 isAuctionLayout
-                  ? 'property-detail-auction-tab-target property-detail-auction-tab-target--about'
-                  : undefined
-              }
+                  ? ' property-detail-auction-tab-target property-detail-auction-tab-target--about'
+                  : ''
+              }`}
             >
             {isAuctionLayout ? (
               <>
@@ -7469,14 +7470,11 @@ function PropertyDetailClassic({
                       paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
                     }`}
                     onClick={handleBookNow}
-                    disabled={isReservedActive || !buyNowEmailOk}
-                    title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+                    disabled={isReservedActive}
+                    title={isReservedActive ? t('objectReserved') : undefined}
                     style={{
-                      opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
-                      cursor:
-                        isReservedActive || !buyNowEmailOk || paymentActionsLocked
-                          ? 'not-allowed'
-                          : 'pointer',
+                      opacity: isReservedActive ? 0.5 : 1,
+                      cursor: isReservedActive ? 'not-allowed' : 'pointer',
                     }}
                   >
                     {isReservedActive

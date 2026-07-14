@@ -2692,6 +2692,10 @@
     width: 100%;
   }
 
+  .property-detail-about-section {
+    order: 3;
+  }
+
   .property-detail-info-section {
     order: 3;
     margin-top: 4px;
