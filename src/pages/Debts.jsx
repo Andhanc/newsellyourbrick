@@ -16,6 +16,7 @@ import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { formatPropertyPrice } from '../utils/currency'
@@ -146,6 +147,14 @@ const Debts = () => {
   const resetDebtsFilters = useCallback(() => {
     setDebtsFilters({ ...EMPTY_DEBTS_FILTERS })
   }, [])
+
+  const resetDebtsDiscovery = useCallback(() => {
+    setSearchQuery('')
+    setDebtsFilters({ ...EMPTY_DEBTS_FILTERS })
+    setDebtsPage(1)
+
+    if (apiDebts.length === 0) navigate('/auction')
+  }, [apiDebts.length, navigate])
 
   const debtsSaleToggleMode =
     !debtsFilters.showAuction && debtsFilters.showBuyNow ? 'buy_now' : 'all'
@@ -685,9 +694,21 @@ const Debts = () => {
                         : null}
 
                       {!loadingDebts && filtered.length === 0 ? (
-                        <div className="debts-listing-empty">
-                          <p>{t('debtsEmpty')}</p>
-                        </div>
+                        <BuyerEmptyState
+                          className="debts-listing-empty debts-empty-guided"
+                          icon={ShieldCheck}
+                          eyebrow="Без тупиков"
+                          title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
+                          description={
+                            apiDebts.length
+                              ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
+                              : 'Пока новых предложений нет — покажем активные объекты, которые можно купить уже сейчас.'
+                          }
+                          primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть доступные объекты'}
+                          onPrimary={resetDebtsDiscovery}
+                          secondaryLabel="Все направления"
+                          onSecondary={() => navigate('/sections')}
+                        />
                       ) : null}
 
                       {!loadingDebts
@@ -732,9 +753,21 @@ const Debts = () => {
                     ) : null}
 
                     {!loadingDebts && filtered.length === 0 ? (
-                      <div className="shares-no-results">
-                        <p>{t('debtsEmpty')}</p>
-                      </div>
+                      <BuyerEmptyState
+                        className="debts-empty-guided"
+                        icon={ShieldCheck}
+                        eyebrow="Без тупиков"
+                        title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
+                        description={
+                          apiDebts.length
+                            ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
+                            : 'Пока новых предложений нет — покажем активные объекты, которые можно купить уже сейчас.'
+                        }
+                        primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть доступные объекты'}
+                        onPrimary={resetDebtsDiscovery}
+                        secondaryLabel="Все направления"
+                        onSecondary={() => navigate('/sections')}
+                      />
                     ) : null}
 
                     {!loadingDebts && filtered.length > 0 ? (

@@ -2078,10 +2078,12 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 .debts-listing-empty {
   grid-column: 1 / -1;
-  padding: 48px 16px;
-  text-align: center;
-  color: #64748b;
-  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.shares-page--debts-redesign .debts-empty-guided {
+  grid-column: 1 / -1;
+  width: min(100%, 560px);
+  margin-block: 8px 34px;
 }
 
 .debts-listing-pagination {
