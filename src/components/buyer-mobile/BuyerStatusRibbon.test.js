@@ -1,0 +1,36 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+async function readOrEmpty(url) {
+  try {
+    return await readFile(url, 'utf8')
+  } catch {
+    return ''
+  }
+}
+
+const source = await readOrEmpty(new URL('./BuyerStatusRibbon.jsx', import.meta.url))
+const css = await readOrEmpty(new URL('./BuyerStatusRibbon.css', import.meta.url))
+
+test('buyer ribbon exposes readable final-state copy without blocking the card', () => {
+  assert.match(source, /listingState/)
+  assert.match(source, /aria-label=\{label\}/)
+  assert.match(source, /buyer-status-ribbon--\$\{tone\}/)
+  assert.match(css, /pointer-events:\s*none/)
+  assert.match(css, /user-select:\s*text/)
+})
+
+test('sold and ended auctions have distinct commercial treatments', () => {
+  assert.match(css, /\.buyer-status-ribbon--sold[\s\S]*var\(--buyer-teal-deep\)/)
+  assert.match(css, /\.buyer-status-ribbon--auction-ended[\s\S]*var\(--buyer-auction\)/)
+  assert.match(css, /repeating-linear-gradient/)
+  assert.match(css, /transform:\s*rotate\(-[0-9.]+deg\)/)
+})
+
+test('ribbon remains legible on narrow cards and under reduced motion', () => {
+  assert.match(css, /font-family:\s*var\(--buyer-font-display\)/)
+  assert.match(css, /text-wrap:\s*balance/)
+  assert.match(css, /@media\s*\(max-width:\s*360px\)/)
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+})

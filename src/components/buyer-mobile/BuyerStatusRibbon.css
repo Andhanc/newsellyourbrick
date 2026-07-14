@@ -1,0 +1,108 @@
+.buyer-status-ribbon {
+  position: absolute;
+  z-index: 8;
+  top: 24px;
+  left: -12%;
+  display: grid;
+  place-items: center;
+  width: 124%;
+  min-height: 44px;
+  padding: 9px 48px;
+  overflow: hidden;
+  pointer-events: none;
+  transform: rotate(-7deg);
+  transform-origin: center;
+  box-shadow: 0 8px 24px rgba(2, 18, 20, 0.2);
+  font-family: var(--buyer-font-display);
+  isolation: isolate;
+}
+
+.buyer-status-ribbon::before,
+.buyer-status-ribbon::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: -1;
+  height: 5px;
+  content: '';
+}
+
+.buyer-status-ribbon::before { top: 0; }
+.buyer-status-ribbon::after { bottom: 0; }
+
+.buyer-status-ribbon__text {
+  color: inherit;
+  font-size: clamp(11px, 3.4vw, 14px);
+  font-weight: 850;
+  letter-spacing: 0.075em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  user-select: text;
+}
+
+.buyer-status-ribbon--sold {
+  background: var(--buyer-teal-deep);
+  color: var(--buyer-white);
+}
+
+.buyer-status-ribbon--sold::before,
+.buyer-status-ribbon--sold::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.92) 0 16px,
+    transparent 16px 30px
+  );
+  opacity: 0.34;
+}
+
+.buyer-status-ribbon--auction-ended {
+  background: var(--buyer-auction);
+  color: var(--buyer-ink);
+}
+
+.buyer-status-ribbon--auction-ended::before,
+.buyer-status-ribbon--auction-ended::after {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--buyer-ink) 0 18px,
+    transparent 18px 34px
+  );
+}
+
+.buyer-status-ribbon--reserved {
+  background: var(--buyer-ink);
+  color: var(--buyer-white);
+}
+
+.buyer-status-ribbon--reserved::before,
+.buyer-status-ribbon--reserved::after,
+.buyer-status-ribbon--unavailable::before,
+.buyer-status-ribbon--unavailable::after {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.buyer-status-ribbon--unavailable {
+  background: #68706f;
+  color: var(--buyer-white);
+}
+
+@media (max-width: 360px) {
+  .buyer-status-ribbon {
+    top: 20px;
+    min-height: 40px;
+    padding-inline: 40px;
+  }
+
+  .buyer-status-ribbon__text {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buyer-status-ribbon {
+    transition: none !important;
+  }
+}
