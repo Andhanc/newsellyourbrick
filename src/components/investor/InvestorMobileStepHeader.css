@@ -1,0 +1,61 @@
+.investor-mobile-step {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .investor-mobile-step {
+    display: block;
+    margin-bottom: 18px;
+    color: var(--buyer-ink);
+  }
+
+  .investor-mobile-step__eyebrow {
+    color: var(--buyer-teal-deep);
+    font: 760 10px/1.2 var(--buyer-font-display);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .investor-mobile-step h1 {
+    margin: 7px 0 4px;
+    font: 820 32px/.98 var(--buyer-font-display);
+    letter-spacing: -.045em;
+  }
+
+  .investor-mobile-step p {
+    margin: 0;
+    color: var(--buyer-text-muted);
+    font: 500 14px/1.45 var(--buyer-font-body);
+  }
+
+  .investor-mobile-step__progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 16px;
+  }
+
+  .investor-mobile-step__progress span {
+    height: 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--buyer-teal) 16%, var(--buyer-cloud));
+  }
+
+  .investor-mobile-step__progress span.is-filled { background: var(--buyer-teal); }
+
+  .investor-mobile-step__labels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin: 7px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--buyer-text-muted);
+    font: 650 9px/1.2 var(--buyer-font-display);
+  }
+
+  .investor-mobile-step__labels li:nth-child(2) { text-align: center; }
+  .investor-mobile-step__labels li:last-child { text-align: right; }
+  .investor-mobile-step__labels .is-active { color: var(--buyer-teal-deep); }
+}
+

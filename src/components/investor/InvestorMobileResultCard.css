@@ -1,0 +1,42 @@
+.investor-mobile-result { display: none; }
+
+@media (max-width: 768px) {
+  .investor-mobile-result {
+    display: block;
+    margin: 0 0 14px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--buyer-teal) 20%, transparent);
+    border-radius: 22px;
+    background: var(--buyer-mint);
+    color: var(--buyer-ink);
+    box-shadow: 0 18px 46px rgba(0, 69, 76, .12);
+  }
+
+  .investor-mobile-result__head { display: flex; align-items: center; gap: 10px; }
+  .investor-mobile-result__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: var(--buyer-teal-deep); color: white; }
+  .investor-mobile-result__head span { color: var(--buyer-teal-deep); font: 740 9px/1.2 var(--buyer-font-display); letter-spacing: .08em; text-transform: uppercase; }
+  .investor-mobile-result__head h2 { margin: 3px 0 0; font: 790 18px/1.1 var(--buyer-font-display); }
+
+  .investor-mobile-result__hero { display: grid; gap: 3px; margin: 16px 0 12px; padding: 15px; border-radius: 16px; background: var(--buyer-white); }
+  .investor-mobile-result__hero span { color: var(--buyer-text-muted); font: 600 11px/1.2 var(--buyer-font-body); }
+  .investor-mobile-result__hero strong { font: 830 28px/1 var(--buyer-font-display); letter-spacing: -.04em; }
+  .investor-mobile-result__hero strong.is-positive { color: var(--buyer-teal-deep); }
+  .investor-mobile-result__hero strong.is-negative { color: #b12b3f; }
+
+  .investor-mobile-result__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 0; }
+  .investor-mobile-result__metrics div { min-width: 0; padding: 10px 8px; border-radius: 13px; background: color-mix(in srgb, var(--buyer-white) 72%, transparent); }
+  .investor-mobile-result__metrics dt { color: var(--buyer-text-muted); font: 600 9px/1.2 var(--buyer-font-body); }
+  .investor-mobile-result__metrics dd { margin: 5px 0 0; overflow-wrap: anywhere; font: 760 11px/1.2 var(--buyer-font-display); }
+
+  .investor-mobile-result__assumptions,
+  .investor-mobile-result__risk { display: flex; gap: 9px; margin-top: 12px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--buyer-teal) 15%, transparent); }
+  .investor-mobile-result__assumptions > svg { color: var(--buyer-teal-deep); }
+  .investor-mobile-result__risk > svg { color: #a56c00; }
+  .investor-mobile-result__assumptions div,
+  .investor-mobile-result__risk div { display: grid; gap: 2px; }
+  .investor-mobile-result__assumptions strong,
+  .investor-mobile-result__risk strong { font: 740 11px/1.2 var(--buyer-font-display); }
+  .investor-mobile-result__assumptions span,
+  .investor-mobile-result__risk span { color: var(--buyer-text-muted); font: 500 11px/1.4 var(--buyer-font-body); }
+}
+
