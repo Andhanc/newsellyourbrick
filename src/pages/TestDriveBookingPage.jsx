@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
@@ -8,6 +8,7 @@ import { TestDriveRangeCalendar } from '@/components/ui/calendar'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { showToast } from '../components/ToastContainer'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import TestDriveSuccessDrawer from '../components/TestDriveSuccessDrawer'
 import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -57,6 +58,8 @@ export default function TestDriveBookingPage() {
   )
   const [contactChannel, setContactChannel] = useState(null)
   const [contactPickerOpen, setContactPickerOpen] = useState(false)
+  const [bookingSuccess, setBookingSuccess] = useState(null)
+  const confirmingSessionRef = useRef(null)
 
   const currencyFmt = (amount, currency) => {
     try {
@@ -75,6 +78,17 @@ export default function TestDriveBookingPage() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || searchParams.get('buyer_booking_preview') !== '1') return
+    setPropertyTitle('Вилла с бассейном у Средиземного моря')
+    setBookingSuccess({
+      booking_id: 142,
+      start_date: '2026-08-12',
+      end_date: '2026-08-18',
+      buyer_contact_channel: 'telegram',
+    })
+  }, [searchParams])
 
   useEffect(() => {
     const load = async () => {
@@ -116,6 +130,8 @@ export default function TestDriveBookingPage() {
     if (checkoutResult !== 'success' || !sid) return
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) return
+    if (confirmingSessionRef.current === sid) return
+    confirmingSessionRef.current = sid
     ;(async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/billing/confirm-test-drive-checkout`, {
@@ -128,13 +144,15 @@ export default function TestDriveBookingPage() {
           showToast(data.error || 'Не удалось подтвердить оплату', 'error')
           return
         }
-        showToast('Оплата прошла успешно. Бронирование добавлено в ваши записи.', 'success', 5000)
+        setBookingSuccess(data.data || {})
         const newParams = new URLSearchParams(searchParams)
         newParams.delete('test_drive_checkout')
         newParams.delete('session_id')
         setSearchParams(newParams, { replace: true })
       } catch {
         showToast('Ошибка подтверждения оплаты', 'error')
+      } finally {
+        if (confirmingSessionRef.current === sid) confirmingSessionRef.current = null
       }
     })()
   }, [searchParams, setSearchParams])
@@ -254,6 +272,14 @@ export default function TestDriveBookingPage() {
   return (
     <div className="test-drive-page">
       <Header />
+      <TestDriveSuccessDrawer
+        isOpen={Boolean(bookingSuccess)}
+        booking={bookingSuccess}
+        propertyTitle={propertyTitle}
+        onClose={() => setBookingSuccess(null)}
+        onOpenBookings={() => navigate('/profile/bookings')}
+        onBackToProperty={() => navigate(`/property/${propertyRouteKey}`)}
+      />
       <div className="test-drive-page__hero">
         <button
           type="button"

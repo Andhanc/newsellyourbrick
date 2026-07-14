@@ -2353,7 +2353,17 @@ export function registerStripeBillingRoutes(app) {
       }
       return res.json({
         success: true,
-        data: { already: !!result.already, booking_id: result.bookingId || null },
+        data: {
+          already: !!result.already,
+          booking_id: result.bookingId || null,
+          property_id: Number(session.metadata?.property_id || 0) || null,
+          start_date: String(session.metadata?.start_date || ''),
+          end_date: String(session.metadata?.end_date || ''),
+          day_count: Number(session.metadata?.days_count || 0) || null,
+          buyer_contact_channel: normalizeTestDriveContactChannel(
+            session.metadata?.buyer_contact_channel
+          ),
+        },
       });
     } catch (err) {
       console.error('[Stripe] confirm-test-drive-checkout:', err?.message || err);
