@@ -14,6 +14,6 @@ test('toast container uses the structured queue while keeping the legacy call si
 })
 
 test('notification helper forwards structured events without guessing from their copy', () => {
-  assert.match(helper, /typeof messageOrEvent === 'object'/)
+  assert.match(helper, /isStructuredToastEvent\(messageOrEvent\)/)
   assert.match(helper, /showToast\(messageOrEvent\)/)
 })

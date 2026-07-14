@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import Toast from './Toast'
-import { enqueueToast, normalizeToastEvent, removeToast as removeToastFromQueue } from '../utils/toastModel'
+import {
+  enqueueToast,
+  isStructuredToastEvent,
+  normalizeToastEvent,
+  removeToast as removeToastFromQueue,
+} from '../utils/toastModel'
 import './ToastContainer.css'
 
 let toastId = 0
@@ -9,7 +14,7 @@ let toastListeners = []
 export const showToast = (messageOrEvent, type = 'success', duration = 3000) => {
   const id = toastId++
   const event =
-    messageOrEvent && typeof messageOrEvent === 'object'
+    isStructuredToastEvent(messageOrEvent)
       ? normalizeToastEvent(messageOrEvent)
       : normalizeToastEvent(messageOrEvent, type, duration)
   toastListeners.forEach(listener => listener({ ...event, id }))

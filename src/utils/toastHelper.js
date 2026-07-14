@@ -1,11 +1,12 @@
 import { showToast } from '../components/ToastContainer'
+import { isStructuredToastEvent } from './toastModel'
 
 /**
  * Утилита для замены alert() на красивые toast-уведомления
  * Автоматически определяет тип уведомления по содержимому сообщения
  */
 export const showNotification = (messageOrEvent, type = null, duration = 4000) => {
-  if (messageOrEvent && typeof messageOrEvent === 'object') {
+  if (isStructuredToastEvent(messageOrEvent)) {
     return showToast(messageOrEvent)
   }
 

@@ -21,13 +21,20 @@ function validAction(action) {
   )
 }
 
+export function isStructuredToastEvent(value) {
+  if (!value || typeof value !== 'object') return false
+  return ['message', 'title', 'action', 'duration', 'persistent', 'dedupeKey', 'announcement'].some(
+    (key) => Object.prototype.hasOwnProperty.call(value, key),
+  )
+}
+
 export function normalizeToastEvent(messageOrEvent, legacyType = 'info', legacyDuration = 5000) {
-  if (messageOrEvent == null || typeof messageOrEvent !== 'object') {
+  if (!isStructuredToastEvent(messageOrEvent)) {
     const type = TOAST_TYPES.has(legacyType) ? legacyType : 'info'
     return {
       type,
       title: DEFAULT_TITLES[type],
-      message: String(messageOrEvent ?? ''),
+      message: messageOrEvent ?? '',
       action: null,
       duration: validDuration(legacyDuration),
       persistent: false,

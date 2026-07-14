@@ -9,6 +9,7 @@ try {
 }
 
 const normalizeToastEvent = api.normalizeToastEvent || (() => ({}))
+const isStructuredToastEvent = api.isStructuredToastEvent || (() => false)
 const enqueueToast = api.enqueueToast || (() => ({ visible: [], queued: [] }))
 const removeToast = api.removeToast || (() => ({ visible: [], queued: [] }))
 
@@ -56,6 +57,15 @@ test('rejects unknown types and unsafe action shapes', () => {
   assert.equal(event.type, 'info')
   assert.equal(event.action, null)
   assert.equal(event.duration, 5000)
+})
+
+test('keeps legacy React content instead of mistaking it for a structured event', () => {
+  const reactContent = { $$typeof: Symbol.for('react.transitional.element'), type: 'span', props: {} }
+  const event = normalizeToastEvent(reactContent, 'warning', 4000)
+
+  assert.equal(isStructuredToastEvent(reactContent), false)
+  assert.equal(event.message, reactContent)
+  assert.equal(event.type, 'warning')
 })
 
 test('deduplicates active events in place and preserves their stable id', () => {
