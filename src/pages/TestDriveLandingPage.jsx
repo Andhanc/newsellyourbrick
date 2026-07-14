@@ -16,6 +16,7 @@ import Header from '../components/Header'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import ListingPagePagination from '../components/ListingPagePagination'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
@@ -332,14 +333,17 @@ const TestDriveLandingPage = () => {
               </SharesMobileFiltersDrawer>
 
               {loading ? null : filteredListings.length === 0 ? (
-                <div className="test-drive-empty">
-                  <FiSun size={34} aria-hidden />
-                  <h3>По этим условиям пока нет объектов</h3>
-                  <p>Сбросьте часть фильтров или измените поиск, чтобы увидеть тест-драйвы.</p>
-                  <button type="button" onClick={resetFilters}>
-                    Показать все
-                  </button>
-                </div>
+                <BuyerEmptyState
+                  className="test-drive-empty-guided"
+                  icon={FiSun}
+                  eyebrow="Отпуск перед решением"
+                  title="Подходящих тест-драйвов пока нет"
+                  description="Снимем ограничения и покажем все объекты, где можно пожить до сделки."
+                  primaryLabel="Показать все тест-драйвы"
+                  onPrimary={resetFilters}
+                  secondaryLabel="Все направления"
+                  onSecondary={() => navigate('/sections')}
+                />
               ) : (
                 <>
                   <div className="test-drive-card-grid">
