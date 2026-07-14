@@ -8,7 +8,9 @@ import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../uti
 import { FiArrowRight, FiBarChart2, FiColumns, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
+import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
+import useMobileLayout from '../hooks/useMobileLayout'
 import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
@@ -598,6 +600,7 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
 
 const Compare = () => {
   const navigate = useNavigate()
+  const isMobile = useMobileLayout(767)
   const { favoritesLoading } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
   const { resolved: subscriptionResolved, allowed: hasCalculatorAccess } =
@@ -649,6 +652,13 @@ const Compare = () => {
   )
 
   const clearSelection = () => setSelectedKeys([])
+
+  const replaceSelectedSide = useCallback((side) => {
+    setSelectedKeys((previous) => {
+      if (previous.length !== 2) return previous
+      return side === 'left' ? [previous[1]] : [previous[0]]
+    })
+  }, [])
 
   const pair = useMemo(() => {
     if (selectedKeys.length !== 2) return null
@@ -868,14 +878,21 @@ const Compare = () => {
                 {selectedKeys.length === 0 && 'Нажмите на карточку, чтобы выбрать первый объект.'}
                 {selectedKeys.length === 1 &&
                   'Выберите второй объект того же типа. Остальные карточки недоступны.'}
-                {selectedKeys.length === 2 && 'Ниже — таблица сравнения. Можно сменить выбор кнопкой «Сбросить».'}
+                {selectedKeys.length === 2 && 'Ниже — сравнение по ключевым параметрам. Любой объект можно заменить.'}
               </p>
-              <ComparePickListingGrid
-                items={favoriteAuctions}
-                selectedKeys={selectedKeys}
-                groupFilter={groupFilter}
-                onToggleSelect={toggleSelect}
-              />
+              {isMobile && pair ? (
+                <div className="compare-pick-locked">
+                  <span>Пара выбрана — сравнение уже готово ниже.</span>
+                  <button type="button" onClick={clearSelection}>Выбрать другую пару</button>
+                </div>
+              ) : (
+                <ComparePickListingGrid
+                  items={favoriteAuctions}
+                  selectedKeys={selectedKeys}
+                  groupFilter={groupFilter}
+                  onToggleSelect={toggleSelect}
+                />
+              )}
             </section>
 
             {pair && (
@@ -883,8 +900,16 @@ const Compare = () => {
                 <h2 id="compare-table-heading" className="compare-table-heading">
                   Сравнение
                 </h2>
-                <div className="compare-table-wrap">
-                  <table className="compare-table">
+                {isMobile ? (
+                  <CompareMobileMetrics
+                    left={pair.left}
+                    right={pair.right}
+                    rows={tableRows}
+                    onReplace={replaceSelectedSide}
+                  />
+                ) : (
+                  <div className="compare-table-wrap">
+                    <table className="compare-table">
                     <thead>
                       <tr>
                         <th scope="col" className="compare-table-param">
@@ -941,8 +966,9 @@ const Compare = () => {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                </div>
+                    </table>
+                  </div>
+                )}
 
                 {showInvestorPanelCta && (
                   <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">

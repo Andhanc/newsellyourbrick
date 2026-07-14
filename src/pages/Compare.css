@@ -920,6 +920,103 @@
 }
 
 @media (max-width: 768px) {
+  .compare-page {
+    overflow-x: clip;
+    background:
+      radial-gradient(circle at 100% 0, rgba(0, 153, 169, 0.1), transparent 28rem),
+      var(--buyer-warm);
+  }
+
+  .compare-container {
+    padding: 22px var(--buyer-gutter) calc(48px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .compare-header {
+    margin-bottom: 26px;
+    text-align: left;
+  }
+
+  .compare-title {
+    justify-content: flex-start;
+    margin-bottom: 8px;
+    color: var(--buyer-ink);
+    font-family: var(--buyer-font-display);
+    font-size: clamp(28px, 8vw, 36px);
+    font-weight: 820;
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+  }
+
+  .compare-title-icon { color: var(--buyer-teal); }
+
+  .compare-subtitle {
+    margin: 0;
+    color: var(--buyer-text-muted);
+    font-family: var(--buyer-font-body);
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  .compare-link-muted {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--buyer-touch);
+    color: var(--buyer-teal-deep);
+    font-family: var(--buyer-font-display);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .compare-pick-section { margin-bottom: 26px; }
+
+  .compare-pick-heading,
+  .compare-table-heading {
+    color: var(--buyer-ink);
+    font-family: var(--buyer-font-display);
+    font-weight: 790;
+    letter-spacing: -0.025em;
+  }
+
+  .compare-hint { color: var(--buyer-text-muted); font-family: var(--buyer-font-body); }
+
+  .compare-type-pill {
+    background: var(--buyer-mint);
+    color: var(--buyer-teal-deep);
+  }
+
+  .compare-clear-btn {
+    min-height: var(--buyer-touch);
+    border-color: var(--buyer-line);
+    background: var(--buyer-white);
+    font-family: var(--buyer-font-display);
+    font-weight: 680;
+  }
+
+  .compare-pick-locked {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--buyer-teal) 20%, transparent);
+    border-radius: var(--buyer-radius-md);
+    background: var(--buyer-mint);
+    color: var(--buyer-teal-deep);
+    font: 600 13px/1.4 var(--buyer-font-body);
+  }
+
+  .compare-pick-locked button {
+    min-height: var(--buyer-touch);
+    padding: 0 13px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--buyer-teal-deep);
+    color: var(--buyer-white);
+    font: 700 12px/1 var(--buyer-font-display);
+  }
+
+  .compare-table-section { margin-top: 0; }
+
   .compare-investor-cta-inner {
     flex-direction: column;
     align-items: stretch;
@@ -950,14 +1047,6 @@
 
   .compare-calculator-similar-grid {
     grid-template-columns: 1fr;
-  }
-
-  .compare-container {
-    padding: 24px 12px 40px;
-  }
-
-  .compare-title {
-    font-size: 26px;
   }
 
   .compare-pick-grid {
