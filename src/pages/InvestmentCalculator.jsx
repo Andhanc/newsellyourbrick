@@ -430,8 +430,12 @@ const InvestmentCalculator = () => {
     setWizardStep(2);
   };
 
+  const requiresRentalIncome = investmentStrategy === 'rent' || investmentStrategy === 'fractional';
+
   const goStep3 = () => {
-    if (isMobile ? (!investmentStrategy || Number(ownershipPeriod) <= 0) : !dataSource) return;
+    if (isMobile
+      ? (!investmentStrategy || Number(ownershipPeriod) <= 0 || (requiresRentalIncome && Number(rentalIncome) <= 0))
+      : !dataSource) return;
     if (dataSource === 'favorites') loadCatalog();
     setWizardStep(3);
   };
@@ -441,7 +445,11 @@ const InvestmentCalculator = () => {
   const canContinueFromObject = dataSource === 'favorites'
     ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
     : dataSource === 'manual' && Number(propertyPrice) > 0;
-  const canContinueFromGoal = Boolean(investmentStrategy && Number(ownershipPeriod) > 0);
+  const canContinueFromGoal = Boolean(
+    investmentStrategy &&
+    Number(ownershipPeriod) > 0 &&
+    (!requiresRentalIncome || Number(rentalIncome) > 0)
+  );
 
   const resetWizard = () => {
     setWizardStep(1);
@@ -921,6 +929,21 @@ const InvestmentCalculator = () => {
                       className="parameter-input"
                     />
                   </div>
+                  {requiresRentalIncome && (
+                    <div className="parameter-group calc-mobile-goal-inputs__wide">
+                      <label htmlFor="mobile-investor-rent">Ожидаемая аренда в год, €</label>
+                      <input
+                        id="mobile-investor-rent"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={rentalIncome}
+                        onChange={(event) => setRentalIncome(event.target.value)}
+                        className="parameter-input"
+                      />
+                    </div>
+                  )}
                   <div className="parameter-group">
                     <label htmlFor="mobile-investor-costs">Расходы при покупке, %</label>
                     <input
@@ -1167,9 +1190,17 @@ const InvestmentCalculator = () => {
                     ? calculations.totalReturnOnEquity
                     : calculations.cashOnCashY1
                 )}
-                cashFlow={formatCurrency(calculations.netCashFlow, i18n.language)}
-                profit={formatCurrency(calculations.totalProfit, i18n.language)}
-                isPositive={calculations.totalProfit >= 0}
+                cashFlow={formatCurrency(
+                  calculations.netCashFlow / Math.max(1, (Number(ownershipPeriod) || 1) * 12),
+                  i18n.language
+                )}
+                headlineLabel={investmentStrategy === 'resale' ? 'Итоговая прибыль' : 'Денежный поток за период'}
+                yieldLabel={investmentStrategy === 'resale' ? 'Доходность за период' : 'Доходность в год'}
+                profit={formatCurrency(
+                  investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow,
+                  i18n.language
+                )}
+                isPositive={(investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow) >= 0}
                 assumptions={`${ownershipPeriod || 0} лет · рост ${marketGrowthRate || 0}% · расходы ${operatingExpenses || 0}%`}
               />
             )}

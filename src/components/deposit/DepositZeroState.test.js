@@ -37,3 +37,8 @@ test('wallet renders zero state only after a successful deposit response resolve
   assert.match(wallet, /setShowTopUpPicker\(true\)/)
 })
 
+test('mobile artwork is cropped to keep the value and primary action near the first viewport', () => {
+  const mobile = css.slice(css.indexOf('@media (max-width: 767px)'))
+  assert.match(mobile, /\.deposit-zero__visual\s*\{[\s\S]*height:\s*255px/)
+  assert.match(mobile, /min-height:\s*0/)
+})

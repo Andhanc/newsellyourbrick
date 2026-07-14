@@ -27,7 +27,17 @@ function ObjectHeader({ item, side, index, label, onReplace }) {
   return (
     <article className="compare-mobile__object" aria-label={`${label}: ${view.title}`}>
       <div className="compare-mobile__object-media">
-        <img className="compare-mobile__object-image" src={view.image} alt="" aria-hidden />
+        <img
+          className="compare-mobile__object-image"
+          src={view.image}
+          alt=""
+          aria-hidden
+          onError={(event) => {
+            if (!event.currentTarget.src.endsWith(FALLBACK_IMAGE)) {
+              event.currentTarget.src = FALLBACK_IMAGE
+            }
+          }}
+        />
         <span className="compare-mobile__object-index">{index}</span>
       </div>
       <div className="compare-mobile__object-copy">

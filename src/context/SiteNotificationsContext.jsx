@@ -42,6 +42,11 @@ function parseNotificationData(data) {
   return null
 }
 
+function ensureSuccessfulNotificationResponse(response) {
+  if (!response.ok) throw new Error(`Notification update failed: ${response.status}`)
+  return response
+}
+
 function hasStoredDbUserId() {
   const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null
   return raw != null && /^\d+$/.test(String(raw).trim())
@@ -438,7 +443,8 @@ export function SiteNotificationsProvider({ children }) {
   const handleNotificationView = useCallback(
     async (notificationId) => {
       try {
-        await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' })
+        const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' })
+        ensureSuccessfulNotificationResponse(response)
         const dbUserId = localStorage.getItem('userId')
         if (dbUserId && /^\d+$/.test(dbUserId)) {
           const { fetchUserNotifications, invalidateUserNotificationsCache } = await import(
@@ -462,11 +468,12 @@ export function SiteNotificationsProvider({ children }) {
     if (unreadIds.length === 0) return
 
     try {
-      await Promise.all(
+      const responses = await Promise.all(
         unreadIds.map((notificationId) =>
           fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' }),
         ),
       )
+      responses.forEach(ensureSuccessfulNotificationResponse)
       setNotifications((previous) =>
         previous.map((notification) =>
           unreadIds.includes(notification.id)

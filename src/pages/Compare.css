@@ -928,7 +928,7 @@
   }
 
   .compare-container {
-    padding: 22px var(--buyer-gutter) calc(48px + env(safe-area-inset-bottom, 0px));
+    padding: calc(96px + env(safe-area-inset-top, 0px)) var(--buyer-gutter) calc(48px + env(safe-area-inset-bottom, 0px));
   }
 
   .compare-header {

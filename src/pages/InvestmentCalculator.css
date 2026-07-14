@@ -2011,6 +2011,7 @@ select.parameter-input option {
   .calc-mobile-object-input > span { color: var(--buyer-text-muted); font: 500 11px/1.4 var(--buyer-font-body); }
   .calc-mobile-goal-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .calc-mobile-goal-inputs .parameter-group { min-width: 0; }
+  .calc-mobile-goal-inputs__wide { grid-column: 1 / -1; }
   .calc-fav-picker__label { color: var(--buyer-ink); }
   .calc-fav-picker__trigger,
   .calc-fav-picker__list {

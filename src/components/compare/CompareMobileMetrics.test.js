@@ -12,10 +12,13 @@ async function readOrEmpty(url) {
 
 const source = await readOrEmpty(new URL('./CompareMobileMetrics.jsx', import.meta.url))
 const css = await readOrEmpty(new URL('./CompareMobileMetrics.css', import.meta.url))
+const pageCss = await readOrEmpty(new URL('../../pages/Compare.css', import.meta.url))
 
 test('mobile comparison keeps both object identities visible', () => {
   assert.match(source, /compare-mobile__pair/)
   assert.match(source, /compare-mobile__object-image/)
+  assert.match(source, /onError=/)
+  assert.match(source, /FALLBACK_IMAGE/)
   assert.match(source, /Объект 1/)
   assert.match(source, /Объект 2/)
   assert.match(source, /onReplace\('left'\)/)
@@ -38,4 +41,8 @@ test('mobile comparison has no horizontal scroll and uses readable buyer tokens'
   assert.match(css, /min-height:\s*var\(--buyer-touch\)/)
   assert.match(css, /\.compare-mobile__value--win[\s\S]*var\(--buyer-mint\)/)
   assert.match(css, /@media\s*\(max-width:\s*360px\)/)
+})
+
+test('mobile comparison content clears the fixed buyer header', () => {
+  assert.match(pageCss, /padding:\s*calc\(96px \+ env\(safe-area-inset-top, 0px\)\)/)
 })

@@ -47,7 +47,7 @@
 
 @media (max-width: 767px) {
   .deposit-zero { grid-template-columns: 1fr; gap: 0; padding: 10px 10px 16px; border-radius: 25px; }
-  .deposit-zero__visual { min-height: 238px; border-radius: 19px; }
+  .deposit-zero__visual { height: 255px; min-height: 0; border-radius: 19px; }
   .deposit-zero__visual img { object-position: center 55%; }
   .deposit-zero__visual-badge { left: 10px; bottom: 10px; }
   .deposit-zero__copy { padding: 18px 6px 0; }
@@ -59,4 +59,3 @@
 @media (prefers-reduced-motion: reduce) {
   .deposit-zero__primary { transition: none; }
 }
-

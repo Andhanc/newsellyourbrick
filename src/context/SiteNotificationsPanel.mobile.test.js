@@ -13,6 +13,7 @@ async function readOrEmpty(url) {
 const source = await readFile(new URL('./SiteNotificationsPanel.jsx', import.meta.url), 'utf8')
 const css = await readOrEmpty(new URL('./SiteNotificationsPanel.css', import.meta.url))
 const context = await readFile(new URL('./SiteNotificationsContext.jsx', import.meta.url), 'utf8')
+const legacyMainCss = await readFile(new URL('../pages/MainPage.css', import.meta.url), 'utf8')
 
 test('notification center is an accessible grouped inbox', () => {
   assert.match(source, /role="dialog"/)
@@ -39,6 +40,7 @@ test('notification center is a mobile bottom sheet and desktop side panel', () =
   assert.match(css, /env\(safe-area-inset-bottom/)
   assert.match(css, /@media\s*\(min-width:\s*768px\)[\s\S]*right:\s*0/)
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+  assert.doesNotMatch(legacyMainCss, /\.notification-(?:panel|backdrop|item)(?:\s|\{|__|--)/)
 })
 
 test('live outbid and booking updates use structured actionable toasts', () => {
@@ -46,6 +48,12 @@ test('live outbid and booking updates use structured actionable toasts', () => {
   assert.match(context, /action:\s*\{/)
   assert.match(context, /title:/)
   assert.match(context, /markAllNotificationsRead/)
+})
+
+test('read state is only committed after every server update succeeds', () => {
+  assert.match(context, /if \(!response\.ok\) throw new Error/)
+  assert.match(context, /const responses = await Promise\.all/)
+  assert.match(context, /responses\.forEach\(ensureSuccessfulNotificationResponse\)/)
 })
 
 test('panel close handlers never pass a click event as an after-close callback', () => {

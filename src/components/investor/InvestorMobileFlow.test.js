@@ -26,6 +26,7 @@ test('mobile investor result separates deterministic outcome, assumptions and ri
   assert.match(result, /Базовый сценарий/)
   assert.match(result, /Ваш капитал/)
   assert.match(result, /Доходность/)
+  assert.match(result, /yieldLabel/)
   assert.match(result, /Денежный поток/)
   assert.match(result, /Что учтено/)
   assert.match(result, /Риск/)
@@ -48,6 +49,10 @@ test('mobile object and goal steps collect the minimum decision inputs before re
   assert.match(page, /calc-mobile-goal-inputs/)
   assert.match(page, /Горизонт/)
   assert.match(page, /Расходы при покупке/)
+  assert.match(page, /Ожидаемая аренда в год/)
+  assert.match(page, /requiresRentalIncome/)
+  assert.match(page, /Доходность за период/)
+  assert.match(page, /Доходность в год/)
 })
 
 test('numeric investment inputs expose mobile keyboard and bounds', () => {
