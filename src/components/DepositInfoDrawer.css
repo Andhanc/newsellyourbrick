@@ -1,177 +1,26 @@
-.deposit-info-drawer__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 13620;
-  border: 0;
-  background: rgba(7, 20, 24, 0.58);
-  backdrop-filter: blur(8px);
-  cursor: default;
-  animation: depositInfoBackdropIn 0.24s ease-out both;
-}
-
-.deposit-info-drawer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  z-index: 13630;
-  width: min(480px, calc(100vw - 24px));
-  max-height: calc(100dvh - 28px);
-  overflow-y: auto;
-  padding: 8px 24px 24px;
-  border: 1px solid rgba(0, 153, 169, 0.14);
-  border-radius: 30px;
-  background: #ffffff;
-  color: #102326;
-  text-align: center;
-  box-shadow: 0 28px 90px rgba(7, 28, 32, 0.34);
-  margin: 0 auto;
-  animation: depositInfoDrawerIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes depositInfoBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes depositInfoDrawerIn {
-  from { transform: translateY(105%); }
-  to { transform: translateY(0); }
-}
-
-.deposit-info-drawer__handle {
-  display: flex;
-  justify-content: center;
-  padding: 5px 0 0;
-}
-
-.deposit-info-drawer__handle span {
-  width: 42px;
-  height: 4px;
-  border-radius: 99px;
-  background: #d6dddc;
-}
-
-.deposit-info-drawer__close {
-  position: absolute;
-  top: 17px;
-  right: 17px;
-  width: 38px;
-  height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 50%;
-  background: #eef3f2;
-  color: #244246;
-  font-size: 19px;
-  cursor: pointer;
-}
-
-.deposit-info-drawer__visual {
-  width: 190px;
-  height: 174px;
-  margin: 0 auto -4px;
-  overflow: hidden;
-}
-
-.deposit-info-drawer__visual img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-}
-
-.deposit-info-drawer__eyebrow {
-  display: inline-flex;
-  margin-bottom: 9px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #e9f8f8;
-  color: #007c86;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.deposit-info-drawer h2 {
-  margin: 0;
-  font-size: clamp(25px, 7vw, 32px);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-}
-
-.deposit-info-drawer__lead {
-  margin: 12px auto 18px;
-  max-width: 390px;
-  color: #607174;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.deposit-info-drawer__benefits {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.deposit-info-drawer__benefits > div {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  align-items: center;
-  gap: 11px;
-  padding: 11px 12px;
-  border-radius: 15px;
-  background: #f4f7f6;
-  color: #486064;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.deposit-info-drawer__benefits svg {
-  width: 34px;
-  height: 34px;
-  padding: 8px;
-  border-radius: 11px;
-  background: #ffffff;
-  color: #008c98;
-}
-
-.deposit-info-drawer__cta {
-  width: 100%;
-  min-height: 52px;
-  margin-top: 16px;
-  border: 0;
-  border-radius: 16px;
-  background: #0099a9;
-  color: #ffffff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-}
+.deposit-info-drawer.buyer-sheet { z-index: 13630; }
+.deposit-info-drawer .buyer-sheet__surface { width: min(100%, 500px); }
+.deposit-info-drawer__content { text-align: center; }
+.deposit-info-drawer__visual { width: 180px; height: 158px; margin: -3px auto 0; overflow: hidden; }
+.deposit-info-drawer__visual img { width: 100%; height: 100%; object-fit: contain; }
+.deposit-info-drawer__eyebrow { display: inline-flex; margin-bottom: 9px; padding: 6px 10px; border-radius: 999px; background: var(--buyer-mint); color: var(--buyer-teal-deep); font: 800 9px/1 var(--buyer-font-display); letter-spacing: .09em; text-transform: uppercase; }
+.deposit-info-drawer h2 { margin: 0; color: var(--buyer-ink); font: 820 clamp(26px, 7vw, 34px)/1 var(--buyer-font-display); letter-spacing: -.045em; }
+.deposit-info-drawer__lead { max-width: 390px; margin: 12px auto 17px; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
+.deposit-info-drawer__benefits { display: grid; gap: 8px; text-align: left; }
+.deposit-info-drawer__benefits > div { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px; border-radius: 15px; background: var(--buyer-cloud); color: var(--buyer-text-muted); font: 500 12px/1.4 var(--buyer-font-body); }
+.deposit-info-drawer__benefits svg { width: 36px; height: 36px; padding: 9px; border-radius: 12px; background: var(--buyer-white); color: var(--buyer-teal-deep); }
+.deposit-info-drawer__actions { display: grid; gap: 8px; }
+.deposit-info-drawer__cta,
+.deposit-info-drawer__secondary { width: 100%; min-height: var(--buyer-touch); border-radius: 15px; cursor: pointer; font: 750 13px/1 var(--buyer-font-display); }
+.deposit-info-drawer__cta { border: 0; background: var(--buyer-teal-deep); color: white; }
+.deposit-info-drawer__secondary { border: 1px solid var(--buyer-line); background: var(--buyer-white); color: var(--buyer-teal-deep); }
 
 @media (max-width: 480px) {
-  .deposit-info-drawer {
-    bottom: 0;
-    width: 100%;
-    max-height: 94dvh;
-    padding: 8px 18px calc(20px + env(safe-area-inset-bottom, 0px));
-    border-radius: 28px 28px 0 0;
-  }
-
-  .deposit-info-drawer__visual {
-    width: 168px;
-    height: 150px;
-  }
+  .deposit-info-drawer__content { text-align: left; }
+  .deposit-info-drawer__visual { width: 160px; height: 140px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .deposit-info-drawer,
-  .deposit-info-drawer__backdrop {
-    animation: none;
-  }
+  .deposit-info-drawer__cta,
+  .deposit-info-drawer__secondary { transition: none; }
 }

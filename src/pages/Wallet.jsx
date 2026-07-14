@@ -42,6 +42,7 @@ import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
+import { DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import '../components/PropertyListingGrid.css'
 import '../components/PropertyList.css'
 import {
@@ -241,6 +242,7 @@ const WalletInner = () => {
   const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false)
   const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
   const [showDepositSuccessDrawer, setShowDepositSuccessDrawer] = useState(false)
+  const [confirmedDepositAmount, setConfirmedDepositAmount] = useState(null)
   const [tonConnectUI] = useTonConnectUI()
   const tonAddress = useTonAddress()
   const tonWallet = useTonWallet()
@@ -529,6 +531,7 @@ const WalletInner = () => {
             }
             await loadUserData(false)
             if (isVerified) {
+              setConfirmedDepositAmount(formatAmount(result.data.amountEur))
               setShowDepositSuccessDrawer(true)
             } else {
               showNotification(
@@ -634,8 +637,15 @@ const WalletInner = () => {
 
   const handleDepositSuccessContinue = () => {
     setShowDepositSuccessDrawer(false)
-    if (navigateToWalletEntryOrigin()) return
-    navigate('/auction')
+    window.setTimeout(() => {
+      if (navigateToWalletEntryOrigin()) return
+      navigate('/auction')
+    }, DRAWER_DISMISS_MS.panel)
+  }
+
+  const handleInfoTopUp = () => {
+    setIsDepositInfoOpen(false)
+    window.setTimeout(() => setShowTopUpPicker(true), DRAWER_DISMISS_MS.panel)
   }
 
   const handleBookNow = () => {
@@ -788,6 +798,7 @@ const WalletInner = () => {
         <DepositInfoDrawer
           isOpen={isDepositInfoOpen}
           onClose={() => setIsDepositInfoOpen(false)}
+          onTopUp={handleInfoTopUp}
         />
 
         {/* Picker и модалки пополнения */}
@@ -808,6 +819,8 @@ const WalletInner = () => {
           isOpen={showDepositSuccessDrawer}
           onClose={() => setShowDepositSuccessDrawer(false)}
           onContinue={handleDepositSuccessContinue}
+          confirmedAmount={confirmedDepositAmount}
+          returnPath={isSafeWalletFromPath(location.state?.from) ? location.state.from : getWalletEntryFrom() || '/auction'}
         />
         {dbUserId && (
           <SellerVerificationModal
