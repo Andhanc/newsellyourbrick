@@ -124,7 +124,7 @@ export function SiteNotificationsProvider({ children }) {
   const API_BASE_URL = getApiBaseUrlSync()
 
   const toggle = useCallback(() => setIsOpen((prev) => !prev), [])
-  const closePanel = requestClose
+  const closePanel = useCallback(() => requestClose(), [requestClose])
 
   const getNotificationPropertyMeta = useCallback(
     (notification) => {
@@ -185,11 +185,25 @@ export function SiteNotificationsProvider({ children }) {
           )
           if (newBidOutbidNotifications.length > 0) {
             newBidOutbidNotifications.forEach((notif) => {
+              const payload = parseNotificationData(notif.data)
+              const propertyId = payload?.property_id
               const message =
                 notif.message ||
-                notif.title ||
                 t('toastBidOutbidFallback', 'Your bid has been outbid!')
-              showToast(message, 'warning', 5000)
+              showToast({
+                type: 'warning',
+                title: notif.title || 'Вашу ставку перебили',
+                message,
+                duration: 6500,
+                dedupeKey: `bid_outbid:${propertyId ?? notif.id}`,
+                action: {
+                  label: propertyId != null ? 'Вернуться к торгам' : 'Открыть уведомления',
+                  onClick: () => {
+                    if (propertyId != null) navigate(getPropertyDetailPath(propertyId, { classic: false }))
+                    else setIsOpen(true)
+                  },
+                },
+              })
             })
           }
           const newTestDriveResult = notificationsList.filter(
@@ -200,13 +214,22 @@ export function SiteNotificationsProvider({ children }) {
           )
           if (newTestDriveResult.length > 0) {
             newTestDriveResult.forEach((notif) => {
+              const payload = parseNotificationData(notif.data)
               const message =
-                notif.message || notif.title || t('toastTestDriveUpdate', 'Test-drive update')
-              showToast(
+                notif.message || t('toastTestDriveUpdate', 'Test-drive update')
+              showToast({
+                type: notif.title?.includes('отклон') ? 'warning' : 'success',
+                title: notif.title || 'Статус просмотра обновлён',
                 message,
-                notif.title?.includes('отклон') ? 'warning' : 'success',
-                6000,
-              )
+                duration: 6500,
+                dedupeKey: `test_drive_result:${payload?.booking_id ?? notif.id}`,
+                action: {
+                  label: 'Открыть бронирование',
+                  onClick: () => navigate(
+                    `/profile/bookings${payload?.booking_id != null ? `?booking=${payload.booking_id}` : ''}`,
+                  ),
+                },
+              })
             })
           }
         } else {
@@ -269,7 +292,7 @@ export function SiteNotificationsProvider({ children }) {
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
       stopListeners?.()
     }
-  }, [API_BASE_URL, t])
+  }, [API_BASE_URL, navigate, t])
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -432,6 +455,36 @@ export function SiteNotificationsProvider({ children }) {
     [API_BASE_URL],
   )
 
+  const markAllNotificationsRead = useCallback(async () => {
+    const unreadIds = notifications
+      .filter((notification) => notification.view_count === 0)
+      .map((notification) => notification.id)
+    if (unreadIds.length === 0) return
+
+    try {
+      await Promise.all(
+        unreadIds.map((notificationId) =>
+          fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' }),
+        ),
+      )
+      setNotifications((previous) =>
+        previous.map((notification) =>
+          unreadIds.includes(notification.id)
+            ? { ...notification, view_count: Math.max(1, Number(notification.view_count) || 0) }
+            : notification,
+        ),
+      )
+    } catch (error) {
+      console.error('SiteNotifications: mark all read', error)
+      showToast({
+        type: 'error',
+        title: 'Не удалось обновить уведомления',
+        message: t('networkErrorShort', 'Проверьте подключение и попробуйте снова.'),
+        dedupeKey: 'notifications:mark-all-error',
+      })
+    }
+  }, [API_BASE_URL, notifications, t])
+
   const goToPropertyListing = useCallback(
     async (notificationId, propertyId) => {
       const { ensureCanOpenProperty } = await import('../utils/propertyAccessGuard')
@@ -493,6 +546,8 @@ export function SiteNotificationsProvider({ children }) {
             navigate={navigate}
             notifications={notifications}
             notificationsLoading={notificationsLoading}
+            unreadCount={unreadCount}
+            markAllNotificationsRead={markAllNotificationsRead}
             getNotificationPropertyMeta={getNotificationPropertyMeta}
             respondTestDriveRequest={respondTestDriveRequest}
             handleNotificationView={handleNotificationView}
