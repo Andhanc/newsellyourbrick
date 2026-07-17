@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSliders } from 'react-icons/fi'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Map, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import ListingPagePagination from '../components/ListingPagePagination'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import {
@@ -34,6 +35,7 @@ import {
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
 import { getSearchResultsPropertyPath, parseSearchResultsGeoRoute } from '../utils/searchResultsGeoUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
+import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -81,6 +83,7 @@ const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
@@ -152,10 +155,27 @@ const SearchResults = () => {
     return filterPropertiesBySearchQuery(strict, searchQuery)
   }, [catalogProperties, activeFilters, searchQuery, filterBounds.priceMin, filterBounds.priceMax])
 
-  const groupedSections = useMemo(
-    () => groupPropertiesByCatalogSection(filteredProperties, activeFilters),
-    [filteredProperties, activeFilters],
+  const mobilePagination = useMemo(
+    () => paginateBuyerCatalogue(filteredProperties, currentPage),
+    [filteredProperties, currentPage],
   )
+  const visibleProperties = isMobile ? mobilePagination.items : filteredProperties
+  const groupedSections = useMemo(() => {
+    const sections = groupPropertiesByCatalogSection(visibleProperties, activeFilters)
+    if (!isMobile) return sections
+    const seenListingKeys = new Set()
+    return sections
+      .map((section) => ({
+        ...section,
+        properties: section.properties.filter((property) => {
+          const key = auctionListingDedupeKey(property)
+          if (seenListingKeys.has(key)) return false
+          seenListingKeys.add(key)
+          return true
+        }),
+      }))
+      .filter((section) => section.properties.length > 0)
+  }, [visibleProperties, activeFilters, isMobile])
   const linkGeo = useMemo(
     () => ({
       country: activeFilters.country || routeCountry,
@@ -183,6 +203,10 @@ const SearchResults = () => {
     if (activeFilters.minPrice !== '' || activeFilters.maxPrice !== '') count += 1
     return count
   }, [activeFilters])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeFilters, searchQuery, routeCountry, routeCity])
 
   useEffect(() => {
     if (!location.state?.fromPropertySearchBlock) return
@@ -287,8 +311,29 @@ const SearchResults = () => {
               }`.trim()}
             >
               {!isSearchDesktop ? (
-                <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
-                  <div className="search-box">
+                <>
+                  <div className="search-results__mobile-head">
+                    <div>
+                      <p className="search-results__eyebrow">Каталог покупателя</p>
+                      <h1>Найдите свой объект</h1>
+                      <p className="search-results__mobile-count">
+                        {totalUniqueCount > 0
+                          ? `${totalUniqueCount} ${t('mapFiltersObjects', { defaultValue: 'объектов' })}`
+                          : 'Подберём новые варианты'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="search-results__map-button"
+                      onClick={() => navigate('/map')}
+                      aria-label="Открыть объекты на карте"
+                    >
+                      <Map size={18} aria-hidden />
+                      <span>Карта</span>
+                    </button>
+                  </div>
+                  <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
+                    <div className="search-box">
                     <svg
                       className="search-icon"
                       width="20"
@@ -318,8 +363,8 @@ const SearchResults = () => {
                         ×
                       </button>
                     ) : null}
-                  </div>
-                  <button
+                    </div>
+                    <button
                     type="button"
                     className={`search-results__mobile-filters-btn${
                       activeFilterCount > 0 ? ' is-active' : ''
@@ -334,8 +379,9 @@ const SearchResults = () => {
                         {activeFilterCount}
                       </span>
                     ) : null}
-                  </button>
-                </div>
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div
                   ref={searchFiltersBarRef}
@@ -421,6 +467,22 @@ const SearchResults = () => {
                   </div>
                 )}
               </div>
+
+              {!isSearchDesktop && totalUniqueCount > 0 ? (
+                <ListingPagePagination
+                  currentPage={mobilePagination.currentPage}
+                  totalPages={mobilePagination.totalPages}
+                  onPageChange={(nextPage) => {
+                    setCurrentPage(nextPage)
+                    requestAnimationFrame(() => {
+                      document.getElementById('search-results-grid')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                    })
+                  }}
+                />
+              ) : null}
 
               {!isSearchDesktop ? (
                 <SharesMobileFiltersDrawer

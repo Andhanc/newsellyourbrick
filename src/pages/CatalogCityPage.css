@@ -73,3 +73,197 @@ a.property-card {
   color: inherit;
   display: block;
 }
+
+.catalog-city__mobile-hero {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .catalog-city-page {
+    overflow-x: clip;
+    background: var(--buyer-warm, #faf8f5);
+  }
+
+  .catalog-city-page .new-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .catalog-city-page .new-header__container {
+    width: calc(100% - 24px);
+    min-height: 56px;
+    border-radius: 20px;
+    border-color: rgba(0, 111, 123, 0.08);
+    box-shadow: 0 12px 32px -20px rgba(6, 58, 64, 0.34);
+  }
+
+  .catalog-city__container {
+    width: 100%;
+    max-width: none;
+    padding: calc(env(safe-area-inset-top, 0px) + 82px) 12px calc(38px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+
+  .catalog-city__breadcrumbs,
+  .catalog-city__title {
+    display: none;
+  }
+
+  .catalog-city__mobile-hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 252px;
+    margin: 12px 0 16px;
+    overflow: hidden;
+    border-radius: 28px;
+    background: var(--buyer-teal-deep, #006f7b);
+    box-shadow: 0 22px 50px -28px rgba(4, 63, 70, 0.6);
+    isolation: isolate;
+  }
+
+  .catalog-city__mobile-hero > img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .catalog-city__mobile-hero-shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(5, 5, 5, 0.05) 18%, rgba(5, 5, 5, 0.76) 100%);
+  }
+
+  .catalog-city__mobile-hero-content {
+    min-width: 0;
+    padding: 22px 96px 22px 20px;
+    color: #fff;
+  }
+
+  .catalog-city__mobile-hero-content p {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 0 7px;
+    color: rgba(255, 255, 255, 0.82);
+    font: 700 0.72rem/1.3 'Montserrat', system-ui, sans-serif;
+  }
+
+  .catalog-city__mobile-hero-content h1 {
+    margin: 0 0 8px;
+    color: #fff;
+    font: 800 clamp(1.7rem, 8vw, 2.15rem)/1.02 'Montserrat', system-ui, sans-serif;
+    letter-spacing: -0.04em;
+  }
+
+  .catalog-city__mobile-hero-content > span {
+    color: rgba(255, 255, 255, 0.82);
+    font: 650 0.75rem/1.3 'Montserrat', system-ui, sans-serif;
+  }
+
+  .catalog-city__map-link {
+    position: absolute;
+    right: 14px;
+    bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 78px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--buyer-ink, #050505);
+    text-decoration: none;
+    font: 750 0.76rem/1 'Montserrat', system-ui, sans-serif;
+    box-shadow: 0 14px 28px -18px rgba(5, 5, 5, 0.72);
+  }
+
+  .catalog-city__tabs {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 0 -12px 10px;
+    padding: 0 12px 4px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .catalog-city__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .catalog-city__tabs--sale {
+    margin-bottom: 18px;
+  }
+
+  .catalog-city__tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 15px;
+    border-color: rgba(0, 111, 123, 0.1);
+    color: var(--buyer-text-muted, #66706e);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .catalog-city__tab--active {
+    border-color: var(--buyer-teal-deep, #006f7b);
+    background: var(--buyer-teal-deep, #006f7b);
+    color: #fff;
+  }
+
+  .catalog-city__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 8px;
+    width: 100%;
+    margin-top: 0;
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 82px);
+  }
+
+  .catalog-city__grid .property-card {
+    min-width: 0;
+    border-radius: 19px;
+    border-color: rgba(0, 111, 123, 0.08);
+    box-shadow: 0 16px 30px -24px rgba(6, 58, 64, 0.45);
+  }
+
+  .catalog-city__grid .property-image-container {
+    aspect-ratio: 4 / 3;
+    height: auto;
+  }
+
+  .catalog-city__grid .favorite-button,
+  .catalog-city__grid .property-favorite {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .catalog-city-page .listing-page-pagination .auction-desktop-pagination__page,
+  .catalog-city-page .listing-page-pagination .auction-desktop-pagination__arrow {
+    min-width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .catalog-city-page > #site-footer.footer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-city-page *,
+  .catalog-city-page *::before,
+  .catalog-city-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

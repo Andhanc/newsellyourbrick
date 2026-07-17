@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Map, MapPin } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
@@ -20,6 +21,9 @@ import { getCanonicalRegionLabel, matchCountryKey, getCountryLabel } from '../ut
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
 import { buildCatalogPageSeo } from '../utils/pageSeoBuilders'
+import ListingPagePagination from '../components/ListingPagePagination'
+import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
+import { applyPropertyImageFallback, getPropertyCardImage } from '../utils/propertyImage'
 import './CatalogCityPage.css'
 
 const API_BASE_FALLBACK = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -55,9 +59,20 @@ const CatalogCityPage = () => {
   const [properties, setProperties] = useState([])
   const [cityLabel, setCityLabel] = useState(route.city)
   const [notFound, setNotFound] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 768,
+  )
 
   const countryValid = isCatalogCountrySegment(route.country)
   const typeValid = !route.typePlural || Boolean(CATALOG_TYPE_PLURALS[route.typePlural])
+
+  useEffect(() => {
+    const syncViewport = () => setIsMobile(window.innerWidth <= 768)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
 
   useEffect(() => {
     if (!countryValid || !typeValid) return undefined
@@ -98,6 +113,10 @@ const CatalogCityPage = () => {
     }
   }, [countryValid, typeValid, route.country, route.city, route.typePlural, sale])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [route.country, route.city, route.typePlural, sale])
+
   const catalogSeo = useMemo(() => {
     if (!countryValid || !typeValid) return null
     return buildCatalogPageSeo(
@@ -136,6 +155,9 @@ const CatalogCityPage = () => {
   const basePath = `/${route.country}/${route.city}`
   const listingPath = route.typePlural ? `${basePath}/${route.typePlural}` : basePath
   const saleQuery = (tab) => (tab !== 'all' ? `?sale=${tab}` : '')
+  const mobilePagination = paginateBuyerCatalogue(properties, currentPage)
+  const visibleProperties = isMobile ? mobilePagination.items : properties
+  const heroImage = getPropertyCardImage(properties[0], '')
 
   return (
     <div className="catalog-city-page">
@@ -159,6 +181,32 @@ const CatalogCityPage = () => {
               </>
             ) : null}
           </nav>
+
+          <section className="catalog-city__mobile-hero" aria-labelledby="catalog-city-mobile-title">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt=""
+                loading="eager"
+                onError={applyPropertyImageFallback}
+              />
+            ) : null}
+            <span className="catalog-city__mobile-hero-shade" aria-hidden />
+            <div className="catalog-city__mobile-hero-content">
+              <p><MapPin size={14} aria-hidden /> {countryLabel}</p>
+              <h1 id="catalog-city-mobile-title">
+                {cityLabel}
+                {route.typePlural
+                  ? ` — ${CATALOG_TYPE_I18N[route.typePlural] ? t(CATALOG_TYPE_I18N[route.typePlural]) : route.typePlural}`
+                  : ''}
+              </h1>
+              <span>{properties.length} {t('mapFiltersObjects', { defaultValue: 'объектов' })}</span>
+            </div>
+            <Link to="/map" className="catalog-city__map-link" aria-label="Показать объекты на карте">
+              <Map size={18} aria-hidden />
+              <span>Карта</span>
+            </Link>
+          </section>
 
           <h1 className="catalog-city__title">
             {cityLabel}
@@ -211,7 +259,7 @@ const CatalogCityPage = () => {
             <p className="catalog-city__status">{t('searchResultsEmpty')}</p>
           ) : (
             <div className="properties-grid property-listing-grid catalog-city__grid">
-              {properties.map((property) => (
+              {visibleProperties.map((property) => (
                 <PropertyListingCard
                   key={`${property.property_type}-${property.id}`}
                   property={property}
@@ -221,6 +269,22 @@ const CatalogCityPage = () => {
               ))}
             </div>
           )}
+
+          {isMobile && properties.length > 0 ? (
+            <ListingPagePagination
+              currentPage={mobilePagination.currentPage}
+              totalPages={mobilePagination.totalPages}
+              onPageChange={(nextPage) => {
+                setCurrentPage(nextPage)
+                requestAnimationFrame(() => {
+                  document.querySelector('.catalog-city__grid')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  })
+                })
+              }}
+            />
+          ) : null}
 
           <CatalogCityInternalLinks
             country={route.country}

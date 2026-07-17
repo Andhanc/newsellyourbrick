@@ -28,6 +28,11 @@
   margin: 0 0 6px;
 }
 
+.favorites-eyebrow,
+.favorites-summary {
+  display: none;
+}
+
 .favorites-title {
   display: flex;
   align-items: center;
@@ -556,8 +561,47 @@
 }
 
 @media (max-width: 768px) {
+  .favorites-page {
+    --favorites-purple: var(--buyer-teal, #0099a9);
+    --favorites-purple-dark: var(--buyer-teal-deep, #006f7b);
+    --favorites-purple-soft: var(--buyer-mint, #eaf8f5);
+    --favorites-text: var(--buyer-ink, #050505);
+    --favorites-muted: var(--buyer-text-muted, #66706e);
+    overflow-x: clip;
+    background: var(--buyer-warm, #faf8f5);
+  }
+
+  .favorites-page .new-header__container {
+    width: calc(100% - 24px);
+    min-height: 56px;
+    border-radius: 20px;
+    border-color: rgba(0, 111, 123, 0.08);
+    box-shadow: 0 12px 32px -20px rgba(6, 58, 64, 0.34);
+  }
+
   .favorites-container {
-    padding: calc(env(safe-area-inset-top, 0px) + 114px) 16px 52px;
+    padding: calc(env(safe-area-inset-top, 0px) + 94px) 12px calc(118px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .favorites-header {
+    margin: 12px 2px 20px;
+  }
+
+  .favorites-eyebrow {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--buyer-teal-deep, #006f7b);
+    font: 800 0.68rem/1.2 'Montserrat', system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .favorites-summary {
+    display: block;
+    max-width: 330px;
+    margin: 10px 0 0;
+    color: var(--buyer-text-muted, #66706e);
+    font: 600 0.78rem/1.5 'Montserrat', system-ui, sans-serif;
   }
 
   .favorites-page__grid.properties-grid--auction-cards {
@@ -585,8 +629,10 @@
   }
 
   .favorites-title {
-    gap: 12px;
-    font-size: 28px;
+    gap: 10px;
+    margin-bottom: 0;
+    font-size: clamp(1.7rem, 8vw, 2rem);
+    letter-spacing: -0.035em;
   }
 
   .favorites-title-icon {
@@ -595,8 +641,34 @@
   }
 
   .favorites-breadcrumbs {
-    margin-left: 48px;
-    font-size: 12px;
+    display: none;
+  }
+
+  .favorites-page__grid {
+    margin-top: 0;
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 84px);
+  }
+
+  .favorites-page__sections {
+    margin: 0 0 30px;
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 84px);
+  }
+
+  .favorites-page__grid .auction-card,
+  .favorites-page__grid .debts-property-card,
+  .favorites-page__grid .shares-v2-card {
+    border-radius: 19px;
+    border-color: rgba(0, 111, 123, 0.08);
+    box-shadow: 0 16px 30px -24px rgba(6, 58, 64, 0.45);
+  }
+
+  .favorites-page__grid .auction-card__favorite,
+  .favorites-page__grid .debts-property-card__favorite,
+  .favorites-page__grid .shares-v2-card__favorite {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .favorites-empty {
@@ -617,9 +689,17 @@
     font-size: 15px;
   }
 
+  .favorites-empty-button {
+    min-height: 56px;
+    background: var(--buyer-teal-deep, #006f7b);
+    box-shadow: 0 18px 34px -20px rgba(0, 111, 123, 0.72);
+  }
+
   .favorites-compare {
     margin-bottom: 38px;
-    border-radius: 13px;
+    border-radius: 24px;
+    border-color: rgba(0, 111, 123, 0.08);
+    background: var(--buyer-mint, #eaf8f5);
   }
 
   .favorites-compare__copy {
@@ -631,6 +711,8 @@
   .favorites-compare__icon {
     width: 52px;
     height: 52px;
+    background: var(--buyer-teal-deep, #006f7b);
+    box-shadow: 0 15px 28px -18px rgba(0, 111, 123, 0.7);
   }
 
   .favorites-compare__icon svg {
@@ -650,10 +732,29 @@
     width: 100%;
     min-width: 0;
     gap: 16px;
+    min-height: 44px;
+    border-radius: 14px;
+    color: var(--buyer-teal-deep, #006f7b);
   }
 
   .favorites-compare__image {
     height: 190px;
+  }
+
+  .favorites-page .listing-page-pagination .auction-desktop-pagination__page,
+  .favorites-page .listing-page-pagination .auction-desktop-pagination__arrow {
+    min-width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .favorites-page > .new-header ~ #site-footer.footer,
+  .favorites-page > #site-footer.footer {
+    display: none;
+  }
+
+  .favorites-recommendations {
+    display: none;
   }
 }
 
@@ -697,5 +798,116 @@
 
   .favorites-guide__panel {
     padding: 30px 22px 24px;
+  }
+}
+
+.favorites-guide__content {
+  padding: 8px 2px 4px;
+}
+
+.favorites-guide__illustration {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  border-radius: 22px;
+  background: var(--buyer-mint, #eaf8f5);
+  color: var(--buyer-teal-deep, #006f7b);
+}
+
+.favorites-guide__illustration svg {
+  width: 32px;
+  height: 32px;
+}
+
+.favorites-guide__content h2 {
+  margin: 0 44px 10px 0;
+  color: var(--buyer-ink, #050505);
+  font-size: 1.45rem;
+  line-height: 1.12;
+}
+
+.favorites-guide__content > p:last-child {
+  margin: 0;
+  color: var(--buyer-text-muted, #66706e);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.favorites-guide-sheet .favorites-guide__action {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  border-radius: 16px;
+  background: var(--buyer-teal-deep, #006f7b);
+  box-shadow: 0 18px 36px -22px rgba(0, 111, 123, 0.7);
+}
+
+.favorites-compare-tray {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 10px 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  background: rgba(5, 31, 33, 0.94);
+  color: #fff;
+  box-shadow: 0 20px 46px -24px rgba(2, 24, 26, 0.8);
+  backdrop-filter: blur(18px);
+}
+
+.favorites-compare-tray div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.favorites-compare-tray strong {
+  font-size: 0.84rem;
+}
+
+.favorites-compare-tray span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.68rem;
+}
+
+.favorites-compare-tray a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 15px;
+  background: #fff;
+  color: var(--buyer-teal-deep, #006f7b);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+@media (min-width: 769px) {
+  .favorites-compare-tray {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorites-page *,
+  .favorites-page *::before,
+  .favorites-page *::after,
+  .favorites-guide-sheet * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

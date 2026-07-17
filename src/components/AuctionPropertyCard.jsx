@@ -6,7 +6,7 @@ import { BiArea } from 'react-icons/bi'
 import ListingCardAuctionTimer from './ListingCardAuctionTimer'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
-import { getPropertyCardImage } from '../utils/propertyImage'
+import { getPropertyCardImage, PROPERTY_CARD_IMAGE_FALLBACK } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { resolveAuctionCurrentBidValue } from '../utils/auctionBidValue'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
@@ -111,10 +111,7 @@ export default function AuctionPropertyCard({
   const state = useAuctionCardState(property)
 
   const propertyTitle = property.title || property.name || ''
-  const propertyImage = getPropertyCardImage(
-    property,
-    '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
-  )
+  const propertyImage = getPropertyCardImage(property, PROPERTY_CARD_IMAGE_FALLBACK)
   const propertyImageProps = buildResponsiveImageProps(propertyImage, {
     widths: [320, 480, 640, 800],
     sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',
@@ -199,6 +196,7 @@ export default function AuctionPropertyCard({
         >
           <ImageWithSkeleton
             imgProps={propertyImageProps}
+            fallbackSrc={PROPERTY_CARD_IMAGE_FALLBACK}
             alt={propertyTitle}
             className="auction-card__image"
             containerClassName="auction-card__image-wrap"

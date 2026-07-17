@@ -16,7 +16,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
-import { getPropertyCardImage } from '../utils/propertyImage'
+import { getPropertyCardImage, PROPERTY_CARD_IMAGE_FALLBACK } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
@@ -78,10 +78,7 @@ const PropertyListingCard = ({
   }
 
   const propertyTitle = property.title || property.name || ''
-  const propertyImage = getPropertyCardImage(
-    property,
-    '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
-  )
+  const propertyImage = getPropertyCardImage(property, PROPERTY_CARD_IMAGE_FALLBACK)
   const propertyImageProps = buildResponsiveImageProps(propertyImage, {
     widths: [320, 480, 640, 800],
     sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',
@@ -247,6 +244,7 @@ const PropertyListingCard = ({
         <div className="property-image-container">
           <ImageWithSkeleton
             imgProps={propertyImageProps}
+            fallbackSrc={PROPERTY_CARD_IMAGE_FALLBACK}
             alt={propertyTitle}
             className="property-image"
             containerClassName="property-image"

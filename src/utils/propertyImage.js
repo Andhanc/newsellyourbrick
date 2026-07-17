@@ -1,3 +1,15 @@
+export const PROPERTY_CARD_IMAGE_FALLBACK = '/images/property/property-card-neutral-fallback.jpg'
+
+export function applyPropertyImageFallback(event, fallbackUrl = PROPERTY_CARD_IMAGE_FALLBACK) {
+  const image = event?.currentTarget
+  if (!image || image.dataset?.propertyFallbackApplied === 'true') return
+
+  if (image.dataset) image.dataset.propertyFallbackApplied = 'true'
+  image.removeAttribute?.('srcset')
+  image.removeAttribute?.('sizes')
+  image.src = fallbackUrl
+}
+
 function getBaseOrigin() {
   const apiBase = (import.meta.env.VITE_API_BASE_URL || '').trim()
   if (/^https?:\/\//i.test(apiBase)) {

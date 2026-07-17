@@ -12,6 +12,7 @@ export default function ImageWithSkeleton({
   containerClassName = '',
   skeletonClassName = '',
   imgStyle,
+  fallbackSrc = '',
   onError,
   onLoad,
 }) {
@@ -19,6 +20,7 @@ export default function ImageWithSkeleton({
   const srcSet = imgProps?.srcSet
   const imgRef = useRef(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isFallbackActive, setIsFallbackActive] = useState(false)
 
   const syncLoadedFromDom = useCallback(() => {
     if (isImageDecoded(imgRef.current)) {
@@ -29,6 +31,7 @@ export default function ImageWithSkeleton({
   }, [])
 
   useLayoutEffect(() => {
+    setIsFallbackActive(false)
     if (!src) {
       setIsLoaded(false)
       return
@@ -45,11 +48,20 @@ export default function ImageWithSkeleton({
     }
   }
 
+  const effectiveImgProps = isFallbackActive
+    ? {
+        ...imgProps,
+        src: fallbackSrc,
+        srcSet: undefined,
+        sizes: undefined,
+      }
+    : imgProps
+
   return (
     <div className={`image-with-skeleton ${containerClassName}`.trim()}>
       {!isLoaded ? <div className={`image-with-skeleton__placeholder ${skeletonClassName}`.trim()} /> : null}
       <img
-        {...imgProps}
+        {...effectiveImgProps}
         ref={handleImgRef}
         alt={alt}
         style={imgStyle}
@@ -59,6 +71,11 @@ export default function ImageWithSkeleton({
           onLoad?.(e)
         }}
         onError={(e) => {
+          if (fallbackSrc && !isFallbackActive && src !== fallbackSrc) {
+            setIsLoaded(false)
+            setIsFallbackActive(true)
+            return
+          }
           setIsLoaded(true)
           onError?.(e)
         }}

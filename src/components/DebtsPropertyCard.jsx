@@ -4,6 +4,8 @@ import { MapPin } from 'lucide-react'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { formatPropertyPrice } from '../utils/currency'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from './ImageWithSkeleton'
+import { getPropertyCardImage, PROPERTY_CARD_IMAGE_FALLBACK } from '../utils/propertyImage'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import ListingCardAuctionTimer from './ListingCardAuctionTimer'
 import {
@@ -13,8 +15,6 @@ import {
 } from '../utils/debtsCardPresentation'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import './DebtsPropertyCard.css'
-
-const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
 function DebtsPropertyCard({
   property,
@@ -26,7 +26,7 @@ function DebtsPropertyCard({
   const { t, i18n } = useTranslation()
 
   const title = property.title || property.name || ''
-  const image = property.image || property.images?.[0] || FALLBACK_IMAGE
+  const image = getPropertyCardImage(property, PROPERTY_CARD_IMAGE_FALLBACK)
   const imageProps = buildResponsiveImageProps(image, {
     widths: [320, 480, 640, 800],
     sizes: '(max-width: 1200px) 50vw, 33vw',
@@ -111,7 +111,13 @@ function DebtsPropertyCard({
             />
           </svg>
         </button>
-        <img {...imageProps} alt={title} className="debts-property-card__image" />
+        <ImageWithSkeleton
+          imgProps={imageProps}
+          fallbackSrc={PROPERTY_CARD_IMAGE_FALLBACK}
+          alt={title}
+          className="debts-property-card__image"
+          containerClassName="debts-property-card__image-wrap"
+        />
       </div>
 
       {auctionTimerSlot}

@@ -267,6 +267,7 @@ function buildHouseWhere(filters = {}) {
 }
 
 export function passesApprovedFilters(p) {
+  if (!p || typeof p !== 'object') return false;
   const a = p.is_auction;
   const auctionOff =
     a === 0 ||
@@ -282,6 +283,7 @@ export function passesApprovedFilters(p) {
 }
 
 export function passesAuctionFilters(p) {
+  if (!p || typeof p !== 'object') return false;
   const a = p.is_auction;
   const auctionOn =
     a === 1 ||

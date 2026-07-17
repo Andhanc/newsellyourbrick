@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Header from '../components/Header'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
@@ -25,6 +25,9 @@ import { auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils
 import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 import { formatPropertyPrice } from '../utils/currency'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import ListingPagePagination from '../components/ListingPagePagination'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
+import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 const EMPTY_ILLUSTRATION = '/images/favorites-empty-reference-style.png'
@@ -98,6 +101,10 @@ function FavoritesGrid({
 const Favorites = () => {
   const navigate = useNavigate()
   const [guideOpen, setGuideOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 768,
+  )
   const { favoritesLoading, isFavorite, toggleFavorite } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
 
@@ -108,10 +115,26 @@ const Favorites = () => {
     [],
   )
 
+  useEffect(() => {
+    const syncViewport = () => setIsMobile(window.innerWidth <= 768)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
+  const mobilePagination = paginateBuyerCatalogue(favoriteAuctions, currentPage)
+  const visibleFavorites = isMobile ? mobilePagination.items : favoriteAuctions
+
+  useEffect(() => {
+    if (currentPage !== mobilePagination.currentPage) {
+      setCurrentPage(mobilePagination.currentPage)
+    }
+  }, [currentPage, mobilePagination.currentPage])
+
   const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
     const timerList = []
     const noTimerList = []
-    for (const item of favoriteAuctions) {
+    for (const item of visibleFavorites) {
       if (hasPropertyListingTimer(item.property)) {
         timerList.push(item)
       } else {
@@ -123,7 +146,7 @@ const Favorites = () => {
       withoutTimer: noTimerList,
       splitByTimer: timerList.length > 0 && noTimerList.length > 0,
     }
-  }, [favoriteAuctions])
+  }, [visibleFavorites])
 
   const openProperty = (property, { auctionTab, auctionSoldOutNotice } = {}) => {
     if (!ensureCanOpenProperty()) return
@@ -149,6 +172,7 @@ const Favorites = () => {
       <Header />
       <div className="favorites-container">
         <div className="favorites-header">
+          <p className="favorites-eyebrow">Подборка для решения</p>
           <h1 className="favorites-title">
             <PiHeartStraight className="favorites-title-icon" aria-hidden />
             Понравилось
@@ -158,6 +182,13 @@ const Favorites = () => {
             <span aria-hidden>•</span>
             <span>Понравилось</span>
           </nav>
+          {!listLoading ? (
+            <p className="favorites-summary">
+              {favoriteAuctions.length > 0
+                ? `${favoriteAuctions.length} сохранённых объектов — цены и статусы обновляются из каталога`
+                : 'Соберите здесь варианты, к которым хотите вернуться'}
+            </p>
+          ) : null}
         </div>
 
         {listLoading ? (
@@ -194,7 +225,7 @@ const Favorites = () => {
             </div>
           ) : (
             <FavoritesGrid
-              items={favoriteAuctions}
+              items={visibleFavorites}
               onOpen={openProperty}
               onOpenShare={openShare}
               isFavorite={isFavorite}
@@ -231,6 +262,22 @@ const Favorites = () => {
             </button>
           </section>
         )}
+
+        {isMobile && favoriteAuctions.length > 0 ? (
+          <ListingPagePagination
+            currentPage={mobilePagination.currentPage}
+            totalPages={mobilePagination.totalPages}
+            onPageChange={(nextPage) => {
+              setCurrentPage(nextPage)
+              requestAnimationFrame(() => {
+                document.querySelector('.favorites-page__sections, .favorites-page__grid')?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start',
+                })
+              })
+            }}
+          />
+        ) : null}
 
         <section className="favorites-compare" aria-labelledby="favorites-compare-title">
           <div className="favorites-compare__copy">
@@ -283,9 +330,40 @@ const Favorites = () => {
             ))}
           </div>
         </section>
+
       </div>
 
-      {guideOpen ? (
+      {isMobile ? <BuyerSheetShell
+        isOpen={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        titleId="favorites-guide-title"
+        describedBy="favorites-guide-description"
+        tone="choice"
+        className="favorites-guide-sheet"
+        footer={(
+          <button
+            className="favorites-guide__action"
+            type="button"
+            onClick={() => {
+              setGuideOpen(false)
+              navigate('/auction')
+            }}
+          >
+            Перейти в каталог
+            <PiArrowRight size={20} aria-hidden />
+          </button>
+        )}
+      >
+        <div className="favorites-guide__content">
+          <span className="favorites-guide__illustration" aria-hidden><PiHeartStraight /></span>
+          <p className="favorites-eyebrow">Ваш личный шорт-лист</p>
+          <h2 id="favorites-guide-title">Как работает избранное</h2>
+          <p id="favorites-guide-description">
+            Нажмите на сердечко в карточке объекта, и он появится здесь. Когда вариантов
+            станет два или больше, сравнение поможет увидеть цены и характеристики рядом.
+          </p>
+        </div>
+      </BuyerSheetShell> : guideOpen ? (
         <div
           className="favorites-guide"
           role="dialog"
@@ -323,6 +401,16 @@ const Favorites = () => {
             </button>
           </div>
         </div>
+      ) : null}
+
+      {isMobile && favoriteAuctions.length >= 2 ? (
+        <aside className="favorites-compare-tray" aria-label="Сравнение избранных объектов">
+          <div>
+            <strong>Готовы сравнить?</strong>
+            <span>{favoriteAuctions.length} объектов в подборке</span>
+          </div>
+          <Link to="/compare">Сравнить</Link>
+        </aside>
       ) : null}
     </div>
   )

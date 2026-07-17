@@ -10,6 +10,7 @@ import PageBackButton from '../components/PageBackButton'
 import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
 import MapPageFilters from '../components/MapPageFilters'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -22,6 +23,10 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { formatPropertyPrice } from '../utils/currency'
+import {
+  applyPropertyImageFallback,
+  PROPERTY_CARD_IMAGE_FALLBACK,
+} from '../utils/propertyImage'
 import './MapPage.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import {
@@ -37,7 +42,7 @@ const MAP_PIN_MINI_ZOOM = 15
 const MAP_PIN_CLUSTER_RADIUS_PX = 84
 const MAP_PIN_MINI_APPEAR_DELAY_MS = 280
 const MAP_PIN_MINI_STAGGER_MS = 40
-const MAP_PIN_THUMB_FALLBACK = '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
+const MAP_PIN_THUMB_FALLBACK = PROPERTY_CARD_IMAGE_FALLBACK
 
 const GEOCODE_RESULT_PRIORITY = [
   'building',
@@ -390,6 +395,10 @@ const MapPage = () => {
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
   const [mapFabPhase, setMapFabPhase] = useState('hidden') // hidden | visible | leaving
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 768,
+  )
+  const [resultsSheetState, setResultsSheetState] = useState('half')
 
   const formatPrice = (n, currency = 'USD') =>
     formatPropertyPrice(n, currency, { locale: 'en-US' })
@@ -399,6 +408,21 @@ const MapPage = () => {
       return [property.coordinates[0], property.coordinates[1]]
     }
     return null
+  }
+
+  useEffect(() => {
+    const syncViewport = () => setIsMobile(window.innerWidth <= 768)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
+  const cycleResultsSheet = () => {
+    setResultsSheetState((current) => {
+      if (current === 'peek') return 'half'
+      if (current === 'half') return 'expanded'
+      return 'peek'
+    })
   }
 
   // ─── Загрузка объектов ───────────────────────────────────────────────────
@@ -584,6 +608,7 @@ const MapPage = () => {
             map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
             if (item.count === 1 && item.properties?.[0]) {
               setSelectedProperty(item.properties[0])
+              if (isMobile) setResultsSheetState('half')
             }
           })
 
@@ -608,6 +633,7 @@ const MapPage = () => {
 
         const focusProperty = () => {
           setSelectedProperty(property)
+          if (isMobile) setResultsSheetState('half')
           map.flyTo({
             center: lngLat,
             zoom: Math.min(Math.max(map.getZoom(), MAP_PIN_MINI_ZOOM + 0.5), SATELLITE_MAP_MAX_ZOOM),
@@ -645,7 +671,7 @@ const MapPage = () => {
         })
       }
     },
-    [sortedProperties, selectedProperty, mapReady],
+    [sortedProperties, selectedProperty, mapReady, isMobile],
   )
 
   useEffect(() => {
@@ -748,24 +774,44 @@ const MapPage = () => {
     })
     setSelectedProperty(property)
     setMapOpenHintProperty(property)
+    if (isMobile) setResultsSheetState('half')
     const wrap = mapWrapRef.current
     if (wrap && !mapExpanded) {
       requestAnimationFrame(() => {
         wrap.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
       })
     }
-  }, [mapExpanded])
+  }, [isMobile, mapExpanded])
 
   // ─── Рендер ──────────────────────────────────────────────────────────────
   return (
-    <div className={`map-page-root${mapExpanded ? ' map-page-root--fs-map' : ''}`}>
+    <div className={`map-page-root map-page-root--sheet-${resultsSheetState}${mapExpanded ? ' map-page-root--fs-map' : ''}`}>
       <div className="map-page-booking">
         <header className="map-page-back-bar">
           <PageBackButton onClick={() => navigate(-1)} />
         </header>
 
         <div className="map-page-main">
-          <aside className="map-page-list">
+          <aside className={`map-page-list map-page-list--${resultsSheetState}`}>
+            <button
+              type="button"
+              className="map-results-sheet__handle"
+              onClick={cycleResultsSheet}
+              aria-controls="map-results-scroll"
+              aria-expanded={resultsSheetState === 'expanded'}
+              aria-label={
+                resultsSheetState === 'expanded'
+                  ? 'Свернуть список объектов'
+                  : 'Развернуть список объектов'
+              }
+            >
+              <span aria-hidden />
+              <strong>
+                {loading
+                  ? 'Ищем объекты'
+                  : `${sortedProperties.length} ${t('mapFiltersObjects', { defaultValue: 'объектов' })}`}
+              </strong>
+            </button>
             <div className={`map-list-search-bar${filtersMenuOpen ? ' is-filters-open' : ''}`}>
               <div className="map-list-search-block">
                 <div className="map-list-search-toolbar">
@@ -779,6 +825,7 @@ const MapPage = () => {
                     placeholder={t('mapSearchPlaceholder', { defaultValue: 'Название или адрес' })}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => isMobile && setResultsSheetState('expanded')}
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -799,7 +846,13 @@ const MapPage = () => {
                   aria-expanded={filtersMenuOpen}
                   aria-controls="map-page-filters-panel"
                   aria-label={t('mapFiltersMenuAriaLabel', { defaultValue: 'Фильтры' })}
-                  onClick={() => setFiltersMenuOpen((open) => !open)}
+                  onClick={() => {
+                    if (isMobile) {
+                      setFiltersMenuOpen(true)
+                      return
+                    }
+                    setFiltersMenuOpen((open) => !open)
+                  }}
                 >
                   <span className="map-list-filters-burger__icon" aria-hidden>
                     <span />
@@ -813,13 +866,15 @@ const MapPage = () => {
                   ) : null}
                 </button>
                 </div>
-                <MapPageFilters
-                  id="map-page-filters-panel"
-                  open={filtersMenuOpen}
-                  filters={mapFilters}
-                  onChange={setMapFilters}
-                  priceBounds={priceBounds}
-                />
+                {!isMobile ? (
+                  <MapPageFilters
+                    id="map-page-filters-panel"
+                    open={filtersMenuOpen}
+                    filters={mapFilters}
+                    onChange={setMapFilters}
+                    priceBounds={priceBounds}
+                  />
+                ) : null}
               </div>
             </div>
             <p className="map-list-inline-count">
@@ -834,7 +889,7 @@ const MapPage = () => {
               )}
             </p>
 
-            <div className="map-list-scroll" aria-busy={loading}>
+            <div id="map-results-scroll" className="map-list-scroll" aria-busy={loading}>
               {loading ? (
                 <MapPagePropertyGridSkeletons count={MAP_LIST_SKELETON_COUNT} />
               ) : sortedProperties.length === 0 ? (
@@ -928,6 +983,7 @@ const MapPage = () => {
                       },
                     )}
                     alt=""
+                    onError={applyPropertyImageFallback}
                   />
                 </div>
                 <div className="map-open-hint__main">
@@ -964,6 +1020,55 @@ const MapPage = () => {
           </div>
         </div>
       </div>
+
+      {isMobile ? (
+        <BuyerSheetShell
+          isOpen={filtersMenuOpen}
+          onClose={() => setFiltersMenuOpen(false)}
+          titleId="map-mobile-filters-title"
+          describedBy="map-mobile-filters-description"
+          tone="choice"
+          className="map-filters-sheet"
+          footer={(
+            <div className="map-filters-sheet__actions">
+              {activeFilterCount > 0 ? (
+                <button
+                  type="button"
+                  className="map-filters-sheet__reset"
+                  onClick={() => setMapFilters({ ...EMPTY_MAP_FILTERS })}
+                >
+                  Сбросить
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="map-filters-sheet__apply"
+                onClick={() => {
+                  setFiltersMenuOpen(false)
+                  setResultsSheetState('half')
+                }}
+              >
+                Показать · {sortedProperties.length}
+              </button>
+            </div>
+          )}
+        >
+          <div className="map-filters-sheet__head">
+            <p>Поиск на карте</p>
+            <h2 id="map-mobile-filters-title">Настройте подборку</h2>
+            <span id="map-mobile-filters-description">
+              Покажем только реальные объекты, которые подходят выбранным параметрам.
+            </span>
+          </div>
+          <MapPageFilters
+            id="map-mobile-filters-panel"
+            open
+            filters={mapFilters}
+            onChange={setMapFilters}
+            priceBounds={priceBounds}
+          />
+        </BuyerSheetShell>
+      ) : null}
 
       <button
         type="button"
