@@ -27,6 +27,11 @@ export default function DepositZeroState({ onTopUp }) {
           Пополните баланс один раз — сайт покажет, какие действия доступны и когда сумма временно резервируется.
         </p>
 
+        <button type="button" className="deposit-zero__primary" onClick={onTopUp}>
+          Пополнить депозит
+        </button>
+        <p className="deposit-zero__footnote">Перед оплатой вы увидите способ, сумму и условия подтверждения.</p>
+
         <div className="deposit-zero__benefits">
           {BENEFITS.map(({ icon: Icon, title, copy }) => (
             <article key={title}>
@@ -49,12 +54,7 @@ export default function DepositZeroState({ onTopUp }) {
           <p><strong>Без скрытой блокировки.</strong> Доступную часть депозита можно запросить к возврату, если она не зарезервирована действующей ставкой или бронированием.</p>
         </div>
 
-        <button type="button" className="deposit-zero__primary" onClick={onTopUp}>
-          Пополнить депозит
-        </button>
-        <p className="deposit-zero__footnote">Перед оплатой вы увидите способ, сумму и условия подтверждения.</p>
       </div>
     </section>
   )
 }
-

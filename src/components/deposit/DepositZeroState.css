@@ -25,7 +25,7 @@
 .deposit-zero__eyebrow { color: var(--buyer-teal-deep); font: 760 10px/1.2 var(--buyer-font-display); letter-spacing: .1em; text-transform: uppercase; }
 .deposit-zero h1 { margin: 8px 0 10px; font: 830 clamp(30px, 5vw, 48px)/.98 var(--buyer-font-display); letter-spacing: -.05em; }
 .deposit-zero__lead { margin: 0; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
-.deposit-zero__benefits { display: grid; gap: 8px; margin-top: 18px; }
+.deposit-zero__benefits { display: grid; gap: 8px; margin-top: 14px; }
 .deposit-zero__benefits article { display: flex; gap: 10px; padding: 11px; border-radius: 15px; background: var(--buyer-cloud); }
 .deposit-zero__benefits article > span { display: grid; flex: 0 0 36px; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--buyer-mint); color: var(--buyer-teal-deep); }
 .deposit-zero__benefits h2 { margin: 0; font: 740 12px/1.25 var(--buyer-font-display); }
