@@ -1,22 +1,23 @@
-import { useTranslation } from 'react-i18next'
-import { MapPin } from 'lucide-react'
+import { ArrowUpRight, Heart, MapPin } from 'lucide-react'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { publicAsset } from '../utils/publicAsset'
+import BuyerStatusRibbon from './buyer-mobile/BuyerStatusRibbon'
 import {
-  getCollectedAmount,
-  getCollectedPercent,
-  formatShareOwnershipPercent,
-  getShareBadgeType,
-  getShareLocationLabel,
-} from '../utils/shareCardDisplay'
-import { getSharePricePerShare, isShareSoldOut } from '../utils/shareCardMetrics'
-import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
-import { formatPropertyPrice } from '../utils/currency'
+  formatForecastYield,
+  normalizeMarketplaceShare,
+  resolveShareMarketplaceState,
+} from '../utils/sharesMarketplacePresentation'
 import './SharesPropertyCard.css'
 
-const BADGE_LABEL_KEYS = {
-  stable: 'sharesBadgeStable',
-  new: 'sharesBadgeNew',
-  commercial: 'sharesBadgeCommercial',
+const CARD_IMAGE_FALLBACK = publicAsset('images/co-investment/co-investment-card-fallback.png')
+
+function formatMoney(value, currency = 'EUR') {
+  if (!Number.isFinite(value) || value <= 0) return '—'
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 function SharesPropertyCard({
@@ -25,146 +26,133 @@ function SharesPropertyCard({
   isFavorite = false,
   onFavoriteToggle,
   onInvest,
-  href,
-  imageFallback,
 }) {
-  const { t, i18n } = useTranslation()
-  const badgeType = getShareBadgeType(share)
-  const badgeLabelKey = BADGE_LABEL_KEYS[badgeType] ?? BADGE_LABEL_KEYS.stable
-  const locationLabel = getShareLocationLabel(share)
-  const soldOut = isShareSoldOut(share)
-  const collectedPercent = getCollectedPercent(share)
-  const collectedAmount = getCollectedAmount(share)
-  const totalPrice = Number(share.totalPrice) || 0
-  const currency = share.currency || 'EUR'
-  const ownershipPercent = formatShareOwnershipPercent(share, i18n.language)
-  const minInvestment = getSharePricePerShare(share)
-
-  const image = share.image || imageFallback
-  const imageProps = buildResponsiveImageProps(image, {
+  const cardShare = normalizeMarketplaceShare(share)
+  const investmentState = resolveShareMarketplaceState(cardShare)
+  const forecast = formatForecastYield(cardShare.annualYield)
+  const collectedPercent = Number.isFinite(cardShare.collectedPercent)
+    ? cardShare.collectedPercent
+    : null
+  const availableLabel =
+    Number.isFinite(cardShare.availableShares) && Number.isFinite(cardShare.totalShares)
+      ? `${cardShare.availableShares} из ${cardShare.totalShares}`
+      : '—'
+  const locationLabel = cardShare.location || [cardShare.city, cardShare.country].filter(Boolean).join(', ')
+  const usesFallbackImage = !cardShare.image
+  const imageProps = buildResponsiveImageProps(cardShare.image || CARD_IMAGE_FALLBACK, {
     widths: [320, 480, 640],
     sizes: viewMode === 'list' ? '280px' : '(max-width: 768px) 50vw, 25vw',
-    quality: 72,
+    quality: 76,
     fit: 'crop',
   })
-
-  const formatMoney = (amount) =>
-    formatPropertyPrice(amount, currency, {
-      compact: false,
-      locale: i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US',
-    })
-
-  const handleFavoriteClick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    onFavoriteToggle?.(share, e)
+  const handleFavoriteClick = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    onFavoriteToggle?.(share, event)
   }
 
-  const handleInvestClick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!soldOut) onInvest?.(share)
+  const handleOpen = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!investmentState.blocksInvestment) onInvest?.(share)
   }
 
-  const detailHref = href || (share ? getCoInvestmentDetailPath(share) : '#')
+  const handleImageError = (event) => {
+    const image = event.currentTarget
+    if (image.getAttribute('src') === CARD_IMAGE_FALLBACK) return
+    image.onerror = null
+    image.removeAttribute('srcset')
+    image.src = CARD_IMAGE_FALLBACK
+    image.alt = 'Нейтральный архитектурный визуал — фотография объекта проверяется'
+  }
 
   return (
-    <a
-      href={detailHref}
-      className={`shares-v2-card shares-v2-card--${viewMode}${soldOut ? ' shares-v2-card--sold-out' : ''}`}
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
-        if (e.target.closest('button')) {
-          e.preventDefault()
-          return
-        }
-        if (soldOut) {
-          e.preventDefault()
-          return
-        }
-        if (!onInvest) return
-        e.preventDefault()
-        onInvest(share)
-      }}
+    <article
+      className={`shares-v2-card shares-v2-card--${viewMode} shares-v2-card--${investmentState.state}`}
     >
       <div className="shares-v2-card__media">
-        <span className={`shares-v2-card__badge shares-v2-card__badge--${badgeType}`}>
-          {t(badgeLabelKey)}
-        </span>
+        <img
+          {...imageProps}
+          alt={
+            usesFallbackImage
+              ? 'Нейтральный архитектурный визуал — фотография объекта проверяется'
+              : cardShare.title || 'Объект долевой недвижимости'
+          }
+          className="shares-v2-card__image"
+          onError={handleImageError}
+        />
+        <span className="shares-v2-card__badge">{cardShare.statusLabel}</span>
         <button
           type="button"
           className={`shares-v2-card__favorite${isFavorite ? ' is-active' : ''}`}
           onClick={handleFavoriteClick}
-          aria-label={t('favorites')}
+          aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+          aria-pressed={isFavorite}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              stroke="currentColor"
-              strokeWidth="2"
-              fill={isFavorite ? 'currentColor' : 'none'}
-            />
-          </svg>
+          <Heart size={19} fill={isFavorite ? 'currentColor' : 'none'} aria-hidden />
         </button>
-        <img {...imageProps} alt={share.title} className="shares-v2-card__image" />
-        {soldOut ? <div className="shares-v2-card__sold-overlay">{t('sharesSoldOut')}</div> : null}
+        <BuyerStatusRibbon listingState={investmentState} />
       </div>
 
       <div className="shares-v2-card__body">
-        <h2 className="shares-v2-card__title">{share.title}</h2>
-        {locationLabel ? (
-          <p className="shares-v2-card__location">
-            <MapPin size={14} aria-hidden />
-            <span>{locationLabel}</span>
-          </p>
-        ) : null}
+        <div className="shares-v2-card__heading">
+          <h2 className="shares-v2-card__title">{cardShare.title || 'Название уточняется'}</h2>
+          {locationLabel ? (
+            <p className="shares-v2-card__location">
+              <MapPin size={13} aria-hidden />
+              <span>{locationLabel}</span>
+            </p>
+          ) : null}
+        </div>
 
         <div className="shares-v2-card__metrics">
-          <div className="shares-v2-card__metric">
-            <span className="shares-v2-card__metric-label">{t('sharesCardStake')}</span>
-            <span className="shares-v2-card__metric-value">
-              {ownershipPercent != null ? `${ownershipPercent}%` : '—'}
-            </span>
+          <div className="shares-v2-card__metric shares-v2-card__metric--entry">
+            <span className="shares-v2-card__metric-label">Минимальный вход</span>
+            <strong className="shares-v2-card__metric-value">
+              {formatMoney(cardShare.pricePerShare, cardShare.currency)}
+            </strong>
           </div>
-          <div className="shares-v2-card__metric">
-            <span className="shares-v2-card__metric-label">
-              <span className="shares-v2-card__metric-label--desktop">{t('sharesCardMinInvestment')}</span>
-              <span className="shares-v2-card__metric-label--mobile">{t('sharesCardInvestment')}</span>
-            </span>
-            <span className="shares-v2-card__metric-value">
-              {formatMoney(minInvestment)}
-            </span>
+          <div className="shares-v2-card__metric shares-v2-card__metric--forecast">
+            <span className="shares-v2-card__metric-label">Прогноз доходности</span>
+            <strong className="shares-v2-card__metric-value">{forecast.value}</strong>
+            <small>{forecast.note}</small>
           </div>
         </div>
 
         <div className="shares-v2-card__progress-head">
-          <span className="shares-v2-card__progress-label">{t('sharesCardCollected')}</span>
-          <span className="shares-v2-card__progress-percent">{collectedPercent}%</span>
+          <span className="shares-v2-card__progress-label">Доступно долей</span>
+          <strong className="shares-v2-card__progress-percent">{availableLabel}</strong>
         </div>
-        <div className="shares-v2-card__progress-track" aria-hidden>
+        <div
+          className={`shares-v2-card__progress-track${collectedPercent == null ? ' is-unknown' : ''}`}
+          role="progressbar"
+          aria-label="Собрано долей"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow={collectedPercent ?? undefined}
+          aria-valuetext={collectedPercent == null ? 'Данные уточняются' : `${collectedPercent}%`}
+        >
           <div
             className="shares-v2-card__progress-fill"
-            style={{ width: `${collectedPercent}%` }}
+            style={{ width: `${collectedPercent ?? 0}%` }}
           />
         </div>
-
-        <div className="shares-v2-card__footer">
-          <div className="shares-v2-card__amounts">
-            <strong>{formatMoney(collectedAmount)}</strong>
-            <span className="shares-v2-card__amounts-sep">/</span>
-            <span>{formatMoney(totalPrice)}</span>
-          </div>
-          <button
-            type="button"
-            className="shares-v2-card__invest-btn"
-            onClick={handleInvestClick}
-            disabled={soldOut}
-          >
-            {soldOut ? t('sharesAllSold') : t('sharesCardInvest')}
-          </button>
+        <div className="shares-v2-card__progress-note">
+          <span>Собрано</span>
+          <strong>{collectedPercent == null ? '—' : `${collectedPercent}%`}</strong>
         </div>
+
+        <button
+          type="button"
+          className={`shares-v2-card__invest-btn${investmentState.blocksInvestment ? ' is-disabled' : ''}`}
+          onClick={handleOpen}
+          disabled={investmentState.blocksInvestment}
+        >
+          <span>{investmentState.ctaLabel}</span>
+          <ArrowUpRight size={17} aria-hidden />
+        </button>
       </div>
-    </a>
+    </article>
   )
 }
 

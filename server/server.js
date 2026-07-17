@@ -73,6 +73,7 @@ import {
   AUCTION_DEPOSIT_MIN_EUR,
   isAuctionDepositSufficient,
 } from './utils/auctionDeposit.js';
+import { formatShareMarketplaceApiItem } from './database/shareMarketplaceQueries.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10676,7 +10677,7 @@ app.get('/api/properties/shares', async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
     const offset = parseInt(req.query.offset, 10) || 0;
     const properties = await propertyQueries.getShares(limit, offset);
-    // Нормализуем для карточек: id, property_type, title, location, image (первое фото), price, total_shares, shares_sold, area, rooms
+    // Нормализуем только подтверждённые поля; отсутствие фото остаётся явным.
     const list = properties.map((p) => {
       const photosRaw =
         (p.photos &&
@@ -10692,32 +10693,7 @@ app.get('/api/properties/shares', async (req, res) => {
                 })()
             : [])) || [];
       const photosNorm = normalizePhotosListInput(photosRaw);
-      const totalShares = p.total_shares != null ? Number(p.total_shares) : 0;
-      const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0;
-      const price = p.price != null ? Number(p.price) : 0;
-      const img =
-        photosNorm[0] ||
-        '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg';
-      return {
-        ...p,
-        photos: photosNorm,
-        images: photosNorm,
-        id: p.id,
-        property_type: p.property_type,
-        shareId: `${p.property_type}-${p.id}`,
-        title: p.title,
-        location: p.location || '',
-        description: p.description || '',
-        image: img,
-        totalPrice: price,
-        pricePerShare: totalShares > 0 ? price / totalShares : 0,
-        totalShares,
-        sharesSold,
-        myShares: 0,
-        area: p.area,
-        rooms: p.rooms,
-        bedrooms: p.bedrooms,
-      };
+      return formatShareMarketplaceApiItem(p, photosNorm);
     });
     res.json({ success: true, data: list });
   } catch (err) {

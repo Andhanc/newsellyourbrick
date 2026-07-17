@@ -8,6 +8,7 @@ import {
   parseIdFromPropertySlug,
   propertyTypeHintFromSlug,
 } from '../../shared/propertySlug.js';
+import { mergeShareRowsPage } from './shareMarketplaceQueries.js';
 
 function parseJsonSafe(val, fallback) {
   if (val == null || val === '') return fallback;
@@ -962,12 +963,14 @@ export const propertyQueries = {
   },
 
   getShares: async (limit = 100, offset = 0) => {
-        const [apartments, houses] = await Promise.all([
-      apartmentQueries.getAll({ moderation_status: 'approved', is_shared_ownership: 1 }, limit, offset),
-      houseQueries.getAll({ moderation_status: 'approved', is_shared_ownership: 1 }, limit, offset),
+    const safeLimit = Math.max(1, Number(limit) || 100);
+    const safeOffset = Math.max(0, Number(offset) || 0);
+    const fetchSize = safeOffset + safeLimit;
+    const [apartments, houses] = await Promise.all([
+      apartmentQueries.getAll({ moderation_status: 'approved', is_shared_ownership: 1 }, fetchSize, 0),
+      houseQueries.getAll({ moderation_status: 'approved', is_shared_ownership: 1 }, fetchSize, 0),
     ]);
-    const combined = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return combined.slice(0, limit);
+    return mergeShareRowsPage(apartments, houses, safeOffset, safeLimit);
   },
 
   getByUserId: async (userId, limit = 50, offset = 0) => {

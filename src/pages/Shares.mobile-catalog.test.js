@@ -3,65 +3,63 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./Shares.jsx', import.meta.url), 'utf8')
-const css = await readFile(new URL('./Shares.css', import.meta.url), 'utf8')
-const directions = await readFile(new URL('../components/AuctionCategoryCtaCards.jsx', import.meta.url), 'utf8')
+const mobileCss = await readFile(new URL('./CoInvestment.mobile.css', import.meta.url), 'utf8').catch(() => '')
+const card = await readFile(new URL('../components/SharesPropertyCard.jsx', import.meta.url), 'utf8')
 
-test('shows two compact investment cards per row on smartphones', () => {
-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.shares-invest-page \.shares-invest-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
-  assert.match(css, /\.shares-invest-page \.shares-invest-card__media\s*\{[\s\S]*?aspect-ratio:\s*4 \/ 3/)
-  assert.match(css, /\.shares-invest-page \.shares-invest-card__funding\s*\{[\s\S]*?grid-template-columns:\s*42px minmax\(0, 1fr\)/)
+test('uses only real API shares and a pure 16-item catalogue page', () => {
+  assert.match(page, /SHARES_MARKETPLACE_PAGE_SIZE/)
+  assert.match(page, /paginateSharesMarketplace\(filteredShares, page\)/)
+  assert.doesNotMatch(page, /DEMO_SHARES|GENERATED_SHARES|visual-share|demo-share/)
+  assert.doesNotMatch(page, /while \(merged\.length/)
+  assert.match(page, /while \(true\)/)
+  assert.match(page, /offset \+= payload\.data\.length/)
+  assert.match(page, /if \(payload\.data\.length < API_PAGE_SIZE\) break/)
 })
 
-test('reuses the shares card from the home page and shows 16 objects per page', () => {
-  assert.match(page, /import SharesPropertyCard from '..\/components\/SharesPropertyCard'/)
-  assert.match(page, /const PAGE_SIZE = 16/)
-  assert.match(page, /<SharesPropertyCard/)
-  assert.doesNotMatch(page, /function ShareCard\(/)
+test('uses persistent favourites and the shared guided catalogue states', () => {
+  assert.match(page, /usePropertyFavorites\(\)/)
+  assert.match(page, /isFavorite\(share, getShareFavoriteCategory\(share\)\)/)
+  assert.match(page, /toggleFavorite\(share, getShareFavoriteCategory\(share\)\)/)
+  assert.match(page, /share\.source_table \? undefined : 'property'/)
+  assert.match(page, /BuyerEmptyState/)
+  assert.match(page, /SharesPropertyCardSkeleton/)
+  assert.match(page, /ListingPagePagination/)
+  assert.doesNotMatch(page, /useState\(\(\) => new Set/)
 })
 
-test('matches the compact mobile card proportions used on the home page', () => {
-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.shares-invest-page \.shares-v2-card__media\s*\{[\s\S]*?aspect-ratio:\s*3 \/ 2/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__title\s*\{[\s\S]*?font-size:\s*0\.72rem/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__body\s*\{[\s\S]*?padding:\s*8px/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__invest-btn\s*\{[\s\S]*?background:\s*#0a0a0a/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__invest-btn\s*\{[\s\S]*?color:\s*#fff/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__invest-btn\s*\{[\s\S]*?min-height:\s*30px/)
-  assert.match(css, /\.shares-invest-page \.shares-v2-card__invest-btn:hover:not\(:disabled\)\s*\{[\s\S]*?color:\s*#fff/)
+test('does not present invented portfolio or platform facts', () => {
+  assert.doesNotMatch(page, /€52 480|€2 860|12 842|€128,6 млн|11,6%|\+320 за месяц/)
+  assert.match(page, /formatForecastYield/)
+  assert.match(page, /portfolioFacts\.forecast\.note/)
+  assert.match(page, /Данные портфеля появятся после входа и покупки доли/)
 })
 
-test('keeps pagination compact without duplicating the last page', () => {
-  assert.match(page, /const end = Math\.min\(totalPages, start \+ 2\)/)
-  assert.match(page, /const showLastPage = !pageNumbers\.includes\(totalPages\)/)
-  assert.match(page, /showTrailingEllipsis/)
-  assert.match(page, /showLastPage \? <button/)
+test('renders a distinct dark-emerald portfolio marketplace on phones', () => {
+  assert.match(page, /import '.\/CoInvestment\.mobile\.css'/)
+  assert.match(page, /shares-invest-page--marketplace/)
+  assert.match(mobileCss, /@media \(max-width: 768px\)[\s\S]*?\.shares-invest-page--marketplace \.shares-invest-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(mobileCss, /@media \(max-width: 768px\)[\s\S]*?\.shares-invest-page--marketplace \.shares-v2-card__metrics\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/)
+  assert.match(mobileCss, /--co-invest-emerald:\s*#0b3b35/)
+  assert.match(mobileCss, /\.shares-invest-page--marketplace \.shares-v2-card__favorite\s*\{[\s\S]*?min-width:\s*44px[\s\S]*?min-height:\s*44px/)
+  assert.match(mobileCss, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(mobileCss, /#shares-invest-results\s*\{[\s\S]*?scroll-margin-top:/)
+  assert.match(mobileCss, /\.shares-invest-page--marketplace \.shares-invest-search button\s*\{[\s\S]*?width:\s*44px[\s\S]*?height:\s*44px/)
+  assert.match(mobileCss, /\.shares-invest-page--marketplace \.listing-page-pagination \.auction-desktop-pagination__page[\s\S]*?min-width:\s*44px[\s\S]*?height:\s*44px/)
 })
 
-test('adds a named directions section and a polished mobile hero', () => {
-  assert.match(page, /import AuctionCategoryCtaCards from '..\/components\/AuctionCategoryCtaCards'/)
-  assert.match(page, /<AuctionCategoryCtaCards variant="sharesPage" \/>/)
-  assert.match(directions, /const SHARES_PAGE_CTA_CARD_IDS = \['auction', 'debts', 'test-drive'\]/)
-  assert.match(directions, /variant === 'sharesPage'/)
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.shares-invest-hero__copy\s*\{[\s\S]*?backdrop-filter:\s*blur\(18px\)/)
-  assert.match(css, /\.shares-invest-stats__metrics\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+test('cards label forecasts, expose availability, and use shared final-state ribbons', () => {
+  assert.match(card, /BuyerStatusRibbon/)
+  assert.match(card, /resolveShareMarketplaceState/)
+  assert.match(card, /Прогноз доходности/)
+  assert.match(card, /Доступно долей/)
+  assert.match(card, /formatForecastYield/)
+  assert.match(card, /\{forecast\.note\}/)
+  assert.match(card, /disabled=\{investmentState\.blocksInvestment\}/)
+  assert.doesNotMatch(card, /shares-v2-card__sold-overlay/)
 })
 
-test('turns platform statistics into a selling conversion block', () => {
-  assert.match(page, /shares-invest-stats__intro/)
-  assert.match(page, /shares-invest-stats__title-line">Соберите портфель/)
-  assert.match(page, /shares-invest-stats__title-pill">недвижимости/)
-  assert.match(page, /shares-invest-stats__title-line">по частям/)
-  assert.match(page, /Доступно от €100/)
-  assert.match(page, /Доход от аренды/)
-  assert.match(page, /Подобрать долю/)
-  assert.match(css, /\.shares-invest-stats__intro/)
-  assert.match(css, /\.shares-invest-stats__benefits/)
-  assert.match(css, /\.shares-invest-stats__cta/)
-})
-
-test('removes the mobile hero copy card and lifts the selling block', () => {
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.shares-invest-page \.shares-invest-hero__copy\s*\{[\s\S]*?display:\s*none/)
-  assert.match(css, /\.shares-invest-page \.shares-invest-hero\s*\{[\s\S]*?min-height:\s*280px/)
-  assert.match(css, /\.shares-invest-page \.shares-invest-stats\s*\{[\s\S]*?margin:\s*-152px 0 26px/)
-  assert.match(css, /\.shares-invest-stats__title-pill\s*\{[\s\S]*?background:\s*#4a96a6/)
-  assert.match(css, /transform:\s*rotate\(-2deg\)/)
+test('broken or missing listing photos fall back to a real neutral branded asset', () => {
+  assert.match(card, /co-investment-card-fallback\.png/)
+  assert.match(card, /onError=\{handleImageError\}/)
+  assert.doesNotMatch(card, /shares-v2-card__image-missing/)
 })
