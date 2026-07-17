@@ -93,3 +93,6 @@ server/.wwebjs_cache/
 *.sqlite3
 *.db
 /generated/prisma
+
+# Superdesign local draft templates
+.superdesign/tmp/
