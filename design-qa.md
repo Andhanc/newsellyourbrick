@@ -1,54 +1,40 @@
-**Comparison Target**
+# Test Drive mobile design QA
 
-- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-7edd6985-b791-4fa7-869b-4ec2e87519e1.png`
-- Implementation screenshot: `/private/tmp/debt-risk-mobile.png`
-- Combined comparison: `/private/tmp/debt-risk-comparison.png`
-- Viewport: 390 × 844, mobile, authenticated buyer state
-- State: medium debt risk card visible above the title; fixed bid action visible; PRO dialog closed for the main capture
+## Comparison target
 
-**Findings**
+- Selected art direction: `/Users/vtichonenko/.codex/generated_images/019f605b-3e55-7f12-93cf-8364fe0961a3/exec-bc274c87-10aa-4b3d-9eb7-e708a4162310.png`
+- Implementation screenshot: `/private/tmp/test-drive-390-final.png`
+- Side-by-side comparison: `/private/tmp/test-drive-comparison-final.png`
+- Primary viewport: 390 × 844
+- Responsive contract: 320–430 px
 
-- No actionable P0, P1, or P2 mismatch remains. The implementation preserves the source card hierarchy, white rounded surface, amber semantic color, shield icon, title/body copy, compact “Нажмите” affordance, lightning accent, border, and elevation while fitting the narrower product viewport.
-- Fonts and typography: existing product font is retained; title, supporting copy, and CTA weights match the reference hierarchy without clipping.
-- Spacing and layout rhythm: the card is 350 × 109 px with 20 px page margins; internal tracks remain aligned and no horizontal overflow occurs.
-- Colors and visual tokens: medium risk uses an amber icon tile, border, CTA, and accent consistently with the source semantic state.
-- Image quality and asset fidelity: the card contains standard library icons rather than placeholder or handcrafted assets. Listing-image failures visible in the test data are outside this component and this change.
-- Copy and content: “Средний риск”, the yellow-risk explanation, and “Нажмите” match the selected source card’s meaning and structure.
+## Visual review
 
-**Open Questions**
+- The implementation preserves the selected photo-first direction: edge-to-edge Mediterranean property image, lightweight translucent utilities, high-contrast commercial headline, and a floating white booking surface integrated into the hero.
+- The real product copy is shorter and more actionable than the concept while preserving its hierarchy. Text wraps without clipping and keeps a deliberate left edge at 320–430 px.
+- The booking card is deliberately narrower than the viewport, uses one clear conversion CTA, and keeps destination, dates, and trust signals scannable without looking like a desktop form.
+- The curved transition into the catalogue matches the reference rhythm and creates a clear handoff from aspiration to inventory.
+- No placeholder art, fake rating, fake review count, or invented price is used. Missing commercial fields render truthful fallback states.
 
-- None for this component.
+## Interaction and responsive checks
 
-**Full-view Comparison Evidence**
+- Menu, search, profile, primary CTA, filters, favourites, listing links, and pagination have explicit interactive semantics.
+- The primary CTA scrolls the app layout to the catalogue.
+- The filter drawer opens as a bottom mobile surface with a persistent action.
+- Listing pagination is capped at 16 records.
+- The mobile stylesheet keeps two catalogue columns at 320–767 px and prevents horizontal document overflow.
+- Focus-visible and minimum touch-target rules are present for primary controls.
+- Focused tests: 14 passed, 0 failed.
 
-- The combined image shows the full reference card set beside the rendered 390 × 844 property page. The selected medium-risk card replaces both former badges and keeps the page title and auction controls readable.
+## Comparison history
 
-**Focused Region Comparison Evidence**
+- Reduced the initial oversized booking surface and tightened its internal spacing.
+- Simplified the supporting copy and removed redundant secondary actions.
+- Narrowed the mobile card to retain more of the hero image and align with the selected concept.
+- Recompared the final 390 × 844 implementation with the selected source in one side-by-side image.
 
-- No additional crop was needed because the card text, iconography, border, radius, and action treatment are legible in the combined comparison at original resolution.
+## Findings
 
-**Interaction and Responsive Checks**
-
-- One risk card rendered; the old property-type badge is absent for debt objects.
-- “Сделать ставку” is visible in the fixed mobile action bar.
-- Tapping the card opens “Полный анализ долга” with the “Купить PRO” action.
-- Document width equals the 390 px viewport; no horizontal overflow.
-- Fresh browser run reported no console or page errors.
-
-**Comparison History**
-
-- Initial implementation exposed an unavailable icon export, which blanked the page. Replaced it with the installed `Pointer` icon and recaptured the implementation.
-- Source-copy drift (“Подробнее” and generic risk descriptions) was corrected to “Нажмите” and the source-aligned red/yellow/green explanations before the passing comparison.
-
-**Implementation Checklist**
-
-- [x] Replace the two mobile badges with one semantic risk card.
-- [x] Preserve responsive width and fixed bid action.
-- [x] Open the existing PRO subscription dialog from the card.
-- [x] Verify 390 × 844 rendering, interaction, overflow, and browser console.
-
-**Follow-up Polish**
-
-- None required for acceptance.
+- No actionable P0, P1, or P2 visual mismatch remains for the accepted Test Drive hero and catalogue contract.
 
 final result: passed

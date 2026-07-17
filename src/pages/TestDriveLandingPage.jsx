@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  FiCalendar,
   FiChevronDown,
+  FiCheckCircle,
   FiHeart,
   FiHome,
+  FiMapPin,
+  FiMenu,
   FiSearch,
   FiShield,
   FiSliders,
   FiSun,
   FiUmbrella,
+  FiUser,
   FiX,
 } from 'react-icons/fi'
 import { FaStar } from 'react-icons/fa'
@@ -17,7 +22,9 @@ import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { auctionListingDedupeKey, getPropertyTestDrivePath } from '../utils/propertyDetailUrl'
@@ -25,8 +32,12 @@ import { publicAsset } from '../utils/publicAsset'
 import {
   isWithinSelectedTestDrivePrice,
   mapRealTestDriveListing,
+  matchesSelectedTestDriveAmenities,
+  matchesSelectedTestDriveDurations,
   matchesSelectedTestDriveType,
+  paginateTestDriveListings,
   realTestDriveListings,
+  sortTestDriveListings,
 } from './testDriveListingData'
 import './TestDriveLandingPage.css'
 
@@ -34,6 +45,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/test-drive/hero-resort.png')
+const HERO_MOBILE_IMAGE = publicAsset('images/test-drive/hero-resort-mobile.png')
+const TEST_DRIVE_CARD_IMAGE_FALLBACK = publicAsset(
+  'images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+)
 
 const TYPE_FILTERS = ['Вилла', 'Апартаменты', 'Таунхаус', 'Дом', 'Пентхаус']
 const CITY_FILTERS = ['Марбелья', 'Барселона', 'Мадрид', 'Валенсия', 'Малага', 'Аликанте', 'Севилья', 'Пальма']
@@ -63,7 +78,7 @@ function normalizeText(value) {
 }
 
 function mapApiPropertyToListing(property, index) {
-  const image = getPropertyCardImage(property) || ''
+  const image = getPropertyCardImage(property, TEST_DRIVE_CARD_IMAGE_FALLBACK)
   const formatted = formatPropertyForListingCard({
     ...property,
     image,
@@ -77,8 +92,16 @@ function mapApiPropertyToListing(property, index) {
   })
 }
 
+function handleTestDriveImageError(event) {
+  const image = event.currentTarget
+  if (image.getAttribute('src') === TEST_DRIVE_CARD_IMAGE_FALLBACK) return
+  image.onerror = null
+  image.src = TEST_DRIVE_CARD_IMAGE_FALLBACK
+}
+
 const TestDriveLandingPage = () => {
   const navigate = useNavigate()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [loading, setLoading] = useState(true)
   const [apiListings, setApiListings] = useState([])
   const [query, setQuery] = useState('')
@@ -90,7 +113,6 @@ const TestDriveLandingPage = () => {
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
-  const [favorites, setFavorites] = useState(() => new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -134,24 +156,21 @@ const TestDriveLandingPage = () => {
       const haystack = normalizeText(`${item.title} ${item.location} ${item.type}`)
       const typeOk = matchesSelectedTestDriveType(item.type, selectedTypes)
       const directionOk = selectedDirections.length === 0 || selectedDirections.includes(item.city)
-      const durationOk =
-        selectedDurations.length === 0 ||
-        selectedDurations.includes(item.stayDays <= 7 ? '3-7 дней' : '1-2 недели')
+      const durationOk = matchesSelectedTestDriveDurations(item, selectedDurations)
+      const amenityOk = matchesSelectedTestDriveAmenities(item, selectedAmenities)
       const priceOk = isWithinSelectedTestDrivePrice(item.price, price)
-      return (!q || haystack.includes(q)) && typeOk && directionOk && durationOk && priceOk
+      return (!q || haystack.includes(q)) && typeOk && directionOk && durationOk && amenityOk && priceOk
     })
 
-    if (sort === 'price') return [...filtered].sort((a, b) => a.price - b.price)
-    if (sort === 'rating') return [...filtered].sort((a, b) => b.rating - a.rating)
-    return filtered
-  }, [listings, price, query, selectedDirections, selectedDurations, selectedTypes, sort])
+    return sortTestDriveListings(filtered, sort)
+  }, [listings, price, query, selectedAmenities, selectedDirections, selectedDurations, selectedTypes, sort])
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
-  const pageListings = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredListings.slice(start, start + PAGE_SIZE)
-  }, [filteredListings, safePage])
+  const pageListings = useMemo(
+    () => paginateTestDriveListings(filteredListings, safePage, PAGE_SIZE),
+    [filteredListings, safePage],
+  )
 
   useEffect(() => {
     if (page > totalPages) {
@@ -163,12 +182,14 @@ const TestDriveLandingPage = () => {
     setPage(1)
   }, [query, selectedTypes, selectedDirections, selectedDurations, selectedAmenities, price, sort])
 
+  const scrollToCatalog = () => {
+    document.getElementById('test-drive-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const goToPage = (nextPage) => {
     const safeNext = Math.max(1, Math.min(nextPage, totalPages))
     setPage(safeNext)
-    requestAnimationFrame(() => {
-      document.getElementById('test-drive-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+    requestAnimationFrame(scrollToCatalog)
   }
 
   const toggleValue = (value, setter) => {
@@ -191,13 +212,16 @@ const TestDriveLandingPage = () => {
     navigate(getPropertyTestDrivePath(property), { state: { property } })
   }
 
-  const toggleFavorite = (id) => {
-    setFavorites((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const isListingFavorite = (listing) => {
+    const favoriteProperty = listing.originalProperty || listing
+    const mockCategory = hasDbBackedProperty(favoriteProperty) ? undefined : 'property'
+    return isFavorite(favoriteProperty, mockCategory)
+  }
+
+  const toggleListingFavorite = (listing) => {
+    const favoriteProperty = listing.originalProperty || listing
+    const mockCategory = hasDbBackedProperty(favoriteProperty) ? undefined : 'property'
+    void toggleFavorite(favoriteProperty, mockCategory)
   }
 
   return (
@@ -205,14 +229,74 @@ const TestDriveLandingPage = () => {
       <Header />
       <main className="test-drive-landing__main">
         <section className="test-drive-hero">
-          <img src={HERO_IMAGE} alt="" className="test-drive-hero__image" />
+          <picture>
+            <source media="(max-width: 640px)" srcSet={HERO_MOBILE_IMAGE} />
+            <img src={HERO_IMAGE} alt="" className="test-drive-hero__image" />
+          </picture>
           <div className="test-drive-hero__shade" aria-hidden />
           <div className="test-drive-hero__content">
-            <h1>Тест-драйв недвижимости</h1>
-            <p className="test-drive-hero__subtitle">Маленький отпуск перед покупкой</p>
-            <p className="test-drive-hero__lead">
-              Поживите в объекте до сделки и примите взвешенное решение
-            </p>
+            <nav className="test-drive-hero__utilities" aria-label="Быстрые действия">
+              <Link
+                to="/sections"
+                className="test-drive-hero__utility test-drive-hero__utility--menu"
+                aria-label="Открыть разделы"
+              >
+                <FiMenu size={20} aria-hidden />
+              </Link>
+              <button
+                type="button"
+                className="test-drive-hero__search-capsule"
+                onClick={scrollToCatalog}
+              >
+                <FiSearch size={18} aria-hidden />
+                <span>Поиск тест-драйва</span>
+              </button>
+              <Link
+                to="/profile/bookings"
+                className="test-drive-hero__utility test-drive-hero__utility--profile"
+                aria-label="Мои брони"
+              >
+                <FiUser size={19} aria-hidden />
+              </Link>
+            </nav>
+
+            <div className="test-drive-hero__copy test-drive-hero__copy--desktop">
+              <h1>Тест-драйв недвижимости</h1>
+              <p className="test-drive-hero__subtitle">Маленький отпуск перед покупкой</p>
+              <p className="test-drive-hero__lead">
+                Поживите в объекте до сделки и примите взвешенное решение
+              </p>
+            </div>
+
+            <div className="test-drive-hero__copy test-drive-hero__copy--mobile">
+              <h1>Поживите здесь до покупки</h1>
+              <p className="test-drive-hero__eyebrow">Тест-драйв недвижимости · Коста-дель-Соль</p>
+            </div>
+
+            <div className="test-drive-hero-card">
+              <div className="test-drive-hero-card__head">
+                <div>
+                  <strong>Ваш тест-драйв</strong>
+                </div>
+              </div>
+              <div className="test-drive-hero-card__details">
+                <div>
+                  <span className="test-drive-hero-card__icon" aria-hidden><FiMapPin size={18} /></span>
+                  <strong>Марбелья, Испания</strong>
+                </div>
+                <div>
+                  <span className="test-drive-hero-card__icon" aria-hidden><FiCalendar size={18} /></span>
+                  <strong>12 авг — 18 авг</strong>
+                </div>
+              </div>
+              <div className="test-drive-hero-card__trust" aria-label="Преимущества">
+                <span><FiCheckCircle size={14} aria-hidden /> Без обязательств</span>
+                <span><FiShield size={14} aria-hidden /> Проверенные объекты</span>
+              </div>
+              <button type="button" className="test-drive-hero-card__action" onClick={scrollToCatalog}>
+                Найти свободные объекты
+              </button>
+            </div>
           </div>
         </section>
 
@@ -239,7 +323,7 @@ const TestDriveLandingPage = () => {
           <section className="test-drive-catalog" id="test-drive-catalog">
             <TestDriveFiltersPanel
               className="test-drive-filter-panel test-drive-filter-panel--sidebar"
-              filteredCount={filteredListings.length || listings.length}
+              filteredCount={filteredListings.length}
               selectedTypes={selectedTypes}
               selectedDirections={selectedDirections}
               selectedDurations={selectedDurations}
@@ -257,12 +341,12 @@ const TestDriveLandingPage = () => {
               <div className="test-drive-results__head">
                 <div>
                   <h2>
-                    Объекты с тест-драйвом <span>{loading ? '...' : filteredListings.length}</span>
+                    Дома, в которых можно пожить <span>{loading ? '...' : filteredListings.length}</span>
                   </h2>
                   <p>
                     {activeFilterCount
                       ? `Активных фильтров: ${activeFilterCount}`
-                      : 'Выберите виллу, апартаменты или дом для проживания до сделки'}
+                      : 'До 16 вариантов на странице — сравните ощущения до покупки'}
                   </p>
                 </div>
               </div>
@@ -308,13 +392,13 @@ const TestDriveLandingPage = () => {
                 isOpen={filtersDrawerOpen}
                 onClose={() => setFiltersDrawerOpen(false)}
                 title="Фильтры"
-                applyLabel={`Показать ${filteredListings.length || listings.length} объектов`}
+                applyLabel={`Показать ${filteredListings.length} объектов`}
                 onApply={() => setFiltersDrawerOpen(false)}
                 onReset={resetFilters}
               >
                 <TestDriveFiltersPanel
                   className="test-drive-filter-panel test-drive-filter-panel--drawer"
-                  filteredCount={filteredListings.length || listings.length}
+                  filteredCount={filteredListings.length}
                   selectedTypes={selectedTypes}
                   selectedDirections={selectedDirections}
                   selectedDurations={selectedDurations}
@@ -347,13 +431,16 @@ const TestDriveLandingPage = () => {
               ) : (
                 <>
                   <div className="test-drive-card-grid">
-                    {pageListings.map((listing) => (
+                    {pageListings.map((listing) => {
+                      const favoriteActive = isListingFavorite(listing)
+                      return (
                       <article className="test-drive-card" key={listing.id}>
                         <button
                           type="button"
-                          className={`test-drive-card__favorite${favorites.has(listing.id) ? ' is-active' : ''}`}
-                          onClick={() => toggleFavorite(listing.id)}
-                          aria-label="Добавить в избранное"
+                          className={`test-drive-card__favorite${favoriteActive ? ' is-active' : ''}`}
+                          onClick={() => toggleListingFavorite(listing)}
+                          aria-label={favoriteActive ? 'Убрать из избранного' : 'Добавить в избранное'}
+                          aria-pressed={favoriteActive}
                         >
                           <FiHeart size={22} aria-hidden />
                         </button>
@@ -362,7 +449,11 @@ const TestDriveLandingPage = () => {
                           className="test-drive-card__image-button"
                           onClick={() => openListing(listing)}
                         >
-                          <img src={listing.image} alt={listing.title} />
+                          <img
+                            src={listing.image || TEST_DRIVE_CARD_IMAGE_FALLBACK}
+                            alt={listing.title}
+                            onError={handleTestDriveImageError}
+                          />
                         </button>
                         <div className="test-drive-card__body">
                           <button type="button" onClick={() => openListing(listing)}>
@@ -370,23 +461,35 @@ const TestDriveLandingPage = () => {
                           </button>
                           <p>{listing.location}</p>
                           <div className="test-drive-card__specs">
-                            <span>{listing.bedrooms} спальни</span>
-                            <span>{listing.bathrooms} ванные</span>
-                            <span>{listing.area} м²</span>
+                            {listing.bedrooms != null ? <span>{listing.bedrooms} спальни</span> : null}
+                            {listing.bathrooms != null ? <span>{listing.bathrooms} ванные</span> : null}
+                            {listing.area != null ? <span>{listing.area} м²</span> : null}
                           </div>
                           <div className="test-drive-card__footer">
                             <div className="test-drive-card__price">
-                              <strong>€{listing.price}</strong>
-                              <span>/ ночь</span>
+                              {listing.price != null ? (
+                                <>
+                                  <strong>€{listing.price}</strong>
+                                  <span>/ ночь</span>
+                                </>
+                              ) : (
+                                <strong>По запросу</strong>
+                              )}
                             </div>
-                            <span className="test-drive-card__rating">
-                              <FaStar size={13} aria-hidden />
-                              {listing.rating.toFixed(1)} ({listing.reviews})
-                            </span>
+                            {listing.rating != null ? (
+                              <span className="test-drive-card__rating">
+                                <FaStar size={13} aria-hidden />
+                                {listing.rating.toFixed(1)}
+                                {listing.reviews != null ? ` (${listing.reviews})` : null}
+                              </span>
+                            ) : (
+                              <span className="test-drive-card__rating test-drive-card__rating--new">Новый</span>
+                            )}
                           </div>
                         </div>
                       </article>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   <ListingPagePagination
