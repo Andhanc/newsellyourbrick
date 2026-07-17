@@ -567,6 +567,7 @@ export function SiteNotificationsProvider({ children }) {
 }
 
 export function NotificationsBell({ variant = 'desktop' }) {
+  const { t } = useTranslation()
   const { isSignedIn } = useAuth()
   const ctx = useContext(SiteNotificationsContext)
   const { unreadCount = 0, isOpen = false, toggle } = ctx || {}
@@ -586,6 +587,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
         type="button"
         className="header__action-btn"
         data-site-notifications-bell
+        aria-label={t('notifications')}
         aria-expanded={isOpen}
         onClick={(e) => {
           e.stopPropagation()
@@ -603,6 +605,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
       type="button"
       className="new-header__notification-btn"
       data-site-notifications-bell
+      aria-label={t('notifications')}
       aria-expanded={isOpen}
       onClick={(e) => {
         e.stopPropagation()

@@ -2328,6 +2328,9 @@ function TestPage() {
           aria-labelledby={showBuyerCabinetSkeleton ? undefined : 'test-hero-heading'}
           aria-busy={showBuyerCabinetSkeleton || undefined}
         >
+          <span className="test-hero-pro__mobile-eyebrow">
+            {t('buyerCabinet_title', { defaultValue: 'Личный кабинет' })}
+          </span>
           {showBuyerCabinetSkeleton ? (
             <BuyerCabinetHeroSkeleton
               sectionsLabel={t('buyerCabinet_sectionsLabel')}
@@ -3217,6 +3220,7 @@ function TestPage() {
       <OwnerCabinetOnboardingDrawer
         isOpen={sellerOnboardingOpen}
         onComplete={completeSellerOnboarding}
+        translationPrefix="buyerTest"
       />
 
       <ProfileSpotlightOnboarding

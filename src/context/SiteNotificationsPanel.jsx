@@ -40,6 +40,31 @@ function notificationTime(notification) {
   }).format(date)
 }
 
+function notificationNextStep(notification, dataObj) {
+  const explicit = dataObj?.next_step ?? dataObj?.nextStep
+  if (typeof explicit === 'string' && explicit.trim()) return explicit.trim()
+
+  switch (String(notification?.type || '').toLowerCase()) {
+    case 'test_drive_request':
+      return 'Подтвердите или отклоните даты — покупатель сразу получит ответ.'
+    case 'test_drive_result':
+    case 'test_drive_approved':
+      return 'Откройте бронь и проверьте даты, анкету и инструкции к визиту.'
+    case 'test_drive_cancelled':
+      return 'Откройте бронирования, чтобы выбрать другой объект или новые даты.'
+    case 'buy_now_approved':
+      return 'Проверьте покупку и срок следующего платежа в истории.'
+    case 'outbid':
+    case 'bid_outbid':
+      return 'Откройте объект и решите, повышать ли ставку до завершения торгов.'
+    case 'payment_succeeded':
+    case 'deposit_paid':
+      return 'Средства зачислены. Проверьте, какой шаг сделки теперь доступен.'
+    default:
+      return null
+  }
+}
+
 function NotificationItem({
   notification,
   t,
@@ -57,6 +82,7 @@ function NotificationItem({
     dataObj?.action_path ?? dataObj?.route ?? dataObj?.url ?? notification?.action_path,
   )
   const unread = notification.view_count === 0
+  const nextStep = notificationNextStep(notification, dataObj)
 
   const openRoute = (target) => {
     closePanel()
@@ -78,6 +104,9 @@ function NotificationItem({
       <div className="notification-item__content">
         <h4 className="notification-item__title">{notification.title || t('notifications')}</h4>
         {notification.message ? <p className="notification-item__message">{notification.message}</p> : null}
+        {nextStep ? (
+          <p className="notification-item__next-step"><span>Следующий шаг</span>{nextStep}</p>
+        ) : null}
 
         {notification.type === 'test_drive_request' && dataObj?.booking_id ? (
           <div className="notification-item__test-drive-actions" onClick={(event) => event.stopPropagation()}>

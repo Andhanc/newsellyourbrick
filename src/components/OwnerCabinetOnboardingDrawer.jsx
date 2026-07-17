@@ -7,7 +7,11 @@ import './OwnerCabinetOnboardingDrawer.css'
 
 const STEP_COUNT = 4
 
-export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
+export default function OwnerCabinetOnboardingDrawer({
+  isOpen,
+  onComplete,
+  translationPrefix = 'ownerTest',
+}) {
   const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [entered, setEntered] = useState(false)
@@ -66,10 +70,10 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
     setStep((current) => Math.min(current + 1, STEP_COUNT - 1))
   }
 
-  const titleBefore = t(`ownerTest_onboardingStep${step + 1}TitleBefore`, { defaultValue: '' })
-  const titleHighlight = t(`ownerTest_onboardingStep${step + 1}TitleHighlight`, { defaultValue: '' })
-  const titleAfter = t(`ownerTest_onboardingStep${step + 1}TitleAfter`, { defaultValue: '' })
-  const titleLine2 = t(`ownerTest_onboardingStep${step + 1}TitleLine2`, { defaultValue: '' })
+  const titleBefore = t(`${translationPrefix}_onboardingStep${step + 1}TitleBefore`, { defaultValue: '' })
+  const titleHighlight = t(`${translationPrefix}_onboardingStep${step + 1}TitleHighlight`, { defaultValue: '' })
+  const titleAfter = t(`${translationPrefix}_onboardingStep${step + 1}TitleAfter`, { defaultValue: '' })
+  const titleLine2 = t(`${translationPrefix}_onboardingStep${step + 1}TitleLine2`, { defaultValue: '' })
 
   return createPortal(
     <>
@@ -112,7 +116,7 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
           <div className="owner-onboarding-drawer__content">
             <div className="owner-onboarding-drawer__copy">
               <p className="owner-onboarding-drawer__step-label">
-                {t('ownerTest_onboardingStepCounter', { current: step + 1, total: STEP_COUNT })}
+                {t(`${translationPrefix}_onboardingStepCounter`, { current: step + 1, total: STEP_COUNT })}
               </p>
 
               <h2 id="owner-onboarding-drawer-title" className="owner-onboarding-drawer__title">
@@ -137,7 +141,7 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
               </h2>
 
               <p className="owner-onboarding-drawer__text">
-                {t(`ownerTest_onboardingStep${step + 1}Text`)}
+                {t(`${translationPrefix}_onboardingStep${step + 1}Text`)}
               </p>
             </div>
 
@@ -145,14 +149,14 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
               <div
                 className="owner-onboarding-drawer__dots"
                 role="tablist"
-                aria-label={t('ownerTest_onboardingStepsAria')}
+                aria-label={t(`${translationPrefix}_onboardingStepsAria`)}
               >
                 {Array.from({ length: STEP_COUNT }, (_, index) => (
                   <span
                     key={index}
                     role="tab"
                     aria-selected={index === step}
-                    aria-label={t('ownerTest_onboardingStepDot', { step: index + 1, total: STEP_COUNT })}
+                    aria-label={t(`${translationPrefix}_onboardingStepDot`, { step: index + 1, total: STEP_COUNT })}
                     className={`owner-onboarding-drawer__dot${
                       index === step ? ' owner-onboarding-drawer__dot--active' : ''
                     }`}
@@ -161,7 +165,9 @@ export default function OwnerCabinetOnboardingDrawer({ isOpen, onComplete }) {
               </div>
 
               <button type="button" className="owner-onboarding-drawer__cta" onClick={handlePrimary}>
-                {isLastStep ? t('ownerTest_onboardingStart') : t('ownerTest_onboardingNext')}
+                {isLastStep
+                  ? t(`${translationPrefix}_onboardingStart`)
+                  : t(`${translationPrefix}_onboardingNext`)}
               </button>
             </div>
           </div>

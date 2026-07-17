@@ -168,6 +168,15 @@
 
 .notification-panel__group-items { display: grid; gap: 10px; }
 
+.notification-panel__group-items .notification-item {
+  animation: notification-item-in 360ms var(--buyer-ease-out) both;
+}
+
+.notification-panel__group-items .notification-item:nth-child(2) { animation-delay: 45ms; }
+.notification-panel__group-items .notification-item:nth-child(3) { animation-delay: 90ms; }
+.notification-panel__group-items .notification-item:nth-child(4) { animation-delay: 135ms; }
+.notification-panel__group-items .notification-item:nth-child(n + 5) { animation-delay: 160ms; }
+
 .notification-item {
   position: relative;
   overflow: hidden;
@@ -233,6 +242,27 @@
   font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.notification-item__next-step {
+  margin: 11px 0 0;
+  padding: 11px 12px;
+  border-radius: 13px;
+  background: var(--buyer-mint);
+  color: #284444;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.notification-item__next-step span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--buyer-teal-deep);
+  font-family: var(--buyer-font-display);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 
 .notification-item__property {
@@ -313,6 +343,10 @@
 @keyframes notification-sheet-in { from { opacity: 0; transform: translateY(42px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes notification-sheet-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(42px); } }
 @keyframes notification-shimmer { to { background-position: -220% 0; } }
+@keyframes notification-item-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 @media (min-width: 768px) {
   .notification-layer { justify-content: flex-end; align-items: stretch; }
@@ -334,6 +368,7 @@
 @media (prefers-reduced-motion: reduce) {
   .notification-backdrop,
   .notification-panel,
+  .notification-panel__group-items .notification-item,
   .notification-panel__skeleton span {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;

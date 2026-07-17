@@ -672,7 +672,32 @@ const History = () => {
 
         <main className="history-main buyer-cabinet-layout-main">
           <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
+          <span className="history-mobile-eyebrow">Портфель покупателя</span>
           <h1 className="history-title">{t('buyerHistory_title')}</h1>
+
+          <section className="history-mobile-hero" aria-label="Сводка по покупкам">
+            <div className="history-mobile-hero__top">
+              <span>Ваши активы</span>
+              <span className="history-mobile-hero__status">
+                {activeReservationPurchases.length > 0 ? 'Есть активный резерв' : 'Все события сохранены'}
+              </span>
+            </div>
+            <strong className="history-mobile-hero__value">
+              {purchaseHistory.length + completedBuyNowReservations.length + sharePurchases.length}{' '}
+              {t('buyerHistory_assetsCount', { defaultValue: 'объектов' })}
+            </strong>
+            <p>
+              Покупки, доли, резервы и ставки собраны в одной хронологии. Для каждого события показан актуальный следующий шаг.
+            </p>
+            <div className="history-mobile-hero__metrics">
+              <span><b>{activeReservationPurchases.length}</b> активных резервов</span>
+              <span><b>{bidHistory.length}</b> ставок</span>
+            </div>
+            <div className="history-mobile-hero__actions">
+              <Link to="/auction" className="history-mobile-hero__action">Найти объект</Link>
+              <Link to="/wallet" className="history-mobile-hero__action history-mobile-hero__action--secondary">Открыть кошелёк</Link>
+            </div>
+          </section>
 
           <div className="history-content">
             <section className="history-section">
@@ -1056,4 +1081,3 @@ const History = () => {
 }
 
 export default History
-
