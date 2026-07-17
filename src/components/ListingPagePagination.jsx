@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import './ListingPagePagination.css'
 
 export default function ListingPagePagination({ currentPage, totalPages, onPageChange }) {
@@ -15,7 +16,7 @@ export default function ListingPagePagination({ currentPage, totalPages, onPageC
         onClick={() => onPageChange(currentPage - 1)}
         aria-label={t('auctionPaginationPrev')}
       >
-        ←
+        <ChevronLeft size={18} aria-hidden />
       </button>
       <div className="auction-desktop-pagination__pages">
         {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
@@ -39,7 +40,7 @@ export default function ListingPagePagination({ currentPage, totalPages, onPageC
         onClick={() => onPageChange(currentPage + 1)}
         aria-label={t('auctionPaginationNext')}
       >
-        →
+        <ChevronRight size={18} aria-hidden />
       </button>
     </nav>
   )

@@ -74,6 +74,10 @@
   margin-bottom: 0;
 }
 
+.hero-auction-mobile {
+  display: none;
+}
+
 @media (min-width: 769px) {
   .hero--auction-scene {
     padding: calc(env(safe-area-inset-top, 0px) + 144px) 24px 52px;
@@ -368,7 +372,105 @@
 
 @media (max-width: 768px) {
   .hero--auction-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 120px) 12px 20px;
+    display: flex;
+    align-items: flex-end;
+    min-height: min(670px, 78svh);
+    padding: calc(env(safe-area-inset-top, 0px) + 132px) 16px 24px;
+    background: #132124;
+  }
+
+  .hero--auction-scene__bg {
+    object-position: 58% center;
+    opacity: 0.92;
+  }
+
+  .hero--auction-scene__overlay {
+    background: rgba(4, 15, 18, 0.46);
+  }
+
+  .hero--auction-scene .hero-container {
+    width: 100%;
+  }
+
+  .hero--auction-scene .hero-auction-header,
+  .hero--auction-scene .hero-features {
+    display: none;
+  }
+
+  .hero-auction-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 2px;
+    color: #fff;
+  }
+
+  .hero-auction-mobile__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 999px;
+    background: rgba(10, 28, 31, 0.58);
+    color: rgba(255, 255, 255, 0.94);
+    font-size: 10px;
+    font-weight: 760;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .hero-auction-mobile h1 {
+    max-width: 340px;
+    margin: 16px 0 0;
+    color: #fff;
+    font-size: clamp(30px, 8.4vw, 38px);
+    font-weight: 830;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    text-wrap: balance;
+  }
+
+  .hero-auction-mobile p {
+    display: -webkit-box;
+    max-width: 350px;
+    margin: 12px 0 0;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 13px;
+    font-weight: 520;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .hero-auction-mobile__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 18px;
+    padding: 12px 15px 12px 18px;
+    border: 0;
+    border-radius: 16px;
+    background: #fff;
+    color: #17383d;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 780;
+    box-shadow: 0 14px 30px rgba(2, 13, 15, 0.28);
+  }
+
+  .hero-auction-mobile__cta:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.88);
+    outline-offset: 3px;
   }
 
   .hero-auction-header {

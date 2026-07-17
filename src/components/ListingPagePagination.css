@@ -67,8 +67,8 @@
 
   .listing-page-pagination .auction-desktop-pagination__page,
   .listing-page-pagination .auction-desktop-pagination__arrow {
-    min-width: 36px;
-    height: 36px;
+    min-width: 44px;
+    height: 44px;
     font-size: 0.875rem;
   }
 }

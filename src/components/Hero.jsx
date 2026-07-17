@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ArrowDown } from 'lucide-react'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
 import './Hero.css'
 
@@ -144,6 +145,26 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
       ) : null}
       <div className="hero-container">
         {auctionScene ? (
+          <div className="hero-auction-mobile">
+            <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
+            <h1>{t('auctionSectionTitle')}</h1>
+            <p>{t('auctionSectionSubtitle')}</p>
+            <button
+              type="button"
+              className="hero-auction-mobile__cta"
+              onClick={() => {
+                document.getElementById('properties-grid')?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start',
+                })
+              }}
+            >
+              <span>{t('auctionSectionCta')}</span>
+              <ArrowDown size={18} strokeWidth={2.2} aria-hidden />
+            </button>
+          </div>
+        ) : null}
+        {auctionScene ? (
           <header className="hero-auction-header">
             <h1 className="hero-auction-header__title">{t('auctionSectionTitle')}</h1>
             <p className="hero-auction-header__lead">{t('auctionSectionSubtitle')}</p>
@@ -223,4 +244,3 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
 }
 
 export default Hero
-

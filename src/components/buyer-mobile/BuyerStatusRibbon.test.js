@@ -39,9 +39,11 @@ test('ribbon remains legible on narrow cards and under reduced motion', () => {
 })
 
 test('catalog cards consume the shared final-state resolver and ribbon', () => {
+  assert.match(listingCard, /resolveBuyerListingState/)
+  assert.match(listingCard, /BuyerStatusRibbon/)
+  assert.match(auctionCard, /resolveBuyerListingState/)
+  assert.match(auctionCard, /AuctionFinalStateRibbon/)
   for (const card of [listingCard, auctionCard]) {
-    assert.match(card, /resolveBuyerListingState/)
-    assert.match(card, /BuyerStatusRibbon/)
     assert.match(card, /blocksPurchase/)
     assert.match(card, /blocksBid/)
   }

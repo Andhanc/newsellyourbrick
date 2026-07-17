@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Gem, ShoppingBag, Car, ArrowUpRight } from 'lucide-react'
+import { MapPin, Gem, ShoppingBag, Car, ArrowUpRight, Heart, LockKeyhole } from 'lucide-react'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import ListingCardAuctionTimer from './ListingCardAuctionTimer'
@@ -21,7 +21,7 @@ import {
 import './AuctionPropertyCard.css'
 import { getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { resolveBuyerListingState } from '../utils/resolveBuyerListingState'
-import BuyerStatusRibbon from './buyer-mobile/BuyerStatusRibbon'
+import AuctionFinalStateRibbon from './auction/AuctionFinalStateRibbon'
 
 function useAuctionCardState(property) {
   return useMemo(() => {
@@ -123,7 +123,12 @@ export default function AuctionPropertyCard({
   })
 
   const showPrivateClubBand =
-    viewerHasVip && state.isPrivateClub && !state.listingEnded && !state.isReserved
+    viewerHasVip &&
+    state.isPrivateClub &&
+    !state.blocksBid &&
+    !state.blocksPurchase &&
+    !state.listingEnded &&
+    !state.isReserved
 
   const displayPrice = state.hasTimer
     ? resolveAuctionCurrentBidValue(property)
@@ -133,6 +138,8 @@ export default function AuctionPropertyCard({
 
   const showFeatureBadges =
     !state.isReserved &&
+    !state.blocksBid &&
+    !state.blocksPurchase &&
     !showPrivateClubBand &&
     (state.hasBuyNowPrice || state.hasTestDrive) &&
     !state.listingEnded
@@ -147,30 +154,58 @@ export default function AuctionPropertyCard({
     .filter(Boolean)
     .join(' ')
 
+  const cardSpecs = [
+    (property.area || property.sqft) && {
+      key: 'area',
+      icon: <BiArea size={15} aria-hidden />,
+      label: `${property.area || property.sqft} ${t('squareMeters')}`,
+    },
+    (property.rooms || property.beds || property.bedrooms) && {
+      key: 'rooms',
+      icon: <MdBed size={15} aria-hidden />,
+      label: property.rooms || property.beds || property.bedrooms,
+    },
+    property.bathrooms && {
+      key: 'bathrooms',
+      icon: <MdOutlineBathtub size={15} aria-hidden />,
+      label: property.bathrooms,
+    },
+    property.floor && {
+      key: 'floor',
+      icon: null,
+      label: `${property.floor} ${t('floor')}`,
+    },
+  ]
+    .filter(Boolean)
+    .slice(0, 2)
+
+  const handleCanonicalOpen = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1) return
+    if (!onOpen) return
+    event.preventDefault()
+    onOpen(property)
+  }
+
+  const openLabel = `${t('buyerCabinet_openProperty')}: ${propertyTitle}`
+
   return (
-    <a
-      href={detailHref}
-      className={cardClassName}
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
-        if (e.target.closest('button')) {
-          e.preventDefault()
-          return
-        }
-        if (!onOpen) return
-        e.preventDefault()
-        onOpen(property)
-      }}
-    >
+    <article className={cardClassName}>
       <div className="auction-card__media">
-        <ImageWithSkeleton
-          imgProps={propertyImageProps}
-          alt={propertyTitle}
-          className="auction-card__image"
-          containerClassName="auction-card__image-wrap"
-        />
-        <div className="auction-card__media-gradient" aria-hidden />
-        <BuyerStatusRibbon listingState={state.listingState} />
+        <a
+          href={detailHref}
+          className="auction-card__media-link"
+          onClick={handleCanonicalOpen}
+          aria-label={openLabel}
+        >
+          <ImageWithSkeleton
+            imgProps={propertyImageProps}
+            alt={propertyTitle}
+            className="auction-card__image"
+            containerClassName="auction-card__image-wrap"
+          />
+          <div className="auction-card__media-gradient" aria-hidden />
+          <AuctionFinalStateRibbon listingState={state.listingState} />
+        </a>
 
         {showPrivateClubBand ? (
           <div className="auction-card__vip-ribbon" aria-label={t('auctionPrivateClubLotTooltip')}>
@@ -186,21 +221,15 @@ export default function AuctionPropertyCard({
             type="button"
             className={`auction-card__favorite${isFavorite ? ' auction-card__favorite--active' : ''}`}
             onClick={(e) => onFavoriteToggle(property, e)}
-            aria-label={t('favorites')}
+            aria-label={isFavorite ? t('auctionRemoveFavorite') : t('propertyDetailAddToFavorites')}
+            aria-pressed={Boolean(isFavorite)}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill={isFavorite ? 'currentColor' : 'none'}
-              />
-            </svg>
+            <Heart size={20} strokeWidth={2} fill={isFavorite ? 'currentColor' : 'none'} aria-hidden />
           </button>
 
           {showFeatureBadges ? (
             <div className="auction-card__photo-icons" onClick={(e) => e.stopPropagation()}>
-              {state.hasBuyNowPrice ? (
+              {state.hasBuyNowPrice && !state.blocksPurchase ? (
                 <button
                   type="button"
                   className="auction-card__photo-icon auction-card__photo-icon--buy"
@@ -256,7 +285,7 @@ export default function AuctionPropertyCard({
 
         {state.isReserved ? (
           <div className="auction-card__reserved">
-            <span aria-hidden>🔒</span>
+            <LockKeyhole size={14} strokeWidth={2.2} aria-hidden />
             <span>{t('reserved')}</span>
           </div>
         ) : null}
@@ -330,32 +359,24 @@ export default function AuctionPropertyCard({
             <p className="auction-card__location auction-card__location--empty" aria-hidden />
           )}
 
-          <h3 className="auction-card__title">{propertyTitle}</h3>
+          <h3 className="auction-card__title">
+            <a
+              href={detailHref}
+              className="auction-card__title-link"
+              onClick={handleCanonicalOpen}
+              aria-label={openLabel}
+            >
+              {propertyTitle}
+            </a>
+          </h3>
 
           <div className="auction-card__specs">
-            {(property.area || property.sqft) ? (
-              <span className="auction-card__spec">
-                <BiArea size={15} aria-hidden />
-                {property.area || property.sqft} {t('squareMeters')}
+            {cardSpecs.map((spec) => (
+              <span key={spec.key} className="auction-card__spec">
+                {spec.icon}
+                {spec.label}
               </span>
-            ) : null}
-            {(property.rooms || property.beds || property.bedrooms) ? (
-              <span className="auction-card__spec">
-                <MdBed size={15} aria-hidden />
-                {property.rooms || property.beds || property.bedrooms}
-              </span>
-            ) : null}
-            {property.bathrooms ? (
-              <span className="auction-card__spec">
-                <MdOutlineBathtub size={15} aria-hidden />
-                {property.bathrooms}
-              </span>
-            ) : null}
-            {property.floor ? (
-              <span className="auction-card__spec">
-                {property.floor} {t('floor')}
-              </span>
-            ) : null}
+            ))}
           </div>
 
           {state.buyNowWinnerId != null && !state.listingEnded ? (
@@ -372,7 +393,9 @@ export default function AuctionPropertyCard({
                 {state.hasTimer ? t('currentBid').replace(/:$/, '') : t('propertyDetailPrice').replace(/:$/, '')}
               </span>
               <span className="auction-card__price-label-short">
-                {state.hasTimer ? 'Ставка' : 'Цена'}
+                {state.hasTimer
+                  ? t('auctionCardBidShort')
+                  : t('propertyDetailPrice').replace(/:$/, '')}
               </span>
             </span>
             <span className="auction-card__price-value">{formatPrice(displayPrice, property.currency)}</span>
@@ -437,12 +460,16 @@ export default function AuctionPropertyCard({
                 onOpen(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
               }}
             >
-              <span>{state.listingState.state === 'sold' ? 'Сделка завершена' : 'Торги завершены'}</span>
+              <span>
+                {state.listingState.state === 'sold'
+                  ? t('auctionFinalActionSold')
+                  : t('auctionFinalActionEnded')}
+              </span>
               <strong>{t('auctionResultSummary')} <ArrowUpRight size={14} aria-hidden /></strong>
             </button>
           ) : null}
         </div>
       </div>
-    </a>
+    </article>
   )
 }

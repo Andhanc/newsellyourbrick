@@ -1,0 +1,57 @@
+.auction-final-ribbon {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 138%;
+  height: 52px;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) rotate(-8deg);
+  transform-origin: center;
+  filter: drop-shadow(0 8px 10px rgba(7, 17, 18, 0.28));
+}
+
+.auction-final-ribbon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.auction-final-ribbon span {
+  position: relative;
+  z-index: 1;
+  max-width: 72%;
+  overflow: hidden;
+  color: #121718;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 880;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .auction-final-ribbon {
+    top: 18px;
+    height: 46px;
+  }
+
+  .auction-final-ribbon span {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-final-ribbon {
+    transition: none;
+  }
+}

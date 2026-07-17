@@ -346,7 +346,8 @@
   .auction-mobile-stack--desktop-cards,
   .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
   .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards {
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 8px !important;
   }
 
   .auction-mobile-stack--desktop-cards .auction-card__title {
@@ -357,6 +358,23 @@
   .auction-mobile-stack--desktop-cards .auction-card__spec,
   .auction-mobile-stack--desktop-cards .auction-card__btn {
     font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .auction-mobile-layout {
+    padding-inline: 0 !important;
+  }
+
+  .auction-mobile-tabs {
+    display: none;
+  }
+
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: stretch;
   }
 }
 

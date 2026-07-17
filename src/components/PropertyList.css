@@ -1791,6 +1791,53 @@ a.property-card {
     margin-top: clamp(20px, 5vw, 32px);
   }
 
+  .auction-mobile-catalog-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 0 14px;
+    padding: 0 2px;
+  }
+
+  .auction-mobile-catalog-head span {
+    display: block;
+    max-width: 230px;
+    overflow: hidden;
+    color: #6d7a7c;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .auction-mobile-catalog-head h2 {
+    margin: 5px 0 0;
+    color: #162527;
+    font-size: 22px;
+    font-weight: 820;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+  }
+
+  .auction-mobile-catalog-head strong {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid rgba(24, 95, 103, 0.14);
+    border-radius: 14px;
+    background: #eaf4f3;
+    color: #185f67;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
   .search-filters-bar .search-box {
     width: 100%;
     background: #fff;

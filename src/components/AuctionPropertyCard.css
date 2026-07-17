@@ -16,7 +16,7 @@
     0 1px 2px rgba(15, 23, 42, 0.04),
     0 10px 32px rgba(15, 23, 42, 0.07);
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   color: inherit;
   text-decoration: none;
   transition:
@@ -74,6 +74,20 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #e2e8f0;
+}
+
+.auction-card__media-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.auction-card__media-link:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.96);
+  outline-offset: -5px;
 }
 
 .auction-card__image-wrap,
@@ -506,6 +520,21 @@
   overflow: hidden;
 }
 
+.auction-card__title-link {
+  display: -webkit-box;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.auction-card__title-link:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid rgba(36, 110, 118, 0.28);
+  outline-offset: 2px;
+}
+
 .auction-card__specs {
   display: flex;
   flex-wrap: wrap;
@@ -839,5 +868,139 @@
   .auction-card:hover,
   .auction-card:hover .auction-card__image {
     transform: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .auction-mobile-stack--desktop-cards .auction-card {
+    border: 0;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 9px 24px rgba(20, 42, 45, 0.1);
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card:hover {
+    transform: none;
+    box-shadow: 0 9px 24px rgba(20, 42, 45, 0.1);
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__media,
+  .auction-mobile-stack--desktop-cards .auction-card--ended .auction-card__media {
+    flex: none;
+    max-height: none;
+    aspect-ratio: 4 / 3;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__image {
+    transform: none;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__media-gradient {
+    background: rgba(6, 18, 20, 0.06);
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__media-actions {
+    top: 8px;
+    right: 8px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__favorite {
+    width: 44px;
+    height: 44px;
+    border-color: rgba(255, 255, 255, 0.58);
+    background: rgba(13, 34, 37, 0.7);
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__photo-icons {
+    display: none;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__body {
+    gap: 8px;
+    padding: 11px 10px 12px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__meta {
+    gap: 5px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__location {
+    min-height: 14px;
+    color: #758184;
+    font-size: 10px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__title {
+    min-height: calc(13px * 1.28 * 2);
+    color: #152528;
+    font-size: 13px;
+    font-weight: 780;
+    line-height: 1.28;
+    letter-spacing: -0.02em;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__specs {
+    min-height: 24px;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__spec {
+    min-width: 0;
+    padding: 4px 6px;
+    overflow: hidden;
+    background: #f2f6f5;
+    color: #4f5f61;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__footer {
+    gap: 7px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__price-panel {
+    padding: 8px 8px 8px 11px;
+    border-color: rgba(24, 95, 103, 0.14);
+    background: #f8fbfa;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__price-panel::before {
+    background: #2f7c84;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__price-value {
+    font-size: 13px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 6px;
+    border-radius: 12px;
+    font-size: 10px;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__btn--primary {
+    background: #246e76;
+    box-shadow: 0 6px 14px rgba(28, 91, 98, 0.2);
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__btn--secondary {
+    border-color: rgba(36, 110, 118, 0.3);
+    background: #fff;
+    color: #246e76;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__final-action {
+    min-height: 44px;
+    padding: 8px;
+    border-radius: 12px;
   }
 }

@@ -60,13 +60,7 @@ export default function AuctionMobileLayout({
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [view, setView] = useState(() => {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY)
-      if (v === 'list' || v === 'card') return v
-    } catch (_) {}
-    return 'card'
-  })
+  const [view, setView] = useState('card')
 
   useEffect(() => {
     try {

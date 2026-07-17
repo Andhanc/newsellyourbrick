@@ -18,7 +18,8 @@ import AuctionListingSaleToggle from './AuctionListingSaleToggle'
 import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
 import AuctionPropertyCard from './AuctionPropertyCard'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import ListingPagePagination from './ListingPagePagination'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { formatPropertyPrice } from '../utils/currency'
@@ -65,6 +66,7 @@ const AuctionMobileLayoutLazy = lazyWithRetry(
 
 const MOBILE_BREAKPOINT = 768
 const AUCTION_DESKTOP_PAGE_SIZE = 20
+const AUCTION_MOBILE_PAGE_SIZE = 16
 
 const PROPERTY_FILTER_ITEMS = [
   { kind: 'type', value: 'все', labelKey: 'propertyTypeAll' },
@@ -377,34 +379,30 @@ const PropertyList = ({
     return () => root.classList.remove('home-page--auction-filters-open')
   }, [isAuctionDesktop, desktopFiltersOpen])
 
-  const auctionTotalPages = Math.max(
-    1,
-    Math.ceil(filteredProperties.length / AUCTION_DESKTOP_PAGE_SIZE)
-  )
+  const auctionPageSize = isAuctionMobileFilters
+    ? AUCTION_MOBILE_PAGE_SIZE
+    : AUCTION_DESKTOP_PAGE_SIZE
+  const auctionTotalPages = Math.max(1, Math.ceil(filteredProperties.length / auctionPageSize))
   const safeAuctionPage = Math.min(auctionPage, auctionTotalPages)
 
   useEffect(() => {
-    if (isAuctionDesktop && auctionPage > auctionTotalPages) {
+    if (isAuctionPage && auctionPage > auctionTotalPages) {
       setAuctionPage(auctionTotalPages)
     }
-  }, [isAuctionDesktop, auctionPage, auctionTotalPages])
+  }, [isAuctionPage, auctionPage, auctionTotalPages])
 
   const displayedProperties = useMemo(() => {
-    if (isMobile && isAuctionPage) {
-      return filteredProperties.slice(0, visibleCount)
-    }
-    if (isAuctionDesktop) {
-      const start = (safeAuctionPage - 1) * AUCTION_DESKTOP_PAGE_SIZE
-      return filteredProperties.slice(start, start + AUCTION_DESKTOP_PAGE_SIZE)
+    if (isAuctionPage) {
+      const start = (safeAuctionPage - 1) * auctionPageSize
+      return filteredProperties.slice(start, start + auctionPageSize)
     }
     return filteredProperties.slice(0, visibleCount)
   }, [
     filteredProperties,
-    isMobile,
     isAuctionPage,
-    isAuctionDesktop,
     visibleCount,
     safeAuctionPage,
+    auctionPageSize,
   ])
 
   const goToAuctionPage = (page) => {
@@ -684,6 +682,15 @@ const PropertyList = ({
             }`.trim() || undefined}
           >
         <div className={isAuctionPage ? 'auction-listing-search-stack' : undefined}>
+        {isAuctionMobileFilters ? (
+          <header className="auction-mobile-catalog-head">
+            <div>
+              <span>{t('auctionSectionTitle')}</span>
+              <h2>{t('auctionListingSaleAll')}</h2>
+            </div>
+            <strong aria-live="polite">{filteredProperties.length}</strong>
+          </header>
+        ) : null}
         <div
           ref={searchFiltersBarRef}
           className={`search-filters-bar${
@@ -1415,7 +1422,7 @@ const PropertyList = ({
                   onClick={() => goToAuctionPage(safeAuctionPage - 1)}
                   aria-label={t('auctionPaginationPrev')}
                 >
-                  ←
+                  <ChevronLeft size={18} aria-hidden />
                 </button>
                 <div className="auction-desktop-pagination__pages">
                   {Array.from({ length: auctionTotalPages }, (_, index) => index + 1).map((page) => (
@@ -1439,12 +1446,20 @@ const PropertyList = ({
                   onClick={() => goToAuctionPage(safeAuctionPage + 1)}
                   aria-label={t('auctionPaginationNext')}
                 >
-                  →
+                  <ChevronRight size={18} aria-hidden />
                 </button>
               </nav>
             ) : null}
 
-            {!isAuctionDesktop && filteredProperties.length > visibleCount && (
+            {isAuctionMobileFilters && filteredProperties.length > 0 ? (
+              <ListingPagePagination
+                currentPage={safeAuctionPage}
+                totalPages={auctionTotalPages}
+                onPageChange={goToAuctionPage}
+              />
+            ) : null}
+
+            {!isAuctionPage && filteredProperties.length > visibleCount && (
               <div className="load-more-container">
                 <button
                   className="load-more-button"
