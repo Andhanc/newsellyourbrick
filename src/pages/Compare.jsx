@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CompareInvestorProDrawer from '../components/CompareInvestorProDrawer'
 import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalculatorAccess'
@@ -9,6 +9,7 @@ import { FiArrowRight, FiBarChart2, FiColumns, FiRefreshCw, FiLoader } from 'rea
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
+import CompareDecisionSummary from '../components/compare/CompareDecisionSummary'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import useMobileLayout from '../hooks/useMobileLayout'
 import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
@@ -21,11 +22,15 @@ import './Compare.css'
 import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
 import { writeInvestorScenario } from '../utils/investorScenarioContext'
+import {
+  isAuctionListing,
+  resolvePositivePropertyPrice,
+  selectComparisonItem,
+  summarizeComparisonRows,
+} from '../utils/compareDecision'
+import { createCompareAiRequestGuard } from '../utils/compareAiRequestGuard'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
-function compareInvestorDrawerSessionKey(leftKey, rightKey) {
-  return `compareInvestorProDrawer:${leftKey}:${rightKey}`
-}
 
 /** Плейсхолдер карточки выбора, пока каталог и избранное подгружаются */
 function ComparePickCardSkeleton() {
@@ -83,23 +88,6 @@ function toPositiveNumber(value) {
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
-function effectivePrice(p) {
-  const isAuc = p.isAuction === true || p.is_auction === 1 || p.is_auction === true
-  const bid = toPositiveNumber(p.currentBid ?? p.current_bid ?? p.auction_current_bid)
-  const start = toPositiveNumber(p.auction_starting_price ?? p.starting_price)
-  const buyNowOrPrice = toPositiveNumber(p.price)
-
-  // Для чистого аукциона ориентируемся на текущую ставку, иначе на стартовую.
-  if (isAuc && bid != null) return bid
-  if (isAuc && start != null) return start
-
-  // Для buy-now/обычных карточек — цена продажи; если её нет, fallback на старт аукциона.
-  if (buyNowOrPrice != null) return buyNowOrPrice
-  if (start != null) return start
-  if (bid != null) return bid
-  return null
-}
-
 function areaM2(p) {
   const a = Number(p.sqft ?? p.area ?? 0)
   return a > 0 ? a : null
@@ -116,11 +104,13 @@ function landAreaM2(p) {
 }
 
 function auctionStartingPrice(p) {
-  return toPositiveNumber(p.auction_starting_price ?? p.auctionStartingPrice)
+  return [p.auction_starting_price, p.auctionStartingPrice, p.starting_price]
+    .map(toPositiveNumber)
+    .find((value) => value != null) ?? null
 }
 
-function isAuctionProperty(p) {
-  return p.isAuction === true || p.is_auction === 1 || p.is_auction === true
+function shouldRenderAuctionRows(left, right) {
+  return isAuctionListing(left) || isAuctionListing(right)
 }
 
 function isHouseLike(p) {
@@ -181,6 +171,13 @@ function countHouseComfortFlags(p) {
 function comfortScore(p) {
   if (isHouseLike(p)) return countHouseComfortFlags(p)
   return countApartmentComfortFlags(p)
+}
+
+function hasComfortData(p) {
+  const keys = isHouseLike(p)
+    ? ['pool', 'garden', 'garage', 'parking', 'electricity', 'internet', 'security', 'furniture']
+    : ['balcony', 'parking', 'elevator', 'electricity', 'internet', 'security', 'furniture']
+  return Array.isArray(p.amenities) || keys.some((key) => Object.prototype.hasOwnProperty.call(p, key))
 }
 
 function compareMetric(a, b, mode) {
@@ -369,9 +366,9 @@ function formatCalcEur(price) {
 }
 
 function buildRows(left, right) {
-  const pL = effectivePrice(left)
-  const pR = effectivePrice(right)
-  const isAuc = isAuctionProperty(left) || isAuctionProperty(right)
+  const pL = resolvePositivePropertyPrice(left)
+  const pR = resolvePositivePropertyPrice(right)
+  const isAuc = shouldRenderAuctionRows(left, right)
   const startL = auctionStartingPrice(left)
   const startR = auctionStartingPrice(right)
 
@@ -383,6 +380,7 @@ function buildRows(left, right) {
     left: pL != null ? formatPrice(pL, left?.currency) : '—',
     right: pR != null ? formatPrice(pR, right?.currency) : '—',
     winner: compareMetric(pL, pR, 'lower'),
+    decisionSignal: true,
   })
 
   if (isAuc && (startL != null || startR != null)) {
@@ -392,6 +390,7 @@ function buildRows(left, right) {
       left: startL != null ? formatPrice(startL, left?.currency) : '—',
       right: startR != null ? formatPrice(startR, right?.currency) : '—',
       winner: compareMetric(startL, startR, 'lower'),
+      decisionSignal: true,
     })
   }
 
@@ -407,6 +406,7 @@ function buildRows(left, right) {
     left: ppmL != null ? formatPrice(ppmL, left?.currency) : '—',
     right: ppmR != null ? formatPrice(ppmR, right?.currency) : '—',
     winner: compareMetric(ppmL, ppmR, 'lower'),
+    decisionSignal: true,
   })
 
   rows.push({
@@ -500,13 +500,15 @@ function buildRows(left, right) {
 
   const cL = comfortScore(left)
   const cR = comfortScore(right)
+  const comfortKnownL = hasComfortData(left)
+  const comfortKnownR = hasComfortData(right)
   const comfortMax = bothHouse ? 8 : 7
   rows.push({
     id: 'comfort',
     label: 'Удобства',
-    left: `${cL} / ${comfortMax}`,
-    right: `${cR} / ${comfortMax}`,
-    winner: compareMetric(cL, cR, 'higher'),
+    left: comfortKnownL ? `${cL} / ${comfortMax}` : 'Нет данных',
+    right: comfortKnownR ? `${cR} / ${comfortMax}` : 'Нет данных',
+    winner: comfortKnownL && comfortKnownR ? compareMetric(cL, cR, 'higher') : null,
   })
 
   rows.push({
@@ -613,7 +615,10 @@ const Compare = () => {
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
-  const [aiRefreshKey, setAiRefreshKey] = useState(0)
+  const aiRequestGuardRef = useRef(null)
+  if (aiRequestGuardRef.current == null) {
+    aiRequestGuardRef.current = createCompareAiRequestGuard()
+  }
   const [calcLoading, setCalcLoading] = useState(false)
   const [calcData, setCalcData] = useState(() => ({ left: null, right: null }))
   const [calcError, setCalcError] = useState(() => ({ left: null, right: null }))
@@ -669,72 +674,74 @@ const Compare = () => {
     return { left: a, right: b }
   }, [favoriteAuctions, selectedKeys])
 
-  const investorRouteState = useMemo(() => {
-    if (!pair) return null
-    return {
-      calculatorFromProperty: pair.left.property,
-      calculatorSelectedKey: pair.left.key,
-      calculatorStrategy: 'rent',
-    }
-  }, [pair])
-
-  const persistInvestorScenario = useCallback(() => {
-    if (!pair) return null
-    return writeInvestorScenario({
+  const openInvestorPanel = useCallback((side) => {
+    const selected = selectComparisonItem(pair, side)
+    if (!selected) return
+    const scenario = writeInvestorScenario({
       source: 'compare',
       propertyKeys: [pair.left.key, pair.right.key],
-      selectedKey: pair.left.key,
+      selectedKey: selected.key,
     })
-  }, [pair])
-
-  const openInvestorPanel = useCallback(() => {
-    if (!pair) {
-      navigate('/calculator')
-      return
-    }
-    persistInvestorScenario()
-    navigate('/calculator', { state: investorRouteState })
-  }, [investorRouteState, navigate, pair, persistInvestorScenario])
+    navigate('/calculator', {
+      state: {
+        calculatorFromProperty: selected.property,
+        calculatorSelectedKey: selected.key,
+        calculatorStrategy: 'rent',
+        calculatorScenarioCreatedAt: scenario?.createdAt ?? null,
+      },
+    })
+  }, [navigate, pair])
 
   const tableRows = useMemo(() => {
     if (!pair) return []
     return buildRows(pair.left.property, pair.right.property)
   }, [pair])
 
+  const decisionSummary = useMemo(() => summarizeComparisonRows(tableRows), [tableRows])
+
   const aiScores = useMemo(
     () => (aiResult?.rows?.length ? scoreAiInfrastructure(aiResult.rows) : null),
     [aiResult]
   )
 
-  useEffect(() => {
-    if (!pair) {
-      setAiResult(null)
-      setAiError(null)
-      setAiLoading(false)
+  const requestAiAnalysis = useCallback(async () => {
+    if (!pair || aiLoading) return
+    if (!subscriptionResolved) return
+    if (!hasCalculatorAccess) {
+      setCompareInvestorDrawerOpen(true)
       return
     }
-    const ac = new AbortController()
+
+    const { requestId, signal } = aiRequestGuardRef.current.start()
     setAiLoading(true)
     setAiError(null)
+    try {
+      const result = await askPropertyCompareAssistant(
+        serializePropertyForAi(pair.left.property),
+        serializePropertyForAi(pair.right.property),
+        { signal },
+      )
+      if (aiRequestGuardRef.current.isCurrent(requestId)) setAiResult(result)
+    } catch (error) {
+      if (aiRequestGuardRef.current.isCurrent(requestId) && error?.name !== 'AbortError') {
+        setAiError(error?.message || 'Не удалось получить AI-разбор')
+      }
+    } finally {
+      if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
+    }
+  }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved])
+
+  useEffect(() => {
+    aiRequestGuardRef.current.cancel()
     setAiResult(null)
+    setAiError(null)
+    setAiLoading(false)
+    setCompareInvestorDrawerOpen(false)
+  }, [pair?.left?.key, pair?.right?.key])
 
-    askPropertyCompareAssistant(
-      serializePropertyForAi(pair.left.property),
-      serializePropertyForAi(pair.right.property),
-      { signal: ac.signal }
-    )
-      .then((res) => {
-        setAiResult(res)
-        setAiLoading(false)
-      })
-      .catch((e) => {
-        if (e.name === 'AbortError') return
-        setAiError(e?.message || 'Не удалось получить ответ ИИ')
-        setAiLoading(false)
-      })
-
-    return () => ac.abort()
-  }, [pair?.left?.key, pair?.right?.key, aiRefreshKey])
+  useEffect(() => {
+    return () => aiRequestGuardRef.current.cancel()
+  }, [])
 
   useEffect(() => {
     setCalcData({ left: null, right: null })
@@ -755,19 +762,8 @@ const Compare = () => {
 
   const showInvestorPanelCta = useMemo(() => {
     if (calcLoading) return false
-    return Boolean(
-      calcData.left != null ||
-        calcData.right != null ||
-        calcError.left ||
-        calcError.right
-    )
-  }, [
-    calcLoading,
-    calcData.left,
-    calcData.right,
-    calcError.left,
-    calcError.right,
-  ])
+    return Boolean(calcData.left || calcData.right || calcError.left || calcError.right)
+  }, [calcData.left, calcData.right, calcError.left, calcError.right, calcLoading])
 
   const runCompareCalculator = useCallback(async () => {
     if (!pair) return
@@ -807,40 +803,6 @@ const Compare = () => {
       setCalcLoading(false)
     }
   }, [pair])
-
-  const refreshAiAnalysis = useCallback(() => {
-    setAiRefreshKey((k) => k + 1)
-  }, [])
-
-  useEffect(() => {
-    if (!pair) {
-      setCompareInvestorDrawerOpen(false)
-      return undefined
-    }
-    if (!subscriptionResolved) return undefined
-    if (hasCalculatorAccess) {
-      setCompareInvestorDrawerOpen(false)
-      return undefined
-    }
-
-    const sessionKey = compareInvestorDrawerSessionKey(pair.left.key, pair.right.key)
-    try {
-      if (sessionStorage.getItem(sessionKey) === '1') return undefined
-    } catch {
-      /* private mode */
-    }
-
-    const timer = window.setTimeout(() => {
-      setCompareInvestorDrawerOpen(true)
-      try {
-        sessionStorage.setItem(sessionKey, '1')
-      } catch {
-        /* ignore */
-      }
-    }, 480)
-
-    return () => window.clearTimeout(timer)
-  }, [pair, pair?.left?.key, pair?.right?.key, subscriptionResolved, hasCalculatorAccess])
 
   return (
     <div className="compare-page">
@@ -929,12 +891,19 @@ const Compare = () => {
                   Сравнение
                 </h2>
                 {isMobile ? (
-                  <CompareMobileMetrics
-                    left={pair.left}
-                    right={pair.right}
-                    rows={tableRows}
-                    onReplace={replaceSelectedSide}
-                  />
+                  <>
+                    <CompareMobileMetrics
+                      left={pair.left}
+                      right={pair.right}
+                      rows={tableRows}
+                      onReplace={replaceSelectedSide}
+                    />
+                    <CompareDecisionSummary
+                      pair={pair}
+                      summary={decisionSummary}
+                      onOpenCalculator={openInvestorPanel}
+                    />
+                  </>
                 ) : (
                   <div className="compare-table-wrap">
                     <table className="compare-table">
@@ -998,7 +967,7 @@ const Compare = () => {
                   </div>
                 )}
 
-                {showInvestorPanelCta && (
+                {!isMobile && showInvestorPanelCta && (
                   <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
                     <div className="compare-investor-cta-inner">
                       <div className="compare-investor-cta-copy">
@@ -1007,21 +976,17 @@ const Compare = () => {
                           Умная панель инвестора
                         </h2>
                         <p className="compare-investor-cta-text">
-                          Сравнили котировку — загляните в панель: стратегия (аренда, перепродажа, доли),
-                          прогноз потоков и понятнее, какой объект ближе к вашим целям. Часть сценариев и
-                          сохранённая аналитика открывается по подписке — там же можно спокойно довести выбор до
-                          сделки.
+                          Выберите, какой из двух объектов перенести в подробный финансовый сценарий.
                         </p>
                       </div>
-                      <Link
-                        to="/calculator"
-                        state={investorRouteState}
-                        onClick={persistInvestorScenario}
-                        className="compare-investor-cta-link"
-                      >
-                        Открыть Умную панель инвестора
-                        <FiArrowRight size={18} className="compare-investor-cta-link-arrow" aria-hidden />
-                      </Link>
+                      <div className="compare-investor-cta-actions">
+                        <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('left')}>
+                          Рассчитать объект 1 <FiArrowRight size={18} aria-hidden />
+                        </button>
+                        <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('right')}>
+                          Рассчитать объект 2 <FiArrowRight size={18} aria-hidden />
+                        </button>
+                      </div>
                     </div>
                   </section>
                 )}
@@ -1035,29 +1000,53 @@ const Compare = () => {
                     <button
                       type="button"
                       className="compare-ai-refresh"
-                      onClick={refreshAiAnalysis}
-                      disabled={aiLoading}
+                      onClick={requestAiAnalysis}
+                      disabled={aiLoading || !subscriptionResolved}
+                      aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
+                      title={!subscriptionResolved ? 'Подождите, пока мы проверим доступ к AI-разбору' : undefined}
                     >
                       <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
-                      Обновить анализ
+                      {aiResult ? 'Обновить анализ' : 'Получить AI-разбор'}
                     </button>
                   </div>
                   <p className="compare-ai-disclaimer">
                     ИИ опирается на адрес и описание объектов и общеизвестные сведения о локациях. Перед сделкой
                     проверьте расстояния на карте и актуальную инфраструктуру.
                   </p>
+                  {!subscriptionResolved ? (
+                    <p id="compare-ai-entitlement-help" className="compare-ai-entitlement-help" role="status" aria-live="polite">
+                      Проверяем доступ к AI-разбору. Кнопка станет доступна после проверки.
+                    </p>
+                  ) : null}
+
+                  {!aiLoading && !aiError && !aiResult && (
+                    <div className="compare-ai-idle">
+                      <strong>Разбор запускаете вы</strong>
+                      <span>Помощник сопоставит описание и окружение только после вашего нажатия.</span>
+                      <button
+                        type="button"
+                        className="compare-ai-idle-action"
+                        onClick={requestAiAnalysis}
+                        disabled={!subscriptionResolved}
+                        aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
+                        title={!subscriptionResolved ? 'Подождите, пока мы проверим доступ к AI-разбору' : undefined}
+                      >
+                        Получить AI-разбор
+                      </button>
+                    </div>
+                  )}
 
                   {aiLoading && (
-                    <div className="compare-ai-loading">
+                    <div className="compare-ai-loading" role="status" aria-live="polite">
                       <span className="compare-ai-loading-dot" />
                       Запрашиваем анализ у умного помощника…
                     </div>
                   )}
 
                   {aiError && !aiLoading && (
-                    <div className="compare-ai-error">
+                    <div className="compare-ai-error" role="alert">
                       {aiError}
-                      <button type="button" className="compare-ai-retry" onClick={refreshAiAnalysis}>
+                      <button type="button" className="compare-ai-retry" onClick={requestAiAnalysis}>
                         Повторить
                       </button>
                     </div>
@@ -1070,8 +1059,33 @@ const Compare = () => {
                   )}
 
                   {!aiLoading && aiResult?.rows?.length > 0 && (
-                    <div className="compare-table-wrap compare-ai-table-wrap">
-                      <table className="compare-table compare-ai-table">
+                    isMobile ? (
+                      <div className="compare-ai-mobile-list">
+                        {aiResult.rows.map((row, idx) => (
+                          <article className="compare-ai-mobile-card" key={`${row.aspect}-${idx}`}>
+                            <h3>{row.aspect}</h3>
+                            <div className="compare-ai-mobile-values">
+                              <div className={row.winner === 'left' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
+                                <span>Объект 1</span>
+                                <strong>{row.left}</strong>
+                              </div>
+                              <div className={row.winner === 'right' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
+                                <span>Объект 2</span>
+                                <strong>{row.right}</strong>
+                              </div>
+                            </div>
+                          </article>
+                        ))}
+                        {aiScores ? (
+                          <p className="compare-ai-mobile-score">
+                            По строкам AI: объект 1 — {aiScores.left}, объект 2 — {aiScores.right}
+                            {aiScores.tie > 0 ? `, паритет — ${aiScores.tie}` : ''}.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="compare-table-wrap compare-ai-table-wrap">
+                        <table className="compare-table compare-ai-table">
                         <thead>
                           <tr>
                             <th scope="col" className="compare-table-param">
@@ -1138,8 +1152,9 @@ const Compare = () => {
                             </tr>
                           )}
                         </tbody>
-                      </table>
-                    </div>
+                        </table>
+                      </div>
+                    )
                   )}
 
                   {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
@@ -1328,7 +1343,7 @@ const Compare = () => {
       <CompareInvestorProDrawer
         isOpen={compareInvestorDrawerOpen}
         onClose={() => setCompareInvestorDrawerOpen(false)}
-        onOpenInvestorPanel={openInvestorPanel}
+        onOpenInvestorPanel={() => navigate('/calculator')}
       />
     </div>
   )
