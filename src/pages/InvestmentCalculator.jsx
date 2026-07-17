@@ -20,9 +20,12 @@ import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import InvestorMobileStepHeader from '../components/investor/InvestorMobileStepHeader';
 import InvestorMobileResultCard from '../components/investor/InvestorMobileResultCard';
+import InvestorMobileHero from '../components/investor/InvestorMobileHero';
+import InvestorAssumptionsSheet from '../components/investor/InvestorAssumptionsSheet';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { getPropertyCardImage } from '../utils/propertyImage';
 import { buildResponsiveImageProps } from '../utils/responsiveImage';
+import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl';
 import { scrollMainTo } from '../utils/mainScroll';
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
 import { isSiteUserSignedIn } from '../utils/siteAuthGate';
@@ -137,6 +140,7 @@ const InvestmentCalculator = () => {
   const [selectedFavoriteKey, setSelectedFavoriteKey] = useState(null);
   const [ownershipShare, setOwnershipShare] = useState('100');
   const [favDropdownOpen, setFavDropdownOpen] = useState(false);
+  const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const favDropdownRef = useRef(null);
 
   const { favoriteAuctions, loadCatalog } = useFavoriteAuctionItems();
@@ -388,6 +392,16 @@ const InvestmentCalculator = () => {
     () => favoriteAuctions.find((x) => x.key === selectedFavoriteKey) ?? null,
     [favoriteAuctions, selectedFavoriteKey]
   );
+
+  const openCalculatedProperty = useCallback(() => {
+    const property = selectedFavoriteItem?.property;
+    if (!property) {
+      navigate('/auction');
+      return;
+    }
+    const target = buildPropertyDetailNavigation(property);
+    navigate(target.pathname, { state: target.state });
+  }, [navigate, selectedFavoriteItem]);
 
   useEffect(() => {
     if (dataSource !== 'favorites' || favoriteAuctions.length === 0) return;
@@ -808,6 +822,7 @@ const InvestmentCalculator = () => {
     <div className="investment-calculator-page">
       <BackgroundIcons />
       <Header />
+      {isMobile && <InvestorMobileHero />}
       <div className="calculator-container">
         {investorScenario && (
           <aside className="calc-context-banner" aria-label="Сценарий из сравнения">
@@ -816,7 +831,7 @@ const InvestmentCalculator = () => {
             </span>
             <span className="calc-context-banner__copy">
               <strong>Сценарий из сравнения · 2 объекта</strong>
-              <span>Мы сохранили пару и открыли расчёт для первого объекта.</span>
+              <span>Открыт выбранный объект. Пара сохранена — его можно переключить ниже.</span>
             </span>
             <button
               type="button"
@@ -1202,6 +1217,10 @@ const InvestmentCalculator = () => {
                 )}
                 isPositive={(investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow) >= 0}
                 assumptions={`${ownershipPeriod || 0} лет · рост ${marketGrowthRate || 0}% · расходы ${operatingExpenses || 0}%`}
+                propertyTitle={selectedFavoriteItem?.property?.title || selectedFavoriteItem?.property?.name}
+                propertyImage={selectedFavoriteItem ? listingThumb(selectedFavoriteItem.property) : null}
+                onOpenAssumptions={() => setAssumptionsOpen(true)}
+                onOpenProperty={openCalculatedProperty}
               />
             )}
 
@@ -1720,6 +1739,35 @@ const InvestmentCalculator = () => {
       </div>
 
       <div className="investment-calculator-page__footer-blend" aria-hidden="true" />
+
+      {isMobile && (
+        <InvestorAssumptionsSheet
+          isOpen={assumptionsOpen}
+          onClose={() => setAssumptionsOpen(false)}
+          propertyPrice={propertyPrice}
+          setPropertyPrice={setPropertyPrice}
+          renovationCost={renovationCost}
+          setRenovationCost={setRenovationCost}
+          ownershipPeriod={ownershipPeriod}
+          setOwnershipPeriod={setOwnershipPeriod}
+          marketGrowthRate={marketGrowthRate}
+          setMarketGrowthRate={setMarketGrowthRate}
+          rentalIncome={rentalIncome}
+          setRentalIncome={setRentalIncome}
+          operatingExpenses={operatingExpenses}
+          setOperatingExpenses={setOperatingExpenses}
+          buyerCostsPct={buyerCostsPct}
+          setBuyerCostsPct={setBuyerCostsPct}
+          useMortgage={useMortgage}
+          setUseMortgage={setUseMortgage}
+          mortgageRate={mortgageRate}
+          setMortgageRate={setMortgageRate}
+          mortgageTerm={mortgageTerm}
+          setMortgageTerm={setMortgageTerm}
+          downPayment={downPayment}
+          setDownPayment={setDownPayment}
+        />
+      )}
 
       {showSubGateOverlay && (
         <div className="calc-sub-gate-overlay">
