@@ -401,15 +401,17 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
 
 /**
  * Числовой id пользователя в БД, публичный ID (user_id_number), счётчик и превью истории (как на /history).
+ * @param {{ loadHistory?: boolean }} [options]
+ *   loadHistory — когда false, тяжёлый history fetch не стартует (герой не ждёт).
  */
-export function useCabinetOverviewData() {
+export function useCabinetOverviewData({ loadHistory = true } = {}) {
   const { user, isLoaded: userLoaded } = useUser()
   const [numericUserId, setNumericUserId] = useState(() => getStoredNumericUserId())
   const [publicIdDisplay, setPublicIdDisplay] = useState(null)
   const [historyCount, setHistoryCount] = useState(0)
   const [recentHistoryRows, setRecentHistoryRows] = useState([])
   const [historySections, setHistorySections] = useState([])
-  const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(() => Boolean(loadHistory))
   const [subscriptionPlanLabel, setSubscriptionPlanLabel] = useState('Starter')
   const [cabinetSubscriptionTier, setCabinetSubscriptionTier] = useState('starter')
   const [cabinetVipActive, setCabinetVipActive] = useState(false)
@@ -516,13 +518,18 @@ export function useCabinetOverviewData() {
   }, [numericUserId, userLoaded])
 
   useEffect(() => {
+    if (!loadHistory) {
+      setHistoryLoading(false)
+      return undefined
+    }
+
     const uid = numericUserId ?? getStoredNumericUserId()
     if (!uid) {
       setHistoryCount(0)
       setRecentHistoryRows([])
       setHistorySections([])
       setHistoryLoading(false)
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -575,7 +582,7 @@ export function useCabinetOverviewData() {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, userLoaded, historyRevision])
+  }, [numericUserId, userLoaded, historyRevision, loadHistory])
 
   useEffect(() => {
     const uid = numericUserId ?? getStoredNumericUserId()

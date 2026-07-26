@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
-import { FiSliders } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 import { properties } from '../data/properties'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -56,7 +56,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import BuyerEmptyState from './buyer-mobile/BuyerEmptyState'
 import './PropertyList.css'
-import '../styles/hrShowcaseAuctionCards.css'
+import '../styles/discoverAuctionCards.css'
 
 const PropertySearchModalLazy = lazyWithRetry(() => import('./PropertySearchModal'))
 const AuctionMobileLayoutLazy = lazyWithRetry(
@@ -625,23 +625,6 @@ const PropertyList = ({
             isAuctionDesktop ? ' property-list-container--auction-desktop' : ''
           }`}
         >
-        {isMobile && isAuctionPage && onOpenAIChat && (
-          <div className="property-list-header">
-            <button
-              type="button"
-              className="ai-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onOpenAIChat()
-              }}
-              aria-label="AI Assistant"
-            >
-              AI
-            </button>
-          </div>
-        )}
-
         <div
           className={
             isAuctionDesktop
@@ -681,16 +664,15 @@ const PropertyList = ({
                 : ''
             }`.trim() || undefined}
           >
-        <div className={isAuctionPage ? 'auction-listing-search-stack' : undefined}>
-        {isAuctionMobileFilters ? (
-          <header className="auction-mobile-catalog-head">
-            <div>
-              <span>{t('auctionSectionTitle')}</span>
-              <h2>{t('auctionListingSaleAll')}</h2>
-            </div>
-            <strong aria-live="polite">{filteredProperties.length}</strong>
-          </header>
-        ) : null}
+        <div
+          className={
+            isAuctionPage
+              ? `auction-listing-search-stack${
+                  isAuctionMobileFilters ? ' auction-listing-search-stack--compact' : ''
+                }`
+              : undefined
+          }
+        >
         <div
           ref={searchFiltersBarRef}
           className={`search-filters-bar${
@@ -712,27 +694,58 @@ const PropertyList = ({
               {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
             </button>
           ) : null}
-          <div className="search-box">
-            <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              className="search-input"
-              placeholder={t('searchPlaceholderLong')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button 
-                className="search-clear"
-                onClick={() => setSearchQuery('')}
-              >
-                ×
+          {isAuctionMobileFilters ? (
+            <form
+              className="debts-listing-search"
+              onSubmit={(event) => {
+                event.preventDefault()
+              }}
+            >
+              <input
+                className="debts-listing-search__input"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('searchPlaceholderLong')}
+                aria-label={t('searchPlaceholderLong')}
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  className="debts-listing-search__clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label={t('clearSearch')}
+                >
+                  ×
+                </button>
+              ) : null}
+              <button type="submit" className="debts-listing-search__go" aria-label={t('search')}>
+                <FiSearch aria-hidden />
               </button>
-            )}
-          </div>
+            </form>
+          ) : (
+            <div className="search-box">
+              <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                placeholder={t('searchPlaceholderLong')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  className="search-clear"
+                  onClick={() => setSearchQuery('')}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          )}
           {!isAuctionDesktop ? (
           <div className="filters-and-types-grid">
             <button
@@ -749,11 +762,9 @@ const PropertyList = ({
                 }
               }}
             >
-              {isAuctionMobileFilters ? <FiSliders size={18} aria-hidden /> : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                </svg>
-              )}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
               <span className="filters-button__label">{t('filters')}</span>
               {isAuctionMobileFilters && mobileAuctionActiveFilterCount > 0 ? (
                 <span className="filters-button__dot" aria-hidden="true" />
@@ -854,7 +865,13 @@ const PropertyList = ({
         ) : (
           <>
             {isMobile && isAuctionPage ? (
-              <div className="hr-showcases hr-showcases--auction-listing">
+              <div
+                className={`discover-auction-cards invest-home-page invest-showcase${
+                  auctionSaleToggleMode === 'buy_now'
+                    ? ' invest-showcase--buy-now discover-auction-cards--buy-now'
+                    : ' invest-showcase--auction'
+                }`}
+              >
                 <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
                   <Suspense fallback={<AuctionMobileListingSkeleton />}>
                     <AuctionMobileLayoutLazy
@@ -865,13 +882,22 @@ const PropertyList = ({
                     onOpen={openProperty}
                     onTooltip={setTooltip}
                     viewerHasVip={viewerHasVip}
+                    buyNowCards={auctionSaleToggleMode === 'buy_now'}
                     />
                   </Suspense>
                 </div>
               </div>
             ) : (
             <div
-              className={isAuctionPage ? 'hr-showcases hr-showcases--auction-listing' : undefined}
+              className={
+                isAuctionPage
+                  ? `discover-auction-cards invest-home-page invest-showcase${
+                      auctionSaleToggleMode === 'buy_now'
+                        ? ' invest-showcase--buy-now discover-auction-cards--buy-now'
+                        : ' invest-showcase--auction'
+                    }`
+                  : undefined
+              }
             >
             <div
               id="properties-grid"

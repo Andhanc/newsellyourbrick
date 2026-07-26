@@ -1,11 +1,11 @@
 .seller-page {
-  --seller-cyan: #4d96a9;
-  --seller-cyan-dark: #3d7a8a;
-  --seller-cyan-soft: #e6f1f4;
-  --seller-cyan-pale: #f0f7f9;
+  --seller-cyan: #0099A9;
+  --seller-cyan-dark: #007d8a;
+  --seller-cyan-soft: #e6f6f8;
+  --seller-cyan-pale: #f0fafb;
   --seller-ink: #202227;
   --seller-muted: #6f767d;
-  --seller-line: rgba(77, 150, 169, 0.11);
+  --seller-line: rgba(0, 153, 169, 0.12);
   --seller-shadow: 0 24px 70px rgba(24, 43, 47, 0.1);
   min-height: 100vh;
   overflow-x: clip;
@@ -116,7 +116,7 @@
 .seller-pill--quiet {
   color: var(--seller-cyan-dark);
   background: rgba(229, 251, 248, 0.88);
-  border: 1px solid rgba(77, 150, 169, 0.18);
+  border: 1px solid rgba(0, 153, 169, 0.18);
 }
 
 .seller-pill--solid {
@@ -184,14 +184,14 @@
 .seller-feature-card__link:focus-visible,
 .seller-footer-cta a:focus-visible,
 .seller-demo__close:focus-visible {
-  outline: 3px solid rgba(77, 150, 169, 0.28);
+  outline: 3px solid rgba(0, 153, 169, 0.28);
   outline-offset: 3px;
 }
 
 .seller-button--primary {
   color: #122323;
   background: var(--seller-cyan);
-  box-shadow: 0 15px 30px rgba(77, 150, 169, 0.24);
+  box-shadow: 0 15px 30px rgba(0, 153, 169, 0.24);
 }
 
 .seller-button--ghost {
@@ -504,7 +504,7 @@
   border-radius: 11px;
   color: var(--seller-cyan-dark);
   background: var(--seller-cyan-soft);
-  border: 1px solid rgba(77, 150, 169, 0.2);
+  border: 1px solid rgba(0, 153, 169, 0.2);
 }
 
 .seller-feature-card__icon svg {
@@ -568,7 +568,7 @@
   min-height: 0;
   overflow: hidden;
   border-radius: 0;
-  background: #e3f0f4;
+  background: var(--seller-cyan-soft);
 }
 
 .seller-savings__hero-bg {
@@ -749,7 +749,7 @@
   align-items: center;
   gap: 24px;
   padding: 22px clamp(32px, 8vw, 104px) 26px;
-  background: #e3f0f4;
+  background: var(--seller-cyan-soft);
 }
 
 .seller-savings__stats article {
@@ -798,7 +798,7 @@
 .seller-savings__lifestyle-shade {
   background:
     linear-gradient(180deg, rgba(5, 5, 5, 0.08) 0%, rgba(5, 5, 5, 0.18) 48%, rgba(5, 5, 5, 0.46) 100%),
-    linear-gradient(90deg, rgba(61, 122, 138, 0.52), rgba(5, 5, 5, 0.08) 48%, rgba(77, 150, 169, 0.26));
+    linear-gradient(90deg, rgba(0, 125, 138, 0.52), rgba(5, 5, 5, 0.08) 48%, rgba(0, 153, 169, 0.26));
 }
 
 .seller-savings__lifestyle-badge {
@@ -912,7 +912,7 @@
   border-radius: 0;
   padding: 18px clamp(24px, 8vw, 104px);
   background: #f0f7f9;
-  border: 1px solid rgba(77, 150, 169, 0.14);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   border-inline: none;
 }
 
@@ -977,7 +977,7 @@
   border-radius: 18px;
   padding: 24px 22px;
   background: #ffffff;
-  border: 1px solid rgba(77, 150, 169, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.1);
   box-shadow: 0 18px 48px rgba(24, 43, 47, 0.06);
 }
 
@@ -985,7 +985,7 @@
   color: #ffffff;
   background: var(--seller-cyan);
   border-color: transparent;
-  box-shadow: 0 22px 54px rgba(77, 150, 169, 0.28);
+  box-shadow: 0 22px 54px rgba(0, 153, 169, 0.28);
 }
 
 .seller-toolkit-card__icon {
@@ -995,7 +995,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(77, 150, 169, 0.12);
+  background: rgba(0, 153, 169, 0.12);
   color: var(--seller-cyan-dark);
 }
 
@@ -1139,6 +1139,17 @@
   font-weight: 900;
   line-height: 1.05;
   text-wrap: balance;
+}
+
+.seller-about__title-accent {
+  display: inline-block;
+  padding: 0.08em 0.32em 0.1em;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #4ecdd6;
+  box-shadow:
+    0 6px 16px rgba(78, 205, 214, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .seller-about__lead {
@@ -1295,7 +1306,7 @@
 .seller-services__shade {
   background:
     linear-gradient(180deg, rgba(23, 29, 34, 0.72) 0%, rgba(23, 29, 34, 0.92) 100%),
-    linear-gradient(90deg, rgba(77, 150, 169, 0.18), transparent 55%);
+    linear-gradient(90deg, rgba(0, 153, 169, 0.18), transparent 55%);
 }
 
 .seller-services__head {
@@ -1354,7 +1365,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(77, 150, 169, 0.12);
+  background: rgba(0, 153, 169, 0.12);
   color: var(--seller-cyan-dark);
 }
 
@@ -1544,19 +1555,25 @@
     max-width: none;
   }
 
+  .seller-services__head {
+    width: 100%;
+    margin: 0;
+    text-align: left;
+  }
+
   .seller-services__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     align-items: stretch;
-    gap: 14px;
+    gap: 16px;
     width: 100%;
   }
 
   .seller-services-card {
-    align-items: center;
+    align-items: flex-start;
     min-height: 0;
-    height: 100%;
-    padding: 18px 14px 16px;
-    text-align: center;
+    height: auto;
+    padding: 26px 24px 22px;
+    text-align: left;
   }
 
   .seller-services-card--accent {
@@ -1564,13 +1581,13 @@
   }
 
   .seller-services-card__icon {
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .seller-services-card h3 {
     width: 100%;
-    margin-top: 14px;
-    font-size: clamp(1.08rem, 3.4vw, 1.5rem);
+    margin-top: 16px;
+    font-size: clamp(1.35rem, 3.2vw, 1.7rem);
     line-height: 1.15;
     min-height: 0;
     -webkit-line-clamp: unset;
@@ -1580,10 +1597,10 @@
 
   .seller-services-card p {
     width: 100%;
-    max-width: none;
+    max-width: 34ch;
     margin-top: 12px;
-    font-size: clamp(0.76rem, 2.3vw, 0.88rem);
-    line-height: 1.48;
+    font-size: 0.95rem;
+    line-height: 1.5;
     flex: 0 1 auto;
     min-height: 0;
     -webkit-line-clamp: unset;
@@ -1592,11 +1609,11 @@
   }
 
   .seller-services-card a {
-    align-self: center;
-    justify-content: center;
-    width: 100%;
+    align-self: flex-start;
+    justify-content: flex-start;
+    width: auto;
     margin-top: auto;
-    padding-top: 18px;
+    padding-top: 22px;
   }
 }
 
@@ -1812,16 +1829,23 @@
   .seller-savings__stats {
     min-height: 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px 16px;
+    padding: 28px 20px 30px;
+  }
+
+  .seller-savings__stats article {
     gap: 12px;
-    padding: 20px 12px 22px;
   }
 
   .seller-savings__stats strong {
-    font-size: clamp(1.8rem, 8vw, 2.65rem);
+    font-size: clamp(1.7rem, 7.2vw, 2.4rem);
+    letter-spacing: -0.02em;
   }
 
   .seller-savings__stats span {
-    font-size: 10px;
+    max-width: 118px;
+    font-size: 11px;
+    line-height: 1.4;
   }
 
   .seller-savings__lifestyle {
@@ -1852,39 +1876,39 @@
   }
 
   .seller-savings__plans {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     align-items: stretch;
-    gap: 10px;
-    width: calc(100% - 24px);
-    margin-top: 34px;
+    gap: 16px;
+    width: calc(100% - 32px);
+    margin: 40px auto 36px;
   }
 
   .seller-savings-plan,
   .seller-savings-plan:nth-child(2),
   .seller-savings-plan:nth-child(3) {
     min-height: 0;
-    height: 100%;
-    padding: 16px 12px 14px;
-    border-radius: 16px;
-    box-shadow: 0 14px 34px rgba(5, 5, 5, 0.14);
+    height: auto;
+    padding: 28px 24px 22px;
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(5, 5, 5, 0.16);
   }
 
   .seller-savings-plan h3 {
-    font-size: clamp(1.05rem, 4.4vw, 1.45rem);
+    font-size: clamp(1.65rem, 6.4vw, 2.1rem);
   }
 
   .seller-savings-plan p {
-    margin-top: 10px;
-    font-size: 13px;
-    line-height: 1.4;
+    margin-top: 14px;
+    font-size: 15px;
+    line-height: 1.5;
     flex: 1 1 auto;
   }
 
   .seller-savings-plan a {
-    min-height: 32px;
-    margin-top: 12px;
-    padding: 0 10px;
-    font-size: 10px;
+    min-height: 42px;
+    margin-top: 20px;
+    padding: 0 18px;
+    font-size: 13px;
   }
 
   .seller-toolkit__grid {
@@ -1921,57 +1945,89 @@
   }
 
   .seller-services {
-    padding-inline: 16px;
+    padding: 48px 20px 56px;
+  }
+
+  .seller-services__head h2 {
+    font-size: clamp(1.7rem, 7vw, 2.2rem);
+  }
+
+  .seller-services__head p {
+    margin-top: 14px;
+    font-size: 0.92rem;
   }
 
   .seller-services__grid {
-    gap: 10px;
-    margin-top: 32px;
+    gap: 14px;
+    margin-top: 28px;
   }
 
   .seller-services-card {
     min-height: 0;
-    height: 100%;
-    padding: 16px 12px 14px;
-    border-radius: 16px;
+    height: auto;
+    padding: 24px 22px 20px;
+    border-radius: 18px;
   }
 
   .seller-services-card__icon {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
   }
 
   .seller-services-card__icon svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
   }
 
   .seller-services-card h3 {
-    margin-top: 12px;
-    font-size: clamp(1rem, 4.4vw, 1.28rem);
+    margin-top: 14px;
+    font-size: clamp(1.35rem, 5.6vw, 1.65rem);
     min-height: 0;
   }
 
   .seller-services-card p {
-    margin-top: 10px;
-    font-size: 0.78rem;
-    line-height: 1.48;
+    margin-top: 12px;
+    font-size: 0.92rem;
+    line-height: 1.5;
     min-height: 0;
   }
 
   .seller-services-card a {
-    padding-top: 16px;
-    font-size: 10px;
-    gap: 4px;
+    padding-top: 20px;
+    font-size: 11px;
+    gap: 6px;
   }
 
   .seller-services-card a svg {
-    width: 11px;
-    height: 11px;
+    width: 13px;
+    height: 13px;
+  }
+
+  .seller-about {
+    padding: 0 0 40px;
+    gap: 28px;
   }
 
   .seller-about__media {
-    min-height: 360px;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .seller-about__portrait {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    object-position: center top;
+    box-shadow: none;
+    background: var(--seller-cyan);
+  }
+
+  .seller-about__content {
+    padding: 0 20px;
+    max-width: none;
   }
 
   .seller-about__columns {
@@ -1980,14 +2036,22 @@
   }
 
   .seller-about__badge--brands {
-    left: 8px;
-    bottom: 10%;
+    left: 16px;
+    bottom: 12%;
+    max-width: min(240px, calc(100% - 32px));
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .seller-about__badge--brands strong {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
   }
 
   .seller-about__badge--chart {
-    right: 8px;
-    top: 8%;
-    width: 96px;
+    right: 16px;
+    top: 10%;
+    width: 104px;
   }
 
   .seller-footer-cta {
@@ -2026,48 +2090,53 @@
   }
 
   .seller-savings__stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding: 18px 10px 20px;
+    gap: 18px 12px;
+    padding: 26px 16px 28px;
+  }
+
+  .seller-savings__stats article {
+    gap: 10px;
   }
 
   .seller-savings__stats strong {
-    font-size: clamp(1.35rem, 6.2vw, 1.85rem);
+    font-size: clamp(1.5rem, 6.8vw, 2rem);
   }
 
   .seller-savings__stats span {
-    max-width: none;
+    max-width: 104px;
     width: 100%;
-    font-size: 9px;
-    line-height: 1.25;
+    font-size: 10px;
+    line-height: 1.35;
   }
 
   .seller-savings__plans {
-    gap: 8px;
-    width: calc(100% - 16px);
+    gap: 14px;
+    width: calc(100% - 28px);
+    margin: 36px auto 32px;
   }
 
   .seller-savings-plan,
   .seller-savings-plan:nth-child(2),
   .seller-savings-plan:nth-child(3) {
-    padding: 14px 10px 12px;
-    border-radius: 14px;
+    padding: 24px 20px 20px;
+    border-radius: 18px;
   }
 
   .seller-savings-plan h3 {
-    font-size: clamp(0.95rem, 4vw, 1.2rem);
+    font-size: clamp(1.5rem, 7vw, 1.9rem);
   }
 
   .seller-savings-plan p {
-    margin-top: 8px;
-    font-size: 12px;
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   .seller-savings-plan a {
-    min-height: 28px;
-    margin-top: 10px;
-    padding: 0 8px;
-    font-size: 9px;
+    min-height: 40px;
+    margin-top: 18px;
+    padding: 0 16px;
+    font-size: 13px;
   }
 
   .seller-toolkit {
@@ -2096,34 +2165,38 @@
     font-size: 0.68rem;
   }
 
+  .seller-services {
+    padding: 44px 16px 52px;
+  }
+
   .seller-services__grid {
-    gap: 8px;
+    gap: 12px;
   }
 
   .seller-services-card {
-    padding: 14px 10px 12px;
-    border-radius: 14px;
+    padding: 22px 20px 18px;
+    border-radius: 18px;
   }
 
   .seller-services-card__icon {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .seller-services-card h3 {
-    font-size: clamp(0.96rem, 4vw, 1.14rem);
+    font-size: clamp(1.28rem, 6vw, 1.55rem);
     min-height: 0;
   }
 
   .seller-services-card p {
-    margin-top: 10px;
-    font-size: 0.74rem;
-    line-height: 1.48;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
     min-height: 0;
   }
 
   .seller-services-card a {
-    padding-top: 14px;
-    font-size: 9px;
+    padding-top: 18px;
+    font-size: 11px;
   }
 }

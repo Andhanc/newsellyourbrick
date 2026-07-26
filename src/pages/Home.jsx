@@ -1237,7 +1237,7 @@ function Home() {
           <div ref={faqSentinelRef} aria-hidden="true" />
           {showFaq ? (
             <Suspense fallback={null}>
-              <AuctionBelowFoldLazy onContactClick={openManagerChatDock} />
+              <AuctionBelowFoldLazy />
             </Suspense>
           ) : null}
         </>

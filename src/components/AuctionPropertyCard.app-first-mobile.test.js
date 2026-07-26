@@ -1,12 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { access, readFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 
 const card = await readFile(new URL('./AuctionPropertyCard.jsx', import.meta.url), 'utf8')
 const cardCss = await readFile(new URL('./AuctionPropertyCard.css', import.meta.url), 'utf8')
 const layoutCss = await readFile(new URL('./ui/AuctionMobileLayout.css', import.meta.url), 'utf8')
-const ribbon = await readFile(new URL('./auction/AuctionFinalStateRibbon.jsx', import.meta.url), 'utf8').catch(() => '')
-const ribbonCss = await readFile(new URL('./auction/AuctionFinalStateRibbon.css', import.meta.url), 'utf8').catch(() => '')
+const ribbon = await readFile(new URL('./auction/AuctionFinalStateRibbon.jsx', import.meta.url), 'utf8')
+const ribbonCss = await readFile(new URL('./auction/AuctionFinalStateRibbon.css', import.meta.url), 'utf8')
 const localeNames = ['en', 'es', 'fr', 'sv']
 const localeSources = await Promise.all(
   localeNames.map((locale) =>
@@ -14,35 +14,55 @@ const localeSources = await Promise.all(
   ),
 )
 
-test('final auction states use a real raster tape with localized state copy', async () => {
-  await access(new URL('../../public/images/auction/final-state-tape.png', import.meta.url))
+test('closed listings share a premium sold presentation with check ribbon', async () => {
   assert.match(card, /AuctionFinalStateRibbon/)
+  assert.match(card, /showSoldPresentation/)
+  assert.match(card, /auction-card--sold-presentation/)
+  assert.match(card, /auction-card__sold-cta/)
+  assert.match(card, /auctionSoldFor/)
+  assert.match(card, /auctionSoldBadge/)
   assert.doesNotMatch(card, /BuyerStatusRibbon/)
-  assert.match(ribbon, /\/images\/auction\/final-state-tape\.png/)
-  assert.match(ribbon, /useTranslation/)
   assert.match(ribbon, /auctionFinalStateSold/)
-  assert.match(ribbon, /auctionFinalStateEnded/)
-  assert.doesNotMatch(ribbon, /listingState\.label/)
-  assert.match(ribbon, /<img/)
-  assert.doesNotMatch(ribbonCss, /repeating-linear-gradient/)
+  assert.match(ribbon, /Check/)
+  assert.match(ribbon, /'auction-ended'/)
+  assert.doesNotMatch(ribbon, /final-state-tape\.png/)
+  assert.match(ribbonCss, /\.auction-final-ribbon--sold/)
+  assert.match(ribbonCss, /rotate\(-16deg\)/)
+  assert.match(ribbonCss, /#4ecdd6/)
   for (const locale of localeSources) {
     assert.match(locale, /"auctionFinalStateSold"/)
-    assert.match(locale, /"auctionFinalStateEnded"/)
-    assert.doesNotMatch(locale.match(/"auctionFinalState(?:Sold|Ended)"\s*:\s*"([^"]+)"/g)?.join(' ') || '', /[А-Яа-яЁё]/)
+    assert.match(locale, /"auctionSoldBadge"/)
+    assert.match(locale, /"auctionSoldFor"/)
+    assert.doesNotMatch(locale.match(/"auctionFinalStateSold"\s*:\s*"([^"]+)"/g)?.join(' ') || '', /[А-Яа-яЁё]/)
   }
+})
+
+test('sold presentation dims photo and uses inactive ruled sold CTA', () => {
+  assert.match(cardCss, /\.auction-card--sold-presentation \.auction-card__image/)
+  assert.match(cardCss, /brightness\(0\.72\)/)
+  assert.match(cardCss, /\.auction-card__sold-cta/)
+  assert.match(cardCss, /\.auction-card__sold-cta-rule/)
+  assert.match(layoutCss, /\.auction-mobile-sold-cta/)
 })
 
 test('phone catalogue keeps exactly two photo-first cards per row from 320 to 767', () => {
   assert.match(layoutCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
-  assert.match(layoutCss, /@media \(max-width:\s*767px\)/)
-  assert.doesNotMatch(layoutCss, /@media \(max-width:\s*374px\)[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/)
-  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__media\s*\{[\s\S]*aspect-ratio:\s*4 \/ 3;/)
+  assert.match(layoutCss, /@media \(max-width:\s*767px\)[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__media\s*\{[\s\S]*aspect-ratio:\s*3 \/ 2;/)
+  assert.match(layoutCss, /align-items:\s*start/)
 })
 
-test('phone cards expose no more than two specs and keep actions touch-safe', () => {
-  assert.match(card, /\.slice\(0, 2\)/)
-  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*44px;/)
-  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__favorite[\s\S]*width:\s*44px;[\s\S]*height:\s*44px;/)
+test('phone cards expose up to four portal specs and keep actions touch-safe', () => {
+  assert.match(card, /\.slice\(0, 4\)/)
+  assert.match(card, /auction-card__until-pill/)
+  assert.match(card, /auction-card__countdown-pill/)
+  assert.match(card, /auction-card__media-top/)
+  assert.match(card, /auction-card__buy-now-value/)
+  assert.match(card, /auction-card__btn--outline/)
+  assert.match(card, /formatAuctionCardCountdown/)
+  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*36px;/)
+  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__favorite[\s\S]*width:\s*36px;[\s\S]*height:\s*36px;/)
+  assert.match(cardCss, /@media \(max-width:\s*768px\)[\s\S]*\.auction-card__btn-text-short[\s\S]*display:\s*inline/)
 })
 
 test('auction cards use valid sibling interactions and accessible canonical links', () => {

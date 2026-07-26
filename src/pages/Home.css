@@ -51,8 +51,11 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   .home-page--auction > .hero--auction-scene {
     order: 1;
     margin-top: 0;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
-    padding-bottom: 20px;
+  }
+
+  /* Hero-экран аукциона: без AI-кнопки */
+  .home-page--auction .ai-button {
+    display: none !important;
   }
 
   .home-page--auction > .home-list-wrap {
@@ -67,7 +70,8 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   }
 
   .home-page--auction > .faq,
-  .home-page--auction > .auction-faq-section {
+  .home-page--auction > .auction-faq-section,
+  .home-page--auction > .md-faq {
     order: 4;
   }
 

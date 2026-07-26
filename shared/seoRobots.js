@@ -37,6 +37,7 @@ export function normalizeSeoPathname(pathname = '') {
   const raw = String(pathname || '').split('?')[0].split('#')[0] || '/'
   if (raw === '/main') return '/auction'
   if (raw === '/home-redesign') return '/'
+  if (raw === '/mobile-discover') return '/'
   return raw.startsWith('/') ? raw : `/${raw}`
 }
 

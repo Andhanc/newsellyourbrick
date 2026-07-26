@@ -8,6 +8,156 @@
   box-sizing: border-box;
 }
 
+.auction-cta-cards--profile {
+  padding: 6px 0 0;
+  background: transparent;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__inner {
+  max-width: none;
+  padding: 0;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title {
+  margin-bottom: 14px;
+  font-size: clamp(1.55rem, 6.2vw, 1.9rem);
+  text-align: center;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-desktop {
+  display: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title::after {
+  display: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-pill {
+  display: inline-block;
+  margin: 0 0.08em;
+  padding: 0.08em 0.52em 0.14em;
+  border-radius: 999px;
+  background: #4ecdd6;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.05;
+  box-shadow:
+    0 10px 28px rgba(78, 205, 214, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: rotate(-2deg);
+}
+
+.auction-cta-cards--profile .auction-cta-cards__grid,
+.auction-cta-cards--profile .auction-cta-cards__grid--trio {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  max-width: none;
+}
+
+/* Profile always uses the compact horizontal cards from the reference */
+.auction-cta-cards--profile .auction-cta-cards__card {
+  flex-direction: row;
+  align-items: center;
+  min-height: 112px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(42, 56, 68, 0.12);
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.82) 0%,
+    rgba(15, 23, 42, 0.52) 42%,
+    rgba(15, 23, 42, 0.18) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card--sage .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 144, 95, 0.8) 0%,
+    rgba(186, 191, 130, 0.54) 40%,
+    rgba(217, 219, 174, 0.26) 68%,
+    rgba(217, 219, 174, 0.1) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card--teal .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(74, 150, 166, 0.78) 0%,
+    rgba(90, 165, 181, 0.52) 40%,
+    rgba(74, 150, 166, 0.22) 68%,
+    rgba(74, 150, 166, 0.1) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__icon {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 0 0 12px;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__footer {
+  position: static;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin-top: 0;
+  padding: 12px 72px 12px 8px;
+  background: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content strong {
+  font-size: clamp(1rem, 4.2vw, 1.15rem);
+  line-height: 1.12;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content p {
+  max-width: none;
+  font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+  line-height: 1.35;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  min-height: 28px;
+  padding: 0 9px 0 10px;
+  gap: 4px;
+  font-size: 11px;
+  border-radius: 999px;
+}
+
 .auction-cta-cards__inner {
   width: 100%;
   max-width: 1120px;
@@ -47,7 +197,7 @@
   height: 4px;
   margin-top: clamp(14px, 2vw, 18px);
   border-radius: 999px;
-  background: #4a96a6;
+  background: #4ecdd6;
 }
 
 .auction-cta-cards__grid {
@@ -243,12 +393,12 @@
     margin: 0 0.08em;
     padding: 0.08em 0.52em 0.14em;
     border-radius: 999px;
-    background: #4a96a6;
+    background: #4ecdd6;
     color: #ffffff;
     font-weight: 800;
     line-height: 1.05;
     box-shadow:
-      0 10px 28px rgba(74, 150, 166, 0.32),
+      0 10px 28px rgba(78, 205, 214, 0.38),
       inset 0 1px 0 rgba(255, 255, 255, 0.55);
     transform: rotate(-2deg);
   }

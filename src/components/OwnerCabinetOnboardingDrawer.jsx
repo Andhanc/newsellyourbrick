@@ -82,15 +82,19 @@ export default function OwnerCabinetOnboardingDrawer({
         aria-hidden="true"
       />
       <div
-        className="owner-onboarding-drawer"
+        className={`owner-onboarding-drawer${
+          translationPrefix === 'buyerTest' ? ' owner-onboarding-drawer--buyer' : ''
+        }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="owner-onboarding-drawer-title"
       >
         <div
           className={`owner-onboarding-drawer__panel${
-            entered && !isClosing ? ' owner-onboarding-drawer__panel--entering' : ''
-          }${isClosing ? ' owner-onboarding-drawer__panel--closing drawer-dismiss-from-bottom--closing' : ''}`}
+            translationPrefix === 'buyerTest' ? ' owner-onboarding-drawer__panel--buyer' : ''
+          }${entered && !isClosing ? ' owner-onboarding-drawer__panel--entering' : ''}${
+            isClosing ? ' owner-onboarding-drawer__panel--closing drawer-dismiss-from-bottom--closing' : ''
+          }`}
         >
           <div className="owner-onboarding-drawer__handle" aria-hidden="true">
             <span className="owner-onboarding-drawer__handle-pill" />

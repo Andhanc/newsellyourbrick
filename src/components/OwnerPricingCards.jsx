@@ -8,17 +8,14 @@ const FREE_COMPARE_PRICE = 99
 
 const PLAN_ORDER = ['standard', 'pro', 'institutional']
 
-function getYearlyMonthlyPrice(monthlyPrice) {
-  if (monthlyPrice === 0) return 0
-  return Math.round(monthlyPrice * (1 - YEARLY_DISCOUNT))
-}
-
 function formatEuro(amount) {
   return amount.toLocaleString('ru-RU')
 }
 
-function PlanPrice({ monthlyPrice, compareAtPrice, isYearly, perMonthSuffix }) {
-  const displayPrice = isYearly ? getYearlyMonthlyPrice(monthlyPrice) : monthlyPrice
+function PlanPrice({ monthlyPrice, compareAtPrice, isYearly, perMonthSuffix, yearlyDiscount = YEARLY_DISCOUNT }) {
+  const displayPrice = isYearly && monthlyPrice > 0
+    ? Math.round(monthlyPrice * (1 - yearlyDiscount))
+    : monthlyPrice
   const promoCompare =
     compareAtPrice ?? (monthlyPrice === 0 && displayPrice === 0 ? FREE_COMPARE_PRICE : null)
   const showPromoFree = promoCompare != null && promoCompare > displayPrice
@@ -62,21 +59,25 @@ export default function OwnerPricingCards({
   activeCtaLabel,
   popularLabel,
   onSelectPlan,
+  planOrder = PLAN_ORDER,
+  featuredPlanId = 'pro',
+  yearlyDiscount = YEARLY_DISCOUNT,
+  variant = 'default',
 }) {
   const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = useState('monthly')
   const isYearly = billingCycle === 'yearly'
 
   const orderedPlans = useMemo(
-    () => PLAN_ORDER.map((id) => plans.find((plan) => plan.id === id)).filter(Boolean),
-    [plans]
+    () => planOrder.map((id) => plans.find((plan) => plan.id === id)).filter(Boolean),
+    [planOrder, plans]
   )
 
   const defaultSelectedId = useMemo(() => {
-    const featured = orderedPlans.find((plan) => plan.id === 'pro')
+    const featured = orderedPlans.find((plan) => plan.id === featuredPlanId)
     const firstAvailable = orderedPlans.find((plan) => plan.id !== activePlanId)
-    return firstAvailable?.id || featured?.id || orderedPlans[0]?.id || 'pro'
-  }, [activePlanId, orderedPlans])
+    return firstAvailable?.id || featured?.id || orderedPlans[0]?.id || featuredPlanId
+  }, [activePlanId, featuredPlanId, orderedPlans])
 
   const [selectedPlanId, setSelectedPlanId] = useState(defaultSelectedId)
 
@@ -95,7 +96,7 @@ export default function OwnerPricingCards({
   }
 
   return (
-    <div className="owner-pricing-cards">
+    <div className={`owner-pricing-cards${variant === 'light' ? ' owner-pricing-cards--light' : ''}`}>
       <div className="opc-billing" role="group" aria-label={t('ownerTest_subscriptionsTitle')}>
         <div className="opc-billing__tabs">
           <button
@@ -126,7 +127,7 @@ export default function OwnerPricingCards({
           if (!details) return null
 
           const isCurrent = activePlanId === plan.id
-          const isFeatured = plan.id === 'pro'
+          const isFeatured = plan.id === featuredPlanId
           const isSelected = selectedPlanId === plan.id
           const features = details.features.map((item) => item.text)
 
@@ -135,11 +136,15 @@ export default function OwnerPricingCards({
               key={plan.id}
               className={[
                 'opc-plan',
+                isFeatured ? 'opc-plan--featured' : '',
                 isSelected ? 'opc-plan--selected' : '',
                 isCurrent ? 'opc-plan--current' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
+              onClick={() => {
+                if (!isCurrent) setSelectedPlanId(plan.id)
+              }}
             >
               {isFeatured ? <span className="opc-plan__badge">{popularLabel}</span> : null}
 
@@ -151,6 +156,7 @@ export default function OwnerPricingCards({
                 compareAtPrice={plan.compareAtPrice}
                 isYearly={isYearly}
                 perMonthSuffix={perMonthSuffix}
+                yearlyDiscount={yearlyDiscount}
               />
 
               <ul className="opc-plan__features">
@@ -168,11 +174,15 @@ export default function OwnerPricingCards({
                   'opc-plan__button',
                   isSelected ? 'opc-plan__button--selected' : '',
                   isCurrent ? 'opc-plan__button--current' : '',
+                  isFeatured && !isCurrent ? 'opc-plan__button--featured' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
                 disabled={isCurrent}
-                onClick={() => setSelectedPlanId(plan.id)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  if (!isCurrent) setSelectedPlanId(plan.id)
+                }}
               >
                 {isCurrent ? activeCtaLabel : t('ownerTest_planChoose')}
                 {!isCurrent ? <ArrowRight size={16} strokeWidth={2.25} aria-hidden /> : null}

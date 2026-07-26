@@ -35,7 +35,7 @@ import BuyerStatusRibbon from '../buyer-mobile/BuyerStatusRibbon'
 import { resolveBuyerListingState } from '../../utils/resolveBuyerListingState'
 import DebtsPropertyCard from '../DebtsPropertyCard'
 import '../PropertyList.css'
-import '../../styles/hrShowcaseAuctionCards.css'
+import '../../styles/discoverAuctionCards.css'
 import '../../styles/hrShowcaseDebtsCards.css'
 import './AuctionMobileLayout.css'
 
@@ -57,6 +57,7 @@ export default function AuctionMobileLayout({
   onOpen,
   onTooltip,
   debtsCards = false,
+  buyNowCards = false,
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -132,7 +133,9 @@ export default function AuctionMobileLayout({
               view === 'card' &&
                 (debtsCards
                   ? 'hr-showcases hr-showcases--debts-listing auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
-                  : 'hr-showcases hr-showcases--auction-listing auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'),
+                  : buyNowCards
+                    ? 'discover-auction-cards discover-auction-cards--buy-now invest-home-page invest-showcase invest-showcase--buy-now auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
+                    : 'discover-auction-cards invest-home-page invest-showcase invest-showcase--auction auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'),
             )}
           >
             {properties.map((property) =>
@@ -796,7 +799,11 @@ function AuctionMobileItem({
           ) : (
             <div className="auction-mobile-price-row">
               <span className="auction-mobile-price-row__label">
-                {hasTimer ? t('currentBid') : t('auctionAskingPrice')}
+                {isAuctionEndedCard
+                  ? t('auctionSoldFor')
+                  : hasTimer
+                    ? t('currentBid')
+                    : t('auctionAskingPrice')}
               </span>
               <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue, property.currency)}</span>
             </div>
@@ -877,18 +884,11 @@ function AuctionMobileItem({
             </div>
           )}
           {isAuctionEndedCard ? (
-            <button
-              type="button"
-              className="buyer-card-final-action auction-mobile-final-action"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS, auctionSoldOutNotice: true })
-              }}
-            >
-              <span>{listingState.state === 'sold' ? 'Сделка завершена' : 'Торги завершены'}</span>
-              <strong>{t('auctionResultSummary')} <span aria-hidden>→</span></strong>
-            </button>
+            <div className="auction-mobile-sold-cta" aria-disabled="true">
+              <span className="auction-mobile-sold-cta__rule" aria-hidden />
+              <span className="auction-mobile-sold-cta__label">{t('auctionSoldBadge')}</span>
+              <span className="auction-mobile-sold-cta__rule" aria-hidden />
+            </div>
           ) : null}
         </div>
       </motion.div>

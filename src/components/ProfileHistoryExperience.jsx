@@ -1,11 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   FiActivity,
-  FiArrowLeft,
   FiArrowRight,
-  FiArrowUpRight,
-  FiChevronDown,
+  FiCheck,
   FiClock,
   FiLayers,
   FiMapPin,
@@ -23,66 +21,82 @@ const CATEGORY_ICONS = {
   debts: FiActivity,
 }
 
-function compactMoney(value, currency, locale) {
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value)
-  } catch {
-    return `${Math.round(value).toLocaleString(locale)} ${currency}`
-  }
+const CATEGORY_LABELS = {
+  bids: 'СТАВКА',
+  properties: 'ОБЪЕКТ',
+  shares: 'ДОЛЯ',
+  debts: 'ДОЛГ',
 }
 
-function HistoryCard({ item, categoryKey, onOpenPurchased, onClose }) {
+function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
   const canOpenDrawer = Boolean(item.purchaseChannel && onOpenPurchased)
-  const action = canOpenDrawer ? (
-    <button
-      type="button"
-      className="profile-history-card__action"
-      aria-label={`Подробнее: ${item.title}`}
-      onClick={() => onOpenPurchased(item)}
-    >
-      <FiArrowRight size={14} aria-hidden />
-    </button>
-  ) : item.href ? (
-    <Link
-      className="profile-history-card__action"
-      to={item.href}
-      aria-label={`Открыть: ${item.title}`}
-      onClick={onClose}
-    >
-      <FiArrowRight size={14} aria-hidden />
-    </Link>
-  ) : null
+  const meta = CATEGORY_LABELS[categoryKey] || 'ИСТОРИЯ'
+  const open = () => {
+    if (canOpenDrawer) onOpenPurchased(item)
+  }
 
-  return (
-    <article className={`profile-history-card profile-history-card--${categoryKey}`}>
-      <div className="profile-history-card__media">
+  const body = (
+    <>
+      <div className="profile-history-list-card__media">
         <img src={item.imageSrc} alt="" loading="lazy" decoding="async" />
+        <span className="profile-history-list-card__badge">
+          <FiCheck size={11} aria-hidden />
+          {meta}
+        </span>
       </div>
-      <div className="profile-history-card__content">
-        <time className="profile-history-card__date" dateTime={item.dayKey || undefined}>
-          <FiClock size={12} aria-hidden />
-          {item.purchaseDate || 'Дата не указана'}
-        </time>
-        <h5 className="profile-history-card__title">{item.title}</h5>
+      <div className="profile-history-list-card__copy">
+        <span className="profile-history-list-card__meta">
+          {meta}
+          {item.purchaseDate ? ` • ${item.purchaseDate}` : ''}
+        </span>
+        <strong className="profile-history-list-card__title">{item.title}</strong>
         {item.location ? (
-          <p className="profile-history-card__location">
+          <p className="profile-history-list-card__desc">
             <FiMapPin size={13} aria-hidden />
             <span>{item.location}</span>
           </p>
+        ) : item.subtitle ? (
+          <p className="profile-history-list-card__desc">{item.subtitle}</p>
         ) : null}
-        <div className="profile-history-card__amount">
-          <span>{categoryKey === 'bids' ? 'Ставка' : 'Покупка'}</span>
+        <div className="profile-history-list-card__stats">
+          <span>{categoryKey === 'bids' ? 'Ставка' : 'Сумма'}</span>
           <strong>{item.amount || '—'}</strong>
+          {item.purchaseDate ? (
+            <>
+              <span className="profile-history-list-card__dot" aria-hidden>
+                •
+              </span>
+              <span className="profile-history-list-card__date">
+                <FiClock size={12} aria-hidden />
+                {item.purchaseDate}
+              </span>
+            </>
+          ) : null}
         </div>
       </div>
-      <div className="profile-history-card__aside">{action}</div>
-    </article>
+      <span className="profile-history-list-card__chev" aria-hidden>
+        <FiArrowRight size={16} />
+      </span>
+    </>
   )
+
+  if (canOpenDrawer) {
+    return (
+      <button type="button" className="profile-history-list-card" onClick={open}>
+        {body}
+      </button>
+    )
+  }
+
+  if (item.href) {
+    return (
+      <Link className="profile-history-list-card" to={item.href} onClick={onClose}>
+        {body}
+      </Link>
+    )
+  }
+
+  return <article className="profile-history-list-card profile-history-list-card--static">{body}</article>
 }
 
 export default function ProfileHistoryExperience({
@@ -93,9 +107,12 @@ export default function ProfileHistoryExperience({
   onClose,
   onOpenPurchased,
   locale = 'ru-RU',
+  embedded = false,
 }) {
   const dashboard = useMemo(() => buildProfileHistoryDashboard(sections), [sections])
+  const [activeCategory, setActiveCategory] = useState('all')
   const normalizedQuery = String(query || '').trim().toLowerCase()
+
   const categories = useMemo(
     () =>
       dashboard.categories.map((category) => ({
@@ -110,110 +127,133 @@ export default function ProfileHistoryExperience({
       })),
     [dashboard.categories, normalizedQuery],
   )
-  const investedEntries = Object.entries(dashboard.analytics.investedByCurrency)
-  const invested = investedEntries.length
-    ? investedEntries.map(([currency, value]) => compactMoney(value, currency, locale)).join(' + ')
-    : '—'
+
+  const allItems = useMemo(
+    () =>
+      categories.flatMap((category) =>
+        category.items.map((item) => ({
+          ...item,
+          categoryKey: category.key,
+          categoryTitle: category.title,
+        })),
+      ),
+    [categories],
+  )
+
+  const visibleItems = useMemo(() => {
+    if (activeCategory === 'all') return allItems
+    return allItems.filter((item) => item.categoryKey === activeCategory)
+  }, [activeCategory, allItems])
+
+  const isEmpty = !loading && allItems.length === 0 && !normalizedQuery
 
   return (
-    <div className="profile-history-experience">
-      <div className="profile-history-experience__toolbar">
-        <button type="button" className="profile-history-experience__back" onClick={onClose}>
-          <FiArrowLeft size={18} aria-hidden />
-          <span>Назад</span>
-        </button>
-        <div>
-          <span className="profile-history-experience__eyebrow">Финансовый журнал</span>
-          <h3 className="profile-history-experience__title">История операций</h3>
-        </div>
+    <div
+      className={`profile-history-experience profile-history-experience--fullscreen${
+        embedded ? ' profile-history-experience--embedded' : ''
+      }`}
+    >
+      <div className="profile-history-hero">
+        <img
+          className="profile-history-hero__image"
+          src="/images/profile/history-hero-man.png"
+          alt=""
+          decoding="async"
+        />
       </div>
 
-      {loading ? (
-        <div className="profile-history-experience__loading" aria-busy="true">
-          Загружаем историю…
+      <div className="profile-history-panel">
+        <div className="profile-history-panel__intro">
+          <h2 id="profile-history-sheet-title" className="profile-history-panel__title">
+            История операций
+          </h2>
+          <p className="profile-history-panel__lead">
+            Покупки, доли и ставки — в одном списке. Откройте карточку, чтобы продолжить.
+          </p>
         </div>
-      ) : (
-        <>
-          <div className="profile-history-insights" aria-label="Краткая аналитика">
-            <div className="profile-history-insight profile-history-insight--accent">
-              <div><span>Вложено</span><i><FiArrowUpRight size={16} /></i></div>
-              <strong>{invested}</strong>
-              <small>Общий объём</small>
-            </div>
-            <div className="profile-history-insight">
-              <div><span>Операции</span><i><FiArrowUpRight size={16} /></i></div>
-              <strong>{dashboard.analytics.operations}</strong>
-              <small>Всего</small>
-            </div>
-            <div className="profile-history-insight">
-              <div><span>Покупки</span><i><FiArrowUpRight size={16} /></i></div>
-              <strong>{dashboard.analytics.purchases}</strong>
-              <small>Активов</small>
-            </div>
-            <div className="profile-history-insight">
-              <div><span>Ставки</span><i><FiArrowUpRight size={16} /></i></div>
-              <strong>{dashboard.analytics.activeBids}</strong>
-              <small>Аукцион</small>
-            </div>
+
+        {loading ? (
+          <div className="profile-history-experience__loading" aria-busy="true">
+            Загружаем историю…
           </div>
-
-          <label className="profile-history-search">
-            <FiSearch size={17} aria-hidden />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Найти объект или операцию"
-              autoComplete="off"
-            />
-          </label>
-
-          <div className="profile-history-categories">
-            {categories.map((category, index) => {
-              const Icon = CATEGORY_ICONS[category.key]
-              const count = category.items.length
-              return (
-                <details
-                  key={category.key}
-                  className={`profile-history-category profile-history-category--${category.key}`}
-                  defaultOpen={index === 0 && count > 0}
-                >
-                  <summary className="profile-history-category__summary">
-                    <span className="profile-history-category__icon" aria-hidden>
+        ) : isEmpty ? (
+          <div className="profile-history-empty">
+            <p className="profile-history-empty__text">
+              Пока нет операций. Начните с торгов — подходящие объекты появятся в истории.
+            </p>
+            <Link to="/auction" className="profile-history-empty__cta" onClick={onClose}>
+              Перейти к торгам
+              <FiArrowRight size={16} aria-hidden />
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="profile-history-categories-rail" aria-label="Категории истории">
+              <button
+                type="button"
+                className={`profile-history-cat-chip${
+                  activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
+                }`}
+                onClick={() => setActiveCategory('all')}
+              >
+                <span className="profile-history-cat-chip__icon" aria-hidden>
+                  <FiLayers size={18} />
+                </span>
+                <span>Все</span>
+                <small>{allItems.length}</small>
+              </button>
+              {categories.map((category) => {
+                const Icon = CATEGORY_ICONS[category.key]
+                return (
+                  <button
+                    key={category.key}
+                    type="button"
+                    className={`profile-history-cat-chip${
+                      activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
+                    }`}
+                    onClick={() => setActiveCategory(category.key)}
+                  >
+                    <span className="profile-history-cat-chip__icon" aria-hidden>
                       <Icon size={18} />
                     </span>
-                    <span className="profile-history-category__copy">
-                      <strong>{category.title}</strong>
-                      <small>{category.eyebrow}</small>
-                    </span>
-                    <span className="profile-history-category__count">{count}</span>
-                    <FiChevronDown className="profile-history-category__chevron" size={18} aria-hidden />
-                  </summary>
-                  <div className="profile-history-category__body">
-                    {count ? (
-                      <div className="profile-history-category__rail">
-                        {category.items.map((item) => (
-                          <HistoryCard
-                            key={item.id}
-                            item={item}
-                            categoryKey={category.key}
-                            onOpenPurchased={onOpenPurchased}
-                            onClose={onClose}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="profile-history-category__empty">
-                        {normalizedQuery ? 'В этой категории совпадений нет' : 'Пока здесь нет операций'}
-                      </p>
-                    )}
-                  </div>
-                </details>
-              )
-            })}
-          </div>
-        </>
-      )}
+                    <span>{category.title}</span>
+                    <small>{category.items.length}</small>
+                  </button>
+                )
+              })}
+            </div>
+
+            <label className="profile-history-search">
+              <FiSearch size={17} aria-hidden />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                placeholder="Найти объект или операцию"
+                autoComplete="off"
+              />
+            </label>
+
+            <div className="profile-history-list" aria-label="Список истории">
+              {visibleItems.length ? (
+                visibleItems.map((item) => (
+                  <HistoryListCard
+                    key={`${item.categoryKey}-${item.id}`}
+                    item={item}
+                    categoryKey={item.categoryKey}
+                    onOpenPurchased={onOpenPurchased}
+                    onClose={onClose}
+                  />
+                ))
+              ) : (
+                <p className="profile-history-category__empty">
+                  {normalizedQuery ? 'Совпадений не найдено' : 'В этой категории пока пусто'}
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

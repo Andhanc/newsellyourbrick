@@ -1,17 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { AsYouType } from 'libphonenumber-js'
-import {
-  UserRound,
-  History as LucideHistory,
-  CalendarDays,
-  Wallet,
-  Sparkles,
-  MessagesSquare,
-} from 'lucide-react'
 import {
   FiHash,
   FiShield,
@@ -21,11 +13,11 @@ import {
   FiMap,
   FiFileText,
   FiBookOpen,
+  FiArrowLeft,
   FiArrowRight,
   FiCheckCircle,
   FiMail,
-  FiArrowLeft,
-  FiUpload,
+  FiCamera,
   FiChevronDown,
   FiChevronUp,
   FiCheck,
@@ -35,7 +27,10 @@ import {
   FiCopy,
   FiUserPlus,
   FiGift,
+  FiLayers,
   FiAward,
+  FiColumns,
+  FiInfo,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -49,23 +44,20 @@ import {
   effectivePurchasedTier,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
 } from '../hooks/useCabinetOverviewData'
-import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout, startVipSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
-import DirectionSummaryCard from '../components/ui/direction-summary-card'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
-import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
-import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
+import PhoneInput from '../components/PhoneInput'
+import '../components/PhoneInput.css'
 import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
-import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
-import ProfileHistoryExperience from '../components/ProfileHistoryExperience'
-import ProfileBookingsExperience from '../components/ProfileBookingsExperience'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
@@ -77,12 +69,16 @@ import {
   storePendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
-import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
-import {
-  hasCompletedOwnerCabinetOnboarding,
-  markOwnerCabinetOnboardingComplete,
-} from '../utils/ownerCabinetOnboarding'
+import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
 import './TestPage.css'
+
+const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
+const ProfileHistoryExperience = lazy(() => import('../components/ProfileHistoryExperience'))
+const ProfileBookingsExperience = lazy(() => import('../components/ProfileBookingsExperience'))
+
+const TIFFANY = '#4ecdd6'
+const TIFFANY_DARK = '#3bc0cb'
+const PROFILE_CONFETTI_COLORS = [TIFFANY, TIFFANY_DARK, '#6ad6dd', '#dff6f8', '#2eafb9', '#a8e8ed']
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -128,6 +124,38 @@ const PROFILE_MAIN_FIELDS = [
   { key: 'phone', labelKey: 'buyerData_labelPhone', autoComplete: 'tel' },
   { key: 'country', labelKey: 'buyerData_labelCountry', autoComplete: 'country-name' },
   { key: 'address', labelKey: 'buyerData_labelAddress', multiline: true, autoComplete: 'street-address' },
+]
+
+const PROFILE_DATA_BLOCKS = [
+  {
+    id: 'phone',
+    keys: ['phone'],
+  },
+  {
+    id: 'identity',
+    keys: ['first_name', 'last_name'],
+    pair: true,
+  },
+  {
+    id: 'contacts',
+    keys: ['email'],
+  },
+  {
+    id: 'address',
+    keys: ['country', 'address'],
+  },
+]
+
+const PROFILE_REVIEW_BLOCKS = [
+  { id: 'phone', title: 'Телефон', keys: ['phone'] },
+  { id: 'identity', title: 'Имя', keys: ['first_name', 'last_name'] },
+  { id: 'contacts', title: 'Контакты', keys: ['email'] },
+  { id: 'address', title: 'Адрес', keys: ['country', 'address'] },
+  {
+    id: 'documents',
+    title: 'Документы',
+    keys: ['passport_number', 'identification_number'],
+  },
 ]
 
 const PROFILE_PASSPORT_FIELDS = [
@@ -477,10 +505,15 @@ function TestSheetSkeletonBookings() {
 }
 
 function buildProfileFormFromRow(row, clerkUser, fallbackEmail) {
+  const clerkEmail =
+    clerkUser?.primaryEmailAddress?.emailAddress ||
+    clerkUser?.emailAddresses?.[0]?.emailAddress ||
+    fallbackEmail ||
+    ''
   return {
-    first_name: row?.first_name ?? clerkUser?.firstName ?? '',
-    last_name: row?.last_name ?? clerkUser?.lastName ?? '',
-    email: row?.email ?? fallbackEmail ?? '',
+    first_name: row?.first_name || clerkUser?.firstName || '',
+    last_name: row?.last_name || clerkUser?.lastName || '',
+    email: row?.email || clerkEmail || '',
     phone: formatPhoneForDisplayByCountry(row?.phone_number ?? '', row?.country ?? ''),
     country: row?.country ?? '',
     address: row?.address ?? '',
@@ -563,52 +596,6 @@ function buildDirectionSummaries(t) {
         },
       ],
     },
-    {
-      variant: 'auction',
-      areaLabel: t('buyerCabinet_directionAreaPlatform'),
-      headline: t('buyerCabinet_directionHeadlineAuction'),
-      subCardTitle: t('buyerCabinet_directionAuctionTitle'),
-      subCardSubtitle: t('buyerCabinet_directionAuctionSubtitle'),
-      to: '/auction',
-      moreCount: 6,
-      thumbnails: [
-        {
-          src: '/images/external/photo-1568605117036-5fe5e7bab0b7-32f92559a5.jpg',
-          alt: t('buyerCabinet_thumbCountryCottage'),
-        },
-        {
-          src: '/images/external/photo-1600047509807-ba8f99d2cdde-6a550a8c9a.jpg',
-          alt: t('buyerCabinet_thumbFacade'),
-        },
-        {
-          src: '/images/external/photo-1570129477492-45c003edd2be-a6e8fdead4.jpg',
-          alt: t('buyerCabinet_thumbLawnHouse'),
-        },
-      ],
-    },
-    {
-      variant: 'debts',
-      areaLabel: t('buyerCabinet_directionAreaFinance'),
-      headline: t('buyerCabinet_directionHeadlineDebts'),
-      subCardTitle: t('buyerCabinet_directionDebtsTitle'),
-      subCardSubtitle: t('buyerCabinet_directionDebtsSubtitle'),
-      to: '/debts',
-      moreCount: 5,
-      thumbnails: [
-        {
-          src: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
-          alt: t('buyerCabinet_thumbLivingRoom'),
-        },
-        {
-          src: '/images/external/photo-1600566753190-17f0baa2a6c3-fadfb56f04.jpg',
-          alt: t('buyerCabinet_thumbMultiStoreyHouse'),
-        },
-        {
-          src: '/images/external/photo-1605276374104-dee2a0ed3cd6-4659477264.jpg',
-          alt: t('buyerCabinet_thumbResidentialArchitecture'),
-        },
-      ],
-    },
   ]
 }
 
@@ -618,14 +605,14 @@ function buildMainCards(t) {
       title: t('buyerCabinet_cardDataTitle'),
       description: t('buyerCabinet_cardDataSubtitle'),
       sheet: 'data',
-      icon: UserRound,
+      iconSrc: '/images/profile/shortcuts/data.png',
       accent: 'teal',
     },
     {
       title: t('buyerCabinet_cardHistoryTitle'),
       description: t('buyerCabinet_cardHistorySubtitle'),
       to: '/history',
-      icon: LucideHistory,
+      iconSrc: '/images/profile/shortcuts/history.png',
       accent: 'ocean',
     },
     {
@@ -633,14 +620,14 @@ function buildMainCards(t) {
       description: t('buyerCabinet_cardBookingsSubtitle'),
       to: '/profile/bookings',
       sheet: 'bookings',
-      icon: CalendarDays,
+      iconSrc: '/images/profile/shortcuts/bookings.png',
       accent: 'violet',
     },
     {
       title: t('buyerCabinet_tileDepositTitle'),
       description: t('buyerCabinet_tileDepositDescription'),
       to: '/deposit',
-      icon: Wallet,
+      iconSrc: '/images/profile/shortcuts/deposit.png',
       accent: 'amber',
     },
     {
@@ -648,14 +635,14 @@ function buildMainCards(t) {
       description: t('buyerCabinet_cardSubscriptionsSubtitle'),
       to: '/subscriptions',
       sheet: 'subscriptions',
-      icon: Sparkles,
+      iconSrc: '/images/profile/shortcuts/subscriptions.png',
       accent: 'rose',
     },
     {
       title: t('buyerCabinet_cardChatTitle'),
       description: t('buyerCabinet_cardChatSubtitle'),
       action: 'managerChat',
-      icon: MessagesSquare,
+      iconSrc: '/images/profile/shortcuts/chat.png',
       accent: 'jade',
     },
   ]
@@ -665,6 +652,7 @@ function buildQuickLinks(t) {
   return {
     primary: [
       { title: t('buyerCabinet_quickFavoritesTitle'), subtitle: t('buyerCabinet_quickFavoritesSubtitle'), to: '/favorites', icon: FiHeart },
+      { title: t('buyerCabinet_compare'), subtitle: t('footerCompareObjects'), to: '/compare', icon: FiColumns },
       { title: t('buyerCabinet_quickMapTitle'), subtitle: t('buyerCabinet_quickMapSubtitle'), to: '/map', icon: FiMap },
     ],
     logout: {
@@ -684,6 +672,7 @@ function TestPage() {
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
   const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
+  const [historyLoadRequested, setHistoryLoadRequested] = useState(false)
   const {
     numericUserId,
     publicIdDisplay,
@@ -694,7 +683,7 @@ function TestPage() {
     subscriptionPlanLabel,
     cabinetSubscriptionTier,
     cabinetVipActive,
-  } = useCabinetOverviewData()
+  } = useCabinetOverviewData({ loadHistory: historyLoadRequested })
   const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
@@ -715,12 +704,12 @@ function TestPage() {
   /** State из хука может отставать от localStorage на первом кадре — для онбординга и % нужен синхронный id. */
   const resolvedNumericUserId = numericUserId ?? getStoredNumericUserId()
 
-  const showBuyerCabinetSkeleton = useMemo(
-    () => !isLoaded || (resolvedNumericUserId != null && historyLoading),
-    [isLoaded, resolvedNumericUserId, historyLoading],
-  )
+  const showBuyerCabinetSkeleton = useMemo(() => !isLoaded, [isLoaded])
 
   const [dataSheetOpen, setDataSheetOpen] = useState(false)
+  const [dataSheetStep, setDataSheetStep] = useState('contacts')
+  const [legalSheetOpen, setLegalSheetOpen] = useState(false)
+  const [legalSheetTab, setLegalSheetTab] = useState('agreement')
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
   const [historySearchQuery, setHistorySearchQuery] = useState('')
   const [subscriptionSheetOpen, setSubscriptionSheetOpen] = useState(false)
@@ -803,10 +792,13 @@ function TestPage() {
 
   const dbUserRowRef = useRef(dbUserRow)
   const dataTileRef = useRef(null)
+  const foldersRailRef = useRef(null)
+  const [foldersDotIndex, setFoldersDotIndex] = useState(0)
   const profileCompletionToastRef = useRef(null)
   const profileToastHeaderRef = useRef(null)
   const profileToastFirstMissingRef = useRef(null)
   const dataHydratedForSheetRef = useRef(false)
+  const countryGeoTriedRef = useRef(false)
   const saveTimersRef = useRef({})
   const persistFieldRef = useRef(async () => {})
   const passportInputRef = useRef(null)
@@ -981,8 +973,15 @@ function TestPage() {
   useEffect(() => {
     if (!historySheetOpen) {
       setHistorySearchQuery('')
+      return
     }
+    setHistoryLoadRequested(true)
   }, [historySheetOpen])
+
+  useEffect(() => {
+    const idlePrefetch = window.setTimeout(() => setHistoryLoadRequested(true), 1800)
+    return () => window.clearTimeout(idlePrefetch)
+  }, [])
 
   useEffect(() => {
     if (!dataSheetOpen) {
@@ -1374,6 +1373,69 @@ function TestPage() {
     }
   }, [subscriptionProfileVisual, t])
 
+  const buyerSubscriptionPlans = useMemo(
+    () => [
+      {
+        id: 'starter',
+        name: 'Starter',
+        monthlyPrice: 0,
+        compareAtPrice: 99,
+        popular: false,
+      },
+      {
+        id: 'pro',
+        name: 'Pro',
+        monthlyPrice: 149,
+        popular: true,
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        monthlyPrice: 499,
+        popular: false,
+      },
+    ],
+    [],
+  )
+
+  const buyerSubscriptionPlanDetails = useMemo(
+    () => ({
+      starter: {
+        features: [
+          { text: t('buyerPricing_featS0') },
+          { text: t('buyerPricing_featS1') },
+          { text: t('buyerPricing_featS2') },
+        ],
+      },
+      pro: {
+        features: [
+          { text: t('buyerPricing_featP0') },
+          { text: t('buyerPricing_featP1') },
+          { text: t('buyerPricing_featP2') },
+          { text: t('buyerPricing_featP3') },
+        ],
+      },
+      vip: {
+        features: [
+          { text: t('buyerPricing_featV0') },
+          { text: t('buyerPricing_featV1') },
+          { text: t('buyerPricing_featV2') },
+          { text: t('buyerPricing_featV3') },
+        ],
+      },
+    }),
+    [t],
+  )
+
+  const buyerSubscriptionTaglines = useMemo(
+    () => ({
+      starter: t('buyerPricing_starterDesc'),
+      pro: t('buyerPricing_proDesc'),
+      vip: t('buyerPricing_vipDesc'),
+    }),
+    [t],
+  )
+
   const completionForm = useMemo(() => {
     if (dbUserRow) {
       return buildProfileFormFromRow(dbUserRow, user, email)
@@ -1395,6 +1457,7 @@ function TestPage() {
   useEffect(() => {
     if (!dataSheetOpen) {
       dataHydratedForSheetRef.current = false
+      countryGeoTriedRef.current = false
       return
     }
     if (dbUserLoading || !dbUserRow) return
@@ -1410,6 +1473,33 @@ function TestPage() {
     }
     setProfileFieldSavedOk((prev) => ({ ...prev, ...initialSaved }))
   }, [dataSheetOpen, dbUserLoading, dbUserRow, user, email])
+
+  useEffect(() => {
+    if (!dataSheetOpen || !dataHydratedForSheetRef.current || countryGeoTriedRef.current) return undefined
+    if (String(profileForm.country || '').trim()) {
+      countryGeoTriedRef.current = true
+      return undefined
+    }
+
+    let cancelled = false
+    countryGeoTriedRef.current = true
+    ;(async () => {
+      const dial = await detectPhoneDialByGeo()
+      if (cancelled || !dial?.iso) return
+      const match = countryList.find((country) => country.code === dial.iso)
+      if (!match?.name) return
+      setProfileForm((prev) => {
+        if (String(prev.country || '').trim()) return prev
+        return { ...prev, country: match.name }
+      })
+      setProfileFieldSavedOk((prev) => ({ ...prev, country: false }))
+      void persistFieldRef.current?.('country', match.name)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [dataSheetOpen, profileForm.country])
 
   useEffect(() => {
     if (!dataSheetOpen) {
@@ -1857,25 +1947,7 @@ function TestPage() {
 
   const needsProfileOnboarding = profileCompletionStats.pct < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
 
-  useEffect(() => {
-    if (!isLoaded || !isSiteUserSignedIn(user, isLoaded) || !resolvedNumericUserId) return undefined
-    if (hasCompletedOwnerCabinetOnboarding(resolvedNumericUserId)) return undefined
-
-    const timer = window.setTimeout(() => setSellerOnboardingOpen(true), 500)
-    return () => window.clearTimeout(timer)
-  }, [isLoaded, resolvedNumericUserId, user])
-
-  const completeSellerOnboarding = useCallback(() => {
-    markOwnerCabinetOnboardingComplete(resolvedNumericUserId)
-    setSellerOnboardingOpen(false)
-    setHistorySheetOpen(false)
-    setSubscriptionSheetOpen(false)
-    setBookingsSheetOpen(false)
-    setDataSheetOpen(true)
-    scrollMainTo(0, 0, 'instant')
-  }, [resolvedNumericUserId])
-
-  /** Пока профиль &lt; 78% — только сценарий подсказок, без обходных кликов по кабинету. */
+  /** Пока профиль &lt; 78% — флаг для логики заполнения данных (без UI-подсказок). */
   const profileGateActive =
     isLoaded &&
     isSiteUserSignedIn(user, isLoaded) &&
@@ -1884,20 +1956,14 @@ function TestPage() {
     needsProfileOnboarding
 
   /** Не требуем Clerk `user`: при регистрации по email сессия часто только локальная (isLoggedIn в userData). */
-  const showTileDataOnboarding =
-    profileGateActive &&
-    !dataSheetOpen &&
-    !showProfileCompleteCelebration &&
-    !subscriptionCheckoutCelebration &&
-    !showServiceQuickLinksTour &&
-    !sellerOnboardingOpen
+  const showTileDataOnboarding = false
 
-  /** Тост прогресса держим до 100%; порог 78% только для гейта и спотлайта (`needsProfileOnboarding`). */
+  /** Чеклист в тосте — только пока гейт онбординга (&lt;78%); иначе прогресс внутри листа. */
   const showProfileCompletionWidget =
     Boolean(resolvedNumericUserId && profileCompletionRows.length > 0) &&
     profileCompletionStats.pct < 100
-  const showProfileCompletionToast =
-    dataSheetOpen && showProfileCompletionWidget && !profileCompletionToastDismissedForInput
+  /** Подсказки/тост прогресса отключены по редизайну профиля. */
+  const showProfileCompletionToast = false
 
   const firstMissingKey = useMemo(
     () => profileCompletionRows.find((r) => !r.filled)?.key ?? null,
@@ -1922,7 +1988,25 @@ function TestPage() {
     toastHintShownThisDataOpenRef.current = false
     setProfileCompletionToastDismissedForInput(false)
     setProfileFieldSavedOk({})
+    setDataSheetStep('contacts')
   }, [dataSheetOpen])
+
+  useEffect(() => {
+    if (!dataSheetOpen) return
+    if (!firstMissingKey) {
+      setDataSheetStep('review')
+      return
+    }
+    const isPassport = PROFILE_PASSPORT_FIELDS.some((f) => f.key === firstMissingKey)
+    setDataSheetStep(isPassport ? 'documents' : 'contacts')
+    // Только при открытии листа — не перехватываем ручной выбор шага.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- firstMissingKey читаем на open
+  }, [dataSheetOpen])
+
+  useEffect(() => {
+    if (!dataSheetOpen || firstMissingKey) return
+    setDataSheetStep('review')
+  }, [dataSheetOpen, firstMissingKey])
 
   /** Каждый новый заход в «Данные» (после главной) — снова можно гайд по тосту; сбрасываем флаг перехода к полю. */
   useEffect(() => {
@@ -1944,14 +2028,19 @@ function TestPage() {
 
   const scrollToProfileField = useCallback(
     (key) => {
+      const isPassport = PROFILE_PASSPORT_FIELDS.some((f) => f.key === key)
+      const targetStep = isPassport ? 'documents' : 'contacts'
       const run = () => {
-        const wrap = document.getElementById(`test-profile-field-wrap-${key}`)
-        const input = document.getElementById(`profile-field-${key}`)
-        if (!wrap) return
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        wrap.classList.add('test-data-field--focus-hint')
-        window.setTimeout(() => wrap.classList.remove('test-data-field--focus-hint'), 2200)
-        window.setTimeout(() => input?.focus?.({ preventScroll: true }), 450)
+        setDataSheetStep(targetStep)
+        window.requestAnimationFrame(() => {
+          const wrap = document.getElementById(`test-profile-field-wrap-${key}`)
+          const input = document.getElementById(`profile-field-${key}`)
+          if (!wrap) return
+          wrap.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          wrap.classList.add('test-data-field--focus-hint')
+          window.setTimeout(() => wrap.classList.remove('test-data-field--focus-hint'), 2200)
+          window.setTimeout(() => input?.focus?.({ preventScroll: true }), 450)
+        })
       }
       if (!dataSheetOpen) {
         setDataSheetOpen(true)
@@ -2059,14 +2148,6 @@ function TestPage() {
     setShowProfileCompleteCelebration(false)
     setDataSheetOpen(false)
     scrollMainTo(0, 0, 'smooth')
-    if (serviceTourTimerRef.current) {
-      clearTimeout(serviceTourTimerRef.current)
-      serviceTourTimerRef.current = null
-    }
-    serviceTourTimerRef.current = window.setTimeout(() => {
-      setShowServiceQuickLinksTour(true)
-      serviceTourTimerRef.current = null
-    }, 1000)
   }, [resolvedNumericUserId])
 
   const handleServiceQuickLinksTourDismiss = useCallback(() => {
@@ -2174,24 +2255,10 @@ function TestPage() {
         ? 'Вот список полей, которые нужно заполнить'
         : 'Нажмите, чтобы перейти к заполнению'
 
-  const toastGuideSpotlightActive =
-    toastGuideStep >= 1 &&
-    toastGuideStep <= 3 &&
-    dataSheetOpen &&
-    showProfileCompletionToast &&
-    needsProfileOnboarding &&
-    Boolean(firstMissingKey) &&
-    !readToastGuideFieldNavDone(resolvedNumericUserId) &&
-    !showProfileCompleteCelebration &&
-    !subscriptionCheckoutCelebration &&
-    !showServiceQuickLinksTour
+  const toastGuideSpotlightActive = false
 
   /** Пока профиль <78% — блокируем клики по кабинету, кроме «Данные». */
-  const onboardingGateUiLocked =
-    profileGateActive &&
-    !showProfileCompleteCelebration &&
-    !subscriptionCheckoutCelebration &&
-    !showServiceQuickLinksTour
+  const onboardingGateUiLocked = false
 
   useEffect(() => {
     const bodyClass = 'profile-onboarding-gate-locked'
@@ -2212,109 +2279,112 @@ function TestPage() {
     !readToastGuideFieldNavDone(resolvedNumericUserId)
 
   const cabinetOverviewHiddenBehindSheet =
-    dataSheetOpen || historySheetOpen || subscriptionSheetOpen || bookingsSheetOpen
+    dataSheetOpen ||
+    historySheetOpen ||
+    subscriptionSheetOpen ||
+    bookingsSheetOpen ||
+    legalSheetOpen
+
+  const openLegalSheet = useCallback((tab = 'agreement') => {
+    setDataSheetOpen(false)
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    setLegalSheetTab(tab === 'privacy' ? 'privacy' : 'agreement')
+    setLegalSheetOpen(true)
+  }, [])
+
+  const syncFoldersDotIndex = useCallback(() => {
+    const rail = foldersRailRef.current
+    if (!rail) return
+    const cards = rail.querySelectorAll('.profile-folder-card')
+    if (!cards.length) return
+    const railLeft = rail.getBoundingClientRect().left
+    let bestIndex = 0
+    let bestDistance = Number.POSITIVE_INFINITY
+    cards.forEach((card, index) => {
+      const distance = Math.abs(card.getBoundingClientRect().left - railLeft)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        bestIndex = index
+      }
+    })
+    setFoldersDotIndex((prev) => (prev === bestIndex ? prev : bestIndex))
+  }, [])
+
+  useEffect(() => {
+    syncFoldersDotIndex()
+  }, [syncFoldersDotIndex, mainCards.length, showBuyerCabinetSkeleton])
+
+  const handleFoldersRailScroll = useCallback(() => {
+    syncFoldersDotIndex()
+  }, [syncFoldersDotIndex])
+
+  const scrollFoldersToIndex = useCallback((index) => {
+    const rail = foldersRailRef.current
+    if (!rail) return
+    const card = rail.querySelectorAll('.profile-folder-card')[index]
+    if (!card) return
+    const left = card.offsetLeft - 2
+    rail.scrollTo({ left, behavior: 'smooth' })
+    setFoldersDotIndex(index)
+  }, [])
+
+  const handleMainCardActivate = useCallback(
+    (card) => {
+      const closeOthers = () => {
+        setDataSheetOpen(false)
+        setHistorySheetOpen(false)
+        setSubscriptionSheetOpen(false)
+        setBookingsSheetOpen(false)
+        setLegalSheetOpen(false)
+      }
+      if (card.sheet === 'data') {
+        setHistorySheetOpen(false)
+        setSubscriptionSheetOpen(false)
+        setBookingsSheetOpen(false)
+        setLegalSheetOpen(false)
+        setDataSheetOpen((open) => !open)
+        return
+      }
+      if (card.to === '/history' || card.sheet === 'history') {
+        setDataSheetOpen(false)
+        setSubscriptionSheetOpen(false)
+        setBookingsSheetOpen(false)
+        setLegalSheetOpen(false)
+        setHistorySheetOpen((open) => !open)
+        return
+      }
+      if (card.sheet === 'subscriptions') {
+        setDataSheetOpen(false)
+        setHistorySheetOpen(false)
+        setBookingsSheetOpen(false)
+        setLegalSheetOpen(false)
+        setSubscriptionSheetOpen((open) => !open)
+        return
+      }
+      if (card.sheet === 'bookings') {
+        setDataSheetOpen(false)
+        setHistorySheetOpen(false)
+        setSubscriptionSheetOpen(false)
+        setLegalSheetOpen(false)
+        setBookingsSheetOpen((open) => !open)
+        return
+      }
+      if (card.action === 'managerChat') {
+        closeOthers()
+        void openManagerChatModal()
+      }
+    },
+    [openManagerChatModal],
+  )
+
+  const profileStatHistory = historyLoading ? '—' : String(historyCount ?? 0)
+  const profileStatBookings = String(visibleBookingsSheetRows.length)
+  const profileStatProfile = `${profileCompletionStats.pct}%`
 
   return (
-    <div
-      className={`test-page${showProfileCompletionToast ? ' test-page--profile-toast' : ''}${
-        onboardingGateUiLocked ? ' test-page--onboarding-gate' : ''
-      }`}
-    >
-      {showProfileCompletionToast ? (
-        <motion.div
-          ref={profileCompletionToastRef}
-          className={`test-profile-completion test-profile-completion--toast${
-            profileCompletionExpanded ? ' test-profile-completion--expanded' : ''
-          }`}
-          role="region"
-          aria-label={t('buyerData_profileCompletionTitle')}
-          initial={reduceMotionUi ? { opacity: 0 } : { opacity: 0, y: -22 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={
-            reduceMotionUi
-              ? { duration: 0.2 }
-              : { type: 'spring', damping: 26, stiffness: 320, mass: 0.7 }
-          }
-        >
-          <button
-            type="button"
-            ref={profileToastHeaderRef}
-            className="test-profile-completion__header"
-            onClick={handleToastHeaderClick}
-            aria-expanded={profileCompletionExpanded}
-            disabled={toastGuideStrictActive && toastGuideStep === 0}
-          >
-            <div className="test-profile-completion__ring-wrap" aria-hidden>
-              <svg className="test-profile-completion__ring" viewBox="0 0 40 40" width="36" height="36">
-                <circle
-                  cx={profileRingCenter}
-                  cy={profileRingCenter}
-                  r={profileRingR}
-                  fill="none"
-                  stroke="rgba(15,23,42,0.08)"
-                  strokeWidth="2.5"
-                />
-                <circle
-                  cx={profileRingCenter}
-                  cy={profileRingCenter}
-                  r={profileRingR}
-                  fill="none"
-                  stroke={profileCompletionStats.pct >= 100 ? '#0099A9' : '#0099A9'}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  transform={`rotate(-90 ${profileRingCenter} ${profileRingCenter})`}
-                  strokeDasharray={`${profileRingDashVisible} ${profileRingC}`}
-                />
-              </svg>
-              <span className="test-profile-completion__ring-label">{profileCompletionStats.pct}%</span>
-            </div>
-            <div className="test-profile-completion__summary">
-              <span className="test-profile-completion__title">{t('buyerData_profileCompletionTitle')}</span>
-              <span className="test-profile-completion__count">
-                {t('buyerData_profileCompletionCount', {
-                  filled: profileCompletionStats.filled,
-                  total: profileCompletionStats.total,
-                })}
-              </span>
-            </div>
-            {profileCompletionExpanded ? (
-              <FiChevronUp size={18} className="test-profile-completion__chev" aria-hidden />
-            ) : (
-              <FiChevronDown size={18} className="test-profile-completion__chev" aria-hidden />
-            )}
-          </button>
-          {profileCompletionExpanded ? (
-            <ul className="test-profile-completion__list">
-              {profileCompletionRows.map((row) => (
-                <li key={row.key}>
-                  {row.filled ? (
-                    <span className="test-profile-completion__row test-profile-completion__row--done">
-                      <FiCheck size={15} className="test-profile-completion__icon-ok" aria-hidden />
-                      <span className="test-profile-completion__row-label">{row.label}</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      ref={row.key === firstMissingKey ? profileToastFirstMissingRef : undefined}
-                      className="test-profile-completion__row test-profile-completion__row--missing"
-                      disabled={
-                        toastGuideStrictActive &&
-                        (toastGuideStep === 0 ||
-                          toastGuideStep === 2 ||
-                          (toastGuideStep === 3 && row.key !== firstMissingKey))
-                      }
-                      onClick={() => handleToastMissingRowClick(row.key)}
-                    >
-                      <span className="test-profile-completion__dot-miss" aria-hidden />
-                      <span className="test-profile-completion__row-label">{row.label}</span>
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </motion.div>
-      ) : null}
+    <div className="test-page test-page--cabinet-v2">
 
       <div className="test-page__ambient" aria-hidden="true">
         <span className="test-page__blob test-page__blob--a" />
@@ -2328,9 +2398,6 @@ function TestPage() {
           aria-labelledby={showBuyerCabinetSkeleton ? undefined : 'test-hero-heading'}
           aria-busy={showBuyerCabinetSkeleton || undefined}
         >
-          <span className="test-hero-pro__mobile-eyebrow">
-            {t('buyerCabinet_title', { defaultValue: 'Личный кабинет' })}
-          </span>
           {showBuyerCabinetSkeleton ? (
             <BuyerCabinetHeroSkeleton
               sectionsLabel={t('buyerCabinet_sectionsLabel')}
@@ -2347,636 +2414,242 @@ function TestPage() {
               }
             />
           ) : (
-            <>
-              <div className="test-hero-pro__identity">
-                <div className="test-hero-pro__avatar-wrap">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt=""
-                      className="test-hero-pro__avatar-img"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <span className="test-hero-pro__avatar-fallback" aria-hidden="true">
-                      {initials || 'U'}
-                    </span>
-                  )}
-                  {cabinetVipActive ? (
-                    <span
-                      className="test-hero-pro__vip-badge"
-                      title={t('profileVipBadgeTitle')}
-                      aria-label={t('profileVipBadgeTitle')}
-                    >
-                      <FiAward className="test-hero-pro__vip-badge-icon" aria-hidden />
-                      <span className="test-hero-pro__vip-badge-text">VIP</span>
-                    </span>
-                  ) : null}
-                </div>
+            <div className="profile-cabinet">
+              <header className="profile-cabinet__banner">
                 <Link
                   to="/"
-                  className="test-hero-pro__home-corner"
+                  className="profile-cabinet__home"
                   aria-label={t('buyerCabinet_home')}
                 >
-                  <span className="test-hero-pro__home-corner-glow" aria-hidden />
-                  <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
-                  <span>{t('buyerCabinet_home')}</span>
+                  <FiHome size={16} aria-hidden />
                 </Link>
-                <div className="test-hero-pro__who">
-                  <h2 id="test-hero-heading" className="test-hero-pro__name">
-                    {fullName}
-                  </h2>
-                  {email ? (
-                    <p className="test-hero-pro__email">
-                      <FiMail size={14} aria-hidden />
-                      {email}
-                    </p>
-                  ) : null}
-                  <div className="test-hero-pro__chips">
-                    <span className="test-chip">
-                      <FiHash size={13} aria-hidden />
-                      ID {idForChip}
-                    </span>
-                    <span className="test-chip">
-                      <FiShield size={13} aria-hidden />
-                      {roleLabel}
-                    </span>
-                    {verified ? (
-                      <span className="test-chip test-chip--ok">
-                        <FiCheckCircle size={13} aria-hidden />
-                        {t('buyerCabinet_emailVerified')}
+                <button
+                  type="button"
+                  className="profile-cabinet__info"
+                  aria-label={t('buyerCabinet_legalInfoAria')}
+                  onClick={() => openLegalSheet('agreement')}
+                >
+                  <FiInfo size={16} aria-hidden />
+                </button>
+                <div className="profile-cabinet__identity">
+                  <div className="profile-cabinet__avatar-wrap">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="profile-cabinet__avatar"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span className="profile-cabinet__avatar profile-cabinet__avatar--fallback" aria-hidden>
+                        {initials || 'U'}
+                      </span>
+                    )}
+                    {cabinetVipActive ? (
+                      <span className="profile-cabinet__vip" title={t('profileVipBadgeTitle')}>
+                        <FiAward size={11} aria-hidden />
+                        VIP
                       </span>
                     ) : null}
                   </div>
+                  <div className="profile-cabinet__who">
+                    <h2 id="test-hero-heading" className="profile-cabinet__name">
+                      {fullName}
+                    </h2>
+                    <p className="profile-cabinet__role">{roleLabel}</p>
+                  </div>
                 </div>
-              </div>
+                <div className="profile-cabinet__stats" aria-label="Статистика кабинета">
+                  <div className="profile-cabinet__stat">
+                    <strong>{profileStatHistory}</strong>
+                    <span>История</span>
+                  </div>
+                  <div className="profile-cabinet__stat">
+                    <strong>{profileStatBookings}</strong>
+                    <span>Брони</span>
+                  </div>
+                  <div className="profile-cabinet__stat">
+                    <strong>{profileStatProfile}</strong>
+                    <span>Профиль</span>
+                  </div>
+                </div>
+              </header>
 
-              <nav className="test-hero-pro__shortcuts" aria-label={t('buyerCabinet_sectionsAria')}>
-                <p className="test-hero-pro__shortcuts-label">{t('buyerCabinet_sectionsLabel')}</p>
-                <div className="test-hero-icon-grid">
+              <section className="profile-cabinet__folders" aria-label={t('buyerCabinet_sectionsAria')}>
+                <div className="profile-cabinet__section-head">
+                  <div className="profile-cabinet__section-copy">
+                    <h3 className="profile-cabinet__section-title">{t('buyerCabinet_sectionsLabel')}</h3>
+                  </div>
+                </div>
+                <div
+                  ref={foldersRailRef}
+                  className="profile-cabinet__folders-rail"
+                  onScroll={handleFoldersRailScroll}
+                >
                   {mainCards.map((card) => {
-                    const Icon = card.icon
                     const isHistory = card.to === '/history'
                     const isSubscriptions = card.sheet === 'subscriptions'
                     const isBookings = card.sheet === 'bookings'
-                    const isManagerChat = card.action === 'managerChat'
                     const isData = card.sheet === 'data'
-                    const cardTitle = card.title
-                    const cardDescription = card.description
-                    const showHistoryCount = isHistory && !historyLoading && historyCount > 0
-                    const showBookingsCount =
-                      isBookings && !bookingsSheetLoading && visibleBookingsSheetRows.length > 0
-                    const planLabel = subscriptionPlanLabel || 'Starter'
-                    const historyAria = showHistoryCount
-                      ? t('buyerCabinet_historyAria', { title: cardTitle, count: historyCount })
-                      : undefined
-                    const subscriptionsAria = isSubscriptions
-                      ? t('buyerCabinet_subscriptionsAria', { title: cardTitle, plan: planLabel })
-                      : undefined
-                    const bookingsAria = showBookingsCount
-                      ? t('buyerCabinet_bookingsAria', {
-                          title: cardTitle,
-                          count: visibleBookingsSheetRows.length,
-                        })
-                      : undefined
-                    const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
-                    const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
-                      isData && dataSheetOpen ? ' test-hero-icon-tile--active' : ''
-                    }${isData && onboardingGateUiLocked ? ' test-hero-icon-tile--gate-data' : ''}${
-                      isHistory && historySheetOpen ? ' test-hero-icon-tile--active' : ''
-                    }${isSubscriptions && subscriptionSheetOpen ? ' test-hero-icon-tile--active' : ''}${
-                      isBookings && bookingsSheetOpen ? ' test-hero-icon-tile--active' : ''
+                    const isManagerChat = card.action === 'managerChat'
+                    const isLinkOnly = Boolean(card.to) && !card.sheet && !card.action && !isHistory
+                    const active =
+                      (isData && dataSheetOpen) ||
+                      (isHistory && historySheetOpen) ||
+                      (isSubscriptions && subscriptionSheetOpen) ||
+                      (isBookings && bookingsSheetOpen) ||
+                      (isManagerChat && isManagerChatOpen)
+                    const meta =
+                      isHistory && !historyLoading && historyCount > 0
+                        ? `${historyCount}`
+                        : isBookings && visibleBookingsSheetRows.length > 0
+                          ? `${visibleBookingsSheetRows.length}`
+                          : isSubscriptions
+                            ? subscriptionPlanLabel || 'Starter'
+                            : card.description
+                    const className = `profile-folder-card profile-folder-card--${card.accent || 'teal'}${
+                      active ? ' profile-folder-card--active' : ''
                     }`
-                    const iconInner = (
+                    const inner = (
                       <>
-                        <span className="test-hero-icon-tile__icon">
-                          <Icon size={17} strokeWidth={1.85} aria-hidden />
-                          {showHistoryCount ? (
-                            <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
-                              {historyCount > 99 ? '99+' : historyCount}
-                            </span>
-                          ) : null}
-                          {showBookingsCount ? (
-                            <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
-                              {visibleBookingsSheetRows.length > 99 ? '99+' : visibleBookingsSheetRows.length}
-                            </span>
-                          ) : null}
-                          {isSubscriptions ? (
-                            <span className="test-hero-icon-tile__plan-badge">{planLabel}</span>
-                          ) : null}
+                        <span className="profile-folder-card__glow" aria-hidden />
+                        <span className="profile-folder-card__icon" aria-hidden>
+                          <img src={card.iconSrc} alt="" loading="lazy" decoding="async" draggable={false} />
                         </span>
-                        <span className="test-hero-icon-tile__label">{cardTitle}</span>
+                        <span className="profile-folder-card__copy">
+                          <strong>{card.title}</strong>
+                          <span>{meta}</span>
+                        </span>
                       </>
                     )
-                    if (isData) {
+                    if (isLinkOnly || (card.to === '/deposit')) {
                       return (
-                        <button
-                          ref={dataTileRef}
-                          key={card.title}
-                          type="button"
-                          className={tileClass}
-                          title={cardDescription}
-                          aria-label={cardTitle}
-                          aria-pressed={dataSheetOpen}
-                          onClick={() => {
-                            const openDataForOnboarding =
-                              !dataSheetOpen && Boolean(resolvedNumericUserId) && needsProfileOnboarding
-                            setHistorySheetOpen(false)
-                            setSubscriptionSheetOpen(false)
-                            setBookingsSheetOpen(false)
-                            if (openDataForOnboarding) {
-                              setDataSheetOpen(true)
-                            } else {
-                              setDataSheetOpen((open) => !open)
-                            }
-                          }}
-                        >
-                          {iconInner}
-                        </button>
-                      )
-                    }
-                    if (isHistory) {
-                      return (
-                        <button
-                          key={card.title}
-                          type="button"
-                          className={tileClass}
-                          title={cardDescription}
-                          aria-label={ariaLabel ?? cardTitle}
-                          aria-pressed={historySheetOpen}
-                          onClick={() => {
-                            setDataSheetOpen(false)
-                            setSubscriptionSheetOpen(false)
-                            setBookingsSheetOpen(false)
-                            setHistorySheetOpen((open) => !open)
-                          }}
-                        >
-                          {iconInner}
-                        </button>
-                      )
-                    }
-                    if (isSubscriptions) {
-                      return (
-                        <button
-                          key={card.title}
-                          type="button"
-                          className={tileClass}
-                          title={cardDescription}
-                          aria-label={ariaLabel ?? cardTitle}
-                          aria-pressed={subscriptionSheetOpen}
-                          onClick={() => {
-                            setDataSheetOpen(false)
-                            setHistorySheetOpen(false)
-                            setBookingsSheetOpen(false)
-                            setSubscriptionSheetOpen((open) => !open)
-                          }}
-                        >
-                          {iconInner}
-                        </button>
-                      )
-                    }
-                    if (isBookings) {
-                      return (
-                        <button
-                          key={card.title}
-                          type="button"
-                          className={tileClass}
-                          title={cardDescription}
-                          aria-label={ariaLabel ?? cardTitle}
-                          aria-pressed={bookingsSheetOpen}
-                          onClick={() => {
-                            setDataSheetOpen(false)
-                            setHistorySheetOpen(false)
-                            setSubscriptionSheetOpen(false)
-                            setBookingsSheetOpen((open) => !open)
-                          }}
-                        >
-                          {iconInner}
-                        </button>
-                      )
-                    }
-                    if (isManagerChat) {
-                      return (
-                        <button
-                          key={card.title}
-                          type="button"
-                          className={tileClass}
-                          title={cardDescription}
-                          aria-label={cardTitle}
-                          aria-pressed={isManagerChatOpen}
-                          onClick={() => {
-                            setDataSheetOpen(false)
-                            setHistorySheetOpen(false)
-                            setSubscriptionSheetOpen(false)
-                            setBookingsSheetOpen(false)
-                            void openManagerChatModal()
-                          }}
-                        >
-                          {iconInner}
-                        </button>
+                        <Link key={card.title} to={card.to} className={className} title={card.description}>
+                          {inner}
+                        </Link>
                       )
                     }
                     return (
-                      <Link
+                      <button
                         key={card.title}
-                        to={card.to}
-                        className={tileClass}
-                        title={cardDescription}
-                        aria-label={ariaLabel}
+                        type="button"
+                        className={className}
+                        title={card.description}
+                        aria-pressed={active || undefined}
+                        ref={isData ? dataTileRef : undefined}
+                        onClick={() => handleMainCardActivate(card)}
                       >
-                        {iconInner}
-                      </Link>
+                        {inner}
+                      </button>
                     )
                   })}
                 </div>
-              </nav>
-            </>
+                {mainCards.length > 1 ? (
+                  <div
+                    className="profile-cabinet__folders-dots"
+                    role="tablist"
+                    aria-label={t('buyerCabinet_sectionsLabel')}
+                  >
+                    {mainCards.map((card, index) => (
+                      <button
+                        key={`folder-dot-${card.title}`}
+                        type="button"
+                        role="tab"
+                        aria-selected={foldersDotIndex === index}
+                        aria-label={card.title}
+                        className={`profile-cabinet__folders-dot${
+                          foldersDotIndex === index ? ' profile-cabinet__folders-dot--active' : ''
+                        }`}
+                        onClick={() => scrollFoldersToIndex(index)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="profile-cabinet__list" aria-label="Ключевые направления">
+                <div className="profile-cabinet__section-head">
+                  <div className="profile-cabinet__section-copy">
+                    <h3 className="profile-cabinet__section-title">{t('buyerCabinet_directionsTitle')}</h3>
+                  </div>
+                </div>
+                <ul className="profile-cabinet__rows">
+                  {directionSummaries.map((item) => {
+                    const thumbs = (item.thumbnails || []).slice(0, 3)
+                    return (
+                      <li key={item.headline}>
+                        <Link to={item.to} className="profile-cabinet-row profile-cabinet-row--shares">
+                          <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
+                            <FiLayers size={20} />
+                          </span>
+                          <span className="profile-cabinet-row__copy">
+                            <strong>{item.subCardTitle || item.headline}</strong>
+                            <span>{item.subCardSubtitle || item.areaLabel}</span>
+                          </span>
+                          <span className="profile-cabinet-row__avatars" aria-hidden>
+                            {thumbs.map((thumb, index) => (
+                              <img
+                                key={`${item.to}-${index}`}
+                                src={thumb.src}
+                                alt=""
+                                style={{ zIndex: thumbs.length - index }}
+                              />
+                            ))}
+                          </span>
+                          <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                        </Link>
+                      </li>
+                    )
+                  })}
+                  {quickLinksPrimary.map((link) => {
+                    const Icon = link.icon
+                    const rowTone =
+                      link.to === '/favorites'
+                        ? 'favorites'
+                        : link.to === '/compare'
+                          ? 'compare'
+                          : link.to === '/map'
+                            ? 'map'
+                            : 'link'
+                    return (
+                      <li key={link.to || link.title}>
+                        <Link to={link.to} className={`profile-cabinet-row profile-cabinet-row--${rowTone}`}>
+                          <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${rowTone}`} aria-hidden>
+                            <Icon size={20} />
+                          </span>
+                          <span className="profile-cabinet-row__copy">
+                            <strong>{link.title}</strong>
+                            <span>{link.subtitle}</span>
+                          </span>
+                          <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+
+              <div className="profile-cabinet__directions-cta">
+                <AuctionCategoryCtaCards variant="profilePage" />
+              </div>
+
+              <section className="profile-cabinet__mobile-actions" aria-label="Действия профиля">
+                <Link to="/bonuses" className="profile-cabinet__mobile-action">
+                  <FiGift size={16} aria-hidden />
+                  <span>{t('buyerData_moreBonusesCta')}</span>
+                </Link>
+                <button
+                  type="button"
+                  className="profile-cabinet__mobile-action profile-cabinet__mobile-action--logout"
+                  onClick={handleQuickLogout}
+                >
+                  <QuickLogoutIcon size={16} aria-hidden />
+                  <span>{quickLogoutLink.title}</span>
+                </button>
+              </section>
+            </div>
           )}
 
-          <div
-            data-profile-sheet="data"
-            className={`test-data-dropbox${dataSheetOpen ? ' test-data-dropbox--open' : ''}`}
-            aria-hidden={!dataSheetOpen}
-          >
-            <div className="test-data-dropbox__measure">
-              <div
-                className="test-hero-pro__data-panel test-hero-pro__data-panel--sheet-data"
-                aria-labelledby="test-data-panel-title"
-              >
-                <div className="test-data-panel__toolbar">
-                  <button
-                    type="button"
-                    className="test-data-panel__back"
-                    aria-label={t('buyerCabinet_collapse')}
-                    onClick={() => setDataSheetOpen(false)}
-                  >
-                    <FiArrowLeft size={18} aria-hidden />
-                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
-                  </button>
-                  <h3 id="test-data-panel-title" className="test-data-panel__title">
-                    {t('buyerData_profilePanelTitle')}
-                  </h3>
-                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
-                </div>
-                <p className="test-data-panel__hint">
-                  {t('buyerData_profileAutosaveHint')}
-                </p>
-                {dbUserLoading ? (
-                  <TestSheetSkeletonData />
-                ) : !resolvedNumericUserId ? (
-                  <p className="test-data-panel__hint">
-                    {t('buyerData_profileNotResolved')}
-                  </p>
-                ) : (
-                  <>
-                  <div className="test-data-panel__sections">
-                    <section className="test-data-panel__section" aria-labelledby="profile-section-main">
-                      <h4 id="profile-section-main" className="test-data-panel__section-title">
-                        {t('buyerData_sectionContacts')}
-                      </h4>
-                      <div className="test-data-panel__grid">
-                        {PROFILE_MAIN_FIELDS.map(({ key, labelKey, multiline, type, autoComplete }) => (
-                          <div
-                            key={key}
-                            id={`test-profile-field-wrap-${key}`}
-                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
-                              savingField === key ? ' test-data-field--saving' : ''
-                            }`}
-                          >
-                            <label className="test-data-field__label" htmlFor={`profile-field-${key}`}>
-                              {t(PROFILE_FIELD_I18N[key] || labelKey)}
-                            </label>
-                            <div
-                              className={`test-data-field__input-wrap${
-                                profileFieldSavedOk[key] && savingField !== key
-                                  ? ' test-data-field__input-wrap--saved'
-                                  : ''
-                              }${multiline ? ' test-data-field__input-wrap--textarea' : ''}`}
-                            >
-                              {key === 'country' ? (
-                                <div ref={countryFieldRef} className="test-country-select">
-                                  {(() => {
-                                    const countrySaved = profileFieldSavedOk[key] && savingField !== key
-                                    return (
-                                  <button
-                                    id={`profile-field-${key}`}
-                                    type="button"
-                                    className={`test-data-field__input test-country-select__trigger${
-                                      countrySaved ? ' test-country-select__trigger--saved' : ''
-                                    }`}
-                                    onClick={() => {
-                                      setCountryDropdownOpen((prev) => !prev)
-                                      setCountrySearchQuery('')
-                                    }}
-                                    disabled={profileFieldsLocked}
-                                    aria-haspopup="listbox"
-                                    aria-expanded={countryDropdownOpen}
-                                  >
-                                    <span className="test-country-select__value">
-                                      {profileForm[key] ? profileForm[key] : t('buyerData_placeholderCountry')}
-                                    </span>
-                                    <span className="test-country-select__chevron" aria-hidden>
-                                      <FiChevronDown size={18} />
-                                    </span>
-                                  </button>
-                                    )
-                                  })()}
-
-                                  {countryDropdownOpen ? (
-                                    <div className="test-country-select__menu" role="listbox" aria-label="Список стран">
-                                      <input
-                                        type="text"
-                                        className="test-country-select__search"
-                                        placeholder={t('buyerData_countrySearchPlaceholder')}
-                                        value={countrySearchQuery}
-                                        onChange={(e) => setCountrySearchQuery(e.target.value)}
-                                        autoFocus
-                                      />
-                                      {filteredCountries.map((country) => {
-                                        const selected = profileForm.country === country.name
-                                        return (
-                                          <button
-                                            key={country.code}
-                                            type="button"
-                                            className={`test-country-select__option${
-                                              selected ? ' test-country-select__option--selected' : ''
-                                            }`}
-                                            onClick={() => handleCountrySelect(country.name)}
-                                            role="option"
-                                            aria-selected={selected}
-                                          >
-                                            <span className="test-country-select__option-flag" aria-hidden>
-                                              {country.flag}
-                                            </span>
-                                            <span className="test-country-select__option-name">{country.name}</span>
-                                          </button>
-                                        )
-                                      })}
-                                      {filteredCountries.length === 0 ? (
-                                        <p className="test-country-select__empty">{t('countryNoResults')}</p>
-                                      ) : null}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              ) : multiline ? (
-                                <textarea
-                                  id={`profile-field-${key}`}
-                                  className="test-data-field__input test-data-field__input--textarea"
-                                  rows={1}
-                                  value={profileForm[key] ?? ''}
-                                  onChange={handleProfileChange(key)}
-                                  onBlur={handleProfileBlur(key)}
-                                  autoComplete={autoComplete}
-                                  spellCheck={false}
-                                  disabled={profileFieldsLocked}
-                                />
-                              ) : (
-                                <input
-                                  id={`profile-field-${key}`}
-                                  className="test-data-field__input"
-                                  type={type || 'text'}
-                                  value={profileForm[key] ?? ''}
-                                  onChange={handleProfileChange(key)}
-                                  onBlur={handleProfileBlur(key)}
-                                  autoComplete={autoComplete}
-                                  spellCheck={false}
-                                  disabled={profileFieldsLocked}
-                                />
-                              )}
-                              <span
-                                className={`test-data-field__saved${
-                                  profileFieldSavedOk[key] && savingField !== key
-                                    ? ' test-data-field__saved--visible'
-                                    : ''
-                                }`}
-                                role="img"
-                                aria-label="Сохранено"
-                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
-                              >
-                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section
-                      className="test-data-panel__section test-data-panel__section--passport"
-                      aria-labelledby="profile-section-passport"
-                    >
-                      <div className="test-data-panel__section-head">
-                        <div>
-                          <h4 id="profile-section-passport" className="test-data-panel__section-title">
-                            {t('buyerData_sectionPassportAndId')}
-                          </h4>
-                          <p className="test-data-panel__section-sub">
-                            {t('buyerData_passportRecognizeHint')}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className="test-recognize-passport-btn"
-                          disabled={profileFieldsLocked}
-                          onClick={() => passportInputRef.current?.click()}
-                        >
-                          {isRecognizingPassport || isSavingExtractPatch ? (
-                            <>
-                              <span className="test-spinner" aria-hidden />
-                              {isRecognizingPassport ? t('buyerData_recognizing') : t('buyerData_saveInProgress')}
-                            </>
-                          ) : (
-                            <>
-                              <FiUpload size={17} strokeWidth={2} aria-hidden />
-                              {t('buyerData_recognizePassport')}
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <input
-                        ref={passportInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="test-passport-file-input"
-                        aria-hidden
-                        tabIndex={-1}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          await handlePassportRecognition(file)
-                          e.target.value = ''
-                        }}
-                      />
-                      {passportPhotoHints.length > 0 && (
-                        <div className="test-passport-hints" role="status" aria-live="polite">
-                          {passportPhotoHints.map((hint, idx) => (
-                            <p key={`${hint}-${idx}`}>{hint}</p>
-                          ))}
-                        </div>
-                      )}
-                      <div
-                        className={`test-data-panel__grid test-data-panel__grid--passport${
-                          isSpainCountry(profileForm.country)
-                            ? ''
-                            : ' test-data-panel__grid--passport-stacked'
-                        }`}
-                      >
-                        {PROFILE_PASSPORT_FIELDS.map(({ key, labelKey, type, autoComplete }) => (
-                          <div
-                            key={key}
-                            id={`test-profile-field-wrap-${key}`}
-                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
-                              savingField === key ? ' test-data-field--saving' : ''
-                            }`}
-                          >
-                            <label className="test-data-field__label" htmlFor={`profile-field-${key}`}>
-                              {key === 'identification_number'
-                                ? t(getIdentificationLabelKeyByCountry(profileForm.country))
-                                : t(PROFILE_FIELD_I18N[key] || labelKey)}
-                            </label>
-                            <div
-                              className={`test-data-field__input-wrap${
-                                profileFieldSavedOk[key] && savingField !== key
-                                  ? ' test-data-field__input-wrap--saved'
-                                  : ''
-                              }`}
-                            >
-                              <input
-                                id={`profile-field-${key}`}
-                                className="test-data-field__input"
-                                type={type || 'text'}
-                                value={profileForm[key] ?? ''}
-                                onChange={handleProfileChange(key)}
-                                onBlur={handleProfileBlur(key)}
-                                autoComplete={autoComplete}
-                                spellCheck={false}
-                                disabled={profileFieldsLocked}
-                              />
-                              <span
-                                className={`test-data-field__saved${
-                                  profileFieldSavedOk[key] && savingField !== key
-                                    ? ' test-data-field__saved--visible'
-                                    : ''
-                                }`}
-                                role="img"
-                                aria-label="Сохранено"
-                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
-                              >
-                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                  <div className="test-data-panel__footer-actions">
-                    <button
-                      type="button"
-                      className={`test-data-panel__save${
-                        shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
-                      }`}
-                      onClick={handleProfilePanelSaveClick}
-                      disabled={
-                        dbUserLoading ||
-                        !resolvedNumericUserId ||
-                        profileFieldsLocked ||
-                        profileSaveAllLoading
-                      }
-                    >
-                      {profileSaveAllLoading ? t('buyerData_saveInProgress') : t('buyerData_save')}
-                    </button>
-                  </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`test-data-dropbox${historySheetOpen ? ' test-data-dropbox--open' : ''}`}
-            aria-hidden={!historySheetOpen}
-          >
-            <div className="test-data-dropbox__measure">
-              <div className="test-hero-pro__data-panel test-hero-pro__history-panel">
-                <ProfileHistoryExperience
-                  sections={historySections}
-                  loading={historyLoading}
-                  query={historySearchQuery}
-                  onQueryChange={setHistorySearchQuery}
-                  onClose={() => setHistorySheetOpen(false)}
-                  locale={locale}
-                  onOpenPurchased={(item) => {
-                    setSelectedPurchasedProperty(item)
-                    setPurchaseDrawerView('details')
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`test-data-dropbox${subscriptionSheetOpen ? ' test-data-dropbox--open' : ''}`}
-            aria-hidden={!subscriptionSheetOpen}
-          >
-            <div className="test-data-dropbox__measure">
-              <div className="test-hero-pro__data-panel" aria-labelledby="test-subscription-panel-title">
-                <div className="test-data-panel__toolbar test-data-panel__toolbar--subscription">
-                  <button
-                    type="button"
-                    className="test-data-panel__back"
-                    aria-label={t('buyerCabinet_collapse')}
-                    onClick={() => setSubscriptionSheetOpen(false)}
-                  >
-                    <FiArrowLeft size={18} aria-hidden />
-                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
-                  </button>
-                  <h3 id="test-subscription-panel-title" className="test-data-panel__title">
-                    {t('buyerCabinet_cardSubscriptionsTitle')}
-                  </h3>
-                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
-                </div>
-                {subscriptionSheetLoading ? (
-                  <TestSheetSkeletonSubscription />
-                ) : (
-                  <div className="test-subscription-pricing-wrap">
-                    <div className="test-subscription-pricing-scroll">
-                      <PricingCards
-                        creative
-                        compact={false}
-                        mobileTwoColumn={false}
-                        currentPlanVisual={subscriptionProfileVisual}
-                        checkoutBusy={subscriptionUpgradeLoading}
-                        onBookCall={handleSubscriptionPlanSubscribe}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`test-data-dropbox${bookingsSheetOpen ? ' test-data-dropbox--open' : ''}`}
-            aria-hidden={!bookingsSheetOpen}
-          >
-            <div className="test-data-dropbox__measure">
-              <div className="test-hero-pro__data-panel test-hero-pro__bookings-panel">
-                <ProfileBookingsExperience
-                  rows={visibleBookingsSheetRows}
-                  loading={bookingsSheetLoading}
-                  locale={locale}
-                  moneyLocale={moneyLocale}
-                  onClose={() => setBookingsSheetOpen(false)}
-                  onCheckIn={(booking) => {
-                    setBookingsSheetOpen(false)
-                    setCheckInBookingId(booking.id)
-                  }}
-                  onCancel={setTestDriveCancelBooking}
-                />
-              </div>
-            </div>
-          </div>
         </section>
 
         <div
@@ -2994,38 +2667,6 @@ function TestPage() {
                 />
               ) : (
                 <>
-                  <section
-                    className="test-direction-summaries"
-                    aria-label="Ключевые направления: доли, аукцион и долги"
-                  >
-                <div ref={directionSummariesGridRef} className="test-direction-summaries__grid">
-                  {directionSummaries.map((item) => {
-                    const dirRef =
-                      item.to === '/shares'
-                        ? directionSharesRef
-                        : item.to === '/auction'
-                          ? directionAuctionRef
-                          : item.to === '/debts'
-                            ? directionDebtsRef
-                            : undefined
-                    return (
-                      <DirectionSummaryCard
-                        key={item.headline}
-                        ref={dirRef}
-                        variant={item.variant}
-                        areaLabel={item.areaLabel}
-                        headline={item.headline}
-                        subCardTitle={item.subCardTitle}
-                        subCardSubtitle={item.subCardSubtitle}
-                        to={item.to}
-                        moreCount={item.moreCount}
-                        thumbnails={item.thumbnails}
-                      />
-                    )
-                  })}
-                </div>
-              </section>
-
               <ProfileVipClubPromo className="test-page__vip-promo" />
 
               <div className="test-bento">
@@ -3217,26 +2858,678 @@ function TestPage() {
         extractedData={extractedPassportData}
       />
 
-      <OwnerCabinetOnboardingDrawer
-        isOpen={sellerOnboardingOpen}
-        onComplete={completeSellerOnboarding}
-        translationPrefix="buyerTest"
-      />
 
-      <ProfileSpotlightOnboarding
-        active={showTileDataOnboarding}
-        targetRef={dataTileRef}
-        message="Необходимо заполнить данные"
-        bubbleShiftX={-74}
-        bubbleShiftY={-22}
-        headRotateDeg={-10}
-      />
-      <ProfileSpotlightOnboarding
-        key={`profile-toast-guide-${toastGuideStep}`}
-        active={toastGuideSpotlightActive}
-        targetRef={toastGuideTargetRef}
-        message={toastGuideMessage}
-      />
+
+      <BuyerSheetShell
+        isOpen={legalSheetOpen}
+        onClose={() => setLegalSheetOpen(false)}
+        titleId="profile-legal-sheet-title"
+        closeLabel={t('buyerCabinet_collapse')}
+        className="profile-cabinet-sheet profile-cabinet-sheet--legal"
+      >
+        <div className="profile-cabinet-sheet__content profile-legal-sheet" data-profile-sheet="legal">
+          <div className="profile-cabinet-sheet__head">
+            <div className="profile-cabinet-sheet__head-copy">
+              <span className="profile-cabinet-sheet__eyebrow">{t('buyerCabinet_legalEyebrow')}</span>
+              <h2 id="profile-legal-sheet-title" className="profile-cabinet-sheet__title">
+                {t('buyerCabinet_legalTitle')}
+              </h2>
+            </div>
+          </div>
+          <div className="profile-legal-sheet__tabs" role="tablist" aria-label={t('buyerCabinet_legalTitle')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={legalSheetTab === 'agreement'}
+              className={`profile-legal-sheet__tab${
+                legalSheetTab === 'agreement' ? ' profile-legal-sheet__tab--active' : ''
+              }`}
+              onClick={() => setLegalSheetTab('agreement')}
+            >
+              {t('buyerCabinet_userAgreement')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={legalSheetTab === 'privacy'}
+              className={`profile-legal-sheet__tab${
+                legalSheetTab === 'privacy' ? ' profile-legal-sheet__tab--active' : ''
+              }`}
+              onClick={() => setLegalSheetTab('privacy')}
+            >
+              {t('buyerCabinet_legalPrivacyTab')}
+            </button>
+          </div>
+          <div className="profile-legal-sheet__body" role="tabpanel">
+            {(legalSheetTab === 'agreement'
+              ? [
+                  {
+                    key: 'subject',
+                    titleKey: 'buyerCabinet_legalAgreement_subjectTitle',
+                    bodyKey: 'buyerCabinet_legalAgreement_subjectBody',
+                  },
+                  {
+                    key: 'access',
+                    titleKey: 'buyerCabinet_legalAgreement_accessTitle',
+                    bodyKey: 'buyerCabinet_legalAgreement_accessBody',
+                  },
+                  {
+                    key: 'rules',
+                    titleKey: 'buyerCabinet_legalAgreement_rulesTitle',
+                    bodyKey: 'buyerCabinet_legalAgreement_rulesBody',
+                  },
+                  {
+                    key: 'contacts',
+                    titleKey: 'buyerCabinet_legalAgreement_contactsTitle',
+                    bodyKey: 'buyerCabinet_legalAgreement_contactsBody',
+                  },
+                ]
+              : [
+                  {
+                    key: 'scope',
+                    titleKey: 'buyerCabinet_legalPrivacy_scopeTitle',
+                    bodyKey: 'buyerCabinet_legalPrivacy_scopeBody',
+                  },
+                  {
+                    key: 'data',
+                    titleKey: 'buyerCabinet_legalPrivacy_dataTitle',
+                    bodyKey: 'buyerCabinet_legalPrivacy_dataBody',
+                  },
+                  {
+                    key: 'rights',
+                    titleKey: 'buyerCabinet_legalPrivacy_rightsTitle',
+                    bodyKey: 'buyerCabinet_legalPrivacy_rightsBody',
+                  },
+                  {
+                    key: 'contacts',
+                    titleKey: 'buyerCabinet_legalPrivacy_contactsTitle',
+                    bodyKey: 'buyerCabinet_legalPrivacy_contactsBody',
+                  },
+                ]
+            ).map((section) => (
+              <section key={`${legalSheetTab}-${section.key}`} className="profile-legal-sheet__section">
+                <h3>{t(section.titleKey)}</h3>
+                <p>{t(section.bodyKey)}</p>
+              </section>
+            ))}
+          </div>
+          <Link to="/about" className="profile-legal-sheet__about" onClick={() => setLegalSheetOpen(false)}>
+            {t('buyerCabinet_legalAboutLink')}
+            <FiArrowRight size={16} aria-hidden />
+          </Link>
+        </div>
+      </BuyerSheetShell>
+
+      <BuyerSheetShell
+        isOpen={dataSheetOpen}
+        onClose={() => setDataSheetOpen(false)}
+        titleId="test-data-panel-title"
+        closeLabel={t('buyerCabinet_collapse')}
+        className="profile-cabinet-sheet profile-cabinet-sheet--data"
+        footer={
+          dataSheetOpen && dataSheetStep === 'review' ? (
+            <div className="test-data-panel__step-nav test-data-panel__step-nav--footer">
+              <button
+                type="button"
+                className="test-data-panel__step-back"
+                onClick={() => setDataSheetStep('documents')}
+                aria-label={t('buyerData_sectionPassportAndId')}
+              >
+                <FiArrowLeft size={20} strokeWidth={2.4} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={`test-data-panel__save${
+                  shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
+                }`}
+                onClick={handleProfilePanelSaveClick}
+                disabled={
+                  dbUserLoading ||
+                  !resolvedNumericUserId ||
+                  profileFieldsLocked ||
+                  profileSaveAllLoading
+                }
+              >
+                {profileSaveAllLoading ? t('buyerData_saveInProgress') : t('buyerData_save')}
+              </button>
+            </div>
+          ) : null
+        }
+      >
+        <div
+          className="profile-data-experience profile-data-experience--fullscreen"
+          data-profile-sheet="data"
+        >
+          <div className="profile-data-hero">
+            <img
+              className="profile-data-hero__image"
+              src="/images/profile/data-hero-woman.png"
+              alt=""
+              decoding="async"
+            />
+          </div>
+          <div className="profile-data-panel">
+            <div className="profile-data-panel__intro">
+              <h2 id="test-data-panel-title" className="profile-data-panel__title">
+                {t('buyerData_profilePanelTitle')}
+              </h2>
+              <p className="profile-data-panel__lead">{t('buyerData_profileAutosaveHint')}</p>
+            </div>
+                <nav className="test-data-steps" aria-label="Шаги заполнения профиля">
+                  {[
+                    { id: 'contacts', label: 'Контакты' },
+                    { id: 'documents', label: 'Документы' },
+                    { id: 'review', label: 'Проверка' },
+                  ].map((step, index) => {
+                    const active = dataSheetStep === step.id
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        className={`test-data-steps__item${active ? ' test-data-steps__item--active' : ''}`}
+                        onClick={() => setDataSheetStep(step.id)}
+                      >
+                        <span className="test-data-steps__index">{index + 1}</span>
+                        <span className="test-data-steps__label">{step.label}</span>
+                      </button>
+                    )
+                  })}
+                </nav>
+                {dbUserLoading ? (
+                  <TestSheetSkeletonData />
+                ) : !resolvedNumericUserId ? (
+                  <p className="test-data-panel__hint">
+                    {t('buyerData_profileNotResolved')}
+                  </p>
+                ) : (
+                  <>
+                  <div className="test-data-panel__sections">
+                    {dataSheetStep === 'contacts' ? (
+                    <section className="test-data-panel__section" aria-labelledby="profile-section-main">
+                      <h4 id="profile-section-main" className="visually-hidden">
+                        {t('buyerData_sectionContacts')}
+                      </h4>
+                      <div className="test-data-blocks">
+                        {PROFILE_DATA_BLOCKS.map((block) => (
+                          <article
+                            key={block.id}
+                            className={`test-data-block${block.pair ? ' test-data-block--pair' : ''}`}
+                          >
+                            <div className="test-data-panel__grid">
+                              {PROFILE_MAIN_FIELDS.filter((field) => block.keys.includes(field.key)).map(
+                                ({ key, labelKey, multiline, type, autoComplete }) => (
+                          <div
+                            key={key}
+                            id={`test-profile-field-wrap-${key}`}
+                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
+                              savingField === key ? ' test-data-field--saving' : ''
+                            }${
+                              profileFieldSavedOk[key] && savingField !== key ? ' test-data-field--ok' : ''
+                            }${firstMissingKey === key ? ' test-data-field--next' : ''}`}
+                          >
+                            <label className="visually-hidden" htmlFor={`profile-field-${key}`}>
+                              {t(PROFILE_FIELD_I18N[key] || labelKey)}
+                            </label>
+                            <div
+                              className={`test-data-field__input-wrap${
+                                profileFieldSavedOk[key] && savingField !== key
+                                  ? ' test-data-field__input-wrap--saved'
+                                  : ''
+                              }${multiline ? ' test-data-field__input-wrap--textarea' : ''}`}
+                            >
+                              {key === 'phone' ? (
+                                <PhoneInput
+                                  variant="split"
+                                  autoDetectCountry
+                                  value={profileForm.phone || ''}
+                                  disabled={profileFieldsLocked}
+                                  placeholder={t('buyerData_labelPhone')}
+                                  onChange={handleProfileChange('phone')}
+                                  onBlur={handleProfileBlur('phone')}
+                                />
+                              ) : key === 'country' ? (
+                                <div ref={countryFieldRef} className="test-country-select">
+                                  {(() => {
+                                    const countrySaved = profileFieldSavedOk[key] && savingField !== key
+                                    return (
+                                  <button
+                                    id={`profile-field-${key}`}
+                                    type="button"
+                                    className={`test-data-field__input test-country-select__trigger${
+                                      countrySaved ? ' test-country-select__trigger--saved' : ''
+                                    }${profileForm[key] ? '' : ' test-country-select__trigger--placeholder'}`}
+                                    onClick={() => {
+                                      setCountryDropdownOpen((prev) => !prev)
+                                      setCountrySearchQuery('')
+                                    }}
+                                    disabled={profileFieldsLocked}
+                                    aria-haspopup="listbox"
+                                    aria-expanded={countryDropdownOpen}
+                                  >
+                                    <span className="test-country-select__value">
+                                      {profileForm[key] ? profileForm[key] : t('buyerData_placeholderCountry')}
+                                    </span>
+                                    <span className="test-country-select__chevron" aria-hidden>
+                                      <FiChevronDown size={18} />
+                                    </span>
+                                  </button>
+                                    )
+                                  })()}
+
+                                  {countryDropdownOpen ? (
+                                    <div className="test-country-select__menu" role="listbox" aria-label="Список стран">
+                                      <input
+                                        type="text"
+                                        className="test-country-select__search"
+                                        placeholder={t('buyerData_countrySearchPlaceholder')}
+                                        value={countrySearchQuery}
+                                        onChange={(e) => setCountrySearchQuery(e.target.value)}
+                                        autoFocus
+                                      />
+                                      {filteredCountries.map((country) => {
+                                        const selected = profileForm.country === country.name
+                                        return (
+                                          <button
+                                            key={country.code}
+                                            type="button"
+                                            className={`test-country-select__option${
+                                              selected ? ' test-country-select__option--selected' : ''
+                                            }`}
+                                            onClick={() => handleCountrySelect(country.name)}
+                                            role="option"
+                                            aria-selected={selected}
+                                          >
+                                            <span className="test-country-select__option-flag" aria-hidden>
+                                              {country.flag}
+                                            </span>
+                                            <span className="test-country-select__option-name">{country.name}</span>
+                                          </button>
+                                        )
+                                      })}
+                                      {filteredCountries.length === 0 ? (
+                                        <p className="test-country-select__empty">{t('countryNoResults')}</p>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : multiline ? (
+                                <textarea
+                                  id={`profile-field-${key}`}
+                                  className="test-data-field__input test-data-field__input--textarea"
+                                  rows={1}
+                                  value={profileForm[key] ?? ''}
+                                  onChange={handleProfileChange(key)}
+                                  onBlur={handleProfileBlur(key)}
+                                  autoComplete={autoComplete}
+                                  spellCheck={false}
+                                  disabled={profileFieldsLocked}
+                                  placeholder={t(PROFILE_FIELD_I18N[key] || labelKey)}
+                                />
+                              ) : (
+                                <input
+                                  id={`profile-field-${key}`}
+                                  className="test-data-field__input"
+                                  type={type || 'text'}
+                                  value={profileForm[key] ?? ''}
+                                  onChange={handleProfileChange(key)}
+                                  onBlur={handleProfileBlur(key)}
+                                  autoComplete={autoComplete}
+                                  spellCheck={false}
+                                  disabled={profileFieldsLocked}
+                                  placeholder={t(PROFILE_FIELD_I18N[key] || labelKey)}
+                                />
+                              )}
+                              <span
+                                className={`test-data-field__saved${
+                                  profileFieldSavedOk[key] && savingField !== key
+                                    ? ' test-data-field__saved--visible'
+                                    : ''
+                                }`}
+                                role="img"
+                                aria-label="Сохранено"
+                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
+                              >
+                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
+                              </span>
+                            </div>
+                          </div>
+                                ),
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                      <div className="test-data-panel__step-nav">
+                        <button
+                          type="button"
+                          className="test-data-panel__step-next"
+                          onClick={() => setDataSheetStep('documents')}
+                        >
+                          Далее
+                          <FiArrowRight size={16} aria-hidden />
+                        </button>
+                      </div>
+                    </section>
+                    ) : null}
+
+                    {dataSheetStep === 'documents' ? (
+                    <section
+                      className="test-data-panel__section test-data-panel__section--passport"
+                      aria-labelledby="profile-section-passport"
+                    >
+                      <h4 id="profile-section-passport" className="visually-hidden">
+                        {t('buyerData_sectionPassportAndId')}
+                      </h4>
+                      <div className="test-data-blocks">
+                        <article className="test-data-block test-data-block--scan">
+                          <button
+                            type="button"
+                            className="test-passport-ocr-card"
+                            disabled={profileFieldsLocked || isRecognizingPassport || isSavingExtractPatch}
+                            onClick={() => passportInputRef.current?.click()}
+                          >
+                            <img
+                              className="test-passport-ocr-card__image"
+                              src="/images/profile/passport-scan-illustration.png"
+                              alt=""
+                              decoding="async"
+                            />
+                            <span className="test-passport-ocr-card__copy">
+                              <strong>
+                                {isRecognizingPassport
+                                  ? t('buyerData_recognizing')
+                                  : isSavingExtractPatch
+                                    ? t('buyerData_saveInProgress')
+                                    : t('buyerData_recognizePassport')}
+                              </strong>
+                              <span>{t('buyerData_passportRecognizeHint')}</span>
+                              <span className="test-passport-ocr-card__cta">
+                                {isRecognizingPassport || isSavingExtractPatch ? (
+                                  <span className="test-spinner" />
+                                ) : (
+                                  <FiCamera size={16} strokeWidth={2.2} aria-hidden />
+                                )}
+                                {t('buyerData_passportScanCta')}
+                              </span>
+                            </span>
+                          </button>
+                          <input
+                            ref={passportInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="test-passport-file-input"
+                            aria-hidden
+                            tabIndex={-1}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              await handlePassportRecognition(file)
+                              e.target.value = ''
+                            }}
+                          />
+                          {passportPhotoHints.length > 0 && (
+                            <div className="test-passport-hints" role="status" aria-live="polite">
+                              {passportPhotoHints.map((hint, idx) => (
+                                <p key={`${hint}-${idx}`}>{hint}</p>
+                              ))}
+                            </div>
+                          )}
+                        </article>
+
+                        <article className="test-data-block">
+                          <div
+                            className={`test-data-panel__grid test-data-panel__grid--passport${
+                              isSpainCountry(profileForm.country)
+                                ? ''
+                                : ' test-data-panel__grid--passport-stacked'
+                            }`}
+                          >
+                            {PROFILE_PASSPORT_FIELDS.map(({ key, labelKey, type, autoComplete }) => (
+                          <div
+                            key={key}
+                            id={`test-profile-field-wrap-${key}`}
+                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
+                              savingField === key ? ' test-data-field--saving' : ''
+                            }${
+                              profileFieldSavedOk[key] && savingField !== key ? ' test-data-field--ok' : ''
+                            }${firstMissingKey === key ? ' test-data-field--next' : ''}`}
+                          >
+                            <label className="visually-hidden" htmlFor={`profile-field-${key}`}>
+                              {key === 'identification_number'
+                                ? t(getIdentificationLabelKeyByCountry(profileForm.country))
+                                : t(PROFILE_FIELD_I18N[key] || labelKey)}
+                            </label>
+                            <div
+                              className={`test-data-field__input-wrap${
+                                profileFieldSavedOk[key] && savingField !== key
+                                  ? ' test-data-field__input-wrap--saved'
+                                  : ''
+                              }`}
+                            >
+                              <input
+                                id={`profile-field-${key}`}
+                                className="test-data-field__input"
+                                type={type || 'text'}
+                                value={profileForm[key] ?? ''}
+                                onChange={handleProfileChange(key)}
+                                onBlur={handleProfileBlur(key)}
+                                autoComplete={autoComplete}
+                                spellCheck={false}
+                                disabled={profileFieldsLocked}
+                                placeholder={
+                                  key === 'identification_number'
+                                    ? t(getIdentificationLabelKeyByCountry(profileForm.country))
+                                    : t(PROFILE_FIELD_I18N[key] || labelKey)
+                                }
+                              />
+                              <span
+                                className={`test-data-field__saved${
+                                  profileFieldSavedOk[key] && savingField !== key
+                                    ? ' test-data-field__saved--visible'
+                                    : ''
+                                }`}
+                                role="img"
+                                aria-label="Сохранено"
+                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
+                              >
+                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                          </div>
+                        </article>
+                      </div>
+                      <div className="test-data-panel__step-nav">
+                        <button
+                          type="button"
+                          className="test-data-panel__step-back"
+                          onClick={() => setDataSheetStep('contacts')}
+                          aria-label={t('buyerData_sectionContacts')}
+                        >
+                          <FiArrowLeft size={20} strokeWidth={2.4} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          className="test-data-panel__step-next"
+                          onClick={() => setDataSheetStep('review')}
+                        >
+                          Далее
+                          <FiArrowRight size={16} aria-hidden />
+                        </button>
+                      </div>
+                    </section>
+                    ) : null}
+
+                    {dataSheetStep === 'review' ? (
+                    <section className="test-data-panel__section" aria-labelledby="profile-section-review">
+                      <h4 id="profile-section-review" className="visually-hidden">
+                        {t('buyerData_profileCompletionTitle')}
+                      </h4>
+                      <div className="test-data-blocks">
+                        {PROFILE_REVIEW_BLOCKS.map((block) => {
+                          const blockRows = profileCompletionRows.filter((row) =>
+                            block.keys.includes(row.key),
+                          )
+                          if (!blockRows.length) return null
+                          return (
+                            <article
+                              key={block.id}
+                              className={`test-data-block${block.pair ? ' test-data-block--pair' : ''}`}
+                            >
+                              <ul className="test-data-review-list">
+                                {blockRows.map((row) => {
+                                  const rawValue = profileForm[row.key]
+                                  const displayValue =
+                                    rawValue && String(rawValue).trim()
+                                      ? String(rawValue).trim()
+                                      : '—'
+                                  const rowClass = `test-data-review-list__row${
+                                    row.filled
+                                      ? ' test-data-review-list__row--done'
+                                      : ' test-data-review-list__row--missing'
+                                  }`
+                                  return (
+                                    <li key={row.key}>
+                                      <button
+                                        type="button"
+                                        className={rowClass}
+                                        onClick={() => handleProfileCompletionRowActivate(row.key)}
+                                      >
+                                        {row.filled ? (
+                                          <FiCheck size={16} aria-hidden />
+                                        ) : (
+                                          <span className="test-data-review-list__dot" aria-hidden />
+                                        )}
+                                        <span className="test-data-review-list__copy">
+                                          <span className="test-data-review-list__label">{row.label}</span>
+                                          <strong className="test-data-review-list__value">
+                                            {displayValue}
+                                          </strong>
+                                        </span>
+                                      </button>
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            </article>
+                          )
+                        })}
+                      </div>
+                    </section>
+                    ) : null}
+                  </div>
+                  </>
+                )}
+          </div>
+        </div>
+      </BuyerSheetShell>
+
+      <BuyerSheetShell
+        isOpen={historySheetOpen}
+        onClose={() => setHistorySheetOpen(false)}
+        titleId="profile-history-sheet-title"
+        closeLabel={t('buyerCabinet_collapse')}
+        className="profile-cabinet-sheet profile-cabinet-sheet--history"
+      >
+        <Suspense fallback={<TestSheetSkeletonHistory />}>
+          <ProfileHistoryExperience
+            embedded
+            sections={historySections}
+            loading={historyLoading}
+            query={historySearchQuery}
+            onQueryChange={setHistorySearchQuery}
+            onClose={() => setHistorySheetOpen(false)}
+            locale={locale}
+            onOpenPurchased={(item) => {
+              setSelectedPurchasedProperty(item)
+              setPurchaseDrawerView('details')
+            }}
+          />
+        </Suspense>
+      </BuyerSheetShell>
+
+      <BuyerSheetShell
+        isOpen={subscriptionSheetOpen}
+        onClose={() => setSubscriptionSheetOpen(false)}
+        titleId="test-subscription-panel-title"
+        closeLabel={t('buyerCabinet_collapse')}
+        className="profile-cabinet-sheet profile-cabinet-sheet--subscriptions"
+      >
+        <div
+          className="profile-subscriptions-experience profile-subscriptions-experience--fullscreen"
+          data-profile-sheet="subscriptions"
+        >
+          <div className="profile-subscriptions-hero">
+            <img
+              className="profile-subscriptions-hero__image"
+              src="/images/profile/subscriptions-hero-premium.png"
+              alt=""
+              decoding="async"
+            />
+          </div>
+          <div className="profile-subscriptions-panel">
+            <div className="profile-subscriptions-panel__intro">
+              <h2 id="test-subscription-panel-title" className="profile-subscriptions-panel__title">
+                {t('buyerCabinet_cardSubscriptionsTitle')}
+              </h2>
+              <p className="profile-subscriptions-panel__lead">
+                Выберите тариф — доступ к торгам, аналитике и приоритетной поддержке.
+              </p>
+            </div>
+            {subscriptionSheetLoading ? (
+              <TestSheetSkeletonSubscription />
+            ) : (
+              <div className="test-subscription-pricing-wrap">
+                <Suspense fallback={<TestSheetSkeletonSubscription />}>
+                  <OwnerPricingCards
+                    variant="light"
+                    plans={buyerSubscriptionPlans}
+                    planDetails={buyerSubscriptionPlanDetails}
+                    taglines={buyerSubscriptionTaglines}
+                    planOrder={['starter', 'pro', 'vip']}
+                    featuredPlanId="pro"
+                    yearlyDiscount={0.25}
+                    activePlanId={subscriptionProfileVisual || 'starter'}
+                    loading={subscriptionUpgradeLoading}
+                    monthlyLabel={t('buyerPricing_tabMonthly')}
+                    yearlyLabel={t('buyerPricing_tabYearly')}
+                    perMonthSuffix={t('buyerPricing_perMonth')}
+                    activeCtaLabel={t('buyerCabinet_subStatus_active')}
+                    popularLabel={t('buyerPricing_badgeBest')}
+                    onSelectPlan={handleSubscriptionPlanSubscribe}
+                  />
+                </Suspense>
+              </div>
+            )}
+          </div>
+        </div>
+      </BuyerSheetShell>
+
+      <BuyerSheetShell
+        isOpen={bookingsSheetOpen}
+        onClose={() => setBookingsSheetOpen(false)}
+        titleId="profile-bookings-sheet-title"
+        closeLabel={t('buyerCabinet_collapse')}
+        className="profile-cabinet-sheet profile-cabinet-sheet--bookings"
+      >
+        <Suspense fallback={<TestSheetSkeletonBookings />}>
+          <ProfileBookingsExperience
+            embedded
+            rows={visibleBookingsSheetRows}
+            loading={bookingsSheetLoading}
+            locale={locale}
+            moneyLocale={moneyLocale}
+            onClose={() => setBookingsSheetOpen(false)}
+            onCheckIn={(booking) => {
+              setBookingsSheetOpen(false)
+              setCheckInBookingId(booking.id)
+            }}
+            onCancel={setTestDriveCancelBooking}
+          />
+        </Suspense>
+      </BuyerSheetShell>
+
 
       {showProfileCompleteCelebration || subscriptionCheckoutCelebration ? (
         <>
@@ -3252,20 +3545,7 @@ function TestPage() {
                   }
                   gravity={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.11 : 0.1}
                   wind={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.03 : 0.02}
-                  colors={[
-                    '#0099A9',
-                    '#0099A9',
-                    '#33adbb',
-                    '#a78bfa',
-                    '#8b5cf6',
-                    '#f59e0b',
-                    '#ec4899',
-                    '#3b82f6',
-                    '#ef4444',
-                    '#06b6d4',
-                    '#f97316',
-                    '#fbbf24',
-                  ]}
+                  colors={PROFILE_CONFETTI_COLORS}
                   confettiSource={{
                     x: 0,
                     y: 0,
@@ -3284,7 +3564,7 @@ function TestPage() {
                     numberOfPieces={420}
                     gravity={0.14}
                     wind={-0.025}
-                    colors={['#a78bfa', '#8b5cf6', '#0099A9', '#33adbb', '#fbbf24', '#f472b6']}
+                    colors={PROFILE_CONFETTI_COLORS}
                     confettiSource={{
                       x: Math.max(0, windowSize.width * 0.15),
                       y: windowSize.height * 0.85,
@@ -3369,11 +3649,6 @@ function TestPage() {
         </>
       ) : null}
 
-      <ServiceQuickLinksTour
-        active={showServiceQuickLinksTour}
-        onDismiss={handleServiceQuickLinksTourDismiss}
-        groupRef={directionSummariesGridRef}
-      />
 
       {isManagerChatOpen ? (
         <div className="test-manager-chat-modal-root" role="dialog" aria-modal="true" aria-label={t('chatManagerTitle')}>

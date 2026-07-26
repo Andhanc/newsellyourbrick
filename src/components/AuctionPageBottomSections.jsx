@@ -1,11 +1,11 @@
 import AuctionCategoryCtaCards from './AuctionCategoryCtaCards'
-import FAQ from './FAQ'
+import MobileDiscoverFaq from './MobileDiscoverFaq'
 
-function AuctionPageBottomSections({ onContactClick }) {
+function AuctionPageBottomSections() {
   return (
     <>
       <AuctionCategoryCtaCards />
-      <FAQ onContactClick={onContactClick} />
+      <MobileDiscoverFaq idPrefix="auction-md-faq" />
     </>
   )
 }

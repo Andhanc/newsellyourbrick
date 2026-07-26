@@ -12,7 +12,6 @@ import './about-luxury.css';
 const ASSETS = {
   hero: publicAsset('images/sellyourbrick/about-corporate/overview-hero-building.png'),
   analyticsTeam: publicAsset('images/sellyourbrick/about-corporate/analytics-team.png'),
-  workshopTeam: publicAsset('images/sellyourbrick/about-corporate/workshop-team.png'),
   botanical: publicAsset('images/sellyourbrick/about-corporate/botanical-leaves.png'),
   meeting: publicAsset('images/sellyourbrick/about-corporate/enterprise-meeting.png'),
   blueLoop: publicAsset('images/sellyourbrick/about-corporate/blue-glass-loop.png'),
@@ -23,13 +22,11 @@ const analyticsCards = [
     label: 'Всего инвестировано',
     eyebrow: 'капитал',
     value: '€41.5млн',
-    image: ASSETS.analyticsTeam,
   },
   {
     label: 'Возвращено инвесторам',
     eyebrow: 'выплаты',
     value: '€24млн',
-    image: ASSETS.workshopTeam,
   },
 ];
 
@@ -73,7 +70,11 @@ const partnerNotes = [
 
 function ArrowBadge({ className = '', label = 'Подробнее' }: { className?: string; label?: string }) {
   return (
-    <span className={`al-arrow-badge ${className}`} aria-label={label}>
+    <span
+      className={`al-arrow-badge ${className}`}
+      aria-hidden={label ? undefined : true}
+      aria-label={label || undefined}
+    >
       <HiArrowUpRight aria-hidden />
     </span>
   );
@@ -184,28 +185,31 @@ export default function About() {
       <main>
         <section className="al-hero" id="about-intro" aria-labelledby="about-hero-title">
           <div className="al-shell al-hero__grid">
-            <Reveal className="al-hero__copy">
+            <Reveal className="al-hero__visual" delay={0}>
+              <img src={ASSETS.hero} alt="Современный жилой комплекс SellYourBrick" />
+              <div className="al-hero__shade" aria-hidden />
+              <ArrowBadge className="al-hero__arrow" />
+            </Reveal>
+
+            <Reveal className="al-hero__copy" delay={80}>
               <div className="al-hero__title-row">
+                <p className="al-hero__eyebrow">О платформе</p>
                 <h1 id="about-hero-title">
-                  <span className="al-hero__title-lead">О платформе</span>
-                  <br />
-                  <span className="al-hero__title-tail">SellYourBrick</span>
+                  <span className="al-hero__brand">
+                    <span>Sell</span>
+                    <span className="al-hero__brand-accent">Your</span>
+                    <span>Brick</span>
+                  </span>
                 </h1>
-                <span className="al-pill">Инвестиции</span>
+                <span className="al-pill al-hero__pill">Инвестиции</span>
               </div>
               <div className="al-hero__subcopy">
                 <h2>Недвижимость без лишних барьеров</h2>
                 <p>
-                  SellYourBrick — инвестиционная платформа, которая открывает доступ к премиальной
-                  недвижимости и обеспечивает стабильный доход с максимальной прозрачностью на каждом
-                  этапе сделки.
+                  Открываем доступ к премиальной недвижимости и сопровождаем сделку с прозрачными
+                  условиями на каждом этапе.
                 </p>
               </div>
-            </Reveal>
-
-            <Reveal className="al-hero__visual" delay={120}>
-              <img src={ASSETS.hero} alt="Современный жилой комплекс SellYourBrick" />
-              <ArrowBadge className="al-hero__arrow" />
             </Reveal>
           </div>
         </section>
@@ -224,7 +228,7 @@ export default function About() {
             <Reveal className="al-analytics__cards" delay={90}>
               {analyticsCards.map((card) => (
                 <article className="al-analytics-card" key={card.label}>
-                  <img src={card.image} alt="" aria-hidden />
+                  <ArrowBadge className="al-analytics-card__mark" label="" />
                   <div>
                     <span>{card.label}</span>
                     <small>{card.eyebrow}</small>

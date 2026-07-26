@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
@@ -173,6 +174,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   if (!isOpen) return null
 
   const isHeaderWizard = authEntryVariant === 'header_wizard'
+  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
   const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
   /** Шаг 1 (роль) без цветовой темы buyer/seller; шаг 2 и обычная модалка — как раньше */
   const tintedByRole =
@@ -773,13 +775,34 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     }
   }
 
-  return (
+  return createPortal(
     <>
       {/* Скрываем LoginModal когда открыт EmailVerificationModal */}
       {!showEmailVerificationModal && !showBuyerSellerLinkConfirm && (
-        <div className="login-modal-overlay" onClick={onClose}>
+        <div
+          className={[
+            'login-modal-overlay',
+            isRoleStep ? 'login-modal-overlay--role-drawer' : '',
+            showAuthForm ? 'login-modal-overlay--form-screen' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={onClose}
+        >
           <div
-            className={`login-modal${loginModalTintClass ? ` ${loginModalTintClass}` : ''}`}
+            className={[
+              'login-modal',
+              loginModalTintClass,
+              isRoleStep ? 'login-modal--role-drawer' : '',
+              showAuthForm ? 'login-modal--form-screen' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={
+              isRoleStep ? 'login-modal-wizard-role-title' : 'login-modal-heading'
+            }
             onClick={(e) => e.stopPropagation()}
           >
 
@@ -817,8 +840,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           <FiX size={24} />
         </button>
 
-        {isHeaderWizard && wizardPhase === 'role' && (
+        {isRoleStep && (
           <div className="login-modal__wizard login-modal__wizard--role">
+            <div className="login-modal__drawer-handle" aria-hidden="true">
+              <span />
+            </div>
             <div className="login-modal__wizard-head">
               <p className="login-modal__step-badge" aria-hidden>
                 {t('authWizardStep1Badge')}
@@ -840,8 +866,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
                   <FiUser />
                 </span>
-                <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
-                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
+                <span className="login-modal__wizard-tile-copy">
+                  <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
+                  <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -854,8 +882,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
                   <FiShoppingBag />
                 </span>
-                <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
-                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+                <span className="login-modal__wizard-tile-copy">
+                  <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
+                  <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+                </span>
               </button>
             </div>
           </div>
@@ -1328,7 +1358,8 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           />
         </Suspense>
       ) : null}
-    </>
+    </>,
+    document.body,
   )
 }
 

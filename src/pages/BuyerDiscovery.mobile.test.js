@@ -33,7 +33,8 @@ test('favorites behaves like a private shortlist with pagination and guided help
   assert.match(favorites, /paginateBuyerCatalogue\(favoriteAuctions, currentPage\)/)
   assert.match(favorites, /<ListingPagePagination/)
   assert.match(favorites, /<BuyerSheetShell/)
-  assert.match(favorites, /Подборка для решения/)
+  assert.match(favorites, /Понравилось/)
+  assert.doesNotMatch(favorites, /Подборка для решения/)
 })
 
 test('map is a mobile canvas with a stateful results sheet and guided filters drawer', () => {

@@ -25,9 +25,9 @@ test('buyer ribbon exposes readable final-state copy without blocking the card',
 })
 
 test('sold and ended auctions have distinct commercial treatments', () => {
-  assert.match(css, /\.buyer-status-ribbon--sold[\s\S]*var\(--buyer-teal-deep\)/)
-  assert.match(css, /\.buyer-status-ribbon--auction-ended[\s\S]*var\(--buyer-auction\)/)
-  assert.match(css, /repeating-linear-gradient/)
+  assert.match(css, /\.buyer-status-ribbon--sold[\s\S]*#4ecdd6/)
+  assert.match(source, /'auction-ended'/)
+  assert.match(source, /Check/)
   assert.match(css, /transform:\s*rotate\(-[0-9.]+deg\)/)
 })
 

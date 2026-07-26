@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowDown } from 'lucide-react'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 import './Hero.css'
 
 function measureCopyHeight(element) {
@@ -36,7 +37,7 @@ function measureCopyHeight(element) {
 
 const MOBILE_BREAKPOINT_PX = 768
 
-const AUCTION_HERO_BG = '/images/sellyourbrick/about/about-category-auction.jpg'
+const AUCTION_HERO_BG = '/images/sellyourbrick/about/mission-villa.jpg'
 
 const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
   const { t } = useTranslation()
@@ -133,6 +134,13 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
     setCollapsingIndex((prev) => (prev === index ? null : prev))
   }
 
+  const scrollToAuctionCatalog = () => {
+    const target =
+      document.getElementById('properties-grid') ||
+      document.querySelector('.home-list-wrap')
+    if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
+  }
+
   return (
     <section
       className={['hero', auctionScene && 'hero--auction-scene'].filter(Boolean).join(' ')}
@@ -141,27 +149,35 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
         <>
           <img className="hero--auction-scene__bg" src={AUCTION_HERO_BG} alt="" aria-hidden />
           <div className="hero--auction-scene__overlay" aria-hidden />
+          <div className="hero-auction-mobile__brand" aria-label="SellYourBrick">
+            <span className="hero-auction-mobile__brand-text">
+              <span className="hero-auction-mobile__brand-word">Sell</span>
+              <span className="hero-auction-mobile__brand-word hero-auction-mobile__brand-word--accent">
+                Your
+              </span>
+              <span className="hero-auction-mobile__brand-word">Brick</span>
+            </span>
+          </div>
         </>
       ) : null}
       <div className="hero-container">
         {auctionScene ? (
           <div className="hero-auction-mobile">
-            <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
-            <h1>{t('auctionSectionTitle')}</h1>
-            <p>{t('auctionSectionSubtitle')}</p>
-            <button
-              type="button"
-              className="hero-auction-mobile__cta"
-              onClick={() => {
-                document.getElementById('properties-grid')?.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start',
-                })
-              }}
-            >
-              <span>{t('auctionSectionCta')}</span>
-              <ArrowDown size={18} strokeWidth={2.2} aria-hidden />
-            </button>
+            <div className="hero-auction-mobile__copy">
+              <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
+              <h1 className="hero-auction-mobile__title">{t('auctionSectionTitle')}</h1>
+              <p className="hero-auction-mobile__lead">{t('auctionSectionSubtitle')}</p>
+              <button
+                type="button"
+                className="hero-auction-mobile__cta"
+                onClick={scrollToAuctionCatalog}
+              >
+                <span>{t('auctionSectionCta')}</span>
+                <span className="hero-auction-mobile__cta-icon" aria-hidden>
+                  <ArrowDown size={18} strokeWidth={2.4} />
+                </span>
+              </button>
+            </div>
           </div>
         ) : null}
         {auctionScene ? (
@@ -239,6 +255,16 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
           })}
         </div>
       </div>
+      {auctionScene ? (
+        <button
+          type="button"
+          className="hero-auction-scene__scroll"
+          onClick={scrollToAuctionCatalog}
+          aria-label={t('auctionSectionCta')}
+        >
+          <span className="hero-auction-scene__scroll-arrow" aria-hidden="true" />
+        </button>
+      ) : null}
     </section>
   )
 }

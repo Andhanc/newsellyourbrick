@@ -339,7 +339,10 @@ function SellerAboutSection() {
 
       <div className="seller-about__content">
         <span className="seller-about__label">О SellYourBrick</span>
-        <h2 id="seller-about-title">Мы делаем всё, чтобы ваш объект продавался быстрее</h2>
+        <h2 id="seller-about-title">
+          Мы делаем всё, чтобы ваш{' '}
+          <span className="seller-about__title-accent">объект</span> продавался быстрее
+        </h2>
         <p className="seller-about__lead">
           SellYourBrick помогает продавцу пройти путь от подготовки лота до переговоров без таблиц,
           потерянных файлов и бесконечных чатов с покупателями.

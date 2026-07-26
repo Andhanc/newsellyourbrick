@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { getVisiblePaginationItems } from '../utils/sharesListing'
 import './ListingPagePagination.css'
 
 export default function ListingPagePagination({ currentPage, totalPages, onPageChange }) {
   const { t } = useTranslation()
 
   if (totalPages <= 1) return null
+
+  const pageItems = getVisiblePaginationItems(currentPage, totalPages)
 
   return (
     <nav className="auction-desktop-pagination listing-page-pagination" aria-label={t('auctionPaginationLabel')}>
@@ -19,19 +22,29 @@ export default function ListingPagePagination({ currentPage, totalPages, onPageC
         <ChevronLeft size={18} aria-hidden />
       </button>
       <div className="auction-desktop-pagination__pages">
-        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-          <button
-            key={page}
-            type="button"
-            className={`auction-desktop-pagination__page${
-              page === currentPage ? ' auction-desktop-pagination__page--active' : ''
-            }`}
-            onClick={() => onPageChange(page)}
-            aria-current={page === currentPage ? 'page' : undefined}
-          >
-            {page}
-          </button>
-        ))}
+        {pageItems.map((item, index) =>
+          item.type === 'ellipsis' ? (
+            <span
+              key={`ellipsis-${index}`}
+              className="listing-page-pagination__ellipsis"
+              aria-hidden
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={item.value}
+              type="button"
+              className={`auction-desktop-pagination__page${
+                item.value === currentPage ? ' auction-desktop-pagination__page--active' : ''
+              }`}
+              onClick={() => onPageChange(item.value)}
+              aria-current={item.value === currentPage ? 'page' : undefined}
+            >
+              {item.value}
+            </button>
+          ),
+        )}
       </div>
       <button
         type="button"

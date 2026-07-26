@@ -1,18 +1,18 @@
 :root {
   --buyer-ink: #050505;
-  --buyer-teal: #0099a9;
-  --buyer-teal-deep: #006f7b;
-  --buyer-mint: #eaf8f5;
-  --buyer-warm: #faf8f5;
-  --buyer-cloud: #f3f6f5;
+  --buyer-teal: #4ecdd6;
+  --buyer-teal-deep: #3bc0cb;
+  --buyer-mint: #dff6f8;
+  --buyer-warm: #f7faf9;
+  --buyer-cloud: #eef6f7;
   --buyer-auction: #f4d63e;
   --buyer-white: #ffffff;
   --buyer-danger: #c7473a;
-  --buyer-success: #167568;
+  --buyer-success: #2eafb9;
   --buyer-text-muted: #66706e;
   --buyer-line: rgba(5, 5, 5, 0.1);
-  --buyer-font-display: 'Montserrat', 'Inter', system-ui, sans-serif;
-  --buyer-font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --buyer-font-display: 'Montserrat', system-ui, sans-serif;
+  --buyer-font-body: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --buyer-radius-sm: 12px;
   --buyer-radius-md: 18px;
   --buyer-radius-lg: 26px;

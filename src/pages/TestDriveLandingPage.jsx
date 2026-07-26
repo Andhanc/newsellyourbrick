@@ -1,20 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  FiCalendar,
   FiChevronDown,
   FiCheckCircle,
   FiHeart,
   FiHome,
-  FiMapPin,
-  FiMenu,
   FiSearch,
   FiShield,
   FiSliders,
-  FiSun,
   FiUmbrella,
-  FiUser,
-  FiX,
 } from 'react-icons/fi'
 import { FaStar } from 'react-icons/fa'
 import Header from '../components/Header'
@@ -40,12 +34,14 @@ import {
   sortTestDriveListings,
 } from './testDriveListingData'
 import './TestDriveLandingPage.css'
+import '../components/PropertyList.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/test-drive/hero-resort.png')
 const HERO_MOBILE_IMAGE = publicAsset('images/test-drive/hero-resort-mobile.png')
+const TEST_DRIVE_EMPTY_IMAGE = publicAsset('images/test-drive-empty-illustration.png')
 const TEST_DRIVE_CARD_IMAGE_FALLBACK = publicAsset(
   'images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
 )
@@ -235,31 +231,6 @@ const TestDriveLandingPage = () => {
           </picture>
           <div className="test-drive-hero__shade" aria-hidden />
           <div className="test-drive-hero__content">
-            <nav className="test-drive-hero__utilities" aria-label="Быстрые действия">
-              <Link
-                to="/sections"
-                className="test-drive-hero__utility test-drive-hero__utility--menu"
-                aria-label="Открыть разделы"
-              >
-                <FiMenu size={20} aria-hidden />
-              </Link>
-              <button
-                type="button"
-                className="test-drive-hero__search-capsule"
-                onClick={scrollToCatalog}
-              >
-                <FiSearch size={18} aria-hidden />
-                <span>Поиск тест-драйва</span>
-              </button>
-              <Link
-                to="/profile/bookings"
-                className="test-drive-hero__utility test-drive-hero__utility--profile"
-                aria-label="Мои брони"
-              >
-                <FiUser size={19} aria-hidden />
-              </Link>
-            </nav>
-
             <div className="test-drive-hero__copy test-drive-hero__copy--desktop">
               <h1>Тест-драйв недвижимости</h1>
               <p className="test-drive-hero__subtitle">Маленький отпуск перед покупкой</p>
@@ -273,29 +244,46 @@ const TestDriveLandingPage = () => {
               <p className="test-drive-hero__eyebrow">Тест-драйв недвижимости · Коста-дель-Соль</p>
             </div>
 
-            <div className="test-drive-hero-card">
-              <div className="test-drive-hero-card__head">
-                <div>
-                  <strong>Ваш тест-драйв</strong>
+            <div
+              className="test-drive-hero-card test-drive-hero-ticket"
+              aria-label="Тест-драйв"
+            >
+              <div className="test-drive-hero-ticket__stub">
+                <strong className="test-drive-hero-ticket__title">Ваш тест-драйв</strong>
+                <p className="test-drive-hero-ticket__lead">
+                  Поживите в объекте до сделки — без обязательств купить.
+                </p>
+
+                <ol className="test-drive-hero-ticket__steps" aria-label="Как это работает">
+                  <li>Выберите</li>
+                  <li>Поживите</li>
+                  <li>Решите</li>
+                </ol>
+
+                <div className="test-drive-hero-ticket__trust" aria-label="Преимущества">
+                  <span>
+                    <FiCheckCircle size={14} aria-hidden /> Без обязательств
+                  </span>
+                  <span>
+                    <FiShield size={14} aria-hidden /> Проверенные объекты
+                  </span>
                 </div>
               </div>
-              <div className="test-drive-hero-card__details">
-                <div>
-                  <span className="test-drive-hero-card__icon" aria-hidden><FiMapPin size={18} /></span>
-                  <strong>Марбелья, Испания</strong>
-                </div>
-                <div>
-                  <span className="test-drive-hero-card__icon" aria-hidden><FiCalendar size={18} /></span>
-                  <strong>12 авг — 18 авг</strong>
-                </div>
+              <div className="test-drive-hero-ticket__perforation" aria-hidden>
+                <span />
               </div>
-              <div className="test-drive-hero-card__trust" aria-label="Преимущества">
-                <span><FiCheckCircle size={14} aria-hidden /> Без обязательств</span>
-                <span><FiShield size={14} aria-hidden /> Проверенные объекты</span>
+              <div className="test-drive-hero-ticket__tear">
+                <button
+                  type="button"
+                  className="test-drive-hero-card__action"
+                  onClick={scrollToCatalog}
+                >
+                  Найти свободные объекты
+                </button>
+                <Link to="/profile/bookings" className="test-drive-hero-ticket__secondary">
+                  Мои брони
+                </Link>
               </div>
-              <button type="button" className="test-drive-hero-card__action" onClick={scrollToCatalog}>
-                Найти свободные объекты
-              </button>
             </div>
           </div>
         </section>
@@ -351,32 +339,65 @@ const TestDriveLandingPage = () => {
                 </div>
               </div>
 
-              <div className="test-drive-toolbar">
-                <label className="test-drive-search" aria-label="Поиск по объекту или локации">
-                  <FiSearch size={19} aria-hidden />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Поиск по объекту или локации"
-                  />
-                  {query ? (
-                    <button type="button" onClick={() => setQuery('')} aria-label="Очистить поиск">
-                      <FiX size={17} aria-hidden />
+              <div className="auction-listing-search-stack auction-listing-search-stack--compact">
+                <div className="search-filters-bar search-filters-bar--auction-mobile">
+                  <form
+                    className="debts-listing-search"
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                    }}
+                  >
+                    <input
+                      className="debts-listing-search__input"
+                      type="search"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Поиск по объекту или локации"
+                      aria-label="Поиск по объекту или локации"
+                    />
+                    {query ? (
+                      <button
+                        type="button"
+                        className="debts-listing-search__clear"
+                        onClick={() => setQuery('')}
+                        aria-label="Очистить поиск"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                    <button type="submit" className="debts-listing-search__go" aria-label="Найти">
+                      <FiSearch aria-hidden />
                     </button>
-                  ) : null}
-                </label>
+                  </form>
 
-                <button
-                  type="button"
-                  className={`test-drive-filters-btn${hasActiveFilters ? ' is-active' : ''}`}
-                  onClick={() => setFiltersDrawerOpen(true)}
-                  aria-label="Фильтры"
-                  aria-expanded={filtersDrawerOpen}
-                >
-                  <FiSliders size={18} aria-hidden />
-                  <span className="test-drive-filters-btn__label">Фильтры</span>
-                  {hasActiveFilters ? <span className="test-drive-filters-btn__dot" aria-hidden /> : null}
-                </button>
+                  <div className="filters-and-types-grid">
+                    <button
+                      type="button"
+                      className={`filters-button${hasActiveFilters ? ' is-active' : ''}`}
+                      aria-expanded={filtersDrawerOpen}
+                      aria-label="Фильтры"
+                      onClick={() => setFiltersDrawerOpen(true)}
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                      </svg>
+                      <span className="filters-button__label">Фильтры</span>
+                      {activeFilterCount > 0 ? (
+                        <span className="filters-badge" aria-hidden="true">
+                          {activeFilterCount}
+                        </span>
+                      ) : null}
+                    </button>
+                  </div>
+                </div>
 
                 <label className="test-drive-sort test-drive-sort--desktop">
                   <FiSliders size={18} aria-hidden />
@@ -419,14 +440,20 @@ const TestDriveLandingPage = () => {
               {loading ? null : filteredListings.length === 0 ? (
                 <BuyerEmptyState
                   className="test-drive-empty-guided"
-                  icon={FiSun}
-                  eyebrow="Отпуск перед решением"
-                  title="Подходящих тест-драйвов пока нет"
-                  description="Снимем ограничения и покажем все объекты, где можно пожить до сделки."
-                  primaryLabel="Показать все тест-драйвы"
-                  onPrimary={resetFilters}
-                  secondaryLabel="Все направления"
-                  onSecondary={() => navigate('/sections')}
+                  image={TEST_DRIVE_EMPTY_IMAGE}
+                  eyebrow={null}
+                  title={
+                    listings.length
+                      ? 'Подходящих тест-драйвов пока нет'
+                      : 'Сейчас нет доступных тест-драйвов'
+                  }
+                  description={
+                    listings.length
+                      ? 'Снимем ограничения и покажем все объекты, где можно пожить до сделки.'
+                      : 'Каталог обновится, когда появятся новые предложения. А пока можно посмотреть другие объекты.'
+                  }
+                  primaryLabel={listings.length ? 'Показать все тест-драйвы' : 'Смотреть другие объекты'}
+                  onPrimary={listings.length ? resetFilters : () => navigate('/auction')}
                 />
               ) : (
                 <>

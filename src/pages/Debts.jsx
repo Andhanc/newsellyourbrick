@@ -3,6 +3,7 @@ import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { FiSearch } from 'react-icons/fi'
 import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import '../components/DebtsDesktopFilters.css'
@@ -17,6 +18,7 @@ import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import { publicAsset } from '../utils/publicAsset'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { formatPropertyPrice } from '../utils/currency'
@@ -44,6 +46,7 @@ import {
 import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import { getDebtsContextPropertyPath } from '../utils/listingContextUrl'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 
 const SiteChatDockLazy = lazy(() => import('../components/SiteChatDock'))
 const AuctionMobileLayoutLazy = lazyWithRetry(
@@ -55,6 +58,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
 const DEBTS_PAGE_SIZE = 16
 const DEBTS_HERO_BG = '/images/sellyourbrick/about/about-category-debts.jpg'
+const DEBTS_EMPTY_IMAGE = publicAsset('images/debts-empty-illustration.png')
 
 const Debts = () => {
   const { t } = useTranslation()
@@ -141,7 +145,10 @@ const Debts = () => {
   }
 
   const scrollToDebtsGrid = () => {
-    document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const target =
+      document.getElementById('properties-grid') ||
+      document.querySelector('.shares-container--debts-main')
+    if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
   }
 
   const resetDebtsFilters = useCallback(() => {
@@ -546,6 +553,14 @@ const Debts = () => {
           />
           </div>
         </div>
+        <button
+          type="button"
+          className="debts-hero-scene__scroll"
+          onClick={scrollToDebtsGrid}
+          aria-label={t('debtsSectionCta')}
+        >
+          <span className="debts-hero-scene__scroll-arrow" aria-hidden="true" />
+        </button>
       </section>
 
       <main className="shares-container shares-container--debts-main">
@@ -605,33 +620,34 @@ const Debts = () => {
                       {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                     </button>
                   ) : null}
-                  <div className="search-box">
-                    <svg
-                      className="search-icon"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.35-4.35" />
-                    </svg>
+                  <form
+                    className="debts-listing-search"
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                    }}
+                  >
                     <input
-                      type="text"
-                      className="search-input"
-                      placeholder={t('searchPlaceholderLong')}
+                      className="debts-listing-search__input"
+                      type="search"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={t('searchPlaceholderLong')}
+                      aria-label={t('searchPlaceholderLong')}
                     />
                     {searchQuery ? (
-                      <button type="button" className="search-clear" onClick={() => setSearchQuery('')}>
+                      <button
+                        type="button"
+                        className="debts-listing-search__clear"
+                        onClick={() => setSearchQuery('')}
+                        aria-label={t('clearSearch')}
+                      >
                         ×
                       </button>
                     ) : null}
-                  </div>
+                    <button type="submit" className="debts-listing-search__go" aria-label={t('search')}>
+                      <FiSearch aria-hidden />
+                    </button>
+                  </form>
                   {!isDebtsDesktop ? (
                     <div className="filters-and-types-grid">
                       <button
@@ -696,18 +712,16 @@ const Debts = () => {
                       {!loadingDebts && filtered.length === 0 ? (
                         <BuyerEmptyState
                           className="debts-listing-empty debts-empty-guided"
-                          icon={ShieldCheck}
-                          eyebrow="Без тупиков"
+                          image={DEBTS_EMPTY_IMAGE}
+                          eyebrow={null}
                           title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
                           description={
                             apiDebts.length
                               ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
-                              : 'Пока новых предложений нет — покажем активные объекты, которые можно купить уже сейчас.'
+                              : 'Пока новых предложений нет — посмотрите другие объекты, которые можно купить уже сейчас.'
                           }
-                          primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть доступные объекты'}
+                          primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть другие объекты'}
                           onPrimary={resetDebtsDiscovery}
-                          secondaryLabel="Все направления"
-                          onSecondary={() => navigate('/sections')}
                         />
                       ) : null}
 
@@ -755,18 +769,16 @@ const Debts = () => {
                     {!loadingDebts && filtered.length === 0 ? (
                       <BuyerEmptyState
                         className="debts-empty-guided"
-                        icon={ShieldCheck}
-                        eyebrow="Без тупиков"
+                        image={DEBTS_EMPTY_IMAGE}
+                        eyebrow={null}
                         title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
                         description={
                           apiDebts.length
                             ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
-                            : 'Пока новых предложений нет — покажем активные объекты, которые можно купить уже сейчас.'
+                            : 'Пока новых предложений нет — посмотрите другие объекты, которые можно купить уже сейчас.'
                         }
-                        primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть доступные объекты'}
+                        primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть другие объекты'}
                         onPrimary={resetDebtsDiscovery}
-                        secondaryLabel="Все направления"
-                        onSecondary={() => navigate('/sections')}
                       />
                     ) : null}
 

@@ -153,7 +153,7 @@ function BookingTicket({ booking, locale, onOpen }) {
           <div><strong>STAY</strong><span>Отдых</span></div>
         </div>
         <div className="profile-booking-pass__visual">
-          <img src="/images/profile/profile-booking-vacation.png" alt="Пальма и шезлонги у бассейна" />
+          <img src="/images/profile/profile-booking-vacation.png" alt="" />
         </div>
         <div className="profile-booking-pass__property">
           <h4>{ticket.title}</h4>
@@ -187,45 +187,92 @@ export default function ProfileBookingsExperience({
   onClose,
   onCheckIn,
   onCancel,
+  embedded = false,
 }) {
   const [selectedTicket, setSelectedTicket] = useState(null)
   const upcoming = useMemo(
     () => [...rows].sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || ''))),
     [rows],
   )
+  const confirmedCount = useMemo(
+    () => upcoming.filter((item) => ['approved', 'paid'].includes(String(item.status).toLowerCase())).length,
+    [upcoming],
+  )
+  const isEmpty = !loading && upcoming.length === 0
 
   return (
-    <div className="profile-bookings-experience">
-      <div className="profile-bookings-experience__toolbar">
-        <button type="button" className="profile-bookings-experience__back" onClick={onClose}>
-          <FiArrowLeft size={18} aria-hidden /><span>Назад</span>
-        </button>
-        <div>
-          <span>Ваши поездки</span>
-          <h3>Бронирования</h3>
-        </div>
+    <div
+      className={`profile-bookings-experience profile-bookings-experience--fullscreen${
+        embedded ? ' profile-bookings-experience--embedded' : ''
+      }`}
+    >
+      <div className="profile-bookings-hero">
+        <img
+          className="profile-bookings-hero__image"
+          src="/images/profile/bookings-hero-travel.png"
+          alt=""
+          decoding="async"
+        />
       </div>
 
-      <div className="profile-bookings-summary">
-        <div><FiCalendar size={19} aria-hidden /><span>Всего броней<strong>{upcoming.length}</strong></span></div>
-        <div><FiCheckCircle size={19} aria-hidden /><span>Подтверждено<strong>{upcoming.filter((item) => ['approved', 'paid'].includes(String(item.status).toLowerCase())).length}</strong></span></div>
-      </div>
+      <div className="profile-bookings-panel">
+        <div className="profile-bookings-panel__intro">
+          <h2 id="profile-bookings-sheet-title" className="profile-bookings-panel__title">
+            Бронирования
+          </h2>
+          <p className="profile-bookings-panel__lead">
+            Билеты на отдых и будущие поездки — в одном месте.
+          </p>
+        </div>
 
-      {loading ? (
-        <p className="profile-bookings-experience__state">Загружаем билеты…</p>
-      ) : upcoming.length ? (
-        <div className="profile-bookings-list">
-          {upcoming.map((booking) => (
-            <BookingTicket key={booking.id} booking={booking} locale={locale} onOpen={setSelectedTicket} />
-          ))}
-        </div>
-      ) : (
-        <div className="profile-bookings-empty">
-          <FiCalendar size={28} aria-hidden />
-          <strong>Пока нет бронирований</strong>
-          <span>Будущие поездки появятся здесь в формате билетов.</span>
-        </div>
-      )}
+        {!embedded ? (
+          <div className="profile-bookings-experience__toolbar">
+            <button type="button" className="profile-bookings-experience__back" onClick={onClose}>
+              <FiArrowLeft size={18} aria-hidden />
+              <span>Назад</span>
+            </button>
+          </div>
+        ) : null}
+
+        {!isEmpty ? (
+          <div className="profile-bookings-summary">
+            <div>
+              <FiCalendar size={19} aria-hidden />
+              <span>
+                Всего броней
+                <strong>{upcoming.length}</strong>
+              </span>
+            </div>
+            <div>
+              <FiCheckCircle size={19} aria-hidden />
+              <span>
+                Подтверждено
+                <strong>{confirmedCount}</strong>
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <p className="profile-bookings-experience__state">Загружаем билеты…</p>
+        ) : isEmpty ? (
+          <div className="profile-bookings-empty">
+            <p className="profile-bookings-empty__text">
+              Пока нет бронирований. Выберите объект для отдыха — билет появится здесь.
+            </p>
+            <Link to="/map" className="profile-bookings-empty__cta" onClick={onClose}>
+              Смотреть объекты
+              <FiArrowRight size={16} aria-hidden />
+            </Link>
+          </div>
+        ) : (
+          <div className="profile-bookings-list">
+            {upcoming.map((booking) => (
+              <BookingTicket key={booking.id} booking={booking} locale={locale} onOpen={setSelectedTicket} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {selectedTicket ? (
         <BookingDetailsDrawer

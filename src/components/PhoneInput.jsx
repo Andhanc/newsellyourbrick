@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { FiChevronDown } from 'react-icons/fi'
+import { detectPhoneDialByGeo, pickPhoneCountryFromDial } from '../utils/detectPhoneCountryByGeo'
+
 
 // Полный список всех стран с телефонными кодами
 export const COUNTRY_CODES = [
@@ -209,7 +211,17 @@ export const COUNTRY_CODES = [
   { code: '998', name: 'Узбекистан', flag: '🇺🇿' },
 ]
 
-const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
+const PhoneInput = ({
+  value,
+  onChange,
+  onBlur,
+  onCountryChange,
+  error,
+  disabled,
+  autoDetectCountry = false,
+  variant = 'default',
+  placeholder = 'Укажите свой номер телефона',
+}) => {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES.find(c => c.code === '1') || COUNTRY_CODES[0]) // США по умолчанию
   const [phoneNumber, setPhoneNumber] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -217,6 +229,7 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
   const dropdownRef = useRef(null)
   const containerRef = useRef(null)
   const searchInputRef = useRef(null)
+  const geoTriedRef = useRef(false)
 
   useEffect(() => {
     // Если значение пришло извне, парсим его
@@ -259,6 +272,30 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
       setPhoneNumber('')
     }
   }, [value])
+
+  useEffect(() => {
+    if (!autoDetectCountry || geoTriedRef.current) return undefined
+    const digits = String(value || '').replace(/\D/g, '')
+    if (digits.length > 4) {
+      geoTriedRef.current = true
+      return undefined
+    }
+
+    let cancelled = false
+    geoTriedRef.current = true
+    ;(async () => {
+      const detected = await detectPhoneDialByGeo()
+      if (cancelled || !detected) return
+      const country = pickPhoneCountryFromDial(COUNTRY_CODES, detected)
+      if (!country) return
+      setSelectedCountry(country)
+      if (onCountryChange) onCountryChange(country.code)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [autoDetectCountry, onCountryChange, value])
 
   // Закрытие dropdown при клике вне компонента
   useEffect(() => {
@@ -346,7 +383,7 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
     setPhoneNumber(limitedDigits)
     
     // Формируем полный номер с кодом страны
-    const fullNumber = selectedCountry.code + limitedDigits
+    const fullNumber = limitedDigits ? `+${selectedCountry.code}${limitedDigits}` : ''
     if (onChange) {
       onChange({ target: { value: fullNumber } })
     }
@@ -391,19 +428,26 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
   }
 
   return (
-    <div className="phone-input-container" ref={containerRef}>
+    <div
+      className={`phone-input-container${variant === 'split' ? ' phone-input-container--split' : ''}`}
+      ref={containerRef}
+    >
       <div className="phone-input-wrapper">
-        <div 
+        <button
+          type="button"
           className="phone-input-country-selector"
           onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
+          disabled={disabled}
+          aria-label="Код страны"
+          aria-expanded={isDropdownOpen}
         >
           <span className="phone-input-flag">{selectedCountry.flag}</span>
           <span className="phone-input-code">+{selectedCountry.code}</span>
-          <FiChevronDown className="phone-input-chevron" />
-        </div>
+          <FiChevronDown className="phone-input-chevron" aria-hidden />
+        </button>
         
         {isDropdownOpen && (
-          <div className="phone-input-dropdown">
+          <div className="phone-input-dropdown" ref={dropdownRef}>
             <div className="phone-input-search">
               <svg 
                 className="phone-input-search-icon" 
@@ -411,6 +455,7 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
                 height="16" 
                 viewBox="0 0 16 16" 
                 fill="none"
+                aria-hidden
               >
                 <circle cx="7" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/>
                 <path d="M10 10L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -428,15 +473,16 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
             <div className="phone-input-dropdown-list">
               {filteredCountries.length > 0 ? (
                 filteredCountries.map((country) => (
-                  <div
-                    key={country.code}
-                    className={`phone-input-dropdown-item ${selectedCountry.code === country.code ? 'selected' : ''}`}
+                  <button
+                    type="button"
+                    key={`${country.code}-${country.name}`}
+                    className={`phone-input-dropdown-item ${selectedCountry.code === country.code && selectedCountry.name === country.name ? 'selected' : ''}`}
                     onClick={() => handleCountrySelect(country)}
                   >
                     <span className="phone-input-flag">{country.flag}</span>
                     <span className="phone-input-country-name">{country.name}</span>
                     <span className="phone-input-country-code">+{country.code}</span>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="phone-input-no-results">
@@ -449,10 +495,23 @@ const PhoneInput = ({ value, onChange, onCountryChange, error, disabled }) => {
         
         <input
           type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
           className={`phone-input-field ${error ? 'error' : ''}`}
           value={formatPhoneDisplay(phoneNumber)}
           onChange={handlePhoneChange}
-          placeholder="Введите номер"
+          onBlur={(event) => {
+            if (!onBlur) return
+            const fullNumber = phoneNumber ? `+${selectedCountry.code}${phoneNumber}` : ''
+            onBlur({
+              ...event,
+              target: {
+                ...event.target,
+                value: fullNumber,
+              },
+            })
+          }}
+          placeholder={placeholder}
           disabled={disabled}
           maxLength={20}
         />

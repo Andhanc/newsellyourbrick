@@ -58,6 +58,7 @@ const AUCTION_CTA_CARDS = [
 const DEBTS_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'test-drive']
 const TEST_DRIVE_PAGE_CTA_CARD_IDS = ['shares', 'auction', 'debts']
 const SHARES_PAGE_CTA_CARD_IDS = ['auction', 'debts', 'test-drive']
+const PROFILE_PAGE_CTA_CARD_IDS = ['auction', 'shares', 'debts']
 
 const CTA_SECTION_TITLES = {
   default: {
@@ -70,24 +71,41 @@ const CTA_SECTION_TITLES = {
     pill: 'auctionPageCtaSectionTitleOurMobilePill',
     line2: 'auctionPageCtaSectionTitleOurMobileLine2',
   },
+  profilePage: {
+    desktop: 'auctionPageCtaSectionTitleOur',
+    pill: 'auctionPageCtaSectionTitleOurMobilePill',
+    line2: 'auctionPageCtaSectionTitleOurMobileLine2',
+  },
+}
+
+function resolveCtaCards(variant) {
+  if (variant === 'debtsPage') {
+    return DEBTS_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+  }
+  if (variant === 'sharesPage') {
+    return SHARES_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+  }
+  if (variant === 'testDrivePage') {
+    return TEST_DRIVE_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+  }
+  if (variant === 'profilePage') {
+    return PROFILE_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
+  }
+  return AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
 }
 
 function AuctionCategoryCtaCards({ variant = 'default' }) {
   const { t } = useTranslation()
-  const titleKeys = variant === 'testDrivePage' ? CTA_SECTION_TITLES.testDrivePage : CTA_SECTION_TITLES.default
-  const cards =
-    variant === 'debtsPage'
-      ? DEBTS_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
-      : variant === 'sharesPage'
-        ? SHARES_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
-      : variant === 'testDrivePage'
-        ? TEST_DRIVE_PAGE_CTA_CARD_IDS.map((id) => AUCTION_CTA_CARDS.find((card) => card.id === id)).filter(Boolean)
-        : AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
+  const titleKeys = CTA_SECTION_TITLES[variant] || CTA_SECTION_TITLES.default
+  const cards = resolveCtaCards(variant)
+  const sectionClassName =
+    variant === 'profilePage' ? 'auction-cta-cards auction-cta-cards--profile' : 'auction-cta-cards'
+  const headingId = variant === 'profilePage' ? 'profile-cta-heading' : 'auction-cta-heading'
 
   return (
-    <section className="auction-cta-cards" aria-labelledby="auction-cta-heading">
+    <section className={sectionClassName} aria-labelledby={headingId}>
       <div className="auction-cta-cards__inner">
-        <h2 id="auction-cta-heading" className="auction-cta-cards__title">
+        <h2 id={headingId} className="auction-cta-cards__title">
           <span className="auction-cta-cards__title-desktop">{t(titleKeys.desktop)}</span>
           <span className="auction-cta-cards__title-mobile">
             <span className="auction-cta-cards__title-line">

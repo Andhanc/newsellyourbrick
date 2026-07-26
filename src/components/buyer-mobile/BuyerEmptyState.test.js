@@ -13,8 +13,11 @@ test('buyer empty state explains the recovery and exposes one primary action', (
   assert.match(source, /primaryLabel/)
   assert.match(source, /onPrimary/)
   assert.match(source, /secondaryLabel/)
+  assert.match(source, /buyer-empty-state--illustrated/)
+  assert.match(source, /buyer-empty-state__image/)
   assert.match(css, /min-height:\s*var\(--buyer-touch\)/)
   assert.match(css, /var\(--buyer-mint\)/)
+  assert.match(css, /\.buyer-empty-state__image/)
 })
 
 test('auction no-results state no longer uses an emoji dead end', () => {

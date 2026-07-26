@@ -251,7 +251,7 @@ export function paginateShares(shares = [], page = 1, pageSize = SHARES_PAGE_SIZ
 }
 
 export function getVisiblePaginationItems(currentPage, totalPages) {
-  if (totalPages <= 7) {
+  if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, index) => ({ type: 'page', value: index + 1 }))
   }
 

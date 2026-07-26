@@ -132,14 +132,51 @@
     0 0 0 4px rgba(0, 153, 169, 0.45);
 }
 
-.auction-mobile-item--ended {
-  opacity: 0.95;
-  border-color: rgba(100, 116, 139, 0.4);
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+.auction-mobile-item--buyer-sold .auction-mobile-image-wrap img,
+.auction-mobile-item--buyer-auction-ended .auction-mobile-image-wrap img {
+  filter: brightness(0.72) saturate(0.92);
 }
 
-.auction-mobile-item--ended .auction-mobile-image-wrap img {
-  filter: grayscale(0.2);
+.auction-mobile-item--ended {
+  opacity: 1;
+  border-color: rgba(100, 116, 139, 0.22);
+}
+
+.auction-mobile-sold-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 4px;
+}
+
+.auction-mobile-sold-cta__rule {
+  display: block;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(148, 163, 184, 0.85) 18%,
+    rgba(148, 163, 184, 0.85) 82%,
+    transparent 100%
+  );
+}
+
+.auction-mobile-sold-cta__label {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+  color: #64748b;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .auction-mobile-item--list {
@@ -216,7 +253,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 10px;
   row-gap: 14px;
-  align-items: stretch;
+  align-items: start;
   width: 100%;
   gap: unset;
 }
@@ -225,11 +262,13 @@
 .auction-mobile-stack.auction-mobile-stack--desktop-cards .auction-card,
 .auction-mobile-stack--desktop-cards .debts-property-card {
   min-width: 0;
-  min-height: 100%;
+  height: auto;
+  min-height: 0;
 }
 
 .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
-.properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards {
+.properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards,
+.properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   column-gap: 10px !important;
@@ -246,24 +285,35 @@
 
 @media (min-width: 640px) {
   .auction-mobile-stack--desktop-cards,
-  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
-    column-gap: 20px !important;
-    row-gap: 24px !important;
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards {
+    column-gap: 16px !important;
+    row-gap: 20px !important;
   }
 }
 
-/* 2 в ряд на телефоне: масштаб desktop-карточки под узкую колонку */
+/* 2 в ряд на телефоне: компактная portal-карточка */
 .auction-mobile-stack--desktop-cards .auction-card {
-  border-radius: 12px;
+  border-radius: 16px;
+  height: auto;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__body {
-  gap: 6px;
-  padding: 10px 10px 12px;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 10px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__meta {
+  flex: 0 0 auto;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__footer {
+  margin-top: 0;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__location {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__location svg {
@@ -272,32 +322,34 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__title {
-  font-size: 0.78rem;
-  line-height: 1.25;
+  font-size: 0.88rem;
+  line-height: 1.2;
   -webkit-line-clamp: 2;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__specs {
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px 6px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__spec {
-  padding: 3px 6px;
-  font-size: 0.62rem;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__spec svg {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
 }
 
-.auction-mobile-stack--desktop-cards .auction-card__price-panel {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 7px 8px;
-  border-radius: 10px;
+.auction-mobile-stack--desktop-cards .auction-card__pricing {
+  gap: 6px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__price-label {
@@ -306,15 +358,16 @@
 
 .auction-mobile-stack--desktop-cards .auction-card__price-value {
   width: 100%;
-  font-size: 0.82rem;
+  font-size: clamp(0.9rem, 3.8vw, 1.02rem);
   text-align: left;
+  line-height: 1.1;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  margin-top: 2px;
+  gap: 6px;
+  margin-top: 0;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__actions--single {
@@ -322,19 +375,20 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__btn {
-  padding: 9px 8px;
+  padding: 7px 5px;
   font-size: 0.68rem;
   border-radius: 10px;
+  min-height: 36px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__favorite {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__favorite svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__photo-icon {
@@ -351,13 +405,11 @@
   }
 
   .auction-mobile-stack--desktop-cards .auction-card__title {
-    font-size: 0.92rem;
+    font-size: 0.86rem;
   }
 
-  .auction-mobile-stack--desktop-cards .auction-card__location,
-  .auction-mobile-stack--desktop-cards .auction-card__spec,
   .auction-mobile-stack--desktop-cards .auction-card__btn {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
   }
 }
 
@@ -371,10 +423,12 @@
   }
 
   .auction-mobile-stack--desktop-cards,
-  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    align-items: stretch;
+    align-items: start;
+    row-gap: 14px !important;
   }
 }
 
@@ -1050,14 +1104,16 @@
 }
 
 .auction-mobile-item--card .auction-mobile-card-title {
-  font-size: 12px;
-  line-height: 1.25;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: normal;
   -webkit-line-clamp: 2;
 }
 
 .auction-mobile-item--card .auction-mobile-loc {
   margin-bottom: 4px;
-  font-size: 10px;
+  font-size: 0.75rem;
   align-items: flex-start;
   min-height: 2.35em;
 }
@@ -1075,7 +1131,7 @@
 }
 
 .auction-mobile-item--card .auction-mobile-price-row__value {
-  font-size: 14px;
+  font-size: clamp(0.88rem, 1.8vw, 1.05rem);
 }
 
 .auction-mobile-item--card .auction-mobile-meta {
@@ -1134,16 +1190,17 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 14px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.9375rem;
   font-weight: 700;
-  line-height: 1.28;
+  line-height: 1.3;
   color: var(--am-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-align: left;
-  letter-spacing: -0.01em;
+  letter-spacing: normal;
 }
 
 .auction-mobile-favorite-btn {
@@ -1233,7 +1290,7 @@
 
 .auction-mobile-loc {
   margin: 0 0 7px;
-  font-size: 11.5px;
+  font-size: 0.75rem;
   line-height: 1.35;
   color: var(--am-muted);
   display: flex;
@@ -1273,21 +1330,22 @@
 }
 
 .auction-mobile-price-row__label {
-  font-size: 9px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--am-teal-dark);
+  color: #006672;
+  font-family: 'Montserrat', system-ui, sans-serif;
   line-height: 1.2;
 }
 
 .auction-mobile-price-row__value {
-  font-size: 17px;
+  font-size: clamp(0.88rem, 1.8vw, 1.05rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--am-text);
-  font-family: 'Plus Jakarta Sans', 'Montserrat', system-ui, sans-serif;
+  font-family: 'Montserrat', system-ui, sans-serif;
   line-height: 1.12;
 }
 

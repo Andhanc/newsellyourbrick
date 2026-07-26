@@ -1,37 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  FiArrowRight,
-  FiBriefcase,
-  FiCheckCircle,
-  FiChevronDown,
-  FiSearch,
-  FiShield,
-  FiSliders,
-  FiTrendingUp,
-  FiX,
-} from 'react-icons/fi'
+import { ArrowDown } from 'lucide-react'
+import { FiChevronDown, FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import SharesPropertyCard, { SharesPropertyCardSkeleton } from '../components/SharesPropertyCard'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import MobileDiscoverFaq from '../components/MobileDiscoverFaq'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { publicAsset } from '../utils/publicAsset'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 import {
   SHARES_MARKETPLACE_PAGE_SIZE,
-  formatForecastYield,
   normalizeMarketplaceShare,
   paginateSharesMarketplace,
 } from '../utils/sharesMarketplacePresentation'
 import './Shares.css'
+import '../components/PropertyList.css'
 import './CoInvestment.mobile.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const API_PAGE_SIZE = 100
-const HERO_IMAGE = publicAsset('images/external/shares-hero-estate.jpg')
+const HERO_IMAGE = publicAsset('images/sellyourbrick/about/about-category-shares.jpg')
+const SHARES_EMPTY_IMAGE = publicAsset('images/shares-empty-illustration.png')
 const STATUS_FILTERS = ['Сбор открыт', 'Почти собрано', 'Сбор завершён']
 
 function normalizeText(value) {
@@ -42,15 +37,6 @@ function finiteValues(list, key) {
   return list
     .map((item) => item[key])
     .filter((value) => Number.isFinite(value))
-}
-
-function formatMoney(value, currency = 'EUR') {
-  if (!Number.isFinite(value) || value <= 0) return '—'
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value)
 }
 
 function sortMarketplaceShares(list, sort) {
@@ -182,20 +168,6 @@ export default function Shares() {
     setPage(1)
   }, [query, selectedLocations, selectedStatuses, selectedTypes, sharePriceMax, sort, yieldMax])
 
-  const portfolioFacts = useMemo(() => {
-    const availableObjects = shares.filter((share) => share.availableShares == null || share.availableShares > 0).length
-    const minimum = priceValues.length ? Math.min(...priceValues) : null
-    const averageYield = yieldValues.length
-      ? yieldValues.reduce((sum, value) => sum + value, 0) / yieldValues.length
-      : null
-    return {
-      availableObjects,
-      minimum,
-      forecast: formatForecastYield(averageYield),
-      currency: shares.find((share) => share.pricePerShare === minimum)?.currency || 'EUR',
-    }
-  }, [priceValues, shares, yieldValues])
-
   const toggleFilter = (value, setter) => {
     setter((current) =>
       current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
@@ -212,16 +184,18 @@ export default function Shares() {
     setSort('new')
   }
 
-  const hasActiveFilters = Boolean(
-    selectedTypes.length ||
-      selectedLocations.length ||
-      selectedStatuses.length ||
-      yieldMax != null ||
-      sharePriceMax != null,
-  )
+  const activeFilterCount =
+    selectedTypes.length +
+    selectedLocations.length +
+    selectedStatuses.length +
+    (yieldMax != null ? 1 : 0) +
+    (sharePriceMax != null ? 1 : 0)
 
   const scrollToCatalog = () => {
-    document.getElementById('shares-invest-catalog')?.scrollIntoView({ behavior: 'smooth' })
+    const target =
+      document.getElementById('shares-invest-catalog') ||
+      document.getElementById('shares-invest-results')
+    if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
   }
 
   const openShare = (share) => {
@@ -231,7 +205,8 @@ export default function Shares() {
   const handlePageChange = (nextPage) => {
     setPage(nextPage)
     window.requestAnimationFrame(() => {
-      document.getElementById('shares-invest-results')?.scrollIntoView({ behavior: 'smooth' })
+      const target = document.getElementById('shares-invest-results')
+      if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
     })
   }
 
@@ -257,68 +232,53 @@ export default function Shares() {
   }
 
   return (
-    <div className="shares-page shares-invest-page shares-invest-page--marketplace">
+    <div className="shares-page shares-page--shares-redesign">
       <Header />
-      <main className="shares-invest-main">
-        <section className="shares-market-hero">
-          <div className="shares-market-hero__media" aria-hidden>
-            <img src={HERO_IMAGE} alt="" />
-          </div>
-          <div className="shares-market-hero__copy">
-            <span className="shares-market-hero__eyebrow">
-              <FiShield aria-hidden /> Проверенная долевая недвижимость
+
+      <section className="shares-hero-scene" aria-labelledby="shares-hero-title">
+        <img className="shares-hero-scene__bg" src={HERO_IMAGE} alt="" aria-hidden />
+        <div className="shares-hero-scene__overlay" aria-hidden />
+
+        <div className="shares-hero-scene__brand" aria-label="SellYourBrick">
+          <span className="shares-hero-scene__brand-text">
+            <span className="shares-hero-scene__brand-word">Sell</span>
+            <span className="shares-hero-scene__brand-word shares-hero-scene__brand-word--accent">
+              Your
             </span>
-            <h1>Соберите портфель из реальных объектов</h1>
-            <p>
-              Изучайте условия каждой доли, доступность и прогнозные показатели до решения.
-              Доходность не гарантируется.
+            <span className="shares-hero-scene__brand-word">Brick</span>
+          </span>
+        </div>
+
+        <div className="shares-hero-scene__inner">
+          <div className="shares-hero-scene__copy">
+            <span className="shares-hero-scene__eyebrow">Соинвестирование</span>
+            <h1 id="shares-hero-title" className="shares-hero-scene__title">
+              Доли в недвижимость
+            </h1>
+            <p className="shares-hero-scene__lead">
+              Инвестируйте в проверенные объекты частями: условия, доступность и прогноз доходности
+              видны до покупки. Доходность не гарантируется.
             </p>
-            <div className="shares-market-hero__actions">
-              <button type="button" className="shares-market-hero__primary" onClick={scrollToCatalog}>
-                Смотреть объекты <FiArrowRight aria-hidden />
-              </button>
-              <button type="button" className="shares-market-hero__secondary" onClick={() => navigate('/profile')}>
-                <FiBriefcase aria-hidden /> Мой портфель
-              </button>
-            </div>
-          </div>
-
-          <aside className="shares-market-portfolio" aria-label="Сводка маркетплейса">
-            <div className="shares-market-portfolio__head">
-              <div>
-                <span>Личный портфель</span>
-                <strong>Все доли — в одном месте</strong>
-              </div>
-              <FiTrendingUp aria-hidden />
-            </div>
-            <p>Данные портфеля появятся после входа и покупки доли.</p>
-            <div className="shares-market-portfolio__facts">
-              <div>
-                <span>Объектов сейчас</span>
-                <strong>{loading || loadError ? '—' : portfolioFacts.availableObjects}</strong>
-              </div>
-              <div>
-                <span>Минимальный вход</span>
-                <strong>{formatMoney(portfolioFacts.minimum, portfolioFacts.currency)}</strong>
-              </div>
-              <div>
-                <span>{portfolioFacts.forecast.label}</span>
-                <strong>{portfolioFacts.forecast.value}</strong>
-                <small>{portfolioFacts.forecast.note}</small>
-              </div>
-            </div>
-            <button type="button" onClick={() => navigate('/profile')}>
-              Открыть личный кабинет <FiArrowRight aria-hidden />
+            <button type="button" className="shares-hero-scene__cta" onClick={scrollToCatalog}>
+              <span>Смотреть объекты</span>
+              <span className="shares-hero-scene__cta-icon" aria-hidden>
+                <ArrowDown size={18} strokeWidth={2.4} />
+              </span>
             </button>
-          </aside>
-        </section>
+          </div>
+        </div>
 
-        <section className="shares-market-proof" aria-label="Как работает покупка доли">
-          <span><FiCheckCircle aria-hidden /> Условия видны до покупки</span>
-          <span><FiShield aria-hidden /> Финальный статус блокирует покупку</span>
-          <span><FiTrendingUp aria-hidden /> Прогноз отделён от факта</span>
-        </section>
+        <button
+          type="button"
+          className="shares-hero-scene__scroll"
+          onClick={scrollToCatalog}
+          aria-label="Перейти к каталогу"
+        >
+          <span className="shares-hero-scene__scroll-arrow" aria-hidden="true" />
+        </button>
+      </section>
 
+      <main className="shares-container shares-container--shares-main">
         <section className="shares-invest-catalog" id="shares-invest-catalog">
           <SharesFiltersPanel
             {...filterPanelProps}
@@ -326,39 +286,66 @@ export default function Shares() {
           />
 
           <div className="shares-invest-results" id="shares-invest-results">
-            <div className="shares-invest-results__title">
-              <div>
-                <span className="shares-invest-results__eyebrow">Маркетплейс долей</span>
-                <h2>Объекты для соинвестирования <span>{filteredShares.length}</span></h2>
-                <p>На странице — не больше {SHARES_MARKETPLACE_PAGE_SIZE} объектов из актуального каталога.</p>
-              </div>
-            </div>
-
-            <div className="shares-invest-toolbar">
-              <label className="shares-invest-search">
-                <FiSearch size={18} aria-hidden />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Город или объект"
-                />
-                {query ? (
-                  <button type="button" aria-label="Очистить поиск" onClick={() => setQuery('')}>
-                    <FiX size={16} aria-hidden />
+            <div className="auction-listing-search-stack auction-listing-search-stack--compact">
+              <div className="search-filters-bar search-filters-bar--auction-mobile">
+                <form
+                  className="debts-listing-search"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                  }}
+                >
+                  <input
+                    className="debts-listing-search__input"
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Город или объект"
+                    aria-label="Поиск по городу или объекту"
+                  />
+                  {query ? (
+                    <button
+                      type="button"
+                      className="debts-listing-search__clear"
+                      onClick={() => setQuery('')}
+                      aria-label="Очистить поиск"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                  <button type="submit" className="debts-listing-search__go" aria-label="Найти">
+                    <FiSearch aria-hidden />
                   </button>
-                ) : null}
-              </label>
-              <button
-                type="button"
-                className={`shares-invest-filters-btn${hasActiveFilters ? ' is-active' : ''}`}
-                onClick={() => setFiltersDrawerOpen(true)}
-                aria-label="Фильтры"
-                aria-expanded={filtersDrawerOpen}
-              >
-                <FiSliders size={18} aria-hidden />
-                <span className="shares-invest-filters-btn__label">Фильтры</span>
-                {hasActiveFilters ? <span className="shares-invest-filters-btn__dot" aria-hidden /> : null}
-              </button>
+                </form>
+
+                <div className="filters-and-types-grid">
+                  <button
+                    type="button"
+                    className={`filters-button${activeFilterCount > 0 ? ' is-active' : ''}`}
+                    aria-expanded={filtersDrawerOpen}
+                    aria-label="Фильтры"
+                    onClick={() => setFiltersDrawerOpen(true)}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    <span className="filters-button__label">Фильтры</span>
+                    {activeFilterCount > 0 ? (
+                      <span className="filters-badge" aria-hidden="true">
+                        {activeFilterCount}
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
+              </div>
+
               <label className="shares-invest-sort shares-invest-sort--desktop">
                 <select value={sort} onChange={(event) => setSort(event.target.value)}>
                   <option value="new">По умолчанию</option>
@@ -386,18 +373,19 @@ export default function Shares() {
 
             {loading ? (
               <div className="shares-invest-grid" aria-label="Загрузка объектов">
-                {Array.from({ length: 6 }, (_, index) => <SharesPropertyCardSkeleton key={index} />)}
+                {Array.from({ length: Math.min(6, SHARES_MARKETPLACE_PAGE_SIZE) }, (_, index) => (
+                  <SharesPropertyCardSkeleton key={index} />
+                ))}
               </div>
             ) : loadError ? (
               <BuyerEmptyState
                 className="shares-market-state"
-                eyebrow="Каталог временно недоступен"
+                image={SHARES_EMPTY_IMAGE}
+                eyebrow={null}
                 title="Не удалось загрузить объекты"
-                description="Проверьте соединение и попробуйте ещё раз. Мы не подменяем данные демонстрационными карточками."
-                primaryLabel="Повторить загрузку"
-                onPrimary={() => setReloadKey((value) => value + 1)}
-                secondaryLabel="Перейти в профиль"
-                onSecondary={() => navigate('/profile')}
+                description="Проверьте соединение и попробуйте позже — или посмотрите другие предложения на платформе."
+                primaryLabel="Смотреть другие объекты"
+                onPrimary={() => navigate('/auction')}
               />
             ) : pagination.items.length ? (
               <>
@@ -421,22 +409,24 @@ export default function Shares() {
             ) : (
               <BuyerEmptyState
                 className="shares-market-state"
-                eyebrow={shares.length ? 'Измените параметры' : 'Новые сборы готовятся'}
+                image={SHARES_EMPTY_IMAGE}
+                eyebrow={null}
                 title={shares.length ? 'По этим условиям объектов нет' : 'Сейчас нет открытых объектов'}
                 description={
                   shares.length
                     ? 'Сбросьте фильтры или расширьте поиск — покажем только реальные доступные предложения.'
-                    : 'Каталог обновится, когда продавцы опубликуют проверенные предложения с долями.'
+                    : 'Каталог обновится, когда появятся новые предложения с долями. А пока можно посмотреть другие объекты.'
                 }
-                primaryLabel={shares.length ? 'Сбросить фильтры' : 'Вернуться на главную'}
-                onPrimary={shares.length ? resetFilters : () => navigate('/')}
-                secondaryLabel="Мой портфель"
-                onSecondary={() => navigate('/profile')}
+                primaryLabel={shares.length ? 'Сбросить фильтры' : 'Смотреть другие объекты'}
+                onPrimary={shares.length ? resetFilters : () => navigate('/auction')}
               />
             )}
           </div>
         </section>
       </main>
+
+      <AuctionCategoryCtaCards variant="sharesPage" />
+      <MobileDiscoverFaq idPrefix="shares-md-faq" />
     </div>
   )
 }
@@ -470,13 +460,20 @@ function SharesFiltersPanel({
           <span>Настройте выбор</span>
           <h2>Фильтры</h2>
         </div>
-        <button type="button" onClick={onReset}>Сбросить</button>
+        <button type="button" onClick={onReset}>
+          Сбросить
+        </button>
       </header>
       {typeOptions.length ? (
         <FilterGroup title="Тип объекта" options={typeOptions} values={selectedTypes} onToggle={onToggleType} />
       ) : null}
       {locationOptions.length ? (
-        <FilterGroup title="Город" options={locationOptions} values={selectedLocations} onToggle={onToggleLocation} />
+        <FilterGroup
+          title="Город"
+          options={locationOptions}
+          values={selectedLocations}
+          onToggle={onToggleLocation}
+        />
       ) : null}
       <FilterGroup title="Статус сбора" options={STATUS_FILTERS} values={selectedStatuses} onToggle={onToggleStatus} />
       {yieldCeiling != null ? (
@@ -504,7 +501,9 @@ function SharesFiltersPanel({
       ) : null}
       {showSort ? (
         <div className="shares-invest-filter-block shares-invest-filter-block--sort">
-          <span className="shares-invest-filter-block__title shares-invest-filter-block__title--static">Сортировка</span>
+          <span className="shares-invest-filter-block__title shares-invest-filter-block__title--static">
+            Сортировка
+          </span>
           <label className="shares-invest-sort shares-invest-sort--drawer">
             <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
               <option value="new">По умолчанию</option>

@@ -27,7 +27,7 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
-import HomeRedesignPage from './pages/home-redesign/HomeRedesignPage'
+import MobileDiscoverPage from './pages/MobileDiscoverPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import { PurchaseSuccessProvider } from './context/PurchaseSuccessContext'
@@ -121,10 +121,10 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
     pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
-  const homePageScroll = pathname === '/'
+  const mobileDiscoverHome = pathname === '/'
 
-  const routeClass = homePageScroll
-    ? 'app-layout--investor-home'
+  const routeClass = mobileDiscoverHome
+    ? 'app-layout--mobile-discover'
     : addPropertySingleScroll
     ? 'app-layout--add-property-single-scroll'
     : calculatorSingleScroll
@@ -610,7 +610,7 @@ function App() {
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <Routes>
-              <Route path="/" element={<HomeRedesignPage />} />
+              <Route path="/" element={<MobileDiscoverPage />} />
               <Route path="/auction" element={<Home />} />
               <Route path="/auction/property/:slugOrId" element={<PropertyDetailPage />} />
               <Route path="/auction/:segment1/:segment2?" element={<Home />} />
@@ -845,6 +845,7 @@ function App() {
                   </LazyPage>
                 }
               />
+              <Route path="/mobile-discover" element={<Navigate to="/" replace />} />
               <Route
                 path="/buyer"
                 element={

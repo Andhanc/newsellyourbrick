@@ -10,10 +10,22 @@
 .listing-page-pagination .auction-desktop-pagination__pages {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 6px;
   max-width: min(100%, 640px);
+}
+
+.listing-page-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 40px;
+  color: #94a3b8;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.9375rem;
+  user-select: none;
 }
 
 .listing-page-pagination .auction-desktop-pagination__page,
@@ -41,16 +53,16 @@
 
 .listing-page-pagination .auction-desktop-pagination__page:hover:not(.auction-desktop-pagination__page--active),
 .listing-page-pagination .auction-desktop-pagination__arrow:hover:not(:disabled) {
-  border-color: rgba(74, 150, 166, 0.4);
-  color: #3f8798;
-  background: rgba(74, 150, 166, 0.06);
+  border-color: rgba(78, 205, 214, 0.45);
+  color: #3bc0cb;
+  background: rgba(78, 205, 214, 0.1);
 }
 
 .listing-page-pagination .auction-desktop-pagination__page--active {
-  border-color: #4a96a6;
-  background: #4a96a6;
+  border-color: #4ecdd6;
+  background: #4ecdd6;
   color: #ffffff;
-  box-shadow: 0 6px 18px rgba(74, 150, 166, 0.28);
+  box-shadow: 0 6px 18px rgba(78, 205, 214, 0.38);
   cursor: default;
 }
 

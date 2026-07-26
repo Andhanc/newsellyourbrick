@@ -13,6 +13,13 @@
   text-align: center;
 }
 
+.buyer-empty-state--illustrated {
+  padding: 12px 16px 28px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .buyer-empty-state__icon {
   display: grid;
   place-items: center;
@@ -22,6 +29,15 @@
   background: var(--buyer-mint);
   color: var(--buyer-teal-deep);
   transform: rotate(-4deg);
+}
+
+.buyer-empty-state__image {
+  width: min(100%, 340px);
+  max-width: min(80vw, 340px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  object-position: center;
+  margin: 0;
 }
 
 .buyer-empty-state__eyebrow {
@@ -84,6 +100,29 @@
 
 @media (max-width: 360px) {
   .buyer-empty-state { padding: 26px 16px; }
+}
+
+.buyer-empty-state--illustrated .buyer-empty-state__eyebrow {
+  margin-top: 8px;
+}
+
+.buyer-empty-state--illustrated h2 {
+  margin-top: 4px;
+  font: 800 clamp(24px, 6.5vw, 30px)/1.15 var(--buyer-font-display);
+  letter-spacing: -.04em;
+}
+
+.buyer-empty-state--illustrated p {
+  margin-top: 10px;
+  max-width: 420px;
+  color: #7f879d;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.buyer-empty-state--illustrated .buyer-empty-state__actions {
+  margin-top: 22px;
 }
 
 @media (prefers-reduced-motion: reduce) {

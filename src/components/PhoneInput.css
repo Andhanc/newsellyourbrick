@@ -176,6 +176,83 @@
   padding-left: 4px;
 }
 
+/* Revolut-like split: flag+code block | number block */
+.phone-input-container--split .phone-input-wrapper {
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.phone-input-container--split .phone-input-wrapper:focus-within {
+  border-color: transparent;
+}
+
+.phone-input-container--split .phone-input-country-selector {
+  flex: 0 0 auto;
+  min-width: 112px;
+  min-height: 58px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  color: #111827;
+  font: inherit;
+}
+
+.phone-input-container--split .phone-input-country-selector:hover {
+  background: #ebeef1;
+}
+
+.phone-input-container--split .phone-input-code {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.phone-input-container--split .phone-input-chevron {
+  margin-left: 2px;
+  color: #6b7280;
+}
+
+.phone-input-container--split .phone-input-field {
+  min-width: 0;
+  min-height: 58px;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: #f2f4f6;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #111827;
+}
+
+.phone-input-container--split .phone-input-field:focus {
+  outline: none;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
+}
+
+.phone-input-container--split .phone-input-country-selector:focus-visible {
+  outline: none;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
+}
+
+.phone-input-container--split .phone-input-dropdown {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+}
+
+.phone-input-container--split .phone-input-dropdown-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
 /* Адаптивность */
 @media (max-width: 480px) {
   .phone-input-country-selector {

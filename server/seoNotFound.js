@@ -7,6 +7,7 @@ import { isKnownPublicAppPath } from '../shared/seoPublicRoutes.js';
 import { propertySlugQueries } from './database/propertySlugPrisma.js';
 import { getArticleBySlug } from './services/newsStore.js';
 import { sendSeoSpaHtml } from './seoHtmlRender.js';
+import { resolveWebDist } from './middleware/resolveWebDist.js';
 import {
   CATALOG_TYPE_PLURALS,
   catalogPublicPageExists,
@@ -102,7 +103,7 @@ function sendSpa404(res, indexPath, req) {
  * @param {import('express').Express} app
  */
 export function registerSeoNotFound(app) {
-  const distPath = join(__dirname, '..', 'dist');
+  const distPath = resolveWebDist(__dirname);
   const indexPath = join(distPath, 'index.html');
 
   app.use(async (req, res, next) => {

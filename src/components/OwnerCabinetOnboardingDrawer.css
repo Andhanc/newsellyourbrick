@@ -358,3 +358,83 @@
     transition: none;
   }
 }
+
+/* Buyer welcome: Tiffany + Montserrat */
+.owner-onboarding-drawer--buyer,
+.owner-onboarding-drawer__panel--buyer {
+  --buyer-onboarding-tiffany: #4ecdd6;
+  --buyer-onboarding-tiffany-dark: #3bc0cb;
+  --buyer-onboarding-tiffany-soft: #dff6f8;
+  --buyer-onboarding-font: 'Montserrat', system-ui, sans-serif;
+}
+
+.owner-onboarding-drawer__panel--buyer {
+  font-family: var(--buyer-onboarding-font);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 58%),
+    #ffffff;
+  border-top-color: rgba(78, 205, 214, 0.2);
+  box-shadow: 0 -16px 48px rgba(15, 61, 67, 0.14);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__handle-pill {
+  background: rgba(78, 205, 214, 0.45);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbfc 100%);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__hero::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 100%);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__step-label {
+  color: var(--buyer-onboarding-tiffany-dark);
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 800;
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__title {
+  color: #0f172a;
+  font-family: var(--buyer-onboarding-font);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__pill {
+  background: linear-gradient(
+    135deg,
+    #6ad6dd 0%,
+    var(--buyer-onboarding-tiffany) 48%,
+    var(--buyer-onboarding-tiffany-dark) 100%
+  );
+  box-shadow: 0 4px 14px rgba(59, 192, 203, 0.28);
+  font-family: var(--buyer-onboarding-font);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__text {
+  color: #5b6b73;
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 500;
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__dot--active {
+  background: var(--buyer-onboarding-tiffany-dark);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__cta {
+  background: var(--buyer-onboarding-tiffany-dark);
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 800;
+  box-shadow: 0 12px 28px rgba(59, 192, 203, 0.28);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__cta:hover {
+  background: #2eafb9;
+  box-shadow: 0 14px 32px rgba(59, 192, 203, 0.34);
+}
+
+@media (min-width: 901px) {
+  .owner-onboarding-drawer__panel--buyer {
+    border-color: rgba(78, 205, 214, 0.22);
+  }
+}

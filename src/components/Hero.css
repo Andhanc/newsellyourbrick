@@ -8,7 +8,14 @@
   position: relative;
   overflow: hidden;
   margin-top: 0;
-  padding: calc(env(safe-area-inset-top, 0px) + 136px) 20px 44px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 136px)
+    20px
+    48px;
   background: #050505;
   color: #ffffff;
 }
@@ -23,7 +30,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  opacity: 0.62;
+  opacity: 0.72;
 }
 
 .hero--auction-scene__overlay {
@@ -32,18 +39,30 @@
   right: 0;
   bottom: 0;
   left: 0;
-  background: linear-gradient(
-    105deg,
-    rgba(5, 5, 5, 0.82) 0%,
-    rgba(5, 5, 5, 0.58) 42%,
-    rgba(74, 150, 166, 0.22) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 12, 14, 0.42) 0%,
+      rgba(5, 12, 14, 0.28) 38%,
+      rgba(5, 12, 14, 0.72) 100%
+    ),
+    linear-gradient(
+      105deg,
+      rgba(5, 5, 5, 0.55) 0%,
+      rgba(5, 5, 5, 0.2) 48%,
+      rgba(78, 205, 214, 0.18) 100%
+    );
   pointer-events: none;
 }
 
 .hero--auction-scene .hero-container {
   position: relative;
   z-index: 1;
+  width: 100%;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .hero-auction-header {
@@ -55,19 +74,20 @@
 .hero-auction-header__title {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  font-size: clamp(2.15rem, 5.2vw, 3.25rem);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  white-space: nowrap;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-wrap: balance;
 }
 
 .hero-auction-header__lead {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   max-width: 36rem;
-  color: rgba(255, 255, 255, 0.84);
-  font-size: 15px;
-  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 .hero--auction-scene .hero-features {
@@ -78,9 +98,21 @@
   display: none;
 }
 
+.hero-auction-scene__scroll {
+  display: none;
+}
+
 @media (min-width: 769px) {
   .hero--auction-scene {
-    padding: calc(env(safe-area-inset-top, 0px) + 144px) 24px 52px;
+    justify-content: center;
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 144px)
+      24px
+      calc(env(safe-area-inset-bottom, 0px) + 52px);
+  }
+
+  .hero--auction-scene .hero-container {
+    justify-content: flex-start;
   }
 }
 
@@ -370,26 +402,48 @@
   cursor: pointer;
 }
 
+.hero-auction-mobile__brand {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .hero--auction-scene {
-    display: flex;
-    align-items: flex-end;
-    min-height: min(670px, 78svh);
-    padding: calc(env(safe-area-inset-top, 0px) + 132px) 16px 24px;
-    background: #132124;
+    min-height: 740px;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 0 0 50% 50% / 0 0 4% 4%;
+    box-shadow: 0 22px 52px rgba(8, 61, 67, 0.18);
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 120px)
+      18px
+      calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+    background: #0a1618;
   }
 
   .hero--auction-scene__bg {
-    object-position: 58% center;
-    opacity: 0.92;
+    object-position: center center;
+    opacity: 0.88;
   }
 
   .hero--auction-scene__overlay {
-    background: rgba(4, 15, 18, 0.46);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(4, 15, 18, 0.45) 0%,
+        rgba(4, 15, 18, 0.28) 42%,
+        rgba(4, 15, 18, 0.72) 100%
+      ),
+      linear-gradient(
+        115deg,
+        rgba(4, 15, 18, 0.4) 0%,
+        rgba(78, 205, 214, 0.12) 100%
+      );
   }
 
   .hero--auction-scene .hero-container {
     width: 100%;
+    flex: 0 1 auto;
+    justify-content: center;
   }
 
   .hero--auction-scene .hero-auction-header,
@@ -397,52 +451,105 @@
     display: none;
   }
 
+  .hero-auction-mobile__brand {
+    position: absolute;
+    left: 50%;
+    top: calc(env(safe-area-inset-top, 0px) + 132px);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(92vw, 22rem);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .hero-auction-mobile__brand-text {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0.14em;
+    color: #ffffff;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: clamp(1.85rem, 7.6vw, 2.45rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    white-space: nowrap;
+    text-shadow:
+      0 1px 0 rgba(8, 28, 42, 0.22),
+      0 12px 32px rgba(8, 28, 42, 0.38);
+  }
+
+  .hero-auction-mobile__brand-word--accent {
+    color: #ffffff;
+    padding: 0.1em 0.3em 0.12em;
+    border-radius: 999px;
+    background: rgba(78, 205, 214, 0.48);
+    box-shadow:
+      0 8px 22px rgba(8, 28, 42, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  }
+
   .hero-auction-mobile {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
     max-width: 430px;
     margin: 0 auto;
     padding: 0 2px;
     color: #fff;
+    text-align: left;
+  }
+
+  .hero-auction-mobile__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: clamp(1.5rem, 6vh, 3rem);
+    margin-bottom: 0;
   }
 
   .hero-auction-mobile__eyebrow {
     display: inline-flex;
     align-items: center;
     min-height: 28px;
-    padding: 6px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.34);
+    padding: 6px 12px;
+    border: 0;
     border-radius: 999px;
-    background: rgba(10, 28, 31, 0.58);
-    color: rgba(255, 255, 255, 0.94);
+    background: #4ecdd6;
+    color: #ffffff;
     font-size: 10px;
-    font-weight: 760;
-    letter-spacing: 0.08em;
+    font-weight: 780;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba(78, 205, 214, 0.32);
   }
 
+  .hero-auction-mobile__title,
   .hero-auction-mobile h1 {
-    max-width: 340px;
-    margin: 16px 0 0;
+    max-width: 20ch;
+    margin: 18px 0 0;
     color: #fff;
-    font-size: clamp(30px, 8.4vw, 38px);
+    font-size: clamp(1.9rem, 8.6vw, 2.55rem);
     font-weight: 830;
-    line-height: 1.04;
-    letter-spacing: -0.045em;
+    line-height: 1.02;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     text-wrap: balance;
   }
 
+  .hero-auction-mobile__lead,
   .hero-auction-mobile p {
     display: -webkit-box;
-    max-width: 350px;
-    margin: 12px 0 0;
+    max-width: 34ch;
+    margin: 14px 0 0;
     overflow: hidden;
-    color: rgba(255, 255, 255, 0.84);
-    font-size: 13px;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 15px;
     font-weight: 520;
     line-height: 1.5;
     -webkit-box-orient: vertical;
@@ -455,22 +562,76 @@
     justify-content: space-between;
     gap: 14px;
     width: 100%;
-    min-height: 48px;
-    margin-top: 18px;
-    padding: 12px 15px 12px 18px;
+    min-height: 56px;
+    margin-top: 22px;
+    padding: 0.35rem 0.4rem 0.35rem 1.2rem;
     border: 0;
-    border-radius: 16px;
-    background: #fff;
-    color: #17383d;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #0f172a;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 780;
-    box-shadow: 0 14px 30px rgba(2, 13, 15, 0.28);
+    font-size: 0.95rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    box-shadow:
+      0 14px 36px rgba(15, 23, 42, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  }
+
+  .hero-auction-mobile__cta-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #4ecdd6;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 18px rgba(78, 205, 214, 0.38);
+  }
+
+  .hero-auction-mobile__cta:active {
+    transform: scale(0.99);
   }
 
   .hero-auction-mobile__cta:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.88);
+    outline: 2px solid #4ecdd6;
     outline-offset: 3px;
+  }
+
+  .hero-auction-scene__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    transform: translateX(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(8, 70, 80, 0.2);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: hero-auction-scroll-bob 2s ease-in-out infinite;
+  }
+
+  .hero-auction-scene__scroll:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  .hero-auction-scene__scroll-arrow {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #111827;
+    margin-top: 2px;
   }
 
   .hero-auction-header {
@@ -478,11 +639,11 @@
   }
 
   .hero-auction-header__title {
-    font-size: clamp(1.12rem, 4.6vw, 2rem);
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
   }
 
   .hero-auction-header__lead {
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.45;
   }
 
@@ -786,6 +947,20 @@
 
   .hero-features--static-mobile .hero-feature-card--static::after {
     animation: none;
+  }
+
+  .hero-auction-scene__scroll {
+    animation: none;
+  }
+}
+
+@keyframes hero-auction-scroll-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(6px);
   }
 }
 

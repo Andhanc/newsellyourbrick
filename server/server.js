@@ -52,6 +52,9 @@ import { registerCatalogRoutes } from './catalogRoutes.js';
 import { registerPropertyAiRoutes } from './propertyAiRoutes.js';
 import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
+import { createCorsOriginChecker } from './middleware/corsOrigin.js';
+import { requireClerkAuth } from './middleware/clerkAuth.js';
+import { resolveWebDist } from './middleware/resolveWebDist.js';
 import { getCurrencySymbol } from './utils/currency.js';
 import {
   applyFormattedPropertyAmenities,
@@ -147,6 +150,26 @@ app.use(
   })
 );
 
+// CORS must run before early routers (news/seo/catalog) so Expo Web can call the API.
+app.use(cors({
+  origin: createCorsOriginChecker(),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-User-Id',
+    'Access-Control-Request-Private-Network',
+  ],
+}));
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
+
 registerIntelligenceIoProxy(app);
 registerNewsRoutes(app);
 registerSeoRedirects(app);
@@ -211,7 +234,6 @@ function validatePassword(password) {
 }
 
 // Настройка middleware
-// CORS с поддержкой dev tunnels и других доменов
 // Health check endpoint для Railway
 app.get('/health', async (req, res) => {
   res.status(200).json({ 
@@ -956,29 +978,26 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Разрешаем запросы без origin (например, Postman, мобильные приложения)
-    if (!origin) return callback(null, true);
-    
-    // Разрешаем localhost для локальной разработки
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
-    
-    // Разрешаем dev tunnels домены
-    if (origin.includes('devtunnels.ms') || origin.includes('devtunnels')) {
-      return callback(null, true);
-    }
-    
-    // Разрешаем все остальные домены (для тестирования)
-    // В production здесь нужно указать конкретные домены
-    callback(null, true);
-  },
+  origin: createCorsOriginChecker(),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-User-Id',
+    'Access-Control-Request-Private-Network',
+  ],
 }));
-// Stripe webhook требует сырой body для проверки подписи
+
+/** Optional Clerk bearer gate — enable with REQUIRE_API_AUTH=1 after JWKS configured */
+app.use('/api', (req, res, next) => {
+  // Skip public health/config and Stripe webhook (raw body route registered earlier)
+  if (req.path === '/config' || req.path === '/health' || req.path.startsWith('/webhooks/')) {
+    return next();
+  }
+  return requireClerkAuth(req, res, next);
+});// Stripe webhook требует сырой body для проверки подписи
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 /** Опрос тест-драйва может содержать base64-фото; дефолтный лимит 100kb рвёт такие запросы. */
 app.use(express.json({ limit: '18mb' }));
@@ -16688,12 +16707,14 @@ async function checkPropertiesWithoutBids() {
 // Раздача статики из dist для продакшена (если папка существует)
 // ВАЖНО: Это должно быть ПОСЛЕ всех API маршрутов, но ПЕРЕД запуском сервера
 if (process.env.NODE_ENV === 'production') {
-  const distPath = join(__dirname, '..', 'dist');
+  const distPath = resolveWebDist(__dirname);
   const distExists = fs.existsSync(distPath);
   
-  console.log(`📦 Проверка dist папки: ${distPath}`);
+  console.log(`📦 Проверка web dist папки: ${distPath}`);
   console.log(`📦 Dist существует: ${distExists}`);
-  
+  if (process.env.USE_EXPO_WEB === '1') {
+    console.log('📦 USE_EXPO_WEB=1 — предпочтение Expo Web export (apps/client/dist-web)');
+  }  
   if (distExists) {
     // Проверяем содержимое dist
     try {

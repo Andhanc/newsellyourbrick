@@ -18,6 +18,7 @@ import {
   Info,
   Landmark,
   Lock,
+  LogIn,
   LogOut,
   Map,
   MessageSquare,
@@ -44,6 +45,7 @@ import {
   isSellerCabinetRole,
   readStoredUserRole,
 } from '../utils/cabinetRoutes'
+import { APP_VERSION } from '../utils/appVersion'
 import './HeaderMegaMenu.css'
 
 const MOBILE_MEGA_MENU_BREAKPOINT = 1023
@@ -394,36 +396,54 @@ export default function HeaderMegaMenu({
     window.location.assign('/')
   }, [clerkUser, closeAfterNav, menuUser.isLoggedIn, onClose, signOut, t])
 
-  const renderMobileUserCard = () => {
+  const renderMobileFooter = () => {
+    if (!menuUser.isLoggedIn) {
+      return (
+        <div className="header-mega-menu__footer">
+          <button
+            type="button"
+            className="header-mega-menu__login-btn"
+            onClick={() => openLoginOrNavigate(profilePath, true)}
+          >
+            <LogIn size={18} strokeWidth={2} aria-hidden />
+            <span>{t('logIn')}</span>
+          </button>
+          <p className="header-mega-menu__version" aria-label={`SellYourBrick ${APP_VERSION}`}>
+            v{APP_VERSION}
+          </p>
+        </div>
+      )
+    }
+
     const initials = getUserInitials(menuUser.firstName, menuUser.lastName, menuUser.email)
     const fullName = [menuUser.firstName, menuUser.lastName].filter(Boolean).join(' ') || emptyValue
 
     return (
-      <div className="header-mega-menu__user-plate">
-        <button
-          type="button"
-          className="header-mega-menu__user-plate-main"
-          onClick={handleUserCardClick}
-          aria-label={t('profile')}
-        >
-          <span className="header-mega-menu__user-avatar" aria-hidden>
-            {menuUser.picture ? (
-              <img src={menuUser.picture} alt="" className="header-mega-menu__user-avatar-img" />
-            ) : (
-              <span className="header-mega-menu__user-avatar-fallback">{initials}</span>
-            )}
-          </span>
-
-          <span className="header-mega-menu__user-card-info">
-            <span className="header-mega-menu__user-card-name">{fullName}</span>
-            <span className="header-mega-menu__user-card-email">{menuUser.email || emptyValue}</span>
-            <span className={`header-mega-menu__user-card-role header-mega-menu__user-card-role--${menuUser.role}`}>
-              {roleLabel}
+      <div className="header-mega-menu__footer">
+        <div className="header-mega-menu__user-plate">
+          <button
+            type="button"
+            className="header-mega-menu__user-plate-main"
+            onClick={handleUserCardClick}
+            aria-label={t('profile')}
+          >
+            <span className="header-mega-menu__user-avatar" aria-hidden>
+              {menuUser.picture ? (
+                <img src={menuUser.picture} alt="" className="header-mega-menu__user-avatar-img" />
+              ) : (
+                <span className="header-mega-menu__user-avatar-fallback">{initials}</span>
+              )}
             </span>
-          </span>
-        </button>
 
-        {menuUser.isLoggedIn ? (
+            <span className="header-mega-menu__user-card-info">
+              <span className="header-mega-menu__user-card-name">{fullName}</span>
+              <span className="header-mega-menu__user-card-email">{menuUser.email || emptyValue}</span>
+              <span className={`header-mega-menu__user-card-role header-mega-menu__user-card-role--${menuUser.role}`}>
+                {roleLabel}
+              </span>
+            </span>
+          </button>
+
           <button
             type="button"
             className="header-mega-menu__user-logout"
@@ -433,7 +453,10 @@ export default function HeaderMegaMenu({
           >
             <LogOut size={20} strokeWidth={1.85} aria-hidden />
           </button>
-        ) : null}
+        </div>
+        <p className="header-mega-menu__version" aria-label={`SellYourBrick ${APP_VERSION}`}>
+          v{APP_VERSION}
+        </p>
       </div>
     )
   }
@@ -541,7 +564,7 @@ export default function HeaderMegaMenu({
           )}
         </div>
 
-        {isMobile ? renderMobileUserCard() : null}
+        {isMobile ? renderMobileFooter() : null}
       </div>
     </div>
   )

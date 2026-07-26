@@ -839,15 +839,28 @@ const Compare = () => {
             </ul>
           </section>
         ) : favoriteAuctions.length === 0 ? (
-          <div className="compare-empty">
-            <FiColumns size={56} className="compare-empty-icon" />
-            <h2 className="compare-empty-title">Нечего сравнивать</h2>
-            <p className="compare-empty-text">Добавьте объекты в избранное, затем вернитесь сюда.</p>
-            <button type="button" className="compare-empty-button" onClick={() => navigate('/auction')}>
-              Перейти к аукционам
-              <FiArrowRight size={18} />
-            </button>
-          </div>
+          <section className="compare-empty" aria-labelledby="compare-empty-title">
+            <div className="compare-empty__visual" aria-hidden>
+              <img
+                src="/images/compare/house-magnifier.png"
+                alt=""
+                className="compare-empty__image"
+                loading="lazy"
+              />
+            </div>
+            <div className="compare-empty__copy">
+              <h2 id="compare-empty-title" className="compare-empty-title">
+                Нечего сравнивать
+              </h2>
+              <p className="compare-empty-text">
+                Добавьте объекты в «Понравилось», затем вернитесь сюда — и выберите пару.
+              </p>
+              <button type="button" className="compare-empty-button" onClick={() => navigate('/auction')}>
+                Перейти к аукционам
+                <FiArrowRight size={16} aria-hidden />
+              </button>
+            </div>
+          </section>
         ) : (
           <>
             <section className="compare-pick-section" aria-labelledby="compare-pick-heading">
