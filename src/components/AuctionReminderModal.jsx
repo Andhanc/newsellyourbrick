@@ -52,6 +52,7 @@ export default function AuctionReminderModal({ property, open, onClose }) {
   const [scheduledAt, setScheduledAt] = useState(() => new Date())
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [heroImageHidden, setHeroImageHidden] = useState(false)
   const [delivery, setDelivery] = useState({
     loaded: false,
     hasEmail: false,
@@ -81,6 +82,7 @@ export default function AuctionReminderModal({ property, open, onClose }) {
     setStep(1)
     setNotifyEmail(true)
     setNotifyWa(false)
+    setHeroImageHidden(false)
     setScheduledAt(firstScheduledSlot(bounds))
   }, [open, property, bounds])
 
@@ -292,11 +294,14 @@ export default function AuctionReminderModal({ property, open, onClose }) {
         <div className="auction-reminder-modal__layout">
           <div className="auction-reminder-modal__info">
             <div className="auction-reminder-modal__hero">
-              <img
-                src={HERO_IMAGE}
-                alt=""
-                className="auction-reminder-modal__hero-img"
-              />
+              {!heroImageHidden ? (
+                <img
+                  src={HERO_IMAGE}
+                  alt=""
+                  className="auction-reminder-modal__hero-img"
+                  onError={() => setHeroImageHidden(true)}
+                />
+              ) : null}
               <div className="auction-reminder-modal__hero-overlay" aria-hidden />
               <div className="auction-reminder-modal__hero-copy">
                 <span className="auction-reminder-modal__hero-badge">

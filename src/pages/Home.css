@@ -2,74 +2,39 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f5f5f5;
+  background: var(--site-color-bg);
+  font-family: var(--site-font-family);
+  color: var(--site-color-text);
   overflow-x: hidden;
   width: 100%;
   max-width: 100%;
   position: relative;
 }
 
-/* Аукцион: чуть плотнее стык Hero → заголовок (ниже карточек) */
-.home-page--auction .hero {
-  padding: 60px 20px 44px;
+/* Аукцион: hero-сцена с фото — без серого фона и лишних отступов */
+.home-page--auction .new-header-spacer {
+  height: 0;
+  min-height: 0;
+}
+
+/* Мобильный аукцион: App.css даёт spacer 104px — убираем, фото идёт под меню */
+html.auction-mobile-lock-x .home-page--auction .new-header-spacer,
+body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
+  height: 0;
+  min-height: 0;
+}
+
+.home-page--auction > .hero--auction-scene {
+  margin-top: 0;
+  padding-bottom: 36px;
 }
 
 .home-page--auction .hero-features {
   margin-bottom: 44px;
 }
 
-/* Аукцион: та же колонка, что у Hero — без двойного max-width+padding у .page-context-heading */
-.home-page--auction .page-context-heading.page-context-heading--home-auction {
-  max-width: none;
-  width: 100%;
-  margin: 0;
-  padding: 0 20px 28px;
-  background: #f5f5f5;
-  box-sizing: border-box;
-}
-
-.home-page--auction .page-context-heading--home-auction-inner {
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-@media (min-width: 769px) {
-  /* Когда открыт сайдбар фильтров — та же колонка, что у .property-list-container--auction-desktop */
-  .home-page--auction.home-page--auction-filters-open .page-context-heading.page-context-heading--home-auction {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner {
-    max-width: 1440px;
-    padding-left: 24px;
-    padding-right: 24px;
-    display: grid;
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-    gap: 24px;
-    align-items: end;
-  }
-
-  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner > * {
-    grid-column: 1;
-  }
-}
-
-.home-page--auction .page-context-heading__title--auction-script {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-style: italic;
-  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
-  line-height: 1.12;
-  color: #0f172a;
-  margin: 0.35rem 0 0.55rem;
-  letter-spacing: 0.03em;
-  text-align: left;
-  font-synthesis: none;
+.home-page--auction .hero--auction-scene .hero-features {
+  margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
@@ -83,32 +48,31 @@
     order: -1;
   }
 
-  /* Заголовок и крошки — сразу под шапкой, выше карточек Hero */
-  .home-page--auction > .page-context-heading.page-context-heading--home-auction {
+  .home-page--auction > .hero--auction-scene {
     order: 1;
-    padding: 0 16px 6px;
+    margin-top: 0;
   }
 
-  .home-page--auction > .hero {
-    order: 2;
-    padding-top: 6px;
-    padding-bottom: 10px;
+  /* Hero-экран аукциона: без AI-кнопки */
+  .home-page--auction .ai-button {
+    display: none !important;
   }
 
   .home-page--auction > .home-list-wrap {
-    order: 3;
+    order: 2;
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
   }
 
-  .home-page--auction > .faq {
-    order: 4;
+  .home-page--auction > .auction-cta-cards {
+    order: 3;
   }
 
-  .home-page--auction .page-context-heading__title--auction-script {
-    margin: 0 0 0.3rem;
-    font-size: clamp(2rem, 8vw, 2.5rem);
+  .home-page--auction > .faq,
+  .home-page--auction > .auction-faq-section,
+  .home-page--auction > .md-faq {
+    order: 4;
   }
 
   .home-page--auction .hero-features {
@@ -118,7 +82,7 @@
 
 .home-page .new-header {
   background: transparent;
-  padding: 20px 0;
+  padding: 28px 0 16px;
   position: fixed;
   top: 0;
   z-index: 1000;
@@ -128,9 +92,9 @@
 }
 
 .home-page .new-header__container {
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.36), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   /* Делаем такую же ширину, как на Главной (десктоп) */
   display: flex;
   align-items: center;
@@ -143,7 +107,7 @@
 }
 
 .home-page .menu-dropdown {
-  top: calc(20px + 65px + 8px) !important; /* под хедером с небольшим отступом */
+  top: calc(28px + 65px + 8px) !important; /* под хедером с небольшим отступом */
 }
 
 @media (max-width: 768px) {
@@ -167,12 +131,13 @@
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 0 0;
   }
 
   .home-page .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -382,7 +347,7 @@
 
 .chat-widget__status {
   font-size: 12px;
-  color: #10b981;
+  color: #4a96a6;
   font-weight: 500;
   font-family: 'Montserrat', sans-serif;
   display: flex;
@@ -395,7 +360,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
+  background: #4a96a6;
   display: inline-block;
 }
 
@@ -740,7 +705,7 @@
 .chat-widget__recommendation-price {
   font-size: 15px;
   font-weight: 600;
-  color: #10b981;
+  color: #4a96a6;
   font-family: 'Montserrat', sans-serif;
   margin-top: 4px;
 }
@@ -776,7 +741,7 @@
   color: #6b7280;
   background: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #4a96a6;
 }
 
 @keyframes typing {
@@ -851,8 +816,5 @@
     min-height: 0;
   }
 }
-
-
-
 
 

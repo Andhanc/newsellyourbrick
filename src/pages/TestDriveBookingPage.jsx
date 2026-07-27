@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
@@ -8,6 +8,7 @@ import { TestDriveRangeCalendar } from '@/components/ui/calendar'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { showToast } from '../components/ToastContainer'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import TestDriveSuccessDrawer from '../components/TestDriveSuccessDrawer'
 import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -34,13 +35,15 @@ const CONTACT_OPTIONS = [
 ]
 
 export default function TestDriveBookingPage() {
-  const { id } = useParams()
+  const { slugOrId: propertyRouteKey } = useParams()
+  const propertyApiKey = propertyRouteKey ? encodeURIComponent(propertyRouteKey) : ''
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const propertyTable =
     searchParams.get('table') || 'properties_apartments'
 
   const [propertyTitle, setPropertyTitle] = useState('')
+  const [propertyNumericId, setPropertyNumericId] = useState(null)
   const [bookedDates, setBookedDates] = useState([])
   const [myBookedDates, setMyBookedDates] = useState([])
   const [saving, setSaving] = useState(false)
@@ -55,6 +58,8 @@ export default function TestDriveBookingPage() {
   )
   const [contactChannel, setContactChannel] = useState(null)
   const [contactPickerOpen, setContactPickerOpen] = useState(false)
+  const [bookingSuccess, setBookingSuccess] = useState(null)
+  const confirmingSessionRef = useRef(null)
 
   const currencyFmt = (amount, currency) => {
     try {
@@ -75,15 +80,27 @@ export default function TestDriveBookingPage() {
   }, [])
 
   useEffect(() => {
+    if (!import.meta.env.DEV || searchParams.get('buyer_booking_preview') !== '1') return
+    setPropertyTitle('Вилла с бассейном у Средиземного моря')
+    setBookingSuccess({
+      booking_id: 142,
+      start_date: '2026-08-12',
+      end_date: '2026-08-18',
+      buyer_contact_channel: 'telegram',
+    })
+  }, [searchParams])
+
+  useEffect(() => {
     const load = async () => {
       try {
         const { getApiBaseUrl } = await import('../utils/apiConfig')
         API_BASE_URL = await getApiBaseUrl()
         const lang = (localStorage.getItem('i18nextLng') || 'ru').split('-')[0]
-        const pr = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`)
+        const pr = await fetch(`${API_BASE_URL}/properties/${propertyApiKey}?lang=${lang}`)
         const pj = await pr.json()
         if (pj.success && pj.data) {
-          setPropertyTitle(pj.data.title || ` #${id}`)
+          setPropertyTitle(pj.data.title || ` #${propertyRouteKey}`)
+          if (pj.data.id != null) setPropertyNumericId(Number(pj.data.id))
         }
         const uid = localStorage.getItem('userId')
         const userQ =
@@ -91,7 +108,7 @@ export default function TestDriveBookingPage() {
             ? `&user_id=${encodeURIComponent(uid)}`
             : ''
         const br = await fetch(
-          `${API_BASE_URL}/properties/${id}/test-drive/bookings?property_table=${encodeURIComponent(propertyTable)}${userQ}`
+          `${API_BASE_URL}/properties/${propertyApiKey}/test-drive/bookings?property_table=${encodeURIComponent(propertyTable)}${userQ}`
         )
         const bj = await br.json()
         if (bj.success && bj.data?.booked_dates) {
@@ -105,7 +122,7 @@ export default function TestDriveBookingPage() {
       }
     }
     load()
-  }, [id, propertyTable])
+  }, [propertyRouteKey, propertyApiKey, propertyTable])
 
   useEffect(() => {
     const checkoutResult = searchParams.get('test_drive_checkout')
@@ -113,6 +130,8 @@ export default function TestDriveBookingPage() {
     if (checkoutResult !== 'success' || !sid) return
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) return
+    if (confirmingSessionRef.current === sid) return
+    confirmingSessionRef.current = sid
     ;(async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/billing/confirm-test-drive-checkout`, {
@@ -125,13 +144,15 @@ export default function TestDriveBookingPage() {
           showToast(data.error || 'Не удалось подтвердить оплату', 'error')
           return
         }
-        showToast('Оплата прошла успешно. Бронирование добавлено в ваши записи.', 'success', 5000)
+        setBookingSuccess(data.data || {})
         const newParams = new URLSearchParams(searchParams)
         newParams.delete('test_drive_checkout')
         newParams.delete('session_id')
         setSearchParams(newParams, { replace: true })
       } catch {
         showToast('Ошибка подтверждения оплаты', 'error')
+      } finally {
+        if (confirmingSessionRef.current === sid) confirmingSessionRef.current = null
       }
     })()
   }, [searchParams, setSearchParams])
@@ -174,7 +195,7 @@ export default function TestDriveBookingPage() {
   const fetchQuote = async () => {
     if (!pendingRange) return null
     const res = await fetch(
-      `${API_BASE_URL}/properties/${id}/test-drive/quote?start_date=${encodeURIComponent(
+      `${API_BASE_URL}/properties/${propertyApiKey}/test-drive/quote?start_date=${encodeURIComponent(
         pendingRange.start
       )}&end_date=${encodeURIComponent(pendingRange.end)}`
     )
@@ -225,14 +246,14 @@ export default function TestDriveBookingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: parseInt(uid, 10),
-          propertyId: parseInt(id, 10),
+          propertyId: propertyNumericId,
           propertyType: null,
           propertyTable,
           startDate: pendingRange.start,
           endDate: pendingRange.end,
           contactChannel,
           customerEmail,
-          returnPath: `/property/${id}/test-drive`,
+          returnPath: `/property/${propertyRouteKey}/test-drive`,
         }),
       })
       const data = await res.json()
@@ -251,6 +272,14 @@ export default function TestDriveBookingPage() {
   return (
     <div className="test-drive-page">
       <Header />
+      <TestDriveSuccessDrawer
+        isOpen={Boolean(bookingSuccess)}
+        booking={bookingSuccess}
+        propertyTitle={propertyTitle}
+        onClose={() => setBookingSuccess(null)}
+        onOpenBookings={() => navigate('/profile/bookings')}
+        onBackToProperty={() => navigate(`/property/${propertyRouteKey}`)}
+      />
       <div className="test-drive-page__hero">
         <button
           type="button"

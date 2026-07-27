@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED, getUserData } from '../services/authService'
-import SellerVerificationModal from './SellerVerificationModal'
 import './VerificationRejectedGate.css'
+
+const SellerVerificationModalLazy = lazy(() => import('./SellerVerificationModal'))
 
 /**
  * Блокирующее окно после отклонения верификации админом.
@@ -96,21 +97,23 @@ export default function VerificationRejectedGate({ blockedUser = false }) {
   if (phase === 'verifying' && userId) {
     return (
       <div className="verification-rejected-gate-flow">
-        <SellerVerificationModal
-          isOpen
-          required
-          onClose={() => {
-            setPhase('banner')
-            void tryFetch()
-          }}
-          userId={userId}
-          title={t('verificationRejectedGateVerificationTitle')}
-          subtitle={t('verificationRejectedGateVerificationSubtitle')}
-          onComplete={async () => {
-            await tryFetch()
-            return true
-          }}
-        />
+        <Suspense fallback={null}>
+          <SellerVerificationModalLazy
+            isOpen
+            required
+            onClose={() => {
+              setPhase('banner')
+              void tryFetch()
+            }}
+            userId={userId}
+            title={t('verificationRejectedGateVerificationTitle')}
+            subtitle={t('verificationRejectedGateVerificationSubtitle')}
+            onComplete={async () => {
+              await tryFetch()
+              return true
+            }}
+          />
+        </Suspense>
       </div>
     )
   }

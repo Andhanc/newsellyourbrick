@@ -6,7 +6,33 @@ import { ChevronDown } from 'lucide-react'
 import { getOwnerProfileTabs, getOwnerProfileTabPath } from '../pages/ownerProfileTestTabs'
 import { getUserData, logout } from '../services/authService'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
+import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import './OwnerTestProfileMenu.css'
+
+export async function performOwnerTestLogout({ t, user, signOut, confirm = true }) {
+  if (confirm && !window.confirm(t('ownerTest_logoutConfirm'))) {
+    return
+  }
+
+  sessionStorage.setItem('clerk_logout_in_progress', 'true')
+  try {
+    if (user && signOut) {
+      await signOut({ redirectUrl: `${window.location.origin}/` })
+    }
+  } catch (error) {
+    console.warn('OwnerTestProfileMenu: Clerk signOut', error)
+  }
+
+  try {
+    await logout()
+  } catch (error) {
+    console.warn('OwnerTestProfileMenu: logout()', error)
+  } finally {
+    sessionStorage.removeItem('clerk_logout_in_progress')
+  }
+
+  window.location.assign('/')
+}
 
 export function resolveOwnerTestDisplayName({ name, fullName, fallback } = {}) {
   if (name?.trim()) return name.trim()
@@ -37,9 +63,15 @@ export default function OwnerTestProfileMenu({
     fallback: sellerRoleLabel,
   })
   const displayRole = role?.trim() || profileCtx?.roleLabel || sellerRoleLabel
+  const photoUrl = useOwnerTestUserPhoto()
+  const [photoFailed, setPhotoFailed] = useState(false)
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
   const gradientId = useId()
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [photoUrl])
 
   useEffect(() => {
     if (!open) return undefined
@@ -70,29 +102,7 @@ export default function OwnerTestProfileMenu({
       onLogout()
       return
     }
-
-    if (!window.confirm(t('ownerTest_logoutConfirm'))) {
-      return
-    }
-
-    sessionStorage.setItem('clerk_logout_in_progress', 'true')
-    try {
-      if (user && signOut) {
-        await signOut({ redirectUrl: `${window.location.origin}/` })
-      }
-    } catch (error) {
-      console.warn('OwnerTestProfileMenu: Clerk signOut', error)
-    }
-
-    try {
-      await logout()
-    } catch (error) {
-      console.warn('OwnerTestProfileMenu: logout()', error)
-    } finally {
-      sessionStorage.removeItem('clerk_logout_in_progress')
-    }
-
-    window.location.assign('/')
+    await performOwnerTestLogout({ t, user, signOut })
   }, [onLogout, signOut, user, t])
 
   return (
@@ -105,17 +115,26 @@ export default function OwnerTestProfileMenu({
           onClick={closeMenu}
         >
           <span className="otpm__avatar" aria-hidden>
-            <svg viewBox="0 0 40 40">
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#53d8d3" />
-                  <stop offset="100%" stopColor="#089a95" />
-                </linearGradient>
-              </defs>
-              <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
-              <circle cx="20" cy="16" r="7" fill="#F8FAFC" />
-              <ellipse cx="20" cy="34" rx="11" ry="8" fill="#F8FAFC" />
-            </svg>
+            {photoUrl && !photoFailed ? (
+              <img
+                src={photoUrl}
+                alt=""
+                className="otpm__avatar-img"
+                onError={() => setPhotoFailed(true)}
+              />
+            ) : (
+              <svg viewBox="0 0 40 40">
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#33adbb" />
+                    <stop offset="100%" stopColor="#007d8a" />
+                  </linearGradient>
+                </defs>
+                <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+                <circle cx="20" cy="16" r="7" fill="#F8FAFC" />
+                <ellipse cx="20" cy="34" rx="11" ry="8" fill="#F8FAFC" />
+              </svg>
+            )}
           </span>
           <span className="otpm__info">
             <span className="otpm__name">{displayName}</span>

@@ -1,6 +1,5 @@
 import { CATALOG_FILTER_CURRENCY_CODES, normalizeCurrencyCode } from './currency'
 import { hasCatalogPriceFilter, parseCatalogPriceValue } from './catalogPriceFilter'
-import { normalizeSearchPriceFilters } from './propertySearchFilters'
 
 export const CATALOG_FILTERS_STORAGE_KEY = 'propertySearchFilters'
 
@@ -94,6 +93,38 @@ export const EMPTY_CATALOG_FILTERS = {
   maxArea: '',
 }
 
+function hasFilterValue(value) {
+  return value !== undefined && value !== null && String(value).trim() !== ''
+}
+
+/**
+ * Не считаем фильтром полный диапазон ползунка (min–max сайта).
+ * Локальная реализация, чтобы `catalogFilters` не тянул `propertySearchFilters`.
+ */
+function normalizeSearchPriceFiltersLocal(filters = {}, priceBounds = null) {
+  const out = { ...filters }
+  if (!priceBounds) return out
+
+  const min = hasFilterValue(out.minPrice) ? parseFloat(out.minPrice) : null
+  const max = hasFilterValue(out.maxPrice) ? parseFloat(out.maxPrice) : null
+  const boundMin = Number(priceBounds.min)
+  const boundMax = Number(priceBounds.max)
+
+  if (
+    Number.isFinite(min) &&
+    Number.isFinite(max) &&
+    Number.isFinite(boundMin) &&
+    Number.isFinite(boundMax) &&
+    min <= boundMin &&
+    max >= boundMax
+  ) {
+    out.minPrice = ''
+    out.maxPrice = ''
+  }
+
+  return out
+}
+
 export function getCatalogFilterProfile(propertyType = '') {
   return PROPERTY_TYPE_FILTER_PROFILES[propertyType] || PROPERTY_TYPE_FILTER_PROFILES['']
 }
@@ -143,7 +174,7 @@ export function sanitizeCatalogFilters(filters = {}, bounds = null) {
   next.maxArea = ''
 
   if (bounds) {
-    return normalizeSearchPriceFilters(next, {
+    return normalizeSearchPriceFiltersLocal(next, {
       min: bounds.priceMin,
       max: bounds.priceMax,
     })

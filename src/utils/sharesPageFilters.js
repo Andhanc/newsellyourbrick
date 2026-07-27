@@ -1,39 +1,54 @@
+import { getSharePricePerShare } from './shareCardMetrics'
+import {
+  AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
+  matchesAuctionPropertyTypeFilter,
+} from './auctionDesktopFilterMatch'
+import { parsePropertyLocation } from './propertySearchLocation'
+
 export const EMPTY_SHARES_FILTERS = {
   propertyType: 'все',
-  availability: 'all',
-  minPrice: '',
-  maxPrice: '',
+  country: 'all',
+  city: 'all',
+  collectedRange: 'all',
+  offerCategory: 'all',
 }
 
-export const SHARES_PROPERTY_TYPE_OPTIONS = [
-  { value: 'все', labelKey: 'propertyTypeAll' },
-  { value: 'квартира', labelKey: 'propertyTypeFlat' },
-  { value: 'апартаменты', labelKey: 'propertyTypeApartment' },
-  { value: 'вилла', labelKey: 'propertyTypeVilla' },
-  { value: 'дом', labelKey: 'propertyTypeHouse' },
+export const SHARES_PROPERTY_TYPE_OPTIONS = AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS
+
+export const SHARES_COLLECTED_OPTIONS = [
+  { value: 'all', labelKey: 'sharesFilterCollectedAny' },
+  { value: 'early', labelKey: 'sharesFilterCollectedEarly' },
+  { value: 'active', labelKey: 'sharesFilterCollectedActive' },
+  { value: 'high', labelKey: 'sharesFilterCollectedHigh' },
+  { value: 'sold_out', labelKey: 'sharesFilterSoldOutOnly' },
 ]
 
+export const SHARES_OFFER_CATEGORY_OPTIONS = [
+  { value: 'all', labelKey: 'sharesFilterOfferAll' },
+  { value: 'stable', labelKey: 'sharesBadgeStable' },
+  { value: 'new', labelKey: 'sharesBadgeNew' },
+  { value: 'commercial', labelKey: 'sharesBadgeCommercial' },
+]
+
+/** @deprecated kept for mobile legacy chips */
 export const SHARES_AVAILABILITY_OPTIONS = [
   { value: 'available', labelKey: 'sharesFilterAvailable' },
   { value: 'sold_out', labelKey: 'sharesFilterSoldOutOnly' },
 ]
 
+/** @deprecated kept for mobile legacy chips */
 export const SHARES_MOBILE_FILTER_ITEMS = [
-  ...SHARES_PROPERTY_TYPE_OPTIONS.map((item) => ({ kind: 'type', ...item })),
-  ...SHARES_AVAILABILITY_OPTIONS.map((item) => ({ kind: 'availability', ...item })),
+  ...SHARES_PROPERTY_TYPE_OPTIONS.filter((item) => item.value !== 'all').map((item) => ({
+    kind: 'type',
+    value: item.value,
+    labelKey: item.labelKey,
+  })),
+  ...SHARES_OFFER_CATEGORY_OPTIONS.filter((item) => item.value !== 'all').map(
+    (item) => ({ kind: 'category', value: item.value, labelKey: item.labelKey }),
+  ),
 ]
 
-export function isShareSoldOut(share = {}) {
-  const total = Math.max(1, Number(share.totalShares) || 1)
-  const sold = Math.min(Number(share.sharesSold) || 0, total)
-  return sold >= total
-}
-
-export function getSharePricePerShare(share = {}) {
-  const raw = share.pricePerShare ?? share.price_per_share ?? share.share_price ?? 0
-  const price = Number(raw)
-  return Number.isFinite(price) ? price : 0
-}
+export { isShareSoldOut, getSharePricePerShare } from './shareCardMetrics'
 
 export function getSharesPriceBounds(shares = []) {
   let min = Infinity
@@ -50,70 +65,74 @@ export function getSharesPriceBounds(shares = []) {
   return { min, max: Math.max(max, min) }
 }
 
+function getShareLocationParts(share) {
+  if (share.city && share.country) {
+    return { city: share.city, country: share.country }
+  }
+  const loc = (share.location || '').trim()
+  const parts = loc.split(',').map((part) => part.trim()).filter(Boolean)
+  if (parts.length >= 2) {
+    return { city: parts[0], country: parts[parts.length - 1] }
+  }
+  return { city: parts[0] || '', country: '' }
+}
+
 function matchesPropertyType(share, propertyType) {
-  if (!propertyType || propertyType === 'все') return true
-
-  if (share.property_type) {
-    const typeMap = {
-      квартира: ['apartment', 'flat'],
-      апартаменты: ['commercial', 'apartment'],
-      вилла: ['villa'],
-      дом: ['house', 'townhouse'],
-    }
-    const allowed = typeMap[propertyType]
-    if (allowed && !allowed.includes(share.property_type)) return false
-    return true
-  }
-
-  const titleLower = (share.title || share.name || '').toLowerCase()
-  const typeMatch = {
-    квартира: titleLower.includes('квартир') || titleLower.includes('студи'),
-    апартаменты: titleLower.includes('апартамент'),
-    вилла: titleLower.includes('вилл'),
-    дом: titleLower.includes('дом') || titleLower.includes('таунхаус'),
-  }
-  return Boolean(typeMatch[propertyType])
+  return matchesAuctionPropertyTypeFilter(share, propertyType || 'все')
 }
 
-function matchesAvailability(share, availability) {
-  if (!availability || availability === 'all') return true
-  const soldOut = isShareSoldOut(share)
-  if (availability === 'available') return !soldOut
-  if (availability === 'sold_out') return soldOut
+function matchesCountry(share, country) {
+  if (!country || country === 'all') return true
+  const parsed = parsePropertyLocation(share)
+  if (!parsed) return false
+  return parsed.countryKey === country
+}
+
+function matchesCity(share, city) {
+  if (!city || city === 'all') return true
+  const parsed = parsePropertyLocation(share)
+  if (!parsed) return false
+  return parsed.regionKey === city
+}
+
+function getShareCollectedPercent(share) {
+  const total = Math.max(1, Number(share.totalShares) || 1)
+  const sold = Math.min(Number(share.sharesSold) || 0, total)
+  return Math.round((sold / total) * 100)
+}
+
+function getShareOfferCategory(share) {
+  if (share.badge) return share.badge
+  if (share.property_type === 'commercial') return 'commercial'
+  if (share.is_new) return 'new'
+  return 'stable'
+}
+
+function matchesCollectedRange(share, collectedRange) {
+  if (!collectedRange || collectedRange === 'all') return true
+  if (collectedRange === 'sold_out') return isShareSoldOut(share)
+
+  const percent = getShareCollectedPercent(share)
+  if (isShareSoldOut(share)) return false
+
+  if (collectedRange === 'early') return percent < 35
+  if (collectedRange === 'active') return percent >= 35 && percent < 70
+  if (collectedRange === 'high') return percent >= 70
   return true
 }
 
-function matchesPrice(share, filters) {
-  const { minPrice, maxPrice } = filters
-  if (minPrice === '' && maxPrice === '') return true
-
-  const price = getSharePricePerShare(share)
-  if (minPrice !== '') {
-    const min = Number(minPrice)
-    if (Number.isFinite(min) && price < min) return false
-  }
-  if (maxPrice !== '') {
-    const max = Number(maxPrice)
-    if (Number.isFinite(max) && price > max) return false
-  }
-  return true
+function matchesOfferCategory(share, offerCategory) {
+  if (!offerCategory || offerCategory === 'all') return true
+  return getShareOfferCategory(share) === offerCategory
 }
 
-function matchesSearch(share, searchQuery) {
-  if (!searchQuery) return true
-  const query = searchQuery.toLowerCase()
-  return (
-    (share.title || share.name || '').toLowerCase().includes(query) ||
-    (share.location || '').toLowerCase().includes(query)
-  )
-}
-
-export function applySharesPageFilters(shares = [], filters = EMPTY_SHARES_FILTERS, searchQuery = '') {
+export function applySharesPageFilters(shares = [], filters = EMPTY_SHARES_FILTERS) {
   return shares.filter(
     (share) =>
-      matchesSearch(share, searchQuery) &&
       matchesPropertyType(share, filters.propertyType) &&
-      matchesAvailability(share, filters.availability) &&
-      matchesPrice(share, filters),
+      matchesCountry(share, filters.country) &&
+      matchesCity(share, filters.city) &&
+      matchesCollectedRange(share, filters.collectedRange) &&
+      matchesOfferCategory(share, filters.offerCategory),
   )
 }

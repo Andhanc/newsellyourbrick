@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@clerk/clerk-react'
 import {
   ChevronDown,
   Search,
@@ -12,6 +13,11 @@ import {
   Plus,
   Upload,
   Clock,
+  LayoutGrid,
+  Gavel,
+  ShoppingBag,
+  PieChart,
+  Scale,
 } from 'lucide-react'
 import {
   getOwnerListingTypeLabels,
@@ -28,24 +34,46 @@ import {
 import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import {
+  formatOwnerAuctionTimerCountdown,
+  formatOwnerAuctionTimerFullCountdown,
+  getOwnerAuctionTimerFlags,
+} from '../utils/ownerTestTimer'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
+import { getOwnerProfileTabPath } from './ownerProfileTestTabs'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
+import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
+import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
+import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
+import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
-const MOT_TIFFANY = '#0abab5'
+const MOT_TIFFANY = '#0099a9'
 
 const PAGE_SIZE = 10
 
-const MOB_FILTER_TAB_IDS = ['all', 'active', 'draft']
+const MOB_LISTING_TAB_IDS = ['all', 'auction', 'buy_now', 'shares', 'debts']
+
+const MOB_LISTING_TAB_ICONS = {
+  all: LayoutGrid,
+  auction: Gavel,
+  buy_now: ShoppingBag,
+  shares: PieChart,
+  debts: Scale,
+}
+
+const MOB_LAYOUT_MAX_WIDTH = 900
 
 const FILTER_TAB_KEYS = {
   all: { label: 'ownerTest_propertiesTabAll', shortLabel: 'ownerTest_propertiesTabAllShort' },
@@ -310,7 +338,7 @@ function PropertiesFilterMenu({ filters, onChange }) {
 }
 
 function MiniSpark({ variant }) {
-  const colors = { tiffany: MOT_TIFFANY, green: '#22c55e', orange: '#f59e0b' }
+  const colors = { tiffany: MOT_TIFFANY, green: '#0099a9', orange: '#f59e0b' }
   const stroke = colors[variant] || MOT_TIFFANY
   return (
     <svg className="op-mini-spark" viewBox="0 0 64 28" aria-hidden>
@@ -325,13 +353,41 @@ function MiniSpark({ variant }) {
   )
 }
 
+function OpMobileHeroAvatar({ ariaLabel }) {
+  const { user } = useUser()
+  const gradientId = useId()
+  const imageUrl = user?.imageUrl
+
+  return (
+    <Link to={getOwnerProfileTabPath('personal')} className="op-mob-hero__avatar" aria-label={ariaLabel}>
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className="op-mob-hero__avatar-img" />
+      ) : (
+        <span className="op-mob-hero__avatar-fallback" aria-hidden>
+          <svg viewBox="0 0 40 40">
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#33adbb" />
+                <stop offset="100%" stopColor="#007d8a" />
+              </linearGradient>
+            </defs>
+            <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+            <circle cx="20" cy="16" r="7" fill="#F8FAFC" />
+            <ellipse cx="20" cy="34" rx="11" ry="8" fill="#F8FAFC" />
+          </svg>
+        </span>
+      )}
+    </Link>
+  )
+}
+
 function LogoMark({ className = '' }) {
   return (
     <svg className={`op-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="op-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#op-logo-grad)" />
@@ -374,48 +430,66 @@ function AmountCell({ row }) {
   )
 }
 
-function getObjectTimerState(endTime, t, now = Date.now()) {
+function getObjectTimerState(endTime, t, now = Date.now(), { compact = false } = {}) {
   if (!endTime) return null
   const endMs = new Date(endTime).getTime()
   if (!Number.isFinite(endMs)) return null
 
   const remainingMs = endMs - now
-  if (remainingMs <= 0) {
+  const { expired, warning, critical, urgent } = getOwnerAuctionTimerFlags(remainingMs)
+
+  if (expired) {
     return {
       expired: true,
+      warning: false,
+      critical: false,
+      urgent: false,
       label: t('ownerTest_propertiesTimerFinished'),
       caption: t('ownerTest_propertiesTimerCaption'),
     }
   }
 
-  const totalSeconds = Math.floor(remainingMs / 1000)
-  const days = Math.floor(totalSeconds / 86400)
-  const hours = Math.floor((totalSeconds % 86400) / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  const two = (value) => String(value).padStart(2, '0')
-
   return {
     expired: false,
-    critical: days === 0 && hours < 1,
+    warning,
+    critical,
+    urgent,
     caption: t('ownerTest_propertiesTimerLeft'),
-    label: days > 0
-      ? `${days}d ${two(hours)}:${two(minutes)}:${two(seconds)}`
-      : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
+    label: compact
+      ? formatOwnerAuctionTimerCountdown(remainingMs)
+      : formatOwnerAuctionTimerFullCountdown(remainingMs, t),
   }
 }
 
-function ObjectTimerBadge({ endTime, now }) {
+function ObjectTimerBadge({ endTime, now, compact = false, table = false }) {
   const { t } = useTranslation()
-  const timer = getObjectTimerState(endTime, t, now)
-  if (!timer) return <span className="op-object-timer op-object-timer--empty">—</span>
+  const useCompact = compact || table
+  const timer = getObjectTimerState(endTime, t, now, { compact: useCompact })
+  if (!timer) {
+    return (
+      <span
+        className={[
+          'op-object-timer',
+          'op-object-timer--empty',
+          table && 'op-object-timer--table',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        —
+      </span>
+    )
+  }
 
   return (
     <span
       className={[
         'op-object-timer',
+        table && 'op-object-timer--table',
         timer.expired && 'op-object-timer--expired',
+        timer.warning && 'op-object-timer--warning',
         timer.critical && 'op-object-timer--critical',
+        timer.urgent && 'op-object-timer--urgent',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -424,7 +498,9 @@ function ObjectTimerBadge({ endTime, now }) {
         <Clock size={13} strokeWidth={2.4} />
       </span>
       <span className="op-object-timer__content">
-        <span className="op-object-timer__caption">{timer.caption}</span>
+        {!timer.expired && !table ? (
+          <span className="op-object-timer__caption">{timer.caption}</span>
+        ) : null}
         <span className="op-object-timer__value">{timer.label}</span>
       </span>
     </span>
@@ -516,12 +592,10 @@ export default function OwnerPropertiesTestPage() {
     activeId: 'properties',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
   })
-  const tabItems = useOwnerTestTabItems({
-    activeId: 'properties',
-    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
-  })
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
+  const [mobListingTab, setMobListingTab] = useState('all')
+  const [isMobLayout, setIsMobLayout] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [properties, setProperties] = useState([])
   const [testDriveRows, setTestDriveRows] = useState([])
@@ -577,6 +651,14 @@ export default function OwnerPropertiesTestPage() {
   }, [loadProperties])
 
   const tabCounts = useMemo(() => countOwnerPropertiesByTab(properties), [properties])
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOB_LAYOUT_MAX_WIDTH}px)`)
+    const update = () => setIsMobLayout(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const quickAnalytics = useMemo(() => {
     const currency =
@@ -638,10 +720,16 @@ export default function OwnerPropertiesTestPage() {
     [tabCounts, t]
   )
 
-  const mobFilterTabs = useMemo(
-    () => filterTabs.filter((tab) => MOB_FILTER_TAB_IDS.includes(tab.id)),
-    [filterTabs]
-  )
+  const mobListingTabs = useMemo(() => {
+    const labels = getOwnerListingTypeLabels(t)
+    return MOB_LISTING_TAB_IDS.map((id) => ({
+      id,
+      label: id === 'all' ? t('ownerTest_propertiesTabAllShort') : labels[id],
+      icon: MOB_LISTING_TAB_ICONS[id],
+    }))
+  }, [t])
+
+  const filterTab = isMobLayout ? mobListingTab : activeTab
 
   const mobSummaryStats = useMemo(
     () => [
@@ -657,12 +745,12 @@ export default function OwnerPropertiesTestPage() {
   const visibleProperties = useMemo(
     () =>
       filterOwnerProperties(properties, {
-        tab: activeTab,
+        tab: filterTab,
         query: searchQuery,
         listingTypes: propertyFilters.listingTypes,
         sortBy: propertyFilters.sortBy,
       }),
-    [properties, activeTab, searchQuery, propertyFilters]
+    [properties, filterTab, searchQuery, propertyFilters]
   )
 
   const totalPages = Math.max(1, Math.ceil(visibleProperties.length / PAGE_SIZE))
@@ -688,7 +776,7 @@ export default function OwnerPropertiesTestPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [activeTab, searchQuery, propertyFilters])
+  }, [filterTab, searchQuery, propertyFilters])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -753,6 +841,59 @@ export default function OwnerPropertiesTestPage() {
   const mainColumn = (
     <>
       <div className="op-body">
+        <div className="op-hero-shell op-mobile-only">
+          <div className="op-hero-shell__bg" aria-hidden />
+          <div className="op-hero-shell__shine" aria-hidden />
+          <div className="op-mob-hero">
+            <div className="op-mob-hero__top">
+              <OpMobileHeroAvatar ariaLabel={t('ownerTest_profileAria')} />
+              <div className="op-mob-hero__actions">
+                <OwnerSupportButton className="op-mob-hero__action" iconSize={20} />
+                <OwnerNotificationsButton
+                  className="op-mob-hero__notify"
+                  badgeClassName="op-mob-hero__notify-badge"
+                  iconSize={20}
+                />
+              </div>
+            </div>
+            <h1 className="op-mob-hero__title">{t('ownerTest_navMyProperties')}</h1>
+            <label className="op-mob-hero__search">
+              <Search size={18} strokeWidth={2.2} className="op-mob-hero__search-icon" aria-hidden />
+              <input
+                type="search"
+                className="op-mob-hero__search-input"
+                placeholder={t('ownerTest_propertiesSearch')}
+                aria-label={t('ownerTest_ariaPropertySearch')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="op-hero-shell__fade" aria-hidden />
+        </div>
+
+        <div className="op-listing-filters op-mobile-only" role="tablist" aria-label={t('ownerTest_ariaPropertyFilter')}>
+          {mobListingTabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = mobListingTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`op-listing-filter${isActive ? ' op-listing-filter--active' : ''}`}
+                onClick={() => setMobListingTab(tab.id)}
+              >
+                <span className="op-listing-filter__icon" aria-hidden>
+                  <Icon size={26} strokeWidth={2.1} />
+                </span>
+                <span className="op-listing-filter__label">{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
         <header className="op-header op-desktop-only">
           <h1 className="op-header__title">{t('ownerTest_navMyProperties')}</h1>
           <div className="op-header__actions">
@@ -784,6 +925,8 @@ export default function OwnerPropertiesTestPage() {
             <OwnerTestProfileMenu />
           </div>
         </header>
+
+        <OwnerPurchasedAssets userId={getOwnerPropertiesUserId()} />
 
         <div className="op-workspace">
           <section className="op-mob-metrics op-mobile-only" aria-label={t('ownerTest_ariaPropertySummary')}>
@@ -817,21 +960,6 @@ export default function OwnerPropertiesTestPage() {
               ))}
             </div>
 
-            <div className="op-tabs op-tabs--mobile op-mobile-only" role="tablist" aria-label={t('ownerTest_ariaPropertyFilter')}>
-              {mobFilterTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  className={`op-tabs__item${activeTab === tab.id ? ' op-tabs__item--active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.shortLabel} ({tab.count})
-                </button>
-              ))}
-            </div>
-
             <div className="op-toolbar op-toolbar--desktop">
               <label className="op-search">
                 <Search size={18} strokeWidth={2} aria-hidden />
@@ -849,13 +977,24 @@ export default function OwnerPropertiesTestPage() {
 
             <div className="op-table-card">
               {propertiesLoading ? (
-                <div className="op-table-state">{t('loadingListings')}</div>
+                <OwnerPropertiesTableSkeleton />
               ) : visibleProperties.length === 0 ? (
-                <div className="op-table-state">
-                  {properties.length === 0
-                    ? t('ownerTest_propertiesEmptyAll')
-                    : t('ownerTest_propertiesEmptyFilter')}
-                </div>
+                properties.length === 0 ? (
+                  <OwnerEmptyStatePanel
+                    illustration={OwnerEmptyPropertiesIllustration}
+                    title={t('ownerTest_emptyNoPropertiesTitle')}
+                    description={t('ownerTest_emptyNoPropertiesDesc')}
+                    actionLabel={t('ownerTest_ariaAddProperty')}
+                    onAction={
+                      isEmbedded
+                        ? () => goTo(OWNER_VIEWS.ADD_PROPERTY)
+                        : undefined
+                    }
+                    actionHref={isEmbedded ? undefined : '/owner-add-property-test'}
+                  />
+                ) : (
+                  <div className="op-table-state">{t('ownerTest_propertiesEmptyFilter')}</div>
+                )
               ) : (
               <>
               <div className="op-table-wrap op-desktop-only">
@@ -863,9 +1002,8 @@ export default function OwnerPropertiesTestPage() {
                   <thead>
                     <tr>
                       <th>{t('ownerTest_tabProperties')}</th>
-                      <th>{t('buyerCabinet_billingStatus')}</th>
                       <th>{t('oap_wizardStepListing')}</th>
-                      <th>{t('ownerTest_propertiesTimerCaption')}</th>
+                      <th>{t('ownerTest_propertiesTimerLeft')}</th>
                       <th>{t('ownerTest_metricViews')}</th>
                       <th>{t('propertyDetailPrice')}</th>
                     </tr>
@@ -897,13 +1035,10 @@ export default function OwnerPropertiesTestPage() {
                           </div>
                         </td>
                         <td>
-                          <span className={`op-status op-status--${row.statusKey}`}>{row.status}</span>
-                        </td>
-                        <td>
                           <ListingTypeBadge type={row.listingType} />
                         </td>
                         <td>
-                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} />
+                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} table />
                         </td>
                         <td>
                           <div className="op-stat-cell">
@@ -925,30 +1060,29 @@ export default function OwnerPropertiesTestPage() {
                   const amount = getOwnerPropertyAmount(row, t)
                   return (
                     <li key={row.id} className="op-mob-list__item">
-                      <button
-                        type="button"
-                        className="op-mob-list__open"
-                        onClick={() => openPropertyAnalytics(row.id)}
-                        aria-label={`${t('ownerTest_ariaStatistics')}: ${row.title}`}
-                      >
-                        <img src={row.image} alt="" className="op-mob-list__thumb" loading="lazy" />
-                        <span className="op-mob-list__body">
-                          <span className="op-mob-list__head">
-                            <span className="op-mob-list__title">{row.title}</span>
-                            <span className={`op-status op-status--${row.statusKey}`}>{row.status}</span>
-                          </span>
-                          <span className="op-mob-list__location">{row.location}</span>
-                          <span className="op-mob-list__price">{amount.value}</span>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className="op-mob-list__menu"
-                        aria-label={`${t('ownerTest_ariaAdd')}: ${row.title}`}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <MoreVertical size={18} strokeWidth={2} aria-hidden />
-                      </button>
+                      <article className="op-mob-property">
+                        <div className="op-mob-property__media">
+                          <img src={row.image} alt="" className="op-mob-property__photo" loading="lazy" />
+                        </div>
+                        <div className="op-mob-property__body">
+                          <div className="op-mob-property__head">
+                            <h3 className="op-mob-property__title">{row.title}</h3>
+                            <ListingTypeBadge type={row.listingType} />
+                          </div>
+                          <p className="op-mob-property__location">{row.location}</p>
+                          <div className="op-mob-property__foot">
+                            <p className="op-mob-property__price">{amount.value}</p>
+                            <button
+                              type="button"
+                              className="op-mob-property__open"
+                              onClick={() => openPropertyAnalytics(row.id)}
+                              aria-label={`${t('ownerTest_notificationsOpen')}: ${row.title}`}
+                            >
+                              <ChevronRight size={18} strokeWidth={2.4} aria-hidden />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
                     </li>
                   )
                 })}
@@ -992,6 +1126,8 @@ export default function OwnerPropertiesTestPage() {
             <OwnerAdStack cards={['premium', 'fastSales']} className="op-owner-ads" />
           </aside>
         </div>
+
+        <RoleSwitchBottomCta targetRole="buyer" />
       </div>
       <FileUploadModal
         isOpen={showFileUploadModal}
@@ -1006,22 +1142,6 @@ export default function OwnerPropertiesTestPage() {
 
   return (
     <div className={`op${menuOpen ? ' op--menu-open' : ''}`}>
-      <header className="op-mob-topbar op-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
-        <div className="op-mob-topbar__brand">
-          <LogoMark />
-          <span className="op-logo__text">{t('ownerTest_brandName')}</span>
-        </div>
-        <div className="op-mob-topbar__slot op-mob-topbar__slot--right">
-          <OwnerSupportButton className="op-mob-topbar__bell" iconSize={22} />
-          <OwnerNotificationsButton
-            className="op-mob-topbar__bell"
-            badgeClassName="op-icon-btn__badge"
-            iconSize={22}
-          />
-          <OwnerTestProfileMenu className="otpm--topbar-compact" />
-        </div>
-      </header>
-
       <div
         className="op-drawer-backdrop op-mobile-only"
         aria-hidden={!menuOpen}
@@ -1063,8 +1183,8 @@ export default function OwnerPropertiesTestPage() {
             <svg viewBox="0 0 40 40">
               <defs>
                 <linearGradient id="op-user-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#53d8d3" />
-                  <stop offset="100%" stopColor="#089a95" />
+                  <stop offset="0%" stopColor="#33adbb" />
+                  <stop offset="100%" stopColor="#007d8a" />
                 </linearGradient>
               </defs>
               <circle cx="20" cy="20" r="20" fill="url(#op-user-grad)" />
@@ -1084,40 +1204,11 @@ export default function OwnerPropertiesTestPage() {
 
       {mainColumn}
 
-      <nav className="op-tabbar op-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-        {tabItems.map((item) => {
-          if (item.fab) {
-            return (
-              <div key="fab" className="op-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="op-tabbar__fab" aria-label={t('ownerTest_ariaAddProperty')}>
-                  <Plus size={28} strokeWidth={2.5} />
-                </Link>
-              </div>
-            )
-          }
-          const Icon = item.icon
-          const className = `op-tabbar__item${item.active ? ' op-tabbar__item--active' : ''}`
-          if (item.href) {
-            return (
-              <Link key={item.id} to={item.href} className={className}>
-                <Icon size={22} strokeWidth={2} aria-hidden />
-                <span>{item.label}</span>
-              </Link>
-            )
-          }
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={className}
-              onClick={item.id === 'more' ? () => setMenuOpen(true) : undefined}
-            >
-              <Icon size={22} strokeWidth={item.active ? 2.25 : 2} aria-hidden />
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
+      <OwnerFloatingMobileNav
+        view={OWNER_VIEWS.PROPERTIES}
+        onOpenMenu={() => setMenuOpen(true)}
+        menuOpen={menuOpen}
+      />
     </div>
   )
 }

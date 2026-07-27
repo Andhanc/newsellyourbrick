@@ -21,7 +21,8 @@ import {
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import WarpShaderBackground from '../components/ui/warp-shader-background'
 import { getUserData, getStoredNumericUserId, logout } from '../services/authService'
-import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { getCabinetDataPath, getCabinetProfilePath, getCabinetSubscriptionsPath } from '../utils/cabinetRoutes'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { fetchUserById } from '../utils/usersApi'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
 
@@ -551,7 +552,7 @@ export default function BuyerCabinetTestPage() {
                   {sub?.cancel_at_period_end === 1 ? (
                     <p className="bwt-subscription-hint">{t('buyerCabinet_cancelPeriodHint')}</p>
                   ) : null}
-                  <Link to="/subscriptions" className="bwt-subscription-manage">
+                  <Link to={getCabinetSubscriptionsPath()} className="bwt-subscription-manage">
                     <span>{t('subscriptions')}</span>
                     <ArrowRight size={16} strokeWidth={2} aria-hidden />
                   </Link>
@@ -590,7 +591,7 @@ export default function BuyerCabinetTestPage() {
           <div
             className="bwt-hub-glass-row"
             role="navigation"
-            aria-label={`${t('auction')}, ${t('shares')}, ${t('debtsTitle')}`}
+            aria-label={`${t('auction')}, ${t('coInvestment')}, ${t('debtsTitle')}`}
           >
             <FrostedGlassCard
               variant="investor"
@@ -603,9 +604,9 @@ export default function BuyerCabinetTestPage() {
             </FrostedGlassCard>
             <FrostedGlassCard
               variant="seller"
-              title={t('shares')}
+              title={t('coInvestment')}
               buttonText={t('goTo')}
-              to="/shares"
+              to={CO_INVESTMENT_PATH}
               icon={<ChartPie size={26} strokeWidth={2} aria-hidden />}
             >
               {t('buyerWalletTest_hubSharesDesc')}

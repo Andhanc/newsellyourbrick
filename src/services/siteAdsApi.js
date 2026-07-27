@@ -1,6 +1,8 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { getMarketerToken, setMarketerToken } from './newsApi'
 
+export { fetchActiveSiteAds } from './siteAdsPublicApi'
+
 const BASE = () => `${getApiBaseUrlSync()}/news`
 
 function marketerHeaders() {
@@ -16,13 +18,6 @@ function handleAuthError(res) {
     setMarketerToken('')
     throw new Error('SESSION_EXPIRED')
   }
-}
-
-export async function fetchActiveSiteAds() {
-  const res = await fetch(`${BASE()}/ads`)
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить рекламу')
-  return data.ads || []
 }
 
 export async function fetchMarketerSiteAds() {

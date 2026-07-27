@@ -1,0 +1,208 @@
+.property-detail-location-map {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.property-detail-location-map__map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.property-detail-location-map__map .location-map-container,
+.property-detail-location-map__map .location-map {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.property-detail-location-map__filters {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 0.72fr)
+    minmax(0, 0.88fr)
+    minmax(0, 1.14fr)
+    minmax(0, 1.14fr)
+    minmax(0, 0.9fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.property-detail-location-map__filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.property-detail-location-map__filter--schools {
+  padding-inline: 4px;
+}
+
+.property-detail-location-map__filter--transport {
+  padding-inline: 5px;
+}
+
+.property-detail-location-map__filter.is-active {
+  border-color: var(--filter-border, #cbd5e1);
+  background: var(--filter-soft, #f8fafc);
+  color: var(--filter-color, #0f172a);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.property-detail-location-map__filter.is-error {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.property-detail-location-map__filter:disabled {
+  opacity: 0.85;
+  cursor: wait;
+}
+
+.property-detail-location-map__filter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--filter-soft, #f8fafc);
+  color: var(--filter-color, #334155);
+}
+
+.property-detail-location-map__filter.is-active .property-detail-location-map__filter-icon {
+  background: #ffffff;
+}
+
+.property-detail-location-map__filter-label {
+  min-width: 0;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.property-detail-location-map__filter-spinner {
+  animation: property-detail-location-map-spin 0.8s linear infinite;
+}
+
+@keyframes property-detail-location-map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.location-map-poi-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid var(--poi-border, #cbd5e1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 8px 18px rgba(15, 23, 42, 0.18),
+    0 0 0 4px rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.location-map-poi-marker:hover {
+  transform: scale(1.08);
+}
+
+.location-map-poi-marker__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.location-map-poi-popup .maplibregl-popup-content {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.location-map-poi-popup .maplibregl-popup-tip {
+  border-top-color: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .property-detail-location-map__filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .property-detail-location-map__filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .property-detail-location-map__filter {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 12px;
+    border-radius: 999px;
+    justify-content: flex-start;
+  }
+
+  .property-detail-location-map__filter--schools,
+  .property-detail-location-map__filter--transport {
+    padding-inline: 12px;
+  }
+
+  .property-detail-location-map__filter-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .property-detail-location-map__filter-label {
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}

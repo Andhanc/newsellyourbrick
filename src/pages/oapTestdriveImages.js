@@ -1,3 +1,5 @@
+import { publicAsset } from '../utils/publicAsset'
+
 export const OAP_TESTDRIVE_IMAGES = {
-  sidebarHero: '/images/oap-testdrive/sidebar-hero.png',
+  sidebarHero: publicAsset('images/oap-testdrive/sidebar-hero.webp'),
 }

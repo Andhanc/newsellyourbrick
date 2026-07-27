@@ -178,7 +178,15 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onS
               <button
                 type="button"
                 className="won-property-card__sell-button"
-                onClick={onSellObject}
+                onClick={() =>
+                  onSellObject({
+                    id: purchase.propertyId,
+                    propertyId: purchase.propertyId,
+                    title: purchase.propertyTitle,
+                    image: purchase.image || purchase.propertyImage,
+                    location: purchase.location || purchase.propertyLocation || '',
+                  })
+                }
               >
                 Продать объект
               </button>

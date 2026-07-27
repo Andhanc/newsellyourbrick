@@ -25,7 +25,7 @@
   border-radius: 16px;
   padding: 28px 24px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
 }
 
 .private-club-kick-modal__panel h2 {
@@ -54,7 +54,7 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  background: #0abab5;
+  background: #0099A9;
   color: #fff;
 }
 
@@ -63,6 +63,6 @@
 }
 
 .private-club-kick-modal__btn:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 2px;
 }

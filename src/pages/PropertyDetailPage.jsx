@@ -1,10 +1,13 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Building2 } from 'lucide-react'
 import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
+import Header from '../components/Header'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
@@ -17,8 +20,19 @@ import PropertyDetailClassicSkeleton from './PropertyDetailClassicSkeleton'
 import {
   normalizePropertyTypeForDetailQuery,
   normalizePropertyTypeQueryParam,
+  getPropertyDetailPath,
 } from '../utils/propertyDetailUrl'
+import {
+  getPropertySlugFromRecord,
+  isNumericPropertyRouteParam,
+  parseIdFromPropertySlug,
+  propertyTypeHintFromSlug,
+} from '../utils/propertySlug'
 import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../utils/propertySourceTable'
+import { usePageSeoOverride } from '../context/PageSeoContext'
+import NotFoundPage from '../components/NotFoundPage'
+import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
+import './PropertyDetailPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -27,13 +41,66 @@ function normalizePropertyDetailType(prop) {
   return prop.property_type || prop.propertyType || 'apartment'
 }
 
+function buildBuyerDetailPreview() {
+  const base = properties.find((item) => item.id === 11) || properties[0] || {}
+
+  return {
+    ...base,
+    id: 900001,
+    title: 'Вилла с видом на Средиземное море',
+    name: 'Вилла с видом на Средиземное море',
+    description:
+      'Современная вилла в Марбелье с панорамной террасой, приватным бассейном и готовым интерьером. Объект прошёл проверку документов и доступен для онлайн-бронирования.',
+    location: 'Марбелья, Испания',
+    country: 'Испания',
+    city: 'Марбелья',
+    price: 1240000,
+    currentBid: 1240000,
+    currency: 'EUR',
+    area: 238,
+    sqft: 238,
+    rooms: 5,
+    beds: 4,
+    bedrooms: 4,
+    bathrooms: 3,
+    baths: 3,
+    floor: 2,
+    total_floors: 2,
+    year_built: 2023,
+    property_type: 'house',
+    source_table: 'properties_houses',
+    coordinates: [36.5101, -4.8824],
+    images: base.images || [],
+    videos: [],
+    balcony: true,
+    parking: true,
+    garage: true,
+    pool: true,
+    garden: true,
+    security: true,
+    furniture: true,
+    test_drive: true,
+    testDrive: true,
+    is_auction: false,
+    isAuction: false,
+    endTime: null,
+    auction_end_date: null,
+    test_timer_end_date: null,
+    sale_type: 'buy_now',
+    seller: 'SellYourBrick Verified',
+    moderation_status: 'approved',
+    is_reserved: false,
+    amenities: ['Бассейн', 'Терраса', 'Охрана', 'Паркинг'],
+  }
+}
+
 // Обёртка над страницей объекта:
 // Теперь используем единый «классический» layout PropertyDetailClassic
 // Для аукционных объектов внутри него отображаются:
 // - таймер аукциона
 // - блок с аукционной информацией и кнопкой «История ставок»
 const PropertyDetailPage = () => {
-  const { id } = useParams()
+  const { slugOrId: routeParam } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const { i18n, t } = useTranslation()
@@ -41,30 +108,47 @@ const PropertyDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+
+  const buyerDetailPreview = useMemo(() => {
+    if (!import.meta.env.DEV) return false
+    return new URLSearchParams(location.search || '').get('buyer_detail_preview') === '1'
+  }, [location.search])
+
+  const routeId = routeParam ?? ''
+  const resolvedNumericId = useMemo(() => parseIdFromPropertySlug(routeId), [routeId])
+  const apiPropertyKey = useMemo(() => {
+    if (isNumericPropertyRouteParam(routeId)) return routeId
+    return routeId
+  }, [routeId])
 
   /** При совпадающих numeric id в properties_apartments и properties_houses API должен получить property_type. */
   const disambigPropertyType = useMemo(() => {
     const qs = new URLSearchParams(location.search || '')
     const fromUrl = normalizePropertyTypeQueryParam(qs.get('property_type'))
     if (fromUrl) return fromUrl
+    const fromSlug = propertyTypeHintFromSlug(routeId)
+    if (fromSlug) return fromSlug
     const sp = location.state?.property
-    if (sp != null && id != null && String(sp.id) === String(id)) {
+    if (sp != null && resolvedNumericId != null && String(sp.id) === String(resolvedNumericId)) {
       return normalizePropertyTypeForDetailQuery(sp)
     }
     return ''
-  }, [location.search, location.state?.property, id])
+  }, [location.search, location.state?.property, routeId, resolvedNumericId])
 
   const propertyFromState =
     location.state?.property != null &&
-    id != null &&
-    String(location.state.property.id) === String(id)
+    resolvedNumericId != null &&
+    String(location.state.property.id) === String(resolvedNumericId)
       ? location.state.property
       : null
   const initializedFromStateRef = useRef(false)
 
   useEffect(() => {
     initializedFromStateRef.current = false
-  }, [id])
+    setNotFound(false)
+    setError(null)
+  }, [routeId])
 
   useEffect(() => {
     const fromState = location.state?.from
@@ -79,11 +163,32 @@ const PropertyDetailPage = () => {
     }
   }, [location.pathname, location.search, location.state])
   
+  const propertySeo = useMemo(() => {
+    if (!property) return null
+    const base = buildPropertyPageSeo(property, t, i18n.language)
+    if (!base) return null
+    const { image } = normalizePropertyMediaFields(property)
+    return {
+      ...base,
+      canonicalPath: location.pathname.split('?')[0],
+      ogImage: image || undefined,
+      ogType: 'product',
+    }
+  }, [property, t, i18n.language, location.pathname])
+  usePageSeoOverride(propertySeo)
+
   useEffect(() => {
     const abortController = new AbortController()
     let isActive = true
 
     const loadProperty = async () => {
+      if (buyerDetailPreview) {
+        setProperty(buildBuyerDetailPreview())
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+
       // Если объект передан из state, используем его один раз как начальные данные
       if (propertyFromState && !initializedFromStateRef.current) {
         setProperty({
@@ -94,7 +199,7 @@ const PropertyDetailPage = () => {
       }
 
       // Загружаем из API (всегда загружаем актуальные данные, включая резервацию)
-      if (id) {
+      if (apiPropertyKey) {
         try {
           setIsLoading(true)
           const lang = (i18n.language || 'ru').split('-')[0]
@@ -102,7 +207,7 @@ const PropertyDetailPage = () => {
           if (disambigPropertyType) params.set('property_type', disambigPropertyType)
           const viewerId = getStoredNumericUserId()
           if (viewerId != null) params.set('viewer_user_id', String(viewerId))
-          const response = await fetch(`${API_BASE_URL}/properties/${id}?${params.toString()}`, {
+          const response = await fetch(`${API_BASE_URL}/properties/${encodeURIComponent(apiPropertyKey)}?${params.toString()}`, {
             signal: abortController.signal,
           })
           if (response.status === 403) {
@@ -120,10 +225,23 @@ const PropertyDetailPage = () => {
             if (isActive) setError('Ошибка при загрузке объявления')
             return
           }
+          if (response.status === 404) {
+            if (isActive) setNotFound(true)
+            return
+          }
           if (response.ok) {
             const result = await response.json()
             if (result.success && result.data) {
               const prop = result.data
+              const isOwnerContext =
+                location.pathname.includes('/owner') || location.pathname.includes('/edit')
+              if (
+                String(prop.moderation_status || '').toLowerCase() !== 'approved' &&
+                !isOwnerContext
+              ) {
+                if (isActive) setNotFound(true)
+                return
+              }
               
               // Обрабатываем фотографии (включая legacy форматы photos/images)
               const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
@@ -318,6 +436,8 @@ const PropertyDetailPage = () => {
                 debt_arrest: prop.debt_arrest,
                 debt_inherited: prop.debt_inherited,
                 debt_third_party: prop.debt_third_party,
+                debt_other: prop.debt_other || null,
+                debt_amount: prop.debt_amount,
                 // Резервация
                 is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
                 reserved_until: prop.reserved_until || null,
@@ -326,8 +446,16 @@ const PropertyDetailPage = () => {
               }
               if (isActive) {
                 setProperty(formattedProperty)
+                const canonicalSlug = getPropertySlugFromRecord(prop)
+                if (canonicalSlug && isNumericPropertyRouteParam(routeId)) {
+                  const canonicalPath = getPropertyDetailPath({ ...prop, slug: canonicalSlug }, {
+                    classic: new URLSearchParams(location.search || '').get('classic') === '1',
+                  })
+                  navigate(canonicalPath, { replace: true, state: location.state })
+                  return
+                }
                 const ptForUrl = normalizePropertyTypeForDetailQuery(prop)
-                if (ptForUrl && !disambigPropertyType) {
+                if (ptForUrl && !disambigPropertyType && isNumericPropertyRouteParam(routeId)) {
                   const qs = new URLSearchParams(location.search || '')
                   if (!normalizePropertyTypeQueryParam(qs.get('property_type'))) {
                     qs.set('property_type', ptForUrl)
@@ -339,7 +467,7 @@ const PropertyDetailPage = () => {
                 }
               }
             } else {
-              if (isActive) setError('Объявление не найдено')
+              if (isActive) setNotFound(true)
             }
           } else {
             if (isActive) setError('Ошибка при загрузке объявления')
@@ -362,7 +490,11 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state])
+  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
+
+  if (notFound) {
+    return <NotFoundPage />
+  }
 
   if (isLoading && !property && !error) {
     return <PropertyDetailClassicSkeleton />
@@ -370,8 +502,20 @@ const PropertyDetailPage = () => {
 
   if (error && !property) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p>{error}</p>
+      <div className="property-detail-recovery">
+        <Header />
+        <main className="property-detail-recovery__main">
+          <BuyerEmptyState
+            icon={Building2}
+            eyebrow="Продолжим выбор"
+            title="Объект временно недоступен"
+            description="Не удалось обновить данные этого объявления. Вернитесь к проверенным объектам — фильтры и навигация останутся под рукой."
+            primaryLabel="Вернуться к объектам"
+            onPrimary={() => navigate('/auction')}
+            secondaryLabel="Все направления"
+            onSecondary={() => navigate('/sections')}
+          />
+        </main>
       </div>
     )
   }
@@ -424,6 +568,7 @@ const PropertyDetailPage = () => {
         property={{ ...property, isAuction: finalIsAuction }}
         showDocuments={isOwnerDashboard}
         onRequireLogin={() => setIsLoginModalOpen(true)}
+        requireAuthOnLoad={false}
       />
       <LoginModal
         isOpen={isLoginModalOpen}
@@ -434,5 +579,3 @@ const PropertyDetailPage = () => {
 }
 
 export default PropertyDetailPage
-
-

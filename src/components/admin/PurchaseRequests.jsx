@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingCart, FiCheck, FiX, FiClock, FiFileText, FiExternalLink } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
-import { markPurchaseRequestsViewed } from '../../utils/adminSidebarBadges';
+import { markPurchaseRequestsViewed, requestAdminSidebarBadgesRefresh, countUnseenPurchaseActionable, applyAdminSidebarBadgePatch } from '../../utils/adminSidebarBadges';
 import { showNotification } from '../../utils/toastHelper';
 import './PurchaseRequests.css';
 import { getCurrencySymbol } from '../../utils/currency';
@@ -27,6 +27,8 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
   // Загружаем запросы на покупку из БД
   useEffect(() => {
     fetchRequests();
+    markPurchaseRequestsViewed();
+    requestAdminSidebarBadgesRefresh({ patch: { purchase_requests: 0 } });
   }, []);
 
   const fetchRequests = async () => {
@@ -138,14 +140,21 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Обновляем локальное состояние
-          setRequests(requests.map(req => 
-            req.id === requestId ? { ...req, status: newStatus, admin_notes: adminNotes || req.admin_notes } : req
-          ));
+          const updated = requests.map((req) =>
+            req.id === requestId
+              ? { ...req, status: newStatus, admin_notes: adminNotes || req.admin_notes }
+              : req,
+          );
+          setRequests(updated);
           setAdminNotes('');
           setIsDetailModalOpen(false);
           setSelectedRequest(null);
           setPropertyDetails(null);
+          const remaining = countUnseenPurchaseActionable(updated);
+          requestAdminSidebarBadgesRefresh({
+            patch: applyAdminSidebarBadgePatch({}, { purchase_requests: remaining }),
+          });
+          void onAdminSectionBadgeRefresh?.();
         } else {
           showNotification(`Ошибка: ${result.error || 'Не удалось обновить статус'}`);
         }
@@ -177,8 +186,14 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setRequests(requests.filter(req => req.id !== requestId));
+          const updated = requests.filter((req) => req.id !== requestId);
+          setRequests(updated);
           showNotification('Запрос успешно удален');
+          const remaining = countUnseenPurchaseActionable(updated);
+          requestAdminSidebarBadgesRefresh({
+            patch: applyAdminSidebarBadgePatch({}, { purchase_requests: remaining }),
+          });
+          void onAdminSectionBadgeRefresh?.();
         } else {
           showNotification(`Ошибка: ${result.error || 'Не удалось удалить запрос'}`);
         }
@@ -256,6 +271,7 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
           className="purchase-requests-toolbar__btn"
           onClick={() => {
             markPurchaseRequestsViewed();
+            requestAdminSidebarBadgesRefresh({ patch: { purchase_requests: 0 } });
             void onAdminSectionBadgeRefresh?.();
           }}
         >
@@ -768,7 +784,7 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
                             setIsDetailModalOpen(false);
                           }}
                           style={{
-                            color: '#0ABAB5',
+                            color: '#0099A9',
                             textDecoration: 'none',
                             display: 'inline-flex',
                             alignItems: 'center',

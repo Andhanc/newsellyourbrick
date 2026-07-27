@@ -1,0 +1,999 @@
+/* ——— 7-screen journey wizard ——— */
+.oap.oap--journey-mobile {
+  background: #faf8f5 !important;
+  background-image: none !important;
+}
+
+.oap.oap--journey-mobile .oap-shell--journey {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+.oap.oap--journey-mobile {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #faf8f5;
+}
+
+.oap-shell--journey {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.oap-journey-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) var(--ost-mob-pad, 16px) 4px;
+  background: #faf8f5;
+}
+
+.oap-journey-topbar__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.oap-journey-topbar__back:hover {
+  background: rgba(17, 24, 39, 0.06);
+}
+
+.oap-content--journey {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+  background: #faf8f5;
+}
+
+.oap-content__body--journey {
+  padding: 1rem var(--ost-mob-pad, 16px) calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.oap--journey-flow .oap-mobile-screen {
+  gap: 1.35rem;
+}
+
+.oap--journey-mobile .oap-mobile-screen__title {
+  text-align: center;
+}
+
+.oap--journey-desktop .oap-mobile-screen__title {
+  text-align: left;
+}
+
+.oap--journey-flow .oap-mobile-screen__fields {
+  margin-top: 0;
+}
+
+.oap-footer--journey {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 12px var(--ost-mob-pad, 16px) calc(12px + env(safe-area-inset-bottom, 0px));
+  background: #faf8f5;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.oap-journey-footer__actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.oap-journey-footer__back {
+  flex: 0 0 56px;
+  width: 56px;
+  min-height: 56px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.oap-journey-footer__back:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.oap-journey-footer__back:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.oap-journey-footer__next {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 148px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.oap-journey-footer__next:not(:disabled) {
+  background: #111827 !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.22);
+}
+
+.oap-journey-footer__next:disabled {
+  background: #d1d5db !important;
+  color: #9ca3af !important;
+  opacity: 1;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.oap-footer--journey .oap-journey-footer__next.oap-btn {
+  display: flex;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 148px;
+}
+
+.oap--journey-flow .oap-wizard-step__head,
+.oap--journey-flow .oap-step-aside,
+.oap--journey-flow .oap-wizard-step__layout {
+  display: block;
+}
+
+.oap--journey-flow .oap-wizard-step__head,
+.oap--journey-flow .oap-step-aside {
+  display: none !important;
+}
+
+.oap--journey-flow .oap-wizard-step__main,
+.oap--journey-flow .oap-wizard-step__layout {
+  width: 100%;
+  max-width: none;
+}
+
+.oap--journey-flow .oap-basics-step__row--split {
+  grid-template-columns: 1fr;
+}
+
+.oap--journey-flow .oap-basics-step__card,
+.oap--journey-flow .oap-presentation-step__card,
+.oap--journey-flow .oap-strategy-step__card,
+.oap--journey-flow .oap-finance-step__card,
+.oap--journey-flow .oap-verification-step__card,
+.oap--journey-flow .oap-wizard-step__panel,
+.oap--journey-flow .oap-strategy-block,
+.oap--journey-flow .oap-presentation-block,
+.oap--journey-flow .oap-finance-block:not(.oap-finance-block--pricing),
+.oap--journey-flow .oap-basics-params__grid,
+.oap--journey-flow .oap-media-step--embedded .oap-media-step__card,
+.oap--journey-flow .oap-calculator-step--embedded .oap-calculator-step__card,
+.oap--journey-flow .oap-pricing-step--embedded .oap-pricing-step__card,
+.oap--journey-flow .oap-testdrive-step--embedded .oap-testdrive-step__card,
+.oap--journey-flow .oap-documents-step--embedded .oap-documents-step__card,
+.oap--journey-flow .oap-mobile-screen__summary {
+  background: #faf8f5;
+  box-shadow: none;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.oap--journey-flow .oap-strategy-block--testdrive .oap-testdrive-step--embedded .oap-testdrive-step__card {
+  background: #faf8f5;
+}
+
+.oap--journey-flow .oap-basics-field__input,
+.oap--journey-flow .oap-basics-field__select,
+.oap--journey-flow .oap-wizard-section input:not([type='checkbox']):not([type='radio']),
+.oap--journey-flow .oap-wizard-section select,
+.oap--journey-flow .oap-wizard-section textarea {
+  background: #fff;
+}
+
+.oap--journey-flow .oap-basics-step__row--type-journey {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-basics-step__rows > .oap-basics-step__row--type-journey:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey {
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-basics-step__journey-type-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card {
+  min-height: 78px;
+  padding: 8px 6px;
+  background: #fff;
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card__title {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.oap--journey-flow .oap-basics-step__row--address-journey {
+  margin-top: 1.75rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-basics-step__zone--address-journey {
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-basics-step__row--params-journey {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-basics-step__rows > .oap-basics-step__row--params-journey:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-basics-step__zone--params-journey {
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-basics-step__zone--params-journey .oap-basics-params__grid {
+  gap: 22px 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-basics-params__counts-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.oap--journey-flow .oap-strategy-step--journey .oap-wizard-section {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-strategy-step__row--testdrive-journey,
+.oap--journey-flow .oap-strategy-step__row--listing-journey {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap--journey-flow .oap-strategy-step__zone--testdrive-journey,
+.oap--journey-flow .oap-strategy-step__zone--listing-journey {
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-strategy-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap--journey-flow .oap-strategy-step__row--listing-journey {
+  margin-top: 1.75rem;
+}
+
+.oap--journey-flow .oap-testdrive-step--journey .oap-testdrive-step__journey-panel {
+  width: 100%;
+  background: #fff;
+  border-color: rgba(17, 24, 39, 0.08);
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-strategy-step__zone--testdrive-journey .oap-testdrive-step--journey {
+  width: 100%;
+}
+
+.oap--journey-flow .oap-testdrive-step--journey .oap-testdrive-step__toggle-row {
+  align-items: center;
+  gap: 12px 14px;
+}
+
+.oap--journey-flow .oap-testdrive-step--journey .oap-testdrive-step__toggle-copy {
+  flex: 1;
+  min-width: 0;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__modes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+  text-align: left;
+  gap: 12px 14px;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-body {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  padding-right: 22px;
+  text-align: left;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-icon {
+  flex-shrink: 0;
+}
+
+.oap--journey-flow .oap-amenities-step--journey .oap-amenities-step__card,
+.oap--journey-flow .oap-amenities-step--journey {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-finance-step--journey .oap-wizard-section {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-finance-step__row--pricing-journey,
+.oap--journey-flow .oap-finance-step__zone--pricing-journey,
+.oap--journey-flow .oap-finance-step--journey .oap-finance-block--pricing,
+.oap--journey-flow .oap-finance-step--journey .oap-pricing-step--journey {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  gap: 1rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-finance-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.oap--journey-flow .oap-verification-step--journey .oap-documents-step--journey,
+.oap--journey-flow .oap-verification-step--journey .oap-documents-step--journey .oap-documents-step__section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.oap--journey-flow .oap-verification-step__journey-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+@media (max-width: 900px) {
+  .oap.oap--journey-mobile {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .oap--journey-mobile .oap-journey-footer__next,
+  .oap--journey-mobile .oap-journey-footer__next.oap-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 20px;
+  }
+}
+
+/* ——— Desktop journey: one continuous screen (same flow as mobile) ——— */
+@media (min-width: 901px) {
+  .oap.oap--journey-desktop {
+    min-height: 100vh;
+    background: #faf8f5 !important;
+    background-image: none !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oap.oap--journey-desktop .oap-shell--journey-desktop {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #faf8f5;
+    overflow: hidden;
+  }
+
+  .oap-journey-topbar--desktop {
+    align-items: center;
+    gap: 14px;
+    padding: 18px 48px 14px;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-topbar__back {
+    flex-shrink: 0;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__card {
+    width: 100%;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__meta {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__title {
+    white-space: nowrap;
+    font-size: 1rem;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__step-row {
+    flex: 1;
+    justify-content: flex-end;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__step {
+    white-space: nowrap;
+  }
+
+  .oap-journey-topbar--desktop .oap-journey-progress__steps {
+    flex: 0 0 auto;
+  }
+
+  .oap-journey-topbar__support {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    color: #6b7280;
+  }
+
+  .oap-content--journey-desktop {
+    flex: 1;
+    min-height: 0;
+    background: #faf8f5;
+  }
+
+  .oap--journey-desktop .oap-journey-strip {
+    height: 240px;
+    max-height: 240px;
+    background: #faf8f5;
+  }
+
+  .oap-content--journey-strip-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    gap: 28px 32px;
+    align-items: start;
+    padding-inline: 48px;
+  }
+
+  .oap-content--journey-strip-side .oap-content__body--journey-desktop {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 1.25rem 0 2rem;
+    min-width: 0;
+  }
+
+  .oap-content--journey-strip-side .oap-journey-strip {
+    grid-column: 2;
+    grid-row: 1;
+    height: min(420px, calc(100vh - 220px));
+    max-height: min(420px, calc(100vh - 220px));
+    min-height: 280px;
+    position: sticky;
+    top: 8px;
+    align-self: start;
+  }
+
+  .oap-content--journey-strip-side .oap-journey-strip__image {
+    object-position: center right;
+  }
+
+  .oap-content--journey-type-map {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .oap-content--journey-type-map .oap-content__body--journey-desktop {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  .oap-content--journey-type-map .oap-journey-strip {
+    grid-column: 2;
+    grid-row: 1;
+    height: min(200px, 24vh);
+    max-height: min(200px, 24vh);
+    min-height: 140px;
+    position: sticky;
+    top: 8px;
+  }
+
+  .oap-content--journey-type-map .oap-journey-type-map-aside {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    align-self: start;
+    position: sticky;
+    top: calc(8px + min(200px, 24vh) + 16px);
+  }
+
+  .oap-content--journey-type-map .oap-loc-step__map-aside-inner,
+  .oap-content--journey-type-map .oap-journey-type-map-aside .oap-loc-step__map-col {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .oap-content--journey-type-map .oap-loc-step__map {
+    min-height: min(380px, calc(100vh - 300px));
+  }
+
+  .oap-content--journey-type-map .oap-loc-step__layout--fields-only {
+    display: block;
+  }
+
+  .oap--journey-desktop .oap-content--journey-type-map .oap-loc-step__layout--embedded-wide {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  .oap-content__body--journey-desktop {
+    padding: 1.25rem 48px 2rem;
+    max-width: none;
+  }
+
+  .oap-footer--journey-desktop {
+    padding: 14px 48px calc(18px + env(safe-area-inset-bottom, 0px));
+    background: #faf8f5;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+    box-shadow: none;
+  }
+
+  .oap-footer--journey-desktop .oap-journey-footer__actions {
+    justify-content: flex-end;
+  }
+
+  .oap--journey-desktop .oap-basics-step__journey-type-title,
+  .oap--journey-desktop .oap-strategy-step__journey-title,
+  .oap--journey-desktop .oap-finance-step__journey-title,
+  .oap--journey-desktop .oap-verification-step__journey-title,
+  .oap--journey-desktop .oap-journey-amenities__title {
+    font-size: 1.5rem;
+  }
+
+  .oap--journey-desktop .oap-mobile-screen__title {
+    font-size: 1.75rem;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card {
+    align-items: flex-start;
+    min-height: 0;
+    padding: 16px 18px 16px 16px;
+    border-radius: 16px;
+    gap: 14px;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__body {
+    padding-right: 26px;
+    gap: 4px;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__title {
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__desc {
+    display: block;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #6b7280;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__check {
+    top: 14px;
+    right: 14px;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Центрируем одиночную карточку в последнем ряду (7 типов → 3×2 + 1) */
+  .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card:last-child:nth-child(odd):not(:only-child) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc((100% - 14px) / 2);
+    max-width: calc((100% - 14px) / 2);
+  }
+
+  .oap--journey-desktop .oap-loc-step__layout--embedded-wide {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    justify-content: stretch;
+  }
+
+  .oap--journey-desktop .oap-testdrive-step--journey .oap-testdrive-step__toggle-row {
+    align-items: center;
+    gap: 1rem 1.25rem;
+    min-height: 96px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    padding: 14px 16px;
+    text-align: left;
+    gap: 12px 14px;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-body {
+    flex: 1;
+    width: auto;
+    padding-right: 22px;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .oap--journey-desktop .oap-testdrive-step--journey .oap-testdrive-step__toggle-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-label {
+    font-size: 14px;
+  }
+
+  .oap--journey-desktop .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-desc {
+    font-size: 12px;
+    -webkit-line-clamp: 3;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__req-top {
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__req-content {
+    order: 0;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__req-icon {
+    order: 1;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__security {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__security-icon {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  .oap--journey-desktop .oap-documents-step--journey .oap-documents-step__security > div {
+    order: 0;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .oap--journey-desktop .oap-mobile-screen__generate-row {
+    justify-content: flex-start;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__title,
+  .oap--journey-desktop .oap-journey-amenities__title {
+    font-size: 1.5rem;
+    text-align: left;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__add-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    min-height: 108px;
+    padding: 1.25rem 1.5rem;
+    text-align: left;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__add-card-body {
+    order: 0;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__add-card-icon {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__add-card--video {
+    min-height: 96px;
+  }
+
+  .oap--journey-desktop .oap-mobile-media__videos-title {
+    font-size: 1.05rem;
+  }
+
+  .oap--journey-desktop .oap-amenities-step--journey .oap-amenities-extra {
+    margin-top: 2.25rem;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--params-journey .oap-basics-params__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px 24px;
+    align-items: start;
+  }
+
+  .oap--journey-desktop .oap-basics-params__counts-row {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 48px;
+  }
+
+  .oap--journey-desktop .oap-basics-params__counts-row .oap-basics-count-picker {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .oap--journey-desktop .oap-basics-params__counts-row .oap-basics-count-picker.oap-basics-field--full {
+    grid-column: auto;
+  }
+
+  .oap--journey-desktop .oap-basics-params__counts-row .oap-basics-count-picker__track {
+    max-width: none;
+  }
+
+  /* Дом / вилла / квартира: 3 строки — площади+год | счётчики | остальное */
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(1),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(1),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(2),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(2),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(3),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(3),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(1),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(1),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(2),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(2),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(3),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(3) {
+    grid-row: 1;
+  }
+
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(4),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(4),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(4),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(4) {
+    grid-row: 2;
+  }
+
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(5),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(5),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(7),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(7),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(5),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(5),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(7),
+  .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(7) {
+    grid-row: 3;
+  }
+
+  .oap--journey-desktop .oap-basics-step__zone--params-journey .oap-basics-count-picker.oap-basics-field--full {
+    grid-column: auto;
+  }
+
+  .oap--journey-desktop .oap-basics-count-picker {
+    grid-template-columns: 32px auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .oap--journey-desktop .oap-basics-count-picker__track {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2px;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 48px;
+    padding: 6px 10px;
+  }
+
+  .oap--journey-desktop .oap-basics-count-picker__option {
+    margin: 0;
+    min-width: 38px;
+    min-height: 36px;
+  }
+
+  .oap--journey-desktop .oap-basics-count-picker__option--plus {
+    min-width: 44px;
+  }
+}

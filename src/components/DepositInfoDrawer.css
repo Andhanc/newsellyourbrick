@@ -1,0 +1,26 @@
+.deposit-info-drawer.buyer-sheet { z-index: 13630; }
+.deposit-info-drawer .buyer-sheet__surface { width: min(100%, 500px); }
+.deposit-info-drawer__content { text-align: center; }
+.deposit-info-drawer__visual { width: 180px; height: 158px; margin: -3px auto 0; overflow: hidden; }
+.deposit-info-drawer__visual img { width: 100%; height: 100%; object-fit: contain; }
+.deposit-info-drawer__eyebrow { display: inline-flex; margin-bottom: 9px; padding: 6px 10px; border-radius: 999px; background: var(--buyer-mint); color: var(--buyer-teal-deep); font: 800 9px/1 var(--buyer-font-display); letter-spacing: .09em; text-transform: uppercase; }
+.deposit-info-drawer h2 { margin: 0; color: var(--buyer-ink); font: 820 clamp(26px, 7vw, 34px)/1 var(--buyer-font-display); letter-spacing: -.045em; }
+.deposit-info-drawer__lead { max-width: 390px; margin: 12px auto 17px; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
+.deposit-info-drawer__benefits { display: grid; gap: 8px; text-align: left; }
+.deposit-info-drawer__benefits > div { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px; border-radius: 15px; background: var(--buyer-cloud); color: var(--buyer-text-muted); font: 500 12px/1.4 var(--buyer-font-body); }
+.deposit-info-drawer__benefits svg { width: 36px; height: 36px; padding: 9px; border-radius: 12px; background: var(--buyer-white); color: var(--buyer-teal-deep); }
+.deposit-info-drawer__actions { display: grid; gap: 8px; }
+.deposit-info-drawer__cta,
+.deposit-info-drawer__secondary { width: 100%; min-height: var(--buyer-touch); border-radius: 15px; cursor: pointer; font: 750 13px/1 var(--buyer-font-display); }
+.deposit-info-drawer__cta { border: 0; background: var(--buyer-teal-deep); color: white; }
+.deposit-info-drawer__secondary { border: 1px solid var(--buyer-line); background: var(--buyer-white); color: var(--buyer-teal-deep); }
+
+@media (max-width: 480px) {
+  .deposit-info-drawer__content { text-align: left; }
+  .deposit-info-drawer__visual { width: 160px; height: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deposit-info-drawer__cta,
+  .deposit-info-drawer__secondary { transition: none; }
+}

@@ -37,7 +37,7 @@
 }
 
 .admin-private-club__toolbar button:hover:not(:disabled) {
-  border-color: #0abab5;
+  border-color: #0099A9;
   color: #0a9d99;
 }
 
@@ -96,8 +96,8 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  background: #ecfdf5;
-  color: #047857;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .admin-private-club__pill--muted {

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ArrowDown } from 'lucide-react'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 import './Hero.css'
 
 function measureCopyHeight(element) {
@@ -35,7 +37,9 @@ function measureCopyHeight(element) {
 
 const MOBILE_BREAKPOINT_PX = 768
 
-const Hero = ({ staticMobileCards = false }) => {
+const AUCTION_HERO_BG = '/images/sellyourbrick/about/mission-villa.jpg'
+
+const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
   const { t } = useTranslation()
   const [isMobile, setIsMobile] = useState(
     () =>
@@ -48,6 +52,7 @@ const Hero = ({ staticMobileCards = false }) => {
   const copyRefs = useRef([])
 
   const isStaticMobile = staticMobileCards && isMobile
+  const isStaticCards = isStaticMobile
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
@@ -108,7 +113,7 @@ const Hero = ({ staticMobileCards = false }) => {
   }
 
   useEffect(() => {
-    if (isStaticMobile) return undefined
+    if (isStaticCards) return undefined
     if (expandedIndex === null || typeof window === 'undefined') return undefined
 
     const remeasure = () => {
@@ -122,20 +127,69 @@ const Hero = ({ staticMobileCards = false }) => {
 
     window.addEventListener('resize', remeasure, { passive: true })
     return () => window.removeEventListener('resize', remeasure)
-  }, [expandedIndex, isStaticMobile, t])
+  }, [expandedIndex, isStaticCards, t])
 
   const handleCopyTransitionEnd = (index) => (event) => {
     if (event.target !== event.currentTarget || event.propertyName !== 'max-height') return
     setCollapsingIndex((prev) => (prev === index ? null : prev))
   }
 
+  const scrollToAuctionCatalog = () => {
+    const target =
+      document.getElementById('properties-grid') ||
+      document.querySelector('.home-list-wrap')
+    if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
+  }
+
   return (
-    <section className="hero">
+    <section
+      className={['hero', auctionScene && 'hero--auction-scene'].filter(Boolean).join(' ')}
+    >
+      {auctionScene ? (
+        <>
+          <img className="hero--auction-scene__bg" src={AUCTION_HERO_BG} alt="" aria-hidden />
+          <div className="hero--auction-scene__overlay" aria-hidden />
+          <div className="hero-auction-mobile__brand" aria-label="SellYourBrick">
+            <span className="hero-auction-mobile__brand-text">
+              <span className="hero-auction-mobile__brand-word">Sell</span>
+              <span className="hero-auction-mobile__brand-word hero-auction-mobile__brand-word--accent">
+                Your
+              </span>
+              <span className="hero-auction-mobile__brand-word">Brick</span>
+            </span>
+          </div>
+        </>
+      ) : null}
       <div className="hero-container">
+        {auctionScene ? (
+          <div className="hero-auction-mobile">
+            <div className="hero-auction-mobile__copy">
+              <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
+              <h1 className="hero-auction-mobile__title">{t('auctionSectionTitle')}</h1>
+              <p className="hero-auction-mobile__lead">{t('auctionSectionSubtitle')}</p>
+              <button
+                type="button"
+                className="hero-auction-mobile__cta"
+                onClick={scrollToAuctionCatalog}
+              >
+                <span>{t('auctionSectionCta')}</span>
+                <span className="hero-auction-mobile__cta-icon" aria-hidden>
+                  <ArrowDown size={18} strokeWidth={2.4} />
+                </span>
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {auctionScene ? (
+          <header className="hero-auction-header">
+            <h1 className="hero-auction-header__title">{t('auctionSectionTitle')}</h1>
+            <p className="hero-auction-header__lead">{t('auctionSectionSubtitle')}</p>
+          </header>
+        ) : null}
         <div
           className={[
             'hero-features',
-            isStaticMobile && 'hero-features--static-mobile',
+            isStaticCards && 'hero-features--static-mobile',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -149,13 +203,13 @@ const Hero = ({ staticMobileCards = false }) => {
               key={feature.titleKey}
               className={[
                 'hero-feature-card',
-                isStaticMobile && 'hero-feature-card--static',
-                !isStaticMobile && isExpanded && 'hero-feature-card--expanded',
-                !isStaticMobile && isCollapsing && 'hero-feature-card--collapsing',
+                isStaticCards && 'hero-feature-card--static',
+                !isStaticCards && isExpanded && 'hero-feature-card--expanded',
+                !isStaticCards && isCollapsing && 'hero-feature-card--collapsing',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              {...(!isStaticMobile
+              {...(!isStaticCards
                 ? {
                     onClick: () => handleToggle(index),
                     role: 'button',
@@ -179,7 +233,7 @@ const Hero = ({ staticMobileCards = false }) => {
               </div>
               <div className="hero-feature-content">
                 <h3>{t(feature.titleKey)}</h3>
-                {!isStaticMobile ? (
+                {!isStaticCards ? (
                   <div
                     ref={(el) => {
                       copyRefs.current[index] = el
@@ -201,9 +255,18 @@ const Hero = ({ staticMobileCards = false }) => {
           })}
         </div>
       </div>
+      {auctionScene ? (
+        <button
+          type="button"
+          className="hero-auction-scene__scroll"
+          onClick={scrollToAuctionCatalog}
+          aria-label={t('auctionSectionCta')}
+        >
+          <span className="hero-auction-scene__scroll-arrow" aria-hidden="true" />
+        </button>
+      ) : null}
     </section>
   )
 }
 
 export default Hero
-

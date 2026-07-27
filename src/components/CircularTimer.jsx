@@ -267,10 +267,10 @@ const CircularTimer = ({
             <stop offset="100%" stopColor="#991b1b" stopOpacity="1" />
           </linearGradient>
           <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#86efac" stopOpacity="1" />
-            <stop offset="30%" stopColor="#6ee7b7" stopOpacity="1" />
-            <stop offset="60%" stopColor="#34d399" stopOpacity="1" />
-            <stop offset="100%" stopColor="#059669" stopOpacity="1" />
+            <stop offset="0%" stopColor="#99d5dd" stopOpacity="1" />
+            <stop offset="30%" stopColor="#99d5dd" stopOpacity="1" />
+            <stop offset="60%" stopColor="#33adbb" stopOpacity="1" />
+            <stop offset="100%" stopColor="#007d8a" stopOpacity="1" />
           </linearGradient>
           <linearGradient id="grayGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#c7d2fe" stopOpacity="1" />
@@ -289,10 +289,10 @@ const CircularTimer = ({
           
           {/* Радиальные градиенты для объемного центра (зеленый для лидера) */}
           <radialGradient id="centerGreenRadial" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#a7f3d0" stopOpacity="1" />
-            <stop offset="40%" stopColor="#6ee7b7" stopOpacity="1" />
-            <stop offset="70%" stopColor="#34d399" stopOpacity="1" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="1" />
+            <stop offset="0%" stopColor="#cce9ed" stopOpacity="1" />
+            <stop offset="40%" stopColor="#99d5dd" stopOpacity="1" />
+            <stop offset="70%" stopColor="#33adbb" stopOpacity="1" />
+            <stop offset="100%" stopColor="#0099A9" stopOpacity="1" />
           </radialGradient>
           
           {/* Фильтры для теней */}

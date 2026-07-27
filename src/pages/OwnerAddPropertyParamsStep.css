@@ -126,8 +126,8 @@
 .oap-param-field__input:focus,
 .oap-param-field__select:focus {
   outline: none;
-  border-color: #0abab5;
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.28);
+  border-color: #0099a9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.28);
 }
 
 .oap-param-field--error .oap-param-field__input,
@@ -150,7 +150,7 @@
   padding: 20px 16px 12px;
   border-radius: 16px;
   background: #b8ece9;
-  border: 1px solid rgba(10, 186, 181, 0.28);
+  border: 1px solid rgba(0, 153, 169, 0.28);
   position: sticky;
   top: 16px;
   overflow: hidden;
@@ -171,14 +171,14 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  color: #089a95;
+  color: #007d8a;
   background: rgba(255, 255, 255, 0.55);
 }
 
 .oap-params-step__tip-title {
   font-size: 15px;
   font-weight: 700;
-  color: #065f5c;
+  color: #006672;
   letter-spacing: -0.01em;
 }
 

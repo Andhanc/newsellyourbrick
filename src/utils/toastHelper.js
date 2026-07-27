@@ -1,17 +1,21 @@
 import { showToast } from '../components/ToastContainer'
+import { isStructuredToastEvent } from './toastModel'
 
 /**
  * Утилита для замены alert() на красивые toast-уведомления
  * Автоматически определяет тип уведомления по содержимому сообщения
  */
-export const showNotification = (message, type = null, duration = 4000) => {
+export const showNotification = (messageOrEvent, type = null, duration = 4000) => {
+  if (isStructuredToastEvent(messageOrEvent)) {
+    return showToast(messageOrEvent)
+  }
+
   // Если тип не указан, определяем автоматически
   if (!type) {
-    const messageLower = typeof message === 'string' ? message.toLowerCase() : ''
+    const messageLower = typeof messageOrEvent === 'string' ? messageOrEvent.toLowerCase() : ''
     
     // Успешные сообщения
     if (
-      messageLower.includes('успешно') ||
       messageLower.includes('успешно') ||
       messageLower.includes('сохранен') ||
       messageLower.includes('отправлен') ||
@@ -51,9 +55,8 @@ export const showNotification = (message, type = null, duration = 4000) => {
     }
   }
 
-  return showToast(message, type, duration)
+  return showToast(messageOrEvent, type, duration)
 }
 
 // Экспортируем также прямую функцию для обратной совместимости
 export default showNotification
-

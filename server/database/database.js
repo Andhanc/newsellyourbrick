@@ -57,3 +57,13 @@ export {
 export { administratorQueries } from './module7AdminPrisma.js';
 export { stripeSubscriptionQueries } from './module8StripePrisma.js';
 export { crmQueries } from './module9CrmPrisma.js';
+export {
+  appendPropertyAiMessage,
+  createPropertyAiReport,
+  ensurePropertyAiConversation,
+  findReusablePropertyAiReport,
+  getOwnedPropertyAiReport,
+  listPropertyAiHistory,
+  updatePropertyAiReport,
+  userExistsForPropertyAi,
+} from './propertyAiReportsPrisma.js';

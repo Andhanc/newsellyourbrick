@@ -59,7 +59,7 @@ export default function ExcelImportBucketPreloader({ title }) {
               <stop offset="1" stopColor="rgba(10,186,181,0.14)" />
             </linearGradient>
             <filter id="excel-bucket-shadow" x="-20" y="-20" width="440" height="300" filterUnits="userSpaceOnUse">
-              <feDropShadow dx="0" dy="12" stdDeviation="16" floodColor="rgba(10, 186, 181, 0.25)" />
+              <feDropShadow dx="0" dy="12" stdDeviation="16" floodColor="rgba(0, 153, 169, 0.25)" />
             </filter>
           </defs>
           <g filter="url(#excel-bucket-shadow)">

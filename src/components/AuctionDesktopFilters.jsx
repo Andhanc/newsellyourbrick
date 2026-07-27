@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import FilterCollapsibleSection from './FilterCollapsibleSection'
+import useFilterSectionState from '../hooks/useFilterSectionState'
 import {
   AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
   AUCTION_DESKTOP_SALE_TYPE_ITEMS,
@@ -24,6 +26,11 @@ function AuctionDesktopFilters({
   setPropertyTypes,
   saleFilters,
   setSaleFilters,
+  locationOptions = [],
+  country = '',
+  city = '',
+  setCountry,
+  setCity,
   minArea,
   maxArea,
   setMinArea,
@@ -35,14 +42,34 @@ function AuctionDesktopFilters({
   areaBounds,
   priceBounds,
   onApply,
+  variant = 'sidebar',
 }) {
   const { t } = useTranslation()
-  const [openSections, setOpenSections] = useState({
-    type: true,
-    sale: true,
-    area: true,
-    price: true,
-  })
+
+  const activeSectionKeys = useMemo(() => {
+    const keys = []
+    if (country || city) keys.push('location')
+    if (propertyTypes.length > 0) keys.push('type')
+    if (saleFilters.length > 0) keys.push('sale')
+    if (minArea !== '' || maxArea !== '') keys.push('area')
+    if (minPrice !== '' || maxPrice !== '') keys.push('price')
+    return keys
+  }, [country, city, propertyTypes, saleFilters, minArea, maxArea, minPrice, maxPrice])
+
+  const [openSections, toggleSection] = useFilterSectionState(
+    {
+      location: true,
+      type: true,
+      sale: true,
+      area: true,
+      price: true,
+    },
+    activeSectionKeys,
+  )
+  const selectedCountry = useMemo(
+    () => locationOptions.find((item) => item.key === country) || null,
+    [locationOptions, country],
+  )
 
   const activeChips = useMemo(() => {
     const chips = []
@@ -66,6 +93,27 @@ function AuctionDesktopFilters({
         })
       }
     })
+    if (country) {
+      const countryLabel =
+        locationOptions.find((item) => item.key === country)?.label || country
+      chips.push({
+        id: `country-${country}`,
+        label: countryLabel,
+        onRemove: () => {
+          setCountry?.('')
+          setCity?.('')
+        },
+      })
+    }
+    if (city) {
+      const cityLabel =
+        selectedCountry?.regions?.find((item) => item.key === city)?.label || city
+      chips.push({
+        id: `city-${city}`,
+        label: cityLabel,
+        onRemove: () => setCity?.(''),
+      })
+    }
     if (minArea !== '' || maxArea !== '') {
       chips.push({
         id: 'area',
@@ -104,6 +152,12 @@ function AuctionDesktopFilters({
     setMaxArea,
     setMinPrice,
     setMaxPrice,
+    country,
+    city,
+    locationOptions,
+    selectedCountry,
+    setCountry,
+    setCity,
     t,
   ])
 
@@ -119,13 +173,13 @@ function AuctionDesktopFilters({
   const priceFillLeft = ((sliderPriceMin - priceBounds.min) / priceSpan) * 100
   const priceFillWidth = ((sliderPriceMax - sliderPriceMin) / priceSpan) * 100
 
-  const toggleSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+  const toggleSectionKey = toggleSection
 
   const handleReset = () => {
     setPropertyTypes([])
     setSaleFilters([])
+    setCountry?.('')
+    setCity?.('')
     setMinArea('')
     setMaxArea('')
     setMinPrice('')
@@ -159,10 +213,17 @@ function AuctionDesktopFilters({
   }
 
   return (
-    <aside className="auction-desktop-filters" aria-label={t('filters')}>
-      <div className="auction-desktop-filters__head">
-        <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
-      </div>
+    <aside
+      className={`auction-desktop-filters${
+        variant === 'drawer' ? ' auction-desktop-filters--drawer' : ''
+      }`}
+      aria-label={t('filters')}
+    >
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__head">
+          <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
+        </div>
+      ) : null}
 
       {activeChips.length > 0 && (
         <div className="auction-desktop-filters__chips">
@@ -181,10 +242,53 @@ function AuctionDesktopFilters({
       )}
 
       <div className="auction-desktop-filters__sections">
-        <FilterSection
+        <FilterCollapsibleSection
+          title={t('catalogFilterLocation')}
+          open={openSections.location}
+          onToggle={() => toggleSectionKey('location')}
+        >
+          <div className="catalog-desktop-filters__location-fields">
+            <label className="catalog-desktop-filters__select-label">
+              <span>{t('catalogFilterCountry')}</span>
+              <select
+                className="auction-desktop-filters__input catalog-desktop-filters__select"
+                value={country}
+                onChange={(e) => {
+                  setCountry?.(e.target.value)
+                  setCity?.('')
+                }}
+              >
+                <option value="">{t('catalogFilterAll')}</option>
+                {locationOptions.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="catalog-desktop-filters__select-label">
+              <span>{t('catalogFilterRegion')}</span>
+              <select
+                className="auction-desktop-filters__input catalog-desktop-filters__select"
+                value={city}
+                onChange={(e) => setCity?.(e.target.value)}
+                disabled={!country}
+              >
+                <option value="">{t('catalogFilterAll')}</option>
+                {(selectedCountry?.regions || []).map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </FilterCollapsibleSection>
+
+        <FilterCollapsibleSection
           title={t('auctionFilterPropertyType')}
           open={openSections.type}
-          onToggle={() => toggleSection('type')}
+          onToggle={() => toggleSectionKey('type')}
         >
           <ul className="auction-desktop-filters__checklist">
             {PROPERTY_TYPE_ITEMS.map((item) => (
@@ -205,12 +309,12 @@ function AuctionDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterSaleType')}
           open={openSections.sale}
-          onToggle={() => toggleSection('sale')}
+          onToggle={() => toggleSectionKey('sale')}
         >
           <ul className="auction-desktop-filters__checklist">
             {SALE_TYPE_ITEMS.map((item) => (
@@ -227,12 +331,12 @@ function AuctionDesktopFilters({
               </li>
             ))}
           </ul>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterArea')}
           open={openSections.area}
-          onToggle={() => toggleSection('area')}
+          onToggle={() => toggleSectionKey('area')}
         >
           <div className="auction-desktop-filters__range-inputs">
             <input
@@ -291,12 +395,12 @@ function AuctionDesktopFilters({
               unit: t('squareMeters'),
             })}
           </p>
-        </FilterSection>
+        </FilterCollapsibleSection>
 
-        <FilterSection
+        <FilterCollapsibleSection
           title={t('auctionFilterPrice')}
           open={openSections.price}
-          onToggle={() => toggleSection('price')}
+          onToggle={() => toggleSectionKey('price')}
         >
           <div className="auction-desktop-filters__range-inputs">
             <input
@@ -355,30 +459,20 @@ function AuctionDesktopFilters({
               unit: '',
             })}
           </p>
-        </FilterSection>
+        </FilterCollapsibleSection>
       </div>
 
-      <div className="auction-desktop-filters__footer">
-        <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
-          {t('auctionApplyFilters')}
-        </button>
-        <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
-          {t('auctionClearAllFilters')}
-        </button>
-      </div>
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__footer">
+          <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
+            {t('auctionApplyFilters')}
+          </button>
+          <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
+            {t('auctionClearAllFilters')}
+          </button>
+        </div>
+      ) : null}
     </aside>
-  )
-}
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <section className={`auction-desktop-filters__section${open ? ' is-open' : ''}`}>
-      <button type="button" className="auction-desktop-filters__section-toggle" onClick={onToggle}>
-        <span>{title}</span>
-        <ChevronDown size={18} className="auction-desktop-filters__chevron" aria-hidden />
-      </button>
-      {open ? <div className="auction-desktop-filters__section-body">{children}</div> : null}
-    </section>
   )
 }
 

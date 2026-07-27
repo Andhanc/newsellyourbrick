@@ -7,12 +7,36 @@ import {
   CLERK_DB_USER_SYNCED,
 } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
+import { fetchCabinetUserByEmail } from '../utils/resolveCabinetUserByEmail'
+import { isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import {
+  CABINET_HISTORY_UPDATED_EVENT,
+  PRIVATE_CLUB_KICKED_MODAL_EVENT,
+  SUBSCRIPTION_BILLING_UPDATED_EVENT,
+} from '../constants/cabinetEvents'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
+import { mapReservationPurchase } from '../utils/cabinetPurchaseHistory'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
+
+export function invalidateCabinetHistoryCache(userId) {
+  clearCabinetHistoryCacheForUser(userId)
+}
+
+function clearCabinetHistoryCacheForUser(uid) {
+  if (!uid) return
+  const base = `${API_BASE_URL}/users/${uid}`
+  CABINET_JSON_CACHE.delete(`${base}/reservation-purchases`)
+  CABINET_JSON_CACHE.delete(`${base}/share-purchases`)
+  CABINET_JSON_CACHE.delete(`${API_BASE_URL}/auction-winners/user/${uid}`)
+  CABINET_JSON_CACHE.delete(`${API_BASE_URL}/bids/user/${uid}`)
+}
+
 const HISTORY_CACHE_TTL_MS = 45000
 const SUBSCRIPTION_CACHE_TTL_MS = 30000
 
@@ -20,7 +44,7 @@ async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
   const cached = CABINET_JSON_CACHE.get(url)
   const now = Date.now()
 
-  if (!force && cached?.data && now - cached.ts < ttlMs) {
+  if (!force && cached?.data != null && now - cached.ts < ttlMs) {
     return cached.data
   }
   if (!force && cached?.promise) {
@@ -49,10 +73,7 @@ async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
 }
 
 /** После оплаты / синхронизации Stripe — перечитать тариф в превью кабинета. */
-export const SUBSCRIPTION_BILLING_UPDATED_EVENT = 'subscription-billing-updated'
-
-/** Модератор снял доступ закрытого клуба по БД — показать модальное окно (слушатель в PrivateClubKickModal). */
-export const PRIVATE_CLUB_KICKED_MODAL_EVENT = 'private-club-kicked-modal'
+export { SUBSCRIPTION_BILLING_UPDATED_EVENT, PRIVATE_CLUB_KICKED_MODAL_EVENT } from '../constants/cabinetEvents'
 
 function formatShortDate(iso) {
   if (!iso) return '—'
@@ -95,6 +116,17 @@ function firstPhotoFromProperty(prop) {
 function pickLocationFromProperty(prop) {
   if (!prop || typeof prop !== 'object') return ''
   return String(prop.location || prop.address || '').trim()
+}
+
+function isDebtProperty(prop) {
+  if (!prop || typeof prop !== 'object') return false
+  return (
+    String(prop.sale_type || '').toLowerCase() === 'debt' ||
+    prop.is_debt === 1 ||
+    prop.is_debt === true ||
+    prop.has_debt === 1 ||
+    prop.has_debt === true
+  )
 }
 
 /** Ключ календарного дня в локальной зоне (группировка в UI). */
@@ -196,6 +228,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionAuction.push({
       id: `aw-${winner.id}`,
+      propertyId: pid,
       title: t,
       subtitle: `Победа в аукционе`,
       amount: formatMoney(winner.winning_bid_amount, winner.currency || prop.currency),
@@ -205,24 +238,28 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      amountValue: Number(winner.winning_bid_amount) || 0,
+      currency: String(winner.currency || prop.currency || 'EUR').toUpperCase(),
+      isDebt: isDebtProperty(prop),
     })
   }
 
   const rArr = Array.isArray(reservations) ? reservations : []
   for (const row of rArr) {
-    const title = row.property_title || `Объект #${row.billing?.property_id ?? '—'}`
-    const date = row.paid_at
+    const purchase = mapReservationPurchase(row)
+    const title = purchase.title
+    const date = purchase.purchaseDateRaw
     const sort = new Date(date || 0).getTime()
-    const cur = (row.currency || 'eur').toUpperCase()
-    const paid = (row.amount_cents || 0) / 100
-    const pid = row.billing?.property_id
-    const img = sharePurchaseImageSrc(row.property_image)
+    const cur = purchase.currency
+    const paid = purchase.paidAmount
+    const pid = purchase.propertyId
+    const img = purchase.imageSrc
     const reserveProp =
       pid != null
-        ? { id: pid, property_type: row.property_type || row.billing?.property_type }
+        ? { id: pid, property_type: purchase.propertyType }
         : null
     const href = pid != null ? getPropertyDetailPath(pid, { property: reserveProp }) : null
-    const loc = String(row.property_location || row.property_address || '').trim()
+    const loc = purchase.location
     events.push({
       sort,
       id: `rv-${row.id ?? row.dedupe_key}`,
@@ -232,6 +269,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionReserve.push({
       id: `rv-${row.id ?? row.dedupe_key}`,
+      propertyId: pid,
       title,
       subtitle: 'Купить сейчас',
       amount: formatMoney(paid, cur),
@@ -241,6 +279,9 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      ...purchase,
+      amountValue: paid,
+      isDebt: Boolean(purchase.isDebt),
     })
   }
 
@@ -260,7 +301,9 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const pt = row.property_type || 'property'
     const pid = row.property_id
     const href =
-      pid != null ? `/shares/${pt}-${pid}` : null
+      pid != null
+        ? getCoInvestmentDetailPath({ id: pid, property_type: pt })
+        : null
     const loc = String(row.property_location || '').trim()
     events.push({
       sort,
@@ -271,6 +314,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     })
     sectionShares.push({
       id: `sp-${row.id}`,
+      propertyId: pid,
       title,
       subtitle: row.shares_count != null ? `Куплено долей: ${row.shares_count}` : 'Покупка долей',
       amount: line,
@@ -280,6 +324,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
+      amountValue: Number(row.total_paid) || 0,
+      currency: cur,
     })
   }
 
@@ -319,6 +365,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(bidDate),
+      amountValue: Number(latest.bid_amount) || 0,
+      currency: String(latest.currency || prop.currency || 'EUR').toUpperCase(),
     })
   }
 
@@ -353,22 +401,40 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
 
 /**
  * Числовой id пользователя в БД, публичный ID (user_id_number), счётчик и превью истории (как на /history).
+ * @param {{ loadHistory?: boolean }} [options]
+ *   loadHistory — когда false, тяжёлый history fetch не стартует (герой не ждёт).
  */
-export function useCabinetOverviewData() {
+export function useCabinetOverviewData({ loadHistory = true } = {}) {
   const { user, isLoaded: userLoaded } = useUser()
   const [numericUserId, setNumericUserId] = useState(() => getStoredNumericUserId())
   const [publicIdDisplay, setPublicIdDisplay] = useState(null)
   const [historyCount, setHistoryCount] = useState(0)
   const [recentHistoryRows, setRecentHistoryRows] = useState([])
   const [historySections, setHistorySections] = useState([])
-  const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(() => Boolean(loadHistory))
   const [subscriptionPlanLabel, setSubscriptionPlanLabel] = useState('Starter')
   const [cabinetSubscriptionTier, setCabinetSubscriptionTier] = useState('starter')
   const [cabinetVipActive, setCabinetVipActive] = useState(false)
+  const [historyRevision, setHistoryRevision] = useState(0)
 
   useEffect(() => {
-    const applyFromStorage = () => {
+    const bumpHistory = (event) => {
+      const uid = event?.detail?.userId ?? numericUserId ?? getStoredNumericUserId()
+      if (uid) clearCabinetHistoryCacheForUser(uid)
+      setHistoryRevision((n) => n + 1)
+    }
+    window.addEventListener(CABINET_HISTORY_UPDATED_EVENT, bumpHistory)
+    window.addEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, bumpHistory)
+    return () => {
+      window.removeEventListener(CABINET_HISTORY_UPDATED_EVENT, bumpHistory)
+      window.removeEventListener(PURCHASE_SUCCESS_CONFIRMED_EVENT, bumpHistory)
+    }
+  }, [numericUserId])
+
+  useEffect(() => {
+    const applyFromStorage = (event) => {
       const n = getStoredNumericUserId()
+      if (event?.detail?.userId) clearCabinetHistoryCacheForUser(event.detail.userId)
       setNumericUserId((prev) => (prev === n ? prev : n))
     }
     applyFromStorage()
@@ -392,12 +458,10 @@ export function useCabinetOverviewData() {
           const userEmail =
             user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
           if (userEmail) {
-            const userResponse = await fetchJsonCached(
-              `${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`,
-              { ttlMs: 20000 }
-            )
-            if (userResponse?.success && userResponse?.data?.id) {
-              const numericId = userResponse.data.id
+            const cabinetRole = isSellerCabinetRole(readStoredUserRole()) ? 'seller' : 'buyer'
+            const dbUser = await fetchCabinetUserByEmail(userEmail, cabinetRole, API_BASE_URL)
+            if (dbUser?.id) {
+              const numericId = dbUser.id
               setNumericUserId(numericId)
               localStorage.setItem('userId', String(numericId))
               return
@@ -454,13 +518,18 @@ export function useCabinetOverviewData() {
   }, [numericUserId, userLoaded])
 
   useEffect(() => {
+    if (!loadHistory) {
+      setHistoryLoading(false)
+      return undefined
+    }
+
     const uid = numericUserId ?? getStoredNumericUserId()
     if (!uid) {
       setHistoryCount(0)
       setRecentHistoryRows([])
       setHistorySections([])
       setHistoryLoading(false)
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -513,7 +582,7 @@ export function useCabinetOverviewData() {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, userLoaded])
+  }, [numericUserId, userLoaded, historyRevision, loadHistory])
 
   useEffect(() => {
     const uid = numericUserId ?? getStoredNumericUserId()

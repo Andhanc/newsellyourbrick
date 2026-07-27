@@ -13,7 +13,7 @@ export const TZ_AMENITY_LABELS_RU = {
   tennis_court: 'Теннисный корт',
   padel_court: 'Падел-корт',
   basketball_court: 'Баскетбольная площадка',
-  garden: 'Сад / Придомовая территория',
+  garden: 'Придомовая территория',
   rooftop_terrace: 'Эксплуатируемая кровля',
   balcony: 'Балкон / Лоджия',
   bbq_area: 'Зона барбекю',

@@ -1,0 +1,129 @@
+.property-specs-grid {
+  margin: 0;
+  padding: 0;
+}
+
+.property-specs-grid__title {
+  margin: 0 0 20px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.property-specs-grid__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 32px;
+}
+
+.property-specs-grid__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.property-specs-grid__item--wide {
+  grid-column: 1 / -1;
+}
+
+.property-specs-grid__icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #334155;
+}
+
+.property-specs-grid__icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.property-specs-grid__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.property-specs-grid__label {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #8898aa;
+}
+
+.property-specs-grid__value {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #172b4d;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.property-specs-grid__more {
+  margin-top: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0468ff;
+  cursor: pointer;
+}
+
+.property-specs-grid__more:hover {
+  text-decoration: underline;
+}
+
+.property-detail-auction-desktop-card .property-specs-grid__title {
+  margin: 0 0 20px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.property-detail-auction-desktop-card .property-specs-grid__list {
+  gap: 28px 36px;
+}
+
+.property-detail-auction-desktop-card--description .property-specs-grid--under-description {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #eef1f6;
+}
+
+.property-detail-mobile-description .property-specs-grid--under-description {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eef1f6;
+}
+
+@media (max-width: 1100px) {
+  .property-specs-grid__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .property-specs-grid__list {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .property-specs-grid__value {
+    font-size: 16px;
+  }
+}

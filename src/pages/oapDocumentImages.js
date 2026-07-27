@@ -1,3 +1,5 @@
+import { publicAsset } from '../utils/publicAsset'
+
 export const OAP_DOCUMENT_IMAGES = {
-  sidebarHero: '/images/oap-documents/sidebar-hero.png',
+  sidebarHero: publicAsset('images/oap-documents/sidebar-hero.webp'),
 }

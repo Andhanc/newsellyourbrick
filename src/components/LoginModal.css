@@ -127,13 +127,13 @@
 
 .login-modal--buyer .login-modal__change-role--side {
   color: rgba(6, 122, 118, 0.92);
-  border-color: rgba(10, 186, 181, 0.28);
+  border-color: rgba(0, 153, 169, 0.28);
 }
 
 .login-modal--buyer .login-modal__change-role--side:hover {
   color: #055a57;
-  background-color: rgba(10, 186, 181, 0.08);
-  border-color: rgba(10, 186, 181, 0.4);
+  background-color: rgba(0, 153, 169, 0.08);
+  border-color: rgba(0, 153, 169, 0.4);
 }
 
 .login-modal--seller .login-modal__change-role--side {
@@ -168,7 +168,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(90deg, #0099A9 0%, #007d8a 100%);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: 1;
@@ -176,7 +176,7 @@
 
 .login-modal--buyer .login-modal__form-panel::before {
   opacity: 1;
-  background: linear-gradient(90deg, #0ABAB5 0%, #25d366 100%);
+  background: linear-gradient(90deg, #0099A9 0%, #25d366 100%);
 }
 
 .login-modal--seller .login-modal__form-panel::before {
@@ -225,7 +225,7 @@
 }
 
 .login-modal--buyer .login-modal__header {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.03) 0%, rgba(37, 211, 102, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.03) 0%, rgba(37, 211, 102, 0.03) 100%);
 }
 
 .login-modal--seller .login-modal__header {
@@ -242,8 +242,8 @@
 }
 
 .login-modal--buyer .login-modal__title {
-  color: #0ABAB5;
-  text-shadow: 0 2px 10px rgba(10, 186, 181, 0.2);
+  color: #0099A9;
+  text-shadow: 0 2px 10px rgba(0, 153, 169, 0.2);
 }
 
 .login-modal--seller .login-modal__title {
@@ -273,8 +273,8 @@
 /* Регистрация: дорожка в цвет темы; снизу без лишнего отступа — зона роли даёт разрыв */
 .login-modal--buyer .login-modal__mode-switch {
   margin-bottom: 0;
-  background: rgba(10, 186, 181, 0.12);
-  box-shadow: inset 0 1px 2px rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0, 153, 169, 0.08);
 }
 
 .login-modal--seller .login-modal__mode-switch {
@@ -319,11 +319,11 @@
 }
 
 .login-modal--buyer .login-modal__mode-tab--active {
-  color: #067a76;
+  color: #006672;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 1px 6px rgba(10, 186, 181, 0.18),
-    0 0 0 1px rgba(10, 186, 181, 0.22);
+    0 1px 6px rgba(0, 153, 169, 0.18),
+    0 0 0 1px rgba(0, 153, 169, 0.22);
 }
 
 .login-modal--seller .login-modal__mode-tab--active {
@@ -336,11 +336,11 @@
 
 /* Режим «Вход»: на корне нет buyer/seller — подсветка активной вкладки в фирменном цвете */
 .login-modal:not(.login-modal--buyer):not(.login-modal--seller) .login-modal__mode-tab--active {
-  color: #067a76;
+  color: #006672;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 1px 6px rgba(10, 186, 181, 0.18),
-    0 0 0 1px rgba(10, 186, 181, 0.2);
+    0 1px 6px rgba(0, 153, 169, 0.18),
+    0 0 0 1px rgba(0, 153, 169, 0.2);
 }
 
 .login-modal__role-section {
@@ -355,8 +355,8 @@
 }
 
 .login-modal--buyer .login-modal__role-section {
-  border-top-color: rgba(10, 186, 181, 0.22);
-  background: linear-gradient(180deg, rgba(10, 186, 181, 0.06) 0%, transparent 56px);
+  border-top-color: rgba(0, 153, 169, 0.22);
+  background: linear-gradient(180deg, rgba(0, 153, 169, 0.06) 0%, transparent 56px);
 }
 
 .login-modal--seller .login-modal__role-section {
@@ -423,10 +423,10 @@
 }
 
 .login-modal--buyer .login-modal__role-card--active {
-  border-color: #0ABAB5;
-  background: rgba(10, 186, 181, 0.08);
-  color: #067a76;
-  box-shadow: 0 2px 14px rgba(10, 186, 181, 0.18);
+  border-color: #0099A9;
+  background: rgba(0, 153, 169, 0.08);
+  color: #006672;
+  box-shadow: 0 2px 14px rgba(0, 153, 169, 0.18);
 }
 
 .login-modal--seller .login-modal__role-card--active {
@@ -437,8 +437,8 @@
 }
 
 .login-modal--buyer .login-modal__role-card--active:hover:not(:disabled) {
-  border-color: #089a95;
-  background: rgba(10, 186, 181, 0.11);
+  border-color: #007d8a;
+  background: rgba(0, 153, 169, 0.11);
 }
 
 .login-modal--seller .login-modal__role-card--active:hover:not(:disabled) {
@@ -640,7 +640,7 @@
 }
 
 .login-modal--buyer .login-modal__form {
-  background: linear-gradient(180deg, rgba(10, 186, 181, 0.01) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(0, 153, 169, 0.01) 0%, transparent 100%);
 }
 
 .login-modal--seller .login-modal__form {
@@ -681,8 +681,8 @@
 }
 
 .login-modal--buyer .login-modal__input:focus {
-  border-color: #0ABAB5;
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.3);
+  border-color: #0099A9;
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
 }
 
 .login-modal--seller .login-modal__input:focus {
@@ -758,12 +758,12 @@
 }
 
 .login-modal__password-toggle:hover {
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .login-modal__password-toggle:focus {
   outline: none;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .login-modal--seller .login-modal__password-toggle:hover {
@@ -783,7 +783,7 @@
 .login-modal__footer-link {
   background: none;
   border: none;
-  color: #0ABAB5;
+  color: #0099A9;
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
@@ -804,7 +804,7 @@
 
 .login-modal__forgot-link:hover,
 .login-modal__footer-link:hover {
-  color: #067a76;
+  color: #006672;
   text-decoration: underline;
 }
 
@@ -858,12 +858,12 @@
 }
 
 .login-modal--buyer .login-modal__submit {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
 }
 
 .login-modal--buyer .login-modal__submit:hover {
-  background: linear-gradient(135deg, #089a95 0%, #067a76 100%);
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.4);
+  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
 }
 
 .login-modal--seller .login-modal__submit {
@@ -884,7 +884,7 @@
   padding: 16px;
   min-height: 48px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -896,7 +896,7 @@
   margin-left: 0;
   margin-right: 0;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -937,12 +937,12 @@
 }
 
 .login-modal__submit--liquid-glass:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -956,7 +956,7 @@
   opacity: 0.65;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.15);
 }
 
 .login-modal__footer {
@@ -967,7 +967,7 @@
 }
 
 .login-modal--buyer .login-modal__footer {
-  background: linear-gradient(180deg, transparent 0%, rgba(10, 186, 181, 0.02) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 153, 169, 0.02) 100%);
 }
 
 .login-modal--seller .login-modal__footer {
@@ -1036,12 +1036,12 @@
 
   .login-modal--buyer .login-modal__change-role--mobile {
     color: rgba(6, 122, 118, 0.9);
-    border-color: rgba(10, 186, 181, 0.22);
+    border-color: rgba(0, 153, 169, 0.22);
   }
 
   .login-modal--buyer .login-modal__change-role--mobile:hover {
-    background-color: rgba(10, 186, 181, 0.05);
-    border-color: rgba(10, 186, 181, 0.32);
+    background-color: rgba(0, 153, 169, 0.05);
+    border-color: rgba(0, 153, 169, 0.32);
   }
 
   .login-modal--seller .login-modal__change-role--mobile {
@@ -1070,8 +1070,8 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(90deg, #0ABAB5 0%, #089a95 100%);
-  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(90deg, #0099A9 0%, #007d8a 100%);
+  box-shadow: 0 2px 10px rgba(0, 153, 169, 0.35);
 }
 
 .login-modal--seller .login-modal__step-badge {
@@ -1091,7 +1091,7 @@
 }
 
 .login-modal--buyer .login-modal__role-inline {
-  color: #067a76;
+  color: #006672;
 }
 
 .login-modal--seller .login-modal__role-inline {
@@ -1144,7 +1144,7 @@
 }
 
 .login-modal__wizard-tile--buyer:hover {
-  border-color: rgba(10, 186, 181, 0.55);
+  border-color: rgba(0, 153, 169, 0.55);
 }
 
 .login-modal__wizard-tile--seller:hover {
@@ -1170,13 +1170,22 @@
 }
 
 .login-modal__wizard-tile--buyer .login-modal__wizard-tile-icon {
-  color: #0ABAB5;
-  background: rgba(10, 186, 181, 0.12);
+  color: #0099A9;
+  background: rgba(0, 153, 169, 0.12);
 }
 
 .login-modal__wizard-tile--seller .login-modal__wizard-tile-icon {
   color: #7c3aed;
   background: rgba(124, 58, 237, 0.14);
+}
+
+.login-modal__wizard-tile-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
 }
 
 .login-modal__wizard-tile-title {
@@ -1197,8 +1206,608 @@
   hyphens: auto;
 }
 
+.login-modal__drawer-handle {
+  display: none;
+}
+
+/* Auth form on phone: full-screen light editorial sheet */
+@media (max-width: 767px) {
+  .login-modal-overlay--form-screen {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    background: #ffffff;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  .login-modal--form-screen {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+    flex-direction: column;
+    overflow: visible;
+    background: #ffffff;
+    box-shadow: none;
+    animation: loginFormScreenIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    color: #0f172a;
+    font-family: inherit;
+  }
+
+  .login-modal--form-screen.login-modal--seller,
+  .login-modal--form-screen.login-modal--buyer {
+    background: #ffffff;
+  }
+
+  .login-modal--form-screen .login-modal__side-panel {
+    display: none;
+  }
+
+  .login-modal--form-screen .login-modal__form-panel {
+    position: relative;
+    width: 100%;
+    max-width: 28rem;
+    height: auto;
+    margin: 0 auto;
+    overflow: visible;
+    padding:
+      calc(12px + env(safe-area-inset-top, 0px))
+      1.25rem
+      calc(28px + env(safe-area-inset-bottom, 0px));
+    background: transparent;
+  }
+
+  .login-modal--form-screen .login-modal__form-panel::before {
+    display: none;
+  }
+
+  .login-modal--form-screen .login-modal__close {
+    position: absolute;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 1rem;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+  }
+
+  .login-modal--form-screen .login-modal__close:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  .login-modal--form-screen .login-modal__change-role--mobile {
+    display: inline-flex;
+    width: auto;
+    max-width: calc(100% - 3.5rem);
+    margin: 0.15rem 0 1rem;
+    padding: 0.55rem 0;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #475569;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen.login-modal--buyer .login-modal__change-role--mobile,
+  .login-modal--form-screen.login-modal--seller .login-modal__change-role--mobile,
+  .login-modal--form-screen .login-modal__change-role--mobile:hover {
+    color: #0f172a;
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .login-modal--form-screen .login-modal__header,
+  .login-modal--form-screen.login-modal--buyer .login-modal__header,
+  .login-modal--form-screen.login-modal--seller .login-modal__header {
+    padding: 0 0 1rem;
+    text-align: left;
+    background: transparent;
+  }
+
+  .login-modal--form-screen .login-modal__step-badge {
+    display: inline-flex;
+    margin: 0 0 0.65rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #006672;
+    background: #f0fafb;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__step-badge {
+    color: #5b21b6;
+    background: #f5f3ff;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen .login-modal__title,
+  .login-modal--form-screen.login-modal--buyer .login-modal__title,
+  .login-modal--form-screen.login-modal--seller .login-modal__title {
+    margin: 0 0 0.35rem;
+    color: #0f172a;
+    text-shadow: none;
+    font-family: inherit;
+    font-size: clamp(1.55rem, 6.5vw, 1.85rem);
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .login-modal--form-screen .login-modal__role-inline,
+  .login-modal--form-screen.login-modal--buyer .login-modal__role-inline,
+  .login-modal--form-screen.login-modal--seller .login-modal__role-inline {
+    margin: 0 0 0.45rem;
+    color: #0099A9;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__role-inline {
+    color: #7c3aed;
+  }
+
+  .login-modal--form-screen .login-modal__subtitle {
+    max-width: 34ch;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .login-modal--form-screen .login-modal__mode-switch,
+  .login-modal--form-screen.login-modal--buyer .login-modal__mode-switch,
+  .login-modal--form-screen.login-modal--seller .login-modal__mode-switch {
+    margin: 0 0 1.15rem;
+    padding: 0.2rem;
+    background: #f1f5f9;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen .login-modal__mode-tab {
+    min-height: 42px;
+    border-radius: 999px;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .login-modal--form-screen .login-modal__mode-tab--active,
+  .login-modal--form-screen.login-modal--buyer .login-modal__mode-tab--active,
+  .login-modal--form-screen.login-modal--seller .login-modal__mode-tab--active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  }
+
+  .login-modal--form-screen.login-modal--buyer .login-modal__mode-tab--active {
+    color: #006672;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__mode-tab--active {
+    color: #5b21b6;
+  }
+
+  /* Form first, then social — easier path on phone */
+  .login-modal--form-screen #login-modal-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .login-modal--form-screen .login-modal__error {
+    order: 0;
+    margin: 0 0 0.85rem !important;
+    padding: 0.75rem 0.9rem !important;
+  }
+
+  .login-modal--form-screen .login-modal__form {
+    order: 1;
+  }
+
+  .login-modal--form-screen .login-modal__divider {
+    order: 2;
+  }
+
+  .login-modal--form-screen .login-modal__social {
+    order: 3;
+  }
+
+  .login-modal--form-screen .login-modal__footer {
+    order: 4;
+  }
+
+  .login-modal--form-screen .login-modal__form,
+  .login-modal--form-screen.login-modal--buyer .login-modal__form,
+  .login-modal--form-screen.login-modal--seller .login-modal__form {
+    gap: 0.85rem;
+    padding: 0;
+    background: transparent;
+  }
+
+  .login-modal--form-screen .login-modal__label {
+    gap: 0.45rem;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .login-modal--form-screen .login-modal__input {
+    min-height: 52px;
+    padding: 0.9rem 1rem;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: none;
+    transform: none !important;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .login-modal--form-screen .login-modal__input::placeholder {
+    color: #94a3b8;
+  }
+
+  .login-modal--form-screen .login-modal__input:focus,
+  .login-modal--form-screen.login-modal--buyer .login-modal__input:focus,
+  .login-modal--form-screen.login-modal--seller .login-modal__input:focus {
+    transform: none !important;
+    border-color: #0099A9;
+    box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.12);
+    background: #ffffff;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+  }
+
+  .login-modal--form-screen .login-modal__password-toggle {
+    color: #94a3b8;
+  }
+
+  .login-modal--form-screen .login-modal__password-toggle:hover {
+    color: #0f172a;
+  }
+
+  .login-modal--form-screen .login-modal__forgot {
+    margin: 0.15rem 0 0;
+    text-align: right;
+  }
+
+  .login-modal--form-screen .login-modal__forgot-link,
+  .login-modal--form-screen .login-modal__footer-link {
+    color: #0099A9;
+    font-weight: 700;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__forgot-link,
+  .login-modal--form-screen.login-modal--seller .login-modal__footer-link {
+    color: #7c3aed;
+  }
+
+  .login-modal--form-screen .login-modal__submit,
+  .login-modal--form-screen.login-modal--buyer .login-modal__submit,
+  .login-modal--form-screen.login-modal--seller .login-modal__submit,
+  .login-modal--form-screen .login-modal__submit--liquid-glass {
+    min-height: 52px;
+    margin-top: 0.35rem;
+    border: 0;
+    border-radius: 999px;
+    background: #0099A9;
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen .login-modal__submit::before,
+  .login-modal--form-screen .login-modal__submit::after,
+  .login-modal--form-screen .login-modal__submit--liquid-glass::before,
+  .login-modal--form-screen .login-modal__submit--liquid-glass::after {
+    display: none;
+  }
+
+  .login-modal--form-screen.login-modal--seller .login-modal__submit,
+  .login-modal--form-screen.login-modal--seller .login-modal__submit--liquid-glass {
+    background: #7c3aed;
+  }
+
+  .login-modal--form-screen .login-modal__divider {
+    margin: 1.25rem 0 1rem;
+    padding: 0;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .login-modal--form-screen .login-modal__divider::before,
+  .login-modal--form-screen .login-modal__divider::after {
+    background: #e2e8f0;
+  }
+
+  /* Compact social row — icons only, not a bulky 2×2 */
+  .login-modal--form-screen .login-modal__social {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .login-modal--form-screen .login-modal__social-btn,
+  .login-modal--form-screen .login-modal__telegram-row {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 52px;
+    padding: 0.65rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: none;
+    color: #0f172a;
+  }
+
+  .login-modal--form-screen .login-modal__social-btn:hover {
+    transform: none;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: none;
+  }
+
+  .login-modal--form-screen .login-modal__social-btn-label--full,
+  .login-modal--form-screen .login-modal__social-btn-label--short,
+  .login-modal--form-screen .login-modal__telegram-caption {
+    display: none !important;
+  }
+
+  .login-modal--form-screen .login-modal__social-btn--facebook { color: #1877f2; }
+  .login-modal--form-screen .login-modal__social-btn--google { color: #0f172a; }
+  .login-modal--form-screen .login-modal__social-btn--whatsapp { color: #128c7e; }
+  .login-modal--form-screen .login-modal__social-btn--telegram { color: #229ed9; }
+
+  .login-modal--form-screen .login-modal__telegram-row {
+    position: relative;
+    overflow: hidden;
+    color: #229ed9;
+  }
+
+  .login-modal--form-screen .login-modal__telegram-caption--short {
+    display: inline !important;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #229ed9;
+  }
+
+  .login-modal--form-screen .login-modal__telegram-widget {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  .login-modal--form-screen .login-modal__telegram-row.login-modal__telegram-loading {
+    grid-column: span 1;
+  }
+
+  .login-modal--form-screen .login-modal__footer,
+  .login-modal--form-screen.login-modal--buyer .login-modal__footer,
+  .login-modal--form-screen.login-modal--seller .login-modal__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 1.35rem;
+    padding: 1rem 0 0;
+    background: transparent;
+    border-top: 1px solid #eef2f6;
+  }
+
+  .login-modal--form-screen .login-modal__footer-text {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .login-modal--form-screen .login-modal__role-section {
+    order: -1;
+    padding: 0 0 1rem;
+    border: 0;
+    background: transparent;
+  }
+
+  .login-modal--form-screen .login-modal__role-label {
+    color: #475569;
+  }
+
+  .login-modal--form-screen .login-modal__role-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #0f172a;
+  }
+}
+
+@keyframes loginFormScreenIn {
+  from {
+    opacity: 0.55;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-modal--form-screen,
+  .login-modal--role-drawer {
+    animation: none !important;
+  }
+}
+
+/* Role step on phone: bottom drawer, not centered modal */
+@media (max-width: 767px) {
+  .login-modal-overlay--role-drawer {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    background: rgba(2, 15, 17, 0.58);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+  }
+
+  .login-modal--role-drawer {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(88dvh, 760px);
+    margin: 0;
+    border-radius: 24px 24px 0 0;
+    flex-direction: column;
+    overflow: auto;
+    overscroll-behavior: contain;
+    box-shadow: 0 -18px 48px rgba(2, 8, 18, 0.28);
+    animation: loginRoleDrawerUp 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .login-modal--role-drawer .login-modal__side-panel {
+    display: none;
+  }
+
+  .login-modal--role-drawer .login-modal__form-panel {
+    width: 100%;
+    max-width: none;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .login-modal--role-drawer .login-modal__close {
+    top: 14px;
+    right: 12px;
+    z-index: 3;
+  }
+
+  .login-modal--role-drawer .login-modal__drawer-handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 4px;
+  }
+
+  .login-modal--role-drawer .login-modal__drawer-handle span {
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.18);
+  }
+
+  .login-modal--role-drawer .login-modal__wizard {
+    padding: 0 18px 8px;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-head {
+    margin-bottom: 16px;
+    padding-top: 2px;
+  }
+
+  .login-modal--role-drawer .login-modal__title {
+    font-size: 1.45rem;
+    letter-spacing: -0.02em;
+  }
+
+  .login-modal--role-drawer .login-modal__subtitle {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #64748b;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tiles {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 14px;
+    min-height: 76px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border-width: 1.5px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile:hover,
+  .login-modal--role-drawer .login-modal__wizard-tile:active {
+    transform: none;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile:active {
+    background: #f8fafc;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile-copy {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile-title {
+    font-size: 1.05rem;
+  }
+
+  .login-modal--role-drawer .login-modal__wizard-tile-desc {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #64748b;
+  }
+}
+
+@keyframes loginRoleDrawerUp {
+  from {
+    opacity: 0.72;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 480px) {
-  .login-modal {
+  .login-modal:not(.login-modal--role-drawer) {
     max-width: 100%;
     border-radius: 16px;
     max-height: 95vh;
@@ -1214,43 +1823,43 @@
     margin-bottom: 14px;
   }
 
-  .login-modal__wizard--role .login-modal__title {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__title {
     font-size: 22px;
   }
 
-  .login-modal__wizard--role .login-modal__subtitle {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__subtitle {
     font-size: 13px;
     line-height: 1.4;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tiles {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tiles {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tile {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tile {
     padding: 12px 8px 10px;
     gap: 4px;
     border-radius: 12px;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tile-icon {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tile-icon {
     width: 40px;
     height: 40px;
     border-radius: 10px;
     margin-bottom: 0;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tile-icon svg {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tile-icon svg {
     width: 20px;
     height: 20px;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tile-title {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tile-title {
     font-size: 13px;
   }
 
-  .login-modal__wizard--role .login-modal__wizard-tile-desc {
+  .login-modal:not(.login-modal--role-drawer) .login-modal__wizard--role .login-modal__wizard-tile-desc {
     font-size: 10px;
     line-height: 1.3;
   }

@@ -7,6 +7,7 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { CATALOG_PROPERTY_TYPE_OPTIONS } from '../utils/catalogFilters'
+import { getSearchResultsGeoPath } from '../utils/searchResultsGeoUrl'
 import './PropertySearchModal.css'
 
 const CATALOG_PROPERTY_TYPE_SELECT_OPTIONS = CATALOG_PROPERTY_TYPE_OPTIONS.filter((opt) => opt.value)
@@ -299,7 +300,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
       })
     )
     sessionStorage.removeItem(DRAFT_FILTERS_KEY)
-    requestClose(() => navigate('/search-results'))
+    requestClose(() => navigate(getSearchResultsGeoPath(payload)))
   }
 
   const handleReset = () => {

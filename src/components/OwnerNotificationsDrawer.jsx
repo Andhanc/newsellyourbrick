@@ -1,6 +1,8 @@
-import { Bell, CalendarCheck, MessageSquare, ShieldCheck, TrendingUp, X } from 'lucide-react'
+import { Bell, CalendarCheck, ChevronRight, MessageSquare, ShieldCheck, TrendingUp, X } from 'lucide-react'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import OwnerNoBidsIllustration from './OwnerNoBidsIllustration'
 import './OwnerNotificationsDrawer.css'
 
 export function getDefaultOwnerNotifications(t) {
@@ -44,7 +46,7 @@ export function getDefaultOwnerNotifications(t) {
   ]
 }
 
-export default function OwnerNotificationsDrawer({ open, onClose, items }) {
+export default function OwnerNotificationsDrawer({ open, onClose, items, onDismiss }) {
   const { t } = useTranslation()
   const resolvedItems = items ?? getDefaultOwnerNotifications(t)
 
@@ -72,7 +74,9 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
     }
   }, [open, onClose])
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className={`ond${open ? ' ond--open' : ''}`} aria-hidden={!open}>
       <button
         type="button"
@@ -100,6 +104,16 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
               const Icon = item.icon
               return (
                 <li key={item.id} className={`ond-item ond-item--${item.tone}`}>
+                  {onDismiss && (
+                    <button
+                      type="button"
+                      className="ond-item__dismiss"
+                      aria-label={t('ownerTest_notificationsDismiss')}
+                      onClick={() => onDismiss(item.id)}
+                    >
+                      <X size={14} strokeWidth={2.2} aria-hidden />
+                    </button>
+                  )}
                   <span className="ond-item__icon">
                     <Icon size={18} strokeWidth={2.2} aria-hidden />
                   </span>
@@ -111,19 +125,25 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
                     <span className="ond-item__text">{item.text}</span>
                   </span>
                   <span className="ond-item__side">
-                    {item.amount && <strong className="ond-item__amount">{item.amount}</strong>}
+                    {item.amount && <span className="ond-item__amount">{item.amount}</span>}
                     <time className="ond-item__time">{item.time}</time>
                     {item.onAction ? (
                       <button
                         type="button"
                         className="ond-item__open"
+                        aria-label={t('ownerTest_notificationsOpen')}
                         onClick={() => handleItemAction(item)}
                       >
-                        {t('ownerTest_notificationsOpen')}
+                        <ChevronRight size={18} strokeWidth={2.2} aria-hidden />
                       </button>
                     ) : item.href ? (
-                      <a className="ond-item__open" href={item.href} onClick={onClose}>
-                        {t('ownerTest_notificationsOpen')}
+                      <a
+                        className="ond-item__open"
+                        href={item.href}
+                        aria-label={t('ownerTest_notificationsOpen')}
+                        onClick={onClose}
+                      >
+                        <ChevronRight size={18} strokeWidth={2.2} aria-hidden />
                       </a>
                     ) : null}
                   </span>
@@ -133,14 +153,13 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
           </ul>
         ) : (
           <div className="ond__empty">
-            <span className="ond__empty-icon">
-              <TrendingUp size={22} strokeWidth={2.2} aria-hidden />
-            </span>
+            <OwnerNoBidsIllustration className="ond__empty-illustration" />
             <strong>{t('ownerTest_notificationsEmptyTitle')}</strong>
             <p>{t('ownerTest_notificationsEmptyDesc')}</p>
           </div>
         )}
       </aside>
-    </div>
+    </div>,
+    document.body
   )
 }

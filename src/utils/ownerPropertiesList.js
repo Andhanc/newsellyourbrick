@@ -73,6 +73,8 @@ function resolveAuctionEndTime(property) {
   return (
     property.test_timer_end_date ||
     property.auction_end_date ||
+    property.auction_end_at ||
+    property.auctionEndAt ||
     property.end_time ||
     property.endTime ||
     null
@@ -187,6 +189,8 @@ export async function fetchOwnerProperties(userId) {
   return rows
 }
 
+const LISTING_TYPE_TAB_IDS = new Set(['auction', 'buy_now', 'shares', 'debts'])
+
 export function filterOwnerProperties(
   rows,
   { tab = 'all', query = '', listingTypes = [], sortBy = 'date_desc' } = {}
@@ -198,7 +202,13 @@ export function filterOwnerProperties(
   const typeSet = Array.isArray(listingTypes) && listingTypes.length > 0 ? new Set(listingTypes) : null
 
   let result = rows.filter((row) => {
-    if (tab !== 'all' && row.filterKey !== tab) return false
+    if (tab !== 'all') {
+      if (LISTING_TYPE_TAB_IDS.has(tab)) {
+        if (row.listingType !== tab) return false
+      } else if (row.filterKey !== tab) {
+        return false
+      }
+    }
     if (typeSet && !typeSet.has(row.listingType)) return false
     if (!q) return true
     const haystack = [row.title, row.location, row.displayId, String(row.id)]
@@ -247,6 +257,20 @@ export function countOwnerPropertiesByTab(rows) {
   }
   for (const row of rows) {
     if (counts[row.filterKey] != null) counts[row.filterKey] += 1
+  }
+  return counts
+}
+
+export function countOwnerPropertiesByListingType(rows) {
+  const counts = {
+    all: rows.length,
+    auction: 0,
+    buy_now: 0,
+    shares: 0,
+    debts: 0,
+  }
+  for (const row of rows) {
+    if (counts[row.listingType] != null) counts[row.listingType] += 1
   }
   return counts
 }

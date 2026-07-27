@@ -1,32 +1,41 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { OTD_IMAGES } from './ownerTestDriveImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OwnerTestDriveDetailModal from '../components/OwnerTestDriveDetailModal'
+import OwnerTestDriveSplitView from '../components/OwnerTestDriveSplitView'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
-import {
-  CLERK_DB_USER_SYNCED,
-  countOwnerTestDriveByTab,
-  fetchOwnerTestDriveBookings,
-  filterOwnerTestDriveRows,
-  getOwnerTestDriveUserId,
-} from '../utils/ownerTestDriveList'
+import { getOwnerTestDriveUserId } from '../utils/ownerTestDriveList'
 import './OwnerTestDrivePage.css'
 import './OwnerTestDrivePage.mobile.css'
+
+function useOtdMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const onChange = () => setIsMobile(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return isMobile
+}
 
 function LogoMark({ className = '' }) {
   return (
     <svg className={`otd-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="otd-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#otd-logo-grad)" />
@@ -48,78 +57,15 @@ function LogoMark({ className = '' }) {
 export default function OwnerTestDrivePage() {
   const { t } = useTranslation()
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const isMobile = useOtdMobile()
   const navItems = useOwnerTestNavItems({
     activeId: 'testdrive',
     hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
   })
-  const filterTabDefs = useMemo(
-    () => [
-      { id: 'all', label: t('ownerTest_testDriveTabAll') },
-      { id: 'pending', label: t('ownerTest_testDriveTabPending') },
-      { id: 'confirmed', label: t('ownerTest_testDriveTabConfirmed') },
-      { id: 'cancelled', label: t('ownerTest_testDriveTabCancelled') },
-    ],
-    [t]
-  )
-  const datesColumnLabel = useMemo(
-    () => t('ownerTestDriveModalDates', { start: '', end: '' }).replace(/\s*[:\u2014-].*$/, '').trim(),
-    [t]
-  )
-  const [activeTab, setActiveTab] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [bookings, setBookings] = useState([])
-  const [bookingsLoading, setBookingsLoading] = useState(true)
-  const [selectedRow, setSelectedRow] = useState(null)
+  const userId = getOwnerTestDriveUserId()
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
-  const closeDetailModal = useCallback(() => setSelectedRow(null), [])
-  const userId = useMemo(() => getOwnerTestDriveUserId(), [])
-
-  const loadBookings = useCallback(async () => {
-    const userId = getOwnerTestDriveUserId()
-    if (!userId) {
-      setBookings([])
-      setBookingsLoading(false)
-      return
-    }
-
-    setBookingsLoading(true)
-    try {
-      const rows = await fetchOwnerTestDriveBookings(userId)
-      setBookings(rows)
-    } catch (error) {
-      console.warn('OwnerTestDrivePage: не удалось загрузить заявки', error)
-      setBookings([])
-    } finally {
-      setBookingsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadBookings()
-  }, [loadBookings])
-
-  useEffect(() => {
-    const onUserSynced = () => loadBookings()
-    window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
-    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
-  }, [loadBookings])
-
-  const tabCounts = useMemo(() => countOwnerTestDriveByTab(bookings), [bookings])
-
-  const filterTabs = useMemo(
-    () => filterTabDefs.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
-    [filterTabDefs, tabCounts]
-  )
-
-  const filteredRows = useMemo(
-    () => filterOwnerTestDriveRows(bookings, activeTab),
-    [bookings, activeTab]
-  )
-
-  const handleRowOpen = useCallback((row) => {
-    setSelectedRow(row)
-  }, [])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -165,133 +111,28 @@ export default function OwnerTestDrivePage() {
   }, [menuOpen])
 
   const mainColumn = (
-      <div className="otd-body">
-        <header className="otd-header otd-desktop-only">
-          <h1 className="otd-header__title">{t('ownerTest_navTestDrive')}</h1>
-          <div className="otd-header__actions">
-            <OwnerSupportButton className="otd-icon-btn" />
-            <OwnerNotificationsButton className="otd-icon-btn" badgeClassName="otd-icon-btn__badge" />
-            <OwnerTestProfileMenu />
-          </div>
-        </header>
-
-        <div className="otd-workspace">
-          <div className="otd-mob-pagehead otd-mobile-only">
-            <h1 className="otd-mob-pagehead__title">{t('ownerTest_navTestDrive')}</h1>
-          </div>
-
-          <div className="otd-content">
-          <div className="otd-tabs-row">
-            <div className="otd-tabs" role="tablist" aria-label={t('ownerTest_chartFilterTestDrives')}>
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  className={`otd-tabs__item${activeTab === tab.id ? ' otd-tabs__item--active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label} ({tab.count})
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="otd-table-card">
-            {bookingsLoading ? (
-              <div className="otd-table-state">{t('ownerSalesLoading')}</div>
-            ) : filteredRows.length === 0 ? (
-              <div className="otd-table-state">
-                {bookings.length === 0
-                  ? t('ownerTestDriveEmptyText')
-                  : t('ownerTest_propertiesEmptyFilter')}
-              </div>
-            ) : (
-            <div className="otd-table-wrap">
-              <table className="otd-table">
-                <thead>
-                  <tr>
-                    <th>{t('ownerTest_navMyProperties')}</th>
-                    <th>{t('ownerTestDriveBuyer')}</th>
-                    <th>{datesColumnLabel}</th>
-                    <th>{t('depositButton_label')}</th>
-                    <th>{t('buyerCabinet_billingStatus')}</th>
-                    <th aria-label={t('ownerTest_notificationsOpen')} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="otd-table__row--clickable"
-                      onClick={() => handleRowOpen(row)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleRowOpen(row)
-                        }
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`${t('ownerTest_notificationsOpen')} ${row.displayId}`}
-                    >
-                      <td>
-                        <div className="otd-object-cell">
-                          <img
-                            src={row.image}
-                            alt=""
-                            className="otd-object-cell__thumb"
-                            loading="lazy"
-                          />
-                          <div className="otd-object-cell__text">
-                            <p className="otd-object-cell__title">{row.title}</p>
-                            <p className="otd-object-cell__meta">{row.location}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="otd-buyer">{row.buyer}</span>
-                      </td>
-                      <td>
-                        <span className="otd-dates">{row.dates}</span>
-                      </td>
-                      <td>
-                        <span className="otd-amount">{row.amount}</span>
-                      </td>
-                      <td>
-                        <div className="otd-status-cell">
-                          <span className={`otd-status otd-status--${row.statusKey}`}>{row.status}</span>
-                          {row.checkInStatus === 'checked_in' ? (
-                            <span className="otd-status otd-status--checked-in">{row.checkInStatusLabel}</span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="otd-row-open" aria-hidden>
-                          <ChevronRight size={18} />
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            )}
-          </div>
-
-          <OwnerTestDriveDetailModal
-            row={selectedRow}
-            userId={userId}
-            onClose={closeDetailModal}
-            onUpdated={loadBookings}
-          />
+    <div className="otd-body">
+      <header className="otd-header otd-desktop-only">
+        <h1 className="otd-header__title">{t('ownerTest_navTestDrive')}</h1>
+        <div className="otd-header__actions">
+          <OwnerSupportButton className="otd-icon-btn" />
+          <OwnerNotificationsButton className="otd-icon-btn" badgeClassName="otd-icon-btn__badge" />
+          <OwnerTestProfileMenu />
         </div>
+      </header>
+
+      <div className="otd-workspace">
+        <div className="otd-content otd-content--split">
+          <p className="otd-split-lead otd-desktop-only">{t('ownerTestDriveAnalyticsHeroHint')}</p>
+          <OwnerTestDriveSplitView userId={userId} isMobile={isMobile} />
         </div>
       </div>
+    </div>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) {
+    return <div className="otd otd--embedded">{mainColumn}</div>
+  }
 
   return (
     <div className={`otd${menuOpen ? ' otd--menu-open' : ''}`}>

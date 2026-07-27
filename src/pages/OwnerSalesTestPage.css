@@ -1,21 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .osl {
-  --osl-tiffany: #0abab5;
-  --osl-tiffany-dark: #089a95;
-  --osl-tiffany-light: #53d8d3;
-  --osl-tiffany-soft: #ecfdf5;
-  --osl-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --osl-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --osl-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-  --osl-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
+  --osl-tiffany: var(--oc-tiffany);
+  --osl-tiffany-dark: var(--oc-tiffany-dark);
+  --osl-tiffany-light: var(--oc-tiffany-light);
+  --osl-tiffany-soft: var(--oc-tiffany-soft);
+  --osl-tiffany-muted: var(--oc-tiffany-muted);
+  --osl-tiffany-ring: var(--oc-tiffany-ring);
+  --osl-gradient-brand: var(--oc-gradient-brand);
+  --osl-gradient-active: var(--oc-gradient-active);
 
-  --osl-surface: #ffffff;
-  --osl-text: #111827;
-  --osl-text-muted: #6b7280;
+  --osl-surface: var(--oc-surface);
+  --osl-text: var(--oc-text);
+  --osl-text-muted: var(--oc-text-muted);
   --osl-text-light: #9ca3af;
   --osl-border: #e5e7eb;
-  --osl-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
+  --osl-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(0, 153, 169, 0.06);
   --osl-radius: 16px;
   --osl-radius-sm: 12px;
   --osl-sidebar-w: 252px;
@@ -24,9 +25,9 @@
   min-height: 100vh;
   background-color: #f4fbfb;
   background-image:
-    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
-    linear-gradient(180deg, #f8fafc 0%, #f0fdfa 55%, #ecfdf5 100%);
+    linear-gradient(180deg, #f8fafc 0%, #f3f7f9 55%, #e8f1f4 100%);
   color: var(--osl-text);
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 14px;
@@ -69,11 +70,14 @@
 .osl-owner-buyer-ad .oad-buyer__image {
   grid-area: image;
   justify-self: end;
-  align-self: end;
-  width: min(270px, 100%);
-  height: 136px;
+  align-self: center;
+  width: min(220px, 100%);
+  height: 128px;
   margin: 0;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  filter: none;
 }
 
 .osl-owner-buyer-ad .oad-buyer__list {
@@ -86,7 +90,7 @@
   gap: 7px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
   color: #475569;
   font-size: 12px;
   font-weight: 750;
@@ -113,18 +117,18 @@
   min-height: 42px;
   padding: 0 18px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
   font-size: 14px;
-  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.24);
+  box-shadow: 0 12px 24px rgba(0, 153, 169, 0.24);
 }
 
 .osl-owner-buyer-ad .oad-buyer__button:hover,
 .osl-owner-buyer-ad .oad-buyer__button:focus-visible {
-  box-shadow: 0 15px 30px rgba(10, 186, 181, 0.32);
+  box-shadow: 0 15px 30px rgba(0, 153, 169, 0.32);
 }
 
 .osl-owner-buyer-ad .oad-buyer__link {
-  color: #0abab5;
+  color: #0099a9;
   font-size: 13px;
 }
 
@@ -176,13 +180,13 @@
 }
 
 .osl-body {
-  --osl-tiffany: #0abab5;
-  --osl-tiffany-dark: #089a95;
-  --osl-tiffany-light: #53d8d3;
-  --osl-tiffany-soft: #ecfdf5;
-  --osl-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --osl-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --osl-gradient-brand: linear-gradient(135deg, #2f8cff 0%, #0b6ff0 100%);
+  --osl-tiffany: var(--oc-tiffany);
+  --osl-tiffany-dark: var(--oc-tiffany-dark);
+  --osl-tiffany-light: var(--oc-tiffany-light);
+  --osl-tiffany-soft: var(--oc-tiffany-soft);
+  --osl-tiffany-muted: var(--oc-tiffany-muted);
+  --osl-tiffany-ring: var(--oc-tiffany-ring);
+  --osl-gradient-brand: var(--oc-gradient-brand);
   --osl-surface: #ffffff;
   --osl-text: #111827;
   --osl-text-muted: #6b7280;
@@ -206,8 +210,8 @@
   display: flex;
   flex-direction: column;
   padding: 24px 16px 20px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fffe 100%);
-  border-right: 1px solid rgba(10, 186, 181, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f6fafb 100%);
+  border-right: 1px solid rgba(0, 153, 169, 0.1);
   position: sticky;
   top: 0;
   align-self: flex-start;
@@ -233,9 +237,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(10, 186, 181, 0.2) 8%,
-    rgba(10, 186, 181, 0.36) 50%,
-    rgba(10, 186, 181, 0.2) 92%,
+    rgba(0, 153, 169, 0.2) 8%,
+    rgba(0, 153, 169, 0.36) 50%,
+    rgba(0, 153, 169, 0.2) 92%,
     transparent 100%
   );
 }
@@ -285,7 +289,7 @@
 }
 
 .osl-nav__item--active {
-  background: rgba(10, 186, 181, 0.1);
+  background: rgba(0, 153, 169, 0.1);
   color: var(--osl-tiffany-dark);
   font-weight: 600;
   position: relative;
@@ -324,8 +328,8 @@
   overflow: hidden;
   position: relative;
   padding: 16px 16px 0;
-  background: linear-gradient(180deg, #fff 0%, #f0fdfa 55%, rgba(236, 253, 245, 0.95) 100%);
-  box-shadow: 0 4px 22px rgba(10, 186, 181, 0.12);
+  background: linear-gradient(180deg, #fff 0%, #f3f7f9 55%, rgba(236, 253, 245, 0.95) 100%);
+  box-shadow: 0 4px 22px rgba(0, 153, 169, 0.12);
 }
 
 .osl-sidebar-promo__title {
@@ -368,6 +372,15 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: #ffffff;
+}
+
+.osl-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #ffffff;
 }
 
 .osl-header {
@@ -376,8 +389,9 @@
   justify-content: space-between;
   gap: 20px;
   padding: 28px 32px 20px;
-  background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(244, 251, 251, 0.8) 0%, rgba(240, 253, 250, 0.65) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -478,18 +492,24 @@
 }
 
 .osl-content {
-  padding: 0 32px 32px;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
+  padding: 0 32px 32px;
+  background: #ffffff;
 }
 
-/* ——— Tabs + filter ——— */
+/* ——— Tabs + filter (как op-tabs на «Мои объекты») ——— */
 .osl-tabs-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
 }
 
 .osl-tabs {
@@ -499,6 +519,7 @@
   flex: 1;
   min-width: 0;
   overflow-x: auto;
+  background: transparent;
 }
 
 .osl-tabs__item {
@@ -526,7 +547,7 @@
   border-bottom-color: var(--osl-tiffany);
 }
 
-/* ——— Table ——— */
+/* ——— Table (aligned with owner wallet transaction history) ——— */
 .osl-table-state {
   padding: 48px 24px;
   text-align: center;
@@ -536,32 +557,36 @@
 }
 
 .osl-table-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fafefe 100%);
-  border: 1px solid rgba(229, 231, 235, 0.7);
-  border-radius: var(--osl-radius);
-  box-shadow: var(--osl-shadow);
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
   overflow: hidden;
+  background: #fff;
+}
+
+.osl-table-wrap {
+  overflow-x: auto;
 }
 
 .osl-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 .osl-table thead th {
-  padding: 14px 16px;
+  padding: 12px 14px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: var(--osl-text-muted);
-  background: #fafafa;
-  border-bottom: 1px solid var(--osl-border);
+  color: #9ca3af;
+  background: #fafbfc;
+  border-bottom: 1px solid #e8edf2;
   white-space: nowrap;
 }
 
 .osl-table tbody td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 14px;
+  border-bottom: 1px solid #e8edf2;
   vertical-align: middle;
 }
 
@@ -570,7 +595,7 @@
 }
 
 .osl-table tbody tr:hover {
-  background: #fafafa;
+  background: rgba(0, 153, 169, 0.04);
 }
 
 .osl-object-cell {
@@ -581,8 +606,8 @@
 }
 
 .osl-object-cell__thumb {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   object-fit: cover;
   flex-shrink: 0;
@@ -590,25 +615,83 @@
 }
 
 .osl-object-cell__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
 .osl-object-cell__title {
-  margin: 0 0 2px;
+  margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
+  color: var(--osl-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .osl-object-cell__meta {
   margin: 0;
   font-size: 12px;
   color: var(--osl-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .osl-buyer {
   font-size: 14px;
   font-weight: 500;
+  color: var(--osl-text);
+}
+
+.osl-amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--osl-text);
+  white-space: nowrap;
+}
+
+.osl-amount--positive {
+  color: var(--osl-tiffany-dark);
+}
+
+.osl-sale-date {
+  color: var(--osl-text-muted);
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.osl-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.osl-status--completed {
+  background: rgba(34, 197, 94, 0.12);
+  color: #0099a9;
+}
+
+.osl-status--in-progress {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+
+.osl-status--pending {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.osl-status--cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
 }
 
 .osl-deal-cell {
@@ -642,7 +725,7 @@
 
 .osl-reserve--paid {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #007d8a;
 }
 
 .osl-reserve--unpaid {
@@ -651,7 +734,7 @@
 }
 
 .osl-sale-type--auction {
-  background: rgba(10, 186, 181, 0.14);
+  background: rgba(0, 153, 169, 0.14);
   color: var(--osl-tiffany-dark);
 }
 
@@ -694,12 +777,12 @@
 }
 
 .osl-promo-card--light {
-  background: linear-gradient(135deg, #ecfdf5 0%, #f8fffe 55%, #ffffff 100%);
+  background: linear-gradient(135deg, #e8f1f4 0%, #f6fafb 55%, #ffffff 100%);
   border: 1px solid var(--osl-tiffany-ring);
 }
 
 .osl-promo-card--dark {
-  background: linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #0d9488 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #006672 100%);
   border: 1px solid transparent;
   color: #fff;
 }
@@ -739,7 +822,7 @@
   max-width: 100%;
   object-fit: contain;
   object-position: bottom right;
-  filter: drop-shadow(0 4px 10px rgba(10, 186, 181, 0.14));
+  filter: drop-shadow(0 4px 10px rgba(0, 153, 169, 0.14));
 }
 
 .osl-promo-card__visual--photo {
@@ -789,7 +872,7 @@
 }
 
 .osl-btn--primary:hover {
-  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.35);
 }
 
 .osl-btn--sm {
@@ -812,7 +895,7 @@
   gap: 20px;
   padding: 20px 24px;
   border-radius: var(--osl-radius);
-  background: linear-gradient(105deg, #ecfdf5 0%, #f8fafc 38%, #ccfbf1 72%, rgba(94, 234, 212, 0.45) 100%);
+  background: linear-gradient(105deg, #e8f1f4 0%, #f8fafc 38%, #e8f1f4 72%, rgba(94, 234, 212, 0.45) 100%);
   border: 1px solid var(--osl-tiffany-ring);
   box-shadow: var(--osl-shadow);
 }
@@ -841,7 +924,7 @@
   width: 72px;
   height: 72px;
   flex-shrink: 0;
-  filter: drop-shadow(0 6px 14px rgba(10, 186, 181, 0.22));
+  filter: drop-shadow(0 6px 14px rgba(0, 153, 169, 0.22));
 }
 
 @media (max-width: 1200px) {
@@ -880,8 +963,9 @@
     top: 0;
     z-index: 10;
     padding: 28px 32px 20px;
-    background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
-    backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(244, 251, 251, 0.8) 0%, rgba(240, 253, 250, 0.65) 100%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
   }
 
   .osl-header__title {
@@ -899,32 +983,40 @@
   .osl-content {
     padding: 14px 31px 28px;
     gap: 0;
+    background: #ffffff;
   }
 
   .osl-tabs-row {
-    align-items: center;
-    margin-bottom: 22px;
+    margin: 0 0 16px;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
   }
 
   .osl-tabs {
-    gap: 28px;
-    border-bottom: 0;
-    overflow: visible;
+    gap: 4px;
+    border-bottom: 1px solid var(--osl-border);
+    overflow-x: auto;
   }
 
   .osl-tabs__item {
-    margin: 0;
-    padding: 0;
-    border-bottom: 0;
-    color: #8a94a6;
+    padding: 12px 16px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--osl-text-muted);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0;
   }
 
+  .osl-tabs__item:hover {
+    color: var(--osl-text);
+  }
+
   .osl-tabs__item--active {
-    color: #0abab5;
-    border-bottom-color: transparent;
+    color: var(--osl-tiffany-dark);
+    font-weight: 600;
+    border-bottom-color: var(--osl-tiffany);
   }
 
   .osl-sales-summary {
@@ -934,11 +1026,11 @@
     min-height: 92px;
     margin-bottom: 34px;
     padding: 18px 22px;
-    border: 1px solid rgba(10, 186, 181, 0.22);
+    border: 1px solid rgba(0, 153, 169, 0.22);
     border-radius: 14px;
     background:
       linear-gradient(120deg, rgba(236, 253, 251, 0.98) 0%, rgba(255, 255, 255, 0.98) 48%, rgba(231, 250, 247, 0.96) 100%);
-    box-shadow: 0 16px 38px rgba(10, 186, 181, 0.09);
+    box-shadow: 0 16px 38px rgba(0, 153, 169, 0.09);
   }
 
   .osl-sales-summary__icon {
@@ -949,9 +1041,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: #0abab5;
+    background: #0099a9;
     color: #ffffff;
-    box-shadow: 0 12px 24px rgba(10, 186, 181, 0.24);
+    box-shadow: 0 12px 24px rgba(0, 153, 169, 0.24);
   }
 
   .osl-sales-summary__copy {
@@ -994,34 +1086,20 @@
     align-items: center;
     gap: 6px;
     border-radius: 999px;
-    background: rgba(10, 186, 181, 0.12);
-    color: #089a95;
+    background: rgba(0, 153, 169, 0.12);
+    color: #007d8a;
   }
 
   .osl-sales-summary__hint {
-    color: #089a95;
+    color: #007d8a;
   }
 
   .osl-table-card {
     margin-bottom: 44px;
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    background: #ffffff;
-    box-shadow: none;
   }
 
   .osl-table {
     table-layout: fixed;
-  }
-
-  .osl-table thead th {
-    padding: 0 0 20px;
-    border-bottom: 0;
-    background: transparent;
-    color: #9ca3af;
-    font-size: 13px;
-    font-weight: 600;
   }
 
   .osl-table thead th:nth-child(1) {
@@ -1044,86 +1122,8 @@
     width: 14%;
   }
 
-  .osl-table tbody td {
-    height: 62px;
-    padding: 0 0 18px;
-    border-bottom: 0;
-    color: #111827;
-  }
-
-  .osl-table tbody tr:hover {
-    background: transparent;
-  }
-
-  .osl-object-cell {
-    gap: 14px;
-  }
-
-  .osl-object-cell__thumb {
-    width: 50px;
-    height: 39px;
-    border-radius: 3px;
-    box-shadow: 0 7px 15px rgba(15, 23, 42, 0.11);
-  }
-
   .osl-object-cell__title {
-    max-width: 210px;
-    margin-bottom: 4px;
-    overflow: hidden;
-    color: #111827;
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .osl-object-cell__meta {
-    color: #9ca3af;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .osl-buyer,
-  .osl-amount,
-  .osl-sale-date {
-    font-size: 14px;
-    font-weight: 700;
-    color: #111827;
-    white-space: nowrap;
-  }
-
-  .osl-status {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88px;
-    height: 26px;
-    padding: 0 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .osl-status--completed {
-    background: #dff7ec;
-    color: #0f9f64;
-  }
-
-  .osl-status--in-progress {
-    background: #fff0d5;
-    color: #d48612;
-  }
-
-  .osl-status--pending {
-    background: #f2f3f5;
-    color: #5b6472;
-  }
-
-  .osl-status--cancelled {
-    background: #ffe5eb;
-    color: #d64263;
+    max-width: 240px;
   }
 
   .osl-buyer-banner {
@@ -1167,8 +1167,8 @@
     height: 40px;
     padding: 0 18px;
     border-radius: 4px;
-    background: #0abab5;
-    box-shadow: 0 9px 20px rgba(10, 186, 181, 0.24);
+    background: #0099a9;
+    box-shadow: 0 9px 20px rgba(0, 153, 169, 0.24);
     font-size: 13px;
   }
 

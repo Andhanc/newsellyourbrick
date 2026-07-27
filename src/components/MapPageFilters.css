@@ -44,8 +44,8 @@
 }
 
 .map-page-filters__reset-row:hover {
-  background: rgba(10, 186, 181, 0.06);
-  color: #089a96;
+  background: rgba(0, 153, 169, 0.06);
+  color: #007d8a;
 }
 
 /* Меню фильтров — продолжение блока поиска */
@@ -251,8 +251,8 @@
 
 .map-page-filters__price-input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.55);
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.12);
+  border-color: rgba(0, 153, 169, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.12);
 }
 
 .map-page-filters__price-sep {

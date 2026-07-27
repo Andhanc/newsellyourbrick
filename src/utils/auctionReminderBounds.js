@@ -131,6 +131,16 @@ export function isPropertyListingSoldOut(property) {
   return hasPropertyListingTimer(property) && isEffectiveAuctionTimerExpired(property)
 }
 
+/**
+ * Объект продан и не должен показываться в публичных списках (карта, каталог и т.п.).
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isSoldPropertyListing(property) {
+  if (!property) return true
+  if (property.status === 'sold') return true
+  return isPropertyListingSoldOut(property)
+}
+
 const STEP_MS = 30 * 60 * 1000
 
 /**

@@ -1,7 +1,7 @@
 /* Горизонтальный промо-баннер: тиффани-фон, белый текст, иллюстрация справа */
 .profile-vip-club-promo {
-  --vip-banner-teal: #0abab5;
-  --vip-banner-teal-deep: #089a95;
+  --vip-banner-teal: #0099A9;
+  --vip-banner-teal-deep: #007d8a;
 
   display: block;
   width: 100%;
@@ -17,7 +17,7 @@
     var(--vip-banner-teal-deep) 100%
   );
   box-shadow:
-    0 14px 36px rgba(8, 154, 149, 0.28),
+    0 14px 36px rgba(0, 125, 138, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
@@ -25,7 +25,7 @@
 .profile-vip-club-promo:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 18px 44px rgba(8, 154, 149, 0.34),
+    0 18px 44px rgba(0, 125, 138, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 

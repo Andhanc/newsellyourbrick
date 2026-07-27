@@ -1,0 +1,25 @@
+---
+description: Mobile photo-hero shape for listing pages (test-drive, shares, auction, debts)
+globs: src/pages/{TestDriveLandingPage,Shares,CoInvestment.mobile,Home}.css,src/components/Hero.css,src/pages/{TestDriveLandingPage,Shares,Debts,Home}.jsx,src/components/Hero.jsx
+alwaysApply: false
+---
+
+# Listing photo hero (mobile)
+
+Reference: Test Drive `/test-drive` upper photo block.
+
+On phones (`max-width: 640px` or `768px` for auction/shares/debts listing heroes), keep this shape:
+
+- `min-height: 740px` (scene + content shell)
+- `border-radius: 0 0 50% 50% / 0 0 4% 4%` — soft elliptical bottom bowl
+- `overflow: hidden` so the photo clips to the curve
+- `box-shadow: 0 22px 52px rgba(8, 61, 67, 0.18)`
+
+Applies to:
+
+- `.test-drive-hero`
+- `.shares-hero-scene` (доли / co-investment)
+- `.hero--auction-scene` (аукцион)
+- `.debts-hero-scene` (долги)
+
+Do not stretch these mobile heroes to full `100dvh` unless product explicitly asks. Desktop can stay taller / full-bleed without the bowl curve.

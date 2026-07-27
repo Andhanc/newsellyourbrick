@@ -1,555 +1,565 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ArrowDown } from 'lucide-react'
+import { FiChevronDown, FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
-import SiteChatDock from '../components/SiteChatDock'
-import PageBreadcrumbs from '../components/PageBreadcrumbs'
-import DepositButton from '../components/DepositButton'
-import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
-import SharesDesktopFilters from '../components/SharesDesktopFilters'
-import { AnimatedMarqueeHero } from '../components/ui/hero-3'
-import { fetchUserDeposit } from '../utils/depositApi'
-import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
-import './Shares.css'
-import { getPropertyCardImage } from '../utils/propertyImage'
-import { ShareCardSkeletonGrid } from '../components/ShareCardSkeletonGrid'
-import PropertyShareButton from '../components/PropertyShareButton'
+import SharesPropertyCard, { SharesPropertyCardSkeleton } from '../components/SharesPropertyCard'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
+import ListingPagePagination from '../components/ListingPagePagination'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import MobileDiscoverFaq from '../components/MobileDiscoverFaq'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
-import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import '../components/PropertyList.css'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
-import { formatPropertyPrice } from '../utils/currency'
+import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
+import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
+import { publicAsset } from '../utils/publicAsset'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 import {
-  EMPTY_SHARES_FILTERS,
-  applySharesPageFilters,
-  getSharesPriceBounds,
-  SHARES_MOBILE_FILTER_ITEMS,
-  isShareSoldOut,
-} from '../utils/sharesPageFilters'
-
-const MOBILE_BREAKPOINT = 768
-
-// Фотографии разных объектов недвижимости для бегущей строки
-const HERO_MARQUEE_IMAGES = [
-  '/images/external/photo-1600596542815-ffad4c1539a9-8e64e4db52.jpg', // villa with pool
-  '/images/external/photo-1600585154340-be6161a56a0c-c8de737e17.jpg', // penthouse
-  '/images/external/photo-1600566753190-17f0baa2a6c3-ae67f1c22f.jpg', // mountain lodge
-  '/images/external/photo-1502672260266-1c1ef2d93688-acaae47eb8.jpg', // seaside apartment
-  '/images/external/photo-1560448204-e02f11c3d0e2-d2972f440a.jpg', // downtown loft
-  '/images/external/photo-1580587771525-78b9dba3b914-91f09fab03.jpg', // family home
-]
+  SHARES_MARKETPLACE_PAGE_SIZE,
+  normalizeMarketplaceShare,
+  paginateSharesMarketplace,
+} from '../utils/sharesMarketplacePresentation'
+import './Shares.css'
+import '../components/PropertyList.css'
+import './CoInvestment.mobile.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_PAGE_SIZE = 100
+const HERO_IMAGE = publicAsset('images/sellyourbrick/about/about-category-shares.jpg')
+const SHARES_EMPTY_IMAGE = publicAsset('images/shares-empty-illustration.png')
+const STATUS_FILTERS = ['Сбор открыт', 'Почти собрано', 'Сбор завершён']
 
-// Демо-объекты долей (показываются вместе с объектами из API)
-const SHARE_CARD_FALLBACK =
-  '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
+function normalizeText(value) {
+  return String(value || '').trim().toLocaleLowerCase('ru-RU')
+}
 
-const DEMO_SHARE_OBJECTS = [
-  {
-    id: 'share-demo-1',
-    title: 'Квартира в центре, 2-комн.',
-    location: 'Минск, ул. Примерная, 10',
-    image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
-    totalPrice: 120000,
-    pricePerShare: 6000,
-    totalShares: 20,
-    sharesSold: 8,
-    myShares: 0,
-    area: 65,
-    rooms: 2,
-  },
-  {
-    id: 'share-demo-2',
-    title: 'Апартаменты с видом на море',
-    location: 'Барселона, Eixample',
-    image: '/images/external/photo-1502672260266-1c1ef2d93688-97c7b765e8.jpg',
-    totalPrice: 250000,
-    pricePerShare: 12500,
-    totalShares: 20,
-    sharesSold: 15,
-    myShares: 2,
-    area: 95,
-    rooms: 3,
-  },
-  {
-    id: 'share-demo-3',
-    title: 'Студия в историческом центре',
-    location: 'Вена, 1-й район',
-    image: '/images/external/photo-1502672023488-70e25813eb80-62911a5aab.jpg',
-    totalPrice: 180000,
-    pricePerShare: 9000,
-    totalShares: 20,
-    sharesSold: 20,
-    myShares: 0,
-    area: 42,
-    rooms: 1,
-  },
-]
+function finiteValues(list, key) {
+  return list
+    .map((item) => item[key])
+    .filter((value) => Number.isFinite(value))
+}
 
-const Shares = () => {
-  const { t } = useTranslation()
+function sortMarketplaceShares(list, sort) {
+  const sorted = [...list]
+  const nullableSort = (selector, direction = 'asc') => (a, b) => {
+    const left = selector(a)
+    const right = selector(b)
+    if (!Number.isFinite(left)) return Number.isFinite(right) ? 1 : 0
+    if (!Number.isFinite(right)) return -1
+    return direction === 'desc' ? right - left : left - right
+  }
+
+  if (sort === 'yield') return sorted.sort(nullableSort((share) => share.annualYield, 'desc'))
+  if (sort === 'collected') return sorted.sort(nullableSort((share) => share.collectedPercent, 'desc'))
+  if (sort === 'price') return sorted.sort(nullableSort((share) => share.pricePerShare))
+  return sorted
+}
+
+function getShareFavoriteCategory(share) {
+  return share.source_table ? undefined : 'property'
+}
+
+export default function Shares() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sharesFilters, setSharesFilters] = useState(EMPTY_SHARES_FILTERS)
-  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
-  )
-  const searchFiltersBarRef = useRef(null)
-  const [apiShares, setApiShares] = useState([])
-  const [loadingShares, setLoadingShares] = useState(true)
-  const [compactShareCards, setCompactShareCards] = useState(false)
-  const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
-  const [userDeposit, setUserDeposit] = useState(0)
-  const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)')
-    const update = () => {
-      setCompactShareCards(mq.matches)
-      setIsMobile(mq.matches)
-    }
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
-
-  useEffect(() => {
-    if (!isMobile || !mobileFiltersOpen) return
-    const handlePointerDown = (e) => {
-      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
-        setMobileFiltersOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('touchstart', handlePointerDown, { passive: true })
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('touchstart', handlePointerDown)
-    }
-  }, [isMobile, mobileFiltersOpen])
-
-  const isSharesDesktop = !isMobile
-
-  const setPropertyType = (propertyType) => {
-    setSharesFilters((prev) => ({ ...prev, propertyType }))
-  }
-
-  const setAvailabilityFilter = (availability) => {
-    setSharesFilters((prev) => ({ ...prev, availability }))
-  }
-
-  const setMinPriceFilter = (minPrice) => {
-    setSharesFilters((prev) => ({ ...prev, minPrice }))
-  }
-
-  const setMaxPriceFilter = (maxPrice) => {
-    setSharesFilters((prev) => ({ ...prev, maxPrice }))
-  }
+  const [shares, setShares] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
+  const [query, setQuery] = useState('')
+  const [selectedTypes, setSelectedTypes] = useState([])
+  const [selectedLocations, setSelectedLocations] = useState([])
+  const [selectedStatuses, setSelectedStatuses] = useState([])
+  const [yieldMax, setYieldMax] = useState(null)
+  const [sharePriceMax, setSharePriceMax] = useState(null)
+  const [sort, setSort] = useState('new')
+  const [page, setPage] = useState(1)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
-      if (!cancelled && id) setDbUserId(id)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!dbUserId) {
-      setDepositLoading(false)
-      return
-    }
-    let cancelled = false
-    setDepositLoading(true)
+    setLoading(true)
+    setLoadError('')
 
     ;(async () => {
       try {
-        const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
-        if (
-          !cancelled &&
-          deposit &&
-          typeof deposit.depositAmount === 'number'
-        ) {
-          setUserDeposit(deposit.depositAmount || 0)
+        const records = []
+        let offset = 0
+        while (true) {
+          const response = await fetch(
+            `${API_BASE}/properties/shares?limit=${API_PAGE_SIZE}&offset=${offset}`,
+          )
+          const payload = await response.json().catch(() => null)
+          if (!response.ok || payload?.success === false || !Array.isArray(payload?.data)) {
+            throw new Error(payload?.error || 'Не удалось загрузить объекты')
+          }
+          records.push(...payload.data)
+          offset += payload.data.length
+          if (payload.data.length < API_PAGE_SIZE) break
         }
-      } catch {
-        if (!cancelled) setUserDeposit(0)
+        if (!cancelled) setShares(records.map(normalizeMarketplaceShare))
+      } catch (error) {
+        if (!cancelled) {
+          setShares([])
+          setLoadError(error?.message || 'Не удалось загрузить объекты')
+        }
       } finally {
-        if (!cancelled) setDepositLoading(false)
+        if (!cancelled) setLoading(false)
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [dbUserId])
-
-  const loadShares = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/properties/shares`)
-      const json = await (res.ok ? res.json() : { success: false, data: [] })
-      if (json.success && Array.isArray(json.data)) {
-        setApiShares(json.data.map((p) => ({
-          ...p,
-          id: p.shareId || `${p.property_type}-${p.id}`,
-          image: getPropertyCardImage(p, SHARE_CARD_FALLBACK),
-        })))
-      }
-    } catch (_) {
-      setApiShares([])
-    } finally {
-      setLoadingShares(false)
-    }
-  }, [])
+  }, [reloadKey])
 
   useEffect(() => {
-    void loadShares()
-  }, [loadShares])
+    const prefilter = readHeroSearchPrefilter(location.state)
+    if (!prefilter?.shareCountry) return
 
-  const allShareObjects = [...DEMO_SHARE_OBJECTS, ...apiShares]
-  const priceBounds = useMemo(() => getSharesPriceBounds(allShareObjects), [allShareObjects])
+    setSelectedLocations([prefilter.shareCountry])
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+  }, [location.pathname, location.search, location.state, navigate])
 
-  const filtered = useMemo(
-    () => applySharesPageFilters(allShareObjects, sharesFilters, searchQuery),
-    [allShareObjects, sharesFilters, searchQuery],
+  const typeOptions = useMemo(
+    () => [...new Set(shares.map((share) => share.type).filter(Boolean))].sort(),
+    [shares],
+  )
+  const locationOptions = useMemo(
+    () => [...new Set(shares.map((share) => share.city).filter(Boolean))].sort(),
+    [shares],
+  )
+  const yieldValues = useMemo(() => finiteValues(shares, 'annualYield'), [shares])
+  const priceValues = useMemo(() => finiteValues(shares, 'pricePerShare'), [shares])
+  const yieldCeiling = yieldValues.length ? Math.ceil(Math.max(...yieldValues)) : null
+  const priceCeiling = priceValues.length ? Math.ceil(Math.max(...priceValues) / 100) * 100 : null
+
+  const filteredShares = useMemo(() => {
+    const search = normalizeText(query)
+    const filtered = shares.filter((share) => {
+      const haystack = normalizeText(
+        `${share.title} ${share.location} ${share.type} ${share.statusLabel}`,
+      )
+      const yieldMatches =
+        yieldMax == null || (Number.isFinite(share.annualYield) && share.annualYield <= yieldMax)
+      const priceMatches =
+        sharePriceMax == null ||
+        (Number.isFinite(share.pricePerShare) && share.pricePerShare <= sharePriceMax)
+
+      return (
+        (!search || haystack.includes(search)) &&
+        (selectedTypes.length === 0 || selectedTypes.includes(share.type)) &&
+        (selectedLocations.length === 0 || selectedLocations.includes(share.city)) &&
+        (selectedStatuses.length === 0 || selectedStatuses.includes(share.statusLabel)) &&
+        yieldMatches &&
+        priceMatches
+      )
+    })
+    return sortMarketplaceShares(filtered, sort)
+  }, [query, selectedLocations, selectedStatuses, selectedTypes, sharePriceMax, shares, sort, yieldMax])
+
+  const pagination = useMemo(
+    () => paginateSharesMarketplace(filteredShares, page),
+    [filteredShares, page],
   )
 
-  const formatPrice = (n, currency = 'USD') =>
-    formatPropertyPrice(n, currency, { compact: true })
+  useEffect(() => {
+    setPage(1)
+  }, [query, selectedLocations, selectedStatuses, selectedTypes, sharePriceMax, sort, yieldMax])
 
-  const toShareFavoriteProperty = (obj) => ({
-    ...obj,
-    title: obj.title,
-    name: obj.title,
-    sale_type: 'share',
-    is_shared_ownership: true,
-  })
-
-  const isShareLiked = (obj) =>
-    isFavorite(
-      toShareFavoriteProperty(obj),
-      hasDbBackedProperty(obj) ? undefined : 'share',
-    )
-
-  const handleShareFavoriteToggle = (obj, e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    toggleFavorite(
-      toShareFavoriteProperty(obj),
-      hasDbBackedProperty(obj) ? undefined : 'share',
+  const toggleFilter = (value, setter) => {
+    setter((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
     )
   }
 
+  const resetFilters = () => {
+    setQuery('')
+    setSelectedTypes([])
+    setSelectedLocations([])
+    setSelectedStatuses([])
+    setYieldMax(null)
+    setSharePriceMax(null)
+    setSort('new')
+  }
+
+  const activeFilterCount =
+    selectedTypes.length +
+    selectedLocations.length +
+    selectedStatuses.length +
+    (yieldMax != null ? 1 : 0) +
+    (sharePriceMax != null ? 1 : 0)
+
+  const scrollToCatalog = () => {
+    const target =
+      document.getElementById('shares-invest-catalog') ||
+      document.getElementById('shares-invest-results')
+    if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
+  }
+
+  const openShare = (share) => {
+    navigate(getCoInvestmentContextPropertyPath(share), { state: { shareObject: share } })
+  }
+
+  const handlePageChange = (nextPage) => {
+    setPage(nextPage)
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById('shares-invest-results')
+      if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
+    })
+  }
+
+  const filterPanelProps = {
+    filteredCount: filteredShares.length,
+    typeOptions,
+    locationOptions,
+    selectedTypes,
+    selectedLocations,
+    selectedStatuses,
+    yieldMax,
+    yieldCeiling,
+    sharePriceMax,
+    priceCeiling,
+    sort,
+    onSortChange: setSort,
+    onReset: resetFilters,
+    onToggleType: (value) => toggleFilter(value, setSelectedTypes),
+    onToggleLocation: (value) => toggleFilter(value, setSelectedLocations),
+    onToggleStatus: (value) => toggleFilter(value, setSelectedStatuses),
+    onYieldMaxChange: setYieldMax,
+    onSharePriceMaxChange: setSharePriceMax,
+  }
+
   return (
-    <div className="shares-page shares-page--catalog">
+    <div className="shares-page shares-page--shares-redesign">
       <Header />
-      <div className="shares-page__bg" />
-      <AnimatedMarqueeHero
-        title={
-          <>
-            {t('sharesHeroTitleLine1')}
-            <br />
-            <span className="shares-hero__title-marker">{t('sharesHeroTitleLine2')}</span>
-          </>
-        }
-        description={t('sharesHeroDescription')}
-        images={HERO_MARQUEE_IMAGES}
-        className="animated-marquee-hero--shares"
-      />
-      <main className="shares-container shares-container--catalog">
-        <div
-          className={`shares-listing-shell${
-            isSharesDesktop && desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ''
-          }${isSharesDesktop && !desktopFiltersOpen ? ' shares-listing-shell--filters-hidden' : ''}`}
-        >
-          <div className="page-context-heading page-context-heading--listing-auction">
-            <div className="page-context-heading--listing-auction-inner">
-              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
-                {t('shares')}
-              </h1>
-              <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-            </div>
+
+      <section className="shares-hero-scene" aria-labelledby="shares-hero-title">
+        <img className="shares-hero-scene__bg" src={HERO_IMAGE} alt="" aria-hidden />
+        <div className="shares-hero-scene__overlay" aria-hidden />
+
+        <div className="shares-hero-scene__brand" aria-label="SellYourBrick">
+          <span className="shares-hero-scene__brand-text">
+            <span className="shares-hero-scene__brand-word">Sell</span>
+            <span className="shares-hero-scene__brand-word shares-hero-scene__brand-word--accent">
+              Your
+            </span>
+            <span className="shares-hero-scene__brand-word">Brick</span>
+          </span>
+        </div>
+
+        <div className="shares-hero-scene__inner">
+          <div className="shares-hero-scene__copy">
+            <span className="shares-hero-scene__eyebrow">Соинвестирование</span>
+            <h1 id="shares-hero-title" className="shares-hero-scene__title">
+              Доли в недвижимость
+            </h1>
+            <p className="shares-hero-scene__lead">
+              Инвестируйте в проверенные объекты частями: условия, доступность и прогноз доходности
+              видны до покупки. Доходность не гарантируется.
+            </p>
+            <button type="button" className="shares-hero-scene__cta" onClick={scrollToCatalog}>
+              <span>Смотреть объекты</span>
+              <span className="shares-hero-scene__cta-icon" aria-hidden>
+                <ArrowDown size={18} strokeWidth={2.4} />
+              </span>
+            </button>
           </div>
+        </div>
 
-          <div
-            className={`shares-listing-layout${
-              isSharesDesktop
-                ? ` auction-desktop-layout${
-                    desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
-                  }`
-                : ''
-            }`}
-          >
-            {isSharesDesktop && desktopFiltersOpen ? (
-              <SharesDesktopFilters
-                propertyType={sharesFilters.propertyType}
-                setPropertyType={setPropertyType}
-                availabilityFilter={sharesFilters.availability}
-                setAvailabilityFilter={setAvailabilityFilter}
-                minPrice={sharesFilters.minPrice}
-                maxPrice={sharesFilters.maxPrice}
-                setMinPrice={setMinPriceFilter}
-                setMaxPrice={setMaxPriceFilter}
-                priceBounds={priceBounds}
-                onApply={() => {
-                  document.getElementById('shares-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }}
-              />
-            ) : null}
+        <button
+          type="button"
+          className="shares-hero-scene__scroll"
+          onClick={scrollToCatalog}
+          aria-label="Перейти к каталогу"
+        >
+          <span className="shares-hero-scene__scroll-arrow" aria-hidden="true" />
+        </button>
+      </section>
 
-            <div
-              className={`shares-listing-layout__main${
-                isSharesDesktop ? ' auction-desktop-layout__main' : ''
-              }${
-                isSharesDesktop && !desktopFiltersOpen ? ' auction-desktop-layout__main--filters-hidden' : ''
-              }`.trim()}
-            >
-              <div
-                ref={searchFiltersBarRef}
-                className={`search-filters-bar${
-                  isSharesDesktop ? ' search-filters-bar--auction-desktop' : ' search-filters-bar--auction-mobile'
-                }${
-                  isMobile
-                    ? mobileFiltersOpen
-                      ? ' search-filters-bar--types-expanded'
-                      : ' search-filters-bar--types-collapsed'
-                    : ''
-                }`}
-              >
-                {isSharesDesktop ? (
-                  <button
-                    type="button"
-                    className="auction-desktop-filters-toggle"
-                    onClick={() => setDesktopFiltersOpen((open) => !open)}
-                    aria-label={
-                      desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
-                    }
-                    aria-expanded={desktopFiltersOpen}
-                  >
-                    {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
-                  </button>
-                ) : null}
-                <div className="search-box">
-                  <svg
-                    className="search-icon"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.35-4.35" />
-                  </svg>
+      <main className="shares-container shares-container--shares-main">
+        <section className="shares-invest-catalog" id="shares-invest-catalog">
+          <SharesFiltersPanel
+            {...filterPanelProps}
+            className="shares-invest-filters shares-invest-filters--sidebar"
+          />
+
+          <div className="shares-invest-results" id="shares-invest-results">
+            <div className="auction-listing-search-stack auction-listing-search-stack--compact">
+              <div className="search-filters-bar search-filters-bar--auction-mobile">
+                <form
+                  className="debts-listing-search"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                  }}
+                >
                   <input
-                    type="text"
-                    className="search-input"
-                    placeholder={t('searchPlaceholderLong')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="debts-listing-search__input"
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Город или объект"
+                    aria-label="Поиск по городу или объекту"
                   />
-                  {searchQuery ? (
+                  {query ? (
                     <button
                       type="button"
-                      className="search-clear"
-                      onClick={() => setSearchQuery('')}
-                      aria-label={t('clearSearch')}
+                      className="debts-listing-search__clear"
+                      onClick={() => setQuery('')}
+                      aria-label="Очистить поиск"
                     >
                       ×
                     </button>
                   ) : null}
-                </div>
-                {isMobile ? (
-                  <div className="filters-and-types-grid">
-                    <button
-                      type="button"
-                      className="filters-button"
-                      aria-expanded={mobileFiltersOpen}
-                      onClick={() => setMobileFiltersOpen((open) => !open)}
+                  <button type="submit" className="debts-listing-search__go" aria-label="Найти">
+                    <FiSearch aria-hidden />
+                  </button>
+                </form>
+
+                <div className="filters-and-types-grid">
+                  <button
+                    type="button"
+                    className={`filters-button${activeFilterCount > 0 ? ' is-active' : ''}`}
+                    aria-expanded={filtersDrawerOpen}
+                    aria-label="Фильтры"
+                    onClick={() => setFiltersDrawerOpen(true)}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
                     >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden
-                      >
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                      </svg>
-                      {t('filters')}
-                    </button>
-                    <div className="property-types property-types--auction-mobile">
-                      {SHARES_MOBILE_FILTER_ITEMS.map((item) => (
-                        <button
-                          key={`${item.kind}-${item.value}`}
-                          type="button"
-                          className={`type-button ${
-                            item.kind === 'type'
-                              ? sharesFilters.propertyType === item.value
-                                ? 'active'
-                                : ''
-                              : sharesFilters.availability === item.value
-                                ? 'active'
-                                : ''
-                          }`}
-                          onClick={() => {
-                            if (item.kind === 'type') {
-                              setPropertyType(item.value)
-                            } else {
-                              setAvailabilityFilter(
-                                sharesFilters.availability === item.value ? 'all' : item.value,
-                              )
-                            }
-                          }}
-                        >
-                          {t(item.labelKey)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    <span className="filters-button__label">Фильтры</span>
+                    {activeFilterCount > 0 ? (
+                      <span className="filters-badge" aria-hidden="true">
+                        {activeFilterCount}
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
               </div>
 
-        <div id="shares-grid" className="shares-grid" aria-busy={loadingShares}>
-          {loadingShares ? (
-            <ShareCardSkeletonGrid count={6} />
-          ) : filtered.length === 0 ? (
-            <div className="shares-no-results">
-              <p>{t('sharesEmpty')}</p>
+              <label className="shares-invest-sort shares-invest-sort--desktop">
+                <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                  <option value="new">По умолчанию</option>
+                  <option value="yield">По прогнозу доходности</option>
+                  <option value="collected">По заполнению сбора</option>
+                  <option value="price">Сначала доступные доли</option>
+                </select>
+              </label>
             </div>
-          ) : (
-            filtered.map((obj) => {
-              const rawSoldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
-              const soldPercent = Math.max(0, Math.min(rawSoldPercent, 100))
-              const isSoldOut = isShareSoldOut(obj)
-              const total = Math.max(1, Number(obj.totalShares) || 1)
-              const sold = Math.min(obj.sharesSold || 0, total)
-              const remaining = Math.max(total - sold, 0)
-              const cardImage = getPropertyCardImage(obj, SHARE_CARD_FALLBACK)
-              const cardImageProps = buildResponsiveImageProps(cardImage, {
-                widths: [320, 480, 640, 800],
-                sizes: '(max-width: 768px) 50vw, (max-width: 1024px) 50vw, 33vw',
-                quality: 72,
-                fit: 'crop',
-              })
-              return (
-              <article
-                key={obj.id}
-                className={`share-card ${isSoldOut ? 'share-card--sold-out' : ''}`}
-                onClick={() => navigate(`/shares/${obj.id}`, { state: { shareObject: obj } })}
-              >
-                <div className="share-card__image-wrap">
-                  <div className="property-media-actions property-media-actions--compact">
-                    <button
-                      type="button"
-                      className={`property-favorite ${isShareLiked(obj) ? 'active' : ''}`}
-                      onClick={(e) => handleShareFavoriteToggle(obj, e)}
-                      aria-label={t('favorites')}
-                    >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          fill={isShareLiked(obj) ? 'currentColor' : 'none'}
-                        />
-                      </svg>
-                    </button>
-                    <PropertyShareButton property={obj} variant="compact" iconSize={16} />
-                  </div>
-                  <div className="share-card__scale" aria-hidden>
-                    <div className="share-card__scale-track">
-                      <div
-                        className="share-card__scale-fill"
-                        style={{ height: `${(sold / total) * 100}%` }}
-                      />
-                    </div>
-                    <span className="share-card__scale-label share-card__scale-label--bottom">0%</span>
-                    <span className="share-card__scale-label share-card__scale-label--top">100%</span>
-                    <span className="share-card__scale-sold" style={{ bottom: `${soldPercent}%` }}>
-                      {soldPercent}%
-                    </span>
-                  </div>
-                  <img
-                    {...cardImageProps}
-                    alt={obj.title}
-                    className="share-card__image"
-                  />
-                  <div
-                    className="share-card__sold-overlay"
-                    style={{ height: `${soldPercent}%` }}
-                    aria-hidden
-                  >
-                    {!isSoldOut && soldPercent > 0 && (
-                      <span className="share-card__sold-percent">
-                        {t(compactShareCards ? 'sharesRemainingCompact' : 'sharesRemainingCount', { remaining })}
-                      </span>
-                    )}
-                  </div>
-                  {isSoldOut && (
-                    <div className="share-card__sold-out-label">{t('sharesSoldOut')}</div>
-                  )}
+
+            <SharesMobileFiltersDrawer
+              isOpen={filtersDrawerOpen}
+              onClose={() => setFiltersDrawerOpen(false)}
+              title="Фильтры объектов"
+              applyLabel={`Показать ${filteredShares.length} объектов`}
+              onApply={() => setFiltersDrawerOpen(false)}
+              onReset={resetFilters}
+            >
+              <SharesFiltersPanel
+                {...filterPanelProps}
+                className="shares-invest-filters shares-invest-filters--drawer"
+                showSort
+              />
+            </SharesMobileFiltersDrawer>
+
+            {loading ? (
+              <div className="shares-invest-grid" aria-label="Загрузка объектов">
+                {Array.from({ length: Math.min(6, SHARES_MARKETPLACE_PAGE_SIZE) }, (_, index) => (
+                  <SharesPropertyCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : loadError ? (
+              <BuyerEmptyState
+                className="shares-market-state"
+                image={SHARES_EMPTY_IMAGE}
+                eyebrow={null}
+                title="Не удалось загрузить объекты"
+                description="Проверьте соединение и попробуйте позже — или посмотрите другие предложения на платформе."
+                primaryLabel="Смотреть другие объекты"
+                onPrimary={() => navigate('/auction')}
+              />
+            ) : pagination.items.length ? (
+              <>
+                <div className="shares-invest-grid">
+                  {pagination.items.map((share) => (
+                    <SharesPropertyCard
+                      key={`${share.source_table || share.property_type || 'share'}-${share.id}`}
+                      share={share}
+                      isFavorite={isFavorite(share, getShareFavoriteCategory(share))}
+                      onFavoriteToggle={() => toggleFavorite(share, getShareFavoriteCategory(share))}
+                      onInvest={() => openShare(share)}
+                    />
+                  ))}
                 </div>
-                <div className="share-card__content">
-                  <h2 className="share-card__title">{obj.title}</h2>
-                  <p className="share-card__location">{obj.location}</p>
-                  {obj.area && (
-                    <p className="share-card__specs">
-                      {obj.area} {t('squareMeters')} · {obj.rooms} {t('roomsShort')}
-                    </p>
-                  )}
-                  <div className="share-card__prices">
-                    <div className="share-card__price-total">
-                      {t('sharesTotalCost')} <strong>{formatPrice(obj.totalPrice, obj.currency)}</strong>
-                    </div>
-                    <div className="share-card__price-per-share">
-                      {t('sharesPerShare')} <strong>{formatPrice(obj.pricePerShare, obj.currency)}</strong>
-                    </div>
-                  </div>
-                  <div className="share-card__footer">
-                    <span className="share-card__sold">
-                      {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold, total })}
-                    </span>
-                  </div>
-                </div>
-              </article>
-              )
-            })
-          )}
-        </div>
-            </div>
+                <ListingPagePagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            ) : (
+              <BuyerEmptyState
+                className="shares-market-state"
+                image={SHARES_EMPTY_IMAGE}
+                eyebrow={null}
+                title={shares.length ? 'По этим условиям объектов нет' : 'Сейчас нет открытых объектов'}
+                description={
+                  shares.length
+                    ? 'Сбросьте фильтры или расширьте поиск — покажем только реальные доступные предложения.'
+                    : 'Каталог обновится, когда появятся новые предложения с долями. А пока можно посмотреть другие объекты.'
+                }
+                primaryLabel={shares.length ? 'Сбросить фильтры' : 'Смотреть другие объекты'}
+                onPrimary={shares.length ? resetFilters : () => navigate('/auction')}
+              />
+            )}
           </div>
-        </div>
+        </section>
       </main>
-      <SiteChatDock
-        wrapperClassName="shares-floats"
-        recommendationProperties={allShareObjects}
-        onRecommendationClick={(share) =>
-          navigate(`/shares/${share.id}`, { state: { shareObject: share } })
-        }
-      >
-        {dbUserId ? (
-          depositLoading ? (
-            <DepositButtonSkeleton />
-          ) : (
-            <DepositButton amount={userDeposit} />
-          )
-        ) : null}
-      </SiteChatDock>
+
+      <AuctionCategoryCtaCards variant="sharesPage" />
+      <MobileDiscoverFaq idPrefix="shares-md-faq" />
     </div>
   )
 }
 
-export default Shares
+function SharesFiltersPanel({
+  className = '',
+  filteredCount,
+  typeOptions,
+  locationOptions,
+  selectedTypes,
+  selectedLocations,
+  selectedStatuses,
+  yieldMax,
+  yieldCeiling,
+  sharePriceMax,
+  priceCeiling,
+  sort,
+  onSortChange,
+  onReset,
+  onToggleType,
+  onToggleLocation,
+  onToggleStatus,
+  onYieldMaxChange,
+  onSharePriceMaxChange,
+  showSort = false,
+}) {
+  return (
+    <aside className={className} aria-label="Фильтры">
+      <header>
+        <div>
+          <span>Настройте выбор</span>
+          <h2>Фильтры</h2>
+        </div>
+        <button type="button" onClick={onReset}>
+          Сбросить
+        </button>
+      </header>
+      {typeOptions.length ? (
+        <FilterGroup title="Тип объекта" options={typeOptions} values={selectedTypes} onToggle={onToggleType} />
+      ) : null}
+      {locationOptions.length ? (
+        <FilterGroup
+          title="Город"
+          options={locationOptions}
+          values={selectedLocations}
+          onToggle={onToggleLocation}
+        />
+      ) : null}
+      <FilterGroup title="Статус сбора" options={STATUS_FILTERS} values={selectedStatuses} onToggle={onToggleStatus} />
+      {yieldCeiling != null ? (
+        <RangeFilter
+          title="Прогноз доходности"
+          minLabel="от 0%"
+          maxLabel={yieldMax == null ? `до ${yieldCeiling}%` : `до ${yieldMax}%`}
+          value={yieldMax ?? yieldCeiling}
+          min={0}
+          max={yieldCeiling}
+          onChange={(value) => onYieldMaxChange(value === yieldCeiling ? null : value)}
+        />
+      ) : null}
+      {priceCeiling != null ? (
+        <RangeFilter
+          title="Цена одной доли"
+          minLabel="от €0"
+          maxLabel={sharePriceMax == null ? `до €${priceCeiling}` : `до €${sharePriceMax}`}
+          value={sharePriceMax ?? priceCeiling}
+          min={0}
+          max={priceCeiling}
+          step={100}
+          onChange={(value) => onSharePriceMaxChange(value === priceCeiling ? null : value)}
+        />
+      ) : null}
+      {showSort ? (
+        <div className="shares-invest-filter-block shares-invest-filter-block--sort">
+          <span className="shares-invest-filter-block__title shares-invest-filter-block__title--static">
+            Сортировка
+          </span>
+          <label className="shares-invest-sort shares-invest-sort--drawer">
+            <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
+              <option value="new">По умолчанию</option>
+              <option value="yield">По прогнозу доходности</option>
+              <option value="collected">По заполнению сбора</option>
+              <option value="price">Сначала доступные доли</option>
+            </select>
+          </label>
+        </div>
+      ) : null}
+      <button type="button" className="shares-invest-filters__apply shares-invest-filters__apply--sidebar">
+        Показать {filteredCount} объектов
+      </button>
+    </aside>
+  )
+}
+
+function FilterGroup({ title, options, values, onToggle }) {
+  return (
+    <div className="shares-invest-filter-block">
+      <div className="shares-invest-filter-block__title">
+        <span>{title}</span>
+        <FiChevronDown size={15} aria-hidden />
+      </div>
+      <div className="shares-invest-checks">
+        {options.map((option) => (
+          <label key={option}>
+            <input type="checkbox" checked={values.includes(option)} onChange={() => onToggle(option)} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RangeFilter({ title, minLabel, maxLabel, value, min, max, step = 1, onChange }) {
+  return (
+    <div className="shares-invest-filter-block">
+      <div className="shares-invest-filter-block__title">
+        <span>{title}</span>
+        <FiChevronDown size={15} aria-hidden />
+      </div>
+      <div className="shares-invest-range-labels">
+        <span>{minLabel}</span>
+        <span>{maxLabel}</span>
+      </div>
+      <input
+        className="shares-invest-range"
+        type="range"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </div>
+  )
+}

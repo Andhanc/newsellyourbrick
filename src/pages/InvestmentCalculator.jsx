@@ -18,9 +18,14 @@ import {
 import Header from '../components/Header';
 import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
+import InvestorMobileStepHeader from '../components/investor/InvestorMobileStepHeader';
+import InvestorMobileResultCard from '../components/investor/InvestorMobileResultCard';
+import InvestorMobileHero from '../components/investor/InvestorMobileHero';
+import InvestorAssumptionsSheet from '../components/investor/InvestorAssumptionsSheet';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { getPropertyCardImage } from '../utils/propertyImage';
 import { buildResponsiveImageProps } from '../utils/responsiveImage';
+import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl';
 import { scrollMainTo } from '../utils/mainScroll';
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
 import { isSiteUserSignedIn } from '../utils/siteAuthGate';
@@ -31,6 +36,11 @@ import {
 } from '../services/authService';
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems';
 import { subscriptionUnlocksCalculator } from '../utils/subscriptionAccess';
+import useMobileLayout from '../hooks/useMobileLayout';
+import {
+  clearInvestorScenario,
+  readInvestorScenario,
+} from '../utils/investorScenarioContext';
 import {
   ChevronDown,
   Wallet,
@@ -94,6 +104,7 @@ const InvestmentCalculator = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useMobileLayout(768);
   const { user, isLoaded: userLoaded } = useUser();
   const propertyEntryHandledRef = useRef(false);
 
@@ -129,9 +140,11 @@ const InvestmentCalculator = () => {
   const [selectedFavoriteKey, setSelectedFavoriteKey] = useState(null);
   const [ownershipShare, setOwnershipShare] = useState('100');
   const [favDropdownOpen, setFavDropdownOpen] = useState(false);
+  const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const favDropdownRef = useRef(null);
 
   const { favoriteAuctions, loadCatalog } = useFavoriteAuctionItems();
+  const [investorScenario, setInvestorScenario] = useState(() => readInvestorScenario());
 
   const [mortgageRates, setMortgageRates] = useState(null);
 
@@ -334,26 +347,70 @@ const InvestmentCalculator = () => {
         : 'rent';
 
     setInvestmentStrategy(strategy);
-    setDataSource('manual');
-    setSelectedFavoriteKey(null);
+    const selectedKey = location.state?.calculatorSelectedKey;
+    const comesFromComparison =
+      typeof selectedKey === 'string' && investorScenario?.propertyKeys?.includes(selectedKey);
+    setDataSource(comesFromComparison ? 'favorites' : 'manual');
+    setSelectedFavoriteKey(comesFromComparison ? selectedKey : null);
     applyPropertyPreset(property, strategy);
+
+    const prefill = location.state?.calculatorPrefill;
+    if (prefill && typeof prefill === 'object') {
+      if (Number.isFinite(prefill.investment) && prefill.investment > 0) {
+        setPropertyPrice(String(Math.round(prefill.investment)));
+      }
+      if (Number.isFinite(prefill.rentAnnual) && prefill.rentAnnual > 0) {
+        setRentalIncome(String(Math.round(prefill.rentAnnual)));
+      }
+      if (Number.isFinite(prefill.periodYears) && prefill.periodYears > 0) {
+        setOwnershipPeriod(String(Math.round(prefill.periodYears)));
+      }
+    }
+
     setWizardStep(3);
 
     navigate(location.pathname, { replace: true, state: null });
-  }, [location.state, location.pathname, navigate, applyPropertyPreset]);
+  }, [location.state, location.pathname, navigate, applyPropertyPreset, investorScenario]);
+
+  useEffect(() => {
+    if (propertyEntryHandledRef.current || location.state?.calculatorFromProperty) return;
+    const selectedKey = investorScenario?.selectedKey;
+    if (!selectedKey) return;
+
+    const selectedItem = favoriteAuctions.find((item) => item.key === selectedKey);
+    if (!selectedItem) return;
+
+    propertyEntryHandledRef.current = true;
+    setInvestmentStrategy('rent');
+    setDataSource('favorites');
+    setSelectedFavoriteKey(selectedKey);
+    applyPropertyPreset(selectedItem.property, 'rent');
+    setWizardStep(3);
+  }, [applyPropertyPreset, favoriteAuctions, investorScenario, location.state]);
 
   const selectedFavoriteItem = useMemo(
     () => favoriteAuctions.find((x) => x.key === selectedFavoriteKey) ?? null,
     [favoriteAuctions, selectedFavoriteKey]
   );
 
+  const openCalculatedProperty = useCallback(() => {
+    const property = selectedFavoriteItem?.property;
+    if (!property) {
+      navigate('/auction');
+      return;
+    }
+    const target = buildPropertyDetailNavigation(property);
+    navigate(target.pathname, { state: target.state });
+  }, [navigate, selectedFavoriteItem]);
+
   useEffect(() => {
-    if ((wizardStep !== 2 && wizardStep !== 3) || dataSource !== 'favorites' || !investmentStrategy) return;
-    if (favoriteAuctions.length === 0) return;
-    if (selectedFavoriteKey) return;
-    const first = favoriteAuctions[0];
-    setSelectedFavoriteKey(first.key);
-    applyPropertyPreset(first.property, investmentStrategy);
+    if (dataSource !== 'favorites' || favoriteAuctions.length === 0) return;
+    const selected = selectedFavoriteKey
+      ? favoriteAuctions.find((item) => item.key === selectedFavoriteKey)
+      : favoriteAuctions[0];
+    if (!selected) return;
+    if (!selectedFavoriteKey) setSelectedFavoriteKey(selected.key);
+    if (investmentStrategy) applyPropertyPreset(selected.property, investmentStrategy);
   }, [
     wizardStep,
     dataSource,
@@ -364,30 +421,49 @@ const InvestmentCalculator = () => {
   ]);
 
   useEffect(() => {
-    if (wizardStep !== 2 || dataSource !== 'favorites') return;
+    if (dataSource !== 'favorites') return;
     loadCatalog();
-  }, [wizardStep, dataSource, loadCatalog]);
+  }, [dataSource, loadCatalog]);
 
   const pickFavorite = useCallback(
     (item) => {
-      if (!investmentStrategy) return;
       setSelectedFavoriteKey(item.key);
-      applyPropertyPreset(item.property, investmentStrategy);
+      if (investmentStrategy) applyPropertyPreset(item.property, investmentStrategy);
       setFavDropdownOpen(false);
     },
     [applyPropertyPreset, investmentStrategy]
   );
 
   const goStep2 = () => {
-    if (!investmentStrategy) return;
+    if (isMobile) {
+      const hasObject = dataSource === 'favorites'
+        ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
+        : dataSource === 'manual' && Number(propertyPrice) > 0;
+      if (!hasObject) return;
+    } else if (!investmentStrategy) return;
     setWizardStep(2);
   };
 
+  const requiresRentalIncome = investmentStrategy === 'rent' || investmentStrategy === 'fractional';
+
   const goStep3 = () => {
-    if (!dataSource) return;
+    if (isMobile
+      ? (!investmentStrategy || Number(ownershipPeriod) <= 0 || (requiresRentalIncome && Number(rentalIncome) <= 0))
+      : !dataSource) return;
     if (dataSource === 'favorites') loadCatalog();
     setWizardStep(3);
   };
+
+  const showSourceStep = isMobile ? wizardStep === 1 : wizardStep === 2;
+  const showStrategyStep = isMobile ? wizardStep === 2 : wizardStep === 1;
+  const canContinueFromObject = dataSource === 'favorites'
+    ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
+    : dataSource === 'manual' && Number(propertyPrice) > 0;
+  const canContinueFromGoal = Boolean(
+    investmentStrategy &&
+    Number(ownershipPeriod) > 0 &&
+    (!requiresRentalIncome || Number(rentalIncome) > 0)
+  );
 
   const resetWizard = () => {
     setWizardStep(1);
@@ -574,14 +650,14 @@ const InvestmentCalculator = () => {
       {
         label: t('calcChartIncome'),
         data: hasYearlyData ? calculations.yearlyData.map(d => d.rentalIncome) : [0],
-        borderColor: '#34d399',
+        borderColor: '#33adbb',
         backgroundColor: 'rgba(52, 211, 153, 0.1)',
         fill: true,
         tension: 0.4,
         borderWidth: 3,
         pointRadius: 5,
         pointHoverRadius: 7,
-        pointBackgroundColor: '#34d399',
+        pointBackgroundColor: '#33adbb',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
       },
@@ -746,8 +822,32 @@ const InvestmentCalculator = () => {
     <div className="investment-calculator-page">
       <BackgroundIcons />
       <Header />
+      {isMobile && <InvestorMobileHero />}
       <div className="calculator-container">
-        <motion.div
+        {investorScenario && (
+          <aside className="calc-context-banner" aria-label="Сценарий из сравнения">
+            <span className="calc-context-banner__icon" aria-hidden>
+              <Sparkles size={18} strokeWidth={2.2} />
+            </span>
+            <span className="calc-context-banner__copy">
+              <strong>Сценарий из сравнения · 2 объекта</strong>
+              <span>Открыт выбранный объект. Пара сохранена — его можно переключить ниже.</span>
+            </span>
+            <button
+              type="button"
+              className="calc-context-banner__reset"
+              onClick={() => {
+                clearInvestorScenario();
+                setInvestorScenario(null);
+                resetWizard();
+              }}
+            >
+              Сбросить
+            </button>
+          </aside>
+        )}
+        {isMobile && <InvestorMobileStepHeader step={wizardStep} />}
+        {!isMobile && <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="calculator-header"
@@ -764,12 +864,12 @@ const InvestmentCalculator = () => {
                 : t('calcStep3Lead')}
           </p>
           <div className="calculator-header__stepper">{stepper}</div>
-        </motion.div>
+        </motion.div>}
 
         <AnimatePresence mode="wait">
-          {wizardStep === 1 && (
+          {showStrategyStep && (
             <motion.section
-              key="w1"
+              key="strategy"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -828,12 +928,65 @@ const InvestmentCalculator = () => {
                   </span>
                 </button>
               </div>
-              <div className="calc-wizard-actions">
+              {isMobile && (
+                <div className="calc-mobile-goal-inputs" aria-label="Основные допущения">
+                  <div className="parameter-group">
+                    <label htmlFor="mobile-investor-period">Горизонт, лет</label>
+                    <input
+                      id="mobile-investor-period"
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="30"
+                      step="1"
+                      value={ownershipPeriod}
+                      onChange={(event) => setOwnershipPeriod(event.target.value)}
+                      className="parameter-input"
+                    />
+                  </div>
+                  {requiresRentalIncome && (
+                    <div className="parameter-group calc-mobile-goal-inputs__wide">
+                      <label htmlFor="mobile-investor-rent">Ожидаемая аренда в год, €</label>
+                      <input
+                        id="mobile-investor-rent"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={rentalIncome}
+                        onChange={(event) => setRentalIncome(event.target.value)}
+                        className="parameter-input"
+                      />
+                    </div>
+                  )}
+                  <div className="parameter-group">
+                    <label htmlFor="mobile-investor-costs">Расходы при покупке, %</label>
+                    <input
+                      id="mobile-investor-costs"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      max="20"
+                      step="0.1"
+                      value={buyerCostsPct}
+                      onChange={(event) => setBuyerCostsPct(event.target.value)}
+                      className="parameter-input"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className={`calc-wizard-actions ${isMobile ? 'calc-mobile-sticky-action calc-wizard-actions--split' : ''}`}>
+                {isMobile && (
+                  <button type="button" className="calc-wizard-btn calc-wizard-btn--ghost" onClick={() => setWizardStep(1)}>
+                    <ArrowLeft size={18} strokeWidth={2} aria-hidden />
+                    {t('calcBack')}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="calc-wizard-btn calc-wizard-btn--primary"
-                  disabled={!investmentStrategy}
-                  onClick={goStep2}
+                  disabled={isMobile ? !canContinueFromGoal : !investmentStrategy}
+                  onClick={isMobile ? goStep3 : goStep2}
                 >
                   {t('calcNext')}
                 </button>
@@ -841,9 +994,9 @@ const InvestmentCalculator = () => {
             </motion.section>
           )}
 
-          {wizardStep === 2 && (
+          {showSourceStep && (
             <motion.section
-              key="w2"
+              key="source"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -891,6 +1044,23 @@ const InvestmentCalculator = () => {
                   </span>
                 </button>
               </div>
+
+              {isMobile && dataSource === 'manual' && (
+                <div className="calc-mobile-object-input">
+                  <label htmlFor="mobile-investor-price">Цена покупки, €</label>
+                  <input
+                    id="mobile-investor-price"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    value={propertyPrice}
+                    onChange={(event) => setPropertyPrice(event.target.value)}
+                    className="parameter-input"
+                  />
+                  <span>Можно уточнить ремонт, аренду и финансирование на экране результата.</span>
+                </div>
+              )}
 
               {dataSource === 'favorites' && favoriteAuctions.length > 0 && (
                 <div className="calc-step2-fav-wrap">
@@ -977,16 +1147,18 @@ const InvestmentCalculator = () => {
                 </div>
               )}
 
-              <div className="calc-wizard-actions calc-wizard-actions--split">
-                <button type="button" className="calc-wizard-btn calc-wizard-btn--ghost" onClick={() => setWizardStep(1)}>
-                  <ArrowLeft size={18} strokeWidth={2} aria-hidden />
-                  {t('calcBack')}
-                </button>
+              <div className={`calc-wizard-actions calc-wizard-actions--split ${isMobile ? 'calc-mobile-sticky-action' : ''}`}>
+                {!isMobile && (
+                  <button type="button" className="calc-wizard-btn calc-wizard-btn--ghost" onClick={() => setWizardStep(1)}>
+                    <ArrowLeft size={18} strokeWidth={2} aria-hidden />
+                    {t('calcBack')}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="calc-wizard-btn calc-wizard-btn--primary"
-                  disabled={!dataSource}
-                  onClick={goStep3}
+                  disabled={isMobile ? !canContinueFromObject : !dataSource}
+                  onClick={isMobile ? goStep2 : goStep3}
                 >
                   {t('calcNext')}
                 </button>
@@ -1023,6 +1195,33 @@ const InvestmentCalculator = () => {
                   </button>
                 </div>
               </div>
+            )}
+
+            {isMobile && (
+              <InvestorMobileResultCard
+                equity={formatCurrency(calculations.initialEquity, i18n.language)}
+                yieldValue={formatPercent(
+                  investmentStrategy === 'resale'
+                    ? calculations.totalReturnOnEquity
+                    : calculations.cashOnCashY1
+                )}
+                cashFlow={formatCurrency(
+                  calculations.netCashFlow / Math.max(1, (Number(ownershipPeriod) || 1) * 12),
+                  i18n.language
+                )}
+                headlineLabel={investmentStrategy === 'resale' ? 'Итоговая прибыль' : 'Денежный поток за период'}
+                yieldLabel={investmentStrategy === 'resale' ? 'Доходность за период' : 'Доходность в год'}
+                profit={formatCurrency(
+                  investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow,
+                  i18n.language
+                )}
+                isPositive={(investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow) >= 0}
+                assumptions={`${ownershipPeriod || 0} лет · рост ${marketGrowthRate || 0}% · расходы ${operatingExpenses || 0}%`}
+                propertyTitle={selectedFavoriteItem?.property?.title || selectedFavoriteItem?.property?.name}
+                propertyImage={selectedFavoriteItem ? listingThumb(selectedFavoriteItem.property) : null}
+                onOpenAssumptions={() => setAssumptionsOpen(true)}
+                onOpenProperty={openCalculatedProperty}
+              />
             )}
 
             <div className="calc-step3-shell">
@@ -1262,7 +1461,9 @@ const InvestmentCalculator = () => {
               <label>{t('calcPriceLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 min="0"
+                step="any"
                 value={propertyPrice}
                 onChange={(e) => setPropertyPrice(e.target.value)}
                 className="parameter-input"
@@ -1273,7 +1474,9 @@ const InvestmentCalculator = () => {
               <label>{t('calcRenovationLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 min="0"
+                step="any"
                 value={renovationCost}
                 onChange={(e) => setRenovationCost(e.target.value)}
                 className="parameter-input"
@@ -1284,6 +1487,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcPeriodLabel')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 max="30"
                 value={ownershipPeriod}
@@ -1296,6 +1500,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcMarketGrowthLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 value={marketGrowthRate}
@@ -1322,6 +1527,7 @@ const InvestmentCalculator = () => {
                 <label>{t('calcOwnershipShareLabel')}</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="1"
                   max="100"
                   value={ownershipShare}
@@ -1347,6 +1553,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcBuyerCostsLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 max="20"
@@ -1360,6 +1567,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcSellerCostsLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 max="15"
@@ -1373,6 +1581,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcCapitalGainsTaxLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 max="50"
@@ -1401,6 +1610,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcRentalIncomeLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 min="0"
                 value={rentalIncome}
                 onChange={(e) => setRentalIncome(e.target.value)}
@@ -1412,6 +1622,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcRentalGrowthLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 value={rentalGrowthRate}
@@ -1424,6 +1635,7 @@ const InvestmentCalculator = () => {
               <label>{t('calcOperatingExpensesLabel')}</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
                 min="0"
                 value={operatingExpenses}
@@ -1460,6 +1672,7 @@ const InvestmentCalculator = () => {
                   <label>{t('calcMortgageRateLabel')}</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.1"
                     min="0"
                     value={mortgageRate}
@@ -1477,6 +1690,7 @@ const InvestmentCalculator = () => {
                   <label>{t('calcMortgageTermLabel')}</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min="1"
                     max="30"
                     value={mortgageTerm}
@@ -1489,6 +1703,7 @@ const InvestmentCalculator = () => {
                   <label>{t('calcDownPaymentLabel')}</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     min="10"
                     max="100"
                     value={downPayment}
@@ -1524,6 +1739,35 @@ const InvestmentCalculator = () => {
       </div>
 
       <div className="investment-calculator-page__footer-blend" aria-hidden="true" />
+
+      {isMobile && (
+        <InvestorAssumptionsSheet
+          isOpen={assumptionsOpen}
+          onClose={() => setAssumptionsOpen(false)}
+          propertyPrice={propertyPrice}
+          setPropertyPrice={setPropertyPrice}
+          renovationCost={renovationCost}
+          setRenovationCost={setRenovationCost}
+          ownershipPeriod={ownershipPeriod}
+          setOwnershipPeriod={setOwnershipPeriod}
+          marketGrowthRate={marketGrowthRate}
+          setMarketGrowthRate={setMarketGrowthRate}
+          rentalIncome={rentalIncome}
+          setRentalIncome={setRentalIncome}
+          operatingExpenses={operatingExpenses}
+          setOperatingExpenses={setOperatingExpenses}
+          buyerCostsPct={buyerCostsPct}
+          setBuyerCostsPct={setBuyerCostsPct}
+          useMortgage={useMortgage}
+          setUseMortgage={setUseMortgage}
+          mortgageRate={mortgageRate}
+          setMortgageRate={setMortgageRate}
+          mortgageTerm={mortgageTerm}
+          setMortgageTerm={setMortgageTerm}
+          downPayment={downPayment}
+          setDownPayment={setDownPayment}
+        />
+      )}
 
       {showSubGateOverlay && (
         <div className="calc-sub-gate-overlay">

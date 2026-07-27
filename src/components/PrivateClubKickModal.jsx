@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { PRIVATE_CLUB_KICKED_MODAL_EVENT } from '../hooks/useCabinetOverviewData'
+import { PRIVATE_CLUB_KICKED_MODAL_EVENT } from '../constants/cabinetEvents'
 import './PrivateClubKickModal.css'
 
 export default function PrivateClubKickModal() {

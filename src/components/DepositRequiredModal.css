@@ -1,13 +1,13 @@
 .deposit-required-modal__overlay {
   position: fixed;
   inset: 0;
-  z-index: 20000;
+  z-index: 21000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(10, 186, 181, 0.18) 0%, rgba(10, 186, 181, 0) 55%),
+    radial-gradient(1200px 600px at 20% -10%, rgba(0, 153, 169, 0.18) 0%, rgba(0, 153, 169, 0) 55%),
     radial-gradient(900px 500px at 100% 110%, rgba(14, 165, 233, 0.17) 0%, rgba(14, 165, 233, 0) 60%),
     rgba(15, 23, 42, 0.62);
   backdrop-filter: blur(5px);
@@ -25,7 +25,7 @@
   border-radius: 22px;
   box-shadow:
     0 30px 80px rgba(2, 6, 23, 0.28),
-    0 10px 25px rgba(10, 186, 181, 0.15);
+    0 10px 25px rgba(0, 153, 169, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.6);
   animation: depositRequiredModalIn 0.24s ease-out;
 }
@@ -46,7 +46,7 @@
   height: 180px;
   top: -86px;
   left: -52px;
-  background: rgba(10, 186, 181, 0.32);
+  background: rgba(0, 153, 169, 0.32);
 }
 
 .deposit-required-modal__glow--two {
@@ -99,9 +99,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0891b2;
+  color: #007d8a;
   background:
-    linear-gradient(145deg, rgba(10, 186, 181, 0.2) 0%, rgba(14, 165, 233, 0.2) 100%);
+    linear-gradient(145deg, rgba(0, 153, 169, 0.2) 0%, rgba(14, 165, 233, 0.2) 100%);
   border: 1px solid rgba(255, 255, 255, 0.75);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -140,10 +140,10 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   color: #fff;
-  background: linear-gradient(135deg, #0abab5 0%, #15c8c3 46%, #22d6d1 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #15c8c3 46%, #22d6d1 100%);
   cursor: pointer;
   box-shadow:
-    0 10px 20px rgba(10, 186, 181, 0.35),
+    0 10px 20px rgba(0, 153, 169, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
@@ -151,7 +151,7 @@
 .deposit-required-modal__action:hover {
   transform: translateY(-1px) scale(1.01);
   box-shadow:
-    0 14px 28px rgba(10, 186, 181, 0.4),
+    0 14px 28px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   filter: saturate(1.1);
 }
@@ -224,7 +224,7 @@
 
 .deposit-required-modal__detail-actions .deposit-required-modal__action {
   flex: 1;
-  background: linear-gradient(135deg, #0abab5 0%, #15c8c3 46%, #22d6d1 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #15c8c3 46%, #22d6d1 100%);
 }
 
 @keyframes depositRequiredModalIn {

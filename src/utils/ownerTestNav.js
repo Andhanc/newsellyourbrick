@@ -2,13 +2,13 @@ export const OWNER_TEST_PATH = '/owner-test'
 
 /** Standalone owner-test page routes (non-embedded). */
 export const OWNER_TEST_STANDALONE_HREF_MAP = {
-  home: '/main-owner-test',
-  properties: '/owner-properties-test',
-  sales: '/owner-sales-test',
-  testdrive: '/owner-test-drive',
-  wallet: '/owner-wallet-test',
-  subscriptions: '/owner-subscriptions-test',
-  settings: '/owner-profile-test',
+  home: OWNER_TEST_PATH,
+  properties: `${OWNER_TEST_PATH}/properties`,
+  sales: OWNER_TEST_PATH,
+  testdrive: `${OWNER_TEST_PATH}/test-drive`,
+  wallet: `${OWNER_TEST_PATH}/wallet`,
+  subscriptions: `${OWNER_TEST_PATH}/subscriptions`,
+  settings: `${OWNER_TEST_PATH}/profile`,
 }
 
 export const OWNER_VIEWS = {
@@ -43,13 +43,31 @@ export const NAV_ID_TO_VIEW = {
   sales: OWNER_VIEWS.SALES,
   wallet: OWNER_VIEWS.WALLET,
   testdrive: OWNER_VIEWS.TEST_DRIVE,
-  bookings: OWNER_VIEWS.TEST_DRIVE,
   subscriptions: OWNER_VIEWS.SUBSCRIPTIONS,
   settings: OWNER_VIEWS.PROFILE,
 }
 
 export function isTabbarView(view) {
   return view !== OWNER_VIEWS.ADD_PROPERTY
+}
+
+const STANDALONE_VIEW_HREF = {
+  [OWNER_VIEWS.HOME]: OWNER_TEST_STANDALONE_HREF_MAP.home,
+  [OWNER_VIEWS.PROPERTIES]: OWNER_TEST_STANDALONE_HREF_MAP.properties,
+  [OWNER_VIEWS.PROPERTY_ANALYTICS]: OWNER_TEST_STANDALONE_HREF_MAP.properties,
+  [OWNER_VIEWS.TEST_DRIVE]: OWNER_TEST_STANDALONE_HREF_MAP.testdrive,
+  [OWNER_VIEWS.SUBSCRIPTIONS]: OWNER_TEST_STANDALONE_HREF_MAP.subscriptions,
+  [OWNER_VIEWS.SALES]: OWNER_TEST_STANDALONE_HREF_MAP.sales,
+  [OWNER_VIEWS.WALLET]: OWNER_TEST_STANDALONE_HREF_MAP.wallet,
+  [OWNER_VIEWS.PROFILE]: OWNER_TEST_STANDALONE_HREF_MAP.settings,
+  [OWNER_VIEWS.ADD_PROPERTY]: '/owner-add-property-test',
+}
+
+/** Навигация по разделам кабинета на legacy standalone-маршрутах. */
+export function navigateToOwnerView(navigate, view) {
+  if (typeof navigate !== 'function') return
+  const href = STANDALONE_VIEW_HREF[view] || OWNER_TEST_PATH
+  navigate(href)
 }
 
 const OWNER_CABINET_SCROLL_ROOTS = [
@@ -102,10 +120,64 @@ export function scrollOwnerCabinetToTop() {
 export function resolveOwnerTestView(searchParams) {
   const view = searchParams.get('view') || OWNER_VIEWS.HOME
   if (!VALID_VIEWS.has(view)) return OWNER_VIEWS.HOME
+  if (view === OWNER_VIEWS.SALES) return OWNER_VIEWS.HOME
   if (view === OWNER_VIEWS.PROPERTY_ANALYTICS && !searchParams.get('propertyId')) {
     return OWNER_VIEWS.PROPERTIES
   }
   return view
+}
+
+export function sanitizeOwnerTestView(view) {
+  const next = String(view || '').trim().toLowerCase()
+  if (!VALID_VIEWS.has(next)) return OWNER_VIEWS.HOME
+  if (next === OWNER_VIEWS.SALES) return OWNER_VIEWS.HOME
+  return next
+}
+
+export function buildOwnerTestPath(view, params = {}) {
+  const nextView = sanitizeOwnerTestView(view)
+  if (nextView === OWNER_VIEWS.HOME) return OWNER_TEST_PATH
+  if (nextView === OWNER_VIEWS.PROPERTY_ANALYTICS) {
+    const propertyId = String(params.propertyId || '').trim()
+    if (!propertyId) return `${OWNER_TEST_PATH}/${OWNER_VIEWS.PROPERTIES}`
+    return `${OWNER_TEST_PATH}/${OWNER_VIEWS.PROPERTY_ANALYTICS}/${encodeURIComponent(propertyId)}`
+  }
+  return `${OWNER_TEST_PATH}/${nextView}`
+}
+
+export function buildOwnerTestQueryParams(params = {}) {
+  const sp = new URLSearchParams()
+  if (params.tab && params.tab !== 'personal') sp.set('tab', params.tab)
+  if (params.highlight) sp.set('highlight', params.highlight)
+  if (params.listing_fee_checkout) sp.set('listing_fee_checkout', params.listing_fee_checkout)
+  return sp
+}
+
+/**
+ * @param {{ routeView?: string, routePropertyId?: string, searchParams?: URLSearchParams }} options
+ */
+export function resolveOwnerTestRoute(options = {}) {
+  const routeViewRaw = String(options.routeView || '').trim()
+  const routePropertyIdRaw = String(options.routePropertyId || '').trim()
+  const sp = options.searchParams instanceof URLSearchParams ? options.searchParams : new URLSearchParams()
+
+  const legacyViewRaw = sp.get('view') || ''
+  const rawView = routeViewRaw || legacyViewRaw || OWNER_VIEWS.HOME
+  let view = sanitizeOwnerTestView(rawView)
+
+  const propertyId = routePropertyIdRaw || sp.get('propertyId') || ''
+  if (view === OWNER_VIEWS.PROPERTY_ANALYTICS && !propertyId) {
+    view = OWNER_VIEWS.PROPERTIES
+  }
+
+  return {
+    view,
+    propertyId: String(propertyId || '').trim(),
+    tab: sp.get('tab') || 'personal',
+    highlight: sp.get('highlight') || '',
+    listing_fee_checkout: sp.get('listing_fee_checkout') || '',
+    legacyViewUsed: Boolean(legacyViewRaw),
+  }
 }
 
 export function buildOwnerTestSearchParams(view, params = {}) {
@@ -118,9 +190,10 @@ export function buildOwnerTestSearchParams(view, params = {}) {
 }
 
 export function ownerTestHref(view, params = {}) {
-  const sp = buildOwnerTestSearchParams(view, params)
+  const path = buildOwnerTestPath(view, params)
+  const sp = buildOwnerTestQueryParams(params)
   const qs = sp.toString()
-  return qs ? `${OWNER_TEST_PATH}?${qs}` : OWNER_TEST_PATH
+  return qs ? `${path}?${qs}` : path
 }
 
 export function isNavItemActive(navId, view) {
@@ -132,11 +205,20 @@ export function isNavItemActive(navId, view) {
   return mapped === view
 }
 
-export function isTabItemActive(tabId, view) {
+export function isTabItemActive(tabId, view, { aiChatOpen = false, menuOpen = false } = {}) {
   if (tabId === 'home') return view === OWNER_VIEWS.HOME
   if (tabId === 'properties') {
     return view === OWNER_VIEWS.PROPERTIES || view === OWNER_VIEWS.PROPERTY_ANALYTICS
   }
-  if (tabId === 'bookings') return view === OWNER_VIEWS.TEST_DRIVE
+  if (tabId === 'ai') return aiChatOpen
+  if (tabId === 'more') {
+    if (menuOpen) return true
+    return (
+      view === OWNER_VIEWS.PROFILE ||
+      view === OWNER_VIEWS.SUBSCRIPTIONS ||
+      view === OWNER_VIEWS.WALLET ||
+      view === OWNER_VIEWS.TEST_DRIVE
+    )
+  }
   return false
 }

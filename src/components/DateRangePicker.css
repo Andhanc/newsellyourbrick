@@ -22,10 +22,10 @@
   border-radius: 20px;
   padding: 24px;
   box-shadow: 
-    0 20px 60px rgba(10, 186, 181, 0.15),
+    0 20px 60px rgba(0, 153, 169, 0.15),
     0 8px 24px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1px 0 rgba(10, 186, 181, 0.1);
+    inset 0 -1px 0 rgba(0, 153, 169, 0.1);
   max-width: 500px;
   position: relative;
   overflow: hidden;
@@ -52,9 +52,9 @@
   height: 2px;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(10, 186, 181, 0.4),
-    rgba(10, 186, 181, 0.7),
-    rgba(10, 186, 181, 0.4),
+    rgba(0, 153, 169, 0.4),
+    rgba(0, 153, 169, 0.7),
+    rgba(0, 153, 169, 0.4),
     transparent
   );
   pointer-events: none;
@@ -66,7 +66,7 @@
   justify-content: space-between;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid rgba(10, 186, 181, 0.1);
+  border-bottom: 2px solid rgba(0, 153, 169, 0.1);
   position: relative;
   z-index: 1;
 }
@@ -86,7 +86,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #0ABAB5;
+  color: #0099A9;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.05),
@@ -95,14 +95,14 @@
 
 .date-range-picker__nav-btn:hover {
   background: linear-gradient(135deg, 
-    rgba(10, 186, 181, 0.1) 0%, 
+    rgba(0, 153, 169, 0.1) 0%, 
     rgba(8, 156, 151, 0.08) 100%
   );
-  border-color: rgba(10, 186, 181, 0.5);
-  color: #089C97;
+  border-color: rgba(0, 153, 169, 0.5);
+  color: #007d8a;
   transform: translateY(-2px) scale(1.05);
   box-shadow: 
-    0 8px 20px rgba(10, 186, 181, 0.2),
+    0 8px 20px rgba(0, 153, 169, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
@@ -113,7 +113,7 @@
 .date-range-picker__month-year {
   font-size: 19px;
   font-weight: 700;
-  background: linear-gradient(135deg, #000000 0%, #0ABAB5 100%);
+  background: linear-gradient(135deg, #000000 0%, #0099A9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -150,7 +150,7 @@
   height: 2px;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(10, 186, 181, 0.3),
+    rgba(0, 153, 169, 0.3),
     transparent
   );
   border-radius: 2px;
@@ -197,7 +197,7 @@
   bottom: 0;
   border-radius: 12px;
   background: linear-gradient(135deg, 
-    rgba(10, 186, 181, 0.1) 0%, 
+    rgba(0, 153, 169, 0.1) 0%, 
     rgba(8, 156, 151, 0.08) 100%
   );
   opacity: 0;
@@ -210,27 +210,27 @@
 
 .date-range-picker__day:hover:not(.date-range-picker__day--disabled):not(.date-range-picker__day--empty) {
   background: linear-gradient(135deg, 
-    rgba(10, 186, 181, 0.15) 0%, 
+    rgba(0, 153, 169, 0.15) 0%, 
     rgba(8, 156, 151, 0.12) 100%
   );
-  border-color: rgba(10, 186, 181, 0.4);
-  color: #089C97;
+  border-color: rgba(0, 153, 169, 0.4);
+  color: #007d8a;
   transform: translateY(-2px) scale(1.05);
   box-shadow: 
-    0 6px 16px rgba(10, 186, 181, 0.2),
+    0 6px 16px rgba(0, 153, 169, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   z-index: 2;
 }
 
 .date-range-picker__day--start {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #ffffff;
-  border-color: #0ABAB5;
+  border-color: #0099A9;
   font-weight: 700;
   border-radius: 12px 0 0 12px;
   box-shadow: 
-    0 8px 20px rgba(10, 186, 181, 0.4),
-    0 4px 12px rgba(10, 186, 181, 0.3),
+    0 8px 20px rgba(0, 153, 169, 0.4),
+    0 4px 12px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
   z-index: 3;
@@ -241,14 +241,14 @@
 }
 
 .date-range-picker__day--end {
-  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #ffffff;
-  border-color: #0ABAB5;
+  border-color: #0099A9;
   font-weight: 700;
   border-radius: 0 12px 12px 0;
   box-shadow: 
-    0 8px 20px rgba(10, 186, 181, 0.4),
-    0 4px 12px rgba(10, 186, 181, 0.3),
+    0 8px 20px rgba(0, 153, 169, 0.4),
+    0 4px 12px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
   z-index: 3;
@@ -260,10 +260,10 @@
 
 .date-range-picker__day--in-range {
   background: linear-gradient(135deg, 
-    rgba(10, 186, 181, 0.15) 0%, 
+    rgba(0, 153, 169, 0.15) 0%, 
     rgba(8, 156, 151, 0.12) 100%
   );
-  border-color: rgba(10, 186, 181, 0.2);
+  border-color: rgba(0, 153, 169, 0.2);
   border-radius: 0;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);

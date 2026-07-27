@@ -33,7 +33,7 @@ export function getOwnerPropertyAuctionTimer(row) {
 
 const TRAFFIC_SOURCES = [
   { label: 'Поиск', pct: 45, color: '#3b82f6' },
-  { label: 'Соцсети', pct: 25, color: '#0abab5' },
+  { label: 'Соцсети', pct: 25, color: '#0099a9' },
   { label: 'Прямые заходы', pct: 15, color: '#6366f1' },
   { label: 'Реклама', pct: 10, color: '#f59e0b' },
   { label: 'Другие', pct: 5, color: '#a855f7' },
@@ -145,6 +145,7 @@ const RAW_PROPERTIES = [
     currentBid: '$2 380 000',
     listingType: 'auction',
     auctionTimer: '1д 08:45:12',
+    raw: { test_drive: 1 },
     date: '12.03.2024',
   },
   {
@@ -213,6 +214,15 @@ const RAW_PROPERTIES = [
     bookingsUp: true,
     price: '$1 890 000',
     listingType: 'shares',
+    currency: 'USD',
+    priceAmount: 1890000,
+    raw: {
+      test_drive: 1,
+      total_shares: 20,
+      shares_sold: 8,
+      price_per_share: 94500,
+      currency: 'USD',
+    },
     date: '22.02.2024',
   },
   {
@@ -291,5 +301,5 @@ export function getOwnerTestProperty(propertyId) {
 }
 
 export function getOwnerPropertyAnalyticsPath(propertyId) {
-  return `/owner-test?view=property-analytics&propertyId=${encodeURIComponent(propertyId)}`
+  return `/owner-test/property-analytics/${encodeURIComponent(propertyId)}`
 }

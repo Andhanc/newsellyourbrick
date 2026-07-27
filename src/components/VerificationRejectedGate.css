@@ -25,7 +25,7 @@
   border-radius: 16px;
   padding: 28px 24px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(0, 153, 169, 0.35);
 }
 
 .verification-rejected-gate__panel h2 {
@@ -49,9 +49,9 @@
   line-height: 1.5;
   color: #0f172a;
   padding: 12px 14px;
-  background: rgba(10, 186, 181, 0.1);
+  background: rgba(0, 153, 169, 0.1);
   border-radius: 10px;
-  border-left: 4px solid #0abab5;
+  border-left: 4px solid #0099A9;
 }
 
 .verification-rejected-gate__reason--muted {
@@ -70,14 +70,14 @@
   border-radius: 12px;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
-  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .verification-rejected-gate__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.42);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.42);
 }
 
 .verification-rejected-gate__cta:active {

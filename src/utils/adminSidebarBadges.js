@@ -1,5 +1,7 @@
 /** Ключи localStorage для счётчиков в боковом меню админки */
 
+export const ADMIN_SIDEBAR_BADGES_REFRESH_EVENT = 'admin-sidebar-badges-refresh';
+
 export const LS_TEST_DRIVE_GLOBAL_CANCEL_SEEN = 'admin_test_drive_global_cancel_seen_at';
 export const LS_LIVE_CHAT_ALL_READ = 'admin_live_chat_all_messages_read_at';
 export const LS_PURCHASE_REQUESTS_SEEN = 'admin_purchase_requests_mark_seen_at';
@@ -84,17 +86,114 @@ export function markPurchaseRequestsViewed() {
   writeAdminLs(LS_PURCHASE_REQUESTS_SEEN, new Date().toISOString());
 }
 
-/** Запросы со статусом pending, созданные после последней отметки «просмотрено» */
-export function countUnseenPurchasePending(requests) {
+/** Запросы со статусом pending/processing, созданные после последней отметки «просмотрено» */
+export function countUnseenPurchaseActionable(requests) {
   if (!Array.isArray(requests)) return 0;
   const seenRaw = readAdminLs(LS_PURCHASE_REQUESTS_SEEN);
   const seenMs = seenRaw ? Date.parse(seenRaw) : NaN;
+  const actionable = new Set(['pending', 'processing']);
   return requests.filter((r) => {
-    if (String(r.status || '').toLowerCase() !== 'pending') return false;
+    const status = String(r.status || '').toLowerCase();
+    if (!actionable.has(status)) return false;
     const createdRaw = r.created_at || r.updated_at;
     const created = createdRaw ? Date.parse(createdRaw) : NaN;
     if (!Number.isFinite(seenMs)) return true;
     if (!Number.isFinite(created)) return true;
     return created > seenMs;
   }).length;
+}
+
+/** @deprecated используйте countUnseenPurchaseActionable */
+export function countUnseenPurchasePending(requests) {
+  return countUnseenPurchaseActionable(requests);
+}
+
+const SECTIONS_CLEARED_ON_VIEW = new Set(['chat', 'purchase_requests']);
+
+export function recomputeStatisticsBadge(badges = {}) {
+  return (
+    (Number(badges.moderation) || 0) +
+    (Number(badges.purchase_requests) || 0) +
+    (Number(badges.chat) || 0) +
+    (Number(badges.bonuses) || 0)
+  );
+}
+
+export function applyAdminSidebarBadgePatch(prev = {}, patch = {}) {
+  const next = { ...prev, ...patch };
+  if (
+    patch.moderation != null ||
+    patch.purchase_requests != null ||
+    patch.chat != null ||
+    patch.bonuses != null
+  ) {
+    next.statistics = recomputeStatisticsBadge(next);
+  }
+  return next;
+}
+
+export function countPendingVerificationUsers(docs = []) {
+  const ids = new Set();
+  for (const doc of docs) {
+    if ((doc.verification_status || 'pending') === 'pending' && doc.user_id != null) {
+      ids.add(doc.user_id);
+    }
+  }
+  return ids.size;
+}
+
+export function countPendingProperties(rows = []) {
+  return rows.filter((p) => {
+    const st = p.moderation_status || p.moderationStatus;
+    return st === 'pending' || st == null || st === undefined;
+  }).length;
+}
+
+export function buildModerationBadgesPatch(pendingDocuments = [], pendingProperties = []) {
+  const usersN = countPendingVerificationUsers(pendingDocuments);
+  const propsN = countPendingProperties(pendingProperties);
+  return applyAdminSidebarBadgePatch(
+    {},
+    {
+      moderation: usersN + propsN,
+      objects: propsN,
+      addition: propsN,
+      users: usersN,
+    },
+  );
+}
+
+/** Пометить раздел просмотренным (localStorage). */
+export function markAdminSectionViewed(sectionId) {
+  switch (sectionId) {
+    case 'chat':
+      markLiveChatAllViewed();
+      break;
+    case 'purchase_requests':
+      markPurchaseRequestsViewed();
+      break;
+    default:
+      break;
+  }
+}
+
+/** Оптимистичный сброс бейджа при входе в раздел. */
+export function buildSectionViewBadgePatch(sectionId) {
+  if (!SECTIONS_CLEARED_ON_VIEW.has(sectionId)) return null;
+  return applyAdminSidebarBadgePatch({}, { [sectionId]: 0 });
+}
+
+/**
+ * Мгновенно обновить бейджи в сайдбаре.
+ * @param {{ patch?: Record<string, number>, markViewed?: string }} [options]
+ */
+export function requestAdminSidebarBadgesRefresh(options = {}) {
+  if (typeof window === 'undefined') return;
+  const { patch, markViewed } = options;
+  if (markViewed) markAdminSectionViewed(markViewed);
+  window.dispatchEvent(
+    new CustomEvent(ADMIN_SIDEBAR_BADGES_REFRESH_EVENT, {
+      detail: { patch: patch || null },
+    }),
+  );
 }

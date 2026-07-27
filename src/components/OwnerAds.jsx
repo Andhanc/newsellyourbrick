@@ -1,13 +1,17 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BadgeCheck, Eye, MessageCircle, ShieldCheck } from 'lucide-react'
+import { publicAsset } from '../utils/publicAsset'
+import { RoleSwitchButton } from './RoleSwitchBottomCta'
 import './OwnerAds.css'
 
-const AD_IMAGES = {
-  buyerHouse: '/images/owner-test/owner-promo-sidebar-buyer.png',
-  premiumHouse: '/images/owner-test/owner-promo-promote-thumb.png',
-  growthChart: '/images/owner-wallet-test/metric-chart.png',
-  salesExpert: '/images/owner-test/owner-promo-buyer-thumb.png',
+export const AD_IMAGES = {
+  buyerHouse: publicAsset('images/owner-test/owner-promo-sidebar-buyer.png'),
+  buyerHero: publicAsset('images/owner-test/owner-buyer-promo-hero.png'),
+  buyerMobile: publicAsset('images/owner-test/owner-buyer-promo-mobile.png'),
+  premiumHouse: publicAsset('images/owner-test/owner-promo-promote-thumb.png'),
+  fastSalesHero: publicAsset('images/owner-test/owner-promo-fast-sales-thumb.png'),
+  salesExpert: publicAsset('images/owner-test/owner-promo-help-thumb.png'),
 }
 
 function useCompactAds() {
@@ -18,24 +22,23 @@ function useCompactAds() {
       premium: {
         title: t('ownerTest_adPremiumTitle'),
         text: t('ownerTest_adPremiumText'),
-        button: t('ownerTest_adPremiumButton'),
+        button: t('ownerTest_adPremiumBtn'),
         image: AD_IMAGES.premiumHouse,
         imageClassName: 'oad-card__image--house',
         tone: 'premium',
-        dismiss: true,
       },
       fastSales: {
         title: t('ownerTest_adFastSalesTitle'),
         text: t('ownerTest_adFastSalesText'),
-        button: t('ownerTest_adFastSalesButton'),
-        image: AD_IMAGES.growthChart,
-        imageClassName: 'oad-card__image--chart',
+        button: t('ownerTest_adFastSalesBtn'),
+        image: AD_IMAGES.fastSalesHero,
+        imageClassName: 'oad-card__image--fast',
         tone: 'fast',
       },
       help: {
         title: t('ownerTest_adHelpTitle'),
         text: t('ownerTest_adHelpText'),
-        button: t('ownerTest_adHelpButton'),
+        button: t('ownerTest_adHelpBtn'),
         image: AD_IMAGES.salesExpert,
         imageClassName: 'oad-card__image--expert',
         tone: 'help',
@@ -59,7 +62,7 @@ function useBuyerFeatures() {
   )
 }
 
-export function OwnerBuyerAd({ className = '' }) {
+export function OwnerBuyerAd({ className = '', imageSrc = AD_IMAGES.buyerHouse }) {
   const { t } = useTranslation()
   const buyerFeatures = useBuyerFeatures()
 
@@ -72,7 +75,7 @@ export function OwnerBuyerAd({ className = '' }) {
 
       <img
         className="oad-buyer__image"
-        src={AD_IMAGES.buyerHouse}
+        src={imageSrc}
         alt=""
         loading="lazy"
         decoding="async"
@@ -91,9 +94,9 @@ export function OwnerBuyerAd({ className = '' }) {
       </ul>
 
       <div className="oad-buyer__actions">
-        <button type="button" className="oad-buyer__button">
+        <RoleSwitchButton targetRole="buyer" className="oad-buyer__button">
           {t('ownerTest_adBuyerBecome')}
-        </button>
+        </RoleSwitchButton>
         <button type="button" className="oad-buyer__link">
           {t('ownerTest_adBuyerMore')}
         </button>

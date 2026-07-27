@@ -21,9 +21,20 @@ function isPropertyPath(path) {
   return pathname === '/property' || pathname.startsWith('/property/')
 }
 
-export function isSafePropertyEntryPath(path) {
+function isWalletOrDepositPath(path) {
+  const pathname = pathnameFromPath(path)
+  return pathname === '/deposit' || pathname === '/wallet'
+}
+
+function isUsablePropertyEntryPath(path) {
   const normalized = normalizeInternalPath(path)
-  return Boolean(normalized) && !isPropertyPath(normalized)
+  return (
+    Boolean(normalized) && !isPropertyPath(normalized) && !isWalletOrDepositPath(normalized)
+  )
+}
+
+export function isSafePropertyEntryPath(path) {
+  return isUsablePropertyEntryPath(path)
 }
 
 export function setPropertyEntryFrom(path) {
@@ -63,10 +74,10 @@ export function rememberInternalRoutePath(path) {
 export function getPreviousInternalRoutePath(currentPath) {
   const current = normalizeInternalPath(currentPath)
   try {
-    const last = sessionStorage.getItem(LAST_INTERNAL_PATH_KEY)
-    const prev = sessionStorage.getItem(PREV_INTERNAL_PATH_KEY)
-    if (normalizeInternalPath(last) && last !== current) return last
-    if (normalizeInternalPath(prev) && prev !== current) return prev
+    const last = normalizeInternalPath(sessionStorage.getItem(LAST_INTERNAL_PATH_KEY))
+    const prev = normalizeInternalPath(sessionStorage.getItem(PREV_INTERNAL_PATH_KEY))
+    if (last && last !== current && isUsablePropertyEntryPath(last)) return last
+    if (prev && prev !== current && isUsablePropertyEntryPath(prev)) return prev
     return null
   } catch {
     return null

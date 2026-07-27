@@ -12,7 +12,7 @@ import { OSL_IMAGES } from './ownerSalesTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import { OwnerBuyerAd } from '../components/OwnerAds'
+import { AD_IMAGES, OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
@@ -131,8 +131,8 @@ function LogoMark({ className = '' }) {
     <svg className={`osl-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="osl-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#osl-logo-grad)" />
@@ -364,79 +364,95 @@ export default function OwnerSalesTestPage() {
               </div>
             </section>
 
-            {filteredRows.length === 0 ? (
-              <div className="osl-table-state">
-                {salesLoading ? t('ownerSalesLoading') : t('ownerTest_salesEmptyFilter')}
-              </div>
-            ) : (
-              <>
             <div className="osl-table-card osl-desktop-only">
-              <div className="osl-table-wrap">
-                <table className="osl-table">
-                  <thead>
-                    <tr>
-                      <th>{t('oap_wizardStepObject')}</th>
-                      <th>{t('ownerTestDriveBuyer')}</th>
-                      <th>{t('ownerSaleCelebrationSumLabel')}</th>
-                      <th>{t('ownerAnalyticsSaleDateLabel').replace(':', '').trim()}</th>
-                      <th>{t('buyerCabinet_billingStatus')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <div className="osl-object-cell">
-                            <img
-                              src={row.image}
-                              alt=""
-                              className="osl-object-cell__thumb"
-                              loading="lazy"
-                            />
-                            <div className="osl-object-cell__text">
-                              <p className="osl-object-cell__title">{row.title}</p>
-                              <p className="osl-object-cell__meta">{row.location}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="osl-buyer">{row.buyer}</span>
-                        </td>
-                        <td>
-                          <span className="osl-amount">{row.dealAmount}</span>
-                        </td>
-                        <td>
-                          <span className="osl-sale-date">{row.saleDate}</span>
-                        </td>
-                        <td>
-                          <span className={`osl-status osl-status--${row.statusTone}`}>
-                            {row.statusLabel}
-                          </span>
-                        </td>
+              {salesLoading || filteredRows.length === 0 ? (
+                <div className="osl-table-state">
+                  {salesLoading ? t('ownerSalesLoading') : t('ownerTest_salesEmptyFilter')}
+                </div>
+              ) : (
+                <div className="osl-table-wrap">
+                  <table className="osl-table">
+                    <thead>
+                      <tr>
+                        <th>{t('oap_wizardStepObject')}</th>
+                        <th>{t('ownerTestDriveBuyer')}</th>
+                        <th>{t('ownerSaleCelebrationSumLabel')}</th>
+                        <th>{t('ownerAnalyticsSaleDateLabel').replace(':', '').trim()}</th>
+                        <th>{t('buyerCabinet_billingStatus')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredRows.map((row) => (
+                        <tr key={row.id}>
+                          <td>
+                            <div className="osl-object-cell">
+                              <img
+                                src={row.image}
+                                alt=""
+                                className="osl-object-cell__thumb"
+                                loading="lazy"
+                              />
+                              <span className="osl-object-cell__text">
+                                <span className="osl-object-cell__title">{row.title}</span>
+                                <span className="osl-object-cell__meta">
+                                  {row.propertyId ? `ID: ${row.propertyId}` : row.location}
+                                </span>
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="osl-buyer">{row.buyer}</span>
+                          </td>
+                          <td>
+                            <span
+                              className={`osl-amount${row.statusTone === 'completed' ? ' osl-amount--positive' : ''}`}
+                            >
+                              {row.dealAmount}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="osl-sale-date">{row.saleDate}</span>
+                          </td>
+                          <td>
+                            <span className={`osl-status osl-status--${row.statusTone}`}>
+                              {row.statusLabel}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
-            <ul className="osl-mob-list osl-mobile-only">
-              {filteredRows.map((row) => (
-                <li key={row.id} className="osl-mob-list__item">
-                  <img src={row.image} alt="" className="osl-mob-list__thumb" loading="lazy" />
-                  <div className="osl-mob-list__body">
-                    <p className="osl-mob-list__title">{row.title}</p>
-                    <p className="osl-mob-list__meta">{row.buyer}</p>
-                    <p className="osl-mob-list__date">{row.saleDate}</p>
-                  </div>
-                  <span className="osl-mob-list__amount">{row.dealAmount}</span>
-                </li>
-              ))}
-            </ul>
-              </>
-            )}
+            <div className="osl-table-card osl-mobile-only">
+              {salesLoading || filteredRows.length === 0 ? (
+                <div className="osl-table-state">
+                  {salesLoading ? t('ownerSalesLoading') : t('ownerTest_salesEmptyFilter')}
+                </div>
+              ) : (
+                <ul className="osl-mob-list">
+                  {filteredRows.map((row) => (
+                    <li key={row.id} className="osl-mob-list__item">
+                      <img src={row.image} alt="" className="osl-mob-list__thumb" loading="lazy" />
+                      <div className="osl-mob-list__body">
+                        <p className="osl-mob-list__title">{row.title}</p>
+                        <p className="osl-mob-list__meta">{row.buyer}</p>
+                        <p className="osl-mob-list__date">{row.saleDate}</p>
+                      </div>
+                      <span
+                        className={`osl-mob-list__amount${row.statusTone === 'completed' ? ' osl-mob-list__amount--positive' : ''}`}
+                      >
+                        {row.dealAmount}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            <OwnerBuyerAd className="osl-owner-buyer-ad" />
+            <OwnerBuyerAd className="osl-owner-buyer-ad" imageSrc={AD_IMAGES.buyerMobile} />
           </div>
         </div>
       </div>

@@ -29,6 +29,10 @@ export default function OwnerAddPropertyPresentationStep({
   onRemovePhoto,
   onAddVideo,
   onRemoveVideo,
+  hideCopySection = false,
+  hideAmenitiesSection = false,
+  hideMediaSection = false,
+  hideWizardChrome = false,
 }) {
   const { t } = useTranslation()
   const titleLength = form.title.length
@@ -80,15 +84,18 @@ export default function OwnerAddPropertyPresentationStep({
 
   return (
     <section className="oap-presentation-step" aria-labelledby="oap-presentation-step-title">
-      <OwnerAddPropertyWizardStepHead
-        titleId="oap-presentation-step-title"
-        title={t('oap_presentationTitle')}
-        subtitle={t('oap_presentationSubtitle')}
-        subtitleShort={t('oap_presentationSubtitleShort')}
-        stepNumber={2}
-      />
+      {!hideWizardChrome ? (
+        <OwnerAddPropertyWizardStepHead
+          titleId="oap-presentation-step-title"
+          title={t('oap_presentationTitle')}
+          subtitle={t('oap_presentationSubtitle')}
+          subtitleShort={t('oap_presentationSubtitleShort')}
+          stepNumber={2}
+        />
+      ) : null}
 
       <div className="oap-presentation-step__rows">
+        {!hideCopySection ? (
         <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--title">
           <div className="oap-presentation-step__zone">
             <OwnerAddPropertyWizardSection
@@ -114,91 +121,94 @@ export default function OwnerAddPropertyPresentationStep({
                 </span>
               </label>
             </OwnerAddPropertyWizardSection>
+
+            <OwnerAddPropertyWizardSection
+              number={2}
+              title={t('oap_presentationDescTitle')}
+              hint={t('oap_presentationDescHint')}
+            >
+              <label className="oap-presentation-field">
+                <span className="oap-presentation-field__control">
+                  <textarea
+                    className="oap-presentation-field__textarea"
+                    rows={6}
+                    placeholder={t('oap_presentationDescPlaceholder')}
+                    value={form.description}
+                    maxLength={descriptionMaxLength}
+                    onChange={(e) => onFieldChange('description', e.target.value)}
+                  />
+                  <span
+                    className={`oap-presentation-field__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-presentation-field__counter--warn' : ''}`}
+                  >
+                    {descriptionLength}/{descriptionMaxLength}
+                  </span>
+                </span>
+              </label>
+              <div className="oap-presentation-step__generate-row">
+                <AnimatedGenerateButton
+                  labelIdle={t('oap_presentationGenerate')}
+                  labelActive={t('oap_presentationGenerating')}
+                  generating={isGeneratingDescription}
+                  highlightHueDeg={210}
+                  onClick={handleGenerateDescription}
+                  disabled={isGeneratingDescription || !(form.description || '').trim()}
+                  ariaLabel={t('oap_presentationGenerateAria')}
+                  className="oap-presentation-step__generate-btn"
+                />
+              </div>
+            </OwnerAddPropertyWizardSection>
           </div>
 
           <OwnerAddPropertyStepAside layout="inline" {...OAP_PRESENTATION_ROW_ASIDES.copy} />
         </div>
+        ) : null}
 
-        <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--description">
-          <OwnerAddPropertyWizardSection
-            number={2}
-            title={t('oap_presentationDescTitle')}
-            hint={t('oap_presentationDescHint')}
-          >
-            <label className="oap-presentation-field">
-              <span className="oap-presentation-field__control">
-                <textarea
-                  className="oap-presentation-field__textarea"
-                  rows={6}
-                  placeholder={t('oap_presentationDescPlaceholder')}
-                  value={form.description}
-                  maxLength={descriptionMaxLength}
-                  onChange={(e) => onFieldChange('description', e.target.value)}
+        {!hideAmenitiesSection ? (
+          <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">
+            <OwnerAddPropertyStepAside
+              layout="inline"
+              variant="compact"
+              {...OAP_PRESENTATION_ROW_ASIDES.amenities}
+            />
+
+            <div className="oap-presentation-step__zone oap-presentation-step__zone--amenities">
+              <OwnerAddPropertyWizardSection
+                number={3}
+                title={t('oap_presentationAmenitiesTitle')}
+                hint={t('oap_presentationAmenitiesHint')}
+              >
+                <OwnerAddPropertyAmenitiesStep
+                  embedded
+                  typeProfile={typeProfile}
+                  additionalAmenities={form.additionalAmenities}
+                  selectedAmenities={selectedAmenities}
+                  onAdditionalChange={onAdditionalChange}
+                  onToggleAmenity={onToggleAmenity}
                 />
-                <span
-                  className={`oap-presentation-field__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-presentation-field__counter--warn' : ''}`}
-                >
-                  {descriptionLength}/{descriptionMaxLength}
-                </span>
-              </span>
-            </label>
-            <div className="oap-presentation-step__generate-row">
-              <AnimatedGenerateButton
-                labelIdle={t('oap_presentationGenerate')}
-                labelActive={t('oap_presentationGenerating')}
-                generating={isGeneratingDescription}
-                highlightHueDeg={210}
-                onClick={handleGenerateDescription}
-                disabled={isGeneratingDescription || !(form.description || '').trim()}
-                ariaLabel={t('oap_presentationGenerateAria')}
-                className="oap-presentation-step__generate-btn"
-              />
+              </OwnerAddPropertyWizardSection>
             </div>
-          </OwnerAddPropertyWizardSection>
-        </div>
+          </div>
+        ) : null}
 
-        <div className="oap-presentation-step__row oap-presentation-step__row--split oap-presentation-step__row--amenities">
-          <OwnerAddPropertyStepAside
-            layout="inline"
-            variant="compact"
-            {...OAP_PRESENTATION_ROW_ASIDES.amenities}
-          />
-
-          <div className="oap-presentation-step__zone oap-presentation-step__zone--amenities">
+        {!hideMediaSection ? (
+          <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--media">
             <OwnerAddPropertyWizardSection
-              number={3}
-              title={t('oap_presentationAmenitiesTitle')}
-              hint={t('oap_presentationAmenitiesHint')}
+              number={4}
+              title={t('oap_presentationMediaTitle')}
+              hint={t('oap_presentationMediaHint')}
             >
-              <OwnerAddPropertyAmenitiesStep
+              <OwnerAddPropertyMediaStep
                 embedded
-                typeProfile={typeProfile}
-                additionalAmenities={form.additionalAmenities}
-                selectedAmenities={selectedAmenities}
-                onAdditionalChange={onAdditionalChange}
-                onToggleAmenity={onToggleAmenity}
+                photos={photos}
+                videos={videos}
+                onAddPhotos={onAddPhotos}
+                onRemovePhoto={onRemovePhoto}
+                onAddVideo={onAddVideo}
+                onRemoveVideo={onRemoveVideo}
               />
             </OwnerAddPropertyWizardSection>
           </div>
-        </div>
-
-        <div className="oap-presentation-step__row oap-presentation-step__row--full oap-presentation-step__row--media">
-          <OwnerAddPropertyWizardSection
-            number={4}
-            title={t('oap_presentationMediaTitle')}
-            hint={t('oap_presentationMediaHint')}
-          >
-            <OwnerAddPropertyMediaStep
-              embedded
-              photos={photos}
-              videos={videos}
-              onAddPhotos={onAddPhotos}
-              onRemovePhoto={onRemovePhoto}
-              onAddVideo={onAddVideo}
-              onRemoveVideo={onRemoveVideo}
-            />
-          </OwnerAddPropertyWizardSection>
-        </div>
+        ) : null}
       </div>
 
       {showDescriptionCompareModal && (

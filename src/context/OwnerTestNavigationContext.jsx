@@ -1,38 +1,77 @@
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   OWNER_VIEWS,
-  buildOwnerTestSearchParams,
-  resolveOwnerTestView,
+  buildOwnerTestPath,
+  buildOwnerTestQueryParams,
+  resolveOwnerTestRoute,
   scrollOwnerCabinetToTop,
 } from '../utils/ownerTestNav'
 
 const OwnerTestNavigationContext = createContext(null)
 
 export function OwnerTestNavigationProvider({ children }) {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { view: routeView, propertyId: routePropertyId } = useParams()
+  const [searchParams] = useSearchParams()
+  const routeState = useMemo(
+    () => resolveOwnerTestRoute({ routeView, routePropertyId, searchParams }),
+    [routeView, routePropertyId, searchParams],
+  )
 
   // После Stripe возвращаем на мастер добавления объекта (черновик в localStorage).
   useEffect(() => {
-    const checkout = searchParams.get('listing_fee_checkout')
+    const checkout = routeState.listing_fee_checkout
     if (!checkout) return
-    if (searchParams.get('view') === OWNER_VIEWS.ADD_PROPERTY) return
-    const next = new URLSearchParams(searchParams)
-    next.set('view', OWNER_VIEWS.ADD_PROPERTY)
-    setSearchParams(next, { replace: true })
-  }, [searchParams, setSearchParams])
+    if (routeState.view === OWNER_VIEWS.ADD_PROPERTY) return
+    const nextPath = buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
+    const nextQuery = buildOwnerTestQueryParams({
+      listing_fee_checkout: checkout,
+      tab: routeState.tab,
+      highlight: routeState.highlight,
+    })
+    const qs = nextQuery.toString()
+    navigate(qs ? `${nextPath}?${qs}` : nextPath, { replace: true })
+  }, [navigate, routeState.highlight, routeState.listing_fee_checkout, routeState.tab, routeState.view])
 
-  const view = resolveOwnerTestView(searchParams)
-  const propertyId = searchParams.get('propertyId') || ''
-  const tab = searchParams.get('tab') || 'personal'
-  const highlight = searchParams.get('highlight') || ''
+  // Поддержка legacy URL /owner-test?view=...: канонизируем к path-based ссылке.
+  useEffect(() => {
+    if (!routeState.legacyViewUsed) return
+    const nextPath = buildOwnerTestPath(routeState.view, { propertyId: routeState.propertyId })
+    const nextQuery = buildOwnerTestQueryParams({
+      tab: routeState.tab,
+      highlight: routeState.highlight,
+      listing_fee_checkout: routeState.listing_fee_checkout,
+    })
+    const qs = nextQuery.toString()
+    navigate(qs ? `${nextPath}?${qs}` : nextPath, { replace: true })
+  }, [
+    navigate,
+    routeState.highlight,
+    routeState.legacyViewUsed,
+    routeState.listing_fee_checkout,
+    routeState.propertyId,
+    routeState.tab,
+    routeState.view,
+  ])
+
+  const view = routeState.view
+  const propertyId = routeState.propertyId
+  const tab = routeState.tab
+  const highlight = routeState.highlight
 
   const goTo = useCallback(
     (nextView, params = {}) => {
-      const sp = buildOwnerTestSearchParams(nextView, params)
-      setSearchParams(sp, { replace: false })
+      const path = buildOwnerTestPath(nextView, { propertyId: params.propertyId })
+      const sp = buildOwnerTestQueryParams({
+        tab: params.tab,
+        highlight: params.highlight,
+        listing_fee_checkout: params.listing_fee_checkout,
+      })
+      const qs = sp.toString()
+      navigate(qs ? `${path}?${qs}` : path, { replace: false })
     },
-    [setSearchParams]
+    [navigate]
   )
 
   useEffect(() => {

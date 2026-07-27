@@ -1,0 +1,146 @@
+.auction-ended-similar-card {
+  margin-top: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 10px 28px rgba(0, 153, 169, 0.1),
+    0 0 0 1px rgba(0, 153, 169, 0.08);
+}
+
+.auction-ended-similar-card__surface {
+  position: relative;
+  isolation: isolate;
+  min-height: 0;
+  padding: 16px 16px 15px;
+  color: #0f172a;
+  background: #f0fafb;
+  border: 1px solid rgba(0, 153, 169, 0.12);
+}
+
+.auction-ended-similar-card__art {
+  position: absolute;
+  right: -6px;
+  bottom: -10px;
+  z-index: 0;
+  width: min(46%, 118px);
+  height: auto;
+  object-fit: contain;
+  object-position: right bottom;
+  opacity: 0.28;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(135deg, transparent 18%, #000 72%);
+  mask-image: linear-gradient(135deg, transparent 18%, #000 72%);
+}
+
+.auction-ended-similar-card__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  width: min(100%, 100%);
+  padding-right: 72px;
+}
+
+.auction-ended-similar-card__eyebrow {
+  margin: 0;
+  color: #0099a9;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.auction-ended-similar-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.auction-ended-similar-card__text {
+  margin: 0;
+  color: #475569;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.auction-ended-similar-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: #0099a9;
+  color: #ffffff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.22);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.auction-ended-similar-card__cta svg {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.auction-ended-similar-card__cta:hover {
+  background: #007d8a;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0, 153, 169, 0.28);
+}
+
+.auction-ended-similar-card__cta:hover svg {
+  transform: translateX(2px);
+}
+
+.pdx-auction-card--ended .auction-winner-card,
+.pdx-auction-card--ended .auction-completed-no-bids,
+.pd-v3-card--bid .auction-winner-card,
+.pd-v3-card--bid .auction-completed-no-bids {
+  margin-top: 0;
+}
+
+@media (max-width: 360px) {
+  .auction-ended-similar-card__surface {
+    padding: 14px 14px 13px;
+  }
+
+  .auction-ended-similar-card__content {
+    padding-right: 0;
+  }
+
+  .auction-ended-similar-card__art {
+    width: min(40%, 96px);
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-ended-similar-card__cta,
+  .auction-ended-similar-card__cta svg {
+    transition: none;
+  }
+
+  .auction-ended-similar-card__cta:hover,
+  .auction-ended-similar-card__cta:hover svg {
+    transform: none;
+  }
+}

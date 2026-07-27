@@ -2,14 +2,16 @@ import { useTranslation } from 'react-i18next'
 import { List, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../constants/auctionMobileViewStorage'
+import { DebtsPropertyCardSkeleton } from './DebtsPropertyCard'
 import './AuctionPropertyCard.css'
+import './DebtsPropertyCard.css'
 import './ui/AuctionMobileLayout.css'
 
 /**
  * Скелетон списка мобильного аукциона: повторяет разметку list vs card (`auction-mobile-stack` / `--grid`),
  * чтобы при загрузке не показывать «режим список», когда в памяти выбраны карточки.
  */
-export function AuctionMobileListingSkeleton({ viewMode = 'list' }) {
+export function AuctionMobileListingSkeleton({ viewMode = 'list', debtsCards = false }) {
   const { t } = useTranslation()
   const isCard = viewMode === 'card'
   const itemCount = isCard ? 6 : 4
@@ -44,13 +46,17 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list' }) {
       <div
         className={cn(
           isCard
-            ? 'auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
+            ? 'auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
             : 'auction-mobile-stack',
         )}
       >
         {Array.from({ length: itemCount }, (_, i) =>
           isCard ? (
-            <AuctionDesktopCardSkeletonItem key={`am-sk-${i}`} />
+            debtsCards ? (
+              <DebtsPropertyCardSkeleton key={`am-sk-${i}`} />
+            ) : (
+              <AuctionDesktopCardSkeletonItem key={`am-sk-${i}`} />
+            )
           ) : (
             <AuctionMobileSkeletonItem key={`am-sk-${i}`} variant="list" />
           ),

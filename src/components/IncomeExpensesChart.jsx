@@ -155,14 +155,14 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                 }}
               >
                 {incomeChange >= 0 ? (
-                  <TrendingUp className="size-4" style={{ color: '#22c55e' }} />
+                  <TrendingUp className="size-4" style={{ color: '#0099A9' }} />
                 ) : (
                   <TrendingDown className="size-4" style={{ color: '#ef4444' }} />
                 )}
                 <span 
                   className="text-sm font-semibold"
                   style={{
-                    color: incomeChange >= 0 ? '#22c55e' : '#ef4444',
+                    color: incomeChange >= 0 ? '#0099A9' : '#ef4444',
                   }}
                 >
                   {Math.abs(incomeChange)}%
@@ -216,14 +216,14 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                   }}
                 >
                   {expensesChange <= 0 ? (
-                    <TrendingUp className="size-4" style={{ color: '#22c55e' }} />
+                    <TrendingUp className="size-4" style={{ color: '#0099A9' }} />
                   ) : (
                     <TrendingDown className="size-4" style={{ color: '#ef4444' }} />
                   )}
                   <span 
                     className="text-sm font-semibold"
                     style={{
-                      color: expensesChange <= 0 ? '#22c55e' : '#ef4444',
+                      color: expensesChange <= 0 ? '#0099A9' : '#ef4444',
                     }}
                   >
                     {expensesChange >= 0 ? '+' : ''}{expensesChange.toFixed(1)}%

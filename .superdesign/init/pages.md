@@ -1,0 +1,2107 @@
+# Buyer page dependency trees
+
+These ten routes are the highest-priority buyer/mobile design surfaces. Each tree recursively traces every static local import (including CSS and local dynamic imports); files marked “reused” already appeared earlier in that same route tree. This file is the source of truth for Superdesign `--context-file` inputs. Add every listed file when drafting the corresponding route, plus `src/index.css`, `src/App.css`, `src/styles/buyer-mobile-tokens.css`, and `.superdesign/design-system.md`.
+
+## /auction — Auction marketplace
+
+Entry: `src/pages/Home.jsx`
+
+Dependencies:
+- src/pages/Home.jsx
+  - src/components/icons/ContactChannelIcons.jsx
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/Hero.jsx
+    - src/assets/moneta.jpg
+    - src/components/Hero.css
+  - src/components/PropertyList.jsx
+    - src/data/properties.js
+    - src/context/PropertyFavoritesContext.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyFavoriteKey.js
+      - src/utils/toastHelper.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/components/FirstFavoriteDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js
+        - src/components/FirstFavoriteIllustration.jsx
+        - src/components/FirstFavoriteDrawer.css
+          - src/styles/promoBottomSheetDrawer.css
+      - src/components/CompareFavoritesDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js (reused)
+        - src/components/CompareFavoritesIllustration.jsx
+        - src/components/CompareFavoritesDrawer.css
+          - src/styles/promoBottomSheetDrawer.css (reused)
+      - src/utils/favoritesApi.js
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/hasBuyNowOption.js
+    - src/components/PropertyTimer.jsx
+      - src/components/PropertyTimer.css
+      - src/components/ui/flip-countdown.tsx
+    - src/components/CircularTimer.jsx
+      - src/components/CircularTimer.css
+      - src/components/CountrySelect.jsx
+        - src/components/CountrySelect.css
+    - src/components/PropertyListingSkeletonGrid.jsx
+    - src/components/AuctionMobileListingSkeleton.jsx
+      - src/lib/utils.js (reused)
+      - src/constants/auctionMobileViewStorage.js
+      - src/components/DebtsPropertyCard.jsx
+        - src/utils/propertyAccessGuard.js (reused)
+        - src/utils/currency.js
+        - src/utils/responsiveImage.js
+        - src/utils/auctionReminderBounds.js
+        - src/components/ListingCardAuctionTimer.jsx
+          - src/utils/formatListingAuctionTimeLeft.js
+          - src/components/ListingCardAuctionTimer.css
+        - src/utils/debtsCardPresentation.js
+          - src/utils/auctionReminderBounds.js (reused)
+          - src/utils/auctionBidValue.js
+            - src/utils/propertySourceTable.js
+        - src/utils/propertyDetailUrl.js (reused)
+        - src/components/DebtsPropertyCard.css
+      - src/components/AuctionPropertyCard.css
+      - src/components/DebtsPropertyCard.css (reused)
+      - src/components/ui/AuctionMobileLayout.css
+    - src/components/AuctionDesktopFilters.jsx
+      - src/components/FilterCollapsibleSection.jsx
+      - src/hooks/useFilterSectionState.js
+        - src/hooks/useMobileLayout.js
+      - src/utils/auctionDesktopFilterMatch.js
+        - src/utils/hasBuyNowOption.js (reused)
+        - src/utils/auctionReminderBounds.js (reused)
+      - src/components/AuctionDesktopFilters.css
+    - src/components/SharesMobileFiltersDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/styles/drawerDismiss.css
+      - src/components/SharesMobileFiltersDrawer.css
+    - src/components/AuctionListingSaleToggle.jsx
+      - src/components/AuctionListingSaleToggle.css
+    - src/components/AuctionListingSaleToggle.css (reused)
+    - src/components/PageBreadcrumbs.jsx
+      - src/utils/breadcrumbTrail.js
+        - src/utils/sectionRoutes.js (reused)
+        - src/utils/catalogGeoUrl.js
+          - src/utils/propertySearchLocation.js
+          - src/utils/propertySlug.js (reused)
+        - src/utils/propertySearchLocation.js (reused)
+        - src/utils/auctionFilterUrl.js (reused)
+      - src/components/PageBreadcrumbs.css
+    - src/components/AuctionPropertyCard.jsx
+      - src/components/ListingCardAuctionTimer.jsx (reused)
+      - src/components/CircularTimer.jsx (reused)
+      - src/components/ImageWithSkeleton.jsx
+        - src/components/ImageWithSkeleton.css
+      - src/utils/propertyImage.js (reused)
+      - src/utils/responsiveImage.js (reused)
+      - src/utils/auctionBidValue.js (reused)
+      - src/utils/isPrivateClubAuctionLot.js
+      - src/utils/hasBuyNowOption.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/components/AuctionPropertyCard.css (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/resolveBuyerListingState.js
+      - src/components/auction/AuctionFinalStateRibbon.jsx
+        - src/components/auction/AuctionFinalStateRibbon.css
+    - src/components/ImageWithSkeleton.jsx (reused)
+    - src/utils/propertyAccessGuard.js (reused)
+    - src/utils/currency.js (reused)
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/propertyImage.js (reused)
+    - src/services/auctionListCache.js
+      - src/utils/apiConfig.js (reused)
+      - src/utils/fetchDedupe.js
+      - src/services/authService.js (reused)
+      - src/utils/propertySourceTable.js (reused)
+      - src/utils/fetchAuctionMaxBids.js
+        - src/utils/propertySourceTable.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/auctionBidValue.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/isPrivateClubAuctionLot.js (reused)
+    - src/utils/auctionDesktopFilterMatch.js (reused)
+    - src/utils/auctionFilterUrl.js (reused)
+    - src/utils/heroSearchFilters.js
+    - src/utils/listingContextUrl.js
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/sectionRoutes.js (reused)
+      - src/utils/catalogGeoUrl.js (reused)
+      - src/utils/propertySlug.js (reused)
+    - src/utils/catalogGeoUrl.js (reused)
+    - src/utils/propertySearchLocation.js (reused)
+    - src/utils/responsiveImage.js (reused)
+    - src/utils/lazyWithRetry.js
+    - src/components/buyer-mobile/BuyerEmptyState.jsx
+      - src/components/buyer-mobile/BuyerEmptyState.css
+    - src/components/PropertyList.css
+    - src/styles/hrShowcaseAuctionCards.css
+    - src/components/PropertySearchModal.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/fetchDedupe.js (reused)
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/utils/catalogFilters.js
+        - src/utils/currency.js (reused)
+        - src/utils/catalogPriceFilter.js
+          - src/utils/currency.js (reused)
+      - src/utils/searchResultsGeoUrl.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/propertyDetailUrl.js (reused)
+        - src/utils/catalogGeoUrl.js (reused)
+        - src/utils/propertySearchLocation.js (reused)
+      - src/components/PropertySearchModal.css
+    - src/components/ui/AuctionMobileLayout.jsx
+      - src/lib/utils.js (reused)
+      - src/components/ListingCardAuctionTimer.jsx (reused)
+      - src/components/CircularTimer.jsx (reused)
+      - src/components/PropertyTimer.jsx (reused)
+      - src/utils/toastHelper.js (reused)
+      - src/utils/propertyAccessGuard.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/utils/hasBuyNowOption.js (reused)
+      - src/utils/buyNowEmailGate.js
+        - src/services/authService.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/services/auctionListCache.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/isPrivateClubAuctionLot.js (reused)
+      - src/constants/auctionMobileViewStorage.js (reused)
+      - src/utils/responsiveImage.js (reused)
+      - src/components/ImageWithSkeleton.jsx (reused)
+      - src/components/AuctionPropertyCard.jsx (reused)
+      - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+        - src/components/buyer-mobile/BuyerStatusRibbon.css
+      - src/utils/resolveBuyerListingState.js (reused)
+      - src/components/DebtsPropertyCard.jsx (reused)
+      - src/components/PropertyList.css (reused)
+      - src/styles/hrShowcaseAuctionCards.css (reused)
+      - src/styles/hrShowcaseDebtsCards.css
+      - src/components/ui/AuctionMobileLayout.css (reused)
+  - src/components/DepositButton.jsx
+    - src/utils/walletNavigation.js (reused)
+    - src/components/DepositButton.css
+  - src/components/DepositButtonSkeleton.jsx
+    - src/components/DepositButton.css (reused)
+  - src/services/authService.js (reused)
+  - src/services/auctionListCache.js (reused)
+  - src/utils/propertyAccessGuard.js (reused)
+  - src/utils/requestOpenLoginModal.js (reused)
+  - src/utils/siteAuthGate.js (reused)
+  - src/pages/Home.css
+  - src/utils/apiConfig.js (reused)
+  - src/utils/depositApi.js
+  - src/utils/depositVisibility.js
+    - src/services/authService.js (reused)
+    - src/utils/cabinetRoutes.js (reused)
+  - src/utils/auctionReminderBounds.js (reused)
+  - src/hooks/useManagerLiveChat.js
+    - src/services/authService.js (reused)
+    - src/utils/toastHelper.js (reused)
+    - src/services/liveChatApi.js
+      - src/utils/apiConfig.js (reused)
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/auctionFilterUrl.js (reused)
+  - src/hooks/useViewerVipAccess.js
+    - src/services/authService.js (reused)
+    - src/constants/cabinetEvents.js
+    - src/hooks/useCabinetOverviewData.js
+      - src/services/authService.js (reused)
+      - src/utils/usersApi.js (reused)
+      - src/utils/resolveCabinetUserByEmail.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/currency.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/sectionRoutes.js (reused)
+      - src/constants/cabinetEvents.js (reused)
+      - src/utils/purchaseSuccessFlow.js
+        - src/utils/apiConfig.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/subscriptionCheckout.js
+        - src/utils/purchasedPropertyListingPrefill.js
+          - src/utils/apiConfig.js (reused)
+          - src/utils/oapAddPropertyDraft.js
+          - src/utils/propertyDetailUrl.js (reused)
+          - src/utils/oapLocationGeocode.js
+            - src/i18n/config.js
+              - src/i18n/locales/mainPage/ru.json
+              - src/i18n/locales/mainPage/en.json
+              - src/i18n/locales/mainPage/de.json
+              - src/i18n/locales/mainPage/es.json
+              - src/i18n/locales/mainPage/fr.json
+              - src/i18n/locales/mainPage/sv.json
+        - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/cabinetPurchaseHistory.js
+  - src/components/AuctionPageBottomSections.jsx
+    - src/components/AuctionCategoryCtaCards.jsx
+      - src/utils/publicAsset.js
+      - src/components/AuctionCategoryCtaCards.css
+    - src/components/FAQ.jsx
+      - src/components/ui/faq-section.tsx
+        - src/components/ui/accordion.tsx
+          - src/lib/utils.js (reused)
+          - src/components/ui/accordion.css
+        - src/components/ui/faq-section.css
+  - src/services/aiService.js
+    - src/utils/apiConfig.js (reused)
+  - src/services/liveChatApi.js (reused)
+  - src/services/assistantLeadService.js
+    - src/utils/apiConfig.js (reused)
+
+## /property/:slugOrId — Property detail
+
+Entry: `src/pages/PropertyDetailPage.jsx`
+
+Dependencies:
+- src/pages/PropertyDetailPage.jsx
+  - src/utils/toastHelper.js
+    - src/components/ToastContainer.jsx
+      - src/components/Toast.jsx
+        - src/components/Toast.css
+      - src/utils/toastModel.js
+      - src/components/ToastContainer.css
+    - src/utils/toastModel.js (reused)
+  - src/data/properties.js
+  - src/pages/PropertyDetailClassic.jsx
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/propertySourceTable.js
+    - src/components/PropertyTimer.jsx
+      - src/components/PropertyTimer.css
+      - src/components/ui/flip-countdown.tsx
+    - src/components/CircularTimer.jsx
+      - src/components/CircularTimer.css
+      - src/components/CountrySelect.jsx
+        - src/components/CountrySelect.css
+    - src/components/BiddingHistoryModal.jsx
+      - src/components/BiddingHistoryPanel.jsx
+        - src/components/CountdownTimer.jsx
+          - src/components/CountdownTimer.css
+        - src/utils/apiConfig.js (reused)
+        - src/utils/countryFlagFromStored.js
+          - src/components/CountrySelect.jsx (reused)
+        - src/components/BiddingHistoryModal.css
+        - src/utils/currency.js
+        - src/utils/propertySourceTable.js (reused)
+      - src/components/BiddingHistoryModal.css (reused)
+    - src/components/BuyNowModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/depositApi.js
+      - src/utils/toastHelper.js (reused)
+      - src/utils/subscriptionCheckout.js
+      - src/utils/buyNowEmailGate.js
+        - src/services/authService.js (reused)
+      - src/components/ShareSignaturePad.jsx
+        - src/components/ShareSignaturePad.css
+      - src/components/BuyNowModal.css
+      - src/utils/reserveTermsPdfUrl.js
+      - src/utils/currency.js (reused)
+    - src/components/AuctionReminderModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyFavoriteKey.js
+      - src/utils/toastHelper.js (reused)
+      - src/utils/requestOpenLoginModal.js
+      - src/utils/auctionReminderBounds.js
+      - src/components/ui/auction-reminder-wheel-picker.tsx
+        - src/lib/utils.js
+        - src/components/ui/auction-reminder-wheel-picker.css
+      - src/hooks/useMobileModalLayout.js
+      - src/components/AuctionReminderModal.css
+    - src/components/DepositRequiredModal.jsx
+      - src/components/DepositRequiredModal.css
+    - src/components/AuctionSoldOutNotice.jsx
+      - src/hooks/useDrawerDismiss.js
+      - src/utils/searchCatalogNavigation.js
+        - src/utils/catalogFilters.js
+          - src/utils/currency.js (reused)
+          - src/utils/catalogPriceFilter.js
+            - src/utils/currency.js (reused)
+        - src/utils/catalogGeoUrl.js
+          - src/utils/propertySearchLocation.js
+          - src/utils/propertySlug.js
+            - shared/propertySlug.js
+        - src/utils/propertyListingKind.js
+          - src/utils/hasBuyNowOption.js
+        - src/utils/propertySearchLocation.js (reused)
+        - src/utils/searchResultsGeoUrl.js
+          - src/utils/propertySlug.js (reused)
+          - src/utils/propertyDetailUrl.js
+            - src/services/authService.js (reused)
+            - src/utils/propertySlug.js (reused)
+          - src/utils/catalogGeoUrl.js (reused)
+          - src/utils/propertySearchLocation.js (reused)
+      - src/components/AuctionSoldOutNotice.css
+        - src/styles/promoBottomSheetDrawer.css
+    - src/components/AuctionEndedSimilarPromo.jsx
+      - src/components/AuctionEndedSimilarPromo.css
+    - src/components/PropertyDetailLocationMap.jsx
+      - src/components/LocationMap.jsx
+        - src/components/LocationMap.css
+        - src/utils/mapStyles.js
+      - src/utils/mapNearbyPlaces.js
+      - src/components/PropertyDetailLocationMap.css
+    - src/components/ToastContainer.jsx (reused)
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/components/BidOutbidNotification.jsx
+      - src/components/BidOutbidNotification.css
+    - src/pages/PropertyDetailClassic.css
+    - src/pages/PropertyDetailClassic.desktopAuctionV3.css
+    - src/components/property-detail/PropertyDetailDesktopPage.jsx
+      - src/components/property-detail/PropertyDetailDesktopPage.css
+    - src/components/property-detail/PropertyDetailDesktopGallery.jsx
+      - src/components/property-detail/PropertyDetailDesktopGallery.css
+    - src/components/property-detail/PropertyDetailDesktopTestDriveBanner.jsx
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/components/property-detail/PropertyDetailDesktopTestDriveBanner.css
+    - src/components/property-detail/PropertyDetailDesktopRelatedSection.jsx
+      - src/components/PropertyListingCard.jsx
+        - src/context/PropertyFavoritesContext.jsx
+          - src/services/authService.js (reused)
+          - src/utils/apiConfig.js (reused)
+          - src/utils/propertyFavoriteKey.js (reused)
+          - src/utils/toastHelper.js (reused)
+          - src/utils/requestOpenLoginModal.js (reused)
+          - src/components/FirstFavoriteDrawer.jsx
+            - src/hooks/useDrawerDismiss.js (reused)
+            - src/hooks/useBottomSheetDrag.js
+            - src/components/FirstFavoriteIllustration.jsx
+            - src/components/FirstFavoriteDrawer.css
+              - src/styles/promoBottomSheetDrawer.css (reused)
+          - src/components/CompareFavoritesDrawer.jsx
+            - src/hooks/useDrawerDismiss.js (reused)
+            - src/hooks/useBottomSheetDrag.js (reused)
+            - src/components/CompareFavoritesIllustration.jsx
+            - src/components/CompareFavoritesDrawer.css
+              - src/styles/promoBottomSheetDrawer.css (reused)
+          - src/utils/favoritesApi.js
+        - src/utils/propertyFavoriteKey.js (reused)
+        - src/utils/hasBuyNowOption.js (reused)
+        - src/components/PropertyTimer.jsx (reused)
+        - src/components/CircularTimer.jsx (reused)
+        - src/components/ImageWithSkeleton.jsx
+          - src/components/ImageWithSkeleton.css
+        - src/utils/currency.js (reused)
+        - src/utils/auctionReminderBounds.js (reused)
+        - src/utils/propertyImage.js
+        - src/services/auctionListCache.js
+          - src/utils/apiConfig.js (reused)
+          - src/utils/fetchDedupe.js
+          - src/services/authService.js (reused)
+          - src/utils/propertySourceTable.js (reused)
+          - src/utils/fetchAuctionMaxBids.js
+            - src/utils/propertySourceTable.js (reused)
+          - src/utils/propertyDetailUrl.js (reused)
+          - src/utils/auctionReminderBounds.js (reused)
+          - src/utils/propertyImage.js (reused)
+          - src/utils/auctionBidValue.js
+            - src/utils/propertySourceTable.js (reused)
+        - src/utils/propertyDetailUrl.js (reused)
+        - src/utils/responsiveImage.js
+        - src/utils/resolveBuyerListingState.js
+        - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+          - src/components/buyer-mobile/BuyerStatusRibbon.css
+        - src/components/PropertyList.css
+      - src/hooks/usePropertyRelatedListings.js
+        - src/utils/catalogGeoUrl.js (reused)
+        - src/utils/propertySearchLocation.js (reused)
+        - src/utils/apiConfig.js (reused)
+      - src/components/property-detail/PropertyDetailDesktopRelatedSection.css
+    - src/components/property-detail/PropertyDetailDesktopTestDriveBanner.css (reused)
+    - src/components/property-detail/PropertyDetailDesktopRelatedSection.css (reused)
+    - src/hooks/useIsDesktopProperty.js
+    - src/utils/apiConfig.js (reused)
+    - src/utils/countryFlagFromStored.js (reused)
+    - src/components/DebtAuctionInsight.jsx
+      - src/services/authService.js (reused)
+      - src/utils/subscriptionCheckout.js (reused)
+      - src/utils/toastHelper.js (reused)
+      - src/utils/debtPropertyDetail.js
+      - src/components/DebtAuctionInsight.css
+    - src/components/PropertyDebtRiskBanner.jsx
+      - src/utils/debtPropertyDetail.js (reused)
+      - src/components/DebtAuctionInsight.jsx (reused)
+      - src/components/PropertyDebtRiskBanner.css
+    - src/components/ui/award.tsx
+      - src/lib/utils.js (reused)
+    - src/components/TestDriveSection.jsx
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/apiConfig.js (reused)
+    - src/components/PropertyDetailTestDrivePromo.jsx
+      - src/components/TestDriveSection.jsx (reused)
+      - src/utils/publicAsset.js
+      - src/components/PropertyDetailTestDrivePromo.css
+    - src/components/PageBackButton.jsx
+      - src/components/PageBackButton.css
+    - src/components/PropertyGeoLinks.jsx
+      - src/utils/catalogGeoUrl.js (reused)
+      - src/components/PropertyGeoLinks.css
+    - src/components/PropertyDetailInternalLinks.jsx
+      - src/components/PropertyListingCard.jsx (reused)
+      - src/hooks/usePropertyRelatedListings.js (reused)
+      - src/components/PropertyDetailInternalLinks.css
+    - src/components/PropertyAiExperience.jsx
+      - src/services/authService.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/services/propertyAiService.js
+        - src/utils/apiConfig.js (reused)
+      - src/components/PropertyAiExperience.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx (reused)
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/components/TestDrivePromoDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js (reused)
+      - src/components/TestDrivePromoIllustration.jsx
+      - src/components/TestDrivePromoDrawer.css
+        - src/styles/promoBottomSheetDrawer.css (reused)
+    - src/components/AuctionBidDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/components/AuctionBidDrawer.css
+    - src/components/AuctionBidCeilingModal.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/auctionBidStep.js
+      - src/utils/moneyInputFormat.js
+      - src/utils/auctionBidCeilingSimulation.js
+      - src/components/AuctionBidCeilingChart.jsx
+        - src/utils/auctionBidCeilingSimulation.js (reused)
+        - src/utils/auctionBidCeilingUserBids.js
+        - src/components/AuctionBidCeilingChart.css
+      - src/components/AuctionBidCeilingModal.css
+    - src/components/PropertyDetailAuctionBiddingForm.jsx
+      - src/utils/auctionBidStep.js (reused)
+      - src/components/PropertyCurrencySelector.jsx
+        - src/components/PropertyCurrencySelector.css
+    - src/components/ShareDetailPurchasePanel.jsx
+      - src/utils/currency.js (reused)
+      - src/components/ShareDetailPurchasePanel.css
+    - src/components/ShareMobilePurchaseBar.jsx
+      - src/components/ShareMobilePurchaseBar.css
+    - src/components/ShareDetailPurchasePanel.css (reused)
+    - src/components/PropertyDetailDesktopAppBanner.jsx
+      - src/utils/toastHelper.js (reused)
+      - src/components/PropertyDetailAppBannerPhone.jsx
+    - src/components/PropertyDetailDesktopYieldCalc.jsx
+      - src/utils/moneyInputFormat.js (reused)
+    - src/components/PropertyDetailYieldPromo.jsx
+      - src/utils/publicAsset.js (reused)
+      - src/components/PropertyDetailYieldPromo.css
+    - src/components/property-detail/PropertyDetailInvestorPanelPromo.jsx
+      - src/components/property-detail/PropertyDetailInvestorPanelIllustration.jsx
+      - src/components/property-detail/PropertyDetailInvestorPanelPromo.css
+    - src/utils/propertyShowsTestDrive.js
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/auctionBidStep.js (reused)
+    - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/propertyNavigation.js
+    - src/utils/mapStyles.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/purchaseSuccessFlow.js
+      - src/utils/apiConfig.js (reused)
+      - src/services/authService.js (reused)
+      - src/utils/subscriptionCheckout.js (reused)
+      - src/utils/purchasedPropertyListingPrefill.js
+        - src/utils/apiConfig.js (reused)
+        - src/utils/oapAddPropertyDraft.js
+        - src/utils/propertyDetailUrl.js (reused)
+        - src/utils/oapLocationGeocode.js
+          - src/i18n/config.js
+            - src/i18n/locales/mainPage/ru.json
+            - src/i18n/locales/mainPage/en.json
+            - src/i18n/locales/mainPage/de.json
+            - src/i18n/locales/mainPage/es.json
+            - src/i18n/locales/mainPage/fr.json
+            - src/i18n/locales/mainPage/sv.json
+      - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/searchCatalogNavigation.js (reused)
+    - src/utils/shareProperty.js
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/tzAmenityLabels.js
+    - src/pages/oapAmenityIcons.js
+    - src/services/auctionListCache.js (reused)
+    - src/context/PropertyFavoritesContext.jsx (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/buyerAuctionKyc.js
+    - src/utils/auctionDeposit.js
+    - src/utils/buyNowEmailGate.js (reused)
+    - src/hooks/usePropertyDisplayCurrency.js
+      - src/utils/apiConfig.js (reused)
+      - src/utils/currency.js (reused)
+    - src/hooks/useHorizontalSwipe.js
+    - src/hooks/useAuctionDesktopBidPanelDock.js
+    - src/utils/moneyInputFormat.js (reused)
+    - src/components/PropertyCurrencySelector.jsx (reused)
+    - src/components/PropertyCurrencySelector.css (reused)
+    - src/components/PropertyDepositAccessDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/styles/drawerDismiss.css
+      - src/components/PropertyDepositAccessDrawer.css
+  - src/components/LoginModal.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/toastHelper.js (reused)
+    - src/utils/visitorAuthDefault.js
+    - src/utils/loginModalDocumentFlag.js
+    - src/utils/cabinetRoutes.js (reused)
+    - src/components/LoginModal.css
+    - src/components/WhatsAppVerificationModal.jsx
+      - src/services/authService.js (reused)
+      - src/components/PhoneInput.jsx
+      - src/components/PhoneInput.css
+      - src/components/WhatsAppVerificationModal.css
+    - src/components/EmailVerificationModal.jsx
+      - src/services/authService.js (reused)
+      - src/components/EmailVerificationModal.css
+    - src/components/ForgotPasswordModal.jsx
+      - src/services/authService.js (reused)
+      - src/components/ForgotPasswordModal.css
+    - src/components/BuyerSellerLinkConfirmModal.jsx
+      - src/components/EmailVerificationModal.css (reused)
+    - src/components/VerificationDocumentsModal.jsx
+      - src/utils/toastHelper.js (reused)
+      - src/components/VerificationDocumentsModal.css
+    - src/components/AnimatedCharacters.jsx
+    - src/services/newsApi.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/clerkOAuth.js
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js (reused)
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js (reused)
+    - src/utils/cabinetRoutes.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx (reused)
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/services/authService.js (reused)
+  - src/utils/auctionReminderBounds.js (reused)
+  - src/utils/propertyNavigation.js (reused)
+  - src/utils/propertyImage.js (reused)
+  - src/pages/PropertyDetailClassicSkeleton.jsx
+    - src/pages/PropertyDetailClassic.css (reused)
+    - src/pages/PropertyDetailClassicSkeleton.css
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/propertySlug.js (reused)
+  - src/utils/propertySourceTable.js (reused)
+  - src/context/PageSeoContext.jsx
+  - src/components/NotFoundPage.jsx
+    - src/components/Header.jsx (reused)
+    - src/components/Footer.jsx
+      - 6019556644745841501.png
+      - src/components/Footer.css
+      - src/utils/mainScroll.js
+      - src/utils/walletNavigation.js (reused)
+      - src/utils/siteAuthGate.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js (reused)
+      - src/constants/uiLanguages.js (reused)
+    - src/hooks/usePageSeo.js
+      - shared/seoRobots.js
+    - src/utils/sectionRoutes.js (reused)
+    - src/components/NotFoundPage.css
+  - src/utils/pageSeoBuilders.js
+    - shared/pageSeoBuilders.js
+      - src/utils/currency.js (reused)
+      - src/utils/catalogGeoUrl.js (reused)
+      - src/utils/propertySearchLocation.js (reused)
+  - src/pages/PropertyDetailPage.css
+
+## /test-drive — Test Drive discovery
+
+Entry: `src/pages/TestDriveLandingPage.jsx`
+
+Dependencies:
+- src/pages/TestDriveLandingPage.jsx
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/SharesMobileFiltersDrawer.jsx
+    - src/hooks/useDrawerDismiss.js (reused)
+    - src/styles/drawerDismiss.css
+    - src/components/SharesMobileFiltersDrawer.css
+  - src/components/AuctionCategoryCtaCards.jsx
+    - src/utils/publicAsset.js
+    - src/components/AuctionCategoryCtaCards.css
+  - src/components/ListingPagePagination.jsx
+    - src/components/ListingPagePagination.css
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/context/PropertyFavoritesContext.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/propertyFavoriteKey.js
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/components/FirstFavoriteDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js
+      - src/components/FirstFavoriteIllustration.jsx
+      - src/components/FirstFavoriteDrawer.css
+        - src/styles/promoBottomSheetDrawer.css
+    - src/components/CompareFavoritesDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js (reused)
+      - src/components/CompareFavoritesIllustration.jsx
+      - src/components/CompareFavoritesDrawer.css
+        - src/styles/promoBottomSheetDrawer.css (reused)
+    - src/utils/favoritesApi.js
+  - src/utils/propertyAccessGuard.js (reused)
+  - src/utils/propertyFavoriteKey.js (reused)
+  - src/utils/propertyImage.js (reused)
+  - src/utils/formatPropertyListingCard.js
+    - src/utils/propertySearchLocation.js
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/publicAsset.js (reused)
+  - src/pages/testDriveListingData.js
+  - src/pages/TestDriveLandingPage.css
+
+## /search-results[/:country/:city] — Search results
+
+Entry: `src/pages/SearchResults.jsx`
+
+Dependencies:
+- src/pages/SearchResults.jsx
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/Footer.jsx
+    - 6019556644745841501.png
+    - src/components/Footer.css
+    - src/utils/mainScroll.js
+    - src/utils/walletNavigation.js (reused)
+    - src/utils/siteAuthGate.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/utils/cabinetRoutes.js (reused)
+    - src/utils/sectionRoutes.js (reused)
+    - src/constants/uiLanguages.js (reused)
+  - src/components/PropertyListingCard.jsx
+    - src/context/PropertyFavoritesContext.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyFavoriteKey.js
+      - src/utils/toastHelper.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/components/FirstFavoriteDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js
+        - src/components/FirstFavoriteIllustration.jsx
+        - src/components/FirstFavoriteDrawer.css
+          - src/styles/promoBottomSheetDrawer.css
+      - src/components/CompareFavoritesDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js (reused)
+        - src/components/CompareFavoritesIllustration.jsx
+        - src/components/CompareFavoritesDrawer.css
+          - src/styles/promoBottomSheetDrawer.css (reused)
+      - src/utils/favoritesApi.js
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/hasBuyNowOption.js
+    - src/components/PropertyTimer.jsx
+      - src/components/PropertyTimer.css
+      - src/components/ui/flip-countdown.tsx
+    - src/components/CircularTimer.jsx
+      - src/components/CircularTimer.css
+      - src/components/CountrySelect.jsx
+        - src/components/CountrySelect.css
+    - src/components/ImageWithSkeleton.jsx
+      - src/components/ImageWithSkeleton.css
+    - src/utils/currency.js
+    - src/utils/auctionReminderBounds.js
+    - src/utils/propertyImage.js (reused)
+    - src/services/auctionListCache.js
+      - src/utils/apiConfig.js (reused)
+      - src/utils/fetchDedupe.js
+      - src/services/authService.js (reused)
+      - src/utils/propertySourceTable.js
+      - src/utils/fetchAuctionMaxBids.js
+        - src/utils/propertySourceTable.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/auctionBidValue.js
+        - src/utils/propertySourceTable.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/responsiveImage.js
+    - src/utils/resolveBuyerListingState.js
+    - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+      - src/components/buyer-mobile/BuyerStatusRibbon.css
+    - src/components/PropertyList.css
+  - src/components/CatalogDesktopFilters.jsx
+    - src/utils/apiConfig.js (reused)
+    - src/utils/fetchDedupe.js (reused)
+    - src/utils/catalogFilters.js
+      - src/utils/currency.js (reused)
+      - src/utils/catalogPriceFilter.js
+        - src/utils/currency.js (reused)
+    - src/components/AuctionDesktopFilters.css
+  - src/components/SharesMobileFiltersDrawer.jsx
+    - src/hooks/useDrawerDismiss.js (reused)
+    - src/styles/drawerDismiss.css
+    - src/components/SharesMobileFiltersDrawer.css
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/utils/propertyAccessGuard.js (reused)
+  - src/utils/apiConfig.js (reused)
+  - src/utils/catalogFilters.js (reused)
+  - src/pages/SearchResults.css
+  - src/components/PropertyList.css (reused)
+  - src/components/PropertyListingGrid.css
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/formatPropertyListingCard.js
+    - src/utils/propertySearchLocation.js
+  - src/utils/propertySearchCatalog.js
+    - src/utils/fetchDedupe.js (reused)
+  - src/utils/catalogSearchSections.js
+    - src/utils/propertyListingKind.js
+      - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/hasBuyNowOption.js (reused)
+  - src/utils/propertySearchFilters.js
+    - src/utils/propertyListingKind.js (reused)
+    - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/catalogPriceFilter.js (reused)
+    - src/utils/propertySearchLocation.js (reused)
+    - src/utils/catalogFilters.js (reused)
+  - src/utils/auctionReminderBounds.js (reused)
+  - src/utils/searchResultsGeoUrl.js
+    - src/utils/propertySlug.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/catalogGeoUrl.js
+      - src/utils/propertySearchLocation.js (reused)
+      - src/utils/propertySlug.js (reused)
+    - src/utils/propertySearchLocation.js (reused)
+  - src/utils/heroSearchFilters.js
+
+## /map — Map discovery
+
+Entry: `src/pages/MapPage.jsx`
+
+Dependencies:
+- src/pages/MapPage.jsx
+  - src/utils/toastHelper.js
+    - src/components/ToastContainer.jsx
+      - src/components/Toast.jsx
+        - src/components/Toast.css
+      - src/utils/toastModel.js
+      - src/components/ToastContainer.css
+    - src/utils/toastModel.js (reused)
+  - src/components/PageBackButton.jsx
+    - src/components/PageBackButton.css
+  - src/components/MapPagePropertyGrid.jsx
+    - src/lib/utils.js
+    - src/components/AuctionPropertyCard.jsx
+      - src/components/ListingCardAuctionTimer.jsx
+        - src/utils/formatListingAuctionTimeLeft.js
+        - src/components/ListingCardAuctionTimer.css
+      - src/components/CircularTimer.jsx
+        - src/components/CircularTimer.css
+        - src/components/CountrySelect.jsx
+          - src/components/CountrySelect.css
+      - src/components/ImageWithSkeleton.jsx
+        - src/components/ImageWithSkeleton.css
+      - src/utils/propertyImage.js
+      - src/utils/responsiveImage.js
+      - src/utils/auctionBidValue.js
+        - src/utils/propertySourceTable.js
+      - src/utils/isPrivateClubAuctionLot.js
+      - src/utils/hasBuyNowOption.js
+      - src/utils/auctionReminderBounds.js
+      - src/components/AuctionPropertyCard.css
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js
+          - src/utils/env.js
+            - src/utils/apiConfig.js
+          - src/utils/apiConfig.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/resolveBuyerListingState.js
+      - src/components/auction/AuctionFinalStateRibbon.jsx
+        - src/components/auction/AuctionFinalStateRibbon.css
+    - src/utils/propertyAccessGuard.js
+      - src/services/authService.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/components/AuctionPropertyCard.css (reused)
+    - src/components/ui/AuctionMobileLayout.css
+  - src/components/MapPageFilters.jsx
+    - src/utils/mapPageFilters.js
+      - src/utils/propertySearchFilters.js
+        - src/utils/propertyListingKind.js
+          - src/utils/hasBuyNowOption.js (reused)
+        - src/utils/hasBuyNowOption.js (reused)
+        - src/utils/catalogPriceFilter.js
+          - src/utils/currency.js
+        - src/utils/propertySearchLocation.js
+        - src/utils/catalogFilters.js
+          - src/utils/currency.js (reused)
+          - src/utils/catalogPriceFilter.js (reused)
+    - src/components/MapPageFilters.css
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/utils/apiConfig.js (reused)
+  - src/utils/mapStyles.js
+  - src/utils/propertyAccessGuard.js (reused)
+  - src/utils/requestOpenLoginModal.js
+  - src/utils/siteAuthGate.js
+    - src/services/authService.js (reused)
+  - src/context/PropertyFavoritesContext.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/propertyFavoriteKey.js
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/components/FirstFavoriteDrawer.jsx
+      - src/hooks/useDrawerDismiss.js
+      - src/hooks/useBottomSheetDrag.js
+      - src/components/FirstFavoriteIllustration.jsx
+      - src/components/FirstFavoriteDrawer.css
+        - src/styles/promoBottomSheetDrawer.css
+    - src/components/CompareFavoritesDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js (reused)
+      - src/components/CompareFavoritesIllustration.jsx
+      - src/components/CompareFavoritesDrawer.css
+        - src/styles/promoBottomSheetDrawer.css (reused)
+    - src/utils/favoritesApi.js
+  - src/utils/propertyFavoriteKey.js (reused)
+  - src/utils/mainScroll.js
+  - src/utils/responsiveImage.js (reused)
+  - src/utils/currency.js (reused)
+  - src/pages/MapPage.css
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/mapPageFilters.js (reused)
+  - src/utils/auctionReminderBounds.js (reused)
+
+## /favorites — Favorites shortlist
+
+Entry: `src/pages/Favorites.jsx`
+
+Dependencies:
+- src/pages/Favorites.jsx
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/FavoritePropertyCard.jsx
+    - src/components/AuctionPropertyCard.jsx
+      - src/components/ListingCardAuctionTimer.jsx
+        - src/utils/formatListingAuctionTimeLeft.js
+        - src/components/ListingCardAuctionTimer.css
+      - src/components/CircularTimer.jsx
+        - src/components/CircularTimer.css
+        - src/components/CountrySelect.jsx
+          - src/components/CountrySelect.css
+      - src/components/ImageWithSkeleton.jsx
+        - src/components/ImageWithSkeleton.css
+      - src/utils/propertyImage.js (reused)
+      - src/utils/responsiveImage.js
+      - src/utils/auctionBidValue.js
+        - src/utils/propertySourceTable.js
+      - src/utils/isPrivateClubAuctionLot.js
+      - src/utils/hasBuyNowOption.js
+      - src/utils/auctionReminderBounds.js
+      - src/components/AuctionPropertyCard.css
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/resolveBuyerListingState.js
+      - src/components/auction/AuctionFinalStateRibbon.jsx
+        - src/components/auction/AuctionFinalStateRibbon.css
+    - src/components/DebtsPropertyCard.jsx
+      - src/utils/propertyAccessGuard.js (reused)
+      - src/utils/currency.js
+      - src/utils/responsiveImage.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/components/ListingCardAuctionTimer.jsx (reused)
+      - src/utils/debtsCardPresentation.js
+        - src/utils/auctionReminderBounds.js (reused)
+        - src/utils/auctionBidValue.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/components/DebtsPropertyCard.css
+    - src/components/SharesPropertyCard.jsx
+      - src/utils/responsiveImage.js (reused)
+      - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+        - src/components/buyer-mobile/BuyerStatusRibbon.css
+      - src/utils/sharesMarketplacePresentation.js
+        - src/utils/resolveBuyerListingState.js (reused)
+      - src/components/SharesPropertyCard.css
+    - src/components/PropertyListingCard.jsx
+      - src/context/PropertyFavoritesContext.jsx
+        - src/services/authService.js (reused)
+        - src/utils/apiConfig.js (reused)
+        - src/utils/propertyFavoriteKey.js
+        - src/utils/toastHelper.js (reused)
+        - src/utils/requestOpenLoginModal.js (reused)
+        - src/components/FirstFavoriteDrawer.jsx
+          - src/hooks/useDrawerDismiss.js (reused)
+          - src/hooks/useBottomSheetDrag.js
+          - src/components/FirstFavoriteIllustration.jsx
+          - src/components/FirstFavoriteDrawer.css
+            - src/styles/promoBottomSheetDrawer.css
+        - src/components/CompareFavoritesDrawer.jsx
+          - src/hooks/useDrawerDismiss.js (reused)
+          - src/hooks/useBottomSheetDrag.js (reused)
+          - src/components/CompareFavoritesIllustration.jsx
+          - src/components/CompareFavoritesDrawer.css
+            - src/styles/promoBottomSheetDrawer.css (reused)
+        - src/utils/favoritesApi.js
+      - src/utils/propertyFavoriteKey.js (reused)
+      - src/utils/hasBuyNowOption.js (reused)
+      - src/components/PropertyTimer.jsx
+        - src/components/PropertyTimer.css
+        - src/components/ui/flip-countdown.tsx
+      - src/components/CircularTimer.jsx (reused)
+      - src/components/ImageWithSkeleton.jsx (reused)
+      - src/utils/currency.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/services/auctionListCache.js
+        - src/utils/apiConfig.js (reused)
+        - src/utils/fetchDedupe.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySourceTable.js (reused)
+        - src/utils/fetchAuctionMaxBids.js
+          - src/utils/propertySourceTable.js (reused)
+        - src/utils/propertyDetailUrl.js (reused)
+        - src/utils/auctionReminderBounds.js (reused)
+        - src/utils/propertyImage.js (reused)
+        - src/utils/auctionBidValue.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/responsiveImage.js (reused)
+      - src/utils/resolveBuyerListingState.js (reused)
+      - src/components/buyer-mobile/BuyerStatusRibbon.jsx (reused)
+      - src/components/PropertyList.css
+    - src/utils/shareCardDisplay.js
+      - src/utils/propertyImage.js (reused)
+    - src/utils/propertyListingKind.js
+      - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/propertyFavoriteKey.js (reused)
+  - src/pages/Favorites.css
+  - src/components/PropertyList.css (reused)
+  - src/components/AuctionPropertyCard.css (reused)
+  - src/components/DebtsPropertyCard.css (reused)
+  - src/components/SharesPropertyCard.css (reused)
+  - src/styles/hrShowcaseAuctionCards.css
+  - src/styles/hrShowcaseDebtsCards.css
+  - src/components/ui/AuctionMobileLayout.css
+  - src/context/PropertyFavoritesContext.jsx (reused)
+  - src/utils/propertyFavoriteKey.js (reused)
+  - src/utils/propertyAccessGuard.js (reused)
+  - src/hooks/useFavoriteAuctionItems.js
+    - src/data/properties.js
+    - src/data/favoriteMockLists.js
+    - src/context/PropertyFavoritesContext.jsx (reused)
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/propertyImage.js (reused)
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/auctionReminderBounds.js (reused)
+  - src/utils/currency.js (reused)
+  - src/utils/sectionRoutes.js (reused)
+
+## /compare — Comparison cockpit
+
+Entry: `src/pages/Compare.jsx`
+
+Dependencies:
+- src/pages/Compare.jsx
+  - src/components/CompareInvestorProDrawer.jsx
+    - src/hooks/useDrawerDismiss.js
+    - src/hooks/useBottomSheetDrag.js
+    - src/components/CompareInvestorProIllustration.jsx
+    - src/components/CompareInvestorProDrawer.css
+      - src/styles/promoBottomSheetDrawer.css
+  - src/hooks/useSubscriptionCalculatorAccess.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/subscriptionAccess.js
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/utils/propertyCalculatorMapping.js
+  - src/components/PropertyListingCard.jsx
+    - src/context/PropertyFavoritesContext.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyFavoriteKey.js
+      - src/utils/toastHelper.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/components/FirstFavoriteDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js (reused)
+        - src/components/FirstFavoriteIllustration.jsx
+        - src/components/FirstFavoriteDrawer.css
+          - src/styles/promoBottomSheetDrawer.css (reused)
+      - src/components/CompareFavoritesDrawer.jsx
+        - src/hooks/useDrawerDismiss.js (reused)
+        - src/hooks/useBottomSheetDrag.js (reused)
+        - src/components/CompareFavoritesIllustration.jsx
+        - src/components/CompareFavoritesDrawer.css
+          - src/styles/promoBottomSheetDrawer.css (reused)
+      - src/utils/favoritesApi.js
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/hasBuyNowOption.js
+    - src/components/PropertyTimer.jsx
+      - src/components/PropertyTimer.css
+      - src/components/ui/flip-countdown.tsx
+    - src/components/CircularTimer.jsx
+      - src/components/CircularTimer.css
+      - src/components/CountrySelect.jsx
+        - src/components/CountrySelect.css
+    - src/components/ImageWithSkeleton.jsx
+      - src/components/ImageWithSkeleton.css
+    - src/utils/currency.js
+    - src/utils/auctionReminderBounds.js
+    - src/utils/propertyImage.js (reused)
+    - src/services/auctionListCache.js
+      - src/utils/apiConfig.js (reused)
+      - src/utils/fetchDedupe.js
+      - src/services/authService.js (reused)
+      - src/utils/propertySourceTable.js
+      - src/utils/fetchAuctionMaxBids.js
+        - src/utils/propertySourceTable.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/auctionBidValue.js
+        - src/utils/propertySourceTable.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/responsiveImage.js
+    - src/utils/resolveBuyerListingState.js
+    - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+      - src/components/buyer-mobile/BuyerStatusRibbon.css
+    - src/components/PropertyList.css
+  - src/components/compare/CompareMobileMetrics.jsx
+    - src/utils/currency.js (reused)
+    - src/utils/propertyImage.js (reused)
+    - src/utils/compareDecision.js
+    - src/components/compare/CompareMobileMetrics.css
+  - src/components/compare/CompareDecisionSummary.jsx
+    - src/utils/currency.js (reused)
+    - src/utils/propertyImage.js (reused)
+    - src/utils/compareDecision.js (reused)
+    - src/components/compare/CompareDecisionSummary.css
+  - src/hooks/useFavoriteAuctionItems.js
+    - src/data/properties.js
+    - src/data/favoriteMockLists.js
+    - src/context/PropertyFavoritesContext.jsx (reused)
+    - src/utils/propertyFavoriteKey.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/propertyImage.js (reused)
+  - src/hooks/useMobileLayout.js
+  - src/utils/propertyFavoriteKey.js (reused)
+  - src/utils/toastHelper.js (reused)
+  - src/services/aiService.js
+    - src/utils/apiConfig.js (reused)
+  - src/context/PropertyFavoritesContext.jsx (reused)
+  - src/utils/formatPropertyListingCard.js
+    - src/utils/propertySearchLocation.js
+  - src/utils/auctionReminderBounds.js (reused)
+  - src/pages/Compare.css
+  - src/components/PropertyListingGrid.css
+  - src/utils/currency.js (reused)
+  - src/utils/investorScenarioContext.js
+  - src/utils/compareDecision.js (reused)
+  - src/utils/compareAiRequestGuard.js
+
+## /wallet and /deposit — Wallet and deposit
+
+Entry: `src/pages/Wallet.jsx`
+
+Dependencies:
+- src/pages/Wallet.jsx
+  - src/services/authService.js
+    - src/utils/env.js
+      - src/utils/apiConfig.js
+    - src/utils/apiConfig.js (reused)
+  - src/utils/apiConfig.js (reused)
+  - src/components/BuyNowModal.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/depositApi.js
+    - src/utils/toastHelper.js
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/utils/toastModel.js (reused)
+    - src/utils/subscriptionCheckout.js
+    - src/utils/buyNowEmailGate.js
+      - src/services/authService.js (reused)
+    - src/components/ShareSignaturePad.jsx
+      - src/components/ShareSignaturePad.css
+    - src/components/BuyNowModal.css
+    - src/utils/reserveTermsPdfUrl.js
+    - src/utils/currency.js
+  - src/components/DepositTopUpPicker.jsx
+    - src/components/DepositTopUpPicker.css
+  - src/components/DepositSuccessDrawer.jsx
+    - src/components/buyer-mobile/BuyerSheetShell.jsx
+      - src/hooks/useDrawerDismiss.js
+      - src/components/buyer-mobile/BuyerSheetShell.css
+    - src/components/DepositSuccessDrawer.css
+  - src/components/DepositInfoDrawer.jsx
+    - src/components/buyer-mobile/BuyerSheetShell.jsx (reused)
+    - src/components/DepositInfoDrawer.css
+  - src/components/deposit/DepositZeroState.jsx
+    - src/components/deposit/DepositZeroState.css
+  - src/components/SellerVerificationModal.jsx
+    - src/components/SellerVerificationModal.css
+    - src/components/VerificationModal.jsx
+      - src/utils/toastHelper.js (reused)
+      - src/utils/verificationStorage.js
+      - src/utils/apiConfig.js (reused)
+      - src/components/VerificationModal.css
+  - src/utils/toastHelper.js (reused)
+  - src/utils/currency.js (reused)
+  - src/utils/requestOpenLoginModal.js
+  - src/utils/subscriptionCheckout.js (reused)
+  - src/utils/tonUsdt.js
+  - src/utils/propertyAccessGuard.js
+    - src/services/authService.js (reused)
+  - src/utils/siteAuthGate.js
+    - src/services/authService.js (reused)
+  - src/utils/buyNowEmailGate.js (reused)
+  - src/utils/formatPropertyListingCard.js
+    - src/utils/propertySearchLocation.js
+  - src/utils/enrichBidsWithPropertySpecs.js
+  - src/utils/auctionReminderBounds.js
+  - src/utils/propertyDetailUrl.js
+    - src/services/authService.js (reused)
+    - src/utils/propertySlug.js
+      - shared/propertySlug.js
+  - src/utils/propertyImage.js
+  - src/utils/responsiveImage.js
+  - src/components/ImageWithSkeleton.jsx
+    - src/components/ImageWithSkeleton.css
+  - src/hooks/useDrawerDismiss.js (reused)
+  - src/components/PropertyListingGrid.css
+  - src/components/PropertyList.css
+  - src/utils/walletNavigation.js
+    - src/utils/buyerReturnContext.js
+  - src/pages/Wallet.css
+
+## /co-investment — Co-investment marketplace
+
+Entry: `src/pages/Shares.jsx`
+
+Dependencies:
+- src/pages/Shares.jsx
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js
+      - src/utils/env.js
+        - src/utils/apiConfig.js
+      - src/utils/apiConfig.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js
+        - src/services/authService.js (reused)
+        - src/utils/propertySlug.js
+          - shared/propertySlug.js
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js
+        - src/services/authService.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/SharesPropertyCard.jsx
+    - src/utils/responsiveImage.js
+    - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+      - src/components/buyer-mobile/BuyerStatusRibbon.css
+    - src/utils/sharesMarketplacePresentation.js
+      - src/utils/resolveBuyerListingState.js
+    - src/components/SharesPropertyCard.css
+  - src/components/SharesMobileFiltersDrawer.jsx
+    - src/hooks/useDrawerDismiss.js (reused)
+    - src/styles/drawerDismiss.css
+    - src/components/SharesMobileFiltersDrawer.css
+  - src/components/ListingPagePagination.jsx
+    - src/components/ListingPagePagination.css
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/context/PropertyFavoritesContext.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/propertyFavoriteKey.js
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/components/FirstFavoriteDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js
+      - src/components/FirstFavoriteIllustration.jsx
+      - src/components/FirstFavoriteDrawer.css
+        - src/styles/promoBottomSheetDrawer.css
+    - src/components/CompareFavoritesDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js (reused)
+      - src/components/CompareFavoritesIllustration.jsx
+      - src/components/CompareFavoritesDrawer.css
+        - src/styles/promoBottomSheetDrawer.css (reused)
+    - src/utils/favoritesApi.js
+  - src/utils/listingContextUrl.js
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/sectionRoutes.js (reused)
+    - src/utils/catalogGeoUrl.js
+      - src/utils/propertySearchLocation.js
+      - src/utils/propertySlug.js (reused)
+    - src/utils/propertySlug.js (reused)
+  - src/utils/heroSearchFilters.js
+  - src/utils/publicAsset.js
+  - src/utils/sharesMarketplacePresentation.js (reused)
+  - src/pages/Shares.css
+  - src/pages/CoInvestment.mobile.css
+
+## /debts — Debt marketplace
+
+Entry: `src/pages/Debts.jsx`
+
+Dependencies:
+- src/pages/Debts.jsx
+  - src/utils/lazyWithRetry.js
+  - src/components/DebtsDesktopFilters.jsx
+    - src/components/FilterCollapsibleSection.jsx
+    - src/hooks/useFilterSectionState.js
+      - src/hooks/useMobileLayout.js
+    - src/utils/auctionDesktopFilterMatch.js
+      - src/utils/hasBuyNowOption.js
+      - src/utils/auctionReminderBounds.js
+    - src/utils/debtsPageFilters.js
+      - src/utils/mapPageFilters.js
+        - src/utils/propertySearchFilters.js
+          - src/utils/propertyListingKind.js
+            - src/utils/hasBuyNowOption.js (reused)
+          - src/utils/hasBuyNowOption.js (reused)
+          - src/utils/catalogPriceFilter.js
+            - src/utils/currency.js
+          - src/utils/propertySearchLocation.js
+          - src/utils/catalogFilters.js
+            - src/utils/currency.js (reused)
+            - src/utils/catalogPriceFilter.js (reused)
+      - src/utils/hasBuyNowOption.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/utils/propertySearchLocation.js (reused)
+      - src/utils/debtsCardPresentation.js
+        - src/utils/auctionReminderBounds.js (reused)
+        - src/utils/auctionBidValue.js
+          - src/utils/propertySourceTable.js
+    - src/components/AuctionDesktopFilters.css
+    - src/components/DebtsDesktopFilters.css
+  - src/components/SharesMobileFiltersDrawer.jsx
+    - src/hooks/useDrawerDismiss.js
+    - src/styles/drawerDismiss.css
+    - src/components/SharesMobileFiltersDrawer.css
+  - src/components/DebtsDesktopFilters.css (reused)
+  - src/components/AuctionListingSaleToggle.jsx
+    - src/components/AuctionListingSaleToggle.css
+  - src/components/AuctionListingSaleToggle.css (reused)
+  - src/components/DebtsListingMeta.jsx
+    - src/utils/debtsListing.js
+      - src/utils/formatListingAuctionTimeLeft.js
+    - src/components/DebtsListingMeta.css
+  - src/components/DebtsPropertyCard.jsx
+    - src/utils/propertyAccessGuard.js
+      - src/services/authService.js
+        - src/utils/env.js
+          - src/utils/apiConfig.js
+        - src/utils/apiConfig.js (reused)
+    - src/utils/currency.js (reused)
+    - src/utils/responsiveImage.js
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/components/ListingCardAuctionTimer.jsx
+      - src/utils/formatListingAuctionTimeLeft.js (reused)
+      - src/components/ListingCardAuctionTimer.css
+    - src/utils/debtsCardPresentation.js (reused)
+    - src/utils/propertyDetailUrl.js
+      - src/services/authService.js (reused)
+      - src/utils/propertySlug.js
+        - shared/propertySlug.js
+    - src/components/DebtsPropertyCard.css
+  - src/components/AuctionCategoryCtaCards.jsx
+    - src/utils/publicAsset.js
+    - src/components/AuctionCategoryCtaCards.css
+  - src/components/ListingPagePagination.jsx
+    - src/components/ListingPagePagination.css
+  - src/components/Header.jsx
+    - src/utils/inlineAiChatRoutes.js
+      - src/utils/auctionFilterUrl.js
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/walletNavigation.js
+      - src/utils/buyerReturnContext.js
+    - src/utils/siteAuthGate.js
+      - src/services/authService.js (reused)
+    - src/utils/usersApi.js
+    - src/pages/MainPage.css
+    - src/context/SiteNotificationsContext.jsx
+      - src/utils/apiConfig.js (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/requestOpenLoginModal.js
+      - src/services/authService.js (reused)
+      - src/components/ToastContainer.jsx
+        - src/components/Toast.jsx
+          - src/components/Toast.css
+        - src/utils/toastModel.js
+        - src/components/ToastContainer.css
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/context/SiteNotificationsPanel.jsx
+        - src/utils/groupBuyerNotifications.js
+        - src/utils/notificationItemClass.js
+        - src/context/SiteNotificationsPanel.css
+      - src/utils/notificationsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/propertyImage.js
+      - src/utils/propertyAccessGuard.js (reused)
+    - src/components/ui/menu-toggle-icon.jsx
+      - src/lib/utils.js
+    - src/utils/cabinetRoutes.js
+      - src/services/authService.js (reused)
+    - src/constants/uiLanguages.js
+    - src/utils/siteNavDrawerDocumentFlag.js
+    - src/components/HeaderPinnedCatalogNav.jsx
+      - src/utils/pinnedCatalogNav.js
+        - src/utils/sectionPaths.js
+      - src/components/HeaderPinnedCatalogNav.css
+    - src/components/LoginModal.jsx
+      - src/services/authService.js (reused)
+      - src/utils/apiConfig.js (reused)
+      - src/utils/toastHelper.js
+        - src/components/ToastContainer.jsx (reused)
+        - src/utils/toastModel.js (reused)
+      - src/utils/visitorAuthDefault.js
+      - src/utils/loginModalDocumentFlag.js
+      - src/utils/cabinetRoutes.js (reused)
+      - src/components/LoginModal.css
+      - src/components/WhatsAppVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/PhoneInput.jsx
+        - src/components/PhoneInput.css
+        - src/components/WhatsAppVerificationModal.css
+      - src/components/EmailVerificationModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/EmailVerificationModal.css
+      - src/components/ForgotPasswordModal.jsx
+        - src/services/authService.js (reused)
+        - src/components/ForgotPasswordModal.css
+      - src/components/BuyerSellerLinkConfirmModal.jsx
+        - src/components/EmailVerificationModal.css (reused)
+      - src/components/VerificationDocumentsModal.jsx
+        - src/utils/toastHelper.js (reused)
+        - src/components/VerificationDocumentsModal.css
+      - src/components/AnimatedCharacters.jsx
+      - src/services/newsApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/utils/clerkOAuth.js
+    - src/components/SiteNavDrawer.jsx
+      - src/utils/cabinetRoutes.js (reused)
+      - src/utils/sectionRoutes.js
+        - src/utils/propertySlug.js (reused)
+        - src/utils/sectionPaths.js (reused)
+      - src/components/HeaderMegaMenu.jsx
+        - src/components/SiteBrandLogo.jsx
+          - src/components/SiteBrandLogo.css
+        - src/components/SiteBrandLogo.css (reused)
+        - src/utils/sectionRoutes.js (reused)
+        - src/services/authService.js (reused)
+        - src/utils/cabinetRoutes.js (reused)
+        - src/components/HeaderMegaMenu.css
+  - src/components/ui/FlipCard.jsx
+    - src/components/ui/FlipCard.css
+  - src/components/DepositButton.jsx
+    - src/utils/walletNavigation.js (reused)
+    - src/components/DepositButton.css
+  - src/components/DepositButtonSkeleton.jsx
+    - src/components/DepositButton.css (reused)
+  - src/components/buyer-mobile/BuyerEmptyState.jsx
+    - src/components/buyer-mobile/BuyerEmptyState.css
+  - src/context/PropertyFavoritesContext.jsx
+    - src/services/authService.js (reused)
+    - src/utils/apiConfig.js (reused)
+    - src/utils/propertyFavoriteKey.js
+    - src/utils/toastHelper.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/components/FirstFavoriteDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js
+      - src/components/FirstFavoriteIllustration.jsx
+      - src/components/FirstFavoriteDrawer.css
+        - src/styles/promoBottomSheetDrawer.css
+    - src/components/CompareFavoritesDrawer.jsx
+      - src/hooks/useDrawerDismiss.js (reused)
+      - src/hooks/useBottomSheetDrag.js (reused)
+      - src/components/CompareFavoritesIllustration.jsx
+      - src/components/CompareFavoritesDrawer.css
+        - src/styles/promoBottomSheetDrawer.css (reused)
+    - src/utils/favoritesApi.js
+  - src/utils/propertyFavoriteKey.js (reused)
+  - src/utils/currency.js (reused)
+  - src/utils/propertyImage.js (reused)
+  - src/utils/depositApi.js
+  - src/utils/depositVisibility.js
+    - src/services/authService.js (reused)
+    - src/utils/cabinetRoutes.js (reused)
+  - src/utils/fetchDedupe.js
+  - src/services/authService.js (reused)
+  - src/services/auctionListCache.js
+    - src/utils/apiConfig.js (reused)
+    - src/utils/fetchDedupe.js (reused)
+    - src/services/authService.js (reused)
+    - src/utils/propertySourceTable.js (reused)
+    - src/utils/fetchAuctionMaxBids.js
+      - src/utils/propertySourceTable.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/propertyImage.js (reused)
+    - src/utils/auctionBidValue.js (reused)
+  - src/components/AuctionMobileListingSkeleton.jsx
+    - src/lib/utils.js (reused)
+    - src/constants/auctionMobileViewStorage.js
+    - src/components/DebtsPropertyCard.jsx (reused)
+    - src/components/AuctionPropertyCard.css
+    - src/components/DebtsPropertyCard.css (reused)
+    - src/components/ui/AuctionMobileLayout.css
+  - src/pages/Shares.css
+  - src/components/PropertyList.css
+  - src/styles/hrShowcaseDebtsCards.css
+  - src/utils/propertyDetailUrl.js (reused)
+  - src/utils/debtsPageFilters.js (reused)
+  - src/utils/debtsListing.js (reused)
+  - src/utils/catalogGeoUrl.js
+    - src/utils/propertySearchLocation.js (reused)
+    - src/utils/propertySlug.js (reused)
+  - src/utils/listingContextUrl.js
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/sectionRoutes.js (reused)
+    - src/utils/catalogGeoUrl.js (reused)
+    - src/utils/propertySlug.js (reused)
+  - src/components/SiteChatDock.jsx
+    - src/components/icons/ContactChannelIcons.jsx
+    - src/hooks/useSiteAiChatDock.js
+      - src/services/authService.js (reused)
+      - src/services/assistantLeadService.js
+        - src/utils/apiConfig.js (reused)
+      - src/services/aiService.js
+        - src/utils/apiConfig.js (reused)
+      - src/services/liveChatApi.js
+        - src/utils/apiConfig.js (reused)
+      - src/hooks/useManagerLiveChat.js
+        - src/services/authService.js (reused)
+        - src/utils/toastHelper.js (reused)
+        - src/services/liveChatApi.js (reused)
+      - src/utils/requestOpenLoginModal.js (reused)
+      - src/utils/siteAuthGate.js (reused)
+    - src/pages/Home.css
+  - src/components/ui/AuctionMobileLayout.jsx
+    - src/lib/utils.js (reused)
+    - src/components/ListingCardAuctionTimer.jsx (reused)
+    - src/components/CircularTimer.jsx
+      - src/components/CircularTimer.css
+      - src/components/CountrySelect.jsx
+        - src/components/CountrySelect.css
+    - src/components/PropertyTimer.jsx
+      - src/components/PropertyTimer.css
+      - src/components/ui/flip-countdown.tsx
+    - src/utils/toastHelper.js (reused)
+    - src/utils/propertyAccessGuard.js (reused)
+    - src/utils/requestOpenLoginModal.js (reused)
+    - src/utils/hasBuyNowOption.js (reused)
+    - src/utils/buyNowEmailGate.js
+      - src/services/authService.js (reused)
+    - src/utils/auctionReminderBounds.js (reused)
+    - src/utils/propertyImage.js (reused)
+    - src/services/auctionListCache.js (reused)
+    - src/utils/propertyDetailUrl.js (reused)
+    - src/utils/isPrivateClubAuctionLot.js
+    - src/constants/auctionMobileViewStorage.js (reused)
+    - src/utils/responsiveImage.js (reused)
+    - src/components/ImageWithSkeleton.jsx
+      - src/components/ImageWithSkeleton.css
+    - src/components/AuctionPropertyCard.jsx
+      - src/components/ListingCardAuctionTimer.jsx (reused)
+      - src/components/CircularTimer.jsx (reused)
+      - src/components/ImageWithSkeleton.jsx (reused)
+      - src/utils/propertyImage.js (reused)
+      - src/utils/responsiveImage.js (reused)
+      - src/utils/auctionBidValue.js (reused)
+      - src/utils/isPrivateClubAuctionLot.js (reused)
+      - src/utils/hasBuyNowOption.js (reused)
+      - src/utils/auctionReminderBounds.js (reused)
+      - src/components/AuctionPropertyCard.css (reused)
+      - src/utils/propertyDetailUrl.js (reused)
+      - src/utils/resolveBuyerListingState.js
+      - src/components/auction/AuctionFinalStateRibbon.jsx
+        - src/components/auction/AuctionFinalStateRibbon.css
+    - src/components/buyer-mobile/BuyerStatusRibbon.jsx
+      - src/components/buyer-mobile/BuyerStatusRibbon.css
+    - src/utils/resolveBuyerListingState.js (reused)
+    - src/components/DebtsPropertyCard.jsx (reused)
+    - src/components/PropertyList.css (reused)
+    - src/styles/hrShowcaseAuctionCards.css
+    - src/styles/hrShowcaseDebtsCards.css (reused)
+    - src/components/ui/AuctionMobileLayout.css (reused)

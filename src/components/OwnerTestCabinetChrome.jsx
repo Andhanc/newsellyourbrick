@@ -1,36 +1,53 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { X, Plus } from 'lucide-react'
-import OwnerTestProfileMenu from './OwnerTestProfileMenu'
-import OwnerCabinetLogoMark from './OwnerCabinetLogoMark'
+import { useUser, useClerk } from '@clerk/clerk-react'
+import { ArrowRight, Building2, LogOut, Plus, X } from 'lucide-react'
+import OwnerTestProfileMenu, { performOwnerTestLogout } from './OwnerTestProfileMenu'
+import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
 import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
 import OwnerSupportButton from './OwnerSupportButton'
+import SiteChatDock from './SiteChatDock'
+import OwnerFloatingMobileNav from './OwnerFloatingMobileNav'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
-import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import {
   isNavItemActive,
-  isTabItemActive,
   isTabbarView,
   NAV_ID_TO_VIEW,
   OWNER_VIEWS,
 } from '../utils/ownerTestNav'
+import {
+  readPendingSellPurchasedProperty,
+} from '../utils/purchasedPropertyListingPrefill'
 import './OwnerTestCabinetChrome.css'
 
-function LogoMark({ className = '' }) {
-  return <OwnerCabinetLogoMark className={`otc-logo__mark ${className}`.trim()} />
+function BrandLogo({ className = '' }) {
+  return <SiteBrandLogo className={className} textClassName="otc-logo__text" />
 }
 
 export default function OwnerTestCabinetChrome({ children }) {
   const { t } = useTranslation()
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const { view, goTo } = useOwnerTestNav()
   const navItems = useOwnerTestNavItems()
-  const tabItems = useOwnerTestTabItems()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [managerChatOpen, setManagerChatOpen] = useState(false)
+  const [pendingPurchasedListing] = useState(() => readPendingSellPurchasedProperty())
   const showTabbar = isTabbarView(view)
+  const showPurchasedDraftHint =
+    Boolean(pendingPurchasedListing?.id || pendingPurchasedListing?.propertyId) &&
+    (view === OWNER_VIEWS.HOME || view === OWNER_VIEWS.PROPERTIES)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const handleLogout = useCallback(async () => {
+    closeMenu()
+    await performOwnerTestLogout({ t, user, signOut })
+  }, [closeMenu, signOut, t, user])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -40,6 +57,14 @@ export default function OwnerTestCabinetChrome({ children }) {
       document.body.style.overflow = prev
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    const onManager = (event) => setManagerChatOpen(Boolean(event.detail?.isOpen))
+    window.addEventListener('managerChatStateChange', onManager)
+    return () => {
+      window.removeEventListener('managerChatStateChange', onManager)
+    }
+  }, [])
 
   const handleNavClick = useCallback(
     (navId) => {
@@ -51,8 +76,9 @@ export default function OwnerTestCabinetChrome({ children }) {
   )
 
   const renderNavItem = useCallback(
-    ({ id, label, icon: Icon, badge, href }) => {
-      const active = isNavItemActive(id, view)
+    ({ id, label, icon: Icon, badge, href, action }) => {
+      const active =
+        action === 'managerChat' ? managerChatOpen : isNavItemActive(id, view)
       const className = `otc-nav__item${active ? ' otc-nav__item--active' : ''}`
       const target = NAV_ID_TO_VIEW[id]
       const inner = (
@@ -62,6 +88,22 @@ export default function OwnerTestCabinetChrome({ children }) {
           {badge != null && <span className="otc-nav__badge">{badge}</span>}
         </>
       )
+
+      if (action === 'managerChat') {
+        return (
+          <button
+            key={id}
+            type="button"
+            className={className}
+            onClick={() => {
+              openOwnerManagerChat()
+              closeMenu()
+            }}
+          >
+            {inner}
+          </button>
+        )
+      }
 
       if (href) {
         return (
@@ -85,15 +127,39 @@ export default function OwnerTestCabinetChrome({ children }) {
         </button>
       )
     },
-    [view, handleNavClick, closeMenu]
+    [view, handleNavClick, closeMenu, managerChatOpen]
+  )
+
+  const renderAddPropertyCta = (className = '') => (
+    <button
+      type="button"
+      className={`otc-add-property${className ? ` ${className}` : ''}`}
+      onClick={() => {
+        goTo(OWNER_VIEWS.ADD_PROPERTY)
+        closeMenu()
+      }}
+    >
+      <span className="otc-add-property__icon">
+        <Plus size={18} strokeWidth={2.4} aria-hidden />
+      </span>
+      <span>{t('ownerTest_ariaAddProperty')}</span>
+    </button>
   )
 
   return (
-    <div className={`otc${menuOpen ? ' otc--menu-open' : ''}${showTabbar ? ' otc--tabbar' : ''}`}>
+    <SiteChatDock hideFab wrapperClassName="owner-cabinet-chat-dock">
+      <div
+        className={`otc${menuOpen ? ' otc--menu-open' : ''}${showTabbar ? ' otc--tabbar' : ''}${
+          view === OWNER_VIEWS.HOME ? ' otc--home' : ''
+        }${view === OWNER_VIEWS.PROPERTIES ? ' otc--properties' : ''}${
+          view === OWNER_VIEWS.PROPERTY_ANALYTICS ? ' otc--property-analytics' : ''
+        }${view === OWNER_VIEWS.TEST_DRIVE ? ' otc--testdrive' : ''}${
+          view === OWNER_VIEWS.SUBSCRIPTIONS ? ' otc--subscriptions' : ''
+        }`}
+      >
       <header className="otc-mob-topbar otc-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="otc-mob-topbar__brand">
-          <LogoMark />
-          <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+          <BrandLogo />
         </div>
         <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
           <OwnerSupportButton className="otc-mob-topbar__bell" iconSize={22} />
@@ -118,75 +184,76 @@ export default function OwnerTestCabinetChrome({ children }) {
       >
         <div className="otc-drawer__head">
           <div className="otc-sidebar__brand otc-sidebar__brand--drawer">
-            <LogoMark />
-            <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+            <BrandLogo />
           </div>
           <button type="button" className="otc-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="otc-sidebar__divider otc-sidebar__divider--drawer" aria-hidden />
+        {renderAddPropertyCta('otc-add-property--drawer')}
         <nav className="otc-nav otc-nav--drawer">
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
+          <div className="otc-drawer__logout-foot">
+            <div className="otc-drawer__logout-divider" aria-hidden />
+            <button
+              type="button"
+              className="otc-nav__item otc-nav__item--logout"
+              onClick={handleLogout}
+            >
+              <LogOut size={20} strokeWidth={2} aria-hidden />
+              <span>{t('ownerTest_logout')}</span>
+            </button>
+          </div>
         </nav>
       </aside>
 
       <aside className="otc-sidebar otc-desktop-only">
         <div className="otc-sidebar__brand">
-          <LogoMark />
-          <span className="otc-logo__text">{t('ownerTest_brandName')}</span>
+          <BrandLogo />
         </div>
         <div className="otc-sidebar__divider" aria-hidden />
+        {renderAddPropertyCta()}
         <nav className="otc-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner />
         </nav>
       </aside>
 
-      <div className="otc-stage">{children}</div>
+      <div className="otc-stage">
+        {showPurchasedDraftHint ? (
+          <aside className="otc-purchased-draft-hint" aria-label="Незавершённый объект">
+            <span className="otc-purchased-draft-hint__icon" aria-hidden>
+              <Building2 size={20} strokeWidth={2.1} />
+            </span>
+            <span className="otc-purchased-draft-hint__copy">
+              <strong>У вас есть незаполненный объект</strong>
+              <small>
+                {pendingPurchasedListing.title
+                  ? `Продолжите оформление «${pendingPurchasedListing.title}»`
+                  : 'Данные покупки уже перенесены в черновик'}
+              </small>
+            </span>
+            <button type="button" onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}>
+              <span>Перейти</span>
+              <ArrowRight size={17} aria-hidden />
+            </button>
+          </aside>
+        ) : null}
+        {children}
+      </div>
 
-      {showTabbar && (
-        <nav className="otc-tabbar otc-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
-          {tabItems.map((item) => {
-            if (item.fab) {
-              return (
-                <div key="fab" className="otc-tabbar__fab-slot">
-                  <button
-                    type="button"
-                    className="otc-tabbar__fab"
-                    aria-label={t('ownerTest_ariaAddProperty')}
-                    onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}
-                  >
-                    <Plus size={28} strokeWidth={2.5} />
-                  </button>
-                </div>
-              )
-            }
-            const Icon = item.icon
-            const active = isTabItemActive(item.id, view)
-            const target = NAV_ID_TO_VIEW[item.id]
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`otc-tabbar__item${active ? ' otc-tabbar__item--active' : ''}`}
-                onClick={() => {
-                  if (item.id === 'more') {
-                    setMenuOpen(true)
-                    return
-                  }
-                  if (target) goTo(target)
-                }}
-              >
-                <Icon size={22} strokeWidth={active ? 2.25 : 2} aria-hidden />
-                <span>{item.label}</span>
-              </button>
-            )
-          })}
-        </nav>
-      )}
+      {showTabbar ? (
+        <OwnerFloatingMobileNav
+          view={view}
+          goTo={goTo}
+          onOpenMenu={() => setMenuOpen(true)}
+          menuOpen={menuOpen}
+        />
+      ) : null}
 
-    </div>
+      </div>
+    </SiteChatDock>
   )
 }

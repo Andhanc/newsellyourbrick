@@ -12,9 +12,9 @@
   }
 
   .osl {
-    --osl-mob-pad: 16px;
-    --osl-mob-accent: #0b6ff0;
-    --osl-tiffany: #0abab5;
+    --osl-mob-pad: var(--oc-mob-pad, 16px);
+    --osl-mob-accent: var(--oc-mob-accent, var(--oc-tiffany));
+    --osl-tiffany: var(--oc-tiffany);
 
     flex-direction: column;
     width: 100%;
@@ -48,9 +48,9 @@
   }
 
   .osl-body {
-    --osl-mob-pad: 16px;
-    --osl-mob-accent: #0b6ff0;
-    --osl-tiffany: #0abab5;
+    --osl-mob-pad: var(--oc-mob-pad, 16px);
+    --osl-mob-accent: var(--oc-mob-accent, var(--oc-tiffany));
+    --osl-tiffany: var(--oc-tiffany);
 
     flex: 1;
     min-height: 0;
@@ -267,7 +267,8 @@
   .osl-workspace {
     flex: 1;
     min-height: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -284,21 +285,23 @@
   }
 
   .osl-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     padding: 0;
     gap: 0;
+    background: #ffffff;
   }
 
   /* —— Tabs —— */
   .osl-tabs-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    margin: 0 0 4px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
   }
 
   .osl-tabs {
-    display: flex;
-    align-items: stretch;
     margin-bottom: 0;
     border-bottom: 1px solid #e5e7eb;
     gap: 0;
@@ -313,17 +316,18 @@
 
   .osl-tabs__item {
     flex: 0 0 auto;
+    min-width: max-content;
     padding: 12px 14px;
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
+    color: #9ca3af;
     border-bottom: 3px solid transparent;
     white-space: nowrap;
   }
 
   .osl-tabs__item--active {
-    color: var(--osl-mob-accent);
-    border-bottom-color: var(--osl-mob-accent);
+    color: var(--osl-tiffany);
+    border-bottom-color: var(--osl-tiffany);
     font-weight: 600;
   }
 
@@ -340,32 +344,39 @@
   }
 
   .osl-table-state {
-    margin: 16px 0 0;
-    padding: 20px 0;
+    margin: 0;
+    padding: 20px 16px;
     text-align: center;
     color: #6b7280;
     font-size: 14px;
   }
 
-  /* —— Mobile list —— */
-  .osl-mob-list.osl-mobile-only {
-    display: block !important;
+  .osl-table-card.osl-mobile-only {
+    margin-top: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  /* —— Mobile list (как op-mob-list) —— */
+  .osl-mob-list {
+    display: flex;
+    flex-direction: column;
     list-style: none;
     margin: 0;
     padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    overflow: visible;
   }
 
   .osl-mob-list__item {
     display: grid;
-    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    padding: 14px 0;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8edf2;
+    background: #fff;
   }
 
   .osl-mob-list__item:last-child {
@@ -373,9 +384,9 @@
   }
 
   .osl-mob-list__thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
     object-fit: cover;
     flex-shrink: 0;
     background: #f3f4f6;
@@ -386,11 +397,11 @@
   }
 
   .osl-mob-list__title {
-    margin: 0 0 3px;
-    font-size: 15px;
-    font-weight: 700;
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 500;
     color: #111827;
-    line-height: 1.25;
+    line-height: 1.35;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -399,7 +410,7 @@
   .osl-mob-list__meta {
     margin: 0 0 2px;
     font-size: 13px;
-    color: #6b7280;
+    color: #9ca3af;
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -408,7 +419,7 @@
 
   .osl-mob-list__date {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: #9ca3af;
     line-height: 1.3;
   }
@@ -421,58 +432,80 @@
     line-height: 1.2;
     text-align: right;
     white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+
+  .osl-mob-list__amount--positive {
+    color: var(--osl-tiffany-dark);
   }
 
   /* —— Рекламный блок «Стать покупателем» —— */
   .osl-owner-buyer-ad.oad-buyer {
+    position: relative;
     display: grid !important;
     flex-direction: unset;
-    align-items: center;
+    align-items: start;
     min-height: 0;
     height: auto;
     margin-top: 20px;
-    padding: 16px;
+    padding: 14px 14px 12px 17px;
     text-align: left;
     border-radius: 16px;
-    border: 1px solid rgba(10, 186, 181, 0.16);
-    background:
-      radial-gradient(circle at 82% 22%, rgba(83, 216, 211, 0.2) 0, rgba(83, 216, 211, 0) 36%),
-      linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-    grid-template-columns: minmax(0, 1fr) 108px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr) 104px;
     grid-template-areas:
       "copy image"
-      "actions image";
-    gap: 10px 12px;
+      "actions actions";
+    column-gap: 12px;
+    row-gap: 10px;
+  }
+
+  .osl-owner-buyer-ad.oad-buyer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #33adbb 0%, #0099a9 100%);
   }
 
   .osl-owner-buyer-ad .oad-buyer__copy {
     grid-area: copy;
     max-width: none;
+    align-self: center;
   }
 
   .osl-owner-buyer-ad .oad-buyer__title {
-    font-size: 17px;
-    line-height: 1.2;
+    font-size: 15px;
+    line-height: 1.22;
+    font-weight: 700;
     color: #111827;
   }
 
   .osl-owner-buyer-ad .oad-buyer__text {
-    margin-top: 6px;
+    margin-top: 5px;
     font-size: 12px;
-    line-height: 1.35;
-    color: #6b7280;
+    line-height: 1.4;
+    color: #64748b;
   }
 
   .osl-owner-buyer-ad .oad-buyer__image {
     grid-area: image;
-    width: 108px;
-    height: 100px;
+    width: 104px;
+    max-width: 104px;
+    height: 84px;
     margin: 0;
     align-self: center;
     justify-self: end;
-    object-fit: contain;
-    filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.1));
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+    filter: none;
   }
 
   .osl-owner-buyer-ad .oad-buyer__list,
@@ -490,12 +523,14 @@
   }
 
   .osl-owner-buyer-ad .oad-buyer__button {
-    width: fit-content;
-    min-height: 36px;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
     padding: 0 14px;
     border-radius: 10px;
-    font-size: 12px;
-    background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-    box-shadow: 0 8px 16px rgba(10, 186, 181, 0.2);
+    font-size: 13px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
+    box-shadow: 0 8px 16px rgba(0, 153, 169, 0.2);
   }
 }

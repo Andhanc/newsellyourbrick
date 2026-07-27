@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Building2,
-  ShoppingBag,
   Car,
   Wallet,
   CreditCard,
@@ -11,8 +10,8 @@ import {
   Settings,
   Home,
   Briefcase,
-  ClipboardList,
-  SlidersHorizontal,
+  Bot,
+  Menu,
   User,
 } from 'lucide-react'
 
@@ -36,13 +35,6 @@ export function useOwnerTestNavItems(options = {}) {
         icon: Building2,
         active: activeId === 'properties',
         href: hrefMap.properties,
-      },
-      {
-        id: 'sales',
-        label: t('ownerTest_navSales'),
-        icon: ShoppingBag,
-        active: activeId === 'sales',
-        href: hrefMap.sales,
       },
       {
         id: 'testdrive',
@@ -70,7 +62,7 @@ export function useOwnerTestNavItems(options = {}) {
         label: t('ownerTest_navMessages'),
         icon: MessageSquare,
         badge: 3,
-        href: hrefMap.messages,
+        action: 'managerChat',
       },
       {
         id: 'settings',
@@ -100,12 +92,6 @@ export function useOwnerTestTabItems(options = {}) {
           href: options.hrefMap?.properties,
         },
         {
-          id: 'sales',
-          label: t('ownerTest_navSales'),
-          icon: ShoppingBag,
-          href: options.hrefMap?.sales,
-        },
-        {
           id: 'messages',
           label: t('ownerTest_navMessages'),
           icon: MessageSquare,
@@ -125,29 +111,29 @@ export function useOwnerTestTabItems(options = {}) {
       {
         id: 'home',
         label: t('ownerTest_tabAnalytics'),
-        icon: Home,
+        icon: LayoutDashboard,
         active: activeId === 'home',
         href: options.hrefMap?.home,
       },
       {
         id: 'properties',
         label: t('ownerTest_tabProperties'),
-        icon: Briefcase,
+        icon: Building2,
         active: activeId === 'properties',
         href: options.hrefMap?.properties,
       },
       { id: 'fab', fab: true },
       {
-        id: 'bookings',
-        label: t('ownerTest_tabBookings'),
-        icon: ClipboardList,
-        active: activeId === 'bookings',
-        href: options.hrefMap?.bookings,
+        id: 'ai',
+        label: t('ownerTest_tabAi'),
+        icon: Bot,
+        action: 'aiChat',
+        active: activeId === 'ai',
       },
       {
         id: 'more',
         label: t('ownerTest_tabMore'),
-        icon: SlidersHorizontal,
+        icon: Menu,
       },
     ]
   }, [t, activeId, variant, options.hrefMap])

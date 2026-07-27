@@ -1,0 +1,28 @@
+---
+description: SellYourBrick DESIGN.md — premium real-estate editorial UI. Read DESIGN.md before styling pages. No 3D, no gradient text, Tiffany accent only.
+globs: **/*.{jsx,tsx,css}
+alwaysApply: false
+---
+
+# SellYourBrick design system
+
+Always read `/DESIGN.md` before UI changes.
+
+## Reference
+
+International premium brokerage About pages: photo-led, serif display + sans body, generous whitespace.
+
+## Accent
+
+Tiffany `#0099A9` — labels, primary buttons, key stats, thin rules only. Not full-page backgrounds.
+
+## Forbidden
+
+Three.js / 3D, parallax, spinning elements, gradient headlines, glow shadows, icon feature grids, hover lift animations.
+
+## Patterns
+
+- Hero: full-bleed photo + bottom dark gradient + white Playfair title
+- Sections: alternate white / `#f8fafc`
+- Property types: 2×2 cards, image top, text bottom
+- Prose max-width ~42rem

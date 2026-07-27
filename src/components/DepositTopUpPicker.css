@@ -1,447 +1,210 @@
-.deposit-picker-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(6px);
-  animation: deposit-picker-fadeIn 0.25s ease-out;
+.deposit-picker.buyer-sheet { z-index: 13380; }
+.deposit-picker .buyer-sheet__surface { width: min(100%, 520px); }
+.deposit-picker .buyer-sheet__body { padding-top: 8px; }
+
+.deposit-picker__choice,
+.deposit-picker__crypto {
+  max-width: 470px;
+  margin: 0 auto;
+  font-family: var(--buyer-font-body);
 }
 
-@keyframes deposit-picker-fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.deposit-picker {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  border-radius: 24px 24px 0 0;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  padding: 28px 24px  calc(24px + env(safe-area-inset-bottom));
-  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.4);
-  animation: deposit-picker-slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes deposit-picker-slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.deposit-picker__close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  display: flex;
+.deposit-picker__eyebrow {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.deposit-picker__close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--buyer-teal-deep);
+  font: 760 10px/1 var(--buyer-font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .deposit-picker__title {
-  margin: 0 0 8px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
+  max-width: 390px;
+  margin: 0;
+  color: var(--buyer-ink);
+  font: 820 clamp(29px, 8vw, 38px)/1.02 var(--buyer-font-display);
+  letter-spacing: -.045em;
 }
 
 .deposit-picker__subtitle {
-  margin: 0 0 24px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  max-width: 420px;
+  margin: 10px 0 20px;
+  color: var(--buyer-text-muted);
+  font: 500 14px/1.5 var(--buyer-font-body);
 }
 
-.deposit-picker__options {
-  display: flex;
-  flex-direction: column;
+.deposit-picker__methods { display: grid; gap: 10px; }
+
+.deposit-picker__method {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 22px;
+  align-items: center;
   gap: 12px;
-}
-
-.deposit-picker__option {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   width: 100%;
-  padding: 18px 20px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  min-height: 86px;
+  padding: 13px 14px;
+  border: 1px solid var(--buyer-line);
+  border-radius: 19px;
+  background: var(--buyer-white);
+  color: var(--buyer-ink);
+  box-shadow: 0 10px 28px rgba(12, 55, 58, .06);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
   text-align: left;
+  transition: transform var(--buyer-duration-fast), border-color var(--buyer-duration-fast), box-shadow var(--buyer-duration-fast);
 }
 
-.deposit-picker__option:hover {
-  border-color: rgba(10, 186, 181, 0.5);
-  background: rgba(10, 186, 181, 0.1);
-  transform: translateY(-2px);
+.deposit-picker__method--recommended {
+  border-color: color-mix(in srgb, var(--buyer-teal) 40%, transparent);
+  background: linear-gradient(135deg, var(--buyer-white), var(--buyer-mint));
+  box-shadow: 0 16px 34px rgba(0, 111, 123, .11);
 }
 
-.deposit-picker__option:active {
-  transform: translateY(0);
+.deposit-picker__method:active { transform: scale(.985); }
+.deposit-picker__method:disabled { cursor: wait; opacity: .72; }
+.deposit-picker__method:focus-visible,
+.deposit-picker__back:focus-visible,
+.deposit-picker__pay:focus-visible,
+.deposit-picker__wallet-actions button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--buyer-teal) 34%, transparent);
+  outline-offset: 2px;
 }
 
-.deposit-picker__option-icon {
-  width: 52px;
-  height: 52px;
+.deposit-picker__method-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: var(--buyer-teal-deep);
+  color: var(--buyer-white);
+}
+
+.deposit-picker__method-icon--crypto { background: var(--buyer-ink); }
+.deposit-picker__method-copy { display: grid; min-width: 0; gap: 3px; }
+.deposit-picker__method-copy strong { font: 760 14px/1.2 var(--buyer-font-display); }
+.deposit-picker__method-copy small { color: var(--buyer-text-muted); font: 500 11px/1.35 var(--buyer-font-body); }
+.deposit-picker__method-badge {
+  width: max-content;
+  margin-bottom: 1px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: var(--buyer-ink);
+  color: var(--buyer-white);
+  font: 720 8px/1 var(--buyer-font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.deposit-picker__trust {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(10, 186, 181, 0.95);
+  gap: 10px;
+  margin-top: 12px;
+  padding: 13px;
+  border-radius: 16px;
+  background: var(--buyer-mint);
+  color: var(--buyer-teal-deep);
 }
-
-.deposit-picker__option-icon--ton {
-  background: rgba(0, 152, 234, 0.25);
-}
-
-.deposit-picker__option--card .deposit-picker__option-icon {
-  color: rgba(10, 186, 181, 0.95);
-}
-
-.deposit-picker__option-label {
-  display: block;
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.deposit-picker__option-desc {
-  display: block;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Экран «Криптовалюта» внутри пикера */
-.deposit-picker__crypto {
-  padding-top: 8px;
-}
+.deposit-picker__trust svg { flex: 0 0 auto; margin-top: 1px; }
+.deposit-picker__trust p { margin: 0; font: 500 11px/1.45 var(--buyer-font-body); }
+.deposit-picker__trust strong { font-weight: 760; }
 
 .deposit-picker__back {
   display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding: 8px 0;
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 15px;
-  font-weight: 500;
+  gap: 7px;
+  margin: -4px 0 12px;
+  padding: 0 10px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--buyer-teal-deep);
   cursor: pointer;
-  transition: color 0.2s;
+  font: 720 12px/1 var(--buyer-font-display);
 }
 
-.deposit-picker__back:hover {
-  color: #fff;
+.deposit-picker__crypto-card {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--buyer-teal) 22%, transparent);
+  border-radius: 21px;
+  background: var(--buyer-white);
+  box-shadow: 0 18px 44px rgba(10, 57, 61, .09);
 }
 
-.deposit-picker__crypto-block--in-picker.crypto-wallet-block {
-  margin-top: 0;
-  padding: 20px;
-}
-
-/* Стили блока криптокошелька внутри пикера */
-.deposit-picker .crypto-wallet-block {
-  margin-top: 0;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(0, 152, 234, 0.35);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-}
-
-.deposit-picker .crypto-wallet-block__header {
-  display: flex;
+.deposit-picker__wallet-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
 }
-
-.deposit-picker .crypto-wallet-block__icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
-.deposit-picker .crypto-wallet-block__icon--ton {
-  background: rgba(0, 152, 234, 0.25);
-  box-shadow: 0 2px 12px rgba(0, 152, 234, 0.2);
-}
-
-.deposit-picker .crypto-wallet-block__icon svg {
-  width: 28px;
-  height: 28px;
-}
-
-.deposit-picker .crypto-wallet-block__title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.deposit-picker .crypto-wallet-card {
-  border-radius: 16px;
+.deposit-picker__wallet-avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border-radius: 14px;
+  background: var(--buyer-cloud);
+  color: var(--buyer-teal-deep);
 }
+.deposit-picker__wallet-avatar img { width: 100%; height: 100%; object-fit: contain; }
+.deposit-picker__wallet-copy { display: grid; min-width: 0; gap: 4px; }
+.deposit-picker__wallet-copy strong { font: 750 13px/1.2 var(--buyer-font-display); }
+.deposit-picker__wallet-copy small { overflow: hidden; color: var(--buyer-text-muted); font: 500 11px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.deposit-picker__connected { display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 999px; background: var(--buyer-mint); color: var(--buyer-teal-deep); font: 700 9px/1 var(--buyer-font-display); }
 
-.deposit-picker .crypto-wallet-card--connected {
-  background: linear-gradient(135deg, rgba(0, 152, 234, 0.12) 0%, rgba(0, 152, 234, 0.06) 100%);
-  border: 1px solid rgba(0, 152, 234, 0.3);
-  padding: 20px;
-}
-
-.deposit-picker .crypto-wallet-card--disconnected {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  padding: 24px;
-  text-align: center;
-}
-
-.deposit-picker .crypto-wallet-card__wallet-info {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.deposit-picker .crypto-wallet-card__wallet-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  object-fit: contain;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.deposit-picker .crypto-wallet-card__wallet-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.deposit-picker .crypto-wallet-card__wallet-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.deposit-picker .crypto-wallet-card__address {
-  font-size: 14px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  color: rgba(255, 255, 255, 0.75);
-  letter-spacing: 0.02em;
-}
-
-.deposit-picker .crypto-wallet-card__pay-section {
-  margin-bottom: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.deposit-picker .crypto-wallet-card__pay-hint {
-  margin: 0 0 12px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.deposit-picker .crypto-wallet-card__pay-phone-hint {
-  margin: 12px 0 0;
-  padding: 12px;
-  background: rgba(0, 152, 234, 0.15);
-  border-radius: 10px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.45;
-}
-
-.deposit-picker .crypto-wallet-card__pay-phone-hint strong {
-  color: #fff;
-}
-
-.deposit-picker .crypto-wallet-card__pay-cross-device-note {
-  margin: 10px 0 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.4;
-}
-
-.deposit-picker .crypto-wallet-card__pay-btn {
+.deposit-picker__pay {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #0098ea 0%, #0077b8 100%);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  min-height: 56px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--buyer-teal-deep);
+  color: var(--buyer-white);
+  box-shadow: 0 13px 29px rgba(0, 111, 123, .24);
   cursor: pointer;
-  transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+  font: 760 14px/1 var(--buyer-font-display);
 }
+.deposit-picker__pay:disabled { cursor: wait; opacity: .72; }
+.deposit-picker__spinner { animation: deposit-picker-spin .8s linear infinite; }
+@keyframes deposit-picker-spin { to { transform: rotate(1turn); } }
 
-.deposit-picker .crypto-wallet-card__pay-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 152, 234, 0.45);
-}
-
-.deposit-picker .crypto-wallet-card__pay-btn:disabled {
-  opacity: 0.85;
-  cursor: not-allowed;
-}
-
-.deposit-picker .crypto-wallet-card__pay-btn-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: deposit-picker-spin 0.7s linear infinite;
-}
-
-@keyframes deposit-picker-spin {
-  to { transform: rotate(360deg); }
-}
-
-.deposit-picker .crypto-wallet-card__success {
+.deposit-picker__success {
   display: flex;
+  min-height: 56px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.5);
-  border-radius: 12px;
-  color: #4ade80;
-  font-size: 15px;
-  font-weight: 600;
+  gap: 7px;
+  margin-top: 16px;
+  border-radius: 16px;
+  background: var(--buyer-mint);
+  color: var(--buyer-teal-deep);
+  font: 750 13px/1.2 var(--buyer-font-display);
+}
+.deposit-picker__crypto-note { margin: 10px 2px 0; color: var(--buyer-text-muted); text-align: center; font: 500 10px/1.45 var(--buyer-font-body); }
+.deposit-picker__wallet-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--buyer-line); }
+.deposit-picker__wallet-actions button { min-width: 44px; min-height: 44px; border: 0; border-radius: 13px; background: var(--buyer-cloud); color: var(--buyer-ink); cursor: pointer; font: 690 10px/1.2 var(--buyer-font-display); }
+
+.deposit-picker__disconnected { padding: 8px 4px 2px; text-align: center; }
+.deposit-picker__crypto-mark { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 12px; border-radius: 19px; background: var(--buyer-ink); color: var(--buyer-white); box-shadow: 0 12px 28px rgba(5, 5, 5, .16); }
+.deposit-picker__disconnected h3 { margin: 0; font: 780 17px/1.15 var(--buyer-font-display); letter-spacing: -.02em; }
+.deposit-picker__disconnected p { max-width: 320px; margin: 8px auto 0; color: var(--buyer-text-muted); font: 500 12px/1.45 var(--buyer-font-body); }
+
+@media (max-width: 480px) {
+  .deposit-picker .buyer-sheet__surface { border-radius: 28px 28px 0 0; }
+  .deposit-picker .buyer-sheet__body { padding-inline: 16px; }
+  .deposit-picker__method { min-height: 88px; }
+  .deposit-picker__title { padding-right: 28px; }
 }
 
-.deposit-picker .crypto-wallet-card__success-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  background: rgba(34, 197, 94, 0.4);
-  border-radius: 50%;
-  font-size: 14px;
-  line-height: 1;
-}
-
-.deposit-picker .crypto-wallet-card__actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.deposit-picker .crypto-wallet-card__btn {
-  flex: 1;
-  min-width: 100px;
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, transform 0.15s;
-  border: none;
-}
-
-.deposit-picker .crypto-wallet-card__btn--change {
-  background: rgba(0, 152, 234, 0.35);
-  color: #fff;
-}
-
-.deposit-picker .crypto-wallet-card__btn--change:hover {
-  background: rgba(0, 152, 234, 0.5);
-  transform: translateY(-1px);
-}
-
-.deposit-picker .crypto-wallet-card__btn--disconnect {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.deposit-picker .crypto-wallet-card__btn--disconnect:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-  transform: translateY(-1px);
-}
-
-.deposit-picker .crypto-wallet-card__hint {
-  margin: 0 0 20px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
-}
-
-.deposit-picker .crypto-wallet-card__connect-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #0098ea 0%, #0077b8 100%);
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 152, 234, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
-}
-
-.deposit-picker .crypto-wallet-card__connect-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 152, 234, 0.5);
-  filter: brightness(1.05);
-}
-
-.deposit-picker .crypto-wallet-card__connect-btn:active {
-  transform: translateY(0);
-}
-
-.deposit-picker .crypto-wallet-card__connect-btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.deposit-picker .crypto-wallet-card__connect-btn-icon svg {
-  width: 24px;
-  height: 24px;
+@media (prefers-reduced-motion: reduce) {
+  .deposit-picker__method,
+  .deposit-picker__spinner { transition: none; animation-duration: 1ms !important; }
 }

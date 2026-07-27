@@ -147,13 +147,13 @@
 }
 
 .user-bid-item--latest {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(0, 153, 169, 0.1);
+  border-color: rgba(0, 153, 169, 0.3);
 }
 
 .user-bid-item--latest:hover {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(0, 153, 169, 0.15);
+  border-color: rgba(0, 153, 169, 0.4);
 }
 
 .user-bid-item__info {
@@ -179,8 +179,8 @@
 }
 
 .user-bid-item__badge {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: rgba(0, 153, 169, 0.2);
+  color: #0099A9;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 11px;
@@ -211,8 +211,8 @@
 }
 
 .user-bid-item__change--increase {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+  color: #0099A9;
+  background: rgba(0, 153, 169, 0.1);
 }
 
 .user-bid-item__change--decrease {

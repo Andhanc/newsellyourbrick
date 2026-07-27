@@ -99,8 +99,8 @@
 .moderation-user-detail__info-value--seller {
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
   display: inline-block;
   width: fit-content;
 }
@@ -277,12 +277,12 @@
 }
 
 .moderation-user-detail__btn--approve {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .moderation-user-detail__btn--approve:hover {
-  background: #bbf7d0;
+  background: #e6f6f8;
   color: #14532d;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
@@ -499,14 +499,14 @@
 }
 
 .moderation-user-detail__user-btn--approve {
-  background: #10b981;
+  background: #0099A9;
   color: white;
 }
 
 .moderation-user-detail__user-btn--approve:hover {
-  background: #059669;
+  background: #007d8a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
 }
 
 .moderation-user-detail__user-btn--reject {

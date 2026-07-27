@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Clock,
   EyeOff,
   Shield,
   Sparkles,
@@ -17,6 +16,8 @@ import {
   parseMoneyInputValue,
   sanitizeMoneyInputRaw,
 } from '../utils/moneyInputFormat'
+import { getCeilingPreviewAmount } from '../utils/auctionBidCeilingSimulation'
+import AuctionBidCeilingChart from './AuctionBidCeilingChart'
 import './AuctionBidCeilingModal.css'
 
 const HERO_IMAGE = '/images/auction-bid-ceiling-hero.png'
@@ -31,6 +32,9 @@ export default function AuctionBidCeilingModal({
   startingPrice = 0,
   currencySymbol = '€',
   fmtPrice,
+  bids = [],
+  isUserLeader = false,
+  formatBidDateTime,
   onSaved,
   onError,
 }) {
@@ -39,6 +43,7 @@ export default function AuctionBidCeilingModal({
   const [existingCeiling, setExistingCeiling] = useState(null)
   const [saving, setSaving] = useState(false)
   const [fetching, setFetching] = useState(false)
+  const [activePage, setActivePage] = useState(0)
 
   const effectiveCurrentBid = useMemo(() => {
     const cur = currentBid != null ? Number(currentBid) : null
@@ -93,9 +98,17 @@ export default function AuctionBidCeilingModal({
   }, [userId, property?.id, propertyTable])
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setActivePage(0)
+      return
+    }
     void fetchCeiling()
   }, [open, fetchCeiling])
+
+  const previewCeiling = useMemo(
+    () => getCeilingPreviewAmount(maxAmountInput, minCeiling, parseMoneyInputValue),
+    [maxAmountInput, minCeiling],
+  )
 
   const handleSave = async () => {
     const amount = parseMoneyInputValue(maxAmountInput)
@@ -199,174 +212,200 @@ export default function AuctionBidCeilingModal({
           <X size={20} />
         </button>
 
-        <div className="auction-bid-ceiling-modal__layout">
-          <div className="auction-bid-ceiling-modal__info">
-            <div className="auction-bid-ceiling-modal__hero">
-              <img
-                src={HERO_IMAGE}
-                alt=""
-                className="auction-bid-ceiling-modal__hero-img"
-              />
-              <div className="auction-bid-ceiling-modal__hero-overlay" aria-hidden />
-              <div className="auction-bid-ceiling-modal__hero-copy">
-                <span className="auction-bid-ceiling-modal__hero-badge">
-                  <Sparkles size={14} aria-hidden />
-                  {t('auctionBidCeilingBadge')}
-                </span>
-                <h2 id="auction-bid-ceiling-title" className="auction-bid-ceiling-modal__title">
-                  {t('auctionBidCeilingTitle')}
-                </h2>
-                <p className="auction-bid-ceiling-modal__subtitle">{t('auctionBidCeilingSubtitle')}</p>
-              </div>
-            </div>
-
-            <div className="auction-bid-ceiling-modal__info-body">
-              <div className="auction-bid-ceiling-modal__stats">
-                <div className="auction-bid-ceiling-modal__stat">
-                  <span className="auction-bid-ceiling-modal__stat-label">
-                    {t('propertyDetailCurrentMaxBid')}
-                  </span>
-                  <span className="auction-bid-ceiling-modal__stat-value">
-                    {fmtPrice ? fmtPrice(effectiveCurrentBid) : `${effectiveCurrentBid} ${currencySymbol}`}
-                  </span>
-                </div>
-                <div className="auction-bid-ceiling-modal__stat">
-                  <span className="auction-bid-ceiling-modal__stat-label">
-                    {t('auctionBidCeilingMinLabel')}
-                  </span>
-                  <span className="auction-bid-ceiling-modal__stat-value auction-bid-ceiling-modal__stat-value--accent">
-                    {fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`}
-                  </span>
-                </div>
-              </div>
-
-              <ul className="auction-bid-ceiling-modal__features">
-                <li>
-                  <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
-                    <EyeOff size={18} />
-                  </span>
-                  <span>{t('auctionBidCeilingFeatureHidden')}</span>
-                </li>
-                <li>
-                  <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
-                    <Clock size={18} />
-                  </span>
-                  <span>{t('auctionBidCeilingFeatureFinalPhase')}</span>
-                </li>
-                <li>
-                  <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
-                    <Target size={18} />
-                  </span>
-                  <span>{t('auctionBidCeilingFeatureProximity')}</span>
-                </li>
-                <li>
-                  <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
-                    <Shield size={18} />
-                  </span>
-                  <span>{t('auctionBidCeilingFeatureCap')}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="auction-bid-ceiling-modal__form-side">
-            <div className="auction-bid-ceiling-modal__form-card">
-              <div className="auction-bid-ceiling-modal__mobile-head">
-                <span className="auction-bid-ceiling-modal__mobile-badge">
-                  <Sparkles size={12} aria-hidden />
-                  {t('auctionBidCeilingBadge')}
-                </span>
-                <h2 className="auction-bid-ceiling-modal__mobile-title">{t('auctionBidCeilingTitle')}</h2>
-                <p className="auction-bid-ceiling-modal__mobile-lead">{t('auctionBidCeilingSubtitle')}</p>
-              </div>
-
-              <div className="auction-bid-ceiling-modal__mobile-stats">
-                <div className="auction-bid-ceiling-modal__stat">
-                  <span className="auction-bid-ceiling-modal__stat-label">
-                    {t('propertyDetailCurrentMaxBid')}
-                  </span>
-                  <span className="auction-bid-ceiling-modal__stat-value">
-                    {fmtPrice ? fmtPrice(effectiveCurrentBid) : `${effectiveCurrentBid} ${currencySymbol}`}
-                  </span>
-                </div>
-                <div className="auction-bid-ceiling-modal__stat">
-                  <span className="auction-bid-ceiling-modal__stat-label">
-                    {t('auctionBidCeilingMinLabel')}
-                  </span>
-                  <span className="auction-bid-ceiling-modal__stat-value auction-bid-ceiling-modal__stat-value--accent">
-                    {fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="auction-bid-ceiling-modal__form-header">
-                <span className="auction-bid-ceiling-modal__form-icon" aria-hidden>
-                  <TrendingUp size={20} />
-                </span>
-                <div>
-                  <p className="auction-bid-ceiling-modal__form-eyebrow">
-                    {t('auctionBidCeilingFormEyebrow')}
-                  </p>
-                  <h3 className="auction-bid-ceiling-modal__form-title">
-                    {t('auctionBidCeilingInputLabel')}
-                  </h3>
-                </div>
-              </div>
-
-              <div className="auction-bid-ceiling-modal__field">
-                <label className="auction-bid-ceiling-modal__label auction-bid-ceiling-modal__label--sr" htmlFor="auction-bid-ceiling-input">
-                  {t('auctionBidCeilingInputLabel')}
-                </label>
-                <div className="auction-bid-ceiling-modal__input-wrap">
-                  <span className="auction-bid-ceiling-modal__currency">{currencySymbol}</span>
-                  <input
-                    id="auction-bid-ceiling-input"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    className="auction-bid-ceiling-modal__input"
-                    placeholder={minCeilingPlaceholder}
-                    value={maxAmountDisplay}
-                    onChange={handleAmountChange}
-                    disabled={saving || fetching}
+        <div className="auction-bid-ceiling-modal__body">
+          {activePage === 0 ? (
+            <div className="auction-bid-ceiling-modal__layout">
+              <div className="auction-bid-ceiling-modal__info">
+                <div className="auction-bid-ceiling-modal__hero">
+                  <img
+                    src={HERO_IMAGE}
+                    alt=""
+                    className="auction-bid-ceiling-modal__hero-img"
                   />
+                  <div className="auction-bid-ceiling-modal__hero-overlay" aria-hidden />
+                  <div className="auction-bid-ceiling-modal__hero-copy">
+                    <span className="auction-bid-ceiling-modal__hero-badge">
+                      <Sparkles size={14} aria-hidden />
+                      {t('auctionBidCeilingBadge')}
+                    </span>
+                    <h2 id="auction-bid-ceiling-title" className="auction-bid-ceiling-modal__title">
+                      {t('auctionBidCeilingTitle')}
+                    </h2>
+                    <p className="auction-bid-ceiling-modal__subtitle">{t('auctionBidCeilingSubtitle')}</p>
+                  </div>
                 </div>
-                <p className="auction-bid-ceiling-modal__hint">
-                  {t('auctionBidCeilingInputHint', {
-                    step: fmtPrice ? fmtPrice(step) : `${step} ${currencySymbol}`,
-                  })}
-                </p>
+
+                <div className="auction-bid-ceiling-modal__info-body">
+                  <div className="auction-bid-ceiling-modal__stats">
+                    <div className="auction-bid-ceiling-modal__stat">
+                      <span className="auction-bid-ceiling-modal__stat-label">
+                        {t('propertyDetailCurrentMaxBid')}
+                      </span>
+                      <span className="auction-bid-ceiling-modal__stat-value">
+                        {fmtPrice ? fmtPrice(effectiveCurrentBid) : `${effectiveCurrentBid} ${currencySymbol}`}
+                      </span>
+                    </div>
+                    <div className="auction-bid-ceiling-modal__stat">
+                      <span className="auction-bid-ceiling-modal__stat-label">
+                        {t('auctionBidCeilingMinLabel')}
+                      </span>
+                      <span className="auction-bid-ceiling-modal__stat-value auction-bid-ceiling-modal__stat-value--accent">
+                        {fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <ul className="auction-bid-ceiling-modal__features">
+                    <li>
+                      <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
+                        <EyeOff size={18} />
+                      </span>
+                      <span>{t('auctionBidCeilingFeatureHidden')}</span>
+                    </li>
+                    <li>
+                      <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
+                        <Target size={18} />
+                      </span>
+                      <span>{t('auctionBidCeilingFeatureAutoBid')}</span>
+                    </li>
+                    <li>
+                      <span className="auction-bid-ceiling-modal__feature-icon" aria-hidden>
+                        <Shield size={18} />
+                      </span>
+                      <span>{t('auctionBidCeilingFeatureCap')}</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              {existingCeiling?.activated_at ? (
-                <p className="auction-bid-ceiling-modal__active-note" role="status">
-                  {t('auctionBidCeilingAlreadyActive')}
-                </p>
-              ) : null}
+              <div className="auction-bid-ceiling-modal__form-side">
+                <div className="auction-bid-ceiling-modal__form-card">
+                  <div className="auction-bid-ceiling-modal__mobile-head">
+                    <span className="auction-bid-ceiling-modal__mobile-badge">
+                      <Sparkles size={12} aria-hidden />
+                      {t('auctionBidCeilingBadge')}
+                    </span>
+                    <h2 className="auction-bid-ceiling-modal__mobile-title">{t('auctionBidCeilingTitle')}</h2>
+                    <p className="auction-bid-ceiling-modal__mobile-lead">{t('auctionBidCeilingSubtitle')}</p>
+                  </div>
 
-              <div className="auction-bid-ceiling-modal__actions">
-                <button
-                  type="button"
-                  className="auction-bid-ceiling-modal__submit"
-                  onClick={handleSave}
-                  disabled={saving || fetching || !maxAmountInput.trim()}
-                >
-                  {saving ? t('propertyDetailSubmitting') : t('auctionBidCeilingSubmit')}
-                </button>
-                {existingCeiling ? (
-                  <button
-                    type="button"
-                    className="auction-bid-ceiling-modal__remove"
-                    onClick={handleRemove}
-                    disabled={saving}
-                  >
-                    {t('auctionBidCeilingRemove')}
-                  </button>
-                ) : null}
+                  <div className="auction-bid-ceiling-modal__mobile-stats">
+                    <div className="auction-bid-ceiling-modal__stat">
+                      <span className="auction-bid-ceiling-modal__stat-label">
+                        {t('propertyDetailCurrentMaxBid')}
+                      </span>
+                      <span className="auction-bid-ceiling-modal__stat-value">
+                        {fmtPrice ? fmtPrice(effectiveCurrentBid) : `${effectiveCurrentBid} ${currencySymbol}`}
+                      </span>
+                    </div>
+                    <div className="auction-bid-ceiling-modal__stat">
+                      <span className="auction-bid-ceiling-modal__stat-label">
+                        {t('auctionBidCeilingMinLabel')}
+                      </span>
+                      <span className="auction-bid-ceiling-modal__stat-value auction-bid-ceiling-modal__stat-value--accent">
+                        {fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="auction-bid-ceiling-modal__form-header">
+                    <span className="auction-bid-ceiling-modal__form-icon" aria-hidden>
+                      <TrendingUp size={20} />
+                    </span>
+                    <div>
+                      <p className="auction-bid-ceiling-modal__form-eyebrow">
+                        {t('auctionBidCeilingFormEyebrow')}
+                      </p>
+                      <h3 className="auction-bid-ceiling-modal__form-title">
+                        {t('auctionBidCeilingInputLabel')}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="auction-bid-ceiling-modal__field">
+                    <label className="auction-bid-ceiling-modal__label auction-bid-ceiling-modal__label--sr" htmlFor="auction-bid-ceiling-input">
+                      {t('auctionBidCeilingInputLabel')}
+                    </label>
+                    <div className="auction-bid-ceiling-modal__input-wrap">
+                      <span className="auction-bid-ceiling-modal__currency">{currencySymbol}</span>
+                      <input
+                        id="auction-bid-ceiling-input"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        className="auction-bid-ceiling-modal__input"
+                        placeholder={minCeilingPlaceholder}
+                        value={maxAmountDisplay}
+                        onChange={handleAmountChange}
+                        disabled={saving || fetching}
+                      />
+                    </div>
+                    <p className="auction-bid-ceiling-modal__hint">
+                      {t('auctionBidCeilingInputHint', {
+                        step: fmtPrice ? fmtPrice(step) : `${step} ${currencySymbol}`,
+                      })}
+                    </p>
+                  </div>
+
+                  {existingCeiling?.activated_at ? (
+                    <p className="auction-bid-ceiling-modal__active-note" role="status">
+                      {t('auctionBidCeilingAlreadyActive')}
+                    </p>
+                  ) : null}
+
+                  <div className="auction-bid-ceiling-modal__actions">
+                    <button
+                      type="button"
+                      className="auction-bid-ceiling-modal__submit"
+                      onClick={handleSave}
+                      disabled={saving || fetching || !maxAmountInput.trim()}
+                    >
+                      {saving ? t('propertyDetailSubmitting') : t('auctionBidCeilingSubmit')}
+                    </button>
+                    {existingCeiling ? (
+                      <button
+                        type="button"
+                        className="auction-bid-ceiling-modal__remove"
+                        onClick={handleRemove}
+                        disabled={saving}
+                      >
+                        {t('auctionBidCeilingRemove')}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <AuctionBidCeilingChart
+              currentBid={effectiveCurrentBid}
+              ceiling={previewCeiling}
+              fmtPrice={fmtPrice}
+              currencySymbol={currencySymbol}
+              bids={bids}
+              userId={userId}
+              isUserLeader={isUserLeader}
+              formatDateTime={formatBidDateTime}
+            />
+          )}
         </div>
+
+        <nav className="auction-bid-ceiling-modal__pager" aria-label={t('auctionBidCeilingPagerLabel')}>
+          {[0, 1].map((page) => (
+            <button
+              key={page}
+              type="button"
+              className={`auction-bid-ceiling-modal__pager-dot${
+                activePage === page ? ' auction-bid-ceiling-modal__pager-dot--active' : ''
+              }`}
+              onClick={() => setActivePage(page)}
+              aria-label={
+                page === 0 ? t('auctionBidCeilingDotSetup') : t('auctionBidCeilingDotChart')
+              }
+              aria-current={activePage === page ? 'true' : undefined}
+            />
+          ))}
+        </nav>
       </div>
     </div>
   )

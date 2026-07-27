@@ -42,6 +42,11 @@ Thumbs.db
 # Vite
 .vite
 
+# Python venv / ML caches (local only)
+.venv-img/
+.venv/
+.cache/
+
 # Optional npm cache directory
 .npm
 
@@ -52,21 +57,23 @@ Thumbs.db
 
 # Uploads
 server/uploads/
+
+# Рasters — игнорируем везде, кроме public/ и явных исключений (деплой на Railway)
 *.jpg
-!src/assets/moneta.jpg
+!public/**/*.jpg
+!src/assets/**/*.jpg
 *.jpeg
+!public/**/*.jpeg
+!src/assets/**/*.jpeg
 *.png
 !6019556644745841501.png
 !main fon.png
-!public/images/oap-*/
-!public/images/oap-*/**
-!public/images/owner-sales-test/
-!public/images/owner-sales-test/**
-!public/images/owner-properties-test/
-!public/images/owner-properties-test/**
-!public/images/owner-test/
-!public/images/owner-test/**
+!public/**/*.png
+*.webp
+!public/**/*.webp
+!src/assets/**/*.webp
 *.gif
+!public/**/*.gif
 *.pdf
 !public/documents/reserve-terms.pdf
 !Document.pdf
@@ -86,3 +93,6 @@ server/.wwebjs_cache/
 *.sqlite3
 *.db
 /generated/prisma
+
+# Superdesign local draft templates
+.superdesign/tmp/

@@ -1,11 +1,11 @@
 .oap-wizard-aside {
-  --aside-accent: #0abab5;
-  --aside-accent-dark: #089a95;
-  --aside-accent-soft: rgba(10, 186, 181, 0.12);
-  --aside-accent-border: rgba(10, 186, 181, 0.22);
-  --aside-mesh-a: rgba(10, 186, 181, 0.2);
+  --aside-accent: #0099a9;
+  --aside-accent-dark: #007d8a;
+  --aside-accent-soft: rgba(0, 153, 169, 0.12);
+  --aside-accent-border: rgba(0, 153, 169, 0.22);
+  --aside-mesh-a: rgba(0, 153, 169, 0.2);
   --aside-mesh-b: rgba(83, 216, 211, 0.14);
-  --aside-hero-bg: linear-gradient(165deg, rgba(10, 186, 181, 0.14) 0%, rgba(255, 255, 255, 0.96) 58%);
+  --aside-hero-bg: linear-gradient(165deg, rgba(0, 153, 169, 0.14) 0%, rgba(255, 255, 255, 0.96) 58%);
 
   position: sticky;
   top: 16px;
@@ -32,13 +32,13 @@
 }
 
 .oap-wizard-aside--emerald {
-  --aside-accent: #10b981;
-  --aside-accent-dark: #059669;
-  --aside-accent-soft: rgba(16, 185, 129, 0.12);
-  --aside-accent-border: rgba(16, 185, 129, 0.22);
-  --aside-mesh-a: rgba(16, 185, 129, 0.14);
+  --aside-accent: #0099a9;
+  --aside-accent-dark: #007d8a;
+  --aside-accent-soft: rgba(0, 153, 169, 0.12);
+  --aside-accent-border: rgba(0, 153, 169, 0.22);
+  --aside-mesh-a: rgba(0, 153, 169, 0.14);
   --aside-mesh-b: rgba(52, 211, 153, 0.1);
-  --aside-hero-bg: linear-gradient(165deg, rgba(16, 185, 129, 0.12) 0%, rgba(255, 255, 255, 0.96) 58%);
+  --aside-hero-bg: linear-gradient(165deg, rgba(0, 153, 169, 0.12) 0%, rgba(255, 255, 255, 0.96) 58%);
 }
 
 /* Unified sidebar card */
@@ -114,8 +114,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-height: 156px;
-  padding: 4px 8px 0;
+  min-height: 220px;
+  padding: 4px 4px 0;
 }
 
 .oap-wizard-aside__visual-glow {
@@ -135,8 +135,8 @@
   position: relative;
   z-index: 1;
   display: block;
-  width: 88%;
-  max-width: 228px;
+  width: 100%;
+  max-width: 300px;
   height: auto;
   object-fit: contain;
   object-position: center bottom;
@@ -289,8 +289,8 @@
 }
 
 .oap-wizard-aside__tip-icon--tiffany-muted {
-  color: #047857;
-  background: rgba(16, 185, 129, 0.1);
+  color: #007d8a;
+  background: rgba(0, 153, 169, 0.1);
 }
 
 /* Help */
@@ -380,11 +380,11 @@
   }
 
   .oap-wizard-aside__visual-frame {
-    min-height: 132px;
+    min-height: 180px;
   }
 
   .oap-wizard-aside__visual-img {
-    width: 74%;
-    max-width: 210px;
+    width: 92%;
+    max-width: 280px;
   }
 }

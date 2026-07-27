@@ -3,6 +3,7 @@ import { FiExternalLink, FiCalendar, FiChevronLeft, FiChevronRight, FiSend } fro
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import {
   markTestDriveAllCancellationsViewed,
+  requestAdminSidebarBadgesRefresh,
   testDriveMergedCancelSeenMs,
   testDrivePerPropertySeenKey,
 } from '../../utils/adminSidebarBadges';
@@ -655,11 +656,13 @@ export default function AdminTestDrive({
       // ignore storage errors
     }
     void onAdminSectionBadgeRefresh?.();
+    requestAdminSidebarBadgesRefresh({ patch: { test_drive: 0 } });
   };
 
   const markAllTestDriveCancellationsViewed = () => {
     markTestDriveAllCancellationsViewed();
     setAllCancelsSeenTick((x) => x + 1);
+    requestAdminSidebarBadgesRefresh({ patch: { test_drive: 0 } });
     void onAdminSectionBadgeRefresh?.();
   };
 

@@ -166,11 +166,11 @@
   height: 52px;
   border-radius: 8px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #e0f2fe, #ccfbf1);
+  background: linear-gradient(135deg, #e0f2fe, #e6f6f8);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0891b2;
+  color: #007d8a;
   font-size: 11px;
   font-weight: 800;
 }
@@ -696,8 +696,8 @@
 }
 
 .admin-test-drive__quality-chip--positive {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .admin-test-drive__quality-chip--negative {
@@ -738,7 +738,7 @@
 }
 
 .admin-test-drive__quality-contact-row a {
-  color: #0d9488;
+  color: #007580;
   font-weight: 700;
   text-decoration: none;
 }
@@ -784,8 +784,8 @@
 }
 
 .admin-test-drive__quality-photo-link:hover {
-  border-color: rgba(13, 148, 136, 0.45);
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.15);
+  border-color: rgba(0, 153, 169, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.15);
 }
 
 .admin-test-drive__quality-photo-thumb {
@@ -808,9 +808,9 @@
 }
 
 .admin-test-drive__quality-answer-text--positive {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: #e6f6f8;
+  color: #007d8a;
+  border: 1px solid #cce9ed;
 }
 
 .admin-test-drive__quality-answer-text--negative {
@@ -877,7 +877,7 @@
 
 .admin-test-drive__quality-answer--positive {
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
 }
 
 .admin-test-drive__quality-answer--negative {
@@ -1054,7 +1054,7 @@
 
 .admin-test-drive__status--approved {
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
 }
 
 .admin-test-drive__status--rejected {
@@ -1130,9 +1130,9 @@
 }
 
 .admin-test-drive__broadcast-subtab--active {
-  border-color: rgba(13, 148, 136, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   background: rgba(204, 251, 241, 0.55);
-  color: #0f766e;
+  color: #00605a;
 }
 
 .admin-test-drive__broadcast-list {
@@ -1176,7 +1176,7 @@
 
 .admin-test-drive__broadcast-status--sent {
   background: #d1fae5;
-  color: #047857;
+  color: #007d8a;
 }
 
 .admin-test-drive__broadcast-meta {
@@ -1199,8 +1199,8 @@
   font-size: 0.85rem;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+  background: linear-gradient(135deg, #007580 0%, #00605a 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.35);
 }
 
 .admin-test-drive__broadcast-send:disabled {

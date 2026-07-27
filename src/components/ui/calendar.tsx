@@ -489,7 +489,7 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
                 anchor &&
                   rangeEnd &&
                   toYmd(day.date) === toYmd(anchor) &&
-                  "bg-[#0abab5] text-white ring-0 shadow-md shadow-teal-500/25"
+                  "bg-[#0099A9] text-white ring-0 shadow-md shadow-teal-500/25"
               )}
             >
               {day.date.getDate()}

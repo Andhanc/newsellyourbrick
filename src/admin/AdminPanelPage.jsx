@@ -24,15 +24,20 @@ import AdminAddition from '../components/admin/AdminAddition';
 import AdminTestDrive from '../components/admin/AdminTestDrive';
 import AdminAuctions from '../components/admin/AdminAuctions';
 import AdminPrivateClub from '../components/admin/AdminPrivateClub';
+import SeoPanel from '../components/admin/SeoPanel';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
-import { getApiBaseUrl } from '../utils/apiConfig';
 import {
-  countUnseenPurchasePending,
-  countUnseenTestDriveCancellations,
-  readAdminLs,
-  LS_LIVE_CHAT_ALL_READ,
+  ADMIN_SIDEBAR_BADGES_REFRESH_EVENT,
+  applyAdminSidebarBadgePatch,
+  buildSectionViewBadgePatch,
+  markAdminSectionViewed,
+  requestAdminSidebarBadgesRefresh,
 } from '../utils/adminSidebarBadges';
+import {
+  createEmptyAdminSidebarBadges,
+  fetchAdminSidebarBadges,
+} from '../utils/fetchAdminSidebarBadges';
 import { subscribeBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync';
 import { showNotification } from '../utils/toastHelper';
 import '../styles/admin/global.css';
@@ -44,13 +49,7 @@ const AdminPanelPage = () => {
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState(null);
   const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
-  const [sidebarBadges, setSidebarBadges] = useState({
-    test_drive: 0,
-    moderation: 0,
-    chat: 0,
-    purchase_requests: 0,
-    bonuses: 0,
-  });
+  const [sidebarBadges, setSidebarBadges] = useState(createEmptyAdminSidebarBadges);
   const [testDriveCancelStats, setTestDriveCancelStats] = useState({
     totalCancelledInDb: null,
   });
@@ -114,7 +113,8 @@ const AdminPanelPage = () => {
     testing: 'Тестирование',
     access_management: 'Доступы',
     storage: 'Хранилище',
-    auctions: 'Аукционы'
+    auctions: 'Аукционы',
+    seo: 'SEO'
   };
 
   // Проверка прав доступа к разделу
@@ -143,7 +143,8 @@ const AdminPanelPage = () => {
       testing: adminPermissions.can_access_objects,
       access_management: adminPermissions.can_access_access_management,
       storage: adminPermissions.can_access_objects,
-      auctions: adminPermissions.can_access_objects
+      auctions: adminPermissions.can_access_objects,
+      seo: adminPermissions.can_access_seo
     };
 
     return accessMap[section] || false;
@@ -171,7 +172,13 @@ const AdminPanelPage = () => {
     // Проверяем права доступа перед сменой секции
     if (hasAccess(section)) {
       closeClientsAdminMenu();
+      markAdminSectionViewed(section);
+      const viewPatch = buildSectionViewBadgePatch(section);
+      if (viewPatch) {
+        setSidebarBadges((prev) => applyAdminSidebarBadgePatch(prev, viewPatch));
+      }
       setActiveSection(section);
+      requestAdminSidebarBadgesRefresh();
     } else {
       showNotification('У вас нет прав доступа к этому разделу');
     }
@@ -190,104 +197,29 @@ const AdminPanelPage = () => {
   }, [activeSection]);
 
   const refreshSidebarBadges = useCallback(async () => {
-    const base = await getApiBaseUrl();
-    const [test_drive, moderation, chat, purchase_requests, bonuses] = await Promise.all([
-      (async () => {
-        try {
-          const r = await fetch(`${base}/admin/test-drive/cancellations-badge`);
-          const j = await r.json();
-          if (j.success && Array.isArray(j.data)) {
-            const total =
-              j.meta && typeof j.meta.total_cancelled === 'number'
-                ? j.meta.total_cancelled
-                : j.data.length;
-            setTestDriveCancelStats({ totalCancelledInDb: total });
-            return countUnseenTestDriveCancellations(j.data);
-          }
-        } catch {
-          /* ignore */
-        }
-        return 0;
-      })(),
-      (async () => {
-        try {
-          const [r1, r2] = await Promise.all([
-            fetch(`${base}/documents/pending`),
-            fetch(`${base}/properties/pending`),
-          ]);
-          let usersN = 0;
-          let propsN = 0;
-          if (r1.ok) {
-            const j1 = await r1.json();
-            if (j1.success && Array.isArray(j1.data)) {
-              const ids = new Set();
-              for (const doc of j1.data) {
-                if ((doc.verification_status || 'pending') === 'pending') {
-                  ids.add(doc.user_id);
-                }
-              }
-              usersN = ids.size;
-            }
-          }
-          if (r2.ok) {
-            const j2 = await r2.json();
-            if (j2.success && Array.isArray(j2.data)) {
-              propsN = j2.data.filter((p) => {
-                const st = p.moderation_status || p.moderationStatus;
-                return st === 'pending' || st == null || st === undefined;
-              }).length;
-            }
-          }
-          return usersN + propsN;
-        } catch {
-          return 0;
-        }
-      })(),
-      (async () => {
-        try {
-          const sinceRaw = readAdminLs(LS_LIVE_CHAT_ALL_READ);
-          const since = sinceRaw || '1970-01-01T00:00:00.000Z';
-          const r = await fetch(
-            `${base}/admin/live-chat/user-messages-since?since=${encodeURIComponent(since)}`,
-          );
-          const j = await r.json();
-          if (j.success && j.data && typeof j.data.count === 'number') {
-            return j.data.count;
-          }
-        } catch {
-          /* ignore */
-        }
-        return 0;
-      })(),
-      (async () => {
-        try {
-          const r = await fetch(`${base}/purchase-requests?limit=1000`);
-          if (!r.ok) return 0;
-          const j = await r.json();
-          if (j.success && Array.isArray(j.data)) {
-            return countUnseenPurchasePending(j.data);
-          }
-        } catch {
-          /* ignore */
-        }
-        return 0;
-      })(),
-      (async () => {
-        try {
-          const r = await fetch(`${base}/bonus-submissions/pending`);
-          const j = await r.json();
-          if (j.success && Array.isArray(j.data)) {
-            return j.data.length;
-          }
-        } catch {
-          /* ignore */
-        }
-        return 0;
-      })(),
-    ]);
-    setSidebarBadges({ test_drive, moderation, chat, purchase_requests, bonuses });
-    setAdminBadgeTick((t) => t + 1);
+    try {
+      const { badges, meta } = await fetchAdminSidebarBadges();
+      setSidebarBadges(badges);
+      setTestDriveCancelStats({
+        totalCancelledInDb: meta.testDriveTotalCancelled,
+      });
+      setAdminBadgeTick((t) => t + 1);
+    } catch {
+      /* ignore */
+    }
   }, []);
+
+  useEffect(() => {
+    const onBadgesRefresh = (event) => {
+      const patch = event?.detail?.patch;
+      if (patch && typeof patch === 'object') {
+        setSidebarBadges((prev) => applyAdminSidebarBadgePatch(prev, patch));
+      }
+      void refreshSidebarBadges();
+    };
+    window.addEventListener(ADMIN_SIDEBAR_BADGES_REFRESH_EVENT, onBadgesRefresh);
+    return () => window.removeEventListener(ADMIN_SIDEBAR_BADGES_REFRESH_EVENT, onBadgesRefresh);
+  }, [refreshSidebarBadges]);
 
   useEffect(() => {
     void refreshSidebarBadges();
@@ -320,7 +252,7 @@ const AdminPanelPage = () => {
       case 'private_club':
         return <AdminPrivateClub />;
       case 'moderation':
-        return <Moderation />;
+        return <Moderation onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
       case 'chat':
         return <AdminChat onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
       case 'smart_assistant':
@@ -360,6 +292,8 @@ const AdminPanelPage = () => {
         return <StorageMirror />;
       case 'auctions':
         return <AdminAuctions />;
+      case 'seo':
+        return <SeoPanel />;
       default:
         return <Statistics businessInfo={mockBusinessInfo} onShowUsers={() => setShowUsersModal(true)} />;
     }

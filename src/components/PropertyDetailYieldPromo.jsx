@@ -1,60 +1,42 @@
-import { FiArrowRight } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
-import PropertyYieldPromoIllustration from './PropertyYieldPromoIllustration'
+import { publicAsset } from '../utils/publicAsset'
 import './PropertyDetailYieldPromo.css'
+
+const YIELD_PROMO_HOUSE_IMAGE = publicAsset('images/owner-ads/ad-premium-house.png')
 
 export default function PropertyDetailYieldPromo({ onClick, className = '', variant = 'default' }) {
   const { t } = useTranslation()
-
-  if (variant === 'desktop-auction') {
-    return (
-      <button
-        type="button"
-        className={`property-detail-yield-promo property-detail-yield-promo--desktop-auction${
-          className ? ` ${className}` : ''
-        }`}
-        onClick={onClick}
-      >
-        <span className="property-detail-yield-promo__desktop-bg" aria-hidden />
-        <span className="property-detail-yield-promo__desktop-grid" aria-hidden />
-        <span className="property-detail-yield-promo__desktop-body">
-          <span className="property-detail-yield-promo__desktop-copy">
-            <span className="property-detail-yield-promo__desktop-badge">
-              {t('propertyDetailCalculateYieldBadge')}
-            </span>
-            <span className="property-detail-yield-promo__desktop-title">
-              {t('propertyDetailCalculateYield')}
-            </span>
-            <span className="property-detail-yield-promo__desktop-lead">
-              {t('propertyDetailCalculateYieldLead')}
-            </span>
-            <span className="property-detail-yield-promo__desktop-cta">
-              {t('propertyDetailCalculateYieldCta')}
-              <FiArrowRight size={18} strokeWidth={2.5} aria-hidden />
-            </span>
-          </span>
-          <span className="property-detail-yield-promo__desktop-visual" aria-hidden>
-            <PropertyYieldPromoIllustration className="property-detail-yield-promo__illustration" />
-          </span>
-        </span>
-      </button>
-    )
-  }
+  const isDesktopAuction = variant === 'desktop-auction'
 
   return (
     <button
       type="button"
-      className={`property-detail-yield-promo${className ? ` ${className}` : ''}`}
+      className={`property-detail-yield-promo property-detail-yield-promo--banner${
+        isDesktopAuction ? ' property-detail-yield-promo--desktop-auction' : ''
+      }${className ? ` ${className}` : ''}`}
       onClick={onClick}
     >
-      <span className="property-detail-yield-promo__shine" aria-hidden />
-      <span className="property-detail-yield-promo__content">
+      <span className="property-detail-yield-promo__grid" aria-hidden />
+      <span className="property-detail-yield-promo__copy">
         <span className="property-detail-yield-promo__title">
           {t('propertyDetailCalculateYield')}
         </span>
+        <span className="property-detail-yield-promo__lead">
+          {t('propertyDetailCalculateYieldLead')}
+        </span>
+        <span className="property-detail-yield-promo__cta">
+          {t('propertyDetailCalculateYieldCta')}
+        </span>
       </span>
-      <span className="property-detail-yield-promo__icon-wrap" aria-hidden>
-        <PropertyYieldPromoIllustration className="property-detail-yield-promo__illustration" />
+      <span className="property-detail-yield-promo__media" aria-hidden>
+        <span className="property-detail-yield-promo__halo" />
+        <img
+          className="property-detail-yield-promo__photo"
+          src={YIELD_PROMO_HOUSE_IMAGE}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
       </span>
     </button>
   )

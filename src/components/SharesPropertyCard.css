@@ -1,0 +1,411 @@
+.shares-v2-card,
+a.shares-v2-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  border-radius: var(--site-card-radius);
+  background: var(--site-color-surface);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--site-card-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.shares-v2-card:hover {
+  border-color: rgba(184, 207, 154, 0.45);
+  box-shadow: var(--site-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.shares-v2-card--list {
+  flex-direction: row;
+  min-height: 220px;
+}
+
+.shares-v2-card--sold-out {
+  cursor: default;
+}
+
+.shares-v2-card--sold-out:hover {
+  transform: none;
+}
+
+.shares-v2-card__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.shares-v2-card--list .shares-v2-card__media {
+  flex: 0 0 280px;
+  aspect-ratio: auto;
+  min-height: 220px;
+}
+
+.shares-v2-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shares-v2-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-family: var(--site-font-family);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.shares-v2-card__badge--stable {
+  background: #0099A9;
+}
+
+.shares-v2-card__badge--new {
+  background: #f59e0b;
+}
+
+.shares-v2-card__badge--commercial {
+  background: var(--site-color-accent-dark, #007d8a);
+}
+
+.shares-v2-card__favorite {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #9ca3af;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.shares-v2-card__favorite.is-active {
+  color: #ef4444;
+}
+
+.shares-v2-card__sold-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.55);
+  color: #ffffff;
+  font-family: var(--site-font-family);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shares-v2-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 14px 14px 16px;
+}
+
+.shares-v2-card__heading {
+  min-width: 0;
+}
+
+.shares-v2-card--list .shares-v2-card__body {
+  justify-content: center;
+  padding: 18px 20px;
+}
+
+.shares-v2-card__title {
+  margin: 0 0 6px;
+  font-family: var(--site-font-family);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--site-color-text);
+}
+
+.shares-v2-card__location {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0 0 14px;
+  font-family: var(--site-font-family);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--site-color-muted);
+}
+
+.shares-v2-card__location span {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.shares-v2-card__location svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.shares-v2-card__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.shares-v2-card__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shares-v2-card__metric-label {
+  font-family: var(--site-font-family);
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: #9ca3af;
+}
+
+.shares-v2-card__metric-label--mobile {
+  display: none;
+}
+
+.shares-v2-card__metric-value {
+  font-family: var(--site-font-family);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--site-color-text);
+}
+
+.shares-v2-card__metric small {
+  color: var(--site-color-muted);
+  font-family: var(--site-font-family);
+  font-size: 0.625rem;
+  line-height: 1.25;
+}
+
+.shares-v2-card__metric-suffix {
+  font-weight: 500;
+  color: var(--site-color-muted);
+}
+
+.shares-v2-card__progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.shares-v2-card__progress-label,
+.shares-v2-card__progress-percent {
+  font-family: var(--site-font-family);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--site-color-muted);
+}
+
+.shares-v2-card__progress-percent {
+  color: var(--site-color-accent-dark, #007d8a);
+}
+
+.shares-v2-card__progress-track {
+  height: 6px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.9);
+  overflow: hidden;
+}
+
+.shares-v2-card__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--site-color-accent, #0099A9) 0%, #66c1cc 100%);
+  transition: width 0.3s ease;
+}
+
+.shares-v2-card__progress-track.is-unknown .shares-v2-card__progress-fill {
+  width: 35% !important;
+  background: #cbd5d1;
+}
+
+.shares-v2-card__progress-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -8px 0 12px;
+  color: var(--site-color-muted);
+  font-family: var(--site-font-family);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
+.shares-v2-card__progress-note strong {
+  color: var(--site-color-text);
+}
+
+.shares-v2-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.shares-v2-card__amounts {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--site-font-family);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  color: var(--site-color-muted);
+}
+
+.shares-v2-card__amounts strong {
+  color: var(--site-color-text);
+  font-weight: 700;
+}
+
+.shares-v2-card__amounts-sep {
+  color: #d1d5db;
+}
+
+.shares-v2-card__invest-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid rgba(184, 207, 154, 0.45);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--site-color-accent-dark, #007d8a);
+  font-family: var(--site-font-family);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.shares-v2-card__invest-btn:hover:not(:disabled) {
+  background: rgba(200, 255, 130, 0.22);
+  border-color: var(--site-color-accent, #0099A9);
+}
+
+.shares-v2-card__invest-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Skeleton */
+.shares-v2-card--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.shares-v2-card--skeleton:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.shares-v2-card__shimmer {
+  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+  background-size: 200% 100%;
+  animation: shares-v2-shimmer 1.4s ease-in-out infinite;
+}
+
+.shares-v2-card__shimmer-line {
+  height: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.shares-v2-card__shimmer-line--title {
+  width: 78%;
+  height: 16px;
+}
+
+.shares-v2-card__shimmer-line--loc {
+  width: 56%;
+}
+
+.shares-v2-card__shimmer-block {
+  height: 42px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.shares-v2-card__shimmer-line--bar {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.shares-v2-card__shimmer-footer {
+  height: 36px;
+  border-radius: 10px;
+}
+
+@keyframes shares-v2-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-v2-card__metric-label--desktop {
+    display: none;
+  }
+
+  .shares-v2-card__metric-label--mobile {
+    display: inline;
+  }
+
+  .shares-v2-card--list {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .shares-v2-card--list .shares-v2-card__media {
+    flex: none;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 16 / 10;
+  }
+
+  .shares-listing-grid--list .shares-v2-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shares-listing-grid--list .shares-v2-card__invest-btn {
+    width: 100%;
+  }
+}

@@ -60,18 +60,18 @@
   text-align: center;
   color: #fff;
   /* Tiffany / «Сделать ставку» (.btn-liquid-glass в PropertyList.css) */
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.92) 0%, rgba(8, 154, 149, 0.92) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.92) 0%, rgba(0, 125, 138, 0.92) 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.28);
   box-shadow:
-    0 4px 14px rgba(10, 186, 181, 0.28),
+    0 4px 14px rgba(0, 153, 169, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .sub-cab-preview__card--current {
   border-width: 1.5px;
-  border-color: rgba(13, 148, 136, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   box-shadow:
-    0 0 0 1px rgba(13, 148, 136, 0.2),
+    0 0 0 1px rgba(0, 153, 169, 0.2),
     0 8px 22px rgba(15, 23, 42, 0.08);
 }
 
@@ -203,8 +203,8 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: rgba(16, 185, 129, 0.15);
-  color: #059669;
+  background: rgba(0, 153, 169, 0.15);
+  color: #007d8a;
   display: inline-flex;
   align-items: center;
   justify-content: center;

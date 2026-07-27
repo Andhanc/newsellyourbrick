@@ -109,8 +109,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.map-list-loading,
-.map-list-empty {
+.map-list-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -121,73 +120,183 @@
   text-align: center;
 }
 
-/* Сетка карточек — стиль как на мобильном аукционе (2 в ряд) */
-.map-page-property-grid.auction-mobile-layout {
+.map-list-empty.buyer-empty-state {
+  width: 100%;
+  margin: 6px 0 24px;
+}
+
+/* Сетка карточек — тот же auction-card grid, что на странице аукциона (2 в ряд) */
+.map-page-property-grid {
   width: 100%;
   max-width: none;
   padding: 0;
   margin: 0;
 }
 
-.map-list-scroll .map-page-property-grid .auction-mobile-stack--grid {
-  gap: 10px;
+.map-page-property-grid .auction-mobile-stack--desktop-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 14px;
+  width: 100%;
 }
 
-.map-page-grid-card {
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+@media (min-width: 480px) {
+  .map-page-property-grid .auction-mobile-stack--desktop-cards {
+    column-gap: 12px;
+    row-gap: 16px;
+  }
+}
+
+@media (min-width: 640px) {
+  .map-page-property-grid .auction-mobile-stack--desktop-cards {
+    column-gap: 20px;
+    row-gap: 24px;
+  }
 }
 
 .map-page-grid-card--selected {
-  border-color: rgba(10, 186, 181, 0.45) !important;
+  border-color: rgba(0, 153, 169, 0.45) !important;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.14),
-    0 0 0 2px rgba(10, 186, 181, 0.18) !important;
+    0 4px 16px rgba(0, 153, 169, 0.14),
+    0 0 0 2px rgba(0, 153, 169, 0.18) !important;
 }
 
-.map-page-grid-card__price {
-  margin: 4px 0 0;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #0f172a;
-  letter-spacing: -0.01em;
+/* Единая внутрянка карточек на странице карты */
+.map-page-property-grid .auction-card--map {
+  height: 100%;
 }
 
-.map-page-grid-card--skeleton {
-  pointer-events: none;
+.map-page-property-grid .auction-card--map .auction-card__timer-slot {
+  flex: 0 0 auto;
 }
 
-.map-page-grid-card__media-skel {
+.map-page-property-grid .auction-card--map .listing-card-auction-timer--placeholder {
+  min-height: 48px;
+  padding: 7px 10px 6px;
+  border-top: 1px solid #eef0f3;
+  border-bottom: 1px solid #eef0f3;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  min-height: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__meta {
+  flex: 1 1 auto;
+  gap: 5px;
+  min-height: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location {
+  align-items: flex-start;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  min-height: calc(0.68rem * 1.3 * 2);
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location svg {
+  width: 12px;
+  height: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__location span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__title {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  min-height: calc(0.78rem * 1.25 * 2);
+}
+
+.map-page-property-grid .auction-card--map .auction-card__specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
   width: 100%;
-  aspect-ratio: 3 / 2;
-  background: linear-gradient(90deg, #e8ebed 0%, #f3f4f6 45%, #e8ebed 90%);
-  background-size: 200% 100%;
-  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+  min-height: calc(0.62rem * 1.2 + 6px);
 }
 
-.map-page-grid-card__line {
-  border-radius: 8px;
-  background: linear-gradient(90deg, #e8ebed 0%, #f3f4f6 45%, #e8ebed 90%);
-  background-size: 200% 100%;
-  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+.map-page-property-grid .auction-card--map .auction-card__spec {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 4px;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.map-page-grid-card__line--title {
-  height: 14px;
-  width: 72%;
-  margin-bottom: 8px;
-}
-
-.map-page-grid-card__line--loc {
+.map-page-property-grid .auction-card--map .auction-card__spec svg {
+  width: 11px;
   height: 11px;
-  width: 90%;
-  margin-bottom: 8px;
 }
 
-.map-page-grid-card__line--price {
-  height: 16px;
-  width: 48%;
+.map-page-property-grid .auction-card--map .auction-card__actions {
+  margin-top: 0;
+}
+
+.map-page-property-grid .auction-card--map .auction-card__btn {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 0.6875rem;
+  border-radius: 9px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer {
+  padding: 7px 10px 6px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__prefix {
+  font-size: 0.625rem;
+  margin-bottom: 2px;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__time {
+  font-size: 0.75rem;
+  gap: 4px;
+  color: #ea580c;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer__time svg {
+  width: 13px;
+  height: 13px;
+  color: #ea580c;
+}
+
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-long .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-medium .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-short .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-critical .listing-card-auction-timer__time,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-long .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-medium .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-short .listing-card-auction-timer__time svg,
+.map-page-property-grid .auction-card--map .listing-card-auction-timer.timer-critical .listing-card-auction-timer__time svg {
+  color: #ea580c;
 }
 
 .map-list-count-skel {
@@ -409,7 +518,7 @@
   font-weight: 700;
   line-height: 18px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 153, 169, 0.35);
 }
 
 .map-list-inline-count {
@@ -464,8 +573,8 @@
 
 .map-page-search-box__input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.65);
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+  border-color: rgba(0, 153, 169, 0.65);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 /* Скрываем встроенный крестик браузера у type="search" — остаётся только наша кнопка */
@@ -481,7 +590,7 @@
 }
 
 .map-page-search-box:focus-within .map-page-search-box__icon {
-  color: #0abab5;
+  color: #0099A9;
 }
 
 .map-page-search-box__clear {
@@ -1011,7 +1120,7 @@
   margin: 4px 0 0;
   font-size: 15px;
   font-weight: 700;
-  color: #0f766e;
+  color: #00605a;
 }
 
 .map-open-hint__cta {
@@ -1020,19 +1129,19 @@
   padding: 10px 18px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0abab5, #0d9488);
+  background: linear-gradient(135deg, #0099A9, #007580);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.35);
   transition: transform 0.15s ease, box-shadow 0.2s ease;
   white-space: nowrap;
 }
 
 .map-open-hint__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.45);
 }
 
 @media (max-width: 520px) {
@@ -1055,7 +1164,129 @@
   }
 }
 
+/* Маркеры-кластеры — миниатюры объектов вместо цифр */
+.map-pin-thumb-stack {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  opacity: 0;
+  transition: opacity 0.38s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.map-pin-thumb-stack--enter {
+  opacity: 0;
+}
+
+.map-pin-thumb-stack.map-pin-mini--visible,
+.map-pin-thumb-stack--visible {
+  opacity: 1;
+}
+
+.map-pin-thumb-stack__thumb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1.5px solid #fff;
+  background: #e5e7eb;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(17, 24, 39, 0.08);
+  transform: translate(-50%, -50%);
+}
+
+.map-pin-thumb-stack__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-pin-thumb-stack__thumb--stacked {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  opacity: 0.92;
+}
+
+.map-pin-thumb-stack__thumb--stacked[data-stack-index='1'] {
+  transform: translate(calc(-50% - 8px), calc(-50% - 6px));
+  z-index: 1;
+}
+
+.map-pin-thumb-stack__thumb--stacked[data-stack-index='2'] {
+  transform: translate(calc(-50% + 8px), calc(-50% - 6px));
+  z-index: 1;
+}
+
+.map-pin-thumb-stack__badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  z-index: 3;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #0099a9;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.map-pin-thumb-stack:hover .map-pin-thumb-stack__thumb,
+.map-pin-thumb-stack:focus-visible .map-pin-thumb-stack__thumb {
+  border-color: rgba(0, 153, 169, 0.55);
+}
+
 /* Маркеры на карте — мини-карточка: фото + цена (без transform на корне — не конфликтует с позицией MapLibre) */
+.map-pin-mini--compact {
+  width: max-content;
+  max-width: max-content;
+}
+
+.map-pin-mini--compact .map-pin-mini__inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 4px;
+  min-height: 48px;
+  max-width: 158px;
+  width: max-content;
+  border-radius: 11px;
+  transform: scale(1);
+}
+
+.map-pin-mini--compact.map-pin-mini--visible .map-pin-mini__inner {
+  transform: scale(1);
+}
+
+.map-pin-mini--compact .map-pin-mini__img-wrap {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 9px;
+}
+
+.map-pin-mini--compact .map-pin-mini__price {
+  display: block;
+  font-size: 10px;
+  max-width: 6.75rem;
+}
+
 .map-pin-cluster {
   display: inline-flex;
   align-items: center;
@@ -1079,9 +1310,9 @@
 }
 
 .map-pin-cluster:hover {
-  border-color: rgba(10, 186, 181, 0.45);
+  border-color: rgba(0, 153, 169, 0.45);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.24),
+    0 6px 20px rgba(0, 153, 169, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.9) inset;
 }
 
@@ -1114,20 +1345,20 @@
 .map-pin-mini__inner {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 8px 4px 4px;
+  gap: 6px;
+  padding: 5px 9px 5px 5px;
   box-sizing: border-box;
   background: #fff;
   border-radius: 12px;
   border: 1px solid rgba(17, 24, 39, 0.12);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.18),
+    0 3px 12px rgba(0, 0, 0, 0.16),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   cursor: pointer;
   user-select: none;
-  max-width: 156px;
+  max-width: 164px;
   width: max-content;
-  min-height: 44px;
+  min-height: 50px;
   transform: scale(0.9);
   transform-origin: center bottom;
   transition:
@@ -1145,21 +1376,21 @@
 }
 
 .map-pin-mini--active .map-pin-mini__inner {
-  border-color: rgba(10, 186, 181, 0.65);
+  border-color: rgba(0, 153, 169, 0.65);
   box-shadow:
-    0 6px 22px rgba(10, 186, 181, 0.35),
-    0 0 0 2px rgba(10, 186, 181, 0.25),
+    0 6px 22px rgba(0, 153, 169, 0.35),
+    0 0 0 2px rgba(0, 153, 169, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.9);
   cursor: pointer;
 }
 
 .map-pin-mini__img-wrap {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 9px;
   overflow: hidden;
   background: #e5e7eb;
   border: 1px solid rgba(17, 24, 39, 0.06);
@@ -1193,32 +1424,45 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 8.5rem;
+  max-width: 7.25rem;
 }
 
 .map-pin-mini--active .map-pin-mini__price {
-  color: #0f766e;
+  color: #00605a;
 }
 
 @media (max-width: 480px) {
   .map-pin-mini__inner {
-    gap: 6px;
-    padding: 3px 6px 3px 3px;
-    max-width: 142px;
-    min-height: 40px;
+    gap: 5px;
+    padding: 4px 8px 4px 4px;
+    max-width: 148px;
+    min-height: 46px;
   }
 
   .map-pin-mini__img-wrap {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    border-radius: 7px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 8px;
   }
 
-  .map-pin-mini__price {
+  .map-pin-mini--compact .map-pin-mini__inner {
+    min-height: 44px;
+    max-width: 144px;
+  }
+
+  .map-pin-mini--compact .map-pin-mini__img-wrap {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .map-pin-mini__price,
+  .map-pin-mini--compact .map-pin-mini__price {
     font-size: 10px;
-    max-width: 7rem;
+    max-width: 6.25rem;
   }
 }
 
@@ -1236,9 +1480,9 @@
   font-family: inherit;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #0abab5 0%, #0d9488 52%, #0891b2 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007580 52%, #007d8a 100%);
   box-shadow:
-    0 4px 14px rgba(10, 186, 181, 0.38),
+    0 4px 14px rgba(0, 153, 169, 0.38),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
@@ -1251,7 +1495,7 @@
 .map-booking-card__show-btn:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.48),
+    0 6px 20px rgba(0, 153, 169, 0.48),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
   filter: brightness(1.04);
 }
@@ -1420,10 +1664,10 @@
   }
 
   .map-booking-card.selected {
-    border-color: rgba(10, 186, 181, 0.35);
+    border-color: rgba(0, 153, 169, 0.35);
     box-shadow:
       0 1px 2px rgba(15, 23, 42, 0.04),
-      0 4px 16px rgba(10, 186, 181, 0.12);
+      0 4px 16px rgba(0, 153, 169, 0.12);
   }
 
   .map-booking-card.map-booking-card--skeleton:hover {
@@ -1545,7 +1789,7 @@
 }
 
 .map-float-map-btn:focus-visible {
-  outline: 2px solid #0abab5;
+  outline: 2px solid #0099A9;
   outline-offset: 3px;
 }
 
@@ -1586,5 +1830,321 @@
 @media (min-width: 769px) {
   .map-float-map-btn {
     display: none;
+  }
+}
+
+.map-results-sheet__handle {
+  display: none;
+}
+
+.map-filters-sheet__head {
+  padding: 6px 2px 18px;
+}
+
+.map-filters-sheet__head > p {
+  margin: 0 0 6px;
+  color: var(--buyer-teal-deep, #006f7b);
+  font: 800 0.68rem/1.2 'Montserrat', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.map-filters-sheet__head h2 {
+  margin: 0 42px 8px 0;
+  color: var(--buyer-ink, #050505);
+  font: 800 1.5rem/1.1 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.map-filters-sheet__head > span {
+  display: block;
+  color: var(--buyer-text-muted, #66706e);
+  font: 600 0.84rem/1.5 'Montserrat', system-ui, sans-serif;
+}
+
+.map-filters-sheet__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.map-filters-sheet__reset,
+.map-filters-sheet__apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 0;
+  border-radius: 16px;
+  font: 800 0.82rem/1 'Montserrat', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.map-filters-sheet__reset {
+  flex: 0 0 104px;
+  background: var(--buyer-cloud, #f3f6f5);
+  color: var(--buyer-teal-deep, #006f7b);
+}
+
+.map-filters-sheet__apply {
+  flex: 1 1 auto;
+  background: var(--buyer-teal-deep, #006f7b);
+  color: #fff;
+  box-shadow: 0 18px 36px -24px rgba(0, 111, 123, 0.72);
+}
+
+@media (max-width: 768px) {
+  .map-page-root {
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: var(--buyer-cloud, #f3f6f5);
+  }
+
+  .map-page-booking,
+  .map-page-main {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  .map-page-main {
+    position: relative;
+    display: block;
+  }
+
+  .map-page-map-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  .map-page-map-toolbar {
+    padding: max(14px, env(safe-area-inset-top, 0px)) 12px 0;
+  }
+
+  .map-page-map-toolbar__back,
+  .map-open-hint__dismiss,
+  .map-open-hint__cta {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .map-expand-btn,
+  .map-float-map-btn {
+    display: none;
+  }
+
+  .map-page-list {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    width: 100%;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 30px 30px 0 0;
+    background: var(--buyer-warm, #faf8f5);
+    box-shadow: 0 -22px 48px -30px rgba(2, 24, 26, 0.55);
+    transition: height 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .map-page-list--peek {
+    height: 176px;
+  }
+
+  .map-page-list--half {
+    height: min(54dvh, 500px);
+  }
+
+  .map-page-list--expanded {
+    height: calc(100dvh - max(70px, env(safe-area-inset-top, 0px) + 58px));
+  }
+
+  .map-results-sheet__handle {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 5px;
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 16px 5px;
+    border: 0;
+    background: transparent;
+    color: var(--buyer-ink, #050505);
+    cursor: pointer;
+  }
+
+  .map-results-sheet__handle > span {
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(5, 5, 5, 0.18);
+  }
+
+  .map-results-sheet__handle strong {
+    font: 800 0.78rem/1.25 'Montserrat', system-ui, sans-serif;
+  }
+
+  .map-list-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 4px 12px 8px;
+    background: var(--buyer-warm, #faf8f5);
+  }
+
+  .map-list-search-block {
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .map-list-search-toolbar {
+    gap: 8px;
+    padding: 0;
+  }
+
+  .map-page-search-box__input {
+    min-height: 48px;
+    padding: 0 42px;
+    border: 1px solid rgba(0, 111, 123, 0.11);
+    border-radius: 17px;
+    background: #fff;
+    font-size: 0.86rem;
+    box-shadow: 0 12px 28px -24px rgba(6, 58, 64, 0.5);
+  }
+
+  .map-page-search-box__clear {
+    right: 3px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .map-list-filters-burger {
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border: 1px solid rgba(0, 111, 123, 0.11);
+    border-radius: 17px;
+    background: #fff;
+    color: var(--buyer-teal-deep, #006f7b);
+    box-shadow: 0 12px 28px -24px rgba(6, 58, 64, 0.5);
+  }
+
+  .map-list-filters-burger__icon {
+    gap: 4px;
+    width: 18px;
+  }
+
+  .map-list-filters-burger__icon span {
+    height: 2px;
+  }
+
+  .map-list-inline-count {
+    display: none;
+  }
+
+  .map-list-scroll {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 12px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .map-page-list--peek .map-list-scroll {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .map-page-property-grid .auction-mobile-stack--desktop-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 8px;
+  }
+
+  .map-page-property-grid .auction-card--map {
+    min-width: 0;
+    border-radius: 19px;
+    border-color: rgba(0, 111, 123, 0.08);
+    box-shadow: 0 16px 30px -24px rgba(6, 58, 64, 0.45);
+  }
+
+  .map-page-property-grid .auction-card--map .auction-card__favorite,
+  .map-page-property-grid .auction-card--map .auction-card__btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .map-page-property-grid .auction-card__actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px;
+  }
+
+  .map-page-property-grid .auction-card__btn {
+    width: 100% !important;
+    white-space: normal;
+  }
+
+  .map-open-hint {
+    top: max(66px, calc(env(safe-area-inset-top, 0px) + 58px));
+    border-radius: 20px;
+    box-shadow: 0 22px 48px -30px rgba(2, 24, 26, 0.62);
+  }
+
+  .map-open-hint__cta {
+    border-radius: 14px;
+    background: var(--buyer-teal-deep, #006f7b);
+  }
+
+  .map-filters-sheet .buyer-sheet__surface {
+    background: var(--buyer-warm, #faf8f5);
+  }
+
+  .map-filters-sheet .map-page-filters {
+    grid-template-rows: 1fr;
+  }
+
+  .map-filters-sheet .map-page-filters__panel-inner {
+    opacity: 1;
+    transform: none;
+  }
+
+  .map-filters-sheet .map-page-filters__menu {
+    overflow: hidden;
+    border: 1px solid rgba(0, 111, 123, 0.08);
+    border-radius: 20px;
+  }
+
+  .map-filters-sheet .map-page-filters__dropdown-trigger,
+  .map-filters-sheet .map-page-filters__option,
+  .map-filters-sheet .map-page-filters__toggle-row,
+  .map-filters-sheet .map-page-filters__reset-row {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-page-root *,
+  .map-page-root *::before,
+  .map-page-root *::after,
+  .map-filters-sheet * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

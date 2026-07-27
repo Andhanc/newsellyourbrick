@@ -8,7 +8,7 @@ import {
   fetchAdminLiveChatSessions,
   sendAdminLiveChatMessage,
 } from '../../services/liveChatApi';
-import { markLiveChatAllViewed } from '../../utils/adminSidebarBadges';
+import { markLiveChatAllViewed, requestAdminSidebarBadgesRefresh } from '../../utils/adminSidebarBadges';
 
 function resolveClientAvatarUrl(row) {
   if (!row) return null;
@@ -447,6 +447,7 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
               className="admin-chat__mark-read-btn"
               onClick={() => {
                 markLiveChatAllViewed();
+                requestAdminSidebarBadgesRefresh({ patch: { chat: 0 } });
                 void onAdminSectionBadgeRefresh?.();
               }}
             >

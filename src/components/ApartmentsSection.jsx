@@ -9,7 +9,6 @@ import { BiArea } from 'react-icons/bi'
 import { isAuthenticated } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import PropertyTimer from './PropertyTimer'
-import PropertyShareButton from './PropertyShareButton'
 import './PropertyList.css'
 import { formatPropertyPrice } from '../utils/currency'
 
@@ -146,11 +145,11 @@ function ApartmentsSection() {
   }
 
   const handleHeaderClick = () => {
-    window.location.href = '/auction?category=Apartment&filter=auction'
+    window.location.href = '/auction/bidding/apartments'
   }
 
   const handlePropertyClick = (propertyId) => {
-    window.location.href = '/auction?category=Apartment&filter=auction'
+    window.location.href = '/auction/bidding/apartments'
   }
 
   return (
@@ -187,14 +186,6 @@ function ApartmentsSection() {
                     </div>
                   )}
                   <div className="property-media-actions property-media-actions--reverse">
-                    <PropertyShareButton
-                      property={{
-                        id: apartment.id,
-                        title: apartment.title,
-                        name: apartment.title,
-                        property_type: 'apartment',
-                      }}
-                    />
                     <button
                       type="button"
                       className={`property-favorite ${

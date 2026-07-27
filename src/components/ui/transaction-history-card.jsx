@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const TIFFANY = '#0ABAB5'
+const TIFFANY = '#0099A9'
 
 /**
  * История транзакций: плоская белая карта и серые строки (референс payment card), без градиентов.
@@ -55,7 +55,7 @@ export default function TransactionHistoryCard({
                 onClick={() => setSelectedId(row.id)}
                 className={cn(
                   'relative flex w-full cursor-pointer items-center gap-4 overflow-hidden rounded-2xl p-4 text-left',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0ABAB5]',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0099A9]',
                   !isSelected && 'test-tx-row--ghost',
                   isSelected && 'text-white'
                 )}

@@ -153,8 +153,8 @@
 
 .moderation-property-detail__badge {
   padding: 0.5rem 1rem;
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -197,7 +197,7 @@
 /* Объединённый блок: уровень риска + долговые обязательства */
 .moderation-property-detail__debt-block {
   background: linear-gradient(135deg, #f0fdfc 0%, #f8fafc 100%);
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  border: 1px solid rgba(0, 153, 169, 0.2);
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -207,7 +207,7 @@
 .moderation-property-detail__debt-block-risk {
   margin-bottom: 1.25rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(10, 186, 181, 0.15);
+  border-bottom: 1px solid rgba(0, 153, 169, 0.15);
 }
 
 .moderation-property-detail__debt-block-risk:last-of-type {
@@ -306,7 +306,7 @@
 .moderation-property-detail__private-club input {
   width: 1.1rem;
   height: 1.1rem;
-  accent-color: #0d9488;
+  accent-color: #007580;
 }
 
 .moderation-property-detail__actions {
@@ -331,12 +331,12 @@
 }
 
 .moderation-property-detail__btn--approve {
-  background: #dcfce7;
-  color: #166534;
+  background: #e6f6f8;
+  color: #007d8a;
 }
 
 .moderation-property-detail__btn--approve:hover {
-  background: #bbf7d0;
+  background: #e6f6f8;
   color: #14532d;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
@@ -355,14 +355,14 @@
 }
 
 .moderation-property-detail__btn--view-changes {
-  background: #0ABAB5;
+  background: #0099A9;
   color: white;
 }
 
 .moderation-property-detail__btn--view-changes:hover:not(.disabled) {
-  background: #089a95;
+  background: #007d8a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
 }
 
 .moderation-property-detail__btn--view-changes.disabled {
@@ -531,7 +531,7 @@
 }
 
 .moderation-property-detail__document-card--debt-group:hover {
-  border-color: #0ABAB5;
+  border-color: #0099A9;
   background: #e6fffe;
 }
 
@@ -551,12 +551,12 @@
   align-items: center;
   gap: 0.4rem;
   font-size: 0.875rem;
-  color: #0ABAB5;
+  color: #0099A9;
   text-decoration: none;
   font-weight: 500;
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
   transition: background 0.15s, color 0.15s;
   word-break: break-word;
 }
@@ -568,7 +568,7 @@
 }
 
 .moderation-property-detail__debt-document-link:hover {
-  background: rgba(10, 186, 181, 0.18);
+  background: rgba(0, 153, 169, 0.18);
   color: #089e9a;
   text-decoration: underline;
 }
@@ -655,7 +655,7 @@
 .moderation-property-detail__translate-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 186, 181, 0.12);
+  background: rgba(0, 153, 169, 0.12);
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
@@ -667,7 +667,7 @@
   background: white;
   padding: 2rem 3rem;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(10, 186, 181, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 153, 169, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -678,7 +678,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid #e5e7eb;
-  border-top-color: #0ABAB5;
+  border-top-color: #0099A9;
   border-radius: 50%;
   animation: moderation-translate-spin 0.9s linear infinite;
 }
@@ -703,7 +703,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -715,7 +715,7 @@
 
 .moderation-property-detail__btn--translate:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.4);
 }
 
 .moderation-property-detail__btn--translate:disabled {

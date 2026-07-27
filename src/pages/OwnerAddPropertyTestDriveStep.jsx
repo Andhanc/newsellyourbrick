@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Video, DollarSign, Shield, Gavel, Lightbulb } from 'lucide-react'
 import OapSelect from '../components/OapSelect'
 import { PROPERTY_CURRENCIES, QUICK_LISTING_CURRENCY_CODES } from '../utils/currency'
+import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_TESTDRIVE_IMAGES } from './oapTestdriveImages'
 import './OwnerAddPropertyTestDriveStep.css'
 
@@ -15,6 +16,7 @@ const TEST_DRIVE_CURRENCY_OPTIONS = PROPERTY_CURRENCIES.filter((c) =>
 
 export default function OwnerAddPropertyTestDriveStep({
   embedded = false,
+  journeyLayout = false,
   testDrive,
   pricePerDay,
   insuranceDeposit,
@@ -46,31 +48,53 @@ export default function OwnerAddPropertyTestDriveStep({
     />
   )
 
+  const toggleIcon = (
+    <span className="oap-testdrive-step__toggle-icon" aria-hidden>
+      <Video size={embedded ? 18 : 20} strokeWidth={1.75} />
+    </span>
+  )
+
+  const toggleCopy = (
+    <div className="oap-testdrive-step__toggle-copy">
+      <span className="oap-testdrive-step__toggle-label">
+        {embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
+      </span>
+      <span className="oap-testdrive-step__toggle-hint">
+        {embedded
+          ? t('oap_testDriveHint')
+          : `${t('oap_testDriveHint')}${propertyTypeOption?.label ? ` · ${propertyTypeOption.label.toLowerCase()}` : ''}`}
+      </span>
+    </div>
+  )
+
+  const toggleSwitch = (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isEnabled}
+      aria-label={embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
+      className={`oap-testdrive-step__switch${isEnabled ? ' oap-testdrive-step__switch--on' : ''}`}
+      onClick={handleToggle}
+    >
+      <span className="oap-testdrive-step__switch-thumb" />
+    </button>
+  )
+
   const toggleRow = (
     <div className="oap-testdrive-step__toggle-row">
-      <span className="oap-testdrive-step__toggle-icon" aria-hidden>
-        <Video size={embedded ? 18 : 20} strokeWidth={1.75} />
-      </span>
-      <div className="oap-testdrive-step__toggle-copy">
-        <span className="oap-testdrive-step__toggle-label">
-          {embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
-        </span>
-        <span className="oap-testdrive-step__toggle-hint">
-          {embedded
-            ? t('oap_testDriveHint')
-            : `${t('oap_testDriveHint')}${propertyTypeOption?.label ? ` · ${propertyTypeOption.label.toLowerCase()}` : ''}`}
-        </span>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isEnabled}
-        aria-label={embedded ? t('oap_testDriveAllow') : t('oap_testDriveAvailable')}
-        className={`oap-testdrive-step__switch${isEnabled ? ' oap-testdrive-step__switch--on' : ''}`}
-        onClick={handleToggle}
-      >
-        <span className="oap-testdrive-step__switch-thumb" />
-      </button>
+      {journeyLayout ? (
+        <>
+          {toggleCopy}
+          {toggleSwitch}
+          {toggleIcon}
+        </>
+      ) : (
+        <>
+          {toggleIcon}
+          {toggleCopy}
+          {toggleSwitch}
+        </>
+      )}
     </div>
   )
 
@@ -160,13 +184,20 @@ export default function OwnerAddPropertyTestDriveStep({
   if (embedded) {
     return (
       <section
-        className={`oap-testdrive-step oap-testdrive-step--embedded${isEnabled ? ' oap-testdrive-step--on' : ''}`}
+        className={`oap-testdrive-step oap-testdrive-step--embedded${journeyLayout ? ' oap-testdrive-step--journey' : ''}${isEnabled ? ' oap-testdrive-step--on' : ''}`}
       >
-        <p className="oap-testdrive-step__embedded-hint">{t('oap_tdConfigureView')}</p>
-        <div className="oap-testdrive-step__card">
-          {toggleRow}
-          {pricingBody}
-        </div>
+        {!journeyLayout ? <p className="oap-testdrive-step__embedded-hint">{t('oap_tdConfigureView')}</p> : null}
+        {journeyLayout ? (
+          <div className="oap-testdrive-step__journey-panel">
+            {toggleRow}
+            {pricingBody}
+          </div>
+        ) : (
+          <div className="oap-testdrive-step__card">
+            {toggleRow}
+            {pricingBody}
+          </div>
+        )}
       </section>
     )
   }
@@ -197,9 +228,8 @@ export default function OwnerAddPropertyTestDriveStep({
           </div>
           <p className="oap-testdrive-step__sidebar-text">{t('oap_tdSidebarText')}</p>
           <div className="oap-testdrive-step__sidebar-illustration">
-            <img
+            <OapWizardSidebarImage
               src={OAP_TESTDRIVE_IMAGES.sidebarHero}
-              alt=""
               className="oap-testdrive-step__sidebar-img"
             />
           </div>

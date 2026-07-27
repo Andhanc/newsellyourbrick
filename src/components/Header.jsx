@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -10,7 +10,6 @@ import {
   FiGlobe,
 } from 'react-icons/fi'
 import { isInlineAiChatRoute } from '../utils/inlineAiChatRoutes'
-import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -24,11 +23,15 @@ import {
   getCabinetDataPath,
   getCabinetHomePath,
   getCabinetProfilePath,
+  getCabinetSubscriptionsPath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
-import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import HeaderPinnedCatalogNav from './HeaderPinnedCatalogNav'
+
+const LoginModalLazy = lazy(() => import('./LoginModal'))
+const SiteNavDrawerLazy = lazy(() => import('./SiteNavDrawer'))
 
 const Header = () => {
   const navigate = useNavigate()
@@ -344,6 +347,7 @@ const Header = () => {
   // Определение страниц для поиска
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetDataPath = getCabinetDataPath()
+  const cabinetSubscriptionsPath = getCabinetSubscriptionsPath()
   const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
@@ -368,10 +372,10 @@ const Header = () => {
       allowedRoles: ['buyer', 'client', 'admin'],
     },
     { path: cabinetDataPath, keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
-    { path: '/subscriptions', keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: cabinetSubscriptionsPath, keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'seller', 'owner', 'admin'] },
     { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/bonuses', keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания'], titleKey: 'bonuses', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
-    { path: '/owner', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
+    { path: '/owner-test', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
     { path: '/owner/property/new', keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'], titleKey: 'addProperty', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
     { path: '/admin', keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'], titleKey: 'adminPanel', requiresAuth: true, requiresRole: ['admin'], allowedRoles: ['admin'] }
   ]
@@ -633,7 +637,9 @@ const Header = () => {
               </button>
             </div>
             
-            <SiteNavDrawer
+            {(isMenuOpen || isMenuClosing) ? (
+              <Suspense fallback={null}>
+                <SiteNavDrawerLazy
               menuRef={menuRef}
               isMenuOpen={isMenuOpen}
               isMenuClosing={isMenuClosing}
@@ -649,7 +655,9 @@ const Header = () => {
                 setIsLoginModalOpen(true)
                 setIsMenuOpen(false)
               }}
-            />
+                />
+              </Suspense>
+            ) : null}
           </div>
 
           <div className="new-header__filters">
@@ -766,49 +774,18 @@ const Header = () => {
               </div>
             ) : (
               <>
-                {location.pathname !== '/' ? (
-                  <>
-                    <button 
-                      className="new-header__search-btn"
-                      onClick={() => {
-                        setIsSearchOpen(true)
-                        setSearchQuery('')
-                        setSearchResults([])
-                      }}
-                      aria-label={t('openSearch')}
-                    >
-                      <FiSearch size={20} />
-                    </button>
-                    <button 
-                      type="button"
-                      className="new-header__auction-btn"
-                      onClick={() => navigate('/')}
-                    >
-                      {t('home')}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button 
-                      type="button"
-                      className="new-header__auction-btn"
-                      onClick={() => navigate('/auction')}
-                    >
-                      {t('auction')}
-                    </button>
-                    <button 
-                      className="new-header__search-btn"
-                      onClick={() => {
-                        setIsSearchOpen(true)
-                        setSearchQuery('')
-                        setSearchResults([])
-                      }}
-                      aria-label={t('openSearch')}
-                    >
-                      <FiSearch size={20} />
-                    </button>
-                  </>
-                )}
+                <button 
+                  className="new-header__search-btn"
+                  onClick={() => {
+                    setIsSearchOpen(true)
+                    setSearchQuery('')
+                    setSearchResults([])
+                  }}
+                  aria-label={t('openSearch')}
+                >
+                  <FiSearch size={20} />
+                </button>
+                <HeaderPinnedCatalogNav />
                 <button 
                   className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
                   onClick={() => {
@@ -913,14 +890,18 @@ const Header = () => {
       </header>
       
       {/* Модальное окно входа/регистрации */}
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
+      {isLoginModalOpen ? (
+        <Suspense fallback={null}>
+          <LoginModalLazy
+        isOpen={isLoginModalOpen}
         onClose={() => {
           setIsLoginModalOpen(false)
           setLoginModalEntry('direct')
         }}
         authEntryVariant={loginModalEntry === 'wizard' ? 'header_wizard' : 'default'}
-      />
+          />
+        </Suspense>
+      ) : null}
 
       {isGlobalAiModalOpen && (
         <div className="global-ai-modal" role="dialog" aria-modal="true" aria-label={t('aiAssistant')}>

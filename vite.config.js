@@ -1,9 +1,13 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
+import { viteSeoHtmlPlugin } from './plugins/vite-seo-html.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const packageJson = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'))
+const appVersion = String(packageJson.version || '0.0.0')
 
 export default defineConfig(({ mode }) => {
   // Определяем режим: если NODE_ENV=production или запущено на Railway (есть PORT), то production
@@ -153,10 +157,59 @@ export default defineConfig(({ mode }) => {
       timeout: 30000,
       proxyTimeout: 30000,
     },
+    '/robots.txt': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 10000,
+      proxyTimeout: 10000,
+    },
+    '/sitemap.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-pages.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-all.xml': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-properties': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+    '/sitemap-images': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
   };
 
   return {
     plugins: [
+      viteSeoHtmlPlugin(),
       react({
         // Используем более стабильные настройки для Railway
         jsxRuntime: 'automatic',
@@ -197,9 +250,10 @@ export default defineConfig(({ mode }) => {
         '@tonconnect/ui-react',
         'framer-motion',
         'recharts',
+        '@radix-ui/react-accordion',
       ],
-      // Исключаем проблемные зависимости из оптимизации
-      exclude: [],
+      // Исключаем тяжёлые наборы react-icons из pre-bundle (fa/pi по ~1–6 MB в dev)
+      exclude: ['react-icons/fa', 'react-icons/fa6', 'react-icons/pi'],
       // Принудительно пересобираем зависимости при проблемах
       force: false,
       // Используем esbuild для оптимизации
@@ -246,25 +300,34 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: vitePort,
-      // Важно для OAuth (Google/Facebook origin_mismatch):
-      // чтобы случайно не открывали сайт по Network IP (например 192.168.*),
-      // а использовали именно localhost.
-      host: 'localhost',
+      // По умолчанию только localhost (OAuth origin).
+      // Для теста с телефона в одной Wi‑Fi: VITE_LAN=1 npm run dev
+      host: process.env.VITE_LAN === '1' ? true : 'localhost',
       strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
-      // Разрешаем все Railway хосты
-      allowedHosts: [
-        '.railway.app',
-        '.up.railway.app',
-        'newsellyourbrick-production.up.railway.app', // Конкретный хост из ошибки
-        'localhost',
-        '127.0.0.1'
-      ],
+      allowedHosts:
+        process.env.VITE_LAN === '1'
+          ? true
+          : [
+              '.railway.app',
+              '.up.railway.app',
+              'newsellyourbrick-production.up.railway.app',
+              'localhost',
+              '127.0.0.1',
+            ],
       // Отключаем HMR в production (на Railway) - он не нужен и вызывает проблемы с WebSocket
-      hmr: actualMode === 'production' ? false : {
-        clientPort: vitePort, // Для HMR в development
-        overlay: false // Отключаем overlay для избежания ошибок esbuild на Railway
-      },
+      hmr:
+        actualMode === 'production'
+          ? false
+          : process.env.VITE_LAN === '1'
+            ? {
+                // Телефон ходит по LAN IP — HMR берёт host из страницы
+                overlay: false,
+              }
+            : {
+                clientPort: vitePort, // Для HMR в development
+                overlay: false, // Отключаем overlay для избежания ошибок esbuild на Railway
+              },
       // JSON новостей и счётчики просмотров — не триггерить full reload при открытии статьи
       watch: {
         ignored: ['**/server/data/**'],
@@ -287,6 +350,7 @@ export default defineConfig(({ mode }) => {
       'process.env.REACT_APP_EMAILJS_PUBLIC_KEY': JSON.stringify(railwayEnv.REACT_APP_EMAILJS_PUBLIC_KEY || railwayEnv.VITE_EMAILJS_PUBLIC_KEY || ''),
       'process.env.REACT_APP_API_BASE_URL': JSON.stringify(railwayEnv.REACT_APP_API_BASE_URL || railwayEnv.VITE_API_BASE_URL || '/api'),
       'import.meta.env.VITE_INTELLIGENCE_IO_API_KEY': JSON.stringify(railwayEnv.VITE_INTELLIGENCE_IO_API_KEY || ''),
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
       'process.env.NODE_ENV': JSON.stringify(actualMode === 'production' ? 'production' : 'development'),
     },
   }

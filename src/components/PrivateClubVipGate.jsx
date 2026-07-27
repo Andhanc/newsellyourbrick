@@ -5,7 +5,7 @@ import { FiX } from 'react-icons/fi'
 import { getUserData } from '../services/authService'
 import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
-import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
+import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './PrivateClubVipGate.css'
 

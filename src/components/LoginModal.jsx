@@ -1,23 +1,24 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import WhatsAppVerificationModal from './WhatsAppVerificationModal'
-import EmailVerificationModal from './EmailVerificationModal'
-import BuyerSellerLinkConfirmModal from './BuyerSellerLinkConfirmModal'
-import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
 import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
-import { marketerLogin } from '../services/newsApi'
-import AnimatedCharacters from './AnimatedCharacters'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import './LoginModal.css'
+
+const LazyWhatsAppVerificationModal = lazy(() => import('./WhatsAppVerificationModal'))
+const LazyEmailVerificationModal = lazy(() => import('./EmailVerificationModal'))
+const LazyForgotPasswordModal = lazy(() => import('./ForgotPasswordModal'))
+const LazyBuyerSellerLinkConfirmModal = lazy(() => import('./BuyerSellerLinkConfirmModal'))
+const LazyVerificationDocumentsModal = lazy(() => import('./VerificationDocumentsModal'))
+const LazyAnimatedCharacters = lazy(() => import('./AnimatedCharacters'))
 
 /** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
 const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => {
@@ -48,6 +49,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const [registerBottomError, setRegisterBottomError] = useState('')
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
   const [showBuyerSellerLinkConfirm, setShowBuyerSellerLinkConfirm] = useState(false)
   const [pendingSellerLinkBuyerId, setPendingSellerLinkBuyerId] = useState(null)
   const [sellerRegistrationBuyerId, setSellerRegistrationBuyerId] = useState(null)
@@ -172,6 +174,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   if (!isOpen) return null
 
   const isHeaderWizard = authEntryVariant === 'header_wizard'
+  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
   const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
   /** Шаг 1 (роль) без цветовой темы buyer/seller; шаг 2 и обычная модалка — как раньше */
   const tintedByRole =
@@ -271,6 +274,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       // Панель маркетолога (логин в поле Email — manager / manager)
       if (formData.email.trim().toLowerCase() === 'manager') {
         try {
+          const { marketerLogin } = await import('../services/newsApi')
           await marketerLogin('manager', formData.password)
           setIsLoading(false)
           onClose()
@@ -534,6 +538,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
 
       if (signInLoaded && signIn) {
+        const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
         const returnUrl = getClerkOAuthReturnUrl()
         await signIn.authenticateWithRedirect({
           strategy: 'oauth_google',
@@ -628,6 +633,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       console.log('LoginModal: Facebook OAuth via signIn', { signInLoaded, isLogin, userRole: clerkRole })
 
       if (signInLoaded && signIn) {
+        const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
         const returnUrl = getClerkOAuthReturnUrl()
         await signIn.authenticateWithRedirect({
           strategy: 'oauth_facebook',
@@ -769,13 +775,34 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     }
   }
 
-  return (
+  return createPortal(
     <>
       {/* Скрываем LoginModal когда открыт EmailVerificationModal */}
       {!showEmailVerificationModal && !showBuyerSellerLinkConfirm && (
-        <div className="login-modal-overlay" onClick={onClose}>
+        <div
+          className={[
+            'login-modal-overlay',
+            isRoleStep ? 'login-modal-overlay--role-drawer' : '',
+            showAuthForm ? 'login-modal-overlay--form-screen' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={onClose}
+        >
           <div
-            className={`login-modal${loginModalTintClass ? ` ${loginModalTintClass}` : ''}`}
+            className={[
+              'login-modal',
+              loginModalTintClass,
+              isRoleStep ? 'login-modal--role-drawer' : '',
+              showAuthForm ? 'login-modal--form-screen' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={
+              isRoleStep ? 'login-modal-wizard-role-title' : 'login-modal-heading'
+            }
             onClick={(e) => e.stopPropagation()}
           >
 
@@ -793,11 +820,13 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 </button>
               )}
               <div className="login-modal__side-panel-characters">
-                <AnimatedCharacters
-                  isTypingPassword={isPasswordFocused && formData.password.length > 0}
-                  isPasswordVisible={showPassword && formData.password.length > 0}
-                  isEmailFocused={isEmailFocused}
-                />
+                <Suspense fallback={null}>
+                  <LazyAnimatedCharacters
+                    isTypingPassword={isPasswordFocused && formData.password.length > 0}
+                    isPasswordVisible={showPassword && formData.password.length > 0}
+                    isEmailFocused={isEmailFocused}
+                  />
+                </Suspense>
               </div>
             </div>
 
@@ -811,8 +840,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           <FiX size={24} />
         </button>
 
-        {isHeaderWizard && wizardPhase === 'role' && (
+        {isRoleStep && (
           <div className="login-modal__wizard login-modal__wizard--role">
+            <div className="login-modal__drawer-handle" aria-hidden="true">
+              <span />
+            </div>
             <div className="login-modal__wizard-head">
               <p className="login-modal__step-badge" aria-hidden>
                 {t('authWizardStep1Badge')}
@@ -834,8 +866,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
                   <FiUser />
                 </span>
-                <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
-                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
+                <span className="login-modal__wizard-tile-copy">
+                  <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
+                  <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -848,8 +882,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
                   <FiShoppingBag />
                 </span>
-                <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
-                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+                <span className="login-modal__wizard-tile-copy">
+                  <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
+                  <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+                </span>
               </button>
             </div>
           </div>
@@ -1197,7 +1233,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
 
           {isLogin && (
             <div className="login-modal__forgot">
-              <button type="button" className="login-modal__forgot-link">
+              <button
+                type="button"
+                className="login-modal__forgot-link"
+                onClick={() => setShowForgotPasswordModal(true)}
+              >
                 {t('forgotPassword')}
               </button>
             </div>
@@ -1245,51 +1285,81 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         </div>
       )}
       
-      <WhatsAppVerificationModal
-        isOpen={showWhatsAppModal}
-        onClose={() => setShowWhatsAppModal(false)}
-        onSuccess={handleWhatsAppSuccess}
-        role={userRole}
-        mode={isLogin ? 'login' : 'register'}
-      />
-      
-      <BuyerSellerLinkConfirmModal
-        isOpen={showBuyerSellerLinkConfirm}
-        onClose={() => {
-          setShowBuyerSellerLinkConfirm(false)
-          setPendingSellerLinkBuyerId(null)
-        }}
-        onConfirm={handleBuyerSellerLinkConfirmed}
-        email={formData.email}
-      />
+      {showWhatsAppModal ? (
+        <Suspense fallback={null}>
+          <LazyWhatsAppVerificationModal
+            isOpen={showWhatsAppModal}
+            onClose={() => setShowWhatsAppModal(false)}
+            onSuccess={handleWhatsAppSuccess}
+            role={userRole}
+            mode={isLogin ? 'login' : 'register'}
+          />
+        </Suspense>
+      ) : null}
 
-      <EmailVerificationModal
-        isOpen={showEmailVerificationModal}
-        onClose={() => {
-          console.log('📧 Закрываем EmailVerificationModal')
-          setShowEmailVerificationModal(false)
-          setSellerRegistrationBuyerId(null)
-          onClose() // Также закрываем LoginModal
-        }}
-        onSuccess={handleEmailVerificationSuccess}
-        email={formData.email}
-        password={formData.password}
-        name={formData.name}
-        role={userRole}
-        linkBuyerId={sellerRegistrationBuyerId}
-      />
-      
-      <VerificationDocumentsModal
-        isOpen={showVerificationDocumentsModal}
-        onClose={() => {
-          setShowVerificationDocumentsModal(false)
-          onClose()
-          navigate('/profile')
-        }}
-        userId={newUserId}
-        onComplete={handleVerificationDocumentsComplete}
-      />
-    </>
+      {showBuyerSellerLinkConfirm ? (
+        <Suspense fallback={null}>
+          <LazyBuyerSellerLinkConfirmModal
+            isOpen={showBuyerSellerLinkConfirm}
+            onClose={() => {
+              setShowBuyerSellerLinkConfirm(false)
+              setPendingSellerLinkBuyerId(null)
+            }}
+            onConfirm={handleBuyerSellerLinkConfirmed}
+            email={formData.email}
+          />
+        </Suspense>
+      ) : null}
+
+      {showForgotPasswordModal ? (
+        <Suspense fallback={null}>
+          <LazyForgotPasswordModal
+            isOpen={showForgotPasswordModal}
+            onClose={() => setShowForgotPasswordModal(false)}
+            initialEmail={formData.email}
+            onSuccess={() => {
+              showNotification(t('forgotPassword_success'), 'success')
+            }}
+          />
+        </Suspense>
+      ) : null}
+
+      {showEmailVerificationModal ? (
+        <Suspense fallback={null}>
+          <LazyEmailVerificationModal
+            isOpen={showEmailVerificationModal}
+            onClose={() => {
+              console.log('📧 Закрываем EmailVerificationModal')
+              setShowEmailVerificationModal(false)
+              setSellerRegistrationBuyerId(null)
+              onClose()
+            }}
+            onSuccess={handleEmailVerificationSuccess}
+            email={formData.email}
+            password={formData.password}
+            name={formData.name}
+            role={userRole}
+            linkBuyerId={sellerRegistrationBuyerId}
+          />
+        </Suspense>
+      ) : null}
+
+      {showVerificationDocumentsModal ? (
+        <Suspense fallback={null}>
+          <LazyVerificationDocumentsModal
+            isOpen={showVerificationDocumentsModal}
+            onClose={() => {
+              setShowVerificationDocumentsModal(false)
+              onClose()
+              navigate('/profile')
+            }}
+            userId={newUserId}
+            onComplete={handleVerificationDocumentsComplete}
+          />
+        </Suspense>
+      ) : null}
+    </>,
+    document.body,
   )
 }
 

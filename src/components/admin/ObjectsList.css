@@ -183,7 +183,7 @@
 .property-card__link {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #0ABAB5;
+  color: #0099A9;
   text-decoration: none;
   cursor: pointer;
   position: relative;
@@ -192,7 +192,7 @@
 }
 
 .property-card__link:hover {
-  color: #089A95;
+  color: #007d8a;
 }
 
 .property-card__link::after {

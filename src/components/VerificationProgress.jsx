@@ -51,7 +51,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
     .map(([field, _]) => fieldLabels[field]);
 
   const getProgressColor = () => {
-    if (status.progress === 100 && status.hasDocuments) return '#10b981'; // green
+    if (status.progress === 100 && status.hasDocuments) return '#0099A9'; // green
     if (status.progress >= 75) return '#f59e0b'; // yellow
     return '#ef4444'; // red
   };

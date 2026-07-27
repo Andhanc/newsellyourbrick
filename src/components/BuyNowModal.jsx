@@ -10,7 +10,7 @@ import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
-import { openReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
+import { launchReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
 import { getCurrencySymbol } from '../utils/currency'
 
 const DEPOSIT_FRACTION = 0.1
@@ -118,6 +118,7 @@ const BuyNowModal = ({
       setPdfViewerUrl('')
       setIsPdfViewerOpen(false)
       setAgreed(false)
+      setStripeLoading(false)
     }
   }, [isOpen])
 
@@ -206,17 +207,13 @@ const BuyNowModal = ({
     }
   }, [isOpen, currency, tenPercent])
 
-  const openPdf = async () => {
+  const openPdf = () => {
     try {
-      const { url, found } = await openReserveTermsPdf()
-      setPdfViewerUrl(url)
-      setIsPdfViewerOpen(true)
+      const { url, openedInNewTab } = launchReserveTermsPdf()
       setPdfOpened(true)
-      if (!found) {
-        showNotification(
-          'Не удалось проверить файл условий. Если документ не открылся, обновите страницу или обратитесь в поддержку.',
-          'error'
-        )
+      if (!openedInNewTab) {
+        setPdfViewerUrl(url)
+        setIsPdfViewerOpen(true)
       }
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
@@ -228,6 +225,7 @@ const BuyNowModal = ({
   }
 
   const handleStripeReservation = async () => {
+    if (stripeLoading) return
     if (!property?.id) {
       showNotification(t('buyNowModalErrorNoProperty'), 'error')
       return
@@ -244,7 +242,7 @@ const BuyNowModal = ({
       showNotification(t('buyNowModalErrorPdfConsent'), 'error')
       return
     }
-    if (signaturePadRef.current?.isEmpty()) {
+    if (signaturePadRef.current?.isEmpty?.()) {
       showNotification(t('buyNowModalErrorSignature'), 'error')
       return
     }
@@ -261,21 +259,36 @@ const BuyNowModal = ({
     try {
       const API_BASE_URL = await getApiBaseUrl()
       const useDepositFlag = !!(useWalletDeposit && canUseWallet)
-      const intentRes = await fetch(`${API_BASE_URL}/billing/property-reservation-signature-intent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: dbUserId,
-          propertyId: property.id,
-          propertyType: property?.property_type || property?.propertyType,
-          useDeposit: useDepositFlag,
-          signatureDataUrl: signaturePng,
-        }),
-      })
-      const intentData = await intentRes.json().catch(() => ({}))
-      if (!intentRes.ok || !intentData.success || !intentData.signingIntentId) {
-        showNotification(intentData.error || t('buyNowModalErrorSignatureSave'), 'error')
+      const controller = new AbortController()
+      const timer = window.setTimeout(() => controller.abort(), 45000)
+      let intentData = {}
+      try {
+        const intentRes = await fetch(`${API_BASE_URL}/billing/property-reservation-signature-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            userId: dbUserId,
+            propertyId: property.id,
+            propertyType: property?.property_type || property?.propertyType,
+            useDeposit: useDepositFlag,
+            signatureDataUrl: signaturePng,
+          }),
+        })
+        intentData = await intentRes.json().catch(() => ({}))
+        if (!intentRes.ok || !intentData.success || !intentData.signingIntentId) {
+          showNotification(intentData.error || t('buyNowModalErrorSignatureSave'), 'error')
+          return
+        }
+      } catch (error) {
+        const msg =
+          error?.name === 'AbortError'
+            ? 'Превышено время ожидания ответа сервера. Проверьте, что API запущен.'
+            : error?.message || t('buyNowModalErrorCheckout')
+        showNotification(msg, 'error')
         return
+      } finally {
+        window.clearTimeout(timer)
       }
 
       const customerEmail =
@@ -296,6 +309,10 @@ const BuyNowModal = ({
       })
       if (!result.ok) {
         showNotification(result.error || t('buyNowModalErrorCheckout'), 'error')
+        return
+      }
+      if (!result.redirected) {
+        showNotification(t('buyNowModalErrorCheckout'), 'error')
       }
     } finally {
       setStripeLoading(false)
@@ -504,30 +521,30 @@ const BuyNowModal = ({
             </button>
           </div>
         </div>
-
-        {isPdfViewerOpen && (
-          <div className="buy-now-modal__pdf-viewer-overlay" onClick={() => setIsPdfViewerOpen(false)}>
-            <div className="buy-now-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
-              <div className="buy-now-modal__pdf-viewer-head">
-                <strong>{t('buyNowModalPdfTerms')}</strong>
-                <button
-                  type="button"
-                  className="buy-now-modal__pdf-viewer-close"
-                  onClick={() => setIsPdfViewerOpen(false)}
-                  aria-label={t('buyNowModalCloseAria')}
-                >
-                  <FiX size={18} />
-                </button>
-              </div>
-              <iframe
-                title="Reserve terms PDF"
-                src={pdfViewerUrl}
-                className="buy-now-modal__pdf-viewer-frame"
-              />
-            </div>
-          </div>
-        )}
       </div>
+
+      {isPdfViewerOpen && (
+        <div className="buy-now-modal__pdf-viewer-overlay" onClick={() => setIsPdfViewerOpen(false)}>
+          <div className="buy-now-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
+            <div className="buy-now-modal__pdf-viewer-head">
+              <strong>{t('buyNowModalPdfTerms')}</strong>
+              <button
+                type="button"
+                className="buy-now-modal__pdf-viewer-close"
+                onClick={() => setIsPdfViewerOpen(false)}
+                aria-label={t('buyNowModalCloseAria')}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+            <iframe
+              title="Reserve terms PDF"
+              src={pdfViewerUrl}
+              className="buy-now-modal__pdf-viewer-frame"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

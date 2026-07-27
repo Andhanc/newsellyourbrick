@@ -15,6 +15,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import i18n from '../i18n/config'
 import { getCurrencySymbol } from '../utils/currency'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import './History.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
@@ -323,22 +324,9 @@ const History = () => {
   const [bidHistory, setBidHistory] = useState([])
   const [isLoadingBids, setIsLoadingBids] = useState(true)
 
-  const handleSellObject = () => {
-    const role = String(
-      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
-    ).toLowerCase()
-    if (role === 'seller' || role === 'owner') {
-      navigate('/owner/property/new')
-      return
-    }
-    try {
-      sessionStorage.setItem('login_modal_mode', 'register')
-      sessionStorage.setItem('login_modal_user_role', 'seller')
-    } catch {
-      /* ignore */
-    }
-    requestOpenLoginModal({ wizard: false })
-    navigate('/', { replace: true })
+  const handleSellObject = (snapshot) => {
+    const pid = snapshot?.id ?? snapshot?.propertyId
+    if (pid) navigate(`/profile/purchased/${pid}`)
   }
 
   const loadReservationPurchases = async () => {
@@ -684,7 +672,32 @@ const History = () => {
 
         <main className="history-main buyer-cabinet-layout-main">
           <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
+          <span className="history-mobile-eyebrow">Портфель покупателя</span>
           <h1 className="history-title">{t('buyerHistory_title')}</h1>
+
+          <section className="history-mobile-hero" aria-label="Сводка по покупкам">
+            <div className="history-mobile-hero__top">
+              <span>Ваши активы</span>
+              <span className="history-mobile-hero__status">
+                {activeReservationPurchases.length > 0 ? 'Есть активный резерв' : 'Все события сохранены'}
+              </span>
+            </div>
+            <strong className="history-mobile-hero__value">
+              {purchaseHistory.length + completedBuyNowReservations.length + sharePurchases.length}{' '}
+              {t('buyerHistory_assetsCount', { defaultValue: 'объектов' })}
+            </strong>
+            <p>
+              Покупки, доли, резервы и ставки собраны в одной хронологии. Для каждого события показан актуальный следующий шаг.
+            </p>
+            <div className="history-mobile-hero__metrics">
+              <span><b>{activeReservationPurchases.length}</b> активных резервов</span>
+              <span><b>{bidHistory.length}</b> ставок</span>
+            </div>
+            <div className="history-mobile-hero__actions">
+              <Link to="/auction" className="history-mobile-hero__action">Найти объект</Link>
+              <Link to="/wallet" className="history-mobile-hero__action history-mobile-hero__action--secondary">Открыть кошелёк</Link>
+            </div>
+          </section>
 
           <div className="history-content">
             <section className="history-section">
@@ -894,7 +907,10 @@ const History = () => {
                     </p>
                     {sharePurchases.map((row) => {
                       const cur = (row.currency || 'USD').toUpperCase()
-                      const shareTo = `/shares/${row.property_type}-${row.property_id}`
+                      const shareTo = getCoInvestmentDetailPath({
+                        id: row.property_id,
+                        property_type: row.property_type,
+                      })
                       const title =
                         row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
                       const imgSrc = sharePurchaseImageSrc(row.property_image)
@@ -967,7 +983,15 @@ const History = () => {
                             <button
                               type="button"
                               className="card-button card-button--secondary"
-                              onClick={handleSellObject}
+                              onClick={() =>
+                                handleSellObject({
+                                  id: row.property_id,
+                                  propertyId: row.property_id,
+                                  title,
+                                  image: sharePurchaseImageSrc(row.property_image),
+                                  location: row.property_location || '',
+                                })
+                              }
                             >
                               Продать объект
                             </button>
@@ -1057,4 +1081,3 @@ const History = () => {
 }
 
 export default History
-

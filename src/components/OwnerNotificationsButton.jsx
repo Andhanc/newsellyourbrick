@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Bell, DollarSign } from 'lucide-react'
 import OwnerNotificationsDrawer from './OwnerNotificationsDrawer'
 import { useOwnerTestNavOptional } from '../context/OwnerTestNavigationContext'
+import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
@@ -170,8 +171,13 @@ export default function OwnerNotificationsButton({
       .sort((a, b) => b.createdTs - a.createdTs)
   }, [bidRows, nav, properties, t, i18n.language])
 
+  const { dismiss, filterItems } = useOwnerDismissedNotifications()
   const resolvedItems = items ?? fetchedItems
-  const resolvedBadge = badge !== undefined ? badge : resolvedItems.length || null
+  const visibleItems = useMemo(() => filterItems(resolvedItems), [filterItems, resolvedItems])
+  const badgeCount =
+    items != null ? visibleItems.length : badge != null ? Number(badge) : visibleItems.length
+  const resolvedBadge =
+    badgeCount > 0 ? (badgeCount > 99 ? '99+' : badgeCount) : null
 
   return (
     <>
@@ -185,7 +191,12 @@ export default function OwnerNotificationsButton({
         <Bell size={iconSize} strokeWidth={2} />
         {resolvedBadge != null && <span className={badgeClassName}>{resolvedBadge}</span>}
       </button>
-      <OwnerNotificationsDrawer open={open} onClose={() => setOpen(false)} items={resolvedItems} />
+      <OwnerNotificationsDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        items={visibleItems}
+        onDismiss={dismiss}
+      />
     </>
   )
 }

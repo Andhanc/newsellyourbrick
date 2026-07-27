@@ -31,6 +31,7 @@ function CatalogDesktopFilters({
   filters,
   onChange,
   priceBounds,
+  variant = 'sidebar',
 }) {
   const { t } = useTranslation()
   const [locationOptions, setLocationOptions] = useState([])
@@ -191,10 +192,17 @@ function CatalogDesktopFilters({
   }
 
   return (
-    <aside className="auction-desktop-filters catalog-desktop-filters" aria-label={t('filters')}>
-      <div className="auction-desktop-filters__head">
-        <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
-      </div>
+    <aside
+      className={`auction-desktop-filters catalog-desktop-filters${
+        variant === 'drawer' ? ' auction-desktop-filters--drawer' : ''
+      }`}
+      aria-label={t('filters')}
+    >
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__head">
+          <h2 className="auction-desktop-filters__title">{t('filters')}</h2>
+        </div>
+      ) : null}
 
       {activeChips.length > 0 ? (
         <div className="auction-desktop-filters__chips">
@@ -380,11 +388,13 @@ function CatalogDesktopFilters({
         </FilterSection>
       </div>
 
-      <div className="auction-desktop-filters__footer">
-        <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
-          {t('catalogResetFilters')}
-        </button>
-      </div>
+      {variant !== 'drawer' ? (
+        <div className="auction-desktop-filters__footer">
+          <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
+            {t('catalogResetFilters')}
+          </button>
+        </div>
+      ) : null}
     </aside>
   )
 }

@@ -1,0 +1,84 @@
+<style>
+  .directions { display:grid; grid-template-columns:repeat(3,minmax(250px,1fr)); gap:20px; margin-top:24px; }
+  .direction { cursor:pointer; border:1px solid var(--border); border-radius:24px; padding:16px; background:var(--surface); transition:.2s ease; }
+  .direction:hover { transform:translateY(-3px); border-color:#8da51e; }
+  .direction.selected { outline:3px solid #a8c92a; outline-offset:2px; }
+  .phone { overflow:hidden; border-radius:28px; background:#f7f5f0; padding:16px 0 20px; box-shadow:0 20px 50px rgba(34,37,28,.12); }
+  .rail { display:flex; gap:10px; overflow:hidden; padding-left:14px; }
+  .strategy { position:relative; flex:0 0 84%; overflow:hidden; border-radius:22px; color:#172016; min-height:300px; box-sizing:border-box; }
+  .strategy.next { flex-basis:26%; filter:saturate(.65); }
+  .copy { position:relative; z-index:3; padding:18px; }
+  .eyebrow { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.62; }
+  .strategy h4 { max-width:8ch; margin:48px 0 9px; font-size:29px; line-height:.94; letter-spacing:-.055em; }
+  .strategy p { max-width:17ch; margin:0; font-size:12px; line-height:1.35; opacity:.72; }
+  .button { position:absolute; z-index:5; left:18px; bottom:18px; padding:9px 13px; border:1px solid rgba(20,30,15,.22); border-radius:999px; background:rgba(255,255,255,.62); backdrop-filter:blur(8px); font-size:10px; font-weight:800; }
+  .object { position:absolute; z-index:1; right:-18px; bottom:8px; width:150px; height:170px; opacity:.62; }
+  .house { position:absolute; right:10px; bottom:16px; width:112px; height:86px; border-radius:10px; background:linear-gradient(145deg,#fff,#c7d0bd); box-shadow:0 18px 28px rgba(34,52,29,.19); transform:rotate(-6deg); }
+  .house:before { content:""; position:absolute; left:12px; top:-42px; border-left:44px solid transparent; border-right:44px solid transparent; border-bottom:47px solid #879e78; filter:drop-shadow(0 8px 8px rgba(0,0,0,.1)); }
+  .house:after { content:""; position:absolute; left:45px; bottom:0; width:24px; height:45px; border-radius:5px 5px 0 0; background:#61705b; }
+  .coin { position:absolute; right:0; bottom:0; width:62px; height:62px; border-radius:50%; background:linear-gradient(145deg,#f9e5a1,#bd8d28); box-shadow:inset -8px -8px 16px rgba(109,75,7,.18),0 12px 22px rgba(75,62,16,.2); }
+  .coin.two { right:55px; bottom:4px; transform:scale(.72); }
+  .label { margin-top:16px; }
+  .label strong { display:block; margin-bottom:5px; font-size:16px; }
+  .label span { display:block; color:var(--muted); font-size:12px; line-height:1.4; }
+  .a .strategy { background:linear-gradient(145deg,#d8efaa,#afcf77); }
+  .a .strategy h4 { margin-top:48px; }
+  .b .strategy { min-height:300px; background:linear-gradient(145deg,#dfe8db,#bdcbb6); }
+  .b .copy { width:60%; }
+  .b .strategy h4 { margin-top:50px; }
+  .b .object { right:-2px; bottom:10px; opacity:.42; transform:scale(.95); }
+  .b .button { right:16px; left:auto; width:34px; height:34px; padding:0; display:grid; place-items:center; font-size:16px; }
+  .c .strategy { min-height:300px; background:linear-gradient(150deg,#ece8dd,#d0c8b6); }
+  .c .copy { padding-bottom:120px; }
+  .c .strategy h4 { margin-top:24px; }
+  .c .object { right:16px; bottom:-24px; width:185px; opacity:.33; transform:scale(1.08); }
+  .c .button { bottom:16px; }
+  @media(max-width:900px){ .directions{grid-template-columns:1fr;} .phone{max-width:360px;margin:auto;} }
+</style>
+
+<h2>Как должна выглядеть мобильная карточка?</h2>
+<p class="subtitle">Во всех вариантах работает свайп и виден край следующей карточки. Нажмите на понравившийся вариант.</p>
+
+<div class="directions">
+  <div class="direction a" data-choice="a" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="rail">
+        <div class="strategy">
+          <div class="copy"><span class="eyebrow">01 · Аукцион</span><h4>Цена ниже рынка</h4><p>Прозрачные ставки и понятный финал торгов</p></div>
+          <div class="object"><div class="house"></div><div class="coin"></div><div class="coin two"></div></div>
+          <span class="button">Смотреть →</span>
+        </div>
+        <div class="strategy next"></div>
+      </div>
+    </div>
+    <div class="label"><strong>A · Рекламная</strong><span>Крупный текст и заметный 3D-объект. Самая эмоциональная, но сильнее притягивает внимание.</span></div>
+  </div>
+
+  <div class="direction b" data-choice="b" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="rail">
+        <div class="strategy">
+          <div class="copy"><span class="eyebrow">01 · Аукцион</span><h4>Цена ниже рынка</h4><p>Прозрачные ставки и понятный финал торгов</p></div>
+          <div class="object"><div class="house"></div><div class="coin"></div></div>
+          <span class="button">→</span>
+        </div>
+        <div class="strategy next"></div>
+      </div>
+    </div>
+    <div class="label"><strong>B · Сбалансированная — рекомендую</strong><span>Текст слева, приглушённый 3D-объект справа. Читается быстро и не перетягивает внимание.</span></div>
+  </div>
+
+  <div class="direction c" data-choice="c" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="rail">
+        <div class="strategy">
+          <div class="copy"><span class="eyebrow">01 · Аукцион</span><h4>Цена ниже рынка</h4><p>Прозрачные ставки и понятный финал торгов</p></div>
+          <div class="object"><div class="house"></div><div class="coin"></div><div class="coin two"></div></div>
+          <span class="button">Смотреть →</span>
+        </div>
+        <div class="strategy next"></div>
+      </div>
+    </div>
+    <div class="label"><strong>C · Атмосферная</strong><span>3D-графика почти растворяется в фоне. Самая спокойная, но связь со стратегией слабее.</span></div>
+  </div>
+</div>

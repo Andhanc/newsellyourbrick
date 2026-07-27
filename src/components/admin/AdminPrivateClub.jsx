@@ -75,7 +75,7 @@ const AdminPrivateClub = () => {
     <div className="admin-private-club">
       <div className="admin-private-club__header">
         <h2>
-          <FaGem style={{ marginRight: 8, verticalAlign: 'middle', color: '#0abab5' }} size={20} />
+          <FaGem style={{ marginRight: 8, verticalAlign: 'middle', color: '#0099A9' }} size={20} />
           Закрытый клуб
         </h2>
         <p>

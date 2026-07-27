@@ -5,16 +5,18 @@
 }
 
 .otsb__menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 40;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 13500;
   width: min(280px, calc(100vw - 24px));
   padding: 10px;
   border-radius: 14px;
-  border: 1px solid rgba(10, 186, 181, 0.18);
+  border: 1.5px solid #e5e7eb;
   background: #fff;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.14),
+    0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .otsb__menu-title {
@@ -40,7 +42,7 @@
 }
 
 .otsb__menu-item:hover {
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
 }
 
 .otsb__menu-icon {
@@ -54,8 +56,8 @@
 }
 
 .otsb__menu-icon--chat {
-  background: rgba(10, 186, 181, 0.12);
-  color: #089a95;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007d8a;
 }
 
 .otsb__menu-icon--ai {

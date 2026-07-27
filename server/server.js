@@ -43,7 +43,18 @@ import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './e
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
 import { registerNewsRoutes } from './newsRoutes.js';
+import { registerSeoRedirects } from './seoRedirects.js';
+import { registerSeoSitemap } from './seoSitemap.js';
+import { registerSeoNotFound } from './seoNotFound.js';
+import { registerSeoAdminRoutes } from './seoAdminRoutes.js';
+import { sendSeoSpaHtml } from './seoHtmlRender.js';
+import { registerCatalogRoutes } from './catalogRoutes.js';
+import { registerPropertyAiRoutes } from './propertyAiRoutes.js';
+import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
+import { createCorsOriginChecker } from './middleware/corsOrigin.js';
+import { requireClerkAuth } from './middleware/clerkAuth.js';
+import { resolveWebDist } from './middleware/resolveWebDist.js';
 import { getCurrencySymbol } from './utils/currency.js';
 import {
   applyFormattedPropertyAmenities,
@@ -65,6 +76,7 @@ import {
   AUCTION_DEPOSIT_MIN_EUR,
   isAuctionDepositSufficient,
 } from './utils/auctionDeposit.js';
+import { formatShareMarketplaceApiItem } from './database/shareMarketplaceQueries.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -138,8 +150,33 @@ app.use(
   })
 );
 
+// CORS must run before early routers (news/seo/catalog) so Expo Web can call the API.
+app.use(cors({
+  origin: createCorsOriginChecker(),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-User-Id',
+    'Access-Control-Request-Private-Network',
+  ],
+}));
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
+
 registerIntelligenceIoProxy(app);
 registerNewsRoutes(app);
+registerSeoRedirects(app);
+registerSeoSitemap(app);
+registerSeoNotFound(app);
+registerSeoAdminRoutes(app);
+registerCatalogRoutes(app);
 // На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
 // В development: используем SERVER_PORT или 3000
 // Логика: если NODE_ENV=production и есть PORT, используем PORT, иначе SERVER_PORT или 3000
@@ -197,7 +234,6 @@ function validatePassword(password) {
 }
 
 // Настройка middleware
-// CORS с поддержкой dev tunnels и других доменов
 // Health check endpoint для Railway
 app.get('/health', async (req, res) => {
   res.status(200).json({ 
@@ -835,6 +871,33 @@ app.get('/api/geo/country', (req, res) => {
   });
 });
 
+app.get('/api/map/nearby-places', async (req, res) => {
+  const lat = Number.parseFloat(req.query.lat);
+  const lng = Number.parseFloat(req.query.lng);
+  const category = String(req.query.category || '').trim();
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180 ||
+    !category
+  ) {
+    return res.status(400).json({ success: false, error: 'Invalid map query params' });
+  }
+
+  try {
+    const places = await fetchNearbyPlacesForCategory(lat, lng, category);
+    res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    return res.json({ success: true, data: { places } });
+  } catch (error) {
+    console.error('[map/nearby-places]', category, lat, lng, error?.message || error);
+    return res.status(502).json({ success: false, error: 'Failed to load nearby places' });
+  }
+});
+
 app.get('/api/config', async (req, res) => {
   res.setHeader(
     'Cache-Control',
@@ -915,32 +978,30 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Разрешаем запросы без origin (например, Postman, мобильные приложения)
-    if (!origin) return callback(null, true);
-    
-    // Разрешаем localhost для локальной разработки
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
-    
-    // Разрешаем dev tunnels домены
-    if (origin.includes('devtunnels.ms') || origin.includes('devtunnels')) {
-      return callback(null, true);
-    }
-    
-    // Разрешаем все остальные домены (для тестирования)
-    // В production здесь нужно указать конкретные домены
-    callback(null, true);
-  },
+  origin: createCorsOriginChecker(),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-User-Id',
+    'Access-Control-Request-Private-Network',
+  ],
 }));
-// Stripe webhook требует сырой body для проверки подписи
+
+/** Optional Clerk bearer gate — enable with REQUIRE_API_AUTH=1 after JWKS configured */
+app.use('/api', (req, res, next) => {
+  // Skip public health/config and Stripe webhook (raw body route registered earlier)
+  if (req.path === '/config' || req.path === '/health' || req.path.startsWith('/webhooks/')) {
+    return next();
+  }
+  return requireClerkAuth(req, res, next);
+});// Stripe webhook требует сырой body для проверки подписи
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 /** Опрос тест-драйва может содержать base64-фото; дефолтный лимит 100kb рвёт такие запросы. */
 app.use(express.json({ limit: '18mb' }));
+registerPropertyAiRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
 
@@ -2236,7 +2297,18 @@ app.put('/api/users/:id/card-bound', async (req, res) => {
  */
 app.get('/api/users/email/:email', async (req, res) => {
   try {
-    const user = await userQueries.getByEmail(req.params.email);
+    const emailLower = String(req.params.email || '').trim().toLowerCase();
+    const roleRaw = req.query.role ? String(req.query.role).toLowerCase() : null;
+
+    let user = null;
+    if (roleRaw === 'buyer' || roleRaw === 'seller') {
+      const rows = await userQueries.getAllByEmail(emailLower);
+      const matches = usersForCabinetRole(rows, roleRaw);
+      user = matches[0] || null;
+    } else {
+      user = await userQueries.getByEmail(emailLower);
+    }
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -2594,18 +2666,28 @@ app.put('/api/users/:id', async (req, res) => {
     // Проверяем, обновляется ли email и требуется ли его подтверждение
     if (updateData.email && updateData.email !== currentUser.email) {
       const emailLower = updateData.email.toLowerCase();
-      
-      // Проверяем, не занят ли email другим пользователем
-      const existingUser = await userQueries.getByEmail(emailLower);
-      if (existingUser && existingUser.id !== parseInt(userId)) {
-        return res.status(409).json({ 
-          success: false, 
-          error: 'Пользователь с таким email уже существует' 
+
+      const sameEmailUsers = await userQueries.getAllByEmail(emailLower);
+      const emailConflict = sameEmailUsers.find((u) => u.id !== parseInt(userId, 10));
+      if (emailConflict) {
+        return res.status(409).json({
+          success: false,
+          error: 'Пользователь с таким email уже существует',
         });
       }
-      
+
       // Смена email подтверждается явным согласием на фронтенде перед сохранением.
       // Здесь пропускаем изменение дальше, оставляя серверную проверку уникальности.
+    }
+
+    if (updateData.phone_number) {
+      const phoneOwner = await userQueries.getByPhone(updateData.phone_number);
+      if (phoneOwner && phoneOwner.id !== parseInt(userId, 10)) {
+        return res.status(409).json({
+          success: false,
+          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+        });
+      }
     }
     
     // Если пароль передан, валидируем и хешируем его перед сохранением
@@ -2665,7 +2747,14 @@ app.put('/api/users/:id', async (req, res) => {
     console.error('   Сообщение:', error.message);
     console.error('   Stack:', error.stack);
     
-    if (error.message && error.message.includes('UNIQUE constraint')) {
+    if (error.message && (error.message.includes('UNIQUE constraint') || error.code === 'P2002')) {
+      const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(', ') : '';
+      if (target.includes('phone_number') || error.message.includes('phone_number')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+        });
+      }
       return res.status(409).json({ 
         success: false, 
         error: 'Пользователь с таким email или номером телефона уже существует' 
@@ -4346,42 +4435,6 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     
     console.log(`✅ Статус запроса #${req.params.id} обновлен: ${status}`);
 
-    // Завершение сделки: перенос активов с аккаунта покупателя на продавца (один email), чтобы кабинет продавца видел покупки
-    if (status === 'completed') {
-      try {
-        const rawBuyerId = request.buyer_id;
-        const buyerIdNum =
-          rawBuyerId != null ? parseInt(String(rawBuyerId).trim(), 10) : NaN;
-        if (Number.isFinite(buyerIdNum)) {
-          const buyerUser = await userQueries.getById(buyerIdNum);
-          const email =
-            buyerUser?.email && String(buyerUser.email).trim().toLowerCase();
-          if (email) {
-            const sameEmail = await userQueries.getAllByEmail(email);
-            const sellerRow = sameEmail.find(
-              (u) =>
-                Number(u.id) !== buyerIdNum &&
-                String(u.role || '').toLowerCase() === 'seller'
-            );
-            if (sellerRow) {
-              await userQueries.migrateBuyerAssetsToSellerUser(
-                buyerIdNum,
-                Number(sellerRow.id)
-              );
-              console.log(
-                `✅ Перенос активов покупатель→продавец после завершения запроса #${req.params.id}: ${buyerIdNum} → ${sellerRow.id}`
-              );
-            }
-          }
-        }
-      } catch (migrateOnCompleteErr) {
-        console.error(
-          '❌ Ошибка переноса активов при завершении запроса на покупку:',
-          migrateOnCompleteErr
-        );
-      }
-    }
-    
     // Если статус "processing", отправляем уведомления покупателю
     if (status === 'processing') {
       try {
@@ -5210,6 +5263,227 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
   }
 });
 
+const isSellerCabinetRole = (role) => role === 'seller' || role === 'owner';
+const isBuyerCabinetRole = (role) => role === 'buyer' || role === 'client' || !role;
+
+function linkedRolePublicUser(u) {
+  if (!u) return null;
+  return {
+    id: u.id,
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Пользователь',
+    email: u.email,
+    role: u.role,
+    hasPassword: Boolean(u.password),
+    phone: u.phone_number || null,
+    country: u.country || null,
+    address: u.address || null,
+    passportNumber: u.passport_number || null,
+    identificationNumber: u.identification_number || null,
+    ...(u.hasOwnProperty('user_id_number') && u.user_id_number ? { user_id_number: u.user_id_number } : {}),
+  };
+}
+
+function buildLinkedRoleProfileFromUser(sourceUser) {
+  const firstName = (sourceUser.first_name || '').trim() || 'Пользователь';
+  return {
+    first_name: firstName,
+    last_name: sourceUser.last_name ?? null,
+    email: (sourceUser.email || '').toLowerCase(),
+    // phone_number UNIQUE — второй аккаунт с тем же email не может повторять телефон (как при link_buyer_id register)
+    phone_number: null,
+    country: sourceUser.country ?? null,
+    address: sourceUser.address ?? null,
+    passport_number: sourceUser.passport_number ?? null,
+    identification_number: sourceUser.identification_number ?? null,
+    passport_series: sourceUser.passport_series ?? null,
+    user_photo: sourceUser.user_photo ?? null,
+    passport_photo: sourceUser.passport_photo ?? null,
+    is_verified: 0,
+    is_online: 1,
+    is_blocked: 0,
+  };
+}
+
+/**
+ * GET /api/auth/linked-roles — связанные кабинеты покупателя и продавца по email
+ */
+app.get('/api/auth/linked-roles', async (req, res) => {
+  try {
+    const userIdRaw = req.query.userId;
+    const emailRaw = req.query.email;
+    let emailLower = typeof emailRaw === 'string' ? emailRaw.toLowerCase().trim() : '';
+
+    if (userIdRaw) {
+      const user = await userQueries.getById(parseInt(String(userIdRaw), 10));
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      }
+      emailLower = (user.email || '').toLowerCase();
+    }
+
+    if (!emailLower) {
+      return res.status(400).json({ success: false, error: 'Укажите userId или email' });
+    }
+
+    const rows = await userQueries.getAllByEmail(emailLower);
+    const buyer = rows.find((u) => isBuyerCabinetRole(u.role)) || null;
+    const seller = rows.find((u) => isSellerCabinetRole(u.role)) || null;
+
+    res.json({
+      success: true,
+      email: emailLower,
+      buyer: linkedRolePublicUser(buyer),
+      seller: linkedRolePublicUser(seller),
+      hasBoth: Boolean(buyer && seller),
+    });
+  } catch (error) {
+    console.error('❌ linked-roles GET:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/linked-roles/create — создать связанный кабинет (покупатель ↔ продавец)
+ */
+app.post('/api/auth/linked-roles/create', async (req, res) => {
+  try {
+    const userId = parseInt(String(req.body.userId), 10);
+    const targetRole = String(req.body.targetRole || '').toLowerCase();
+    const password = req.body.password;
+
+    if (!userId || !password || !targetRole) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите userId, targetRole и password',
+      });
+    }
+
+    if (targetRole !== 'buyer' && targetRole !== 'seller') {
+      return res.status(400).json({
+        success: false,
+        error: 'targetRole должен быть buyer или seller',
+      });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: passwordValidation.message,
+        passwordValidation: {
+          missing: passwordValidation.missing,
+          present: passwordValidation.present,
+        },
+      });
+    }
+
+    const sourceUser = await userQueries.getById(userId);
+    if (!sourceUser) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const emailLower = (sourceUser.email || '').toLowerCase();
+    if (!emailLower) {
+      return res.status(400).json({
+        success: false,
+        error: 'Для создания связанного кабинета нужен email в профиле',
+      });
+    }
+
+    const sourceRole = sourceUser.role || 'buyer';
+    const wantsBuyer = targetRole === 'buyer';
+    const wantsSeller = targetRole === 'seller';
+
+    if (wantsBuyer && !isSellerCabinetRole(sourceRole)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Кабинет покупателя можно создать только из кабинета продавца',
+      });
+    }
+    if (wantsSeller && !isBuyerCabinetRole(sourceRole)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Кабинет продавца можно создать только из кабинета покупателя',
+      });
+    }
+
+    const rows = await userQueries.getAllByEmail(emailLower);
+    const existingBuyer = rows.find((u) => isBuyerCabinetRole(u.role)) || null;
+    const existingSeller = rows.find((u) => isSellerCabinetRole(u.role)) || null;
+
+    if (wantsBuyer && existingBuyer) {
+      return res.status(409).json({
+        success: false,
+        status: 'already_exists',
+        error: 'Кабинет покупателя для этого email уже существует',
+        user: linkedRolePublicUser(existingBuyer),
+      });
+    }
+    if (wantsSeller && existingSeller) {
+      return res.status(409).json({
+        success: false,
+        status: 'already_exists',
+        error: 'Кабинет продавца для этого email уже существует',
+        user: linkedRolePublicUser(existingSeller),
+      });
+    }
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    for (const u of rows) {
+      if (u.password && u.password === hashedPassword) {
+        return res.status(400).json({
+          success: false,
+          status: 'password_same_as_other',
+          error:
+            'Пароль нового кабинета должен отличаться от пароля другого кабинета. Укажите другой пароль.',
+        });
+      }
+    }
+
+    const profileBase = buildLinkedRoleProfileFromUser(sourceUser);
+    const newUser = {
+      ...profileBase,
+      password: hashedPassword,
+      role: wantsBuyer ? 'buyer' : 'seller',
+    };
+
+    const result = await userQueries.create(newUser);
+    const createdUser = await userQueries.getById(result.lastInsertRowid);
+    if (!createdUser) {
+      return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
+    }
+
+    const createdUserFinal = await userQueries.getById(createdUser.id);
+
+    res.status(201).json({
+      success: true,
+      user: linkedRolePublicUser(createdUserFinal),
+    });
+  } catch (error) {
+    const msg = String(error?.message || '');
+    const isUnique =
+      msg.includes('UNIQUE constraint') ||
+      error?.code === 'P2002' ||
+      msg.includes('Unique constraint failed');
+
+    if (isUnique) {
+      if (msg.includes('phone_number') || error?.meta?.target?.includes?.('phone_number')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Не удалось создать кабинет: телефон уже привязан к другому аккаунту. Повторите попытку.',
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        error: 'Аккаунт с такими данными уже существует',
+      });
+    }
+    console.error('❌ linked-roles/create:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 /**
  * POST /api/auth/email/register - Регистрация через Email
  */
@@ -5338,28 +5612,6 @@ app.post('/api/auth/email/register', async (req, res) => {
       }
     }
 
-    if (linkBuyer) {
-      try {
-        await userQueries.migrateBuyerAssetsToSellerUser(linkBuyer.id, createdUser.id);
-        const dep = Number(linkBuyer.deposit_amount) || 0;
-        if (dep > 0) {
-          await userQueries.update(createdUser.id, { deposit_amount: dep });
-          await userQueries.update(linkBuyer.id, { deposit_amount: 0 });
-        }
-      } catch (migErr) {
-        console.error('❌ Ошибка переноса данных покупателя → продавец:', migErr);
-        try {
-          await userQueries.delete(createdUser.id);
-        } catch (delErr) {
-          console.error('❌ Не удалось откатить создание продавца:', delErr);
-        }
-        return res.status(500).json({
-          success: false,
-          error: 'Не удалось перенести данные покупателя. Попробуйте позже или обратитесь в поддержку.',
-        });
-      }
-    }
-
     const createdUserFinal = linkBuyer ? await userQueries.getById(createdUser.id) : createdUser;
 
     console.log('✅ Пользователь успешно сохранен в БД:', {
@@ -5401,7 +5653,7 @@ app.post('/api/auth/email/register', async (req, res) => {
  */
 app.post('/api/auth/email/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ 
@@ -5423,11 +5675,24 @@ app.post('/api/auth/email/login', async (req, res) => {
       });
     }
 
+    const roleNorm = role ? String(role).toLowerCase() : null;
+    let loginCandidates = candidates;
+    if (roleNorm === 'buyer' || roleNorm === 'seller') {
+      loginCandidates = usersForCabinetRole(candidates, roleNorm);
+      if (!loginCandidates.length) {
+        console.log('❌ Кабинет не найден для email:', { identifier, role: roleNorm });
+        return res.status(401).json({
+          success: false,
+          error: 'Неверный email или пароль',
+        });
+      }
+    }
+
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
     /** Несколько аккаунтов с одним email (покупатель + продавец) — подбираем по паролю */
     let user = null;
-    for (const u of candidates) {
+    for (const u of loginCandidates) {
       if (!u.password) continue;
       if (u.password === hashedPassword) {
         user = u;
@@ -5436,7 +5701,7 @@ app.post('/api/auth/email/login', async (req, res) => {
     }
 
     if (!user) {
-      if (candidates.length === 1 && !candidates[0].password) {
+      if (loginCandidates.length === 1 && !loginCandidates[0].password) {
         return res.status(401).json({
           success: false,
           error:
@@ -5485,6 +5750,255 @@ app.post('/api/auth/email/login', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/** Сессии восстановления пароля (email → код + токен) */
+const passwordResetSessions = new Map();
+const PASSWORD_RESET_CODE_TTL_MS = 10 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+function generatePasswordResetCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function getEmailJsServerConfig() {
+  return {
+    serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
+    templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
+    publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || '',
+  };
+}
+
+async function sendPasswordResetEmail(email, code) {
+  const emailJsConfig = getEmailJsServerConfig();
+  if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
+    console.warn('⚠️ EmailJS не настроен — код восстановления пароля:', code);
+    return { sent: false, devCode: code };
+  }
+  const emailData = {
+    service_id: emailJsConfig.serviceId,
+    template_id: emailJsConfig.templateId,
+    user_id: emailJsConfig.publicKey,
+    template_params: {
+      to_email: email,
+      email,
+      verification_code: code,
+      code,
+      passcode: code,
+      subject: 'Восстановление пароля — Sellyourbrick',
+    },
+  };
+  await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return { sent: true };
+}
+
+function cabinetRolesForUsers(users) {
+  const roles = new Set();
+  for (const u of users) {
+    const r = u.role || 'buyer';
+    roles.add(r === 'seller' || r === 'owner' ? 'seller' : 'buyer');
+  }
+  return [...roles];
+}
+
+function usersForCabinetRole(users, role) {
+  const wantSeller = role === 'seller';
+  return users.filter((u) => {
+    const r = u.role || 'buyer';
+    const isSeller = r === 'seller' || r === 'owner';
+    return wantSeller ? isSeller : !isSeller;
+  });
+}
+
+/**
+ * POST /api/auth/email/forgot-password/send-code — отправить 4-значный код
+ */
+app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
+  try {
+    const emailRaw = req.body.email;
+    if (!emailRaw || typeof emailRaw !== 'string') {
+      return res.status(400).json({ success: false, error: 'Укажите email' });
+    }
+    const emailLower = emailRaw.toLowerCase().trim();
+    const users = await userQueries.getAllByEmail(emailLower);
+    if (!users.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'Аккаунт с таким email не найден',
+      });
+    }
+
+    const code = generatePasswordResetCode();
+    const roles = cabinetRolesForUsers(users);
+    passwordResetSessions.set(emailLower, {
+      code,
+      expiresAt: Date.now() + PASSWORD_RESET_CODE_TTL_MS,
+      resetToken: null,
+      resetTokenExpiresAt: null,
+      roles,
+    });
+
+    try {
+      const mailResult = await sendPasswordResetEmail(emailLower, code);
+      res.json({
+        success: true,
+        message: 'Код отправлен на email',
+        roles,
+        hasMultipleRoles: roles.length > 1,
+        ...(mailResult.devCode && process.env.NODE_ENV !== 'production' ? { devCode: mailResult.devCode } : {}),
+      });
+    } catch (mailErr) {
+      console.error('❌ forgot-password send email:', mailErr.message);
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({
+          success: true,
+          message: 'Email не отправлен (dev). Используйте код из ответа.',
+          roles,
+          hasMultipleRoles: roles.length > 1,
+          devCode: code,
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: 'Не удалось отправить письмо. Попробуйте позже.',
+      });
+    }
+  } catch (error) {
+    console.error('❌ forgot-password/send-code:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/email/forgot-password/verify-code — проверить 4-значный код
+ */
+app.post('/api/auth/email/forgot-password/verify-code', async (req, res) => {
+  try {
+    const emailLower = String(req.body.email || '').toLowerCase().trim();
+    const code = String(req.body.code || '').trim();
+    if (!emailLower || !code) {
+      return res.status(400).json({ success: false, error: 'Укажите email и код' });
+    }
+    if (!/^\d{4}$/.test(code)) {
+      return res.status(400).json({ success: false, error: 'Код должен содержать 4 цифры' });
+    }
+
+    const session = passwordResetSessions.get(emailLower);
+    if (!session || Date.now() > session.expiresAt) {
+      passwordResetSessions.delete(emailLower);
+      return res.status(400).json({ success: false, error: 'Код не найден или истёк. Запросите новый.' });
+    }
+    if (session.code !== code) {
+      return res.status(400).json({ success: false, error: 'Неверный код' });
+    }
+
+    const resetToken = crypto.randomBytes(24).toString('hex');
+    session.resetToken = resetToken;
+    session.resetTokenExpiresAt = Date.now() + PASSWORD_RESET_TOKEN_TTL_MS;
+
+    res.json({
+      success: true,
+      resetToken,
+      roles: session.roles,
+      hasMultipleRoles: session.roles.length > 1,
+    });
+  } catch (error) {
+    console.error('❌ forgot-password/verify-code:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/email/forgot-password/reset — установить новый пароль
+ */
+app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
+  try {
+    const emailLower = String(req.body.email || '').toLowerCase().trim();
+    const resetToken = String(req.body.resetToken || '').trim();
+    const password = req.body.password;
+    const role = req.body.role ? String(req.body.role).toLowerCase() : null;
+
+    if (!emailLower || !resetToken || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите email, токен и новый пароль',
+      });
+    }
+
+    const session = passwordResetSessions.get(emailLower);
+    if (
+      !session ||
+      !session.resetToken ||
+      session.resetToken !== resetToken ||
+      !session.resetTokenExpiresAt ||
+      Date.now() > session.resetTokenExpiresAt
+    ) {
+      return res.status(401).json({
+        success: false,
+        error: 'Сессия восстановления истекла. Запросите код заново.',
+      });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: passwordValidation.message,
+        passwordValidation: {
+          missing: passwordValidation.missing,
+          present: passwordValidation.present,
+        },
+      });
+    }
+
+    const users = await userQueries.getAllByEmail(emailLower);
+    if (!users.length) {
+      return res.status(404).json({ success: false, error: 'Аккаунт не найден' });
+    }
+
+    let targets = users;
+    if (role === 'buyer' || role === 'seller') {
+      targets = usersForCabinetRole(users, role);
+      if (!targets.length) {
+        return res.status(400).json({ success: false, error: 'Кабинет не найден для этого email' });
+      }
+    } else if (session.roles.length > 1) {
+      return res.status(400).json({
+        success: false,
+        status: 'needs_role',
+        error: 'Выберите кабинет, для которого меняете пароль',
+        roles: session.roles,
+      });
+    }
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    for (const u of targets) {
+      const others = users.filter((x) => x.id !== u.id && x.password);
+      if (others.some((x) => x.password === hashedPassword)) {
+        return res.status(400).json({
+          success: false,
+          status: 'password_same_as_other',
+          error:
+            'Пароль должен отличаться от пароля другого кабинета с этим email. Укажите другой пароль.',
+        });
+      }
+      await userQueries.update(u.id, { password: hashedPassword });
+    }
+
+    passwordResetSessions.delete(emailLower);
+
+    res.json({
+      success: true,
+      message: 'Пароль успешно обновлён',
+      updatedUserIds: targets.map((u) => u.id),
+    });
+  } catch (error) {
+    console.error('❌ forgot-password/reset:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -6819,7 +7333,9 @@ app.post('/api/admin/auth/login', async (req, res) => {
           can_access_moderation: 1,
           can_access_chat: 1,
           can_access_objects: 1,
-          can_access_access_management: 1
+          can_access_access_management: 1,
+          can_access_seo: 1,
+          seo_role: 'admin'
         });
         superAdmin = await administratorQueries.getByUsername('admin');
       }
@@ -6963,7 +7479,9 @@ app.post('/api/admin/administrators', async (req, res) => {
       can_access_moderation: permissions.can_access_moderation ? 1 : 0,
       can_access_chat: permissions.can_access_chat ? 1 : 0,
       can_access_objects: permissions.can_access_objects ? 1 : 0,
-      can_access_access_management: 0 // Только для супер-админа
+      can_access_access_management: 0, // Только для супер-админа
+      can_access_seo: permissions.can_access_seo ? 1 : 0,
+      seo_role: permissions.seo_role || null
     });
 
     const newAdmin = await administratorQueries.getById(result.lastInsertRowid);
@@ -7012,7 +7530,9 @@ app.put('/api/admin/administrators/:id', async (req, res) => {
       can_access_moderation: permissions.can_access_moderation ? 1 : 0,
       can_access_chat: permissions.can_access_chat ? 1 : 0,
       can_access_objects: permissions.can_access_objects ? 1 : 0,
-      can_access_access_management: 0 // Только для супер-админа
+      can_access_access_management: 0, // Только для супер-админа
+      can_access_seo: permissions.can_access_seo ? 1 : 0,
+      seo_role: permissions.seo_role || null
     });
 
     const updatedAdmin = await administratorQueries.getById(id);
@@ -7071,8 +7591,19 @@ function getFrontendPublicBase() {
   return String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 }
 
-function buildPropertyPublicLink(propertyId) {
-  return `${getFrontendPublicBase()}/property/${Number(propertyId)}`;
+function buildPropertyPublicLink(propertyId, slug = null) {
+  const base = getFrontendPublicBase();
+  if (slug) return `${base}/property/${slug}`;
+  return `${base}/property/${Number(propertyId)}`;
+}
+
+/** Numeric id из /api/properties/:id когда :id может быть slug. */
+async function resolvePropertyRouteId(param, propertyTypeHint = null) {
+  const raw = String(param ?? '').trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const property = await propertyQueries.getByIdOrSlug(raw, propertyTypeHint);
+  return property?.id != null ? Number(property.id) : null;
 }
 
 async function loadPropertyRowForReminder(propertyId, propertyTable) {
@@ -10102,6 +10633,61 @@ app.delete('/api/properties/:id/test-timer', async (req, res) => {
 });
 
 /**
+ * GET /api/properties/test-drive — объекты с доступным test-drive
+ * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
+ */
+app.get('/api/properties/test-drive', async (req, res) => {
+  try {
+    const auctions = await propertyQueries.getAuctions();
+    const properties = auctions.filter((p) => {
+      const td =
+        p.test_drive === 1 ||
+        p.test_drive === true ||
+        p.test_drive === '1';
+      return td && propertyRowAllowsTestDriveListing(p);
+    });
+
+    const formattedProperties = properties.map((prop) => {
+      const formatted = { ...prop };
+
+      if (formatted.photos && typeof formatted.photos === 'string') {
+        try { formatted.photos = JSON.parse(formatted.photos); } catch { formatted.photos = []; }
+      } else if (!formatted.photos) {
+        formatted.photos = [];
+      }
+
+      if (formatted.videos && typeof formatted.videos === 'string') {
+        try { formatted.videos = JSON.parse(formatted.videos); } catch { formatted.videos = []; }
+      } else if (!formatted.videos) {
+        formatted.videos = [];
+      }
+
+      if (formatted.additional_documents && typeof formatted.additional_documents === 'string') {
+        try { formatted.additional_documents = JSON.parse(formatted.additional_documents); } catch { formatted.additional_documents = []; }
+      } else if (!formatted.additional_documents) {
+        formatted.additional_documents = [];
+      }
+
+      if (formatted.amenities && typeof formatted.amenities === 'string') {
+        try { formatted.amenities = JSON.parse(formatted.amenities); } catch { formatted.amenities = []; }
+      } else if (!formatted.amenities) {
+        formatted.amenities = [];
+      }
+
+      formatted.name = formatted.title;
+      applyListingPhotosToFormatted(formatted);
+      return formatted;
+    });
+
+    res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
+    res.json({ success: true, data: formattedProperties });
+  } catch (error) {
+    console.error('Ошибка при получении test-drive объектов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/properties/shares - Получить одобренные объекты долевой собственности
  * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
  */
@@ -10110,7 +10696,7 @@ app.get('/api/properties/shares', async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
     const offset = parseInt(req.query.offset, 10) || 0;
     const properties = await propertyQueries.getShares(limit, offset);
-    // Нормализуем для карточек: id, property_type, title, location, image (первое фото), price, total_shares, shares_sold, area, rooms
+    // Нормализуем только подтверждённые поля; отсутствие фото остаётся явным.
     const list = properties.map((p) => {
       const photosRaw =
         (p.photos &&
@@ -10126,32 +10712,7 @@ app.get('/api/properties/shares', async (req, res) => {
                 })()
             : [])) || [];
       const photosNorm = normalizePhotosListInput(photosRaw);
-      const totalShares = p.total_shares != null ? Number(p.total_shares) : 0;
-      const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0;
-      const price = p.price != null ? Number(p.price) : 0;
-      const img =
-        photosNorm[0] ||
-        '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg';
-      return {
-        ...p,
-        photos: photosNorm,
-        images: photosNorm,
-        id: p.id,
-        property_type: p.property_type,
-        shareId: `${p.property_type}-${p.id}`,
-        title: p.title,
-        location: p.location || '',
-        description: p.description || '',
-        image: img,
-        totalPrice: price,
-        pricePerShare: totalShares > 0 ? price / totalShares : 0,
-        totalShares,
-        sharesSold,
-        myShares: 0,
-        area: p.area,
-        rooms: p.rooms,
-        bedrooms: p.bedrooms,
-      };
+      return formatShareMarketplaceApiItem(p, photosNorm);
     });
     res.json({ success: true, data: list });
   } catch (err) {
@@ -10295,7 +10856,7 @@ function parseJsonSafe(value, fallback = null) {
  */
 app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     const userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
     const propertyTable = req.query.property_table || null;
     if (!propertyId || Number.isNaN(propertyId)) {
@@ -10352,7 +10913,7 @@ app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
  */
 app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
     }
@@ -10412,7 +10973,7 @@ app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
  */
 app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     const { start_date, end_date } = req.query || {};
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
@@ -10467,7 +11028,7 @@ app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
  */
 app.post('/api/properties/:id/test-drive/request', async (req, res) => {
   try {
-    const propertyId = parseInt(req.params.id, 10);
+    const propertyId = await resolvePropertyRouteId(req.params.id, req.body?.property_type || null);
     const { user_id, start_date, end_date, property_table } = req.body || {};
     const userId = parseInt(user_id, 10);
     if (!propertyId || Number.isNaN(propertyId) || !userId || Number.isNaN(userId)) {
@@ -10710,28 +11271,35 @@ async function enrichTestDriveBookingWithPropertyTitle(row) {
   const table = row.property_table || 'properties_apartments';
   let title = null;
   let property_cover_url = null;
+  let property_location = null;
   try {
     if (table === 'properties_houses') {
       const p = await prisma.properties_houses.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     } else if (table === 'properties_apartments') {
       const p = await prisma.properties_apartments.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     } else {
       const p = await prisma.properties.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true, photos: true },
+        select: { title: true, photos: true, location: true, address: true, city: true, country: true },
       });
       title = p?.title;
       property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
+      property_location =
+        p?.location || [p?.city, p?.country].filter(Boolean).join(', ') || p?.address || null;
     }
   } catch (e) {
     /* ignore */
@@ -10740,6 +11308,7 @@ async function enrichTestDriveBookingWithPropertyTitle(row) {
     ...row,
     property_title: title || `Объект #${row.property_id}`,
     property_cover_url,
+    property_location,
   };
 }
 
@@ -11858,7 +12427,7 @@ app.get('/api/properties/:id', async (req, res) => {
   try {
     const requestedPropertyType = req.query.property_type || null; // apartment | commercial | house | villa — для однозначного поиска доли
     console.log(`🔍 GET /api/properties/:id - Поиск объекта с ID=${id}, property_type=${requestedPropertyType || 'любой'}`);
-    const property = await propertyQueries.getById(id, requestedPropertyType);
+    const property = await propertyQueries.getByIdOrSlug(id, requestedPropertyType);
     
     if (!property) {
       console.log(`❌ GET /api/properties/:id - Объект с ID=${id} не найден`);
@@ -12059,8 +12628,9 @@ app.get('/api/properties/:id', async (req, res) => {
     }
     
     // Проверяем резервацию объекта
-    console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${id}`);
-    const reservationInfo = await propertyQueries.isReserved(id);
+    const propertyId = Number(property.id);
+    console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${propertyId}`);
+    const reservationInfo = await propertyQueries.isReserved(propertyId);
     console.log(`🔍 GET /api/properties/:id - Результат проверки резервации:`, reservationInfo);
     
     formatted.is_reserved = reservationInfo.isReserved || false;
@@ -12076,7 +12646,7 @@ app.get('/api/properties/:id', async (req, res) => {
         const tr = await getPrisma().property_translations.findUnique({
           where: {
             property_id_property_table_lang_code: {
-              property_id: Number(id),
+              property_id: propertyId,
               property_table: String(table),
               lang_code: String(lang),
             },
@@ -14262,6 +14832,8 @@ app.post('/api/bids', async (req, res) => {
           property_id: propertyIdNum,
           bid_amount: bidAmountNum,
           minimum_bid: newMinimumBid,
+          leader_user_id: userIdNum,
+          user_id: userIdNum,
           ...(extendedTestTimer || {}),
         });
 
@@ -14279,13 +14851,15 @@ app.post('/api/bids', async (req, res) => {
             propertyTable: tableName,
             property,
             basePrice,
-            onAutoBidPlaced: async ({ bidAmount, currentMax }) => {
+            onAutoBidPlaced: async ({ userId, bidAmount }) => {
               const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
               broadcastPropertyBidEvent(propertyIdNum, {
                 type: 'bid_placed',
                 property_id: propertyIdNum,
                 bid_amount: bidAmount,
                 minimum_bid: newMinimumBid,
+                leader_user_id: userId,
+                user_id: userId,
                 from_ceiling: true,
               });
               try {
@@ -14428,30 +15002,57 @@ app.put('/api/bids/ceiling', async (req, res) => {
       basePrice,
     });
 
-    setImmediate(() => {
-      void evaluateBidCeilings(prisma, {
-        propertyId: propertyIdNum,
-        propertyTable: tableName,
-        property,
-        basePrice,
-        onAutoBidPlaced: async ({ bidAmount }) => {
-          const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
-          broadcastPropertyBidEvent(propertyIdNum, {
-            type: 'bid_placed',
-            property_id: propertyIdNum,
-            bid_amount: bidAmount,
-            minimum_bid: newMinimumBid,
-            from_ceiling: true,
-          });
-        },
-      }).catch((err) => console.warn('evaluateBidCeilings after PUT:', err?.message || err));
+    const autoBids = await evaluateBidCeilings(prisma, {
+      propertyId: propertyIdNum,
+      propertyTable: tableName,
+      property,
+      basePrice,
+      activateUserIds: [userIdNum],
+      onAutoBidPlaced: async ({ userId, bidAmount }) => {
+        const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
+        broadcastPropertyBidEvent(propertyIdNum, {
+          type: 'bid_placed',
+          property_id: propertyIdNum,
+          bid_amount: bidAmount,
+          minimum_bid: newMinimumBid,
+          leader_user_id: userId,
+          user_id: userId,
+          from_ceiling: true,
+        });
+        try {
+          const updatedAt = new Date().toISOString();
+          if (tableName === 'properties_apartments') {
+            await prisma.properties_apartments.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else if (tableName === 'properties_houses') {
+            await prisma.properties_houses.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else {
+            await prisma.properties.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          }
+        } catch (minErr) {
+          console.warn('auction_minimum_bid (ceiling save):', minErr?.message || minErr);
+        }
+      },
     });
+
+    if (autoBids.length > 0) {
+      console.log(`🎯 Авто-ставка при сохранении потолка: ${autoBids.length} для property ${propertyIdNum}`);
+    }
 
     res.json({
       success: true,
       data: {
         max_amount: row.max_amount,
         updated_at: row.updated_at,
+        auto_bids: autoBids,
       },
     });
   } catch (error) {
@@ -16106,12 +16707,14 @@ async function checkPropertiesWithoutBids() {
 // Раздача статики из dist для продакшена (если папка существует)
 // ВАЖНО: Это должно быть ПОСЛЕ всех API маршрутов, но ПЕРЕД запуском сервера
 if (process.env.NODE_ENV === 'production') {
-  const distPath = join(__dirname, '..', 'dist');
+  const distPath = resolveWebDist(__dirname);
   const distExists = fs.existsSync(distPath);
   
-  console.log(`📦 Проверка dist папки: ${distPath}`);
+  console.log(`📦 Проверка web dist папки: ${distPath}`);
   console.log(`📦 Dist существует: ${distExists}`);
-  
+  if (process.env.USE_EXPO_WEB === '1') {
+    console.log('📦 USE_EXPO_WEB=1 — предпочтение Expo Web export (apps/client/dist-web)');
+  }  
   if (distExists) {
     // Проверяем содержимое dist
     try {
@@ -16123,18 +16726,15 @@ if (process.env.NODE_ENV === 'production') {
     
     console.log('📦 Production режим: раздача статики из dist');
 
-    const sendSpaIndex = (res, indexPath) => {
-      // Свежий index.html — иначе после деплоя в кэше остаются ссылки на старые чанки → 404/MIME-ошибки
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.sendFile(indexPath);
+    const sendSpaIndex = (res, indexPath, req) => {
+      return sendSeoSpaHtml(res, indexPath, req);
     };
     
     // Явно обрабатываем корневой маршрут - отдаем index.html
     app.get('/', (req, res) => {
       const indexPath = join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
-        sendSpaIndex(res, indexPath);
+        sendSpaIndex(res, indexPath, req);
       } else {
         console.error(`❌ index.html не найден по пути: ${indexPath}`);
         res.status(404).send('index.html not found');
@@ -16199,9 +16799,7 @@ if (process.env.NODE_ENV === 'production') {
     // Для всех остальных маршрутов отдаем index.html (SPA routing)
     const indexPath = join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.sendFile(indexPath);
+      sendSeoSpaHtml(res, indexPath, req);
     } else {
       console.error(`❌ index.html не найден по пути: ${indexPath}`);
       res.status(404).send('index.html not found');

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { FiShoppingBag, FiInbox, FiCheckCircle, FiEye, FiX } from 'react-icons/fi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
-import PropertyShareButton from './PropertyShareButton'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import '../components/PropertyList.css'
@@ -272,15 +271,6 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
                 />
               </svg>
             </button>
-            <PropertyShareButton
-              property={{
-                id: item.id,
-                title: item.title,
-                name: item.title,
-                property_type:
-                  String(item.property_table || '').includes('house') ? 'house' : 'apartment',
-              }}
-            />
           </div>
           </div>
           <div className="property-content">

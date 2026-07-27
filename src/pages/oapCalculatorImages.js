@@ -1,4 +1,6 @@
+import { publicAsset } from '../utils/publicAsset'
+
 export const OAP_CALCULATOR_IMAGES = {
-  sidebarHero: '/images/oap-calculator/sidebar-hero.png',
-  pricingPublicationHero: '/images/oap-calculator/pricing-publication-hero.png',
+  sidebarHero: publicAsset('images/oap-calculator/sidebar-hero.webp'),
+  pricingPublicationHero: publicAsset('images/oap-calculator/pricing-publication-hero.webp'),
 }

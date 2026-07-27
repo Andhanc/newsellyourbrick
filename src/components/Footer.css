@@ -61,6 +61,7 @@
 
 .footer__upper-left .footer__menu.footer__menu--desktop {
   justify-content: flex-start;
+  gap: 28px;
 }
 
 .footer__upper-right {
@@ -95,10 +96,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-width: 160px;
+  min-width: 130px;
+  flex: 1 1 0;
   align-items: flex-start;
   text-align: left;
-  
 }
 
 .footer__menu-link {
@@ -116,7 +117,7 @@
 
 .footer__menu-link:hover {
   text-decoration: underline;
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 /* Описание сервиса */
@@ -148,7 +149,7 @@
   padding: 0;
   margin: 0;
   font-size: inherit;
-  color: #0ABAB5;
+  color: #0099A9;
   cursor: pointer;
 }
 
@@ -192,7 +193,7 @@ a.footer__brand {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #0ABAB5;
+  background: #0099A9;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -247,7 +248,7 @@ body.admin-panel-active .footer .footer__brand-text {
   background: none;
   padding: 0;
   font-size: 13px;
-  color: #0ABAB5;
+  color: #0099A9;
   cursor: pointer;
 }
 
@@ -525,7 +526,7 @@ body.admin-panel-active .footer .footer__brand-text {
 
 .footer__language-check {
   margin-left: auto;
-  color: #0ABAB5;
+  color: #0099A9;
   flex-shrink: 0;
 }
 
@@ -638,7 +639,7 @@ body.admin-panel-active .footer .footer__brand-icon {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #0ABAB5;
+  background: #0099A9;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1108,6 +1109,10 @@ body.admin-panel-active .footer .footer__upper {
     grid-template-columns: unset !important;
   }
 
+  #site-footer.footer:not(.footer--deposit) .footer__menu.footer__menu--desktop {
+    justify-content: flex-start !important;
+  }
+
   #site-footer.footer .footer__menu.footer__menu--mobile {
     display: none !important;
   }
@@ -1229,6 +1234,21 @@ body.admin-panel-active .footer .footer__upper {
   border-top: none;
 }
 
+/* Селектор языка открывается вверх — поднимаем футер над .app-layout__content (z-index: 11) */
+#site-footer.footer.footer--language-open {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+
+#site-footer.footer.footer--language-open .footer__container,
+#site-footer.footer.footer--language-open .footer__upper,
+#site-footer.footer.footer--language-open .footer__upper-right,
+#site-footer.footer.footer--language-open .footer__store-buttons,
+#site-footer.footer.footer--language-open .footer__language-selector {
+  overflow: visible;
+}
+
 /* Во время обязательного онбординга из кабинета покупателя отключаем переходы в футере. */
 body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   pointer-events: none !important;
@@ -1242,12 +1262,12 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   margin-top: 0;
   background: linear-gradient(180deg, #121a2c 0%, #0f172a 55%, #0b1220 100%);
   color: rgba(255, 255, 255, 0.74);
-  border-top: 1px solid rgba(10, 186, 181, 0.24);
+  border-top: 1px solid rgba(0, 153, 169, 0.24);
   box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.28);
 }
 
 #site-footer.footer.footer--deposit .footer__upper {
-  border-top-color: rgba(10, 186, 181, 0.18);
+  border-top-color: rgba(0, 153, 169, 0.18);
 }
 
 #site-footer.footer.footer--deposit .footer__menu-link {
@@ -1255,7 +1275,7 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 }
 
 #site-footer.footer.footer--deposit .footer__menu-link:hover {
-  color: #5ec9c4;
+  color: #33adbb;
 }
 
 #site-footer.footer.footer--deposit .footer__brand-text {
@@ -1269,8 +1289,8 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 }
 
 #site-footer.footer.footer--deposit .footer__language-selector-btn:hover {
-  border-color: rgba(10, 186, 181, 0.4);
-  background: rgba(10, 186, 181, 0.12);
+  border-color: rgba(0, 153, 169, 0.4);
+  background: rgba(0, 153, 169, 0.12);
 }
 
 #site-footer.footer.footer--deposit .footer__language-chevron {
@@ -1288,7 +1308,7 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 }
 
 #site-footer.footer.footer--deposit .footer__language-option:hover {
-  background: rgba(10, 186, 181, 0.12);
+  background: rgba(0, 153, 169, 0.12);
 }
 
 #site-footer.footer.footer--deposit .footer__store-btn {
@@ -1297,7 +1317,699 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 }
 
 #site-footer.footer.footer--deposit .footer__store-btn:hover {
-  background: rgba(10, 186, 181, 0.14) !important;
-  border-color: rgba(10, 186, 181, 0.38) !important;
+  background: rgba(0, 153, 169, 0.14) !important;
+  border-color: rgba(0, 153, 169, 0.38) !important;
+}
+
+/* ── Light theme (default) — editorial footer per DESIGN.md ── */
+#site-footer.footer:not(.footer--deposit) {
+  --footer-surface: #f8fafc;
+  --footer-ink: #0f172a;
+  --footer-ink-soft: #475569;
+  --footer-ink-muted: #64748b;
+  --footer-line: #e2e8f0;
+  --footer-tiffany: #0099A9;
+  --footer-tiffany-dark: #007d8a;
+
+  background: var(--footer-surface);
+  color: var(--footer-ink-soft);
+  padding: clamp(28px, 3.5vw, 40px) 0 clamp(16px, 2vw, 24px);
+  margin-top: 0;
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__container {
+  max-width: 1160px;
+  padding: 0 clamp(20px, 4vw, 32px);
+}
+
+/* ── Nav grid (5 sections): 2 + 2 + 1 по центру; в ряд — только на широком экране ── */
+#site-footer.footer:not(.footer--deposit) .footer__nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  padding-bottom: clamp(16px, 2vw, 22px);
+  border-bottom: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-bottom {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  align-items: start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-column--company {
+  justify-self: stretch;
+  align-items: flex-start;
+  text-align: left;
+  width: auto;
+  max-width: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-column--company .footer__menu-link {
+  text-align: left;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-image {
+  position: static;
+  bottom: auto;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding-top: 16px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--brand-socials {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: auto;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--brand-socials .footer__socials {
+  flex-shrink: 0;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--socials,
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores {
+  flex-shrink: 0;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-selector--inline {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 0;
+  position: relative;
+  z-index: 20;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-selector-btn--compact {
+  width: auto;
+  min-width: 118px;
+  justify-content: center;
+  gap: 5px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 11px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand--panel {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand--panel .footer__brand-text {
+  font-size: 1.125rem;
+  letter-spacing: 0.01em;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand--panel .footer__brand-icon {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__socials {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-right: 0;
+  margin-right: 0;
+  border-right: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--footer-line);
+  background: #ffffff;
+  color: var(--footer-ink-soft);
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__social-btn:hover {
+  border-color: rgba(0, 153, 169, 0.55);
+  color: var(--footer-tiffany);
+  background: var(--footer-tiffany-soft);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn--compact {
+  min-width: 0;
+  height: 38px;
+  padding: 6px 12px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn--compact .footer__store-name {
+  font-size: 11px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-selector-btn--compact {
+  min-width: 0;
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 13px;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+#site-footer.footer.footer--deposit .footer__nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(0, 153, 169, 0.18);
+}
+
+#site-footer.footer.footer--deposit .footer__nav-bottom {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 4vw, 28px) clamp(16px, 3.5vw, 24px);
+  align-items: start;
+}
+
+#site-footer.footer.footer--deposit .footer__menu-column--company {
+  justify-self: stretch;
+  align-items: flex-start;
+  text-align: left;
+  width: auto;
+  max-width: none;
+}
+
+#site-footer.footer.footer--deposit .footer__menu-column--company .footer__menu-link {
+  text-align: left;
+}
+
+#site-footer.footer.footer--deposit .footer__nav-qr-slot {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+#site-footer.footer.footer--deposit .footer__menu-heading {
+  margin: 0 0 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+#site-footer.footer.footer--deposit .footer__bottom-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding-top: 16px;
+}
+
+#site-footer.footer.footer--deposit .footer__bottom-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+#site-footer.footer.footer--deposit .footer__bottom-row--brand-socials {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: auto;
+}
+
+#site-footer.footer.footer--deposit .footer__bottom-row--stores {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+#site-footer.footer.footer--deposit .footer__socials {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: none;
+}
+
+#site-footer.footer.footer--deposit .footer__social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+}
+
+#site-footer.footer.footer--deposit .footer__social-btn:hover {
+  border-color: rgba(0, 153, 169, 0.45);
+  color: #33adbb;
+  background: rgba(0, 153, 169, 0.12);
+}
+
+#site-footer.footer.footer--deposit .footer__qr-image--inline {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  flex: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-heading {
+  margin: 0 0 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--footer-ink);
+  line-height: 1.2;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-heading--spacer {
+  display: block;
+  min-height: 1.2em;
+  margin-bottom: 6px;
+  visibility: hidden;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-link {
+  color: var(--footer-ink-soft);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: left;
+  transition: color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__menu-link:hover {
+  color: var(--footer-tiffany);
+  text-decoration: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand-text {
+  color: var(--footer-ink);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand-icon {
+  background: var(--footer-tiffany);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__nav-qr {
+  gap: clamp(20px, 3vw, 36px);
+  align-items: flex-start;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__whatsapp-qr {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__qr-image {
+  border: 1px solid var(--footer-line);
+  box-shadow: none;
+  border-radius: 12px;
+  padding: 6px;
+  background: #ffffff;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__qr-caption {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--footer-ink-muted);
+  text-align: center;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__upper-right {
+  padding-left: 0;
+  margin-left: 0;
+  width: 100%;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-buttons {
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: clamp(20px, 2.5vw, 28px);
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__brand--inline {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn {
+  background: #ffffff !important;
+  color: var(--footer-ink) !important;
+  border: 1px solid var(--footer-line) !important;
+  border-radius: 999px;
+  min-width: 124px;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 153, 169, 0.55) !important;
+  transform: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-name,
+#site-footer.footer:not(.footer--deposit) .footer__store-btn span {
+  color: var(--footer-ink) !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon {
+  color: var(--footer-ink) !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon--whatsapp {
+  color: #25d366 !important;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-selector-btn {
+  border-radius: 999px;
+  border-color: var(--footer-line);
+  background: #ffffff;
+  color: var(--footer-ink);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-selector-btn:hover {
+  border-color: rgba(0, 153, 169, 0.45);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-option--active {
+  background: #f0fafb;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-option--active:hover {
+  background: #e6f6f8;
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__language-check {
+  color: var(--footer-tiffany);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__legal {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--footer-line);
+}
+
+#site-footer.footer:not(.footer--deposit) .footer__copyright {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--footer-ink-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 1279px) {
+  #site-footer.footer .footer__menu-column {
+    min-width: 0;
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #site-footer.footer .footer__menu-link {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (min-width: 1280px) {
+  #site-footer.footer:not(.footer--deposit) .footer__nav-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(16px, 2vw, 24px);
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-bottom {
+    display: contents;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__menu-column--company {
+    grid-column: auto;
+    justify-self: stretch;
+    align-items: flex-start;
+    text-align: left;
+    max-width: none;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot {
+    display: none;
+  }
+
+  #site-footer.footer.footer--deposit .footer__nav-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(16px, 2.5vw, 28px);
+  }
+
+  #site-footer.footer.footer--deposit .footer__nav-bottom {
+    display: contents;
+  }
+
+  #site-footer.footer.footer--deposit .footer__menu-column--company {
+    grid-column: auto;
+    justify-self: stretch;
+    align-items: flex-start;
+    text-align: left;
+    max-width: none;
+  }
+
+  #site-footer.footer.footer--deposit .footer__nav-qr-slot {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  #site-footer.footer:not(.footer--deposit) {
+    padding-bottom: 20px;
+  }
+
+  #site-footer.footer .footer__nav-grid {
+    gap: 22px 16px;
+    padding-bottom: 20px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__menu-heading {
+    margin-bottom: 8px;
+    font-size: 0.625rem;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__menu-link {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-image {
+    width: 108px;
+    height: 108px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__nav-qr-slot .footer__qr-caption {
+    font-size: 0.6875rem;
+  }
+
+  #site-footer.footer .footer__bottom-panel {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 14px;
+    padding-top: 22px;
+  }
+
+  #site-footer.footer .footer__bottom-row {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #site-footer.footer .footer__bottom-row--brand-socials {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin-right: 0;
+  }
+
+  #site-footer.footer .footer__brand--panel {
+    justify-content: flex-start;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__brand--panel .footer__brand-text {
+    font-size: 1rem;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__brand--panel .footer__brand-icon {
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+  }
+
+  #site-footer.footer .footer__bottom-row--brand-socials .footer__socials {
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  #site-footer.footer .footer__social-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  #site-footer.footer .footer__bottom-row--stores {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn,
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn--compact,
+  #site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-selector--inline {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn,
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn--compact {
+    min-width: 0 !important;
+    max-width: none;
+    width: auto;
+    height: 34px;
+    padding: 4px 8px;
+    gap: 5px;
+    justify-content: center;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-selector--inline {
+    flex: 1 1 0;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-selector-btn--compact {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__bottom-row--stores .footer__language-name {
+    display: none;
+  }
+
+  #site-footer.footer .footer__bottom-row--stores .footer__language-flag {
+    width: 18px !important;
+    height: 13px !important;
+    min-width: 18px !important;
+    min-height: 13px !important;
+    max-width: 18px !important;
+    max-height: 13px !important;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn--compact .footer__store-name {
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__store-btn .footer__store-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+  }
+
+  #site-footer.footer .footer__bottom-row--stores .footer__language-dropdown {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    min-width: 180px;
+  }
+
+  #site-footer.footer .footer__socials {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  #site-footer.footer:not(.footer--deposit) .footer__legal {
+    text-align: center;
+  }
 }
 

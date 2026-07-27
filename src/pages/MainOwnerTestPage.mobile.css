@@ -8,6 +8,30 @@
     display: none !important;
   }
 
+  .mot-mobile-only {
+    display: revert !important;
+  }
+
+  .mot-mob-hero.mot-mobile-only {
+    display: flex !important;
+  }
+
+  .mot-metrics-wrap.mot-mobile-only {
+    display: block !important;
+  }
+
+  .mot-mob-topbar.mot-mobile-only {
+    display: grid !important;
+  }
+
+  .mot-drawer.mot-mobile-only {
+    display: flex !important;
+  }
+
+  .mot-tabbar.mot-mobile-only {
+    display: flex !important;
+  }
+
   /* Embedded в OwnerTestCabinetChrome — без фиксированной высоты */
   .mot.mot--embedded,
   .mot.mot--embedded .mot-main,
@@ -24,10 +48,10 @@
   }
 
   .mot {
-    --mot-mob-pad: 16px;
+    --mot-mob-pad: var(--oc-mob-pad, 16px);
     --mot-tab-h: 56px;
-    --mot-tiffany: #0abab5;
-    --mot-mob-block-border: 1.5px solid rgba(10, 186, 181, 0.34);
+    --mot-tiffany: var(--oc-tiffany);
+    --mot-mob-block-border: 1.5px solid rgba(0, 125, 138, 0.28);
     --mot-mob-block-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 
     flex-direction: column;
@@ -37,7 +61,7 @@
     min-height: 0;
     overflow: visible !important;
     padding-bottom: 0;
-    background: #ffffff;
+    background: var(--oc-mob-surface, #ffffff);
   }
 
   .mot-main {
@@ -50,6 +74,10 @@
   }
 
   /* —— Header (standalone route only) —— */
+  .mot .mot-mob-topbar {
+    display: none !important;
+  }
+
   .mot-mob-topbar {
     display: grid !important;
     grid-template-columns: 48px 1fr 48px;
@@ -110,11 +138,22 @@
 
   .mot-mob-topbar__bell .mot-icon-btn__badge {
     top: 4px;
-    right: 2px;
-    min-width: 16px;
-    height: 16px;
-    font-size: 9px;
-    border-width: 1.5px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.38);
   }
 
   /* Drawer */
@@ -213,39 +252,316 @@
   }
 
   .mot:not(.mot--embedded) .mot-content {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* —— Приветствие + период —— */
+  /* —— Tiffany hero shell (drawer-style bottom radius) —— */
+  .mot-hero-shell {
+    --mot-hero-radius: 24px;
+    position: relative;
+    margin: 0 0 12px;
+    padding: 0 0 18px;
+    overflow: hidden;
+    border-radius: 0 0 var(--mot-hero-radius) var(--mot-hero-radius);
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+  }
+
+  .mot-hero-shell__bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      #33adbb 0%,
+      #7ee8e4 16%,
+      #2ec9c4 38%,
+      #0099a9 62%,
+      #007d8a 82%,
+      #006672 100%
+    );
+    background-size: 220% 220%;
+    animation: mot-hero-shell-gradient 10s ease-in-out infinite;
+    border-radius: inherit;
+    z-index: 0;
+  }
+
+  .mot-hero-shell__shine {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 95% 75% at 8% 6%, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0) 56%),
+      radial-gradient(ellipse 72% 58% at 92% 14%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 60%),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(6, 122, 118, 0) 100%
+      );
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mot-hero-shell__fade {
+    position: absolute;
+    inset: 48% 0 0;
+    background: linear-gradient(
+      180deg,
+      rgba(6, 122, 118, 0) 0%,
+      rgba(0, 102, 114, 0.18) 36%,
+      rgba(6, 95, 92, 0.45) 100%
+    );
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mot-hero-shell .mot-mob-hero,
+  .mot-hero-shell .mot-metrics-wrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* —— Мобильный hero (аватар, приветствие, поиск) —— */
   .mot-mob-hero {
+    position: relative;
     display: flex !important;
     flex-direction: column;
-    gap: 14px;
     flex-shrink: 0;
-    margin: 18px var(--mot-mob-pad) 16px;
-    padding: 0;
+    margin: 0 0 14px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) var(--mot-mob-pad) 4px;
     background: transparent;
     border: none;
     border-radius: 0;
     box-shadow: none;
     box-sizing: border-box;
+    overflow: visible;
   }
 
-  .mot-mob-hero__title {
-    margin: 0;
-    font-size: 22px;
+  .mot-hero-shell .mot-mob-hero__greeting {
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(0, 102, 114, 0.2);
+  }
+
+  .mot-hero-shell .mot-mob-hero__notify {
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.94);
+  }
+
+  .mot-mob-hero__top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .mot-mob-hero__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mot-mob-hero__actions .otsb {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .mot-mob-hero__avatar {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  }
+
+  .mot-mob-hero__avatar-img,
+  .mot-mob-hero__avatar-fallback,
+  .mot-mob-hero__avatar-fallback svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .mot-mob-hero__notify {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    border-radius: 50%;
+    background: #ffffff;
+    color: #111827;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  }
+
+  .mot-mob-hero__notify-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    color: #000000;
-    line-height: 1.2;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.38);
   }
 
-  .mot-mob-hero__subtitle {
-    margin: 6px 0 0;
-    font-size: 13px;
-    font-weight: 400;
+  .mot-mob-hero__greeting {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 18px;
+    font-size: clamp(24px, 6.4vw, 28px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    line-height: 1.15;
+  }
+
+  .mot-mob-hero__greeting span {
+    display: block;
+  }
+
+  .mot-mob-hero__search-wrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mot-mob-hero__search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 52px;
+    padding: 6px 6px 6px 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    box-sizing: border-box;
+  }
+
+  .mot-mob-hero__search-wrap--expanded {
+    border: 1px solid rgba(0, 153, 169, 0.18);
+    border-radius: 26px;
+    background: #ffffff;
+    box-shadow:
+      0 12px 32px rgba(15, 23, 42, 0.08),
+      0 4px 14px rgba(0, 153, 169, 0.08);
+    overflow: hidden;
+  }
+
+  .mot-mob-hero__search-wrap--expanded .mot-mob-hero__search {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mot-mob-hero__search-icon {
+    flex-shrink: 0;
     color: #9ca3af;
-    line-height: 1.35;
+  }
+
+  .mot-mob-hero__search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 8px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    outline: none;
+  }
+
+  .mot-mob-hero__search-input::placeholder {
+    color: #9ca3af;
+  }
+
+  .mot-mob-hero__filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #111827;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .mot-mob-hero__filter--active {
+    background: rgba(0, 153, 169, 0.14);
+    color: #007d8a;
+    box-shadow: inset 0 0 0 1px rgba(0, 153, 169, 0.22);
+  }
+
+  .mot-mob-hero__search-wrap .mot-date-popover {
+    position: static;
+    top: auto;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto;
+    width: 100% !important;
+    max-width: none;
+    margin: 0;
+    padding: 0 16px;
+    border: none;
+    border-top: none;
+    border-radius: 0 0 22px 22px;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transform: none;
+    transform-origin: top center;
+    transition:
+      max-height 0.32s cubic-bezier(0.22, 1, 0.32, 1),
+      padding 0.32s cubic-bezier(0.22, 1, 0.32, 1);
+  }
+
+  .mot-mob-hero__search-wrap .mot-date-popover--open {
+    max-height: 560px;
+    padding: 16px 16px 18px;
+    border-top: 1px solid rgba(0, 153, 169, 0.12);
+    background:
+      linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
+    pointer-events: auto;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .mot-mob-hero__search-wrap .mot-date-popover__head {
+    border-bottom-color: rgba(0, 153, 169, 0.1);
   }
 
   .mot-date-pill--full {
@@ -258,10 +574,31 @@
     font-weight: 500;
     color: #374151;
     background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    border: none;
+    border-radius: 0;
     box-shadow: none;
     line-height: 1.2;
+  }
+
+  .mot-date-control--full {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .mot-date-control--expanded {
+    border-color: #e5e7eb;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  }
+
+  .mot-date-control--expanded .mot-date-pill--full svg:last-child {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
   }
 
   .mot-date-pill--full span {
@@ -278,6 +615,7 @@
   .mot-date-pill--full svg:last-child {
     flex-shrink: 0;
     color: #9ca3af;
+    transition: transform 0.2s ease;
   }
 
   .mot-date-control--mobile {
@@ -285,26 +623,39 @@
     flex-shrink: 0;
   }
 
-  .mot-date-control--full {
-    width: 100%;
-  }
-
   .mot-date-control--mobile .mot-date-popover {
-    position: fixed;
+    position: static;
     top: auto;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-    width: calc(100vw - 24px) !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto;
+    width: 100% !important;
     max-width: none;
-    padding: 14px;
-    border-radius: 18px;
-    transform: translateY(10px) scale(0.98);
-    transform-origin: bottom right;
+    margin: 0;
+    padding: 0 14px;
+    border: none;
+    border-top: 1px solid transparent;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+    opacity: 1;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transform: none;
+    transform-origin: top center;
+    transition:
+      max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      padding 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.2s ease;
   }
 
   .mot-date-control--mobile .mot-date-popover--open {
-    transform: translateY(0) scale(1);
+    max-height: 520px;
+    padding: 14px;
+    border-top-color: #e5e7eb;
+    pointer-events: auto;
+    transform: none;
   }
 
   .mot-date-popover__head strong {
@@ -323,7 +674,8 @@
   /* —— Metrics: 2×2 —— */
   .mot-metrics-wrap {
     display: block !important;
-    margin-bottom: 16px;
+    margin-bottom: 0;
+    padding-bottom: 4px;
   }
 
   .mot-metrics-wrap::after {
@@ -338,7 +690,8 @@
   }
 
   .mot-metric--mobile {
-    min-height: 108px;
+    position: relative;
+    min-height: 96px;
     height: auto;
     padding: 12px 12px 10px;
     display: flex;
@@ -346,56 +699,67 @@
     align-items: flex-start;
     justify-content: flex-start;
     background: #ffffff !important;
-    border: 1px solid rgba(10, 186, 181, 0.18) !important;
+    border: 1px solid rgba(0, 153, 169, 0.18) !important;
     border-radius: 12px !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
   }
 
   .mot-metric__mobile-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 8px;
     margin-bottom: 8px;
+  }
+
+  .mot-metric--mobile .mot-metric__link {
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+  }
+
+  .mot-metric--mobile .mot-metric__link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mot-metric--mobile .mot-metric__spark--mobile-chart {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: block !important;
+    width: 64px;
+    height: 26px;
+    flex-shrink: 0;
+    margin-left: 0;
+    z-index: 1;
   }
 
   .mot-metric--mobile .mot-metric__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     flex-shrink: 0;
+    color: #ffffff;
   }
 
   .mot-metric--mobile .mot-metric__icon--tiffany {
-    background: #e6f9f8;
-    color: var(--mot-tiffany);
+    background: linear-gradient(135deg, #55d7d2 0%, #209fbd 100%);
+    box-shadow: 0 8px 18px rgba(0, 153, 169, 0.22);
   }
 
-  .mot-metric--mobile .mot-metric__icon--orange {
-    background: #fff4e6;
-    color: #f59e0b;
+  .mot-metric--mobile .mot-metric__icon--pink {
+    background: linear-gradient(135deg, #db2777 0%, #ec4899 100%);
+    box-shadow: 0 8px 18px rgba(219, 39, 119, 0.2);
   }
 
-  .mot-metric--mobile .mot-metric__icon--teal {
-    background: #e0f7f6;
-    color: #14b8a6;
+  .mot-metric--mobile .mot-metric__icon--purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.2);
   }
 
-  .mot-metric--mobile .mot-metric__icon--green {
-    background: #ecfdf5;
-    color: #22c55e;
-  }
-
-  .mot-metric--mobile .mot-metric__spark--mobile-chart {
-    display: block !important;
-    width: 72px;
-    height: 30px;
-    flex-shrink: 0;
-    margin-left: auto;
+  .mot-metric--mobile .mot-metric__icon--amber {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 8px 18px rgba(245, 158, 11, 0.2);
   }
 
   .mot-metric--mobile .mot-metric__label {
@@ -413,19 +777,14 @@
     color: #000000;
     letter-spacing: -0.02em;
     line-height: 1.15;
-    margin: 0 0 2px;
+    margin: 0;
+    padding-right: 72px;
   }
 
   .mot-metric--mobile .mot-metric__delta--mobile {
-    display: block;
-    margin-top: auto;
-    font-size: 10px;
-    font-weight: 500;
-    color: #9ca3af;
-    line-height: 1.2;
+    display: none;
   }
 
-  /* —— Chart card —— */
   .mot-row {
     width: 100%;
     max-width: 100%;
@@ -433,9 +792,11 @@
     box-sizing: border-box;
   }
 
+  /* —— Chart card (mobile progress-style) —— */
   .mot-row--chart {
     grid-template-columns: minmax(0, 1fr);
     padding: 0 var(--mot-mob-pad);
+    margin-top: 0;
     margin-bottom: 16px;
     gap: 0;
   }
@@ -444,11 +805,11 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    padding: 16px;
-    border-radius: 20px;
+    padding: 18px 16px 14px;
+    border-radius: 24px;
     background: #ffffff;
-    border: var(--mot-mob-block-border);
-    box-shadow: var(--mot-mob-block-shadow);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
     box-sizing: border-box;
     overflow: hidden;
   }
@@ -457,42 +818,69 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+
+  .mot-chart-card__intro {
+    min-width: 0;
   }
 
   .mot-chart-card__head .mot-card__title {
     margin: 0;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 700;
+    letter-spacing: -0.02em;
     color: #111827;
-    line-height: 1.25;
+    line-height: 1.2;
   }
 
-  .mot-chart-card__head .mot-chart-filter {
-    align-self: flex-end;
-    max-width: 100%;
-  }
-
-  .mot-chart-card__legend {
+  .mot-chart-card__pills {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 12px;
-    margin-bottom: 12px;
-    max-width: 100%;
+    gap: 8px;
   }
 
-  .mot-chart-card__legend .mot-legend-item {
-    font-size: 11px;
+  .mot-chart-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: #ecfccb;
+    color: #365314;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .mot-chart-pill--active {
+    background: #ecfccb;
+    opacity: 1;
+  }
+
+  .mot-chart-pill:not(.mot-chart-pill--active) {
+    background: #f3f4f6;
     color: #6b7280;
-    max-width: 100%;
-    min-width: 0;
+    opacity: 0.72;
   }
 
-  .mot-chart-card__legend .mot-legend-item i {
-    width: 7px;
-    height: 7px;
+  .mot-chart-pill__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .mot-chart-pill:active {
+    transform: scale(0.98);
   }
 
   .mot-chart-card__canvas {
@@ -500,15 +888,130 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    height: 220px;
+    height: 248px;
     margin: 0;
-    padding-top: 4px;
+    padding: 0;
     overflow: hidden;
   }
 
   .mot-chart-card__canvas > div,
   .mot-chart-card__canvas canvas {
     max-width: 100% !important;
+  }
+
+  .mot-bars-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 250px;
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: var(--mot-mob-block-border);
+    box-shadow: var(--mot-mob-block-shadow);
+    box-sizing: border-box;
+  }
+
+  .mot-bars-card__plot {
+    min-height: 170px;
+    gap: 8px;
+  }
+
+  .mot-ending-strip {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    padding: 0 var(--mot-mob-pad);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  .mot-ending-strip__title,
+  .mot-section-head__title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .mot-section-head {
+    margin-bottom: 12px;
+  }
+
+  .mot-section-head__title {
+    margin: 0;
+  }
+
+  .mot-ending-strip__scroll {
+    gap: 12px;
+    margin: 0;
+    padding: 0 0 2px;
+  }
+
+  .mot-ending-card {
+    flex: 0 0 min(76vw, 240px);
+    width: min(76vw, 240px);
+  }
+
+  .mot-ending-card__body {
+    padding: 8px 8px 10px;
+  }
+
+  .mot-ending-strip__dots {
+    margin-top: 12px;
+  }
+
+  .mot-ending-card__timer {
+    padding: 28px 10px 9px;
+  }
+
+  .mot-ending-card__timer-value strong {
+    font-size: 24px;
+  }
+
+  .mot-ending-card__timer-value span {
+    font-size: 13px;
+  }
+
+  .mot-ending-card__title {
+    font-size: 13px;
+  }
+
+  .mot-ending-card__meta {
+    font-size: 11px;
+  }
+
+  .mot-ending-card__go {
+    margin-top: 8px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .mot-ending-card--more {
+    border-radius: 18px;
+  }
+
+  .mot-ending-card__more-inner {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .mot-ending-card__more-count {
+    font-size: 40px;
+  }
+
+  .mot-ending-card__more-hint {
+    font-size: 11px;
+  }
+
+  .mot-ending-card__more-label {
+    margin-top: 0;
+    font-size: 12px;
   }
 
   .mot-select-pill {
@@ -571,7 +1074,6 @@
     right: 10px;
     padding: 6px 10px;
     font-size: 11px;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
   }
 
   .mot-row--chart .mot-best__name {
@@ -608,30 +1110,29 @@
     font-size: 14px;
     font-weight: 600;
     color: #ffffff;
-    background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+    background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
     box-shadow:
-      0 4px 14px rgba(10, 186, 181, 0.38),
+      0 4px 14px rgba(0, 153, 169, 0.38),
       inset 0 1px 0 rgba(255, 255, 255, 0.28);
   }
 
-  /* —— Activity (как на десктопе) —— */
-  .mot-row--triple {
+  /* —— Центр событий —— */
+  .mot-row--events {
     grid-template-columns: minmax(0, 1fr);
     padding: 0 var(--mot-mob-pad);
     margin-bottom: 16px;
     gap: 12px;
   }
 
-  .mot-activity-card {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding: 16px;
-    border-radius: 20px;
-    background: #ffffff;
-    border: var(--mot-mob-block-border);
-    box-shadow: var(--mot-mob-block-shadow);
-    box-sizing: border-box;
+  /* —— Центр событий (строки на фоне, без общей карточки) —— */
+  .mot-activity-card.mot-card {
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .mot-activity-card__head {
@@ -639,34 +1140,33 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 0;
+    margin-bottom: 12px;
+    padding: 0 2px;
   }
 
   .mot-activity-card__head .mot-card__title {
     margin: 0;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
+    letter-spacing: -0.02em;
     color: #111827;
   }
 
   .mot-link-btn--all {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--mot-tiffany);
     padding: 0;
     flex-shrink: 0;
   }
 
-  .mot-activity-card .mot-link-btn:not(.mot-link-btn--all) {
-    margin-top: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--mot-tiffany);
+  .mot-activity-card .mot-link-btn.mot-desktop-only {
+    display: none !important;
   }
 
   .mot-activity {
     list-style: none;
-    margin: 14px 0 10px;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -674,47 +1174,58 @@
   }
 
   .mot-activity__item {
-    display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    gap: 8px 10px;
-    align-items: start;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.95);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
   }
 
   .mot-activity__item--bid {
-    padding: 12px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(10, 186, 181, 0.06) 0%, rgba(255, 255, 255, 0.92) 100%);
-    border: 1px solid rgba(10, 186, 181, 0.1);
+    padding: 12px 14px;
   }
 
-  .mot-activity__icon {
-    grid-column: 1;
-    grid-row: 1;
-    width: 36px;
-    height: 36px;
+  .mot-activity__photo {
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
+    overflow: hidden;
     flex-shrink: 0;
+    background: #f3f4f6;
+  }
+
+  .mot-activity__photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .mot-activity__body {
-    grid-column: 2;
-    grid-row: 1;
+    flex: 1;
     min-width: 0;
   }
 
   .mot-activity__title {
-    margin: 0 0 3px;
-    font-size: 13px;
-    font-weight: 600;
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
     color: #111827;
-    line-height: 1.3;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mot-activity__subtitle {
     display: -webkit-box;
     margin: 0;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 500;
     color: #6b7280;
     line-height: 1.35;
     word-break: break-word;
@@ -723,128 +1234,115 @@
     overflow: hidden;
   }
 
-  .mot-activity__side {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: flex;
-    flex-direction: row;
+  .mot-activity__action {
+    display: none;
+  }
+
+  .mot-activity__go {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-    padding-top: 10px;
-    margin-top: 2px;
-    border-top: 1px solid rgba(10, 186, 181, 0.14);
-  }
-
-  .mot-activity__amount {
-    padding: 6px 11px;
-    border-radius: 999px;
-    background: rgba(10, 186, 181, 0.12);
-    color: #0d9488;
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1;
-    white-space: nowrap;
+    justify-content: center;
     flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    margin-left: 2px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
   }
 
-  .mot-activity__time {
-    font-size: 11px;
-    color: #9ca3af;
-    white-space: nowrap;
-    line-height: 1.2;
-    text-align: right;
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-
-  .mot-activity__empty {
-    min-height: 160px;
-    margin: 14px 0 10px;
-    padding: 20px;
-  }
-
-  /* —— Распределение по статусам —— */
-  .mot-row--triple .mot-status-card {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding: 16px;
-    border-radius: 20px;
-    background: #ffffff;
-    border: var(--mot-mob-block-border);
-    box-shadow: var(--mot-mob-block-shadow);
-    box-sizing: border-box;
-  }
-
-  .mot-row--triple .mot-status-card .mot-card__title {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
+  .mot-activity__go:active {
+    transform: scale(0.96);
+    background: #e5e7eb;
     color: #111827;
   }
 
-  .mot-row--triple .mot-status-card__body {
-    margin-top: 12px;
-    gap: 14px;
-  }
-
-  .mot-row--triple .mot-status-card__analytics {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    min-height: 0;
-    padding: 16px;
-    border-radius: 16px;
-    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
-    border: 1px solid rgba(10, 186, 181, 0.08);
-  }
-
-  .mot-row--triple .mot-donut-wrap {
-    width: 148px;
-    height: 148px;
-  }
-
-  .mot-row--triple .mot-donut-center__value {
-    font-size: 24px;
-  }
-
-  .mot-row--triple .mot-status-legend {
-    width: 100%;
-    gap: 8px;
-  }
-
-  .mot-row--triple .mot-status-legend li {
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(10, 186, 181, 0.08);
-    font-size: 12px;
-  }
-
-  .mot-row--triple .mot-status-legend i {
-    width: 9px;
-    height: 9px;
-  }
-
-  .mot-row--triple .mot-status-buyer-ad.oad-buyer {
-    width: 100%;
-    min-height: 0;
+  .mot-activity__empty {
+    min-height: 260px;
     margin: 0;
-    padding: 14px;
-    border-radius: 16px;
+    padding: 8px 0 18px;
+    gap: 14px;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
   }
 
-  .mot-row--triple .mot-status-buyer-ad .oad-buyer__title {
+  .mot-activity__empty-illustration {
+    width: min(420px, 100%);
+  }
+
+  .mot-activity__empty strong {
+    font-size: 18px;
+  }
+
+  .mot-activity__empty p {
+    max-width: 340px;
     font-size: 14px;
   }
 
-  .mot-row--triple .mot-status-buyer-ad .oad-buyer__text {
+  .mot-activity-card__head .mot-section-head__title {
+    font-size: 17px;
+  }
+
+  /* —— Рекламный блок «рейтинг» —— */
+  .mot-content > .mot-rating-promo {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 var(--mot-mob-pad);
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__surface {
+    grid-template-columns: minmax(0, 1fr) minmax(108px, 34%);
+    min-height: 168px;
+    padding: 0;
+    border-radius: 22px;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__copy {
+    gap: 7px;
+    padding: 18px 0 18px 16px;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__badge {
+    min-height: 24px;
+    padding: 0 9px;
+    font-size: 9px;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__title {
+    font-size: 19px;
+    line-height: 1.12;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__text {
     font-size: 12px;
+    max-width: 210px;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__art-wrap {
+    min-height: 168px;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__art {
+    object-position: 62% center;
+  }
+
+  .mot-content > .mot-rating-promo .mot-rating-promo__cta {
+    min-height: 34px;
+    padding: 0 13px;
+    font-size: 11px;
   }
 
   /* —— Promo cards —— */
@@ -865,14 +1363,14 @@
   }
 
   .mot-mob-promo-card--light {
-    background: linear-gradient(135deg, #ecfdf5 0%, #f8fffe 55%, #ffffff 100%);
-    border: 1px solid rgba(10, 186, 181, 0.32);
-    box-shadow: 0 4px 16px rgba(10, 186, 181, 0.1);
+    background: linear-gradient(135deg, #e8f1f4 0%, #f6fafb 55%, #ffffff 100%);
+    border: 1px solid rgba(0, 153, 169, 0.32);
+    box-shadow: 0 4px 16px rgba(0, 153, 169, 0.1);
   }
 
   .mot-mob-promo-card--dark {
-    background: linear-gradient(128deg, #0f172a 0%, #134e4a 55%, #0d9488 100%);
-    border: 1px solid rgba(10, 186, 181, 0.32);
+    background: linear-gradient(128deg, #0f172a 0%, #134e4a 55%, #006672 100%);
+    border: 1px solid rgba(0, 153, 169, 0.32);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
   }
 
@@ -899,13 +1397,13 @@
   }
 
   .mot-mob-promo-card--light .mot-mob-promo-card__tag {
-    background: rgba(10, 186, 181, 0.12);
-    color: #0d9488;
+    background: rgba(0, 153, 169, 0.12);
+    color: #006672;
   }
 
   .mot-mob-promo-card--dark .mot-mob-promo-card__tag {
-    background: rgba(10, 186, 181, 0.22);
-    color: #99f6e4;
+    background: rgba(0, 153, 169, 0.22);
+    color: #cce9ed;
   }
 
   .mot-mob-promo-card__title {
@@ -1045,7 +1543,7 @@
     justify-content: center;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(10, 186, 181, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 153, 169, 0.35);
   }
 
   .mot-tabbar__fab svg {

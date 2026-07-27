@@ -270,7 +270,7 @@
 
 .oap-presentation-step__row--media .oap-media-step--embedded .oap-media-step__action-card:hover:not(:disabled) {
   border-color: var(--oap-primary);
-  background: rgba(10, 186, 181, 0.04);
+  background: rgba(0, 153, 169, 0.04);
   transform: none;
   box-shadow: none;
 }
@@ -346,7 +346,7 @@
 
 .oap-presentation-step__row--media .oap-media-step--embedded .oap-media-step__add-more:hover {
   border-color: var(--oap-primary);
-  background: rgba(10, 186, 181, 0.05);
+  background: rgba(0, 153, 169, 0.05);
 }
 
 .oap-presentation-step__row--media .oap-media-step--embedded .oap-media-step__add-more-icon {
@@ -381,10 +381,6 @@
     background: #f8fafc;
     border: 1px solid #e8edf2;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  }
-
-  .oap--mobile .oap-presentation-step .oap-wizard-section::before {
-    display: block;
   }
 
   .oap--mobile .oap-presentation-step .oap-wizard-section__head {

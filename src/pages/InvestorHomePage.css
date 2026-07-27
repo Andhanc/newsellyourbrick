@@ -1,0 +1,2312 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+.app-layout--investor-home {
+  background: #fbfcfd;
+  scroll-snap-type: y proximity;
+}
+
+.app-layout--investor-home .invest-hero {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.app-layout--investor-home .invest-section--strategies {
+  scroll-snap-align: start;
+}
+
+.invest-home-page {
+  --invest-header-offset: 104px;
+  min-height: 100dvh;
+  background: #fbfcfd;
+}
+
+@media (max-width: 768px) {
+  .invest-home-page {
+    --invest-header-offset: 88px;
+  }
+}
+
+.invest-home-page .new-header {
+  background: transparent;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+.invest-home-page .new-header__container {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.36), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-radius: 16px;
+  width: calc(100% - 120px);
+  max-width: 1250px;
+  gap: 8px;
+}
+
+.invest-home-page .new-header-spacer {
+  height: 0;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.invest-home-page .new-header--menu-open {
+  z-index: 10001 !important;
+}
+
+.invest-home-page .new-header__container--menu-open {
+  z-index: 10002;
+}
+
+.invest-home-page .menu-dropdown {
+  top: calc(20px + 65px + 8px) !important;
+}
+
+@media (max-width: 768px) {
+  .invest-home-page .menu-dropdown {
+    top: 0 !important;
+  }
+
+  .invest-home-page .new-header {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .invest-home-page .new-header__container {
+    width: 92%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    border-radius: 20px;
+    box-sizing: border-box;
+  }
+}
+
+.invest-home {
+  --ink: #080c24;
+  --muted: #787b8f;
+  --soft: #f4f8f9;
+  --line: rgba(19, 33, 54, 0.08);
+  --teal: #22b8b3;
+  --teal-dark: #0b9f9a;
+  --orange: #f48a5d;
+  --deep: #003d44;
+  min-height: 100dvh;
+  padding-bottom: 26px;
+  background: linear-gradient(180deg, #fbfcfd 0%, #ffffff 46%, #fbfcfd 100%);
+  color: var(--ink);
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0;
+}
+
+.invest-home *,
+.invest-home *::before,
+.invest-home *::after {
+  box-sizing: border-box;
+}
+
+.invest-home button,
+.invest-home input,
+.invest-home select,
+.invest-home textarea {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.invest-home button,
+.invest-strategy-card,
+.invest-lot-card {
+  cursor: pointer;
+}
+
+.invest-shell {
+  width: min(100% - 104px, 1460px);
+  margin: 0 auto;
+}
+
+.invest-hero {
+  position: relative;
+  height: 112dvh;
+  min-height: 112dvh;
+  max-height: 112dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.invest-hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 68% 48%;
+  filter: brightness(1.1) saturate(1.16) contrast(1.04);
+  transform: scale(1.06);
+  transform-origin: 70% 45%;
+}
+
+.invest-hero__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 20%, rgba(255, 255, 255, 0.38) 40%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 52%, rgba(255, 255, 255, 0.85) 78%, #fbfcfd 100%);
+}
+
+.invest-hero__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(360px, 28vw);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'copy stats'
+    'filter filter'
+    'proof proof';
+  align-items: start;
+  column-gap: clamp(18px, 2.4vw, 36px);
+  row-gap: clamp(10px, 1.4dvh, 18px);
+  height: 100%;
+  padding:
+    calc(var(--invest-header-offset) + clamp(4px, 1dvh, 12px))
+    0
+    clamp(44px, 4.8dvh, 56px);
+}
+
+.invest-hero__copy {
+  grid-area: copy;
+  align-self: start;
+  width: min(780px, 100%);
+  margin-top: clamp(72px, 14dvh, 168px);
+}
+
+.invest-hero h1 {
+  margin: 0;
+  color: #080c24;
+  font-size: clamp(58px, 7.8dvh + 1.4vw, 108px);
+  line-height: 0.96;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.invest-hero h1 span {
+  color: var(--teal);
+}
+
+.invest-hero__copy p {
+  width: min(680px, 100%);
+  margin: clamp(20px, 2.4dvh, 32px) 0 0;
+  color: #2f3346;
+  font-size: clamp(22px, 1.95dvh + 0.6vw, 30px);
+  line-height: 1.5;
+  font-weight: 700;
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.9),
+    0 0 18px rgba(255, 255, 255, 0.75);
+}
+
+.invest-hero__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(10px, 1.2dvh, 16px);
+  margin-top: clamp(64px, 9dvh, 120px);
+}
+
+.invest-button {
+  min-height: clamp(48px, 5.4dvh, 56px);
+  border-radius: 999px;
+  padding: 0 clamp(24px, 2.2vw, 32px);
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  font-size: clamp(15px, 1.05dvh + 0.3vw, 16px);
+  font-weight: 700;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.invest-hero__actions .invest-button--primary {
+  padding-right: 0.45rem;
+  color: #ffffff;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  box-shadow:
+    0 14px 34px rgba(11, 159, 154, 0.32),
+    0 0 0 1px rgba(12, 163, 158, 0.18);
+}
+
+.invest-hero__actions .invest-button--primary:hover {
+  background: linear-gradient(135deg, #22c4be, #0eb5af);
+  box-shadow:
+    0 18px 40px rgba(11, 159, 154, 0.38),
+    0 0 0 1px rgba(12, 163, 158, 0.24);
+}
+
+.invest-hero__actions .invest-button__icon {
+  background: #ffffff;
+  color: var(--teal-dark);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.invest-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.invest-hero__actions .invest-button--ghost {
+  min-width: 0;
+  color: #151a2e;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(19, 33, 54, 0.18);
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+}
+
+.invest-hero__actions .invest-button--ghost:hover {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(34, 184, 179, 0.35);
+}
+
+.invest-button:hover,
+.invest-search-button:hover,
+.invest-strategy-card:hover,
+.invest-lot-card:hover {
+  transform: translateY(-2px);
+}
+
+.invest-button--primary,
+.invest-search-button {
+  color: #ffffff;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  box-shadow: 0 14px 30px rgba(11, 159, 154, 0.18);
+}
+
+.invest-button--ghost {
+  min-width: min(272px, 100%);
+  color: #151a2e;
+  background: rgba(255, 255, 255, 0.74);
+  border: 2px solid rgba(34, 184, 179, 0.35);
+  box-shadow: none;
+}
+
+.invest-hero__stats {
+  grid-area: stats;
+  align-self: end;
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.4dvh, 14px);
+  width: min(100%, 360px);
+  margin-bottom: clamp(40px, 9dvh, 120px);
+}
+
+.invest-hero-stat-card.frosted-glass-card-container {
+  max-width: none;
+  width: 100%;
+}
+
+.invest-hero-stat-card__surface {
+  min-height: 0;
+  padding: clamp(18px, 2.2dvh, 26px) clamp(20px, 2vw, 26px);
+}
+
+.invest-hero-stat-card .frosted-glass-card__header {
+  margin-bottom: clamp(12px, 1.4dvh, 16px);
+}
+
+.invest-hero-stat-card .frosted-glass-card__title {
+  font-size: clamp(20px, 2.3dvh, 25px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.invest-hero-stat-card .frosted-glass-card__text {
+  font-size: clamp(13px, 1dvh + 0.25vw, 15px);
+  line-height: 1.5;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 clamp(16px, 2dvh, 22px);
+}
+
+.invest-hero-stat-card .frosted-glass-card__btn {
+  width: 100%;
+  justify-content: center;
+  min-height: clamp(46px, 5dvh, 54px);
+  font-size: clamp(14px, 1dvh + 0.25vw, 16px);
+  font-weight: 800;
+  border-radius: 14px;
+}
+
+.invest-hero-stat-card__icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Investor card — tiffany instead of lime green */
+.invest-hero-stat-card .frosted-glass-card--investor .frosted-glass-card__icon-wrap {
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  box-shadow:
+    0 8px 20px rgba(11, 159, 154, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.invest-hero-stat-card .frosted-glass-card--investor .frosted-glass-card__icon {
+  color: #ffffff;
+}
+
+.invest-hero-stat-card .frosted-glass-card__btn--investor {
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  color: #ffffff;
+  box-shadow:
+    0 10px 24px rgba(11, 159, 154, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.invest-hero-stat-card .frosted-glass-card__btn--investor:hover {
+  background: linear-gradient(135deg, #22c4be, #0eb5af);
+  color: #ffffff;
+  filter: none;
+}
+
+.invest-filter {
+  grid-area: filter;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.2dvh, 14px);
+  min-height: 0;
+  margin-top: 0;
+  padding: clamp(14px, 1.6dvh, 18px);
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 22px 50px rgba(15, 23, 42, 0.1),
+    0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.invest-filter__top {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 14px);
+}
+
+.invest-filter__field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  min-height: clamp(52px, 5.8dvh, 58px);
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.invest-filter__field:focus-within {
+  border-color: rgba(34, 184, 179, 0.42);
+  box-shadow: 0 0 0 3px rgba(34, 184, 179, 0.1);
+}
+
+.invest-filter__field-icon {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.invest-filter__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #171a2d;
+  font-size: clamp(15px, 1.05dvh + 0.3vw, 16px);
+  font-weight: 600;
+  outline: none;
+}
+
+.invest-filter__input::placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.invest-filter__filters-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.invest-filter__chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  min-height: 66px;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  background: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.invest-filter__chip:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.invest-filter__chip--active {
+  border-color: rgba(34, 184, 179, 0.45);
+  background: rgba(34, 184, 179, 0.06);
+  box-shadow: 0 0 0 1px rgba(34, 184, 179, 0.14);
+}
+
+.invest-filter__chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(34, 184, 179, 0.14);
+  color: var(--teal-dark);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.invest-filter__chip--active .invest-filter__chip-icon {
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  color: #ffffff;
+}
+
+.invest-filter__chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  flex: 1;
+  padding-right: 1rem;
+}
+
+.invest-filter__chip-sub {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  line-height: 1.1;
+}
+
+.invest-filter__chip-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #15182b;
+  line-height: 1.2;
+}
+
+.invest-filter__chip-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.invest-filter__chip-chevron {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.invest-search-button {
+  flex-shrink: 0;
+  min-height: clamp(52px, 5.8dvh, 58px);
+  min-width: clamp(112px, 9vw, 132px);
+  border: 0;
+  border-radius: 999px;
+  padding: 0 clamp(22px, 2vw, 28px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: 0 12px 28px rgba(11, 159, 154, 0.22);
+}
+
+.invest-proof-strip {
+  grid-area: proof;
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
+  justify-content: center;
+  gap: clamp(20px, 4vw, 56px);
+  margin-top: 0;
+  color: #333647;
+  font-size: clamp(11px, 0.95dvh + 0.2vw, 12px);
+  font-weight: 800;
+}
+
+.invest-proof-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invest-proof-strip svg {
+  color: var(--teal);
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 8px rgba(34, 184, 179, 0.22));
+}
+
+.invest-section {
+  padding: 36px 0 0;
+  scroll-margin-top: 0;
+}
+
+.invest-section--strategies {
+  padding: clamp(64px, 7dvh, 96px) 0 clamp(24px, 2.6dvh, 36px);
+  background: linear-gradient(
+    180deg,
+    #fbfcfd 0%,
+    #f9fdfc 8%,
+    #f4fbf9 16%,
+    #f0fafb 28%,
+    #f6fcfb 44%,
+    #f0fafb 62%,
+    #f8fefd 78%,
+    #fbfcfd 100%
+  );
+}
+
+.invest-section__center {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.invest-section h2,
+.invest-contact-faq h2 {
+  margin: 0;
+  color: #111427;
+  font-size: 32px;
+  line-height: 1.16;
+  font-weight: 900;
+}
+
+.invest-section__center p {
+  margin: 14px 0 0;
+  color: #797b8f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.invest-strategy-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin: clamp(36px, 4.2dvh, 52px) auto 0;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 153, 169, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 153, 169, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.invest-strategy-tabs__item {
+  border: 0;
+  border-radius: 999px;
+  padding: clamp(10px, 1.2dvh, 12px) clamp(16px, 1.6vw, 22px);
+  background: transparent;
+  color: #5b6078;
+  font-size: clamp(13px, 0.95dvh + 0.25vw, 14px);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.invest-strategy-tabs__item:hover:not(.is-active) {
+  color: #15182b;
+  background: rgba(0, 153, 169, 0.08);
+}
+
+.invest-strategy-tabs__item.is-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0099A9, #007d8a);
+  box-shadow: 0 8px 22px rgba(0, 153, 169, 0.28);
+}
+
+.invest-strategy-tabs__item.is-active:hover {
+  transform: translateY(-1px);
+}
+
+.invest-strategy-grid,
+.invest-auction-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.invest-strategy-card,
+.invest-lot-card {
+  overflow: hidden;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 14px 36px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(19, 33, 54, 0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.invest-strategy-card:hover {
+  border-color: rgba(0, 153, 169, 0.24);
+  box-shadow:
+    0 22px 48px rgba(0, 153, 169, 0.1),
+    0 0 0 1px rgba(0, 153, 169, 0.14);
+}
+
+.invest-strategy-card img {
+  display: block;
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+
+.invest-strategy-card div {
+  padding: 23px 24px 25px;
+}
+
+.invest-strategy-card h3,
+.invest-lot-card h3 {
+  margin: 0;
+  color: #15182b;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.invest-strategy-card p {
+  min-height: 88px;
+  margin: 20px 0 22px;
+  color: #77798e;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 700;
+}
+
+.invest-strategy-card button,
+.invest-auction-head button,
+.invest-faq-card__all {
+  border: 0;
+  background: transparent;
+  color: var(--teal-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.invest-section--auction {
+  padding-top: 50px;
+}
+
+@media (max-height: 820px) {
+  .invest-hero h1 {
+    font-size: clamp(46px, 6dvh + 0.9vw, 80px);
+  }
+
+  .invest-hero__copy {
+    margin-top: clamp(44px, 9dvh, 88px);
+  }
+
+  .invest-hero__copy p {
+    font-size: clamp(17px, 1.35dvh + 0.4vw, 21px);
+    line-height: 1.52;
+  }
+
+  .invest-hero-stat-card__surface {
+    padding: 14px 16px;
+  }
+
+  .invest-filter {
+    padding: 14px 16px;
+  }
+
+  .invest-proof-strip {
+    gap: clamp(14px, 2.5vw, 28px);
+  }
+}
+
+.invest-auction-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 22px;
+}
+
+.invest-auction-head h2 {
+  font-size: 34px;
+}
+
+.invest-auction-head p {
+  margin: 0;
+  color: #77798d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.invest-lot-card__image {
+  position: relative;
+  height: 146px;
+  overflow: hidden;
+}
+
+.invest-lot-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.invest-lot-card__image span {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 6px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.invest-lot-card__body {
+  padding: 22px 22px 26px;
+}
+
+.invest-lot-card__body > span {
+  color: #838697;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.invest-lot-card h3 {
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.invest-lot-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.invest-lot-card__meta small {
+  display: block;
+  color: #a0a2af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.invest-lot-card__meta strong {
+  display: block;
+  margin-top: 10px;
+  color: #111427;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.invest-trust {
+  position: relative;
+  width: min(100% - 104px, 1460px);
+  min-height: 166px;
+  margin: clamp(28px, 4dvh, 44px) auto clamp(28px, 4dvh, 40px);
+  padding: 24px 50px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--deep);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 20px 44px rgba(7, 38, 45, 0.16);
+}
+
+.invest-trust img {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 44%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+}
+
+.invest-trust__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6, 47, 57, 0.98) 0%, rgba(6, 47, 57, 0.94) 58%, rgba(6, 47, 57, 0.62) 100%);
+}
+
+.invest-trust__item {
+  position: relative;
+  z-index: 1;
+  min-height: 108px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.86);
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.invest-trust__item:last-child {
+  border-right: 0;
+}
+
+.invest-trust__item svg {
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.invest-trust__item strong {
+  color: #ffffff;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.invest-trust__item span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.invest-contact-faq {
+  padding-top: 54px;
+}
+
+.invest-contact-faq__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 34px;
+}
+
+.invest-contact-card,
+.invest-faq-card {
+  min-height: 350px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+}
+
+.invest-contact-card {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 24px;
+  padding: 30px 36px 30px 22px;
+}
+
+.invest-contact-card > img {
+  align-self: center;
+  justify-self: center;
+  width: 190px;
+  max-height: 270px;
+  object-fit: contain;
+}
+
+.invest-contact-card form {
+  display: grid;
+  gap: 15px;
+}
+
+.invest-contact-card p {
+  margin: 0;
+  color: #747688;
+  font-size: 13px;
+  line-height: 1.8;
+  font-weight: 700;
+}
+
+.invest-contact-card__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.invest-contact-card label {
+  display: grid;
+  gap: 9px;
+  color: #25283b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.invest-contact-card input,
+.invest-contact-card textarea {
+  width: 100%;
+  border: 1px solid rgba(19, 33, 54, 0.09);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #15182b;
+  padding: 0 16px;
+  outline: none;
+}
+
+.invest-contact-card input {
+  height: 48px;
+}
+
+.invest-contact-card textarea {
+  min-height: 78px;
+  padding-top: 15px;
+  resize: vertical;
+}
+
+.invest-contact-card .invest-button {
+  min-height: 52px;
+  width: 100%;
+}
+
+.invest-faq-card {
+  padding: 30px 46px;
+}
+
+.invest-faq-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.invest-faq-item {
+  border: 1px solid rgba(19, 33, 54, 0.08);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.invest-faq-item button {
+  width: 100%;
+  min-height: 45px;
+  border: 0;
+  background: transparent;
+  color: #24273a;
+  padding: 0 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.invest-faq-item svg {
+  flex: 0 0 auto;
+  color: #6d7081;
+  transition: transform 160ms ease;
+}
+
+.invest-faq-item svg.is-open {
+  transform: rotate(180deg);
+}
+
+.invest-faq-item p {
+  margin: 0;
+  padding: 0 17px 15px;
+  color: #77798d;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 650;
+}
+
+.invest-faq-card__all {
+  margin-top: 28px;
+}
+
+.invest-floating-summary {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 20;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #24454c;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(34, 184, 179, 0.18);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(16px);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.invest-floating-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invest-floating-summary svg {
+  color: var(--teal-dark);
+}
+
+@media (max-width: 1180px) {
+  .invest-shell,
+  .invest-trust {
+    width: min(100% - 42px, 980px);
+  }
+
+  .invest-hero__content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      'copy'
+      'stats'
+      'filter'
+      'proof';
+  }
+
+  .invest-hero__copy {
+    width: 100%;
+    align-self: auto;
+    margin-top: clamp(40px, 7dvh, 72px);
+  }
+
+  .invest-hero__stats {
+    align-self: auto;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 360px;
+    margin-inline: auto;
+  }
+
+  .invest-proof-strip,
+  .invest-filter__filters-row,
+  .invest-strategy-grid,
+  .invest-auction-grid,
+  .invest-trust,
+  .invest-contact-faq__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invest-filter__filters-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .invest-proof-strip {
+    justify-content: stretch;
+    gap: 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  .invest-shell,
+  .invest-trust {
+    width: min(100% - 28px, 520px);
+  }
+
+  .invest-hero {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+  }
+
+  .invest-hero__content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      'copy'
+      'stats'
+      'filter'
+      'proof';
+    height: auto;
+    min-height: auto;
+    padding: calc(var(--invest-header-offset) + 8px) 0 32px;
+  }
+
+  .invest-hero__copy {
+    width: 100%;
+    align-self: auto;
+    margin-top: clamp(40px, 7dvh, 72px);
+  }
+
+  .invest-hero__veil {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.8) 42%, #ffffff 74%),
+      linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.32) 100%);
+  }
+
+  .invest-hero h1 {
+    font-size: clamp(46px, 12.5vw, 60px);
+    line-height: 0.98;
+  }
+
+  .invest-hero__copy p {
+    font-size: clamp(17px, 4.6vw, 20px);
+    line-height: 1.68;
+  }
+
+  .invest-hero__actions,
+  .invest-filter__top,
+  .invest-filter__filters-row,
+  .invest-proof-strip,
+  .invest-strategy-grid,
+  .invest-auction-head,
+  .invest-auction-grid,
+  .invest-trust,
+  .invest-contact-faq__grid,
+  .invest-contact-card,
+  .invest-contact-card__row {
+    grid-template-columns: 1fr;
+  }
+
+  .invest-hero__actions {
+    display: grid;
+    gap: 12px;
+    margin-top: 68px;
+  }
+
+  .invest-button,
+  .invest-button--ghost {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .invest-hero__stats {
+    max-width: none;
+  }
+
+  .invest-filter {
+    gap: 12px;
+    padding: 14px;
+    margin-top: 0;
+  }
+
+  .invest-filter__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invest-search-button {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .invest-filter__filters-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .invest-filter__chip {
+    min-height: 58px;
+  }
+
+  .invest-proof-strip {
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .invest-section {
+    padding-top: 30px;
+  }
+
+  .invest-section h2,
+  .invest-contact-faq h2 {
+    font-size: 27px;
+  }
+
+  .invest-strategy-tabs {
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .invest-strategy-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .invest-strategy-card img,
+  .invest-lot-card__image {
+    height: 164px;
+  }
+
+  .invest-trust {
+    padding: 22px;
+    margin: 28px auto 24px;
+  }
+
+  .invest-trust__item {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .invest-trust__item:last-child {
+    border-bottom: 0;
+  }
+
+  .invest-contact-faq {
+    padding-top: 34px;
+  }
+
+  .invest-contact-card,
+  .invest-faq-card {
+    padding: 22px;
+  }
+
+  .invest-contact-card > img {
+    display: none;
+  }
+
+  .invest-floating-summary {
+    display: none;
+  }
+}
+
+.invest-showcase {
+  --showcase-gap: clamp(12px, 1.4vw, 16px);
+  --showcase-card-max: 300px;
+  padding: clamp(36px, 4dvh, 52px) 0;
+}
+
+.invest-showcase__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(16px, 2vw, 28px);
+  margin-bottom: clamp(22px, 2.6dvh, 30px);
+}
+
+.invest-showcase__intro {
+  min-width: 0;
+}
+
+.invest-showcase__title {
+  margin: 0;
+  color: #111427;
+  font-size: clamp(28px, 2.4dvh + 0.8vw, 34px);
+  line-height: 1.12;
+  font-weight: 900;
+}
+
+.invest-showcase__subtitle {
+  margin: clamp(10px, 1.2dvh, 14px) 0 0;
+  max-width: 620px;
+  color: #797b8f;
+  font-size: clamp(14px, 1.05dvh + 0.3vw, 16px);
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+.invest-showcase__cta-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(12px, 1.4vw, 18px);
+  min-height: 52px;
+  padding: 6px 6px 6px clamp(18px, 1.8vw, 24px);
+  border: 0;
+  border-radius: 999px;
+  background: #0a0a0a;
+  color: #ffffff;
+  font-size: clamp(14px, 1dvh + 0.25vw, 15px);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(10, 10, 10, 0.18);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.invest-showcase__cta-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(10, 10, 10, 0.22);
+}
+
+.invest-showcase__cta-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.invest-showcase__carousel {
+  display: grid;
+  gap: 10px;
+}
+
+.invest-showcase__scroller {
+  display: flex;
+  gap: var(--showcase-gap);
+  overflow-x: auto;
+  padding: 4px 2px 6px 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.invest-showcase__scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.invest-home-page .invest-showcase .home-showcase__slot {
+  flex: 0 0 min(calc((100% - 2 * var(--showcase-gap)) / 2.95), var(--showcase-card-max));
+  width: min(calc((100% - 2 * var(--showcase-gap)) / 2.95), var(--showcase-card-max));
+  min-width: 0;
+  scroll-snap-align: start;
+  display: flex;
+}
+
+.invest-home-page .invest-showcase .home-showcase__slot > * {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+
+/* Компактные карточки витрины: шире по слоту, ниже по высоте */
+.invest-home-page .invest-showcase .auction-card__media,
+.invest-home-page .invest-showcase .shares-v2-card__media,
+.invest-home-page .invest-showcase .debts-property-card__media {
+  aspect-ratio: 16 / 9;
+}
+
+.invest-home-page .invest-showcase .auction-card__body {
+  gap: 7px;
+  padding: 11px 12px 12px;
+}
+
+.invest-home-page .invest-showcase .auction-card__location {
+  font-size: 0.75rem;
+}
+
+.invest-home-page .invest-showcase .auction-card__title {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.invest-home-page .invest-showcase .auction-card__spec {
+  padding: 4px 7px;
+  font-size: 0.72rem;
+}
+
+.invest-home-page .invest-showcase .auction-card__price-panel {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.invest-home-page .invest-showcase .auction-card__price-value {
+  font-size: clamp(0.88rem, 1.8vw, 1.05rem);
+}
+
+.invest-home-page .invest-showcase .auction-card__actions {
+  margin-top: 2px;
+}
+
+.invest-home-page .invest-showcase .auction-card__btn {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+}
+
+/* Auction card mint accents -> tiffany inside showcases */
+.invest-home-page .invest-showcase .auction-card {
+  --ac-mint: #5eead4;
+  --ac-mint-bright: #0099A9;
+  --ac-mint-deep: #006672;
+  --ac-mint-soft: rgba(0, 153, 169, 0.16);
+  --ac-mint-glow: rgba(0, 153, 169, 0.4);
+}
+
+.invest-home-page .invest-showcase .auction-card__price-panel {
+  background: linear-gradient(135deg, #f0fafb 0%, #f8fafc 100%);
+  border-color: rgba(0, 153, 169, 0.22);
+  box-shadow: 0 1px 3px rgba(0, 153, 169, 0.08);
+}
+
+.invest-home-page .invest-showcase .auction-card__price-label {
+  color: #006672;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__body,
+.invest-home-page .invest-showcase .debts-property-card__body {
+  gap: 8px;
+  padding: 11px 12px 12px;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__title,
+.invest-home-page .invest-showcase .debts-property-card__title {
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__location,
+.invest-home-page .invest-showcase .debts-property-card__location {
+  margin-bottom: 8px;
+  font-size: 0.7rem;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__metrics {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__metric-value {
+  font-size: 0.8125rem;
+}
+
+.invest-home-page .invest-showcase .debts-property-card__pricing {
+  gap: 6px;
+}
+
+.invest-home-page .invest-showcase .debts-property-card__price-value {
+  font-size: 0.9375rem;
+}
+
+.invest-home-page .invest-showcase .debts-property-card__btn,
+.invest-home-page .invest-showcase .shares-v2-card__invest-btn {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 0.75rem;
+  border-radius: 10px;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__progress-head {
+  margin-bottom: 4px;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__amounts {
+  font-size: 0.75rem;
+}
+
+.invest-showcase__footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+}
+
+.invest-showcase__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.invest-showcase__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(10, 10, 10, 0.18);
+  background: rgba(255, 255, 255, 0.94);
+  color: #0a0a0a;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.invest-showcase__nav-btn:hover:not(:disabled) {
+  background: #0a0a0a;
+  color: #ffffff;
+  border-color: #0a0a0a;
+  transform: translateY(-1px);
+}
+
+.invest-showcase__nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.invest-showcase__dots {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.invest-showcase__dots--placeholder {
+  pointer-events: none;
+}
+
+.invest-showcase__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 153, 169, 0.22);
+  cursor: pointer;
+  transition: transform 180ms ease, background 180ms ease, width 180ms ease;
+}
+
+.invest-showcase__dot.is-active {
+  width: 24px;
+  background: #0099A9;
+}
+
+.invest-showcase--shares {
+  background: #ffffff;
+}
+
+/* Dark teal sections: Buy now + Debts */
+.invest-showcase--buy-now,
+.invest-showcase--debts {
+  background: linear-gradient(180deg, #003d44 0%, #003d44 100%);
+}
+
+.invest-showcase--buy-now .invest-showcase__title,
+.invest-showcase--debts .invest-showcase__title {
+  color: #ffffff;
+}
+
+.invest-showcase--buy-now .invest-showcase__subtitle,
+.invest-showcase--debts .invest-showcase__subtitle {
+  color: rgba(226, 232, 240, 0.66);
+}
+
+.invest-showcase--buy-now .invest-showcase__cta-pill,
+.invest-showcase--debts .invest-showcase__cta-pill {
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  box-shadow: 0 12px 28px rgba(11, 159, 154, 0.34);
+}
+
+.invest-showcase--buy-now .invest-showcase__cta-pill-icon,
+.invest-showcase--debts .invest-showcase__cta-pill-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.invest-showcase--buy-now .invest-showcase__nav-btn,
+.invest-showcase--debts .invest-showcase__nav-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.invest-showcase--buy-now .invest-showcase__nav-btn:hover:not(:disabled),
+.invest-showcase--debts .invest-showcase__nav-btn:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #003d44;
+}
+
+.invest-showcase--buy-now .invest-showcase__dot,
+.invest-showcase--debts .invest-showcase__dot {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.invest-showcase--buy-now .invest-showcase__dot.is-active,
+.invest-showcase--debts .invest-showcase__dot.is-active {
+  background: #5eead4;
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .invest-home-page .invest-showcase .home-showcase__slot {
+    flex: 0 0 calc((100% - 2 * var(--showcase-gap)) / 2.35);
+    width: calc((100% - 2 * var(--showcase-gap)) / 2.35);
+    max-width: var(--showcase-card-max);
+  }
+}
+
+@media (max-width: 768px) {
+  .invest-showcase {
+    --showcase-card-max: 268px;
+  }
+
+  .invest-showcase__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invest-showcase__cta-pill {
+    width: fit-content;
+    max-width: 100%;
+    align-self: flex-start;
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 4px 4px 4px 16px;
+    gap: 10px;
+  }
+
+  .invest-showcase__cta-pill-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .invest-home-page .invest-showcase .home-showcase__slot {
+    flex: 0 0 calc((100% - var(--showcase-gap)) / 1.18);
+    width: calc((100% - var(--showcase-gap)) / 1.18);
+    max-width: var(--showcase-card-max);
+  }
+}
+
+/* ===== Community / newsletter section (light, on page background) ===== */
+.invest-community {
+  position: relative;
+  padding: clamp(4px, 0.8dvh, 12px) 0 clamp(40px, 6dvh, 72px);
+  background: transparent;
+  overflow: hidden;
+}
+
+.invest-community__inner {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Full-width image wall with overlaid text */
+.invest-community__wall-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.invest-community__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: clamp(32px, 6dvh, 80px) 16px 0;
+  pointer-events: none;
+}
+
+.invest-community__overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62%;
+  background: linear-gradient(
+    180deg,
+    rgba(251, 252, 253, 0.95) 0%,
+    rgba(251, 252, 253, 0.82) 34%,
+    rgba(251, 252, 253, 0.35) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.invest-community__header {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  text-align: center;
+}
+
+.invest-community__eyebrow {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(0, 153, 169, 0.1);
+  border: 1px solid rgba(0, 153, 169, 0.26);
+  color: #0a8f8a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.invest-community__title {
+  margin: 0;
+  color: #111427;
+  font-size: clamp(28px, 2.2dvh + 1.4vw, 44px);
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.invest-community__title span {
+  background: linear-gradient(135deg, #0099A9, #006672);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.invest-community__subtitle {
+  margin: clamp(14px, 1.6dvh, 20px) auto 0;
+  max-width: 620px;
+  color: #6b7280;
+  font-size: clamp(15px, 1.1dvh + 0.3vw, 17px);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.invest-community__wall-inner {
+  background: transparent !important;
+}
+
+/* Newsletter card */
+.invest-community__card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin-top: clamp(-220px, -20dvh, -150px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  min-height: clamp(260px, 28vw, 320px);
+  padding: clamp(1.5rem, 3vw, 2.4rem);
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e2e8f0);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.invest-community__card-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1.1rem, 2vw, 1.5rem);
+  min-width: 0;
+}
+
+.invest-community__card-title {
+  margin: 0;
+  max-width: 15ch;
+  color: #111427;
+  font-size: clamp(1.65rem, 2.8vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.invest-community__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.invest-community__field {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.invest-community__field-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.invest-community__input {
+  width: 100%;
+  height: 56px;
+  padding: 0 1.1rem 0 2.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invest-community__input::placeholder {
+  color: #9ca3af;
+}
+
+.invest-community__input:focus {
+  outline: none;
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
+}
+
+.invest-community__input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.invest-community__submit {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 1.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(11, 159, 154, 0.26);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.invest-community__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #22c4be, #0eb5af);
+  box-shadow: 0 16px 34px rgba(11, 159, 154, 0.34);
+}
+
+.invest-community__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Floating property cards */
+.invest-community__visual {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+}
+
+.invest-community__float {
+  position: absolute;
+  width: clamp(150px, 34%, 210px);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+.invest-community__float--1 {
+  top: 4%;
+  left: 8%;
+  transform: rotate(-7deg);
+  z-index: 1;
+}
+
+.invest-community__float--2 {
+  top: 18%;
+  right: 2%;
+  transform: rotate(5deg);
+  z-index: 3;
+}
+
+.invest-community__float--3 {
+  bottom: -4%;
+  left: 28%;
+  transform: rotate(-3deg);
+  z-index: 2;
+}
+
+.invest-community__float-media {
+  height: 88px;
+  overflow: hidden;
+}
+
+.invest-community__float-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.invest-community__float-body {
+  padding: 0.65rem 0.75rem 0.8rem;
+}
+
+.invest-community__float-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.invest-community__float-excerpt {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.45;
+  color: #6b7280;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .invest-community__card {
+    grid-template-columns: 1fr;
+  }
+
+  .invest-community__visual {
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 560px) {
+  .invest-community__form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invest-community__submit {
+    width: 100%;
+  }
+}
+
+/* ===== Questions + FAQ (SYB-style, on our background) ===== */
+.invest-questions {
+  padding: clamp(48px, 7dvh, 84px) 0 clamp(56px, 8dvh, 96px);
+}
+
+.invest-questions__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+.invest-questions__contact {
+  min-width: 0;
+}
+
+.invest-questions__title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #111427;
+}
+
+.invest-questions__subtitle {
+  margin: 0 0 clamp(1.25rem, 2.5vw, 1.75rem);
+  max-width: 34ch;
+  font-size: clamp(0.92rem, 1.3vw, 1rem);
+  line-height: 1.6;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.invest-questions__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.invest-questions__fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.invest-questions__field {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.invest-questions__field--message {
+  position: static;
+}
+
+.invest-questions__field-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.invest-questions__input {
+  width: 100%;
+  height: 56px;
+  padding: 0 1.1rem 0 2.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invest-questions__input::placeholder {
+  color: #9ca3af;
+}
+
+.invest-questions__input:focus {
+  outline: none;
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
+}
+
+.invest-questions__input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.invest-questions__textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invest-questions__textarea::placeholder {
+  color: #9ca3af;
+}
+
+.invest-questions__textarea:focus {
+  outline: none;
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.22);
+}
+
+.invest-questions__textarea:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.invest-questions__btn {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 1.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1fbab5, #0ca39e);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(11, 159, 154, 0.26);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.invest-questions__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #22c4be, #0eb5af);
+  box-shadow: 0 16px 34px rgba(11, 159, 154, 0.34);
+}
+
+.invest-questions__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.invest-questions__faq-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invest-questions__faq-item {
+  border-bottom: 1px solid #d8dde5;
+}
+
+.invest-questions__faq-item:first-child {
+  border-top: 1px solid #d8dde5;
+}
+
+.invest-questions__faq-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.invest-questions__faq-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.1rem, 2vw, 1.45rem) 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  font-weight: 700;
+  color: #111427;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.invest-questions__faq-trigger:hover {
+  color: #0099A9;
+}
+
+.invest-questions__faq-trigger:focus-visible {
+  outline: 2px solid #0099A9;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.invest-questions__faq-question {
+  flex: 1;
+  min-width: 0;
+}
+
+.invest-questions__faq-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111427;
+  transition: color 0.2s ease;
+}
+
+.invest-questions__faq-trigger.is-open .invest-questions__faq-icon {
+  color: #0099A9;
+}
+
+.invest-questions__faq-panel:not([hidden]) {
+  animation: invest-faq-open 0.2s ease;
+}
+
+@keyframes invest-faq-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.invest-questions__faq-answer {
+  margin: 0 0 clamp(1rem, 2vw, 1.25rem);
+  padding-top: 0.15rem;
+  font-size: clamp(0.92rem, 1.1vw, 1rem);
+  line-height: 1.65;
+  color: #4b5563;
+}
+
+@media (max-width: 1024px) {
+  .invest-questions__inner {
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 5vw, 2.75rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .invest-questions {
+    padding: clamp(36px, 8vw, 48px) 0 clamp(44px, 9vw, 56px);
+  }
+
+  .invest-questions__title {
+    font-size: clamp(1.625rem, 7vw, 2rem);
+  }
+
+  .invest-questions__subtitle {
+    max-width: none;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  .invest-questions__form {
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .invest-questions__input {
+    height: 48px;
+    font-size: 0.875rem;
+  }
+
+  .invest-questions__textarea {
+    min-height: 104px;
+    font-size: 0.875rem;
+    border-radius: 16px;
+  }
+
+  .invest-questions__btn {
+    width: fit-content;
+    min-width: 148px;
+    height: 48px;
+    padding: 0 1.35rem;
+    font-size: 0.875rem;
+  }
+}

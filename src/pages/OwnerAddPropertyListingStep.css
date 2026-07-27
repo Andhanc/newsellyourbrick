@@ -119,14 +119,14 @@
 }
 
 .oap-listing-step__mode:hover {
-  border-color: rgba(10, 186, 181, 0.35);
+  border-color: rgba(0, 153, 169, 0.35);
   transform: translateY(-1px);
 }
 
 .oap-listing-step__mode--active {
-  border-color: var(--oap-primary, #0abab5);
-  background: linear-gradient(145deg, rgba(10, 186, 181, 0.1) 0%, rgba(10, 186, 181, 0.03) 100%);
-  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.12);
+  border-color: var(--oap-primary, #0099a9);
+  background: linear-gradient(145deg, rgba(0, 153, 169, 0.1) 0%, rgba(0, 153, 169, 0.03) 100%);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.12);
 }
 
 .oap-listing-step__mode--violet.oap-listing-step__mode--active {
@@ -164,9 +164,9 @@
 }
 
 .oap-listing-step__mode-icon--teal {
-  color: #0f766e;
-  background: rgba(10, 186, 181, 0.12);
-  border-color: rgba(10, 186, 181, 0.2);
+  color: #005a63;
+  background: rgba(0, 153, 169, 0.12);
+  border-color: rgba(0, 153, 169, 0.2);
 }
 
 .oap-listing-step__mode-icon--violet {
@@ -230,8 +230,8 @@
 }
 
 .oap-listing-step__mode--active .oap-listing-step__mode-mark {
-  border-color: var(--oap-primary, #0abab5);
-  background: var(--oap-primary, #0abab5);
+  border-color: var(--oap-primary, #0099a9);
+  background: var(--oap-primary, #0099a9);
   color: #fff;
 }
 
@@ -316,8 +316,8 @@
 
 .oap-listing-step__input:focus {
   outline: none;
-  border-color: var(--oap-primary, #0abab5);
-  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+  border-color: var(--oap-primary, #0099a9);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 .oap-listing-step__input::placeholder {
@@ -347,7 +347,7 @@
 
 .oap-listing-step__location svg {
   flex-shrink: 0;
-  color: var(--oap-primary, #0abab5);
+  color: var(--oap-primary, #0099a9);
 }
 
 .oap-listing-step__auction-grid {

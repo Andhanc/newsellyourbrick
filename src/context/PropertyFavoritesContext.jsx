@@ -1,18 +1,17 @@
 import {
   createContext,
+  lazy,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
-import CompareFavoritesDrawer from '../components/CompareFavoritesDrawer'
-import FirstFavoriteDrawer from '../components/FirstFavoriteDrawer'
 import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { fetchUserFavorites, invalidateUserFavoritesCache } from '../utils/favoritesApi'
 import {
   favoriteCompositeKey,
   hasDbBackedProperty,
@@ -20,6 +19,9 @@ import {
 } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+
+const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
+const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
 
 const PropertyFavoritesContext = createContext(null)
 
@@ -92,24 +94,30 @@ function PropertyFavoritesDrawersHost({
   onCloseCompare,
 }) {
   const navigate = useNavigate()
+  if (!firstOpen && !compareOpen) return null
   return (
-    <>
-      <FirstFavoriteDrawer
-        isOpen={firstOpen}
-        onClose={onCloseFirst}
-        onGoToFavorites={() => navigate('/favorites')}
-      />
-      <CompareFavoritesDrawer
-        isOpen={compareOpen}
-        onClose={onCloseCompare}
-        onCompare={() => navigate('/compare')}
-      />
-    </>
+    <Suspense fallback={null}>
+      {firstOpen ? (
+        <LazyFirstFavoriteDrawer
+          isOpen={firstOpen}
+          onClose={onCloseFirst}
+          onGoToFavorites={() => navigate('/favorites')}
+        />
+      ) : null}
+      {compareOpen ? (
+        <LazyCompareFavoritesDrawer
+          isOpen={compareOpen}
+          onClose={onCloseCompare}
+          onCompare={() => navigate('/compare')}
+        />
+      ) : null}
+    </Suspense>
   )
 }
 
 export function PropertyFavoritesProvider({ children }) {
   const { user, isLoaded: userLoaded } = useUser()
+  const { pathname } = useLocation()
   const [dbKeys, setDbKeys] = useState(() => new Set())
   const [favoriteRows, setFavoriteRows] = useState(() => [])
   const [mockMap, setMockMap] = useState(() => readMockFavoritesMap())
@@ -127,6 +135,7 @@ export function PropertyFavoritesProvider({ children }) {
     setLoading(true)
     try {
       const base = await getApiBaseUrl()
+      const { fetchUserFavorites } = await import('../utils/favoritesApi')
       const rows = await fetchUserFavorites(base, uid, { ttlMs: 20000 })
       if (Array.isArray(rows)) {
         const next = new Set()
@@ -146,23 +155,46 @@ export function PropertyFavoritesProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!getDbUserId()) return undefined
     let cancelled = false
+    let loaded = false
     const run = () => {
-      if (!cancelled) void loadDbFavorites()
+      if (cancelled || loaded) return
+      loaded = true
+      void loadDbFavorites()
     }
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(run, { timeout: 4500 })
+    const isHome = pathname === '/'
+    const onInteract = () => run()
+    const interactEvents = ['scroll', 'click', 'keydown', 'touchstart']
+    if (isHome) {
+      interactEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onInteract, { once: true, passive: true })
+      })
+    }
+    const idleTimeout = isHome ? 12000 : 4500
+    if (!isHome && typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: idleTimeout })
       return () => {
         cancelled = true
         window.cancelIdleCallback(id)
+        if (isHome) {
+          interactEvents.forEach((eventName) => {
+            window.removeEventListener(eventName, onInteract)
+          })
+        }
       }
     }
-    const t = window.setTimeout(run, 600)
+    const t = window.setTimeout(run, isHome ? 3000 : 600)
     return () => {
       cancelled = true
       window.clearTimeout(t)
+      if (isHome) {
+        interactEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, onInteract)
+        })
+      }
     }
-  }, [loadDbFavorites])
+  }, [loadDbFavorites, pathname])
 
   useEffect(() => {
     const onStorage = (e) => {
@@ -220,6 +252,7 @@ export function PropertyFavoritesProvider({ children }) {
 
         try {
           const base = await getApiBaseUrl()
+          const { invalidateUserFavoritesCache } = await import('../utils/favoritesApi')
           invalidateUserFavoritesCache(base, uid)
           const body = JSON.stringify({
             property_id: property.id,
@@ -244,6 +277,7 @@ export function PropertyFavoritesProvider({ children }) {
           }
         } catch (e) {
           const base = await getApiBaseUrl().catch(() => '/api')
+          const { invalidateUserFavoritesCache } = await import('../utils/favoritesApi')
           invalidateUserFavoritesCache(base, uid)
           setDbKeys((prev) => {
             const next = new Set(prev)

@@ -19,7 +19,9 @@ const AccessManagement = () => {
     can_access_users: false,
     can_access_moderation: false,
     can_access_chat: false,
-    can_access_objects: false
+    can_access_objects: false,
+    can_access_seo: false,
+    seo_role: 'editor'
   });
 
   useEffect(() => {
@@ -69,7 +71,9 @@ const AccessManagement = () => {
       can_access_users: admin.can_access_users,
       can_access_moderation: admin.can_access_moderation,
       can_access_chat: admin.can_access_chat,
-      can_access_objects: admin.can_access_objects
+      can_access_objects: admin.can_access_objects,
+      can_access_seo: admin.can_access_seo,
+      seo_role: admin.seo_role || 'editor'
     });
     setEditingAdmin(admin);
     setShowCreateModal(true);
@@ -124,7 +128,9 @@ const AccessManagement = () => {
             can_access_users: formData.can_access_users,
             can_access_moderation: formData.can_access_moderation,
             can_access_chat: formData.can_access_chat,
-            can_access_objects: formData.can_access_objects
+            can_access_objects: formData.can_access_objects,
+            can_access_seo: formData.can_access_seo,
+            seo_role: formData.can_access_seo ? formData.seo_role : null
           })
         });
       } else {
@@ -216,10 +222,16 @@ const AccessManagement = () => {
                       {admin.can_access_moderation && <span className="permission-tag">Модерация</span>}
                       {admin.can_access_chat && <span className="permission-tag">Чат</span>}
                       {admin.can_access_objects && <span className="permission-tag">Объекты</span>}
+                      {admin.can_access_seo && (
+                        <span className="permission-tag">
+                          SEO{admin.seo_role ? ` (${admin.seo_role})` : ''}
+                        </span>
+                      )}
                       {admin.can_access_access_management && <span className="permission-tag">Доступы</span>}
                       {!admin.can_access_statistics && !admin.can_access_users && 
                        !admin.can_access_moderation && !admin.can_access_chat && 
-                       !admin.can_access_objects && !admin.can_access_access_management && (
+                       !admin.can_access_objects && !admin.can_access_seo &&
+                       !admin.can_access_access_management && (
                         <span className="permission-tag permission-tag--none">Нет доступа</span>
                       )}
                     </div>
@@ -347,6 +359,27 @@ const AccessManagement = () => {
                     />
                     <span>Объекты</span>
                   </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.can_access_seo}
+                      onChange={() => handleCheckboxChange('can_access_seo')}
+                    />
+                    <span>SEO-кабинет</span>
+                  </label>
+                  {formData.can_access_seo && (
+                    <div className="form-group">
+                      <label>Роль SEO</label>
+                      <select
+                        value={formData.seo_role}
+                        onChange={(e) => setFormData({ ...formData, seo_role: e.target.value })}
+                      >
+                        <option value="editor">Редактор</option>
+                        <option value="marketer">Маркетолог</option>
+                        <option value="admin">Админ SEO</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 

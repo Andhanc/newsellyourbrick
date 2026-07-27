@@ -195,7 +195,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 40%, #0d9488 100%);
+  background: linear-gradient(90deg, #00605a 0%, #33adbb 40%, #007580 100%);
   border-radius: 24px 24px 0 0;
 }
 
@@ -254,12 +254,12 @@
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(145deg, #0d9488 0%, #0f766e 100%);
+  background: linear-gradient(145deg, #007580 0%, #00605a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 10px 24px -8px rgba(13, 148, 136, 0.55);
+  box-shadow: 0 10px 24px -8px rgba(0, 153, 169, 0.55);
 }
 
 .property-calculator-modal__header {
@@ -273,7 +273,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #0d9488;
+  color: #007580;
   margin: 0 0 8px 0;
 }
 
@@ -369,9 +369,9 @@
 
 .property-calculator-form__input:focus,
 .property-calculator-form__select:focus {
-  border-color: #0d9488;
+  border-color: #007580;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.15);
 }
 
 .property-calculator-form__input::placeholder {
@@ -431,16 +431,16 @@
 }
 
 .property-calculator-form__button--primary {
-  background: linear-gradient(180deg, #0f766e 0%, #0d9488 100%);
+  background: linear-gradient(180deg, #00605a 0%, #007580 100%);
   color: #fff;
   border-color: rgba(15, 23, 42, 0.08);
-  box-shadow: 0 4px 14px -4px rgba(13, 148, 136, 0.55);
+  box-shadow: 0 4px 14px -4px rgba(0, 153, 169, 0.55);
 }
 
 .property-calculator-form__button--primary:hover {
   filter: brightness(1.05);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px -6px rgba(13, 148, 136, 0.5);
+  box-shadow: 0 8px 20px -6px rgba(0, 153, 169, 0.5);
 }
 
 .property-calculator-form__button--secondary {
@@ -457,13 +457,13 @@
 
 /* Как у кнопки "Сделать ставку" (liquid glass) */
 .property-calculator-form__button--liquid {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
   box-shadow:
-    0 4px 16px rgba(10, 186, 181, 0.3),
+    0 4px 16px rgba(0, 153, 169, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -508,12 +508,12 @@
 }
 
 .property-calculator-form__button--liquid:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(10, 186, 181, 0.4),
+    0 6px 20px rgba(0, 153, 169, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -529,13 +529,13 @@
   width: 88px;
   height: 88px;
   border-radius: 22px;
-  background: linear-gradient(145deg, #0d9488 0%, #0f766e 100%);
+  background: linear-gradient(145deg, #007580 0%, #00605a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
   color: #fff;
-  box-shadow: 0 12px 32px -10px rgba(13, 148, 136, 0.55);
+  box-shadow: 0 12px 32px -10px rgba(0, 153, 169, 0.55);
 }
 
 .property-calculator-result__title {
@@ -548,7 +548,7 @@
 .property-calculator-result__price {
   font-size: 42px;
   font-weight: 700;
-  color: #0f766e;
+  color: #00605a;
   margin: 0 0 24px 0;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -628,7 +628,7 @@
 
 .property-calculator-loader__icon {
   animation: spin 1s linear infinite;
-  color: #0d9488;
+  color: #007580;
   margin-bottom: 24px;
 }
 
@@ -754,7 +754,7 @@
 .property-calculator-result__similar-price {
   font-size: 18px;
   font-weight: 700;
-  color: #0f766e;
+  color: #00605a;
 }
 
 .property-calculator-result__similar-details {

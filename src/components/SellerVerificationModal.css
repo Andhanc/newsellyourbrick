@@ -136,7 +136,7 @@
 .seller-verification-modal__btn {
   width: 100%;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -151,9 +151,9 @@
 }
 
 .seller-verification-modal__btn:hover {
-  background: linear-gradient(135deg, #089C97 0%, #067a75 100%);
+  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
 }
 
 .seller-verification-modal__btn svg {

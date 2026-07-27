@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiAlertCircle } from 'react-icons/fi'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { FiSliders } from 'react-icons/fi'
+import { Map, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
+import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
+import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import ListingPagePagination from '../components/ListingPagePagination'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import {
@@ -14,6 +17,7 @@ import {
   filterPropertiesBySearchQuery,
   getCatalogFilterBounds,
   loadCatalogFiltersFromSession,
+  mergeCatalogFilters,
   persistCatalogFilters,
   sanitizeCatalogFilters,
 } from '../utils/catalogFilters'
@@ -29,6 +33,9 @@ import {
   normalizeSearchPriceFilters,
 } from '../utils/propertySearchFilters'
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
+import { getSearchResultsPropertyPath, parseSearchResultsGeoRoute } from '../utils/searchResultsGeoUrl'
+import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
+import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -38,13 +45,14 @@ function isHiddenSoldListing(property) {
   return isPropertyListingSoldOut(property)
 }
 
-function SearchResultsGrid({ properties, onOpen }) {
+function SearchResultsGrid({ properties, onOpen, linkGeo }) {
   return (
     <div className="properties-grid property-listing-grid search-results__grid">
       {properties.map((property) => (
         <PropertyListingCard
           key={auctionListingDedupeKey(property)}
           property={property}
+          href={getSearchResultsPropertyPath(property, linkGeo)}
           onOpen={onOpen}
           showActions={false}
           pinFooter
@@ -58,11 +66,24 @@ const SearchResults = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const params = useParams()
+  const routeGeo = useMemo(
+    () => parseSearchResultsGeoRoute({ country: params.country, city: params.city }),
+    [params.country, params.city],
+  )
+  const routeCountry = routeGeo.country
+  const routeCity = routeGeo.region
+  const heroSearchPrefilter = useMemo(
+    () => readHeroSearchPrefilter(location.state),
+    [location.state],
+  )
   const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
   const [searchQuery, setSearchQuery] = useState('')
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
@@ -79,6 +100,10 @@ const SearchResults = () => {
   }, [])
 
   useEffect(() => {
+    if (isSearchDesktop) setMobileFiltersOpen(false)
+  }, [isSearchDesktop])
+
+  useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
@@ -90,7 +115,16 @@ const SearchResults = () => {
           .map((prop) => formatPropertyForListingCard(prop))
           .filter((property) => !isHiddenSoldListing(property))
         const bounds = getCatalogFilterBounds(formatted)
-        const initialFilters = sanitizeCatalogFilters(loadCatalogFiltersFromSession(bounds), bounds)
+        const initialFilters = sanitizeCatalogFilters(
+          heroSearchPrefilter
+            ? mergeCatalogFilters(heroSearchPrefilter, EMPTY_CATALOG_FILTERS)
+            : loadCatalogFiltersFromSession(bounds),
+          bounds,
+        )
+        if (routeCountry && routeCity) {
+          initialFilters.country = routeCountry
+          initialFilters.region = routeCity
+        }
         persistCatalogFilters(initialFilters)
         setCatalogProperties(formatted)
         setActiveFilters(initialFilters)
@@ -104,7 +138,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [heroSearchPrefilter, routeCountry, routeCity])
 
   const filterBounds = useMemo(
     () => getCatalogFilterBounds(catalogProperties),
@@ -121,9 +155,33 @@ const SearchResults = () => {
     return filterPropertiesBySearchQuery(strict, searchQuery)
   }, [catalogProperties, activeFilters, searchQuery, filterBounds.priceMin, filterBounds.priceMax])
 
-  const groupedSections = useMemo(
-    () => groupPropertiesByCatalogSection(filteredProperties, activeFilters),
-    [filteredProperties, activeFilters],
+  const mobilePagination = useMemo(
+    () => paginateBuyerCatalogue(filteredProperties, currentPage),
+    [filteredProperties, currentPage],
+  )
+  const visibleProperties = isMobile ? mobilePagination.items : filteredProperties
+  const groupedSections = useMemo(() => {
+    const sections = groupPropertiesByCatalogSection(visibleProperties, activeFilters)
+    if (!isMobile) return sections
+    const seenListingKeys = new Set()
+    return sections
+      .map((section) => ({
+        ...section,
+        properties: section.properties.filter((property) => {
+          const key = auctionListingDedupeKey(property)
+          if (seenListingKeys.has(key)) return false
+          seenListingKeys.add(key)
+          return true
+        }),
+      }))
+      .filter((section) => section.properties.length > 0)
+  }, [visibleProperties, activeFilters, isMobile])
+  const linkGeo = useMemo(
+    () => ({
+      country: activeFilters.country || routeCountry,
+      region: activeFilters.region || routeCity,
+    }),
+    [activeFilters.country, activeFilters.region, routeCountry, routeCity],
   )
 
   const totalUniqueCount = useMemo(() => {
@@ -134,8 +192,27 @@ const SearchResults = () => {
     return seen.size
   }, [filteredProperties])
 
+  const activeFilterCount = useMemo(() => {
+    let count = Array.isArray(activeFilters.purchaseTypes)
+      ? activeFilters.purchaseTypes.length
+      : 0
+    if (activeFilters.country) count += 1
+    if (activeFilters.region) count += 1
+    if (activeFilters.propertyType) count += 1
+    if (activeFilters.rooms) count += 1
+    if (activeFilters.minPrice !== '' || activeFilters.maxPrice !== '') count += 1
+    return count
+  }, [activeFilters])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeFilters, searchQuery, routeCountry, routeCity])
+
   useEffect(() => {
     if (!location.state?.fromPropertySearchBlock) return
+    if (typeof location.state?.searchQuery === 'string' && location.state.searchQuery.trim()) {
+      setSearchQuery(location.state.searchQuery.trim())
+    }
     if (loading || autoScrolledRef.current) return
 
     const target = document.getElementById('search-results-grid')
@@ -152,7 +229,8 @@ const SearchResults = () => {
     const { pathname, state } = buildPropertyDetailNavigation(property, {
       auctionTab: auctionTab || undefined,
     })
-    navigate(pathname, { state })
+    const targetPath = getSearchResultsPropertyPath(property, linkGeo)
+    navigate(targetPath === getPropertyDetailPath(property) ? pathname : targetPath, { state })
   }
 
   const sanitizeActiveFilters = (nextFilters) =>
@@ -215,7 +293,7 @@ const SearchResults = () => {
                 : ''
             }`}
           >
-            {!isSearchDesktop || desktopFiltersOpen ? (
+            {isSearchDesktop && desktopFiltersOpen ? (
               <CatalogDesktopFilters
                 filters={activeFilters}
                 onChange={handleDesktopFilterChange}
@@ -233,8 +311,29 @@ const SearchResults = () => {
               }`.trim()}
             >
               {!isSearchDesktop ? (
-                <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
-                  <div className="search-box">
+                <>
+                  <div className="search-results__mobile-head">
+                    <div>
+                      <p className="search-results__eyebrow">Каталог покупателя</p>
+                      <h1>Найдите свой объект</h1>
+                      <p className="search-results__mobile-count">
+                        {totalUniqueCount > 0
+                          ? `${totalUniqueCount} ${t('mapFiltersObjects', { defaultValue: 'объектов' })}`
+                          : 'Подберём новые варианты'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="search-results__map-button"
+                      onClick={() => navigate('/map')}
+                      aria-label="Открыть объекты на карте"
+                    >
+                      <Map size={18} aria-hidden />
+                      <span>Карта</span>
+                    </button>
+                  </div>
+                  <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
+                    <div className="search-box">
                     <svg
                       className="search-icon"
                       width="20"
@@ -264,8 +363,25 @@ const SearchResults = () => {
                         ×
                       </button>
                     ) : null}
+                    </div>
+                    <button
+                    type="button"
+                    className={`search-results__mobile-filters-btn${
+                      activeFilterCount > 0 ? ' is-active' : ''
+                    }`}
+                    onClick={() => setMobileFiltersOpen(true)}
+                    aria-label={t('filters')}
+                    aria-expanded={mobileFiltersOpen}
+                  >
+                    <FiSliders size={20} aria-hidden />
+                    {activeFilterCount > 0 ? (
+                      <span className="search-results__mobile-filters-count" aria-hidden>
+                        {activeFilterCount}
+                      </span>
+                    ) : null}
+                    </button>
                   </div>
-                </div>
+                </>
               ) : (
                 <div
                   ref={searchFiltersBarRef}
@@ -318,18 +434,16 @@ const SearchResults = () => {
 
               <div id="search-results-grid" className="search-results__body">
                 {totalUniqueCount === 0 ? (
-                  <div className="search-results__empty">
-                    <FiAlertCircle size={48} />
-                    <h2>Ничего не найдено</h2>
-                    <p>Попробуйте изменить параметры поиска</p>
-                    <button
-                      type="button"
-                      className="search-results__button"
-                      onClick={handleResetFilters}
-                    >
-                      Показать все объекты
-                    </button>
-                  </div>
+                  <BuyerEmptyState
+                    className="search-results__empty"
+                    eyebrow="Новый шанс для выбора"
+                    title="Подходящих объектов пока нет"
+                    description="Снимем ограничения и снова покажем весь каталог — ваши параметры поиска не потеряются навсегда."
+                    primaryLabel="Показать весь каталог"
+                    onPrimary={handleResetFilters}
+                    secondaryLabel="Все направления"
+                    onSecondary={() => navigate('/sections')}
+                  />
                 ) : (
                   <div className="search-results__sections property-listing-grid-sections">
                     {groupedSections.map((section, index) => (
@@ -340,7 +454,7 @@ const SearchResults = () => {
                             ({section.properties.length})
                           </span>
                         </h2>
-                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} />
+                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} linkGeo={linkGeo} />
                         {index < groupedSections.length - 1 ? (
                           <div
                             className="property-listing-grid-divider"
@@ -353,6 +467,41 @@ const SearchResults = () => {
                   </div>
                 )}
               </div>
+
+              {!isSearchDesktop && totalUniqueCount > 0 ? (
+                <ListingPagePagination
+                  currentPage={mobilePagination.currentPage}
+                  totalPages={mobilePagination.totalPages}
+                  onPageChange={(nextPage) => {
+                    setCurrentPage(nextPage)
+                    requestAnimationFrame(() => {
+                      document.getElementById('search-results-grid')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                    })
+                  }}
+                />
+              ) : null}
+
+              {!isSearchDesktop ? (
+                <SharesMobileFiltersDrawer
+                  isOpen={mobileFiltersOpen}
+                  onClose={() => setMobileFiltersOpen(false)}
+                  title={t('filters')}
+                  applyLabel={`${t('auctionApplyFilters')} · ${totalUniqueCount}`}
+                  onApply={() => setMobileFiltersOpen(false)}
+                  resetLabel={t('catalogResetFilters')}
+                  onReset={handleResetFilters}
+                >
+                  <CatalogDesktopFilters
+                    filters={activeFilters}
+                    onChange={handleDesktopFilterChange}
+                    priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
+                    variant="drawer"
+                  />
+                </SharesMobileFiltersDrawer>
+              ) : null}
             </div>
           </div>
         </div>

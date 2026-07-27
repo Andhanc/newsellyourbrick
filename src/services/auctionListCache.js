@@ -12,8 +12,12 @@ import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAu
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
+import {
+  resolveAuctionCurrentBidValue,
+  setAuctionBidOverride as setBidOverride,
+} from '../utils/auctionBidValue'
 
-const BID_OVERRIDES_STORAGE_KEY = 'syb_auction_bid_overrides_v1'
+export { resolveAuctionCurrentBidValue } from '../utils/auctionBidValue'
 
 function pickNonEmptyTimerDate(a, b) {
   if (a != null && a !== '') return a
@@ -25,82 +29,6 @@ function asFiniteNumberOrNull(value) {
   if (value == null || value === '') return null
   const n = Number(value)
   return Number.isFinite(n) ? n : null
-}
-
-const bidOverrides = new Map()
-let bidOverridesLoaded = false
-
-function ensureBidOverridesLoaded() {
-  if (bidOverridesLoaded) return
-  bidOverridesLoaded = true
-  try {
-    if (typeof window === 'undefined' || !window.sessionStorage) return
-    const raw = window.sessionStorage.getItem(BID_OVERRIDES_STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return
-    Object.entries(parsed).forEach(([k, v]) => {
-      const id = Number(k)
-      const bid = asFiniteNumberOrNull(v)
-      if (Number.isFinite(id) && bid != null) {
-        bidOverrides.set(id, bid)
-      }
-    })
-  } catch {
-    /* ignore storage parse errors */
-  }
-}
-
-function persistBidOverrides() {
-  try {
-    if (typeof window === 'undefined' || !window.sessionStorage) return
-    const payload = {}
-    bidOverrides.forEach((v, k) => {
-      payload[String(k)] = v
-    })
-    window.sessionStorage.setItem(BID_OVERRIDES_STORAGE_KEY, JSON.stringify(payload))
-  } catch {
-    /* ignore storage write errors */
-  }
-}
-
-function getBidOverrideForProperty(prop) {
-  ensureBidOverridesLoaded()
-  const key = compositeBidAmountKey(prop?.id, resolvePropertySourceTable(prop))
-  const value = bidOverrides.get(key)
-  return value != null ? value : null
-}
-
-function setBidOverride(propertyOrId, bidAmount, sourceTable) {
-  ensureBidOverridesLoaded()
-  const id = typeof propertyOrId === 'object' ? Number(propertyOrId?.id) : Number(propertyOrId)
-  const table =
-    typeof propertyOrId === 'object'
-      ? resolvePropertySourceTable(propertyOrId)
-      : resolvePropertySourceTable({ source_table: sourceTable })
-  const key = compositeBidAmountKey(id, table)
-  const bid = asFiniteNumberOrNull(bidAmount)
-  if (!Number.isFinite(id) || bid == null) return false
-  const prev = bidOverrides.get(key)
-  const next = prev == null ? bid : Math.max(prev, bid)
-  bidOverrides.set(key, next)
-  persistBidOverrides()
-  return true
-}
-
-export function resolveAuctionCurrentBidValue(prop) {
-  if (!prop) return 0
-  const candidates = [
-    asFiniteNumberOrNull(prop.currentBid),
-    asFiniteNumberOrNull(prop.current_bid),
-    asFiniteNumberOrNull(prop.max_bid),
-    asFiniteNumberOrNull(prop.highest_bid),
-    asFiniteNumberOrNull(prop.auction_current_bid),
-    asFiniteNumberOrNull(prop.auction_starting_price),
-    getBidOverrideForProperty(prop),
-  ].filter((v) => v != null)
-  if (candidates.length === 0) return 0
-  return Math.max(...candidates)
 }
 
 /** Один id мог прийти и из test-timers, и из approved — объединяем, чтобы круговой таймер не терялся. */

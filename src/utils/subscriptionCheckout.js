@@ -14,16 +14,48 @@ function normalizeBillingApiBase() {
 }
 
 const API_BASE = normalizeBillingApiBase()
+const DEFAULT_FETCH_TIMEOUT_MS = 45000
+
+function billingFetchErrorMessage(error) {
+  const msg = String(error?.message || '')
+  if (error?.name === 'AbortError' || msg.includes('abort')) {
+    return 'Превышено время ожидания ответа сервера. Проверьте, что API запущен, и попробуйте снова.'
+  }
+  const isNetwork =
+    error?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
+  return isNetwork
+    ? 'Нет связи с сервером. Запустите API (npm run server) или проверьте VITE_API_BASE_URL.'
+    : msg || 'Ошибка сети'
+}
+
+async function fetchBillingJson(path, options = {}, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+    })
+    const data = await res.json().catch(() => ({}))
+    return { res, data }
+  } catch (error) {
+    throw new Error(billingFetchErrorMessage(error))
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
 
 /**
  * Переход на hosted Stripe Checkout.
- * Используем replace(), а не href/assign: иначе в истории остаётся checkout.stripe.com
+ * Используем assign(), а не href/assign history quirks: иначе в истории остаётся checkout.stripe.com
  * и кнопка «Назад» после оплаты снова открывает Stripe.
+ * @returns {boolean} true если редирект инициирован
  */
 export function navigateToStripeCheckout(checkoutUrl) {
   const u = String(checkoutUrl || '').trim()
-  if (!/^https?:\/\//i.test(u)) return
-  window.location.replace(u)
+  if (!/^https?:\/\//i.test(u)) return false
+  window.location.assign(u)
+  return true
 }
 
 /** После возврата с Stripe — синхронизировать сессию в БД */
@@ -179,41 +211,63 @@ export async function startPropertyReservationCheckout({
   useDeposit,
   signingIntentId,
 } = {}) {
-  const res = await fetch(`${API_BASE}/billing/create-property-reservation-checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userId: userId != null ? String(userId) : undefined,
-      propertyId: propertyId != null ? String(propertyId) : undefined,
-      propertyType: propertyType || undefined,
-      customerEmail: customerEmail || undefined,
-      returnPath: returnPath || undefined,
-      useDeposit: useDeposit === true,
-      signingIntentId: signingIntentId || undefined,
-    }),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return { ok: false, error: data.error || 'Не удалось создать оплату резерва' }
+  try {
+    const { res, data } = await fetchBillingJson('/billing/create-property-reservation-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userId != null ? String(userId) : undefined,
+        propertyId: propertyId != null ? String(propertyId) : undefined,
+        propertyType: propertyType || undefined,
+        customerEmail: customerEmail || undefined,
+        returnPath: returnPath || undefined,
+        useDeposit: useDeposit === true,
+        signingIntentId: signingIntentId || undefined,
+      }),
+    })
+    if (!res.ok) {
+      return { ok: false, error: data.error || 'Не удалось создать оплату резерва' }
+    }
+    const checkoutUrl =
+      typeof data.url === 'string'
+        ? data.url
+        : typeof data?.data?.url === 'string'
+          ? data.data.url
+          : ''
+    if (checkoutUrl && /^https?:\/\//i.test(checkoutUrl)) {
+      const redirected = navigateToStripeCheckout(checkoutUrl)
+      return { ok: true, redirected }
+    }
+    return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+  } catch (e) {
+    return { ok: false, error: e?.message || 'Ошибка сети' }
   }
-  if (data.url) {
-    navigateToStripeCheckout(data.url)
-    return { ok: true }
-  }
-  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
 }
 
 export async function confirmPropertyReservationSession(sessionId, userId) {
-  const res = await fetch(`${API_BASE}/billing/confirm-property-reservation`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, userId: String(userId) }),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return { ok: false, error: data.error || 'confirm_failed' }
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), 45000)
+  try {
+    const body = { session_id: sessionId }
+    if (userId != null && /^\d+$/.test(String(userId))) {
+      body.userId = String(userId)
+    }
+    const res = await fetch(`${API_BASE}/billing/confirm-property-reservation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify(body),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { ok: false, error: data.error || 'confirm_failed' }
+    }
+    return { ok: true, data: data.data }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'confirm_failed' }
+  } finally {
+    window.clearTimeout(timer)
   }
-  return { ok: true, data: data.data }
 }
 
 /** Stripe Checkout: оплата публикации объявления (фикс. сумма в EUR на сервере). */

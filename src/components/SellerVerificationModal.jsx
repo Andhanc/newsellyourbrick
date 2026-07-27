@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import VerificationModal from './VerificationModal'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import './SellerVerificationModal.css'
+
+const VerificationModalLazy = lazy(() => import('./VerificationModal'))
 
 const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required, title, subtitle }) => {
   const [showVerification, setShowVerification] = useState(false)
@@ -41,18 +42,20 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
 
   if (showVerification) {
     return (
-      <VerificationModal
-        isOpen={true}
-        required={required}
-        onClose={() => {
-          setShowVerification(false)
-          onClose()
-        }}
-        userId={userId}
-        onComplete={async () => {
-          await handleVerificationComplete()
-        }}
-      />
+      <Suspense fallback={null}>
+        <VerificationModalLazy
+          isOpen={true}
+          required={required}
+          onClose={() => {
+            setShowVerification(false)
+            onClose()
+          }}
+          userId={userId}
+          onComplete={async () => {
+            await handleVerificationComplete()
+          }}
+        />
+      </Suspense>
     )
   }
 

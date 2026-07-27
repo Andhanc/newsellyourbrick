@@ -1,0 +1,67 @@
+.oap-journey-publish-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 13370;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(250, 248, 245, 0.82);
+  backdrop-filter: blur(6px);
+  animation: oap-journey-publish-loader-in 0.22s ease-out both;
+}
+
+@keyframes oap-journey-publish-loader-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.oap-journey-publish-loader__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: min(280px, 100%);
+  padding: 28px 32px;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 153, 169, 0.14);
+  box-shadow:
+    0 16px 40px rgba(0, 153, 169, 0.1),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.oap-journey-publish-loader__spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 153, 169, 0.18);
+  border-top-color: #0099A9;
+  animation: oap-journey-publish-loader-spin 0.75s linear infinite;
+}
+
+@keyframes oap-journey-publish-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.oap-journey-publish-loader__text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #374151;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oap-journey-publish-loader,
+  .oap-journey-publish-loader__spinner {
+    animation: none;
+  }
+}

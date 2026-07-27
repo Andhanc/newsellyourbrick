@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import './styles/liquid-glass-buttons-global.css';
+@source "./**/*.{js,ts,jsx,tsx}";
 
 @theme inline {
   --color-destructive-foreground: oklch(1 0 0);
@@ -9,6 +11,19 @@
 
 :root {
   --destructive-foreground: oklch(1 0 0);
+  --site-font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --site-color-accent: #0099A9;
+  --site-color-accent-dark: #007d8a;
+  --site-color-primary: #0099A9;
+  --site-color-text: #0f172a;
+  --site-color-muted: #64748b;
+  --site-color-subtle: #94a3b8;
+  --site-color-bg: #f8fafc;
+  --site-color-surface: #ffffff;
+  --site-color-border: #e2e8f0;
+  --site-card-radius: 18px;
+  --site-card-shadow: 0 12px 32px -18px rgba(15, 23, 42, 0.26);
+  --site-card-shadow-hover: 0 18px 42px -20px rgba(15, 23, 42, 0.34);
 }
 
 .dark {
@@ -49,16 +64,15 @@ html::-webkit-scrollbar {
 }
 
 body {
-  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--site-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #333;
+  color: var(--site-color-text);
   line-height: 1.6;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   -webkit-overflow-scrolling: touch; /* плавный инерционный скролл на iOS (на контейнере .app-layout) */
+  text-rendering: optimizeLegibility;
 }
 
 body::-webkit-scrollbar {
@@ -233,3 +247,28 @@ button {
   animation: flip-bottom 0.18s ease-out 0.18s forwards;
 }
 
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}

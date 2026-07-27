@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
-import DepositButton from '../components/DepositButton'
 import DepositRequiredModal from '../components/DepositRequiredModal'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
@@ -49,17 +48,6 @@ const PropertyDetail = () => {
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const userData = getUserData()
   const userId = userData?.id
-
-  // Функция для проверки, можно ли показывать депозит (только для авторизованных покупателей)
-  const canShowDeposit = () => {
-    // Проверяем, авторизован ли пользователь
-    if (!isAuthenticated() || !userData || !userData.isLoggedIn) {
-      return false
-    }
-    // Показываем депозит только для покупателей (не для продавцов)
-    const userRole = userData.role || 'buyer'
-    return userRole === 'buyer' || userRole === 'client'
-  }
 
   // Проверка авторизации при загрузке компонента
   useEffect(() => {
@@ -549,7 +537,6 @@ const PropertyDetail = () => {
   if (isLoading) {
     return (
       <div className="property-detail-page">
-        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="loading" style={{ 
             display: 'flex', 
@@ -590,7 +577,6 @@ const PropertyDetail = () => {
             onGoToProperty={handleGoToPropertyFromNotification}
           />
         )}
-        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="not-found">
             <h2>Объект не найден</h2>
@@ -823,7 +809,6 @@ const PropertyDetail = () => {
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <div className="property-detail">
         <div className="detail-header">
           <button onClick={handleBackClick} className="back-button">

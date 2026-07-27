@@ -3,9 +3,1579 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f1f5f9;
+  background: var(--site-color-bg);
+  font-family: var(--site-font-family);
+  color: var(--site-color-text);
   position: relative;
   padding-bottom: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Shares investment marketplace redesign
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.shares-invest-page {
+  min-height: 100dvh;
+  font-family: var(--site-font-family);
+  background:
+    linear-gradient(180deg, #f7f4ee 0%, #f7faf8 38%, #ffffff 100%);
+  color: #1f2937;
+}
+
+.shares-invest-main {
+  margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 112px));
+  padding: 0 0 72px;
+  overflow: hidden;
+}
+
+.shares-invest-hero {
+  position: relative;
+  min-height: 560px;
+  isolation: isolate;
+  overflow: hidden;
+  background: #eef3ef;
+}
+
+.shares-invest-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.shares-invest-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(0.96) contrast(1.02);
+}
+
+.shares-invest-hero__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(249, 247, 241, 0.98) 0%, rgba(249, 247, 241, 0.86) 31%, rgba(249, 247, 241, 0.24) 62%, rgba(249, 247, 241, 0.04) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 64%, rgba(247, 250, 248, 0.96) 100%);
+}
+
+.shares-invest-hero__inner,
+.shares-invest-container {
+  width: min(1280px, calc(100% - 56px));
+  margin: 0 auto;
+}
+
+.shares-invest-hero__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 54px;
+  align-items: center;
+  min-height: 560px;
+  padding: calc(env(safe-area-inset-top, 0px) + 112px + 42px) 0 122px;
+}
+
+.shares-invest-hero__copy h1 {
+  max-width: 490px;
+  margin: 0;
+  color: #1f2b3d;
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.shares-invest-hero__subtitle {
+  margin: 12px 0 0;
+  color: #273448;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.shares-invest-hero__lead {
+  max-width: 420px;
+  margin: 10px 0 0;
+  color: #596677;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.shares-invest-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 20px;
+  padding: 0 24px;
+  border-radius: 8px;
+  background: #0099A9;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 18px 34px rgba(10, 113, 107, 0.28);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.shares-invest-hero__cta:hover {
+  transform: translateY(-2px);
+  background: #075f5a;
+  box-shadow: 0 22px 42px rgba(10, 113, 107, 0.36);
+}
+
+.shares-portfolio-card {
+  align-self: start;
+  margin-top: 6px;
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    0 12px 32px rgba(35, 49, 63, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  backdrop-filter: blur(18px) saturate(1.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  max-width: 320px;
+}
+
+.shares-portfolio-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shares-portfolio-card__top span,
+.shares-portfolio-card__value p,
+.shares-portfolio-card__grid span,
+.shares-portfolio-card__cities span {
+  color: #687589;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.shares-portfolio-card__top strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #e8f7ee;
+  color: #0c8a5d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shares-portfolio-card__overview {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.shares-portfolio-card__value {
+  min-width: 0;
+}
+
+.shares-portfolio-card__value p {
+  margin: 0 0 4px;
+}
+
+.shares-portfolio-card h2 {
+  margin: 0;
+  color: #1f2b3d;
+  font-size: clamp(1.45rem, 2.5vw, 1.75rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.shares-portfolio-card__chart {
+  display: flex;
+  flex: 0 0 96px;
+  align-items: end;
+  gap: 5px;
+  height: 52px;
+  margin: 0;
+  padding: 0 2px 2px;
+}
+
+.shares-portfolio-card__chart span {
+  flex: 1;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, #0099A9, #99d5dd);
+}
+
+.shares-portfolio-card__chart span:nth-child(1) { height: 16px; opacity: 0.55; }
+.shares-portfolio-card__chart span:nth-child(2) { height: 24px; opacity: 0.72; }
+.shares-portfolio-card__chart span:nth-child(3) { height: 22px; opacity: 0.64; }
+.shares-portfolio-card__chart span:nth-child(4) { height: 30px; opacity: 0.8; }
+.shares-portfolio-card__chart span:nth-child(5) { height: 38px; opacity: 0.9; }
+.shares-portfolio-card__chart span:nth-child(6) { height: 46px; }
+
+.shares-portfolio-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eeeb;
+}
+
+.shares-portfolio-card__grid div,
+.shares-portfolio-card__split div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shares-portfolio-card__grid strong {
+  color: #1f2b3d;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.shares-portfolio-card__split {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eeeb;
+}
+
+.shares-portfolio-card__donut {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fff 0 48%, transparent 49%),
+    conic-gradient(#0099A9 0 48%, #66c1cc 48% 74%, #c9a34a 74% 90%, #dfe6e2 90% 100%);
+  box-shadow: inset 0 0 0 1px #e5ece8;
+}
+
+.shares-portfolio-card__split p {
+  margin: 0;
+  color: #273448;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.shares-portfolio-card__cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.shares-portfolio-card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+  color: #0099A9;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shares-invest-stats {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: -70px 14px 36px;
+  padding: 26px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 20px 48px rgba(35, 49, 63, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.shares-invest-metric {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 0 18px;
+  border-right: 1px solid #e7eeea;
+}
+
+.shares-invest-metric:last-child {
+  border-right: 0;
+}
+
+.shares-invest-metric__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid #d8e7e1;
+  border-radius: 50%;
+  color: #0099A9;
+  background: #fbfefd;
+}
+
+.shares-invest-metric p {
+  margin: 0 0 3px;
+  color: #637083;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shares-invest-metric strong {
+  display: block;
+  color: #1f2b3d;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.shares-invest-metric span:not(.shares-invest-metric__icon) {
+  display: block;
+  margin-top: 4px;
+  color: #0099A9;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shares-invest-metric__note {
+  display: block;
+}
+
+.shares-invest-catalog {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.shares-invest-filters {
+  align-self: start;
+  padding: 18px 16px;
+  overflow: visible;
+  border: 1px solid #e5ece8;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(35, 49, 63, 0.07);
+}
+
+.shares-invest-filters header,
+.shares-invest-filter-block__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shares-invest-filters header {
+  padding-bottom: 12px;
+}
+
+.shares-invest-filters h2 {
+  margin: 0;
+  color: #1f2b3d;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.shares-invest-filters header button,
+.shares-invest-more {
+  background: transparent;
+  color: #0099A9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shares-invest-filter-block {
+  padding: 11px 0;
+  border-top: 1px solid #e8eeeb;
+}
+
+.shares-invest-filter-block__title {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: #1f2b3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shares-invest-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.shares-invest-checks label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4f5b6d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.shares-invest-checks input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0099A9;
+}
+
+.shares-invest-more {
+  margin-top: 8px;
+}
+
+.shares-invest-range-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: #596677;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shares-invest-range {
+  width: 100%;
+  margin-top: 10px;
+  accent-color: #0099A9;
+}
+
+.shares-invest-filters__apply {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  border-radius: 8px;
+  background: #0099A9;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 16px 28px rgba(10, 113, 107, 0.2);
+}
+
+.shares-invest-filters--drawer {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shares-invest-filters--drawer .shares-invest-filters__apply--sidebar {
+  display: none;
+}
+
+.shares-invest-filters--drawer header {
+  display: none;
+}
+
+.shares-invest-filter-block--sort {
+  padding-bottom: 4px;
+}
+
+.shares-invest-filter-block__title--static {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: #1f2b3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shares-invest-sort--drawer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 9px;
+  padding: 0 14px;
+  border: 1px solid #dde7e3;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.shares-invest-sort--drawer select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #263246;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  appearance: none;
+}
+
+.shares-invest-results {
+  min-width: 0;
+}
+
+.shares-invest-results__title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.shares-invest-results__title h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: #1f2b3d;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.shares-invest-results__title h2 span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef3f1;
+  color: #687589;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shares-invest-results__title p {
+  margin: 7px 0 0;
+  color: #6a7687;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.shares-invest-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.shares-invest-filters-btn {
+  display: none;
+}
+
+.shares-invest-sort--desktop {
+  display: flex;
+}
+
+.shares-invest-search,
+.shares-invest-sort {
+  display: flex;
+  align-items: center;
+  min-height: 58px;
+  border: 1px solid #dde7e3;
+  border-radius: 8px;
+  background: #fff;
+  color: #9aa6b4;
+  box-shadow: 0 12px 30px rgba(35, 49, 63, 0.04);
+}
+
+.shares-invest-search {
+  gap: 14px;
+  padding: 0 18px;
+  min-height: 48px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(17, 24, 39, 0.08);
+  box-shadow:
+    0 1px 2px rgba(17, 24, 39, 0.04),
+    0 4px 16px rgba(17, 24, 39, 0.07);
+}
+
+.shares-invest-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #263246;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.shares-invest-search button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #eef3f1;
+  color: #697789;
+}
+
+.shares-invest-sort {
+  gap: 10px;
+  padding: 0 16px;
+  min-height: 48px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(17, 24, 39, 0.08);
+  box-shadow:
+    0 1px 2px rgba(17, 24, 39, 0.04),
+    0 4px 16px rgba(17, 24, 39, 0.07);
+}
+
+.shares-invest-sort select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #4f5b6d;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.shares-invest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.shares-invest-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #e3ebe7;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 38px rgba(35, 49, 63, 0.08);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.shares-invest-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 46px rgba(35, 49, 63, 0.13);
+}
+
+.shares-invest-card__media {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: #eef3f1;
+}
+
+.shares-invest-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.28s ease;
+}
+
+.shares-invest-card:hover .shares-invest-card__media img {
+  transform: scale(1.045);
+}
+
+.shares-invest-card__status {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #0099A9;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.shares-invest-card__status--gold {
+  background: #c4942c;
+}
+
+.shares-invest-card__media button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  color: #fff;
+  filter: drop-shadow(0 8px 16px rgba(35, 49, 63, 0.28));
+  backdrop-filter: blur(12px);
+}
+
+.shares-invest-card__media button svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.shares-invest-card__media button.is-active {
+  color: #ff765f;
+  background: #fff;
+}
+
+.shares-invest-card__media button.is-active svg {
+  fill: currentColor;
+}
+
+.shares-invest-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px 18px 20px;
+}
+
+.shares-invest-card h3 {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: calc(1.3em * 2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #1f2b3d;
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.shares-invest-card p {
+  margin: 5px 0 14px;
+  color: #707d8f;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.shares-invest-card__funding {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.shares-invest-card__ring {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fff 0 55%, transparent 56%),
+    conic-gradient(#0099A9 0 var(--value), #e6ece9 var(--value) 100%);
+  color: #1f2b3d;
+  box-shadow: inset 0 0 0 1px #e1ebe6;
+}
+
+.shares-invest-card__ring strong {
+  font-size: 0.92rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.shares-invest-card__amounts,
+.shares-invest-card__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.shares-invest-card__amounts span,
+.shares-invest-card__metrics span {
+  min-width: 0;
+}
+
+.shares-invest-card__amounts small,
+.shares-invest-card__metrics small {
+  display: block;
+  color: #738092;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.shares-invest-card__amounts strong,
+.shares-invest-card__metrics strong {
+  display: block;
+  margin-top: 4px;
+  color: #1f2b3d;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.shares-invest-card__bar {
+  height: 7px;
+  margin: 14px 0 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5ece8;
+}
+
+.shares-invest-card__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0099A9, #33adbb);
+}
+
+.shares-invest-card__metrics {
+  padding-top: 14px;
+  margin-bottom: 16px;
+  border-top: 1px solid #e9efec;
+}
+
+.shares-invest-card__invest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 7px;
+  background: #0099A9;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.shares-invest-card__invest:hover {
+  background: #075f5a;
+}
+
+.shares-invest-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.shares-invest-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e2ebe6;
+  border-radius: 50%;
+  background: #fff;
+  color: #657286;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(35, 49, 63, 0.05);
+}
+
+.shares-invest-pagination button.is-active,
+.shares-invest-pagination button:hover:not(:disabled) {
+  background: #0099A9;
+  color: #fff;
+}
+
+.shares-invest-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shares-invest-pagination span {
+  color: #778395;
+  font-weight: 900;
+}
+
+.shares-invest-next {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 58px 0 0;
+}
+
+.shares-invest-next-card {
+  position: relative;
+  display: flex;
+  min-height: 264px;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 28px;
+  border-radius: 10px;
+  color: #fff;
+  box-shadow: 0 22px 46px rgba(35, 49, 63, 0.17);
+  isolation: isolate;
+}
+
+.shares-invest-next-card img,
+.shares-invest-next-card__shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.shares-invest-next-card img {
+  z-index: -2;
+  object-fit: cover;
+  transition: transform 0.32s ease;
+}
+
+.shares-invest-next-card:hover img {
+  transform: scale(1.045);
+}
+
+.shares-invest-next-card__shade {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(12, 32, 39, 0.08) 0%, rgba(12, 32, 39, 0.55) 48%, rgba(9, 26, 34, 0.85) 100%),
+    linear-gradient(90deg, rgba(9, 96, 90, 0.5), rgba(190, 138, 47, 0.16));
+}
+
+.shares-invest-next-card__icon {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.shares-invest-next-card__icon--teal { background: #0099A9; }
+.shares-invest-next-card__icon--coral { background: #ff765f; }
+.shares-invest-next-card__icon--gold { background: #b9892f; }
+
+.shares-invest-next-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shares-invest-next-card strong {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 1.8rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.shares-invest-next-card__content > span {
+  max-width: 270px;
+  margin: 0;
+  padding-bottom: 40px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.96rem;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.shares-invest-next-card em {
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-height: 32px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2b3d;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.shares-invest-next-card em svg {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.5;
+  transition: transform 0.22s ease;
+}
+
+.shares-invest-next-card:hover em {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+.shares-invest-next-card:hover em svg {
+  transform: translateX(2px);
+}
+
+@media (max-width: 1024px) {
+  .shares-invest-next {
+    gap: 10px;
+  }
+
+  .shares-invest-next-card {
+    flex-direction: row;
+    align-items: center;
+    min-height: 112px;
+    height: auto;
+    padding: 0;
+    border-radius: 14px;
+  }
+
+  .shares-invest-next-card__shade {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9, 26, 34, 0.92) 0%,
+        rgba(9, 26, 34, 0.72) 42%,
+        rgba(9, 26, 34, 0.38) 100%
+      ),
+      linear-gradient(90deg, rgba(9, 96, 90, 0.35), rgba(190, 138, 47, 0.1));
+  }
+
+  .shares-invest-next-card__icon {
+    position: relative;
+    top: auto;
+    left: auto;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    margin: 0 0 0 12px;
+  }
+
+  .shares-invest-next-card__icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .shares-invest-next-card__content {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    padding: 12px 72px 12px 8px;
+  }
+
+  .shares-invest-next-card strong {
+    font-size: clamp(1rem, 4.2vw, 1.15rem);
+    line-height: 1.12;
+  }
+
+  .shares-invest-next-card__content > span {
+    max-width: none;
+    padding-bottom: 0;
+    padding-right: 0;
+    font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+    line-height: 1.35;
+  }
+
+  .shares-invest-next-card em {
+    right: 10px;
+    bottom: 10px;
+    min-height: 28px;
+    padding: 0 9px 0 10px;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .shares-invest-next-card em svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .shares-invest-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .shares-portfolio-card {
+    max-width: min(100%, 360px);
+  }
+
+  .shares-invest-stats,
+  .shares-invest-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shares-invest-catalog {
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .shares-invest-main {
+    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 96px));
+  }
+
+  .shares-invest-hero,
+  .shares-invest-hero__inner {
+    min-height: auto;
+  }
+
+  .shares-invest-hero__inner {
+    padding: calc(env(safe-area-inset-top, 0px) + 96px + 40px) 0 110px;
+  }
+
+  .shares-invest-stats,
+  .shares-invest-catalog,
+  .shares-invest-next {
+    grid-template-columns: 1fr;
+  }
+
+  .shares-invest-metric {
+    border-right: 0;
+    border-bottom: 1px solid #e7eeea;
+    padding: 16px 6px;
+  }
+
+  .shares-invest-metric:last-child {
+    border-bottom: 0;
+  }
+
+  .shares-invest-filters {
+    position: static;
+    max-height: none;
+  }
+
+  .shares-invest-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-invest-filters--sidebar {
+    display: none;
+  }
+
+  .shares-invest-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .shares-invest-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-shrink: 0;
+    position: relative;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1.5px solid rgba(17, 24, 39, 0.08);
+    border-radius: 9999px;
+    background: #fff;
+    color: #1f2b3d;
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 4px 16px rgba(17, 24, 39, 0.07);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .shares-invest-filters-btn.is-active {
+    border-color: rgba(0, 153, 169, 0.42);
+    background: rgba(0, 153, 169, 0.08);
+    color: #007d8a;
+    box-shadow:
+      0 1px 2px rgba(0, 153, 169, 0.08),
+      0 4px 16px rgba(0, 153, 169, 0.12);
+  }
+
+  .shares-invest-filters-btn__label {
+    display: none;
+  }
+
+  .shares-invest-filters-btn__dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0099A9;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
+  .shares-invest-sort--desktop {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-invest-stats {
+    margin: -40px 0 22px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.78);
+    border-color: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(20px) saturate(1.12);
+    -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  }
+
+  /* Типографика как на /auction (Hero + PropertyList mobile) */
+  .shares-invest-hero__copy h1 {
+    font-size: clamp(1.45rem, 6.8vw, 2rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .shares-invest-hero__subtitle {
+    margin-top: 12px;
+    font-size: 15px;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  .shares-invest-hero__lead {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 500;
+  }
+
+  .shares-invest-hero__cta {
+    min-height: 48px;
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .shares-portfolio-card__top span,
+  .shares-portfolio-card__value p,
+  .shares-portfolio-card__grid span,
+  .shares-portfolio-card__cities span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shares-portfolio-card h2 {
+    font-size: clamp(1.45rem, 6.8vw, 1.75rem);
+  }
+
+  .shares-portfolio-card__grid strong {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .shares-portfolio-card__split p {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .shares-portfolio-card button {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .shares-invest-metric__body p {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shares-invest-metric__body strong {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .shares-invest-metric__note {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .shares-invest-filters h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+  }
+
+  .shares-invest-filters header button,
+  .shares-invest-filter-block__title,
+  .shares-invest-more {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .shares-invest-checks label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .shares-invest-range-labels {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shares-invest-filters__apply {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .shares-invest-results__title h2 {
+    font-size: clamp(1.45rem, 6.8vw, 2rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .shares-invest-results__title h2 span {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .shares-invest-results__title p {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .shares-invest-search,
+  .shares-invest-sort {
+    min-height: 48px;
+    border-radius: 9999px;
+    border: 1.5px solid rgba(17, 24, 39, 0.08);
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 4px 16px rgba(17, 24, 39, 0.07);
+  }
+
+  .shares-invest-search input {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .shares-invest-sort select {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .shares-invest-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .shares-invest-card p {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .shares-invest-card__amounts small,
+  .shares-invest-card__metrics small {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .shares-invest-card__amounts strong,
+  .shares-invest-card__metrics strong {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .shares-invest-card__ring strong {
+    font-size: 14px;
+  }
+
+  .shares-invest-card__invest {
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .shares-invest-card__status {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .shares-invest-pagination button,
+  .shares-invest-pagination span {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .shares-invest-metric {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-right: 0;
+    border-bottom: 1px solid #e7eeea;
+  }
+
+  .shares-invest-metric:first-child {
+    padding-top: 2px;
+  }
+
+  .shares-invest-metric:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+  }
+
+  .shares-invest-metric__icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    margin-top: 1px;
+  }
+
+  .shares-invest-metric__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .shares-invest-metric__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    align-content: flex-start;
+    column-gap: 8px;
+    row-gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shares-invest-metric__body p {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin: 0;
+    line-height: 1.25;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .shares-invest-metric__body strong {
+    flex: 0 1 auto;
+    min-width: 0;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .shares-invest-metric__note {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 0 0 auto;
+    padding-left: 6px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: right;
+    color: #0099A9;
+  }
+}
+
+@media (max-width: 640px) {
+  .shares-invest-hero__inner,
+  .shares-invest-container {
+    width: min(100% - 32px, 1280px);
+  }
+
+  .shares-portfolio-card {
+    max-width: none;
+    padding: 14px 16px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.76);
+    border-color: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(22px) saturate(1.14);
+    -webkit-backdrop-filter: blur(22px) saturate(1.14);
+  }
+
+  .shares-portfolio-card__overview {
+    margin-top: 10px;
+  }
+
+  .shares-portfolio-card__chart {
+    flex-basis: 88px;
+    height: 48px;
+  }
+
+  .shares-portfolio-card__grid,
+  .shares-portfolio-card__split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shares-portfolio-card__split {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shares-portfolio-card__donut {
+    flex-shrink: 0;
+  }
+
+  .shares-portfolio-card__split > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shares-invest-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shares-invest-stats {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .shares-invest-card__media {
+    height: 230px;
+  }
+}
+
+.shares-page--redesign {
+  background: #f8f9fb;
+  --shares-intro-purple: var(--site-color-accent, #0099A9);
+  --shares-intro-purple-soft: rgba(0, 153, 169, 0.1);
+  --shares-intro-purple-deep: #007d8a;
+  --shares-intro-text: var(--site-color-text);
+  --shares-intro-muted: var(--site-color-muted);
+  --shares-intro-border: var(--site-color-border);
+  --shares-intro-banner-bg: #f9f9fc;
+}
+
+/* Отступ под фиксированную шапку — .new-header-spacer на .shares-page */
+.shares-page--redesign .shares-container {
+  padding-top: 0;
 }
 
 /* Доли/Долги: плавающие плашки AI и Депозит как на аукционе */
@@ -85,18 +1655,27 @@ html.site-footer-near .shares-floats > button.ai-button {
 /* Новый header на странице долей — такой же, как на Главной/домашней */
 .shares-page .new-header {
   background: transparent;
-  padding: 20px 0;
+  padding: 28px 0 16px;
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
   display: flex;
   justify-content: center;
+  box-sizing: border-box;
+}
+
+.shares-page .new-header-spacer {
+  height: calc(env(safe-area-inset-top, 0px) + 112px);
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .shares-page .new-header__container {
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.36), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -108,7 +1687,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .menu-dropdown {
-  top: calc(20px + 63px + 8px) !important;
+  top: calc(28px + 63px + 8px) !important;
 }
 
 @media (max-width: 768px) {
@@ -123,12 +1702,17 @@ html.site-footer-near .shares-floats > button.ai-button {
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 0 0;
+  }
+
+  .shares-page .new-header-spacer {
+    height: calc(env(safe-area-inset-top, 0px) + 96px);
   }
 
   .shares-page .new-header__container {
     width: 92%;
     max-width: 420px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
@@ -142,9 +1726,9 @@ html.site-footer-near .shares-floats > button.ai-button {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(10, 186, 181, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(120, 80, 180, 0.06) 0%, transparent 40%),
-    linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 100%);
+    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(0, 153, 169, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(15, 23, 42, 0.045) 0%, transparent 40%),
+    linear-gradient(180deg, var(--site-color-bg) 0%, #eef7f7 42%, var(--site-color-bg) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -162,7 +1746,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 768px) {
   .shares-page__heading-strip {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 102px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 110px);
     padding-left: 20px;
     padding-right: 20px;
   }
@@ -181,7 +1765,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 768px) {
   .shares-page .animated-marquee-hero--shares-no-hero-title {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 102px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 110px) !important;
     min-height: 42vh !important;
   }
 }
@@ -278,10 +1862,468 @@ html.site-footer-near .shares-floats > button.ai-button {
   box-sizing: border-box;
 }
 
-/* Долги: контейнер не растягивается на весь экран — иначе заголовок уезжает вниз */
+.shares-page-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.shares-page-layout__main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 1200px) {
+  .shares-container--catalog {
+    max-width: 1440px;
+  }
+
+  .shares-page--redesign .shares-page-layout {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .shares-page--redesign .shares-page-layout__main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .shares-page--redesign .shares-page-intro__banner {
+    margin-bottom: 28px;
+  }
+}
+
+.shares-page--debts-redesign {
+  background: #ffffff;
+  --debts-page-column-width: min(1250px, calc(100vw - 120px));
+  --debts-page-inline-inset: max(60px, calc((100vw - 1250px) / 2));
+}
+
+/* Долги: фото-hero под меню — без белой полосы от spacer */
+.shares-page--debts-redesign .new-header-spacer {
+  height: 0;
+  min-height: 0;
+}
+
+.debts-hero-scene {
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: clip;
+  margin-top: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 136px)
+    var(--debts-page-inline-inset, 16px)
+    calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  background: #050505;
+  color: #ffffff;
+}
+
+.debts-hero-scene__bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.62;
+}
+
+.debts-hero-scene__overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(5, 5, 5, 0.84) 0%,
+    rgba(5, 5, 5, 0.58) 42%,
+    rgba(76, 29, 29, 0.28) 100%
+  );
+  pointer-events: none;
+}
+
+.debts-hero-scene__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--debts-page-column-width, 1320px);
+  margin: 0;
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+.debts-hero-scene__header {
+  text-align: left;
+  margin: 0 0 28px;
+  max-width: 42rem;
+}
+
+.debts-hero-scene__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.15rem, 5.4vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.debts-hero-scene__lead {
+  margin: 14px 0 0;
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.debts-hero-scene .shares-flip-cards--debts {
+  margin-top: clamp(1.25rem, 6vh, 3.5rem);
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+
+.debts-hero-scene__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  width: 50px;
+  height: 50px;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(8, 70, 80, 0.2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  animation: debts-hero-scroll-bob 2s ease-in-out infinite;
+}
+
+.debts-hero-scene__scroll:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.debts-hero-scene__scroll-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #111827;
+  margin-top: 2px;
+}
+
+@keyframes debts-hero-scroll-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debts-hero-scene__scroll {
+    animation: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .debts-hero-scene {
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 144px)
+      var(--debts-page-inline-inset, 24px)
+      calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-page--debts-redesign {
+    --debts-page-column-width: min(92vw, 420px);
+    --debts-page-inline-inset: calc((100vw - min(92vw, 420px)) / 2);
+  }
+
+  .debts-hero-scene {
+    min-height: 740px;
+    overflow: hidden;
+    border-radius: 0 0 50% 50% / 0 0 4% 4%;
+    box-shadow: 0 22px 52px rgba(8, 61, 67, 0.18);
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 92px)
+      var(--debts-page-inline-inset, 12px)
+      calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+  }
+
+  .debts-hero-scene__header {
+    margin-bottom: 18px;
+  }
+
+  .debts-hero-scene__title {
+    font-size: clamp(1.85rem, 8.2vw, 2.45rem);
+  }
+
+  .debts-hero-scene__lead {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .debts-hero-scene .shares-flip-cards--debts {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) and (max-height: 740px) {
+  .debts-hero-scene {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 84px);
+  }
+
+  .debts-hero-scene__header {
+    margin-bottom: 12px;
+  }
+
+  .debts-hero-scene__lead {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .debts-hero-scene .shares-flip-cards--debts {
+    gap: 8px;
+  }
+
+  .debts-hero-scene .shares-flip-cards--debts .flip-card-root {
+    --flip-card-height: 104px;
+  }
+}
+
+.shares-container--debts-main {
+  padding-top: 24px;
+}
+
+.shares-page--debts-redesign .debts-page-header {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 769px) {
+  .debts-toolbar__filters-btn {
+    display: none;
+  }
+}
+
+.debts-page-body {
+  width: 100%;
+}
+
+.debts-page-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  grid-template-areas:
+    'sidebar toolbar'
+    'sidebar main';
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.debts-page-layout__toolbar {
+  grid-area: toolbar;
+  min-width: 0;
+}
+
+.debts-page-layout .debts-page-filters {
+  grid-area: sidebar;
+}
+
+.debts-page-layout__main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.debts-listing-section {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.debts-listing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.debts-listing-grid--list {
+  grid-template-columns: 1fr;
+}
+
+.debts-listing-empty {
+  grid-column: 1 / -1;
+}
+
+.shares-page--debts-redesign .debts-empty-guided {
+  grid-column: 1 / -1;
+  width: min(100%, 560px);
+  margin-block: 8px 34px;
+}
+
+.debts-listing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-bottom: 8px;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__pages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(100%, 640px);
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page,
+.debts-listing-pagination .auction-desktop-pagination__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page:hover:not(.auction-desktop-pagination__page--active),
+.debts-listing-pagination .auction-desktop-pagination__arrow:hover:not(:disabled) {
+  border-color: rgba(78, 205, 214, 0.45);
+  color: #3bc0cb;
+  background: rgba(78, 205, 214, 0.1);
+}
+
+.debts-listing-pagination .auction-desktop-pagination__page--active {
+  border-color: #4ecdd6;
+  background: #4ecdd6;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(78, 205, 214, 0.38);
+  cursor: default;
+}
+
+.debts-listing-pagination .auction-desktop-pagination__arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .debts-listing-pagination {
+    margin-top: 20px;
+    padding-inline: 4px;
+  }
+
+  .debts-listing-pagination .auction-desktop-pagination__page,
+  .debts-listing-pagination .auction-desktop-pagination__arrow {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .debts-listing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .debts-page-layout {
+    display: block;
+  }
+
+  .debts-listing-section {
+    padding: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .shares-page--debts-redesign .debts-page-mobile-filters.search-filters-bar--auction-desktop {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-page--debts-redesign .debts-page-mobile-filters {
+    margin-bottom: 12px;
+  }
+}
+
+/* Долги: контейнер листинга — отступ сверху даёт hero-сцена */
 .shares-page--debts .shares-container {
   flex: 0 1 auto;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 96px);
+}
+
+.shares-page--debts .shares-container--debts-main {
+  padding-top: 24px;
+}
+
+.shares-page--debts-redesign .shares-container--debts-main {
+  width: var(--debts-page-column-width);
+  max-width: 1250px;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+.shares-page--debts-redesign .auction-cta-cards {
+  padding-bottom: clamp(2rem, 4vw, 2.75rem);
+}
+
+.shares-page--debts-redesign .auction-cta-cards__inner {
+  width: var(--debts-page-column-width);
+  max-width: 1250px;
+  margin-inline: auto;
+  padding-inline: 0;
 }
 
 /* Листинг с фильтрами — Долги и Доли */
@@ -309,14 +2351,14 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .page-context-heading__title--auction-script {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-style: italic;
-  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
-  line-height: 1.12;
-  color: #0f172a;
-  margin: 0.35rem 0 0.55rem;
-  letter-spacing: 0.03em;
+  font-family: var(--site-font-family);
+  font-weight: 800;
+  font-style: normal;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  color: var(--site-color-text);
+  margin: 0.25rem 0 0.55rem;
+  letter-spacing: -0.035em;
   text-align: left;
   font-synthesis: none;
 }
@@ -332,7 +2374,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 @media (min-width: 769px) {
   .shares-page--catalog .shares-container,
-  .shares-page--debts .shares-container {
+  .shares-page--debts:not(.shares-page--debts-redesign) .shares-container {
     max-width: 1440px;
     padding-left: 24px;
     padding-right: 24px;
@@ -422,12 +2464,12 @@ html.site-footer-near .shares-floats > button.ai-button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.22em;
-  color: #0d9488;
+  color: #007580;
   margin-bottom: 14px;
   padding: 8px 18px;
-  background: rgba(10, 186, 181, 0.08);
+  background: rgba(0, 153, 169, 0.08);
   border-radius: 100px;
-  border: 1px solid rgba(10, 186, 181, 0.18);
+  border: 1px solid rgba(0, 153, 169, 0.18);
 }
 
 .shares-cards-grid__title {
@@ -556,7 +2598,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 @media (max-width: 768px) {
-  .shares-flip-cards {
+  .shares-flip-cards:not(.shares-flip-cards--debts) {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -565,49 +2607,43 @@ html.site-footer-near .shares-floats > button.ai-button {
     margin-bottom: 32px;
   }
 
-  .shares-flip-cards > * {
+  .shares-flip-cards:not(.shares-flip-cards--debts) > * {
     flex: 1 1 0;
     min-width: 0;
   }
 
-  /* Долги: размеры/пропорции ближе к карточкам на аукционе */
-  .shares-flip-cards--debts .flip-card-root {
-    --flip-card-height: 270px;
-    --flip-card-max-width: none;
-    --flip-card-art-top: 14px;
-    --flip-card-art-bottom: 84px;
-    --flip-card-footer-bottom: 14px;
-    --flip-card-title-size: 11px;
-    --flip-card-title-line-height: 1.15;
-    --flip-card-subtitle-size: 9px;
-  }
-}
-
-@media (max-width: 450px) {
+  /* Долги на мобилке: колонка, читаемый горизонтальный лейаут */
   .shares-flip-cards--debts {
     flex-direction: column;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: stretch;
     justify-content: flex-start;
     gap: 12px;
+    margin-bottom: 28px;
   }
 
   .shares-flip-cards--debts > * {
     flex: 1 1 auto;
     width: 100%;
-    max-width: 340px;
+    max-width: none;
   }
 
   .shares-flip-cards--debts .flip-card-root {
-    --flip-card-height: 108px;
-    --flip-card-title-size: 10px;
-    --flip-card-subtitle-size: 10px;
-    --flip-card-title-line-height: 1.2;
+    --flip-card-height: 118px;
+    --flip-card-max-width: none;
+    --flip-card-title-size: 15px;
+    --flip-card-subtitle-size: 13px;
+    --flip-card-title-line-height: 1.25;
   }
 
   .shares-flip-cards--debts .flip-card-root.is-flipped {
-    --flip-card-height: 380px;
+    --flip-card-height: 360px;
     z-index: 3;
+  }
+
+  /* Убираем анимированные полоски — они размывают текст */
+  .shares-flip-cards--debts .flip-card-front-art-inner .flip-card-line {
+    display: none !important;
   }
 
   .shares-flip-cards--debts .flip-card-front-art {
@@ -615,53 +2651,80 @@ html.site-footer-near .shares-floats > button.ai-button {
     bottom: 0 !important;
     left: 14px !important;
     right: auto !important;
-    width: 90px;
+    width: 58px;
     justify-content: center;
     pointer-events: none;
   }
 
   .shares-flip-cards--debts .flip-card-front-art-inner {
-    width: 76px !important;
-    height: 76px !important;
-  }
-
-  .shares-flip-cards--debts .flip-card-front-art-inner .flip-card-line {
-    height: 7px !important;
-    border-radius: 2px !important;
+    width: 48px !important;
+    height: 48px !important;
+    gap: 0 !important;
   }
 
   .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child > div {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 12px !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px color-mix(in srgb, currentColor 28%, transparent) !important;
   }
 
   .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 24px !important;
+    height: 24px !important;
   }
 
   .shares-flip-cards--debts .flip-card-front-footer {
-    top: 50%;
-    bottom: auto !important;
-    left: 110px !important;
-    right: 12px !important;
-    transform: translateY(-50%);
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 78px !important;
+    right: 14px !important;
+    transform: none;
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
   }
 
   .shares-flip-cards--debts .flip-card-front-footer-inner {
     margin: 0 !important;
-    align-items: flex-start;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-title {
+    color: #111827 !important;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
   }
 
   .shares-flip-cards--debts .flip-card-front-subtitle {
-    -webkit-line-clamp: 3 !important;
-    line-clamp: 3;
+    color: #3f3f46 !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    margin-top: 3px !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2;
+    -webkit-font-smoothing: antialiased;
   }
 
   .shares-flip-cards--debts .flip-card-front-zap {
-    margin-top: 2px;
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+
+  .shares-flip-cards--debts .flip-card-click-hint {
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    backdrop-filter: none;
+    background: #ffffff;
+  }
+
+  .shares-flip-cards--debts .flip-card-click-hint span {
+    font-size: 10px;
   }
 
   .shares-flip-cards--debts .flip-card-face--back {
@@ -669,11 +2732,11 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 
   .shares-flip-cards--debts .flip-card-back-overlay {
-    background: linear-gradient(120deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.88) 100%) !important;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.94) 100%) !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-content {
-    padding: 14px 14px 12px 14px !important;
+    padding: 16px 16px 14px !important;
     overflow: hidden !important;
   }
 
@@ -690,21 +2753,14 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 
   .shares-flip-cards--debts .flip-card-back-title {
-    font-size: 18px !important;
-    line-height: 1.2 !important;
-  }
-
-  .shares-flip-cards--debts .flip-card-back-description {
-    margin-top: 10px !important;
-    font-size: 13px !important;
-    line-height: 1.45 !important;
-    display: block !important;
-    overflow: visible !important;
+    font-size: 17px !important;
+    line-height: 1.25 !important;
+    color: #111827 !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-features {
-    margin-top: 32px !important;
-    gap: 8px !important;
+    margin-top: 14px !important;
+    gap: 10px !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-feature {
@@ -713,22 +2769,54 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 
   .shares-flip-cards--debts .flip-card-back-feature-icon {
-    width: 20px !important;
-    height: 20px !important;
+    width: 22px !important;
+    height: 22px !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-feature-text {
-    font-size: 13px !important;
-    line-height: 1.35 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: #27272a !important;
+    font-weight: 500 !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-footer {
-    margin-top: 12px !important;
+    margin-top: 14px !important;
   }
 
   .shares-flip-cards--debts .flip-card-back-cta {
-    padding: 9px 12px !important;
+    padding: 10px 14px !important;
     border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 450px) {
+  .shares-flip-cards--debts .flip-card-root {
+    --flip-card-height: 112px;
+    --flip-card-title-size: 14px;
+    --flip-card-subtitle-size: 12px;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art {
+    left: 12px !important;
+    width: 52px;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-footer {
+    left: 72px !important;
+    right: 12px !important;
+    padding: 10px 0;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child > div {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child svg {
+    width: 22px !important;
+    height: 22px !important;
   }
 }
 
@@ -773,12 +2861,12 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 .shares-search-bar__input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.6);
-  box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.15);
+  border-color: rgba(0, 153, 169, 0.6);
+  box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.15);
 }
 
 .shares-search-bar:focus-within .shares-search-bar__icon {
-  color: #0ABAB5;
+  color: #0099A9;
 }
 
 .shares-search-bar__clear {
@@ -850,9 +2938,9 @@ html.site-footer-near .shares-floats > button.ai-button {
   transform: translateY(-6px);
   box-shadow:
     0 24px 48px -12px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(10, 186, 181, 0.3),
-    0 0 60px -15px rgba(10, 186, 181, 0.15);
-  border-color: rgba(10, 186, 181, 0.35);
+    0 0 0 1px rgba(0, 153, 169, 0.3),
+    0 0 60px -15px rgba(0, 153, 169, 0.15);
+  border-color: rgba(0, 153, 169, 0.35);
 }
 
 /* Вертикальная шкала на фото: куплено из всего */
@@ -886,7 +2974,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, #0ABAB5 0%, #06a39e 100%);
+  background: linear-gradient(to top, #0099A9 0%, #007d8a 100%);
   border-radius: 4px;
   transition: height 0.35s ease;
 }
@@ -919,12 +3007,12 @@ html.site-footer-near .shares-floats > button.ai-button {
   margin-bottom: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: #0d9488;
+  color: #007580;
   background: rgba(255, 255, 255, 0.95);
   padding: 2px 6px;
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(10, 186, 181, 0.4);
+  border: 1px solid rgba(0, 153, 169, 0.4);
 }
 
 .share-card--sold-out .share-card__scale-sold {
@@ -1072,9 +3160,9 @@ html.site-footer-near .shares-floats > button.ai-button {
   margin-top: auto;
   margin-bottom: 14px;
   padding: 16px 18px;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(6, 163, 158, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.1) 0%, rgba(6, 163, 158, 0.05) 100%);
   border-radius: 14px;
-  border: 1px solid rgba(10, 186, 181, 0.25);
+  border: 1px solid rgba(0, 153, 169, 0.25);
 }
 
 .share-card__price-total,
@@ -1087,7 +3175,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 .share-card__price-total strong,
 .share-card__price-per-share strong {
-  color: #0d9488;
+  color: #007580;
   font-weight: 700;
 }
 
@@ -1101,11 +3189,11 @@ html.site-footer-near .shares-floats > button.ai-button {
   font-size: 14px;
   font-weight: 700;
   color: #0f172a;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.16) 0%, rgba(10, 186, 181, 0.08) 100%);
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.16) 0%, rgba(0, 153, 169, 0.08) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.35);
   border-radius: 12px;
   padding: 8px 12px;
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.14);
 }
 
 @media (max-width: 1024px) {
@@ -1125,6 +3213,10 @@ html.site-footer-near .shares-floats > button.ai-button {
 
   .shares-container {
     padding: 20px 12px 48px;
+  }
+
+  .shares-page--redesign .shares-container {
+    padding-top: 8px;
   }
 
   .shares-search-bar {
@@ -1282,6 +3374,10 @@ html.site-footer-near .shares-floats > button.ai-button {
   .shares-container {
     padding: 20px 12px 48px;
   }
+
+  .shares-page--redesign .shares-container {
+    padding-top: 8px;
+  }
   .shares-intro {
     flex-direction: column;
     padding: 28px 20px 32px;
@@ -1401,7 +3497,7 @@ html.site-footer-near .shares-floats > button.ai-button {
     90deg,
     #e8edf2 0%,
     #eef2f6 45%,
-    rgba(10, 186, 181, 0.12) 50%,
+    rgba(0, 153, 169, 0.12) 50%,
     #eef2f6 55%,
     #e8edf2 100%
   );
@@ -1436,7 +3532,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   margin-top: auto;
   padding: 16px 18px;
   border-radius: 14px;
-  border: 1px solid rgba(10, 186, 181, 0.12);
+  border: 1px solid rgba(0, 153, 169, 0.12);
   background: rgba(241, 245, 249, 0.7);
   display: flex;
   flex-direction: column;
@@ -1461,7 +3557,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   background: linear-gradient(
     90deg,
     #e2e8f0 0%,
-    #ecfdf5 50%,
+    #e6f6f8 50%,
     #e2e8f0 100%
   );
   background-size: 200% 100%;
@@ -1552,5 +3648,776 @@ html.site-footer-near .shares-floats > button.ai-button {
   .share-card-skeleton__footer {
     height: 26px;
     border-radius: 8px;
+  }
+}
+
+/* Каталог долей: направления и компактный smartphone layout */
+.shares-invest-next {
+  display: block;
+}
+
+.shares-invest-next__head {
+  margin-bottom: 22px;
+}
+
+.shares-invest-next__eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #0099a9;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shares-invest-next__head h2 {
+  margin: 0;
+  color: #1f2b3d;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.shares-invest-next__head p {
+  margin: 8px 0 0;
+  color: #687589;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shares-invest-next__rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-hero {
+    min-height: 500px;
+    overflow: visible;
+    border-radius: 0 0 30px 30px;
+  }
+
+  .shares-invest-page .shares-invest-hero__media {
+    overflow: hidden;
+    border-radius: 0 0 30px 30px;
+  }
+
+  .shares-invest-page .shares-invest-hero__media img {
+    object-position: 64% center;
+  }
+
+  .shares-invest-page .shares-invest-hero__wash {
+    background:
+      linear-gradient(180deg, rgba(248, 247, 242, 0.72) 0%, rgba(248, 247, 242, 0.35) 38%, rgba(247, 250, 248, 0.9) 100%),
+      linear-gradient(90deg, rgba(249, 247, 241, 0.84), rgba(249, 247, 241, 0.08));
+  }
+
+  .shares-invest-page .shares-invest-hero__inner {
+    display: block;
+    min-height: 500px;
+    padding: calc(env(safe-area-inset-top, 0px) + 112px) 0 96px;
+  }
+
+  .shares-invest-page .shares-invest-hero__copy {
+    max-width: 360px;
+    padding: 22px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.66);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 20px 50px rgba(42, 56, 68, 0.14);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .shares-invest-page .shares-invest-hero__copy h1 {
+    font-size: clamp(1.8rem, 8.5vw, 2.35rem);
+  }
+
+  .shares-invest-page .shares-invest-hero__lead {
+    max-width: 300px;
+  }
+
+  .shares-invest-page .shares-invest-hero__cta {
+    width: 100%;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  .shares-invest-page .shares-portfolio-card {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: -58px 0 26px;
+    padding: 10px;
+    border-radius: 22px;
+    box-shadow: 0 18px 44px rgba(42, 56, 68, 0.12);
+  }
+
+  .shares-invest-page .shares-invest-metric {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    padding: 11px 8px;
+    border: 0;
+  }
+
+  .shares-invest-page .shares-invest-metric:nth-child(odd) {
+    border-right: 1px solid #e7eeea;
+  }
+
+  .shares-invest-page .shares-invest-metric:nth-child(-n + 2) {
+    border-bottom: 1px solid #e7eeea;
+  }
+
+  .shares-invest-page .shares-invest-metric__body {
+    display: block;
+  }
+
+  .shares-invest-page .shares-invest-metric__body p {
+    overflow: hidden;
+    font-size: 10px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .shares-invest-page .shares-invest-metric__body strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 13px;
+  }
+
+  .shares-invest-page .shares-invest-metric__note {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-results__title {
+    margin-bottom: 16px;
+  }
+
+  .shares-invest-page .shares-invest-results__title h2 {
+    font-size: 1.55rem;
+  }
+
+  .shares-invest-page .shares-invest-results__title p {
+    max-width: 330px;
+  }
+
+  .shares-invest-page .shares-invest-pagination {
+    gap: 5px;
+    margin-top: 26px;
+  }
+
+  .shares-invest-page .shares-invest-pagination button {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .shares-invest-page .shares-invest-pagination span {
+    padding: 0 2px;
+    font-size: 12px;
+  }
+
+  .shares-invest-next {
+    margin-top: 46px;
+  }
+
+  .shares-invest-next__head {
+    margin-bottom: 16px;
+  }
+
+  .shares-invest-next__head h2 {
+    font-size: 1.65rem;
+  }
+
+  .shares-invest-next__head p {
+    max-width: 310px;
+    font-size: 13px;
+  }
+
+  .shares-invest-next__rail {
+    display: flex;
+    gap: 12px;
+    margin-right: -16px;
+    padding-right: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .shares-invest-next__rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shares-invest-next__rail .shares-invest-next-card {
+    flex: 0 0 min(82vw, 310px);
+    min-height: 150px;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .shares-invest-page .shares-invest-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card {
+    min-width: 0;
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(35, 49, 63, 0.08);
+  }
+
+  .shares-invest-page .shares-invest-card__media {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .shares-invest-page .shares-invest-card__status {
+    left: 7px;
+    bottom: 7px;
+    min-height: 20px;
+    max-width: calc(100% - 14px);
+    overflow: hidden;
+    padding: 0 7px;
+    font-size: 8px;
+    line-height: 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .shares-invest-page .shares-invest-card__media button {
+    top: 7px;
+    right: 7px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .shares-invest-page .shares-invest-card__media button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .shares-invest-page .shares-invest-card__body {
+    padding: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card h3 {
+    min-height: calc(1.25em * 2);
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .shares-invest-page .shares-invest-card p {
+    display: -webkit-box;
+    min-height: 2.5em;
+    margin: 4px 0 8px;
+    overflow: hidden;
+    color: #718092;
+    font-size: 9px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .shares-invest-page .shares-invest-card__funding {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__ring {
+    width: 42px;
+    height: 42px;
+  }
+
+  .shares-invest-page .shares-invest-card__ring strong {
+    font-size: 10px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts small,
+  .shares-invest-page .shares-invest-card__metrics small {
+    font-size: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__amounts strong,
+  .shares-invest-page .shares-invest-card__metrics strong {
+    margin-top: 0;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-invest-card__bar {
+    height: 5px;
+    margin: 8px 0 9px;
+  }
+
+  .shares-invest-page .shares-invest-card__metrics {
+    gap: 5px;
+    margin-bottom: 10px;
+    padding-top: 8px;
+  }
+
+  .shares-invest-page .shares-invest-card__invest {
+    min-height: 36px;
+    padding: 0 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+}
+
+/* Продающий блок перед каталогом */
+.shares-invest-page .shares-invest-stats {
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.92fr);
+  gap: 26px;
+  align-items: stretch;
+  margin-top: -82px;
+  padding: 26px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(217, 219, 174, 0.34), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 248, 247, 0.94));
+  box-shadow: 0 24px 58px rgba(35, 49, 63, 0.13);
+}
+
+.shares-invest-stats__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 8px 8px 4px;
+}
+
+.shares-invest-stats__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #d9dbae;
+  color: #101928;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.shares-invest-stats__intro h2 {
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: #172235;
+  font-size: clamp(1.6rem, 2.8vw, 2.35rem);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.shares-invest-stats__intro > p {
+  max-width: 570px;
+  margin: 10px 0 0;
+  color: #5e6b7c;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.shares-invest-stats__benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.shares-invest-stats__benefits span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(74, 150, 166, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #405165;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.shares-invest-stats__benefits svg {
+  color: #4a96a6;
+}
+
+.shares-invest-stats__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  margin-top: 17px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a96a6, #3f8798);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 12px 26px rgba(74, 150, 166, 0.27);
+  cursor: pointer;
+}
+
+.shares-invest-stats__cta svg {
+  transition: transform 0.2s ease;
+}
+
+.shares-invest-stats__cta:hover svg {
+  transform: translateX(3px);
+}
+
+.shares-invest-stats__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(222, 230, 227, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.shares-invest-stats__metrics .shares-invest-metric {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 18px 14px;
+  border: 0;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric:nth-child(odd) {
+  border-right: 1px solid #e7eeea;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric:nth-child(-n + 2) {
+  border-bottom: 1px solid #e7eeea;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__icon {
+  width: 42px;
+  height: 42px;
+  background: #f7fbfa;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__body {
+  min-width: 0;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric p {
+  overflow: hidden;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric strong {
+  margin-top: 4px;
+  font-size: 17px;
+}
+
+.shares-invest-stats__metrics .shares-invest-metric__note {
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.shares-invest-page > .auction-cta-cards,
+.shares-invest-main > .auction-cta-cards {
+  margin-top: 54px;
+}
+
+@media (max-width: 900px) {
+  .shares-invest-page .shares-invest-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-stats {
+    display: block;
+    margin: -58px 0 26px;
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .shares-invest-stats__intro {
+    padding: 0;
+  }
+
+  .shares-invest-stats__intro h2 {
+    margin-top: 10px;
+    font-size: clamp(1.45rem, 7vw, 1.9rem);
+  }
+
+  .shares-invest-stats__intro > p {
+    font-size: 12px;
+  }
+
+  .shares-invest-stats__benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 7px;
+    margin-top: 13px;
+  }
+
+  .shares-invest-stats__benefits span {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .shares-invest-stats__benefits span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .shares-invest-stats__cta {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .shares-invest-stats__metrics {
+    margin-top: 18px;
+    border-radius: 18px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 7px;
+    padding: 12px 9px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric p {
+    font-size: 9px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric strong {
+    font-size: 13px;
+  }
+
+  .shares-invest-stats__metrics .shares-invest-metric__note {
+    display: block;
+    margin-top: 3px;
+    font-size: 8px;
+    text-align: left;
+  }
+
+  .shares-invest-main > .auction-cta-cards {
+    margin-top: 38px;
+    padding-top: 0;
+  }
+}
+.shares-invest-stats__intro h2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.shares-invest-stats__title-pill {
+  display: inline-block;
+  width: max-content;
+  padding: 0.08em 0.48em 0.14em;
+  border-radius: 999px;
+  background: #4a96a6;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(74, 150, 166, 0.24);
+  transform: rotate(-2deg);
+}
+
+.shares-invest-stats__title-line {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .shares-invest-page .shares-invest-hero {
+    min-height: 280px;
+  }
+
+  .shares-invest-page .shares-invest-hero__inner {
+    min-height: 280px;
+    padding: 0;
+  }
+
+  .shares-invest-page .shares-invest-hero__copy {
+    display: none;
+  }
+
+  .shares-invest-page .shares-invest-stats {
+    margin: -152px 0 26px;
+  }
+}
+
+/* Mobile shares catalog: use the same compact card density as the home showcase. */
+@media (max-width: 640px) {
+  .shares-invest-page .shares-v2-card {
+    min-width: 0;
+    border-radius: 14px;
+    font-family: Montserrat, system-ui, sans-serif;
+  }
+
+  .shares-invest-page .shares-v2-card:hover {
+    transform: none;
+  }
+
+  .shares-invest-page .shares-v2-card__media {
+    aspect-ratio: 3 / 2;
+  }
+
+  .shares-invest-page .shares-v2-card__badge {
+    top: 7px;
+    left: 7px;
+    max-width: calc(100% - 48px);
+    padding: 4px 6px;
+    overflow: hidden;
+    font-size: 0.54rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__favorite {
+    top: 7px;
+    right: 7px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .shares-invest-page .shares-v2-card__favorite svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .shares-invest-page .shares-v2-card__body {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .shares-invest-page .shares-v2-card__title {
+    display: -webkit-box;
+    min-height: calc(1.25em * 2);
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .shares-invest-page .shares-v2-card__location {
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.56rem;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__location span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__location svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .shares-invest-page .shares-v2-card__metrics {
+    gap: 4px;
+    margin: 1px 0 6px;
+  }
+
+  .shares-invest-page .shares-v2-card__metric {
+    gap: 2px;
+  }
+
+  .shares-invest-page .shares-v2-card__metric-label,
+  .shares-invest-page .shares-v2-card__progress-label,
+  .shares-invest-page .shares-v2-card__progress-percent {
+    font-size: 0.52rem;
+  }
+
+  .shares-invest-page .shares-v2-card__metric-value {
+    font-size: 0.66rem;
+  }
+
+  .shares-invest-page .shares-v2-card__progress-head {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .shares-invest-page .shares-v2-card__progress-track {
+    height: 4px;
+    margin-bottom: 6px;
+  }
+
+  .shares-invest-page .shares-v2-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  .shares-invest-page .shares-v2-card__amounts {
+    gap: 2px;
+    overflow: hidden;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shares-invest-page .shares-v2-card__invest-btn {
+    width: 100%;
+    min-height: 30px;
+    padding: 6px 5px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: #0a0a0a;
+    color: #fff;
+    font-size: 0.625rem;
+    box-shadow: 0 10px 24px rgba(10, 10, 10, 0.16);
+  }
+
+  .shares-invest-page .shares-v2-card__invest-btn:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: #fff;
   }
 }

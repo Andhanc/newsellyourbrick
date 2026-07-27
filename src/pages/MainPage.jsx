@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
+import * as THREE from 'three'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
+import { publicAsset } from '../utils/publicAsset'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
-/** Фон hero-секции (внешнее изображение виллы) */
-const HERO_BACKGROUND_URL =
-  '/images/external/villa-palazzetta-1-577bba2c20.jpg'
 import {
   FiSearch,
-  FiSliders,
   FiHeart,
   FiChevronDown,
   FiArrowRight,
@@ -28,6 +27,7 @@ import {
   FiMessageCircle,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
+import HeaderPinnedCatalogNav from '../components/HeaderPinnedCatalogNav'
 import {
   FaHome,
   FaHeart,
@@ -51,9 +51,9 @@ import {
   PiBuilding,
   PiWarehouse,
 } from 'react-icons/pi'
-import PropertySearchBlock from '../components/PropertySearchBlock'
-import LandingModelsFolders from '../components/LandingModelsFolders'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
+import SybLandingSearchBar from '../components/SybLandingSearchBar'
+import { ScrollReveal, ScrollRevealItem, ScrollRevealStagger } from '../components/ScrollReveal'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -86,6 +86,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
+import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
 import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
@@ -93,8 +94,13 @@ import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
+import HomeSaleFormats from '../components/HomeSaleFormats'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
+
+/** Фон hero-секции (вилла в public/images/external) */
+const HERO_BACKGROUND_URL = publicAsset('images/external/shares-hero-villa.jpg')
+const LANDING_MODELS_RIBBON_IMAGE = publicAsset('images/sellyourbrick/landing-models-ribbon.png')
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -102,46 +108,275 @@ let API_BASE_URL = getApiBaseUrlSync()
 const LISTING_IMAGE_FALLBACK =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
+const premiumStats = [
+  { value: '4', label: 'стратегии', text: 'аукцион, фиксированная цена, доли и долги' },
+  { value: '€1.4B+', label: 'активов', text: 'в объектной, долговой и инвестиционной витрине' },
+  { value: '34%', label: 'быстрее', text: 'путь от интереса к квалифицированному решению' },
+]
+
+const premiumModes = [
+  {
+    id: 'auction',
+    number: '01',
+    eyebrow: 'Аукцион',
+    benefit: 'Поймайте цену ниже рынка',
+    proof: 'Прозрачные ставки и понятный финал торгов',
+    title: 'Аукцион показывает реальный спрос',
+    text: 'Подходит объектам, где важно создать конкуренцию покупателей и получить рыночную цену без хаоса в переговорах.',
+    caption: 'Для продавца: управляемые торги. Для покупателя: прозрачная история ставок.',
+    actionText: 'Показать аукционы',
+    to: '/auction?filter=auction',
+    anchorId: 'strategy-auction',
+    objectsId: 'objects-auction',
+    image: '/images/home-sale-formats/sale-format-auction.webp',
+    imageAlt: 'Современный европейский дом для продажи на аукционе',
+    Icon: FaGavel,
+  },
+  {
+    id: 'buy-now',
+    number: '02',
+    eyebrow: 'Купить сейчас',
+    benefit: 'Заберите подходящий объект без ожидания',
+    proof: 'Фиксированная цена и быстрый путь к сделке',
+    title: 'Купить сейчас закрывает сделку быстрее',
+    text: 'Формат для понятных активов с фиксированной ценой: покупатель не ждет финала торгов, продавец быстрее получает решение.',
+    caption: 'Для тех, кто уже готов к сделке и хочет убрать лишние шаги.',
+    actionText: 'Показать объекты',
+    to: '/auction?filter=buy_now',
+    anchorId: 'strategy-buy-now',
+    objectsId: 'objects-buy-now',
+    image: '/images/home-sale-formats/sale-format-buy-now.webp',
+    imageAlt: 'Светлая готовая вилла для быстрой покупки',
+    Icon: FaBolt,
+  },
+  {
+    id: 'shares',
+    number: '03',
+    eyebrow: 'Доли',
+    benefit: 'Начните с меньшего капитала',
+    proof: 'Доля в реальном объекте и доход пропорционально участию',
+    title: 'Доли открывают вход с меньшим чеком',
+    text: 'Инвестор может собрать портфель из долей в проверенных объектах, а собственник получает новый способ монетизации.',
+    caption: 'Четкая структура доли, объекта, доходности и выхода.',
+    actionText: 'Показать доли',
+    to: '/shares',
+    anchorId: 'strategy-shares',
+    objectsId: 'objects-shares',
+    image: '/images/home-sale-formats/sale-format-shares.webp',
+    imageAlt: 'Премиальный доходный объект для долевого участия',
+    Icon: FaGem,
+  },
+  {
+    id: 'debts',
+    number: '04',
+    eyebrow: 'Долги',
+    benefit: 'Используйте дисконт за сложность',
+    proof: 'Риск-профиль и условия известны до решения',
+    title: 'Долги превращают сложность в стратегию',
+    text: 'Долговые активы требуют отдельной логики: дисконт, документы, риск-профиль и сценарий выхода видны до решения.',
+    caption: 'Для инвесторов, которые умеют работать с асимметрией цены и риска.',
+    actionText: 'Показать долги',
+    to: '/debts',
+    anchorId: 'strategy-debts',
+    objectsId: 'objects-debts',
+    image: '/images/home-sale-formats/sale-format-debts.webp',
+    imageAlt: 'Недвижимость с инвестиционным потенциалом долгового актива',
+    Icon: FiPieChart,
+  },
+]
+
+const premiumFlow = [
+  ['01', 'Собираем объект', 'фото, параметры, документы, ограничения и целевой сценарий продажи'],
+  ['02', 'Упаковываем спрос', 'позиционирование, витрина, торги, buy now или доли'],
+  ['03', 'Ведем сделку', 'чат, уведомления, депозит, история ставок и безопасное закрытие'],
+]
+
+const premiumProof = [
+  'Юридический контур сделки виден до решения',
+  'AI-консультант помогает сузить выбор без давления',
+  'Продавец и инвестор работают в одном интерфейсе',
+  'Каждый объект можно открыть как инвестиционный сценарий',
+]
+
+function TiffanyThreeScene() {
+  const mountRef = useRef(null)
+
+  useEffect(() => {
+    const mount = mountRef.current
+    if (!mount) return undefined
+
+    let renderer
+    let frameId = null
+    let resizeObserver = null
+
+    try {
+      const scene = new THREE.Scene()
+      const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100)
+      camera.position.set(0, 0.1, 7.4)
+
+      renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true,
+      })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+      renderer.outputColorSpace = THREE.SRGBColorSpace
+      renderer.toneMapping = THREE.ACESFilmicToneMapping
+      renderer.toneMappingExposure = 1.12
+      renderer.domElement.setAttribute('aria-hidden', 'true')
+      mount.appendChild(renderer.domElement)
+
+      const group = new THREE.Group()
+      scene.add(group)
+
+      const ambient = new THREE.HemisphereLight(0xf4fffd, 0x063433, 1.8)
+      const key = new THREE.PointLight(0x78fff3, 7.5, 18)
+      key.position.set(3.8, 4.2, 4.8)
+      const rim = new THREE.PointLight(0xffffff, 4.5, 14)
+      rim.position.set(-4.8, -1.6, 3.6)
+      scene.add(ambient, key, rim)
+
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x9ef8ef,
+        metalness: 0,
+        roughness: 0.08,
+        transmission: 0.58,
+        thickness: 1.18,
+        clearcoat: 1,
+        clearcoatRoughness: 0.06,
+        transparent: true,
+        opacity: 0.72,
+        iridescence: 0.32,
+        iridescenceIOR: 1.35,
+      })
+      const deepMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x0099A9,
+        metalness: 0.1,
+        roughness: 0.18,
+        clearcoat: 0.8,
+        transparent: true,
+        opacity: 0.82,
+      })
+      const lineMaterial = new THREE.MeshBasicMaterial({
+        color: 0xd9fffb,
+        transparent: true,
+        opacity: 0.44,
+      })
+
+      const heroSphere = new THREE.Mesh(new THREE.IcosahedronGeometry(1.46, 5), glassMaterial)
+      heroSphere.position.set(-0.72, 0.2, 0)
+      const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.76, 0.1, 180, 18), deepMaterial)
+      knot.position.set(1.36, -0.34, -0.32)
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.012, 16, 164), lineMaterial)
+      ring.rotation.set(1.16, 0.2, -0.42)
+      const smallOne = new THREE.Mesh(new THREE.SphereGeometry(0.28, 48, 32), glassMaterial)
+      smallOne.position.set(1.9, 1.05, 0.1)
+      const smallTwo = new THREE.Mesh(new THREE.SphereGeometry(0.2, 40, 24), deepMaterial)
+      smallTwo.position.set(-2.02, -1.08, 0.2)
+      group.add(heroSphere, knot, ring, smallOne, smallTwo)
+
+      const particleGeometry = new THREE.BufferGeometry()
+      const particleCount = 130
+      const positions = new Float32Array(particleCount * 3)
+      for (let i = 0; i < particleCount; i += 1) {
+        const radius = 2.2 + Math.random() * 2.7
+        const angle = Math.random() * Math.PI * 2
+        positions[i * 3] = Math.cos(angle) * radius
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 3.1
+        positions[i * 3 + 2] = Math.sin(angle) * radius - 1.3
+      }
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const particles = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({
+          color: 0xc7fffa,
+          size: 0.025,
+          transparent: true,
+          opacity: 0.52,
+          depthWrite: false,
+        }),
+      )
+      scene.add(particles)
+
+      const pointer = { x: 0, y: 0 }
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const clock = new THREE.Clock()
+
+      const resize = () => {
+        const rect = mount.getBoundingClientRect()
+        const width = Math.max(1, Math.floor(rect.width))
+        const height = Math.max(1, Math.floor(rect.height))
+        renderer.setSize(width, height, false)
+        camera.aspect = width / height
+        camera.updateProjectionMatrix()
+      }
+
+      const onPointerMove = (event) => {
+        const rect = mount.getBoundingClientRect()
+        pointer.x = ((event.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2
+        pointer.y = ((event.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2
+      }
+
+      const animate = () => {
+        const time = clock.getElapsedTime()
+        const speed = reducedMotion ? 0.16 : 1
+        group.rotation.y = time * 0.18 * speed + pointer.x * 0.16
+        group.rotation.x = Math.sin(time * 0.42) * 0.08 - pointer.y * 0.08
+        heroSphere.rotation.z = time * 0.12 * speed
+        knot.rotation.x = time * 0.28 * speed
+        knot.rotation.y = time * 0.36 * speed
+        ring.rotation.z = time * 0.08 * speed
+        particles.rotation.y = time * 0.028 * speed
+        camera.position.x += (pointer.x * 0.18 - camera.position.x) * 0.035
+        camera.position.y += (-pointer.y * 0.12 + 0.1 - camera.position.y) * 0.035
+        camera.lookAt(0, 0, 0)
+        renderer.render(scene, camera)
+        frameId = requestAnimationFrame(animate)
+      }
+
+      resize()
+      resizeObserver = new ResizeObserver(resize)
+      resizeObserver.observe(mount)
+      mount.addEventListener('pointermove', onPointerMove)
+      animate()
+
+      return () => {
+        if (frameId) cancelAnimationFrame(frameId)
+        mount.removeEventListener('pointermove', onPointerMove)
+        if (resizeObserver) resizeObserver.disconnect()
+        scene.traverse((object) => {
+          if (object.geometry) object.geometry.dispose()
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach((material) => material.dispose())
+            } else {
+              object.material.dispose()
+            }
+          }
+        })
+        renderer.dispose()
+        if (renderer.domElement.parentNode === mount) {
+          mount.removeChild(renderer.domElement)
+        }
+      }
+    } catch (error) {
+      console.warn('Premium hero 3D scene disabled:', error)
+      if (renderer?.domElement?.parentNode === mount) {
+        mount.removeChild(renderer.domElement)
+      }
+      return undefined
+    }
+  }, [])
+
+  return <div className="premium-hero__canvas" ref={mountRef} aria-hidden="true" />
+}
+
 function asFiniteNumberOrNull(value) {
   if (value == null || value === '') return null
   const n = Number(value)
   return Number.isFinite(n) ? n : null
 }
-
-
-// Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
-const landingFolderDataBase = [
-  { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', linkHref: '/auction?filter=auction', projects: [
-    { id: 'ab1', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Аукцион недвижимости' },
-    { id: 'ab2', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Торги объектами' },
-    { id: 'ab3', image: '/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg', title: 'Концентрация спроса' },
-    { id: 'ab4', image: '/images/external/photo-1600566753190-17f0baa2a6c3-9c1606daed.jpg', title: 'Рыночные ставки' },
-  ] },
-  { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', linkHref: '/auction?filter=buy_now', projects: [
-    { id: 'ip1', image: '/images/external/photo-1560448204-e02f11c3d0e2-5b957100f2.jpg', title: 'Сделка по цене' },
-    { id: 'ip2', image: '/images/external/photo-1484154218962-a197022b5858-7367c16227.jpg', title: 'Ликвидность сейчас' },
-    { id: 'ip3', image: '/images/external/photo-1600596542815-ffad4c1539a9-514a2414cc.jpg', title: 'Без ожидания' },
-    { id: 'ip4', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Твёрдая цена' },
-  ] },
-  { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkHref: '/about', projects: [
-    { id: 'da1', image: '/images/external/photo-1564013799919-ab600027ffc6-614ed79fec.jpg', title: 'Арбитраж активов' },
-    { id: 'da2', image: '/images/external/photo-1522771739844-6a9f6d5f14af-afc86ce7ca.jpg', title: 'Специальные ситуации' },
-    { id: 'da3', image: '/images/external/photo-1512917774080-9991f1c4c750-928d26ff49.jpg', title: 'Верификация лотов' },
-    { id: 'da4', image: '/images/external/photo-1600566753086-00f18fb6b3ea-79bf60cec6.jpg', title: 'Due Diligence' },
-  ] },
-  { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkHref: '/debts', projects: [
-    { id: 'db1', image: '/images/external/photo-1450101499163-c8848c66ca85-eb206c83e6.jpg', title: 'Покупка долга' },
-    { id: 'db2', image: '/images/external/photo-1554224155-8d04cb21cd6c-6f898cdd1f.jpg', title: 'Анализ рисков' },
-    { id: 'db3', image: '/images/external/photo-1554224154-22dec7ec8818-ee3fb0cdfa.jpg', title: 'Структура сделки' },
-    { id: 'db4', image: '/images/external/photo-1526304640581-d334cdbbf45e-d7bba8f22f.jpg', title: 'Доходность и сроки' },
-  ] },
-  { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', linkHref: '/shares', projects: [
-    { id: 'fo1', image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg', title: 'Долевое участие' },
-    { id: 'fo2', image: '/images/external/photo-1545324418-cc1a3fa10c00-d04a952c51.jpg', title: 'Премиальные активы' },
-    { id: 'fo3', image: '/images/external/photo-1503387762-592deb58ef4e-c6ab278a57.jpg', title: 'Co-investment' },
-    { id: 'fo4', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Доли в объектах' },
-  ] },
-]
 
 const recommendedProperties = [
   {
@@ -407,7 +642,7 @@ function MainPage() {
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
-  const [propertyMode, setPropertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
+  const [propertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
   const [activeNav, setActiveNav] = useState('home')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
@@ -766,6 +1001,7 @@ function MainPage() {
   const languageDropdownMobileRef = useRef(null)
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
+  const heroVideoRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
   const menuRef = useRef(null)
@@ -810,6 +1046,36 @@ function MainPage() {
   }
   
   const heroImage = heroImages[propertyMode]
+
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return undefined
+
+    const playHeroVideo = () => {
+      video.muted = true
+      video.defaultMuted = true
+      video.playsInline = true
+      const playPromise = video.play()
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {})
+      }
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') playHeroVideo()
+    }
+
+    playHeroVideo()
+    video.addEventListener('loadedmetadata', playHeroVideo)
+    video.addEventListener('canplay', playHeroVideo)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      video.removeEventListener('loadedmetadata', playHeroVideo)
+      video.removeEventListener('canplay', playHeroVideo)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
 
   // Прогресс скролла для секции «Цифры»: 0 = секция внизу экрана, 1 = контент по центру (секция белая)
   useEffect(() => {
@@ -2013,10 +2279,10 @@ function MainPage() {
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
-      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png' },
-      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png' },
-      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png' },
-      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png' },
+      { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
+      { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
+      { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png', href: buildAuctionFilterPath({ categorySlug: 'apartments' }) },
+      { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png', href: buildAuctionFilterPath({ categorySlug: 'villas' }) },
   ], [t, i18n.language])
   
   const navigationItems = useMemo(() => [
@@ -2027,11 +2293,44 @@ function MainPage() {
       { id: 'profile', label: t('profile'), icon: FaUser },
   ], [t, i18n.language])
 
-  const landingFolderData = useMemo(() => landingFolderDataBase.map((folder) => ({
-    ...folder,
-    title: t(folder.titleKey),
-    linkLabel: folder.linkLabelKey ? t(folder.linkLabelKey) : undefined,
-  })), [t, i18n.language])
+  const salesStrategies = useMemo(() => [
+    {
+      id: 'auction',
+      label: t('auctionSectionTitle'),
+      title: t('auctionSectionTitle'),
+      text: t('auctionSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-auction.jpg',
+      to: '/auction?filter=auction',
+      metric: '01',
+    },
+    {
+      id: 'buy-now',
+      label: t('buyNowSectionTitle'),
+      title: t('buyNowSectionTitle'),
+      text: t('buyNowSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-buynow.jpg',
+      to: '/auction?filter=buy_now',
+      metric: '02',
+    },
+    {
+      id: 'shares',
+      label: t('fractionalSaleTitle'),
+      title: t('fractionalSaleTitle'),
+      text: t('fractionalSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-shares.jpg',
+      to: '/shares',
+      metric: '03',
+    },
+    {
+      id: 'debts',
+      label: t('debtsTitle'),
+      title: t('debtsTitle'),
+      text: t('debtsSectionSubtitle'),
+      image: '/images/sellyourbrick/about/about-category-debts.jpg',
+      to: '/debts',
+      metric: '04',
+    },
+  ], [t, i18n.language])
   
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
@@ -2046,7 +2345,7 @@ function MainPage() {
     setActiveCategory(categoryLabel)
     
     // Обновляем URL с параметрами фильтра
-    navigate(`/auction?category=${categoryLabel}`, { replace: true })
+    navigate(buildAuctionFilterPath({ categorySlug: legacyCategoryToSlug(categoryLabel) }), { replace: true })
 
     setTimeout(() => {
       // Фильтруем объявления по типу
@@ -2135,6 +2434,31 @@ function MainPage() {
     )
   }
 
+  const scrollToHomeAnchor = useCallback((anchorId) => {
+    const target = document.getElementById(anchorId)
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const handlePremiumSearchSubmit = useCallback(
+    (event) => {
+      event.preventDefault()
+      const formData = new FormData(event.currentTarget)
+      const dealType = String(formData.get('dealType') || 'auction')
+      const query = String(formData.get('query') || '').trim()
+      const routeByDealType = {
+        auction: '/auction?filter=auction',
+        buy_now: '/auction?filter=buy_now',
+        shares: '/shares',
+        debts: '/debts',
+      }
+      const baseRoute = routeByDealType[dealType] || '/auction'
+      const separator = baseRoute.includes('?') ? '&' : '?'
+      navigate(query ? `${baseRoute}${separator}q=${encodeURIComponent(query)}` : baseRoute)
+    },
+    [navigate],
+  )
+
   const handlePropertyClick = (
     category,
     propertyId,
@@ -2220,20 +2544,18 @@ function MainPage() {
   }
 
   return (
-    <div className="app">
-      <section
-        className="hero-section"
-        // CSS-переменная для фонового изображения в pseudo-element'ах
-        style={{ ['--hero-bg']: `url("${heroImage}")` }}
-      >
-        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.rent}")` }}></div>
-        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.buy}")` }}></div>
-        <div className="hero-section__overlay"></div>
-        {/* Новый хедер для десктопной версии */}
-        <div className="new-header-spacer" aria-hidden="true" />
-        <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
+    <div className="app app--premium-home">
+      <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
         <div className="new-header__left">
+        <button
+          type="button"
+          className="new-header__brand-mini"
+          onClick={() => navigate('/')}
+          aria-label="SellYourBrick"
+        >
+          SellYourBrick
+        </button>
         <div className="new-header__location">
           <span className="new-header__location-icon">
             <FiGlobe size={20} aria-hidden />
@@ -2278,8 +2600,8 @@ function MainPage() {
           <button 
             className={`new-header__menu-btn ${isMenuOpen ? 'new-header__menu-btn--active' : ''}`}
             onClick={(e) => {
-              e.stopPropagation() // Останавливаем всплытие события
-              e.preventDefault() // Предотвращаем стандартное поведение
+              e.stopPropagation()
+              e.preventDefault()
               if (isMenuOpen) {
                 setIsMenuClosing(true)
                 setTimeout(() => {
@@ -2367,7 +2689,6 @@ function MainPage() {
                     setSearchQuery('')
                     setPageSearchResults([])
                   } else if (e.key === 'Enter' && pageSearchResults.length > 0) {
-                    // Переходим на первую доступную страницу
                     const firstAccessible = pageSearchResults.find(r => r.canAccess.allowed)
                     if (firstAccessible) {
                       handleSearchResultClick(firstAccessible)
@@ -2431,17 +2752,10 @@ function MainPage() {
             >
               <FiSearch size={20} />
             </button>
-        <button 
-          type="button"
-          className="new-header__auction-btn"
-          onClick={() => navigate('/auction')}
-        >
-          {t('auction')}
-        </button>
+        <HeaderPinnedCatalogNav />
         <button 
           className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
           onClick={() => {
-            // Всегда сначала проверяем локальные данные (роль, флаги)
             const userData = getUserData()
             const localRole = localStorage.getItem('userRole')
             const storedRole = userData.role || localRole
@@ -2453,19 +2767,16 @@ function MainPage() {
               storedRole === 'owner' ||
               isOwnerFlag
 
-            // Если по локальным данным видно, что это админ — ведем в админ-панель
             if (isAdmin) {
               navigate('/admin')
               return
             }
 
-            // Продавца ведем в кабинет продавца
             if (isOwner) {
               navigate(getCabinetHomePath('seller'))
               return
             }
 
-            // Дальше обычная логика профиля покупателя
             if (userLoaded && user) {
               navigate(getCabinetProfilePath())
             } else if (userData.isLoggedIn) {
@@ -2485,7 +2796,6 @@ function MainPage() {
                   alt="Profile" 
                   className="new-header__avatar-img"
                   onError={(e) => {
-                    // Если фото не загрузилось, показываем placeholder
                     setUserPhoto(null)
                   }}
                 />
@@ -2509,193 +2819,155 @@ function MainPage() {
         </div>
       </header>
 
-        <div className="hero-section__inner">
-        <div className="hero-section__col1">
-        <div className="hero-section__content">
-          {/* Старый хедер для мобильной версии */}
-          <header className="header">
-            <div className="header__location">
-              <span className="header__location-icon">
-                <FiGlobe size={20} aria-hidden />
-              </span>
-              <div className="header__location-info" ref={languageDropdownMobileRef}>
-                <span className="header__location-label">{t('headerLanguage')}</span>
+      <section className="hero-section premium-hero" aria-labelledby="premium-home-title">
+        <div className="premium-hero__ambient" aria-hidden="true" />
+        <div className="new-header-spacer" aria-hidden="true" />
+
+        <div className="premium-hero__inner">
+          <div className="premium-hero__copy">
+            <div className="premium-hero__badge">
+              <span className="premium-hero__badge-dot" aria-hidden="true" />
+              Единая платформа. 4 стратегии продажи.
+            </div>
+            <h1 id="premium-home-title" className="premium-hero__title">
+              Продайте объект через{' '}
+              <span>правильную стратегию сделки.</span>
+            </h1>
+            <p className="premium-hero__lead">
+              SellYourBrick подбирает механику под актив: аукцион, фиксированная цена,
+              доли или долговой сценарий. Покупатель видит понятную витрину, продавец —
+              управляемый путь к сделке.
+            </p>
+
+            <form className="premium-search" onSubmit={handlePremiumSearchSubmit}>
+              <label className="premium-search__field premium-search__field--wide">
+                <span>Поиск объекта</span>
+                <span className="premium-search__input-wrap">
+                  <FiSearch size={19} aria-hidden />
+                  <input
+                    name="query"
+                    type="search"
+                    placeholder="Вилла, апартаменты, район или ID лота"
+                    autoComplete="off"
+                  />
+                </span>
+              </label>
+              <label className="premium-search__field">
+                <span>Стратегия</span>
+                <select name="dealType" defaultValue="auction">
+                  <option value="auction">Аукцион</option>
+                  <option value="buy_now">Купить сейчас</option>
+                  <option value="shares">Доли</option>
+                  <option value="debts">Долги</option>
+                </select>
+              </label>
+              <label className="premium-search__field">
+                <span>Локация</span>
+                <select name="location" defaultValue="tenerife">
+                  <option value="tenerife">Тенерифе</option>
+                  <option value="spain">Испания</option>
+                  <option value="global">Все рынки</option>
+                </select>
+              </label>
+              <button type="submit" className="premium-search__submit">
+                <span>Найти</span>
+                <FiArrowRight size={18} strokeWidth={2.4} aria-hidden />
+              </button>
+            </form>
+
+            <div className="premium-search__filters" aria-label="Быстрые фильтры по стратегиям">
+              {premiumModes.map((mode) => (
                 <button
                   type="button"
-                  className="header__location-select"
-                  onClick={() => setIsLanguageOpen((prev) => !prev)}
-                  aria-haspopup="listbox"
-                  aria-expanded={isLanguageOpen}
-                  aria-label={t('selectLanguageAria')}
+                  key={mode.id}
+                  className="premium-search__filter"
+                  onClick={() => scrollToHomeAnchor(mode.objectsId)}
                 >
-                  <span className="header__location-value">{currentHeaderLanguage.name}</span>
-                  <FiChevronDown
-                    size={16}
-                    className={`header__location-select-icon ${
-                      isLanguageOpen ? 'header__location-select-icon--open' : ''
-                    }`}
-                  />
+                  {mode.eyebrow}
                 </button>
-                {isLanguageOpen && (
-                  <div className="header__location-dropdown">
-                    {UI_LANGUAGES.map((lang) => (
-                      <button
-                        type="button"
-                        className={`header__location-option ${
-                          lang.code === headerLangCode ? 'header__location-option--active' : ''
-                        }`}
-                        key={lang.code}
-                        onClick={() => handleHeaderLanguageSelect(lang.code)}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              ))}
+            </div>
+
+          </div>
+
+          <div className="premium-hero__object" aria-label="Featured real estate object">
+            <div className="premium-object-card">
+              <img
+                src="/images/new-home/new-home-hero-villa.jpg"
+                alt="Современная вилла у океана"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+              <div className="premium-object-card__top">
+                <span>Объект недели</span>
+                <strong>Villa Atlantic</strong>
+              </div>
+              <div className="premium-object-card__bottom">
+                <div>
+                  <span>Стратегия</span>
+                  <strong>Auction + Buy Now</strong>
+                </div>
+                <div>
+                  <span>Ориентир</span>
+                  <strong>€1.82M</strong>
+                </div>
               </div>
             </div>
 
-            <div className="header__actions">
-              <NotificationsBell variant="mobile" />
-              <button 
-                type="button" 
-                className={`header__action-btn ${isLoggedIn ? 'header__action-btn--avatar' : ''}`}
-                onClick={() => {
-                  // Всегда сначала проверяем локальные данные (роль, флаги)
-                  const userData = getUserData()
-                  const localRole = localStorage.getItem('userRole')
-                  const storedRole = userData.role || localRole
-                  const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
-                  const isOwner =
-                    storedRole === 'seller' ||
-                    storedRole === 'owner' ||
-                    isOwnerFlag
+            <div className="premium-object-note premium-object-note--seller">
+              <span>Кабинет продавца</span>
+              <strong>Цена, документы, спрос и переговоры в одном контуре.</strong>
+            </div>
+            <div className="premium-object-note premium-object-note--buyer">
+              <span>Шортлист покупателя</span>
+              <strong>Фильтры по стратегии, бюджету и типу сделки.</strong>
+            </div>
+          </div>
 
-                  // Продавца ведем в кабинет продавца
-                  if (isOwner) {
-                    navigate(getCabinetHomePath('seller'))
-                    return
-                  }
+          <div className="premium-role-grid">
+            <button type="button" className="premium-role-card" onClick={handleHeroInvestorCardClick}>
+              <span className="premium-role-card__icon">
+                <FiShoppingCart size={18} aria-hidden />
+              </span>
+              <strong>Я покупатель</strong>
+              <span>Подобрать объект, сравнить стратегии и открыть безопасный путь к сделке.</span>
+            </button>
+            <button type="button" className="premium-role-card" onClick={handleHeroSellerCardClick}>
+              <span className="premium-role-card__icon">
+                <FaHome size={18} aria-hidden />
+              </span>
+              <strong>Я продавец</strong>
+              <span>Упаковать объект, выбрать механику продажи и получить квалифицированный спрос.</span>
+            </button>
+          </div>
+        </div>
 
-                  // Дальше обычная логика профиля покупателя
-                  if (userLoaded && user) {
-                    navigate(getCabinetProfilePath())
-                  } else if (userData.isLoggedIn) {
-                    navigate(getCabinetProfilePath())
-                  } else {
-                    setMainLoginModalAuthEntry('header_wizard')
-                    setIsLoginModalOpen(true)
-                  }
-                }}
-                aria-label={t('profile')}
+        <nav className="premium-hero__strategy-rail" aria-label="Стратегии SellYourBrick">
+          {premiumModes.map((mode) => {
+            const Icon = mode.Icon
+            return (
+              <button
+                type="button"
+                key={mode.id}
+                className="premium-strategy-pill"
+                onClick={() => scrollToHomeAnchor(mode.anchorId)}
               >
-                {isLoggedIn ? (
-                  <div className="header__avatar-wrapper">
-                    {userPhoto ? (
-                      <img loading="lazy" 
-                        src={userPhoto} 
-                        alt="Profile" 
-                        className="header__avatar-img"
-                        onError={(e) => {
-                          // Если фото не загрузилось, показываем placeholder
-                          setUserPhoto(null)
-                        }}
-                      />
-                    ) : (
-                      <div className="header__avatar-placeholder">
-                        <FiUser size={18} />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <FiUser size={18} />
-                )}
-                {isLoggedIn && hasIncompleteProfile && (
-                  <span className="header__profile-indicator" />
-                )}
+                <span className="premium-strategy-pill__number">{mode.number}</span>
+                <span className="premium-strategy-pill__icon">
+                  <Icon size={17} aria-hidden />
+                </span>
+                <span>
+                  <strong>{mode.eyebrow}</strong>
+                  <small>{mode.title}</small>
+                </span>
               </button>
-            </div>
-          </header>
-        </div>
-
-          <p className="hero-headline__brand hero-headline__brand--mobile">Saleyourbrick</p>
-
-          <div className="hero-headline">
-            <span className="hero-headline__accent" aria-hidden="true" />
-            <p className="hero-headline__brand hero-headline__brand--desktop">Saleyourbrick</p>
-            <h1 className="hero-headline__title">{t('heroTitle')}</h1>
-            <p className="hero-headline__subtitle">
-              {t('heroSubtitle')}
-            </p>
-          </div>
-        </div>
-
-          <section className="search">
-            <div className="search__field">
-              <FiSearch size={18} className="search__icon" />
-              <input
-                type="text"
-                placeholder={t('searchPlaceholderLong')}
-                className="search__input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button 
-                  type="button"
-                  className="search__clear"
-                  onClick={() => setSearchQuery('')}
-                  aria-label={t('clearSearch')}
-                >
-                  <FiX size={18} />
-                </button>
-              )}
-              <button type="button" className="search__filter">
-                <FiSliders size={18} />
-              </button>
-            </div>
-          </section>
-
-          <div className="hero-section__cta">
-            <FrostedGlassCard
-              variant="investor"
-              title={t('becomeInvestor')}
-              buttonText={t('startBtn')}
-              onButtonClick={handleHeroInvestorCardClick}
-            >
-              {t('investorCardText')}
-            </FrostedGlassCard>
-            <FrostedGlassCard
-              variant="seller"
-              title={t('becomeSeller')}
-              buttonText={isHeroCtaAdaptive ? t('startBtn') : t('listProperty')}
-              onButtonClick={handleHeroSellerCardClick}
-            >
-              {t('sellerCardText')}
-            </FrostedGlassCard>
-          </div>
-        </div>
+            )
+          })}
+        </nav>
       </section>
 
-      {/* Блок: 4 инвестиционные модели (3D-папки) */}
-      <section id="landing-models" className="landing-models">
-        <div className="landing-models__container">
-          <h2 className="landing-models__title">
-            <span className="landing-models__title-mark">
-              <span className="landing-models__title-mark-text">{t('landingModelsTitleMark')}</span>
-            </span>{' '}
-            {t('landingModelsTitleRest')}
-          </h2>
-          <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
-          <LandingModelsFolders
-            folders={landingFolderData}
-            ariaLabel={t('landingFoldersCarouselAria')}
-          />
-        </div>
-      </section>
-
-      {/* Блок подборки недвижимости */}
-      <PropertySearchBlock />
+      <HomeSaleFormats modes={premiumModes} />
 
       <MainPageDeferredContext.Provider
         value={{

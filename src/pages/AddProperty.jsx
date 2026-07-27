@@ -759,6 +759,8 @@ import {
   confirmListingPublicationFeeSession,
   startListingPublicationCheckout,
 } from '../utils/subscriptionCheckout'
+import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
+import { applyPricingFieldChange } from '../utils/oapAuctionPriceAuto'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
@@ -780,6 +782,7 @@ const INITIAL_FORM_DATA = {
   auctionEndDate: '',
   auctionStartingPrice: '',
   minimumSalePrice: '',
+  pricingFieldSource: {},
   area: '',
   livingArea: '',
   buildingType: '',
@@ -1599,72 +1602,54 @@ const AddProperty = ({
 
   // Обработчик для поля цены с форматированием
   const handlePriceChange = (e) => {
-    const value = e.target.value
-    // Сохраняем числовое значение без запятых
-    const numericValue = removeCommas(value)
-    setFormData(prev => ({
-      ...prev,
-      price: numericValue
-    }))
-
-    const err = getAuctionStartingVsBuyNowError(numericValue, formData.auctionStartingPrice)
-    if (err) {
-      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.auctionStartingPrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'price', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        const minVsBuyErr = getMinimumSaleVsBuyNowError(next.minimumSalePrice, next.price)
+        if (minVsBuyErr) err.minimumSalePrice = minVsBuyErr
+        else delete err.minimumSalePrice
+        return err
       })
-    }
-    const minVsBuyErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, numericValue)
-    if (minVsBuyErr) {
-      setValidationErrors(prev => ({ ...prev, minimumSalePrice: minVsBuyErr }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.minimumSalePrice
-        return next
-      })
-    }
+      return next
+    })
   }
 
   const handleMinimumSalePriceChange = (e) => {
-    const value = e.target.value
-    const numericValue = removeCommas(value)
-    setFormData((prev) => ({ ...prev, minimumSalePrice: numericValue }))
-    const minVsBuyErr = getMinimumSaleVsBuyNowError(numericValue, formData.price)
-    if (minVsBuyErr) {
-      setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVsBuyErr }))
-    } else {
-      setValidationErrors((prev) => {
-        const next = { ...prev }
-        delete next.minimumSalePrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'minimumSalePrice', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const minVsBuyErr = getMinimumSaleVsBuyNowError(next.minimumSalePrice, next.price)
+        if (minVsBuyErr) err.minimumSalePrice = minVsBuyErr
+        else delete err.minimumSalePrice
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        return err
       })
-    }
+      return next
+    })
   }
 
-  // Обработчик для стартовой цены аукциона с форматированием
   const handleAuctionPriceChange = (e) => {
-    const value = e.target.value
-    // Сохраняем числовое значение без запятых
-    const numericValue = removeCommas(value)
-    setFormData(prev => ({
-      ...prev,
-      auctionStartingPrice: numericValue
-    }))
-
-    const err = getAuctionStartingVsBuyNowError(formData.price, numericValue)
-    if (err) {
-      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
-    } else {
-      setValidationErrors(prev => {
-        const next = { ...prev }
-        delete next.auctionStartingPrice
-        return next
+    const numericValue = removeCommas(e.target.value)
+    setFormData((prev) => {
+      const next = applyPricingFieldChange(prev, 'auctionStartingPrice', numericValue)
+      setValidationErrors((prevErr) => {
+        const err = { ...prevErr }
+        const startErr = getAuctionStartingVsBuyNowError(next.price, next.auctionStartingPrice)
+        if (startErr) err.auctionStartingPrice = startErr
+        else delete err.auctionStartingPrice
+        return err
       })
-    }
+      return next
+    })
   }
 
   const handleDetailChange = (field, value) => {
@@ -1905,7 +1890,7 @@ const AddProperty = ({
             `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
           )
           // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
-          if (!adminMode) navigate('/owner/dashboard')
+          if (!adminMode) navigate('/owner-test')
           return false
         }
       } else {
@@ -1935,7 +1920,7 @@ const AddProperty = ({
             showNotification(
               `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
             )
-            if (!adminMode) navigate('/owner/dashboard')
+            if (!adminMode) navigate('/owner-test')
             return false
           }
         }
@@ -2259,7 +2244,7 @@ const AddProperty = ({
         if (isEditMode) {
           showNotification(data.message || 'Изменения отправлены на модерацию')
           window.dispatchEvent(new CustomEvent('owner-properties-update'))
-          if (!adminMode) navigate('/owner')
+          if (!adminMode) navigate('/owner-test')
           return true
         }
         if (!skipSuccessModal) {
@@ -2989,7 +2974,7 @@ const AddProperty = ({
     } catch (error) {
       console.error('Ошибка загрузки данных объекта:', error)
       showNotification('Не удалось загрузить данные объекта для редактирования')
-      navigate('/owner')
+      navigate('/owner-test')
     } finally {
       setIsLoadingProperty(false)
     }
@@ -5273,47 +5258,7 @@ const AddProperty = ({
   }
 
   const handleApplyCalculatedPrice = useCallback((recommendedPrice) => {
-    const rec = Math.max(0, Math.round(Number(recommendedPrice) || 0))
-    if (!rec) return
-
-    /** От рекомендации: −15% → «Продать сейчас»; от неё −10% → минимум; старт ≤30% от «Продать сейчас». */
-    const buyNowFromRec = Math.round(rec * 0.85)
-    const minSaleFromRec = Math.round(buyNowFromRec * 0.9)
-    const startingFromRec = Math.round(buyNowFromRec * 0.3)
-
-    setFormData((prev) => {
-      const mode = prev.listingMode || 'auction'
-
-      if (mode === 'shares') {
-        return { ...prev, price: String(rec) }
-      }
-      if (mode === 'debt') {
-        return { ...prev, debtAmount: String(rec) }
-      }
-
-      if (mode === 'auction_buy_now' || mode === 'debt_auction') {
-        return {
-          ...prev,
-          price: String(buyNowFromRec),
-          minimumSalePrice: String(minSaleFromRec),
-          auctionStartingPrice: String(startingFromRec)
-        }
-      }
-
-      if (mode === 'auction') {
-        return {
-          ...prev,
-          minimumSalePrice: String(minSaleFromRec),
-          auctionStartingPrice: String(startingFromRec)
-        }
-      }
-
-      const next = { ...prev, auctionStartingPrice: String(startingFromRec) }
-      if (!prev.price || Number(removeCommas(String(prev.price))) <= 0) {
-        next.price = String(buyNowFromRec || rec)
-      }
-      return next
-    })
+    setFormData((prev) => applyCalculatedPriceToForm(prev, recommendedPrice))
 
     setValidationErrors((prev) => {
       const next = { ...prev }
@@ -5323,7 +5268,6 @@ const AddProperty = ({
       return next
     })
 
-    // Не закрываем модалку: пользователь видит рекомендацию, похожие объявления и источники; закрытие — «Закрыть» / крестик.
     setCalculatorGuidanceApplied(true)
     showNotification(t('addPropertyCalculatorAppliedFromRecommended'), 'success')
   }, [t])
@@ -5632,7 +5576,7 @@ const AddProperty = ({
                   setCurrentStep('price')
                 } else {
                   if (adminMode && typeof onAdminBack === 'function') onAdminBack()
-                  else navigate('/owner')
+                  else navigate('/owner-test')
                 }
               }}
             >
@@ -9970,7 +9914,7 @@ const AddProperty = ({
                     </p>
                   </div>
                   {formData.price && formData.totalShares && parseInt(formData.totalShares, 10) > 0 && (
-                    <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(10, 186, 181, 0.1)', borderRadius: '12px', border: '1px solid rgba(10, 186, 181, 0.25)' }}>
+                    <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(0, 153, 169, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 153, 169, 0.25)' }}>
                       <strong>{t('addPropertyPriceSharesPerUnit')}</strong>{' '}
                       <span>{currencies.find(c => c.code === currency)?.symbol || '$'}{(Number(removeCommas(String(formData.price))) / parseInt(formData.totalShares, 10)).toLocaleString('en-US')}</span>
                     </div>
@@ -10760,13 +10704,13 @@ const AddProperty = ({
       {showSuccessModal && (
         <div className="success-modal-overlay" onClick={() => {
           setShowSuccessModal(false)
-          if (!adminMode) navigate('/owner')
+          if (!adminMode) navigate('/owner-test')
         }}>
           <div className="success-modal" onClick={(e) => e.stopPropagation()}>
             <div className="success-modal__icon">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#0ABAB5" strokeWidth="2"/>
-                <path d="M8 12L11 15L16 9" stroke="#0ABAB5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="12" r="10" stroke="#0099A9" strokeWidth="2"/>
+                <path d="M8 12L11 15L16 9" stroke="#0099A9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <h2 className="success-modal__title">Ваш объект отправлен на модерацию</h2>
@@ -10778,7 +10722,7 @@ const AddProperty = ({
               className="success-modal__button"
               onClick={() => {
                 setShowSuccessModal(false)
-                if (!adminMode) navigate('/owner')
+                if (!adminMode) navigate('/owner-test')
               }}
             >
               Понятно
@@ -10866,14 +10810,14 @@ const AddProperty = ({
                           {change.old}
                         </div>
                       </div>
-                      <div style={{ fontSize: '1.5rem', color: '#0ABAB5' }}>→</div>
+                      <div style={{ fontSize: '1.5rem', color: '#0099A9' }}>→</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Стало:</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#d1fae5', 
                           borderRadius: '4px',
-                          color: '#065f46',
+                          color: '#007d8a',
                           fontWeight: '500'
                         }}>
                           {change.new}
@@ -10900,7 +10844,7 @@ const AddProperty = ({
                 onClick={() => setShowChangesModal(false)}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  backgroundColor: '#0ABAB5',
+                  backgroundColor: '#0099A9',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',

@@ -31,10 +31,10 @@ export default function FirstFavoriteIllustration({ className = '' }) {
         d="M40 52h3c1.6 0 2.5.8 2.5 1.8 0 1-.7 1.6-1.8 1.7v.1c1.2.1 2 1 2 2 0 1.4-1.2 2.2-3.2 2.2H40V52z"
         fill="#c2410c"
       />
-      <circle cx="156" cy="64" r="12" fill="#ecfdf5" stroke="#0abab5" strokeWidth="1.5" />
+      <circle cx="156" cy="64" r="12" fill="#e6f6f8" stroke="#0099A9" strokeWidth="1.5" />
       <path
         d="M150 64l4 4 8-8"
-        stroke="#0d9488"
+        stroke="#007580"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

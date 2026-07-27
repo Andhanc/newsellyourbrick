@@ -8,8 +8,8 @@
   }
 
   .otd {
-    --otd-mob-pad: 16px;
-    --otd-tiffany: #0abab5;
+    --otd-mob-pad: var(--oc-mob-pad, 16px);
+    --otd-tiffany: #0099a9;
 
     flex-direction: column;
     width: 100%;
@@ -23,13 +23,16 @@
 
   .otd-body {
     --otd-mob-pad: 16px;
-    --otd-tiffany: #0abab5;
+    --otd-tiffany: #0099a9;
 
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
     background: #ffffff;
     width: 100%;
   }
@@ -179,13 +182,79 @@
     font-size: 15px;
   }
 
+  /* —— Hero card (Daily challenge style) —— */
+  .otd-mob-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    margin: calc(16px + env(safe-area-inset-top, 0px)) var(--otd-mob-pad) 14px;
+    padding: 20px 14px 20px 18px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ebe3ff 0%, #ddd0ff 52%, #d4c4ff 100%);
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(91, 33, 182, 0.12);
+  }
+
+  .otd.otd--embedded .otd-mob-hero {
+    margin-top: 16px;
+  }
+
+  .otd-mob-hero__copy {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  .otd-mob-hero__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: #111827;
+  }
+
+  .otd-mob-hero__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #374151;
+  }
+
+  .otd-mob-hero__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    margin-top: 12px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #5b21b6;
+    font-size: 13px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  .otd-mob-hero__art {
+    width: 152px;
+    height: 152px;
+    flex-shrink: 0;
+    display: block;
+    overflow: visible;
+  }
+
   /* —— «Тест-драйв» —— */
   .otd-mob-pagehead {
     display: flex !important;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: 0 calc(var(--otd-mob-pad) * -1);
+    margin: 0;
     padding: 16px var(--otd-mob-pad) 12px;
     background: #ffffff;
   }
@@ -201,36 +270,97 @@
     min-width: 0;
   }
 
+  .otd-date-bar {
+    display: block;
+    margin: 0;
+    padding: 12px 0 0;
+    background: transparent;
+  }
+
+  .otd.otd--embedded,
+  .otc-stage .otd.otd--embedded {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    flex: none !important;
+    background: transparent;
+    background-image: none;
+  }
+
+  .otd.otd--embedded .otd-body,
+  .otc-stage .otd.otd--embedded .otd-body {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
   /* —— Scroll area —— */
   .otd-workspace {
     flex: 1;
     min-height: 0;
-    display: block;
-    overflow-x: hidden;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-x: clip;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 0 var(--otd-mob-pad) calc(24px + env(safe-area-inset-bottom, 0px));
-    background: #f3f4f6;
+    padding: 0 0 calc(24px + env(safe-area-inset-bottom, 0px));
+    background: #ffffff;
+    box-sizing: border-box;
+  }
+
+  .otd.otd--embedded .otd-workspace,
+  .otc-stage .otd.otd--embedded .otd-workspace {
+    overflow-x: clip;
+    overflow-y: visible;
+    padding-bottom: 12px;
   }
 
   .otd-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     padding: 0;
-    gap: 16px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    background: #ffffff;
   }
 
-  /* —— Tabs —— */
   .otd-tabs-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+    border-bottom: none;
   }
 
   .otd-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin-bottom: 0;
     border-bottom: 1px solid #e5e7eb;
     gap: 0;
+    overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .otd-tabs::-webkit-scrollbar {
@@ -238,11 +368,14 @@
   }
 
   .otd-tabs__item {
-    padding: 10px 12px;
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 12px 14px;
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
-    border-bottom-width: 3px;
+    color: #9ca3af;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
   }
 
   .otd-tabs__item--active {
@@ -251,45 +384,142 @@
     font-weight: 600;
   }
 
-  /* —— Table: only Объект + Статус —— */
-  .otd-table-wrap {
-    overflow-x: visible;
-  }
-
+  /* —— Table card + mobile list (как op-table-card / op-mob-list) —— */
   .otd-table-card {
+    margin: 12px var(--otd-mob-pad) 0;
+    width: auto;
+    max-width: calc(100% - (var(--otd-mob-pad) * 2));
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  .otd-table-state {
+    padding: 20px 16px;
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .otd-mob-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .otd-mob-list__item {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8edf2;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .otd-mob-list__item:last-child {
+    border-bottom: none;
+  }
+
+  .otd-mob-list__open {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .otd-mob-list__open:active {
+    opacity: 0.72;
+  }
+
+  .otd-mob-list__thumb {
+    width: 52px;
+    height: 52px;
     border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #f3f4f6;
   }
 
-  .otd-table thead th:nth-child(2),
-  .otd-table thead th:nth-child(3),
-  .otd-table thead th:nth-child(4),
-  .otd-table thead th:nth-child(6),
-  .otd-table tbody td:nth-child(2),
-  .otd-table tbody td:nth-child(3),
-  .otd-table tbody td:nth-child(4),
-  .otd-table tbody td:nth-child(6) {
-    display: none;
+  .otd-mob-list__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
   }
 
-  .otd-table thead th,
-  .otd-table tbody td {
-    padding: 12px;
+  .otd-mob-list__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
 
-  .otd-table thead th:nth-child(5),
-  .otd-table tbody td:nth-child(5) {
-    text-align: right;
-    width: 1%;
+  .otd-mob-list__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    padding-left: 8px;
   }
 
-  .otd-table tbody td:first-child {
-    padding-right: 8px;
+  .otd-mob-list__status {
+    flex-shrink: 0;
+    max-width: 46%;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .otd-object-cell__thumb {
-    width: 48px;
-    height: 48px;
+  .otd-mob-list__meta {
+    font-size: 13px;
+    color: #9ca3af;
+    line-height: 1.3;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .otd-mob-list__price {
+    flex-shrink: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .otd-mob-list__price--positive {
+    color: var(--otd-tiffany-dark);
   }
 }

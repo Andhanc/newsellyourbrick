@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 import Header from '../components/Header'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './ShareDetailPage.css'
 import './ShareDetailPageSkeleton.css'
 import './PropertyDetailClassic.css'
@@ -15,7 +16,7 @@ export default function ShareDetailPageSkeleton() {
       <Header />
       <div className="share-detail-page__bg" />
       <div className="share-detail-page__container">
-        <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
+        <button type="button" className="share-detail-page__back" onClick={() => navigate(CO_INVESTMENT_PATH)}>
           <FiArrowLeft size={20} /> {t('shareDetailBackToShares')}
         </button>
 

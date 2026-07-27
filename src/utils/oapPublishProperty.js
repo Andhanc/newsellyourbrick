@@ -20,6 +20,22 @@ function getTypeProfile(propertyType) {
   return 'apartment'
 }
 
+/** UI-тип OAP → property_type для POST /api/properties (как backendType в AddProperty.jsx). */
+function mapPropertyTypeToBackend(propertyType) {
+  if (propertyType === 'apartments') return 'apartment'
+  if (propertyType === 'land') return 'house'
+  if (propertyType === 'other') return 'commercial'
+  if (
+    propertyType === 'apartment' ||
+    propertyType === 'house' ||
+    propertyType === 'villa' ||
+    propertyType === 'commercial'
+  ) {
+    return propertyType
+  }
+  return 'apartment'
+}
+
 export function buildOapTzPayload(form, selectedAmenities) {
   const typeProfile = getTypeProfile(form.propertyType)
   const amenities = Array.isArray(selectedAmenities) ? [...new Set(selectedAmenities)] : []
@@ -174,6 +190,13 @@ export async function publishOapProperty({
     return { ok: false, error: 'Пожалуйста, загрузите хотя бы одно фото' }
   }
 
+  if (isShare) {
+    const totalSharesNum = parseInt(String(form.totalShares || '').replace(/\D/g, ''), 10)
+    if (!form.totalShares || Number.isNaN(totalSharesNum) || totalSharesNum <= 0) {
+      return { ok: false, error: 'Укажите количество долей (целое число больше 0)' }
+    }
+  }
+
   const resolvedOwnershipDoc = await oapDocToFile(requiredDocuments?.ownership, 'ownership.pdf')
   const resolvedNoDebtsDoc = await oapDocToFile(requiredDocuments?.noDebts, 'no-debts.pdf')
 
@@ -220,10 +243,11 @@ export async function publishOapProperty({
 
   const currency = form.listingCurrency || 'EUR'
   const typeProfile = getTypeProfile(form.propertyType)
+  const backendPropertyType = mapPropertyTypeToBackend(form.propertyType)
   const formDataToSend = new FormData()
 
   formDataToSend.append('user_id', String(numericUserId))
-  formDataToSend.append('property_type', form.propertyType)
+  formDataToSend.append('property_type', backendPropertyType)
   formDataToSend.append('title', form.title)
 
   if (userProfileData) {
@@ -253,6 +277,7 @@ export async function publishOapProperty({
     formDataToSend.append('is_auction', '0')
     formDataToSend.append('test_drive', '0')
     formDataToSend.append('sale_type', 'share')
+    if (form.totalShares) formDataToSend.append('total_shares', String(form.totalShares))
   } else if (isDebt && listingMode === 'debt') {
     formDataToSend.append('is_auction', '0')
     formDataToSend.append('test_drive', '0')
@@ -296,8 +321,13 @@ export async function publishOapProperty({
   const buildingTypeToSave = form.constructionType || form.buildingType
   if (buildingTypeToSave) formDataToSend.append('building_type', buildingTypeToSave)
 
-  const isApartmentOrCommercial = typeProfile === 'apartment' || typeProfile === 'apartments'
-  const isHouseOrVilla = typeProfile === 'house' || typeProfile === 'villa'
+  const isApartmentOrCommercial =
+    typeProfile === 'apartment' ||
+    typeProfile === 'apartments' ||
+    typeProfile === 'commercial' ||
+    typeProfile === 'other'
+  const isHouseOrVilla =
+    typeProfile === 'house' || typeProfile === 'villa' || typeProfile === 'land'
 
   if (isApartmentOrCommercial) {
     formDataToSend.append(
@@ -371,11 +401,17 @@ export async function publishOapProperty({
     if (!response.ok) {
       let errorText = 'Неизвестная ошибка'
       try {
-        errorText = await response.text()
+        const raw = await response.text()
+        try {
+          const parsed = JSON.parse(raw)
+          errorText = parsed.error || raw
+        } catch {
+          errorText = raw || errorText
+        }
       } catch {
         // ignore
       }
-      throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`)
+      throw new Error(errorText)
     }
 
     const data = await response.json()

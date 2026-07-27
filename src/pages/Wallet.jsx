@@ -1,9 +1,9 @@
-import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AUCTION_DEPOSIT_MIN_EUR } from '../utils/auctionDeposit'
-import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
-import { FiClock } from 'react-icons/fi'
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
+import { FiArrowLeft, FiArrowUpRight, FiArrowDownLeft, FiBell, FiChevronRight, FiCreditCard, FiEye, FiEyeOff, FiGift, FiPlus, FiSliders } from 'react-icons/fi'
+import { Gavel } from 'lucide-react'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
   TonConnectUIProvider,
@@ -19,10 +19,10 @@ import {
   getStoredNumericUserId,
 } from '../services/authService'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
-import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
+import DepositInfoDrawer from '../components/DepositInfoDrawer'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
@@ -30,13 +30,11 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   startDepositWalletCheckout,
   confirmWalletDepositSession,
-  confirmPropertyReservationSession,
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
-import PropertyListingCard from '../components/PropertyListingCard'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { enrichBidsWithPropertySpecs } from '../utils/enrichBidsWithPropertySpecs'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
@@ -44,6 +42,7 @@ import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
+import { DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import '../components/PropertyListingGrid.css'
 import '../components/PropertyList.css'
 import {
@@ -53,6 +52,7 @@ import {
   setWalletEntryFrom,
 } from '../utils/walletNavigation'
 import './Wallet.css'
+import './Wallet.bank.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -178,7 +178,6 @@ const WalletInner = () => {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
-  const walletReservationHandledRef = useRef(null)
   const lastFocusReloadAtRef = useRef(0)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
@@ -227,23 +226,25 @@ const WalletInner = () => {
   }, [user, userLoaded, navigate])
 
   const [depositAmount, setDepositAmount] = useState(0)
+  const [depositResolved, setDepositResolved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
+  const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
+  const [balanceVisible, setBalanceVisible] = useState(true)
   const [analytics, setAnalytics] = useState({
     totalDeposit: 0,
     totalWithdrawal: 0
   })
   const [userBids, setUserBids] = useState([])
-  const [bidForHistory, setBidForHistory] = useState(null)
-  const [showBidHistory, setShowBidHistory] = useState(false)
   const [wonProperty, setWonProperty] = useState(null) // Выигранный объект
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
   const [showTopUpPicker, setShowTopUpPicker] = useState(false)
   const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false)
   const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
   const [showDepositSuccessDrawer, setShowDepositSuccessDrawer] = useState(false)
+  const [confirmedDepositAmount, setConfirmedDepositAmount] = useState(null)
   const [tonConnectUI] = useTonConnectUI()
   const tonAddress = useTonAddress()
   const tonWallet = useTonWallet()
@@ -426,6 +427,7 @@ const WalletInner = () => {
             }
             return prev
           })
+          setDepositResolved(true)
         }
       }
 
@@ -531,6 +533,7 @@ const WalletInner = () => {
             }
             await loadUserData(false)
             if (isVerified) {
+              setConfirmedDepositAmount(formatAmount(result.data.amountEur))
               setShowDepositSuccessDrawer(true)
             } else {
               showNotification(
@@ -552,40 +555,6 @@ const WalletInner = () => {
       } finally {
         const next = new URLSearchParams(searchParams)
         next.delete('deposit_checkout')
-        next.delete('session_id')
-        setSearchParams(next, { replace: true })
-      }
-    }
-    run()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbUserId, searchParams, setSearchParams])
-
-  useEffect(() => {
-    if (!dbUserId) return
-    const rc = searchParams.get('reservation_checkout')
-    const sessionId = searchParams.get('session_id')
-    if (rc !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
-    if (walletReservationHandledRef.current === sessionId) return
-    walletReservationHandledRef.current = sessionId
-
-    const run = async () => {
-      try {
-        const result = await confirmPropertyReservationSession(sessionId, dbUserId)
-        if (result.ok) {
-          if (result.data?.already) {
-            showNotification(t('walletPage_reservationAlreadyRecorded'))
-          } else {
-            showNotification(t('walletPage_reservationSuccess'))
-          }
-          await loadUserData(false)
-        } else {
-          showNotification(result.error || t('walletPage_reservationConfirmError'), 'error')
-        }
-      } catch (e) {
-        showNotification(e?.message || t('walletPage_networkError'), 'error')
-      } finally {
-        const next = new URLSearchParams(searchParams)
-        next.delete('reservation_checkout')
         next.delete('session_id')
         setSearchParams(next, { replace: true })
       }
@@ -651,7 +620,8 @@ const WalletInner = () => {
     const from = isSafeWalletFromPath(fromState) ? fromState : getWalletEntryFrom()
     if (from) {
       clearWalletEntryFrom()
-      navigate(from)
+      // replace убирает /deposit из history, иначе «Назад» на объекте зацикливается deposit ↔ object
+      navigate(from, { replace: true })
       return true
     }
     return false
@@ -669,8 +639,15 @@ const WalletInner = () => {
 
   const handleDepositSuccessContinue = () => {
     setShowDepositSuccessDrawer(false)
-    if (navigateToWalletEntryOrigin()) return
-    navigate('/auction')
+    window.setTimeout(() => {
+      if (navigateToWalletEntryOrigin()) return
+      navigate('/auction')
+    }, DRAWER_DISMISS_MS.panel)
+  }
+
+  const handleInfoTopUp = () => {
+    setIsDepositInfoOpen(false)
+    window.setTimeout(() => setShowTopUpPicker(true), DRAWER_DISMISS_MS.panel)
   }
 
   const handleBookNow = () => {
@@ -701,48 +678,38 @@ const WalletInner = () => {
   // Показываем загрузку, если данные еще не загружены или dbUserId не получен
   if (loading || !dbUserId) {
     return (
-      <div className="wallet-page">
-        <div className="wallet-background">
-          <div className="wallet-background__gradient"></div>
-          <div className="wallet-background__pattern"></div>
-        </div>
-        {location.pathname === '/deposit' ? (
-          <div className="wallet-page__footer-blend" aria-hidden />
-        ) : null}
-        <div className="wallet-container">
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '50px', 
-            color: loadError ? '#dc2626' : '#1f2937',
-            fontSize: '18px',
-            fontWeight: '600',
-            background: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '12px',
-            margin: '50px auto',
-            maxWidth: '500px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
-          }}>
+      <div className="wallet-page wallet-bank">
+        <div className="wallet-bank__shell">
+          <div className="wallet-bank__hero" style={{ minHeight: 180 }}>
+            <div className="wallet-bank__top">
+              <button
+                type="button"
+                className="wallet-bank__back"
+                onClick={handleWalletBack}
+                aria-label={t('walletPage_back')}
+              >
+                <FiArrowLeft aria-hidden />
+              </button>
+            </div>
+            <div className="wallet-bank__balance-block">
+              <div className="wallet-bank__label-row">
+                <span>{t('walletPage_balanceLabel')}</span>
+              </div>
+              <strong className="wallet-bank__amount">…</strong>
+            </div>
+          </div>
+          <div className="wallet-bank__body">
             {loadError ? (
-              <>
-                <p style={{ marginBottom: '20px' }}>{loadError}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  style={{
-                    padding: '10px 20px',
-                    background: '#2563eb',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600'
-                  }}
-                >
+              <div className="wallet-bank__tx-empty">
+                <p>{loadError}</p>
+                <button type="button" className="wallet-bank__cta" onClick={() => window.location.reload()}>
                   {t('walletPage_reloadPage')}
                 </button>
-              </>
+              </div>
             ) : (
-              !dbUserId ? t('walletPage_loadingUser') : t('walletPage_loading')
+              <div className="wallet-bank__tx-empty">
+                {!dbUserId ? t('walletPage_loadingUser') : t('walletPage_loading')}
+              </div>
             )}
           </div>
         </div>
@@ -751,62 +718,259 @@ const WalletInner = () => {
   }
 
   return (
-    <div className="wallet-page">
-      <div className="wallet-background">
-        <div className="wallet-background__gradient"></div>
-        <div className="wallet-background__pattern"></div>
-      </div>
-      {location.pathname === '/deposit' ? (
-        <div className="wallet-page__footer-blend" aria-hidden />
-      ) : null}
-
-      <div className="wallet-container">
-        {/* Заголовок */}
-        <div className="wallet-header">
-          <button type="button" onClick={handleWalletBack} className="wallet-back-button">
-            <FaArrowLeft />
-            <span>{t('walletPage_back')}</span>
-          </button>
-          <h1 className="wallet-title">{t('walletPage_title')}</h1>
-        </div>
-
-        {/* Инструкция о депозите */}
-        <div className="deposit-instruction">
-          <div className="deposit-instruction__content">
-            <h2>{t('walletPage_whatIsDepositTitle')}</h2>
-            <p>{t('walletPage_whatIsDepositText', { amount: AUCTION_DEPOSIT_MIN_EUR })}</p>
-          </div>
-        </div>
-
-        {/* Блок депозита и пополнения — карта скрыта, пополнение через Picker */}
-        <div className="wallet-card-section deposit-main-block">
-          <div className="deposit-info-block">
-            <div className="deposit-info-label">{t('walletPage_depositLabel')}</div>
-            <div className="deposit-info-amount">{formatAmount(depositAmount)}</div>
-          </div>
-          <div className="wallet-actions">
+    <div className="wallet-page wallet-bank">
+      <div className="wallet-bank__shell">
+        <section className="wallet-bank__hero" aria-labelledby="wallet-balance-title">
+          <div className="wallet-bank__top">
             <button
-              className="wallet-action-btn deposit-action"
+              type="button"
+              className="wallet-bank__back"
+              onClick={handleWalletBack}
+              aria-label={t('walletPage_back')}
+            >
+              <FiArrowLeft aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="wallet-bank__bell"
+              onClick={() => setIsDepositInfoOpen(true)}
+              aria-label={t('walletPage_whatIsDepositTitle')}
+            >
+              <FiBell aria-hidden />
+            </button>
+          </div>
+
+          <div className="wallet-bank__balance-block">
+            <div className="wallet-bank__label-row">
+              <span id="wallet-balance-title">{t('walletPage_balanceLabel')}</span>
+            </div>
+            <div className="wallet-bank__amount-row">
+              <strong className="wallet-bank__amount">
+                {balanceVisible ? formatAmount(depositAmount) : '€••••••'}
+              </strong>
+              <button
+                type="button"
+                className="wallet-bank__eye"
+                onClick={() => setBalanceVisible((prev) => !prev)}
+                aria-label={
+                  balanceVisible
+                    ? t('walletPage_hideBalance', { defaultValue: 'Скрыть баланс' })
+                    : t('walletPage_showBalance', { defaultValue: 'Показать баланс' })
+                }
+                aria-pressed={!balanceVisible}
+              >
+                {balanceVisible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+              </button>
+            </div>
+            <span className="wallet-bank__mask">
+              {depositResolved && depositAmount === 0
+                ? t('walletPage_emptyHint')
+                : balanceVisible
+                  ? t('walletPage_accountMask', { amount: formatAmount(analytics.totalDeposit) })
+                  : t('walletPage_accountMaskHidden', { defaultValue: 'Всего пополнено · ••••••' })}
+            </span>
+          </div>
+
+          <div className="wallet-bank__cta-row">
+            <button
+              type="button"
+              className="wallet-bank__cta wallet-bank__cta--primary"
               onClick={() => setShowTopUpPicker(true)}
             >
-              <div className="wallet-action-icon-wrapper">
-                <FaArrowUp className="wallet-action-icon" />
-              </div>
-              <span>{t('walletPage_topUp')}</span>
+              <FiArrowDownLeft aria-hidden />
+              <span>{t('walletPage_addMoney')}</span>
             </button>
             <button
-              className="wallet-action-btn withdraw-action"
+              type="button"
+              className="wallet-bank__cta wallet-bank__cta--secondary"
               onClick={handleWithdraw}
+              disabled={depositAmount <= 0}
             >
-              <div className="wallet-action-icon-wrapper">
-                <FaArrowDown className="wallet-action-icon" />
-              </div>
-              <span>{t('walletPage_withdraw')}</span>
+              <FiArrowUpRight aria-hidden />
+              <span>{t('walletPage_sendMoney')}</span>
             </button>
           </div>
+        </section>
+
+        <div className="wallet-bank__body">
+          <button
+            type="button"
+            className="wallet-bank__alert"
+            onClick={() => navigate('/bonuses')}
+          >
+            <span className="wallet-bank__alert-icon" aria-hidden>
+              <FiGift />
+            </span>
+            <span className="wallet-bank__alert-copy">
+              <strong>{t('walletPage_giftsBannerTitle')}</strong>
+              <small>{t('walletPage_giftsBannerText')}</small>
+            </span>
+            <span className="wallet-bank__alert-chevron" aria-hidden>
+              <FiChevronRight />
+            </span>
+          </button>
+
+          <section className="wallet-bank__quick" aria-labelledby="wallet-quick-title">
+            <h2 id="wallet-quick-title" className="wallet-bank__section-title">
+              {t('walletPage_quickActions')}
+            </h2>
+            <div className="wallet-bank__quick-grid">
+              <button type="button" className="wallet-bank__quick-item" onClick={() => setShowTopUpPicker(true)}>
+                <span className="wallet-bank__quick-icon" aria-hidden><FiPlus /></span>
+                <span>{t('walletPage_quickTopUp')}</span>
+              </button>
+              <button
+                type="button"
+                className="wallet-bank__quick-item"
+                onClick={handleWithdraw}
+                disabled={depositAmount <= 0}
+              >
+                <span className="wallet-bank__quick-icon" aria-hidden><FiCreditCard /></span>
+                <span>{t('walletPage_quickWithdraw')}</span>
+              </button>
+              <button type="button" className="wallet-bank__quick-item" onClick={() => navigate('/bonuses')}>
+                <span className="wallet-bank__quick-icon" aria-hidden><FiGift /></span>
+                <span>{t('walletPage_quickGifts')}</span>
+              </button>
+              <button type="button" className="wallet-bank__quick-item" onClick={() => navigate('/auction')}>
+                <span className="wallet-bank__quick-icon" aria-hidden><Gavel size={20} strokeWidth={2.2} /></span>
+                <span>{t('walletPage_quickBids')}</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="wallet-bank__bids" aria-labelledby="wallet-bids-title">
+            <h2 id="wallet-bids-title" className="wallet-bank__section-title">
+              {t('walletPage_myBids')}
+            </h2>
+            <div className="wallet-bank__bids-rail">
+              <button type="button" className="wallet-bank__bid" onClick={() => navigate('/auction')}>
+                <span className="wallet-bank__bid-thumb wallet-bank__bid-thumb--add"><FiPlus aria-hidden /></span>
+                <strong>{t('walletPage_addBid')}</strong>
+                <small>&nbsp;</small>
+              </button>
+
+              {wonProperty ? (() => {
+                const photoUrl = getPropertyCardImage(wonProperty, null)
+                const imageProps = buildResponsiveImageProps(photoUrl, {
+                  widths: [72, 96, 144],
+                  sizes: '52px',
+                  fit: 'cover',
+                  quality: 76,
+                  format: 'webp',
+                })
+                return (
+                  <button type="button" className="wallet-bank__bid" onClick={handleBookNow}>
+                    {photoUrl ? (
+                      <ImageWithSkeleton
+                        imgProps={imageProps}
+                        alt={wonProperty.title || t('walletPage_propertyAlt')}
+                        className="wallet-bank__bid-image"
+                        containerClassName="wallet-bank__bid-thumb"
+                      />
+                    ) : (
+                      <span className="wallet-bank__bid-thumb wallet-bank__bid-thumb--add" aria-hidden><FiPlus /></span>
+                    )}
+                    <strong>{t('walletPage_wonAuctionBadge')}</strong>
+                    <small>{getCurrencySymbol(wonProperty.currency)}{Number(wonProperty.bid_amount || 0).toLocaleString(i18n.language, { maximumFractionDigits: 0 })}</small>
+                  </button>
+                )
+              })() : null}
+
+              {userBids.map((bid) => {
+                const listingProperty = formatBidAsListingProperty(bid)
+                const photoUrl = getPropertyCardImage(listingProperty, null)
+                const imageProps = buildResponsiveImageProps(photoUrl, {
+                  widths: [72, 96, 144],
+                  sizes: '52px',
+                  fit: 'cover',
+                  quality: 76,
+                  format: 'webp',
+                })
+                return (
+                  <button
+                    type="button"
+                    key={bidPropertyKey(bid)}
+                    className="wallet-bank__bid"
+                    onClick={() => {
+                      if (!ensureCanOpenProperty()) return
+                      navigate(
+                        getPropertyDetailPath(bid.property_id, { property: listingProperty }),
+                        { state: { property: listingProperty } },
+                      )
+                    }}
+                  >
+                    {photoUrl ? (
+                      <ImageWithSkeleton
+                        imgProps={imageProps}
+                        alt={listingProperty.title || t('walletPage_propertyAlt')}
+                        className="wallet-bank__bid-image"
+                        containerClassName="wallet-bank__bid-thumb"
+                      />
+                    ) : (
+                      <span className="wallet-bank__bid-thumb wallet-bank__bid-thumb--add" aria-hidden><FiPlus /></span>
+                    )}
+                    <strong>{listingProperty.title || t('walletPage_propertyAlt')}</strong>
+                    <small>{getCurrencySymbol(bid.currency)}{Number(bid.bid_amount || 0).toLocaleString(i18n.language, { maximumFractionDigits: 0 })}</small>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="wallet-bank__tx" aria-labelledby="wallet-tx-title">
+            <div className="wallet-bank__tx-head">
+              <h2 id="wallet-tx-title" className="wallet-bank__section-title">
+                {t('walletPage_transactionsTitle')}
+              </h2>
+              <span className="wallet-bank__tx-filter" aria-hidden>
+                <FiSliders />
+              </span>
+            </div>
+            <div className="wallet-bank__tx-list">
+              {transactions.length === 0 ? (
+                <div className="wallet-bank__tx-empty">{t('walletPage_noTransactions')}</div>
+              ) : (
+                transactions.map((transaction, index) => (
+                  <div key={transaction.id || index} className="wallet-bank__tx-item">
+                    <div className="wallet-bank__tx-avatar" aria-hidden>
+                      {transaction.amount > 0 ? <FaArrowDown /> : <FaArrowUp />}
+                    </div>
+                    <div className="wallet-bank__tx-info">
+                      <div className="wallet-bank__tx-name">
+                        {transaction.description || transaction.type}
+                      </div>
+                      <div className="wallet-bank__tx-time">
+                        {new Date(transaction.created_at).toLocaleString(i18n.language)}
+                      </div>
+                    </div>
+                    <div className="wallet-bank__tx-right">
+                      <div
+                        className={`wallet-bank__tx-amount ${
+                          transaction.amount > 0 ? 'is-positive' : 'is-negative'
+                        }`}
+                      >
+                        {transaction.amount > 0 ? '+' : '-'}
+                        {formatAmount(Math.abs(transaction.amount))}
+                      </div>
+                      <div className="wallet-bank__tx-type">
+                        {transaction.type === 'deposit'
+                          ? t('walletPage_txDeposit')
+                          : t('walletPage_txWithdrawal')}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         </div>
 
-        {/* Picker и модалки пополнения */}
+        <DepositInfoDrawer
+          isOpen={isDepositInfoOpen}
+          onClose={() => setIsDepositInfoOpen(false)}
+          onTopUp={handleInfoTopUp}
+        />
         <DepositTopUpPicker
           isOpen={showTopUpPicker}
           onClose={() => setShowTopUpPicker(false)}
@@ -823,8 +987,9 @@ const WalletInner = () => {
         <DepositSuccessDrawer
           isOpen={showDepositSuccessDrawer}
           onClose={() => setShowDepositSuccessDrawer(false)}
-          balanceFormatted={formatAmount(depositAmount)}
           onContinue={handleDepositSuccessContinue}
+          confirmedAmount={confirmedDepositAmount}
+          returnPath={isSafeWalletFromPath(location.state?.from) ? location.state.from : getWalletEntryFrom() || '/auction'}
         />
         {dbUserId && (
           <SellerVerificationModal
@@ -840,206 +1005,6 @@ const WalletInner = () => {
             }}
           />
         )}
-
-        {/* Выигранный объект */}
-        {wonProperty && (
-          <div className="wallet-won-object">
-            <div className="wallet-won-object__badge">
-              <span className="wallet-won-object__badge-icon">🏆</span>
-              <span className="wallet-won-object__badge-text">{t('walletPage_wonAuctionBadge')}</span>
-            </div>
-            <div className="wallet-won-object__content">
-              <div className="wallet-won-object__image-wrapper">
-                {(() => {
-                  const photoUrl = getPropertyCardImage(wonProperty, null)
-                  const imageProps = buildResponsiveImageProps(photoUrl, {
-                    widths: [220, 320, 420],
-                    sizes: '220px',
-                    fit: 'cover',
-                    quality: 72,
-                    format: 'webp',
-                  })
-                  
-                  return photoUrl ? (
-                    <ImageWithSkeleton
-                      imgProps={imageProps}
-                      alt={wonProperty.title || t('walletPage_propertyAlt')}
-                      className="wallet-won-object__image"
-                      containerClassName="wallet-won-object__image"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <div className="wallet-won-object__image-placeholder">
-                      {t('walletPage_noPhoto')}
-                    </div>
-                  )
-                })()}
-              </div>
-              <div className="wallet-won-object__info">
-                <h3 className="wallet-won-object__title">{wonProperty.title}</h3>
-                {wonProperty.location && (
-                  <p className="wallet-won-object__location">{wonProperty.location}</p>
-                )}
-                <div className="wallet-won-object__bid-info">
-                  <span className="wallet-won-object__bid-label">{t('walletPage_winningBidLabel')}</span>
-                  <span className="wallet-won-object__bid-amount">
-                    {getCurrencySymbol(wonProperty.currency)}
-                    {wonProperty.bid_amount.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <button
-                  className="wallet-won-object__buy-btn"
-                  onClick={handleBookNow}
-                  disabled={!buyNowEmailOk}
-                  title={!buyNowEmailOk ? t('walletPage_emailRequiredTitle') : undefined}
-                  style={{
-                    opacity: !buyNowEmailOk ? 0.5 : 1,
-                    cursor: !buyNowEmailOk ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {t('walletPage_goToPurchase')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Объекты с активными ставками */}
-        {userBids.length > 0 && !wonProperty && (
-          <div className="wallet-bid-object">
-            <h3 className="wallet-bid-object__heading">
-              {userBids.length > 1
-                ? t('walletPage_activeBidsHeading')
-                : t('walletPage_activeBidHeading')}
-            </h3>
-            <div className="wallet-bid-objects properties-grid property-listing-grid">
-              {userBids.map((bid) => {
-                const listingProperty = formatBidAsListingProperty(bid)
-                return (
-                  <div key={bidPropertyKey(bid)} className="wallet-bid-object__panel">
-                    <PropertyListingCard
-                      property={listingProperty}
-                      onOpen={() => {
-                        if (!ensureCanOpenProperty()) return
-                        navigate(
-                          getPropertyDetailPath(bid.property_id, { property: listingProperty }),
-                          { state: { property: listingProperty } }
-                        )
-                      }}
-                      showFavorite={false}
-                      showDescription={false}
-                      showTimer={false}
-                      showActions={false}
-                      pinFooter
-                      bidInfoLabel={t('walletPage_yourBidLabel')}
-                      bidInfoAmount={bid.bid_amount}
-                      imageTopRightAction={{
-                        ariaLabel: t('walletPage_history'),
-                        icon: <FiClock size={18} aria-hidden />,
-                        onClick: () => {
-                          setBidForHistory(bid)
-                          setShowBidHistory(true)
-                        },
-                      }}
-                      footerAction={
-                        <Link
-                          to={getPropertyDetailPath(bid.property_id, { property: listingProperty })}
-                          className="wallet-bid-object__btn wallet-bid-object__btn--primary"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (!ensureCanOpenProperty()) {
-                              e.preventDefault()
-                            }
-                          }}
-                        >
-                          {t('walletPage_goToProperty')}
-                        </Link>
-                      }
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Модальное окно истории ставок */}
-        {bidForHistory && (
-          <UserBidHistoryModal
-            isOpen={showBidHistory}
-            onClose={() => setShowBidHistory(false)}
-            property={{
-              id: bidForHistory.property_id,
-              title: bidForHistory.title,
-              location: bidForHistory.location,
-            }}
-            userId={dbUserId}
-          />
-        )}
-
-        {/* Аналитика и Транзакции в одной строке */}
-        <div className="wallet-stats-transactions">
-          {/* Аналитика */}
-          <div className="wallet-analytics-block">
-            <h2 className="wallet-analytics-title">{t('walletPage_analyticsTitle')}</h2>
-            <div className="wallet-stats">
-              <div className="wallet-stat-card">
-                <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">{t('walletPage_totalWithdrawn')}</div>
-                  <div className="wallet-stat-icon">
-                    <FaArrowDown />
-                  </div>
-                </div>
-                <div className="wallet-stat-amount">{formatAmount(analytics.totalWithdrawal)}</div>
-              </div>
-              <div className="wallet-stat-card">
-                <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">{t('walletPage_totalDeposited')}</div>
-                  <div className="wallet-stat-icon">
-                    <FaArrowUp />
-                  </div>
-                </div>
-                <div className="wallet-stat-amount">{formatAmount(analytics.totalDeposit)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Транзакции */}
-          <div className="wallet-transactions-block">
-            <div className="wallet-transactions-header">
-              <h3 className="wallet-transactions-title">{t('walletPage_transactionsTitle')}</h3>
-            </div>
-            
-            <div className="wallet-transactions-list">
-              {transactions.length === 0 ? (
-                <div className="wallet-transaction-empty">{t('walletPage_noTransactions')}</div>
-              ) : (
-                transactions.map((transaction, index) => (
-                  <div key={transaction.id || index} className="wallet-transaction-item">
-                    <div className="wallet-transaction-info">
-                      <div className="wallet-transaction-name">{transaction.description || transaction.type}</div>
-                      <div className="wallet-transaction-time">
-                        {new Date(transaction.created_at).toLocaleString(i18n.language)}
-                      </div>
-                    </div>
-                    <div className="wallet-transaction-right">
-                      <div className={`wallet-transaction-amount ${transaction.amount > 0 ? 'positive' : 'negative'}`}>
-                        {transaction.amount > 0 ? '+' : ''}{formatAmount(Math.abs(transaction.amount))}
-                      </div>
-                      <div className="wallet-transaction-type">
-                        {transaction.type === 'deposit' ? t('walletPage_txDeposit') : t('walletPage_txWithdrawal')}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Модальное окно покупки для выигранного объекта */}
         {wonProperty && (
           <BuyNowModal
             isOpen={isBuyNowModalOpen}

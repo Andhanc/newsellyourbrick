@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -16,6 +16,7 @@ import {
   UserRound,
   FileText,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
@@ -26,7 +27,8 @@ import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
-import { getOwnerProfileFieldLabel, getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
+import { getOwnerProfileFieldLabel, getOwnerSubscriptionPlanLabel, getOwnerTestIntlLocale, getNextOwnerSubscriptionPlanId, resolveProfileSubscriptionPlanId } from '../utils/ownerTestI18n'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
@@ -39,6 +41,9 @@ import {
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
+import { RoleSwitchButton } from '../components/RoleSwitchBottomCta'
+import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
+import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
 import {
   buildCountryIsoByName,
@@ -198,8 +203,8 @@ function LogoMark({ className = '' }) {
     <svg className={`opr-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <linearGradient id="opr-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
+          <stop offset="0%" stopColor="#33adbb" />
+          <stop offset="100%" stopColor="#007d8a" />
         </linearGradient>
       </defs>
       <path d="M20 2L35 11v18L20 38 5 29V11L20 2z" fill="url(#opr-logo-grad)" />
@@ -219,19 +224,36 @@ function LogoMark({ className = '' }) {
 }
 
 function ProfileAvatar({ large = false }) {
+  const photoUrl = useOwnerTestUserPhoto()
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const gradientId = useId()
+
+  useEffect(() => {
+    setPhotoFailed(false)
+  }, [photoUrl])
+
   return (
     <span className={`opr-avatar${large ? ' opr-avatar--lg' : ''}`} aria-hidden>
-      <svg viewBox="0 0 80 80">
-        <defs>
-          <linearGradient id="opr-avatar-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#53d8d3" />
-            <stop offset="100%" stopColor="#089a95" />
-          </linearGradient>
-        </defs>
-        <circle cx="40" cy="40" r="40" fill="url(#opr-avatar-grad)" />
-        <circle cx="40" cy="32" r="14" fill="#F8FAFC" />
-        <ellipse cx="40" cy="68" rx="22" ry="16" fill="#F8FAFC" />
-      </svg>
+      {photoUrl && !photoFailed ? (
+        <img
+          src={photoUrl}
+          alt=""
+          className="opr-avatar__img"
+          onError={() => setPhotoFailed(true)}
+        />
+      ) : (
+        <svg viewBox="0 0 80 80">
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#33adbb" />
+              <stop offset="100%" stopColor="#007d8a" />
+            </linearGradient>
+          </defs>
+          <circle cx="40" cy="40" r="40" fill={`url(#${gradientId})`} />
+          <circle cx="40" cy="32" r="14" fill="#F8FAFC" />
+          <ellipse cx="40" cy="68" rx="22" ry="16" fill="#F8FAFC" />
+        </svg>
+      )}
     </span>
   )
 }
@@ -241,6 +263,7 @@ export default function OwnerProfileTestPage() {
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
+  const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const { isEmbedded, goTo, tab: embeddedTab, highlight } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
     activeId: 'settings',
@@ -250,7 +273,7 @@ export default function OwnerProfileTestPage() {
   const statsPeriodDefs = useMemo(
     () => [
       { id: '7d', label: t('ownerTest_datePreset7d') },
-      { id: '30d', label: t('ownerTest_propertiesPeriod30d') },
+      { id: '30d', label: t('ownerTest_statsPeriod30dShort', { defaultValue: t('ownerTest_propertiesPeriod30d') }) },
       { id: 'year', label: t('ownerTest_profilePeriodYear') },
     ],
     [t]
@@ -285,6 +308,29 @@ export default function OwnerProfileTestPage() {
   const saveReleaseRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const currentSubscriptionPlanId = useMemo(
+    () => resolveProfileSubscriptionPlanId(profile?.subscription) || 'standard',
+    [profile?.subscription]
+  )
+
+  const nextSubscriptionPlanId = useMemo(
+    () => getNextOwnerSubscriptionPlanId(currentSubscriptionPlanId),
+    [currentSubscriptionPlanId]
+  )
+
+  const nextSubscriptionPlanLabel = useMemo(
+    () => (nextSubscriptionPlanId ? getOwnerSubscriptionPlanLabel(nextSubscriptionPlanId) : ''),
+    [nextSubscriptionPlanId]
+  )
+
+  const handleSubscriptionUpgrade = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.SUBSCRIPTIONS)
+      return
+    }
+    window.location.assign(OWNER_TEST_STANDALONE_HREF_MAP.subscriptions)
+  }, [goTo, isEmbedded])
 
   const phoneCodeByCountryName = useMemo(() => buildPhoneCodeByCountryName(), [])
   const countryIsoByName = useMemo(() => buildCountryIsoByName(), [])
@@ -767,9 +813,11 @@ export default function OwnerProfileTestPage() {
   }, [excelProperties, formatDateForExport, ownerSalesData, statsTotals, t])
 
   if (loading || !profile) {
+    const skeleton = <OwnerProfilePageSkeleton />
+    if (isEmbedded) return skeleton
     return (
-      <div className="opr opr--loading">
-        <p className="opr-loading-text">{t('buyerCabinet_loadingProfile')}</p>
+      <div className="opr">
+        {skeleton}
       </div>
     )
   }
@@ -829,39 +877,64 @@ export default function OwnerProfileTestPage() {
                   <div className="opr-profile-overview__copy">
                     <span className="opr-profile-overview__eyebrow">{t('ownerDashboard')}</span>
                     <h2 className="opr-profile-overview__name">{fullName}</h2>
-                    <div className="opr-profile-overview__badges">
-                      <span className="opr-profile-overview__badge">
-                        <ShieldCheck size={15} strokeWidth={2.3} aria-hidden />
-                        {roleLabel}
-                      </span>
-                      <span className="opr-profile-overview__badge opr-profile-overview__badge--soft">
-                        <Sparkles size={15} strokeWidth={2.3} aria-hidden />
-                        {profile.subscription}
-                      </span>
+                    <div className="opr-profile-overview__meta">
+                      <div className="opr-profile-overview__badges">
+                        <span className="opr-profile-overview__badge">
+                          <ShieldCheck size={15} strokeWidth={2.3} aria-hidden />
+                          {roleLabel}
+                        </span>
+                        <span className="opr-profile-overview__badge opr-profile-overview__badge--soft">
+                          <Sparkles size={15} strokeWidth={2.3} aria-hidden />
+                          {profile.subscription}
+                        </span>
+                      </div>
+                      {nextSubscriptionPlanId ? (
+                        isEmbedded ? (
+                          <button
+                            type="button"
+                            className="opr-profile-overview__upgrade"
+                            onClick={handleSubscriptionUpgrade}
+                          >
+                            <span>{t('ownerTest_profileUpgradeTo', { plan: nextSubscriptionPlanLabel })}</span>
+                            <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+                          </button>
+                        ) : (
+                          <Link
+                            to={OWNER_TEST_STANDALONE_HREF_MAP.subscriptions}
+                            className="opr-profile-overview__upgrade"
+                          >
+                            <span>{t('ownerTest_profileUpgradeTo', { plan: nextSubscriptionPlanLabel })}</span>
+                            <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+                          </Link>
+                        )
+                      ) : null}
                     </div>
                   </div>
                 </div>
 
-                <div className="opr-profile-overview__facts">
+                <div className="opr-profile-overview__cards">
                   {quickFacts.map((fact) => {
                     const Icon = fact.icon
                     return (
-                      <div key={fact.label} className="opr-profile-overview__fact">
+                      <div key={fact.label} className="opr-profile-overview__card opr-profile-overview__card--fact">
                         <span className="opr-profile-overview__fact-icon" aria-hidden>
                           <Icon size={16} strokeWidth={2.2} />
                         </span>
-                        <span className="opr-profile-overview__fact-label">{fact.label}</span>
-                        <strong className="opr-profile-overview__fact-value">{fact.value}</strong>
+                        <div className="opr-profile-overview__fact-body">
+                          <span className="opr-profile-overview__fact-label">{fact.label}</span>
+                          <strong className="opr-profile-overview__fact-value" title={fact.value}>
+                            {fact.value}
+                          </strong>
+                        </div>
                       </div>
                     )
                   })}
-                </div>
-
-                <div className="opr-profile-overview__completion-wrap">
-                  <OwnerProfileCompletionBanner
-                    variant="sidebar"
-                    onMissingFieldClick={focusProfileField}
-                  />
+                  <div className="opr-profile-overview__card opr-profile-overview__card--completion">
+                    <OwnerProfileCompletionBanner
+                      variant="card"
+                      onMissingFieldClick={focusProfileField}
+                    />
+                  </div>
                 </div>
               </section>
             )}
@@ -1081,7 +1154,8 @@ export default function OwnerProfileTestPage() {
                 <div className="opr-stats-table-wrap">
                   <h3 className="opr-stats-table__title">{t('ownerTest_propertiesTabAll')}</h3>
                   {statsError ? <p className="opr-stats__message">{statsError}</p> : null}
-                  <table className="opr-stats-table">
+                  <div className="opr-stats-table-scroll">
+                    <table className="opr-stats-table">
                     <thead>
                       <tr>
                         <th>{t('oap_wizardStepObject')}</th>
@@ -1118,6 +1192,7 @@ export default function OwnerProfileTestPage() {
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </section>
             </div>
@@ -1269,19 +1344,21 @@ export default function OwnerProfileTestPage() {
         <nav className="opr-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
         </nav>
-        <div className="opr-sidebar-promo">
-          <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
-          <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
-          <button type="button" className="opr-btn opr-btn--primary opr-btn--sm">
-            {t('heroPitchBecomeBuyerCta')}
-          </button>
-          <img
-            className="opr-sidebar-promo__img"
-            src={OPR_IMAGES.promoSidebarBuyer}
-            alt=""
-            loading="lazy"
-          />
-        </div>
+        {!hasBothLinkedRoles ? (
+          <div className="opr-sidebar-promo">
+            <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+            <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
+            <RoleSwitchButton targetRole="buyer" className="opr-btn opr-btn--primary opr-btn--sm">
+              {t('heroPitchBecomeBuyerCta')}
+            </RoleSwitchButton>
+            <img
+              className="opr-sidebar-promo__img"
+              src={OPR_IMAGES.promoSidebarBuyer}
+              alt=""
+              loading="lazy"
+            />
+          </div>
+        ) : null}
       </aside>
 
       {mainColumn}

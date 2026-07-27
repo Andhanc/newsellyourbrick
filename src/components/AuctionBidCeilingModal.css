@@ -111,8 +111,8 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ecfeff;
-  background: rgba(10, 186, 181, 0.35);
+  color: #f0f7f9;
+  background: rgba(74, 150, 166, 0.35);
   border: 1px solid rgba(94, 234, 212, 0.4);
 }
 
@@ -171,7 +171,7 @@
 }
 
 .auction-bid-ceiling-modal__stat-value--accent {
-  color: #089a95;
+  color: #3f8798;
 }
 
 .auction-bid-ceiling-modal__features {
@@ -200,9 +200,9 @@
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  color: #089a95;
-  background: #ecfeff;
-  border: 1px solid rgba(10, 186, 181, 0.22);
+  color: #3f8798;
+  background: #f0f7f9;
+  border: 1px solid rgba(74, 150, 166, 0.22);
 }
 
 /* —— Right: form —— */
@@ -221,7 +221,7 @@
   padding: 28px 26px;
   border-radius: 20px;
   background: #ffffff;
-  border: 1px solid rgba(10, 186, 181, 0.14);
+  border: 1px solid rgba(74, 150, 166, 0.14);
   box-shadow:
     0 12px 40px rgba(6, 47, 46, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -244,9 +244,9 @@
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  color: #089a95;
-  background: linear-gradient(145deg, #ecfeff 0%, #cffafe 100%);
-  border: 1px solid rgba(10, 186, 181, 0.25);
+  color: #3f8798;
+  background: linear-gradient(145deg, #f0f7f9 0%, #e3f0f3 100%);
+  border: 1px solid rgba(74, 150, 166, 0.25);
 }
 
 .auction-bid-ceiling-modal__form-eyebrow {
@@ -255,7 +255,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #089a95;
+  color: #3f8798;
 }
 
 .auction-bid-ceiling-modal__form-title {
@@ -304,9 +304,9 @@
 }
 
 .auction-bid-ceiling-modal__input-wrap:focus-within {
-  border-color: #0abab5;
+  border-color: #4a96a6;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.14);
+  box-shadow: 0 0 0 4px rgba(74, 150, 166, 0.14);
 }
 
 .auction-bid-ceiling-modal__currency {
@@ -347,9 +347,9 @@
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #089a95;
-  background: #ecfeff;
-  border: 1px solid rgba(10, 186, 181, 0.25);
+  color: #3f8798;
+  background: #f0f7f9;
+  border: 1px solid rgba(74, 150, 166, 0.25);
 }
 
 .auction-bid-ceiling-modal__actions {
@@ -369,14 +369,14 @@
   font-weight: 700;
   color: #ffffff;
   cursor: pointer;
-  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.38);
+  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+  box-shadow: 0 10px 28px rgba(74, 150, 166, 0.38);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .auction-bid-ceiling-modal__submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(10, 186, 181, 0.45);
+  box-shadow: 0 14px 32px rgba(74, 150, 166, 0.45);
 }
 
 .auction-bid-ceiling-modal__submit:disabled {
@@ -402,6 +402,44 @@
 .auction-bid-ceiling-modal__remove:hover:not(:disabled) {
   background: #f8fafc;
   color: #334155;
+}
+
+.auction-bid-ceiling-modal__body {
+  min-height: 480px;
+  overflow: hidden;
+}
+
+.auction-bid-ceiling-modal__body .abc-chart {
+  max-height: calc(92vh - 52px);
+  overflow-y: auto;
+}
+
+.auction-bid-ceiling-modal__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 24px 22px;
+}
+
+.auction-bid-ceiling-modal__pager-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, width 0.15s ease;
+}
+
+.auction-bid-ceiling-modal__pager-dot--active {
+  width: 24px;
+  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+}
+
+.auction-bid-ceiling-modal__pager-dot:hover {
+  transform: scale(1.08);
 }
 
 @media (max-width: 768px) {
@@ -457,6 +495,10 @@
   .auction-bid-ceiling-modal__stats {
     grid-template-columns: 1fr;
   }
+
+  .auction-bid-ceiling-modal__body {
+    min-height: 0;
+  }
 }
 
 .auction-bid-ceiling-modal__mobile-head,
@@ -489,6 +531,12 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .auction-bid-ceiling-modal__body .abc-chart {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .auction-bid-ceiling-modal__info {
@@ -527,9 +575,9 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #089a95;
-    background: #ecfeff;
-    border: 1px solid rgba(10, 186, 181, 0.22);
+    color: #3f8798;
+    background: #f0f7f9;
+    border: 1px solid rgba(74, 150, 166, 0.22);
   }
 
   .auction-bid-ceiling-modal__mobile-title {

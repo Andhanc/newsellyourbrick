@@ -106,7 +106,19 @@ function BuyNowCompletedHistoryCard({
             </Link>
           )}
           {typeof onSellObject === 'function' ? (
-            <button type="button" className="card-button card-button--secondary" onClick={onSellObject}>
+            <button
+              type="button"
+              className="card-button card-button--secondary"
+              onClick={() =>
+                onSellObject({
+                  id: pid,
+                  propertyId: pid,
+                  title,
+                  image: imgSrc,
+                  location: row.property_location || row.property_address || '',
+                })
+              }
+            >
               Продать объект
             </button>
           ) : null}

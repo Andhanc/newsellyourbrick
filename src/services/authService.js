@@ -226,14 +226,18 @@ export const saveUserData = (userData, loginMethod = 'email') => {
   
   if (userData.role) {
     localStorage.setItem('userRole', userData.role)
-    // Если роль продавца, устанавливаем флаг isOwnerLoggedIn
     if (userData.role === 'seller' || userData.role === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
+    } else {
+      localStorage.removeItem('isOwnerLoggedIn')
     }
   }
 
   if (userData.phone) {
     localStorage.setItem('userPhone', userData.phone)
+  } else {
+    localStorage.removeItem('userPhone')
+    localStorage.removeItem('userPhoneFormatted')
   }
   
   if (userData.phoneFormatted) {
@@ -2262,7 +2266,7 @@ export const verifyEmailForProfileUpdate = async (userId, email, code) => {
 /**
  * Вход пользователя с email и паролем
  */
-export const loginWithEmail = async (email, password) => {
+export const loginWithEmail = async (email, password, role = null) => {
   try {
     const emailLower = email.toLowerCase().trim()
     
@@ -2283,7 +2287,8 @@ export const loginWithEmail = async (email, password) => {
         },
         body: JSON.stringify({
           email: emailLower,
-          password
+          password,
+          ...(role === 'buyer' || role === 'seller' ? { role } : {}),
         })
       })
       
@@ -2407,5 +2412,83 @@ export const loginWithEmailOrUsername = async (emailOrUsername, password) => {
       error: 'Произошла ошибка при входе'
     }
   }
+}
+
+/**
+ * Запросить код восстановления пароля (4 цифры)
+ */
+export async function sendForgotPasswordCode(email) {
+  try {
+    const emailLower = email.toLowerCase().trim()
+    const response = await fetch(`${API_BASE_URL}/auth/email/forgot-password/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailLower }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Не удалось отправить код' }
+    }
+    return {
+      success: true,
+      message: data.message,
+      roles: data.roles || [],
+      hasMultipleRoles: Boolean(data.hasMultipleRoles),
+      devCode: data.devCode,
+    }
+  } catch (error) {
+    console.error('sendForgotPasswordCode:', error)
+    return { success: false, error: 'Не удалось отправить код. Попробуйте позже.' }
+  }
+}
+
+/**
+ * Проверить код восстановления пароля
+ */
+export async function verifyForgotPasswordCode(email, code) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/email/forgot-password/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase().trim(), code }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Неверный код' }
+    }
+    return {
+      success: true,
+      resetToken: data.resetToken,
+      roles: data.roles || [],
+      hasMultipleRoles: Boolean(data.hasMultipleRoles),
+    }
+  } catch (error) {
+    console.error('verifyForgotPasswordCode:', error)
+    return { success: false, error: 'Ошибка проверки кода' }
+  }
+}
+
+/**
+ * Установить новый пароль после восстановления
+ */
+export async function resetPasswordWithToken(email, resetToken, password, role = null) {
+  const response = await fetch(`${API_BASE_URL}/auth/email/forgot-password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: email.toLowerCase().trim(),
+      resetToken,
+      password,
+      ...(role ? { role } : {}),
+    }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const err = new Error(data.error || 'Не удалось сохранить пароль')
+    err.status = data.status
+    err.passwordValidation = data.passwordValidation
+    throw err
+  }
+  return { success: true, message: data.message || 'Пароль обновлён' }
 }
 
