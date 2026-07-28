@@ -33,6 +33,9 @@ test('discover theme matches portal auction cards: pricing stack and tiffany CTA
   assert.match(css, /#16a34a/)
   assert.match(css, /\.auction-card__btn-text-full[\s\S]*display:\s*inline\s*!important/)
   assert.match(css, /\.auction-card__btn-text-short[\s\S]*display:\s*none\s*!important/)
+  assert.match(css, /aspect-ratio:\s*3\s*\/\s*2\s*!important/)
+  assert.match(css, /\.auction-card__until-pill[\s\S]*display:\s*none\s*!important/)
+  assert.match(css, /\.auction-card__countdown-pill[\s\S]*max-width:\s*100%\s*!important/)
 })
 
 test('stretches the single auction bid action across the full listing card', () => {

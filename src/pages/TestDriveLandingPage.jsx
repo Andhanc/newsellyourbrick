@@ -230,6 +230,13 @@ const TestDriveLandingPage = () => {
             <img src={HERO_IMAGE} alt="" className="test-drive-hero__image" />
           </picture>
           <div className="test-drive-hero__shade" aria-hidden />
+          <div className="test-drive-hero__brand" aria-label="SellYourBrick">
+            <span className="test-drive-hero__brand-text">
+              <span>Sell</span>
+              <span className="test-drive-hero__brand-accent">Your</span>
+              <span>Brick</span>
+            </span>
+          </div>
           <div className="test-drive-hero__content">
             <div className="test-drive-hero__copy test-drive-hero__copy--desktop">
               <h1>Тест-драйв недвижимости</h1>

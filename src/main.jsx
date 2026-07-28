@@ -9,6 +9,7 @@ import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import './index.css'
 import './styles/drawerDismiss.css'
+/* tiffany-shine подключается в конце App, чтобы перекрывать локальные fill-стили кнопок */
 import { i18nReady } from './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 

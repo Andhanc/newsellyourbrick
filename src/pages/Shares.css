@@ -2004,7 +2004,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 .debts-hero-scene__scroll {
   position: absolute;
   left: 50%;
-  bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
   z-index: 4;
   width: 50px;
   height: 50px;
@@ -2066,14 +2066,15 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 
   .debts-hero-scene {
-    min-height: 740px;
+    justify-content: flex-end;
+    min-height: 620px;
     overflow: hidden;
     border-radius: 0 0 50% 50% / 0 0 4% 4%;
     box-shadow: 0 22px 52px rgba(8, 61, 67, 0.18);
     padding:
-      calc(env(safe-area-inset-top, 0px) + 92px)
-      var(--debts-page-inline-inset, 12px)
-      calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+      calc(env(safe-area-inset-top, 0px) + 120px)
+      18px
+      calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
   }
 
   .debts-hero-scene__header {
@@ -2091,6 +2092,8 @@ html.site-footer-near .shares-floats > button.ai-button {
 
   .debts-hero-scene .shares-flip-cards--debts {
     gap: 10px;
+    margin-top: 1rem;
+    margin-bottom: 0;
   }
 }
 

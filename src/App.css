@@ -7,6 +7,7 @@
   flex-direction: column;
   overflow: hidden;
   width: 100%;
+  background-color: #ffffff;
 }
 
 .app-shell {
@@ -17,6 +18,7 @@
   flex-direction: column;
   overflow: hidden;
   width: 100%;
+  background-color: #ffffff;
 }
 
 /* Блокируем взаимодействие с интерфейсом когда пользователь заблокирован */
@@ -46,8 +48,49 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+  background-color: #ffffff;
   /* Конец страницы (футер) не прячется за вырезом / home indicator */
   scroll-padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Soft-launch «Пока недоступно»: без футера и без скролла под карточкой */
+.app-layout--feature-unavailable,
+html.feature-unavailable-active .app-layout {
+  overflow: hidden;
+}
+
+html.feature-unavailable-active #site-footer,
+html.feature-unavailable-active .app-footer-skeleton,
+.app-layout--feature-unavailable #site-footer,
+.app-layout--feature-unavailable .app-footer-skeleton {
+  display: none !important;
+}
+
+/* Бургер-меню открыто: страница не скроллится, листается только панель меню */
+html.site-nav-drawer-open,
+html.site-nav-drawer-open body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.site-nav-drawer-open .app-layout,
+html.site-nav-drawer-open .md-stage,
+html.site-nav-drawer-open .md {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+html.site-nav-drawer-open .menu-dropdown,
+html.site-nav-drawer-open .menu-backdrop {
+  touch-action: auto;
+}
+
+html.site-nav-drawer-open .header-mega-menu__scroll,
+html.site-nav-drawer-open .menu-dropdown__content--mega {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-layout::-webkit-scrollbar {

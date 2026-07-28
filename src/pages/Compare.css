@@ -4,12 +4,13 @@
   --compare-tiffany-soft: #dff6f8;
   --compare-ink: #0f172a;
   --compare-muted: #64748b;
+  --compare-font: 'Montserrat', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f7faf9;
   width: 100%;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--compare-font);
 }
 
 .compare-ai-idle {
@@ -47,30 +48,69 @@
   }
 
   .compare-header {
-    padding: 14px 16px 16px;
-    border: 1px solid rgba(78, 205, 214, 0.16);
-    border-radius: 18px;
-    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(78, 205, 214, 0.18);
+    border-radius: 20px;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 62%),
+      #ffffff;
     box-shadow: none;
-    text-align: left;
+    text-align: center;
+  }
+
+  .compare-header__visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 168px;
+    height: 168px;
+    padding: 6px 8px 0;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .compare-header__image {
+    width: min(420px, 94%);
+    height: 108%;
+    margin: 0 auto;
+    object-fit: contain;
+    object-position: center center;
+  }
+
+  .compare-header__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px 16px;
+    text-align: center;
   }
 
   .compare-title {
-    justify-content: flex-start;
-    font-size: clamp(22px, 6.2vw, 28px);
-    margin-bottom: 8px;
+    justify-content: center;
+    font-family: var(--compare-font);
+    font-size: clamp(22px, 6.2vw, 26px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0;
   }
 
   .compare-subtitle {
     font-size: 12.5px;
-    text-align: left;
+    font-weight: 500;
+    text-align: center;
     margin: 0;
-    max-width: none;
+    max-width: 28rem;
   }
 
   .compare-header-actions {
-    margin-top: 12px;
-    text-align: left;
+    margin-top: 4px;
+    text-align: center;
   }
 
   .compare-empty {
@@ -191,19 +231,62 @@
 }
 
 .compare-header {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
   margin-bottom: 32px;
+  border: 1px solid rgba(78, 205, 214, 0.2);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(78, 205, 214, 0.16), transparent 62%),
+    linear-gradient(180deg, #f7fcfd 0%, #ffffff 46%, #ffffff 100%);
+  box-shadow: 0 12px 32px -22px rgba(15, 60, 70, 0.28);
+  font-family: var(--compare-font);
+  text-align: center;
+}
+
+.compare-header__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 220px;
+  height: clamp(220px, 30vw, 300px);
+  padding: 8px 12px 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+}
+
+.compare-header__image {
+  display: block;
+  width: min(720px, 96%);
+  height: 108%;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center center;
+}
+
+.compare-header__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 28px 24px;
 }
 
 .compare-title {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  font-size: 34px;
-  font-weight: 700;
+  gap: 10px;
+  font-family: var(--compare-font);
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--compare-ink);
-  margin: 0 0 12px;
+  margin: 0;
 }
 
 .compare-title-icon {
@@ -211,22 +294,25 @@
 }
 
 .compare-subtitle {
-  font-size: 16px;
+  font-family: var(--compare-font);
+  font-size: 0.92rem;
+  font-weight: 500;
   color: var(--compare-muted);
-  margin: 0 auto;
-  max-width: 640px;
-  line-height: 1.5;
+  margin: 0;
+  max-width: 32rem;
+  line-height: 1.45;
 }
 
 .compare-header-actions {
-  margin-top: 16px;
+  margin-top: 2px;
 }
 
 .compare-link-muted {
+  font-family: var(--compare-font);
   color: var(--compare-tiffany-dark);
   text-decoration: none;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.88rem;
 }
 
 .compare-link-muted:hover {
@@ -1149,23 +1235,42 @@
 
   .compare-header {
     margin-bottom: 16px;
-    text-align: left;
-    padding: 14px 16px 16px;
-    border: 1px solid rgba(78, 205, 214, 0.16);
-    border-radius: 18px;
-    background: #ffffff;
+    text-align: center;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(78, 205, 214, 0.18);
+    border-radius: 20px;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 62%),
+      #ffffff;
     box-shadow: none;
   }
 
+  .compare-header__visual {
+    min-height: 160px;
+    height: 160px;
+    padding: 6px 8px 0;
+  }
+
+  .compare-header__image {
+    width: min(400px, 94%);
+    height: 110%;
+  }
+
+  .compare-header__copy {
+    gap: 8px;
+    padding: 4px 16px 16px;
+  }
+
   .compare-title {
-    justify-content: flex-start;
-    margin-bottom: 8px;
+    justify-content: center;
+    margin-bottom: 0;
     color: var(--buyer-ink);
-    font-family: var(--buyer-font-display);
-    font-size: clamp(22px, 6vw, 28px);
-    font-weight: 820;
-    letter-spacing: -0.045em;
-    line-height: 1.08;
+    font-family: var(--compare-font);
+    font-size: clamp(20px, 5.5vw, 24px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
   }
 
   .compare-title-icon { color: var(--compare-tiffany-dark, #3bc0cb); }
@@ -1173,9 +1278,11 @@
   .compare-subtitle {
     margin: 0;
     color: var(--buyer-text-muted);
-    font-family: var(--buyer-font-body);
+    font-family: var(--compare-font);
     font-size: 12.5px;
+    font-weight: 500;
     line-height: 1.45;
+    text-align: center;
   }
 
   .compare-link-muted {
@@ -1183,9 +1290,9 @@
     align-items: center;
     min-height: var(--buyer-touch);
     color: var(--compare-tiffany-dark, #3bc0cb);
-    font-family: var(--buyer-font-display);
+    font-family: var(--compare-font);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .compare-empty {
@@ -1418,14 +1525,19 @@
   .compare-page .compare-container { max-width: 560px; }
 
   .compare-page .compare-header {
-    padding: 16px;
-    border: 1px solid rgba(8, 65, 62, 0.09);
+    padding: 0;
+    border: 1px solid rgba(78, 205, 214, 0.18);
     border-radius: 22px;
-    background: rgba(255, 255, 255, 0.76);
-    box-shadow: 0 16px 36px rgba(5, 45, 48, 0.07);
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 65%),
+      #ffffff;
+    box-shadow: 0 12px 28px rgba(5, 45, 48, 0.06);
   }
 
-  .compare-page .compare-title { font-size: clamp(26px, 7.4vw, 32px); }
+  .compare-page .compare-title {
+    font-size: clamp(20px, 5.5vw, 24px);
+    font-weight: 600;
+  }
   .compare-page .compare-subtitle { font-size: 13px; }
 
   .compare-page .compare-table-heading {

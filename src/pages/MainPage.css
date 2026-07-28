@@ -4405,6 +4405,10 @@ a.property-link {
     overflow: hidden;
   }
 
+  html:has(.menu-backdrop) .app-layout {
+    overflow: hidden !important;
+  }
+
 
   .menu-dropdown {
     position: fixed !important;
@@ -13897,8 +13901,13 @@ body:has(.hero-section) .site-ads-host {
 
 .app:has(.hero-section) .home-showcase__slot > * {
   width: 100% !important;
-  flex: 1 1 auto !important;
-  min-height: 100% !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.app:has(.hero-section) .home-showcase__scroller {
+  align-items: flex-start !important;
 }
 
 @media (max-width: 1100px) and (min-width: 769px) {
@@ -13914,6 +13923,86 @@ body:has(.hero-section) .site-ads-host {
     flex: 0 0 calc((100% - var(--showcase-gap, 16px)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1) !important;
     width: calc((100% - var(--showcase-gap, 16px)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1) !important;
     max-width: none !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card {
+    height: auto !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__meta,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__meta,
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__footer,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__footer {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__body {
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__footer,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__footer {
+    gap: 8px !important;
+    margin-top: 0 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__title,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__title {
+    font-size: 0.88rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__location,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__location {
+    font-size: 0.62rem !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__spec,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__spec {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__actions,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__actions--single,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__actions--single {
+    grid-template-columns: 1fr !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text-full,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text-full {
+    display: none !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text-short,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text-short {
+    display: inline !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__price-label-full,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__price-label-full {
+    display: none !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__price-label-short,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__price-label-short {
+    display: inline !important;
   }
 }
 

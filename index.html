@@ -2,7 +2,12 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Chrome/Android: нижняя/статус-панель берёт цвет отсюда, а не с акцентов страницы -->
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#ffffff" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Sellyourbrick — аукцион и инвестиции в недвижимость</title>
     <meta name="description" content="Инвестиционная платформа для покупки недвижимости ниже рынка: аукционы, долевая собственность и test-drive." />
     <!-- Первый кадр до CSS/React: тот же фон, что у приложения, без «белой вспышки». -->
@@ -11,7 +16,7 @@
       body {
         margin: 0;
         height: 100%;
-        background: #fafafa;
+        background: #ffffff;
       }
       #root {
         min-height: 100%;

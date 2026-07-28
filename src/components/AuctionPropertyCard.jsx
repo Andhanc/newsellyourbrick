@@ -481,7 +481,11 @@ export default function AuctionPropertyCard({
               state.showSoldPresentation ? ' auction-card__pricing--sold' : ''
             }`}
           >
-            <div className="auction-card__price-row">
+            <div
+              className={`auction-card__price-row${
+                showBuyNowPriceRow ? ' auction-card__price-row--split' : ''
+              }`}
+            >
               <div className="auction-card__price-main">
                 <span className="auction-card__price-label">
                   <span className="auction-card__price-label-full">
@@ -503,21 +507,20 @@ export default function AuctionPropertyCard({
                   {formatPrice(displayPrice, property.currency)}
                 </span>
               </div>
+              {showBuyNowPriceRow ? (
+                <div className="auction-card__buy-now-row">
+                  <span className="auction-card__price-label">{t('auctionCardBuyShort')}</span>
+                  <span className="auction-card__buy-now-value">
+                    {formatPrice(buyNowPrice, property.currency)}
+                  </span>
+                </div>
+              ) : null}
               {showBidsCount ? (
                 <span className="auction-card__bids-count">
                   {t('auctionCardBidsCount', { count: bidsCount })}
                 </span>
               ) : null}
             </div>
-
-            {showBuyNowPriceRow ? (
-              <div className="auction-card__buy-now-row">
-                <span className="auction-card__price-label">{t('buyNowModalTitle')}</span>
-                <span className="auction-card__buy-now-value">
-                  {formatPrice(buyNowPrice, property.currency)}
-                </span>
-              </div>
-            ) : null}
           </div>
 
           {!showPrivateClubBand && !state.blocksBid ? (

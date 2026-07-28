@@ -69,6 +69,10 @@ import {
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
 import { syncAssistantLead } from '../services/assistantLeadService'
+import {
+  isSoftLaunchFeatureBlocked,
+  isSoftLaunchHrefBlocked,
+} from '../utils/softLaunchAccess'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import SiteNavDrawer from '../components/SiteNavDrawer'
@@ -1827,19 +1831,6 @@ function MainPage() {
 
   // Изменяем overflow body когда меню открыто (но не фон, чтобы не было белого экрана)
   useEffect(() => {
-    if (isMenuOpen) {
-      const main = document.querySelector('.app-layout')
-      const originalOverflow = main ? main.style.overflow : document.body.style.overflow
-      if (main) main.style.overflow = 'hidden'
-      else document.body.style.overflow = 'hidden'
-      return () => {
-        if (main) main.style.overflow = originalOverflow
-        else document.body.style.overflow = originalOverflow
-      }
-    }
-  }, [isMenuOpen])
-
-  useEffect(() => {
     setSiteNavDrawerOpen(isMenuOpen)
     return () => setSiteNavDrawerOpen(false)
   }, [isMenuOpen])
@@ -1858,6 +1849,10 @@ function MainPage() {
   }
 
   const toggleChat = () => {
+    if (isSoftLaunchFeatureBlocked('aiAssistant') || isSoftLaunchFeatureBlocked('aiRealEstate')) {
+      navigate('/chat?assistant=1')
+      return
+    }
     setIsChatOpen((prev) => {
       const next = !prev
       if (next) {
@@ -1941,6 +1936,10 @@ function MainPage() {
   }
 
   const goMapOrChatIfAuthed = (path) => {
+    if (isSoftLaunchHrefBlocked(path)) {
+      navigate(path)
+      return
+    }
     if (!isMainSiteUserLoggedIn()) {
       setMainLoginModalAuthEntry('header_wizard')
       setIsLoginModalOpen(true)
@@ -3058,6 +3057,7 @@ function MainPage() {
         })}
       </nav>
 
+      {!isSoftLaunchFeatureBlocked('aiAssistant') && !isSoftLaunchFeatureBlocked('aiRealEstate') ? (
       <div
         className={`ai-assistant-dock${aiAssistantHiddenByFooter ? ' ai-assistant-dock--footer-near' : ''}`}
         aria-hidden={aiAssistantHiddenByFooter && !isChatOpen && !isManagerChatOpen}
@@ -3328,6 +3328,7 @@ function MainPage() {
         </div>
       )}
       </div>
+      ) : null}
 
       {/* Модальное окно успешной верификации */}
 

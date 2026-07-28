@@ -195,12 +195,15 @@ export default function ProfileHistoryExperience({
                   activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
                 }`}
                 onClick={() => setActiveCategory('all')}
+                aria-label={`Все, ${allItems.length}`}
               >
-                <span className="profile-history-cat-chip__icon" aria-hidden>
-                  <FiLayers size={18} />
+                <span className="profile-history-cat-chip__icon-wrap">
+                  <span className="profile-history-cat-chip__icon" aria-hidden>
+                    <FiLayers size={18} />
+                  </span>
+                  <span className="profile-history-cat-chip__count">{allItems.length}</span>
                 </span>
-                <span>Все</span>
-                <small>{allItems.length}</small>
+                <span className="profile-history-cat-chip__label">Все</span>
               </button>
               {categories.map((category) => {
                 const Icon = CATEGORY_ICONS[category.key]
@@ -212,12 +215,17 @@ export default function ProfileHistoryExperience({
                       activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
                     }`}
                     onClick={() => setActiveCategory(category.key)}
+                    aria-label={`${category.title}, ${category.items.length}`}
                   >
-                    <span className="profile-history-cat-chip__icon" aria-hidden>
-                      <Icon size={18} />
+                    <span className="profile-history-cat-chip__icon-wrap">
+                      <span className="profile-history-cat-chip__icon" aria-hidden>
+                        <Icon size={18} />
+                      </span>
+                      <span className="profile-history-cat-chip__count">{category.items.length}</span>
                     </span>
-                    <span>{category.title}</span>
-                    <small>{category.items.length}</small>
+                    <span className="profile-history-cat-chip__label">
+                      {category.chipTitle || category.title}
+                    </span>
                   </button>
                 )
               })}

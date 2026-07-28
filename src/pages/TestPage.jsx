@@ -1772,6 +1772,17 @@ function TestPage() {
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
     isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
   )
+  const isContactsStepComplete = PROFILE_MAIN_FIELDS.every((f) =>
+    isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
+  )
+  const isDocumentsStepComplete = PROFILE_PASSPORT_FIELDS.every((f) =>
+    isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
+  )
+  const dataSheetStepCompletion = {
+    contacts: isContactsStepComplete,
+    documents: isDocumentsStepComplete,
+    review: isProfileFullyCompleted,
+  }
   const shouldPulseSaveButton =
     dataSheetOpen &&
     !dbUserLoading &&
@@ -3022,14 +3033,25 @@ function TestPage() {
                     { id: 'review', label: 'Проверка' },
                   ].map((step, index) => {
                     const active = dataSheetStep === step.id
+                    const complete = Boolean(dataSheetStepCompletion[step.id])
                     return (
                       <button
                         key={step.id}
                         type="button"
-                        className={`test-data-steps__item${active ? ' test-data-steps__item--active' : ''}`}
+                        className={`test-data-steps__item${active ? ' test-data-steps__item--active' : ''}${
+                          complete ? ' test-data-steps__item--complete' : ''
+                        }`}
                         onClick={() => setDataSheetStep(step.id)}
+                        aria-current={active ? 'step' : undefined}
                       >
-                        <span className="test-data-steps__index">{index + 1}</span>
+                        <span
+                          className={`test-data-steps__index${
+                            complete ? ' test-data-steps__index--complete' : ''
+                          }`}
+                          aria-hidden
+                        >
+                          {complete ? <FiCheck size={14} strokeWidth={2.75} /> : index + 1}
+                        </span>
                         <span className="test-data-steps__label">{step.label}</span>
                       </button>
                     )

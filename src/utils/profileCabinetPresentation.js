@@ -1,8 +1,8 @@
 const HISTORY_CATEGORY_DEFS = [
-  { key: 'bids', title: 'Ставки', eyebrow: 'Участие в торгах' },
-  { key: 'properties', title: 'Купленные объекты', eyebrow: 'Ваша недвижимость' },
-  { key: 'shares', title: 'Купленные доли', eyebrow: 'Совместные инвестиции' },
-  { key: 'debts', title: 'Долги', eyebrow: 'Объекты с обязательствами' },
+  { key: 'bids', title: 'Ставки', chipTitle: 'Ставки', eyebrow: 'Участие в торгах' },
+  { key: 'properties', title: 'Купленные объекты', chipTitle: 'Объекты', eyebrow: 'Ваша недвижимость' },
+  { key: 'shares', title: 'Купленные доли', chipTitle: 'Доли', eyebrow: 'Совместные инвестиции' },
+  { key: 'debts', title: 'Долги', chipTitle: 'Долги', eyebrow: 'Объекты с обязательствами' },
 ]
 
 function finiteAmount(value) {
