@@ -1,0 +1,192 @@
+/* Shared shimmer placeholders for owner (seller) cabinet */
+@keyframes owner-cab-skel-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.88;
+  }
+}
+
+.owner-cab-skel-shimmer {
+  display: block;
+  background: linear-gradient(
+    105deg,
+    #e4ecec 0%,
+    #f0f7f7 42%,
+    rgba(204, 251, 241, 0.75) 50%,
+    #f0f7f7 58%,
+    #e4ecec 100%
+  );
+  background-size: 220% 100%;
+  animation: owner-cab-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.owner-cab-skel-line {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(
+    105deg,
+    #e4ecec 0%,
+    #f0f7f7 42%,
+    rgba(204, 251, 241, 0.75) 50%,
+    #f0f7f7 58%,
+    #e4ecec 100%
+  );
+  background-size: 220% 100%;
+  animation: owner-cab-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.owner-cab-skel-line--xs {
+  height: 10px;
+  width: 48px;
+}
+
+.owner-cab-skel-line--sm {
+  height: 12px;
+  width: 72px;
+}
+
+.owner-cab-skel-line--md {
+  height: 14px;
+  width: 120px;
+}
+
+.owner-cab-skel-line--lg {
+  height: 18px;
+  width: 160px;
+}
+
+.owner-cab-skel-line--xl {
+  height: 28px;
+  width: 88px;
+}
+
+.owner-cab-skel-line--metric-value {
+  height: 32px;
+  width: 72px;
+  border-radius: 12px;
+}
+
+.owner-cab-skel-line--metric-delta {
+  height: 12px;
+  width: 52px;
+  margin-top: 4px;
+}
+
+.owner-cab-skel-line--title {
+  height: 20px;
+  width: 180px;
+}
+
+.owner-cab-skel-line--subtitle {
+  height: 14px;
+  width: 240px;
+  margin-top: 8px;
+}
+
+.owner-cab-skel-block {
+  border-radius: 16px;
+  background: linear-gradient(
+    105deg,
+    #e4ecec 0%,
+    #f0f7f7 42%,
+    rgba(204, 251, 241, 0.75) 50%,
+    #f0f7f7 58%,
+    #e4ecec 100%
+  );
+  background-size: 220% 100%;
+  animation: owner-cab-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.owner-cab-skel-spark {
+  display: block;
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  margin-top: auto;
+}
+
+.owner-cab-skel-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.owner-cab-skel-card {
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #ffffff;
+  padding: 14px;
+  min-width: 0;
+}
+
+.owner-cab-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.owner-cab-skel-table-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 2.2fr) 1fr 1.2fr 0.8fr 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+}
+
+.owner-cab-skel-table-head {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.owner-cab-skel-ending__scroll {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  padding: 2px 0 4px;
+}
+
+.owner-cab-skel-ending__card {
+  flex: 0 0 min(72vw, 220px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.owner-cab-skel-ending__cover {
+  width: 100%;
+  height: 108px;
+  border-radius: 14px;
+}
+
+.owner-cab-skel-chart {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  display: flex;
+  align-items: stretch;
+}
+
+.owner-cab-skel-chart__area {
+  flex: 1;
+  border-radius: 16px;
+  min-height: 220px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-cab-skel-shimmer,
+  .owner-cab-skel-line,
+  .owner-cab-skel-block {
+    animation: none !important;
+  }
+}

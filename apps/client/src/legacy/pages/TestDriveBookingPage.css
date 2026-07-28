@@ -1,0 +1,580 @@
+.test-drive-page {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
+  padding: 24px 16px 48px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.test-drive-page__hero {
+  max-width: 1200px;
+  margin: 0 auto 28px;
+}
+
+.test-drive-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  font-size: 15px;
+}
+
+.test-drive-page__back:hover {
+  color: #1e293b;
+}
+
+.test-drive-page__title {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+
+.test-drive-page__subtitle {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 640px;
+}
+
+.test-drive-page__layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .test-drive-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-drive-page__calendar-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.test-drive-page__calendar-panel {
+  width: 100%;
+  max-width: 100%;
+}
+
+.test-drive-page__saving {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 16px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.test-drive-page__picked {
+  margin: 0 0 16px;
+  text-align: center;
+  color: #334155;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.test-drive-page__picked strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.test-drive-page__actions {
+  margin-top: 24px;
+  padding: 20px 22px;
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+.test-drive-page__action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.test-drive-page__btn {
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.test-drive-page__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.test-drive-page__btn--primary {
+  border: none;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 153, 169, 0.35);
+}
+
+.test-drive-page__btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(0, 153, 169, 0.45);
+}
+
+.test-drive-page__btn--ghost {
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+}
+
+.test-drive-page__btn--ghost:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.test-drive-page__hints {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.test-drive-hint-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.test-drive-hint-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.test-drive-hint-card p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+  margin: 0;
+}
+
+.test-drive-hint-card--accent {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, #fff 0%, #eff6ff 100%);
+}
+
+.test-drive-pay-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 6, 23, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.test-drive-contact-overlay--drawer {
+  align-items: flex-end;
+  justify-content: stretch;
+  padding: 0;
+  background: rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.test-drive-pay-overlay--drawer {
+  align-items: flex-end;
+  justify-content: stretch;
+  padding: 0;
+  background: rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.test-drive-pay-sheet {
+  touch-action: pan-y;
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.test-drive-pay-sheet--drawer {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 24px 24px 0 0;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-top: 0;
+  max-height: min(92vh, 720px);
+  max-height: min(92dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 -12px 48px rgba(15, 23, 42, 0.18),
+    0 -2px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+.test-drive-pay-sheet--drawer .test-drive-contact-drawer__handle-wrap {
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+
+.test-drive-pay-sheet--drawer .test-drive-pay-sheet__title {
+  flex-shrink: 0;
+  padding-top: 4px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.test-drive-pay-sheet__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.test-drive-pay-sheet:not(.test-drive-pay-sheet--drawer) .test-drive-pay-sheet__scroll {
+  flex: none;
+  min-height: unset;
+  overflow: visible;
+}
+
+.test-drive-pay-sheet__actions {
+  flex-shrink: 0;
+  margin-top: 16px;
+}
+
+.test-drive-pay-sheet--drawer .test-drive-pay-sheet__actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.test-drive-pay-sheet__actions--drawer .test-drive-pay-sheet__action-btn {
+  width: 100%;
+}
+
+.test-drive-pay-sheet--drawer .test-drive-pay-sheet__rules {
+  margin-bottom: 8px;
+}
+
+.test-drive-pay-sheet--drawer .test-drive-pay-sheet__summary {
+  margin-bottom: 0;
+}
+
+.test-drive-pay-sheet__title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: #0f172a;
+}
+
+.test-drive-pay-sheet__text {
+  color: #334155;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.test-drive-pay-sheet__rules {
+  margin: 0 0 16px;
+  padding-left: 18px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.test-drive-pay-sheet__summary {
+  margin: 8px 0 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #f8fafc;
+}
+
+.test-drive-pay-sheet__summary p {
+  margin: 6px 0;
+  color: #334155;
+}
+
+.test-drive-pay-sheet__deposit-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+  margin-top: 10px !important;
+}
+
+.test-drive-pay-sheet__total-line {
+  margin-top: 12px !important;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.45);
+  font-size: 16px;
+}
+
+.test-drive-page__contact-picked {
+  margin: 0 0 14px;
+  text-align: center;
+  font-size: 15px;
+  color: #334155;
+}
+
+.test-drive-page__contact-change {
+  margin-left: 10px;
+  border: none;
+  background: none;
+  color: #0099A9;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-family: inherit;
+}
+
+.test-drive-page__contact-change:hover {
+  color: #007d8a;
+}
+
+.test-drive-contact-sheet {
+  touch-action: pan-y;
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 22px;
+  padding: 26px 24px 20px;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.28);
+}
+
+.test-drive-contact-sheet--drawer {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 24px 24px 0 0;
+  padding: 0 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  padding-top: 0;
+  max-height: min(88vh, 620px);
+  max-height: min(88dvh, 620px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 -12px 48px rgba(15, 23, 42, 0.18),
+    0 -2px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+.test-drive-contact-drawer__handle-wrap {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px;
+}
+
+.test-drive-contact-drawer__handle {
+  display: block;
+  width: 40px;
+  height: 5px;
+  border-radius: 100px;
+  background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.test-drive-contact-sheet--drawer .test-drive-contact-sheet__title {
+  padding-top: 4px;
+  margin-bottom: 6px;
+}
+
+.test-drive-contact-sheet--drawer .test-drive-contact-sheet__subtitle {
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.test-drive-contact-sheet--drawer .test-drive-contact-grid {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.test-drive-contact-sheet--drawer .test-drive-contact-sheet__close {
+  flex-shrink: 0;
+  max-width: none;
+  margin-top: 4px;
+}
+
+.test-drive-contact-sheet__title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #0f172a;
+  text-align: center;
+}
+
+.test-drive-contact-sheet__subtitle {
+  margin: 0 0 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.test-drive-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.test-drive-contact-grid--drawer {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .test-drive-contact-grid:not(.test-drive-contact-grid--drawer) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-drive-contact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 18px 12px;
+  border-radius: 16px;
+  border: 2px solid rgba(148, 163, 184, 0.4);
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.test-drive-contact-card--drawer {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.test-drive-contact-card--drawer .test-drive-contact-card__icon {
+  flex-shrink: 0;
+}
+
+.test-drive-contact-card--drawer .test-drive-contact-card__label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.test-drive-contact-card--drawer .test-drive-contact-card__hint {
+  display: block;
+  max-width: none;
+}
+
+.test-drive-contact-card--drawer:active {
+  transform: scale(0.99);
+}
+
+.test-drive-contact-card:hover:not(.test-drive-contact-card--drawer) {
+  border-color: rgba(0, 153, 169, 0.65);
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.15);
+  transform: translateY(-2px);
+}
+
+.test-drive-contact-card--drawer:hover {
+  border-color: rgba(0, 153, 169, 0.55);
+  box-shadow: 0 6px 22px rgba(0, 153, 169, 0.14);
+  transform: none;
+}
+
+.test-drive-contact-sheet--drawer .test-drive-contact-card--active {
+  background: linear-gradient(135deg, #ecfeff 0%, #f0fafb 50%, #fff 100%);
+}
+
+.test-drive-contact-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.test-drive-contact-card--drawer .test-drive-contact-card__body {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.test-drive-contact-card--active {
+  border-color: #0099A9;
+  box-shadow: 0 12px 32px rgba(0, 153, 169, 0.28);
+  background: linear-gradient(180deg, #ecfeff 0%, #fff 100%);
+}
+
+.test-drive-contact-card--active.test-drive-contact-card--drawer {
+  box-shadow: 0 8px 28px rgba(0, 153, 169, 0.22);
+}
+
+.test-drive-contact-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(0, 153, 169, 0.12);
+  color: #00605a;
+}
+
+.test-drive-contact-card--active .test-drive-contact-card__icon {
+  background: rgba(0, 153, 169, 0.22);
+  color: #0f172a;
+}
+
+.test-drive-contact-card__label {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.test-drive-contact-card__hint {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.test-drive-contact-sheet__close {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  display: block;
+}

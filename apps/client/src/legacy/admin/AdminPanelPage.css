@@ -1,0 +1,65 @@
+.admin-panel-app {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Общий контекст наложения: подложка не перекрывает сайдбар, размытие отключено */
+.admin-panel-app--crm-layout {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Раздел «Клиенты / CRM»: контент на всю ширину, меню — выезжающая панель по кнопке */
+.admin-panel-app--crm-layout .main-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100%;
+  padding: 1rem 1.25rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.admin-panel-app--crm-layout .sidebar.sidebar--crm-drawer {
+  left: -280px;
+  z-index: 2200;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-panel-app--crm-layout .sidebar.sidebar--crm-drawer.sidebar--crm-drawer-open,
+.admin-panel-app--crm-layout .sidebar.sidebar--crm-drawer.active {
+  left: 0;
+}
+
+.admin-panel-app--crm-layout .sidebar.sidebar--crm-drawer .sidebar-close {
+  display: inline-flex;
+}
+
+.crm-admin-nav-backdrop {
+  z-index: 2100;
+  /* Подложка была на body поверх #root — blur шёл поверх меню. Тут только затемнение. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.main-content {
+  margin-left: 280px;
+  padding: 2rem;
+  width: calc(100% - 280px);
+  transition: all 0.3s;
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+}
+
+

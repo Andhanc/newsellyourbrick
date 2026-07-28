@@ -1,0 +1,61 @@
+.deposit-zero {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 26px;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--buyer-teal) 14%, transparent);
+  border-radius: 30px;
+  background: var(--buyer-white);
+  box-shadow: 0 22px 58px rgba(9, 58, 63, .11);
+  color: var(--buyer-ink);
+  font-family: var(--buyer-font-body);
+}
+
+.deposit-zero__visual {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 23px;
+  background: var(--buyer-mint);
+}
+
+.deposit-zero__visual img { width: 100%; height: 100%; object-fit: cover; object-position: center 56%; }
+.deposit-zero__visual-badge { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 9px 11px; border-radius: 999px; background: rgba(5, 5, 5, .82); color: white; backdrop-filter: blur(10px); font: 700 10px/1 var(--buyer-font-display); }
+.deposit-zero__copy { align-self: center; }
+.deposit-zero__eyebrow { color: var(--buyer-teal-deep); font: 760 10px/1.2 var(--buyer-font-display); letter-spacing: .1em; text-transform: uppercase; }
+.deposit-zero h1 { margin: 8px 0 10px; font: 830 clamp(30px, 5vw, 48px)/.98 var(--buyer-font-display); letter-spacing: -.05em; }
+.deposit-zero__lead { margin: 0; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
+.deposit-zero__benefits { display: grid; gap: 8px; margin-top: 14px; }
+.deposit-zero__benefits article { display: flex; gap: 10px; padding: 11px; border-radius: 15px; background: var(--buyer-cloud); }
+.deposit-zero__benefits article > span { display: grid; flex: 0 0 36px; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--buyer-mint); color: var(--buyer-teal-deep); }
+.deposit-zero__benefits h2 { margin: 0; font: 740 12px/1.25 var(--buyer-font-display); }
+.deposit-zero__benefits p { margin: 3px 0 0; color: var(--buyer-text-muted); font: 500 11px/1.38 var(--buyer-font-body); }
+
+.deposit-zero__preview { position: relative; margin-top: 12px; padding: 28px 12px 10px; overflow: hidden; border: 1px solid var(--buyer-line); border-radius: 15px; background: var(--buyer-warm); }
+.deposit-zero__preview-label { position: absolute; top: 9px; left: 12px; z-index: 1; color: var(--buyer-teal-deep); font: 730 9px/1 var(--buyer-font-display); letter-spacing: .05em; text-transform: uppercase; }
+.deposit-zero__preview--blurred { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; filter: blur(3.2px); opacity: .58; user-select: none; }
+.deposit-zero__preview--blurred div { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--buyer-white); }
+.deposit-zero__preview--blurred span { color: var(--buyer-text-muted); font-size: 9px; }
+.deposit-zero__preview--blurred strong { font: 760 13px/1.2 var(--buyer-font-display); }
+
+.deposit-zero__refund { display: flex; gap: 9px; margin-top: 12px; padding: 12px; border-radius: 15px; background: var(--buyer-mint); color: var(--buyer-teal-deep); }
+.deposit-zero__refund svg { flex: 0 0 auto; margin-top: 1px; }
+.deposit-zero__refund p { margin: 0; font: 500 10px/1.45 var(--buyer-font-body); }
+.deposit-zero__refund strong { font-weight: 760; }
+.deposit-zero__primary { width: 100%; min-height: 52px; margin-top: 14px; border: 0; border-radius: 16px; background: var(--buyer-teal-deep); color: white; cursor: pointer; box-shadow: 0 13px 30px rgba(0, 111, 123, .25); font: 760 14px/1 var(--buyer-font-display); }
+.deposit-zero__footnote { margin: 7px 0 0; color: var(--buyer-text-muted); text-align: center; font: 500 9px/1.35 var(--buyer-font-body); }
+
+@media (max-width: 767px) {
+  .deposit-zero { grid-template-columns: 1fr; gap: 0; padding: 10px 10px 16px; border-radius: 25px; }
+  .deposit-zero__visual { height: 255px; min-height: 0; border-radius: 19px; }
+  .deposit-zero__visual img { object-position: center 55%; }
+  .deposit-zero__visual-badge { left: 10px; bottom: 10px; }
+  .deposit-zero__copy { padding: 18px 6px 0; }
+  .deposit-zero h1 { font-size: clamp(30px, 9vw, 39px); }
+  .deposit-zero__lead { font-size: 13px; }
+  .deposit-zero__primary { position: sticky; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deposit-zero__primary { transition: none; }
+}

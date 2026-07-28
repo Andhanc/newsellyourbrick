@@ -1,0 +1,27 @@
+@keyframes main-page-fallback-title-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
+}
+
+.main-page-suspense-fallback__title-skel {
+  height: 22px;
+  max-width: 320px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: linear-gradient(
+    105deg,
+    #e2e8f0 0%,
+    #eef2f7 45%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: main-page-fallback-title-shimmer 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.main-page-suspense-fallback__title-skel--narrow {
+  max-width: 260px;
+}

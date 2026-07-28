@@ -1,0 +1,119 @@
+/* Блок «Начни с нами» — CTA */
+
+.cta-start {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.cta-start__inner {
+  margin: 0 auto;
+  max-width: 56rem;
+  padding: 4rem 1.5rem 5rem;
+}
+
+.cta-start__card {
+  position: relative;
+  border-radius: 1.25rem;
+  padding: 3.5rem 2rem;
+  overflow: hidden;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+  box-shadow: 0 4px 24px rgba(30, 58, 95, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.cta-start__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
+
+.cta-start__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.cta-start__card:active {
+  transform: translateY(-2px);
+}
+
+.cta-start__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .cta-start__title {
+    font-size: 2.25rem;
+  }
+}
+
+.cta-start__text {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1.5rem;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .cta-start__text {
+    font-size: 1rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+.cta-start__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  background: #fff;
+  border-radius: 9999px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-start__card:hover .cta-start__btn {
+  background: #f0f9ff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
+}
+
+.cta-start__btn-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  transition: transform 0.25s ease;
+}
+
+.cta-start__card:hover .cta-start__btn-icon {
+  transform: translateX(3px);
+}

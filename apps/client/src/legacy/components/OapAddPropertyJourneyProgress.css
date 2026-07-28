@@ -1,0 +1,120 @@
+.oap-journey-progress {
+  flex-shrink: 0;
+  padding: 0 var(--ost-mob-pad, 16px) 4px;
+  background: #faf8f5;
+  z-index: 3;
+}
+
+.oap-journey-progress__card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+  border: 1px solid rgba(0, 153, 169, 0.16);
+  box-shadow:
+    0 4px 16px rgba(0, 153, 169, 0.08),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.oap-journey-progress__ring-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+}
+
+.oap-journey-progress__ring {
+  display: block;
+}
+
+.oap-journey-progress__ring-track {
+  stroke: rgba(0, 153, 169, 0.14);
+}
+
+.oap-journey-progress__ring-progress {
+  transition: stroke-dashoffset 0.55s cubic-bezier(0.22, 1, 0.32, 1);
+}
+
+.oap-journey-progress__percent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #007580;
+}
+
+.oap-journey-progress__meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.oap-journey-progress__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oap-journey-progress__step-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.oap-journey-progress__step {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.oap-journey-progress__steps {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.oap-journey-progress__dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.14);
+  transition: background 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+}
+
+.oap-journey-progress__dot--done {
+  background: #111827;
+}
+
+.oap-journey-progress__dot--active {
+  background: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.12);
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oap-journey-progress__ring-progress,
+  .oap-journey-progress__dot {
+    transition: none;
+  }
+}

@@ -1,0 +1,501 @@
+.share-purchase-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.share-purchase-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.share-purchase-modal__drawer-handle {
+  display: none;
+}
+
+.share-purchase-modal__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.share-purchase-modal__drawer-pill {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.5);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.65) inset;
+}
+
+.share-purchase-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 20px 22px 12px;
+  border-bottom: 1px solid #e8ecf4;
+  background: #fff;
+}
+
+.share-purchase-modal__header-leading {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.share-purchase-modal__header-text {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.share-purchase-modal__header-back {
+  flex-shrink: 0;
+  margin-top: 2px;
+  margin-right: 2px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+}
+
+.share-purchase-modal__header-back:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.share-purchase-modal__header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.share-purchase-modal__step-meta {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.share-purchase-modal__close {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+}
+
+.share-purchase-modal__close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.share-purchase-modal__body {
+  padding: 18px 22px 24px;
+}
+
+.share-purchase-modal__summary {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.share-purchase-modal__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.share-purchase-modal__row strong {
+  color: #0f172a;
+  text-align: right;
+}
+
+.share-purchase-modal__row--total {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.share-purchase-modal__row--total span,
+.share-purchase-modal__row--total strong {
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.share-purchase-modal__wallet-toggle {
+  margin: 0 0 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #334155;
+  cursor: pointer;
+}
+
+.share-purchase-modal__wallet-toggle input {
+  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+.share-purchase-modal__wallet-hint {
+  margin: -4px 0 12px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.share-purchase-modal__recap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.12) 0%, rgba(0, 153, 169, 0.04) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.28);
+  box-shadow: 0 2px 12px rgba(0, 153, 169, 0.08);
+}
+
+.share-purchase-modal__recap-label {
+  flex: 1 1 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #007580;
+}
+
+.share-purchase-modal__recap-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.share-purchase-modal__recap-muted {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  margin-left: auto;
+}
+
+.share-purchase-modal__policy-intro {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.share-purchase-modal__pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.share-purchase-modal__pdf-btn:hover {
+  background: #e0e7ff;
+}
+
+.share-purchase-modal__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #334155;
+  cursor: pointer;
+}
+
+.share-purchase-modal__check input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.share-purchase-modal__check--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.share-purchase-modal__hint {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.share-purchase-modal__signature-block {
+  margin-top: 18px;
+}
+
+.share-purchase-modal__signature-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.share-purchase-modal__signature-head label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.share-purchase-modal__clear-sig {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.share-purchase-modal__clear-sig:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.share-purchase-modal__error {
+  margin: 14px 0 0;
+  font-size: 0.88rem;
+  color: #b91c1c;
+}
+
+.share-purchase-modal__pay-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.35);
+}
+
+.share-purchase-modal__pay-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.share-purchase-modal__pay-btn:not(:disabled):hover {
+  filter: brightness(1.06);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.42);
+}
+
+/* Просмотр PDF поверх модалки — как в BuyNowModal */
+.share-purchase-modal__pdf-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+  z-index: 12100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.share-purchase-modal__pdf-viewer {
+  width: min(960px, 100%);
+  height: min(88vh, 860px);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
+}
+
+.share-purchase-modal__pdf-viewer-head {
+  height: 48px;
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.share-purchase-modal__pdf-viewer-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.share-purchase-modal__pdf-viewer-close:hover {
+  background: #f1f5f9;
+}
+
+.share-purchase-modal__pdf-viewer-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+@keyframes share-purchase-drawer-up {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes share-purchase-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-purchase-modal-overlay {
+    align-items: flex-end;
+    justify-content: stretch;
+    padding: 0;
+    animation: share-purchase-overlay-fade-in 0.28s ease-out both;
+    /* Дополнительная «площадка» под нижнюю таблетку браузера */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .share-purchase-modal {
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, calc(100% - env(safe-area-inset-bottom, 0px)));
+    margin: 0;
+    border-radius: 22px 22px 0 0;
+    box-shadow:
+      0 -8px 32px rgba(15, 23, 42, 0.14),
+      0 -24px 64px rgba(15, 23, 42, 0.1);
+    animation: share-purchase-drawer-up 0.4s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .share-purchase-modal__drawer-handle {
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 10px 0 8px;
+  }
+
+  .share-purchase-modal__header {
+    padding: 12px 20px 14px;
+    border-bottom-color: rgba(226, 232, 240, 0.95);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  }
+
+  .share-purchase-modal__body {
+    padding: 18px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .share-purchase-modal__pdf-viewer {
+    width: 100%;
+    height: 92vh;
+    border-radius: 18px;
+  }
+
+  .share-purchase-modal__pdf-viewer-overlay {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media (min-width: 769px) {
+  .share-purchase-modal.drawer-dismiss-from-bottom--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-purchase-modal.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.4s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-purchase-modal-overlay {
+    animation: none;
+  }
+
+  .share-purchase-modal {
+    animation: none;
+    transform: none;
+  }
+}

@@ -1,0 +1,376 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
+import { FaApple, FaTelegramPlane, FaYoutube, FaWhatsapp, FaInstagram } from 'react-icons/fa'
+import { MdSentimentDissatisfied } from 'react-icons/md'
+import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
+import whatsappQR from '../../6019556644745841501.png'
+import './Footer.css'
+import { scrollMainTo } from '../utils/mainScroll'
+import { navigateToWallet } from '../utils/walletNavigation'
+import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { UI_LANGUAGES } from '../constants/uiLanguages'
+
+const WHATSAPP_HREF = 'https://wa.me/447700183959'
+
+const SOCIAL_LINKS = [
+  { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', Icon: FaTelegramPlane },
+  { labelKey: 'sectionsSocialYoutube', href: 'https://youtube.com/', Icon: FaYoutube },
+  { labelKey: 'sectionsSocialWhatsapp', href: WHATSAPP_HREF, Icon: FaWhatsapp },
+  { labelKey: 'sectionsSocialInstagram', href: 'https://instagram.com/', Icon: FaInstagram },
+]
+
+/** @typedef {{ to?: string; onClick?: () => void; label: string; requiresAuth?: boolean }} FooterLinkItem */
+
+/** @typedef {{ title: string; links: FooterLinkItem[] }} FooterColumn */
+
+const Footer = () => {
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user, isLoaded: userLoaded } = useUser()
+  const languageDropdownRef = useRef(null)
+  const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
+
+  const currentLanguage =
+    UI_LANGUAGES.find((lang) => lang.code === (i18n.language || 'ru').split('-')[0]) ||
+    UI_LANGUAGES[0]
+
+  const handleLanguageChange = async (langCode) => {
+    try {
+      await i18n.changeLanguage(langCode)
+      setIsLanguageDropdownOpen(false)
+    } catch (error) {
+      console.error('Error changing language:', error)
+    }
+  }
+
+  const scrollToTop = () => {
+    scrollMainTo(0, 0, 'instant')
+  }
+
+  const openStoreComingSoon = () => setStoreComingSoonOpen(true)
+  const closeStoreComingSoon = useCallback(() => setStoreComingSoonOpen(false), [])
+
+  useEffect(() => {
+    if (!storeComingSoonOpen) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeStoreComingSoon()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [storeComingSoonOpen, closeStoreComingSoon])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
+        setIsLanguageDropdownOpen(false)
+      }
+    }
+    if (isLanguageDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isLanguageDropdownOpen])
+
+  const goWallet = () => {
+    scrollToTop()
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    navigateToWallet(navigate, location.pathname)
+  }
+
+  const cabinetProfilePath = getCabinetProfilePath()
+
+  const handleFooterProtectedNav = (to, requiresAuth = false) => {
+    scrollToTop()
+    const needsLogin =
+      (requiresAuth || routeRequiresSiteLogin(to)) && !isSiteUserSignedIn(user, userLoaded)
+    if (needsLogin) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    navigate(to)
+  }
+
+  const linkNeedsAuth = (item) =>
+    item.requiresAuth || (item.to ? routeRequiresSiteLogin(item.to) : false)
+
+  /** @type {FooterColumn[]} */
+  const footerColumns = [
+    {
+      title: t('footerColTrading'),
+      links: [
+        { to: '/', label: t('home') },
+        { to: '/auction', label: t('auction') },
+        { to: CO_INVESTMENT_PATH, label: t('footerShares') },
+        { to: '/debts', label: t('debtsTitle') },
+        { to: '/auction/buy-now', label: t('footerBuyNowShort') },
+      ],
+    },
+    {
+      title: t('footerColTools'),
+      links: [
+        { onClick: goWallet, label: t('buyerCabinet_tileDepositTitle'), requiresAuth: true },
+        { to: '/calculator', label: t('calculator'), requiresAuth: true },
+        { to: '/compare', label: t('footerCompareObjects'), requiresAuth: true },
+        { to: '/favorites', label: t('footerLiked'), requiresAuth: true },
+        { to: '/test-drive', label: t('testDrive') },
+      ],
+    },
+    {
+      title: t('footerColForYou'),
+      links: [
+        { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs'), requiresAuth: true },
+        { to: '/bonuses', label: t('bonuses'), requiresAuth: true },
+        { to: '/news', label: t('news') },
+        { to: '/chat', label: t('aiAssistant'), requiresAuth: true },
+        { to: '/sections', label: t('footerAllSections') },
+      ],
+    },
+    {
+      title: t('footerColProfile'),
+      links: [
+        { to: cabinetProfilePath, label: t('profile'), requiresAuth: true },
+        { to: '/wallet', label: t('footerAssets'), requiresAuth: true },
+        { to: '/profile/bookings', label: t('buyerCabinet_myBookings'), requiresAuth: true },
+        { to: '/history', label: t('history'), requiresAuth: true },
+      ],
+    },
+    {
+      title: t('footerColCompany'),
+      links: [
+        { to: '/about#about-intro', label: t('aboutUs') },
+        { to: '/seller', label: t('footerForSeller') },
+        { to: '/buyer', label: t('sectionsBuyerPageLink') },
+        { to: '/about#about-agents', label: t('footerOurTeam') },
+        { to: '/about#contacts', label: t('footerBecomePartner') },
+      ],
+    },
+  ]
+
+  const renderLink = (item, i, keyPrefix) => {
+    const key = `${keyPrefix}-${i}`
+    if (item.onClick) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className="footer__menu-link"
+          onClick={() => {
+            item.onClick()
+          }}
+        >
+          {item.label}
+        </button>
+      )
+    }
+    if (linkNeedsAuth(item) && !isSiteUserSignedIn(user, userLoaded)) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className="footer__menu-link"
+          onClick={() => handleFooterProtectedNav(item.to, item.requiresAuth)}
+        >
+          {item.label}
+        </button>
+      )
+    }
+    return (
+      <Link key={key} to={item.to} onClick={scrollToTop} className="footer__menu-link">
+        {item.label}
+      </Link>
+    )
+  }
+
+  const renderFooterBrand = (className) => (
+    <Link to="/" onClick={scrollToTop} className={className} aria-label={t('home')}>
+      <div className="footer__brand-icon">
+        <span className="footer__brand-house" />
+      </div>
+      <span className="footer__brand-text">Sellyourbrick</span>
+    </Link>
+  )
+
+  return (
+    <footer
+      id="site-footer"
+      className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}${isLanguageDropdownOpen ? ' footer--language-open' : ''}`}
+    >
+      <div className="footer__container">
+        <nav className="footer__nav-grid" aria-label={t('footerAllSections')}>
+          {footerColumns.slice(0, 4).map((col, ci) => (
+            <div key={col.title} className="footer__menu-column">
+              <p className="footer__menu-heading">{col.title}</p>
+              {col.links.map((item, i) => renderLink(item, i, `c${ci}`))}
+            </div>
+          ))}
+
+          <div className="footer__nav-bottom">
+            <div className="footer__menu-column footer__menu-column--company">
+              <p className="footer__menu-heading">{footerColumns[4].title}</p>
+              {footerColumns[4].links.map((item, i) => renderLink(item, i, 'company'))}
+            </div>
+
+            <aside className="footer__nav-qr-slot" aria-label={t('footerQrApp')}>
+              <div className="footer__whatsapp-qr">
+                <img
+                  src={whatsappQR}
+                  alt={t('footerQrApp')}
+                  className="footer__qr-image"
+                  width={130}
+                  height={130}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p className="footer__qr-caption">{t('footerQrApp')}</p>
+              </div>
+            </aside>
+          </div>
+        </nav>
+
+        <div className="footer__bottom-panel">
+          <div className="footer__bottom-row footer__bottom-row--brand-socials">
+            {renderFooterBrand('footer__brand footer__brand--panel')}
+            <div className="footer__socials" aria-label={t('sectionsSocialAria')}>
+              {SOCIAL_LINKS.map(({ labelKey, href, Icon }) => (
+                <a
+                  key={labelKey}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer__social-btn"
+                  aria-label={t(labelKey)}
+                >
+                  <Icon aria-hidden size={16} />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="footer__bottom-row footer__bottom-row--stores">
+            <button
+              type="button"
+              className="footer__store-btn footer__store-btn--compact"
+              onClick={openStoreComingSoon}
+              aria-label={t('downloadGooglePlay')}
+            >
+              <div className="footer__store-icon footer__store-icon--google">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5Z" fill="#4285F4"/>
+                  <path d="M16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12Z" fill="#EA4335"/>
+                  <path d="M6.05 2.66L16.81 8.88L14.54 11.15L6.05 2.66Z" fill="#FBBC04"/>
+                  <path d="M16.81 8.88L20.16 6.51C20.66 6.26 21 5.75 21 5.16V18.84C21 18.25 20.66 17.74 20.16 17.49L16.81 15.12L14.54 12.85L16.81 8.88Z" fill="#34A853"/>
+                </svg>
+              </div>
+              <div className="footer__store-text">
+                <span className="footer__store-name">Google Play</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="footer__store-btn footer__store-btn--compact"
+              onClick={openStoreComingSoon}
+              aria-label={`${t('downloadIn')} App Store`}
+            >
+              <div className="footer__store-icon">
+                <FaApple size={16} />
+              </div>
+              <div className="footer__store-text">
+                <span className="footer__store-name">App Store</span>
+              </div>
+            </button>
+
+            <div
+              className="footer__language-selector footer__language-selector--inline"
+              ref={languageDropdownRef}
+            >
+              <button
+                type="button"
+                className="footer__language-selector-btn footer__language-selector-btn--compact"
+                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                aria-label={t('selectLanguageAria')}
+                aria-expanded={isLanguageDropdownOpen}
+              >
+                <span className={`footer__language-flag ${currentLanguage.flagClass}`} />
+                <span className="footer__language-name">{currentLanguage.name}</span>
+                <FiChevronDown
+                  size={14}
+                  className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
+                />
+              </button>
+              {isLanguageDropdownOpen && (
+                <div className="footer__language-dropdown">
+                  {UI_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      className={`footer__language-option ${(i18n.language || 'ru').split('-')[0] === lang.code ? 'footer__language-option--active' : ''}`}
+                      onClick={() => handleLanguageChange(lang.code)}
+                    >
+                      <span className={`footer__language-flag ${lang.flagClass}`} />
+                      <span className="footer__language-name">{lang.name}</span>
+                      {(i18n.language || 'ru').split('-')[0] === lang.code && (
+                        <FiCheck size={16} className="footer__language-check" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="footer__legal">
+          <p className="footer__copyright">
+            {t('footerCopyright', { year: new Date().getFullYear() })}
+          </p>
+        </div>
+      </div>
+
+      {storeComingSoonOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="footer-store-modal-overlay"
+              role="presentation"
+              onClick={closeStoreComingSoon}
+            >
+              <div
+                className="footer-store-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="footer-store-modal-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="footer-store-modal__close"
+                  onClick={closeStoreComingSoon}
+                  aria-label={t('footerCloseModal')}
+                >
+                  <FiX size={22} />
+                </button>
+                <MdSentimentDissatisfied className="footer-store-modal__icon" aria-hidden />
+                <p id="footer-store-modal-title" className="footer-store-modal__title">
+                  {t('footerComingSoon')}
+                </p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </footer>
+  )
+}
+
+export default Footer

@@ -1,0 +1,272 @@
+.phone-input-container {
+  width: 100%;
+}
+
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.2s;
+  position: relative;
+}
+
+.phone-input-wrapper:focus-within {
+  border-color: #25d366;
+}
+
+.phone-input-country-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-right: 2px solid #e0e0e0;
+  cursor: pointer;
+  user-select: none;
+  background: #fafafa;
+  border-radius: 12px 0 0 12px;
+  transition: background-color 0.2s;
+  min-width: 100px;
+}
+
+.phone-input-country-selector:hover {
+  background: #f0f0f0;
+}
+
+.phone-input-flag {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.phone-input-code {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.phone-input-chevron {
+  font-size: 16px;
+  color: #666;
+  margin-left: auto;
+}
+
+.phone-input-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow: hidden;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-input-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 2px solid #e0e0e0;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.phone-input-search-icon {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.phone-input-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #333;
+  font-family: inherit;
+}
+
+.phone-input-search-input::placeholder {
+  color: #999;
+}
+
+.phone-input-dropdown-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.phone-input-no-results {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.phone-input-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.phone-input-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.phone-input-dropdown-item:hover {
+  background: #f5f5f5;
+}
+
+.phone-input-dropdown-item.selected {
+  background: #e8f5e9;
+}
+
+.phone-input-country-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
+.phone-input-country-code {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
+.phone-input-field {
+  flex: 1;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 0 12px 12px 0;
+  font-size: 15px;
+  color: #000;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+}
+
+.phone-input-field::placeholder {
+  color: #999;
+}
+
+.phone-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.phone-input-field.error {
+  color: #c33;
+}
+
+.phone-input-error {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #c33;
+  padding-left: 4px;
+}
+
+/* Revolut-like split: flag+code block | number block */
+.phone-input-container--split .phone-input-wrapper {
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.phone-input-container--split .phone-input-wrapper:focus-within {
+  border-color: transparent;
+}
+
+.phone-input-container--split .phone-input-country-selector {
+  flex: 0 0 auto;
+  min-width: 112px;
+  min-height: 58px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  color: #111827;
+  font: inherit;
+}
+
+.phone-input-container--split .phone-input-country-selector:hover {
+  background: #ebeef1;
+}
+
+.phone-input-container--split .phone-input-code {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.phone-input-container--split .phone-input-chevron {
+  margin-left: 2px;
+  color: #6b7280;
+}
+
+.phone-input-container--split .phone-input-field {
+  min-width: 0;
+  min-height: 58px;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: #f2f4f6;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #111827;
+}
+
+.phone-input-container--split .phone-input-field:focus {
+  outline: none;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
+}
+
+.phone-input-container--split .phone-input-country-selector:focus-visible {
+  outline: none;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
+}
+
+.phone-input-container--split .phone-input-dropdown {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+}
+
+.phone-input-container--split .phone-input-dropdown-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .phone-input-country-selector {
+    min-width: 80px;
+    padding: 12px 8px;
+  }
+  
+  .phone-input-code {
+    font-size: 14px;
+  }
+  
+  .phone-input-flag {
+    font-size: 18px;
+  }
+}
+
+

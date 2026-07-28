@@ -209,8 +209,15 @@ export default function AuctionPropertyCard({
     !state.listingEnded &&
     !state.showGreenTimer
 
+  const visibleActionCount =
+    !showPrivateClubBand && !state.blocksBid
+      ? 1 +
+        (state.hasBuyNowPrice && !state.blocksPurchase && !state.listingEnded ? 1 : 0)
+      : 0
+
   const cardClassName = [
     'auction-card',
+    `auction-card--actions-${visibleActionCount}`,
     state.isAuctionEndedCard && 'auction-card--ended',
     state.showSoldPresentation && 'auction-card--sold-presentation',
     `auction-card--buyer-${state.listingState.state}`,
@@ -391,7 +398,7 @@ export default function AuctionPropertyCard({
             {state.showCircularTimer ? (
               <CircularTimer
                 endTime={property.test_timer_end_date}
-                size={58}
+                size={64}
                 strokeWidth={5}
                 originalDuration={state.normalizedTestTimerDuration}
                 progressKey={`auction-card:${property.id}`}
@@ -401,7 +408,7 @@ export default function AuctionPropertyCard({
             {state.showBuyNowEndedSeal ? (
               <CircularTimer
                 endTime={property.buy_now_completed_at}
-                size={58}
+                size={64}
                 strokeWidth={5}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
               />
@@ -546,6 +553,7 @@ export default function AuctionPropertyCard({
                   <>
                     <span className="auction-card__btn-text-full">{t('placeBid')}</span>
                     <span className="auction-card__btn-text-short">{t('auctionCardBidShort')}</span>
+                    <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
                   </>
                 )}
               </button>
@@ -566,6 +574,7 @@ export default function AuctionPropertyCard({
                     <>
                       <span className="auction-card__btn-text-full">{t('buyNowModalTitle')}</span>
                       <span className="auction-card__btn-text-short">{t('auctionCardBuyShort')}</span>
+                      <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
                     </>
                   )}
                 </button>
@@ -573,11 +582,22 @@ export default function AuctionPropertyCard({
             </div>
           ) : null}
           {state.showSoldPresentation ? (
-            <div className="auction-card__sold-cta" aria-disabled="true">
-              <span className="auction-card__sold-cta-rule" aria-hidden />
-              <span className="auction-card__sold-cta-label">{t('auctionSoldBadge')}</span>
-              <span className="auction-card__sold-cta-rule" aria-hidden />
-            </div>
+            <button
+              type="button"
+              className="auction-card__sold-cta"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onOpen(property)
+              }}
+              aria-label={openLabel}
+            >
+              <span className="auction-card__sold-cta-copy">
+                <span className="auction-card__sold-cta-label">{t('auctionSoldBadge')}</span>
+                <span className="auction-card__sold-cta-open">{t('buyerCabinet_openProperty')}</span>
+              </span>
+              <ArrowUpRight className="auction-card__sold-cta-arrow" size={17} aria-hidden />
+            </button>
           ) : null}
         </div>
       </div>

@@ -1,0 +1,539 @@
+.auction-period-picker {
+  width: 100%;
+  color: #0f172a;
+}
+
+.auction-period-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.auction-period-header__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(0, 153, 169, 0.14) 0%, rgba(0, 153, 169, 0.06) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.28);
+  color: #0a8f8a;
+  box-shadow: 0 4px 12px rgba(8, 120, 116, 0.1);
+}
+
+.auction-period-label {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.auction-period-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 22px 22px 20px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 45%, #f4fdfc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.auction-period-end-date {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auction-period-field-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  margin: 0 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.02em;
+}
+
+.auction-period-field-label::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #33adbb 0%, #0099A9 50%, #007d8a 100%);
+  flex-shrink: 0;
+}
+
+.auction-period-date-shell {
+  position: relative;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auction-period-date-shell:focus-within {
+  border-color: rgba(0, 153, 169, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(0, 153, 169, 0.12),
+    0 6px 18px rgba(0, 153, 169, 0.1);
+}
+
+.auction-period-date-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  margin: 0;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #0f172a;
+  background: transparent;
+  color-scheme: light;
+  min-height: 50px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.auction-period-date-input:hover {
+  color: #007580;
+}
+
+.auction-period-date-input:focus {
+  outline: none;
+}
+
+.auction-period-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 4px;
+  margin-right: 2px;
+  border-radius: 8px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.auction-period-date-shell:focus-within .auction-period-date-input::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  background: rgba(0, 153, 169, 0.12);
+}
+
+.auction-period-date-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.auction-period-date-input--error {
+  color: #b91c1c;
+}
+
+.auction-period-date-shell:has(.auction-period-date-input--error) {
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.auction-period-date-input--error:focus {
+  outline: none;
+}
+
+.auction-period-error {
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b91c1c;
+  line-height: 1.45;
+}
+
+.auction-period-hint {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(10, 186, 181, 0.04) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.24);
+  border-radius: 14px;
+  color: #0f3f3d;
+  line-height: 1.5;
+}
+
+.auction-period-hint__title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0a5f5b;
+}
+
+.auction-period-hint__text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #134e4a;
+}
+
+.auction-period-hint__list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #115e59;
+}
+
+.auction-period-hint__list li {
+  padding-left: 2px;
+}
+
+.auction-period-hint__earliest {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(10, 186, 181, 0.18);
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+/* Embedded variant — flat field inside OAP pricing wizard */
+.auction-period-picker--embedded {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-period-picker--embedded .auction-period-content {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auction-period-picker--embedded .auction-period-end-date {
+  gap: 8px;
+}
+
+.auction-period-picker--embedded .auction-period-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  letter-spacing: normal;
+}
+
+.auction-period-picker--embedded .auction-period-field-label::before {
+  display: none;
+}
+
+.auction-period-picker--embedded .auction-period-date-shell {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.auction-period-picker--embedded .auction-period-date-shell:focus-within {
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
+}
+
+.auction-period-picker--embedded .auction-period-date-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  color: #007d8a;
+  background: rgba(0, 153, 169, 0.14);
+  pointer-events: none;
+}
+
+.auction-period-picker--embedded .auction-period-date-input {
+  min-height: 44px;
+  padding: 0 14px 0 46px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auction-period-picker--embedded .auction-period-date-input:hover {
+  color: #0f172a;
+}
+
+.auction-period-picker--embedded .auction-period-hint {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.auction-period-picker--embedded .auction-period-error {
+  margin-top: 0;
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #dc2626;
+  line-height: 1.35;
+}
+
+/* ——— Inline calendar block ——— */
+.auction-period-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.auction-period-inline__calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auction-period-inline__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.auction-period-inline__month {
+  flex: 1;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.auction-period-inline__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auction-period-inline__nav:hover:not(:disabled) {
+  color: #007d8a;
+  background: rgba(0, 153, 169, 0.08);
+}
+
+.auction-period-inline__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.auction-period-inline__weekdays,
+.auction-period-inline__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.auction-period-inline__weekday {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  padding: 2px 0;
+}
+
+.auction-period-inline__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.auction-period-inline__day:focus {
+  outline: none;
+}
+
+.auction-period-inline__day-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.auction-period-inline__day--selectable:not(.auction-period-inline__day--end):not(.auction-period-inline__day--start):hover
+  .auction-period-inline__day-num {
+  background: rgba(0, 153, 169, 0.1);
+  color: #007d8a;
+}
+
+.auction-period-inline__day--in-range .auction-period-inline__day-num {
+  color: #374151;
+  background: transparent;
+}
+
+.auction-period-inline__day--start .auction-period-inline__day-num,
+.auction-period-inline__day--end .auction-period-inline__day-num,
+.auction-period-inline__day--start:hover .auction-period-inline__day-num,
+.auction-period-inline__day--end:hover .auction-period-inline__day-num,
+.auction-period-inline__day--start:focus .auction-period-inline__day-num,
+.auction-period-inline__day--end:focus .auction-period-inline__day-num,
+.auction-period-inline__day--start:focus-visible .auction-period-inline__day-num,
+.auction-period-inline__day--end:focus-visible .auction-period-inline__day-num {
+  background: #0099A9;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.32);
+}
+
+.auction-period-inline__day--empty {
+  min-height: 40px;
+  cursor: default;
+}
+
+.auction-period-inline__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.auction-period-inline__summary-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.auction-period-inline__summary-col--end {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.auction-period-inline__summary-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.auction-period-inline__summary-date {
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.auction-period-inline__summary-weekday {
+  font-size: 0.76rem;
+  line-height: 1.3;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.auction-period-inline__summary-placeholder {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.auction-period-inline__summary-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 48%, #007d8a 100%);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.2);
+}
+
+.auction-period-picker--embedded .auction-period-content {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auction-period-picker--journey {
+  width: 100%;
+}
+
+.auction-period-picker--journey .auction-period-inline {
+  gap: 12px;
+}
+
+.auction-period-picker--journey .auction-period-inline__calendar {
+  padding: 14px 12px 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: none;
+  box-shadow: none;
+}
+
+.auction-period-picker--journey .auction-period-inline__summary {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 12px 0 0;
+}
+
+.auction-period-picker--journey .auction-period-error {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #dc2626;
+}

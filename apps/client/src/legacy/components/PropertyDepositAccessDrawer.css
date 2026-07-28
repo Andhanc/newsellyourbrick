@@ -1,0 +1,209 @@
+.property-deposit-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 20050;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-family: var(--site-font-family, 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+}
+
+.property-deposit-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  animation: propertyDepositBackdropIn 0.24s ease-out both;
+}
+
+.property-deposit-drawer__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  max-height: min(91dvh, 760px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  border-radius: 28px 28px 0 0;
+  background: #fff;
+  box-shadow: 0 -20px 64px rgba(15, 23, 42, 0.2);
+  animation: propertyDepositDrawerIn 0.38s cubic-bezier(.2, .86, .28, 1) both;
+}
+
+.property-deposit-drawer__handle {
+  display: flex;
+  justify-content: center;
+  height: 18px;
+}
+
+.property-deposit-drawer__handle span {
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: #dbe4e7;
+}
+
+.property-deposit-drawer__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(74, 150, 166, 0.17);
+  border-radius: 50%;
+  color: #3f6470;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 18px rgba(47, 115, 131, 0.1);
+  cursor: pointer;
+}
+
+.property-deposit-drawer__visual {
+  position: relative;
+  height: clamp(205px, 57vw, 255px);
+  margin: 2px -4px -4px;
+  overflow: hidden;
+  border-radius: 23px;
+  background: #fff;
+}
+
+.property-deposit-drawer__visual::before,
+.property-deposit-drawer__visual::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(74, 150, 166, 0.08);
+}
+
+.property-deposit-drawer__visual::before { width: 120px; height: 120px; left: -48px; top: -38px; }
+.property-deposit-drawer__visual::after { width: 84px; height: 84px; right: -20px; bottom: -20px; }
+
+.property-deposit-drawer__wallet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transform: translate(-50%, -50%);
+}
+
+.property-deposit-drawer__content {
+  padding: 16px 4px 0;
+  text-align: left;
+}
+
+.property-deposit-drawer__eyebrow {
+  display: inline-flex;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: #347d8b;
+  background: #edf8f9;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.property-deposit-drawer__content h2 {
+  margin: 12px 0 0;
+  max-width: 410px;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: clamp(23px, 6.4vw, 28px);
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -.03em;
+  text-align: left;
+}
+
+.property-deposit-drawer__content > p {
+  margin: 9px 0 0;
+  max-width: 410px;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.property-deposit-drawer__content ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.property-deposit-drawer__content li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #355b65;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.property-deposit-drawer__content li svg { color: #4a96a6; stroke-width: 3; }
+
+.property-deposit-drawer__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 52px;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #3f8798 0%, #4a96a6 48%, #65b9bd 100%);
+  box-shadow: 0 12px 28px rgba(63, 135, 152, 0.3), inset 0 1px rgba(255, 255, 255, 0.3);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.property-deposit-drawer__cta:active { transform: scale(.985); }
+.property-deposit-drawer__note {
+  display: block;
+  margin-top: 10px;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+@keyframes propertyDepositBackdropIn { from { opacity: 0; } }
+@keyframes propertyDepositDrawerIn { from { opacity: .4; transform: translateY(100%); } }
+
+@media (min-width: 961px) {
+  .property-deposit-drawer { align-items: center; padding: 24px; }
+  .property-deposit-drawer__panel { border-radius: 28px; }
+}
+
+@media (max-height: 680px) {
+  .property-deposit-drawer__visual { height: 160px; }
+  .property-deposit-drawer__wallet { object-position: center; }
+  .property-deposit-drawer__content { padding-top: 14px; }
+  .property-deposit-drawer__content ul { margin: 11px 0 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-deposit-drawer__panel,
+  .property-deposit-drawer__backdrop { animation-duration: 1ms; }
+}

@@ -21,7 +21,10 @@ const heroImage = require('../assets/images/mobile-discover/hero-townhouses.png'
 const welcomeHouse = require('../assets/images/mobile-discover/welcome-summer.png')
 const cardImages = {
   cardAuction: require('../assets/images/mobile-discover/card-auction.png'),
-  cardBuyNow: require('../assets/images/mobile-discover/card-buy-now.png'),
+  // The source asset is JPEG bytes with a .png extension, which works on web
+  // but Android's resource compiler rejects. This lossless PNG copy preserves
+  // the same pixels across native and web builds.
+  cardBuyNow: require('../assets/images/mobile-discover/card-buy-now-native.png'),
   cardDebts: require('../assets/images/mobile-discover/card-debts.png'),
   cardShares: require('../assets/images/mobile-discover/card-shares.png'),
 }
@@ -42,9 +45,10 @@ function prefersReducedMotion() {
 export default function MobileDiscoverScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { width } = useWindowDimensions()
+  const { width, height } = useWindowDimensions()
   const isPhoneFrame = width >= 768
   const frameWidth = isPhoneFrame ? Math.min(layout.discoverPhoneMaxWidth, width) : width
+  const stageCardWidth = Math.min(width * 0.76, 292)
 
   const [screen, setScreen] = useState<ScreenKind>('hero')
   const [flashPhase, setFlashPhase] = useState<FlashPhase>('idle')
@@ -55,6 +59,7 @@ export default function MobileDiscoverScreen() {
 
   const busyRef = useRef(false)
   const screenRef = useRef<ScreenKind>('hero')
+  const stageScrollRef = useRef<ScrollView>(null)
   const stageScrollY = useRef(0)
   const wheelAcc = useRef(0)
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -95,7 +100,10 @@ export default function MobileDiscoverScreen() {
         setScreen(next)
         if (next === 'stage') setStageEntered(false)
         later(() => {
-          if (next === 'stage') setStageEntered(true)
+          if (next === 'stage') {
+            stageScrollRef.current?.scrollTo({ y: 0, animated: false })
+            setStageEntered(true)
+          }
           setFlashPhase('reveal')
           later(() => {
             setFlashPhase('idle')
@@ -175,7 +183,14 @@ export default function MobileDiscoverScreen() {
         {screen === 'hero' ? (
           <View style={styles.hero}>
             <View style={styles.heroGlow} pointerEvents="none" />
-            <View style={[styles.heroCopy, { paddingTop: Math.max(insets.top, 24) + 56 }]}>
+            <View
+              style={[
+                styles.heroCopy,
+                // Mirrors the source page: clamp(5.25rem, 15vh, 7.5rem),
+                // while retaining enough clearance for native status bars.
+                { paddingTop: Math.max(insets.top + 80, Math.min(120, height * 0.15)) },
+              ]}
+            >
               <Text style={styles.heroTitle}>Find Your Dream{'\n'}Home Easily</Text>
               <Text style={styles.heroLead}>
                 Now you can find your dream house easily and quickly at a low price
@@ -197,6 +212,7 @@ export default function MobileDiscoverScreen() {
           </View>
         ) : (
           <ScrollView
+            ref={stageScrollRef}
             style={styles.stage}
             contentContainerStyle={[styles.stageContent, stageEntered && styles.stageReady]}
             onScroll={(e) => {
@@ -205,7 +221,31 @@ export default function MobileDiscoverScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
           >
-            <View style={[styles.stageSheet, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
+            <View style={[styles.stageNav, { paddingTop: Math.max(insets.top, 16) }]}>
+              <Pressable style={styles.stageNavCircle} accessibilityLabel="Меню">
+                <Text style={styles.stageNavMenu}>☰</Text>
+              </Pressable>
+              <Link href="/" asChild>
+                <Pressable style={styles.stageNavHome} accessibilityLabel="Главная">
+                  <Text style={styles.stageNavHomeText}>Главная</Text>
+                  <Text style={styles.stageNavHomeChevron}>⌄</Text>
+                </Pressable>
+              </Link>
+              <View style={styles.stageNavActions}>
+                <Link href="/auction" asChild>
+                  <Pressable style={styles.stageNavIcon} accessibilityLabel="Открыть поиск">
+                    <Text style={styles.stageNavIconText}>⌕</Text>
+                  </Pressable>
+                </Link>
+                <Link href="/profile" asChild>
+                  <Pressable style={styles.stageNavIcon} accessibilityLabel="Профиль">
+                    <Text style={styles.stageNavIconText}>♙</Text>
+                  </Pressable>
+                </Link>
+              </View>
+            </View>
+
+            <View style={styles.stageSheet}>
               <View style={styles.stageIntro}>
                 <Text style={styles.stageTitle}>
                   Four <Text style={styles.stageTitleAccent}>Sales</Text> Strategies
@@ -213,13 +253,25 @@ export default function MobileDiscoverScreen() {
                 <Text style={styles.stageSubtitle}>Discover the best home for you</Text>
               </View>
 
-              <View style={styles.cards}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.cards}
+                decelerationRate="fast"
+                snapToInterval={stageCardWidth + 18}
+                snapToAlignment="start"
+              >
                 {SALE_CARDS.map((card, index) => {
                   const isSaved = saved.has(card.id)
                   return (
                     <View
                       key={card.id}
-                      style={[styles.card, stageEntered && { opacity: 1 }, { zIndex: 10 - index }]}
+                      style={[
+                        styles.card,
+                        { width: stageCardWidth, height: stageCardWidth * 1.41 },
+                        stageEntered && { opacity: 1 },
+                        { zIndex: 10 - index },
+                      ]}
                     >
                       <View style={styles.cardFrame}>
                         <ExpoImage
@@ -248,7 +300,7 @@ export default function MobileDiscoverScreen() {
                     </View>
                   )
                 })}
-              </View>
+              </ScrollView>
 
               <View style={styles.welcomeCopy}>
                 <Text style={styles.welcomeTitle}>Buying Property Is Easy!</Text>
@@ -478,19 +530,57 @@ const styles = StyleSheet.create({
   stageReady: {
     opacity: 1,
   },
-  stageSheet: {
+  stageNav: {
+    minHeight: 88,
     paddingHorizontal: 18,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.mdWhite,
+  },
+  stageNavCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f5fa',
+    boxShadow: '0 6px 16px rgba(15, 23, 42, 0.14)',
+  },
+  stageNavMenu: { fontSize: 19, color: colors.mdInk, transform: [{ rotate: '180deg' }] },
+  stageNavHome: {
+    minWidth: 122,
+    height: 46,
+    paddingHorizontal: 15,
+    borderRadius: 23,
+    backgroundColor: '#f5f1fb',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    boxShadow: '0 5px 14px rgba(119, 104, 164, 0.17)',
+  },
+  stageNavHomeText: { fontFamily: 'Montserrat_700Bold', fontSize: 13, color: colors.mdInk, fontWeight: '700' },
+  stageNavHomeChevron: { color: colors.mdInk, fontSize: 16, marginTop: -4 },
+  stageNavActions: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  stageNavIcon: { width: 31, height: 42, alignItems: 'center', justifyContent: 'center' },
+  stageNavIconText: { color: colors.mdInk, fontSize: 27, lineHeight: 30 },
+  stageSheet: {
+    backgroundColor: colors.mdWhite,
   },
   stageIntro: {
-    marginBottom: 18,
-    alignItems: 'center',
+    marginBottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 21,
+    paddingBottom: 22,
   },
   stageTitle: {
     fontFamily: 'Montserrat_700Bold',
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 27,
+    lineHeight: 31,
     color: colors.mdInk,
-    textAlign: 'center',
+    letterSpacing: -0.9,
     fontWeight: '700',
   },
   stageTitleAccent: {
@@ -502,23 +592,26 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   stageSubtitle: {
-    marginTop: 8,
+    marginTop: 10,
     fontFamily: 'Montserrat_400Regular',
     fontSize: 14,
     color: colors.mdInkSoft,
-    textAlign: 'center',
   },
   cards: {
-    gap: 14,
+    gap: 18,
+    paddingLeft: 21,
+    paddingRight: 21,
+    paddingTop: 14,
+    paddingBottom: 38,
   },
   card: {
     borderRadius: rounded.card,
     overflow: 'hidden',
     backgroundColor: '#111827',
-    minHeight: 168,
+    boxShadow: '0 10px 18px -8px rgba(15, 23, 42, 0.18), 0 28px 44px -22px rgba(15, 23, 42, 0.32)',
   },
   cardFrame: {
-    minHeight: 168,
+    flex: 1,
     position: 'relative',
   },
   cardImage: {
@@ -568,7 +661,7 @@ const styles = StyleSheet.create({
     color: colors.mdInk,
   },
   welcomeCopy: {
-    marginTop: 28,
+    marginTop: 0,
     marginBottom: 18,
     alignItems: 'center',
     paddingHorizontal: 12,

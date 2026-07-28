@@ -1,0 +1,543 @@
+/* ——— Step: amenities ——— */
+.oap-amenities-step__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.oap-amenities-step__layout .oap-step-sidebar {
+  height: 100%;
+  min-height: 100%;
+  position: static;
+}
+
+.oap-amenities-step__layout .oap-step-sidebar__tips {
+  margin: 0;
+  padding: 0 4px 0 20px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #1f4f4d;
+}
+
+.oap-amenities-step__layout .oap-step-sidebar__tips li + li {
+  margin-top: 6px;
+}
+
+.oap-amenities-step__layout .oap-step-sidebar__illustration {
+  flex: 1;
+  min-height: 180px;
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.oap-amenities-step__layout .oap-step-sidebar__img {
+  width: 108%;
+  max-width: 108%;
+  max-height: 240px;
+  height: auto;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.oap-amenities-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.oap-amenities-step__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oap-amenities-step__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.oap-amenities-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 28px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.oap-amenities-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.oap-amenities-group__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--oap-text-muted);
+}
+
+.oap-amenities-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.oap-amenity-card {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  max-width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--oap-border);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  color: var(--oap-text);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+.oap-amenity-card:hover {
+  border-color: var(--oap-primary-ring);
+}
+
+.oap-amenities-step:not(.oap-amenities-step--journey) .oap-amenity-card--active {
+  border-color: var(--oap-primary);
+  background: rgba(0, 153, 169, 0.06);
+  box-shadow: 0 0 0 3px var(--oap-primary-ring);
+}
+
+.oap-amenity-card__icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--oap-primary-dark);
+  background: var(--oap-primary-soft);
+}
+
+.oap-amenities-step:not(.oap-amenities-step--journey) .oap-amenity-card--active .oap-amenity-card__icon-wrap {
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
+  color: #fff;
+}
+
+.oap-amenity-card__label {
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.oap-amenity-card__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--oap-primary);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.oap-amenity-card--active .oap-amenity-card__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.oap-amenities-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.oap-amenities-extra__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.oap-amenities-extra__textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #111827;
+  background: #fff;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oap-amenities-extra__textarea::placeholder {
+  color: #9ca3af;
+}
+
+.oap-amenities-extra__textarea:focus {
+  outline: none;
+  border-color: var(--oap-primary);
+  box-shadow: 0 0 0 3px var(--oap-primary-ring);
+}
+
+/* ——— Embedded mode (presentation step) ——— */
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-step__card {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  gap: 16px;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-groups {
+  gap: 14px;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-group__title {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card {
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 92px;
+  padding: 12px 8px 10px;
+  border-radius: 12px;
+  border-color: #e8edf2;
+  background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card:hover {
+  border-color: rgba(0, 153, 169, 0.35);
+  background: #fff;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card--active {
+  border-color: var(--oap-primary);
+  background: rgba(0, 153, 169, 0.05);
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__label {
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: normal;
+  hyphens: none;
+  -webkit-hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1.3;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card--active .oap-amenity-card__label {
+  color: var(--oap-primary-dark);
+}
+
+.oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.oap-amenities-step--embedded .oap-amenities-extra {
+  border-top: none;
+  padding-top: 0;
+}
+
+@media (max-width: 900px) {
+  .oap-amenities-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .oap-amenities-step__card {
+    padding: 18px 16px 20px;
+  }
+
+  .oap-amenities-step__layout .oap-step-sidebar__img {
+    width: 100%;
+    max-width: 100%;
+    max-height: 200px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-groups {
+    gap: 18px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-group__title {
+    margin-bottom: 8px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card {
+    min-height: 96px;
+    padding: 12px 8px 10px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__label {
+    font-size: 10px;
+    line-height: 1.35;
+    -webkit-line-clamp: 4;
+  }
+
+  .oap-amenities-step:not(.oap-amenities-step--embedded) .oap-amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .oap-amenities-step:not(.oap-amenities-step--embedded) .oap-amenity-card {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 48px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .oap-amenities-step:not(.oap-amenities-step--embedded) .oap-amenity-card__label {
+    white-space: normal;
+    hyphens: none;
+    -webkit-hyphens: none;
+    word-break: normal;
+    overflow-wrap: normal;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 380px) {
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card {
+    min-height: 100px;
+    padding: 11px 7px 10px;
+  }
+
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenity-card__label {
+    font-size: 10.5px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 900px) {
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  .oap-amenities-step--embedded:not(.oap-amenities-step--journey) .oap-amenities-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ——— Journey mobile: pill chips ——— */
+.oap-amenities-step--journey .oap-amenities-step__card {
+  gap: 1.1rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap-amenities-step--journey .oap-amenities-groups {
+  gap: 1.1rem;
+}
+
+.oap-amenities-step--journey .oap-amenities-group__title {
+  margin-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #6b7280;
+}
+
+.oap-amenities-step--journey .oap-amenities-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.oap-amenities-step--journey .oap-amenity-card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  padding: 0.45rem 0.85rem 0.5rem;
+  border: 1.5px solid rgba(17, 24, 39, 0.1);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: none;
+  text-align: center;
+}
+
+.oap-amenities-step--journey .oap-amenity-card:hover {
+  border-color: rgba(0, 153, 169, 0.45);
+}
+
+.oap-amenities-step--embedded.oap-amenities-step--journey .oap-amenity-card--active,
+.oap-amenities-step--journey .oap-amenity-card--active,
+.oap-amenity-card--journey.oap-amenity-card--active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.24);
+  color: #fff;
+}
+
+.oap-amenity-card--journey.oap-amenity-card--active:focus,
+.oap-amenity-card--journey.oap-amenity-card--active:focus-visible {
+  outline: none;
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.24);
+}
+
+.oap-amenities-step--journey .oap-amenity-card__icon-wrap {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 153, 169, 0.1);
+}
+
+.oap-amenities-step--journey .oap-amenity-card__label {
+  display: block;
+  width: auto;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.oap-amenities-step--journey .oap-amenity-card--active .oap-amenity-card__icon-wrap,
+.oap-amenity-card--journey.oap-amenity-card--active .oap-amenity-card__icon-wrap {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.oap-amenities-step--journey .oap-amenity-card--active .oap-amenity-card__label,
+.oap-amenity-card--journey.oap-amenity-card--active .oap-amenity-card__label {
+  color: #fff;
+}
+
+.oap-amenities-step--journey .oap-amenity-card__check {
+  display: none;
+}
+
+.oap-amenities-step--journey .oap-amenities-extra {
+  margin-top: 1.75rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap-amenities-step--journey .oap-amenities-extra__label {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.oap-amenities-step--journey .oap-amenities-extra__textarea {
+  border-radius: 14px;
+}
+
+@media (max-width: 900px) {
+  .oap-amenities-step--journey .oap-amenities-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .oap-amenities-step--journey .oap-amenity-card {
+    min-height: 0;
+    padding: 0.42rem 0.8rem 0.48rem;
+  }
+
+  .oap-amenities-step--journey .oap-amenity-card__label {
+    font-size: 0.8rem;
+    white-space: normal;
+    max-width: 9.5rem;
+  }
+}

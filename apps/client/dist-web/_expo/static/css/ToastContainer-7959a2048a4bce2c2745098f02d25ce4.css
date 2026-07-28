@@ -1,0 +1,1 @@
+.toast-container{z-index:20000;padding:max(18px, env(safe-area-inset-top,0px)) 18px 18px;pointer-events:none;flex-direction:column;align-items:flex-end;gap:10px;display:flex;position:fixed;top:0;right:0}@media (width<=767px){.toast-container{padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px;align-items:center;left:0;right:0}}

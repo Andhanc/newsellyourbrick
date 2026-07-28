@@ -1,16 +1,22 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
+import ru from './locales/mainPage/ru.json'
+import en from './locales/mainPage/en.json'
+import de from './locales/mainPage/de.json'
+import es from './locales/mainPage/es.json'
+import fr from './locales/mainPage/fr.json'
+import sv from './locales/mainPage/sv.json'
 
 const SUPPORTED = ['ru', 'en', 'de', 'es', 'fr', 'sv']
 
 const LOCALE_LOADERS = {
-  ru: () => import('./locales/mainPage/ru.json'),
-  en: () => import('./locales/mainPage/en.json'),
-  de: () => import('./locales/mainPage/de.json'),
-  es: () => import('./locales/mainPage/es.json'),
-  fr: () => import('./locales/mainPage/fr.json'),
-  sv: () => import('./locales/mainPage/sv.json'),
+  ru: async () => ({ default: ru }),
+  en: async () => ({ default: en }),
+  de: async () => ({ default: de }),
+  es: async () => ({ default: es }),
+  fr: async () => ({ default: fr }),
+  sv: async () => ({ default: sv }),
 }
 
 const bundleInflight = new Map()

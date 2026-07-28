@@ -2022,7 +2022,7 @@ function MainPage() {
         return
       }
       if (contactPref === 'telegram') {
-        const tgUrl = (import.meta.env.VITE_MANAGER_TELEGRAM_URL || '').trim()
+        const tgUrl = (import.meta.env?.VITE_MANAGER_TELEGRAM_URL || '').trim()
         const botMessage = {
           id: Date.now() + 1,
           text: tgUrl ? t('managerContactThanksTelegram') : t('liveChatTelegramNotConfigured'),

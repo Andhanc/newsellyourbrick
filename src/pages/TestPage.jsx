@@ -80,7 +80,7 @@ const TIFFANY = '#4ecdd6'
 const TIFFANY_DARK = '#3bc0cb'
 const PROFILE_CONFETTI_COLORS = [TIFFANY, TIFFANY_DARK, '#6ad6dd', '#dff6f8', '#2eafb9', '#a8e8ed']
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
 /** Поддержка в WhatsApp (как в Footer). */
 const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'

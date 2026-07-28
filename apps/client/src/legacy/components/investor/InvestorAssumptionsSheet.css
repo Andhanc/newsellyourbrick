@@ -1,0 +1,99 @@
+.investor-assumptions__head {
+  display: grid;
+  gap: 7px;
+  padding-right: 52px;
+}
+
+.investor-assumptions__head > span {
+  color: var(--buyer-teal-deep);
+  font: 760 10px/1.2 var(--buyer-font-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.investor-assumptions__head h2 {
+  margin: 0;
+  font: 820 26px/1.05 var(--buyer-font-display);
+  letter-spacing: -.035em;
+}
+
+.investor-assumptions__head p {
+  margin: 0;
+  color: var(--buyer-text-muted);
+  font: 500 13px/1.5 var(--buyer-font-body);
+}
+
+.investor-assumptions__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.investor-assumptions__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--buyer-ink);
+  font: 680 11px/1.25 var(--buyer-font-display);
+}
+
+.investor-assumptions__field input {
+  width: 100%;
+  min-height: var(--buyer-touch);
+  padding: 0 12px;
+  border: 1px solid var(--buyer-line);
+  border-radius: 13px;
+  background: var(--buyer-white);
+  color: var(--buyer-ink);
+  font: 650 15px/1 var(--buyer-font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.investor-assumptions__field input:focus-visible {
+  border-color: var(--buyer-teal);
+  outline: 3px solid color-mix(in srgb, var(--buyer-teal) 18%, transparent);
+  outline-offset: 1px;
+}
+
+.investor-assumptions__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--buyer-line);
+  border-radius: 15px;
+  background: var(--buyer-white);
+}
+
+.investor-assumptions__toggle > span { display: grid; gap: 3px; }
+.investor-assumptions__toggle strong { font: 720 13px/1.2 var(--buyer-font-display); }
+.investor-assumptions__toggle small { color: var(--buyer-text-muted); font: 500 11px/1.35 var(--buyer-font-body); }
+
+.investor-assumptions__toggle input {
+  width: 46px;
+  height: 26px;
+  accent-color: var(--buyer-teal-deep);
+}
+
+.investor-assumptions__grid--mortgage {
+  margin-top: 12px;
+}
+
+.investor-assumptions__done {
+  min-height: 50px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--buyer-teal-deep);
+  color: var(--buyer-white);
+  cursor: pointer;
+  font: 740 14px/1.1 var(--buyer-font-display);
+  box-shadow: 0 10px 25px rgba(0, 111, 123, .2);
+}
+
+@media (max-width: 340px) {
+  .investor-assumptions__grid { grid-template-columns: 1fr; }
+}

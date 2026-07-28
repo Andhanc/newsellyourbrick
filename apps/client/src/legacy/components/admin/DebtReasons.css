@@ -1,0 +1,190 @@
+.debt-reasons {
+  padding: 2rem;
+  background: #f5f7fa;
+  min-height: calc(100vh - 80px);
+}
+
+.debt-reasons-header {
+  margin-bottom: 2rem;
+}
+
+.debt-reasons-header h2 {
+  color: #1a202c;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.debt-reasons-desc {
+  color: #718096;
+  font-size: 0.95rem;
+  margin: 0 0 1rem 0;
+  max-width: 640px;
+}
+
+.debt-reasons-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.debt-reasons-loading,
+.debt-reasons-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+  font-size: 1.1rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e0;
+}
+
+.debt-reasons-list {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.debt-reasons-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.debt-reasons-table thead {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  color: white;
+}
+
+.debt-reasons-table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.debt-reasons-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.debt-reasons-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.debt-reasons-table .btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  margin-right: 0.5rem;
+  color: #4a5568;
+  border-radius: 6px;
+}
+
+.debt-reasons-table .btn-icon:hover {
+  background: #edf2f7;
+}
+
+.debt-reasons-table .btn-edit:hover {
+  color: #3182ce;
+}
+
+.debt-reasons-table .btn-delete:hover {
+  color: #e53e3e;
+}
+
+.debt-reasons-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.debt-reasons-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.debt-reasons-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.debt-reasons-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1a202c;
+}
+
+.debt-reasons-modal .modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.debt-reasons-modal .modal-close:hover {
+  color: #1a202c;
+}
+
+.debt-reasons-form {
+  padding: 1.5rem;
+}
+
+.debt-reasons-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.debt-reasons-form .form-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.debt-reasons-form .form-group input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.debt-reasons-form .form-group input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+}
+
+.debt-reasons-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 0.5rem;
+}

@@ -1,0 +1,95 @@
+.ton-connect-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  animation: ton-connect-fadeIn 0.2s ease-out;
+}
+
+@keyframes ton-connect-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ton-connect-modal {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  padding: 32px 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: ton-connect-scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ton-connect-scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ton-connect-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ton-connect-modal__close:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ton-connect-modal__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.ton-connect-modal__title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.ton-connect-modal__subtitle {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  line-height: 1.45;
+}
+
+.ton-connect-modal__button-wrap {
+  display: flex;
+  justify-content: center;
+  min-height: 48px;
+}
+
+/* Переопределение стилей кнопки TON Connect для тёмной темы */
+.ton-connect-modal__button-wrap [data-tc-button] {
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+}

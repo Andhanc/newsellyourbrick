@@ -1,0 +1,83 @@
+.profile-spotlight {
+  position: fixed;
+  inset: 0;
+  /* Выше панелей кабинета и тоста (z-index ~15000), чтобы затемнение было видно */
+  z-index: 2147483200;
+  pointer-events: none;
+}
+
+/* Прозрачные области — только перехват кликов вне «дырки» под кнопку. */
+.profile-spotlight__hit-slab {
+  position: fixed;
+  z-index: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.profile-spotlight__dim-svg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+}
+
+.profile-spotlight__dim-path {
+  pointer-events: none;
+}
+
+.profile-spotlight__bubble {
+  position: fixed;
+  z-index: 2;
+  padding: 9px 12px;
+  max-width: min(216px, calc(100vw - 32px));
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.profile-spotlight__bubble-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.profile-spotlight__arrow-svg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Дуга + открытая «V», как на референсе: мягкие концы, без залитого наконечника. */
+.profile-spotlight__arrow-stroke {
+  stroke: rgba(255, 255, 255, 0.93);
+  stroke-width: 3.25;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.22));
+}
+
+.profile-spotlight__arrow-head {
+  stroke-width: 4.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-spotlight__bubble {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

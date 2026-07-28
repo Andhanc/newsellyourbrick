@@ -1,5 +1,5 @@
-import MobileDiscoverScreen from '../src/screens/MobileDiscoverScreen'
+import { PublicPageScreen } from '../src/dom/public-page-screen'
 
 export default function IndexRoute() {
-  return <MobileDiscoverScreen />
+  return <PublicPageScreen initialPath="/" />
 }

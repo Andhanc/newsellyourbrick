@@ -1,0 +1,418 @@
+@media (max-width: 900px) {
+  .oap {
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+    background: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oap-shell {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* ——— Header ——— */
+  .oap-header {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    padding: 12px 12px 10px;
+    margin-bottom: 0;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .oap-header__back {
+    position: static;
+    transform: none;
+    width: 40px;
+    height: 40px;
+    justify-self: start;
+  }
+
+  .oap-header__center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .oap-header__title {
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .oap-header__progress {
+    position: static;
+    transform: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--oap-primary-dark);
+    white-space: nowrap;
+  }
+
+  .oap-header__actions {
+    position: static;
+    transform: none;
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  .oap-header__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--oap-text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .oap-header__close:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--oap-text);
+  }
+
+  /* ——— Stepper ——— */
+  .oap-stepper {
+    flex-shrink: 0;
+    justify-content: center;
+    margin: 0;
+    padding: 12px 24px 14px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .oap-stepper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .oap-stepper__item {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+  }
+
+  .oap-stepper__dot {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 50%;
+  }
+
+  .oap-stepper--icons .oap-stepper__dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+  }
+
+  .oap-stepper__item--done .oap-stepper__dot {
+    background: var(--oap-primary-soft);
+    border-color: var(--oap-primary);
+    color: var(--oap-primary-dark);
+  }
+
+  .oap-stepper__label {
+    display: none;
+  }
+
+  .oap-stepper__line {
+    flex: 0 0 20px;
+    min-width: 12px;
+    max-width: 28px;
+    margin: 0 4px;
+    height: 2px;
+    align-self: center;
+    border: none;
+    border-radius: 999px;
+    background: #e5e7eb;
+  }
+
+  .oap-stepper__line--done {
+    background: var(--oap-primary);
+  }
+
+  /* ——— Content ——— */
+  .oap-content {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+    margin: 0;
+    padding: 20px 16px 16px;
+    background: #fff;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Hide sidebar tips on mobile — keep all form fields */
+  .oap--journey-mobile .oap-wizard-aside {
+    display: none !important;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__progress,
+  .oap--journey-mobile .oap-wizard-step__badge {
+    display: none;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__title-mark {
+    display: none;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__head {
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__head-row {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__title-wrap {
+    flex: 1;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__title {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__subtitle {
+    padding-left: 0;
+    text-align: center;
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
+  .oap--journey-mobile .oap-wizard-step__panel {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .oap--journey-mobile .oap-wizard-section {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .oap--journey-mobile .oap-wizard-section__head {
+    margin-bottom: 12px;
+  }
+
+  /* ——— Footer ——— */
+  .oap-footer {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 16px 16px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    justify-content: stretch;
+  }
+
+  html.oap-page-active #site-footer {
+    display: block !important;
+  }
+
+  .oap-footer--wizard {
+    margin-top: 0;
+  }
+
+  .oap-footer__actions {
+    width: auto;
+    display: contents;
+  }
+
+  .oap-btn--back,
+  .oap-btn--save {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+
+  .oap-btn--full {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .oap-desktop-only {
+    display: none !important;
+  }
+
+  /* ——— Strategy: vertical listing cards ——— */
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__modes {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 0;
+    padding: 14px 14px 14px 12px;
+    text-align: left;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-body {
+    flex: 1;
+    text-align: left;
+    gap: 2px;
+    padding-right: 22px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-label {
+    font-size: 14px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-desc {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode-mark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-left: 0;
+  }
+
+  /* ——— Modals ——— */
+  .listing-fee-modal-overlay,
+  .success-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .listing-fee-modal,
+  .success-modal {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+
+  .listing-fee-modal {
+    padding: 24px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .success-modal {
+    padding: 28px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .listing-fee-modal__promo-row {
+    flex-direction: column;
+  }
+
+  .listing-fee-modal__apply {
+    width: 100%;
+  }
+
+  /* ——— Touch-friendly inputs ——— */
+  .oap--journey-mobile .oap-loc-step__layout,
+  .oap--journey-mobile .oap-loc-step__layout--embedded,
+  .oap--journey-mobile .oap-loc-step__layout--embedded-wide {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    grid-template-columns: none !important;
+  }
+
+  .oap--journey-mobile .oap-loc-step__fields,
+  .oap--journey-mobile .oap-loc-step__map-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .oap--journey-mobile .oap-loc-field,
+  .oap--journey-mobile .oap-loc-field__wrap,
+  .oap--journey-mobile .oap-loc-field__country,
+  .oap--journey-mobile .oap-loc-field__country .country-select,
+  .oap--journey-mobile .oap-loc-field__input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .oap-loc-field__input,
+  .oap-text-field__input,
+  .oap-text-field__textarea,
+  .oap-param-field__input,
+  .oap-param-field__select,
+  .oap-presentation-field__input,
+  .oap-presentation-field__textarea {
+    font-size: 16px;
+  }
+
+  .oap-loc-step__map {
+    min-height: 220px;
+  }
+
+  .oap-loc-step__map .location-map-container,
+  .oap-loc-step__map .location-map {
+    min-height: 220px;
+  }
+
+  .oap-media-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .oap-media-modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+}

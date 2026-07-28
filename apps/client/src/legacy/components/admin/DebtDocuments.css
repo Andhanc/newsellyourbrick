@@ -1,0 +1,142 @@
+.debt-documents {
+  padding: 2rem;
+  background: #f5f7fa;
+  min-height: calc(100vh - 80px);
+  max-width: 900px;
+}
+
+.debt-documents-header {
+  margin-bottom: 2rem;
+}
+
+.debt-documents-header h1 {
+  color: #1a202c;
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+}
+
+.debt-documents-intro {
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.debt-documents-block {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.debt-documents-block h2 {
+  color: #1a202c;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.debt-documents-block h3 {
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem 0;
+}
+
+.debt-documents-block h3:first-child {
+  margin-top: 0;
+}
+
+.debt-documents-subtitle {
+  color: #718096;
+  font-size: 0.95rem;
+  margin: 0 0 1rem 0;
+}
+
+.debt-documents-block p {
+  color: #4a5568;
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.debt-documents-block ul {
+  margin: 0 0 0.5rem 0;
+  padding-left: 1.5rem;
+  color: #2d3748;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.debt-documents-block ul li {
+  margin-bottom: 0.35rem;
+}
+
+.debt-documents-section {
+  margin-bottom: 1rem;
+}
+
+.debt-documents-section:last-child {
+  margin-bottom: 0;
+}
+
+.debt-documents-essential {
+  border-left: 4px solid #e53e3e;
+}
+
+.debt-documents-essential h2 {
+  color: #c53030;
+}
+
+.debt-documents-minimum {
+  border-left: 4px solid #d69e2e;
+}
+
+.debt-documents-minimum h2 {
+  color: #b7791f;
+}
+
+.debt-documents-fields {
+  border-left: 4px solid #3182ce;
+}
+
+.debt-documents-fields h2 {
+  color: #2b6cb0;
+}
+
+.debt-documents-fields-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.debt-documents-fields-list li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.debt-documents-fields-list li:last-child {
+  border-bottom: none;
+}
+
+.debt-documents-fields-list strong {
+  color: #1a202c;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .debt-documents {
+    padding: 1rem;
+  }
+
+  .debt-documents-block {
+    padding: 1rem 1.25rem;
+  }
+
+  .debt-documents-header h1 {
+    font-size: 1.5rem;
+  }
+}

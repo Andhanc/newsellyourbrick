@@ -7,6 +7,7 @@ import { CatalogProperty, PropertyCard } from './PropertyCard'
 import { colors, rounded } from '../theme/tokens'
 
 type FilterMode = 'all' | 'auction' | 'buy_now' | 'debts' | 'shares'
+type CatalogSource = 'approved' | 'test-drive'
 
 function applyFilter(list: CatalogProperty[], mode: FilterMode, q?: string) {
   let next = list
@@ -30,10 +31,13 @@ export function PropertyCatalogScreen({
   title,
   filter = 'all',
   query,
+  source = 'approved',
 }: {
   title: string
   filter?: FilterMode
   query?: string
+  /** `test-drive` is a server-side curated subset, not a client-side guess. */
+  source?: CatalogSource
 }) {
   const insets = useSafeAreaInsets()
   const [items, setItems] = useState<CatalogProperty[]>([])
@@ -45,7 +49,7 @@ export function PropertyCatalogScreen({
     setError(null)
     try {
       const data = await apiFetch<{ success?: boolean; data?: CatalogProperty[] } | CatalogProperty[]>(
-        '/properties/approved?lang=ru',
+        source === 'test-drive' ? '/properties/test-drive' : '/properties/approved?lang=ru',
       )
       const list = Array.isArray(data)
         ? data
@@ -58,7 +62,7 @@ export function PropertyCatalogScreen({
     } finally {
       setLoading(false)
     }
-  }, [filter, query])
+  }, [filter, query, source])
 
   useEffect(() => {
     void load()

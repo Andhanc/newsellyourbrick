@@ -1,0 +1,469 @@
+.statistics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.statistics-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.time-filter {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.time-filter-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--dark);
+}
+
+.time-filter-btn:hover {
+  background: rgba(67, 97, 238, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.time-filter-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.time-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.calendar-wrapper {
+  position: relative;
+}
+
+.weekday-calendar-wrapper {
+  position: relative;
+}
+
+.calendar-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--dark);
+}
+
+.calendar-icon-btn:hover {
+  background: rgba(67, 97, 238, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.calendar-icon-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.calendar-date-range {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 320px;
+  padding: 1rem;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.calendar-nav-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--dark);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.calendar-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.calendar-month-year {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--dark);
+  text-transform: capitalize;
+}
+
+.calendar-grid {
+  margin-bottom: 1rem;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.5rem;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--dark);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-day:not(.empty):hover {
+  background: rgba(67, 97, 238, 0.1);
+  border-color: var(--primary);
+}
+
+.calendar-day.empty {
+  cursor: default;
+}
+
+.calendar-day.in-range {
+  background: rgba(67, 97, 238, 0.1);
+}
+
+.calendar-day.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.calendar-day:disabled {
+  cursor: default;
+}
+
+.calendar-footer {
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.calendar-selected-range {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.calendar-action-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--dark);
+}
+
+.calendar-action-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.calendar-action-btn-primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.calendar-action-btn-primary:hover:not(:disabled) {
+  background: #3f37c9;
+  border-color: #3f37c9;
+}
+
+.calendar-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.chart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.chart-title-small {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+}
+
+.chart-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.03);
+  border: none;
+  cursor: pointer;
+}
+
+.chart-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+.chart-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chart-week-label {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  align-self: center;
+  min-width: 8rem;
+  text-align: center;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.chart-error-hint {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: center;
+  background: rgba(254, 226, 226, 0.9);
+  color: #991b1b;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+}
+
+.chart-error-hint code {
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 200px;
+}
+
+.demographics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Более компактные графики на невысоких или узких экранах,
+   чтобы блоки не выходили за пределы видимой области */
+@media (max-height: 900px), (max-width: 1200px) {
+  .chart-container {
+    padding: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 170px;
+  }
+
+  .charts-row,
+  .demographics-grid {
+    margin-bottom: 1rem;
+  }
+}
+
+.users-section {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.users-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.users-toggle {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.users-toggle:hover {
+  background: var(--secondary);
+}
+
+@media (max-width: 1200px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .demographics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  /* С 0 до 768px показываем карточки по 2 в ряд (2xN) */
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* На мобильных заголовок "Статистика" уже есть в верхнем хедере,
+     поэтому внутри контента его скрываем, чтобы не дублировать */
+  .statistics-title {
+    display: none;
+  }
+
+  .statistics-header {
+    margin-bottom: 1.25rem;
+  }
+
+  /* Более компактные графики на мобильных, чтобы не вылезали за пределы контейнера */
+  .chart-container {
+    padding: 0.875rem;
+  }
+
+  .chart-title,
+  .chart-title-small {
+    font-size: 0.95rem;
+  }
+
+  .chart-wrapper {
+    height: 160px;
+  }
+
+  .charts-row,
+  .demographics-grid {
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+  }
+}
+
+
+

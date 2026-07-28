@@ -1,0 +1,210 @@
+.site-ad-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  animation: site-ad-modal-fade-in 0.35s ease;
+}
+
+.site-ad-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 12, 24, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.site-ad-modal__dialog {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 20px 24px 28px;
+  border-radius: 28px;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(
+    145deg,
+    #1a1f3a 0%,
+    #2d1b69 35%,
+    #5b21b6 55%,
+    #7c3aed 75%,
+    #a855f7 100%
+  );
+  box-shadow:
+    0 32px 80px rgba(91, 33, 182, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  animation: site-ad-modal-scale-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-ad-modal__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.site-ad-modal__glow--tl {
+  top: -40px;
+  left: -30px;
+  width: 160px;
+  height: 160px;
+  background: #f472b6;
+}
+
+.site-ad-modal__glow--br {
+  bottom: -50px;
+  right: -20px;
+  width: 180px;
+  height: 180px;
+  background: #38bdf8;
+}
+
+.site-ad-modal__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -180% 0;
+  animation: site-ad-modal-shine 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.site-ad-modal__icon-wrap {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.site-ad-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.site-ad-modal__close:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(1.05);
+}
+
+.site-ad-modal__body {
+  position: relative;
+  z-index: 1;
+  padding-top: 52px;
+  text-align: center;
+}
+
+.site-ad-modal__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.site-ad-modal__title {
+  margin: 0 0 14px;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.site-ad-modal__description {
+  margin: 0 0 28px;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.site-ad-modal__cta {
+  width: 100%;
+  padding: 15px 24px;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  color: #5b21b6;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.site-ad-modal__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes site-ad-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes site-ad-modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes site-ad-modal-shine {
+  0%, 100% { background-position: -180% 0; }
+  50% { background-position: 180% 0; }
+}
+
+@media (max-width: 480px) {
+  .site-ad-modal__dialog {
+    padding: 16px 18px 24px;
+    border-radius: 22px;
+  }
+
+  .site-ad-modal__body {
+    padding-top: 48px;
+  }
+}

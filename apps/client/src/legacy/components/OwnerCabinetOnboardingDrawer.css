@@ -1,0 +1,440 @@
+@import '../styles/drawerDismiss.css';
+
+.owner-onboarding-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13490;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(4px);
+  animation: owner-onboarding-backdrop-in 0.28s ease-out both;
+}
+
+@keyframes owner-onboarding-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.owner-onboarding-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 13500;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.owner-onboarding-drawer__panel {
+  position: relative;
+  width: 100%;
+  height: auto;
+  max-height: min(620px, 78dvh);
+  box-sizing: border-box;
+  pointer-events: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #faf8f5;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.2);
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.owner-onboarding-drawer__panel--entering {
+  animation: owner-onboarding-panel-in 0.42s cubic-bezier(0.22, 1, 0.32, 1) both;
+}
+
+.owner-onboarding-drawer__panel--closing {
+  animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+}
+
+@keyframes owner-onboarding-panel-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0.75;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.owner-onboarding-drawer__handle {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px;
+  flex-shrink: 0;
+}
+
+.owner-onboarding-drawer__handle-pill {
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: #d1d5db;
+}
+
+.owner-onboarding-drawer__hero {
+  position: relative;
+  flex: 0 0 auto;
+  height: min(28vh, 210px);
+  min-height: 140px;
+  max-height: 210px;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
+}
+
+.owner-onboarding-drawer__hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(250, 248, 245, 0) 0%, #faf8f5 100%);
+  pointer-events: none;
+}
+
+@keyframes owner-onboarding-step-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.owner-onboarding-drawer__illustration {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.owner-onboarding-drawer__illustration--active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.owner-onboarding-drawer__content {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding:
+    0.35rem 24px
+    calc(20px + env(safe-area-inset-bottom, 0px))
+    24px;
+}
+
+.owner-onboarding-drawer__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.owner-onboarding-drawer__step-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.owner-onboarding-drawer__title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  width: 100%;
+  max-width: 100%;
+  font-size: clamp(1.65rem, 6.8vw, 2.05rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  color: #111827;
+}
+
+.owner-onboarding-drawer__title-line {
+  display: block;
+  max-width: 100%;
+}
+
+.owner-onboarding-drawer__title-line--compact {
+  white-space: normal;
+  text-wrap: balance;
+}
+
+.owner-onboarding-drawer__pill {
+  display: inline;
+  margin: 0 0.08em;
+  padding: 0.06em 0.48em 0.1em;
+  border-radius: 999px;
+  background: var(--oc-gradient-brand, linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%));
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.15;
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.24);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.owner-onboarding-drawer__text {
+  margin: 0;
+  width: 100%;
+  max-width: 24rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.owner-onboarding-drawer__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.1rem;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.owner-onboarding-drawer__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+}
+
+.owner-onboarding-drawer__dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d1d5db;
+  transition:
+    width 0.28s ease,
+    background 0.28s ease;
+}
+
+.owner-onboarding-drawer__dot--active {
+  width: 28px;
+  background: #111827;
+}
+
+.owner-onboarding-drawer__cta {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 17px 20px;
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.22);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.owner-onboarding-drawer__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(17, 24, 39, 0.28);
+}
+
+.owner-onboarding-drawer__cta:active {
+  transform: translateY(0);
+}
+
+@media (min-width: 901px) {
+  .owner-onboarding-drawer {
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px))
+      max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  }
+
+  .owner-onboarding-drawer__panel {
+    width: min(440px, 100%);
+    height: min(680px, 85vh);
+    max-height: min(680px, 85vh);
+    border-radius: 24px;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+  }
+
+  .owner-onboarding-drawer__hero {
+    flex: 0 0 auto;
+    min-height: 180px;
+    height: min(280px, 38vh);
+    max-height: 280px;
+  }
+
+  .owner-onboarding-drawer__content {
+    flex: 1 1 auto;
+    padding:
+      0.85rem 28px
+      calc(24px + env(safe-area-inset-bottom, 0px))
+      28px;
+  }
+
+  .owner-onboarding-drawer__copy {
+    gap: 0.65rem;
+  }
+
+  .owner-onboarding-drawer__text {
+    margin-top: 0.65rem;
+  }
+
+  .owner-onboarding-drawer__footer {
+    padding-top: 1.5rem;
+  }
+
+  .owner-onboarding-drawer__panel--entering {
+    animation: owner-onboarding-modal-in 0.34s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .owner-onboarding-drawer__panel--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
+
+  @keyframes owner-onboarding-modal-in {
+    from {
+      transform: translate3d(0, 16px, 0) scale(0.98);
+      opacity: 0;
+    }
+    to {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-onboarding-drawer__backdrop,
+  .owner-onboarding-drawer__panel,
+  .owner-onboarding-drawer__hero {
+    animation: none !important;
+  }
+
+  .owner-onboarding-drawer__cta {
+    transition: none;
+  }
+}
+
+/* Buyer welcome: Tiffany + Montserrat */
+.owner-onboarding-drawer--buyer,
+.owner-onboarding-drawer__panel--buyer {
+  --buyer-onboarding-tiffany: #4ecdd6;
+  --buyer-onboarding-tiffany-dark: #3bc0cb;
+  --buyer-onboarding-tiffany-soft: #dff6f8;
+  --buyer-onboarding-font: 'Montserrat', system-ui, sans-serif;
+}
+
+.owner-onboarding-drawer__panel--buyer {
+  font-family: var(--buyer-onboarding-font);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 58%),
+    #ffffff;
+  border-top-color: rgba(78, 205, 214, 0.2);
+  box-shadow: 0 -16px 48px rgba(15, 61, 67, 0.14);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__handle-pill {
+  background: rgba(78, 205, 214, 0.45);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbfc 100%);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__hero::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 100%);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__step-label {
+  color: var(--buyer-onboarding-tiffany-dark);
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 800;
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__title {
+  color: #0f172a;
+  font-family: var(--buyer-onboarding-font);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__pill {
+  background: linear-gradient(
+    135deg,
+    #6ad6dd 0%,
+    var(--buyer-onboarding-tiffany) 48%,
+    var(--buyer-onboarding-tiffany-dark) 100%
+  );
+  box-shadow: 0 4px 14px rgba(59, 192, 203, 0.28);
+  font-family: var(--buyer-onboarding-font);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__text {
+  color: #5b6b73;
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 500;
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__dot--active {
+  background: var(--buyer-onboarding-tiffany-dark);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__cta {
+  background: var(--buyer-onboarding-tiffany-dark);
+  font-family: var(--buyer-onboarding-font);
+  font-weight: 800;
+  box-shadow: 0 12px 28px rgba(59, 192, 203, 0.28);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__cta:hover {
+  background: #2eafb9;
+  box-shadow: 0 14px 32px rgba(59, 192, 203, 0.34);
+}
+
+@media (min-width: 901px) {
+  .owner-onboarding-drawer__panel--buyer {
+    border-color: rgba(78, 205, 214, 0.22);
+  }
+}

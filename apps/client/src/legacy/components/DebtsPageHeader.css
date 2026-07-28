@@ -1,0 +1,56 @@
+.debts-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.debts-page-header__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.debts-page-header__search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.debts-page-header__search:focus-within {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.debts-page-header__search-icon {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.debts-page-header__search-input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: #111827;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.debts-page-header__search-input::placeholder {
+  color: #9ca3af;
+}
+
+.debts-page-header__search-input:focus {
+  outline: none;
+}

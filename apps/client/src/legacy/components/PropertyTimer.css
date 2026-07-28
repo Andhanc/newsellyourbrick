@@ -1,0 +1,511 @@
+.property-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border-radius: 999px;
+  border: 2px solid #d1d5db; /* базовая серая обводка, перекрашивается по статусу */
+}
+
+.property-timer.compact {
+  margin-top: 0;
+  margin-bottom: 12px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.property-timer-overlay .property-timer.compact {
+  background: transparent;
+  border: none; /* убираем дублирующуюся обводку */
+  box-shadow: none;
+}
+
+.timer-compact-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.timer-icon-svg {
+  color: #111827;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+}
+
+.property-timer-overlay .timer-icon-svg {
+  color: #111827;
+}
+
+.timer-compact-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid #d1d5db; /* базовая серая обводка, перекрашивается по статусу */
+  width: fit-content;
+  min-width: fit-content;
+}
+
+/* для полноразмерного таймера оставляем только внешнюю обводку, без второй рамки внутри */
+.property-timer:not(.compact) .timer-compact-time {
+  border-width: 0;
+}
+
+.time-unit {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+}
+
+.timer-separator {
+  color: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+}
+
+.property-timer-overlay .timer-compact-time {
+  background: transparent;
+  backdrop-filter: none;
+  border: 1px solid #e5e7eb;
+}
+
+.property-timer-overlay .time-unit {
+  background: transparent;
+  border: none;
+}
+
+.time-value {
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.property-timer-overlay .time-value {
+  color: #111827;
+}
+
+.time-label {
+  font-size: 11px;
+  color: #374151; /* более тёмный цвет для обозначений д/ч/м/с */
+  font-weight: 500;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.property-timer-overlay .time-label {
+  color: #6b7280;
+}
+
+.timer-icon {
+  font-size: 18px;
+}
+
+.timer-compact-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timer-compact-label {
+  font-size: 11px;
+  color: #374151;
+}
+
+/* Цвета цифр и обводки в зависимости от оставшихся дней (ТОЛЬКО для некритичных таймеров).
+   Для критического (`timer-critical`) цветом управляет анимация, поэтому исключаем его. */
+.property-timer.timer-long:not(.timer-critical) .time-value,
+.property-timer.timer-long:not(.timer-critical) .timer-compact-time {
+  color: #0099A9;
+}
+.property-timer.timer-long:not(.timer-critical),
+.property-timer.compact.timer-long:not(.timer-critical) .timer-compact-time {
+  border-color: #0099A9;
+}
+
+.property-timer.timer-medium:not(.timer-critical) .time-value,
+.property-timer.timer-medium:not(.timer-critical) .timer-compact-time {
+  color: #f97316;
+}
+.property-timer.timer-medium:not(.timer-critical),
+.property-timer.compact.timer-medium:not(.timer-critical) .timer-compact-time {
+  border-color: #f97316;
+}
+
+.property-timer.timer-short:not(.timer-critical) .time-value,
+.property-timer.timer-short:not(.timer-critical) .timer-compact-time {
+  color: #dc2626;
+}
+.property-timer.timer-short:not(.timer-critical),
+.property-timer.compact.timer-short:not(.timer-critical) .timer-compact-time {
+  border-color: #dc2626;
+}
+
+/* мигающий режим при оставшихся < 7 дней */
+@keyframes property-timer-blink {
+  0%, 100% {
+    color: #111827;   /* тёмные цифры в неактивной фазе */
+  }
+  50% {
+    color: #dc2626;   /* красные цифры в активной фазе */
+  }
+}
+
+@keyframes property-timer-shadow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    border-color: #111827; /* тёмная обводка в неактивной фазе */
+  }
+  50% {
+    box-shadow: 0 0 12px 2px rgba(220, 38, 38, 0.7);
+    border-color: #dc2626; /* красная обводка в активной фазе */
+  }
+}
+
+/* все цифры мигают одновременно — анимация вешается на общий контейнер
+   компактного таймера (цвет + тень синхронно) */
+.property-timer.compact.timer-critical .timer-compact-time {
+  animation: property-timer-blink 1s infinite, property-timer-shadow 1s infinite;
+}
+
+/* для полноразмерного таймера мигает только тень и цвет обводки (не на странице объекта) */
+.property-timer.timer-critical:not(.compact):not(.property-timer--detail) {
+  animation: property-timer-shadow 1s infinite;
+}
+
+.property-timer--detail.timer-critical,
+.property-timer--plain.timer-critical {
+  animation: none;
+  box-shadow: none;
+  border: none;
+}
+
+/* Стили для таймера на странице детального просмотра объекта */
+.property-timer--detail {
+  border: none !important;
+  padding: 0 2px;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+
+.property-timer--detail .property-timer-detail-flip-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.property-timer--detail .property-timer-detail-unit {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.property-timer--detail .property-timer-detail-unit-label {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1;
+}
+
+.property-timer--detail .property-timer-detail-sep--dot {
+  font-size: 22px;
+  font-weight: 700;
+  color: #94a3b8;
+  align-self: center;
+  margin-top: -14px;
+}
+
+.property-timer--detail .property-timer-detail-sep {
+  font-size: 32px;
+  font-weight: 700;
+  color: #9ca3af;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 0;
+  margin-top: -3px;
+}
+
+.property-timer--plain {
+  border: none !important;
+  padding: 0;
+}
+
+.property-timer--plain .property-timer-plain-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.property-timer-plain-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 2.4ch;
+}
+
+.property-timer-plain-value {
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.property-timer-plain-label {
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #94a3b8;
+  text-transform: none;
+}
+
+.property-timer-plain-sep {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.property-timer-plain-sep--dot {
+  font-size: 20px;
+  color: #94a3b8;
+}
+
+.property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-sep {
+  color: #0099A9;
+}
+
+.property-timer--plain.timer-medium:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-medium:not(.timer-critical) .property-timer-plain-sep {
+  color: #f97316;
+}
+
+.property-timer--plain.timer-short:not(.timer-critical) .property-timer-plain-value,
+.property-timer--plain.timer-short:not(.timer-critical) .property-timer-plain-sep {
+  color: #dc2626;
+}
+
+.property-timer--plain.timer-critical .property-timer-plain-value,
+.property-timer--plain.timer-critical .property-timer-plain-sep {
+  animation: property-timer-blink 1s infinite;
+}
+
+.property-timer--detail .flip-unit {
+  --flip-card-bg: #ffffff;
+  border-radius: 15px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.05),
+    0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+/* Линия «шва» флипа — на светлом фоне видна, на тёмной почти не была заметна */
+.property-timer--detail .flip-card__top,
+.property-timer--detail .flipper__top {
+  border-bottom: 1px solid rgba(17, 24, 39, 0.14);
+}
+
+.property-timer--detail .timer-compact-time--detail {
+  font-size: 28px;
+  font-weight: 700;
+  color: inherit;
+  border: none;
+  padding: 0;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  /* Компактный таймер в карточках — не вылезает, компактные цифры */
+  .property-timer.compact {
+    margin-bottom: 6px;
+    max-width: 100%;
+  }
+
+  .property-timer.compact .timer-compact-time {
+    padding: 4px 6px;
+    gap: 2px;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 13px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 12px;
+    margin: 0 0.5px;
+  }
+
+  .property-timer.compact .timer-icon-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Таймер в оверлее карточки */
+  .property-timer-overlay .timer-compact-time {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /*
+    Детальный flip-таймер на мобиле — чуть меньше десктопа, но заметно крупнее прежнего.
+  */
+  .property-timer--detail .flip-unit {
+    width: 36px !important;
+    height: 52px !important;
+  }
+
+  .property-timer--detail .flip-digit {
+    font-size: 25px !important;
+  }
+
+  .property-timer--detail .flip-countdown-container {
+    gap: 1px;
+  }
+
+  .property-timer--detail .property-timer-detail-flip-row {
+    gap: 2px;
+    padding: 0;
+  }
+
+  .property-timer--detail .property-timer-detail-sep {
+    font-size: 28px;
+    margin-top: -2px;
+  }
+
+  .property-timer--detail {
+    padding: 0 2px;
+  }
+}
+
+@media (max-width: 430px) {
+  .property-timer.compact .timer-compact-time {
+    padding: 3px 5px;
+    gap: 1px;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 12px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 7px;
+    letter-spacing: 0.1px;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 10px;
+    margin: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .property-timer.compact .timer-compact-time {
+    padding: 2px 4px;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 11px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 6px;
+    letter-spacing: 0;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 9px;
+  }
+}
+
+/* Аукцион завершён — вместо нулей */
+.property-timer.property-timer--auction-ended.compact {
+  justify-content: center;
+}
+
+.property-timer-ended-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1e293b;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border: 1px solid #94a3b8;
+  text-transform: uppercase;
+}
+
+.property-timer-ended-detail {
+  width: 100%;
+  text-align: center;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border: 1px solid #94a3b8;
+}

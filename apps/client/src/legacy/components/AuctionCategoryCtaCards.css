@@ -1,0 +1,566 @@
+.auction-cta-cards {
+  --auction-cta-sage: #d9dbae;
+  --auction-cta-sage-deep: #8b905f;
+  --auction-cta-sage-mid: #babe86;
+  width: 100%;
+  padding: clamp(2rem, 4vw, 2.75rem) 0 0;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.auction-cta-cards--profile {
+  padding: 6px 0 0;
+  background: transparent;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__inner {
+  max-width: none;
+  padding: 0;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title {
+  margin-bottom: 14px;
+  font-size: clamp(1.55rem, 6.2vw, 1.9rem);
+  text-align: center;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-desktop {
+  display: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title::after {
+  display: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__title-pill {
+  display: inline-block;
+  margin: 0 0.08em;
+  padding: 0.08em 0.52em 0.14em;
+  border-radius: 999px;
+  background: #4ecdd6;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.05;
+  box-shadow:
+    0 10px 28px rgba(78, 205, 214, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: rotate(-2deg);
+}
+
+.auction-cta-cards--profile .auction-cta-cards__grid,
+.auction-cta-cards--profile .auction-cta-cards__grid--trio {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  max-width: none;
+}
+
+/* Profile always uses the compact horizontal cards from the reference */
+.auction-cta-cards--profile .auction-cta-cards__card {
+  flex-direction: row;
+  align-items: center;
+  min-height: 112px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(42, 56, 68, 0.12);
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.82) 0%,
+    rgba(15, 23, 42, 0.52) 42%,
+    rgba(15, 23, 42, 0.18) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card--sage .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 144, 95, 0.8) 0%,
+    rgba(186, 191, 130, 0.54) 40%,
+    rgba(217, 219, 174, 0.26) 68%,
+    rgba(217, 219, 174, 0.1) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__card--teal .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(74, 150, 166, 0.78) 0%,
+    rgba(90, 165, 181, 0.52) 40%,
+    rgba(74, 150, 166, 0.22) 68%,
+    rgba(74, 150, 166, 0.1) 100%
+  );
+}
+
+.auction-cta-cards--profile .auction-cta-cards__icon {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 0 0 12px;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__footer {
+  position: static;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin-top: 0;
+  padding: 12px 72px 12px 8px;
+  background: none;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content strong {
+  font-size: clamp(1rem, 4.2vw, 1.15rem);
+  line-height: 1.12;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__content p {
+  max-width: none;
+  font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+  line-height: 1.35;
+}
+
+.auction-cta-cards--profile .auction-cta-cards__button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  min-height: 28px;
+  padding: 0 9px 0 10px;
+  gap: 4px;
+  font-size: 11px;
+  border-radius: 999px;
+}
+
+.auction-cta-cards__inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
+}
+
+.auction-cta-cards__title {
+  margin: 0 0 clamp(1.25rem, 3vw, 1.75rem);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: clamp(1.875rem, 3.2vw + 0.5rem, 2.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  text-align: left;
+}
+
+.auction-cta-cards__title-desktop {
+  display: block;
+}
+
+.auction-cta-cards__title-mobile {
+  display: none;
+}
+
+.auction-cta-cards__title-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.auction-cta-cards__title::after {
+  content: '';
+  display: block;
+  width: clamp(48px, 5vw, 72px);
+  height: 4px;
+  margin-top: clamp(14px, 2vw, 18px);
+  border-radius: 999px;
+  background: #4ecdd6;
+}
+
+.auction-cta-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.auction-cta-cards__grid--duo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.auction-cta-cards__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 358px;
+  overflow: hidden;
+  border-radius: 10px;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 22px 46px rgba(42, 56, 68, 0.16);
+  isolation: isolate;
+}
+
+.auction-cta-cards__card img,
+.auction-cta-cards__card-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.auction-cta-cards__card img {
+  object-fit: cover;
+  transition: transform 0.32s ease;
+  z-index: -2;
+}
+
+.auction-cta-cards__card:hover img {
+  transform: scale(1.045);
+}
+
+.auction-cta-cards__card-overlay {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.72) 100%);
+}
+
+.auction-cta-cards__card--sage .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(217, 219, 174, 0.26) 0%,
+    rgba(186, 191, 130, 0.56) 48%,
+    rgba(139, 144, 95, 0.8) 100%
+  );
+}
+
+.auction-cta-cards__card--teal .auction-cta-cards__card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(90, 165, 181, 0.18) 0%,
+    rgba(74, 150, 166, 0.44) 48%,
+    rgba(63, 135, 152, 0.74) 100%
+  );
+}
+
+.auction-cta-cards__icon {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin: 28px 0 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+}
+
+.auction-cta-cards__icon--sage {
+  background: var(--auction-cta-sage);
+  color: #101928;
+  box-shadow: 0 8px 24px rgba(77, 150, 58, 0.22);
+}
+
+.auction-cta-cards__icon--teal {
+  background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 100%);
+  box-shadow: 0 8px 24px rgba(74, 150, 166, 0.32);
+}
+
+.auction-cta-cards__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+  padding: 18px 28px 56px;
+}
+
+.auction-cta-cards__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-cta-cards__content strong {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.auction-cta-cards__content p {
+  margin: 0;
+  max-width: 280px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.auction-cta-cards__button {
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-height: 32px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #2d3542;
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auction-cta-cards__button-arrow {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.5;
+  transition: transform 0.22s ease;
+}
+
+.auction-cta-cards__card:hover .auction-cta-cards__button {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+.auction-cta-cards__card:hover .auction-cta-cards__button-arrow {
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .auction-cta-cards__title {
+    text-align: center;
+  }
+
+  .auction-cta-cards__title-desktop {
+    display: none;
+  }
+
+  .auction-cta-cards__title-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+  }
+
+  .auction-cta-cards__title::after {
+    display: none;
+  }
+
+  .auction-cta-cards__title-pill {
+    display: inline-block;
+    margin: 0 0.08em;
+    padding: 0.08em 0.52em 0.14em;
+    border-radius: 999px;
+    background: #4ecdd6;
+    color: #ffffff;
+    font-weight: 800;
+    line-height: 1.05;
+    box-shadow:
+      0 10px 28px rgba(78, 205, 214, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    transform: rotate(-2deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .auction-cta-cards__grid,
+  .auction-cta-cards__grid--duo,
+  .auction-cta-cards__grid--trio {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    max-width: none;
+  }
+
+  .auction-cta-cards__grid--trio .auction-cta-cards__card:last-child:nth-child(3) {
+    grid-column: auto;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .auction-cta-cards__card {
+    flex-direction: row;
+    align-items: center;
+    min-height: 112px;
+    height: auto;
+    aspect-ratio: unset;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(42, 56, 68, 0.12);
+  }
+
+  .auction-cta-cards__card img {
+    object-position: center;
+  }
+
+  .auction-cta-cards__card-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(15, 23, 42, 0.82) 0%,
+      rgba(15, 23, 42, 0.52) 42%,
+      rgba(15, 23, 42, 0.18) 100%
+    );
+  }
+
+  .auction-cta-cards__card--sage .auction-cta-cards__card-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(139, 144, 95, 0.8) 0%,
+      rgba(186, 191, 130, 0.54) 40%,
+      rgba(217, 219, 174, 0.26) 68%,
+      rgba(217, 219, 174, 0.1) 100%
+    );
+  }
+
+  .auction-cta-cards__card--teal .auction-cta-cards__card-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(74, 150, 166, 0.78) 0%,
+      rgba(90, 165, 181, 0.52) 40%,
+      rgba(74, 150, 166, 0.22) 68%,
+      rgba(74, 150, 166, 0.1) 100%
+    );
+  }
+
+  .auction-cta-cards__icon {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 0 0 12px;
+  }
+
+  .auction-cta-cards__icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .auction-cta-cards__footer {
+    position: static;
+    z-index: 1;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    margin-top: 0;
+    padding: 12px 72px 12px 8px;
+    background: none;
+  }
+
+  .auction-cta-cards__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .auction-cta-cards__content strong {
+    font-size: clamp(1rem, 4.2vw, 1.15rem);
+    line-height: 1.12;
+  }
+
+  .auction-cta-cards__content p {
+    max-width: none;
+    font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+    line-height: 1.35;
+    overflow: visible;
+    display: block;
+  }
+
+  .auction-cta-cards__button {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 2;
+    min-height: 28px;
+    padding: 0 9px 0 10px;
+    gap: 4px;
+    font-size: 11px;
+    border-radius: 999px;
+  }
+
+  .auction-cta-cards__button-arrow {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .auction-cta-cards__grid,
+  .auction-cta-cards__grid--duo,
+  .auction-cta-cards__grid--trio {
+    gap: 8px;
+  }
+
+  .auction-cta-cards__card {
+    min-height: 104px;
+  }
+
+  .auction-cta-cards__icon {
+    width: 40px;
+    height: 40px;
+    margin-left: 10px;
+  }
+
+  .auction-cta-cards__footer {
+    padding: 10px 68px 10px 6px;
+    gap: 4px;
+  }
+
+  .auction-cta-cards__button {
+    right: 8px;
+    bottom: 8px;
+    min-height: 26px;
+    padding: 0 8px 0 9px;
+    font-size: 10px;
+  }
+
+  .auction-cta-cards__button-arrow {
+    width: 11px;
+    height: 11px;
+  }
+}

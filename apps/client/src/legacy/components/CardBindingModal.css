@@ -1,0 +1,609 @@
+.card-binding-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.card-binding-modal {
+  background: #fff;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.card-binding-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+  color: #666;
+}
+
+.card-binding-modal__close:hover {
+  background: #e0e0e0;
+  transform: rotate(90deg);
+}
+
+.card-binding-modal__content {
+  padding: 40px;
+}
+
+.card-binding-modal__header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.card-binding-modal__icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.card-binding-modal__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.card-binding-modal__subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.card-binding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-binding-form__card-preview {
+  margin-bottom: 10px;
+  perspective: 1000px;
+}
+
+.card-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.card-container--flipped {
+  transform: rotateY(180deg);
+}
+
+.card-preview {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-preview--front {
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 100%);
+}
+
+.card-preview--back {
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 100%);
+  transform: rotateY(180deg);
+}
+
+.card-preview--visa.card-preview--front {
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 50%, #283593 100%);
+  box-shadow: 0 10px 40px rgba(0, 153, 169, 0.4);
+}
+
+.card-preview--visa.card-preview--back {
+  background: linear-gradient(135deg, #0099A9 0%, #1a237e 50%, #283593 100%);
+  box-shadow: 0 10px 40px rgba(0, 153, 169, 0.4);
+}
+
+.card-preview--mastercard.card-preview--front {
+  background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #EB001B 100%);
+  box-shadow: 0 10px 40px rgba(235, 0, 27, 0.4);
+}
+
+.card-preview--mastercard.card-preview--back {
+  background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #EB001B 100%);
+  box-shadow: 0 10px 40px rgba(235, 0, 27, 0.4);
+}
+
+.card-preview--amex {
+  background: linear-gradient(135deg, #01579b 0%, #0277bd 50%, #0288d1 100%);
+  box-shadow: 0 10px 40px rgba(0, 111, 207, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-preview::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  animation: rotate 20s linear infinite;
+  z-index: 1;
+}
+
+.card-preview::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -30%;
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  z-index: 1;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card-preview__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.card-preview__logo {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card-logo-text {
+  display: block;
+}
+
+.mastercard-logo {
+  position: relative;
+  width: 50px;
+  height: 32px;
+}
+
+.mastercard-circle {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  top: 0;
+}
+
+.mastercard-circle--red {
+  left: 0;
+  background: #EB001B;
+  z-index: 1;
+}
+
+.mastercard-circle--orange {
+  right: 0;
+  background: #F7931E;
+  z-index: 2;
+}
+
+.card-preview__icons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.card-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.card-icon svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.card-preview__chip {
+  position: absolute;
+  top: 60px;
+  left: 24px;
+  z-index: 2;
+}
+
+.chip {
+  width: 50px;
+  height: 38px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.chip::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card-preview__number {
+  position: absolute;
+  bottom: 70px;
+  left: 24px;
+  right: 24px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-preview__footer {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 2;
+}
+
+.card-preview__name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.card-preview__expiry {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.card-preview__lock-bottom {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  opacity: 0.6;
+  z-index: 2;
+}
+
+/* Обратная сторона карты */
+.card-preview__magnetic-stripe {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: #000;
+  z-index: 1;
+}
+
+.card-preview__cvv-section {
+  position: absolute;
+  top: 100px;
+  right: 24px;
+  left: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 4px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-preview__cvv-label {
+  font-size: 10px;
+  color: #333;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.card-preview__cvv-value {
+  font-size: 16px;
+  color: #000;
+  font-weight: 600;
+  letter-spacing: 2px;
+  font-family: 'Courier New', monospace;
+}
+
+.card-preview__back-logo {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2;
+}
+
+.card-preview__back-logo .card-logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card-preview__back-logo .mastercard-logo {
+  width: 40px;
+  height: 26px;
+}
+
+.card-preview__back-logo .mastercard-circle {
+  width: 26px;
+  height: 26px;
+}
+
+.card-binding-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.form-field__input {
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s;
+  background: #fff;
+  font-family: 'Courier New', monospace;
+}
+
+.form-field__input:focus {
+  outline: none;
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.1);
+}
+
+.form-field__input.error {
+  border-color: #ff4444;
+}
+
+.form-field__input.error:focus {
+  box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
+}
+
+.form-field__input.valid {
+  border-color: #0099A9;
+}
+
+.form-field__input.valid:focus {
+  border-color: #0099A9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.1);
+}
+
+.form-field__error {
+  font-size: 12px;
+  color: #ff4444;
+  margin-top: -4px;
+}
+
+.card-binding-form__security {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.card-binding-form__security svg {
+  flex-shrink: 0;
+}
+
+.card-binding-form__submit {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.card-binding-form__submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
+}
+
+.card-binding-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card-binding-form__submit svg {
+  flex-shrink: 0;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .card-binding-modal {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .card-binding-modal__content {
+    padding: 30px 20px;
+  }
+
+  .card-binding-modal__title {
+    font-size: 20px;
+  }
+
+  .card-binding-modal__subtitle {
+    font-size: 14px;
+  }
+
+  .card-container {
+    height: 180px;
+  }
+
+  .card-preview {
+    padding: 20px;
+  }
+
+  .card-preview__number {
+    font-size: 18px;
+    bottom: 60px;
+    letter-spacing: 1.5px;
+  }
+
+  .card-preview__logo {
+    font-size: 20px;
+  }
+
+  .mastercard-logo {
+    width: 40px;
+    height: 26px;
+  }
+
+  .mastercard-circle {
+    width: 26px;
+    height: 26px;
+  }
+
+  .chip {
+    width: 40px;
+    height: 30px;
+  }
+
+  .card-preview__cvv-section {
+    top: 80px;
+    padding: 10px;
+  }
+
+  .form-field-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,226 @@
+.nearest-auction-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  grid-column: span 2;
+}
+
+.nearest-auction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nearest-auction-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.nearest-auction-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 2px solid #d1d5db; /* базовая серая обводка, перекрашивается по статусу */
+  background: transparent;
+}
+
+.nearest-auction-card .timer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  min-width: 60px;
+}
+
+.nearest-auction-card .timer-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.nearest-auction-card .timer-label {
+  font-size: 0.75rem;
+  color: #374151; /* более тёмный цвет для обозначений */
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+}
+
+.nearest-auction-card .timer-separator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: inherit;
+  margin: 0 0.25rem;
+}
+
+.nearest-auction-content {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+}
+
+.nearest-auction-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.nearest-auction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nearest-auction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nearest-auction-object-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.nearest-auction-object-type {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.nearest-auction-object-location {
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nearest-auction-price,
+.nearest-auction-start-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.nearest-auction-price {
+  background: #dbeafe;
+}
+
+.price-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.price-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+@media (max-width: 1024px) {
+  .nearest-auction-card {
+    grid-column: span 1;
+  }
+
+  .nearest-auction-content {
+    grid-template-columns: 1fr;
+  }
+
+  .nearest-auction-image {
+    max-width: 300px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .nearest-auction-card .nearest-auction-timer {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nearest-auction-card .timer-item {
+    min-width: 50px;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .nearest-auction-card .timer-value {
+    font-size: 1.25rem;
+  }
+
+  .nearest-auction-card .timer-separator {
+    font-size: 1.25rem;
+  }
+}
+
+/* Цвета цифр и обводки в зависимости от оставшихся дней (для некритичных таймеров) */
+.nearest-auction-timer.timer-long .timer-value {
+  color: #0099A9; /* зелёный, > 28 дней */
+}
+.nearest-auction-timer.timer-long {
+  border-color: #0099A9;
+}
+
+.nearest-auction-timer.timer-medium .timer-value {
+  color: #f97316; /* жёлто-оранжевый, > 14 и < 28 дней */
+}
+.nearest-auction-timer.timer-medium {
+  border-color: #f97316;
+}
+
+.nearest-auction-timer.timer-short .timer-value {
+  color: #dc2626; /* красный, < 14 дней */
+}
+.nearest-auction-timer.timer-short {
+  border-color: #dc2626;
+}
+
+/* мигающий режим при оставшихся < 7 дней */
+@keyframes nearest-timer-blink {
+  0%, 100% {
+    color: #111827;   /* тёмные цифры в неактивной фазе */
+  }
+  50% {
+    color: #dc2626;   /* красные цифры в активной фазе */
+  }
+}
+
+@keyframes nearest-timer-shadow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    border-color: #111827; /* тёмная обводка в неактивной фазе */
+  }
+  50% {
+    box-shadow: 0 0 12px 2px rgba(220, 38, 38, 0.7);
+    border-color: #dc2626; /* красная обводка в активной фазе */
+  }
+}
+
+/* все цифры мигают одновременно */
+.nearest-auction-timer.timer-critical .timer-value {
+  animation: nearest-timer-blink 1s infinite;
+}
+
+/* мигает только тень и цвет обводки */
+.nearest-auction-timer.timer-critical {
+  animation: nearest-timer-shadow 1s infinite;
+}
+
+

@@ -1,0 +1,89 @@
+/* Общие анимации закрытия drawer / bottom sheet / top sheet */
+
+.drawer-dismiss-backdrop--closing {
+  animation: drawer-dismiss-backdrop-out 0.28s ease-out both !important;
+}
+
+@keyframes drawer-dismiss-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.drawer-dismiss-from-top--closing {
+  animation: drawer-dismiss-from-top-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+}
+
+@keyframes drawer-dismiss-from-top-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+.drawer-dismiss-from-bottom--closing {
+  animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+}
+
+@keyframes drawer-dismiss-from-bottom-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.drawer-dismiss-from-right--closing {
+  animation: drawer-dismiss-from-right-out 0.32s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+@keyframes drawer-dismiss-from-right-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.drawer-dismiss-modal--closing {
+  animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+}
+
+@keyframes drawer-dismiss-modal-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes promo-drawer-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-dismiss-backdrop--closing,
+  .drawer-dismiss-from-top--closing,
+  .drawer-dismiss-from-bottom--closing,
+  .drawer-dismiss-from-right--closing,
+  .drawer-dismiss-modal--closing {
+    animation: none !important;
+  }
+}

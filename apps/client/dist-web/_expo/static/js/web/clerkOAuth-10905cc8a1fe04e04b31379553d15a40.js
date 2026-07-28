@@ -1,0 +1,1 @@
+__d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,'__esModule',{value:!0}),e.getClerkOAuthReturnUrl=function(){if('undefined'==typeof window)return'/oauth-bridge';const t=(globalThis.__ExpoImportMetaRegistry.env?.BASE_URL||'/').replace(/\/$/,''),o=t&&'/'!==t?`${t}/oauth-bridge`:'/oauth-bridge';return`${window.location.origin}${o}`}},2900,[]);

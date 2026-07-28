@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "sellyourbrick",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sellyourbrick.app"
