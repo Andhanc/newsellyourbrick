@@ -16,7 +16,7 @@ const MAP_FOCUS = {
   zoom: 7.1,
 }
 
-const FEATURED_IMAGE = 'images/test-drive/property-marbella.png'
+const FEATURED_IMAGE = 'images/test-drive/property-marbella-card.jpg'
 
 const metricCards = [
   { key: 'yield', label: 'Доходность', value: '+10.8%', Icon: FiTrendingUp, placement: 'tl' },
@@ -121,7 +121,14 @@ export default function BuyerMapScene({ onCardClick }) {
       <div className="buyer-map-scene__marker" aria-label="Выбранный объект">
         <article className="buyer-map-marker__card">
           <div className="buyer-map-marker__media">
-            <img src={publicAsset(FEATURED_IMAGE)} alt="" loading="eager" decoding="async" />
+            <img
+              src={publicAsset(FEATURED_IMAGE)}
+              alt=""
+              width={520}
+              height={325}
+              loading="eager"
+              decoding="async"
+            />
             <span className="buyer-map-marker__badge">New</span>
           </div>
           <div className="buyer-map-marker__body">

@@ -19,6 +19,7 @@ import { installReturningVisitorListeners, markUserHasVisitedSite } from './util
 import { rememberInternalRoutePath } from './utils/propertyNavigation'
 import './App.css'
 import './styles/buyer-mobile-tokens.css'
+import './styles/tiffany-shine-button.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
@@ -42,6 +43,8 @@ import CabinetDataRedirect from './components/CabinetDataRedirect'
 import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
 import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
 import NotFoundPage from './components/NotFoundPage'
+import SoftLaunchGate from './components/SoftLaunchGate'
+import { shouldShowSoftLaunchUnavailable } from './utils/softLaunchAccess'
 import { PageSeoProvider } from './context/PageSeoContext'
 import SitePageSeo from './components/SitePageSeo'
 import { isAuctionRoute } from './utils/auctionFilterUrl'
@@ -122,6 +125,7 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
   const mobileDiscoverHome = pathname === '/'
+  const softLaunchUnavailable = shouldShowSoftLaunchUnavailable(pathname)
 
   const routeClass = mobileDiscoverHome
     ? 'app-layout--mobile-discover'
@@ -136,11 +140,18 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
   return (
     <div
       ref={appLayoutRef}
-      className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}${routeClass ? ` ${routeClass}` : ''}`}
+      className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}${routeClass ? ` ${routeClass}` : ''}${softLaunchUnavailable ? ' app-layout--feature-unavailable' : ''}`}
     >
       {children}
     </div>
   )
+}
+
+/** Soft-launch «Пока недоступно» replaces the page — no site footer underneath. */
+function AppChromeFooter() {
+  const { pathname } = useLocation()
+  if (shouldShowSoftLaunchUnavailable(pathname)) return null
+  return <LazyFooter />
 }
 
 // Компонент для валидации сессии при запуске приложения
@@ -246,9 +257,27 @@ function NumericUserIdHydration() {
   return null
 }
 
-const VIEWPORT_DEFAULT = 'width=device-width, initial-scale=1.0'
+/** Chrome Android красит нижнюю панель в theme-color / фон вкладки — держим белый. */
+function BrowserChromeThemeColor() {
+  useEffect(() => {
+    const COLOR = '#ffffff'
+    const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]'))
+    if (metas.length === 0) {
+      const meta = document.createElement('meta')
+      meta.setAttribute('name', 'theme-color')
+      meta.setAttribute('content', COLOR)
+      document.head.appendChild(meta)
+      return undefined
+    }
+    metas.forEach((meta) => meta.setAttribute('content', COLOR))
+    return undefined
+  }, [])
+  return null
+}
+
+const VIEWPORT_DEFAULT = 'width=device-width, initial-scale=1.0, viewport-fit=cover'
 const VIEWPORT_MAIN_NO_ZOOM =
-  'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no'
+  'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover'
 
 /** Маршруты без масштабирования: главная, аукцион, профиль, кошелёк, бонусы, избранное. */
 const NO_ZOOM_PATHS = new Set([
@@ -584,6 +613,7 @@ function App() {
       <RouteHistoryTracker />
       <ScrollToTop />
       <NumericUserIdHydration />
+      <BrowserChromeThemeColor />
       <MainPageViewportLock />
       <AuctionMobileOverflowLock />
       <ReferralCapture />
@@ -609,6 +639,7 @@ function App() {
         </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
+            <SoftLaunchGate>
             <Routes>
               <Route path="/" element={<MobileDiscoverPage />} />
               <Route path="/auction" element={<Home />} />
@@ -1042,6 +1073,7 @@ function App() {
               />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
+            </SoftLaunchGate>
           </RouteErrorBoundary>
         </div>
         <Suspense
@@ -1058,7 +1090,7 @@ function App() {
             />
           }
         >
-          <LazyFooter />
+          <AppChromeFooter />
         </Suspense>
       </AppLayoutFrame>
       </LayoutScrollRefContext.Provider>

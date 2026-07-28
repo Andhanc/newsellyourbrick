@@ -5,7 +5,7 @@ import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalcula
 import axios from 'axios'
 import Header from '../components/Header'
 import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
-import { FiArrowRight, FiBarChart2, FiColumns, FiRefreshCw, FiLoader } from 'react-icons/fi'
+import { FiArrowRight, FiBarChart2, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
@@ -31,6 +31,7 @@ import {
 import { createCompareAiRequestGuard } from '../utils/compareAiRequestGuard'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
+const COMPARE_HEADER_ILLUSTRATION = '/images/favorites-compare-reference-style.png'
 
 /** Плейсхолдер карточки выбора, пока каталог и избранное подгружаются */
 function ComparePickCardSkeleton() {
@@ -809,18 +810,24 @@ const Compare = () => {
       <Header />
       <div className="compare-container">
         <div className="compare-header">
-          <h1 className="compare-title">
-            <FiColumns className="compare-title-icon" aria-hidden />
-            Сравнение
-          </h1>
-          <p className="compare-subtitle">
-            Выберите два объекта из избранного одного типа — таблица сравнивает цены, площади, планировку,
-            год постройки, удобства и другие поля карточки; по числовым критериям подсчитывается счёт «лучше».
-          </p>
-          <div className="compare-header-actions">
-            <Link to="/favorites" className="compare-link-muted">
-              ← К списку «Понравилось»
-            </Link>
+          <div className="compare-header__visual" aria-hidden>
+            <img
+              src={COMPARE_HEADER_ILLUSTRATION}
+              alt=""
+              className="compare-header__image"
+              loading="lazy"
+            />
+          </div>
+          <div className="compare-header__copy">
+            <h1 className="compare-title">Сравнение</h1>
+            <p className="compare-subtitle">
+              Выберите два объекта одного типа из «Понравилось» — сравним цену, площадь и ключевые параметры.
+            </p>
+            <div className="compare-header-actions">
+              <Link to="/favorites" className="compare-link-muted">
+                ← К списку «Понравилось»
+              </Link>
+            </div>
           </div>
         </div>
 

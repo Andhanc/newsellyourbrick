@@ -2,6 +2,7 @@ import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   FiArrowRight,
+  FiArrowUpRight,
   FiBarChart2,
   FiCheckCircle,
   FiHome,
@@ -421,7 +422,7 @@ function SellerServicesSection() {
               <p>{card.copy}</p>
               <Link to="/owner/property/new" onClick={() => scrollMainTo(0, 0, 'instant')}>
                 Подробнее
-                <FiArrowRight />
+                <FiArrowUpRight />
               </Link>
             </article>
           )

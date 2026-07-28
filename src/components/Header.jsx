@@ -28,6 +28,10 @@ import {
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import {
+  isSoftLaunchFeatureBlocked,
+  isSoftLaunchHrefBlocked,
+} from '../utils/softLaunchAccess'
 import HeaderPinnedCatalogNav from './HeaderPinnedCatalogNav'
 
 const LoginModalLazy = lazy(() => import('./LoginModal'))
@@ -94,19 +98,6 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isSearchOpen])
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      const main = document.querySelector('.app-layout')
-      const originalOverflow = main ? main.style.overflow : document.body.style.overflow
-      if (main) main.style.overflow = 'hidden'
-      else document.body.style.overflow = 'hidden'
-      return () => {
-        if (main) main.style.overflow = originalOverflow
-        else document.body.style.overflow = originalOverflow
-      }
-    }
-  }, [isMenuOpen])
 
   useEffect(() => {
     setSiteNavDrawerOpen(isMenuOpen)
@@ -498,6 +489,11 @@ const Header = () => {
   }
 
   const openLoginOrNavigate = (path, closeMenu = false) => {
+    if (isSoftLaunchHrefBlocked(path)) {
+      navigate(path)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
     if (!isSiteUserSignedIn(user, userLoaded)) {
       setLoginModalEntry('wizard')
       setIsLoginModalOpen(true)
@@ -525,6 +521,10 @@ const Header = () => {
   }
 
   const openAiAssistantFromHeader = () => {
+    if (isSoftLaunchFeatureBlocked('aiAssistant')) {
+      navigate('/chat?assistant=1')
+      return
+    }
     window.dispatchEvent(new CustomEvent('openAIChat'))
   }
 

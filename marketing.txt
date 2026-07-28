@@ -1,0 +1,104 @@
+New Property
+
+↓
+
+AI writes article
+
+↓
+
+Creates 20 social posts
+
+↓
+
+Creates videos
+
+↓
+
+Creates email campaign
+
+↓
+
+Publishes everywhere
+
+↓
+
+Updates website
+
+↓
+
+Indexes Google
+
+↓
+
+Runs advertisements
+
+↓
+
+Answers inquiries
+
+↓
+
+Books meetings
+
+↓
+
+Updates CRM
+
+↓
+
+Follows client
+
+↓
+
+Reports results
+
+Minimal human involvement.
+
+Technologies Worth Following
+
+Keep an eye on platforms such as:
+
+OpenAI (GPT)
+
+Anthropic (Claude)
+
+Google (Gemini)
+
+Perplexity
+
+n8n
+
+Make
+
+Zapier
+
+HubSpot
+
+GoHighLevel
+
+
+These can be combined so that AI generates content, publishes it, responds to leads, updates your CRM, and notifies your sales team.
+
+If I were building House Tenerife today
+
+For your business, I would build an AI ecosystem with:
+
+A multilingual website optimized for AI search and SEO.
+
+An AI agent trained on every property, investment project, and buying process that can answer visitors 24/7.
+
+Automatic creation of blogs, videos, emails, and social media posts from every new listing.
+
+Automated follow-up via WhatsApp and email until the lead books a meeting.
+
+AI scoring to prioritize serious investors.
+
+Dashboards tracking which channels generate the highest-value clients.
+
+
+For a company like House Tenerife, this kind of system can dramatically increase marketing output without needing a large content team, while allowing your human salespeople to spend their time closing deals rather than creating content or chasing cold leads.
+
+
+по поводу маркетинга то что говорили вчера Вот что можно сделать
+
+тебя просил чтобы ты проделал и написал ТЗ как мы будем внедрять маркетинг.  из этого списка что тебе скинул.

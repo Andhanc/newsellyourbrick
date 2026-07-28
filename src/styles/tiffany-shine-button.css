@@ -1,0 +1,324 @@
+/**
+ * Единый primary CTA: tiffany fill + бегущий проблеск справа налево.
+ * Класс: .btn-tiffany-shine
+ * Также применяется к типовым filled Tiffany-кнопкам по всему сайту.
+ */
+
+:root {
+  --syb-tiffany-btn: #3bc0cb;
+  --syb-tiffany-btn-deep: #2aa8b4;
+  --syb-tiffany-btn-shadow: rgba(59, 192, 203, 0.32);
+  /* Ровный tiffany без статичной светлой полосы по центру — текст всегда читаем */
+  --syb-tiffany-btn-fill: linear-gradient(
+    118deg,
+    #1f9aa6 0%,
+    #2eb4bf 38%,
+    #4ecdd6 62%,
+    #2aa8b4 100%
+  );
+  --syb-tiffany-btn-fill-hover: linear-gradient(
+    118deg,
+    #1a8f9a 0%,
+    #2aa8b4 38%,
+    #52ced8 62%,
+    #239aa6 100%
+  );
+  /* Узкий блик для анимации background-position */
+  --syb-tiffany-btn-sheen: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 44%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 56%,
+    transparent 100%
+  );
+}
+
+@keyframes syb-tiffany-btn-sheen {
+  0%,
+  18% {
+    background-position: 140% 0, 0 0;
+  }
+  52% {
+    background-position: -140% 0, 0 0;
+  }
+  100% {
+    background-position: -140% 0, 0 0;
+  }
+}
+
+.btn-tiffany-shine,
+.auction-card__btn--primary,
+.discover-auction-cards .auction-card__btn--primary,
+.discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__btn--primary,
+.discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__btn--primary,
+.md-catalog.invest-home-page .auction-card__btn--primary,
+.shares-v2-card__invest-btn,
+.md-catalog.invest-home-page .shares-v2-card__invest-btn,
+.property-actions .btn-liquid-glass,
+.property-actions .btn-liquid-glass-buy,
+.debts-property-card__actions.property-actions .btn-liquid-glass,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass-buy,
+.md-catalog.invest-home-page .debts-property-card__actions.property-actions .btn-liquid-glass,
+.vip-club-btn--primary,
+.vip-club-story-card__cta,
+.vip-club-join-panel__cta,
+.seller-services-card a,
+.md-card__cta,
+.md-news-feature__cta,
+.favorites-compare__button,
+.favorites-empty-button,
+.compare-empty-button,
+.compare-calculator-btn--liquid,
+.buyer-pill-button,
+.buyer-plan__button.is-selected,
+.al-page .al-primary-link,
+.feature-unavailable-page__link--primary,
+.shares-invest-hero__cta,
+.shares-invest-stats__cta,
+.shares-invest-filters__apply,
+.shares-mobile-filters-drawer__apply,
+.sale-formats__cta,
+.profile-history-empty__cta,
+.compare-favorites-drawer__cta,
+.compare-investor-pro-drawer__cta,
+.first-favorite-drawer__cta,
+.test-drive-promo-drawer__cta,
+.subscription-screen__cta,
+.pdd-promo__cta:not(.pdd-promo__cta--outline),
+.auction-faq-section__cta,
+.property-detail-test-drive__cta,
+.wallet-bid-object__btn--primary,
+.share-mobile-purchase-bar__cta,
+.share-purchase-panel__cta,
+.td-exit-feedback__btn--primary,
+.td-checkin-modal__btn--primary,
+.otd-btn--primary,
+.property-calculator-form__button--primary,
+.verification-rejected-gate__cta,
+.verification-modal__btn--primary,
+.verification-step__btn--primary,
+.auth-alert-modal__button,
+.purchase-success-modal__btn--primary,
+.private-club-vip-celebration__btn--primary,
+.debts-advanced-filters-drawer__btn--primary,
+.debts-toolbar__panel-btn--primary,
+.deposit-button .deposit-button__content-wrapper,
+.sp-btn--primary,
+.single-page-add-flow__action-btn--primary,
+.listing-mode-stage__btn--primary,
+.auction-ended-similar-card__cta,
+.buy-now-modal__button--primary,
+.opc-plan__button--featured,
+.opc-plan__button--selected:not(.opc-plan__button--current),
+.opc-subscribe-panel__cta,
+.pricing-card--starter .pricing-card__cta:not(.pricing-card__cta--muted),
+.pricing-cards--creative .pricing-card--vip .pricing-card__cta:not(.pricing-card__cta--muted),
+.auction-desktop-filters__apply,
+.map-filters-sheet__apply,
+.test-drive-filter-panel__apply,
+.auction-reminder-modal__btn-primary,
+.property-detail-auction-hero__footer-btn,
+.won-property-card__pay-button,
+.login-modal__submit,
+.login-modal__submit--liquid-glass,
+.header-mega-menu__login-btn,
+.hr-showcases .auction-card__btn--primary,
+.hr-showcases.hr-showcases--auction-listing .auction-card__btn--primary,
+.shares-page--shares-redesign .shares-v2-card__invest-btn {
+  border: none !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  background-color: var(--syb-tiffany-btn) !important;
+  background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill) !important;
+  background-size: 220% 100%, 100% 100% !important;
+  background-position: 140% 0, 0 0 !important;
+  background-repeat: no-repeat !important;
+  animation: syb-tiffany-btn-sheen 3.2s ease-in-out infinite !important;
+  box-shadow:
+    0 6px 16px var(--syb-tiffany-btn-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 999px !important;
+}
+
+.btn-tiffany-shine:hover:not(:disabled),
+.auction-card__btn--primary:hover:not(:disabled),
+.discover-auction-cards .auction-card__btn--primary:hover:not(:disabled),
+.md-catalog.invest-home-page .auction-card__btn--primary:hover:not(:disabled),
+.shares-v2-card__invest-btn:hover:not(:disabled),
+.md-catalog.invest-home-page .shares-v2-card__invest-btn:hover:not(:disabled),
+.property-actions .btn-liquid-glass:hover:not(:disabled),
+.property-actions .btn-liquid-glass-buy:hover:not(:disabled),
+.debts-property-card__actions.property-actions .btn-liquid-glass:hover:not(:disabled),
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass:hover:not(:disabled),
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass-buy:hover:not(:disabled),
+.md-catalog.invest-home-page .debts-property-card__actions.property-actions .btn-liquid-glass:hover:not(:disabled),
+.vip-club-btn--primary:hover:not(:disabled),
+.vip-club-story-card__cta:hover,
+.vip-club-join-panel__cta:hover,
+.seller-services-card > a:hover,
+.md-card__cta:hover,
+.md-news-feature__cta:hover,
+.favorites-compare__button:hover,
+.favorites-empty-button:hover,
+.compare-empty-button:hover,
+.compare-calculator-btn--liquid:hover:not(:disabled),
+.buyer-pill-button:hover,
+.buyer-plan__button.is-selected:hover,
+.al-page .al-primary-link:hover,
+.feature-unavailable-page__link--primary:hover,
+.shares-invest-hero__cta:hover,
+.shares-invest-stats__cta:hover,
+.shares-invest-filters__apply:hover,
+.shares-mobile-filters-drawer__apply:hover,
+.sale-formats__cta:hover,
+.profile-history-empty__cta:hover,
+.compare-favorites-drawer__cta:hover,
+.compare-investor-pro-drawer__cta:hover,
+.first-favorite-drawer__cta:hover,
+.test-drive-promo-drawer__cta:hover,
+.subscription-screen__cta:hover:not(:disabled),
+.pdd-promo__cta:not(.pdd-promo__cta--outline):hover,
+.auction-faq-section__cta:hover,
+.property-detail-test-drive__cta:hover:not(:disabled),
+.wallet-bid-object__btn--primary:hover,
+.share-mobile-purchase-bar__cta:hover,
+.share-purchase-panel__cta:hover:not(:disabled),
+.td-exit-feedback__btn--primary:hover:not(:disabled),
+.td-checkin-modal__btn--primary:hover:not(:disabled),
+.otd-btn--primary:hover,
+.property-calculator-form__button--primary:hover,
+.verification-rejected-gate__cta:hover,
+.verification-modal__btn--primary:hover:not(:disabled),
+.verification-step__btn--primary:hover,
+.auth-alert-modal__button:hover,
+.purchase-success-modal__btn--primary:hover,
+.private-club-vip-celebration__btn--primary:hover,
+.debts-advanced-filters-drawer__btn--primary:hover,
+.debts-toolbar__panel-btn--primary:hover,
+.deposit-button:hover .deposit-button__content-wrapper,
+.sp-btn--primary:hover:not(:disabled),
+.single-page-add-flow__action-btn--primary:hover,
+.listing-mode-stage__btn--primary:hover,
+.auction-ended-similar-card__cta:hover,
+.buy-now-modal__button--primary:hover:not(:disabled),
+.opc-plan__button--featured:hover,
+.opc-plan__button--selected:not(.opc-plan__button--current):hover,
+.opc-subscribe-panel__cta:hover:not(:disabled),
+.pricing-card--starter .pricing-card__cta:not(.pricing-card__cta--muted):hover,
+.pricing-cards--creative .pricing-card--vip .pricing-card__cta:not(.pricing-card__cta--muted):hover,
+.auction-desktop-filters__apply:hover,
+.map-filters-sheet__apply:hover,
+.test-drive-filter-panel__apply:hover,
+.auction-reminder-modal__btn-primary:hover,
+.property-detail-auction-hero__footer-btn:hover,
+.won-property-card__pay-button:hover,
+.login-modal__submit:hover:not(:disabled),
+.login-modal__submit--liquid-glass:hover:not(:disabled),
+.header-mega-menu__login-btn:hover,
+.hr-showcases .auction-card__btn--primary:hover:not(:disabled),
+.hr-showcases.hr-showcases--auction-listing .auction-card__btn--primary:hover:not(:disabled),
+.shares-page--shares-redesign .shares-v2-card__invest-btn:hover:not(:disabled) {
+  color: #ffffff !important;
+  background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill-hover) !important;
+  background-size: 220% 100%, 100% 100% !important;
+  box-shadow:
+    0 10px 24px var(--syb-tiffany-btn-shadow),
+    0 0 0 1px rgba(78, 205, 214, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  text-decoration: none !important;
+}
+
+/* Убираем старые liquid-glass / shine-оверлеи — они перекрывают блик */
+.property-actions .btn-liquid-glass::before,
+.property-actions .btn-liquid-glass::after,
+.property-actions .btn-liquid-glass-buy::before,
+.property-actions .btn-liquid-glass-buy::after,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass::before,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass::after,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass-buy::before,
+.md-catalog.invest-home-page .property-actions .btn-liquid-glass-buy::after,
+.verification-step__btn--primary::after,
+.buy-now-modal__button--primary::before,
+.login-modal__submit::before,
+.login-modal__submit::after,
+.login-modal__submit--liquid-glass::before,
+.login-modal__submit--liquid-glass::after,
+.compare-calculator-btn--liquid::before,
+.compare-calculator-btn--liquid::after,
+.pricing-cards--creative .pricing-card--starter .pricing-card__cta:not(.pricing-card__cta--muted)::before,
+.pricing-cards--creative .pricing-card--starter .pricing-card__cta:not(.pricing-card__cta--muted)::after,
+.pricing-cards--creative .pricing-card--vip .pricing-card__cta:not(.pricing-card__cta--muted)::before,
+.pricing-cards--creative .pricing-card--vip .pricing-card__cta:not(.pricing-card__cta--muted)::after {
+  opacity: 0 !important;
+  content: none !important;
+  display: none !important;
+}
+
+/* Ссылки-CTA: выглядят как кнопки */
+.seller-services-card a,
+.md-card__cta,
+.md-news-feature__cta,
+.al-page .al-primary-link,
+.feature-unavailable-page__link--primary,
+.shares-invest-hero__cta,
+.sale-formats__cta,
+.profile-history-empty__cta,
+.vip-club-story-card__cta,
+.vip-club-join-panel__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Shares invest: тёмный CTA — не tiffany, оставляем локальную тему */
+.shares-invest-page .shares-v2-card__invest-btn,
+.shares-invest-page .shares-v2-card__invest-btn:hover:not(:disabled) {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  background-color: #0a0a0a !important;
+  background-image: none !important;
+  animation: none !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(10, 10, 10, 0.16) !important;
+}
+
+.shares-invest-page .shares-v2-card__invest-btn:hover:not(:disabled) {
+  background-color: #1a1a1a !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-tiffany-shine,
+  .auction-card__btn--primary,
+  .shares-v2-card__invest-btn,
+  .property-actions .btn-liquid-glass,
+  .property-actions .btn-liquid-glass-buy,
+  .vip-club-btn--primary,
+  .vip-club-story-card__cta,
+  .seller-services-card a,
+  .md-card__cta,
+  .favorites-compare__button,
+  .favorites-empty-button,
+  .compare-empty-button,
+  .compare-calculator-btn--liquid,
+  .buyer-pill-button,
+  .buyer-plan__button.is-selected,
+  .al-page .al-primary-link,
+  .feature-unavailable-page__link--primary,
+  .deposit-button .deposit-button__content-wrapper,
+  .login-modal__submit,
+  .header-mega-menu__login-btn {
+    animation: none !important;
+    background-image: var(--syb-tiffany-btn-fill) !important;
+    background-size: 100% 100% !important;
+    background-position: 0 0 !important;
+    transition: none;
+  }
+}

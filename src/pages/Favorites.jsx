@@ -4,9 +4,9 @@ import Header from '../components/Header'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
 import {
   PiArrowRight,
+  PiArrowUpRight,
   PiHeartStraight,
   PiQuestion,
-  PiScales,
   PiX,
 } from 'react-icons/pi'
 import './Favorites.css'
@@ -279,24 +279,6 @@ const Favorites = () => {
         ) : null}
 
         <section className="favorites-compare" aria-labelledby="favorites-compare-title">
-          <div className="favorites-compare__copy">
-            <div className="favorites-compare__head">
-              <span className="favorites-compare__icon" aria-hidden>
-                <PiScales />
-              </span>
-              <h2 id="favorites-compare-title">
-                Сравнивайте и выбирайте
-                <span className="favorites-compare__title-accent"> лучшее</span>
-              </h2>
-            </div>
-            <p>
-              Цены, характеристики и локация — рядом, чтобы выбрать уверенно
-            </p>
-            <Link to="/compare" className="favorites-compare__button">
-              О сравнении
-              <PiArrowRight size={13} aria-hidden />
-            </Link>
-          </div>
           <div className="favorites-compare__visual" aria-hidden>
             <img
               src={COMPARE_ILLUSTRATION}
@@ -304,6 +286,19 @@ const Favorites = () => {
               className="favorites-compare__image"
               loading="lazy"
             />
+          </div>
+          <div className="favorites-compare__copy">
+            <h2 id="favorites-compare-title">
+              Сравнивайте и выбирайте
+              <span className="favorites-compare__title-accent"> лучшее</span>
+            </h2>
+            <p>
+              Цены, характеристики и локация — рядом, чтобы выбрать уверенно
+            </p>
+            <Link to="/compare" className="favorites-compare__button">
+              О сравнении
+              <PiArrowUpRight size={13} aria-hidden />
+            </Link>
           </div>
         </section>
 

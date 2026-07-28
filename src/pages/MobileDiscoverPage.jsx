@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  FiArrowUpRight,
   FiBookmark,
   FiGrid,
   FiPieChart,
@@ -83,6 +84,7 @@ export default function MobileDiscoverPage() {
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
+  const cardsRef = useRef(null)
   const busyRef = useRef(false)
   const screenRef = useRef('hero')
   const touchStartY = useRef(0)
@@ -95,6 +97,7 @@ export default function MobileDiscoverPage() {
   const [saved, setSaved] = useState(() => new Set())
   const [stageEntered, setStageEntered] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
+  const [activeSaleCard, setActiveSaleCard] = useState(0)
 
   screenRef.current = screen
 
@@ -120,6 +123,46 @@ export default function MobileDiscoverPage() {
       if (layout) layout.style.overflowY = ''
     }
   }, [clearTimers])
+
+  useEffect(() => {
+    const scroller = cardsRef.current
+    if (!scroller || screen !== 'stage') return undefined
+
+    const syncActive = () => {
+      const cards = Array.from(scroller.querySelectorAll('.md-card'))
+      if (cards.length === 0) return
+      const mid = scroller.scrollLeft + scroller.clientWidth / 2
+      let best = 0
+      let bestDist = Infinity
+      cards.forEach((card, index) => {
+        const center = card.offsetLeft + card.offsetWidth / 2
+        const dist = Math.abs(center - mid)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = index
+        }
+      })
+      setActiveSaleCard(best)
+    }
+
+    syncActive()
+    scroller.addEventListener('scroll', syncActive, { passive: true })
+    window.addEventListener('resize', syncActive)
+    return () => {
+      scroller.removeEventListener('scroll', syncActive)
+      window.removeEventListener('resize', syncActive)
+    }
+  }, [screen, stageEntered])
+
+  const scrollToSaleCard = useCallback((index) => {
+    const scroller = cardsRef.current
+    if (!scroller) return
+    const card = scroller.querySelectorAll('.md-card')[index]
+    if (!card) return
+    const left = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    setActiveSaleCard(index)
+  }, [])
 
   const goTo = useCallback(
     (next) => {
@@ -336,48 +379,65 @@ export default function MobileDiscoverPage() {
               <p className="md-stage__subtitle">Discover the best home for you</p>
             </div>
 
-            <div className="md-cards" role="list">
-              {SALE_CARDS.map((card, index) => {
-                const isSaved = saved.has(card.id)
-                return (
-                  <article
-                    key={card.id}
-                    className={`md-card md-card--${card.theme}`}
-                    role="listitem"
-                    style={{ '--md-card-i': index }}
-                    aria-label={`${card.title}. ${card.description}`}
-                  >
-                    <div className="md-card__frame">
-                      <img
-                        className="md-card__image"
-                        src={card.image}
-                        alt=""
-                        width={900}
-                        height={1200}
-                        loading={index === 0 ? 'eager' : 'lazy'}
-                        decoding="async"
-                      />
-                      <div className="md-card__shade" aria-hidden="true" />
-                      <div className="md-card__body">
-                        <div className="md-card__actions">
-                          <Link className="md-card__cta" to={card.to}>
-                            Подробнее
-                          </Link>
-                          <button
-                            type="button"
-                            className={`md-card__save${isSaved ? ' is-on' : ''}`}
-                            aria-label={isSaved ? 'Убрать из избранного' : 'Сохранить'}
-                            aria-pressed={isSaved}
-                            onClick={() => toggleSaved(card.id)}
-                          >
-                            <FiBookmark aria-hidden />
-                          </button>
+            <div className="md-cards-wrap">
+              <div ref={cardsRef} className="md-cards" role="list">
+                {SALE_CARDS.map((card, index) => {
+                  const isSaved = saved.has(card.id)
+                  return (
+                    <article
+                      key={card.id}
+                      className={`md-card md-card--${card.theme}`}
+                      role="listitem"
+                      style={{ '--md-card-i': index }}
+                      aria-label={`${card.title}. ${card.description}`}
+                    >
+                      <div className="md-card__frame">
+                        <img
+                          className="md-card__image"
+                          src={card.image}
+                          alt=""
+                          width={900}
+                          height={1200}
+                          loading={index === 0 ? 'eager' : 'lazy'}
+                          decoding="async"
+                        />
+                        <div className="md-card__shade" aria-hidden="true" />
+                        <div className="md-card__body">
+                          <div className="md-card__actions">
+                            <Link className="md-card__cta" to={card.to}>
+                              Подробнее
+                              <FiArrowUpRight aria-hidden />
+                            </Link>
+                            <button
+                              type="button"
+                              className={`md-card__save${isSaved ? ' is-on' : ''}`}
+                              aria-label={isSaved ? 'Убрать из избранного' : 'Сохранить'}
+                              aria-pressed={isSaved}
+                              onClick={() => toggleSaved(card.id)}
+                            >
+                              <FiBookmark aria-hidden />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </article>
-                )
-              })}
+                    </article>
+                  )
+                })}
+              </div>
+
+              <div className="md-cards-dots" role="tablist" aria-label="Форматы продажи">
+                {SALE_CARDS.map((card, index) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    role="tab"
+                    className={`md-cards-dot${activeSaleCard === index ? ' is-active' : ''}`}
+                    aria-label={card.title}
+                    aria-selected={activeSaleCard === index}
+                    onClick={() => scrollToSaleCard(index)}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="md-welcome__copy">
@@ -390,17 +450,12 @@ export default function MobileDiscoverPage() {
             </div>
           </div>
 
-          <section className="md-welcome" aria-label="Welcome">
-            <div className="md-welcome__media">
-              <img
-                className="md-welcome__photo"
-                src={WELCOME_HOUSE}
-                alt=""
-                width={1600}
-                height={1200}
-                loading="lazy"
-                decoding="async"
-              />
+          <div className="md-welcome-flow">
+            <section className="md-welcome" aria-label="Welcome">
+              <div
+                className="md-welcome__media"
+                style={{ backgroundImage: `url("${WELCOME_HOUSE}")` }}
+              >
               <svg
                 className="md-welcome__curve"
                 viewBox="0 0 100 32"
@@ -427,7 +482,6 @@ export default function MobileDiscoverPage() {
                     navigate(q ? `/auction?q=${encodeURIComponent(q)}` : '/auction')
                   }}
                 >
-                  <FiSearch className="md-welcome__search-icon" aria-hidden />
                   <input
                     className="md-welcome__search-input"
                     type="search"
@@ -455,10 +509,11 @@ export default function MobileDiscoverPage() {
                 {/* Soft white scoop at the bottom of the photo */}
                 <path d="M0 32 H100 V20 Q50 6 0 20 Z" fill="#ffffff" />
               </svg>
-            </div>
-          </section>
+              </div>
+            </section>
 
-          <MobileDiscoverCatalog />
+            <MobileDiscoverCatalog />
+          </div>
 
           <div className={`md-fab${menuOpen ? ' is-open' : ''}`}>
             {menuOpen && (

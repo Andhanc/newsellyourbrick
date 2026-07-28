@@ -268,17 +268,52 @@
 .favorites-compare {
   --favorites-compare-fade: #ffffff;
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(180px, 0.85fr);
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
   min-height: 0;
   margin: 0 0 28px;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 22px;
   background:
-    radial-gradient(ellipse 48% 90% at 100% 50%, rgba(78, 205, 214, 0.12), transparent 68%),
-    #ffffff;
-  border: 1px solid rgba(78, 205, 214, 0.14);
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(78, 205, 214, 0.16), transparent 62%),
+    linear-gradient(180deg, #f7fcfd 0%, #ffffff 42%, #ffffff 100%);
+  border: 1px solid rgba(78, 205, 214, 0.2);
+  box-shadow: 0 12px 32px -22px rgba(15, 60, 70, 0.3);
+}
+
+.favorites-compare__visual {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 240px;
+  height: clamp(240px, 32vw, 320px);
+  overflow: hidden;
+  pointer-events: none;
+  padding: 8px 12px 0;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.favorites-compare__visual::before {
+  display: none;
+}
+
+.favorites-compare__image {
+  position: relative;
+  z-index: 0;
+  display: block;
+  width: min(720px, 96%);
+  height: 108%;
+  max-width: none;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center center;
+  opacity: 1;
 }
 
 .favorites-compare__copy {
@@ -286,51 +321,19 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 18px 8px 18px 20px;
-  max-width: 34rem;
-}
-
-.favorites-compare__head {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.favorites-compare__icon {
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
   align-items: center;
-  justify-content: center;
-  margin-top: 1px;
-  border-radius: 50%;
-  color: #0b1220;
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff 0%,
-      #eef3f7 38%,
-      #d2dbe4 100%
-    );
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-.favorites-compare__icon svg {
-  width: 15px;
-  height: 15px;
+  text-align: center;
+  gap: 10px;
+  padding: 8px 28px 24px;
+  max-width: none;
 }
 
 .favorites-compare h2 {
   margin: 0;
   color: var(--favorites-text);
-  font-size: clamp(1.05rem, 1.4vw, 1.28rem);
+  font-size: clamp(1.15rem, 1.6vw, 1.4rem);
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.22;
   letter-spacing: -0.02em;
 }
 
@@ -339,64 +342,39 @@
 }
 
 .favorites-compare p {
-  max-width: 24rem;
+  max-width: 28rem;
   margin: 0;
-  color: #6b7585;
-  font-size: 0.8rem;
+  color: #66706e;
+  font-size: 0.88rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .favorites-compare__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 28px;
-  margin-top: 2px;
-  padding: 0 11px;
+  gap: 6px;
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 0 18px;
   border-radius: 999px;
   background: var(--favorites-tiffany-dark);
   border: 0;
   color: #fff;
   text-decoration: none;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  transition: background-color 0.2s ease;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 22px -10px rgba(59, 192, 203, 0.75);
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .favorites-compare__button:hover {
   color: #fff;
   background: #2eafb9;
-}
-
-.favorites-compare__visual {
-  position: relative;
-  z-index: 1;
-  align-self: stretch;
-  min-height: 132px;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.favorites-compare__visual::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.55) 16%, transparent 46%);
-  pointer-events: none;
-}
-
-.favorites-compare__image {
-  position: absolute;
-  inset: 6% -4% 0 -8%;
-  width: 108%;
-  height: 96%;
-  max-width: none;
-  object-fit: contain;
-  object-position: right center;
-  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -10px rgba(59, 192, 203, 0.85);
 }
 
 .favorites-recommendations {
@@ -568,30 +546,28 @@
   }
 
   .favorites-compare {
-    grid-template-columns: 1fr;
     min-height: 0;
   }
 
-  .favorites-compare__copy {
-    padding: 16px 18px 10px;
-    max-width: none;
-  }
-
   .favorites-compare__visual {
-    min-height: 96px;
+    min-height: 200px;
+    height: clamp(200px, 36vw, 260px);
+    padding: 6px 10px 0;
   }
 
   .favorites-compare__visual::before {
-    background:
-      linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.35) 24%, transparent 52%),
-      linear-gradient(90deg, #ffffff 0%, transparent 24%);
+    display: none;
   }
 
   .favorites-compare__image {
-    inset: -8% 0 -4% 0;
-    width: 100%;
-    height: 110%;
-    object-position: center 40%;
+    width: min(640px, 96%);
+    height: 108%;
+    margin: 0 auto;
+    object-position: center center;
+  }
+
+  .favorites-compare__copy {
+    padding: 6px 20px 20px;
   }
 
   .favorites-recommendations__grid {
@@ -737,62 +713,24 @@
   .favorites-compare {
     --favorites-compare-fade: #ffffff;
     position: relative;
-    display: block;
+    display: flex;
+    flex-direction: column;
     margin-bottom: 16px;
-    border-radius: 14px;
-    background: #ffffff;
-    border-color: rgba(78, 205, 214, 0.18);
-  }
-
-  .favorites-compare__copy {
-    position: relative;
-    z-index: 2;
-    gap: 5px;
-    max-width: 58%;
-    padding: 11px 8px 11px 12px;
-  }
-
-  .favorites-compare__head {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .favorites-compare__icon {
-    width: 24px;
-    height: 24px;
-    flex-basis: 24px;
-    margin-top: 1px;
-  }
-
-  .favorites-compare__icon svg {
-    width: 11px;
-    height: 11px;
-  }
-
-  .favorites-compare h2 {
-    font-size: 0.86rem;
-    line-height: 1.16;
-  }
-
-  .favorites-compare p {
-    font-size: 0.68rem;
-    line-height: 1.28;
-  }
-
-  .favorites-compare__button {
-    min-height: 24px;
-    margin-top: 2px;
-    padding: 0 9px;
-    font-size: 0.64rem;
+    border-radius: 18px;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 65%),
+      #ffffff;
+    border-color: rgba(78, 205, 214, 0.2);
+    box-shadow: 0 8px 22px -18px rgba(15, 60, 70, 0.3);
   }
 
   .favorites-compare__visual {
-    position: absolute;
-    inset: -6% -10% -8% auto;
-    width: 55%;
-    min-height: 0;
-    height: auto;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 190px;
+    height: 190px;
+    padding: 4px 8px 0;
   }
 
   .favorites-compare__visual::before {
@@ -800,12 +738,41 @@
   }
 
   .favorites-compare__image {
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    position: relative;
+    inset: auto;
+    width: min(420px, 96%);
+    height: 110%;
+    margin: 0 auto;
     object-fit: contain;
-    object-position: right center;
-    mix-blend-mode: multiply;
+    object-position: center center;
+    mix-blend-mode: normal;
+  }
+
+  .favorites-compare__copy {
+    position: relative;
+    z-index: 2;
+    gap: 8px;
+    max-width: none;
+    width: 100%;
+    padding: 6px 16px 16px;
+  }
+
+  .favorites-compare h2 {
+    font-size: 1rem;
+    line-height: 1.22;
+  }
+
+  .favorites-compare p {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .favorites-compare__button {
+    min-height: 34px;
+    margin-top: 2px;
+    padding: 0 14px;
+    font-size: 0.72rem;
+    box-shadow: 0 8px 16px -8px rgba(59, 192, 203, 0.7);
   }
 
   .favorites-page .listing-page-pagination .auction-desktop-pagination__page,
@@ -842,23 +809,27 @@
   }
 
   .favorites-compare__copy {
-    gap: 6px;
-    max-width: 58%;
-    padding: 11px 6px 11px 11px;
-  }
-
-  .favorites-compare__icon {
-    width: 24px;
-    height: 24px;
-    flex-basis: 24px;
+    gap: 7px;
+    max-width: none;
+    padding: 4px 14px 14px;
   }
 
   .favorites-compare h2 {
-    font-size: 0.86rem;
+    font-size: 0.95rem;
   }
 
   .favorites-compare__visual {
-    width: 48%;
+    width: 100%;
+    min-height: 170px;
+    height: 170px;
+    padding: 4px 6px 0;
+  }
+
+  .favorites-compare__image {
+    width: min(380px, 96%);
+    height: 110%;
+    margin: 0 auto;
+    object-position: center center;
   }
 
   .favorites-recommendations__header {

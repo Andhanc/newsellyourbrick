@@ -26,7 +26,12 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 
 .home-page--auction > .hero--auction-scene {
   margin-top: 0;
-  padding-bottom: 36px;
+}
+
+@media (min-width: 769px) {
+  .home-page--auction > .hero--auction-scene {
+    padding-bottom: 36px;
+  }
 }
 
 .home-page--auction .hero-features {

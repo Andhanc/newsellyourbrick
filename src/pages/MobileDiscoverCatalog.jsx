@@ -15,7 +15,6 @@ import { publicAsset } from '../utils/publicAsset'
 import './InvestorHomePage.css'
 import '../styles/discoverAuctionCards.css'
 
-const FLIP_PIN_PHOTO = publicAsset('images/mobile-discover/welcome-summer.png')
 const BUY_NOW_PHOTO = publicAsset('images/mobile-discover/buy-now-summer.png')
 const DEBTS_PHOTO = publicAsset('images/mobile-discover/debts-summer-cliff.png')
 const CARD_GESTURE = 140
@@ -139,46 +138,42 @@ function FormatCard({ id, index, tone = 'sheet', photo, children }) {
   )
 }
 
-/** Debts flip step + app download share one continuous photo */
+/**
+ * Debts + app share one sticky panel (same park point as other format cards).
+ * A short park tail keeps the panel locked; then the rest of the page scrolls normally.
+ */
 function DebtsFlow({ index, children }) {
   return (
-    <div className="md-debts-flow" style={{ zIndex: index + 1 }}>
-      {/* Keeps welcome peek over previous sticky cards while debts/app are in view */}
-      <div className="md-debts-flow__veil" aria-hidden="true">
-        <img
-          className="md-debts-flow__veil-photo"
-          src={FLIP_PIN_PHOTO}
-          alt=""
-          width={1080}
-          height={1920}
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-      <div className="md-debts-flow__media" aria-hidden="true">
-        <img
-          className="md-debts-flow__photo"
-          src={DEBTS_PHOTO}
-          alt=""
-          width={1080}
-          height={1920}
-          loading="lazy"
-          decoding="async"
-        />
-        <div className="md-debts-flow__shade" />
-      </div>
-      <div className="md-debts-flow__content">
-        <section
-          className="md-format-card md-format-card--photo md-format-card--debts-step"
+    <div className="md-debts-scene" style={{ zIndex: index + 1 }}>
+      {/* One sticky unit: photo + cards + app move together with page scroll. */}
+      <div className="md-debts-pin">
+        <div className="md-debts-pin__media" aria-hidden="true">
+          <img
+            className="md-debts-pin__photo"
+            src={DEBTS_PHOTO}
+            alt=""
+            width={1080}
+            height={1920}
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="md-debts-pin__shade" />
+        </div>
+
+        <div
+          className="md-debts-pin__showcase"
           data-md-format-card=""
           data-md-format="debts"
         >
-          <div className="md-format-card__body">{children}</div>
-        </section>
-        <div className="md-debts-flow__app">
+          {children}
+        </div>
+
+        <div className="md-debts-pin__app">
           <AppDownloadSection />
         </div>
       </div>
+
+      <div className="md-debts-pin__park" aria-hidden="true" />
     </div>
   )
 }
@@ -441,6 +436,10 @@ export default function MobileDiscoverCatalog() {
     const stage = catalog?.closest('.md-stage')
     if (!catalog || !stage) return undefined
 
+    // Native continuous scrolling is the default. The old gesture pager can only
+    // be enabled explicitly for experiments via data-native-format-scroll="false".
+    if (stage.dataset.nativeFormatScroll !== 'false') return undefined
+
     const elTop = (node) => {
       if (!node) return 0
       const stageRect = stage.getBoundingClientRect()
@@ -537,6 +536,13 @@ export default function MobileDiscoverCatalog() {
 
     let settleTimer = 0
 
+    const isPropertyCarouselTarget = (target) =>
+      Boolean(
+        target?.closest?.(
+          '.invest-showcase__scroller, .home-showcase__scroller, .md-cards',
+        ),
+      )
+
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
       if (jumpingRef.current) {
@@ -584,6 +590,14 @@ export default function MobileDiscoverCatalog() {
           event.preventDefault()
           jumpToFlip(0)
         }
+        return
+      }
+
+      // Keep native horizontal pan on property carousels (trackpad / shift-wheel)
+      if (
+        isPropertyCarouselTarget(event.target) &&
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ) {
         return
       }
 
@@ -676,8 +690,17 @@ export default function MobileDiscoverCatalog() {
         event.preventDefault()
         return
       }
-      // Block native drag-scroll only between format card parks
-      if (inFlipZone()) event.preventDefault()
+      // Block native vertical drag between format parks — but never kill
+      // horizontal swipes on property / sale-format carousels.
+      if (!inFlipZone()) return
+      if (isPropertyCarouselTarget(event.target)) return
+      const touch = event.touches[0]
+      if (touch) {
+        const dx = Math.abs(touch.clientX - touchX)
+        const dy = Math.abs(touch.clientY - touchY)
+        if (dx > dy && dx > 8) return
+      }
+      event.preventDefault()
     }
 
     const onScroll = () => {
@@ -719,29 +742,9 @@ export default function MobileDiscoverCatalog() {
       ...(FORMAT_CARD_META[item.id] || { tone: 'sheet' }),
     }))
 
-  const pinCount = formatCards.length
-
   return (
     <div ref={rootRef} className="md-catalog invest-home-page discover-auction-cards">
-      <div
-        className="md-format-stack"
-        style={{ '--md-flip-n': Math.max(pinCount, 1) }}
-      >
-        {/* Welcome photo pinned through all format peeks, including debts */}
-        <div className="md-format-flip__pin" aria-hidden="true">
-          <div className="md-format-flip__scene">
-            <img
-              className="md-format-flip__photo"
-              src={FLIP_PIN_PHOTO}
-              alt=""
-              width={1080}
-              height={1920}
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-        </div>
-
+      <div className="md-format-stack">
         <div className="md-format-stack__origin" data-md-format-origin="" aria-hidden="true" />
 
         {formatCards.map((card, index) =>

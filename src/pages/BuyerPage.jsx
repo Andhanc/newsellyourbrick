@@ -332,18 +332,32 @@ export default function BuyerPage() {
                 </button>
               </article>
             ))}
-          </div>
 
-          <div className="buyer-subscribe-panel">
-            <div>
-              <span>Выбран тариф</span>
-              <strong>{selectedPlanData.name}</strong>
-              <p>{selectedPlanData.subtitle}</p>
+            <div className="buyer-subscribe-panel">
+              <div className="buyer-subscribe-panel__copy">
+                <span>Выбран тариф</span>
+                <strong>{selectedPlanData.name}</strong>
+                <p>
+                  <span className="buyer-subscribe-panel__desc buyer-subscribe-panel__desc--full">
+                    {selectedPlanData.subtitle}
+                  </span>
+                  <span className="buyer-subscribe-panel__desc buyer-subscribe-panel__desc--short">
+                    {selectedPlanData.subtitleShort}
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalTitle(`Оформить ${selectedPlanData.name}`)}
+                aria-label={`Оформить подписку ${selectedPlanData.name}`}
+              >
+                <FiCreditCard aria-hidden />
+                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--full">
+                  Оформить подписку
+                </span>
+                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--short">Оформить</span>
+              </button>
             </div>
-            <button type="button" onClick={() => setModalTitle(`Оформить ${selectedPlanData.name}`)}>
-              <FiCreditCard aria-hidden />
-              Оформить подписку
-            </button>
           </div>
         </div>
       </section>

@@ -42,6 +42,9 @@ html, body {
   width: 100%;
   max-width: 100%;
   height: 100%;
+  /* Единый светлый холст: Chrome Android красит нижнюю панель в цвет фона вкладки */
+  background-color: #ffffff;
+  color-scheme: only light;
   /* Прокрутка только внутри .app-layout — убирает вертикальный/горизонтальный overscroll у document */
   overflow: hidden;
   overscroll-behavior: none;
@@ -87,6 +90,7 @@ body::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 /* Clerk / StrictMode: один внешний узел должен тянуться на всю высоту до .app-root-fill */

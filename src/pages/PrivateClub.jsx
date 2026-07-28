@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import {
   RiArrowRightLine,
+  RiArrowRightUpLine,
   RiLockLine,
   RiNotification3Line,
   RiUserStarLine,
@@ -300,7 +301,7 @@ export default function PrivateClub() {
                       <p>{card.text}</p>
                       <button type="button" className="vip-club-story-card__cta" onClick={openJoinGate}>
                         Подробнее
-                        <RiArrowRightLine aria-hidden />
+                        <RiArrowRightUpLine aria-hidden />
                       </button>
                     </div>
                   </article>

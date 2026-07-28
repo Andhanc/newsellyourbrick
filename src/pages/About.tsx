@@ -40,11 +40,13 @@ const metricCards = [
   {
     value: 131,
     suffix: '',
+    label: 'Профинансированные проекты',
     text: 'Профинансированные проекты — реальные сделки и объекты, каждый проверен и одобрен до публикации на платформе.',
   },
   {
     value: 46,
     suffix: '',
+    label: 'Завершённые выходы',
     text: 'Завершённые выходы — проекты полностью закрыты, капитал возвращён, прибыль распределена инвесторам.',
   },
 ];
@@ -58,6 +60,12 @@ const systemNotes = [
     title: 'Проверка до сделки',
     text: 'Due diligence, оценка и стресс-сценарии — до того, как проект появится у инвесторов.',
   },
+];
+
+const systemHighlights = [
+  { label: 'Объект в реестре', detail: 'Юридический титул, а не презентация' },
+  { label: 'Банковские выписки', detail: 'Возврат капитала подтверждается документами' },
+  { label: 'Открытые риски', detail: 'Задержки публикуем так же, как успехи' },
 ];
 
 const partnerNotes = [
@@ -75,8 +83,93 @@ function ArrowBadge({ className = '', label = 'Подробнее' }: { classNam
       aria-hidden={label ? undefined : true}
       aria-label={label || undefined}
     >
-      <HiArrowUpRight aria-hidden />
+      <HiArrowUpRight aria-hidden strokeWidth={3} />
     </span>
+  );
+}
+
+function CapabilitiesMenu() {
+  const [activeIndex, setActiveIndex] = useState(
+    Math.max(
+      0,
+      capabilities.findIndex((item) => item.active),
+    ),
+  );
+  const rootRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const arrowRef = useRef<HTMLButtonElement>(null);
+  const [arrowOffset, setArrowOffset] = useState(0);
+
+  const syncArrow = () => {
+    const root = rootRef.current;
+    const item = itemRefs.current[activeIndex];
+    const arrow = arrowRef.current;
+    if (!root || !item || !arrow) return;
+
+    const rootTop = root.getBoundingClientRect().top;
+    const itemBox = item.getBoundingClientRect();
+    const arrowHeight = arrow.offsetHeight;
+    setArrowOffset(itemBox.top - rootTop + (itemBox.height - arrowHeight) / 2);
+  };
+
+  useEffect(() => {
+    syncArrow();
+
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === 'undefined') return undefined;
+
+    const observer = new ResizeObserver(() => syncArrow());
+    observer.observe(root);
+    itemRefs.current.forEach((item) => {
+      if (item) observer.observe(item);
+    });
+
+    return () => observer.disconnect();
+  }, [activeIndex]);
+
+  const selectNext = () => {
+    setActiveIndex((current) => (current + 1) % capabilities.length);
+  };
+
+  return (
+    <div
+      className="al-capabilities"
+      ref={rootRef}
+      style={{ '--al-cap-arrow-y': `${arrowOffset}px` } as CSSProperties}
+    >
+      <button
+        ref={arrowRef}
+        type="button"
+        className="al-capabilities__arrow"
+        onClick={selectNext}
+        aria-label="Следующий шаг процесса"
+      >
+        <HiArrowUpRight aria-hidden strokeWidth={2.6} />
+      </button>
+      <ul aria-labelledby="scale-title">
+        {capabilities.map((item, index) => {
+          const isActive = index === activeIndex;
+          return (
+            <li
+              key={item.label}
+              className={isActive ? 'is-active' : undefined}
+              ref={(node) => {
+                itemRefs.current[index] = node;
+              }}
+            >
+              <button
+                type="button"
+                className="al-capabilities__item"
+                aria-current={isActive ? 'step' : undefined}
+                onClick={() => setActiveIndex(index)}
+              >
+                {item.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -264,9 +357,14 @@ export default function About() {
               </div>
             </Reveal>
             <div className="al-partner__notes" aria-label="Гарантии платформы">
-              {partnerNotes.map((note, index) =>
-                index === 1 ? <strong key={note}>{note}</strong> : <span key={note}>{note}</span>,
-              )}
+              {partnerNotes.map((note, index) => (
+                <span
+                  key={note}
+                  className={index === 1 ? 'al-partner__notes-item is-accent' : 'al-partner__notes-item'}
+                >
+                  {note}
+                </span>
+              ))}
             </div>
           </div>
         </section>
@@ -276,7 +374,7 @@ export default function About() {
             <Reveal className="al-scale__image-card">
               <img src={ASSETS.meeting} alt="Команда SellYourBrick на стратегической сессии" />
               <div className="al-scale__overlay">
-                <h2>Как это работает</h2>
+                <h2 id="scale-title">Как это работает</h2>
                 <strong>12–18%</strong>
                 <p>Средняя годовая доходность по проектам платформы.</p>
               </div>
@@ -288,20 +386,7 @@ export default function About() {
                 активом и регулярных выплат инвесторам.
               </p>
               <span className="al-code">6–18 мес.</span>
-              <div className="al-capabilities">
-                <HiArrowUpRight aria-hidden />
-                <ul aria-labelledby="scale-title">
-                  {capabilities.map((item) => (
-                    <li
-                      key={item.label}
-                      id={item.active ? 'scale-title' : undefined}
-                      className={item.active ? 'is-active' : undefined}
-                    >
-                      {item.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <CapabilitiesMenu />
             </Reveal>
           </div>
         </section>
@@ -310,9 +395,8 @@ export default function About() {
           <div className="al-shell">
             <Reveal className="al-metrics__intro">
               <h2 id="metrics-title">
-                <span className="al-metrics__title-lead">Мы не просто говорим о доходности.</span>
-                <br />
-                Мы её обеспечиваем.
+                Мы не просто говорим о доходности.
+                <span className="al-metrics__title-tail"> Мы её обеспечиваем.</span>
               </h2>
               <p>
                 41 миллион евро в работе, 35 тысяч доверяющих инвесторов и десятки успешно
@@ -332,6 +416,18 @@ export default function About() {
                 </Reveal>
               ))}
             </div>
+
+            <Reveal className="al-metrics__mobile" delay={90}>
+              {metricCards.map((metric) => (
+                <div className="al-metrics__mobile-item" key={metric.label}>
+                  <div className="al-metrics__mobile-item__top">
+                    <AnimatedNumber value={metric.value} suffix={metric.suffix} />
+                    <ArrowBadge className="al-metrics__mobile-mark" label="" />
+                  </div>
+                  <p>{metric.text}</p>
+                </div>
+              ))}
+            </Reveal>
           </div>
         </section>
 
@@ -344,26 +440,41 @@ export default function About() {
                   <p>{note.text}</p>
                 </article>
               ))}
-              <div className="al-system-tags">
+              <div className="al-system-tags al-system-tags--desktop">
                 <span>Испания · реестр</span>
                 <span>SellYourBrick</span>
               </div>
             </Reveal>
 
+            <div className="al-system-tags al-system-tags--mobile" aria-label="Метки платформы">
+              <span>Испания · реестр</span>
+              <span>SellYourBrick</span>
+            </div>
+
             <Reveal className="al-system-visual" delay={120}>
               <img src={ASSETS.blueLoop} alt="" aria-hidden />
               <article className="al-system-card">
-                <h2>
-                  Инвестируйте в
-                  <br />
-                  кирпичи, а не в
-                  <br />
-                  обещания
-                </h2>
-                <p>
-                  Возврат капитала подтверждается банковскими выписками. Задержки и риски публикуем
-                  так же открыто, как успехи.
-                </p>
+                <div className="al-system-card__head">
+                  <h2>
+                    Инвестируйте в
+                    <br />
+                    кирпичи, а не в
+                    <br />
+                    обещания
+                  </h2>
+                  <p>
+                    Возврат капитала подтверждается банковскими выписками. Задержки и риски публикуем
+                    так же открыто, как успехи.
+                  </p>
+                </div>
+                <ul className="al-system-card__points">
+                  {systemHighlights.map((item) => (
+                    <li key={item.label}>
+                      <strong>{item.label}</strong>
+                      <span>{item.detail}</span>
+                    </li>
+                  ))}
+                </ul>
                 <div className="al-system-card__footer">
                   <span>LTV 61.5%</span>
                 </div>
