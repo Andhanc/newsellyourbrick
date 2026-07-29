@@ -103,6 +103,7 @@ const showcaseCards = [
 const plans = [
   {
     name: 'Starter',
+    eyebrow: 'Базовый',
     price: '€0',
     oldPrice: '€29',
     discount: '−100%',
@@ -115,6 +116,7 @@ const plans = [
   },
   {
     name: 'Pro',
+    eyebrow: 'Рекомендуем',
     price: '€149',
     oldPrice: '€199',
     discount: '−25%',
@@ -128,6 +130,7 @@ const plans = [
   },
   {
     name: 'VIP',
+    eyebrow: 'Премиум',
     price: '€499',
     oldPrice: '€699',
     discount: '−29%',
@@ -315,24 +318,34 @@ export default function BuyerPage() {
                   }
                 }}
               >
-                {plan.badge && <span className="buyer-plan__badge">{plan.badge}</span>}
-                <span className="buyer-plan__discount">{plan.discount}</span>
-                <h3>{plan.name}</h3>
-                <p>
-                  <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
-                  <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
-                </p>
-                <div className="buyer-plan__price">
-                  <div className="buyer-plan__price-current">
-                    <strong>{plan.price}</strong>
-                    <span>в месяц</span>
-                  </div>
-                  <div className="buyer-plan__price-benefit">
-                    <del>{plan.oldPrice}</del>
-                    <span>{plan.saving}</span>
-                  </div>
+                <div className="buyer-plan__topline">
+                  <span className={plan.badge ? 'buyer-plan__badge' : 'buyer-plan__eyebrow'}>
+                    {plan.badge ?? plan.eyebrow}
+                  </span>
+                  <span className="buyer-plan__discount">{plan.discount}</span>
                 </div>
-                <ul>
+
+                <div className="buyer-plan__heading">
+                  <h3>{plan.name}</h3>
+                  <p>
+                    <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
+                    <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
+                  </p>
+                </div>
+
+                <div className="buyer-plan__price">
+                  <div className="buyer-plan__price-values">
+                    <del className="buyer-plan__price-was">{plan.oldPrice}</del>
+                    <div className="buyer-plan__price-current">
+                      <strong>{plan.price}</strong>
+                      <span>/ месяц</span>
+                    </div>
+                  </div>
+                  <span className="buyer-plan__price-saving">{plan.saving}</span>
+                </div>
+
+                <span className="buyer-plan__features-title">В тариф входит</span>
+                <ul aria-label={`Возможности тарифа ${plan.name}`}>
                   {plan.features.map((feature, index) => (
                     <li key={feature}>
                       <FiCheck aria-hidden />
@@ -349,8 +362,17 @@ export default function BuyerPage() {
                   onClick={() => setSelectedPlan(plan.name)}
                   aria-pressed={selectedPlan === plan.name}
                 >
-                  {selectedPlan === plan.name ? 'Выбрано' : 'Выбрать'}
-                  <FiArrowRight aria-hidden />
+                  {selectedPlan === plan.name ? (
+                    <>
+                      <FiCheck aria-hidden />
+                      Тариф выбран
+                    </>
+                  ) : (
+                    <>
+                      Выбрать тариф
+                      <FiArrowRight aria-hidden />
+                    </>
+                  )}
                 </button>
               </article>
             ))}
