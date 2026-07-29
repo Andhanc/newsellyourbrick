@@ -1,0 +1,83 @@
+/* Единый стиль «Назад» — как .property-detail-header__back на странице объекта */
+
+.page-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #0099A9;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  padding: 8px 0;
+  line-height: 1.2;
+  transition: color 0.2s ease;
+}
+
+.page-back-button:hover {
+  color: #007d8a;
+}
+
+.page-back-button:focus-visible {
+  outline: 2px solid rgba(0, 153, 169, 0.45);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.page-back-button svg {
+  flex-shrink: 0;
+}
+
+/* Поверх карты / тёмного фона — лёгкая подложка, текст остаётся бирюзовым */
+.page-back-button--floating {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  z-index: 40;
+  padding: 8px 12px 8px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 2px 14px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(17, 24, 39, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.page-back-button--floating:hover {
+  background: #ffffff;
+}
+
+/* Круглая иконка без текста (мобильная галерея аукциона) */
+.page-back-button--icon-only {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
+  box-shadow:
+    0 2px 14px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(17, 24, 39, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.page-back-button--icon-only span {
+  display: none;
+}
+
+.page-back-button--icon-only:hover {
+  background: #ffffff;
+  color: #111827;
+}
+
+.page-back-button--icon-only:focus-visible {
+  outline: 2px solid rgba(17, 24, 39, 0.2);
+  outline-offset: 2px;
+}

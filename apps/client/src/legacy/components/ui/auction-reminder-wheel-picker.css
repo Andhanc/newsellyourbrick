@@ -1,0 +1,30 @@
+/* Стили барабана даты/времени (без CSS-переменных shadcn) */
+
+.arm-wheel-gradient-top {
+  background: linear-gradient(to bottom, #f9fafb 0%, transparent 100%);
+}
+
+.arm-wheel-gradient-bottom {
+  background: linear-gradient(to top, #f9fafb 0%, transparent 100%);
+}
+
+.arm-wheel-row-highlight {
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(0, 153, 169, 0.07);
+}
+
+.arm-wheel-text {
+  color: #9ca3af;
+}
+
+.arm-wheel-text--selected {
+  color: #111827;
+}
+
+.arm-wheel-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+}

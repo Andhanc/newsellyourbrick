@@ -1,0 +1,76 @@
+.operations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.operations-table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  overflow-x: auto;
+}
+
+.operations-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.operations-table th,
+.operations-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.operations-table th {
+  font-weight: 600;
+  color: var(--dark);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.operations-table tr:hover {
+  background: rgba(67, 97, 238, 0.03);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge.bronze {
+  background: rgba(205, 127, 50, 0.1);
+  color: #cd7f32;
+}
+
+.badge.silver {
+  background: rgba(192, 192, 192, 0.1);
+  color: #c0c0c0;
+}
+
+.badge.gold {
+  background: rgba(255, 215, 0, 0.1);
+  color: #daa520;
+}
+
+@media (max-width: 768px) {
+  .operations-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .operations-table th,
+  .operations-table td {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+

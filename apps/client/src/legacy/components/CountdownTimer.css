@@ -1,0 +1,150 @@
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  background: transparent;
+  border-radius: 0;
+  border: none; /* таймер без обводки */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  box-shadow: none; /* убираем подсветку */
+}
+
+.timer-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timer-icon {
+  font-size: 26px;
+  color: #333;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.timer-segments {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  margin-left: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.timer-segment {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  min-width: auto;
+  flex: 0 0 auto;
+  justify-content: center;
+  max-width: none;
+}
+
+.countdown-timer .timer-value {
+  font-size: 26px; /* крупнее цифры таймера */
+  font-weight: 700;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  white-space: nowrap;
+}
+
+.countdown-timer .timer-unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151; /* более тёмный цвет для обозначений Д/Ч/М/С */
+  line-height: 1;
+  margin-left: 2px;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  white-space: nowrap;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .countdown-timer {
+    padding: 8px 4px;
+    gap: 10px;
+    border-radius: 0;
+  }
+
+  .timer-icon {
+    font-size: 16px;
+  }
+
+  .timer-segments {
+    gap: 6px;
+    padding: 0;
+  }
+
+  .timer-segment {
+    padding: 0;
+  }
+
+  .countdown-timer .timer-value {
+    font-size: 20px;
+  }
+
+  .countdown-timer .timer-unit {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-timer {
+    padding: 6px 0;
+    gap: 8px;
+  }
+
+  .timer-icon {
+    font-size: 14px;
+  }
+
+  .timer-segments {
+    gap: 4px;
+    padding: 0;
+  }
+
+  .timer-segment {
+    padding: 0;
+  }
+
+  .countdown-timer .timer-value {
+    font-size: 18px;
+  }
+
+  .countdown-timer .timer-unit {
+    font-size: 10px;
+  }
+}
+
+/* Все таймеры имеют тёмный цвет (без цветовых статусов) */
+.countdown-timer.timer-long .timer-value,
+.countdown-timer.timer-medium .timer-value,
+.countdown-timer.timer-short .timer-value,
+.countdown-timer.timer-critical .timer-value {
+  color: #111827; /* тёмный цвет для всех статусов */
+}
+
+/* Для всех статусов сохраняем отсутствие обводки/подсветки */
+.countdown-timer.timer-long,
+.countdown-timer.timer-medium,
+.countdown-timer.timer-short,
+.countdown-timer.timer-critical {
+  border: none;
+  box-shadow: none;
+  animation: none;
+}

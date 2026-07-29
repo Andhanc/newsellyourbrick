@@ -1,0 +1,85 @@
+.otsb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.otsb__menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 13500;
+  width: min(280px, calc(100vw - 24px));
+  padding: 10px;
+  border-radius: 14px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.14),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.otsb__menu-title {
+  margin: 0 0 8px;
+  padding: 4px 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.otsb__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.otsb__menu-item:hover {
+  background: rgba(0, 153, 169, 0.08);
+}
+
+.otsb__menu-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.otsb__menu-icon--chat {
+  background: rgba(0, 153, 169, 0.12);
+  color: #007d8a;
+}
+
+.otsb__menu-icon--ai {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+.otsb__menu-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.otsb__menu-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.otsb__menu-desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #64748b;
+}

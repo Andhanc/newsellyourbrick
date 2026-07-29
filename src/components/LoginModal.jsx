@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag } from 'react-icons/fi'
+import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag, FiArrowUpRight } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
@@ -61,14 +61,15 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const telegramWidgetRef = useRef(null)
-  const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '')
-  const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env.VITE_TELEGRAM_BOT_USERNAME)
+  const welcomeVideoRef = useRef(null)
+  const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env?.VITE_TELEGRAM_BOT_USERNAME || '')
+  const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env?.VITE_TELEGRAM_BOT_USERNAME)
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
-    const fromEnv = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
+    const fromEnv = import.meta.env?.VITE_TELEGRAM_BOT_USERNAME || ''
     if (fromEnv) {
       setTelegramBotUsername(fromEnv)
       setTelegramConfigLoaded(true)
@@ -179,13 +180,33 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     return () => setLoginModalOpen(false)
   }, [isOpen])
 
+  const isHeaderWizard = authEntryVariant === 'header_wizard'
+  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
+  const isWelcomeStep = isHeaderWizard && wizardPhase === 'welcome'
+  const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
+
+  useEffect(() => {
+    const video = welcomeVideoRef.current
+    if (!isOpen || !isWelcomeStep || !video) return undefined
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    if (reduceMotion?.matches) {
+      video.pause()
+      return undefined
+    }
+
+    const playPromise = video.play()
+    playPromise?.catch(() => {
+      // The poster remains visible when browser autoplay policy blocks playback.
+    })
+
+    return () => video.pause()
+  }, [isOpen, isWelcomeStep])
+
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
   if (!isOpen) return null
 
-  const isHeaderWizard = authEntryVariant === 'header_wizard'
-  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
-  const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
   /** Шаг 1 (роль) без цветовой темы buyer/seller; шаг 2 и обычная модалка — как раньше */
   const tintedByRole =
     !isLogin && (!isHeaderWizard || wizardPhase === 'form')
@@ -199,6 +220,12 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
 
   const handleBackToRoleStep = () => {
     setWizardPhase('role')
+    setError('')
+    setRegisterBottomError('')
+  }
+
+  const handleBackToWelcomeStep = () => {
+    setWizardPhase('welcome')
     setError('')
     setRegisterBottomError('')
   }
@@ -480,7 +507,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       // а просто создаём пользователя в БД из данных Clerk.
       const localHasDbUser = /^\d+$/.test(String(localStorage.getItem('userId') || ''))
       if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+        const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
         const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
         const nameParts = userName.split(' ')
@@ -574,7 +601,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       // а пользователь ещё не создан в нашей БД.
       const localHasDbUser = /^\d+$/.test(String(localStorage.getItem('userId') || ''))
       if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+        const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
         const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
         const nameParts = userName.split(' ')
@@ -779,10 +806,39 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       confirmPassword: ''
     })
     const lockRole =
-      authEntryVariant === 'header_wizard' && wizardPhase === 'form'
+      authEntryVariant === 'header_wizard' && wizardPhase !== 'role'
     if (!lockRole) {
       setUserRole('buyer')
     }
+  }
+
+  const handleWelcomeAction = (nextIsLogin) => {
+    setAuthMode(nextIsLogin)
+    setError('')
+    setRegisterBottomError('')
+    setWizardPhase('form')
+  }
+
+  const renderHighlightedBrand = () => (
+    <span className="login-modal__brand-name" aria-label="SellYourBrick">
+      <span aria-hidden="true">Sell</span>
+      <span className="login-modal__brand-accent" aria-hidden="true">Your</span>
+      <span aria-hidden="true">Brick</span>
+    </span>
+  )
+
+  const renderTitleWithHighlightedBrand = (title) => {
+    const brand = 'SellYourBrick'
+    const brandIndex = title.indexOf(brand)
+    if (brandIndex < 0) return title
+
+    return (
+      <>
+        {title.slice(0, brandIndex)}
+        {renderHighlightedBrand()}
+        {title.slice(brandIndex + brand.length)}
+      </>
+    )
   }
 
   return createPortal(
@@ -793,6 +849,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           className={[
             'login-modal-overlay',
             isRoleStep ? 'login-modal-overlay--role-drawer' : '',
+            isWelcomeStep ? 'login-modal-overlay--welcome' : '',
             showAuthForm ? 'login-modal-overlay--form-screen' : '',
           ]
             .filter(Boolean)
@@ -804,6 +861,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               'login-modal',
               loginModalTintClass,
               isRoleStep ? 'login-modal--role-drawer' : '',
+              isWelcomeStep ? 'login-modal--welcome' : '',
               showAuthForm ? 'login-modal--form-screen' : '',
             ]
               .filter(Boolean)
@@ -811,7 +869,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             role="dialog"
             aria-modal="true"
             aria-labelledby={
-              isRoleStep ? 'login-modal-wizard-role-title' : 'login-modal-heading'
+              isRoleStep
+                ? 'login-modal-wizard-role-title'
+                : isWelcomeStep
+                  ? 'login-modal-welcome-title'
+                  : 'login-modal-heading'
             }
             onClick={(e) => e.stopPropagation()}
           >
@@ -850,6 +912,53 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           <FiX size={24} />
         </button>
 
+        {isWelcomeStep && (
+          <div className="login-modal__welcome">
+            <video
+              ref={welcomeVideoRef}
+              className="login-modal__welcome-video"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              poster="/media/auth-summer-villa-poster.jpg"
+              aria-hidden="true"
+              tabIndex={-1}
+            >
+              <source src="/media/auth-summer-villa.mp4" type="video/mp4" />
+            </video>
+            <div className="login-modal__welcome-scrim" aria-hidden="true" />
+            <button
+              type="button"
+              className="login-modal__welcome-back"
+              onClick={handleBackToRoleStep}
+              aria-label={t('authWelcomeBackAria')}
+            >
+              <FiChevronLeft size={24} aria-hidden />
+            </button>
+            <div className="login-modal__welcome-brand">
+              <h2 id="login-modal-welcome-title">{renderHighlightedBrand()}</h2>
+            </div>
+            <div className="login-modal__welcome-actions">
+              <button
+                type="button"
+                className="login-modal__welcome-action login-modal__welcome-action--register"
+                onClick={() => handleWelcomeAction(false)}
+              >
+                {t('authWelcomeCreateAccount')}
+              </button>
+              <button
+                type="button"
+                className="login-modal__welcome-action login-modal__welcome-action--login"
+                onClick={() => handleWelcomeAction(true)}
+              >
+                {t('authWelcomeLogin')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {isRoleStep && (
           <div className="login-modal__wizard login-modal__wizard--role">
             <div className="login-modal__drawer-handle" aria-hidden="true">
@@ -870,7 +979,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 className="login-modal__wizard-tile login-modal__wizard-tile--buyer"
                 onClick={() => {
                   setUserRole('buyer')
-                  setWizardPhase('form')
+                  setWizardPhase('welcome')
                 }}
               >
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
@@ -913,11 +1022,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           <button
             type="button"
             className="login-modal__change-role login-modal__change-role--mobile"
-            onClick={handleBackToRoleStep}
-            aria-label={t('authWizardBackToRoleAria')}
+            onClick={handleBackToWelcomeStep}
+            aria-label={t('authWelcomeBackAria')}
           >
             <FiChevronLeft size={16} aria-hidden />
-            {t('authWizardBackToRole')}
+            {t('authFormBack')}
           </button>
         )}
 
@@ -926,14 +1035,17 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         >
           {isHeaderWizard && wizardPhase === 'form' ? (
             <>
-              <p className="login-modal__step-badge">{t('authWizardStep2Badge')}</p>
               <h2 className="login-modal__title" id="login-modal-heading">
-                {t('authWizardStep2Title')}
+                {isLogin
+                  ? t('authWelcomeBackTitle')
+                  : renderTitleWithHighlightedBrand(t('authCreateAccountTitle'))}
               </h2>
               <p className="login-modal__role-inline">
                 {userRole === 'seller' ? t('roleSeller') : t('roleBuyer')}
               </p>
-              <p className="login-modal__subtitle">{t('authWizardStep2Subtitle')}</p>
+              <p className="login-modal__subtitle">
+                {isLogin ? t('loginSubtitle') : t('registerSubtitle')}
+              </p>
             </>
           ) : (
             <>
@@ -947,41 +1059,49 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           )}
         </div>
 
-        <div
-          className="login-modal__mode-switch"
-          role="tablist"
-          aria-label={t('loginModalModeSwitchAria')}
-        >
-          <button
-            type="button"
-            role="tab"
-            id="login-modal-tab-register"
-            aria-selected={!isLogin}
-            aria-controls="login-modal-panel"
-            className={`login-modal__mode-tab${!isLogin ? ' login-modal__mode-tab--active' : ''}`}
-            onClick={() => setAuthMode(false)}
-            disabled={isLoading}
+        {!isHeaderWizard && (
+          <div
+            className="login-modal__mode-switch"
+            role="tablist"
+            aria-label={t('loginModalModeSwitchAria')}
           >
-            {t('registerTitle')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="login-modal-tab-login"
-            aria-selected={isLogin}
-            aria-controls="login-modal-panel"
-            className={`login-modal__mode-tab${isLogin ? ' login-modal__mode-tab--active' : ''}`}
-            onClick={() => setAuthMode(true)}
-            disabled={isLoading}
-          >
-            {t('loginTitle')}
-          </button>
-        </div>
+            <button
+              type="button"
+              role="tab"
+              id="login-modal-tab-register"
+              aria-selected={!isLogin}
+              aria-controls="login-modal-panel"
+              className={`login-modal__mode-tab${!isLogin ? ' login-modal__mode-tab--active' : ''}`}
+              onClick={() => setAuthMode(false)}
+              disabled={isLoading}
+            >
+              {t('registerTitle')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="login-modal-tab-login"
+              aria-selected={isLogin}
+              aria-controls="login-modal-panel"
+              className={`login-modal__mode-tab${isLogin ? ' login-modal__mode-tab--active' : ''}`}
+              onClick={() => setAuthMode(true)}
+              disabled={isLoading}
+            >
+              {t('loginTitle')}
+            </button>
+          </div>
+        )}
 
         <div
           id="login-modal-panel"
           role="tabpanel"
-          aria-labelledby={isLogin ? 'login-modal-tab-login' : 'login-modal-tab-register'}
+          aria-labelledby={
+            isHeaderWizard
+              ? 'login-modal-heading'
+              : isLogin
+                ? 'login-modal-tab-login'
+                : 'login-modal-tab-register'
+          }
         >
         {!isLogin && !(isHeaderWizard && wizardPhase === 'form') && (
           <div className="login-modal__role-section">
@@ -1268,9 +1388,12 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             className={`login-modal__submit${isLogin ? ' login-modal__submit--liquid-glass' : ''}`}
             disabled={isLoading}
           >
-            {isLoading 
-              ? (isLogin ? t('loginProcessing') : t('registerProcessing')) 
-              : (isLogin ? t('loginButton') : t('registerButton'))}
+            <span>
+              {isLoading
+                ? (isLogin ? t('loginProcessing') : t('registerProcessing'))
+                : (isLogin ? t('loginButton') : t('registerButton'))}
+            </span>
+            {!isLoading && <FiArrowUpRight size={21} aria-hidden="true" />}
           </button>
 
           {!isLogin && registerBottomError && (

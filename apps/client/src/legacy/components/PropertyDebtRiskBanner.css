@@ -1,0 +1,137 @@
+.debt-risk-banner {
+  --debt-risk-color: #d99400;
+  --debt-risk-soft: #fff9e8;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 104px;
+  padding: 15px 16px;
+  border: 1px solid color-mix(in srgb, var(--debt-risk-color) 22%, #dbe4ea);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, .08),
+    0 0 0 3px color-mix(in srgb, var(--debt-risk-color) 7%, transparent);
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.debt-risk-banner:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 34px rgba(15, 23, 42, .11),
+    0 0 0 4px color-mix(in srgb, var(--debt-risk-color) 10%, transparent);
+}
+
+.debt-risk-banner:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--debt-risk-color) 35%, transparent);
+  outline-offset: 3px;
+}
+
+.debt-risk-banner--high {
+  --debt-risk-color: #e5252a;
+  --debt-risk-soft: #fff1f1;
+}
+
+.debt-risk-banner--low {
+  --debt-risk-color: #18aa52;
+  --debt-risk-soft: #effcf4;
+}
+
+.debt-risk-banner--unknown {
+  --debt-risk-color: #64748b;
+  --debt-risk-soft: #f1f5f9;
+}
+
+.debt-risk-banner__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--debt-risk-color);
+  color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--debt-risk-color) 26%, transparent);
+}
+
+.debt-risk-banner__copy {
+  min-width: 0;
+}
+
+.debt-risk-banner__copy strong,
+.debt-risk-banner__copy > span {
+  display: block;
+}
+
+.debt-risk-banner__copy strong {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+
+.debt-risk-banner__copy > span {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.debt-risk-banner__action {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  color: var(--debt-risk-color);
+}
+
+.debt-risk-banner__action > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--debt-risk-color) 18%, transparent);
+  border-radius: 999px;
+  background: var(--debt-risk-soft);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .debt-risk-banner {
+    grid-template-columns: 50px minmax(0, 1fr) 22px;
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .debt-risk-banner__icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+
+  .debt-risk-banner__copy strong {
+    font-size: 15px;
+  }
+
+  .debt-risk-banner__copy > span {
+    font-size: 12px;
+  }
+
+  .debt-risk-banner__action > span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debt-risk-banner {
+    transition: none;
+  }
+}

@@ -1,0 +1,405 @@
+.admin-users-list-container {
+  padding: 0;
+}
+
+.users-filter {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.filter-search {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.filter-search .search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  background: #f9fafb;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #0099A9;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.15);
+}
+
+.clear-search {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.clear-search:hover {
+  color: #374151;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.filter-options {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  border-color: #0099A9;
+  color: #0099A9;
+}
+
+.filter-btn.active {
+  background: #0099A9;
+  border-color: #0099A9;
+  color: white;
+}
+
+.admin-users-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.user-card {
+  background: white;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  border: 1px solid #e5e7eb;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.user-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.user-card--blocked {
+  opacity: 0.7;
+  border-width: 2px;
+  border-color: #fecaca;
+}
+
+.user-card__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: transparent;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.user-card__avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.user-card__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.user-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card__name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.user-card__name h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.blocked-badge {
+  background: #ef4444;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.user-card__email {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin: 0 0 0.375rem 0;
+  word-break: break-all;
+}
+
+.user-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.user-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meta-label {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.meta-value {
+  font-size: 0.8125rem;
+  color: #374151;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.meta-value--role {
+  padding: 0.2rem 0.625rem;
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.meta-value--buyer {
+  background: #e0f7f7;
+  color: #0099A9;
+}
+
+.meta-value--seller {
+  background: #e6f6f8;
+  color: #007d8a;
+}
+
+.meta-value--objects {
+  font-weight: 600;
+  color: #0099A9;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 5px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.status-badge--approved {
+  background: #e6f6f8;
+  color: #007d8a;
+}
+
+.status-badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.user-card__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.btn-action {
+  padding: 0.4rem 0.875rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-action--block {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-action--block:hover {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+.btn-action--unblock {
+  background: #e6f6f8;
+  color: #007d8a;
+}
+
+.btn-action--unblock:hover {
+  background: #e6f6f8;
+  color: #14532d;
+}
+
+.users-empty {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  color: #6b7280;
+}
+
+.users-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  color: #111827;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .admin-users-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-card__actions {
+    width: 100%;
+  }
+
+  .btn-action {
+    width: 100%;
+  }
+
+  .filter-buttons {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-card__meta {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Чуть уменьшаем шрифт в карточках на мобильных,
+     чтобы длинные имена и подписи лучше помещались */
+  .user-card__name h3 {
+    font-size: 0.7rem;
+  }
+
+  .user-card__email {
+    font-size: 0.6rem;
+  }
+
+  .meta-label,
+  .meta-value {
+    font-size: 0.6rem;
+  }
+}
+
+

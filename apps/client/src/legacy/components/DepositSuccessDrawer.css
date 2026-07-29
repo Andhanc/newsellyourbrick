@@ -1,0 +1,21 @@
+.deposit-success-drawer.buyer-sheet { z-index: 13390; }
+.deposit-success-drawer .buyer-sheet__surface { width: min(100%, 480px); }
+.deposit-success-drawer__panel { max-width: 440px; margin: 0 auto; text-align: center; }
+.deposit-success-drawer__illustration { display: block; width: min(188px, 60vw); height: 158px; margin: -5px auto 3px; object-fit: contain; }
+.deposit-success-drawer__eyebrow { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 6px 9px; border-radius: 999px; background: var(--buyer-white); color: var(--buyer-teal-deep); font: 760 9px/1 var(--buyer-font-display); letter-spacing: .07em; text-transform: uppercase; }
+.deposit-success-drawer__title { margin: 0; color: var(--buyer-ink); font: 820 clamp(27px, 7vw, 34px)/1 var(--buyer-font-display); letter-spacing: -.045em; }
+.deposit-success-drawer__confirmed { display: block; margin-top: 10px; color: var(--buyer-teal-deep); font: 830 24px/1 var(--buyer-font-display); letter-spacing: -.03em; }
+.deposit-success-drawer__lead { max-width: 390px; margin: 12px auto 0; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
+.deposit-success-drawer__cta { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; border: 0; border-radius: 16px; background: var(--buyer-teal-deep); color: white; cursor: pointer; box-shadow: 0 11px 27px rgba(0, 111, 123, .25); font: 760 14px/1 var(--buyer-font-display); }
+
+@media (max-width: 480px) {
+  .deposit-success-drawer { padding: 0; }
+  .deposit-success-drawer .buyer-sheet__surface { border-radius: 28px 28px 0 0; }
+  .deposit-success-drawer__panel { max-width: none; text-align: left; }
+  .deposit-success-drawer__illustration { width: 168px; object-fit: contain; }
+  .deposit-success-drawer .buyer-sheet__footer { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deposit-success-drawer__cta { transition: none; }
+}

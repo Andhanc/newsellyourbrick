@@ -1,0 +1,215 @@
+@import '../styles/promoBottomSheetDrawer.css';
+
+.auction-sold-notice-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13450;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: test-drive-promo-backdrop-in 0.28s ease-out both;
+}
+
+.auction-sold-notice-modal__panel {
+  position: relative;
+  z-index: 13451;
+  width: 100%;
+  max-width: 440px;
+  margin: 24px auto;
+  border-radius: 24px;
+  padding: 0;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fafb 100%);
+  border: 1px solid rgba(0, 153, 169, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 24px 48px -12px rgba(17, 24, 39, 0.28),
+    0 12px 24px -8px rgba(17, 24, 39, 0.16);
+}
+
+.auction-sold-notice-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: rgba(17, 24, 39, 0.08);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auction-sold-notice-modal__close:hover {
+  background: rgba(17, 24, 39, 0.12);
+}
+
+.auction-sold-notice-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 13450;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(18px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px))
+    max(18px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+}
+
+.auction-sold-notice-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13450;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.auction-sold-notice-drawer__panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 13451;
+  padding: 0;
+  border-radius: 24px 24px 0 0;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fafb 100%);
+  border: none;
+  border-top: 1px solid rgba(0, 153, 169, 0.22);
+  border-left: none;
+  border-right: none;
+  box-shadow: 0 -22px 64px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.auction-sold-notice-drawer__drag-zone {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 4px;
+}
+
+.auction-sold-notice-drawer__handle {
+  width: 54px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(203, 213, 225, 0.9);
+}
+
+.auction-sold-notice-drawer__close {
+  position: absolute;
+  top: 12px;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: rgba(17, 24, 39, 0.08);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.auction-sold-notice-drawer__close:hover {
+  background: rgba(17, 24, 39, 0.12);
+}
+
+.auction-sold-notice__body {
+  padding:
+    0
+    max(24px, env(safe-area-inset-right, 0px))
+    calc(28px + env(safe-area-inset-bottom, 0px))
+    max(24px, env(safe-area-inset-left, 0px));
+  transition: opacity 0.2s ease;
+}
+
+.auction-sold-notice__illustration {
+  display: block;
+  width: min(210px, 76vw);
+  height: auto;
+  margin: 0 auto 4px;
+}
+
+.auction-sold-notice__illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.auction-sold-notice__title {
+  margin: 0 0 8px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.55rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.auction-sold-notice__lead {
+  margin: 0 0 24px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #475569;
+  max-width: 36ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.auction-sold-notice__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 10px;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #33adbb 0%, #0099A9 52%, #007d8a 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 28px rgba(0, 153, 169, 0.35);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.auction-sold-notice__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(0, 153, 169, 0.42);
+}
+
+@media (min-width: 769px) {
+  .auction-sold-notice-modal__panel {
+    margin: 0;
+  }
+
+  .auction-sold-notice__body {
+    padding: 8px 28px 32px;
+  }
+
+  .auction-sold-notice__illustration {
+    width: min(200px, 56vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-sold-notice__cta,
+  .auction-sold-notice-modal__close,
+  .auction-sold-notice-drawer__close {
+    transition: none;
+  }
+}
+

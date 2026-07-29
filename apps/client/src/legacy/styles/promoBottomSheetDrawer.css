@@ -1,0 +1,136 @@
+/* Общая мобильная вёрстка promo-drawer: ≤50% экрана, без внутреннего скролла */
+
+@media (max-width: 768px) {
+  .test-drive-promo-drawer__panel,
+  .first-favorite-drawer__panel,
+  .compare-favorites-drawer__panel,
+  .compare-investor-pro-drawer__panel {
+    max-height: 50dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .test-drive-promo-drawer__drag-zone,
+  .first-favorite-drawer__drag-zone,
+  .compare-favorites-drawer__drag-zone,
+  .compare-investor-pro-drawer__drag-zone {
+    flex-shrink: 0;
+    min-height: 22px;
+    padding: 6px 20px 2px;
+  }
+
+  .test-drive-promo-drawer__body,
+  .first-favorite-drawer__body,
+  .compare-favorites-drawer__body,
+  .compare-investor-pro-drawer__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding:
+      0
+      max(20px, env(safe-area-inset-right, 0px))
+      calc(14px + env(safe-area-inset-bottom, 0px))
+      max(20px, env(safe-area-inset-left, 0px));
+  }
+
+  .test-drive-promo-drawer__illustration,
+  .first-favorite-drawer__illustration,
+  .compare-favorites-drawer__illustration,
+  .compare-investor-pro-drawer__illustration {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: min(132px, 40vw);
+    max-height: min(80px, 17dvh);
+    height: auto;
+    margin: 0 auto 0;
+  }
+
+  .test-drive-promo-drawer__badge,
+  .first-favorite-drawer__badge,
+  .compare-favorites-drawer__badge,
+  .compare-investor-pro-drawer__badge {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 6px;
+  }
+
+  .test-drive-promo-drawer__title,
+  .first-favorite-drawer__title,
+  .compare-favorites-drawer__title,
+  .compare-investor-pro-drawer__title {
+    font-size: clamp(1.05rem, 4.2vw, 1.28rem);
+    line-height: 1.2;
+    margin: 0 0 4px;
+  }
+
+  .test-drive-promo-drawer__lead,
+  .first-favorite-drawer__lead,
+  .compare-favorites-drawer__lead,
+  .compare-investor-pro-drawer__lead {
+    font-size: clamp(12px, 3.2vw, 14px);
+    line-height: 1.35;
+    margin: 0 0 4px;
+    max-width: 34ch;
+  }
+
+  .test-drive-promo-drawer__hint,
+  .first-favorite-drawer__hint,
+  .compare-favorites-drawer__hint,
+  .compare-investor-pro-drawer__hint {
+    font-size: clamp(11px, 2.8vw, 12px);
+    line-height: 1.4;
+    margin: 0 0 10px;
+  }
+
+  .test-drive-promo-drawer__cta,
+  .first-favorite-drawer__cta,
+  .compare-favorites-drawer__cta,
+  .compare-investor-pro-drawer__cta {
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: auto;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) and (max-height: 640px) {
+  .test-drive-promo-drawer__illustration,
+  .first-favorite-drawer__illustration,
+  .compare-favorites-drawer__illustration,
+  .compare-investor-pro-drawer__illustration {
+    max-height: min(64px, 14dvh);
+    max-width: min(110px, 36vw);
+  }
+
+  .test-drive-promo-drawer__title,
+  .first-favorite-drawer__title,
+  .compare-favorites-drawer__title,
+  .compare-investor-pro-drawer__title {
+    font-size: 1.05rem;
+    margin-bottom: 2px;
+  }
+
+  .test-drive-promo-drawer__lead,
+  .first-favorite-drawer__lead,
+  .compare-favorites-drawer__lead,
+  .compare-investor-pro-drawer__lead,
+  .test-drive-promo-drawer__hint,
+  .first-favorite-drawer__hint,
+  .compare-favorites-drawer__hint,
+  .compare-investor-pro-drawer__hint {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .test-drive-promo-drawer__cta,
+  .first-favorite-drawer__cta,
+  .compare-favorites-drawer__cta,
+  .compare-investor-pro-drawer__cta {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,198 @@
+/**
+ * Owner-test pages: показываем общий #site-footer и даём прокрутку .app-layout до него.
+ */
+
+html.mot-page-active #site-footer,
+html.op-page-active #site-footer,
+html.opa-page-active #site-footer,
+html.otd-page-active #site-footer,
+html.ost-page-active #site-footer,
+html.osl-page-active #site-footer,
+html.opr-page-active #site-footer,
+html.oap-page-active #site-footer,
+html.owner-test-cabinet-active #site-footer {
+  display: block !important;
+}
+
+/* Desktop: sticky sidebar — overflow-x на .app-layout__content ломает position: sticky */
+@media (min-width: 901px) {
+  html.owner-test-cabinet-active .app-layout__content,
+  html.mot-page-active .app-layout__content,
+  html.op-page-active .app-layout__content,
+  html.opa-page-active .app-layout__content,
+  html.otd-page-active .app-layout__content,
+  html.ost-page-active .app-layout__content,
+  html.osl-page-active .app-layout__content,
+  html.opr-page-active .app-layout__content,
+  html.oap-page-active .app-layout__content {
+    overflow: visible;
+  }
+
+  html.owner-test-cabinet-active .otc,
+  html.mot-page-active .mot,
+  html.op-page-active .op,
+  html.opa-page-active .opa,
+  html.otd-page-active .otd,
+  html.ost-page-active .ost,
+  html.osl-page-active .osl,
+  html.opr-page-active .opr,
+  html.oap-page-active .oap {
+    align-items: flex-start;
+  }
+
+  html.owner-test-cabinet-active .otc-sidebar,
+  html.mot-page-active .mot-sidebar,
+  html.op-page-active .op-sidebar,
+  html.opa-page-active .opa-sidebar,
+  html.otd-page-active .otd-sidebar,
+  html.ost-page-active .ost-sidebar,
+  html.osl-page-active .osl-sidebar,
+  html.opr-page-active .opr-sidebar,
+  html.oap-page-active .opa-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 900px) {
+  html.mot-page-active .app-layout,
+  html.op-page-active .app-layout,
+  html.opa-page-active .app-layout,
+  html.otd-page-active .app-layout,
+  html.ost-page-active .app-layout,
+  html.osl-page-active .app-layout,
+  html.opr-page-active .app-layout,
+  html.oap-page-active .app-layout {
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    height: auto !important;
+    min-height: 100dvh;
+  }
+
+  html.mot-page-active .app-layout__content,
+  html.op-page-active .app-layout__content,
+  html.opa-page-active .app-layout__content,
+  html.otd-page-active .app-layout__content,
+  html.ost-page-active .app-layout__content,
+  html.osl-page-active .app-layout__content,
+  html.opr-page-active .app-layout__content,
+  html.oap-page-active .app-layout__content {
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+    min-height: 0;
+  }
+
+  html.mot-page-active .mot,
+  html.op-page-active .op,
+  html.opa-page-active .opa,
+  html.otd-page-active .otd,
+  html.ost-page-active .ost,
+  html.osl-page-active .osl,
+  html.opr-page-active .opr,
+  html.oap-page-active .oap {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  html.mot-page-active .mot-main,
+  html.op-page-active .op-body,
+  html.opa-page-active .opa-body,
+  html.otd-page-active .otd-body,
+  html.ost-page-active .ost-body,
+  html.osl-page-active .osl-body,
+  html.opr-page-active .opr-body,
+  html.oap-page-active .oap-shell {
+    overflow: visible !important;
+    flex: none !important;
+    min-height: auto !important;
+  }
+
+  html.mot-page-active .mot-content,
+  html.op-page-active .op-workspace,
+  html.opa-page-active .opa-workspace,
+  html.otd-page-active .otd-workspace,
+  html.ost-page-active .ost-workspace,
+  html.ost-page-active .ost-content,
+  html.osl-page-active .osl-workspace,
+  html.opr-page-active .opr-workspace,
+  html.oap-page-active .oap-content {
+    overflow: visible !important;
+    flex: none !important;
+    min-height: auto !important;
+  }
+
+  /* Фиксированный tabbar не перекрывает футер при прокрутке вниз */
+  html.mot-page-active #site-footer,
+  html.op-page-active #site-footer,
+  html.opa-page-active #site-footer,
+  html.owner-test-cabinet-active #site-footer {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  html.owner-test-cabinet-active .otc {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  html.owner-test-cabinet-active .otc-stage {
+    overflow: visible !important;
+    flex: none !important;
+    min-height: auto !important;
+  }
+
+  html.owner-test-cabinet-active .mot,
+  html.owner-test-cabinet-active .mot.mot--embedded,
+  html.owner-test-cabinet-active .mot-main,
+  html.owner-test-cabinet-active .mot-content,
+  html.owner-test-cabinet-active .op,
+  html.owner-test-cabinet-active .op.op--embedded,
+  html.owner-test-cabinet-active .op-body,
+  html.owner-test-cabinet-active .op-workspace,
+  html.owner-test-cabinet-active .ost,
+  html.owner-test-cabinet-active .ost.ost--embedded,
+  html.owner-test-cabinet-active .ost-body,
+  html.owner-test-cabinet-active .ost-workspace,
+  html.owner-test-cabinet-active .ost-content,
+  html.owner-test-cabinet-active .osl,
+  html.owner-test-cabinet-active .osl.osl--embedded,
+  html.owner-test-cabinet-active .osl-body,
+  html.owner-test-cabinet-active .osl-workspace,
+  html.owner-test-cabinet-active .owl,
+  html.owner-test-cabinet-active .owl.owl--embedded,
+  html.owner-test-cabinet-active .owl-body,
+  html.owner-test-cabinet-active .owl-workspace,
+  html.owner-test-cabinet-active .opr,
+  html.owner-test-cabinet-active .opr.opr--embedded,
+  html.owner-test-cabinet-active .opr-body,
+  html.owner-test-cabinet-active .opr-workspace,
+  html.owner-test-cabinet-active .otd,
+  html.owner-test-cabinet-active .otd.otd--embedded,
+  html.owner-test-cabinet-active .otd-body,
+  html.owner-test-cabinet-active .otd-workspace {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+    min-height: 0 !important;
+  }
+
+  html.owner-test-cabinet-active .app-layout {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+}

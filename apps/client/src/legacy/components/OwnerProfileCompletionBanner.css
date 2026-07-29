@@ -1,0 +1,248 @@
+.owner-pc {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 153, 169, 0.16);
+  background: linear-gradient(160deg, #ffffff 0%, #f4fdfa 100%);
+  box-shadow:
+    0 2px 10px rgba(0, 153, 169, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  overflow: visible;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.owner-pc--sidebar {
+  margin-top: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.owner-pc--card {
+  margin-top: 0;
+}
+
+.owner-pc--expanded {
+  z-index: 40;
+  border-color: rgba(0, 153, 169, 0.28);
+  box-shadow:
+    0 4px 16px rgba(0, 153, 169, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.owner-pc__header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background 0.18s ease;
+}
+
+.owner-pc--card .owner-pc__header {
+  padding: 7px 9px;
+  gap: 8px;
+}
+
+.owner-pc__header:hover {
+  background: rgba(0, 153, 169, 0.04);
+}
+
+.owner-pc__ring-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.owner-pc__ring {
+  display: block;
+}
+
+.owner-pc__ring-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #111827;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.owner-pc__ring-label--md {
+  font-size: 11px;
+}
+
+.owner-pc__summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.owner-pc__title {
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.owner-pc--card .owner-pc__title {
+  font-size: 12px;
+}
+
+.owner-pc__meta {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.owner-pc--card .owner-pc__meta {
+  font-size: 10px;
+}
+
+.owner-pc__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.owner-pc__alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f97316;
+  filter: drop-shadow(0 1px 2px rgba(249, 115, 22, 0.2));
+}
+
+.owner-pc__chev {
+  flex-shrink: 0;
+  color: #cbd5e1;
+  transition: color 0.2s ease;
+}
+
+.owner-pc--expanded .owner-pc__chev {
+  color: #007d8a;
+}
+
+.owner-pc__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid rgba(0, 153, 169, 0.18);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(0, 153, 169, 0.08);
+  max-height: min(260px, 48vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.owner-pc__list li {
+  margin: 0;
+}
+
+.owner-pc__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 28px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  line-height: 1.25;
+}
+
+.owner-pc__row--done {
+  background: rgba(0, 153, 169, 0.07);
+  color: #007d8a;
+}
+
+.owner-pc__row--missing {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fafbfc;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.owner-pc__row--missing:hover {
+  border-color: rgba(0, 153, 169, 0.3);
+  background: rgba(0, 153, 169, 0.06);
+}
+
+.owner-pc__row-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.owner-pc__row--done .owner-pc__row-label {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.owner-pc__row--missing .owner-pc__row-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.owner-pc__icon-ok {
+  flex-shrink: 0;
+  color: #007d8a;
+}
+
+.owner-pc__dot-miss {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.18);
+}
+
+.owner-pc__hint {
+  padding: 4px 8px 2px;
+  color: #b0bac9;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-pc,
+  .owner-pc__chev,
+  .owner-pc__row--missing {
+    transition: none;
+  }
+}

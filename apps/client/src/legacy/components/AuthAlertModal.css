@@ -1,0 +1,132 @@
+.auth-alert-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Выше LoginModal (10000), хедера (10001) и виджета чата (11000) */
+  z-index: 20000;
+  padding: 20px;
+  animation: authAlertFadeIn 0.25s ease-out;
+}
+
+@keyframes authAlertFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.auth-alert-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  animation: authAlertSlideUp 0.35s ease-out;
+  overflow: hidden;
+}
+
+@keyframes authAlertSlideUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.auth-alert-modal__content {
+  padding: 40px 32px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.auth-alert-modal__icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-alert-modal--warning .auth-alert-modal__icon-wrap {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #b45309;
+}
+
+.auth-alert-modal--info .auth-alert-modal__icon-wrap {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+}
+
+.auth-alert-modal--error .auth-alert-modal__icon-wrap {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #b91c1c;
+}
+
+.auth-alert-modal__icon {
+  flex-shrink: 0;
+}
+
+.auth-alert-modal__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.auth-alert-modal__message {
+  font-size: 15px;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+.auth-alert-modal__button {
+  padding: 14px 32px;
+  background: #0099A9;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  margin-top: 4px;
+  min-width: 180px;
+}
+
+.auth-alert-modal__button:hover {
+  background: #099a96;
+  transform: translateY(-1px);
+}
+
+.auth-alert-modal__button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .auth-alert-modal__content {
+    padding: 32px 24px 28px;
+  }
+
+  .auth-alert-modal__title {
+    font-size: 20px;
+  }
+
+  .auth-alert-modal__message {
+    font-size: 14px;
+  }
+}

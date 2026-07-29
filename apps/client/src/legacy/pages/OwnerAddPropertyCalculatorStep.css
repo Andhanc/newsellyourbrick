@@ -1,0 +1,297 @@
+/* ——— Step: price calculator ——— */
+.oap-calculator-step__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+.oap-calculator-step__layout .oap-calculator-step__sidebar {
+  align-self: start;
+  position: sticky;
+  top: 16px;
+}
+
+.oap-calculator-step__sidebar-tips {
+  margin: 0;
+  padding: 0 0 0 16px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #1f4f4d;
+}
+
+.oap-calculator-step__sidebar-tips li + li {
+  margin-top: 6px;
+}
+
+.oap-calculator-step__layout .oap-calculator-step__sidebar-illustration {
+  margin-top: 4px;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.oap-calculator-step__layout .oap-calculator-step__sidebar-img {
+  width: 110%;
+  max-width: 110%;
+  max-height: 220px;
+  height: auto;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.oap-calculator-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.oap-calculator-step__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.oap-calculator-step__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oap-calculator-step__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.oap-calculator-step__applied {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #006672;
+  background: rgba(0, 153, 169, 0.12);
+  border: 1px solid rgba(0, 153, 169, 0.28);
+}
+
+.oap-calculator-step__applied svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--oap-primary, #0099a9);
+}
+
+.oap-calculator-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 22px 24px 24px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.oap-calculator-step__card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 18px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.oap-calculator-step__card-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: #007d8a;
+  background: linear-gradient(145deg, rgba(0, 153, 169, 0.16) 0%, rgba(0, 153, 169, 0.06) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.22);
+}
+
+.oap-calculator-step__card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.oap-calculator-step__card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.oap-calculator-step__card-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.oap-calculator-step__embed {
+  padding-top: 8px;
+}
+
+/* Встроенный калькулятор без «карточки в карточке» */
+.oap-calculator-step__embed .property-calculator-embedded {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.oap-calculator-step__embed .property-calculator-modal--embedded {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.oap-calculator-step__embed .property-calculator-modal--embedded::before {
+  display: none;
+}
+
+.oap-calculator-step__embed .property-calculator-modal__hero {
+  display: none;
+}
+
+.oap-calculator-step__embed .property-calculator-modal--embedded .property-calculator-modal__content {
+  padding: 0;
+}
+
+.oap-calculator-step__embed .property-calculator-form__panel {
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 16px 16px 14px;
+}
+
+.oap-calculator-step__embed .property-calculator-form__panel-title {
+  color: #374151;
+  font-size: 14px;
+}
+
+.oap-calculator-step__embed .property-calculator-form__actions .property-calculator-form__button--secondary {
+  display: none;
+}
+
+.oap-calculator-step__embed .property-calculator-form__button--liquid {
+  background: linear-gradient(135deg, #33adbb 0%, #0099a9 55%, #007d8a 100%);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.28);
+}
+
+.oap-calculator-step__embed .property-calculator-form__button--liquid:hover:not(:disabled) {
+  filter: brightness(1.03);
+  box-shadow: 0 6px 18px rgba(0, 153, 169, 0.34);
+}
+
+.oap-calculator-step__embed .property-calculator-result__icon {
+  color: var(--oap-primary, #0099a9);
+}
+
+.oap-calculator-step__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(0, 153, 169, 0.14);
+  border: none;
+  position: sticky;
+  top: 16px;
+  overflow: hidden;
+}
+
+.oap-calculator-step__sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oap-calculator-step__sidebar-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #007d8a;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.oap-calculator-step__sidebar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #006672;
+  letter-spacing: -0.01em;
+}
+
+.oap-calculator-step__sidebar-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1f4f4d;
+}
+
+.oap-calculator-step__sidebar-illustration {
+  margin: 4px 0 0;
+  padding-top: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 170px;
+}
+
+.oap-calculator-step__sidebar-img {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .oap-calculator-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .oap-calculator-step__sidebar {
+    position: static;
+    order: -1;
+    padding: 16px;
+  }
+
+  .oap-calculator-step__card {
+    padding: 18px 16px 20px;
+  }
+
+  .oap-calculator-step__sidebar-illustration {
+    min-height: 150px;
+  }
+
+  .oap-calculator-step__layout .oap-calculator-step__sidebar-img {
+    width: 100%;
+    max-width: 100%;
+    max-height: 190px;
+  }
+}

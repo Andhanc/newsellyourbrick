@@ -1,0 +1,59 @@
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-brand__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--oc-tiffany, #0099A9);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.site-brand__house {
+  width: 18px;
+  height: 14px;
+  border-radius: 3px 3px 0 0;
+  background: #ffffff;
+  position: relative;
+}
+
+.site-brand__house::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 8px solid #ffffff;
+}
+
+.site-brand__text {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.site-brand--header .site-brand__icon {
+  width: 34px;
+  height: 34px;
+}
+
+.site-brand--header .site-brand__text {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}

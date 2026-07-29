@@ -1,0 +1,364 @@
+.objects-list-container {
+  padding: 0;
+}
+
+/* Поиск и фильтры */
+.objects-list__filters {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.objects-list__search {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+
+.objects-list__search svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.objects-list__search input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #111827;
+  transition: all 0.2s;
+}
+
+.objects-list__search input:focus {
+  outline: none;
+  border-color: #4361ee;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.objects-list__filter-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.objects-list__filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.objects-list__filter svg {
+  color: #6b7280;
+}
+
+.objects-list__filter label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.objects-list__filter select {
+  padding: 0.625rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.objects-list__filter select:focus {
+  outline: none;
+  border-color: #4361ee;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Сетка объектов */
+.objects-list__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Карточка объекта */
+.property-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.property-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.property-card__image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.property-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.property-card__timer-inline {
+  margin-bottom: 0.75rem;
+}
+
+.property-card__content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.property-card__badge {
+  display: inline-block;
+  
+  background: transparent;
+  color: #111827;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: 300;
+  margin-bottom: 0.25rem;
+  margin-left: -0.5rem;
+}
+
+.property-card__info {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.property-card__info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.property-card__owner {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.property-card__location {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.property-card__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-top: auto;
+}
+
+.property-card__link-wrapper {
+  margin-top: 0.75rem;
+}
+
+.property-card__link {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0099A9;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.property-card__link:hover {
+  color: #007d8a;
+}
+
+.property-card__link::after {
+  content: '→';
+  margin-left: 6px;
+  font-size: 0.9em;
+  color: inherit;
+}
+
+.property-card__price-amount {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.property-card__price-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+  display: block;
+}
+
+.property-card__history-button {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  background: #000000;
+  border-radius: 999px;
+  border: 1px solid #000000;
+  box-shadow: none;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.property-card__history-button:hover {
+  background: #111111;
+  border-color: #111111;
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+/* Кнопка "Смотреть еще" */
+.objects-list__load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.objects-list__load-more-btn {
+  padding: 1rem 2.5rem;
+  background: white;
+  border: 2px solid #4361ee;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4361ee;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.objects-list__load-more-btn:hover {
+  background: #4361ee;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+@media (max-width: 1200px) {
+  .objects-list__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .objects-list-container {
+    margin: 0 -1rem;
+  }
+
+  .objects-list__filters {
+    padding: 1rem;
+  }
+
+  .objects-list__filter-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .objects-list__filter {
+    width: 100%;
+  }
+
+  .objects-list__filter select {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .objects-list__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.2rem;
+  }
+
+  .property-card {
+    border-radius: 10px;
+  }
+
+  .property-card__content {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .property-card__badge {
+    font-size: 1rem;
+    margin-left: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.2rem;
+  }
+
+  .property-card__owner {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.0rem;
+  }
+
+  .property-card__info {
+    min-height: 1.8rem;
+    align-items: center;
+  }
+
+  .property-card__location {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.2rem;
+  }
+}
+
+/* Десктоп: фильтры в одну строку */
+@media (min-width: 769px) {
+  .objects-list__filter-group {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .objects-list__filter {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .objects-list__filter select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+

@@ -1,5 +1,5 @@
-import { PropertyCatalogScreen } from '../../src/components/PropertyCatalogScreen'
+import { PublicPageScreen } from '../../src/dom/public-page-screen'
 
 export default function DebtsRoute() {
-  return <PropertyCatalogScreen title="Долги" filter="debts" />
+  return <PublicPageScreen initialPath="/debts" />
 }

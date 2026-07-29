@@ -1,0 +1,210 @@
+.sidebar {
+  width: 280px;
+  background: linear-gradient(135deg, var(--dark), var(--dark-light));
+  color: white;
+  /* top+bottom вместо 100vh — корректная высота в iOS Safari (адресная строка / safe area) */
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  max-height: none;
+  padding: 1.5rem 0;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.sidebar-header {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  background: transparent !important;
+  flex-shrink: 0;
+}
+
+.sidebar-header h2 {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: white !important;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: transparent !important;
+}
+
+.sidebar-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-close:hover {
+  background: rgba(15, 23, 42, 0.7);
+  transform: translateY(-1px);
+}
+
+.sidebar-menu {
+  padding: 1.5rem 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* scroll вместо auto — на iOS чаще стабильнее внутри flex */
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  pointer-events: auto;
+}
+
+.menu-item {
+  padding: 0.85rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0.25rem 0;
+  position: relative;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.menu-item.active {
+  background: linear-gradient(90deg, rgba(67, 97, 238, 0.2), transparent);
+  color: white;
+  border-left: 4px solid var(--primary);
+}
+
+.menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary);
+}
+
+.menu-item svg,
+.menu-item i {
+  margin-right: 0;
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-item__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-item__badge {
+  flex-shrink: 0;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: center;
+}
+
+.menu-item__badge--tone-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.35);
+}
+
+.menu-item__badge--tone-orange {
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(234, 88, 12, 0.35);
+}
+
+.menu-item--logout {
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent !important;
+  border-left: none !important;
+}
+
+.menu-item--logout:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5;
+}
+
+.menu-item--logout.active {
+  background: transparent !important;
+  border-left: none !important;
+}
+
+.menu-item--logout.active::before {
+  display: none;
+}
+
+.admin-sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: 90;
+  /* не перехватывать жесты скролла у сайдбара (z-index выше) */
+  touch-action: none;
+}
+
+@media (max-width: 992px) {
+  /*
+   * Важно для iOS Safari: transform на предке ломает overflow/scroll у потомков.
+   * Скрытие выезда делаем через left, без translate.
+   */
+  .sidebar {
+    transform: none;
+    left: -280px;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .sidebar-close {
+    display: inline-flex;
+  }
+}
+

@@ -1136,6 +1136,30 @@
   line-height: 1.5;
 }
 
+.buyer-plans__offer-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0 15px;
+  background: rgba(5, 5, 5, 0.34);
+  color: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.buyer-plans__offer-note svg {
+  width: 15px;
+  height: 15px;
+  color: #6ee7d5;
+}
+
 .buyer-plan-grid {
   width: min(980px, 100%);
   display: grid;
@@ -1143,6 +1167,10 @@
   align-items: stretch;
   gap: 18px;
   margin-top: 64px;
+}
+
+.buyer-plans__offer-note + .buyer-plan-grid {
+  margin-top: 42px;
 }
 
 .buyer-plan {
@@ -1153,7 +1181,9 @@
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 14px;
   padding: 24px 24px 20px;
-  background: var(--buyer-white);
+  background:
+    linear-gradient(145deg, rgba(240, 250, 251, 0.7), rgba(255, 255, 255, 0.98) 48%),
+    var(--buyer-white);
   color: var(--buyer-black);
   text-align: left;
   box-shadow: 0 18px 52px rgba(5, 5, 5, 0.17);
@@ -1169,6 +1199,7 @@
 }
 
 .buyer-plan.is-selected {
+  border-color: rgba(0, 153, 169, 0.82);
   box-shadow: 0 28px 82px rgba(0, 153, 169, 0.28);
 }
 
@@ -1182,6 +1213,24 @@
   color: var(--buyer-white);
   font-size: 12px;
   font-weight: 900;
+}
+
+.buyer-plan__discount {
+  position: absolute;
+  top: -16px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: linear-gradient(135deg, #0f8f7d, #18b29d);
+  color: var(--buyer-white);
+  box-shadow: 0 10px 24px rgba(15, 143, 125, 0.25);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .buyer-plan h3 {
@@ -1207,19 +1256,65 @@
   display: none;
 }
 
-.buyer-plan > strong {
-  display: block;
+.buyer-plan__price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  height: auto;
   margin-top: 14px;
-  font-size: 22px;
-  font-weight: 900;
+  border: 1px solid rgba(0, 153, 169, 0.12);
+  border-radius: 13px;
+  padding: 11px 12px;
+  background: rgba(0, 153, 169, 0.055);
 }
 
-.buyer-plan__period {
-  display: block;
-  margin-top: 4px;
+.buyer-plan__price-current {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.buyer-plan__price-current strong {
+  color: var(--buyer-black);
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.buyer-plan__price-current span {
   color: var(--buyer-black-58);
   font-size: 12px;
   font-weight: 800;
+}
+
+.buyer-plan__price-benefit {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+}
+
+.buyer-plan__price-benefit del {
+  color: rgba(5, 5, 5, 0.4);
+  font-size: 24px;
+  font-weight: 900;
+  text-decoration-color: #e05252;
+  text-decoration-thickness: 2px;
+}
+
+.buyer-plan__price-benefit span {
+  color: #087f70;
+  font-size: 11px;
+  font-weight: 850;
 }
 
 .buyer-plan ul {
@@ -1788,10 +1883,11 @@
   }
 
   .buyer-plan-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 560px);
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
-    gap: 10px;
-    margin-top: 28px;
+    gap: 14px;
+    margin-top: 32px;
   }
 
   .buyer-plans__content {
@@ -1801,15 +1897,15 @@
 
   .buyer-plan {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     column-gap: 12px;
     row-gap: 0;
     align-items: start;
     min-height: 0;
     height: 100%;
-    padding: 16px 16px 14px;
-    border-radius: 16px;
+    padding: 20px 20px 18px;
+    border-radius: 18px;
     border-width: 1.5px;
     border-color: rgba(5, 5, 5, 0.1);
     cursor: pointer;
@@ -1817,7 +1913,7 @@
   }
 
   .buyer-plan:has(.buyer-plan__badge) {
-    padding-top: 20px;
+    padding-top: 24px;
   }
 
   .buyer-plan.is-selected {
@@ -1837,26 +1933,34 @@
 
   .buyer-plan__badge {
     top: -11px;
-    left: 16px;
+    left: 20px;
     transform: none;
     padding: 5px 10px;
     font-size: 10px;
     white-space: nowrap;
   }
 
+  .buyer-plan__discount {
+    top: -11px;
+    right: 20px;
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
   .buyer-plan__subtitle--full {
-    display: none;
+    display: block;
   }
 
   .buyer-plan__subtitle--short {
-    display: block;
+    display: none;
   }
 
   .buyer-plan h3 {
     grid-column: 1;
     grid-row: 1;
     margin: 0;
-    font-size: 16px;
+    font-size: 20px;
     line-height: 1.15;
     text-align: left;
   }
@@ -1866,69 +1970,65 @@
     grid-column: 1;
     grid-row: 2;
     margin: 3px 0 0;
-    font-size: 11px;
-    line-height: 1.3;
+    font-size: 13px;
+    line-height: 1.4;
     text-align: left;
   }
 
-  .buyer-plan > strong {
-    display: block;
-    grid-column: 2;
-    grid-row: 1;
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.1;
-    text-align: right;
-    justify-self: end;
+  .buyer-plan__price {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+    align-self: start;
+    min-height: 0;
+    height: auto;
+    margin-top: 10px;
+    padding: 10px 12px;
   }
 
-  .buyer-plan__period {
-    display: block;
-    grid-column: 2;
-    grid-row: 2;
-    margin: 3px 0 0;
-    color: rgba(5, 5, 5, 0.48);
-    font-size: 10px;
-    font-weight: 750;
-    text-align: right;
-    justify-self: end;
+  .buyer-plan__price-current strong {
+    font-size: 20px;
+  }
+
+  .buyer-plan__price-benefit {
+    justify-content: flex-start;
   }
 
   .buyer-plan ul {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 8px;
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 4;
     align-self: start;
-    margin: 12px 0 12px;
+    margin: 12px 0 14px;
     padding: 0;
     list-style: none;
   }
 
   .buyer-plan__feature--full {
-    display: none;
+    display: block;
   }
 
   .buyer-plan__feature--short {
-    display: block;
+    display: none;
   }
 
   .buyer-plan li {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 7px;
     min-width: 0;
     color: var(--buyer-black);
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: 13px;
+    line-height: 1.35;
     font-weight: 700;
     text-align: left;
   }
 
   .buyer-plan li svg {
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
     margin-top: 0;
     flex-shrink: 0;
   }
@@ -1939,24 +2039,24 @@
     justify-content: center;
     gap: 4px;
     grid-column: 1 / -1;
-    grid-row: 4;
+    grid-row: 5;
     align-self: end;
     width: 100%;
-    min-height: 32px;
+    min-height: 44px;
     margin-top: 0;
     border: 0;
     border-radius: 999px;
-    padding: 0 12px;
+    padding: 0 16px;
     background: rgba(5, 5, 5, 0.06);
     color: var(--buyer-black);
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
   }
 
   .buyer-plan__button svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 
   .buyer-plan__button.is-selected {
@@ -1972,10 +2072,11 @@
     align-items: stretch;
     justify-content: flex-start;
     gap: 0;
-    height: 100%;
+    min-height: 176px;
+    height: auto;
     margin-top: 0;
-    padding: 16px 14px 14px;
-    border-radius: 16px;
+    padding: 20px 18px 18px;
+    border-radius: 18px;
     border-color: rgba(255, 255, 255, 0.22);
     background:
       linear-gradient(165deg, rgba(0, 153, 169, 0.22) 0%, rgba(5, 5, 5, 0.55) 42%, rgba(5, 5, 5, 0.72) 100%);
@@ -1992,17 +2093,17 @@
     gap: 0;
     min-height: 0;
     min-width: 0;
-    padding: 28px 0 10px;
+    padding: 30px 0 14px;
   }
 
   .buyer-subscribe-panel__copy > span {
     position: absolute;
-    top: 16px;
+    top: 18px;
     left: 50%;
     transform: translateX(-50%);
     width: max-content;
     max-width: calc(100% - 24px);
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.62);
   }
@@ -2016,32 +2117,32 @@
 
   .buyer-subscribe-panel p {
     margin-top: 8px;
-    max-width: 12rem;
+    max-width: 24rem;
     color: rgba(255, 255, 255, 0.78);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 650;
     line-height: 1.35;
   }
 
   .buyer-subscribe-panel__desc--full,
   .buyer-subscribe-panel__cta--full {
-    display: none;
+    display: inline;
   }
 
   .buyer-subscribe-panel__desc--short {
-    display: block;
+    display: none;
   }
 
   .buyer-subscribe-panel__cta--short {
-    display: inline;
+    display: none;
   }
 
   .buyer-subscribe-panel button {
     width: 100%;
-    min-height: 34px;
+    min-height: 44px;
     margin-top: auto;
-    padding: 0 12px;
-    font-size: 12px;
+    padding: 0 16px;
+    font-size: 14px;
     gap: 6px;
     border: 0;
     box-shadow: 0 6px 16px rgba(5, 5, 5, 0.18);
@@ -2474,5 +2575,350 @@
 @media (max-width: 520px) and (min-height: 800px) and (max-height: 880px) {
   .buyer-map-scene__marker {
     top: 82%;
+  }
+}
+
+/* Premium subscription cards */
+.buyer-plan__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.buyer-plan__eyebrow,
+.buyer-plan__badge,
+.buyer-plan__discount {
+  position: static;
+  inset: auto;
+  transform: none;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.buyer-plan__eyebrow {
+  background: rgba(5, 5, 5, 0.055);
+  color: rgba(5, 5, 5, 0.62);
+}
+
+.buyer-plan__badge {
+  background: var(--buyer-ocean);
+  color: var(--buyer-white);
+  box-shadow: 0 8px 18px rgba(0, 153, 169, 0.2);
+}
+
+.buyer-plan__discount {
+  min-height: 28px;
+  border: 1px solid rgba(0, 153, 169, 0.14);
+  background: #eaf8f5;
+  color: #087f70;
+  box-shadow: none;
+}
+
+.buyer-plan__heading {
+  margin-top: 18px;
+}
+
+.buyer-plan__heading h3 {
+  margin: 0;
+}
+
+.buyer-plan__heading p {
+  margin: 7px 0 0;
+  color: var(--buyer-black-58);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.buyer-plan__features-title {
+  display: block;
+  margin-top: 18px;
+  color: rgba(5, 5, 5, 0.42);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em !important;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.buyer-plan__price {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.buyer-plan__price-values {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.buyer-plan__price-was {
+  color: #b43f36;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration-color: #c7473a;
+  text-decoration-thickness: 2.5px;
+}
+
+.buyer-plan__price-saving {
+  display: block;
+  margin-top: 8px;
+  color: #087f70;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+@media (max-width: 820px) {
+  .buyer-plans {
+    padding: 36px 0 64px;
+  }
+
+  .buyer-plans__content {
+    width: calc(100% - 32px);
+  }
+
+  .buyer-plan-grid {
+    width: min(100%, 520px);
+    gap: 18px;
+    margin-top: 34px;
+  }
+
+  .buyer-plan,
+  .buyer-plan--medium,
+  .buyer-plan--tall,
+  .buyer-plan:has(.buyer-plan__badge) {
+    display: flex;
+    min-height: 0;
+    height: auto;
+    padding: 20px;
+    border: 1px solid rgba(5, 5, 5, 0.08);
+    border-radius: 26px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(0, 153, 169, 0.08), transparent 34%),
+      rgba(255, 255, 255, 0.97);
+    box-shadow:
+      0 22px 46px rgba(5, 24, 28, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96);
+    opacity: 1;
+    transform: none;
+  }
+
+  .buyer-plan.is-selected {
+    border: 2px solid var(--buyer-ocean);
+    padding: 19px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(78, 205, 214, 0.19), transparent 38%),
+      linear-gradient(150deg, #ffffff 0%, #f2fbfb 100%);
+    box-shadow:
+      0 24px 58px rgba(0, 125, 138, 0.25),
+      0 0 0 5px rgba(0, 153, 169, 0.08);
+  }
+
+  .buyer-plan__topline {
+    width: 100%;
+  }
+
+  .buyer-plan__eyebrow,
+  .buyer-plan__badge,
+  .buyer-plan__discount {
+    min-height: 30px;
+    padding-inline: 12px;
+    font-size: 11px;
+  }
+
+  .buyer-plan__heading {
+    margin-top: 20px;
+  }
+
+  .buyer-plan__heading h3,
+  .buyer-plan h3 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em !important;
+  }
+
+  .buyer-plan__heading p,
+  .buyer-plan > p {
+    margin: 9px 0 0;
+    color: rgba(5, 5, 5, 0.56);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .buyer-plan__subtitle--full {
+    display: block;
+  }
+
+  .buyer-plan__subtitle--short {
+    display: none;
+  }
+
+  .buyer-plan__price {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 20px;
+    border: 1px solid rgba(0, 153, 169, 0.12);
+    border-radius: 19px;
+    padding: 16px;
+    background: rgba(240, 250, 251, 0.88);
+  }
+
+  .buyer-plan__price-values {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .buyer-plan__price-was {
+    flex: 0 0 auto;
+    color: #b43f36;
+    font-size: clamp(34px, 9.8vw, 40px);
+    font-weight: 900;
+    letter-spacing: -0.045em !important;
+    line-height: 0.9;
+    text-decoration-color: #c7473a;
+    text-decoration-thickness: 3px;
+  }
+
+  .buyer-plan__price-current {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .buyer-plan__price-current strong {
+    color: var(--buyer-ocean-deep);
+    font-size: clamp(21px, 6.4vw, 26px);
+    font-weight: 850;
+    letter-spacing: -0.035em !important;
+    line-height: 1;
+  }
+
+  .buyer-plan__price-current span {
+    color: rgba(5, 5, 5, 0.48);
+    font-size: 11px;
+    font-weight: 750;
+  }
+
+  .buyer-plan__price-saving {
+    display: block;
+    margin-top: 10px;
+    color: #087f70;
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1.3;
+  }
+
+  .buyer-plan__features-title {
+    margin-top: 20px;
+  }
+
+  .buyer-plan ul {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 11px;
+    margin: 12px 0 20px;
+  }
+
+  .buyer-plan__feature--full {
+    display: block;
+  }
+
+  .buyer-plan__feature--short {
+    display: none;
+  }
+
+  .buyer-plan li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(5, 5, 5, 0.84);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .buyer-plan li svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    margin: 0;
+    border-radius: 50%;
+    padding: 4px;
+    background: #e6f7f4;
+    color: #008b7d;
+    stroke-width: 2.6;
+  }
+
+  .buyer-plan__button {
+    display: inline-flex;
+    width: 100%;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+    border: 0;
+    border-radius: 16px;
+    padding: 0 18px;
+    background: var(--buyer-black);
+    color: var(--buyer-white);
+    box-shadow: 0 12px 24px rgba(5, 5, 5, 0.14);
+    font-size: 14px;
+    font-weight: 850;
+  }
+
+  .buyer-plan__button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .buyer-plan__button.is-selected {
+    background: linear-gradient(135deg, var(--buyer-ocean-deep), #1eb9c6);
+    color: var(--buyer-white);
+    box-shadow: 0 14px 28px rgba(0, 153, 169, 0.24);
+  }
+}
+
+@media (max-width: 360px) {
+  .buyer-plans__content {
+    width: calc(100% - 24px);
+  }
+
+  .buyer-plan,
+  .buyer-plan--medium,
+  .buyer-plan--tall,
+  .buyer-plan:has(.buyer-plan__badge) {
+    padding: 17px;
+    border-radius: 22px;
+  }
+
+  .buyer-plan.is-selected {
+    padding: 16px;
+  }
+
+  .buyer-plan__price {
+    align-items: stretch;
+  }
+
+  .buyer-plan__price-values {
+    gap: 10px;
   }
 }

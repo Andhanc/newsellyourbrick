@@ -1,0 +1,175 @@
+/* Горизонтальный промо-баннер: тиффани-фон, белый текст, иллюстрация справа */
+.profile-vip-club-promo {
+  --vip-banner-teal: #0099A9;
+  --vip-banner-teal-deep: #007d8a;
+
+  display: block;
+  width: 100%;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', 'Montserrat', system-ui, sans-serif;
+  background: linear-gradient(
+    102deg,
+    var(--vip-banner-teal) 0%,
+    #12c4be 42%,
+    var(--vip-banner-teal-deep) 100%
+  );
+  box-shadow:
+    0 14px 36px rgba(0, 125, 138, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.profile-vip-club-promo:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 44px rgba(0, 125, 138, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.profile-vip-club-promo:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 3px;
+}
+
+.profile-vip-club-promo__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 38%);
+  align-items: center;
+  min-height: 132px;
+  padding: 0;
+}
+
+.profile-vip-club-promo__copy {
+  position: relative;
+  z-index: 2;
+  padding: 1.35rem 1.25rem 1.4rem 1.45rem;
+  max-width: 640px;
+}
+
+.profile-vip-club-promo__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.125rem, 2.6vw, 1.5rem);
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.profile-vip-club-promo__desc {
+  margin: 0 0 14px;
+  font-size: clamp(0.8125rem, 1.8vw, 0.9375rem);
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 46ch;
+}
+
+.profile-vip-club-promo__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--vip-banner-teal-deep);
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-vip-club-promo:hover .profile-vip-club-promo__cta {
+  transform: translateX(2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+.profile-vip-club-promo__art {
+  position: absolute;
+  right: -4%;
+  top: 50%;
+  z-index: 1;
+  width: min(52%, 300px);
+  height: auto;
+  transform: translateY(-48%);
+  pointer-events: none;
+}
+
+@media (min-width: 721px) {
+  .profile-vip-club-promo__art {
+    animation: profile-vip-club-promo-art-float 5s ease-in-out infinite;
+  }
+}
+
+@keyframes profile-vip-club-promo-art-float {
+  0%,
+  100% {
+    transform: translateY(-48%);
+  }
+  50% {
+    transform: translateY(-52%);
+  }
+}
+
+.profile-main__vip-promo.profile-vip-club-promo {
+  margin: 0 0 28px;
+}
+
+@media (min-width: 640px) {
+  .profile-vip-club-promo {
+    border-radius: 1.375rem;
+  }
+
+  .profile-vip-club-promo__inner {
+    min-height: 148px;
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-vip-club-promo__inner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .profile-vip-club-promo__copy {
+    padding: 1.2rem 1.15rem 0.5rem;
+    max-width: none;
+  }
+
+  .profile-vip-club-promo__desc {
+    max-width: none;
+    margin-bottom: 12px;
+  }
+
+  .profile-vip-club-promo__art {
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto -8px;
+    display: block;
+  }
+}
+
+@media (max-width: 1024px) {
+  .profile-main__vip-promo.profile-vip-club-promo {
+    margin-bottom: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-vip-club-promo,
+  .profile-vip-club-promo__cta {
+    transition: none;
+  }
+
+  .profile-vip-club-promo__art {
+    animation: none;
+  }
+}

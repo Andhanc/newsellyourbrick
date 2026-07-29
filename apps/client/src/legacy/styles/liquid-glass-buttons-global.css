@@ -1,0 +1,43 @@
+/**
+ * Глобальный «liquid» отклик для нативных кнопок (без SVG-фильтра на каждый элемент — так дешевле для DOM).
+ * Отключить для конкретной кнопки: class="liquid-glass--skip"
+ * Карта / Leaflet: сброс ниже.
+ */
+button:not(.liquid-glass--skip),
+input[type='submit']:not(.liquid-glass--skip),
+input[type='button']:not(.liquid-glass--skip),
+input[type='reset']:not(.liquid-glass--skip) {
+  transition:
+    transform 0.22s cubic-bezier(0.1, 0.4, 0.2, 1),
+    filter 0.22s ease,
+    box-shadow 0.25s ease;
+}
+
+button:not(.liquid-glass--skip):not(:disabled):hover,
+input[type='submit']:not(.liquid-glass--skip):not(:disabled):hover,
+input[type='button']:not(.liquid-glass--skip):not(:disabled):hover,
+input[type='reset']:not(.liquid-glass--skip):not(:disabled):hover {
+  filter: brightness(1.06);
+}
+
+button:not(.liquid-glass--skip):not(:disabled):active,
+input[type='submit']:not(.liquid-glass--skip):not(:disabled):active,
+input[type='button']:not(.liquid-glass--skip):not(:disabled):active,
+input[type='reset']:not(.liquid-glass--skip):not(:disabled):active {
+  transform: scale(0.985);
+  filter: brightness(0.93);
+}
+
+.leaflet-container button,
+.leaflet-container .leaflet-bar a {
+  transition: none !important;
+  filter: none !important;
+}
+
+.leaflet-container button:hover,
+.leaflet-container button:active,
+.leaflet-container .leaflet-bar a:hover,
+.leaflet-container .leaflet-bar a:active {
+  transform: none !important;
+  filter: none !important;
+}

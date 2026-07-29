@@ -1,0 +1,513 @@
+.access-management {
+  padding: 2rem;
+  background: #f5f7fa;
+  min-height: calc(100vh - 80px);
+}
+
+.access-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 2rem;
+}
+
+.access-management-header button.btn-primary,
+.access-management-header .btn.btn-primary,
+.access-management-header .access-create-btn,
+.access-create-btn.btn-primary,
+button.access-create-btn.btn-primary {
+  padding: 0.7rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 999px !important;
+  height: auto !important;
+  line-height: 1.2 !important;
+  min-width: 220px !important;
+  max-width: 260px !important;
+  width: auto !important;
+  box-sizing: border-box !important;
+  gap: 0.4rem !important;
+  white-space: nowrap !important;
+  justify-content: center;
+}
+
+.access-management-header .access-create-btn svg,
+.access-management-header .access-create-btn .fa,
+.access-management-header button.btn-primary svg,
+button.access-create-btn svg {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  font-size: 0.75rem !important;
+  flex-shrink: 0;
+}
+
+.access-management-header h2 {
+  color: #1a202c;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.access-management-loading,
+.access-management-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+  font-size: 1.1rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e0;
+}
+
+.access-management-list {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.access-management-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.access-management-table thead {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  color: white;
+}
+
+.access-management-table th {
+  padding: 1.25rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.access-management-table th:first-child {
+  padding-left: 1.5rem;
+}
+
+.access-management-table th:last-child {
+  padding-right: 1.5rem;
+}
+
+.access-management-table td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.access-management-table td:first-child {
+  padding-left: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.access-management-table td:last-child {
+  padding-right: 1.5rem;
+}
+
+.access-management-table tbody tr {
+  transition: background-color 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.access-management-table tbody tr:hover {
+  background: #f7fafc;
+  border-left-color: #1a202c;
+}
+
+.access-management-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badge-super {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-admin {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.permissions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 400px;
+  padding: 0.75rem 0.75rem 0.9rem;
+  margin-top: 0.5rem;
+  background: #f7fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.permission-tag {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #e6f3ff;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
+}
+
+.permission-tag:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3);
+}
+
+.permission-tag--none {
+  background: #f7fafc;
+  color: #718096;
+  border-color: #cbd5e0;
+  box-shadow: none;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  color: white;
+  box-shadow: 0 4px 6px rgba(26, 32, 44, 0.3);
+  border: none;
+  padding: 0.45rem 0.9rem !important;
+  font-size: 0.8rem !important;
+  border-radius: 6px !important;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(26, 32, 44, 0.5);
+  color: white;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  padding: 0.45rem 0.9rem !important;
+}
+
+.btn-secondary {
+  background: white;
+  color: #4a5568;
+  border: 2px solid #cbd5e0;
+}
+
+.btn-secondary:hover {
+  background: #f7fafc;
+  border-color: #a0aec0;
+  color: #2d3748;
+}
+
+.btn-icon {
+  padding: 0.5rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.btn-edit {
+  background: #e6f3ff;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+}
+
+.btn-edit:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.btn-delete {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+  border: 1px solid #e2e8f0;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1a202c;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #718096;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+  width: 36px;
+  height: 36px;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
+  color: #2d3748;
+  transform: rotate(90deg);
+}
+
+.access-management-form {
+  padding: 1.5rem;
+  background: white;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: white;
+  color: #2d3748;
+  box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
+  outline: none;
+  border-color: #1a202c;
+  box-shadow: 0 0 0 3px rgba(26, 32, 44, 0.1);
+  background: white;
+}
+
+.form-group input:disabled {
+  background: #f7fafc;
+  color: #718096;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+.permissions-label {
+  margin-bottom: 1rem !important;
+}
+
+.permissions-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: #f7fafc;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.checkbox-label:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+  transform: translateX(4px);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #1a202c;
+  flex-shrink: 0;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  accent-color: #1a202c;
+}
+
+.checkbox-label span {
+  color: #2d3748;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+  margin-top: 1.5rem;
+  background: #f7fafc;
+  padding: 1.5rem;
+  margin: 0 -1.5rem -1.5rem -1.5rem;
+}
+
+@media (max-width: 768px) {
+  .access-management {
+    padding: 1rem;
+  }
+
+  .access-management-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .access-management-header .access-create-btn {
+    width: 100% !important;
+    max-width: 260px !important;
+  }
+
+  .access-management-table {
+    font-size: 0.85rem;
+  }
+
+  .access-management-table th,
+  .access-management-table td {
+    padding: 0.3rem 0.3rem;
+  }
+
+  .access-management-table th:first-child,
+  .access-management-table td:first-child {
+    padding-left: 0.75rem;
+  }
+
+  .access-management-table th:last-child,
+  .access-management-table td:last-child {
+    padding-right: 0.75rem;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .permissions-list {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,94 @@
+.owner-float-nav-shell {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .owner-float-nav-shell {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 120;
+    display: flex;
+    justify-content: center;
+    padding: 0 18px;
+    pointer-events: none;
+  }
+
+  .owner-float-nav {
+    pointer-events: auto;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 1px;
+    width: min(100%, 360px);
+    padding: 4px 5px;
+    border-radius: 999px;
+    background: rgba(24, 26, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      0 16px 42px rgba(0, 0, 0, 0.38),
+      0 2px 8px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(22px) saturate(1.15);
+    -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  }
+
+  .owner-float-nav__tab {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 5px 4px 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.58);
+    cursor: pointer;
+    font: inherit;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .owner-float-nav__tab:active {
+    transform: scale(0.97);
+  }
+
+  .owner-float-nav__tab--active {
+    background: rgba(10, 186, 181, 0.22);
+    color: #3ee4df;
+  }
+
+  .owner-float-nav__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: inherit;
+  }
+
+  .owner-float-nav__icon svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .owner-float-nav__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+  }
+
+  .owner-float-nav__tab--active .owner-float-nav__label {
+    font-weight: 600;
+  }
+}

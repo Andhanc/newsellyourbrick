@@ -1,0 +1,181 @@
+.buyer-status-ribbon {
+  position: absolute;
+  z-index: 8;
+  top: 24px;
+  left: -12%;
+  display: grid;
+  place-items: center;
+  width: 124%;
+  min-height: 44px;
+  padding: 9px 48px;
+  overflow: hidden;
+  pointer-events: none;
+  transform: rotate(-7deg);
+  transform-origin: center;
+  box-shadow: 0 8px 24px rgba(2, 18, 20, 0.2);
+  font-family: var(--buyer-font-display);
+  isolation: isolate;
+}
+
+.buyer-status-ribbon::before,
+.buyer-status-ribbon::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: -1;
+  height: 5px;
+  content: '';
+}
+
+.buyer-status-ribbon::before { top: 0; }
+.buyer-status-ribbon::after { bottom: 0; }
+
+.buyer-status-ribbon__text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  color: inherit;
+  font-size: clamp(11px, 3.4vw, 14px);
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  user-select: text;
+}
+
+.buyer-status-ribbon__check-wrap {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.buyer-status-ribbon__check {
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.buyer-status-ribbon--sold {
+  background: linear-gradient(
+    100deg,
+    #0e7c86 0%,
+    #14a3b0 38%,
+    #4ecdd6 52%,
+    #14a3b0 68%,
+    #0e7c86 100%
+  );
+  color: #ffffff;
+  box-shadow:
+    0 14px 28px rgba(14, 124, 134, 0.34),
+    0 2px 0 rgba(255, 255, 255, 0.28) inset;
+}
+
+.buyer-status-ribbon--sold::before,
+.buyer-status-ribbon--sold::after {
+  background: rgba(255, 255, 255, 0.4);
+  opacity: 0.55;
+}
+
+.buyer-status-ribbon--auction-ended {
+  background: var(--buyer-auction);
+  color: var(--buyer-ink);
+}
+
+.buyer-status-ribbon--auction-ended::before,
+.buyer-status-ribbon--auction-ended::after {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--buyer-ink) 0 18px,
+    transparent 18px 34px
+  );
+}
+
+.buyer-status-ribbon--reserved {
+  background: var(--buyer-ink);
+  color: var(--buyer-white);
+}
+
+.buyer-status-ribbon--reserved::before,
+.buyer-status-ribbon--reserved::after,
+.buyer-status-ribbon--unavailable::before,
+.buyer-status-ribbon--unavailable::after {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.buyer-status-ribbon--unavailable {
+  background: #68706f;
+  color: var(--buyer-white);
+}
+
+.buyer-card-final-action {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--buyer-touch);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--buyer-teal) 22%, transparent);
+  border-radius: 14px;
+  background: var(--buyer-mint);
+  color: var(--buyer-ink);
+  cursor: pointer;
+  font-family: var(--buyer-font-display);
+  text-align: left;
+}
+
+.buyer-card-final-action > span {
+  color: var(--buyer-text-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.buyer-card-final-action > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--buyer-teal-deep);
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.property-card--buyer-sold .property-image-container,
+.property-card--buyer-auction-ended .property-image-container,
+.auction-card--buyer-sold .auction-card__media,
+.auction-card--buyer-auction-ended .auction-card__media {
+  background: #0f172a;
+}
+
+.property-card--buyer-sold .property-image,
+.auction-card--buyer-sold .auction-card__image,
+.auction-card--sold-presentation .auction-card__image,
+.property-card--buyer-auction-ended .property-image,
+.auction-card--buyer-auction-ended .auction-card__image {
+  filter: brightness(0.72) saturate(0.92);
+}
+
+@media (max-width: 360px) {
+  .buyer-status-ribbon {
+    top: 20px;
+    min-height: 40px;
+    padding-inline: 40px;
+  }
+
+  .buyer-status-ribbon__text {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buyer-status-ribbon {
+    transition: none !important;
+  }
+}

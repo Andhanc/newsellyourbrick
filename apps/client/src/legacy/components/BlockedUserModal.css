@@ -1,0 +1,151 @@
+.blocked-user-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  animation: fadeIn 0.3s ease-in-out;
+  /* Блокируем все взаимодействия с контентом под модальным окном */
+  pointer-events: auto;
+  /* Предотвращаем прокрутку body когда модальное окно открыто */
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.blocked-user-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.blocked-user-modal-content {
+  text-align: center;
+}
+
+.blocked-user-icon {
+  font-size: 5rem;
+  color: #e74c3c;
+  margin-bottom: 1.5rem;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.blocked-user-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.blocked-user-message {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.blocked-user-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background-color: #667eea !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.875rem 2rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+  min-width: 120px;
+  outline: none !important;
+}
+
+.blocked-user-button:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #653a91 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+  color: white !important;
+}
+
+.blocked-user-button:active {
+  transform: translateY(0);
+  background: linear-gradient(135deg, #5568d3 0%, #653a91 100%) !important;
+  color: white !important;
+}
+
+.blocked-user-button:focus {
+  outline: none !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+}
+
+.blocked-user-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.blocked-user-modal-close:hover {
+  background-color: #f0f0f0;
+  color: #2c3e50;
+  transform: rotate(90deg);
+}
+
+.blocked-user-modal-close:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.blocked-user-modal-close:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(127, 140, 141, 0.3);
+}
+

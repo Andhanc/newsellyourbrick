@@ -1,0 +1,124 @@
+.auction-final-ribbon {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 148%;
+  min-height: 36px;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+  transform: translateX(-50%) rotate(-16deg);
+  transform-origin: center;
+}
+
+.auction-final-ribbon__band {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    100deg,
+    #0e7c86 0%,
+    #14a3b0 38%,
+    #4ecdd6 52%,
+    #14a3b0 68%,
+    #0e7c86 100%
+  );
+  box-shadow:
+    0 14px 28px rgba(14, 124, 134, 0.34),
+    0 2px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -1px 0 rgba(8, 47, 52, 0.22) inset;
+}
+
+.auction-final-ribbon__band::before,
+.auction-final-ribbon__band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 20%,
+    rgba(255, 255, 255, 0.55) 80%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+.auction-final-ribbon__band::before {
+  top: 5px;
+}
+
+.auction-final-ribbon__band::after {
+  bottom: 5px;
+  opacity: 0.35;
+}
+
+.auction-final-ribbon__text {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  padding: 9px 20px;
+  color: #ffffff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: clamp(0.72rem, 2.6vw, 0.84rem);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(8, 47, 52, 0.28);
+}
+
+.auction-final-ribbon__check-wrap {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.auction-final-ribbon__check {
+  display: block;
+  color: #ffffff;
+}
+
+.auction-final-ribbon--sold .auction-final-ribbon__band {
+  background: linear-gradient(
+    100deg,
+    #0e7c86 0%,
+    #14a3b0 38%,
+    #4ecdd6 52%,
+    #14a3b0 68%,
+    #0e7c86 100%
+  );
+}
+
+@media (max-width: 360px) {
+  .auction-final-ribbon {
+    top: 16%;
+    min-height: 32px;
+  }
+
+  .auction-final-ribbon__text {
+    padding: 8px 16px;
+    font-size: 0.64rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-final-ribbon {
+    transition: none;
+  }
+}

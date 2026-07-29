@@ -1,0 +1,1198 @@
+.buy-now-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.buy-now-modal {
+  background: #fff;
+  border-radius: 24px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+/* —— v2: компактная вёрстка —— */
+.buy-now-modal--v2 {
+  max-width: 440px;
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow:
+    0 4px 6px -1px rgba(15, 23, 42, 0.06),
+    0 24px 48px -12px rgba(15, 23, 42, 0.18);
+  background: linear-gradient(180deg, #fafbfc 0%, #ffffff 48%);
+}
+
+.buy-now-modal__content--v2 {
+  padding: 28px 24px 24px;
+}
+
+.buy-now-modal__head {
+  text-align: left;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.buy-now-modal__head .buy-now-modal__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.buy-now-modal__head .buy-now-modal__subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.buy-now-modal__auction-lead {
+  font-size: 0.88rem;
+  color: #475569;
+  margin: 12px 0 0;
+  line-height: 1.45;
+}
+
+.buy-now-modal__sum-footnote {
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.buy-now-modal__sums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.buy-now-modal__sum-card {
+  background: #f8fafc;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buy-now-modal__sum-card--accent {
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.08) 0%, rgba(0, 153, 169, 0.02) 100%);
+  border-color: rgba(0, 153, 169, 0.25);
+}
+
+.buy-now-modal__sum-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.buy-now-modal__sum-card--accent .buy-now-modal__sum-label {
+  color: #007580;
+}
+
+.buy-now-modal__sum-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.buy-now-modal__sum-card--accent .buy-now-modal__sum-value {
+  color: #00605a;
+}
+
+.buy-now-modal__sum-note {
+  font-size: 0.72rem;
+  color: #475569;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.buy-now-modal__wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.buy-now-modal__wallet-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.buy-now-modal__wallet-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.buy-now-modal__wallet-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.buy-now-modal__inline-hint {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  color: #b45309;
+}
+
+.buy-now-modal__how {
+  margin-bottom: 16px;
+}
+
+.buy-now-modal__how-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin: 0 0 10px;
+}
+
+.buy-now-modal__how-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buy-now-modal__how-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #eef2f7;
+}
+
+.buy-now-modal__how-icon {
+  flex-shrink: 0;
+  color: #007580;
+  margin-top: 2px;
+}
+
+.buy-now-modal__how-item strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.buy-now-modal__how-item span:last-child {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.buy-now-modal__legal {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e8edf3;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.buy-now-modal__legal-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin: 0 0 12px;
+}
+
+.buy-now-modal__legal .buy-now-modal__pdf-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 153, 169, 0.35);
+  background: #fff;
+  color: #00605a;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.buy-now-modal__legal .buy-now-modal__pdf-btn:hover {
+  background: rgba(0, 153, 169, 0.06);
+}
+
+.buy-now-modal__legal .buy-now-modal__check {
+  margin-bottom: 0;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.buy-now-modal__legal .buy-now-modal__signature-block {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.buy-now-modal__signature-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.buy-now-modal__cta {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #fff;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+.buy-now-modal__cta:hover:not(:disabled) {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
+}
+
+.buy-now-modal__cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.buy-now-modal--v2 .buy-now-modal__close {
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid #e8edf3;
+  color: #64748b;
+}
+
+.buy-now-modal--v2 .buy-now-modal__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: none;
+}
+
+.buy-now-modal--v2 .buy-now-modal__actions {
+  margin-top: 0;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.buy-now-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+  color: #000;
+}
+
+.buy-now-modal__close:hover {
+  background: #e0e0e0;
+  transform: rotate(90deg);
+}
+
+.buy-now-modal__content {
+  padding: 40px;
+}
+
+.buy-now-modal__header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.buy-now-modal__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #0099A9;
+}
+
+.buy-now-modal__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.1) 0%, rgba(0, 125, 138, 0.15) 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 2px solid rgba(0, 153, 169, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.1);
+}
+
+.buy-now-modal__price-label {
+  font-size: 14px;
+  color: #007d8a;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.buy-now-modal__price-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0099A9;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__intro {
+  margin-bottom: 16px;
+}
+
+.buy-now-modal__intro-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #374151;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__wallet-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.buy-now-modal__wallet-toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #312e81;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__wallet-balance {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6366f1;
+}
+
+.buy-now-modal__wallet-hint {
+  width: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: #b45309;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.buy-now-modal__switch--on {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.buy-now-modal__switch--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.buy-now-modal__switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.buy-now-modal__switch--on .buy-now-modal__switch-knob {
+  transform: translateX(24px);
+}
+
+.buy-now-modal__split-pay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #1e3a8a;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__price-block--deposit {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.buy-now-modal__price-value--deposit {
+  color: #1d4ed8;
+}
+
+.buy-now-modal__instructions {
+  margin-bottom: 24px;
+}
+
+.buy-now-modal__instructions-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 20px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(0, 153, 169, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #0099A9;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.08);
+}
+
+.buy-now-modal__step:hover {
+  background: rgba(0, 153, 169, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.15);
+  transform: translateX(4px);
+}
+
+.buy-now-modal__step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
+}
+
+.buy-now-modal__step-content {
+  flex: 1;
+}
+
+.buy-now-modal__step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__step-title svg {
+  color: #0099A9;
+}
+
+.buy-now-modal__step-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__contact {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.08) 0%, rgba(0, 125, 138, 0.12) 100%);
+  border-radius: 12px;
+  border: 2px solid rgba(0, 153, 169, 0.2);
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.1);
+}
+
+.buy-now-modal__contact-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #007d8a;
+  margin: 0;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+}
+
+.buy-now-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.buy-now-modal__actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.buy-now-modal__button {
+  padding: 12px 32px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+}
+
+.buy-now-modal__button--primary {
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 50%, #006672 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.buy-now-modal__button--primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.buy-now-modal__button--primary:hover::before {
+  left: 100%;
+}
+
+.buy-now-modal__button--primary:hover {
+  background: linear-gradient(135deg, #007d8a 0%, #006672 50%, #055a56 100%);
+  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.5);
+  transform: translateY(-2px);
+}
+
+.buy-now-modal__button--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 153, 169, 0.3);
+}
+
+.buy-now-modal__button--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buy-now-modal__button--stripe {
+  background: linear-gradient(135deg, #635bff 0%, #0a2540 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(99, 91, 255, 0.35);
+}
+
+.buy-now-modal__button--stripe:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+.buy-now-modal__button--stripe:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buy-now-modal__contact-text code {
+  font-size: 0.92em;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.buy-now-modal__button--secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.buy-now-modal__button--secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* Информация о депозите */
+.buy-now-modal__deposit-info {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 2px solid #fbbf24;
+  align-items: flex-start;
+}
+
+.buy-now-modal__deposit-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.buy-now-modal__deposit-content {
+  flex: 1;
+}
+
+.buy-now-modal__deposit-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 8px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__deposit-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #78350f;
+  margin: 0 0 12px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__deposit-amount {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #fbbf24;
+}
+
+.buy-now-modal__deposit-amount-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__deposit-amount-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #d97706;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Чекбокс согласия с офертой */
+.buy-now-modal__agreement {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.buy-now-modal__agreement-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__agreement-label--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buy-now-modal__agreement-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #0099A9;
+}
+
+.buy-now-modal__agreement-label--disabled .buy-now-modal__agreement-checkbox {
+  cursor: not-allowed;
+}
+
+.buy-now-modal__agreement-text {
+  flex: 1;
+}
+
+.buy-now-modal__agreement-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  transition: color 0.2s ease;
+}
+
+.buy-now-modal__agreement-link:hover {
+  color: #1d4ed8;
+}
+
+.buy-now-modal__agreement-hint {
+  margin: 8px 0 0 32px;
+  font-size: 12px;
+  color: #dc2626;
+  font-style: italic;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Секция реквизитов */
+.buy-now-modal__requisites-section {
+  margin-bottom: 24px;
+}
+
+.buy-now-modal__requisites-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.buy-now-modal__requisites-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.buy-now-modal__requisites {
+  margin-top: 16px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.buy-now-modal__requisites-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+  font-family: 'Montserrat', sans-serif;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.buy-now-modal__requisites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.buy-now-modal__requisite-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.buy-now-modal__requisite-item--amount {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-left-color: #2563eb;
+  font-weight: 600;
+}
+
+.buy-now-modal__requisite-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__requisite-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  font-family: 'Montserrat', sans-serif;
+  word-break: break-all;
+}
+
+.buy-now-modal__requisite-value--highlight {
+  font-size: 20px;
+  color: #2563eb;
+}
+
+.buy-now-modal__requisite-value-with-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.buy-now-modal__copy-btn {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.buy-now-modal__copy-btn:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.buy-now-modal__copied-message {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: #0099A9;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 600;
+  animation: slideIn 0.3s ease-out;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.buy-now-modal__policy {
+  margin-bottom: 16px;
+}
+
+.buy-now-modal__policy-intro {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.buy-now-modal__pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.buy-now-modal__pdf-btn:hover {
+  background: #e0e7ff;
+}
+
+.buy-now-modal__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.buy-now-modal__check input {
+  margin-top: 3px;
+}
+
+.buy-now-modal__check--disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.buy-now-modal__policy-hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.buy-now-modal__signature-block {
+  margin-bottom: 20px;
+}
+
+.buy-now-modal__signature-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.buy-now-modal__signature-head label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.buy-now-modal__clear-sig {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.buy-now-modal__clear-sig:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.buy-now-modal__pdf-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.buy-now-modal__pdf-viewer {
+  width: min(960px, 100%);
+  height: min(88vh, 860px);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
+}
+
+.buy-now-modal__pdf-viewer-head {
+  height: 48px;
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.buy-now-modal__pdf-viewer-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.buy-now-modal__pdf-viewer-close:hover {
+  background: #f1f5f9;
+}
+
+.buy-now-modal__pdf-viewer-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .buy-now-modal {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    margin-top: auto;
+    max-height: 95vh;
+  }
+
+  .buy-now-modal__content {
+    padding: 24px;
+  }
+
+  .buy-now-modal__title {
+    font-size: 24px;
+  }
+
+  .buy-now-modal__price-value {
+    font-size: 28px;
+  }
+
+  .buy-now-modal__step {
+    padding: 16px;
+  }
+
+  .buy-now-modal--v2 .buy-now-modal__sums {
+    grid-template-columns: 1fr;
+  }
+
+  .buy-now-modal__content--v2 {
+    padding: 24px 18px 20px;
+  }
+
+  .buy-now-modal__pdf-viewer {
+    width: 100%;
+    height: 92vh;
+    border-radius: 10px;
+  }
+}

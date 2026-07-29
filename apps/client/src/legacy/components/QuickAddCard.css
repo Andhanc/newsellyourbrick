@@ -1,0 +1,131 @@
+.quick-add-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px 28px;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  min-height: 100px;
+  width: 100%;
+}
+
+.quick-add-card__content-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  align-items: center;
+}
+
+.quick-add-card__icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.quick-add-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4A90E2 0%, #357abd 100%);
+  color: #fff;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+  transform: rotate(-8deg);
+}
+
+.quick-add-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-add-card__label {
+  font-size: 11px;
+  color: #4A90E2;
+  margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.quick-add-card__main-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 2px 0;
+}
+
+.quick-add-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+
+.quick-add-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.quick-add-card__subtext {
+  font-size: 12px;
+  color: #666666;
+  margin: 0;
+  font-weight: 500;
+}
+
+.quick-add-card__arrow {
+  color: #999999;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .quick-add-card {
+    padding: 16px 16px 18px;
+    gap: 12px;
+    min-height: 90px;
+    position: relative;
+  }
+
+  /* В мобильной версии полностью убираем блок с иконкой,
+     чтобы карточка хорошо ложилась в сетку 2x2 */
+  .quick-add-card__icon-wrapper {
+    display: none;
+  }
+
+  .quick-add-card__content-wrapper {
+    gap: 8px;
+  }
+
+  .quick-add-card__value {
+    font-size: 18px;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 440px) {
+  .quick-add-card__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .quick-add-card__icon svg {
+    width: 17px;
+    height: 17px;
+  }
+}

@@ -1,5 +1,5 @@
-import { PropertyCatalogScreen } from '../../src/components/PropertyCatalogScreen'
+import { PublicPageScreen } from '../../src/dom/public-page-screen'
 
 export default function CoInvestmentRoute() {
-  return <PropertyCatalogScreen title="Доли" filter="shares" />
+  return <PublicPageScreen initialPath="/co-investment" />
 }

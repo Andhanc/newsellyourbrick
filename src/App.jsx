@@ -544,7 +544,7 @@ function App() {
         
         // Дополнительно проверяем статус в БД
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+          const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api';
           const dbUser = await fetchUserById(API_BASE_URL, blockedUserId);
           if (dbUser && dbUser.is_blocked === 1) {
             setIsBlocked(true);
@@ -568,7 +568,7 @@ function App() {
       const dbUserId = localStorage.getItem('userId')
       if (userData.isLoggedIn && dbUserId && /^\d+$/.test(dbUserId)) {
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+          const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api';
           const dbUser = await fetchUserById(API_BASE_URL, dbUserId);
             if (dbUser && dbUser.is_blocked === 1) {
             // Сохраняем флаг блокировки

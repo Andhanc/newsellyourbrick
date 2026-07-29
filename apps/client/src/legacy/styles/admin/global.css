@@ -1,0 +1,47 @@
+/* Глобальные стили для админ-панели */
+:root {
+  --primary: #0099A9;
+  --primary-light: #007d8a;
+  --secondary: #007d8a;
+  --dark: #1b263b;
+  --dark-light: #415a77;
+  --light: #f8f9fa;
+  --success: #4cc9f0;
+  --warning: #f8961e;
+  --danger: #f72585;
+  --gray: #adb5bd;
+  --gray-dark: #495057;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes modalFadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.content-section {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+

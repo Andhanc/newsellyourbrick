@@ -1,0 +1,442 @@
+/* 3D-папки блока моделей: сетка на планшетах и десктопе; на телефоне — статическая сетка 1 + 2 + 2 */
+
+.landing-models__folders-root {
+  width: 100%;
+}
+
+.landing-models__folders-viewport {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.landing-models__folders-track {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  justify-items: center;
+  justify-content: center;
+  align-items: start;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.landing-models__folders-slide {
+  width: 100%;
+  max-width: 320px;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.landing-models__folders-track .landing-models__folder {
+  width: 100%;
+  max-width: 320px;
+}
+
+.landing-models__folders-cta {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Небольшой зазор: веер превью выходит вверх */
+  .landing-models__folders-root {
+    position: relative;
+    z-index: 1;
+  }
+
+  #landing-models .landing-models__folders-viewport {
+    overflow: visible;
+    padding-top: clamp(8px, 2vw, 24px);
+    padding-bottom: 0;
+    box-sizing: border-box;
+  }
+
+  .landing-models__folders-track {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    box-sizing: border-box;
+    align-items: start;
+  }
+
+  .landing-models__folders-slide {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  .landing-models__folders-cta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  /* На телефоне вместо квадратной папки Active Bidding — баннер «Готовы к аукциону?» */
+  .landing-models__folders-slide--pos-1 {
+    display: none;
+  }
+
+  .landing-models__folders-cta-frame {
+    position: relative;
+    width: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    box-sizing: border-box;
+    isolation: isolate;
+  }
+
+  .landing-models__folders-cta-frame::before,
+  .landing-models__folders-cta-frame::after {
+    content: '';
+    position: absolute;
+    inset: -130%;
+    z-index: 0;
+    pointer-events: none;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 286deg,
+      rgba(0, 153, 169, 0.5) 296deg,
+      #08a8a3 308deg,
+      #0099A9 318deg,
+      #d8fffd 330deg,
+      #0099A9 342deg,
+      rgba(0, 153, 169, 0.4) 352deg,
+      transparent 360deg
+    );
+    filter: drop-shadow(0 0 6px rgba(0, 153, 169, 0.35));
+    animation: landing-models-cta-snake-spin 3.6s linear infinite;
+  }
+
+  /* Вторая «змея» — та же орбита по часовой, старт с противоположной половины периметра */
+  .landing-models__folders-cta-frame::after {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 286deg,
+      rgba(0, 153, 169, 0.48) 296deg,
+      #007580 308deg,
+      #33adbb 318deg,
+      #7ef0eb 330deg,
+      #33adbb 342deg,
+      rgba(0, 153, 169, 0.38) 352deg,
+      transparent 360deg
+    );
+    filter: drop-shadow(0 0 5px rgba(20, 184, 166, 0.3));
+    animation-name: landing-models-cta-snake-spin-offset;
+  }
+
+  @keyframes landing-models-cta-snake-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes landing-models-cta-snake-spin-offset {
+    from {
+      transform: rotate(180deg);
+    }
+    to {
+      transform: rotate(540deg);
+    }
+  }
+
+  .landing-models__folders-cta-shell {
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 6px);
+    min-height: 176px;
+    margin: 3px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid rgba(230, 237, 243, 0.85);
+    color: #0f172a;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 12px 12px 13px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-sizing: border-box;
+  }
+
+  .landing-models__folders-cta-corner-link {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #1f2937;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .landing-models__folders-cta-corner-link:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  .landing-models__folders-cta-corner-icon {
+    width: 17px;
+    height: 17px;
+    stroke-width: 2.25;
+  }
+
+  .landing-models__folders-cta-folder {
+    position: relative;
+    width: 90px;
+    height: 78px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.2));
+  }
+
+  .landing-models__folders-cta-folder-tab,
+  .landing-models__folders-cta-folder-back,
+  .landing-models__folders-cta-folder-front {
+    position: absolute;
+    display: block;
+    border-radius: 10px;
+  }
+
+  .landing-models__folders-cta-folder-tab {
+    width: 30px;
+    height: 12px;
+    top: 13px;
+    left: 14px;
+    border-radius: 8px 8px 2px 2px;
+    background: rgba(9, 138, 133, 0.95);
+  }
+
+  .landing-models__folders-cta-folder-back {
+    width: 72px;
+    height: 44px;
+    left: 8px;
+    top: 20px;
+    background: rgba(10, 153, 147, 0.8);
+  }
+
+  .landing-models__folders-cta-folder-front {
+    width: 72px;
+    height: 44px;
+    left: 8px;
+    top: 25px;
+    background: linear-gradient(135deg, #3cd4ce 0%, #16b7b1 48%, #0f9f99 100%);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .landing-models__folders-cta-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .landing-models__folders-cta-title {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  .landing-models__folders-cta-copy {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #5f6f8f;
+  }
+
+  .landing-models__folders-cta-button {
+    margin-top: 2px;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: #0a9f9a;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    box-shadow: none;
+  }
+
+  .landing-models__folders-cta-button::after {
+    content: '→';
+    font-size: 28px;
+    line-height: 1;
+    display: inline-block;
+    animation: landingModelsCtaArrowMove 1.6s ease-in-out infinite;
+  }
+
+  @keyframes landingModelsCtaArrowMove {
+    0% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(8px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .landing-models__folders-slide--pos-2 {
+    grid-column: 1 / 2;
+    grid-row: 2;
+  }
+
+  .landing-models__folders-slide--pos-3 {
+    grid-column: 2 / 3;
+    grid-row: 2;
+  }
+
+  .landing-models__folders-slide--pos-4 {
+    grid-column: 1 / 2;
+    grid-row: 3;
+  }
+
+  .landing-models__folders-slide--pos-5 {
+    grid-column: 2 / 3;
+    grid-row: 3;
+  }
+
+  .landing-models__folders-track .landing-models__folder {
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+  .landing-models__folders-cta {
+    display: none;
+  }
+
+  .landing-models__folders-slide--featured {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .landing-models__folders-slide--featured .landing-models__folder {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .landing-models__folders-cta {
+    display: none;
+  }
+
+  .landing-models__folders-viewport {
+    overflow: visible;
+  }
+
+  .landing-models__folders-track {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    justify-items: center;
+    width: 100%;
+  }
+
+  .landing-models__folders-slide {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .landing-models__folders-track .landing-models__folder {
+    max-width: 320px;
+  }
+}
+
+@media (min-width: 900px) {
+  .landing-models__folders-track {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    justify-items: stretch;
+    width: 100%;
+  }
+
+  .landing-models__folders-slide {
+    width: 100%;
+    max-width: none;
+  }
+
+  .landing-models__folders-track .landing-models__folder {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .landing-models__folders-track {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 22px;
+    justify-items: stretch;
+    align-items: start;
+    width: 100%;
+  }
+
+  .landing-models__folders-slide {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .landing-models__folders-track .landing-models__folder {
+    width: 100%;
+    max-width: none;
+    min-width: 240px !important;
+    padding: 18px 16px 11px !important;
+  }
+
+  .landing-models__folders-track .landing-models__folder h3 {
+    font-size: 14px !important;
+    line-height: 1.15 !important;
+  }
+
+  .landing-models__folders-track .landing-models__folder p {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .landing-models__folders-cta-frame::before,
+  .landing-models__folders-cta-frame::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .landing-models__folders-cta-shell {
+    border-color: rgba(0, 153, 169, 0.45);
+  }
+
+  .landing-models__folders-cta-button::after {
+    animation: none;
+  }
+}

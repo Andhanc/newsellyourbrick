@@ -1,0 +1,214 @@
+.opr-header__actions .otpm,
+.mot-header__actions .otpm,
+.op-header__actions .otpm,
+.opa-header__actions .otpm,
+.osl-header__actions .otpm,
+.ost-header__actions .otpm,
+.otd-header__actions .otpm,
+.opr-header__actions,
+.mot-header__actions,
+.op-header__actions,
+.opa-header__actions,
+.osl-header__actions,
+.ost-header__actions,
+.otd-header__actions {
+  overflow: visible;
+}
+
+.opr-header__actions .otpm,
+.mot-header__actions .otpm,
+.op-header__actions .otpm,
+.opa-header__actions .otpm,
+.osl-header__actions .otpm,
+.ost-header__actions .otpm,
+.otd-header__actions .otpm,
+.opr-header__actions .otsb,
+.mot-header__actions .otsb,
+.op-header__actions .otsb,
+.opa-header__actions .otsb,
+.osl-header__actions .otsb,
+.ost-header__actions .otsb,
+.otd-header__actions .otsb {
+  z-index: 20;
+}
+
+.otpm {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: fit-content;
+  max-width: min(100%, 320px);
+}
+
+.otpm__pill {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--otpm-border, #e5e7eb);
+  border-radius: 999px;
+  background: var(--otpm-surface, #ffffff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.otpm--current .otpm__pill {
+  border-color: var(--otpm-ring, rgba(0, 153, 169, 0.28));
+  box-shadow: 0 0 0 1px rgba(0, 153, 169, 0.12);
+}
+
+.otpm__identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  padding-right: 4px;
+  border-radius: 999px 0 0 999px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.otpm__identity:hover .otpm__name {
+  color: var(--otpm-tiffany-dark, #007d8a);
+}
+
+.otpm__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.otpm__avatar svg,
+.otpm__avatar-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.otpm__avatar-img {
+  object-fit: cover;
+}
+
+.otpm__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.otpm__name {
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--otpm-text, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otpm__role {
+  max-width: 100%;
+  font-size: 12px;
+  color: var(--otpm-text-muted, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otpm__toggle {
+  width: 34px;
+  height: 40px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-left: 1px solid var(--otpm-border, #e5e7eb);
+  border-radius: 0 999px 999px 0;
+  background: transparent;
+  color: var(--otpm-text-muted, #6b7280);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.otpm__toggle:hover,
+.otpm__toggle--open {
+  color: var(--otpm-tiffany-dark, #007d8a);
+  background: rgba(0, 153, 169, 0.06);
+}
+
+.otpm__toggle svg {
+  transition: transform 0.15s;
+}
+
+.otpm__toggle--open svg {
+  transform: rotate(180deg);
+}
+
+.otpm__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  z-index: 100;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid var(--otpm-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--otpm-surface, #ffffff);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.otpm__divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: #f3f4f6;
+}
+
+.otpm__item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--otpm-text, #111827);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s, color 0.12s;
+}
+
+.otpm__item:hover {
+  background: #f3f7f9;
+  color: var(--otpm-tiffany-dark, #007d8a);
+}
+
+.otpm__item--active {
+  background: rgba(0, 153, 169, 0.1);
+  color: var(--otpm-tiffany-dark, #007d8a);
+  font-weight: 600;
+}
+
+.otpm__item--logout {
+  color: #dc2626;
+}
+
+.otpm__item--logout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}

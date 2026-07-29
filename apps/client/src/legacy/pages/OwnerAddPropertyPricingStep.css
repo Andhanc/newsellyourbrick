@@ -1,0 +1,465 @@
+/* ——— Step: pricing & auction dates ——— */
+.oap-pricing-step__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+.oap-pricing-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.oap-pricing-step__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.oap-pricing-step__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oap-pricing-step__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.oap-pricing-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px 28px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.oap-pricing-step__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oap-pricing-step__field:has(.oap-select--open) {
+  position: relative;
+  z-index: 25;
+}
+
+.oap-pricing-step__prices-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.oap-pricing-step__field--compact {
+  flex: 0 0 auto;
+  width: min(100%, 248px);
+  max-width: 248px;
+}
+
+.oap-pricing-step__field--full {
+  grid-column: 1 / -1;
+}
+
+.oap-pricing-step__field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.oap-pricing-step__field-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #9ca3af;
+}
+
+.oap-pricing-step__field-hint--auto {
+  color: #0f766e;
+  font-weight: 500;
+}
+
+.oap-pricing-step--embedded .oap-pricing-step__subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oap-pricing-step--embedded .oap-pricing-step__subsection-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--oap-text, #111827);
+}
+
+.oap-pricing-step__field-control {
+  position: relative;
+  display: block;
+}
+
+.oap-pricing-step__field-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.oap-pricing-step__field-icon--auction {
+  color: #007d8a;
+  background: rgba(0, 153, 169, 0.14);
+}
+
+.oap-pricing-step__field-icon--minimum {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.oap-pricing-step__field-icon--buynow {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.oap-pricing-step__field-icon--debt {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.oap-pricing-step__field-icon--shares,
+.oap-pricing-step__field-icon--primary {
+  color: #007d8a;
+  background: #ecfeff;
+}
+
+.oap-pricing-step__input {
+  width: 100%;
+  padding: 13px 56px 13px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  color: #111827;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oap-pricing-step__input--with-icon {
+  padding-left: 46px;
+}
+
+.oap-pricing-step__input--with-currency {
+  padding-right: 82px;
+}
+
+.oap-pricing-step__input--shares-count {
+  padding-right: 16px;
+}
+
+.oap-pricing-step__per-share {
+  margin: -4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.oap-pricing-step__per-share strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.oap-pricing-step__input--date {
+  color-scheme: light;
+}
+
+.oap-pricing-step__input:focus {
+  outline: none;
+  border-color: var(--oap-primary, #0099a9);
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
+}
+
+.oap-pricing-step__input--error {
+  border-color: #fca5a5;
+}
+
+.oap-pricing-step__input--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.oap-pricing-step__input::placeholder {
+  color: #9ca3af;
+}
+
+.oap-pricing-step__currency.oap-select {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  transform: none;
+  width: auto;
+  min-width: 58px;
+  z-index: 2;
+}
+
+.oap-pricing-step__currency .oap-select__trigger {
+  height: 100%;
+  min-height: 0;
+  padding: 0 22px 0 10px;
+  border: none;
+  border-left: 1px solid #e5e7eb;
+  border-radius: 0 9px 9px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: #f9fafb;
+  box-shadow: none;
+}
+
+.oap-pricing-step__currency .oap-select__trigger:hover,
+.oap-pricing-step__currency.oap-select--open .oap-select__trigger {
+  background: #e5e7eb;
+  box-shadow: 0 0 0 2px rgba(0, 153, 169, 0.2);
+}
+
+.oap-pricing-step__currency .oap-select__chevron {
+  width: 14px;
+  height: 14px;
+}
+
+.oap-pricing-step__currency .oap-select__menu {
+  right: 0;
+  left: auto;
+  min-width: 88px;
+}
+
+.oap-pricing-step__field-error {
+  font-size: 11px;
+  color: #dc2626;
+}
+
+.oap-pricing-step__auction-period {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(100%, 260px);
+  max-width: 260px;
+  align-self: flex-start;
+}
+
+.oap-pricing-step--embedded .oap-pricing-step__auction-period {
+  width: min(100%, 260px);
+  max-width: 260px;
+}
+
+.oap-pricing-step__auction-period .auction-period-header {
+  margin-bottom: 12px;
+}
+
+.oap-pricing-step__auction-period .auction-period-header__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.oap-pricing-step__auction-period .auction-period-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.oap-pricing-step:not(.oap-pricing-step--embedded) .oap-pricing-step__auction-period {
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.oap-pricing-step__auction-period .auction-period-content {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap-pricing-step__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff7ed;
+  border: 1px solid #fde8d0;
+  box-shadow: 0 1px 3px rgba(251, 146, 60, 0.06);
+  position: sticky;
+  top: 16px;
+  overflow: hidden;
+}
+
+.oap-pricing-step__sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oap-pricing-step__sidebar-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #d97706;
+  background: #fff;
+}
+
+.oap-pricing-step__sidebar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.oap-pricing-step__sidebar-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.oap-pricing-step__sidebar-illustration {
+  margin: 4px 0 0;
+  padding-top: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 170px;
+}
+
+.oap-pricing-step__sidebar-img {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .oap-pricing-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .oap-pricing-step__sidebar {
+    position: static;
+    order: -1;
+  }
+
+  .oap-pricing-step__card {
+    padding: 18px 16px 20px;
+  }
+
+  .oap-pricing-step__prices-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .oap-pricing-step__field--compact,
+  .oap-pricing-step__auction-period {
+    max-width: none;
+    width: 100%;
+  }
+
+  .oap-pricing-step__sidebar {
+    padding: 16px;
+  }
+
+  .oap-pricing-step__sidebar-illustration {
+    min-height: 150px;
+  }
+
+  .oap-pricing-step__sidebar-img {
+    max-width: 220px;
+  }
+}
+
+/* ——— Journey mobile: flat layout ——— */
+.oap-pricing-step--journey {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-group-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__journey-fields,
+.oap-pricing-step--journey .oap-pricing-step__journey-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__prices-row {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__field--compact {
+  width: 100%;
+  max-width: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__auction-period {
+  width: 100%;
+  max-width: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__auction-period .auction-period-picker,
+.oap-pricing-step--journey .oap-pricing-step__auction-period .auction-period-content {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__input {
+  background: #fff;
+  border-color: rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+}
+
+.oap-pricing-step--journey .oap-pricing-step__currency .oap-select__menu {
+  top: calc(100% + 6px);
+  width: 96px;
+  min-width: 96px;
+}

@@ -1,42 +1,81 @@
 # Expo migration status
 
-Updated: 2026-07-26 (continued session)
+Updated: 2026-07-28
 
-## Running
+## Required public UI scope
 
-| App | URL |
-|-----|-----|
-| Vite reference | http://localhost:5173 |
-| Expo Web | http://localhost:8082 |
-| API | http://127.0.0.1:3000 |
+The complete Vite frontend source is mirrored under `apps/client/src/legacy` and is
+bundled by Expo as a DOM component. This lets Android, iOS and Expo Web render the
+same React DOM, CSS, fonts and image assets instead of maintaining a reduced native
+copy of the public pages.
 
-## Routes in `apps/client` (live tree)
+Verified guest routes:
 
-- `/` MobileDiscover (hero + stage + search → `/search-results`)
-- `/auction`, `/debts`, `/co-investment` — catalogs from `/api/properties/approved`
-- `/property/[slugOrId]` — detail + favorite/compare + auction bid
-- `/search-results`, `/buyer`, `/seller`
-- `/news`, `/news/[slug]`, `/about`, `/map`
-- `/login` — email register/login (buyer/seller) via `/api/auth/email/*`
-- `/profile`, `/favorites`, `/wallet` (Stripe checkout + confirm), `/compare`, `/subscriptions`, `/chat`
-- `/owner`, `/owner/properties`, `/owner/property/new` — 4-step create wizard
-- `/admin`, `/marketer` — web shells (Android unavailable)
+- `/`
+- `/auction`
+- `/co-investment`
+- `/debts`
+- `/test-drive`
+- `/about`
+- `/buyer`
+- `/seller`
 
-## Backend
+Each route has an Expo Router entry and renders the corresponding original Vite
+page. Guest Clerk behavior is provided by the Expo-only shim; file-based Android
+WebView storage and public asset paths are normalized without changing Vite
+browser behavior.
 
-- CORS allowlist + optional Clerk JWT (`REQUIRE_API_AUTH=1`)
-- `resolveWebDist` wired into production static + SEO 404 (`USE_EXPO_WEB=1` / `EXPO_WEB_DIST`)
-- Existing Stripe/SEO Express modules kept
+## Visual QA
 
-## Still open for “full complete”
+- Reference: Vite at 390×844.
+- Target: Android release APK in a headless API 36 emulator at the same 390×844
+  CSS viewport.
+- All eight routes were launched from cold deep links.
+- Every route rendered a non-zero 390×844 DOM root and its expected heading.
+- All visible hero images loaded.
+- Header menu interaction was tested through ADB; the complete public drawer
+  opened and contained the expected sections.
+- Paired reference/Android screenshots are in
+  `docs/expo-migration/visual-comparison`.
+- Final smoke screenshot is
+  `docs/expo-migration/android-release/01-home-final.png`.
 
-- Pixel-perfect discover/catalog/detail vs Vite CSS
-- Clerk Expo SDK (email auth works now; Clerk is optional gate)
-- Full Stripe return deep-link QA on device
-- Maps native, KYC camera, TON, SSE/push
-- Full OAP wizard (media/docs/verification/test-drive steps)
-- Full admin/marketer CRM port
-- Production SEO cutover canary + crawl QA
-- Signed Android release + device QA
+## Build verification
 
-Honesty gate: **not fully migrated**; buyer public + account + seller basics + SEO dist switch are substantially advanced.
+```bash
+cd apps/client
+npm run typecheck
+npm run export:web
+
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+cd android
+./gradlew app:assembleRelease
+```
+
+Verified results:
+
+- TypeScript check: passed.
+- Expo Web export: passed (`apps/client/dist-web`).
+- Android Gradle `app:assembleRelease`: passed.
+- Final APK installed and cold-launched in the headless Android emulator.
+- No fatal Android/React Native errors were present after launch.
+- Release WebView debugging is disabled.
+
+Final APK:
+
+`apps/client/android/app/build/outputs/apk/release/app-release.apk`
+
+- Size: 285,453,864 bytes.
+- SHA-256:
+  `bf2674117f1b65184a3ec7eed9f98b5d76a5bb6e45b183f73cb3f79f97d633ed`
+
+The local Expo Android template currently signs the release variant with its
+development keystore. Installation/testing is valid; Google Play publication
+still requires the project's production upload keystore.
+
+## Scope note
+
+The no-account public UI acceptance listed above is complete. Authenticated
+cabinet, payments, KYC, maps and admin/marketer workflows remain separate
+functional QA scopes and were not part of this visual acceptance run.

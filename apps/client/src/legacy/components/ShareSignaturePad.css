@@ -1,0 +1,30 @@
+.share-signature-pad {
+  margin-top: 6px;
+}
+
+/* Компактная «строчка» под роспись: фиксированный небольшой размер */
+.share-signature-pad__frame {
+  width: 280px;
+  max-width: 100%;
+  height: 96px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.share-signature-pad__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  background: #ffffff;
+}
+
+.share-signature-pad__hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}

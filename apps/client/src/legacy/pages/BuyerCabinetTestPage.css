@@ -1,0 +1,1777 @@
+/* Страница-макет кошелька (тест): изоляция стилей, не трогаем Profile.css */
+.buyer-wallet-test-page {
+  /* «Тиффани» / бирюза кабинета (#0099A9 — как в основном UI) */
+  --bwt-blue: #0099A9;
+  --bwt-blue-soft: #e4f7f6;
+  --bwt-text: #1a1a1a;
+  --bwt-muted: #8a94a6;
+  --bwt-card-blue: #e4f7f6;
+  --bwt-card-blue-2: #ecf9f8;
+  --bwt-line: #eef0f4;
+  position: relative;
+  isolation: isolate;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: transparent;
+  color: var(--bwt-text);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.buyer-wallet-test-page__shader {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.buyer-wallet-test-page *,
+.buyer-wallet-test-page *::before,
+.buyer-wallet-test-page *::after {
+  box-sizing: border-box;
+}
+
+.buyer-wallet-test-page__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  /* 430px контента + 16px×2 padding — иначе док сервисов (6 плиток + кнопка) обрезается */
+  max-width: min(464px, 100%);
+  margin: 0 auto;
+  padding: 12px 16px 28px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 769px) {
+  .buyer-wallet-test-page__inner {
+    width: 80%;
+    max-width: none;
+  }
+}
+
+/* Основная белая панель: шапка, подписки, хаб, избранное/сравнение */
+.buyer-wallet-test-page__main-panel {
+  box-sizing: border-box;
+  padding: 2%;
+  padding-bottom: max(2%, 1rem);
+  margin-bottom: 16px;
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid var(--bwt-line);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+@media (max-width: 768px) {
+  .buyer-wallet-test-page__main-panel {
+    padding: max(2%, 12px);
+    padding-bottom: max(2%, 1rem);
+  }
+}
+
+/* Нижняя половина: активы + плитки */
+.bwt-page-lower {
+  padding: 14px 12px 4px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--bwt-line);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+/* —— Header —— */
+.bwt-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 22px;
+}
+
+.bwt-header.bwt-header--back-only {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.bwt-header-left {
+  justify-self: start;
+  min-width: 0;
+}
+
+.bwt-header-right {
+  grid-column: 3;
+  justify-self: end;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.bwt-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--bwt-blue);
+  font-family: inherit;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+
+.bwt-back-btn:hover {
+  opacity: 0.82;
+}
+
+.bwt-header-center {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  max-width: min(100%, 360px);
+}
+
+.bwt-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: linear-gradient(135deg, #7ec8e3, #b8a9e0);
+  flex-shrink: 0;
+}
+
+.bwt-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+}
+
+.bwt-avatar--placeholder svg {
+  display: block;
+}
+
+.bwt-user-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--bwt-text);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* —— Профиль + подписка: одна карточка —— */
+.bwt-identity-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Верхний ряд: слева профиль/подписка, справа «Понравились» + «Сравнить» */
+.bwt-top-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+  align-items: stretch;
+  width: 100%;
+  max-width: min(680px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bwt-top-grid__profile {
+  min-width: 0;
+}
+
+.bwt-top-grid__side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.buyer-wallet-test-page .bwt-top-grid__side .bwt-zone--lists {
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.buyer-wallet-test-page .bwt-top-grid__side .bwt-lists-split {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  justify-content: stretch;
+}
+
+.buyer-wallet-test-page .bwt-top-grid__side .bwt-lists-split .bwt-feature-card--liquid {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  min-height: 108px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 769px) {
+  .bwt-top-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(152px, 34%);
+    gap: 12px;
+    align-items: stretch;
+  }
+}
+
+.bwt-identity-panel__card {
+  border-radius: 22px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.97) 48%, rgba(255, 255, 255, 0.99) 100%);
+  box-shadow:
+    0 10px 40px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: 18px 16px 16px;
+  overflow: hidden;
+}
+
+.bwt-identity-panel__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.bwt-identity-panel__avatar-wrap {
+  flex-shrink: 0;
+}
+
+.bwt-identity-panel__avatar-wrap .bwt-avatar {
+  width: 64px;
+  height: 64px;
+  box-shadow: 0 4px 18px rgba(0, 153, 169, 0.22);
+}
+
+.bwt-identity-panel__intro {
+  min-width: 0;
+  flex: 1;
+}
+
+.bwt-user-name--identity {
+  margin: 0 0 10px;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.22;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.bwt-identity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bwt-identity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.25;
+  border: 1px solid rgba(45, 180, 170, 0.42);
+  background: linear-gradient(180deg, rgba(232, 250, 248, 0.98) 0%, rgba(241, 253, 251, 0.92) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.bwt-identity-chip__label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.bwt-identity-chip__value {
+  color: #007580;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.bwt-identity-panel__divider {
+  height: 1px;
+  margin: 16px 0 14px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 153, 169, 0.18) 20%,
+    rgba(0, 153, 169, 0.22) 50%,
+    rgba(0, 153, 169, 0.18) 80%,
+    transparent 100%
+  );
+}
+
+.bwt-identity-panel__subscription {
+  min-width: 0;
+}
+
+/* —— Subscription: как хаб-карточки — иконка + заголовок, текст, мета, компактная CTA —— */
+.bwt-subscription-card {
+  text-align: left;
+  padding: 14px 14px 13px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.bwt-subscription-card--embedded {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 12px 12px 11px;
+}
+
+.bwt-subscription-card--embedded .bwt-subscription-card__head {
+  margin-bottom: 8px;
+}
+
+.bwt-subscription-card--embedded .bwt-subscription-features {
+  margin-bottom: 10px;
+}
+
+.bwt-subscription-card--embedded .bwt-subscription-manage {
+  margin-top: 10px;
+}
+
+.bwt-subscription-card--loading {
+  padding: 18px 16px;
+}
+
+.bwt-subscription-loading-msg {
+  margin: 0;
+  font-size: 12px;
+  color: var(--bwt-muted);
+}
+
+.bwt-subscription-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bwt-subscription-card__icon-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.bwt-subscription-card--plan-starter .bwt-subscription-card__icon-wrap {
+  background: linear-gradient(145deg, #9ae8e2 0%, #58d6cd 70%, #45ccc3 100%);
+  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.3);
+}
+
+.bwt-subscription-card--plan-vip .bwt-subscription-card__icon-wrap {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 55%, #5b21b6 100%);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+}
+
+.bwt-subscription-card--plan-pro .bwt-subscription-card__icon-wrap {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 45%, #0369a1 100%);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+}
+
+.bwt-subscription-card__head-text {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bwt-subscription-card--plan-starter:not(.bwt-subscription-card--embedded) {
+  border-color: rgba(0, 153, 169, 0.22);
+  background: linear-gradient(165deg, rgba(232, 250, 249, 0.95) 0%, #ffffff 42%, #fafefe 100%);
+}
+
+.bwt-subscription-card--plan-vip:not(.bwt-subscription-card--embedded) {
+  border-color: rgba(124, 58, 237, 0.22);
+  background: linear-gradient(165deg, rgba(243, 237, 255, 0.95) 0%, #ffffff 42%, #fafaff 100%);
+}
+
+.bwt-subscription-card--plan-pro:not(.bwt-subscription-card--embedded) {
+  border-color: rgba(14, 165, 233, 0.22);
+  background: linear-gradient(165deg, rgba(240, 249, 255, 0.95) 0%, #ffffff 42%, #f8fbff 100%);
+}
+
+.bwt-subscription-card--embedded.bwt-subscription-card--plan-starter {
+  border-color: rgba(0, 153, 169, 0.2);
+  background: linear-gradient(145deg, rgba(232, 250, 249, 0.65) 0%, rgba(255, 255, 255, 0.92) 55%, rgba(250, 254, 254, 0.88) 100%);
+}
+
+.bwt-subscription-card--embedded.bwt-subscription-card--plan-vip {
+  border-color: rgba(124, 58, 237, 0.18);
+  background: linear-gradient(145deg, rgba(243, 237, 255, 0.65) 0%, rgba(255, 255, 255, 0.94) 55%, rgba(252, 250, 255, 0.9) 100%);
+}
+
+.bwt-subscription-card--embedded.bwt-subscription-card--plan-pro {
+  border-color: rgba(14, 165, 233, 0.2);
+  background: linear-gradient(145deg, rgba(240, 249, 255, 0.65) 0%, rgba(255, 255, 255, 0.94) 55%, rgba(248, 252, 255, 0.9) 100%);
+}
+
+.bwt-subscription-eyebrow {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0;
+}
+
+.bwt-subscription-card--plan-starter .bwt-subscription-eyebrow {
+  color: #007580;
+}
+
+.bwt-subscription-card--plan-vip .bwt-subscription-eyebrow {
+  color: #7c3aed;
+}
+
+.bwt-subscription-card--plan-pro .bwt-subscription-eyebrow {
+  color: #0284c7;
+}
+
+.bwt-subscription-plan {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--bwt-text);
+  margin: 0;
+}
+
+.bwt-subscription-desc {
+  margin: 0 0 12px;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--bwt-muted);
+}
+
+.bwt-subscription-features {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bwt-subscription-features__item {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  text-align: center;
+  padding: 0 1px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.bwt-subscription-features__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #007580;
+}
+
+.bwt-subscription-features__check svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.bwt-subscription-features__text {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  /* Чуть крупнее; vw уменьшает шрифт на узких экранах — одна строка, без переноса */
+  font-size: clamp(8px, 2.65vw, 10px);
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--bwt-muted);
+  white-space: nowrap;
+}
+
+/* Pro / VIP — четыре колонки: чуть плотнее типографика */
+.bwt-subscription-features[data-count='4'] .bwt-subscription-features__text {
+  font-size: clamp(7px, 2.1vw, 8.5px);
+  line-height: 1.18;
+  white-space: nowrap;
+}
+
+.bwt-subscription-card--plan-pro .bwt-subscription-features__check {
+  color: #0284c7;
+}
+
+.bwt-subscription-card--plan-vip .bwt-subscription-features__check {
+  color: #7c3aed;
+}
+
+.bwt-subscription-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.bwt-subscription-meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.bwt-subscription-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 153, 169, 0.12);
+  color: #007580;
+}
+
+.bwt-subscription-card--plan-starter .bwt-subscription-status-pill {
+  background: rgba(0, 153, 169, 0.14);
+  color: #00605a;
+}
+
+.bwt-subscription-card--plan-vip .bwt-subscription-status-pill {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+.bwt-subscription-card--plan-pro .bwt-subscription-status-pill {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0369a1;
+}
+
+.bwt-subscription-period-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.bwt-subscription-period-label {
+  color: var(--bwt-muted);
+}
+
+.bwt-subscription-period-value {
+  font-weight: 600;
+  color: var(--bwt-text);
+}
+
+.bwt-subscription-hint {
+  margin: 8px 0 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #b45309;
+}
+
+.bwt-subscription-manage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, #7ee0da 0%, #42c9c2 100%);
+  box-shadow:
+    0 4px 14px rgba(0, 153, 169, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.bwt-subscription-card--plan-starter .bwt-subscription-manage {
+  background: linear-gradient(135deg, #7ee0da 0%, #42c9c2 100%);
+  box-shadow:
+    0 4px 14px rgba(0, 153, 169, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.bwt-subscription-card--plan-vip .bwt-subscription-manage {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  box-shadow:
+    0 4px 16px rgba(124, 58, 237, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.bwt-subscription-card--plan-pro .bwt-subscription-manage {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow:
+    0 4px 14px rgba(14, 165, 233, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.bwt-subscription-manage:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.bwt-subscription-manage:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+/* —— Зоны страницы (сервисы / типы сделок / списки) —— */
+.bwt-zone {
+  margin: 0;
+  padding: 0;
+}
+
+.bwt-zone + .bwt-zone {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bwt-line);
+}
+
+.bwt-zone__title {
+  margin: 0 0 12px;
+  padding-left: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+.bwt-zone--deal-types {
+  padding: 12px 0 0;
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.bwt-zone--deal-types .bwt-zone__title {
+  margin-bottom: 10px;
+  color: #00605a;
+  opacity: 0.88;
+}
+
+.bwt-zone--lists .bwt-zone__title {
+  margin-bottom: 10px;
+}
+
+/* —— Quick actions: 6 квадратных плиток (иконка + текст, стиль как «Сделать ставку») —— */
+.bwt-actions--tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  margin: 0;
+  width: 100%;
+  max-width: 430px;
+}
+
+/* Док: одна кнопка «сетка» справа; плитки выезжают влево */
+.bwt-actions-dock {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  /* Ряд 6×56px + зазоры + кнопка-сетка — шире старых 430px, иначе плитки режутся */
+  max-width: min(448px, 100%);
+  margin-left: auto;
+}
+
+.bwt-actions-dock__panel {
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition:
+    max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.22s ease;
+}
+
+.bwt-actions-dock--open .bwt-actions-dock__panel {
+  /* 6×56 + 5×6 gap — компактная полоса плиток */
+  max-width: min(378px, calc(100vw - 96px));
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  opacity: 1;
+}
+
+.bwt-actions--tiles-dock {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+  width: max-content;
+  max-width: none;
+  margin: 0;
+}
+
+.bwt-actions--tiles-dock .bwt-action--tile {
+  width: 56px;
+  flex: 0 0 56px;
+}
+
+.bwt-actions--tiles-dock .bwt-action-tile {
+  width: 100%;
+  aspect-ratio: auto;
+  min-height: 56px;
+  /* 56×56: иконка 22px + одна строка подписи */
+  padding: 2px 2px 3px;
+  gap: 3px;
+}
+
+.bwt-actions--tiles-dock .bwt-action-tile__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.bwt-actions--tiles-dock .bwt-action-tile__label {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1.15;
+  /* max 10px — чтобы «Кошелёк» и др. влезали в 56px без переноса посередине слова */
+  font-size: clamp(8px, 2.15vw, 10px);
+  font-weight: 600;
+}
+
+@media (min-width: 400px) {
+  .bwt-actions--tiles-dock .bwt-action-tile__label {
+    font-size: clamp(9px, 2vw, 10px);
+  }
+}
+
+.bwt-actions-dock__toggle.bwt-action--tile {
+  width: 56px;
+  flex: 0 0 56px;
+  align-self: flex-start;
+}
+
+.bwt-actions-dock__toggle .bwt-action-tile--dock-trigger {
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  padding: 6px 4px 7px;
+  box-sizing: border-box;
+}
+
+.bwt-actions-dock__toggle .bwt-action-tile__label {
+  display: none;
+}
+
+.bwt-actions-dock__toggle .bwt-action-tile__icon {
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bwt-actions-dock--open .bwt-actions-dock__toggle .bwt-action-tile__icon {
+  transform: rotate(180deg);
+}
+
+/* Верхняя строка: «Назад» слева, бренд по центру (absolute), док сервисов справа */
+.bwt-liquid-band__toolbar {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  min-height: 48px;
+}
+
+.bwt-liquid-band__back {
+  position: relative;
+  z-index: 4;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Центр полосы: не участвует в потоке — не сдвигается при открытии дока; клики проходят к плиткам */
+.bwt-liquid-band__brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  pointer-events: none;
+  max-width: min(230px, calc(100% - 140px));
+}
+
+.bwt-toolbar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.bwt-toolbar-brand__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #0099A9;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.bwt-toolbar-brand__house {
+  width: 17px;
+  height: 13px;
+  border-radius: 2px 2px 0 0;
+  background: #fff;
+  position: relative;
+}
+
+.bwt-toolbar-brand__house::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  border-left: 8.5px solid transparent;
+  border-right: 8.5px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+
+.bwt-toolbar-brand__text {
+  font-size: clamp(15px, 3.9vw, 19px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 12rem;
+}
+
+.bwt-liquid-band__toolbar .bwt-zone--services-top {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  margin-left: auto;
+  padding: 0;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: min(100%, 448px);
+}
+
+.bwt-action--tile {
+  display: block;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.bwt-action--tile,
+button.bwt-action--tile {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.bwt-action--tile {
+  font: inherit;
+}
+
+/* Как .property-actions .btn-liquid-glass (PropertyList.css) */
+.bwt-action-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  padding: 6px 4px 7px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 4px 16px rgba(0, 153, 169, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bwt-action-tile::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-action-tile::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: left 0.6s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-action--tile:hover .bwt-action-tile {
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(0, 153, 169, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bwt-action--tile:hover .bwt-action-tile::before {
+  width: 180px;
+  height: 180px;
+}
+
+.bwt-action--tile:hover .bwt-action-tile::after {
+  left: 100%;
+}
+
+.bwt-action--tile:active .bwt-action-tile {
+  transform: translateY(0);
+}
+
+.bwt-action--tile:focus-visible .bwt-action-tile {
+  outline: 2px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 2px;
+}
+
+.bwt-action-tile__icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.bwt-action-tile__icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.bwt-action-tile__label {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(8px, 2.65vw, 11px);
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  line-height: 1.15;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+.bwt-action--tile-logout .bwt-action-tile__icon {
+  color: #dc2626;
+  filter: drop-shadow(0 1px 1px rgba(80, 0, 0, 0.18));
+}
+
+.bwt-action--tile-logout:hover .bwt-action-tile__icon {
+  color: #ef4444;
+}
+
+.bwt-action--tile-logout .bwt-action-tile__label {
+  color: #dc2626;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.bwt-action--tile-logout:hover .bwt-action-tile__label {
+  color: #ef4444;
+}
+
+@media (min-width: 400px) {
+  .bwt-action-tile__label {
+    font-size: clamp(9px, 2.1vw, 11px);
+  }
+}
+
+/* —— Hub: три frosted-glass карточки в одну строку —— */
+.bwt-hub-glass-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 0;
+  width: 100%;
+  max-width: min(860px, 100%);
+  margin-inline: auto;
+}
+
+/*
+ * Хаб: вёрстка как у CTA «Стать продавцом»; акценты как раньше —
+ * аукцион — тиффани; доли — голубой; долги — жёлто-оранжевый.
+ */
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--investor {
+  border-color: rgba(0, 153, 169, 0.42);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--investor .frosted-glass-card__icon-wrap {
+  background: linear-gradient(145deg, #9ae8e2 0%, #76e0d8 35%, #58d6cd 70%, #45ccc3 100%);
+  box-shadow: 0 4px 16px rgba(0, 153, 169, 0.28);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--investor {
+  background: linear-gradient(135deg, #7ee0da 0%, #5dd5cf 40%, #42c9c2 100%);
+  box-shadow:
+    0 4px 16px rgba(0, 153, 169, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(8, 120, 115, 0.12);
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 80, 78, 0.18);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--investor:hover {
+  box-shadow:
+    0 6px 20px rgba(0, 153, 169, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(8, 120, 115, 0.14);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--seller {
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--seller .frosted-glass-card__icon-wrap {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.38);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--seller {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow:
+    0 4px 16px rgba(14, 165, 233, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--seller:hover {
+  box-shadow:
+    0 6px 20px rgba(14, 165, 233, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--debts {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card--debts .frosted-glass-card__icon-wrap {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 45%, #ea580c 100%);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--debts {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 42%, #d97706 100%);
+  box-shadow:
+    0 4px 16px rgba(245, 158, 11, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(180, 83, 9, 0.2);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn--debts:hover {
+  box-shadow:
+    0 6px 20px rgba(234, 88, 12, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(180, 83, 9, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card-container {
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card {
+  min-height: 0;
+  height: 100%;
+  border-radius: 16px;
+  padding: 10px 7px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__header {
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__header > div:last-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__icon-wrap {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__icon-custom svg {
+  width: 20px;
+  height: 20px;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  word-break: break-word;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__text {
+  font-size: 10px;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+  text-align: left;
+  word-break: break-word;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn {
+  width: auto;
+  align-self: flex-start;
+  justify-content: center;
+  font-size: 11px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn-inner {
+  gap: 4px;
+}
+
+.buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn-inner svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 400px) {
+  .buyer-wallet-test-page .bwt-hub-glass-row {
+    gap: 10px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card {
+    padding: 12px 9px 14px;
+    border-radius: 18px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__icon-wrap {
+    width: 42px;
+    height: 42px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__icon-custom svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__title {
+    font-size: 13px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__text {
+    font-size: 11px;
+    -webkit-line-clamp: 7;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn-inner svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (min-width: 769px) {
+  .buyer-wallet-test-page .bwt-hub-glass-row {
+    gap: 12px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card {
+    padding: 16px 14px 16px;
+    border-radius: 22px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__title {
+    font-size: 15px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__text {
+    font-size: 12px;
+    -webkit-line-clamp: 8;
+    margin-bottom: 14px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .buyer-wallet-test-page .bwt-hub-glass-row .frosted-glass-card__btn-inner svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* —— Feature cards —— */
+.bwt-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+/* Избранное + сравнение: две отдельные «кнопки» с отступом, стиль как .btn-liquid-glass */
+.bwt-lists-split {
+  display: grid;
+  grid-template-columns: repeat(
+    2,
+    minmax(0, min(310px, calc((100% - 10px) / 2)))
+  );
+  gap: 10px;
+  margin-bottom: 22px;
+  justify-content: center;
+}
+
+.buyer-wallet-test-page .bwt-lists-split .bwt-feature-card--liquid {
+  display: block;
+  padding: 14px 52px 14px 12px;
+  border-radius: 8px; /* как .property-actions .btn-liquid-glass */
+}
+
+.buyer-wallet-test-page .bwt-lists-split .bwt-feature-card--liquid .bwt-feature-deco {
+  right: 6px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 1;
+}
+
+.buyer-wallet-test-page .bwt-lists-split .bwt-feature-card--liquid .bwt-feature-deco--fa {
+  right: 8px;
+  width: 3.75rem;
+  height: 3.75rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 360px) {
+  .bwt-lists-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bwt-feature-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 14px 12px;
+  min-height: 100px;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.bwt-feature-card--tx {
+  background: var(--bwt-card-blue);
+}
+
+.bwt-feature-card--cash {
+  background: var(--bwt-card-blue-2);
+}
+
+.bwt-feature-card--nav {
+  text-decoration: none;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Как CTA «Разместить объект»: .frosted-glass-card__btn--seller (interactive-frosted-glass-card.css) */
+.bwt-feature-card--liquid {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  box-shadow:
+    0 4px 16px rgba(124, 58, 237, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bwt-feature-card--liquid::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-feature-card--liquid::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transform: rotate(45deg);
+  transition: left 0.6s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-feature-card--liquid:hover::before {
+  width: 280px;
+  height: 280px;
+}
+
+.bwt-feature-card--liquid:hover::after {
+  left: 100%;
+}
+
+.bwt-feature-card--liquid:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(124, 58, 237, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bwt-feature-card--liquid:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.bwt-feature-card--liquid:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 2px;
+}
+
+.bwt-feature-card--liquid .bwt-feature-title {
+  color: #fff;
+}
+
+.bwt-feature-card--liquid .bwt-feature-sub {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.bwt-feature-card--liquid .bwt-feature-deco {
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.38);
+  opacity: 1;
+  top: 50%;
+  bottom: auto;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+.bwt-feature-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bwt-text);
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.bwt-feature-sub {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--bwt-muted);
+  position: relative;
+  z-index: 1;
+}
+
+.bwt-feature-deco {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  color: var(--bwt-blue);
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.bwt-feature-deco--fa {
+  display: block;
+  width: 4.25rem;
+  height: 4.25rem;
+  box-sizing: content-box;
+}
+
+.bwt-feature-grid--after-assets {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.bwt-feature-card--linktile {
+  min-height: 92px;
+  padding: 16px 12px 14px;
+  align-items: flex-start;
+}
+
+.bwt-feature-title--linktile {
+  color: var(--bwt-blue);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 0;
+  max-width: 58%;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.bwt-feature-deco--linktile {
+  opacity: 0.32;
+  right: 6px;
+  bottom: 6px;
+  width: 56px;
+  height: 56px;
+}
+
+/* —— Мои платежи (история из subscription-billing) —— */
+.bwt-payments {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.bwt-payments__title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bwt-text);
+}
+
+.bwt-payments__loading,
+.bwt-payments__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--bwt-muted);
+  line-height: 1.45;
+}
+
+.bwt-payments__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bwt-payments__item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--bwt-line);
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.bwt-payments__left {
+  min-width: 0;
+  flex: 1;
+}
+
+.bwt-payments__amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #007d8a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.bwt-payments__reason {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--bwt-muted);
+}
+
+.bwt-payments__date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--bwt-muted);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* —— Политика и документация: как «Сделать ставку» (.property-actions .btn-liquid-glass) —— */
+.bwt-legal-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  /* Вся полоса из двух кнопок — половина ширины блока (каждая кнопка ≈ ¼ строки) */
+  width: 50%;
+  max-width: 50%;
+  margin-inline: auto;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bwt-line);
+  box-sizing: border-box;
+}
+
+.bwt-legal-links__card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 10px 10px 12px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.85) 0%, rgba(0, 125, 138, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 4px 16px rgba(0, 153, 169, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bwt-legal-links__card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-legal-links__card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: left 0.6s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bwt-legal-links__card:hover {
+  background: linear-gradient(135deg, rgba(0, 153, 169, 0.95) 0%, rgba(0, 125, 138, 0.95) 100%);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(0, 153, 169, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bwt-legal-links__card:hover::before {
+  width: 220px;
+  height: 220px;
+}
+
+.bwt-legal-links__card:hover::after {
+  left: 100%;
+}
+
+.bwt-legal-links__card:active {
+  transform: translateY(0);
+}
+
+.bwt-legal-links__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.bwt-legal-links__icon {
+  flex-shrink: 0;
+  color: #fff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+}
+
+.bwt-legal-links__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #fff;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.bwt-legal-links__arrow {
+  flex-shrink: 0;
+  color: #fff;
+  opacity: 0.95;
+}
+
+@media (max-width: 380px) {
+  .bwt-legal-links {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: 1fr;
+  }
+}

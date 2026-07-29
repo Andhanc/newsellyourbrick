@@ -1,0 +1,122 @@
+.home-key-sections {
+  padding: 2.5rem 1rem 1rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.home-key-sections__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.home-key-sections__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.home-key-sections__subtitle {
+  margin: 0.5rem 0 1.25rem;
+  max-width: 52rem;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.home-key-sections__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-key-sections__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.home-key-sections__link:hover {
+  border-color: rgba(0, 153, 169, 0.35);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.home-key-sections__link-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-right: 1.5rem;
+}
+
+.home-key-sections__link-desc {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.home-key-sections__link-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--site-color-primary, #0099A9);
+}
+
+.home-key-sections__catalog {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.home-key-sections__catalog-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.home-key-sections__catalog-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-key-sections__catalog-link {
+  display: inline-flex;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1e293b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-key-sections__catalog-link:hover {
+  background: #dbeafe;
+  color: var(--site-color-primary, #0099A9);
+}
+
+@media (max-width: 768px) {
+  .home-key-sections {
+    padding-top: 1.75rem;
+  }
+
+  .home-key-sections__grid {
+    grid-template-columns: 1fr;
+  }
+}

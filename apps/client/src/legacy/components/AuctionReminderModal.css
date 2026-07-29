@@ -1,0 +1,744 @@
+.auction-reminder-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6, 47, 46, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.auction-reminder-modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow:
+    0 32px 64px rgba(6, 47, 46, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #0f172a;
+}
+
+.auction-reminder-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.auction-reminder-modal__close:hover {
+  transform: scale(1.05);
+  background: #ffffff;
+}
+
+.auction-reminder-modal__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+  min-height: 460px;
+}
+
+/* —— Left: hero + features —— */
+.auction-reminder-modal__info {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #eef2f6;
+}
+
+.auction-reminder-modal__hero {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 240px;
+  overflow: hidden;
+  border-radius: 28px 0 0 0;
+  background: linear-gradient(145deg, #0099A9 0%, #0a8f8b 52%, #066a67 100%);
+}
+
+.auction-reminder-modal__hero-img {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  object-fit: cover;
+  object-position: center 42%;
+  display: block;
+}
+
+.auction-reminder-modal__hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 47, 46, 0.06) 0%,
+    rgba(6, 47, 46, 0.5) 52%,
+    rgba(6, 47, 46, 0.92) 100%
+  );
+  pointer-events: none;
+}
+
+.auction-reminder-modal__hero-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 28px 28px;
+  z-index: 1;
+}
+
+.auction-reminder-modal__hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ecfeff;
+  background: rgba(0, 153, 169, 0.35);
+  border: 1px solid rgba(94, 234, 212, 0.4);
+}
+
+.auction-reminder-modal__title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.auction-reminder-modal__hero-subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(236, 254, 255, 0.88);
+}
+
+.auction-reminder-modal__property-name {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auction-reminder-modal__info-body {
+  flex: 1;
+  padding: 24px 28px 28px;
+}
+
+.auction-reminder-modal__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auction-reminder-modal__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.auction-reminder-modal__feature-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(0, 153, 169, 0.1);
+  color: #0099A9;
+}
+
+/* —— Right: form —— */
+.auction-reminder-modal__form-side {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 28px 32px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 120px);
+}
+
+.auction-reminder-modal__form-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.auction-reminder-modal__form-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.auction-reminder-modal__form-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: rgba(0, 153, 169, 0.12);
+  color: #0099A9;
+}
+
+.auction-reminder-modal__form-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0099A9;
+}
+
+.auction-reminder-modal__form-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.auction-reminder-modal__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.auction-reminder-modal__hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.auction-reminder-modal__hint--warn {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.auction-reminder-modal__delivery {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f0fafb;
+  border: 1px solid rgba(0, 153, 169, 0.22);
+}
+
+.auction-reminder-modal__delivery-line {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auction-reminder-modal__delivery-line + .auction-reminder-modal__delivery-line {
+  margin-top: 8px;
+}
+
+.auction-reminder-modal__delivery-line--compact {
+  margin-bottom: 12px;
+}
+
+.auction-reminder-modal__delivery-line--ok {
+  color: #007d8a;
+}
+
+.auction-reminder-modal__delivery-line--ok::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+
+.auction-reminder-modal__warn {
+  color: #b45309;
+}
+
+.auction-reminder-modal__warn--muted {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Channel cards */
+.auction-reminder-modal__channels {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auction-reminder-modal__channel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+  font-family: inherit;
+}
+
+.auction-reminder-modal__channel:hover:not(:disabled) {
+  border-color: rgba(0, 153, 169, 0.45);
+  background: rgba(0, 153, 169, 0.03);
+}
+
+.auction-reminder-modal__channel--selected {
+  border-color: #0099A9;
+  background: rgba(0, 153, 169, 0.07);
+  box-shadow: 0 0 0 1px rgba(0, 153, 169, 0.12);
+}
+
+.auction-reminder-modal__channel--disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.auction-reminder-modal__channel-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(0, 153, 169, 0.12);
+  color: #0099A9;
+}
+
+.auction-reminder-modal__channel-icon--wa {
+  background: rgba(37, 211, 102, 0.12);
+  color: #0099A9;
+}
+
+.auction-reminder-modal__channel-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auction-reminder-modal__channel-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.auction-reminder-modal__channel-desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.auction-reminder-modal__channel-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.auction-reminder-modal__channel--selected .auction-reminder-modal__channel-check {
+  border-color: #0099A9;
+  background: #0099A9;
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.auction-reminder-modal__btn-primary {
+  margin-top: auto;
+  padding-top: 18px;
+  width: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+}
+
+.auction-reminder-modal__channels + .auction-reminder-modal__btn-primary {
+  margin-top: 18px;
+}
+
+.auction-reminder-modal__btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 153, 169, 0.34);
+}
+
+.auction-reminder-modal__btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auction-reminder-modal__btn-secondary {
+  flex: 1;
+  padding: 13px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.auction-reminder-modal__btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.auction-reminder-modal__row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.auction-reminder-modal__row .auction-reminder-modal__btn-primary {
+  margin-top: 0;
+  flex: 1;
+  padding-top: 13px;
+  box-shadow: 0 6px 16px rgba(0, 153, 169, 0.22);
+}
+
+.auction-reminder-modal__wheel-wrap {
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 8px 4px 12px;
+}
+
+.auction-reminder-modal__btn-test {
+  margin-top: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px dashed #0099A9;
+  border-radius: 14px;
+  background: rgba(0, 153, 169, 0.06);
+  color: #0a9a95;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.auction-reminder-modal__btn-test:hover:not(:disabled) {
+  background: rgba(0, 153, 169, 0.12);
+}
+
+.auction-reminder-modal__btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auction-reminder-modal__mobile-head {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .auction-reminder-modal__overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .auction-reminder-modal__panel {
+    border-radius: 22px 22px 0 0;
+    max-height: 94vh;
+  }
+
+  .auction-reminder-modal__layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .auction-reminder-modal__info {
+    border-right: none;
+    border-bottom: 1px solid #eef2f6;
+  }
+
+  .auction-reminder-modal__hero {
+    border-radius: 22px 22px 0 0;
+    min-height: 180px;
+  }
+
+  .auction-reminder-modal__hero-img {
+    min-height: 180px;
+  }
+
+  .auction-reminder-modal__hero-copy {
+    padding: 20px 22px 22px;
+  }
+
+  .auction-reminder-modal__title {
+    font-size: 20px;
+  }
+
+  .auction-reminder-modal__info-body {
+    padding: 18px 22px 20px;
+  }
+
+  .auction-reminder-modal__features {
+    gap: 10px;
+  }
+
+  .auction-reminder-modal__form-side {
+    padding: 18px 18px 24px;
+    background: #ffffff;
+  }
+
+  .auction-reminder-modal__form-card {
+    padding: 20px 18px;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .auction-reminder-modal__overlay {
+    padding: 10px;
+    align-items: center;
+  }
+
+  .auction-reminder-modal__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 20px);
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  .auction-reminder-modal__close {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .auction-reminder-modal__layout {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .auction-reminder-modal__info {
+    display: none;
+  }
+
+  .auction-reminder-modal__form-side {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 14px 16px;
+    overflow: hidden;
+  }
+
+  .auction-reminder-modal__form-card {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 12px 12px;
+    border: none;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .auction-reminder-modal__mobile-head {
+    display: block;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef2f6;
+  }
+
+  .auction-reminder-modal__mobile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #007d8a;
+    background: #ecfeff;
+    border: 1px solid rgba(0, 153, 169, 0.22);
+  }
+
+  .auction-reminder-modal__mobile-title {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+  }
+
+  .auction-reminder-modal__mobile-property {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auction-reminder-modal__form-header {
+    margin-bottom: 12px;
+  }
+
+  .auction-reminder-modal__form-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .auction-reminder-modal__form-title {
+    font-size: 15px;
+  }
+
+  .auction-reminder-modal__body {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .auction-reminder-modal__delivery {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+  }
+
+  .auction-reminder-modal__delivery-line {
+    font-size: 12px;
+  }
+
+  .auction-reminder-modal__channels {
+    gap: 8px;
+  }
+
+  .auction-reminder-modal__channel {
+    padding: 10px 12px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+
+  .auction-reminder-modal__channel-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .auction-reminder-modal__channel-label {
+    font-size: 14px;
+  }
+
+  .auction-reminder-modal__channel-desc {
+    font-size: 11px;
+  }
+
+  .auction-reminder-modal__channels + .auction-reminder-modal__btn-primary {
+    margin-top: 12px;
+  }
+
+  .auction-reminder-modal__btn-primary {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .auction-reminder-modal__wheel-wrap {
+    padding: 4px 0 6px;
+    border: none;
+    background: transparent;
+  }
+
+  .auction-reminder-modal__wheel-wrap > div {
+    gap: 0.25rem !important;
+    font-size: 12px !important;
+  }
+
+  .auction-reminder-modal__wheel-wrap .w-36 {
+    width: 6.75rem !important;
+    min-width: 6.75rem !important;
+  }
+
+  .auction-reminder-modal__wheel-wrap .w-20 {
+    width: 3.75rem !important;
+  }
+
+  .auction-reminder-modal__wheel-wrap .w-14 {
+    width: 2.75rem !important;
+  }
+
+  .auction-reminder-modal__btn-test {
+    margin-top: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .auction-reminder-modal__row {
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .auction-reminder-modal__btn-secondary,
+  .auction-reminder-modal__row .auction-reminder-modal__btn-primary {
+    padding: 11px 12px;
+    font-size: 13px;
+  }
+}

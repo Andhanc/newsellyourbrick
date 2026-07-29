@@ -1,0 +1,523 @@
+.moderation-user-detail {
+  padding: 0;
+}
+
+.moderation-user-detail__back {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moderation-user-detail__back:hover {
+  background: #f9fafb;
+  border-color: #4361ee;
+  color: #4361ee;
+}
+
+.moderation-user-detail__content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Левая колонка - Информация */
+.moderation-user-detail__info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.moderation-user-detail__info-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.moderation-user-detail__info-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.moderation-user-detail__info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.moderation-user-detail__info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.moderation-user-detail__info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.moderation-user-detail__info-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.moderation-user-detail__info-value {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+.moderation-user-detail__info-value--buyer {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e40af;
+  display: inline-block;
+  width: fit-content;
+}
+
+.moderation-user-detail__info-value--seller {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: #e6f6f8;
+  color: #007d8a;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* Правая колонка - Фотографии и документы */
+.moderation-user-detail__media-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.moderation-user-detail__media-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.moderation-user-detail__media-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Фотографии */
+.moderation-user-detail__photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.moderation-user-detail__photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f3f4f6;
+  border: 2px solid transparent;
+}
+
+.moderation-user-detail__photo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #4361ee;
+}
+
+.moderation-user-detail__photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Фотографии документов */
+.moderation-user-detail__documents-photos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.moderation-user-detail__document-photo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moderation-user-detail__document-photo-item:hover {
+  transform: translateY(-4px);
+}
+
+.moderation-user-detail__document-photo-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.moderation-user-detail__document-photo-item:hover .moderation-user-detail__document-photo-image {
+  border-color: #4361ee;
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+}
+
+.moderation-user-detail__document-photo-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.moderation-user-detail__document-photo-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+/* Полное отображение фотографии паспорта */
+.moderation-user-detail__document-photo-item-full {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.moderation-user-detail__document-photo-image-full {
+  position: relative;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.moderation-user-detail__document-photo-image-full img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  display: block;
+}
+
+.moderation-user-detail__no-documents {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Блок с кнопками действий */
+.moderation-user-detail__actions-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 1.5rem;
+}
+
+.moderation-user-detail__actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.moderation-user-detail__btn {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.moderation-user-detail__btn--approve {
+  background: #e6f6f8;
+  color: #007d8a;
+}
+
+.moderation-user-detail__btn--approve:hover {
+  background: #e6f6f8;
+  color: #14532d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
+}
+
+.moderation-user-detail__btn--reject {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.moderation-user-detail__btn--reject:hover {
+  background: #fecaca;
+  color: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* Модальное окно для документа */
+.moderation-user-detail__document-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  cursor: pointer;
+}
+
+.moderation-user-detail__document-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.moderation-user-detail__document-modal-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.moderation-user-detail__document-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  z-index: 1001;
+  padding: 0;
+}
+
+.moderation-user-detail__document-modal-close:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.moderation-user-detail__document-pdf {
+  width: 90vw;
+  max-width: 1200px;
+  height: 90vh;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Модальное окно для фотографии */
+.moderation-user-detail__photo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  cursor: pointer;
+}
+
+.moderation-user-detail__photo-modal-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.moderation-user-detail__photo-modal-content img {
+  max-width: 95vw;
+  max-height: 95vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.moderation-user-detail__photo-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  z-index: 1001;
+  padding: 0;
+}
+
+.moderation-user-detail__photo-modal-close:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+@media (max-width: 1024px) {
+  .moderation-user-detail__content {
+    grid-template-columns: 1fr;
+  }
+
+  .moderation-user-detail__photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .moderation-user-detail__photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .moderation-user-detail__documents-photos-grid {
+    gap: 1rem;
+  }
+
+  .moderation-user-detail__actions {
+    flex-direction: column;
+  }
+}
+
+.moderation-user-detail__document-item-wrapper {
+  position: relative;
+}
+
+.moderation-user-detail__document-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.moderation-user-detail__document-actions .moderation-user-detail__btn {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Кнопки одобрения/отклонения пользователя */
+.moderation-user-detail__user-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  justify-content: center;
+}
+
+.moderation-user-detail__user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.moderation-user-detail__user-btn--approve {
+  background: #0099A9;
+  color: white;
+}
+
+.moderation-user-detail__user-btn--approve:hover {
+  background: #007d8a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 153, 169, 0.3);
+}
+
+.moderation-user-detail__user-btn--reject {
+  background: #ef4444;
+  color: white;
+}
+
+.moderation-user-detail__user-btn--reject:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+

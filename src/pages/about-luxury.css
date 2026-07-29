@@ -1457,8 +1457,12 @@
     padding: var(--al-block-gap) 0 0;
   }
 
+  .al-scale {
+    padding-bottom: 40px;
+  }
+
   .al-metrics {
-    padding: var(--al-block-gap) 0 32px;
+    padding: 40px 0;
   }
 
   .al-cta {
@@ -1466,10 +1470,13 @@
   }
 
   .al-analytics__grid,
-  .al-scale__grid,
-  .al-cta__inner,
-  .al-metrics .al-shell {
+  .al-cta__inner {
     padding-inline: 18px;
+  }
+
+  .al-scale__grid,
+  .al-metrics .al-shell {
+    padding-inline: 22px;
   }
 
   .al-systems__grid {
@@ -1758,7 +1765,7 @@
   }
 
   .al-scale__copy {
-    gap: 20px;
+    gap: 26px;
     justify-items: start;
   }
 
@@ -1790,7 +1797,7 @@
   .al-capabilities ul {
     flex: 1;
     min-width: 0;
-    gap: 14px;
+    gap: 18px;
   }
 
   .al-capabilities__item {
@@ -1809,7 +1816,7 @@
   }
 
   .al-metrics__intro p {
-    margin-top: 16px;
+    margin-top: 22px;
   }
   .al-metrics__grid {
     display: none;
@@ -1819,8 +1826,8 @@
     display: flex;
     align-items: stretch;
     justify-content: flex-start;
-    gap: 18px;
-    margin-top: var(--al-block-gap);
+    gap: 22px;
+    margin-top: 40px;
     margin-bottom: 0;
   }
 
@@ -1828,7 +1835,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
     flex: 1 1 0;
     min-width: 0;
     text-align: left;
@@ -2079,8 +2086,12 @@
     padding: var(--al-block-gap) 0 0;
   }
 
+  .al-scale {
+    padding-bottom: 36px;
+  }
+
   .al-metrics {
-    padding: var(--al-block-gap) 0 28px;
+    padding: 36px 0;
   }
 
   .al-cta {
@@ -2088,10 +2099,13 @@
   }
 
   .al-analytics__grid,
-  .al-scale__grid,
-  .al-cta__inner,
-  .al-metrics .al-shell {
+  .al-cta__inner {
     padding-inline: 14px;
+  }
+
+  .al-scale__grid,
+  .al-metrics .al-shell {
+    padding-inline: 20px;
   }
 
   .al-systems__grid {
@@ -2128,12 +2142,12 @@
   }
 
   .al-metrics__mobile {
-    gap: 14px;
-    margin-top: var(--al-block-gap);
+    gap: 18px;
+    margin-top: 32px;
   }
 
   .al-metrics__mobile-item {
-    gap: 8px;
+    gap: 10px;
   }
 
   .al-metrics__mobile-item strong {

@@ -36,7 +36,7 @@ import {
 import './TestDriveLandingPage.css'
 import '../components/PropertyList.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 const PAGE_SIZE = 16
 
 const HERO_IMAGE = publicAsset('images/test-drive/hero-resort.png')

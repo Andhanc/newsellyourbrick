@@ -1,0 +1,124 @@
+.share-mobile-purchase-bar {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-radius: 22px 22px 0 0;
+  pointer-events: auto;
+}
+
+.share-mobile-purchase-bar__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.share-mobile-purchase-bar__quantity {
+  min-width: 0;
+}
+
+.share-mobile-purchase-bar__label,
+.share-mobile-purchase-bar__total span {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.share-mobile-purchase-bar__stepper {
+  display: inline-grid;
+  grid-template-columns: 44px 46px 44px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #dbe5e8;
+  border-radius: 14px;
+  background: #f7fbfc;
+}
+
+.share-mobile-purchase-bar__stepper button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.share-mobile-purchase-bar__stepper button:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.share-mobile-purchase-bar__stepper strong {
+  color: #0f172a;
+  font-size: 16px;
+  text-align: center;
+}
+
+.share-mobile-purchase-bar__total {
+  min-width: 94px;
+  padding-bottom: 9px;
+  text-align: right;
+}
+
+.share-mobile-purchase-bar__total strong {
+  color: #0099a9;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 19px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.share-mobile-purchase-bar__cta {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0099a9 0%, #007d8a 100%);
+  color: #fff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.24);
+  cursor: pointer;
+}
+
+.share-mobile-purchase-bar--sold-out {
+  min-height: 88px;
+  justify-content: center;
+  text-align: center;
+}
+
+.share-mobile-purchase-bar--sold-out strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.share-mobile-purchase-bar--sold-out span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 360px) {
+  .share-mobile-purchase-bar {
+    padding-inline: 12px;
+  }
+
+  .share-mobile-purchase-bar__summary {
+    gap: 8px;
+  }
+
+  .share-mobile-purchase-bar__stepper {
+    grid-template-columns: 40px 40px 40px;
+  }
+
+  .share-mobile-purchase-bar__total strong {
+    font-size: 17px;
+  }
+}

@@ -1,0 +1,128 @@
+.storage-mirror {
+  padding: 1.5rem 2rem 3rem;
+  max-width: 52rem;
+}
+
+.storage-mirror__hero {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+}
+
+.storage-mirror__icon-wrap {
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(13, 27, 42, 0.35);
+}
+
+.storage-mirror__icon {
+  font-size: 1.5rem;
+  color: #7dd3fc;
+}
+
+.storage-mirror__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.storage-mirror__lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.storage-mirror__lead code {
+  font-size: 0.82em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.storage-mirror__actions {
+  margin-bottom: 1.25rem;
+}
+
+.storage-mirror__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.storage-mirror__btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.storage-mirror__btn--primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.storage-mirror__btn--primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+}
+
+.storage-mirror__ok {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #e6f6f8;
+  border: 1px solid #cce9ed;
+  color: #007d8a;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.storage-mirror__err {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.storage-mirror__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.storage-mirror__hint code {
+  font-size: 0.9em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .storage-mirror {
+    padding: 1rem;
+  }
+  .storage-mirror__hero {
+    flex-direction: column;
+  }
+}

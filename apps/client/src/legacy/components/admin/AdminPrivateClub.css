@@ -1,0 +1,134 @@
+.admin-private-club {
+  padding: 0 1rem 2rem;
+}
+
+.admin-private-club__header {
+  margin-bottom: 20px;
+}
+
+.admin-private-club__header h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  color: #111827;
+}
+
+.admin-private-club__header p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.admin-private-club__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-private-club__toolbar button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-private-club__toolbar button:hover:not(:disabled) {
+  border-color: #0099A9;
+  color: #0a9d99;
+}
+
+.admin-private-club__toolbar button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-private-club__loading,
+.admin-private-club__empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.admin-private-club__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-private-club table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-private-club th,
+.admin-private-club td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
+}
+
+.admin-private-club th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.admin-private-club tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-private-club__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.admin-private-club__pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e6f6f8;
+  color: #007d8a;
+}
+
+.admin-private-club__pill--muted {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.admin-private-club__btn-danger {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-private-club__btn-danger:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.admin-private-club__btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-private-club__hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+  max-width: 200px;
+}

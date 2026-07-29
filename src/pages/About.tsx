@@ -192,7 +192,7 @@ function Reveal({
 }
 
 function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLStrongElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {

@@ -1,0 +1,629 @@
+.header-mega-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  position: relative;
+}
+
+.header-mega-menu__mobile-top {
+  display: none;
+}
+
+.header-mega-menu__scroll {
+  display: contents;
+}
+
+.header-mega-menu__close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.header-mega-menu__close:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.header-mega-menu__column--mobile-only {
+  display: none;
+}
+
+.header-mega-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 22px 0 20px;
+}
+
+.header-mega-menu__column {
+  position: relative;
+  padding: 0 22px;
+}
+
+.header-mega-menu__column:first-child {
+  padding-left: 8px;
+}
+
+.header-mega-menu__column:last-child {
+  padding-right: 8px;
+}
+
+.header-mega-menu__column:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(15, 23, 42, 0.1) 10%,
+    rgba(15, 23, 42, 0.1) 90%,
+    transparent 100%
+  );
+}
+
+.header-mega-menu__column-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+}
+
+.header-mega-menu__column-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0099a9;
+  flex-shrink: 0;
+}
+
+.header-mega-menu__column-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.header-mega-menu__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header-mega-menu__link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.header-mega-menu__link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.header-mega-menu__link:hover {
+  color: #0099a9;
+}
+
+.header-mega-menu__link:hover .header-mega-menu__link-icon {
+  color: #0099a9;
+}
+
+/* Mobile accordion — Apple-style sidebar */
+.header-mega-menu__mobile-list {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .header-mega-menu {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .header-mega-menu__mobile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    min-height: 56px;
+    padding: max(10px, env(safe-area-inset-top)) 2px 12px;
+    border-bottom: 1px solid #eef2f6;
+  }
+
+  .header-mega-menu__brand.site-brand {
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .header-mega-menu__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+  }
+
+  .header-mega-menu__close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  .header-mega-menu__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .header-mega-menu__scroll {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .header-mega-menu__scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-mega-menu__grid {
+    display: none;
+  }
+
+  .header-mega-menu__mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 2px 12px;
+  }
+
+  .header-mega-menu__section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    overflow: hidden;
+  }
+
+  .header-mega-menu__section.is-open {
+    background: #ffffff;
+    border-color: rgba(0, 153, 169, 0.18);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  }
+
+  .header-mega-menu__section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 54px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 18px;
+    background: transparent;
+    color: #0f172a;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .header-mega-menu__section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    color: #007d8a;
+    background: rgba(0, 153, 169, 0.1);
+  }
+
+  .header-mega-menu__section-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .header-mega-menu__section.is-open .header-mega-menu__section-icon {
+    color: #ffffff;
+    background: #0099a9;
+  }
+
+  .header-mega-menu__section-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-mega-menu__section-chevron {
+    flex-shrink: 0;
+    color: #94a3b8;
+    width: 18px;
+    height: 18px;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .header-mega-menu__section.is-open .header-mega-menu__section-chevron {
+    transform: rotate(180deg);
+    color: #0099a9;
+  }
+
+  .header-mega-menu__section-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .header-mega-menu__section.is-open .header-mega-menu__section-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .header-mega-menu__section-children {
+    list-style: none;
+    margin: 0;
+    padding: 0 10px 10px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .header-mega-menu__child-row {
+    position: relative;
+    padding-left: 0;
+  }
+
+  .header-mega-menu__child-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    margin: 2px 0;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: #64748b;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .header-mega-menu__child-link:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  .header-mega-menu__child-link.is-active {
+    background: rgba(0, 153, 169, 0.1);
+    color: #006672;
+    font-weight: 700;
+  }
+
+  .header-mega-menu__child-link-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: color 0.2s ease;
+  }
+
+  .header-mega-menu__child-link-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .header-mega-menu__child-link.is-active .header-mega-menu__child-link-icon,
+  .header-mega-menu__child-link:hover .header-mega-menu__child-link-icon {
+    color: #0099a9;
+  }
+
+  .header-mega-menu__child-link-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-mega-menu__child-link-arrow {
+    flex-shrink: 0;
+    color: #94a3b8;
+  }
+
+  .header-mega-menu__footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin: 0;
+    padding: 12px 2px max(14px, env(safe-area-inset-bottom));
+    border-top: 1px solid #eef2f6;
+    background:
+      linear-gradient(180deg, rgba(248, 250, 252, 0.65) 0%, #ffffff 40%);
+  }
+
+  .header-mega-menu__login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: 999px;
+    background: #0099a9;
+    color: #ffffff;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .header-mega-menu__login-btn:hover {
+    background: #007d8a;
+  }
+
+  .header-mega-menu__login-btn:active {
+    transform: scale(0.985);
+  }
+
+  .header-mega-menu__version {
+    margin: 0;
+    text-align: center;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+  }
+
+  .header-mega-menu__user-plate {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 10px 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+  }
+
+  .header-mega-menu__user-plate-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .header-mega-menu__user-plate-main:hover .header-mega-menu__user-card-name {
+    color: #0099a9;
+  }
+
+  .header-mega-menu__user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #33adbb 0%, #007d8a 100%);
+  }
+
+  .header-mega-menu__user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .header-mega-menu__user-avatar-fallback {
+    color: #ffffff;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .header-mega-menu__user-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .header-mega-menu__user-card-name {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+  }
+
+  .header-mega-menu__user-card-email {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-mega-menu__user-card-role {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #0099a9;
+  }
+
+  .header-mega-menu__user-card-role--buyer,
+  .header-mega-menu__user-card-role--client {
+    color: #0099a9;
+  }
+
+  .header-mega-menu__user-card-role--admin {
+    color: #b45309;
+  }
+
+  .header-mega-menu__user-card-role--seller,
+  .header-mega-menu__user-card-role--owner {
+    color: #7c3aed;
+  }
+
+  .header-mega-menu__user-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .header-mega-menu__user-logout:hover {
+    background: rgba(239, 68, 68, 0.14);
+    color: #dc2626;
+  }
+
+  .header-mega-menu__user-logout:active {
+    background: rgba(239, 68, 68, 0.2);
+  }
+
+  .menu-dropdown--mega {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .menu-dropdown--mega .menu-dropdown__content.menu-dropdown__content--mega {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: 100% !important;
+    padding: 0 14px 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .menu-dropdown--mega {
+    border-radius: 0 0 20px 20px !important;
+  }
+
+  .menu-dropdown__content--mega {
+    display: block;
+    padding: 12px 22px 20px !important;
+    max-height: calc(85vh - 64px) !important;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .menu-dropdown__content--mega::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-mega-menu__section-chevron,
+  .header-mega-menu__section-toggle,
+  .header-mega-menu__section-panel,
+  .header-mega-menu__child-link,
+  .header-mega-menu__link {
+    transition: none;
+  }
+
+  .header-mega-menu__section-panel {
+    opacity: 1;
+  }
+
+  .header-mega-menu__section:not(.is-open) .header-mega-menu__section-panel {
+    display: none;
+  }
+}
