@@ -7,6 +7,8 @@
   --md-ink: #0b1220;
   --md-ink-muted: #64748b;
   --md-font: 'Montserrat', system-ui, sans-serif;
+  --md-heading-weight: 800;
+  --md-heading-letter-spacing: -0.04em;
 
   position: relative;
   z-index: 1;
@@ -28,8 +30,8 @@
 .md-faq__title {
   margin: 0;
   font-size: clamp(1.45rem, 5.6vw, 1.8rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-weight: var(--md-heading-weight);
+  letter-spacing: var(--md-heading-letter-spacing);
   color: var(--md-ink);
   line-height: 1.12;
 }
@@ -95,8 +97,8 @@
   flex: 1 1 auto;
   min-width: 0;
   font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: var(--md-heading-weight);
+  letter-spacing: var(--md-heading-letter-spacing);
   line-height: 1.3;
 }
 

@@ -54,6 +54,7 @@ import {
 } from '../utils/propertySearchLocation'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
+import { publicAsset } from '../utils/publicAsset'
 import BuyerEmptyState from './buyer-mobile/BuyerEmptyState'
 import './PropertyList.css'
 import '../styles/discoverAuctionCards.css'
@@ -67,6 +68,7 @@ const AuctionMobileLayoutLazy = lazyWithRetry(
 const MOBILE_BREAKPOINT = 768
 const AUCTION_DESKTOP_PAGE_SIZE = 20
 const AUCTION_MOBILE_PAGE_SIZE = 16
+const AUCTION_EMPTY_IMAGE = publicAsset('images/auction-empty-illustration.png')
 
 const PROPERTY_FILTER_ITEMS = [
   { kind: 'type', value: 'все', labelKey: 'propertyTypeAll' },
@@ -854,13 +856,13 @@ const PropertyList = ({
           )
         ) : filteredProperties.length === 0 ? (
           <BuyerEmptyState
-            eyebrow="Новый шанс для выбора"
-            title={t('nothingFound')}
-            description="Измените параметры или откройте все направления — мы сохраним понятный путь к подходящему объекту."
-            primaryLabel="Все направления"
+            image={AUCTION_EMPTY_IMAGE}
+            imageAlt=""
+            eyebrow={null}
+            title="Объектов пока нет"
+            description="Новые предложения появятся здесь. А пока посмотрите другие направления."
+            primaryLabel="Смотреть другие объекты"
             onPrimary={() => navigate('/sections')}
-            secondaryLabel="Сбросить фильтры"
-            onSecondary={resetAuctionFilters}
           />
         ) : (
           <>

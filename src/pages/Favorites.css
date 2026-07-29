@@ -266,115 +266,69 @@
 }
 
 .favorites-compare {
-  --favorites-compare-fade: #ffffff;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  min-height: 0;
-  margin: 0 0 28px;
-  overflow: hidden;
-  border-radius: 22px;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(78, 205, 214, 0.16), transparent 62%),
-    linear-gradient(180deg, #f7fcfd 0%, #ffffff 42%, #ffffff 100%);
-  border: 1px solid rgba(78, 205, 214, 0.2);
-  box-shadow: 0 12px 32px -22px rgba(15, 60, 70, 0.3);
-}
-
-.favorites-compare__visual {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 240px;
-  height: clamp(240px, 32vw, 320px);
-  overflow: hidden;
-  pointer-events: none;
-  padding: 8px 12px 0;
-  box-sizing: border-box;
-  background: transparent;
-}
-
-.favorites-compare__visual::before {
-  display: none;
-}
-
-.favorites-compare__image {
-  position: relative;
-  z-index: 0;
-  display: block;
-  width: min(720px, 96%);
-  height: 108%;
-  max-width: none;
-  margin: 0 auto;
-  object-fit: contain;
-  object-position: center center;
-  opacity: 1;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 28px;
+  padding: 28px 32px;
+  border: 1px solid rgba(21, 23, 46, 0.09);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px -24px rgba(15, 23, 42, 0.22);
+  font-family: var(--site-font-family);
 }
 
 .favorites-compare__copy {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-  padding: 8px 28px 24px;
-  max-width: none;
+  min-width: 0;
+  max-width: 620px;
 }
 
 .favorites-compare h2 {
   margin: 0;
   color: var(--favorites-text);
-  font-size: clamp(1.15rem, 1.6vw, 1.4rem);
+  font-family: inherit;
+  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
   font-weight: 800;
-  line-height: 1.22;
-  letter-spacing: -0.02em;
-}
-
-.favorites-compare__title-accent {
-  color: var(--favorites-tiffany-dark);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
 .favorites-compare p {
-  max-width: 28rem;
-  margin: 0;
+  margin: 8px 0 0;
   color: #66706e;
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.45;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .favorites-compare__button {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 38px;
-  margin-top: 4px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: var(--favorites-tiffany-dark);
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 13px;
+  background: #050505;
   border: 0;
   color: #fff;
+  font-family: inherit;
   text-decoration: none;
-  font-size: 0.78rem;
+  white-space: nowrap;
+  font-size: 0.82rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
-  box-shadow: 0 10px 22px -10px rgba(59, 192, 203, 0.75);
+  box-shadow: 0 12px 24px -16px rgba(5, 5, 5, 0.6);
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .favorites-compare__button:hover {
   color: #fff;
-  background: #2eafb9;
+  background: #1b1b1b;
   transform: translateY(-1px);
-  box-shadow: 0 14px 26px -10px rgba(59, 192, 203, 0.85);
+  box-shadow: 0 16px 28px -16px rgba(5, 5, 5, 0.68);
 }
 
 .favorites-recommendations {
@@ -545,31 +499,6 @@
     padding-right: 24px;
   }
 
-  .favorites-compare {
-    min-height: 0;
-  }
-
-  .favorites-compare__visual {
-    min-height: 200px;
-    height: clamp(200px, 36vw, 260px);
-    padding: 6px 10px 0;
-  }
-
-  .favorites-compare__visual::before {
-    display: none;
-  }
-
-  .favorites-compare__image {
-    width: min(640px, 96%);
-    height: 108%;
-    margin: 0 auto;
-    object-position: center center;
-  }
-
-  .favorites-compare__copy {
-    padding: 6px 20px 20px;
-  }
-
   .favorites-recommendations__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -711,68 +640,31 @@
   }
 
   .favorites-compare {
-    --favorites-compare-fade: #ffffff;
-    position: relative;
-    display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
     margin-bottom: 16px;
-    border-radius: 18px;
-    background:
-      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(78, 205, 214, 0.14), transparent 65%),
-      #ffffff;
-    border-color: rgba(78, 205, 214, 0.2);
-    box-shadow: 0 8px 22px -18px rgba(15, 60, 70, 0.3);
-  }
-
-  .favorites-compare__visual {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    min-height: 190px;
-    height: 190px;
-    padding: 4px 8px 0;
-  }
-
-  .favorites-compare__visual::before {
-    display: none;
-  }
-
-  .favorites-compare__image {
-    position: relative;
-    inset: auto;
-    width: min(420px, 96%);
-    height: 110%;
-    margin: 0 auto;
-    object-fit: contain;
-    object-position: center center;
-    mix-blend-mode: normal;
+    padding: 20px;
+    border-radius: 16px;
   }
 
   .favorites-compare__copy {
-    position: relative;
-    z-index: 2;
-    gap: 8px;
     max-width: none;
     width: 100%;
-    padding: 6px 16px 16px;
   }
 
   .favorites-compare h2 {
-    font-size: 1rem;
-    line-height: 1.22;
+    font-size: 1.1rem;
   }
 
   .favorites-compare p {
-    font-size: 0.78rem;
-    line-height: 1.4;
+    font-size: 0.82rem;
   }
 
   .favorites-compare__button {
-    min-height: 34px;
-    margin-top: 2px;
-    padding: 0 14px;
-    font-size: 0.72rem;
-    box-shadow: 0 8px 16px -8px rgba(59, 192, 203, 0.7);
+    min-height: 44px;
+    padding: 0 17px;
+    font-size: 0.78rem;
   }
 
   .favorites-page .listing-page-pagination .auction-desktop-pagination__page,
@@ -808,28 +700,13 @@
     align-self: center;
   }
 
-  .favorites-compare__copy {
-    gap: 7px;
-    max-width: none;
-    padding: 4px 14px 14px;
+  .favorites-compare {
+    gap: 14px;
+    padding: 18px;
   }
 
   .favorites-compare h2 {
-    font-size: 0.95rem;
-  }
-
-  .favorites-compare__visual {
-    width: 100%;
-    min-height: 170px;
-    height: 170px;
-    padding: 4px 6px 0;
-  }
-
-  .favorites-compare__image {
-    width: min(380px, 96%);
-    height: 110%;
-    margin: 0 auto;
-    object-position: center center;
+    font-size: 1.05rem;
   }
 
   .favorites-recommendations__header {

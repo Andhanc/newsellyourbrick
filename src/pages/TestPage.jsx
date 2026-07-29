@@ -3506,6 +3506,7 @@ function TestPage() {
                 <Suspense fallback={<TestSheetSkeletonSubscription />}>
                   <OwnerPricingCards
                     variant="light"
+                    showSubscribePanel={false}
                     plans={buyerSubscriptionPlans}
                     planDetails={buyerSubscriptionPlanDetails}
                     taglines={buyerSubscriptionTaglines}

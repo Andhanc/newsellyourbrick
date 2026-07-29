@@ -5,6 +5,10 @@ import { readFile } from 'node:fs/promises'
 const jsx = await readFile(new URL('./HomeSaleFormats.jsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('./HomeSaleFormats.css', import.meta.url), 'utf8')
 const mainPage = await readFile(new URL('../pages/MainPage.jsx', import.meta.url), 'utf8')
+const mobileDiscoverPage = await readFile(
+  new URL('../pages/MobileDiscoverPage.jsx', import.meta.url),
+  'utf8',
+)
 
 test('renders each format as one fully clickable route card', () => {
   assert.match(jsx, /sale-formats__card/)
@@ -31,10 +35,10 @@ test('connects MainPage to the approved sale format content and image series', (
   assert.match(mainPage, /<HomeSaleFormats modes=\{premiumModes\} \/>/)
 
   for (const image of [
-    '/images/home-sale-formats/sale-format-auction.webp',
-    '/images/home-sale-formats/sale-format-buy-now.webp',
-    '/images/home-sale-formats/sale-format-shares.webp',
-    '/images/home-sale-formats/sale-format-debts.webp',
+    '/images/home-sale-formats/summer-2026/sale-format-auction-summer.webp',
+    '/images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp',
+    '/images/home-sale-formats/summer-2026/sale-format-shares-summer.webp',
+    '/images/home-sale-formats/summer-2026/sale-format-debts-summer.webp',
   ]) {
     assert.match(mainPage, new RegExp(image.replaceAll('/', '\\/')))
   }
@@ -47,6 +51,20 @@ test('connects MainPage to the approved sale format content and image series', (
   ]) {
     assert.match(mainPage, new RegExp(benefit))
   }
+})
+
+test('uses the same summer image series on the adaptive phone homepage', () => {
+  for (const image of [
+    'sale-format-auction-summer.webp',
+    'sale-format-buy-now-summer.webp',
+    'sale-format-shares-summer.webp',
+    'sale-format-debts-summer.webp',
+  ]) {
+    assert.match(mobileDiscoverPage, new RegExp(image))
+  }
+  assert.doesNotMatch(mobileDiscoverPage, /images\/mobile-discover\/card-(auction|buy-now|shares|debts)/)
+  assert.match(mobileDiscoverPage, /md-card__copy/)
+  assert.match(mobileDiscoverPage, /const CardIcon = card\.Icon/)
 })
 
 test('matches the selected reference with functional rail controls and split cards', () => {

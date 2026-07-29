@@ -4,7 +4,6 @@ import Header from '../components/Header'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
 import {
   PiArrowRight,
-  PiArrowUpRight,
   PiHeartStraight,
   PiQuestion,
   PiX,
@@ -31,7 +30,6 @@ import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 const EMPTY_ILLUSTRATION = '/images/favorites-empty-reference-style.png'
-const COMPARE_ILLUSTRATION = '/images/favorites-compare-illustration.png'
 
 const recommendedProperties = [
   {
@@ -279,27 +277,16 @@ const Favorites = () => {
         ) : null}
 
         <section className="favorites-compare" aria-labelledby="favorites-compare-title">
-          <div className="favorites-compare__visual" aria-hidden>
-            <img
-              src={COMPARE_ILLUSTRATION}
-              alt=""
-              className="favorites-compare__image"
-              loading="lazy"
-            />
-          </div>
           <div className="favorites-compare__copy">
-            <h2 id="favorites-compare-title">
-              Сравнивайте и выбирайте
-              <span className="favorites-compare__title-accent"> лучшее</span>
-            </h2>
+            <h2 id="favorites-compare-title">Сравните объекты</h2>
             <p>
-              Цены, характеристики и локация — рядом, чтобы выбрать уверенно
+              Сопоставьте цены, характеристики и локацию — всё на одном экране.
             </p>
-            <Link to="/compare" className="favorites-compare__button">
-              О сравнении
-              <PiArrowUpRight size={13} aria-hidden />
-            </Link>
           </div>
+          <Link to="/compare" className="favorites-compare__button">
+            Перейти к сравнению
+            <PiArrowRight size={17} aria-hidden />
+          </Link>
         </section>
 
         <section className="favorites-recommendations" aria-labelledby="favorites-recommendations-title">

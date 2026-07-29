@@ -266,6 +266,201 @@
     grid-template-columns: 1fr !important;
   }
 
+  /* Main-page auction and Buy now cards: favorite above, wide timer below, stacked CTAs. */
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__favorite {
+    top: 8px !important;
+    right: 8px !important;
+    bottom: auto !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__media-top {
+    top: auto !important;
+    right: auto !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    width: 95% !important;
+    transform: translateX(-50%);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 13px;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(231, 249, 251, 0.62));
+    box-shadow:
+      0 9px 22px rgba(7, 45, 58, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__until-pill {
+    display: none !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__countdown-pill {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0;
+    min-height: 26px !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #0f2732 !important;
+    font-size: 0.86rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.035em;
+    box-shadow: none !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__countdown-pill
+    svg {
+    width: 14px !important;
+    height: 14px !important;
+    color: #16a9b6 !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__timer-prices {
+    display: flex !important;
+    flex: 0 0 auto;
+    align-items: center;
+    width: auto;
+    margin-left: 9px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(15, 71, 86, 0.16);
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__timer-price {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__timer-price-label {
+    color: #647b86;
+    font-size: 0.48rem;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__timer-price-value {
+    max-width: 100%;
+    overflow: hidden;
+    color: #102733;
+    font-family: var(--md-font);
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card--timer-pricing
+    .auction-card__pricing {
+    display: none !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__body {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__meta {
+    gap: 7px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__specs {
+    gap: 6px 10px !important;
+    margin-top: 4px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__spec {
+    gap: 2px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__spec-label {
+    margin-top: 1px;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__footer {
+    gap: 10px !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__btn {
+    min-height: 46px !important;
+    padding: 11px 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__btn-text-full {
+    display: inline !important;
+  }
+
+  .discover-auction-cards
+    :is(.md-format-card[data-md-format='buy_now'], .md-format-card[data-md-format='auction'])
+    .auction-card__btn-text-short {
+    display: none !important;
+  }
+
   .discover-auction-cards .auction-card__btn,
   .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__btn,
   .discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__btn {

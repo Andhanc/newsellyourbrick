@@ -148,6 +148,7 @@ export default function InvestorPropertyShowcaseSection({
           onFavoriteToggle={handleFavoriteToggle}
           onOpen={openListing}
           formatPrice={formatPrice}
+          hideBuyNowAction={variant === 'auction'}
         />
       </ShowcaseSlot>
     ))

@@ -27,60 +27,64 @@ type SellerCard = {
   title: string
   copy: string
   accent?: boolean
+  action?: string
 }
 
 const sellerToolkitCards: SellerCard[] = [
   {
     icon: FiHome,
-    title: 'Подготовка объекта',
-    copy: 'Соберите фото, документы и описание лота в одном понятном чек-листе без хаоса в файлах.',
+    title: 'Сильная упаковка',
+    copy: 'Подготовим фото, документы и презентацию, которая раскрывает ценность вашего объекта.',
   },
   {
     icon: FiTrendingUp,
-    title: 'Ценообразование',
-    copy: 'Сравните рынок, спрос и сценарии сделки — и выберите цену, которая не тормозит продажу.',
+    title: 'Стратегия цены',
+    copy: 'Сравним рынок и спрос, чтобы вы уверенно выбрали цену и не уступили лишнего.',
     accent: true,
   },
   {
     icon: FiUsers,
-    title: 'Показ покупателям',
-    copy: 'Покажите объект нужной аудитории: инвесторам, частным покупателям и закрытым клубам.',
+    title: 'Доступ к покупателям',
+    copy: 'Покажем объект частным покупателям, инвесторам и участникам закрытых клубов.',
   },
   {
     icon: FiShield,
-    title: 'Сопровождение сделки',
-    copy: 'Держите переговоры, статусы и ключевые цифры в одном прозрачном сценарии до закрытия.',
+    title: 'Контроль до сделки',
+    copy: 'Соберём предложения, переговоры и статусы в одном понятном процессе до финала.',
   },
 ]
 
 const sellerVisionPoints = [
-  'Продавец видит весь путь сделки в одном месте',
-  'Цена и спрос проверяются до выхода на рынок',
-  'Покупатели приходят подготовленными, без лишней переписки',
+  'Понимаете реальную позицию объекта на рынке',
+  'Видите спрос и предложения в одном месте',
+  'Сами выбираете цену и условия сделки',
 ]
 
 const sellerMissionPoints = [
-  'Убрать хаос из подготовки и продажи объекта',
-  'Дать продавцу инструменты уровня инвест-платформы',
-  'Сделать запуск лота быстрым, прозрачным и управляемым',
+  'Готовим объект к сильному выходу на рынок',
+  'Показываем его подходящим покупателям',
+  'Помогаем пройти переговоры до закрытия сделки',
 ]
 
 const sellerServiceCards: SellerCard[] = [
   {
     icon: FiBarChart2,
-    title: 'Оценка лота',
-    copy: 'Цена, спрос и потенциал — до публикации.',
+    title: 'Стратегия цены',
+    copy: 'Покажем потенциал объекта, реальный спрос и сценарии продажи до публикации.',
+    action: 'Оценить объект',
   },
   {
     icon: FiLayers,
     title: 'Маркетинг объекта',
-    copy: 'Презентация, медиа и сценарий показа.',
+    copy: 'Создадим подачу, которая выделяет объект и помогает покупателю увидеть его ценность.',
     accent: true,
+    action: 'Запустить продажу',
   },
   {
     icon: FiTarget,
-    title: 'Закрытие сделки',
-    copy: 'Переговоры и статусы до финала.',
+    title: 'Сделка под контролем',
+    copy: 'Поможем с предложениями, переговорами и ключевыми этапами до получения результата.',
+    action: 'Стать продавцом',
   },
 ]
 
@@ -90,39 +94,39 @@ const sellerLaunchStats = [
     prefix: '',
     suffix: 'K',
     decimals: 0,
-    label: 'buyers watch verified seller launches',
+    label: 'покупателей видят проверенные запуски продавцов',
   },
   {
     target: 200,
     prefix: '$',
     suffix: 'M',
     decimals: 0,
-    label: 'property value prepared through SellYourBrick',
+    label: 'стоимость объектов, подготовленных с SellYourBrick',
   },
   {
     target: 4.8,
     prefix: '',
     suffix: '/5',
     decimals: 1,
-    label: 'seller launch experience rating',
+    label: 'оценка продавцами процесса запуска',
   },
 ]
 
 const sellerLaunchPlans = [
   {
-    title: 'Plan B',
-    copy: 'Быстрый листинг для продавца, который хочет проверить спрос без лишнего риска.',
-    action: 'Открыть',
+    title: 'Проверить спрос',
+    copy: 'Узнайте, как рынок реагирует на объект, прежде чем принимать решение о цене.',
+    action: 'Проверить',
   },
   {
-    title: 'Ambitious',
-    copy: 'Расширенный запуск с аналитикой цены, спроса и сценариями переговоров.',
-    action: 'Сравнить',
+    title: 'Продать выгоднее',
+    copy: 'Получите аналитику цены, сильную презентацию и доступ к подходящим покупателям.',
+    action: 'Рассчитать',
   },
   {
-    title: 'Intrepid',
-    copy: 'Private-режим для дорогих объектов, закрытых покупателей и сопровождения сделки.',
-    action: 'Изучить',
+    title: 'Закрытая продажа',
+    copy: 'Приватный запуск для дорогих объектов и ограниченного круга покупателей.',
+    action: 'Подробнее',
   },
 ]
 
@@ -174,44 +178,44 @@ function SellerSavingsSection() {
         <div className="seller-savings__hero-content">
           <div className="seller-savings__copy">
             <h2 id="seller-savings-title">
-              <span className="seller-savings__title-line">Войдите в новый мир</span>
-              <span className="seller-savings__title-line">продажи недвижимости</span>
+              <span className="seller-savings__title-line">Продайте выгоднее</span>
+              <span className="seller-savings__title-line">Всё под контролем</span>
             </h2>
             <p>
-              SellYourBrick помогает продавцу подготовить объект, выбрать цену и показать лот
-              нужным покупателям без хаоса в переписках и таблицах.
+              Поможем определить сильную цену, подготовить объект и выйти к покупателям,
+              готовым обсуждать сделку.
             </p>
             <Link
               to="/owner/property/new"
               className="seller-savings__button"
               onClick={() => scrollMainTo(0, 0, 'instant')}
             >
-              Симулятор
+              Рассчитать продажу
               <FiArrowRight />
             </Link>
           </div>
 
-          <div className="seller-savings__card" aria-label="Seller launch preview">
+          <div className="seller-savings__card" aria-label="Предварительный сценарий продажи">
             <img
               src={publicAsset('images/seller-page/seller-savings-family-card.png')}
-              alt="Home seller with family near a modern house"
+              alt="Продавец с семьёй рядом с современным домом"
               loading="lazy"
               decoding="async"
             />
             <div className="seller-savings__profit">
-              <span>Потенциал</span>
+              <span>Ваша выгода</span>
               <strong>$ 22,850</strong>
               <em>+8.07%</em>
             </div>
             <div className="seller-savings__badge">
               <FiCheckCircle />
-              Продавец готов к запуску за 12 дней
+              Объект готов к сильному запуску за 12 дней
             </div>
           </div>
         </div>
       </div>
 
-      <div className="seller-savings__stats" ref={statsRef} aria-label="Seller launch performance">
+      <div className="seller-savings__stats" ref={statsRef} aria-label="Результаты запусков продавцов">
         {sellerLaunchStats.map((stat) => (
           <article key={stat.label}>
             <SellerLaunchStatValue
@@ -239,12 +243,12 @@ function SellerSavingsSection() {
         <div className="seller-savings__lifestyle-shade" />
         <div className="seller-savings__lifestyle-badge">
           <FiCheckCircle />
-          Sellers joined SellYourBrick in 2026
+          Продавцы выбирают SellYourBrick в 2026
         </div>
         <div className="seller-savings__lifestyle-head">
-          <h2 id="seller-savings-lifestyle-title">Лучше продавать — начинается здесь</h2>
+          <h2 id="seller-savings-lifestyle-title">Продажа на ваших условиях начинается здесь</h2>
           <p>
-            Выберите сценарий запуска, сравните ожидания по цене и держите сделку под контролем.
+            Выберите подходящий сценарий, проверьте потенциал объекта и запустите продажу уверенно.
           </p>
         </div>
         <div className="seller-savings__plans">
@@ -268,7 +272,7 @@ function SellerToolkitSection() {
   return (
     <section className="seller-toolkit" aria-labelledby="seller-toolkit-title">
       <h2 id="seller-toolkit-title" className="seller-visually-hidden">
-        Инструменты продавца
+        Почему продавцы выбирают SellYourBrick
       </h2>
       <div className="seller-toolkit__grid">
         {sellerToolkitCards.map((card) => {
@@ -338,19 +342,19 @@ function SellerAboutSection() {
       </div>
 
       <div className="seller-about__content">
-        <span className="seller-about__label">О SellYourBrick</span>
+        <span className="seller-about__label">Почему SellYourBrick</span>
         <h2 id="seller-about-title">
-          Мы делаем всё, чтобы ваш{' '}
-          <span className="seller-about__title-accent">объект</span> продавался быстрее
+          Вы не просто размещаете{' '}
+          <span className="seller-about__title-accent">объект</span> — вы запускаете продажу
         </h2>
         <p className="seller-about__lead">
-          SellYourBrick помогает продавцу пройти путь от подготовки лота до переговоров без таблиц,
-          потерянных файлов и бесконечных чатов с покупателями.
+          Мы соединяем аналитику, профессиональную презентацию и доступ к покупателям в одном
+          сервисе. Вы принимаете решения на основе цифр и сохраняете контроль над сделкой.
         </p>
 
         <div className="seller-about__columns">
           <div>
-            <h3>Наше видение</h3>
+            <h3>Ваша выгода</h3>
             <ul>
               {sellerVisionPoints.map((point) => (
                 <li key={point}>
@@ -361,7 +365,7 @@ function SellerAboutSection() {
             </ul>
           </div>
           <div>
-            <h3>Наша миссия</h3>
+            <h3>Что берём на себя</h3>
             <ul>
               {sellerMissionPoints.map((point) => (
                 <li key={point}>
@@ -375,10 +379,10 @@ function SellerAboutSection() {
 
         <Link
           to="/owner/property/new"
-          className="seller-about__button"
+          className="seller-about__button btn-tiffany-shine"
           onClick={() => scrollMainTo(0, 0, 'instant')}
         >
-          Наша история
+          Стать продавцом
         </Link>
       </div>
     </section>
@@ -399,10 +403,10 @@ function SellerServicesSection() {
       <div className="seller-services__shade" aria-hidden="true" />
 
       <div className="seller-services__head">
-        <span className="seller-services__label">Наши сервисы</span>
-        <h2 id="seller-services-title">Что мы предлагаем продавцу недвижимости</h2>
+        <span className="seller-services__label">Полный цикл</span>
+        <h2 id="seller-services-title">Всё, чтобы продать уверенно и на своих условиях</h2>
         <p>
-          От оценки до закрытия — один сценарий и прозрачные цифры.
+          От первой оценки до закрытия сделки — понятный процесс без хаоса и неизвестности.
         </p>
       </div>
 
@@ -420,7 +424,7 @@ function SellerServicesSection() {
               <h3>{card.title}</h3>
               <p>{card.copy}</p>
               <Link to="/owner/property/new" onClick={() => scrollMainTo(0, 0, 'instant')}>
-                Подробнее
+                {card.action}
                 <FiArrowRight />
               </Link>
             </article>

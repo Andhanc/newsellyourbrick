@@ -26,33 +26,41 @@ const SALE_CARDS = [
     id: 'auction',
     title: 'Аукцион',
     description: 'Участвуйте в торгах и приобретайте объекты по лучшей цене',
-    image: publicAsset('images/mobile-discover/card-auction.png'),
+    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
+    imagePosition: '36% center',
     to: '/auction?filter=auction',
     theme: 'auction',
+    Icon: MdGavel,
   },
   {
     id: 'buy_now',
     title: 'Купить сейчас',
     description: 'Покупайте недвижимость по фиксированной цене без ожидания',
-    image: publicAsset('images/mobile-discover/card-buy-now.png'),
+    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
+    imagePosition: '42% center',
     to: '/auction?filter=buy_now',
     theme: 'buy',
+    Icon: FiShoppingBag,
   },
   {
     id: 'debts',
     title: 'Долги',
     description: 'Инвестируйте в объекты с задолженностью и получайте высокую доходность',
-    image: publicAsset('images/mobile-discover/card-debts.png'),
+    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
+    imagePosition: '46% center',
     to: '/debts',
     theme: 'debts',
+    Icon: MdOutlineReceiptLong,
   },
   {
     id: 'shares',
     title: 'Доли',
     description: 'Покупайте доли в премиальных объектах и инвестируйте с умом',
-    image: publicAsset('images/mobile-discover/card-shares.png'),
+    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
+    imagePosition: '42% center',
     to: CO_INVESTMENT_PATH,
     theme: 'shares',
+    Icon: FiPieChart,
   },
 ]
 
@@ -383,12 +391,16 @@ export default function MobileDiscoverPage() {
               <div ref={cardsRef} className="md-cards" role="list">
                 {SALE_CARDS.map((card, index) => {
                   const isSaved = saved.has(card.id)
+                  const CardIcon = card.Icon
                   return (
                     <article
                       key={card.id}
                       className={`md-card md-card--${card.theme}`}
                       role="listitem"
-                      style={{ '--md-card-i': index }}
+                      style={{
+                        '--md-card-i': index,
+                        '--md-card-image-position': card.imagePosition,
+                      }}
                       aria-label={`${card.title}. ${card.description}`}
                     >
                       <div className="md-card__frame">
@@ -396,13 +408,20 @@ export default function MobileDiscoverPage() {
                           className="md-card__image"
                           src={card.image}
                           alt=""
-                          width={900}
-                          height={1200}
+                          width={1536}
+                          height={1024}
                           loading={index === 0 ? 'eager' : 'lazy'}
                           decoding="async"
                         />
                         <div className="md-card__shade" aria-hidden="true" />
                         <div className="md-card__body">
+                          <div className="md-card__copy">
+                            <span className="md-card__icon" aria-hidden>
+                              <CardIcon />
+                            </span>
+                            <h3 className="md-card__title">{card.title}</h3>
+                            <p className="md-card__description">{card.description}</p>
+                          </div>
                           <div className="md-card__actions">
                             <Link className="md-card__cta" to={card.to}>
                               Подробнее

@@ -1617,3 +1617,141 @@
   .compare-page .compare-ai-title { max-width: none; }
   .compare-page .compare-ai-refresh { width: 100%; justify-content: center; }
 }
+
+/*
+ * Mobile empty state: keep the page as one calm white canvas.
+ * The illustration groups stay distinct through spacing and a divider instead
+ * of being nested in separate card surfaces.
+ */
+@media (max-width: 768px) {
+  .compare-page {
+    --compare-font: 'Montserrat', system-ui, -apple-system, sans-serif;
+    background: #ffffff;
+    color: #2f3542;
+    font-family: var(--compare-font);
+  }
+
+  .compare-page .compare-container {
+    padding-right: clamp(18px, 5.1vw, 22px);
+    padding-left: clamp(18px, 5.1vw, 22px);
+    background: #ffffff;
+  }
+
+  .compare-page .compare-header {
+    margin-bottom: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .compare-page .compare-header__visual {
+    min-height: 160px;
+    height: 160px;
+    padding: 6px 2px 0;
+  }
+
+  .compare-page .compare-header__image {
+    width: min(400px, 100%);
+    height: 110%;
+  }
+
+  .compare-page .compare-header__copy {
+    gap: 8px;
+    padding: 4px 0 16px;
+  }
+
+  .compare-page .compare-title {
+    color: #2f3542;
+    font-family: var(--compare-font);
+    font-size: clamp(26px, 7.2vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  .compare-page .compare-subtitle {
+    max-width: 34ch;
+    color: #66706e;
+    font-family: var(--compare-font);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .compare-page .compare-link-muted {
+    color: #0099a9;
+    font-family: var(--compare-font);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .compare-page .compare-empty {
+    position: relative;
+    margin-top: 32px;
+    padding: 33px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .compare-page .compare-empty::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: #eef2f1;
+    content: '';
+  }
+
+  .compare-page .compare-empty__visual {
+    width: min(100%, 150px);
+    max-width: 150px;
+    margin-bottom: 0;
+  }
+
+  .compare-page .compare-empty__image {
+    max-height: 108px;
+  }
+
+  .compare-page .compare-empty__copy {
+    width: 100%;
+  }
+
+  .compare-page .compare-empty-title {
+    margin-bottom: 8px;
+    color: #2f3542;
+    font-family: var(--compare-font);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+  }
+
+  .compare-page .compare-empty-text {
+    max-width: 34ch;
+    margin-bottom: 24px;
+    color: #66706e;
+    font-family: var(--compare-font);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .compare-page .compare-empty-button {
+    min-height: 48px;
+    max-width: 100%;
+    padding: 0 28px;
+    background: #0099a9;
+    font-family: var(--compare-font);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .compare-page .compare-empty-button:hover {
+    background: #007d8a;
+  }
+}

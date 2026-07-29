@@ -4,6 +4,10 @@ import { readFile } from 'node:fs/promises'
 
 const css = await readFile(new URL('./discoverAuctionCards.css', import.meta.url), 'utf8')
 const card = await readFile(new URL('../components/AuctionPropertyCard.jsx', import.meta.url), 'utf8')
+const showcase = await readFile(
+  new URL('../components/InvestorPropertyShowcaseSection.jsx', import.meta.url),
+  'utf8',
+)
 const propertyList = await readFile(new URL('../components/PropertyList.jsx', import.meta.url), 'utf8')
 const mobileLayout = await readFile(new URL('../components/ui/AuctionMobileLayout.jsx', import.meta.url), 'utf8')
 const mobileLayoutCss = await readFile(
@@ -49,6 +53,50 @@ test('keeps two columns when bid and buy-now actions are both present', () => {
     css,
     /\.discover-auction-cards \.auction-card__actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/,
   )
+})
+
+test('main-page buy-now card swaps timer and favorite, widens timer, and stacks actions', () => {
+  assert.match(
+    css,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__favorite[\s\S]*top:\s*8px\s*!important[\s\S]*bottom:\s*auto\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__media-top[\s\S]*bottom:\s*10px\s*!important[\s\S]*width:\s*95%\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/,
+  )
+  assert.ok(
+    card.includes('`${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`'),
+  )
+  assert.match(card, /auction-card__timer-prices/)
+  assert.match(card, /auction-card--timer-pricing/)
+  assert.doesNotMatch(card, /auction-card__timer-price--buy/)
+  assert.match(
+    css,
+    /\.auction-card--timer-pricing[\s\S]*\.auction-card__pricing[\s\S]*display:\s*none\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__btn[\s\S]*font-size:\s*0\.88rem\s*!important/,
+  )
+})
+
+test('main-page auction card mirrors the compact layout and keeps only a tiffany bid action', () => {
+  assert.match(
+    css,
+    /\.md-format-card\[data-md-format='auction'\][\s\S]*\.auction-card__media-top[\s\S]*bottom:\s*10px\s*!important[\s\S]*width:\s*95%\s*!important/,
+  )
+  assert.match(showcase, /hideBuyNowAction=\{variant === 'auction'\}/)
+  assert.match(card, /hideBuyNowAction = false/)
+  assert.match(card, /!hideBuyNowAction &&[\s\S]*state\.hasBuyNowPrice/)
+  assert.match(
+    card,
+    /hideBuyNowAction[\s\S]*\? 'auction-card__btn--primary'[\s\S]*: 'auction-card__btn--outline'/,
+  )
+  assert.match(card, /state\.showGreenTimer && 'auction-card--timer-pricing'/)
 })
 
 test('phone cards stack their actions and use the homepage tiffany shine', () => {

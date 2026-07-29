@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-const [search, searchCss, city, cityCss, favorites, favoritesCss, map, mapCss] = await Promise.all([
+const [search, searchCss, city, cityCss, favorites, favoritesCss, map, mapCss, buyerPageCss, buyerPage] = await Promise.all([
   readFile(new URL('./SearchResults.jsx', import.meta.url), 'utf8'),
   readFile(new URL('./SearchResults.css', import.meta.url), 'utf8'),
   readFile(new URL('./CatalogCityPage.jsx', import.meta.url), 'utf8'),
@@ -11,6 +11,8 @@ const [search, searchCss, city, cityCss, favorites, favoritesCss, map, mapCss] =
   readFile(new URL('./Favorites.css', import.meta.url), 'utf8'),
   readFile(new URL('./MapPage.jsx', import.meta.url), 'utf8'),
   readFile(new URL('./MapPage.css', import.meta.url), 'utf8'),
+  readFile(new URL('./BuyerPage.css', import.meta.url), 'utf8'),
+  readFile(new URL('./BuyerPage.jsx', import.meta.url), 'utf8'),
 ])
 
 test('search and city catalogues paginate sixteen real items and expose a map decision', () => {
@@ -56,4 +58,29 @@ test('discovery mobile controls stay touch-safe and reduced-motion aware', () =>
     assert.match(css, /44px/)
     assert.match(css, /prefers-reduced-motion:\s*reduce/)
   }
+})
+
+test('buyer subscription plans use one readable card per row on mobile', () => {
+  assert.match(
+    buyerPageCss,
+    /@media \(max-width:\s*820px\)[\s\S]*\.buyer-plan-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+  )
+  assert.match(
+    buyerPageCss,
+    /@media \(max-width:\s*820px\)[\s\S]*\.buyer-plan__button\s*\{[\s\S]*min-height:\s*44px/,
+  )
+  assert.match(
+    buyerPageCss,
+    /\.buyer-plan__price\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto[\s\S]*height:\s*auto/,
+  )
+})
+
+test('every buyer plan shows a crossed-out price and a visible saving', () => {
+  assert.match(buyerPage, /oldPrice:\s*'€29'/)
+  assert.match(buyerPage, /oldPrice:\s*'€199'/)
+  assert.match(buyerPage, /oldPrice:\s*'€699'/)
+  assert.match(buyerPage, /buyer-plan__discount/)
+  assert.match(buyerPage, /buyer-plan__price-benefit/)
+  assert.match(buyerPage, /<del>\{plan\.oldPrice\}<\/del>/)
+  assert.match(buyerPage, /Сейчас все тарифы доступны по специальной цене/)
 })

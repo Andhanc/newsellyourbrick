@@ -104,6 +104,9 @@ const plans = [
   {
     name: 'Starter',
     price: '€0',
+    oldPrice: '€29',
+    discount: '−100%',
+    saving: 'Бесплатно вместо €29',
     subtitle: 'Быстрый старт',
     subtitleShort: 'Быстрый старт',
     height: 'short',
@@ -113,6 +116,9 @@ const plans = [
   {
     name: 'Pro',
     price: '€149',
+    oldPrice: '€199',
+    discount: '−25%',
+    saving: 'Экономия €50 в месяц',
     subtitle: 'Больше функций, аналитика и персональный менеджер',
     subtitleShort: 'Аналитика и менеджер',
     height: 'medium',
@@ -123,6 +129,9 @@ const plans = [
   {
     name: 'VIP',
     price: '€499',
+    oldPrice: '€699',
+    discount: '−29%',
+    saving: 'Экономия €200 в месяц',
     subtitle: 'Максимум функций и приоритет на каждом этапе',
     subtitleShort: 'Приоритет и закрытые лоты',
     height: 'tall',
@@ -285,6 +294,10 @@ export default function BuyerPage() {
           <p>
             Выберите тариф, чтобы видеть больше данных, получать персональные подборки и быстрее забирать лучшие объекты.
           </p>
+          <div className="buyer-plans__offer-note">
+            <FiTrendingUp aria-hidden />
+            <span>Сейчас все тарифы доступны по специальной цене</span>
+          </div>
 
           <div className="buyer-plan-grid" aria-label="Тарифы подписки">
             {plans.map((plan) => (
@@ -303,13 +316,22 @@ export default function BuyerPage() {
                 }}
               >
                 {plan.badge && <span className="buyer-plan__badge">{plan.badge}</span>}
+                <span className="buyer-plan__discount">{plan.discount}</span>
                 <h3>{plan.name}</h3>
                 <p>
                   <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
                   <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
                 </p>
-                <strong>{plan.price}</strong>
-                <span className="buyer-plan__period">в месяц</span>
+                <div className="buyer-plan__price">
+                  <div className="buyer-plan__price-current">
+                    <strong>{plan.price}</strong>
+                    <span>в месяц</span>
+                  </div>
+                  <div className="buyer-plan__price-benefit">
+                    <del>{plan.oldPrice}</del>
+                    <span>{plan.saving}</span>
+                  </div>
+                </div>
                 <ul>
                   {plan.features.map((feature, index) => (
                     <li key={feature}>

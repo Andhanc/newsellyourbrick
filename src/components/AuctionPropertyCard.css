@@ -314,6 +314,10 @@
   text-overflow: ellipsis;
 }
 
+.auction-card__timer-prices {
+  display: none;
+}
+
 /* --- VIP ribbon on photo --- */
 .auction-card__vip-ribbon {
   position: absolute;

@@ -96,6 +96,7 @@ test('profile sheets open in BuyerSheetShell drawers with lazy panels', () => {
   assert.match(profileCss, /\.profile-legal-sheet__tabs/)
   assert.match(profileSource, /profile-subscriptions-experience--fullscreen/)
   assert.match(profileSource, /\/images\/profile\/subscriptions-hero-premium\.png/)
+  assert.match(profileSource, /showSubscribePanel=\{false\}/)
   assert.match(profileCss, /\.profile-cabinet-sheet--subscriptions[\s\S]*height:\s*100dvh/)
   assert.match(profileCss, /\.profile-subscriptions-hero/)
 })

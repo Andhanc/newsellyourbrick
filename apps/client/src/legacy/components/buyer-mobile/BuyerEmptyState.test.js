@@ -22,7 +22,9 @@ test('buyer empty state explains the recovery and exposes one primary action', (
 
 test('auction no-results state no longer uses an emoji dead end', () => {
   assert.match(propertyList, /BuyerEmptyState/)
-  assert.match(propertyList, /resetAuctionFilters/)
+  assert.match(propertyList, /auction-empty-illustration\.png/)
+  assert.match(propertyList, /title="Объектов пока нет"/)
+  assert.match(propertyList, /primaryLabel="Смотреть другие объекты"/)
   assert.doesNotMatch(propertyList, /<div className="no-results-icon">🔍<\/div>/)
 })
 

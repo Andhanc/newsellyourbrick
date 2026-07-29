@@ -63,6 +63,7 @@ export default function OwnerPricingCards({
   featuredPlanId = 'pro',
   yearlyDiscount = YEARLY_DISCOUNT,
   variant = 'default',
+  showSubscribePanel = true,
 }) {
   const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = useState('monthly')
@@ -192,22 +193,24 @@ export default function OwnerPricingCards({
         })}
       </div>
 
-      <div className="opc-subscribe-panel">
-        <div className="opc-subscribe-panel__copy">
-          <span>{t('ownerTest_subscriptionsSelectedPlan')}</span>
-          <strong>{selectedPlan?.name}</strong>
-          <p>{selectedPlan ? taglines[selectedPlan.id] : ''}</p>
+      {showSubscribePanel ? (
+        <div className="opc-subscribe-panel">
+          <div className="opc-subscribe-panel__copy">
+            <span>{t('ownerTest_subscriptionsSelectedPlan')}</span>
+            <strong>{selectedPlan?.name}</strong>
+            <p>{selectedPlan ? taglines[selectedPlan.id] : ''}</p>
+          </div>
+          <button
+            type="button"
+            className="opc-subscribe-panel__cta"
+            disabled={subscribeDisabled}
+            onClick={handleSubscribe}
+          >
+            <CreditCard size={18} strokeWidth={2.25} aria-hidden />
+            {loading ? '…' : selectedIsCurrent ? activeCtaLabel : t('ownerTest_subscriptionDrawerSubscribe')}
+          </button>
         </div>
-        <button
-          type="button"
-          className="opc-subscribe-panel__cta"
-          disabled={subscribeDisabled}
-          onClick={handleSubscribe}
-        >
-          <CreditCard size={18} strokeWidth={2.25} aria-hidden />
-          {loading ? '…' : selectedIsCurrent ? activeCtaLabel : t('ownerTest_subscriptionDrawerSubscribe')}
-        </button>
-      </div>
+      ) : null}
     </div>
   )
 }
