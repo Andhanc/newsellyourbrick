@@ -231,6 +231,15 @@ export interface TestDriveRangeCalendarProps {
   ) => void;
   className?: string;
   maxWidth?: string;
+  /** Предварительно выбранный диапазон, например со страницы каталога тест-драйва. */
+  initialRange?: { start: string; end: string } | null;
+}
+
+function fromYmd(value?: string): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
@@ -240,17 +249,24 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
   onRangeSelected,
   className = "",
   maxWidth = "max-w-2xl",
+  initialRange = null,
 }) => {
   const bookedSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const myBookedSet = useMemo(() => new Set(myBookedDates), [myBookedDates]);
-  const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [anchor, setAnchor] = useState<Date | null>(null);
-  const [rangeEnd, setRangeEnd] = useState<Date | null>(null);
+  const initialStart = fromYmd(initialRange?.start);
+  const initialEnd = fromYmd(initialRange?.end);
+  const [currentDate, setCurrentDate] = useState(() => initialStart || new Date());
+  const [anchor, setAnchor] = useState<Date | null>(() => initialStart);
+  const [rangeEnd, setRangeEnd] = useState<Date | null>(() => initialEnd);
   /** Диапазон подтверждён визуально; следующий клик по свободному дню начинает новый выбор */
   const [confirmedRange, setConfirmedRange] = useState<{
     startYmd: string;
     endYmd: string;
-  } | null>(null);
+  } | null>(() =>
+    initialStart && initialEnd
+      ? { startYmd: toYmd(initialStart), endYmd: toYmd(initialEnd) }
+      : null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const monthNames =

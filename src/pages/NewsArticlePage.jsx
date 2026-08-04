@@ -170,6 +170,7 @@ export default function NewsArticlePage() {
                     className="news-article-page__back-btn"
                     onClick={goToNewsList}
                   />
+                  <span className="news-article-page__toolbar-title">Новости</span>
                 </div>
               </aside>
             </div>
@@ -204,6 +205,15 @@ export default function NewsArticlePage() {
                   className="news-article-page__back-btn"
                   onClick={goToNewsList}
                 />
+                <span className="news-article-page__toolbar-title">Новости</span>
+                <button
+                  type="button"
+                  className="news-article-page__share news-article-page__share--toolbar"
+                  onClick={handleShare}
+                  aria-label="Поделиться новостью"
+                >
+                  <FiShare2 size={19} aria-hidden />
+                </button>
               </div>
 
               {hasToc ? (
@@ -211,7 +221,7 @@ export default function NewsArticlePage() {
                   <h2 className="news-article-page__toc-title">Содержание</h2>
                   <nav ref={tocNavRef} className="news-article-page__toc-nav">
                     <ul className="news-article-page__toc-list">
-                      {(article.sections || []).map((section) => (
+                      {(article.sections || []).map((section, index) => (
                         <li
                           key={section.id}
                           className={
@@ -233,7 +243,12 @@ export default function NewsArticlePage() {
                             }
                             onClick={() => scrollToSection(section.id)}
                           >
-                            {section.title}
+                            <span className="news-article-page__toc-index" aria-hidden>
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <span className="news-article-page__toc-label">
+                              {section.title}
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -250,7 +265,7 @@ export default function NewsArticlePage() {
             <div className="news-article-page__top-row">
               <button
                 type="button"
-                className="news-article-page__share"
+                className="news-article-page__share news-article-page__share--content"
                 onClick={handleShare}
                 aria-label="Поделиться"
               >

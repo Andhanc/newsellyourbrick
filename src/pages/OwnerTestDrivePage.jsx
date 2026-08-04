@@ -124,7 +124,11 @@ export default function OwnerTestDrivePage() {
       <div className="otd-workspace">
         <div className="otd-content otd-content--split">
           <p className="otd-split-lead otd-desktop-only">{t('ownerTestDriveAnalyticsHeroHint')}</p>
-          <OwnerTestDriveSplitView userId={userId} isMobile={isMobile} />
+          <OwnerTestDriveSplitView
+            userId={userId}
+            isMobile={isMobile}
+            onOpenStandaloneMenu={() => setMenuOpen(true)}
+          />
         </div>
       </div>
     </div>

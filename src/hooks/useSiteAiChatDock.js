@@ -100,6 +100,10 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     })
   }, [pauseManagerPolling])
 
+  const closeChatDock = useCallback(() => {
+    setIsChatOpen(false)
+  }, [])
+
   useEffect(() => {
     window.dispatchEvent(
       new CustomEvent('managerChatStateChange', { detail: { isOpen: isManagerChatOpen } }),
@@ -521,6 +525,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     isChatOpen,
     isManagerChatOpen,
     toggleChat,
+    closeChatDock,
     closeManagerChatDock,
     chatMessages,
     chatInput,

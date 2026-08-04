@@ -19,6 +19,21 @@ function NumberField({ id, label, value, onChange, min = 0, max, step = 'any', i
   )
 }
 
+function TextField({ id, label, value, onChange, placeholder = '' }) {
+  return (
+    <label className="investor-assumptions__field" htmlFor={id}>
+      <span>{label}</span>
+      <input
+        id={id}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  )
+}
+
 export default function InvestorAssumptionsSheet({
   isOpen,
   onClose,
@@ -44,6 +59,14 @@ export default function InvestorAssumptionsSheet({
   setMortgageTerm,
   downPayment,
   setDownPayment,
+  borrowerResidenceCountry,
+  setBorrowerResidenceCountry,
+  borrowerAge,
+  setBorrowerAge,
+  borrowerMonthlyIncome,
+  setBorrowerMonthlyIncome,
+  borrowerMonthlyDebts,
+  setBorrowerMonthlyDebts,
 }) {
   const footer = (
     <button type="button" className="investor-assumptions__done" onClick={onClose}>
@@ -88,11 +111,24 @@ export default function InvestorAssumptionsSheet({
       </label>
 
       {useMortgage && (
-        <div className="investor-assumptions__grid investor-assumptions__grid--mortgage">
-          <NumberField id="investor-sheet-rate" label="Ставка, %" value={mortgageRate} onChange={setMortgageRate} step="0.1" />
-          <NumberField id="investor-sheet-term" label="Срок кредита, лет" value={mortgageTerm} onChange={setMortgageTerm} min={1} max={30} step="1" inputMode="numeric" />
-          <NumberField id="investor-sheet-down" label="Первый взнос, %" value={downPayment} onChange={setDownPayment} min={10} max={100} step="0.1" />
-        </div>
+        <>
+          <div className="investor-assumptions__grid investor-assumptions__grid--mortgage">
+            <NumberField id="investor-sheet-rate" label="Ожидаемая ставка, %" value={mortgageRate} onChange={setMortgageRate} step="0.1" />
+            <NumberField id="investor-sheet-term" label="Срок кредита, лет" value={mortgageTerm} onChange={setMortgageTerm} min={1} max={30} step="1" inputMode="numeric" />
+            <NumberField id="investor-sheet-down" label="Первый взнос, %" value={downPayment} onChange={setDownPayment} min={10} max={100} step="0.1" />
+          </div>
+
+          <div className="investor-assumptions__profile-head">
+            <span>Для персональной оценки</span>
+            <p>Эти данные нужны AI для предварительного диапазона ипотеки. Они не заменяют решение банка.</p>
+          </div>
+          <div className="investor-assumptions__grid investor-assumptions__grid--profile">
+            <TextField id="investor-sheet-residence" label="Страна резидентства" value={borrowerResidenceCountry} onChange={setBorrowerResidenceCountry} placeholder="Например, Испания" />
+            <NumberField id="investor-sheet-age" label="Возраст" value={borrowerAge} onChange={setBorrowerAge} min={18} max={100} step="1" inputMode="numeric" />
+            <NumberField id="investor-sheet-income" label="Чистый доход в месяц, €" value={borrowerMonthlyIncome} onChange={setBorrowerMonthlyIncome} />
+            <NumberField id="investor-sheet-debts" label="Другие платежи в месяц, €" value={borrowerMonthlyDebts} onChange={setBorrowerMonthlyDebts} />
+          </div>
+        </>
       )}
     </BuyerSheetShell>
   )

@@ -4,18 +4,15 @@ import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { ArrowRight, Building2, LogOut, Plus, X } from 'lucide-react'
 import OwnerTestProfileMenu, { performOwnerTestLogout } from './OwnerTestProfileMenu'
-import SiteBrandLogo from './SiteBrandLogo'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
 import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
 import OwnerSupportButton from './OwnerSupportButton'
 import SiteChatDock from './SiteChatDock'
-import OwnerFloatingMobileNav from './OwnerFloatingMobileNav'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import {
   isNavItemActive,
-  isTabbarView,
   NAV_ID_TO_VIEW,
   OWNER_VIEWS,
 } from '../utils/ownerTestNav'
@@ -25,7 +22,13 @@ import {
 import './OwnerTestCabinetChrome.css'
 
 function BrandLogo({ className = '' }) {
-  return <SiteBrandLogo className={className} textClassName="otc-logo__text" />
+  return (
+    <div className={`otc-wordmark${className ? ` ${className}` : ''}`} aria-label="Sell Your Brick">
+      <span>Sell</span>
+      <span className="otc-wordmark__accent">Your</span>
+      <span>Brick</span>
+    </div>
+  )
 }
 
 export default function OwnerTestCabinetChrome({ children }) {
@@ -37,7 +40,6 @@ export default function OwnerTestCabinetChrome({ children }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [managerChatOpen, setManagerChatOpen] = useState(false)
   const [pendingPurchasedListing] = useState(() => readPendingSellPurchasedProperty())
-  const showTabbar = isTabbarView(view)
   const showPurchasedDraftHint =
     Boolean(pendingPurchasedListing?.id || pendingPurchasedListing?.propertyId) &&
     (view === OWNER_VIEWS.HOME || view === OWNER_VIEWS.PROPERTIES)
@@ -57,6 +59,12 @@ export default function OwnerTestCabinetChrome({ children }) {
       document.body.style.overflow = prev
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    const openMenu = () => setMenuOpen(true)
+    window.addEventListener('owner-test:open-menu', openMenu)
+    return () => window.removeEventListener('owner-test:open-menu', openMenu)
+  }, [])
 
   useEffect(() => {
     const onManager = (event) => setManagerChatOpen(Boolean(event.detail?.isOpen))
@@ -149,7 +157,7 @@ export default function OwnerTestCabinetChrome({ children }) {
   return (
     <SiteChatDock hideFab wrapperClassName="owner-cabinet-chat-dock">
       <div
-        className={`otc${menuOpen ? ' otc--menu-open' : ''}${showTabbar ? ' otc--tabbar' : ''}${
+        className={`otc${menuOpen ? ' otc--menu-open' : ''}${
           view === OWNER_VIEWS.HOME ? ' otc--home' : ''
         }${view === OWNER_VIEWS.PROPERTIES ? ' otc--properties' : ''}${
           view === OWNER_VIEWS.PROPERTY_ANALYTICS ? ' otc--property-analytics' : ''
@@ -196,6 +204,11 @@ export default function OwnerTestCabinetChrome({ children }) {
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner onNavigate={closeMenu} />
           <div className="otc-drawer__logout-foot">
+            <OwnerTestProfileMenu
+              current={view === OWNER_VIEWS.PROFILE}
+              className="otpm--nav-foot"
+              onNavigate={closeMenu}
+            />
             <div className="otc-drawer__logout-divider" aria-hidden />
             <button
               type="button"
@@ -219,6 +232,13 @@ export default function OwnerTestCabinetChrome({ children }) {
           {navItems.map(renderNavItem)}
           <OwnerProfileCompletionBanner />
         </nav>
+
+        <div className="otc-sidebar__profile-foot">
+          <OwnerTestProfileMenu
+            current={view === OWNER_VIEWS.PROFILE}
+            className="otpm--nav-foot"
+          />
+        </div>
       </aside>
 
       <div className="otc-stage">
@@ -243,15 +263,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         ) : null}
         {children}
       </div>
-
-      {showTabbar ? (
-        <OwnerFloatingMobileNav
-          view={view}
-          goTo={goTo}
-          onOpenMenu={() => setMenuOpen(true)}
-          menuOpen={menuOpen}
-        />
-      ) : null}
 
       </div>
     </SiteChatDock>

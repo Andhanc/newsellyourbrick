@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Building2,
   Car,
-  Wallet,
   CreditCard,
   MessageSquare,
   Settings,
@@ -42,13 +41,6 @@ export function useOwnerTestNavItems(options = {}) {
         icon: Car,
         active: activeId === 'testdrive',
         href: hrefMap.testdrive,
-      },
-      {
-        id: 'wallet',
-        label: t('ownerTest_navWallet'),
-        icon: Wallet,
-        active: activeId === 'wallet',
-        href: hrefMap.wallet,
       },
       {
         id: 'subscriptions',

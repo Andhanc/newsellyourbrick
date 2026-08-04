@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -30,6 +30,7 @@ import {
   Maximize2,
   Eye,
   PieChart,
+  MapPin,
 } from 'lucide-react'
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
 import { getOwnerListingTypeLabels, getOwnerTestProperty } from './ownerPropertiesTestData'
@@ -41,12 +42,12 @@ import {
 import {
   fetchOwnerProperties,
   getOwnerPropertiesUserId,
+  mapApiPropertyToOwnerListRow,
 } from '../utils/ownerPropertiesList'
 import { showNotification } from '../utils/toastHelper'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import OwnerPropertyAnalyticsSkeleton from '../components/OwnerPropertyAnalyticsSkeleton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
@@ -83,6 +84,49 @@ const EMPTY_OWNER_SALES = {
   debts: [],
   buy_now: [],
   test_drive: [],
+}
+
+function AnimatedPropertyAmount({ amount, currency, fallback, locale }) {
+  const target = Number(amount)
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    if (!Number.isFinite(target) || target <= 0) return undefined
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      setDisplayValue(target)
+      return undefined
+    }
+
+    let frameId = 0
+    const startedAt = window.performance.now()
+    const duration = 1450
+
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration)
+      const eased = 1 - Math.pow(1 - progress, 4)
+      setDisplayValue(target * eased)
+      if (progress < 1) frameId = window.requestAnimationFrame(animate)
+    }
+
+    frameId = window.requestAnimationFrame(animate)
+    return () => window.cancelAnimationFrame(frameId)
+  }, [target])
+
+  if (!Number.isFinite(target) || target <= 0) return fallback || '—'
+
+  return `${getCurrencySymbol(currency || 'USD')}${Math.round(displayValue).toLocaleString(locale, {
+    maximumFractionDigits: 0,
+  })}`
+}
+
+async function fetchPublicAnalyticsProperty(propertyId) {
+  const response = await fetch(`/api/properties/${encodeURIComponent(propertyId)}`)
+  if (!response.ok) return null
+  const result = await response.json().catch(() => ({}))
+  if (!result?.success || !result?.data) return null
+  return mapApiPropertyToOwnerListRow(result.data)
 }
 
 function formatOwnerHighlightMoney(amount, currency, locale) {
@@ -587,7 +631,11 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const [chartMetricOpen, setChartMetricOpen] = useState(false)
   const [timerNow, setTimerNow] = useState(() => Date.now())
   const [exportingExcel, setExportingExcel] = useState(false)
+  const [compactHeaderVisible, setCompactHeaderVisible] = useState(false)
+  const [heroImageFailed, setHeroImageFailed] = useState(false)
   const isMobile = useOpaMobile()
+  const mobileDetailsRef = useRef(null)
+  const heroValueRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
@@ -602,18 +650,14 @@ export default function OwnerPropertyAnalyticsTestPage() {
         return
       }
 
-      const userId = getOwnerPropertiesUserId()
-      if (!userId) {
-        setProperty(null)
-        setPropertyLoading(false)
-        return
-      }
-
       setPropertyLoading(true)
       try {
-        await fetchOwnerProperties(userId)
+        const userId = getOwnerPropertiesUserId()
+        if (userId) await fetchOwnerProperties(userId)
         if (!cancelled) {
-          setProperty(getOwnerTestProperty(propertyId))
+          const ownerProperty = getOwnerTestProperty(propertyId)
+          const publicProperty = ownerProperty || await fetchPublicAnalyticsProperty(propertyId)
+          setProperty(publicProperty)
         }
       } catch (error) {
         console.warn('OwnerPropertyAnalyticsTestPage: не удалось загрузить объект', error)
@@ -664,9 +708,9 @@ export default function OwnerPropertyAnalyticsTestPage() {
   }, [isEmbedded])
 
   useEffect(() => {
-    if (!isEmbedded || !goTo || property || !propertyId) return
+    if (!isEmbedded || !goTo || propertyLoading || property || !propertyId) return
     goTo(OWNER_VIEWS.PROPERTIES)
-  }, [property, propertyId, isEmbedded, goTo])
+  }, [property, propertyId, propertyLoading, isEmbedded, goTo])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -676,6 +720,28 @@ export default function OwnerPropertyAnalyticsTestPage() {
       document.body.style.overflow = prev
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    const priceNode = heroValueRef.current
+    if (!isMobile || !property || !priceNode) {
+      setCompactHeaderVisible(false)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setCompactHeaderVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+      },
+      { threshold: 0, rootMargin: '-66px 0px 0px' }
+    )
+
+    observer.observe(priceNode)
+    return () => observer.disconnect()
+  }, [isMobile, property])
+
+  useEffect(() => {
+    setHeroImageFailed(false)
+  }, [property?.image])
 
   const propertyTimerEndTime = useMemo(() => getAnalyticsTimerEndTime(property), [property])
 
@@ -690,6 +756,15 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const selectedChartMetric = chartMetrics.find((metric) => metric.id === chartMetric) || chartMetrics[0]
   const listingTypeLabel =
     listingTypeLabels[property?.listingType] || t('ownerTest_propertiesTypeBuyNow')
+  const heroAmount = property?.listingType === 'auction'
+    ? Number(property?.currentBidAmount || property?.priceAmount)
+    : Number(property?.priceAmount)
+  const heroLocation = property?.location || [property?.raw?.city, property?.raw?.country].filter(Boolean).join(', ') || t('ownerTest_analyticsNoData')
+  const heroDescription = String(property?.raw?.description || '').trim()
+  const propertyHeroImage = property?.image || ''
+  const compactPrice = Number.isFinite(heroAmount) && heroAmount > 0
+    ? formatOwnerHighlightMoney(heroAmount, property?.currency, intlLocale)
+    : property?.price || '—'
 
   const lineChartData = useMemo(() => {
     if (!analytics) return null
@@ -884,6 +959,45 @@ export default function OwnerPropertyAnalyticsTestPage() {
           </div>
         </header>
 
+        <div
+          className={`opa-property-sticky opa-mobile-only${compactHeaderVisible ? ' opa-property-sticky--visible' : ''}${heroImageFailed ? ' opa-property-sticky--no-image' : ''}`}
+          aria-hidden={!compactHeaderVisible}
+        >
+          {isEmbedded ? (
+            <button
+              type="button"
+              className="opa-property-sticky__back"
+              aria-label={t('ownerTest_analyticsBack')}
+              tabIndex={compactHeaderVisible ? 0 : -1}
+              onClick={() => goTo(OWNER_VIEWS.PROPERTIES)}
+            >
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden />
+            </button>
+          ) : (
+            <Link
+              to="/owner-properties-test"
+              className="opa-property-sticky__back"
+              aria-label={t('ownerTest_analyticsBack')}
+              tabIndex={compactHeaderVisible ? 0 : -1}
+            >
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden />
+            </Link>
+          )}
+          {!heroImageFailed ? (
+            <img
+              src={propertyHeroImage}
+              alt=""
+              className="opa-property-sticky__thumb"
+              onError={() => setHeroImageFailed(true)}
+            />
+          ) : null}
+          <span className="opa-property-sticky__copy">
+            <strong>{property.title}</strong>
+            <small><MapPin size={11} strokeWidth={2.3} aria-hidden />{heroLocation}</small>
+          </span>
+          <strong className="opa-property-sticky__price">{compactPrice}</strong>
+        </div>
+
         <div className="opa-workspace">
           <div className="opa-content">
             <div className="opa-mob-period opa-mobile-only">
@@ -913,22 +1027,83 @@ export default function OwnerPropertyAnalyticsTestPage() {
                     </Link>
                   )}
                   <img
-                    src={property.image}
-                    alt=""
+                    src={propertyHeroImage}
+                    alt={property.title}
                     className="opa-property-card__cover-img"
-                    loading="lazy"
+                    loading="eager"
+                    hidden={heroImageFailed}
+                    onError={() => setHeroImageFailed(true)}
                   />
-                  <PropertyCoverTimer property={property} now={timerNow} t={t} />
                   <div className="opa-property-card__cover-fade" aria-hidden />
+                  <div className="opa-property-card__mobile-brand" aria-hidden>
+                    Sell<span>Your</span>Brick
+                  </div>
+                  <button
+                    type="button"
+                    className="opa-property-card__mobile-menu"
+                    aria-label={t('ownerTest_ariaCabinetMenu')}
+                    onClick={() => setMenuOpen(true)}
+                  >
+                    <MoreVertical size={21} strokeWidth={2.2} aria-hidden />
+                  </button>
+
+                  <div className="opa-property-card__hero-value" ref={heroValueRef}>
+                    <strong aria-label={property.price}>
+                      <AnimatedPropertyAmount
+                        amount={heroAmount}
+                        currency={property.currency}
+                        fallback={property.price}
+                        locale={intlLocale}
+                      />
+                    </strong>
+                  </div>
+
+                  <div className="opa-property-card__hero-summary">
+                    <div className="opa-property-card__hero-summary-top">
+                      <span className={`opa-property-card__hero-status opa-property-card__hero-status--${property.statusKey}`}>
+                        <i aria-hidden />
+                        {property.status}
+                      </span>
+                      <span className="opa-property-card__hero-id">{property.displayId || `#${property.id}`}</span>
+                    </div>
+                    <h1>{property.title}</h1>
+                    <p>
+                      <MapPin size={15} strokeWidth={2.3} aria-hidden />
+                      {heroLocation}
+                    </p>
+                    <div className="opa-property-card__hero-metrics" aria-label={t('ownerTest_ariaKeyMetrics')}>
+                      <span><Eye size={15} strokeWidth={2.2} aria-hidden />{analytics.views}</span>
+                      <span><Heart size={15} strokeWidth={2.2} aria-hidden />{analytics.likes}</span>
+                      <span>{listingTypeLabel}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="opa-property-card__scroll-cue"
+                    onClick={() => mobileDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  >
+                    <span className="opa-property-card__scroll-arrow" aria-hidden />
+                  </button>
                 </div>
                 <img
-                  src={property.image}
+                  src={propertyHeroImage}
                   alt=""
                   className="opa-property-card__img opa-desktop-only"
                   loading="lazy"
+                  hidden={heroImageFailed}
+                  onError={() => setHeroImageFailed(true)}
                 />
-                <div className="opa-property-card__body">
+                <div className="opa-property-card__body" ref={mobileDetailsRef}>
+                  <span className="opa-property-card__details-eyebrow opa-mobile-only">Детали объекта</span>
                   <h2 className="opa-property-card__title">{property.title}</h2>
+                  <p className="opa-property-card__details-location opa-mobile-only">
+                    <MapPin size={16} strokeWidth={2.2} aria-hidden />
+                    {heroLocation}
+                  </p>
+                  {heroDescription ? (
+                    <p className="opa-property-card__description opa-mobile-only">{heroDescription}</p>
+                  ) : null}
                   <div className="opa-property-card__stats opa-mobile-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
                     <span className="opa-property-card__stat">
                       <Heart size={16} strokeWidth={2.2} aria-hidden />
@@ -1136,11 +1311,6 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
       {mainColumn}
 
-      <OwnerFloatingMobileNav
-        view={OWNER_VIEWS.PROPERTY_ANALYTICS}
-        onOpenMenu={() => setMenuOpen(true)}
-        menuOpen={menuOpen}
-      />
     </div>
   )
 }

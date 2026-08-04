@@ -28,6 +28,8 @@ const ALLOWED = [
   '/test-drive/survey/tok',
   '/test-drive/feedback/tok',
   '/about',
+  '/news',
+  '/news/some-slug',
   '/buyer',
   '/seller',
   '/private-club',
@@ -39,31 +41,39 @@ const ALLOWED = [
   '/data',
   '/history',
   '/subscriptions',
+  '/bonuses',
   '/favorites',
   '/compare',
+  '/map',
+  '/calculator',
   '/oauth-bridge',
   '/auth/telegram-callback',
   '/main',
   '/mobile-discover',
-]
-
-const BLOCKED = [
   '/owner-test',
-  '/owner-test/wallet',
   '/owner-test/properties',
+  '/owner-test/property-analytics/42',
+  '/owner-test/test-drive',
+  '/owner-test/subscriptions',
+  '/owner-test/wallet',
+  '/owner-test/profile',
   '/owner-test/add-property',
   '/owner',
   '/owner/property/new',
   '/property/p-1/edit',
   '/main-owner-test',
+  '/owner-properties-test',
+  '/owner-property-analytics-test/42',
+  '/owner-test-drive',
+  '/owner-subscriptions-test',
+  '/owner-sales-test',
   '/owner-wallet-test',
+  '/owner-profile-test',
   '/owner-add-property-test',
-  '/map',
+]
+
+const BLOCKED = [
   '/chat',
-  '/calculator',
-  '/bonuses',
-  '/news',
-  '/news/some-slug',
   '/sections',
   '/sellyourbrick',
   '/search-results',
@@ -106,14 +116,22 @@ test('admin and marketer are exempt', () => {
   }
 })
 
-test('AI and seller role features are blocked in UI', () => {
-  assert.equal(isSoftLaunchFeatureBlocked('sellerRole'), true)
+test('seller cabinet and released tools stay available while AI features remain blocked', () => {
+  assert.equal(isSoftLaunchFeatureBlocked('sellerRole'), false)
+  assert.equal(isSoftLaunchFeatureBlocked('sellerCabinet'), false)
   assert.equal(isSoftLaunchFeatureBlocked('aiAssistant'), true)
   assert.equal(isSoftLaunchFeatureBlocked('aiRealEstate'), true)
-  assert.equal(isSoftLaunchFeatureBlocked('smartInvestor'), true)
-  assert.equal(getSoftLaunchBlockedFeatureForHref('/calculator'), 'smartInvestor')
+  assert.equal(isSoftLaunchFeatureBlocked('smartInvestor'), false)
+  assert.equal(isSoftLaunchFeatureBlocked('map'), false)
+  assert.equal(getSoftLaunchBlockedFeatureForHref('/calculator'), null)
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1'), 'aiAssistant')
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?manager=1'), 'managerChat')
-  assert.equal(isSoftLaunchHrefBlocked('/map'), true)
+  assert.equal(isSoftLaunchHrefBlocked('/map'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/bonuses'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/news'), false)
   assert.equal(isSoftLaunchHrefBlocked('/seller'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/owner-test'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/owner-test/properties'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/owner/property/new'), false)
+  assert.equal(isSoftLaunchHrefBlocked('/property/p-1/edit'), false)
 })

@@ -18,6 +18,10 @@
   color: #26303f;
 }
 
+.test-drive-calendar-hero {
+  display: none;
+}
+
 .test-drive-landing .new-header {
   position: fixed;
   top: 0;
@@ -1167,7 +1171,342 @@
     padding: 0 14px;
   }
 
+  .test-drive-calendar-hero {
+    display: block;
+    padding:
+      calc(var(--test-drive-header-offset) + 16px)
+      14px
+      24px;
+    background:
+      radial-gradient(circle at 92% 2%, rgba(78, 205, 214, 0.18), transparent 27%),
+      linear-gradient(180deg, #faf8f5 0%, #f8fbfa 64%, #ffffff 100%);
+    color: #14282d;
+  }
+
+  .test-drive-calendar-hero__intro {
+    padding: 0 4px 16px;
+  }
+
+  .test-drive-calendar-hero__intro > span {
+    display: block;
+    margin-bottom: 6px;
+    color: #0099a9;
+    font-size: 0.6875rem;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .test-drive-calendar-hero__intro h1 {
+    margin: 0;
+    color: #14282d;
+    font-size: clamp(1.65rem, 7.2vw, 2rem);
+    font-weight: 850;
+    letter-spacing: -0.045em;
+    line-height: 1.04;
+  }
+
+  .test-drive-calendar-hero__intro p {
+    max-width: 34rem;
+    margin: 8px 0 0;
+    color: #66706e;
+    font-size: 0.75rem;
+    font-weight: 580;
+    line-height: 1.48;
+  }
+
+  .test-drive-calendar-card {
+    padding: 14px 13px 12px;
+    border: 1px solid rgba(174, 185, 188, 0.25);
+    border-radius: 26px;
+    background:
+      radial-gradient(circle at 100% 0, rgba(78, 205, 214, 0.11), transparent 31%),
+      rgba(255, 255, 255, 0.97);
+    box-shadow:
+      0 20px 50px rgba(20, 40, 45, 0.09),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  }
+
+  .test-drive-calendar-card__month {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .test-drive-calendar-card__month button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(132, 151, 154, 0.16);
+    border-radius: 50%;
+    background: #f3f6f5;
+    color: #14282d;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    transition:
+      transform 0.18s ease,
+      color 0.18s ease,
+      background 0.18s ease;
+  }
+
+  .test-drive-calendar-card__month button:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+
+  .test-drive-calendar-card__month button:disabled {
+    color: #b7c0c2;
+    cursor: not-allowed;
+    opacity: 0.52;
+  }
+
+  .test-drive-calendar-card__month strong {
+    min-width: 0;
+    color: #14282d;
+    font-size: 0.92rem;
+    font-weight: 820;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .test-drive-calendar-card__weekdays,
+  .test-drive-calendar-card__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .test-drive-calendar-card__weekdays {
+    margin-bottom: 2px;
+  }
+
+  .test-drive-calendar-card__weekdays span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    color: #849093;
+    font-size: 0.59rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  .test-drive-calendar-card__grid {
+    gap: 2px 3px;
+  }
+
+  .test-drive-calendar-card__day {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: clamp(40px, 11.3vw, 44px);
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: #243639;
+    font-size: 0.77rem;
+    font-weight: 720;
+    font-variant-numeric: tabular-nums;
+    transition:
+      transform 0.16s ease,
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .test-drive-calendar-card__day:not(:disabled):active {
+    transform: scale(0.92);
+  }
+
+  .test-drive-calendar-card__day.is-today:not(.is-arrival):not(.is-departure) {
+    border-color: rgba(0, 153, 169, 0.5);
+    color: #007d8a;
+  }
+
+  .test-drive-calendar-card__day.is-in-range {
+    border-radius: 10px;
+    background: rgba(78, 205, 214, 0.18);
+    color: #007d8a;
+  }
+
+  .test-drive-calendar-card__day.is-arrival,
+  .test-drive-calendar-card__day.is-departure {
+    border-color: rgba(255, 255, 255, 0.54);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ecdd6 0%, #0099a9 100%);
+    color: #ffffff;
+    font-weight: 850;
+    box-shadow:
+      0 8px 18px rgba(0, 153, 169, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  }
+
+  .test-drive-calendar-card__day.is-disabled {
+    color: #c7ced0;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  .test-drive-calendar-card__legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    margin-top: 10px;
+    padding-top: 11px;
+    border-top: 1px solid rgba(132, 151, 154, 0.14);
+  }
+
+  .test-drive-calendar-card__legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    color: #748184;
+    font-size: 0.59rem;
+    font-weight: 680;
+    white-space: nowrap;
+  }
+
+  .test-drive-calendar-card__legend i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    border-radius: 50%;
+  }
+
+  .test-drive-calendar-card__legend .is-available {
+    border: 1px solid rgba(132, 151, 154, 0.42);
+    background: #ffffff;
+  }
+
+  .test-drive-calendar-card__legend .is-selected {
+    background: linear-gradient(135deg, #4ecdd6, #0099a9);
+  }
+
+  .test-drive-calendar-card__legend .is-unavailable {
+    background: #dfe5e6;
+  }
+
+  .test-drive-calendar-selection {
+    margin-top: 12px;
+    padding: 13px;
+    border: 1px solid rgba(132, 151, 154, 0.16);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 30px rgba(20, 40, 45, 0.06);
+  }
+
+  .test-drive-calendar-selection__dates {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    gap: 10px;
+  }
+
+  .test-drive-calendar-selection__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 14px;
+    background: #e6f7f8;
+    color: #0099a9;
+  }
+
+  .test-drive-calendar-selection__dates > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .test-drive-calendar-selection__dates small {
+    display: block;
+    margin-bottom: 2px;
+    color: #7a878a;
+    font-size: 0.58rem;
+    font-weight: 790;
+    letter-spacing: 0.055em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .test-drive-calendar-selection__dates strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #14282d;
+    font-size: 0.76rem;
+    font-weight: 820;
+    line-height: 1.25;
+  }
+
+  .test-drive-calendar-selection__dates strong svg {
+    color: #0099a9;
+  }
+
+  .test-drive-calendar-selection__dates em {
+    color: #0099a9;
+    font-size: 0.67rem;
+    font-style: normal;
+    font-weight: 780;
+    white-space: nowrap;
+  }
+
+  .test-drive-calendar-selection__error {
+    margin: 7px 1px 0 50px;
+    color: #c7473a;
+    font-size: 0.65rem;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .test-drive-calendar-selection__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 50px;
+    margin-top: 11px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.54);
+    border-radius: 17px;
+    background: linear-gradient(135deg, #4ecdd6 0%, #21b8c4 50%, #0099a9 100%);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 850;
+    box-shadow:
+      0 12px 26px rgba(0, 153, 169, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    transition:
+      transform 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .test-drive-calendar-selection__action:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+
+  .test-drive-calendar-selection__action:disabled {
+    background: linear-gradient(135deg, #cad6d7, #aebbbc);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+
   .test-drive-hero {
+    display: none;
     min-height: 740px;
     padding: 0;
     align-items: stretch;
@@ -1457,7 +1796,7 @@
   }
 
   .test-drive-catalog {
-    margin-top: var(--td-block-gap);
+    margin-top: 10px;
     gap: 0;
   }
 
@@ -1609,6 +1948,31 @@
 @media (max-width: 374px) {
   .test-drive-landing__container {
     padding: 0 10px;
+  }
+
+  .test-drive-calendar-hero {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .test-drive-calendar-card {
+    padding-right: 8px;
+    padding-left: 8px;
+    border-radius: 22px;
+  }
+
+  .test-drive-calendar-card__grid {
+    column-gap: 0;
+  }
+
+  .test-drive-calendar-card__day {
+    border-radius: 12px;
+    font-size: 0.72rem;
+  }
+
+  .test-drive-calendar-card__legend span {
+    gap: 4px;
+    font-size: 0.54rem;
   }
 
   .test-drive-hero {

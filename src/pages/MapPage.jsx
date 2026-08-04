@@ -4,7 +4,7 @@ import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiMapPin, FiX, FiMap, FiSearch } from 'react-icons/fi'
+import { FiMapPin, FiX, FiMap, FiSearch, FiMinimize2 } from 'react-icons/fi'
 import { MapPinned } from 'lucide-react'
 import PageBackButton from '../components/PageBackButton'
 import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
@@ -692,7 +692,6 @@ const MapPage = () => {
 
   // ─── Ресайз при раскрытии карты ─────────────────────────────────────────
   useEffect(() => {
-    if (!mapExpanded) return
     const t1 = setTimeout(() => mapInstanceRef.current?.resize(), 50)
     const t2 = setTimeout(() => mapInstanceRef.current?.resize(), 300)
     const t3 = setTimeout(() => mapInstanceRef.current?.resize(), 600)
@@ -701,6 +700,15 @@ const MapPage = () => {
       clearTimeout(t2)
       clearTimeout(t3)
     }
+  }, [mapExpanded])
+
+  useEffect(() => {
+    if (!mapExpanded) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMapExpanded(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [mapExpanded])
 
   useEffect(() => {
@@ -947,16 +955,20 @@ const MapPage = () => {
                 />
               </div>
             )}
-            {!mapExpanded && (
-              <button
-                type="button"
-                className="map-expand-btn"
-                onClick={() => setMapExpanded(true)}
-                aria-label={t('mapExpandBtnAriaLabel', { defaultValue: 'Развернуть карту' })}
-              >
-                <HiOutlineArrowsExpand size={18} aria-hidden />
-              </button>
-            )}
+            <button
+              type="button"
+              className={`map-expand-btn${mapExpanded ? ' map-expand-btn--collapse' : ''}`}
+              onClick={() => setMapExpanded((expanded) => !expanded)}
+              aria-label={mapExpanded
+                ? t('mapCollapseBtnAriaLabel', { defaultValue: 'Вернуться к обычному виду карты' })
+                : t('mapExpandBtnAriaLabel', { defaultValue: 'Открыть карту целиком' })}
+              title={mapExpanded ? 'Вернуться назад' : 'Открыть карту целиком'}
+              aria-pressed={mapExpanded}
+            >
+              {mapExpanded
+                ? <FiMinimize2 size={18} aria-hidden />
+                : <HiOutlineArrowsExpand size={18} aria-hidden />}
+            </button>
             {mapOpenHintProperty && (
               <div
                 className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
@@ -1009,13 +1021,6 @@ const MapPage = () => {
                   Открыть объект
                 </button>
               </div>
-            )}
-            {mapExpanded && (
-              <PageBackButton
-                className="page-back-button--icon-only map-page-map-toolbar__back map-page-map-toolbar__back--fullscreen"
-                onClick={() => setMapExpanded(false)}
-                iconSize={20}
-              />
             )}
           </div>
         </div>

@@ -49,6 +49,7 @@ export default function OwnerTestProfileMenu({
   activeTab,
   onTabSelect,
   onLogout,
+  onNavigate,
   className = '',
 }) {
   const { t } = useTranslation()
@@ -95,6 +96,10 @@ export default function OwnerTestProfileMenu({
   }, [open])
 
   const closeMenu = () => setOpen(false)
+  const handleNavigate = () => {
+    closeMenu()
+    onNavigate?.()
+  }
 
   const handleLogout = useCallback(async () => {
     closeMenu()
@@ -112,7 +117,7 @@ export default function OwnerTestProfileMenu({
           to={getOwnerProfileTabPath('personal')}
           className="otpm__identity"
           aria-label={t('ownerTest_profileAria')}
-          onClick={closeMenu}
+          onClick={handleNavigate}
         >
           <span className="otpm__avatar" aria-hidden>
             {photoUrl && !photoFailed ? (
@@ -181,7 +186,7 @@ export default function OwnerTestProfileMenu({
                 to={getOwnerProfileTabPath(tab.id)}
                 role="menuitem"
                 className="otpm__item"
-                onClick={closeMenu}
+                onClick={handleNavigate}
               >
                 {tab.label}
               </Link>

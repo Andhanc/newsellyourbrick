@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
+  CalendarDays,
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Inbox,
+  Menu,
   MousePointerClick,
+  UserRound,
   X,
 } from 'lucide-react'
 import OwnerEmptyStatePanel from './OwnerEmptyStatePanel'
@@ -23,14 +28,15 @@ import {
   getOwnerTestDriveUserId,
 } from '../utils/ownerTestDriveList'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '../hooks/useDrawerDismiss'
+import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import { publicAsset } from '../utils/publicAsset'
 import '../components/OwnerTestDriveSection.css'
 import './OwnerTestDriveSplitView.css'
-import OtdMobHeroArt from './OtdMobHeroArt'
 
 const FALLBACK_PROPERTY_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 const SELECT_EMPTY_IMAGE = publicAsset('images/owner-properties-test/owner-testdrive-select-empty.png')
+const PROPERTY_CALENDAR_COLORS = ['#f65bad', '#78dc58', '#9bdfe7', '#ffd45b', '#b797f4', '#ff8a65']
 
 function hasTestDriveFlag(prop) {
   const raw = prop?.raw ?? prop
@@ -62,16 +68,47 @@ function calendarMonthGrid(year, monthIndex) {
   const startWeekday = (first.getDay() + 6) % 7
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
   const cells = []
-  for (let i = 0; i < startWeekday; i += 1) cells.push({ type: 'pad', key: `p-${i}` })
+  for (let i = 0; i < startWeekday; i += 1) cells.push({ type: 'pad', key: `before-${i}` })
   for (let d = 1; d <= daysInMonth; d += 1) {
     cells.push({ type: 'day', key: `d-${d}`, date: new Date(year, monthIndex, d, 12, 0, 0, 0) })
   }
+  while (cells.length < 42) cells.push({ type: 'pad', key: `after-${cells.length}` })
   return cells
 }
 
-export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile = false }) {
+function bookingDateKey(date) {
+  if (!date) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function startOfCalendarWeek(date) {
+  const result = new Date(date)
+  const mondayOffset = (result.getDay() + 6) % 7
+  result.setDate(result.getDate() - mondayOffset)
+  result.setHours(12, 0, 0, 0)
+  return result
+}
+
+function calendarWeekGrid(anchorDate) {
+  const monday = startOfCalendarWeek(anchorDate)
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    return { type: 'day', key: `w-${bookingDateKey(date)}`, date }
+  })
+}
+
+export default function OwnerTestDriveSplitView({
+  userId: userIdProp,
+  isMobile = false,
+  onOpenStandaloneMenu,
+}) {
   const { t, i18n } = useTranslation()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
+  const profilePhoto = useOwnerTestUserPhoto()
   const userId = userIdProp || getOwnerTestDriveUserId()
   const [properties, setProperties] = useState([])
   const [bookings, setBookings] = useState([])
@@ -81,7 +118,15 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
   const [selectedRow, setSelectedRow] = useState(null)
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
-  const [mobileDrawerStep, setMobileDrawerStep] = useState('calendar')
+  const [selectedAggregateDate, setSelectedAggregateDate] = useState('')
+  const [selectedPropertyCalendarOnly, setSelectedPropertyCalendarOnly] = useState(false)
+  const [mobileDrawerTop, setMobileDrawerTop] = useState(null)
+  const [calendarView, setCalendarView] = useState('month')
+  const [calendarViewMenuOpen, setCalendarViewMenuOpen] = useState(false)
+  const [calWeekStart, setCalWeekStart] = useState(() => startOfCalendarWeek(new Date()))
+  const calendarInitializedRef = useRef(false)
+  const calendarViewMenuRef = useRef(null)
+  const mobileCalendarRef = useRef(null)
 
   const locale =
     i18n.language === 'ru'
@@ -123,6 +168,44 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
   useEffect(() => {
     void loadData()
   }, [loadData])
+
+  useEffect(() => {
+    if (loading || calendarInitializedRef.current) return
+    calendarInitializedRef.current = true
+
+    const datedBookings = bookings
+      .map((booking) => ({ booking, date: parseBookingDate(booking.startDate) }))
+      .filter((entry) => entry.date)
+      .sort((a, b) => a.date - b.date)
+    if (!datedBookings.length) return
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const target = datedBookings.find((entry) => entry.date >= today) || datedBookings.at(-1)
+    setCalYear(target.date.getFullYear())
+    setCalMonth(target.date.getMonth())
+    setCalWeekStart(startOfCalendarWeek(target.date))
+  }, [bookings, loading])
+
+  useEffect(() => {
+    if (!calendarViewMenuOpen) return undefined
+
+    const closeOnOutsidePress = (event) => {
+      if (!calendarViewMenuRef.current?.contains(event.target)) {
+        setCalendarViewMenuOpen(false)
+      }
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setCalendarViewMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePress)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [calendarViewMenuOpen])
 
   useEffect(() => {
     const onSync = () => void loadData()
@@ -181,6 +264,26 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
     return bookings.filter((row) => propertyKeyFromBooking(row) === selectedKey)
   }, [bookings, selectedKey])
 
+  const calendarPropertyMeta = useMemo(() => {
+    const meta = new Map()
+    propertyOptions.forEach((property, index) => {
+      meta.set(property.key, {
+        ...property,
+        color: PROPERTY_CALENDAR_COLORS[index % PROPERTY_CALENDAR_COLORS.length],
+        bookings: bookingCountByKey.get(property.key) || 0,
+      })
+    })
+    return meta
+  }, [bookingCountByKey, propertyOptions])
+
+  const calendarLegendItems = useMemo(
+    () => propertyOptions
+      .map((property) => calendarPropertyMeta.get(property.key))
+      .filter((property) => property?.bookings > 0)
+      .filter((property) => !selectedPropertyCalendarOnly || property.key === selectedKey),
+    [calendarPropertyMeta, propertyOptions, selectedKey, selectedPropertyCalendarOnly]
+  )
+
   const filterTabDefs = useMemo(
     () => [
       { id: 'all', label: t('ownerTest_testDriveTabAll') },
@@ -203,12 +306,19 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
   )
 
   const calendarCells = useMemo(() => calendarMonthGrid(calYear, calMonth), [calYear, calMonth])
+  const calendarWeekCells = useMemo(() => calendarWeekGrid(calWeekStart), [calWeekStart])
+  const visibleCalendarCells = calendarView === 'week' ? calendarWeekCells : calendarCells
   const now = new Date()
 
+  const aggregateCalendarBookings = useMemo(
+    () => selectedPropertyCalendarOnly && selectedKey ? propertyBookings : bookings,
+    [bookings, propertyBookings, selectedKey, selectedPropertyCalendarOnly]
+  )
+
   const bookingsForCalendarDay = useCallback(
-    (dayDate) => {
-      if (!dayDate || !selectedKey) return []
-      return propertyBookings.filter((row) => {
+    (dayDate, sourceRows = propertyBookings) => {
+      if (!dayDate) return []
+      return sourceRows.filter((row) => {
         const s = parseBookingDate(row.startDate)
         const e = parseBookingDate(row.endDate)
         if (!s || !e) return false
@@ -232,19 +342,114 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
     year: 'numeric',
   })
 
+  const weekLabel = useMemo(() => {
+    const first = calendarWeekCells[0]?.date
+    const last = calendarWeekCells.at(-1)?.date
+    if (!first || !last) return ''
+
+    const firstLabel = first.toLocaleDateString(locale, {
+      day: 'numeric',
+      month: first.getMonth() === last.getMonth() ? undefined : 'short',
+    })
+    const lastLabel = last.toLocaleDateString(locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+    return `${firstLabel} – ${lastLabel}`
+  }, [calendarWeekCells, locale])
+
+  const calendarDisplayLabel = calendarView === 'week' ? weekLabel : calLabel
+
+  const selectCalendarView = (nextView) => {
+    if (nextView === 'week') {
+      const selectedDate = selectedAggregateDate ? parseBookingDate(selectedAggregateDate) : null
+      const today = new Date()
+      const anchor = selectedDate
+        || (today.getFullYear() === calYear && today.getMonth() === calMonth
+          ? today
+          : new Date(calYear, calMonth, 1))
+      setCalWeekStart(startOfCalendarWeek(anchor))
+    } else {
+      setCalYear(calWeekStart.getFullYear())
+      setCalMonth(calWeekStart.getMonth())
+    }
+    setCalendarView(nextView)
+    setCalendarViewMenuOpen(false)
+    setSelectedAggregateDate('')
+  }
+
+  const shiftVisibleCalendar = (delta) => {
+    if (calendarView === 'week') {
+      setCalWeekStart((current) => {
+        const next = new Date(current)
+        next.setDate(current.getDate() + delta * 7)
+        return next
+      })
+      setSelectedAggregateDate('')
+      return
+    }
+    shiftCal(delta)
+  }
+
   const shiftCal = (delta) => {
     const d = new Date(calYear, calMonth + delta, 1)
     setCalYear(d.getFullYear())
     setCalMonth(d.getMonth())
+    setSelectedAggregateDate('')
   }
 
-  const selectProperty = (key) => {
+  const updateMobileDrawerTop = useCallback(() => {
+    if (!isMobile || !mobileCalendarRef.current || typeof window === 'undefined') return
+    const rect = mobileCalendarRef.current.getBoundingClientRect()
+    const raiseBy = Math.round(window.innerHeight * 0.1)
+    const minimumDrawerHeight = Math.min(420, Math.round(window.innerHeight * 0.46))
+    const nextTop = Math.max(
+      0,
+      Math.min(Math.round(rect.bottom - raiseBy), window.innerHeight - minimumDrawerHeight)
+    )
+    setMobileDrawerTop(nextTop)
+  }, [isMobile])
+
+  const selectProperty = (key, { dateKey = '' } = {}) => {
+    if (dateKey) setSelectedAggregateDate(dateKey)
     setSelectedKey(key)
-    setMobileDrawerStep('calendar')
     setActiveTab('all')
-    setCalYear(new Date().getFullYear())
-    setCalMonth(new Date().getMonth())
+    setSelectedPropertyCalendarOnly(false)
+
+    if (!isMobile || !mobileCalendarRef.current) return
+    mobileCalendarRef.current.scrollIntoView({ behavior: 'auto', block: 'start' })
+    updateMobileDrawerTop()
+    window.requestAnimationFrame(updateMobileDrawerTop)
   }
+
+  const selectedAggregateBookings = useMemo(() => {
+    if (!selectedAggregateDate) return []
+    const selectedDate = parseBookingDate(selectedAggregateDate)
+    return bookingsForCalendarDay(selectedDate, aggregateCalendarBookings)
+  }, [aggregateCalendarBookings, bookingsForCalendarDay, selectedAggregateDate])
+
+  const selectedAggregateProperties = useMemo(() => {
+    const grouped = new Map()
+    selectedAggregateBookings.forEach((booking) => {
+      const key = propertyKeyFromBooking(booking)
+      const current = grouped.get(key)
+      if (current) {
+        current.count += 1
+        return
+      }
+      grouped.set(key, {
+        key,
+        count: 1,
+        property: calendarPropertyMeta.get(key) || {
+          key,
+          title: booking.title,
+          color: '#0099a9',
+        },
+      })
+    })
+    return [...grouped.values()]
+  }, [calendarPropertyMeta, selectedAggregateBookings])
 
   const selectedProperty = useMemo(
     () => propertyOptions.find((property) => property.key === selectedKey) ?? null,
@@ -258,13 +463,31 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
     requestClose: requestDrawerClose,
   } = useDrawerDismiss(mobileDrawerOpen, () => {
     setSelectedKey(null)
-    setMobileDrawerStep('calendar')
+    setSelectedAggregateDate('')
+    setSelectedPropertyCalendarOnly(false)
+    setMobileDrawerTop(null)
   }, {
     duration: DRAWER_DISMISS_MS.spring,
   })
 
   const showPropertyList = true
   const showDetailPanel = !isMobile
+
+  const openCalendarMenu = useCallback(() => {
+    if (isEmbedded) {
+      window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+      return
+    }
+    onOpenStandaloneMenu?.()
+  }, [isEmbedded, onOpenStandaloneMenu])
+
+  const openCalendarProfile = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
+      return
+    }
+    window.location.assign('/owner-test/profile')
+  }, [goTo, isEmbedded])
 
   useEffect(() => {
     if (!drawerVisible) return undefined
@@ -274,30 +497,194 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
 
     const handleKeyDown = (event) => {
       if (event.key !== 'Escape') return
-      if (mobileDrawerStep === 'bookings') {
-        setMobileDrawerStep('calendar')
-        return
-      }
       requestDrawerClose()
     }
 
+    const handleResize = () => updateMobileDrawerTop()
+
     document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('resize', handleResize)
     return () => {
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('resize', handleResize)
     }
-  }, [drawerVisible, mobileDrawerStep, requestDrawerClose])
+  }, [drawerVisible, requestDrawerClose, updateMobileDrawerTop])
 
   const renderMobileHero = () => (
-    <article className="otd-mob-hero otd-mobile-only" aria-label={t('ownerTest_navTestDrive')}>
-      <div className="otd-mob-hero__copy">
-        <h1 className="otd-mob-hero__title">{t('ownerTest_navTestDrive')}</h1>
-        <p className="otd-mob-hero__hint">{t('ownerTestDriveHeroHint')}</p>
-        {!loading && propertyOptions.length > 0 ? (
-          <span className="otd-mob-hero__count">{propertyOptions.length}</span>
-        ) : null}
+    <article
+      ref={mobileCalendarRef}
+      className={`otd-mob-booking-calendar otd-mobile-only${calendarView === 'week' ? ' is-week' : ''}${selectedPropertyCalendarOnly ? ' is-property-filtered' : ''}`}
+      aria-label={t('ownerTest_navTestDrive')}
+    >
+      <header className="otd-mob-booking-calendar__toolbar">
+        <button type="button" onClick={openCalendarMenu} aria-label={t('ownerTest_ariaOpenMenu')}>
+          <Menu size={18} strokeWidth={2.1} aria-hidden />
+          <span>{i18n.language === 'ru' ? 'Меню' : 'Menu'}</span>
+        </button>
+
+        <div className="otd-mob-booking-calendar__view-select" ref={calendarViewMenuRef}>
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={calendarViewMenuOpen}
+            onClick={() => setCalendarViewMenuOpen((open) => !open)}
+          >
+            <CalendarDays size={17} strokeWidth={2.1} aria-hidden />
+            <span>{calendarView === 'week' ? (i18n.language === 'ru' ? 'Неделя' : 'Week') : (i18n.language === 'ru' ? 'Месяц' : 'Month')}</span>
+            <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
+          </button>
+          {calendarViewMenuOpen ? (
+            <div className="otd-mob-booking-calendar__view-menu" role="menu">
+              {[
+                { id: 'month', label: i18n.language === 'ru' ? 'Месяц' : 'Month' },
+                { id: 'week', label: i18n.language === 'ru' ? 'Неделя' : 'Week' },
+              ].map((option) => (
+                <button
+                  type="button"
+                  key={option.id}
+                  role="menuitemradio"
+                  aria-checked={calendarView === option.id}
+                  onClick={() => selectCalendarView(option.id)}
+                >
+                  <span>{option.label}</span>
+                  {calendarView === option.id ? <Check size={16} strokeWidth={2.4} aria-hidden /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          className="otd-mob-booking-calendar__profile"
+          onClick={openCalendarProfile}
+          aria-label={t('ownerTest_ariaProfile')}
+        >
+          {profilePhoto ? (
+            <img src={profilePhoto} alt="" />
+          ) : (
+            <UserRound size={21} strokeWidth={2.1} aria-hidden />
+          )}
+        </button>
+      </header>
+
+      <div className="otd-mob-booking-calendar__month-row">
+        <button
+          type="button"
+          onClick={() => shiftVisibleCalendar(-1)}
+          aria-label={calendarView === 'week'
+            ? (i18n.language === 'ru' ? 'Предыдущая неделя' : 'Previous week')
+            : t('ownerTestDriveCalendarPrev')}
+        >
+          <ChevronLeft size={20} strokeWidth={2.1} aria-hidden />
+        </button>
+        <strong>{calendarDisplayLabel}</strong>
+        <button
+          type="button"
+          onClick={() => shiftVisibleCalendar(1)}
+          aria-label={calendarView === 'week'
+            ? (i18n.language === 'ru' ? 'Следующая неделя' : 'Next week')
+            : t('ownerTestDriveCalendarNext')}
+        >
+          <ChevronRight size={20} strokeWidth={2.1} aria-hidden />
+        </button>
       </div>
-      <OtdMobHeroArt className="otd-mob-hero__art" />
+
+      <div className="otd-mob-booking-calendar__weekdays" aria-hidden>
+        {weekdayLabels.map((weekday, index) => <span key={index}>{weekday}</span>)}
+      </div>
+
+      <div className="otd-mob-booking-calendar__grid" role="grid" aria-label={calendarDisplayLabel}>
+        {visibleCalendarCells.map((cell) => {
+          if (cell.type === 'pad') {
+            return <span key={cell.key} className="otd-mob-booking-calendar__pad" aria-hidden />
+          }
+
+          const dayBookings = bookingsForCalendarDay(cell.date, aggregateCalendarBookings)
+          const propertyKeys = [...new Set(dayBookings.map(propertyKeyFromBooking))]
+          const dateKey = bookingDateKey(cell.date)
+          const isSelected = dateKey === selectedAggregateDate
+          const isToday = dateKey === bookingDateKey(now)
+          const dayColor = calendarPropertyMeta.get(propertyKeys[0])?.color || '#9bdfe7'
+          const bookingTitles = propertyKeys
+            .map((key) => calendarPropertyMeta.get(key)?.title)
+            .filter(Boolean)
+            .join(', ')
+
+          if (!propertyKeys.length) {
+            return (
+              <span
+                key={cell.key}
+                className={`otd-mob-booking-calendar__day${isToday ? ' is-today' : ''}`}
+                aria-label={cell.date.toLocaleDateString(locale, { day: 'numeric', month: 'long' })}
+              >
+                <span>{cell.date.getDate()}</span>
+              </span>
+            )
+          }
+
+          return (
+            <button
+              type="button"
+              key={cell.key}
+              className={`otd-mob-booking-calendar__day${propertyKeys.length ? ' has-bookings' : ''}${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}`}
+              onClick={() => selectProperty(propertyKeys[0], { dateKey })}
+              style={{ '--otd-day-color': dayColor }}
+              aria-pressed={isSelected}
+              aria-label={`${cell.date.toLocaleDateString(locale, { day: 'numeric', month: 'long' })}${bookingTitles ? `: ${bookingTitles}` : ''}`}
+            >
+              <span>{cell.date.getDate()}</span>
+              {propertyKeys.length ? (
+                <span className="otd-mob-booking-calendar__dots" aria-hidden>
+                  {propertyKeys.slice(0, 4).map((key) => (
+                    <i key={key} style={{ '--otd-booking-color': calendarPropertyMeta.get(key)?.color || '#0099a9' }} />
+                  ))}
+                  {propertyKeys.length > 4 ? <em>+{propertyKeys.length - 4}</em> : null}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="otd-mob-booking-calendar__legend" aria-label={i18n.language === 'ru' ? 'Объекты в календаре' : 'Properties in calendar'}>
+        {calendarLegendItems.length ? calendarLegendItems.map((property) => (
+          <button
+            type="button"
+            key={property.key}
+            onClick={() => selectProperty(property.key)}
+            style={{ '--otd-booking-color': property.color }}
+          >
+            <i aria-hidden />
+            <span>{property.title}</span>
+            <small>{property.bookings}</small>
+          </button>
+        )) : (
+          <p>{i18n.language === 'ru' ? 'Новые брони появятся здесь автоматически' : 'New bookings will appear here automatically'}</p>
+        )}
+      </div>
+
+      {selectedAggregateProperties.length && !mobileDrawerOpen ? (
+        <div className="otd-mob-booking-calendar__day-list">
+          <span>{new Date(`${selectedAggregateDate}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long' })}</span>
+          <div>
+            {selectedAggregateProperties.map(({ key, count, property }) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => selectProperty(key)}
+                style={{ '--otd-booking-color': property.color }}
+              >
+                <i aria-hidden />
+                <span>{property.title}</span>
+                <small>{count}</small>
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </article>
   )
 
@@ -541,51 +928,89 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
     )
   }
 
-  const renderMobileDrawerHistoryLink = () => (
-    <button
-      type="button"
-      className="otd-property-drawer__history-link"
-      onClick={() => setMobileDrawerStep('bookings')}
-    >
-      <span className="otd-property-drawer__history-link-copy">
-        <span className="otd-property-drawer__history-link-title">
-          {t('ownerTestDriveSplitBookingsHistory')}
+  const renderMobileBookings = () => (
+    <section className="otd-property-drawer__bookings" aria-label={t('ownerTestDriveBookingsAsideTitle')}>
+      <header className="otd-property-drawer__bookings-head">
+        <span>
+          <small>{i18n.language === 'ru' ? 'Заявки на просмотр' : 'Viewing requests'}</small>
+          <strong>{i18n.language === 'ru' ? 'Брони объекта' : 'Property bookings'}</strong>
         </span>
-        <span className="otd-property-drawer__history-link-meta">
-          {t('ownerTestDriveSplitRequestsCount', { count: propertyBookings.length })}
-        </span>
-      </span>
-      <span className="otd-property-drawer__history-link-trail">
-        <span className="otd-property-drawer__history-link-count">{propertyBookings.length}</span>
-        <ChevronRight size={18} strokeWidth={2} className="otd-property-drawer__history-link-chevron" aria-hidden />
-      </span>
-    </button>
+        <em>{propertyBookings.length}</em>
+      </header>
+
+      {propertyBookings.length === 0 ? (
+        <div className="otd-property-drawer__bookings-empty">
+          <Inbox size={22} strokeWidth={1.8} aria-hidden />
+          <span>{t('ownerTestDriveBookingsAsideEmpty')}</span>
+        </div>
+      ) : (
+        <ul className="otd-property-drawer__booking-list">
+          {propertyBookings.map((row) => (
+            <li key={row.id}>
+              <button
+                type="button"
+                className="otd-property-drawer__booking-card"
+                onClick={() => setSelectedRow(row)}
+              >
+                <span className="otd-property-drawer__booking-date" aria-hidden>
+                  <CalendarDays size={17} strokeWidth={2.1} />
+                </span>
+                <span className="otd-property-drawer__booking-main">
+                  <strong>{row.buyer}</strong>
+                  <small>{row.datesShort || row.dates}</small>
+                </span>
+                <span className="otd-property-drawer__booking-side">
+                  <em className={`is-${row.statusKey}`}>{row.status}</em>
+                  <strong>{row.amount}</strong>
+                </span>
+                <ChevronRight size={17} strokeWidth={2.2} aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 
-  const renderMobileDrawerBody = () => {
-    if (mobileDrawerStep === 'bookings') {
-      return (
-        <div className="otd-property-drawer__panel otd-property-drawer__panel--bookings">
-          <button
-            type="button"
-            className="otd-split__back otd-property-drawer__back"
-            onClick={() => setMobileDrawerStep('calendar')}
-          >
-            <ChevronLeft size={18} strokeWidth={2.2} aria-hidden />
-            {t('ownerTestDriveDetailBack')}
-          </button>
-          {renderBookings()}
-        </div>
-      )
-    }
-
-    return (
-      <div className="otd-property-drawer__panel otd-property-drawer__panel--calendar">
-        {renderCalendar()}
-        {renderMobileDrawerHistoryLink()}
+  const renderMobileDrawerBody = () => (
+    <div className="otd-property-drawer__panel otd-property-drawer__panel--bookings">
+      <div className="otd-property-drawer__summary" aria-label={i18n.language === 'ru' ? 'Сводка броней' : 'Booking summary'}>
+        <span>
+          <small>{i18n.language === 'ru' ? 'Всего' : 'Total'}</small>
+          <strong>{tabCounts.all}</strong>
+        </span>
+        <span>
+          <small>{i18n.language === 'ru' ? 'Ожидают' : 'Pending'}</small>
+          <strong>{tabCounts.pending}</strong>
+        </span>
+        <span>
+          <small>{i18n.language === 'ru' ? 'Подтверждены' : 'Confirmed'}</small>
+          <strong>{tabCounts.confirmed}</strong>
+        </span>
       </div>
-    )
-  }
+
+      <div className="otd-property-drawer__scope">
+        <span className="otd-property-drawer__scope-icon" aria-hidden>
+          <CalendarDays size={18} strokeWidth={2.2} />
+        </span>
+        <span className="otd-property-drawer__scope-copy">
+          <strong>{i18n.language === 'ru' ? 'Брони только этого объекта' : 'Only this property’s bookings'}</strong>
+          <small>{i18n.language === 'ru' ? 'Фильтровать верхний календарь' : 'Filter the calendar above'}</small>
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={selectedPropertyCalendarOnly}
+          aria-label={i18n.language === 'ru' ? 'Брони только этого объекта' : 'Only this property’s bookings'}
+          className={`otd-property-drawer__scope-switch${selectedPropertyCalendarOnly ? ' is-on' : ''}`}
+          onClick={() => setSelectedPropertyCalendarOnly((current) => !current)}
+        >
+          <span />
+        </button>
+      </div>
+      {renderMobileBookings()}
+    </div>
+  )
 
   const renderMobilePropertyDrawer = () => {
     if (!drawerVisible || !selectedProperty || typeof document === 'undefined') return null
@@ -596,7 +1021,10 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
     const openSheet = drawerClosing ? '' : ' otd-property-drawer__sheet--open'
 
     return createPortal(
-      <div className="otd-property-drawer otd-property-drawer--visible">
+      <div
+        className="otd-property-drawer otd-property-drawer--visible"
+        style={mobileDrawerTop == null ? undefined : { '--otd-property-drawer-top': `${mobileDrawerTop}px` }}
+      >
         <button
           type="button"
           className={`otd-property-drawer__backdrop${openBackdrop}${closingBackdrop}`}
@@ -623,6 +1051,9 @@ export default function OwnerTestDriveSplitView({ userId: userIdProp, isMobile =
               }}
             />
             <div className="otd-property-drawer__head-copy">
+              <span className="otd-property-drawer__eyebrow">
+                {i18n.language === 'ru' ? 'Объект тест-драйва' : 'Test-drive property'}
+              </span>
               <h2 className="otd-property-drawer__title">{selectedProperty.title}</h2>
               {selectedProperty.location && selectedProperty.location !== 'Не указано' ? (
                 <p className="otd-property-drawer__meta">{selectedProperty.location}</p>

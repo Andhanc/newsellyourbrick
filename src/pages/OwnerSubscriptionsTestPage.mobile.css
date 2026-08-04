@@ -317,7 +317,7 @@
     justify-self: end;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 0;
   }
 
   .ost-pricing-hero__actions .otsb {
@@ -338,6 +338,19 @@
     cursor: pointer;
     position: relative;
     box-shadow: none;
+  }
+
+  .ost-pricing-hero__menu {
+    display: inline-flex;
+  }
+
+  .ost-pricing-hero__profile {
+    display: inline-flex;
+  }
+
+  .ost-pricing-hero__actions .otpm--pricing-hero .otpm__avatar {
+    width: 40px;
+    height: 40px;
   }
 
   .ost-pricing-hero__icon .ost-icon-btn__badge {
@@ -373,7 +386,7 @@
     margin: 0 0.08em;
     padding: 0.08em 0.52em 0.14em;
     border-radius: 999px;
-    background: var(--oc-gradient-brand);
+    background: #4ecdd6;
     color: #ffffff;
     font-weight: 800;
     line-height: 1.05;
@@ -397,6 +410,7 @@
     align-items: center;
     justify-content: center;
     gap: 0;
+    margin-top: 1.15rem;
   }
 
   .ost-pricing-mob {
@@ -415,6 +429,23 @@
     max-width: 24rem;
     text-align: center;
     margin-top: 4px;
+  }
+
+  @media (max-width: 360px) {
+    .ost-pricing-hero__brand {
+      font-size: 0.95rem;
+    }
+
+    .ost-pricing-hero__icon,
+    .ost-pricing-hero__actions .otpm--pricing-hero .otpm__avatar {
+      width: 32px;
+      height: 32px;
+    }
+
+    .ost-pricing-hero__icon svg {
+      width: 20px;
+      height: 20px;
+    }
   }
 
   .ost-mob-pagehead {

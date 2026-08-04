@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { FiChevronDown, FiCheck, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus, FiArrowUpRight } from 'react-icons/fi'
+import { FiCheck, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus, FiArrowUpRight, FiChevronDown } from 'react-icons/fi'
 import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import Header from '../components/Header'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { getUserData } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { subscribeBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
+import '../styles/drawerDismiss.css'
 import './Bonuses.css'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
@@ -43,6 +45,7 @@ const Bonuses = () => {
   const [userId, setUserId] = useState(null)
   const [submissions, setSubmissions] = useState({})
   const [expandedTask, setExpandedTask] = useState(null)
+  const [ticketOrigin, setTicketOrigin] = useState(null)
   const [linkInputs, setLinkInputs] = useState({})
   const [submitting, setSubmitting] = useState(null)
   const [celebratingTask, setCelebratingTask] = useState(null)
@@ -202,6 +205,35 @@ const Bonuses = () => {
   const isLoggedIn = userId !== null && userId !== ''
 
   const displayTasks = ALL_SOCIAL_TASKS
+  const selectedTask = expandedTask == null
+    ? null
+    : ALL_TASKS.find((task) => task.id === expandedTask) || null
+  const selectedStatus = selectedTask ? getTaskStatus(selectedTask.id) : null
+  const selectedSubmission = selectedTask ? submissions[selectedTask.id] : null
+  const SelectedTaskIcon = selectedTask?.icon || null
+
+  const openTaskDrawer = (taskId, trigger) => {
+    setError(null)
+    const rect = trigger?.getBoundingClientRect?.()
+    if (rect && typeof window !== 'undefined') {
+      const targetWidth = Math.min(window.innerWidth - 32, 760)
+      const targetHeight = Math.min(window.innerHeight * 0.82, 720)
+      setTicketOrigin({
+        x: rect.left + (rect.width / 2) - (window.innerWidth / 2),
+        y: rect.top + (rect.height / 2) - (window.innerHeight / 2),
+        scale: Math.max(0.24, Math.min(rect.width / targetWidth, rect.height / targetHeight)),
+      })
+    } else {
+      setTicketOrigin(null)
+    }
+    setExpandedTask(taskId)
+  }
+
+  const closeTaskDrawer = () => {
+    setError(null)
+    setTicketOrigin(null)
+    setExpandedTask(null)
+  }
 
   const heroStats = useMemo(() => [
     {
@@ -251,11 +283,12 @@ const Bonuses = () => {
           <div className="bonuses-hero__visual">
             <img
               className="bonuses-hero__gift"
-              src="/images/bonuses/bonuses-hero-gift-transparent.png"
+              src="/images/bonuses/bonuses-hero-gifts-line-v3-trimmed.png"
               alt=""
-              width={520}
-              height={520}
+              width={777}
+              height={1003}
               decoding="async"
+              fetchPriority="high"
             />
           </div>
           <div className="bonuses-hero__stats" aria-label={t('bonusesHeroStatsAria')}>
@@ -277,9 +310,19 @@ const Bonuses = () => {
               </article>
             ))}
           </div>
+          <div className="bonuses-hero__scroll-hint">
+            <button
+              type="button"
+              className="bonuses-hero__scroll-button"
+              aria-label={i18n.language === 'ru' ? 'Перейти к бонусным заданиям' : 'Explore bonus tasks'}
+              onClick={() => document.getElementById('bonuses-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              <FiChevronDown size={24} strokeWidth={2.7} aria-hidden />
+            </button>
+          </div>
         </div>
       </section>
-      <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
+      <main id="bonuses-content" className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
 
         {fromListingFee && (
           <button
@@ -305,8 +348,6 @@ const Bonuses = () => {
             </button>
           </div>
         )}
-
-        {error && <div className="bonuses-error" role="alert">{error}</div>}
 
         {isLoggedIn && (
           <>
@@ -341,200 +382,261 @@ const Bonuses = () => {
                 </button>
               </div>
             )}
-            <div className="bonuses-tasks" id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'} role="tabpanel" aria-labelledby={bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller'}>
-          {[...displayTasks]
-            .sort((a, b) => {
-              const usedA = submissions[a.id]?.used_at ? 1 : 0
-              const usedB = submissions[b.id]?.used_at ? 1 : 0
-              return usedA - usedB
-            })
-            .map((task) => {
-            const status = getTaskStatus(task.id)
-            const Icon = task.icon
-            const isExpanded = expandedTask === task.id
-            const isApproved = status === 'approved'
-            const isPending = status === 'pending'
-            const submission = submissions[task.id]
-            const isWideCard = isExpanded || isApproved
+            <div
+              className="bonuses-tasks"
+              id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'}
+              role="tabpanel"
+              aria-labelledby={isAdminSession ? (bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller') : undefined}
+            >
+              {[...displayTasks]
+                .sort((a, b) => {
+                  const usedA = submissions[a.id]?.used_at ? 1 : 0
+                  const usedB = submissions[b.id]?.used_at ? 1 : 0
+                  return usedA - usedB
+                })
+                .map((task) => {
+                  const status = getTaskStatus(task.id)
+                  const Icon = task.icon
+                  const isApproved = status === 'approved'
+                  const isPending = status === 'pending'
+                  const isUsed = Boolean(submissions[task.id]?.used_at)
 
-            return (
-              <article
-                key={task.id}
-                className={`bonuses-task ${isApproved ? 'bonuses-task--done' : ''} ${isPending ? 'bonuses-task--pending' : ''} ${isWideCard ? 'bonuses-task--wide' : ''}`}
-              >
-                <div className="bonuses-task__header">
-                  <div className="bonuses-task__icon-wrap">
-                    <Icon size={24} className="bonuses-task__icon" />
-                  </div>
-                  <div className="bonuses-task__title-wrap">
-                    <h2 className="bonuses-task__title">{t(task.titleKey)}</h2>
-                    {isApproved && (
-                      <span className="bonuses-task__badge bonuses-task__badge--done">
-                        <FiCheck size={14} /> {t('bonusesTaskDone')}
-                      </span>
-                    )}
-                    {isPending && (
-                      <span className="bonuses-task__badge bonuses-task__badge--pending">{t('bonusesTaskPending')}</span>
-                    )}
-                  </div>
-                  {!isApproved && !isPending && (
-                    <button
-                      type="button"
-                      className="bonuses-task__toggle"
-                      onClick={() => setExpandedTask(isExpanded ? null : task.id)}
-                      aria-expanded={isExpanded}
+                  return (
+                    <article
+                      key={task.id}
+                      className={`bonuses-ticket ${isApproved ? 'bonuses-ticket--done' : ''} ${isPending ? 'bonuses-ticket--pending' : ''} ${isUsed ? 'bonuses-ticket--used' : ''}`}
                     >
-                      <span>{isExpanded ? t('bonusesTaskCollapse') : t('bonusesTaskExpand')}</span>
-                      <FiChevronDown size={20} className={isExpanded ? 'bonuses-task__chevron--open' : ''} />
-                    </button>
-                  )}
-                  {isPending && submission?.link && (
-                    <a
-                      href={submission.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bonuses-task__link-out"
-                    >
-                      <FiExternalLink size={18} /> {t('bonusesTaskOpenLink')}
-                    </a>
-                  )}
-                </div>
-
-                {(isExpanded || isApproved) && (
-                  <div className="bonuses-task__body">
-                    {!isApproved && (
-                      <>
-                        <div className="bonuses-task__steps">
-                          <h3 className="bonuses-task__steps-title">{t('bonusesTaskStepsTitle')}</h3>
-                          <ol className="bonuses-task__steps-list">
-                            {task.stepKeys.map((stepKey, i) => (
-                              <li key={i}>{t(stepKey)}</li>
-                            ))}
-                          </ol>
-                        </div>
-{task.referral ? (
-                          <div className="bonuses-task__submit">
-                            <label className="bonuses-task__label">{t('bonusesReferralLabel')}</label>
-                            <div className="bonuses-task__referral-row">
-                              <input
-                                readOnly
-                                type="text"
-                                className="bonuses-task__input bonuses-task__input--referral"
-                                value={userId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${userId}` : ''}
-                                aria-label={t('bonusesReferralLabel')}
-                              />
-                              <button
-                                type="button"
-                                className="bonuses-task__copy-btn bonuses-task__copy-btn--link"
-                                onClick={() => {
-                                  const link = userId ? `${window.location.origin}/?ref=${userId}` : ''
-                                  if (link && navigator.clipboard?.writeText) {
-                                    navigator.clipboard.writeText(link).then(() => {
-                                      setCopiedTaskId(task.id)
-                                      setTimeout(() => setCopiedTaskId(null), 2600)
-                                    })
-                                  }
-                                }}
-                                title={t('bonusesCopyLink')}
-                                aria-label={t('bonusesCopyLinkAria')}
-                              >
-                                {copiedTaskId === task.id ? (
-                                  <FiCheck size={18} className="bonuses-task__copy-icon bonuses-task__copy-icon--done" />
-                                ) : (
-                                  <FiCopy size={18} className="bonuses-task__copy-icon" />
-                                )}
-                              </button>
-                            </div>
-                            <p className="bonuses-task__referral-hint">{t('bonusesReferralHint')}</p>
-                          </div>
-                        ) : (
-                          <div className="bonuses-task__submit">
-                            <label className="bonuses-task__label" htmlFor={`bonus-link-${task.id}`}>
-                              {t(task.linkHintKey)}
-                            </label>
-                            <input
-                              id={`bonus-link-${task.id}`}
-                              type="url"
-                              className="bonuses-task__input"
-                              placeholder={t(task.linkPlaceholderKey)}
-                              value={linkInputs[task.id] || ''}
-                              onChange={(e) => setLinkInputs((prev) => ({ ...prev, [task.id]: e.target.value }))}
-                            />
-                            <button
-                              type="button"
-                              className="bonuses-task__btn bonuses-task__btn--primary"
-                              disabled={submitting === task.id}
-                              onClick={() => handleSubmit(task.id)}
-                            >
-                              {submitting === task.id ? t('bonusesTaskSubmitting') : t('bonusesTaskCheck')}
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {isApproved && (
-                      <div
-                        className={`bonuses-task__congrats ${celebratingTask === task.id ? 'bonuses-task__congrats--animate' : ''}`}
+                      <button
+                        type="button"
+                        className="bonuses-ticket__button"
+                        onClick={(event) => openTaskDrawer(task.id, event.currentTarget)}
+                        aria-haspopup="dialog"
+                        aria-controls="bonuses-task-drawer"
+                        aria-label={`${t(task.titleKey)}, №${task.id}`}
                       >
-                        {celebratingTask === task.id && (
-                          <div className="bonuses-confetti" aria-hidden>
-                            {Array.from({ length: 40 }).map((_, i) => (
-                              <div key={i} className="bonuses-confetti__piece" />
-                            ))}
-                          </div>
-                        )}
-                        {copiedTaskId === task.id && (
-                          <div className="bonuses-confetti bonuses-confetti--copy" aria-hidden>
-                            {Array.from({ length: 40 }).map((_, i) => (
-                              <div key={i} className="bonuses-confetti__piece" />
-                            ))}
-                          </div>
-                        )}
-                        <p className="bonuses-task__congrats-text">{t('bonusesTaskCongrats')}</p>
-                        <div className="bonuses-task__promo-row">
-                          <span className="bonuses-task__promo">{submission?.promo_code || task.promoCode}</span>
-                          <button
-                            type="button"
-                            className="bonuses-task__copy-btn"
-                            onClick={() => copyPromoCode(task.id, submission?.promo_code || task.promoCode, !!submission?.used_at)}
-                            title={submission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
-                            aria-label={submission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
-                          >
-                            {copiedTaskId === task.id ? (
-                              <FiCheck size={18} className="bonuses-task__copy-icon bonuses-task__copy-icon--done" />
-                            ) : (
-                              <FiCopy size={18} className="bonuses-task__copy-icon" />
-                            )}
-                          </button>
-                        </div>
-                        {usedMessageTaskId === task.id && (
-                          <div className="bonuses-task__used-toast" role="alert">
-                            <FiCheck size={16} />
-                            <span>{t('bonusesTaskPromoUsed')}</span>
-                          </div>
-                        )}
-                        <p className="bonuses-task__promo-usage">
-                          {t('bonusesTaskUsage', { count: task.promoUsageLimit ?? 1 })}
-                        </p>
-                        {submission?.used_at ? (
-                          <p className="bonuses-task__promo-used">
-                            <FiCheck size={14} /> {t('bonusesTaskUsedAt')}
-                          </p>
-                        ) : (
-                          <p className="bonuses-task__congrats-hint">{t('bonusesTaskUseHint')}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </article>
-            )
-          })}
-        </div>
+                        <span className="bonuses-ticket__main">
+                          <span className="bonuses-ticket__meta">
+                            <span className="bonuses-ticket__number">№ {String(task.id).padStart(2, '0')}</span>
+                            {isApproved ? (
+                              <span className="bonuses-ticket__status bonuses-ticket__status--done">
+                                <FiCheck size={13} aria-hidden /> {t('bonusesTaskDone')}
+                              </span>
+                            ) : isPending ? (
+                              <span className="bonuses-ticket__status bonuses-ticket__status--pending">
+                                {t('bonusesTaskPending')}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="bonuses-ticket__content">
+                            <span className="bonuses-ticket__icon-wrap" aria-hidden>
+                              <Icon size={24} className="bonuses-ticket__icon" />
+                            </span>
+                            <span className="bonuses-ticket__title">{t(task.titleKey)}</span>
+                          </span>
+                          <span className="bonuses-ticket__barcode" aria-hidden />
+                        </span>
+                        <span className="bonuses-ticket__stub" aria-hidden>
+                          <span className="bonuses-ticket__stub-label">
+                            {isApproved ? t('bonusesTaskDone') : isPending ? t('bonusesTaskPending') : t('bonusesTaskExpand')}
+                          </span>
+                          <span className="bonuses-ticket__open-icon">
+                            <FiArrowUpRight size={20} strokeWidth={2.2} />
+                          </span>
+                        </span>
+                      </button>
+                    </article>
+                  )
+                })}
+            </div>
           </>
         )}
       </main>
+
+      <BuyerSheetShell
+        isOpen={Boolean(selectedTask)}
+        onClose={closeTaskDrawer}
+        labelledBy="bonuses-task-drawer-title"
+        describedBy="bonuses-task-drawer-description"
+        closeLabel={t('close')}
+        tone={selectedStatus === 'approved' ? 'success' : 'detail'}
+        className="bonuses-task-drawer"
+      >
+        {selectedTask ? (
+          <div
+            id="bonuses-task-drawer"
+            className="bonuses-drawer"
+            style={{
+              '--bonuses-origin-x': `${ticketOrigin?.x || 0}px`,
+              '--bonuses-origin-y': `${ticketOrigin?.y || 0}px`,
+              '--bonuses-origin-scale': ticketOrigin?.scale || 0.42,
+            }}
+          >
+            <span className="bonuses-cinema__halo" aria-hidden />
+            <div className="bonuses-cinema__ticket">
+              <section className="bonuses-cinema__face bonuses-cinema__front" aria-hidden="true">
+                <span className="bonuses-cinema__paper-grain" />
+                <div className="bonuses-cinema__front-topline">
+                  <span>SELL YOUR BRICK</span>
+                  <span>№ {String(selectedTask.id).padStart(2, '0')}</span>
+                </div>
+                <div className="bonuses-cinema__front-content">
+                  <span className="bonuses-cinema__front-icon">
+                    {SelectedTaskIcon ? <SelectedTaskIcon size={34} /> : null}
+                  </span>
+                  <span className="bonuses-cinema__front-kicker">BONUS TICKET</span>
+                  <strong>{t(selectedTask.titleKey)}</strong>
+                </div>
+                <div className="bonuses-cinema__front-footer">
+                  <span className="bonuses-cinema__barcode" />
+                  <span>{selectedStatus === 'approved' ? t('bonusesTaskDone') : selectedStatus === 'pending' ? t('bonusesTaskPending') : t('bonusesTaskExpand')}</span>
+                </div>
+              </section>
+
+              <section className="bonuses-cinema__face bonuses-cinema__back">
+                <span className="bonuses-cinema__paper-grain" aria-hidden />
+                <span className="bonuses-cinema__spectral-sweep" aria-hidden />
+                <div className="bonuses-cinema__back-scroll">
+                  <header className="bonuses-drawer__header">
+                    <span className="bonuses-drawer__eyebrow">Инструкция · № {String(selectedTask.id).padStart(2, '0')}</span>
+                    <h2 id="bonuses-task-drawer-title" className="bonuses-drawer__title">
+                      {t(selectedTask.titleKey)}
+                    </h2>
+                  </header>
+
+            <section id="bonuses-task-drawer-description" className="bonuses-drawer__description">
+              <h3>{t('bonusesTaskStepsTitle')}</h3>
+              <ol className="bonuses-drawer__steps">
+                {selectedTask.stepKeys.map((stepKey, index) => (
+                  <li key={stepKey}>
+                    <span>{index + 1}</span>
+                    <p>{t(stepKey)}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section className={`bonuses-drawer__verification ${selectedStatus === 'approved' ? 'bonuses-drawer__verification--approved' : ''}`}>
+              <div className="bonuses-drawer__verification-head">
+                <span>{t('bonusesTaskCheck')}</span>
+                {selectedStatus === 'pending' ? (
+                  <strong>{t('bonusesTaskPending')}</strong>
+                ) : selectedStatus === 'approved' ? (
+                  <strong><FiCheck size={14} aria-hidden /> {t('bonusesTaskDone')}</strong>
+                ) : null}
+              </div>
+
+              {error ? <div className="bonuses-error" role="alert">{error}</div> : null}
+
+              {selectedStatus === 'approved' ? (
+                <div className={`bonuses-task__congrats ${celebratingTask === selectedTask.id ? 'bonuses-task__congrats--animate' : ''}`}>
+                  {(celebratingTask === selectedTask.id || copiedTaskId === selectedTask.id) ? (
+                    <div className={`bonuses-confetti ${copiedTaskId === selectedTask.id ? 'bonuses-confetti--copy' : ''}`} aria-hidden>
+                      {Array.from({ length: 28 }).map((_, index) => (
+                        <span key={index} className="bonuses-confetti__piece" />
+                      ))}
+                    </div>
+                  ) : null}
+                  <p className="bonuses-task__congrats-text">{t('bonusesTaskCongrats')}</p>
+                  <div className="bonuses-task__promo-row">
+                    <span className="bonuses-task__promo">{selectedSubmission?.promo_code || selectedTask.promoCode}</span>
+                    <button
+                      type="button"
+                      className="bonuses-task__copy-btn"
+                      onClick={() => copyPromoCode(selectedTask.id, selectedSubmission?.promo_code || selectedTask.promoCode, Boolean(selectedSubmission?.used_at))}
+                      title={selectedSubmission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
+                      aria-label={selectedSubmission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
+                    >
+                      {copiedTaskId === selectedTask.id ? <FiCheck size={18} /> : <FiCopy size={18} />}
+                    </button>
+                  </div>
+                  {usedMessageTaskId === selectedTask.id ? (
+                    <div className="bonuses-task__used-toast" role="alert">
+                      <FiCheck size={16} />
+                      <span>{t('bonusesTaskPromoUsed')}</span>
+                    </div>
+                  ) : null}
+                  <p className="bonuses-task__promo-usage">
+                    {t('bonusesTaskUsage', { count: selectedTask.promoUsageLimit ?? 1 })}
+                  </p>
+                  {selectedSubmission?.used_at ? (
+                    <p className="bonuses-task__promo-used"><FiCheck size={14} /> {t('bonusesTaskUsedAt')}</p>
+                  ) : (
+                    <p className="bonuses-task__congrats-hint">{t('bonusesTaskUseHint')}</p>
+                  )}
+                </div>
+              ) : selectedStatus === 'pending' ? (
+                <div className="bonuses-drawer__pending">
+                  <p>{t('bonusesTaskPending')}</p>
+                  {selectedSubmission?.link ? (
+                    <a href={selectedSubmission.link} target="_blank" rel="noopener noreferrer" className="bonuses-task__link-out">
+                      <FiExternalLink size={18} /> {t('bonusesTaskOpenLink')}
+                    </a>
+                  ) : null}
+                </div>
+              ) : selectedTask.referral ? (
+                <div className="bonuses-task__submit">
+                  <label className="bonuses-task__label" htmlFor={`bonus-referral-${selectedTask.id}`}>{t('bonusesReferralLabel')}</label>
+                  <div className="bonuses-task__referral-row">
+                    <input
+                      id={`bonus-referral-${selectedTask.id}`}
+                      readOnly
+                      type="text"
+                      className="bonuses-task__input bonuses-task__input--referral"
+                      value={userId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${userId}` : ''}
+                    />
+                    <button
+                      type="button"
+                      className="bonuses-task__copy-btn bonuses-task__copy-btn--link"
+                      onClick={() => {
+                        const link = userId ? `${window.location.origin}/?ref=${userId}` : ''
+                        if (link && navigator.clipboard?.writeText) {
+                          navigator.clipboard.writeText(link).then(() => {
+                            setCopiedTaskId(selectedTask.id)
+                            setTimeout(() => setCopiedTaskId(null), 2600)
+                          })
+                        }
+                      }}
+                      title={t('bonusesCopyLink')}
+                      aria-label={t('bonusesCopyLinkAria')}
+                    >
+                      {copiedTaskId === selectedTask.id ? <FiCheck size={18} /> : <FiCopy size={18} />}
+                    </button>
+                  </div>
+                  <p className="bonuses-task__referral-hint">{t('bonusesReferralHint')}</p>
+                </div>
+              ) : (
+                <div className="bonuses-task__submit">
+                  <label className="bonuses-task__label" htmlFor={`bonus-link-${selectedTask.id}`}>
+                    {t(selectedTask.linkHintKey)}
+                  </label>
+                  <input
+                    id={`bonus-link-${selectedTask.id}`}
+                    type="url"
+                    className="bonuses-task__input"
+                    placeholder={t(selectedTask.linkPlaceholderKey)}
+                    value={linkInputs[selectedTask.id] || ''}
+                    onChange={(event) => {
+                      setError(null)
+                      setLinkInputs((prev) => ({ ...prev, [selectedTask.id]: event.target.value }))
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="bonuses-task__btn bonuses-task__btn--primary btn-tiffany-shine"
+                    disabled={submitting === selectedTask.id}
+                    onClick={() => handleSubmit(selectedTask.id)}
+                  >
+                    {submitting === selectedTask.id ? t('bonusesTaskSubmitting') : t('bonusesTaskCheck')}
+                  </button>
+                </div>
+              )}
+                  </section>
+                </div>
+              </section>
+            </div>
+          </div>
+        ) : null}
+      </BuyerSheetShell>
     </div>
   )
 }
