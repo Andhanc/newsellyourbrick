@@ -129,6 +129,16 @@ html.site-nav-drawer-open .menu-dropdown__content--mega {
   overflow-y: auto !important;
 }
 
+.app-layout.app-layout--calculator-single-scroll:has(.investment-calculator-page--ai-result) {
+  overscroll-behavior-y: none;
+}
+
+/* Full-bleed AI result: hide site footer so the fixed backdrop does not cover it while scrolling */
+body:has(.investment-calculator-page--ai-result) #site-footer,
+body:has(.investment-calculator-page--ai-result) .app-footer-skeleton {
+  display: none !important;
+}
+
 .app-layout.app-layout--calculator-single-scroll .app-layout__content,
 .app-layout.app-layout--calculator-single-scroll .investment-calculator-page,
 .app-layout.app-layout--calculator-single-scroll .calculator-container {

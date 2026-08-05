@@ -3,7 +3,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, Heart, PenLine, Sparkles } from 'lucide-react'
 import { applyPropertyImageFallback } from '../../utils/propertyImage'
+import { publicAsset } from '../../utils/publicAsset'
 import './InvestorSourceHero.css'
+
+const FAVORITES_EMPTY_IMAGE = publicAsset('images/investor-favorites-empty-illustration.png')
 
 const CURATED_PROPERTY_CARDS = [
   {
@@ -274,9 +277,15 @@ export default function InvestorSourceHero({
                 </motion.div>
               ) : (
                 <motion.div className="investor-source-hero__empty" variants={setupItemMotion}>
-                  <span className="investor-source-hero__empty-icon" aria-hidden="true">
-                    <Heart size={28} strokeWidth={1.8} />
-                  </span>
+                  <img
+                    className="investor-source-hero__empty-image"
+                    src={FAVORITES_EMPTY_IMAGE}
+                    alt=""
+                    width={280}
+                    height={280}
+                    loading="eager"
+                    decoding="async"
+                  />
                   <h3>Здесь пока пусто</h3>
                   <p>Добавьте понравившиеся объекты, чтобы сравнить их инвестиционный потенциал.</p>
                   <Link to="/favorites">Перейти в понравившееся</Link>
