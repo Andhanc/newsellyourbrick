@@ -813,7 +813,7 @@ export default function OwnerAddPropertyTestPage() {
       const result = await startListingPublicationCheckout({
         userId: uid,
         customerEmail: ud?.email || undefined,
-        returnPath: '/owner-test',
+        returnPath: '/owner-test/add-property',
       })
       if (!result.ok) {
         showNotification(result.error || t('oap_publishPaymentError'), 'error')

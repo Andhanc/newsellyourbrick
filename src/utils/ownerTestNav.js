@@ -150,6 +150,7 @@ export function buildOwnerTestQueryParams(params = {}) {
   if (params.tab && params.tab !== 'personal') sp.set('tab', params.tab)
   if (params.highlight) sp.set('highlight', params.highlight)
   if (params.listing_fee_checkout) sp.set('listing_fee_checkout', params.listing_fee_checkout)
+  if (params.session_id) sp.set('session_id', params.session_id)
   return sp
 }
 
@@ -176,6 +177,7 @@ export function resolveOwnerTestRoute(options = {}) {
     tab: sp.get('tab') || 'personal',
     highlight: sp.get('highlight') || '',
     listing_fee_checkout: sp.get('listing_fee_checkout') || '',
+    session_id: sp.get('session_id') || '',
     legacyViewUsed: Boolean(legacyViewRaw),
   }
 }
