@@ -21,7 +21,6 @@ import {
   Heart,
   Inbox,
   MoreVertical,
-  Plus,
   Gavel,
   CircleDollarSign,
   Clock,
@@ -32,7 +31,6 @@ import {
   PieChart,
   MapPin,
 } from 'lucide-react'
-import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
 import { getOwnerListingTypeLabels, getOwnerTestProperty } from './ownerPropertiesTestData'
 import { OwnerAdCard } from '../components/OwnerAds'
 import {
@@ -1272,19 +1270,6 @@ export default function OwnerPropertyAnalyticsTestPage() {
         <nav className="opa-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
         </nav>
-        <div className="opa-sidebar-promo">
-          <p className="opa-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
-          <p className="opa-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
-          <button type="button" className="opa-btn opa-btn--primary opa-btn--sm">
-            {t('heroPitchBecomeBuyerCta')}
-          </button>
-          <img
-            className="opa-sidebar-promo__img"
-            src={OWNER_PROP_IMAGES.promoSidebarBuyer}
-            alt=""
-            loading="lazy"
-          />
-        </div>
         <div className="opa-sidebar-user">
           <span className="opa-sidebar-user__avatar" aria-hidden>
             <svg viewBox="0 0 40 40">

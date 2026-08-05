@@ -319,13 +319,30 @@
 
 .otd-split__bookings-empty {
   margin: 8px 2px 0;
-  padding: 28px 20px;
-  border-radius: 12px;
-  background: #f8fafc;
+  padding: 24px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 153, 169, 0.12);
+  background: #ffffff;
   color: #64748b;
   font-size: 14px;
   line-height: 1.55;
   text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.otd-split__bookings-empty-art {
+  display: block;
+  width: min(180px, 70%);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.otd-split__bookings-empty p {
+  margin: 0;
+  max-width: 280px;
 }
 
 .otd-split__requests {
@@ -1125,17 +1142,26 @@
 
 .otd-property-drawer__bookings-empty {
   display: flex;
-  min-height: 88px;
+  min-height: 140px;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 14px;
+  gap: 10px;
+  padding: 16px;
   color: #859196;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
   text-align: center;
+  background: #ffffff;
+}
+
+.otd-property-drawer__bookings-empty-art {
+  display: block;
+  width: min(148px, 62%);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
 }
 
 .otd-property-drawer__back {

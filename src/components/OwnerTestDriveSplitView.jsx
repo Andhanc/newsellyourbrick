@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import OwnerEmptyStatePanel from './OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from './OwnerEmptyPropertiesIllustration'
+import OwnerEmptyBookingsIllustration from './OwnerEmptyBookingsIllustration'
 import OwnerTestDriveSplitSkeleton from './OwnerTestDriveSplitSkeleton'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { OWNER_VIEWS } from '../utils/ownerTestNav'
@@ -772,11 +773,16 @@ export default function OwnerTestDriveSplitView({
       </div>
 
       {filteredRows.length === 0 ? (
-        <p className="otd-split__bookings-empty">
-          {propertyBookings.length === 0
-            ? t('ownerTestDriveBookingsAsideEmpty')
-            : t('ownerTest_propertiesEmptyFilter')}
-        </p>
+        <div className="otd-split__bookings-empty">
+          {propertyBookings.length === 0 ? (
+            <>
+              <OwnerEmptyBookingsIllustration className="otd-split__bookings-empty-art" />
+              <p>{t('ownerTestDriveBookingsAsideEmpty')}</p>
+            </>
+          ) : (
+            <p>{t('ownerTest_propertiesEmptyFilter')}</p>
+          )}
+        </div>
       ) : (
         <ul className="otd-split__requests">
           {filteredRows.map((row) => (
@@ -826,7 +832,7 @@ export default function OwnerTestDriveSplitView({
 
       {propertyBookings.length === 0 ? (
         <div className="otd-property-drawer__bookings-empty">
-          <Inbox size={22} strokeWidth={1.8} aria-hidden />
+          <OwnerEmptyBookingsIllustration className="otd-property-drawer__bookings-empty-art" />
           <span>{t('ownerTestDriveBookingsAsideEmpty')}</span>
         </div>
       ) : (

@@ -32,13 +32,13 @@ import {
   Plus,
   Clock,
   DollarSign,
-  User,
   ArrowUpRight,
 } from 'lucide-react'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
+import OwnerEmptyAuctionsIllustration from '../components/OwnerEmptyAuctionsIllustration'
 import OwnerEmptyLikesIllustration from '../components/OwnerEmptyLikesIllustration'
 import {
   OwnerCabinetChartSkeleton,
@@ -979,13 +979,6 @@ export default function MainOwnerTestPage() {
   )
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
-  const handleAddProperty = useCallback(() => {
-    if (isEmbedded && goTo) {
-      goTo(OWNER_VIEWS.ADD_PROPERTY)
-      return
-    }
-    window.location.assign('/owner-add-property-test')
-  }, [goTo, isEmbedded])
   const closeDatePopover = useCallback(() => {
     setDraftRange(selectedRange)
     setDatePopoverOpen(false)
@@ -1504,7 +1497,6 @@ export default function MainOwnerTestPage() {
           eyebrow: 'Портфель продавца',
           title: 'Аналитика',
           menu: 'Меню',
-          profile: 'Профиль',
           hello: user?.firstName ? `Добрый день, ${user.firstName}` : 'Добрый день',
           portfolioLabel: 'Стоимость всех объектов',
           live: 'Данные обновлены',
@@ -1534,7 +1526,6 @@ export default function MainOwnerTestPage() {
           eyebrow: 'Seller portfolio',
           title: 'Analytics',
           menu: 'Menu',
-          profile: 'Profile',
           hello: user?.firstName ? `Good afternoon, ${user.firstName}` : 'Good afternoon',
           portfolioLabel: 'Value of all properties',
           live: 'Up to date',
@@ -1628,14 +1619,6 @@ export default function MainOwnerTestPage() {
                 <span>{dashboardCopy.title}</span>
                 <ArrowUpRight size={16} strokeWidth={2.2} aria-hidden />
               </button>
-              <button
-                type="button"
-                className="mot-finance__profile-button"
-                aria-label={dashboardCopy.profile}
-                onClick={() => openOwnerView(OWNER_VIEWS.PROFILE, { tab: 'personal' })}
-              >
-                <User size={18} strokeWidth={2} aria-hidden />
-              </button>
             </div>
           </div>
 
@@ -1717,7 +1700,8 @@ export default function MainOwnerTestPage() {
           <button
             type="button"
             className="mot-finance__quick-card mot-finance__quick-card--add"
-            onClick={handleAddProperty}
+            disabled
+            aria-disabled="true"
           >
             <span className="mot-finance__add-icon"><Plus size={23} strokeWidth={2.2} aria-hidden /></span>
             <span className="mot-finance__quick-title">{dashboardCopy.add}</span>
@@ -1740,7 +1724,7 @@ export default function MainOwnerTestPage() {
             <span className="mot-finance__action-ai-mark" aria-hidden>AI</span>
             {dashboardCopy.aiAssistant}
           </button>
-          <button type="button" onClick={handleAddProperty}>
+          <button type="button" disabled aria-disabled="true">
             <span><Plus size={23} strokeWidth={1.9} aria-hidden /></span>
             {dashboardCopy.add}
           </button>
@@ -1790,13 +1774,17 @@ export default function MainOwnerTestPage() {
               ))}
             </div>
           ) : (
-            <div className="mot-finance__empty">
-              <span><Gavel size={25} strokeWidth={1.8} aria-hidden /></span>
+            <div className="mot-finance__empty mot-finance__empty--illustrated">
+              {hasNoProperties ? (
+                <OwnerEmptyPropertiesIllustration className="mot-finance__empty-art" />
+              ) : (
+                <OwnerEmptyAuctionsIllustration className="mot-finance__empty-art" />
+              )}
               <div>
                 <strong>{hasNoProperties ? dashboardCopy.noProperties : dashboardCopy.noAuctions}</strong>
                 {!hasNoProperties ? <p>{dashboardCopy.noAuctionsHint}</p> : null}
               </div>
-              <button type="button" onClick={handleAddProperty}>
+              <button type="button" disabled aria-disabled="true">
                 {dashboardCopy.add}
                 <ArrowUpRight size={17} strokeWidth={2.2} aria-hidden />
               </button>
@@ -1884,18 +1872,6 @@ export default function MainOwnerTestPage() {
         <nav className="mot-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
           {navItems.map(renderNavItem)}
         </nav>
-
-        <div className="mot-sidebar-promo">
-          <div className="mot-sidebar-promo__glow" aria-hidden />
-          <div className="mot-sidebar-promo__body">
-            <span className="mot-sidebar-promo__tag">{t('ownerTest_adBuyerTitle')}</span>
-            <p className="mot-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
-            <p className="mot-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
-            <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
-              {t('heroPitchBecomeBuyerCta')}
-            </button>
-          </div>
-        </div>
       </aside>
 
       {mainColumn}

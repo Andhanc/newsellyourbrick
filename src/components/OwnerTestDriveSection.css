@@ -138,6 +138,11 @@
   text-align: center;
 }
 
+.owner-test-drive__empty-panel {
+  margin: 8px 16px 28px;
+  padding: 36px 20px 40px;
+}
+
 .owner-test-drive__empty-icon {
   color: #cbd5e1;
   margin-bottom: 16px;
@@ -650,6 +655,25 @@
   font-size: 14px;
   color: #64748b;
   line-height: 1.5;
+}
+
+.owner-td-bookings-aside__empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px 4px;
+  text-align: center;
+}
+
+.owner-td-bookings-aside__empty-art {
+  width: min(100%, 168px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
 }
 
 .owner-td-booking-cards {

@@ -813,6 +813,41 @@
   margin: 3px 0 0;
 }
 
+.osa__empty-state--illustrated {
+  min-height: 280px;
+  margin: 8px 0 18px;
+  padding: 28px 18px;
+  border: 0;
+  border-radius: 24px;
+  background: #f7fafb;
+  gap: 12px;
+}
+
+.osa__empty-art {
+  width: min(100%, 220px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
+}
+
+.osa__empty-state--illustrated strong {
+  max-width: 280px;
+  color: #1f2933;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.osa__empty-state--illustrated span {
+  max-width: 300px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 @keyframes osa-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }

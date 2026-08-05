@@ -1,9 +1,9 @@
 import { publicAsset } from '../utils/publicAsset'
 
-const SRC = publicAsset('images/owner-properties-test/owner-empty-no-properties.png')
+const SRC = publicAsset('images/owner-properties-test/owner-empty-no-auctions.png')
 
-/** Empty state: seller has no listings yet */
-export default function OwnerEmptyPropertiesIllustration({ className = '' }) {
+/** Empty state: no upcoming auctions */
+export default function OwnerEmptyAuctionsIllustration({ className = '' }) {
   return (
     <img
       className={className}

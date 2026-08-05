@@ -1947,12 +1947,29 @@
     flex-wrap: wrap;
   }
 
+  .mot-finance__empty--illustrated {
+    align-items: center;
+    padding: 22px 16px;
+  }
+
+  .mot-finance__empty-art {
+    width: min(180px, 72%);
+  }
+
   .mot-finance__empty div {
     min-width: calc(100% - 75px);
   }
 
+  .mot-finance__empty--illustrated div {
+    min-width: 100%;
+  }
+
   .mot-finance__empty button {
     margin-left: 70px;
+  }
+
+  .mot-finance__empty--illustrated button {
+    margin-left: 0;
   }
 
   .mot-finance__shimmer--balance {
@@ -2113,12 +2130,6 @@
     padding-inline: 12px;
     border-radius: 999px;
     font-size: 11px;
-  }
-
-  .mot-finance__profile-button {
-    width: 38px;
-    height: 38px;
-    border-radius: 13px;
   }
 }
 

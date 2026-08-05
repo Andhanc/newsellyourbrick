@@ -199,6 +199,19 @@
   transform: translateY(0) scale(0.99);
 }
 
+.otc-add-property--disabled,
+.otc-add-property:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+.otc-add-property--disabled:hover,
+.otc-add-property:disabled:hover {
+  transform: none;
+}
+
 .otc-add-property__icon {
   width: 28px;
   height: 28px;
@@ -662,13 +675,19 @@
   }
 
   .otc.otc--properties {
-    --otc-shell-bg: #79dce2;
+    --otc-shell-bg: #3bc0cb;
     --otc-shell-bg-image: none;
     --otc-topbar-ink: #ffffff;
     position: relative;
-    background-color: #79dce2 !important;
+    background-color: #3bc0cb !important;
     background-image: none !important;
     overflow: visible !important;
+  }
+
+  /* Фон скролла = низ tiffany-героя, иначе под скруглением торчит белый app-layout */
+  html.owner-test-cabinet-active .app-layout:has(.otc--properties),
+  html.owner-test-cabinet-active .app-layout:has(.otc--properties) .app-layout__content {
+    background-color: #3bc0cb !important;
   }
 
   .otc.otc--testdrive {
@@ -725,22 +744,23 @@
     overflow: visible !important;
   }
 
-  .otc--properties .op-hero-shell {
-    margin-top: calc(-1 * var(--otc-mob-topbar-offset)) !important;
-    position: relative;
-    z-index: 0;
-  }
-
-  .otc--properties .op-mob-hero {
-    padding-top: calc(var(--otc-mob-topbar-offset) + 10px) !important;
-  }
-
   .otc--properties .op-body > :not(.op-hero-shell),
   .otc--testdrive .otd-split,
   .otc--testdrive .otd-workspace {
     background: #ffffff;
     position: relative;
+    z-index: 2;
+  }
+
+  .otc--properties .op-hero-shell {
+    margin-top: calc(-1 * var(--otc-mob-topbar-offset)) !important;
+    margin-bottom: 0 !important;
+    position: relative;
     z-index: 1;
+  }
+
+  .otc--properties .op-mob-hero {
+    padding-top: calc(var(--otc-mob-topbar-offset) + 10px) !important;
   }
 
   .otc--testdrive .otd-mob-booking-calendar {
