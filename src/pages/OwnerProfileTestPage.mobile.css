@@ -961,6 +961,9 @@
     gap: 14px;
     padding: 16px;
     border-radius: 18px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .opr-body .opr-form-section__title {
@@ -1327,65 +1330,84 @@
   .opr-body .opr-field--phone,
   .opr-body .opr-field--country {
     gap: 8px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .opr-body .opr-field--phone .phone-input-container,
   .opr-body .opr-field--phone .phone-input-wrapper {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .opr-body .opr-field--phone .phone-input-wrapper {
-    gap: 10px;
+    gap: 0;
+    min-height: 46px;
+    border: 1px solid #e7edf3;
+    border-radius: 13px;
+    background: #fbfdfd;
+    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  }
+
+  .opr-body .opr-field--phone .phone-input-wrapper:focus-within {
+    border-color: #0099a9;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+  }
+
+  .opr-body .opr-field--phone .phone-input-country-selector {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 40%;
+    min-height: 44px;
+    padding: 0 8px 0 12px;
     border: 0;
+    border-right: 1px solid #e7edf3;
+    border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
 
-  .opr-body .opr-field--phone .phone-input-country-selector {
-    min-width: 112px;
-    min-height: 58px;
+  .opr-body .opr-field--phone .phone-input-field {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    min-height: 44px;
     padding: 0 14px;
     border: 0;
-    border-radius: 18px;
-    background: #f2f4f6;
-    box-shadow: none;
-  }
-
-  .opr-body .opr-field--phone .phone-input-field {
-    min-width: 0;
-    min-height: 58px;
-    padding: 0 18px;
-    border: 0;
-    border-radius: 18px;
-    background: #f2f4f6;
+    border-radius: 0;
+    background: transparent;
     color: #11181d;
     font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
     box-shadow: none;
   }
 
   .opr-body .opr-field--phone .phone-input-country-selector:hover,
   .opr-body .opr-field--phone .phone-input-country-selector:focus-visible,
   .opr-body .opr-field--phone .phone-input-field:focus {
-    background: #eefbfc;
-    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.2);
+    background: transparent;
+    box-shadow: none;
   }
 
   .opr-body .opr-field--country .country-select__trigger {
-    min-height: 58px;
-    padding: 0 18px;
-    border: 0;
-    border-radius: 18px;
-    background: #f2f4f6;
-    box-shadow: none;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid #e7edf3;
+    border-radius: 13px;
+    background: #fbfdfd;
+    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+    box-sizing: border-box;
   }
 
   .opr-body .opr-field--country .country-select__trigger:hover,
   .opr-body .opr-field--country .country-select__trigger--open {
-    border: 0;
-    background: #eefbfc;
-    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.2);
+    border: 1px solid #0099a9;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
   }
 
   .opr-body .opr-field--country .country-select__input,
@@ -1393,8 +1415,8 @@
   .opr-body .opr-field--country .country-select__placeholder {
     color: #11181d;
     font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
   }
 
   .opr-body .opr-field--country .country-select__placeholder {
@@ -1404,8 +1426,19 @@
   .opr-body .opr-field--phone .phone-input-dropdown,
   .opr-body .opr-field--country .country-select__dropdown {
     border-color: rgba(15, 23, 42, 0.08);
-    border-radius: 18px;
+    border-radius: 14px;
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .opr-body .opr-form-row {
+    min-width: 0;
+  }
+
+  .opr-body .opr-form-row > .opr-field {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 

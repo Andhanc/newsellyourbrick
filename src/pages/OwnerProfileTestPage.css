@@ -1500,10 +1500,11 @@
 .opr-body .opr-field--country .country-select__trigger {
   min-height: 48px;
   padding: 12px 14px;
-  border-color: #e7edf3;
+  border: 1px solid #e7edf3;
   border-radius: 14px;
   background: #fbfdfd;
   box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  box-sizing: border-box;
 }
 
 .opr-body .opr-field--country .country-select__trigger:hover,
@@ -1515,6 +1516,109 @@
 
 .opr-body .opr-field--country .country-select__input {
   font-size: 14px;
+  font-weight: 400;
+}
+
+.opr-body .opr-field,
+.opr-body .opr-field--country,
+.opr-body .opr-field--phone,
+.opr-body .opr-field--country .country-select,
+.opr-body .opr-field--phone .phone-input-container {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Телефон: как обычное поле имени — одна рамка, белый/мягкий фон */
+.opr-body .opr-field--phone .phone-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid #e7edf3;
+  border-radius: 14px;
+  background: #fbfdfd;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  box-sizing: border-box;
+}
+
+.opr-body .opr-field--phone .phone-input-wrapper:focus-within {
+  border-color: #0099a9;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+}
+
+.opr-body .opr-field--phone .phone-input-country-selector {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: auto;
+  max-width: 42%;
+  min-height: 46px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-right: 1px solid #e7edf3;
+  border-radius: 0;
+  background: transparent;
+  color: var(--opr-text, #111827);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.opr-body .opr-field--phone .phone-input-country-selector:hover,
+.opr-body .opr-field--phone .phone-input-country-selector:focus-visible {
+  background: transparent;
+  box-shadow: none;
+}
+
+.opr-body .opr-field--phone .phone-input-flag {
+  font-size: 18px;
+}
+
+.opr-body .opr-field--phone .phone-input-code {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.opr-body .opr-field--phone .phone-input-chevron {
+  margin-left: 2px;
+  color: #6b7280;
+}
+
+.opr-body .opr-field--phone .phone-input-field {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--opr-text, #111827);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+.opr-body .opr-field--phone .phone-input-field:focus {
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.opr-body .opr-field--phone .phone-input-dropdown {
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes opr-field-highlight-pulse {
@@ -1910,15 +2014,22 @@
 
   .opr-body .opr-form-section {
     overflow: hidden;
+    min-width: 0;
   }
 
   .opr-body .opr-form-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
   }
 
+  .opr-body .opr-form-row > .opr-field,
   .opr-body .opr-form-row .opr-field__input,
-  .opr-body .opr-form-row .opr-field--country .country-select__trigger {
+  .opr-body .opr-form-row .opr-field--country .country-select,
+  .opr-body .opr-form-row .opr-field--country .country-select__trigger,
+  .opr-body .opr-form-row .opr-field--phone .phone-input-container,
+  .opr-body .opr-form-row .opr-field--phone .phone-input-wrapper {
     min-width: 0;
+    max-width: 100%;
   }
 
   .opr-body .opr-stats__head {

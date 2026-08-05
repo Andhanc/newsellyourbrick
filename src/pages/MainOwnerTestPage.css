@@ -6,8 +6,17 @@
   min-width: 0;
   width: 100%;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: transparent;
   background-image: none;
+}
+
+.mot.mot--embedded > .mot-finance,
+.mot.mot--embedded > .mot-main.mot-finance {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 .mot {
@@ -3543,17 +3552,17 @@
 }
 
 .mot-finance__section-head > button {
-  padding: 9px 12px;
+  padding: 0 16px;
+  min-height: 40px;
   border: 0;
-  border-radius: 12px;
-  background: #f3f6f6;
-  color: #4c585a;
+  border-radius: 999px;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   font: inherit;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 750;
   cursor: pointer;
 }
 
@@ -3777,11 +3786,16 @@
 
 /* Reference-accurate composition: white balance, black actions, white sheet. */
 .mot-finance {
+  display: flex;
+  flex-direction: column;
   background: #111313;
 }
 
 .mot-finance__canvas {
   width: min(1180px, 100%);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 28px 34px 0;
 }
 
@@ -3854,31 +3868,38 @@
   min-height: 154px;
   border: 0;
   border-radius: 22px;
-  background: #f5f5f3;
-  color: #161818;
+  color: #ffffff;
   box-shadow: none;
+  position: relative;
 }
 
 .mot-finance__quick-card:hover {
   border: 0;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-.mot-finance__quick-card--add .mot-finance__quick-title {
-  color: #657073;
+.mot-finance__quick-card .mot-finance__quick-title,
+.mot-finance__quick-card--add .mot-finance__quick-title,
+.mot-finance__quick-card .mot-finance__quick-hint,
+.mot-finance__quick-card--add .mot-finance__quick-hint,
+.mot-finance__quick-card > strong,
+.mot-finance__quick-card--add .mot-finance__add-arrow,
+.mot-finance__quick-arrow {
+  color: #ffffff;
 }
 
-.mot-finance__quick-card--add .mot-finance__quick-hint {
-  color: #92999b;
-}
-
-.mot-finance__quick-card--add .mot-finance__add-arrow {
-  color: #636b6c;
+.mot-finance__quick-arrow {
+  position: absolute;
+  right: 17px;
+  bottom: 18px;
 }
 
 .mot-finance__add-icon {
-  background: rgba(0, 153, 169, 0.12);
-  color: var(--mot-tiffany-dark);
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.mot-finance__quick-card--add .mot-finance__add-arrow {
+  color: #ffffff;
 }
 
 .mot-finance__action-bar {
@@ -3932,10 +3953,12 @@
 }
 
 .mot-finance__auctions {
+  flex: 1;
   margin: 0;
-  padding-top: 25px;
+  padding: 25px 30px 48px;
   border: 0;
   border-radius: 34px 34px 0 0;
+  background: #ffffff;
   box-shadow: none;
 }
 
@@ -3994,15 +4017,13 @@
 .mot-finance__analytics-button {
   min-height: 40px;
   padding: 0 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #3bc0cb 0%, #4ecdd6 100%);
+  border-radius: 999px;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 10px 24px rgba(78, 205, 214, 0.28);
 }
 
 .mot-finance__profile-button {
@@ -4054,48 +4075,42 @@
 
 .mot-finance__quick-card,
 .mot-finance__quick-card--bookings {
-  border: 1px solid rgba(59, 192, 203, 0.36);
-  background:
-    radial-gradient(circle at 100% 0%, rgba(106, 214, 221, 0.4), transparent 46%),
-    linear-gradient(145deg, #e6fbfa 0%, #d2f6f3 48%, #bfecea 100%);
+  color: #ffffff;
   box-shadow:
     0 16px 34px rgba(59, 192, 203, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .mot-finance__quick-card--bookings {
-  background:
-    radial-gradient(circle at 0% 100%, rgba(106, 214, 221, 0.36), transparent 48%),
-    linear-gradient(145deg, #eafcfa 0%, #d6f7f4 48%, #c3efed 100%);
+  color: #ffffff;
 }
 
 .mot-finance__quick-card:hover {
-  border-color: rgba(59, 192, 203, 0.55);
   box-shadow:
     0 20px 40px rgba(59, 192, 203, 0.18),
-    inset 0 1px 0 #ffffff;
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .mot-finance__quick-icon {
-  background: linear-gradient(135deg, rgba(106, 214, 221, 0.32), rgba(78, 205, 214, 0.18));
-  color: #239da8;
-  box-shadow: inset 0 0 0 1px rgba(78, 205, 214, 0.12);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 
 .mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-title {
-  color: #225f64;
+  color: #ffffff;
 }
 
 .mot-finance__quick-card:not(.mot-finance__quick-card--add) > strong {
-  color: #0b3437;
+  color: #ffffff;
 }
 
 .mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-hint {
-  color: #64898c;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-card-top > svg {
-  color: #38adb7;
+  color: #ffffff;
 }
 
 .mot-finance__thumb-stack img,
@@ -4223,37 +4238,34 @@
 
 /* Dark pill CTA from the dashboard reference. */
 .mot-finance__section-head > button {
-  min-height: 52px;
-  padding: 6px 6px 6px 19px;
-  gap: 14px;
+  min-height: 44px;
+  padding: 0 18px;
+  gap: 8px;
   border: 0;
   border-radius: 999px;
-  background: #0b1322;
   color: #ffffff;
-  font-weight: 800;
-  box-shadow: 0 12px 26px rgba(11, 19, 34, 0.16);
+  font-weight: 750;
 }
 
 .mot-finance__section-head > button:hover {
-  background: #121c2d;
   color: #ffffff;
   transform: translateY(-1px);
 }
 
 .mot-finance__section-head > button svg {
-  width: 40px;
-  height: 40px;
-  padding: 10px;
-  border-radius: 50%;
-  background: #263044;
-  color: #ffffff;
-  stroke-width: 2.4;
-  transition: transform 180ms ease, background 180ms ease;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: currentColor;
+  stroke-width: 2.2;
+  transition: transform 180ms ease;
 }
 
 .mot-finance__section-head > button:hover svg {
-  background: #303b50;
-  transform: translateX(2px);
+  background: transparent;
+  transform: translate(2px, -2px);
 }
 
 /* Calm, content-first auction rows: image, title, current bid and live timer. */

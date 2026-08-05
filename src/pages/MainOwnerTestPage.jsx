@@ -33,6 +33,7 @@ import {
   Clock,
   DollarSign,
   User,
+  ArrowUpRight,
 } from 'lucide-react'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
@@ -1624,8 +1625,8 @@ export default function MainOwnerTestPage() {
                 aria-expanded={analyticsDrawerOpen}
                 onClick={() => setAnalyticsDrawerOpen(true)}
               >
-                <TrendingUp size={16} strokeWidth={2.1} aria-hidden />
                 <span>{dashboardCopy.title}</span>
+                <ArrowUpRight size={16} strokeWidth={2.2} aria-hidden />
               </button>
               <button
                 type="button"
@@ -1681,11 +1682,11 @@ export default function MainOwnerTestPage() {
                   ))}
                 </span>
               ) : null}
-              <ChevronRight size={20} aria-hidden />
             </span>
             <span className="mot-finance__quick-title">{dashboardCopy.properties}</span>
             <strong>{overviewLoading ? '—' : formatMotNumber(propertyStatsRows.length, intlLocale)}</strong>
             <span className="mot-finance__quick-hint">{dashboardCopy.propertiesHint}</span>
+            <ArrowUpRight className="mot-finance__quick-arrow" size={18} strokeWidth={2.2} aria-hidden />
           </button>
 
           <button
@@ -1702,7 +1703,6 @@ export default function MainOwnerTestPage() {
                   ))}
                 </span>
               ) : null}
-              <ChevronRight size={20} aria-hidden />
             </span>
             <span className="mot-finance__quick-title">{dashboardCopy.bookings}</span>
             <strong>{overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}</strong>
@@ -1711,6 +1711,7 @@ export default function MainOwnerTestPage() {
                 ? `${pendingBookingCount} ${dashboardCopy.pending}`
                 : dashboardCopy.bookingsHint}
             </span>
+            <ArrowUpRight className="mot-finance__quick-arrow" size={18} strokeWidth={2.2} aria-hidden />
           </button>
 
           <button
@@ -1721,7 +1722,7 @@ export default function MainOwnerTestPage() {
             <span className="mot-finance__add-icon"><Plus size={23} strokeWidth={2.2} aria-hidden /></span>
             <span className="mot-finance__quick-title">{dashboardCopy.add}</span>
             <span className="mot-finance__quick-hint">{dashboardCopy.addHint}</span>
-            <ChevronRight className="mot-finance__add-arrow" size={20} aria-hidden />
+            <ArrowUpRight className="mot-finance__add-arrow" size={20} strokeWidth={2.2} aria-hidden />
           </button>
           </div>
         </section>
@@ -1754,7 +1755,7 @@ export default function MainOwnerTestPage() {
             </div>
             <button type="button" onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}>
               {dashboardCopy.all}
-              <ChevronRight size={17} aria-hidden />
+              <ArrowUpRight size={17} strokeWidth={2.2} aria-hidden />
             </button>
           </div>
 
@@ -1796,8 +1797,8 @@ export default function MainOwnerTestPage() {
                 {!hasNoProperties ? <p>{dashboardCopy.noAuctionsHint}</p> : null}
               </div>
               <button type="button" onClick={handleAddProperty}>
-                <Plus size={17} aria-hidden />
                 {dashboardCopy.add}
+                <ArrowUpRight size={17} strokeWidth={2.2} aria-hidden />
               </button>
             </div>
           )}

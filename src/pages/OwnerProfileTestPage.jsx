@@ -218,7 +218,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -242,6 +242,8 @@ function ProfileAvatar({ large = false }) {
           src={photoUrl}
           alt=""
           className="opr-avatar__img"
+          referrerPolicy="no-referrer"
+          decoding="async"
           onError={() => setPhotoFailed(true)}
         />
       ) : (

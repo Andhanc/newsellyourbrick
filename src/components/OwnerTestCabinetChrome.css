@@ -27,6 +27,12 @@
   --otc-sidebar-w: 240px;
   --otc-tab-h: 56px;
   --otc-mob-topbar-h: 64px;
+  --otc-mob-topbar-pad-top: calc(8px + env(safe-area-inset-top, 0px));
+  --otc-mob-topbar-pad-bottom: 8px;
+  --otc-mob-topbar-row: 44px;
+  --otc-mob-topbar-offset: calc(
+    var(--otc-mob-topbar-pad-top) + var(--otc-mob-topbar-row) + var(--otc-mob-topbar-pad-bottom)
+  );
   --otc-mob-pad: 16px;
 
   display: flex;
@@ -173,23 +179,20 @@
   padding: 0 18px;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  border: 1.5px solid #111827;
-  border-radius: 22px;
-  background: #111827;
+  gap: 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: #ffffff;
   font: inherit;
   font-size: 14px;
   font-weight: 750;
   cursor: pointer;
-  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.18);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: transform 0.18s ease;
 }
 
 .otc-add-property:hover {
   transform: translateY(-2px);
-  background: #1f2937;
-  box-shadow: 0 18px 34px rgba(17, 24, 39, 0.24);
 }
 
 .otc-add-property:active {
@@ -203,9 +206,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  color: #111827;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
   flex-shrink: 0;
+}
+
+.otc-add-property__icon + span {
+  flex: 1;
+  text-align: left;
 }
 
 .otc-nav__item {
@@ -373,6 +381,7 @@
   .otc-stage > .opa.opa--embedded,
   .otc-stage > .ost.ost--embedded,
   .otc-stage > .otd.otd--embedded,
+  .otc-stage > .mot.mot--embedded,
   .otc-stage > .opr-body {
     flex: 1;
     display: flex;
@@ -396,8 +405,11 @@
   .otc {
     flex-direction: column;
     min-height: 100dvh;
-    background: #fff;
-    background-image: none;
+    --otc-shell-bg: #ffffff;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #111827;
+    background-color: var(--otc-shell-bg) !important;
+    background-image: var(--otc-shell-bg-image) !important;
   }
 
   .otc-stage {
@@ -408,6 +420,7 @@
     min-width: 0;
     overflow-x: clip;
     overflow-y: visible;
+    background: transparent;
   }
 
   .otc-purchased-draft-hint {
@@ -485,46 +498,38 @@
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
-  .otc--home .otc-mob-topbar {
-    display: none !important;
-  }
-
-  .otc--properties .otc-mob-topbar {
-    display: none !important;
-  }
-
-  .otc--property-analytics .otc-mob-topbar {
-    display: none !important;
-  }
-
-  .otc--testdrive .otc-mob-topbar {
-    display: none !important;
-  }
-
-  .otc--subscriptions .otc-mob-topbar {
-    display: none !important;
-  }
-
   .otc-mob-topbar {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
     flex-shrink: 0;
-    min-height: var(--otc-mob-topbar-h);
+    min-height: var(--otc-mob-topbar-offset);
     height: auto;
-    padding: 8px var(--otc-mob-pad);
-    padding-top: calc(8px + env(safe-area-inset-top, 0px));
-    background: #fff;
-    border-bottom: 1px solid #f0f0f0;
+    padding: var(--otc-mob-topbar-pad-bottom) var(--otc-mob-pad);
+    padding-top: var(--otc-mob-topbar-pad-top);
+    background: transparent;
+    border-bottom: none;
     z-index: 40;
     box-sizing: border-box;
+  }
+
+  .otc--home .otc-mob-topbar,
+  .otc--properties .otc-mob-topbar,
+  .otc--property-analytics .otc-mob-topbar,
+  .otc--testdrive .otc-mob-topbar,
+  .otc--subscriptions .otc-mob-topbar {
+    display: grid !important;
   }
 
   .otc-mob-topbar__slot {
     display: flex;
     align-items: center;
+  }
+
+  .otc-mob-topbar__slot--left {
+    justify-content: flex-start;
   }
 
   .otc-mob-topbar__slot--right {
@@ -540,27 +545,36 @@
 
   .otc-mob-topbar__menu,
   .otc-mob-topbar__bell {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
     background: transparent;
-    color: #1f2937;
+    color: var(--otc-topbar-ink);
     padding: 0;
     cursor: pointer;
     position: relative;
   }
 
-  .otc-mob-topbar__brand {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 7px;
+  .otc-mob-topbar__title {
+    margin: 0;
     min-width: 0;
-    flex: 1;
+    text-align: center;
+    font-family: var(--oc-font-family, 'Montserrat', system-ui, sans-serif);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--otc-topbar-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     pointer-events: none;
+  }
+
+  .otc-mob-topbar__brand {
+    display: none;
   }
 
   .otc-mob-topbar .otpm--topbar-compact {
@@ -584,18 +598,167 @@
     height: 36px;
   }
 
-  .otc-mob-topbar__brand .otc-logo__mark {
-    width: 38px;
-    height: 38px;
+  .otc-mob-topbar .otpm--topbar-compact .otpm__identity {
+    padding: 0;
+  }
+
+  /* Дублирующие мобильные шапки страниц скрываем — общая otc-шапка */
+  .otc .ost-pricing-hero__top,
+  .otc .op-mob-hero__top,
+  .otc .mot-finance__wallet-head .mot-finance__menu-button {
+    display: none !important;
+  }
+
+  .otc .ost-pricing-hero {
+    padding-top: 4px;
+  }
+
+  /*
+   * Фон оболочки = верх страницы, чтобы прозрачная шапка сливалась.
+   * --otc-topbar-ink: тёмный на светлом / белый на тифани.
+   */
+  .otc.otc--home,
+  .otc.otc--wallet,
+  .otc.otc--property-analytics {
+    --otc-shell-bg: #ffffff;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #111827;
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Главная: белая шапка = белый wallet, без серой полосы */
+  .otc--home .otc-mob-topbar {
+    background-color: #ffffff !important;
+  }
+
+  .otc--home .mot-finance__wallet {
+    background-color: #ffffff !important;
+  }
+
+  .otc--home .mot.mot--embedded,
+  .otc--home .mot-body {
+    background: transparent !important;
+  }
+
+  /* Не сбрасываем #111313 у canvas — только верх белый через wallet + topbar */
+
+  .otc.otc--profile {
+    --otc-shell-bg: #f8fbfb;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #111827;
+  }
+
+  .otc.otc--subscriptions {
+    --otc-shell-bg: #faf8f5;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #111827;
+  }
+
+  .otc.otc--subscriptions .ost-workspace--pricing-mob,
+  .otc.otc--subscriptions .ost-workspace--pricing {
+    padding-top: 4px;
+    background: transparent;
+  }
+
+  .otc.otc--properties {
+    --otc-shell-bg: #79dce2;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #ffffff;
+    position: relative;
+    background-color: #79dce2 !important;
+    background-image: none !important;
+    overflow: visible !important;
+  }
+
+  .otc.otc--testdrive {
+    --otc-shell-bg: #3bc0cb;
+    --otc-shell-bg-image: none;
+    --otc-topbar-ink: #ffffff;
+    position: relative;
+    background-color: #3bc0cb !important;
+    background-image: none !important;
+    overflow: visible !important;
+  }
+
+  /*
+   * Тифани-герои: шапка прозрачная и в потоке, герой тянется под неё
+   * отрицательным margin — один непрерывный градиент+shine без шва.
+   */
+  .otc--properties .otc-mob-topbar,
+  .otc--testdrive .otc-mob-topbar {
+    position: relative !important;
+    z-index: 6;
     flex-shrink: 0;
+    width: 100%;
+    margin: 0;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
-  .otc-mob-topbar__brand .otc-logo__text {
-    font-size: 18px;
+  .otc--properties .otc-stage,
+  .otc--testdrive .otc-stage {
+    overflow: visible !important;
   }
 
-  .otc-mob-topbar__brand .otc-wordmark {
-    font-size: 17px;
+  .otc--properties .otc-mob-topbar .otpm--topbar-compact .otpm__avatar,
+  .otc--testdrive .otc-mob-topbar .otpm--topbar-compact .otpm__avatar {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92);
+  }
+
+  .otc--properties .otc-icon-btn__badge,
+  .otc--testdrive .otc-icon-btn__badge {
+    background: #ffffff;
+    color: #007d8a;
+  }
+
+  .otc--properties .op,
+  .otc--properties .op.op--embedded,
+  .otc--properties .op-body,
+  .otc--testdrive .otd,
+  .otc--testdrive .otd.otd--embedded,
+  .otc--testdrive .otd-body {
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  .otc--properties .op-hero-shell {
+    margin-top: calc(-1 * var(--otc-mob-topbar-offset)) !important;
+    position: relative;
+    z-index: 0;
+  }
+
+  .otc--properties .op-mob-hero {
+    padding-top: calc(var(--otc-mob-topbar-offset) + 10px) !important;
+  }
+
+  .otc--properties .op-body > :not(.op-hero-shell),
+  .otc--testdrive .otd-split,
+  .otc--testdrive .otd-workspace {
+    background: #ffffff;
+    position: relative;
+    z-index: 1;
+  }
+
+  .otc--testdrive .otd-mob-booking-calendar {
+    margin-top: calc(-1 * var(--otc-mob-topbar-offset)) !important;
+    padding-top: calc(var(--otc-mob-topbar-offset) + 8px) !important;
+  }
+
+  .otc--profile .opr-body {
+    background: transparent !important;
+  }
+
+  .otc--wallet .owl.owl--embedded,
+  .otc--wallet .owl-body {
+    background: transparent !important;
+  }
+
+  .otc--wallet .otc-mob-topbar {
+    background-color: #ffffff !important;
   }
 
   .otc-sidebar__brand .otc-logo__mark {
@@ -696,23 +859,14 @@
     overflow-y: auto;
     overscroll-behavior-x: none;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(15, 23, 42, 0.18) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .otc-nav--drawer::-webkit-scrollbar {
-    width: 4px;
-    height: 0;
-  }
-
-  .otc-nav--drawer::-webkit-scrollbar:horizontal {
     display: none;
+    width: 0;
     height: 0;
-  }
-
-  .otc-nav--drawer::-webkit-scrollbar-thumb {
-    background: rgba(15, 23, 42, 0.18);
-    border-radius: 999px;
   }
 
   .otc-drawer__logout-foot {

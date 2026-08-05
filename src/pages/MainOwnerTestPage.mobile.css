@@ -1645,8 +1645,10 @@
   }
 
   .mot-finance__auctions {
-    margin: 0 10px;
+    flex: 1;
+    margin: 0;
     border-radius: 40px 40px 0 0;
+    background: #ffffff;
   }
 }
 
@@ -1654,6 +1656,8 @@
 @media (max-width: 900px) {
   .mot-finance.mot-main {
     min-height: 100%;
+    display: flex;
+    flex-direction: column;
     background: #101516;
   }
 
@@ -1680,7 +1684,10 @@
 
   .mot-finance__canvas {
     width: 100%;
-    padding: 0 0 calc(22px + env(safe-area-inset-bottom, 0px));
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     background: #101516;
   }
 
@@ -1826,8 +1833,9 @@
   }
 
   .mot-finance__auctions {
+    flex: 1;
     margin: 0;
-    padding: 13px var(--oc-mob-pad, 16px) 24px;
+    padding: 13px var(--oc-mob-pad, 16px) 40px;
     border: 0;
     border-radius: 30px 30px 0 0;
     background: #ffffff;
@@ -1982,7 +1990,10 @@
   }
 
   .mot-finance__canvas {
-    padding-top: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
   .mot-finance__wallet {
@@ -2089,8 +2100,10 @@
   }
 
   .mot-finance__auctions {
+    flex: 1;
     margin: 0;
     border-radius: 30px 30px 0 0;
+    background: #ffffff;
     box-shadow: none;
   }
 
@@ -2098,7 +2111,7 @@
   .mot-finance__analytics-button {
     min-height: 38px;
     padding-inline: 12px;
-    border-radius: 13px;
+    border-radius: 999px;
     font-size: 11px;
   }
 
@@ -2110,8 +2123,7 @@
 }
 
 @media (max-width: 380px) {
-  .mot-finance__menu-button span,
-  .mot-finance__analytics-button svg {
+  .mot-finance__menu-button span {
     display: none;
   }
 
@@ -2176,8 +2188,10 @@
 
   .mot-finance__auctions {
     width: 100%;
+    flex: 1;
     margin: 0;
     border-radius: 42px 42px 0 0;
+    background: #ffffff;
   }
 }
 
@@ -2396,31 +2410,28 @@
 
 @media (max-width: 900px) {
   .mot-finance__section-head > button {
-    min-height: 48px;
-    padding: 5px 5px 5px 16px;
-    gap: 11px;
+    min-height: 40px;
+    padding: 0 16px;
+    gap: 8px;
     border: 0;
     border-radius: 999px;
-    background: #0b1322;
     color: #ffffff;
-    font-size: 11px;
-    font-weight: 800;
-    box-shadow: 0 10px 22px rgba(11, 19, 34, 0.14);
+    font-size: 12px;
+    font-weight: 750;
   }
 
   .mot-finance__section-head > button:hover {
-    background: #0b1322;
     color: #ffffff;
   }
 
   .mot-finance__section-head > button svg {
-    width: 38px;
-    height: 38px;
-    padding: 10px;
-    border-radius: 50%;
-    background: #263044;
-    color: #ffffff;
-    stroke-width: 2.4;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: currentColor;
+    stroke-width: 2.2;
   }
 }
 

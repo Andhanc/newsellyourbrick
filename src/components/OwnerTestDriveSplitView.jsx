@@ -3,14 +3,10 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   CalendarDays,
-  Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Inbox,
-  Menu,
   MousePointerClick,
-  UserRound,
   X,
 } from 'lucide-react'
 import OwnerEmptyStatePanel from './OwnerEmptyStatePanel'
@@ -28,7 +24,6 @@ import {
   getOwnerTestDriveUserId,
 } from '../utils/ownerTestDriveList'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '../hooks/useDrawerDismiss'
-import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import { publicAsset } from '../utils/publicAsset'
 import '../components/OwnerTestDriveSection.css'
 import './OwnerTestDriveSplitView.css'
@@ -104,11 +99,10 @@ function calendarWeekGrid(anchorDate) {
 export default function OwnerTestDriveSplitView({
   userId: userIdProp,
   isMobile = false,
-  onOpenStandaloneMenu,
 }) {
+  // Mobile calendar toolbar (menu / month / profile) removed — chrome header covers it.
   const { t, i18n } = useTranslation()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
-  const profilePhoto = useOwnerTestUserPhoto()
   const userId = userIdProp || getOwnerTestDriveUserId()
   const [properties, setProperties] = useState([])
   const [bookings, setBookings] = useState([])
@@ -121,11 +115,9 @@ export default function OwnerTestDriveSplitView({
   const [selectedAggregateDate, setSelectedAggregateDate] = useState('')
   const [selectedPropertyCalendarOnly, setSelectedPropertyCalendarOnly] = useState(false)
   const [mobileDrawerTop, setMobileDrawerTop] = useState(null)
-  const [calendarView, setCalendarView] = useState('month')
-  const [calendarViewMenuOpen, setCalendarViewMenuOpen] = useState(false)
+  const calendarView = 'month'
   const [calWeekStart, setCalWeekStart] = useState(() => startOfCalendarWeek(new Date()))
   const calendarInitializedRef = useRef(false)
-  const calendarViewMenuRef = useRef(null)
   const mobileCalendarRef = useRef(null)
 
   const locale =
@@ -186,26 +178,6 @@ export default function OwnerTestDriveSplitView({
     setCalMonth(target.date.getMonth())
     setCalWeekStart(startOfCalendarWeek(target.date))
   }, [bookings, loading])
-
-  useEffect(() => {
-    if (!calendarViewMenuOpen) return undefined
-
-    const closeOnOutsidePress = (event) => {
-      if (!calendarViewMenuRef.current?.contains(event.target)) {
-        setCalendarViewMenuOpen(false)
-      }
-    }
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setCalendarViewMenuOpen(false)
-    }
-
-    document.addEventListener('pointerdown', closeOnOutsidePress)
-    document.addEventListener('keydown', closeOnEscape)
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePress)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [calendarViewMenuOpen])
 
   useEffect(() => {
     const onSync = () => void loadData()
@@ -361,24 +333,6 @@ export default function OwnerTestDriveSplitView({
 
   const calendarDisplayLabel = calendarView === 'week' ? weekLabel : calLabel
 
-  const selectCalendarView = (nextView) => {
-    if (nextView === 'week') {
-      const selectedDate = selectedAggregateDate ? parseBookingDate(selectedAggregateDate) : null
-      const today = new Date()
-      const anchor = selectedDate
-        || (today.getFullYear() === calYear && today.getMonth() === calMonth
-          ? today
-          : new Date(calYear, calMonth, 1))
-      setCalWeekStart(startOfCalendarWeek(anchor))
-    } else {
-      setCalYear(calWeekStart.getFullYear())
-      setCalMonth(calWeekStart.getMonth())
-    }
-    setCalendarView(nextView)
-    setCalendarViewMenuOpen(false)
-    setSelectedAggregateDate('')
-  }
-
   const shiftVisibleCalendar = (delta) => {
     if (calendarView === 'week') {
       setCalWeekStart((current) => {
@@ -473,22 +427,6 @@ export default function OwnerTestDriveSplitView({
   const showPropertyList = true
   const showDetailPanel = !isMobile
 
-  const openCalendarMenu = useCallback(() => {
-    if (isEmbedded) {
-      window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
-      return
-    }
-    onOpenStandaloneMenu?.()
-  }, [isEmbedded, onOpenStandaloneMenu])
-
-  const openCalendarProfile = useCallback(() => {
-    if (isEmbedded && goTo) {
-      goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
-      return
-    }
-    window.location.assign('/owner-test/profile')
-  }, [goTo, isEmbedded])
-
   useEffect(() => {
     if (!drawerVisible) return undefined
 
@@ -517,58 +455,6 @@ export default function OwnerTestDriveSplitView({
       className={`otd-mob-booking-calendar otd-mobile-only${calendarView === 'week' ? ' is-week' : ''}${selectedPropertyCalendarOnly ? ' is-property-filtered' : ''}`}
       aria-label={t('ownerTest_navTestDrive')}
     >
-      <header className="otd-mob-booking-calendar__toolbar">
-        <button type="button" onClick={openCalendarMenu} aria-label={t('ownerTest_ariaOpenMenu')}>
-          <Menu size={18} strokeWidth={2.1} aria-hidden />
-          <span>{i18n.language === 'ru' ? 'Меню' : 'Menu'}</span>
-        </button>
-
-        <div className="otd-mob-booking-calendar__view-select" ref={calendarViewMenuRef}>
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={calendarViewMenuOpen}
-            onClick={() => setCalendarViewMenuOpen((open) => !open)}
-          >
-            <CalendarDays size={17} strokeWidth={2.1} aria-hidden />
-            <span>{calendarView === 'week' ? (i18n.language === 'ru' ? 'Неделя' : 'Week') : (i18n.language === 'ru' ? 'Месяц' : 'Month')}</span>
-            <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-          </button>
-          {calendarViewMenuOpen ? (
-            <div className="otd-mob-booking-calendar__view-menu" role="menu">
-              {[
-                { id: 'month', label: i18n.language === 'ru' ? 'Месяц' : 'Month' },
-                { id: 'week', label: i18n.language === 'ru' ? 'Неделя' : 'Week' },
-              ].map((option) => (
-                <button
-                  type="button"
-                  key={option.id}
-                  role="menuitemradio"
-                  aria-checked={calendarView === option.id}
-                  onClick={() => selectCalendarView(option.id)}
-                >
-                  <span>{option.label}</span>
-                  {calendarView === option.id ? <Check size={16} strokeWidth={2.4} aria-hidden /> : null}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          className="otd-mob-booking-calendar__profile"
-          onClick={openCalendarProfile}
-          aria-label={t('ownerTest_ariaProfile')}
-        >
-          {profilePhoto ? (
-            <img src={profilePhoto} alt="" />
-          ) : (
-            <UserRound size={21} strokeWidth={2.1} aria-hidden />
-          )}
-        </button>
-      </header>
-
       <div className="otd-mob-booking-calendar__month-row">
         <button
           type="button"
