@@ -117,6 +117,23 @@
     box-sizing: border-box;
   }
 
+  /* Embedded: герой под общей шапкой — один фон без шва */
+  .otc--properties .op.op--embedded,
+  .otc--properties .op.op--embedded .op-body,
+  .otc--properties .op.op--embedded .op-workspace {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  .otc--properties .op-hero-shell {
+    margin-top: calc(-1 * var(--otc-mob-topbar-offset, 60px)) !important;
+  }
+
+  .otc--properties .op-mob-hero {
+    padding-top: calc(var(--otc-mob-topbar-offset, 60px) + 10px) !important;
+  }
+
   .op-mob-hero__top {
     display: flex;
     align-items: center;

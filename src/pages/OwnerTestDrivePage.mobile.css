@@ -201,6 +201,17 @@
     margin-top: 0;
   }
 
+  /* Embedded: календарь под общей шапкой — один фон */
+  .otc--testdrive .otd-mob-booking-calendar {
+    margin-top: calc(-1 * var(--otc-mob-topbar-offset, 60px)) !important;
+    padding-top: calc(var(--otc-mob-topbar-offset, 60px) + 8px) !important;
+  }
+
+  .otc--testdrive .otd.otd--embedded,
+  .otc--testdrive .otd.otd--embedded .otd-body {
+    overflow: visible !important;
+  }
+
   .otd-mob-booking-calendar__toolbar {
     position: relative;
     z-index: 5;

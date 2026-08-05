@@ -125,7 +125,13 @@
 .header-mega-menu__login-btn,
 .hr-showcases .auction-card__btn--primary,
 .hr-showcases.hr-showcases--auction-listing .auction-card__btn--primary,
-.shares-page--shares-redesign .shares-v2-card__invest-btn {
+.shares-page--shares-redesign .shares-v2-card__invest-btn,
+.mot-finance__analytics-button,
+.mot-finance__section-head > button,
+.mot-finance__empty button,
+.otc-add-property,
+.mot-btn--primary,
+.op-btn--primary {
   border: none !important;
   border-color: transparent !important;
   color: #ffffff !important;
@@ -142,6 +148,28 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border-radius: 999px !important;
+}
+
+/* Карточки кабинета продавца: тот же tiffany-fill, но радиус карточки */
+.mot-finance__quick-card--properties,
+.mot-finance__quick-card--bookings,
+.mot-finance__quick-card--add {
+  border: none !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  background-color: var(--syb-tiffany-btn) !important;
+  background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill) !important;
+  background-size: 220% 100%, 100% 100% !important;
+  background-position: 140% 0, 0 0 !important;
+  background-repeat: no-repeat !important;
+  animation: syb-tiffany-btn-sheen 3.2s ease-in-out infinite !important;
+  box-shadow:
+    0 6px 16px var(--syb-tiffany-btn-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 22px !important;
 }
 
 .btn-tiffany-shine:hover:not(:disabled),
@@ -220,7 +248,16 @@
 .header-mega-menu__login-btn:hover,
 .hr-showcases .auction-card__btn--primary:hover:not(:disabled),
 .hr-showcases.hr-showcases--auction-listing .auction-card__btn--primary:hover:not(:disabled),
-.shares-page--shares-redesign .shares-v2-card__invest-btn:hover:not(:disabled) {
+.shares-page--shares-redesign .shares-v2-card__invest-btn:hover:not(:disabled),
+.mot-finance__analytics-button:hover,
+.mot-finance__section-head > button:hover,
+.mot-finance__empty button:hover,
+.mot-finance__quick-card--properties:hover,
+.mot-finance__quick-card--bookings:hover,
+.mot-finance__quick-card--add:hover,
+.otc-add-property:hover,
+.mot-btn--primary:hover,
+.op-btn--primary:hover {
   color: #ffffff !important;
   background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill-hover) !important;
   background-size: 220% 100%, 100% 100% !important;
@@ -267,7 +304,11 @@
 .sale-formats__cta,
 .profile-history-empty__cta,
 .vip-club-story-card__cta,
-.vip-club-join-panel__cta {
+.vip-club-join-panel__cta,
+.mot-finance__analytics-button,
+.mot-finance__section-head > button,
+.mot-finance__empty button,
+.otc-add-property {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -311,7 +352,16 @@
   .feature-unavailable-page__link--primary,
   .deposit-button .deposit-button__content-wrapper,
   .login-modal__submit,
-  .header-mega-menu__login-btn {
+  .header-mega-menu__login-btn,
+  .mot-finance__analytics-button,
+  .mot-finance__section-head > button,
+  .mot-finance__empty button,
+  .mot-finance__quick-card--properties,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add,
+  .otc-add-property,
+  .mot-btn--primary,
+  .op-btn--primary {
     animation: none !important;
     background-image: var(--syb-tiffany-btn-fill) !important;
     background-size: 100% 100% !important;

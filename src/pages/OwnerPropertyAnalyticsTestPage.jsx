@@ -263,7 +263,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -797,8 +797,8 @@ export default function OwnerPropertyAnalyticsTestPage() {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#111827',
-          titleFont: { family: 'Inter', size: 12 },
-          bodyFont: { family: 'Inter', size: 12 },
+          titleFont: { family: 'Montserrat', size: 12 },
+          bodyFont: { family: 'Montserrat', size: 12 },
           padding: 10,
           cornerRadius: 8,
         },
@@ -808,7 +808,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
           grid: { color: '#f1f5f9', drawBorder: false },
           ticks: {
             color: '#94a3b8',
-            font: { family: 'Inter', size: isMobile ? 10 : 11 },
+            font: { family: 'Montserrat', size: isMobile ? 10 : 11 },
             maxRotation: 0,
           },
           border: { display: false },
@@ -817,7 +817,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
           min: 0,
           ticks: {
             color: '#94a3b8',
-            font: { family: 'Inter', size: isMobile ? 10 : 11 },
+            font: { family: 'Montserrat', size: isMobile ? 10 : 11 },
           },
           grid: { color: '#f1f5f9', drawBorder: false },
           border: { display: false },

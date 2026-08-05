@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .oap {
   --oap-primary: #0099a9;
@@ -20,7 +19,7 @@
     radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.1) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.08) 0%, transparent 52%),
     linear-gradient(180deg, #f8fafc 0%, #f3f7f9 55%, #e8f1f4 100%);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--oc-font-family, 'Montserrat', system-ui, -apple-system, sans-serif);
   font-size: 14px;
   line-height: 1.45;
   color: var(--oap-text);

@@ -46,7 +46,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -127,7 +127,6 @@ export default function OwnerTestDrivePage() {
           <OwnerTestDriveSplitView
             userId={userId}
             isMobile={isMobile}
-            onOpenStandaloneMenu={() => setMenuOpen(true)}
           />
         </div>
       </div>

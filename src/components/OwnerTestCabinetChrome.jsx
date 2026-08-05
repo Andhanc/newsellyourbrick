@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
-import { ArrowRight, Building2, LogOut, Plus, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Building2, LogOut, Menu, Plus, X } from 'lucide-react'
 import OwnerTestProfileMenu, { performOwnerTestLogout } from './OwnerTestProfileMenu'
 import OwnerNotificationsButton from './OwnerNotificationsButton'
 import OwnerProfileCompletionBanner from './OwnerProfileCompletionBanner'
@@ -151,6 +151,7 @@ export default function OwnerTestCabinetChrome({ children }) {
         <Plus size={18} strokeWidth={2.4} aria-hidden />
       </span>
       <span>{t('ownerTest_ariaAddProperty')}</span>
+      <ArrowUpRight size={17} strokeWidth={2.2} aria-hidden />
     </button>
   )
 
@@ -163,12 +164,23 @@ export default function OwnerTestCabinetChrome({ children }) {
           view === OWNER_VIEWS.PROPERTY_ANALYTICS ? ' otc--property-analytics' : ''
         }${view === OWNER_VIEWS.TEST_DRIVE ? ' otc--testdrive' : ''}${
           view === OWNER_VIEWS.SUBSCRIPTIONS ? ' otc--subscriptions' : ''
+        }${view === OWNER_VIEWS.WALLET ? ' otc--wallet' : ''}${
+          view === OWNER_VIEWS.PROFILE ? ' otc--profile' : ''
         }`}
       >
       <header className="otc-mob-topbar otc-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
-        <div className="otc-mob-topbar__brand">
-          <BrandLogo />
+        <div className="otc-mob-topbar__slot otc-mob-topbar__slot--left">
+          <button
+            type="button"
+            className="otc-mob-topbar__menu"
+            aria-label={t('ownerTest_ariaOpenMenu')}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)}
+          >
+            <Menu size={22} strokeWidth={2.2} aria-hidden />
+          </button>
         </div>
+        <p className="otc-mob-topbar__title">{t('ownerTest_brandName')}</p>
         <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
           <OwnerSupportButton className="otc-mob-topbar__bell" iconSize={22} />
           <OwnerNotificationsButton

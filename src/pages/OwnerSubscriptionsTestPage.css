@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import '../styles/owner-cabinet-tokens.css';
 
 :where(.ost, .ost-body) {
@@ -39,7 +38,7 @@
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
     var(--oc-gradient-page);
   color: var(--ost-text);
-  font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-family: var(--oc-font-family, 'Montserrat', system-ui, -apple-system, sans-serif);
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
