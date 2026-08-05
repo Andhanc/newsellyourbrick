@@ -25,7 +25,12 @@ export function getPrisma() {
 
 export async function closePrisma() {
   if (prisma) {
-    await prisma.$disconnect();
-    prisma = null;
+    try {
+      await prisma.$disconnect()
+    } catch (error) {
+      console.warn('closePrisma:', error?.message || error)
+    } finally {
+      prisma = null
+    }
   }
 }

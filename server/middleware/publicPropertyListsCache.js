@@ -98,7 +98,8 @@ export function publicPropertyListsCache(req, res, next) {
       if (settled) return
       settled = true
       inflight.delete(cacheKey)
-      reject(new Error('closed before json'))
+      // Клиент оборвал запрос до res.json — не reject, иначе unhandledRejection
+      resolve({ statusCode: 499, body: '{}', cacheControl: undefined })
     })
   })
 
