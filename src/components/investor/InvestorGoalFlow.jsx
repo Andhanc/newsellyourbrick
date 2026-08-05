@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeft,
   ArrowRight,
   Building2,
   CalendarClock,
@@ -66,17 +65,11 @@ const itemMotion = {
   },
 }
 
-function GoalHeader({ onBack, title, description }) {
+function GoalHeader({ title, description }) {
   return (
     <motion.header className="investor-goal-flow__header" variants={itemMotion}>
-      <button type="button" className="investor-goal-flow__back" onClick={onBack} aria-label="Вернуться назад">
-        <ArrowLeft size={20} strokeWidth={2.2} />
-      </button>
-      <div>
-        <span>Шаг 2 из 3</span>
-        <h2>{title}</h2>
-        <p>{description}</p>
-      </div>
+      <h2>{title}</h2>
+      <p>{description}</p>
     </motion.header>
   )
 }
@@ -141,7 +134,6 @@ export default function InvestorGoalFlow({
             exit="exit"
           >
             <GoalHeader
-              onBack={onBackToObject}
               title="Выберите цель"
               description="Что должна дать вам эта инвестиция?"
             />
@@ -185,9 +177,14 @@ export default function InvestorGoalFlow({
               ))}
             </motion.div>
 
-            <motion.p className="investor-goal-flow__swipe-hint" variants={itemMotion}>
-              Листайте карточки в сторону
-            </motion.p>
+            <motion.div className="investor-goal-flow__footer" variants={itemMotion}>
+              <p className="investor-goal-flow__swipe-hint">
+                Листайте карточки в сторону
+              </p>
+              <button type="button" className="investor-goal-flow__back" onClick={onBackToObject}>
+                Нажмите, чтобы вернуться назад
+              </button>
+            </motion.div>
           </motion.section>
         ) : (
           <motion.section
@@ -199,105 +196,106 @@ export default function InvestorGoalFlow({
             exit="exit"
           >
             <GoalHeader
-              onBack={onBackToGoals}
               title="Параметры цели"
               description={`Настроим сценарий «${goal.title.toLowerCase()}».`}
             />
 
-            <motion.div className="investor-goal-flow__values-card" variants={itemMotion}>
-              <div className="investor-goal-flow__values-summary">
-                <span className="investor-goal-flow__values-icon" aria-hidden="true">
-                  <goal.Icon size={25} strokeWidth={1.9} />
-                </span>
-                <span>
-                  <small>{goal.eyebrow}</small>
-                  <strong>{goal.title}</strong>
-                </span>
-              </div>
-
-              <div className="investor-goal-flow__fields">
-                <NumberField
-                  icon={CalendarClock}
-                  label="Горизонт владения"
-                  suffix="лет"
-                  inputMode="numeric"
-                  min="1"
-                  max="30"
-                  step="1"
-                  value={ownershipPeriod}
-                  onChange={(event) => onOwnershipPeriodChange(event.target.value)}
-                  placeholder="10"
-                />
-
-                {(selectedGoal === 'rent' || selectedGoal === 'fractional') && (
-                  <NumberField
-                    icon={Coins}
-                    label="Ожидаемая аренда в год"
-                    suffix="€"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    value={rentalIncome}
-                    onChange={(event) => onRentalIncomeChange(event.target.value)}
-                    placeholder="24 000"
-                  />
-                )}
-
-                {selectedGoal === 'resale' && (
-                  <NumberField
-                    icon={TrendingUp}
-                    label="Ожидаемый рост стоимости"
-                    suffix="%"
-                    inputMode="decimal"
-                    step="0.1"
-                    value={marketGrowthRate}
-                    onChange={(event) => onMarketGrowthRateChange(event.target.value)}
-                    placeholder="5"
-                  />
-                )}
-
-                {selectedGoal === 'fractional' && (
-                  <NumberField
-                    icon={PieChart}
-                    label="Ваша доля владения"
-                    suffix="%"
-                    inputMode="decimal"
-                    min="1"
-                    max="100"
-                    step="1"
-                    value={ownershipShare}
-                    onChange={(event) => onOwnershipShareChange(event.target.value)}
-                    placeholder="50"
-                  />
-                )}
-
-                <NumberField
-                  icon={Percent}
-                  label="Расходы при покупке"
-                  suffix="%"
-                  inputMode="decimal"
-                  min="0"
-                  max="20"
-                  step="0.1"
-                  value={buyerCostsPct}
-                  onChange={(event) => onBuyerCostsPctChange(event.target.value)}
-                  placeholder="8"
-                />
-              </div>
+            <motion.div className="investor-goal-flow__values-summary" variants={itemMotion}>
+              <span className="investor-goal-flow__values-icon" aria-hidden="true">
+                <goal.Icon size={25} strokeWidth={1.9} />
+              </span>
+              <span>
+                <small>{goal.eyebrow}</small>
+                <strong>{goal.title}</strong>
+              </span>
             </motion.div>
 
-            <motion.button
-              type="button"
-              className="investor-goal-flow__continue"
-              onClick={onContinue}
-              disabled={!canContinue}
-              variants={itemMotion}
-            >
-              <span>Рассчитать результат</span>
-              <span className="investor-goal-flow__continue-arrow" aria-hidden="true">
-                <ArrowRight size={20} strokeWidth={2.2} />
-              </span>
-            </motion.button>
+            <motion.div className="investor-goal-flow__fields" variants={itemMotion}>
+              <NumberField
+                icon={CalendarClock}
+                label="Горизонт владения"
+                suffix="лет"
+                inputMode="numeric"
+                min="1"
+                max="30"
+                step="1"
+                value={ownershipPeriod}
+                onChange={(event) => onOwnershipPeriodChange(event.target.value)}
+                placeholder="10"
+              />
+
+              {(selectedGoal === 'rent' || selectedGoal === 'fractional') && (
+                <NumberField
+                  icon={Coins}
+                  label="Ожидаемая аренда в год"
+                  suffix="€"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={rentalIncome}
+                  onChange={(event) => onRentalIncomeChange(event.target.value)}
+                  placeholder="24 000"
+                />
+              )}
+
+              {selectedGoal === 'resale' && (
+                <NumberField
+                  icon={TrendingUp}
+                  label="Ожидаемый рост стоимости"
+                  suffix="%"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={marketGrowthRate}
+                  onChange={(event) => onMarketGrowthRateChange(event.target.value)}
+                  placeholder="5"
+                />
+              )}
+
+              {selectedGoal === 'fractional' && (
+                <NumberField
+                  icon={PieChart}
+                  label="Ваша доля владения"
+                  suffix="%"
+                  inputMode="decimal"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value={ownershipShare}
+                  onChange={(event) => onOwnershipShareChange(event.target.value)}
+                  placeholder="50"
+                />
+              )}
+
+              <NumberField
+                icon={Percent}
+                label="Расходы при покупке"
+                suffix="%"
+                inputMode="decimal"
+                min="0"
+                max="20"
+                step="0.1"
+                value={buyerCostsPct}
+                onChange={(event) => onBuyerCostsPctChange(event.target.value)}
+                placeholder="8"
+              />
+            </motion.div>
+
+            <motion.div className="investor-goal-flow__footer" variants={itemMotion}>
+              <button type="button" className="investor-goal-flow__back" onClick={onBackToGoals}>
+                Нажмите, чтобы вернуться назад
+              </button>
+              <button
+                type="button"
+                className="investor-goal-flow__continue"
+                onClick={onContinue}
+                disabled={!canContinue}
+              >
+                <span>Рассчитать результат</span>
+                <span className="investor-goal-flow__continue-arrow" aria-hidden="true">
+                  <ArrowRight size={20} strokeWidth={2.2} />
+                </span>
+              </button>
+            </motion.div>
           </motion.section>
         )}
       </AnimatePresence>

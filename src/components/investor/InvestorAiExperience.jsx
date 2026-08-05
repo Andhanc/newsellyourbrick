@@ -20,7 +20,6 @@ import {
   BadgeEuro,
   Banknote,
   BarChart3,
-  BrainCircuit,
   Check,
   CircleAlert,
   ExternalLink,
@@ -244,6 +243,8 @@ function buildCashFlowSummary(analysis) {
 
 function LoadingScene({ propertyTitle }) {
   const [activeStep, setActiveStep] = useState(0)
+  const progress = ((activeStep + 1) / LOADING_STEPS.length) * 100
+  const circumference = 2 * Math.PI * 88
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -257,30 +258,81 @@ function LoadingScene({ propertyTitle }) {
       className="investor-ai-loader"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.02, filter: 'blur(8px)' }}
-      transition={{ duration: 0.55 }}
+      exit={{ opacity: 0, scale: 1.04, filter: 'blur(12px)' }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       role="status"
       aria-live="polite"
+      aria-label="Анализ инвестиционного сценария"
     >
       <div className="investor-ai-loader__grid" aria-hidden="true" />
+
       <motion.div
-        className="investor-ai-loader__halo"
+        className="investor-ai-loader__flash"
         aria-hidden="true"
-        animate={{ opacity: [0.45, 0.92, 0.58], scaleX: [0.72, 1.08, 0.85], y: [20, -10, 5] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        initial={{ opacity: 0.95, scale: 0.35 }}
+        animate={{
+          opacity: [0.95, 0.55, 0.18, 0.42, 0.12],
+          scale: [0.35, 1.15, 1.85, 1.35, 2.4],
+        }}
+        exit={{ opacity: [0.2, 0.9, 0], scale: [1, 2.8, 3.4] }}
+        transition={{ duration: 2.8, ease: [0.16, 1, 0.3, 1], times: [0, 0.18, 0.42, 0.7, 1] }}
       />
+
+      <motion.div
+        className="investor-ai-loader__flash investor-ai-loader__flash--pulse"
+        aria-hidden="true"
+        key={activeStep}
+        initial={{ opacity: 0.55, scale: 0.55 }}
+        animate={{ opacity: 0, scale: 1.9 }}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+      />
+
       <div className="investor-ai-loader__topline">
         <span><Sparkles size={15} /> AI INVESTMENT LAB</span>
         <span>LIVE</span>
       </div>
+
       <div className="investor-ai-loader__core">
-        <motion.span
-          className="investor-ai-loader__icon"
-          animate={{ rotate: [0, 4, -4, 0], scale: [1, 1.08, 1] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <BrainCircuit size={36} strokeWidth={1.6} />
-        </motion.span>
+        <div className="investor-ai-loader__orbit" aria-hidden="true">
+          <motion.span
+            className="investor-ai-loader__orbit-ring investor-ai-loader__orbit-ring--outer"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8.5, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.span
+            className="investor-ai-loader__orbit-ring investor-ai-loader__orbit-ring--mid"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 5.8, repeat: Infinity, ease: 'linear' }}
+          />
+
+          <svg className="investor-ai-loader__ring" viewBox="0 0 200 200" aria-hidden="true">
+            <circle className="investor-ai-loader__ring-track" cx="100" cy="100" r="88" />
+            <motion.circle
+              className="investor-ai-loader__ring-progress"
+              cx="100"
+              cy="100"
+              r="88"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: circumference * (1 - progress / 100) }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </svg>
+
+          <div className="investor-ai-loader__hub">
+            <motion.strong
+              key={`pct-${activeStep}`}
+              initial={{ opacity: 0, scale: 0.86, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.35 }}
+            >
+              {Math.round(progress)}
+              <small>%</small>
+            </motion.strong>
+            <span>анализ</span>
+          </div>
+        </div>
+
         <p>Умная панель анализирует</p>
         <h2>{propertyTitle || 'ваш инвестиционный сценарий'}</h2>
 
@@ -288,9 +340,9 @@ function LoadingScene({ propertyTitle }) {
           <motion.div
             key={activeStep}
             className="investor-ai-loader__step-copy"
-            initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
+            initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -10, filter: 'blur(5px)' }}
+            exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
             transition={{ duration: 0.42 }}
           >
             <strong>{LOADING_STEPS[activeStep].title}</strong>
@@ -304,6 +356,7 @@ function LoadingScene({ propertyTitle }) {
           ))}
         </div>
       </div>
+
       <div className="investor-ai-loader__foot">Сценарная оценка · не является банковским одобрением</div>
     </motion.div>
   )
@@ -339,17 +392,24 @@ function OutcomePriceMarker({ cx, cy, index, value, currency, total, color, show
   if ((!isStart && !isEnd) || !Number.isFinite(cx) || !Number.isFinite(cy)) return null
 
   const price = compactMoney(value, currency)
-  const label = isStart ? `Старт · ${price}` : price
-  const width = isStart ? 104 : 82
-  const height = 28
-  const x = isStart ? cx + 8 : cx - width - 9
-  const y = isStart ? cy - height - 10 : cy - (height / 2)
+  const width = isStart ? 88 : 84
+  const height = 26
+  const x = isStart ? cx - (width / 2) : cx - 8
+  const y = cy - (height / 2)
 
   return (
     <g className={`investor-score-screen__chart-price-label${isStart ? ' is-start' : ' is-end'}`} aria-hidden="true">
-      <circle cx={cx} cy={cy} r="4.5" fill={color} stroke="#050606" strokeWidth="2" />
-      <rect x={x} y={y} width={width} height={height} rx="9" fill="#f7f8f4" stroke={isStart ? 'rgba(8,10,10,.16)' : color} strokeWidth="1.25" />
-      <text x={x + (width / 2)} y={y + 18.5} textAnchor="middle">{label}</text>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx="8"
+        fill="#f7f8f4"
+        stroke={isStart ? 'rgba(8,10,10,.14)' : color}
+        strokeWidth="1.2"
+      />
+      <text x={x + (width / 2)} y={y + 17} textAnchor="middle">{price}</text>
     </g>
   )
 }
@@ -359,7 +419,7 @@ function MarketOutcomeChart({ summary, currency }) {
   return (
     <div className="investor-score-screen__outcome-chart" aria-label="Прогноз стоимости объекта по трём сценариям рынка">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={summary.chartRows} margin={{ top: 24, right: 8, left: 4, bottom: 0 }}>
+        <LineChart data={summary.chartRows} margin={{ top: 18, right: 88, left: 48, bottom: 4 }}>
           <CartesianGrid stroke="rgba(255,255,255,.16)" vertical={false} />
           <XAxis dataKey="year" tick={{ fill: 'rgba(255,255,255,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip currency={currency} />} />
@@ -694,15 +754,23 @@ function FocusedResult({ analysis, currency, onRestart, onHome }) {
       className="investor-score-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
     >
+      <motion.div
+        className="investor-score-screen__entry-flash"
+        aria-hidden="true"
+        initial={{ opacity: 0.88, scale: 0.6 }}
+        animate={{ opacity: 0, scale: 2.2 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      />
       <div className="investor-score-screen__gradient" aria-hidden="true" />
 
       <motion.section
         className="investor-score-screen__hero"
         initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.72, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
       >
         <span className="investor-score-screen__label">Оценка сделки</span>
         <motion.div
@@ -917,6 +985,7 @@ function FocusedResult({ analysis, currency, onRestart, onHome }) {
           <h2>Ликвидность</h2>
           <div className="investor-score-screen__liquidity-score">
             <strong>{liquidity.label}</strong>
+            <i className="investor-score-screen__liquidity-sep" aria-hidden="true" />
             <span>{liquidity.score}<small>/100</small></span>
           </div>
           <p className="investor-score-screen__section-lead">Расчётный индекс спроса на основе динамики цены, аренды и ожидаемой вакантности.</p>
@@ -1044,7 +1113,21 @@ export default function InvestorAiExperience({
   onOpenAssumptions,
   onOpenProperty,
 }) {
-  if (status === 'loading') return <LoadingScene propertyTitle={propertyTitle} />
-  if (status === 'error' || !analysis) return <ErrorScene message={error} onRetry={onRetry} onBack={onBack} />
-  return <FocusedResult analysis={analysis} currency={currency} onRestart={onRestart || onBack} onHome={onHome} />
+  return (
+    <AnimatePresence mode="wait">
+      {status === 'loading' ? (
+        <LoadingScene key="loading" propertyTitle={propertyTitle} />
+      ) : status === 'error' || !analysis ? (
+        <ErrorScene key="error" message={error} onRetry={onRetry} onBack={onBack} />
+      ) : (
+        <FocusedResult
+          key="result"
+          analysis={analysis}
+          currency={currency}
+          onRestart={onRestart || onBack}
+          onHome={onHome}
+        />
+      )}
+    </AnimatePresence>
+  )
 }

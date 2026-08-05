@@ -1,38 +1,31 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, Heart, PenLine } from 'lucide-react'
+import { ArrowRight, Check, Heart, PenLine, Sparkles } from 'lucide-react'
 import { applyPropertyImageFallback } from '../../utils/propertyImage'
 import './InvestorSourceHero.css'
 
 const CURATED_PROPERTY_CARDS = [
   {
     src: '/images/sellyourbrick/about/about-hero-villa.jpg',
-    alt: 'Современная вилла с бассейном',
+    alt: 'Вилла у моря в Марбелье',
+    name: 'Марбелья',
+    price: '€248 000',
+    tone: 'amber',
   },
   {
-    src: '/images/sellyourbrick/about/mission-villa.jpg',
-    alt: 'Современная вилла с панорамным бассейном',
+    src: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
+    alt: 'Светлая квартира в Валенсии',
+    name: 'Валенсия',
+    price: '€186 400',
+    tone: 'silver',
   },
   {
     src: '/images/external/villa-palazzetta-1-577bba2c20.jpg',
     alt: 'Средиземноморская вилла у моря',
-  },
-  {
-    src: '/images/external/shares-hero-villa.jpg',
-    alt: 'Премиальная вилла с бассейном',
-  },
-  {
-    src: '/images/external/photo-1613490493576-7fde63acd811-d800e5fb95.jpg',
-    alt: 'Минималистичная вилла для продажи',
-  },
-  {
-    src: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
-    alt: 'Светлая дизайнерская квартира',
-  },
-  {
-    src: '/images/external/photo-1600607687920-4e2a09cf159d-841fb3874c.jpg',
-    alt: 'Современная квартира с открытой планировкой',
+    name: 'Барселона',
+    price: '€312 900',
+    tone: 'sky',
   },
 ]
 
@@ -120,22 +113,33 @@ export default function InvestorSourceHero({
               </h1>
             </div>
 
-            <div className="investor-source-hero__portfolio" aria-label="Объекты для инвестиционного анализа">
-              <span className="investor-source-hero__pair-link investor-source-hero__pair-link--upper" aria-hidden="true" />
-              <span className="investor-source-hero__pair-link investor-source-hero__pair-link--lower" aria-hidden="true" />
+            <div className="investor-source-hero__portfolio" aria-label="Примеры сделок для инвестиционного анализа">
               {portfolioCards.map((card, index) => (
-                <figure
+                <button
                   key={`${card.src}-${index}`}
-                  className={`investor-source-hero__property-card investor-source-hero__property-card--${index + 1}`}
+                  type="button"
+                  className={`investor-source-hero__property-card investor-source-hero__property-card--${card.tone} investor-source-hero__property-card--${index + 1}`}
+                  aria-label={`Начать расчёт: ${card.name}, ${card.price}`}
+                  onClick={() => setHasStarted(true)}
                 >
-                  <img
-                    src={card.src}
-                    alt={card.alt}
-                    loading={index < 3 ? 'eager' : 'lazy'}
-                    fetchPriority={index === 0 ? 'high' : 'auto'}
-                    onError={(event) => applyPropertyImageFallback(event, CURATED_PROPERTY_CARDS[index].src)}
-                  />
-                </figure>
+                  <span className="investor-source-hero__property-avatar">
+                    <img
+                      src={card.src}
+                      alt=""
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={index === 0 ? 'high' : 'auto'}
+                      onError={(event) => applyPropertyImageFallback(event, CURATED_PROPERTY_CARDS[index].src)}
+                    />
+                  </span>
+                  <span className="investor-source-hero__property-copy">
+                    <strong>{card.name}</strong>
+                    <b>{card.price}</b>
+                  </span>
+                  <span className="investor-source-hero__property-action" aria-hidden="true">
+                    <Sparkles size={12} strokeWidth={2.4} />
+                    Рассчитать
+                  </span>
+                </button>
               ))}
             </div>
 
@@ -157,7 +161,6 @@ export default function InvestorSourceHero({
             {...sceneMotion}
           >
             <div className="investor-source-hero__source-copy">
-              <span>Шаг 1 из 3</span>
               <h2>Выберите объект</h2>
               <p>Возьмите сохранённый объект или начните новый расчёт.</p>
             </div>
@@ -218,23 +221,12 @@ export default function InvestorSourceHero({
             exit="exit"
           >
             <motion.header className="investor-source-hero__setup-header" variants={setupItemMotion}>
-              <button
-                type="button"
-                className="investor-source-hero__setup-back"
-                onClick={onBackToSource}
-                aria-label="Вернуться к выбору способа"
-              >
-                <ArrowLeft size={20} strokeWidth={2.2} />
-              </button>
-              <div>
-                <span>Шаг 1 из 3</span>
-                <h2>{selectedSource === 'favorites' ? 'Выберите объект' : 'Свои значения'}</h2>
-                <p>
-                  {selectedSource === 'favorites'
-                    ? 'Нажмите на объект, который хотите рассчитать.'
-                    : 'Укажите исходные данные — остальное можно уточнить позже.'}
-                </p>
-              </div>
+              <h2>{selectedSource === 'favorites' ? 'Выберите объект' : 'Свои значения'}</h2>
+              <p>
+                {selectedSource === 'favorites'
+                  ? 'Нажмите на объект, который хотите рассчитать.'
+                  : 'Укажите исходные данные — остальное можно уточнить позже.'}
+              </p>
             </motion.header>
 
             {selectedSource === 'favorites' ? (
@@ -291,7 +283,7 @@ export default function InvestorSourceHero({
                 </motion.div>
               )
             ) : (
-              <motion.div className="investor-source-hero__manual-card" variants={setupItemMotion}>
+              <motion.div className="investor-source-hero__manual-fields" variants={setupItemMotion}>
                 <label className="investor-source-hero__manual-field">
                   <span>Цена покупки</span>
                   <span className="investor-source-hero__manual-input">
@@ -330,20 +322,28 @@ export default function InvestorSourceHero({
               </motion.div>
             )}
 
-            {(selectedSource === 'manual' || favoriteItems.length > 0) && (
-              <motion.button
+            <motion.div className="investor-source-hero__setup-footer" variants={setupItemMotion}>
+              <button
                 type="button"
-                className="investor-source-hero__continue"
-                onClick={onContinue}
-                disabled={!canContinue}
-                variants={setupItemMotion}
+                className="investor-source-hero__setup-back"
+                onClick={onBackToSource}
               >
-                <span>Продолжить</span>
-                <span className="investor-source-hero__continue-arrow" aria-hidden="true">
-                  <ArrowRight size={20} strokeWidth={2.2} />
-                </span>
-              </motion.button>
-            )}
+                Нажмите, чтобы вернуться назад
+              </button>
+              {(selectedSource === 'manual' || favoriteItems.length > 0) && (
+                <button
+                  type="button"
+                  className="investor-source-hero__continue"
+                  onClick={onContinue}
+                  disabled={!canContinue}
+                >
+                  <span>Продолжить</span>
+                  <span className="investor-source-hero__continue-arrow" aria-hidden="true">
+                    <ArrowRight size={20} strokeWidth={2.2} />
+                  </span>
+                </button>
+              )}
+            </motion.div>
           </motion.section>
         )}
       </AnimatePresence>

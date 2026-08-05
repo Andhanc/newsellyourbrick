@@ -39,7 +39,7 @@
 
 .investment-calculator-page--ai-result .calculator-container {
   max-width: 760px;
-  padding-top: 24px;
+  padding-top: 0;
   padding-bottom: 72px;
 }
 
@@ -2462,9 +2462,15 @@ select.parameter-input option {
 
 @media (max-width: 768px) {
   .investment-calculator-page--ai-result .calculator-container {
-    padding: 16px 14px 54px;
+    padding: 0 0 54px;
     background: transparent;
     box-shadow: none;
+  }
+
+  .investment-calculator-page.investment-calculator-page--ai-result {
+    background: #070909;
+    color: #ffffff;
+    padding-bottom: 0;
   }
 
   .investment-calculator-page.investment-calculator-page--start {

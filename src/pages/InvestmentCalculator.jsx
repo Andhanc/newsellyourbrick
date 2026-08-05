@@ -984,9 +984,6 @@ const InvestmentCalculator = () => {
           animate={{ opacity: 1, y: 0 }}
           className="calculator-header"
         >
-          <span className="calculator-badge">
-            {wizardStep === 2 ? t('calcStep1Badge') : t('calcStep3Badge')}
-          </span>
           <h1 className="calculator-title">{t('calculator')}</h1>
           <p className="calculator-subtitle">
             {wizardStep === 2 ? t('calcWizardIntroLead') : t('calcStep3Lead')}
