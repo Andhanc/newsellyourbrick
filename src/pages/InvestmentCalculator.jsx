@@ -742,6 +742,7 @@ const InvestmentCalculator = () => {
     setAnalysisStatus('loading');
     setInvestorAiError('');
     setInvestorAiAnalysis(null);
+    scrollMainTo(0, 0, 'instant');
 
     try {
       const minimumLoader = new Promise((resolve) => window.setTimeout(resolve, 3900));

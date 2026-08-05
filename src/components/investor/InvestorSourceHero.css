@@ -562,11 +562,49 @@
 }
 
 .investor-source-hero__empty {
+  display: grid;
+  justify-items: center;
   align-self: start;
+  gap: 0;
+  padding: 28px 24px 36px;
   border-radius: 34px;
   background: #f4f4f1;
   color: #080909;
+  text-align: center;
   box-shadow: 0 24px 60px rgba(0, 0, 0, .34);
+}
+
+.investor-source-hero__empty-image {
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  margin: 0 0 6px;
+  object-fit: contain;
+  object-position: center;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
+}
+
+.investor-source-hero__empty h3 {
+  margin: 0;
+  font: 800 24px/1.05 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.035em;
+}
+
+.investor-source-hero__empty p {
+  max-width: 380px;
+  margin: 11px auto 20px;
+  color: #676b70;
+  font: 550 13px/1.5 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__empty a {
+  padding: 13px 18px;
+  border-radius: 999px;
+  background: #080909;
+  color: #ffffff;
+  font: 800 12px/1 'Montserrat', system-ui, sans-serif;
+  text-decoration: none;
 }
 
 .investor-source-hero__manual-fields {
@@ -649,46 +687,6 @@
   margin: 4px 6px 0;
   color: #7a7e83;
   font: 600 12px/1.45 'Montserrat', system-ui, sans-serif;
-}
-
-.investor-source-hero__empty {
-  display: grid;
-  justify-items: center;
-  padding: 44px 28px;
-  text-align: center;
-}
-
-.investor-source-hero__empty-icon {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: 18px;
-  border-radius: 50%;
-  background: #080909;
-  color: #ffffff;
-}
-
-.investor-source-hero__empty h3 {
-  margin: 0;
-  font: 800 24px/1.05 'Montserrat', system-ui, sans-serif;
-  letter-spacing: -.035em;
-}
-
-.investor-source-hero__empty p {
-  max-width: 380px;
-  margin: 11px auto 20px;
-  color: #676b70;
-  font: 550 13px/1.5 'Montserrat', system-ui, sans-serif;
-}
-
-.investor-source-hero__empty a {
-  padding: 13px 18px;
-  border-radius: 999px;
-  background: #080909;
-  color: #ffffff;
-  font: 800 12px/1 'Montserrat', system-ui, sans-serif;
-  text-decoration: none;
 }
 
 .investor-source-hero__continue {
@@ -855,6 +853,14 @@
 
   .investor-source-hero__manual-fields {
     gap: 10px;
+  }
+
+  .investor-source-hero__empty {
+    padding: 20px 16px 28px;
+  }
+
+  .investor-source-hero__empty-image {
+    width: min(100%, 220px);
   }
 
   .investor-source-hero__manual-field {

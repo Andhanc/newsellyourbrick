@@ -25,22 +25,45 @@
 }
 
 .investment-calculator-page--ai-result {
+  --investor-result-backdrop:
+    radial-gradient(ellipse 88% 96% at 112% 104%, rgba(85, 244, 255, .62) 0%, rgba(39, 221, 230, .4) 36%, rgba(0, 153, 169, .12) 61%, rgba(0, 125, 138, 0) 76%),
+    radial-gradient(ellipse 150% 62% at 50% 110%, rgba(85, 244, 255, .92) 0%, rgba(39, 221, 230, .7) 31%, rgba(0, 153, 169, .24) 63%, rgba(0, 125, 138, 0) 82%),
+    linear-gradient(180deg, #050606 0%, #060909 55%, #06272b 78%, #0099a9 100%);
   min-height: 100dvh;
   padding-bottom: 0;
   background: #070909;
+  overscroll-behavior-y: none;
 }
 
+/* Keep ::before/icons/footer-blend off; ::after is the static viewport gradient */
 .investment-calculator-page--ai-result::before,
-.investment-calculator-page--ai-result::after,
 .investment-calculator-page--ai-result .background-icons,
 .investment-calculator-page--ai-result .investment-calculator-page__footer-blend {
   display: none;
 }
 
+.investment-calculator-page--ai-result::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: var(--investor-result-backdrop);
+}
+
+.investment-calculator-page--ai-result > .new-header,
+.investment-calculator-page--ai-result > .new-header-spacer,
+.investment-calculator-page--ai-result > .calculator-container {
+  position: relative;
+  z-index: 1;
+}
+
 .investment-calculator-page--ai-result .calculator-container {
   max-width: 760px;
+  min-height: 0;
   padding-top: 0;
-  padding-bottom: 72px;
+  padding-bottom: 32px;
+  background: transparent;
 }
 
 /* Максимально плавный переход яркости к светлому футеру (#site-footer): длинная зона + много ступеней */
@@ -2462,15 +2485,22 @@ select.parameter-input option {
 
 @media (max-width: 768px) {
   .investment-calculator-page--ai-result .calculator-container {
-    padding: 0 0 54px;
+    padding: 0 0 28px;
     background: transparent;
     box-shadow: none;
+    min-height: 0;
   }
 
   .investment-calculator-page.investment-calculator-page--ai-result {
     background: #070909;
     color: #ffffff;
     padding-bottom: 0;
+    overscroll-behavior-y: none;
+  }
+
+  /* Sticky header is in-flow on calculator — spacer would double the top gap and feel like a jump */
+  .investment-calculator-page--ai-result > .new-header-spacer {
+    display: none;
   }
 
   .investment-calculator-page.investment-calculator-page--start {
