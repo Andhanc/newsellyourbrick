@@ -13,11 +13,7 @@ import {
   Plus,
   Upload,
   Clock,
-  LayoutGrid,
-  Gavel,
-  ShoppingBag,
-  PieChart,
-  Scale,
+  Menu,
 } from 'lucide-react'
 import {
   getOwnerListingTypeLabels,
@@ -48,7 +44,6 @@ import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyProperties
 import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
 import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
@@ -59,18 +54,18 @@ import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
-const MOT_TIFFANY = '#0099a9'
+const MOT_TIFFANY = '#4ecdd6'
 
 const PAGE_SIZE = 10
 
-const MOB_LISTING_TAB_IDS = ['all', 'auction', 'buy_now', 'shares', 'debts']
+const MOB_LISTING_TAB_IDS = ['auction', 'buy_now', 'shares', 'debts']
 
-const MOB_LISTING_TAB_ICONS = {
-  all: LayoutGrid,
-  auction: Gavel,
-  buy_now: ShoppingBag,
-  shares: PieChart,
-  debts: Scale,
+const MOB_LISTING_TAB_ICON_PATHS = {
+  all: '/images/owner-properties-test/filters/all.png',
+  auction: '/images/owner-properties-test/filters/auction.png',
+  buy_now: '/images/owner-properties-test/filters/buy-now.png',
+  shares: '/images/owner-properties-test/filters/shares.png',
+  debts: '/images/owner-properties-test/filters/debts.png',
 }
 
 const MOB_LAYOUT_MAX_WIDTH = 900
@@ -353,13 +348,13 @@ function MiniSpark({ variant }) {
   )
 }
 
-function OpMobileHeroAvatar({ ariaLabel }) {
+function OpMobileHeroAvatar({ ariaLabel, onClick }) {
   const { user } = useUser()
   const gradientId = useId()
   const imageUrl = user?.imageUrl
 
-  return (
-    <Link to={getOwnerProfileTabPath('personal')} className="op-mob-hero__avatar" aria-label={ariaLabel}>
+  const avatar = (
+    <>
       {imageUrl ? (
         <img src={imageUrl} alt="" className="op-mob-hero__avatar-img" />
       ) : (
@@ -367,8 +362,8 @@ function OpMobileHeroAvatar({ ariaLabel }) {
           <svg viewBox="0 0 40 40">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#33adbb" />
-                <stop offset="100%" stopColor="#007d8a" />
+                <stop offset="0%" stopColor="#79dce2" />
+                <stop offset="100%" stopColor="#4ecdd6" />
               </linearGradient>
             </defs>
             <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
@@ -377,6 +372,20 @@ function OpMobileHeroAvatar({ ariaLabel }) {
           </svg>
         </span>
       )}
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" className="op-mob-hero__avatar" aria-label={ariaLabel} onClick={onClick}>
+        {avatar}
+      </button>
+    )
+  }
+
+  return (
+    <Link to={getOwnerProfileTabPath('personal')} className="op-mob-hero__avatar" aria-label={ariaLabel}>
+      {avatar}
     </Link>
   )
 }
@@ -609,6 +618,22 @@ export default function OwnerPropertiesTestPage() {
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
+  const openMobileMenu = useCallback(() => {
+    if (isEmbedded) {
+      window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+      return
+    }
+    setMenuOpen(true)
+  }, [isEmbedded])
+
+  const openMobileProfile = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
+      return
+    }
+    navigate(getOwnerProfileTabPath('personal'))
+  }, [goTo, isEmbedded, navigate])
+
   const loadProperties = useCallback(async () => {
     const userId = getOwnerPropertiesUserId()
     if (!userId) {
@@ -725,7 +750,7 @@ export default function OwnerPropertiesTestPage() {
     return MOB_LISTING_TAB_IDS.map((id) => ({
       id,
       label: id === 'all' ? t('ownerTest_propertiesTabAllShort') : labels[id],
-      icon: MOB_LISTING_TAB_ICONS[id],
+      iconSrc: MOB_LISTING_TAB_ICON_PATHS[id],
     }))
   }, [t])
 
@@ -846,13 +871,24 @@ export default function OwnerPropertiesTestPage() {
           <div className="op-hero-shell__shine" aria-hidden />
           <div className="op-mob-hero">
             <div className="op-mob-hero__top">
-              <OpMobileHeroAvatar ariaLabel={t('ownerTest_profileAria')} />
+              <button
+                type="button"
+                className="op-mob-hero__menu"
+                aria-label={t('ownerTest_ariaOpenMenu')}
+                onClick={openMobileMenu}
+              >
+                <Menu size={21} strokeWidth={2.2} aria-hidden />
+                <span>{t('menu')}</span>
+              </button>
               <div className="op-mob-hero__actions">
-                <OwnerSupportButton className="op-mob-hero__action" iconSize={20} />
                 <OwnerNotificationsButton
                   className="op-mob-hero__notify"
                   badgeClassName="op-mob-hero__notify-badge"
                   iconSize={20}
+                />
+                <OpMobileHeroAvatar
+                  ariaLabel={t('ownerTest_profileAria')}
+                  onClick={openMobileProfile}
                 />
               </div>
             </div>
@@ -874,7 +910,6 @@ export default function OwnerPropertiesTestPage() {
 
         <div className="op-listing-filters op-mobile-only" role="tablist" aria-label={t('ownerTest_ariaPropertyFilter')}>
           {mobListingTabs.map((tab) => {
-            const Icon = tab.icon
             const isActive = mobListingTab === tab.id
             return (
               <button
@@ -883,10 +918,15 @@ export default function OwnerPropertiesTestPage() {
                 role="tab"
                 aria-selected={isActive}
                 className={`op-listing-filter${isActive ? ' op-listing-filter--active' : ''}`}
-                onClick={() => setMobListingTab(tab.id)}
+                onClick={() => setMobListingTab((current) => (current === tab.id ? 'all' : tab.id))}
               >
                 <span className="op-listing-filter__icon" aria-hidden>
-                  <Icon size={26} strokeWidth={2.1} />
+                  <img
+                    src={tab.iconSrc}
+                    alt=""
+                    className="op-listing-filter__icon-image"
+                    decoding="async"
+                  />
                 </span>
                 <span className="op-listing-filter__label">{tab.label}</span>
               </button>
@@ -1204,11 +1244,6 @@ export default function OwnerPropertiesTestPage() {
 
       {mainColumn}
 
-      <OwnerFloatingMobileNav
-        view={OWNER_VIEWS.PROPERTIES}
-        onOpenMenu={() => setMenuOpen(true)}
-        menuOpen={menuOpen}
-      />
     </div>
   )
 }

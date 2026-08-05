@@ -17,6 +17,7 @@ import {
   FileText,
   Sparkles,
   ChevronRight,
+  Settings2,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
@@ -45,6 +46,7 @@ import { RoleSwitchButton } from '../components/RoleSwitchBottomCta'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
+import PhoneInput from '../components/PhoneInput'
 import {
   buildCountryIsoByName,
   buildPhoneCodeByCountryName,
@@ -57,11 +59,12 @@ import {
   isValidSpainDniNie,
   normalizeIdentificationInput,
 } from '../utils/profileIdentification'
-import { OWNER_PROFILE_COMPLETION_FIELDS } from '../utils/ownerTestProfile'
+import { getOwnerProfileCompletion, OWNER_PROFILE_COMPLETION_FIELDS } from '../utils/ownerTestProfile'
 import { getCurrencySymbol } from '../utils/currency'
 import { showNotification } from '../utils/toastHelper'
 import './OwnerProfileTestPage.css'
 import './OwnerProfileTestPage.mobile.css'
+import '../components/PhoneInput.css'
 
 /**
  * Поля профиля продавца (из OwnerDashboard + макет):
@@ -308,6 +311,14 @@ export default function OwnerProfileTestPage() {
   const saveReleaseRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const openSellerAnalytics = useCallback(() => {
+    if (isEmbedded && goTo) {
+      goTo(OWNER_VIEWS.HOME)
+      return
+    }
+    window.location.assign(OWNER_TEST_STANDALONE_HREF_MAP.home)
+  }, [goTo, isEmbedded])
 
   const currentSubscriptionPlanId = useMemo(
     () => resolveProfileSubscriptionPlanId(profile?.subscription) || 'standard',
@@ -835,6 +846,31 @@ export default function OwnerProfileTestPage() {
     },
   ]
 
+  const profileCompletion = getOwnerProfileCompletion(profile)
+  const mobileProfileSections = profileTabs.map((tab) => {
+    if (tab.id === 'statistics') {
+      return {
+        ...tab,
+        icon: TrendingUp,
+        meta: statsLoading
+          ? t('ownerTest_metricLoading')
+          : t('ownerTest_profileStatProperties', { count: statsTotals.totalProperties }),
+      }
+    }
+    if (tab.id === 'settings') {
+      return {
+        ...tab,
+        icon: Settings2,
+        meta: t('ownerSettingsTitle'),
+      }
+    }
+    return {
+      ...tab,
+      icon: UserRound,
+      meta: `${profileCompletion.filled} / ${profileCompletion.total}`,
+    }
+  })
+
   const mainColumn = (
       <div className="opr-body">
         <header className="opr-header opr-desktop-only">
@@ -855,6 +891,81 @@ export default function OwnerProfileTestPage() {
             <h1 className="opr-mob-pagehead__title">{t('ownerProfileTitle')}</h1>
           </div>
           <div className="opr-content">
+            <div className="opr-mobile-cabinet">
+              <header className="opr-mobile-cabinet__banner">
+                <button
+                  type="button"
+                  className="opr-mobile-cabinet__settings"
+                  aria-label={t('ownerTest_navAnalytics')}
+                  onClick={openSellerAnalytics}
+                >
+                  <Settings2 size={17} aria-hidden />
+                </button>
+
+                <div className="opr-mobile-cabinet__identity">
+                  <div className="opr-mobile-cabinet__avatar-wrap">
+                    <ProfileAvatar large />
+                    <span className="opr-mobile-cabinet__plan">{profile.subscription}</span>
+                  </div>
+                  <div className="opr-mobile-cabinet__who">
+                    <h2>{fullName}</h2>
+                    <p>{roleLabel}</p>
+                  </div>
+                </div>
+
+                <div className="opr-mobile-cabinet__stats" aria-label={t('ownerTest_ariaStatistics')}>
+                  <div>
+                    <strong>{statsLoading ? '—' : statsTotals.totalProperties}</strong>
+                    <span>{t('ownerTest_tabProperties')}</span>
+                  </div>
+                  <div>
+                    <strong>{statsLoading ? '—' : statsTotals.totalSales}</strong>
+                    <span>{t('ownerTest_profileStatSales')}</span>
+                  </div>
+                  <div>
+                    <strong>{profileCompletion.pct}%</strong>
+                    <span>{t('profile')}</span>
+                  </div>
+                </div>
+              </header>
+
+              <section className="opr-mobile-cabinet__sections" aria-label={t('ownerTest_ariaProfileSections')}>
+                <h3>{t('buyerCabinet_sectionsLabel')}</h3>
+                <div className="opr-mobile-cabinet__rail" role="tablist">
+                  {mobileProfileSections.map((tab) => {
+                    const Icon = tab.icon
+                    const selected = activeTab === tab.id
+                    return (
+                      <button
+                        key={`mobile-${tab.id}`}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        className={`opr-mobile-folder${selected ? ' opr-mobile-folder--active' : ''}`}
+                        onClick={() => selectProfileTab(tab.id)}
+                      >
+                        <span className="opr-mobile-folder__icon" aria-hidden>
+                          <Icon size={23} strokeWidth={2} />
+                        </span>
+                        <span className="opr-mobile-folder__copy">
+                          <strong>{tab.label}</strong>
+                          <span>{tab.meta}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="opr-mobile-cabinet__dots" aria-hidden>
+                  {mobileProfileSections.map((tab) => (
+                    <span
+                      key={`mobile-dot-${tab.id}`}
+                      className={activeTab === tab.id ? 'opr-mobile-cabinet__dot--active' : ''}
+                    />
+                  ))}
+                </div>
+              </section>
+            </div>
+
             <div className="opr-profile-tabs" role="tablist" aria-label={t('ownerTest_ariaProfileSections')}>
               {profileTabs.map((tab) => (
                 <button
@@ -991,23 +1102,20 @@ export default function OwnerProfileTestPage() {
                     </div>
 
                     <div className="opr-form-row">
-                      <label className="opr-field opr-field--phone">
+                      <div className="opr-field opr-field--phone" id="owner-profile-field-phone">
                         <span className="opr-field__label">{getOwnerProfileFieldLabel('phone')}</span>
-                        <input
-                          id="owner-profile-field-phone"
-                          type="tel"
-                          inputMode="tel"
-                          className="opr-field__input"
+                        <PhoneInput
+                          variant="split"
+                          autoDetectCountry
                           value={profile.phone}
                           onChange={handlePhoneChange}
-                          autoComplete="tel"
                           placeholder={
                             profile.country
                               ? t('ownerTest_profilePhonePlaceholder')
                               : t('ownerTest_profilePhoneSelectCountry')
                           }
                         />
-                      </label>
+                      </div>
                       <label className="opr-field">
                         <span className="opr-field__label">{getOwnerProfileFieldLabel('email')}</span>
                         <input

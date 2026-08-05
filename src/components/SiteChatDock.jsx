@@ -2,7 +2,10 @@ import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
 import { useSiteAiChatDock } from '../hooks/useSiteAiChatDock'
+import useMobileLayout from '../hooks/useMobileLayout'
+import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import '../pages/Home.css'
+import './SiteChatDock.css'
 
 export default function SiteChatDock({
   wrapperClassName = 'site-chat-dock',
@@ -15,6 +18,7 @@ export default function SiteChatDock({
 }) {
   const { t } = useTranslation()
   const chat = useSiteAiChatDock({ recommendationProperties })
+  const isMobile = useMobileLayout(767)
 
   const findRecommendation = (recId) => {
     if (typeof resolveRecommendationProperty === 'function') {
@@ -22,6 +26,95 @@ export default function SiteChatDock({
     }
     return recommendationProperties.find(
       (item) => String(item.id) === String(recId) || String(item.key) === String(recId),
+    )
+  }
+
+  const renderManagerChat = (inDrawer = false) => {
+    const titleId = inDrawer ? 'site-manager-drawer-title' : 'site-manager-dock-title'
+
+    return (
+      <div
+        className={`chat-widget ${
+          inDrawer
+            ? 'chat-widget--sheet-drawer chat-widget--manager-drawer'
+            : `chat-widget--manager-dock${
+                chat.isChatOpen ? ' chat-widget--stacked-above-ai' : ''
+              }`
+        }`}
+        role={inDrawer ? undefined : 'dialog'}
+        aria-labelledby={inDrawer ? undefined : titleId}
+      >
+        <div className="chat-widget__header">
+          <div className="chat-widget__header-info">
+            <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+            <div className="chat-widget__header-text">
+              <h3 id={titleId} className="chat-widget__title">{t('chatManagerTitle')}</h3>
+              <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+            </div>
+          </div>
+          {!inDrawer ? (
+            <button
+              type="button"
+              className="chat-widget__close"
+              onClick={chat.closeManagerChatDock}
+              aria-label={t('closeChat')}
+            >
+              <FiX size={20} />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="chat-widget__messages" ref={chat.managerMessagesRef} aria-live="polite">
+          {chat.managerConnecting && (
+            <div className="chat-widget__message chat-widget__message--bot">
+              <div className="chat-widget__message-content">
+                <div className="chat-widget__typing" aria-hidden>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
+              </div>
+            </div>
+          )}
+          {!chat.managerConnecting &&
+            chat.managerThreadUi.map((message) => (
+              <div
+                key={message.id}
+                className={`chat-widget__message ${
+                  message.sender === 'user'
+                    ? 'chat-widget__message--user'
+                    : message.sender === 'manager'
+                      ? 'chat-widget__message--manager'
+                      : 'chat-widget__message--system'
+                }`}
+              >
+                <div className="chat-widget__message-content">{message.text}</div>
+                <div className="chat-widget__message-time">{message.time}</div>
+              </div>
+            ))}
+        </div>
+
+        <form className="chat-widget__input-form" onSubmit={chat.submitManagerMessage}>
+          <input
+            type="text"
+            className="chat-widget__input"
+            placeholder={t('chatPlaceholder')}
+            value={chat.managerChatInput}
+            onChange={(e) => chat.setManagerChatInput(e.target.value)}
+            autoComplete="off"
+            disabled={chat.managerConnecting || !chat.liveChatToken}
+          />
+          <button
+            type="submit"
+            className="chat-widget__send"
+            aria-label={t('sendMessage')}
+            disabled={chat.managerConnecting || !chat.liveChatToken}
+          >
+            <FiSend size={18} />
+          </button>
+        </form>
+      </div>
     )
   }
 
@@ -44,27 +137,25 @@ export default function SiteChatDock({
         </button>
       ) : null}
 
-      {chat.isChatOpen && (
-        <div className="chat-widget">
+      <BuyerSheetShell
+        isOpen={chat.isChatOpen}
+        onClose={chat.closeChatDock}
+        titleId="site-ai-drawer-title"
+        closeLabel={t('closeChat')}
+        className="site-ai-drawer"
+      >
+        <div className="chat-widget chat-widget--sheet-drawer chat-widget--ai-drawer">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
               <div className="chat-widget__avatar">AI</div>
               <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                <h3 id="site-ai-drawer-title" className="chat-widget__title">{t('chatTitle')}</h3>
                 <span className="chat-widget__status">{t('chatOnline')}</span>
               </div>
             </div>
-            <button
-              type="button"
-              className="chat-widget__close"
-              onClick={chat.toggleChat}
-              aria-label={t('closeChat')}
-            >
-              <FiX size={20} />
-            </button>
           </div>
 
-          <div className="chat-widget__messages" ref={chat.chatMessagesRef}>
+          <div className="chat-widget__messages" ref={chat.chatMessagesRef} aria-live="polite">
             {chat.chatMessages.map((message, idx) => (
               <div
                 key={message.id}
@@ -97,7 +188,7 @@ export default function SiteChatDock({
                               if (typeof onRecommendationClick === 'function') {
                                 onRecommendationClick(property)
                               }
-                              chat.toggleChat()
+                              chat.closeChatDock()
                             }}
                           >
                             <div className="chat-widget__recommendation-item">
@@ -200,7 +291,6 @@ export default function SiteChatDock({
               value={chat.chatInput}
               onChange={chat.handleChatInputChange}
               disabled={chat.isLoadingAI}
-              autoFocus
             />
             <button
               type="submit"
@@ -212,86 +302,21 @@ export default function SiteChatDock({
             </button>
           </form>
         </div>
-      )}
+      </BuyerSheetShell>
 
-      {chat.isManagerChatOpen && (
-        <div
-          className={`chat-widget chat-widget--manager-dock${
-            chat.isChatOpen ? ' chat-widget--stacked-above-ai' : ''
-          }`}
-          role="dialog"
-          aria-label={t('chatManagerTitle')}
+      {isMobile ? (
+        <BuyerSheetShell
+          isOpen={chat.isManagerChatOpen}
+          onClose={chat.closeManagerChatDock}
+          titleId="site-manager-drawer-title"
+          closeLabel={t('closeChat')}
+          className="site-ai-drawer site-manager-drawer"
         >
-          <div className="chat-widget__header">
-            <div className="chat-widget__header-info">
-              <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
-              <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
-                <span className="chat-widget__status">{t('chatManagerOnline')}</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="chat-widget__close"
-              onClick={chat.closeManagerChatDock}
-              aria-label={t('closeChat')}
-            >
-              <FiX size={20} />
-            </button>
-          </div>
-
-          <div className="chat-widget__messages" ref={chat.managerMessagesRef}>
-            {chat.managerConnecting && (
-              <div className="chat-widget__message chat-widget__message--bot">
-                <div className="chat-widget__message-content">
-                  <div className="chat-widget__typing" aria-hidden>
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
-                </div>
-              </div>
-            )}
-            {!chat.managerConnecting &&
-              chat.managerThreadUi.map((message) => (
-                <div
-                  key={message.id}
-                  className={`chat-widget__message ${
-                    message.sender === 'user'
-                      ? 'chat-widget__message--user'
-                      : message.sender === 'manager'
-                        ? 'chat-widget__message--manager'
-                        : 'chat-widget__message--system'
-                  }`}
-                >
-                  <div className="chat-widget__message-content">{message.text}</div>
-                  <div className="chat-widget__message-time">{message.time}</div>
-                </div>
-              ))}
-          </div>
-
-          <form className="chat-widget__input-form" onSubmit={chat.submitManagerMessage}>
-            <input
-              type="text"
-              className="chat-widget__input"
-              placeholder={t('chatPlaceholder')}
-              value={chat.managerChatInput}
-              onChange={(e) => chat.setManagerChatInput(e.target.value)}
-              autoComplete="off"
-              disabled={chat.managerConnecting || !chat.liveChatToken}
-            />
-            <button
-              type="submit"
-              className="chat-widget__send"
-              aria-label={t('sendMessage')}
-              disabled={chat.managerConnecting || !chat.liveChatToken}
-            >
-              <FiSend size={18} />
-            </button>
-          </form>
-        </div>
-      )}
+          {renderManagerChat(true)}
+        </BuyerSheetShell>
+      ) : chat.isManagerChatOpen ? (
+        renderManagerChat()
+      ) : null}
     </div>
   )
 }

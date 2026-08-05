@@ -3086,3 +3086,1261 @@
 }
 
 /* Мобильные стили: MainOwnerTestPage.mobile.css */
+
+/* ——— 2026 seller analytics / finance dashboard ——— */
+.mot-finance {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 82% 4%, rgba(0, 153, 169, 0.1), transparent 28%),
+    #f2f4f4;
+}
+
+.mot-finance__topbar {
+  width: min(1360px, 100%);
+  margin: 0 auto;
+  padding: 30px 34px 22px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mot-finance__eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--mot-tiffany-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mot-finance__topbar h1 {
+  margin: 0;
+  color: #101415;
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.mot-finance__topbar p {
+  margin: 8px 0 0;
+  color: #7b8385;
+  font-size: 14px;
+}
+
+.mot-finance__top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mot-finance__icon-button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #172022;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+}
+
+.mot-finance__canvas {
+  width: min(1360px, 100%);
+  margin: 0 auto;
+  padding: 0 34px 44px;
+}
+
+.mot-finance__wallet {
+  position: relative;
+  isolation: isolate;
+  min-height: 330px;
+  overflow: hidden;
+  padding: 38px 42px 42px;
+  border: 1px solid rgba(0, 125, 138, 0.12);
+  border-radius: 38px 38px 18px 18px;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(126, 232, 228, 0.86) 0%, rgba(126, 232, 228, 0.26) 25%, transparent 48%),
+    radial-gradient(circle at 12% 100%, rgba(0, 153, 169, 0.14), transparent 38%),
+    #ffffff;
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.08);
+}
+
+.mot-finance__wallet::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 440px;
+  height: 440px;
+  right: -122px;
+  bottom: -285px;
+  border: 62px solid rgba(0, 153, 169, 0.16);
+  border-radius: 50%;
+}
+
+.mot-finance__wallet-glow {
+  position: absolute;
+  z-index: -1;
+  width: 210px;
+  height: 210px;
+  top: -110px;
+  right: 10%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  filter: blur(18px);
+}
+
+.mot-finance__wallet-grid {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: 0.3;
+  background-image:
+    linear-gradient(rgba(0, 153, 169, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 153, 169, 0.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(90deg, transparent, #000 58%, #000);
+}
+
+.mot-finance__wallet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mot-finance__wallet-kicker {
+  display: inline-flex;
+  margin-bottom: 10px;
+  color: var(--mot-tiffany-dark);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mot-finance__wallet h2 {
+  margin: 0;
+  color: #6c7577;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mot-finance__live {
+  padding: 9px 13px;
+  border: 1px solid rgba(0, 153, 169, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #375256;
+  font-size: 12px;
+  font-weight: 650;
+  backdrop-filter: blur(12px);
+}
+
+.mot-finance__live i,
+.mot-finance__auction-status i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #08a681;
+  box-shadow: 0 0 0 4px rgba(8, 166, 129, 0.1);
+}
+
+.mot-finance__balance {
+  margin-top: 34px;
+}
+
+.mot-finance__balance-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.mot-finance__balance-visibility {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 46px;
+  padding: 0;
+  border: 1px solid rgba(78, 205, 214, 0.34);
+  border-radius: 50%;
+  background: rgba(78, 205, 214, 0.14);
+  color: #172126;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mot-finance__balance-visibility:hover {
+  transform: translateY(-1px);
+  background: rgba(78, 205, 214, 0.24);
+  box-shadow: 0 8px 18px rgba(59, 192, 203, 0.16);
+}
+
+.mot-finance__balance-visibility:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mot-finance__balance strong {
+  display: block;
+  color: #111617;
+  font-size: clamp(46px, 6vw, 78px);
+  font-weight: 520;
+  line-height: 0.98;
+  letter-spacing: -0.065em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mot-finance__balance p {
+  margin: 15px 0 0;
+  color: #778184;
+  font-size: 13px;
+}
+
+.mot-finance__balance small {
+  display: block;
+  margin-top: 7px;
+  color: var(--mot-tiffany-dark);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.mot-finance__portfolio-meta {
+  position: absolute;
+  right: 42px;
+  bottom: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mot-finance__portfolio-meta span {
+  min-height: 42px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 15px;
+  background: rgba(0, 74, 82, 0.78);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: 0 12px 28px rgba(0, 74, 82, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.mot-finance__quick-grid {
+  position: relative;
+  z-index: 2;
+  margin: -18px 28px 0;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) 180px;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  background: #111617;
+  box-shadow: 0 24px 52px rgba(11, 18, 20, 0.22);
+}
+
+.mot-finance__quick-card {
+  position: relative;
+  min-width: 0;
+  min-height: 182px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: #f8fbfb;
+  color: #172022;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mot-finance__quick-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 153, 169, 0.34);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.16);
+}
+
+.mot-finance__quick-card--bookings {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(126, 232, 228, 0.3), transparent 44%),
+    #f8fbfb;
+}
+
+.mot-finance__quick-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #889092;
+}
+
+.mot-finance__quick-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(0, 153, 169, 0.11);
+  color: var(--mot-tiffany-dark);
+}
+
+.mot-finance__quick-title {
+  display: block;
+  margin-top: 14px;
+  color: #657073;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.mot-finance__quick-card > strong {
+  display: block;
+  margin-top: 2px;
+  color: #111617;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.mot-finance__quick-hint {
+  display: block;
+  max-width: calc(100% - 92px);
+  margin-top: 7px;
+  color: #92999b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.mot-finance__thumb-stack {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.mot-finance__thumb-stack img,
+.mot-finance__thumb-stack > span {
+  width: 38px;
+  height: 38px;
+  margin-left: -11px;
+  border: 3px solid #f8fbfb;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #dff4f4;
+  color: var(--mot-tiffany-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mot-finance__quick-card--add {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(126, 232, 228, 0.32), transparent 36%),
+    linear-gradient(145deg, #005c66 0%, #007d8a 52%, #0099a9 100%);
+  color: #ffffff;
+}
+
+.mot-finance__quick-card-top .mot-finance__thumb-stack {
+  position: static;
+  right: auto;
+  bottom: auto;
+  margin-left: auto;
+  flex-direction: row;
+  align-items: center;
+}
+
+.mot-finance__quick-card-top .mot-finance__thumb-stack img,
+.mot-finance__quick-card-top .mot-finance__thumb-stack > span {
+  width: 30px;
+  height: 30px;
+  margin-left: -9px;
+  border-width: 2px;
+}
+
+.mot-finance__quick-card-top .mot-finance__thumb-stack img:first-child,
+.mot-finance__quick-card-top .mot-finance__thumb-stack > span:first-child {
+  margin-left: 0;
+}
+
+.mot-finance__quick-card--add .mot-finance__quick-title,
+.mot-finance__quick-card--add .mot-finance__quick-hint {
+  color: #ffffff;
+  max-width: 100%;
+}
+
+.mot-finance__add-icon {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--mot-tiffany-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mot-finance__add-arrow {
+  position: absolute;
+  right: 17px;
+  bottom: 18px;
+}
+
+.mot-finance__auctions {
+  margin-top: 28px;
+  padding: 28px 30px 22px;
+  border: 1px solid rgba(15, 23, 42, 0.055);
+  border-radius: 34px;
+  background: #ffffff;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.07);
+}
+
+.mot-finance__sheet-handle {
+  display: none;
+}
+
+.mot-finance__section-head {
+  padding: 0 2px 21px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mot-finance__section-head h2 {
+  margin: 0;
+  color: #131819;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.mot-finance__section-head p {
+  margin: 7px 0 0;
+  color: #92999b;
+  font-size: 12px;
+}
+
+.mot-finance__section-head > button {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #f3f6f6;
+  color: #4c585a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.mot-finance__auction-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mot-finance__auction-row {
+  min-width: 0;
+  width: 100%;
+  padding: 15px 8px;
+  display: grid;
+  grid-template-columns: 34px 70px minmax(180px, 1fr) minmax(150px, 0.55fr) minmax(160px, 0.55fr) 38px;
+  align-items: center;
+  gap: 16px;
+  border: 0;
+  border-top: 1px solid #eef1f1;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.mot-finance__auction-row:hover {
+  z-index: 1;
+  border-radius: 18px;
+  background: #f4fbfb;
+  transform: translateX(3px);
+}
+
+.mot-finance__auction-position {
+  color: #afb5b7;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.mot-finance__auction-row > img {
+  width: 70px;
+  height: 58px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: #e8eeee;
+}
+
+.mot-finance__auction-copy,
+.mot-finance__auction-price,
+.mot-finance__auction-time {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mot-finance__auction-status {
+  margin-bottom: 3px;
+  color: #0b8a6c;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.mot-finance__auction-status i {
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  box-shadow: none;
+}
+
+.mot-finance__auction-copy > strong {
+  overflow: hidden;
+  color: #1a2021;
+  font-size: 14px;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mot-finance__auction-copy > small {
+  overflow: hidden;
+  margin-top: 4px;
+  color: #9ba1a3;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mot-finance__auction-price small,
+.mot-finance__auction-time small {
+  margin-bottom: 5px;
+  color: #9ba1a3;
+  font-size: 10px;
+}
+
+.mot-finance__auction-time small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mot-finance__auction-price strong,
+.mot-finance__auction-time strong {
+  overflow: hidden;
+  color: #2d3638;
+  font-size: 13px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mot-finance__auction-open {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e7ecec;
+  border-radius: 12px;
+  color: #697476;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mot-finance__auction-loading {
+  display: grid;
+  gap: 10px;
+}
+
+.mot-finance__shimmer {
+  display: block;
+  height: 78px;
+  border-radius: 18px;
+  background: linear-gradient(100deg, #eef2f2 25%, #fafcfc 40%, #eef2f2 60%);
+  background-size: 240% 100%;
+  animation: mot-finance-shimmer 1.25s ease-in-out infinite;
+}
+
+.mot-finance__shimmer--balance {
+  width: min(560px, 74%);
+  height: 70px;
+  border-radius: 14px;
+}
+
+.mot-finance__empty {
+  min-height: 150px;
+  padding: 24px;
+  border: 1px dashed rgba(0, 153, 169, 0.24);
+  border-radius: 22px;
+  background: #f8fcfc;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.mot-finance__empty > span {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 17px;
+  background: rgba(0, 153, 169, 0.1);
+  color: var(--mot-tiffany-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mot-finance__empty div {
+  flex: 1;
+}
+
+.mot-finance__empty strong {
+  color: #243032;
+  font-size: 14px;
+}
+
+.mot-finance__empty p {
+  margin: 5px 0 0;
+  color: #8b9496;
+  font-size: 12px;
+}
+
+.mot-finance__empty button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--mot-gradient-active);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes mot-finance-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (max-width: 1160px) and (min-width: 901px) {
+  .mot-finance__quick-grid {
+    grid-template-columns: 1fr 1fr 140px;
+    margin-inline: 18px;
+  }
+
+  .mot-finance__auction-row {
+    grid-template-columns: 26px 62px minmax(150px, 1fr) minmax(130px, 0.55fr) minmax(135px, 0.55fr) 34px;
+    gap: 11px;
+  }
+
+  .mot-finance__auction-row > img {
+    width: 62px;
+    height: 54px;
+  }
+}
+
+/* Reference-accurate composition: white balance, black actions, white sheet. */
+.mot-finance {
+  background: #111313;
+}
+
+.mot-finance__canvas {
+  width: min(1180px, 100%);
+  padding: 28px 34px 0;
+}
+
+.mot-finance__wallet {
+  min-height: 0;
+  padding: 38px 42px 30px;
+  overflow: visible;
+  border: 0;
+  border-radius: 34px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.mot-finance__wallet::after,
+.mot-finance__wallet-glow,
+.mot-finance__wallet-grid,
+.mot-finance__portfolio-meta {
+  display: none;
+}
+
+.mot-finance__wallet-head {
+  align-items: center;
+}
+
+.mot-finance__wallet h2 {
+  color: #858585;
+  font-size: 15px;
+  font-weight: 560;
+}
+
+.mot-finance__live {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mot-gradient-active);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  box-shadow: none;
+}
+
+.mot-finance__balance {
+  margin-top: 22px;
+}
+
+.mot-finance__balance strong {
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 720;
+}
+
+.mot-finance__balance p {
+  margin-top: 12px;
+}
+
+.mot-finance__quick-grid {
+  margin: 38px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr) 168px;
+  gap: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mot-finance__quick-card,
+.mot-finance__quick-card--bookings,
+.mot-finance__quick-card--add {
+  min-height: 154px;
+  border: 0;
+  border-radius: 22px;
+  background: #f5f5f3;
+  color: #161818;
+  box-shadow: none;
+}
+
+.mot-finance__quick-card:hover {
+  border: 0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.mot-finance__quick-card--add .mot-finance__quick-title {
+  color: #657073;
+}
+
+.mot-finance__quick-card--add .mot-finance__quick-hint {
+  color: #92999b;
+}
+
+.mot-finance__quick-card--add .mot-finance__add-arrow {
+  color: #636b6c;
+}
+
+.mot-finance__add-icon {
+  background: rgba(0, 153, 169, 0.12);
+  color: var(--mot-tiffany-dark);
+}
+
+.mot-finance__action-bar {
+  min-height: 96px;
+  padding: 16px 42px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 42px;
+  background: #111313;
+}
+
+.mot-finance__action-bar button {
+  min-width: 92px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 570;
+  cursor: pointer;
+}
+
+.mot-finance__action-bar button > span {
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2a2d2d, #121414);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.mot-finance__action-bar button > .mot-finance__action-ai-mark {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.mot-finance__action-bar button:hover > span {
+  border-color: rgba(126, 232, 228, 0.78);
+  background: var(--mot-tiffany-dark);
+}
+
+.mot-finance__auctions {
+  margin: 0;
+  padding-top: 25px;
+  border: 0;
+  border-radius: 34px 34px 0 0;
+  box-shadow: none;
+}
+
+.mot-finance,
+.mot-finance * {
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+.mot-finance {
+  --mot-tiffany: #4ecdd6;
+  --mot-tiffany-dark: #3bc0cb;
+  --mot-tiffany-deep: #2aaeb9;
+  --mot-tiffany-light: #6ad6dd;
+  --mot-tiffany-soft: rgba(78, 205, 214, 0.12);
+  --mot-gradient-active: linear-gradient(135deg, #3bc0cb 0%, #4ecdd6 100%);
+}
+
+.mot-finance__wallet-head {
+  align-items: center;
+}
+
+.mot-finance__menu-button,
+.mot-finance__analytics-button,
+.mot-finance__profile-button {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mot-finance__menu-button {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: #f3f4f2;
+  color: #323738;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.mot-finance__menu-button:hover {
+  background: #e9eeee;
+  color: var(--mot-tiffany-dark);
+}
+
+.mot-finance__wallet-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mot-finance__analytics-button {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3bc0cb 0%, #4ecdd6 100%);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(78, 205, 214, 0.28);
+}
+
+.mot-finance__profile-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #f3f4f2;
+  color: #343a3b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.mot-finance__profile-button:hover {
+  background: rgba(0, 153, 169, 0.12);
+  color: var(--mot-tiffany-dark);
+}
+
+.mot-finance__auctions,
+.mot-finance__auctions button,
+.mot-finance__auctions h2,
+.mot-finance__auctions p,
+.mot-finance__auctions span,
+.mot-finance__auctions strong,
+.mot-finance__auctions small {
+  font-family: "Montserrat", system-ui, sans-serif !important;
+}
+
+.mot-finance__section-head h2 {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.mot-finance__section-head p {
+  font-weight: 500;
+}
+
+.mot-finance__section-head > button,
+.mot-finance__auction-copy > strong,
+.mot-finance__auction-price strong,
+.mot-finance__auction-time strong {
+  font-weight: 700;
+}
+
+.mot-finance__wallet {
+  border-radius: 42px;
+}
+
+.mot-finance__quick-card,
+.mot-finance__quick-card--bookings {
+  border: 1px solid rgba(59, 192, 203, 0.36);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(106, 214, 221, 0.4), transparent 46%),
+    linear-gradient(145deg, #e6fbfa 0%, #d2f6f3 48%, #bfecea 100%);
+  box-shadow:
+    0 16px 34px rgba(59, 192, 203, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.mot-finance__quick-card--bookings {
+  background:
+    radial-gradient(circle at 0% 100%, rgba(106, 214, 221, 0.36), transparent 48%),
+    linear-gradient(145deg, #eafcfa 0%, #d6f7f4 48%, #c3efed 100%);
+}
+
+.mot-finance__quick-card:hover {
+  border-color: rgba(59, 192, 203, 0.55);
+  box-shadow:
+    0 20px 40px rgba(59, 192, 203, 0.18),
+    inset 0 1px 0 #ffffff;
+}
+
+.mot-finance__quick-icon {
+  background: linear-gradient(135deg, rgba(106, 214, 221, 0.32), rgba(78, 205, 214, 0.18));
+  color: #239da8;
+  box-shadow: inset 0 0 0 1px rgba(78, 205, 214, 0.12);
+}
+
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-title {
+  color: #225f64;
+}
+
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) > strong {
+  color: #0b3437;
+}
+
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-hint {
+  color: #64898c;
+}
+
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-card-top > svg {
+  color: #38adb7;
+}
+
+.mot-finance__thumb-stack img,
+.mot-finance__thumb-stack > span {
+  border-color: #e1f8f6;
+}
+
+.mot-finance__auctions {
+  border-radius: 42px 42px 0 0;
+}
+
+/* Tiffany account cards — shared visual treatment for all three cards. */
+.mot-finance__quick-card,
+.mot-finance__quick-card--bookings,
+.mot-finance__quick-card--add {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background:
+    radial-gradient(circle at 88% 4%, rgba(255, 255, 255, 0.34), transparent 36%),
+    linear-gradient(145deg, #54d2da 0%, #3bc0cb 52%, #2aaeb9 100%);
+  color: #ffffff;
+  box-shadow:
+    0 18px 36px rgba(42, 174, 185, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.mot-finance__quick-card--bookings {
+  background:
+    radial-gradient(circle at 8% 100%, rgba(255, 255, 255, 0.28), transparent 42%),
+    linear-gradient(145deg, #63d7dd 0%, #45c8d1 48%, #31b4bf 100%);
+}
+
+.mot-finance__quick-card--add {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.3), transparent 42%),
+    linear-gradient(145deg, #43c8d1 0%, #2eb4bf 52%, #239da8 100%);
+}
+
+.mot-finance__quick-card:hover {
+  border-color: rgba(255, 255, 255, 0.74);
+  box-shadow:
+    0 22px 42px rgba(42, 174, 185, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.mot-finance__quick-icon,
+.mot-finance__add-icon {
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.mot-finance__quick-card .mot-finance__quick-title,
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-title,
+.mot-finance__quick-card .mot-finance__quick-hint,
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-hint,
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) > strong,
+.mot-finance__quick-card .mot-finance__quick-card-top,
+.mot-finance__quick-card:not(.mot-finance__quick-card--add) .mot-finance__quick-card-top > svg,
+.mot-finance__quick-card--add .mot-finance__add-arrow {
+  color: #ffffff;
+}
+
+.mot-finance__quick-card .mot-finance__quick-title {
+  font-weight: 750;
+}
+
+.mot-finance__quick-card .mot-finance__quick-hint {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.mot-finance__thumb-stack img,
+.mot-finance__thumb-stack > span {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.mot-finance__auction-list {
+  gap: 12px;
+}
+
+.mot-finance__auction-row {
+  padding: 12px;
+  border: 1px solid rgba(59, 192, 203, 0.18);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(78, 205, 214, 0.12), transparent 38%),
+    linear-gradient(145deg, #ffffff 0%, #f7fdfc 62%, #eefafa 100%);
+  box-shadow: 0 10px 24px rgba(35, 157, 168, 0.07);
+}
+
+.mot-finance__auction-row:hover {
+  border-radius: 22px;
+  border-color: rgba(59, 192, 203, 0.38);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(78, 205, 214, 0.18), transparent 40%),
+    linear-gradient(145deg, #ffffff 0%, #f1fbfa 100%);
+  box-shadow: 0 16px 32px rgba(35, 157, 168, 0.12);
+}
+
+.mot-finance__auction-row > img {
+  box-shadow: 0 9px 20px rgba(15, 23, 42, 0.12);
+}
+
+.mot-finance__auction-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(78, 205, 214, 0.12);
+  color: #138f98;
+}
+
+.mot-finance__auction-price strong {
+  color: #164d52;
+}
+
+.mot-finance__auction-open {
+  border: 0;
+  background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(59, 192, 203, 0.24);
+}
+
+/* Dark pill CTA from the dashboard reference. */
+.mot-finance__section-head > button {
+  min-height: 52px;
+  padding: 6px 6px 6px 19px;
+  gap: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #0b1322;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 12px 26px rgba(11, 19, 34, 0.16);
+}
+
+.mot-finance__section-head > button:hover {
+  background: #121c2d;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mot-finance__section-head > button svg {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border-radius: 50%;
+  background: #263044;
+  color: #ffffff;
+  stroke-width: 2.4;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.mot-finance__section-head > button:hover svg {
+  background: #303b50;
+  transform: translateX(2px);
+}
+
+/* Calm, content-first auction rows: image, title, current bid and live timer. */
+.mot-finance__auction-row {
+  min-height: 104px;
+  padding: 12px;
+  grid-template-columns: 82px minmax(160px, 1fr) minmax(138px, auto) minmax(182px, auto) 42px;
+  gap: 14px;
+  border: 1px solid #e5eeee;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+}
+
+.mot-finance__auction-row:hover {
+  border-color: #c9eaed;
+  background: #ffffff;
+  box-shadow: 0 13px 28px rgba(15, 23, 42, 0.085);
+}
+
+.mot-finance__auction-row > img {
+  width: 82px;
+  height: 78px;
+  border-radius: 18px;
+}
+
+.mot-finance__auction-copy > strong {
+  color: #151c22;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.mot-finance__auction-price {
+  width: fit-content;
+  padding: 10px 13px;
+  border-radius: 15px;
+  background: #f3f6f6;
+}
+
+.mot-finance__auction-price small,
+.mot-finance__auction-time small {
+  margin-bottom: 4px;
+  color: #8a9598;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.mot-finance__auction-price strong {
+  color: #17272a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.mot-finance__auction-time {
+  width: fit-content;
+  padding: 0;
+  align-items: flex-end;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: right;
+}
+
+.mot-finance__auction-time small {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  color: #879396;
+}
+
+.mot-finance__auction-time strong {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  color: #15939d;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.mot-finance__auction-open {
+  width: 42px;
+  height: 48px;
+  border-radius: 15px;
+  background: #42c4ce;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(59, 192, 203, 0.2);
+}

@@ -1400,6 +1400,12 @@
   color: #111827;
 }
 
+.ost-pricing-hero__menu {
+  grid-column: 1;
+  justify-self: start;
+  display: none;
+}
+
 .ost-pricing-hero__actions {
   grid-column: 3;
   justify-self: end;
@@ -1458,7 +1464,7 @@
   margin: 0 0.08em;
   padding: 0.08em 0.52em 0.14em;
   border-radius: 999px;
-  background: var(--oc-gradient-brand);
+  background: #4ecdd6;
   color: #ffffff;
   font-weight: 800;
   line-height: 1.05;
@@ -1466,6 +1472,35 @@
     0 10px 24px var(--oc-tiffany-ring),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transform: rotate(-2deg);
+}
+
+.ost-pricing-hero__actions .otpm--pricing-hero {
+  max-width: none;
+}
+
+.ost-pricing-hero__profile {
+  display: none;
+}
+
+.ost-pricing-hero__actions .otpm--pricing-hero .otpm__pill {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ost-pricing-hero__actions .otpm--pricing-hero .otpm__info,
+.ost-pricing-hero__actions .otpm--pricing-hero .otpm__toggle {
+  display: none;
+}
+
+.ost-pricing-hero__actions .otpm--pricing-hero .otpm__identity {
+  padding: 0;
+}
+
+.ost-pricing-hero__actions .otpm--pricing-hero .otpm__avatar {
+  width: 44px;
+  height: 44px;
 }
 
 .ost-content--pricing-mob,

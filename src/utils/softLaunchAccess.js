@@ -19,6 +19,7 @@ const EXACT_ALLOWED = new Set([
   '/debts',
   '/test-drive',
   '/about',
+  '/news',
   '/buyer',
   /** Marketing landing «Для продавца» — not the owner cabinet. */
   '/seller',
@@ -31,19 +32,18 @@ const EXACT_ALLOWED = new Set([
   '/subscriptions',
   '/wallet',
   '/deposit',
+  '/bonuses',
   '/favorites',
   '/compare',
+  '/map',
+  '/calculator',
 ])
 
 /** UI features blocked during soft-launch (entry points + deep links). */
 const BLOCKED_FEATURES = new Set([
-  'sellerRole',
-  'sellerCabinet',
   'aiAssistant',
   'aiRealEstate',
-  'smartInvestor',
   'managerChat',
-  'map',
 ])
 
 function normalizePathname(pathname = '') {
@@ -86,6 +86,11 @@ export function isSoftLaunchSellerContourPath(pathname = '') {
 export function isSoftLaunchPathAllowed(pathname = '') {
   const path = normalizePathname(pathname)
 
+  if (
+    isSoftLaunchSellerContourPath(path) &&
+    !isSoftLaunchFeatureBlocked('sellerCabinet')
+  ) return true
+
   if (EXACT_ALLOWED.has(path)) return true
 
   if (path.startsWith('/auction/')) return true
@@ -93,6 +98,7 @@ export function isSoftLaunchPathAllowed(pathname = '') {
   if (path.startsWith('/shares/')) return true
   if (path.startsWith('/debts/')) return true
   if (path.startsWith('/test-drive/')) return true
+  if (path.startsWith('/news/')) return true
 
   // /property/:id and /property/:id/test-drive — not /edit
   const propertyMatch = path.match(/^\/property\/([^/]+)(?:\/([^/]+))?$/)
@@ -113,7 +119,9 @@ export function isSoftLaunchPathAllowed(pathname = '') {
 export function shouldShowSoftLaunchUnavailable(pathname = '') {
   if (!SOFT_LAUNCH_ENABLED) return false
   if (isSoftLaunchExemptPath(pathname)) return false
-  if (isSoftLaunchSellerContourPath(pathname)) return true
+  if (isSoftLaunchSellerContourPath(pathname)) {
+    return isSoftLaunchFeatureBlocked('sellerCabinet')
+  }
   if (isSoftLaunchPathAllowed(pathname)) return false
   return true
 }
@@ -137,14 +145,23 @@ export function getSoftLaunchBlockedFeatureForHref(href = '') {
   const path = normalizePathname(raw)
   const query = raw.includes('?') ? raw.slice(raw.indexOf('?')) : ''
 
-  if (path === '/calculator' || path.startsWith('/calculator/')) return 'smartInvestor'
+  if (
+    (path === '/calculator' || path.startsWith('/calculator/')) &&
+    isSoftLaunchFeatureBlocked('smartInvestor')
+  ) return 'smartInvestor'
   if (path === '/chat' || path.startsWith('/chat/')) {
     if (query.includes('assistant=1')) return 'aiAssistant'
     if (query.includes('manager=1')) return 'managerChat'
     return 'aiRealEstate'
   }
-  if (path === '/map' || path.startsWith('/map/')) return 'map'
-  if (isSoftLaunchSellerContourPath(path)) return 'sellerCabinet'
+  if (
+    (path === '/map' || path.startsWith('/map/')) &&
+    isSoftLaunchFeatureBlocked('map')
+  ) return 'map'
+  if (
+    isSoftLaunchSellerContourPath(path) &&
+    isSoftLaunchFeatureBlocked('sellerCabinet')
+  ) return 'sellerCabinet'
   if (shouldShowSoftLaunchUnavailable(path)) return 'unavailable'
   return null
 }

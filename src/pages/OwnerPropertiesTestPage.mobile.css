@@ -39,7 +39,9 @@
   .op {
     --op-mob-pad: var(--oc-mob-pad, 16px);
     --op-tab-h: 56px;
-    --op-tiffany: var(--oc-tiffany);
+    --op-tiffany: #4ecdd6;
+    --op-tiffany-dark: #2aaeb9;
+    --op-tiffany-light: #79dce2;
 
     flex-direction: column;
     width: 100%;
@@ -64,29 +66,19 @@
 
   /* —— Tiffany hero shell (drawer-style bottom radius) —— */
   .op-hero-shell {
-    --op-hero-radius: 24px;
+    --op-hero-radius: 30px;
     position: relative;
     margin: 0 0 12px;
     padding: 0 0 16px;
     overflow: hidden;
     border-radius: 0 0 var(--op-hero-radius) var(--op-hero-radius);
-    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 42px rgba(42, 174, 185, 0.18);
   }
 
   .op-hero-shell__bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      180deg,
-      #33adbb 0%,
-      #7ee8e4 16%,
-      #2ec9c4 38%,
-      #0099a9 62%,
-      #007d8a 82%,
-      #006672 100%
-    );
-    background-size: 220% 220%;
-    animation: op-hero-shell-gradient 10s ease-in-out infinite;
+    background: linear-gradient(145deg, #79dce2 0%, #62d5dc 35%, #4ecdd6 68%, #3bc0cb 100%);
     border-radius: inherit;
     z-index: 0;
   }
@@ -95,14 +87,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 95% 75% at 8% 6%, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0) 56%),
-      radial-gradient(ellipse 72% 58% at 92% 14%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 60%),
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.2) 0%,
-        rgba(255, 255, 255, 0) 40%,
-        rgba(6, 122, 118, 0) 100%
-      );
+      radial-gradient(ellipse 92% 78% at 5% 0%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 58%),
+      radial-gradient(ellipse 70% 58% at 100% 15%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 64%);
     border-radius: inherit;
     pointer-events: none;
     z-index: 0;
@@ -111,12 +97,7 @@
   .op-hero-shell__fade {
     position: absolute;
     inset: 48% 0 0;
-    background: linear-gradient(
-      180deg,
-      rgba(6, 122, 118, 0) 0%,
-      rgba(0, 102, 114, 0.18) 36%,
-      rgba(6, 95, 92, 0.45) 100%
-    );
+    background: linear-gradient(180deg, rgba(42, 174, 185, 0) 0%, rgba(42, 174, 185, 0.16) 100%);
     border-radius: inherit;
     pointer-events: none;
     z-index: 0;
@@ -141,24 +122,30 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 22px;
   }
 
   .op-mob-hero__actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
   }
 
   .op-mob-hero__avatar {
-    display: block;
-    width: 44px;
-    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 8px 20px rgba(18, 96, 103, 0.14);
+    cursor: pointer;
   }
 
   .op-mob-hero__avatar-img,
@@ -167,13 +154,32 @@
     display: block;
     width: 100%;
     height: 100%;
+    border-radius: 50%;
   }
 
-  .op-mob-hero__action,
+  .op-mob-hero__menu {
+    min-width: 104px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #172126;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 750;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(18, 96, 103, 0.12);
+  }
+
   .op-mob-hero__notify {
     position: relative;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -184,7 +190,7 @@
     padding: 0;
     cursor: pointer;
     flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 8px 20px rgba(18, 96, 103, 0.12);
   }
 
   .op-mob-hero__notify-badge {
@@ -210,12 +216,12 @@
 
   .op-mob-hero__title {
     margin: 0 0 16px;
-    font-size: clamp(24px, 6.4vw, 28px);
-    font-weight: 700;
+    font-size: clamp(30px, 8vw, 38px);
+    font-weight: 800;
     letter-spacing: -0.03em;
     color: #ffffff;
     line-height: 1.15;
-    text-shadow: 0 1px 10px rgba(0, 102, 114, 0.2);
+    text-shadow: 0 1px 12px rgba(18, 96, 103, 0.14);
   }
 
   .op-mob-hero__search {
@@ -223,18 +229,18 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    min-height: 52px;
-    padding: 6px 16px;
+    min-height: 58px;
+    padding: 7px 18px;
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid rgba(255, 255, 255, 0.82);
     border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 14px 32px rgba(18, 96, 103, 0.13);
     box-sizing: border-box;
   }
 
   .op-mob-hero__search-icon {
     flex-shrink: 0;
-    color: #9ca3af;
+    color: #53666a;
   }
 
   .op-mob-hero__search-input {
@@ -243,8 +249,8 @@
     border: none;
     background: transparent;
     padding: 8px 0;
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     color: #111827;
     outline: none;
   }
@@ -256,9 +262,9 @@
   .op-listing-filters {
     display: flex !important;
     align-items: stretch;
-    gap: 4px;
+    gap: 8px;
     margin: 0;
-    padding: 14px var(--op-mob-pad) 8px;
+    padding: 18px var(--op-mob-pad) 10px;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
@@ -275,7 +281,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
     padding: 6px 2px 4px;
     border: none;
     border-radius: 12px;
@@ -291,24 +297,37 @@
   }
 
   .op-listing-filter__icon {
-    width: 56px;
-    height: 56px;
+    width: 62px;
+    height: 62px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(0, 153, 169, 0.12);
-    color: #007d8a;
+    background: #eaf9fa;
+    color: #223338;
     transition:
       background 0.18s ease,
       color 0.18s ease,
       box-shadow 0.18s ease;
   }
 
+  .op-listing-filter__icon-image {
+    display: block;
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 8px rgba(18, 96, 103, 0.14));
+    transition: transform 0.2s ease;
+  }
+
   .op-listing-filter--active .op-listing-filter__icon {
-    background: #0099a9;
+    background: var(--op-tiffany);
     color: #ffffff;
-    box-shadow: 0 6px 16px rgba(0, 153, 169, 0.28);
+    box-shadow: 0 10px 22px rgba(78, 205, 214, 0.34);
+  }
+
+  .op-listing-filter--active .op-listing-filter__icon-image {
+    transform: scale(1.04);
   }
 
   .op-listing-filter__label {
@@ -317,13 +336,13 @@
     font-weight: 500;
     line-height: 1.15;
     text-align: center;
-    color: #9ca3af;
+    color: #7b878b;
     hyphens: auto;
   }
 
   .op-listing-filter--active .op-listing-filter__label {
-    color: #4b5563;
-    font-weight: 600;
+    color: #111827;
+    font-weight: 750;
   }
 
   .op-tabs--hero {
@@ -419,16 +438,6 @@
     .op-tabs--hero .op-tabs__item:not(.op-tabs__item--active):active,
     .op-tabs--hero .op-tabs__item--active:active {
       transform: none;
-    }
-  }
-
-  @keyframes op-hero-shell-gradient {
-    0%,
-    100% {
-      background-position: 0% 40%;
-    }
-    50% {
-      background-position: 100% 60%;
     }
   }
 
@@ -796,9 +805,9 @@
   .op-mob-list.op-mobile-only {
     display: flex !important;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     list-style: none;
-    margin: 16px 0 0;
+    margin: 18px 0 0;
     padding: 0 var(--op-mob-pad);
   }
 
@@ -813,25 +822,25 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    gap: 12px;
-    min-height: 92px;
-    padding: 10px 12px;
-    border-radius: 16px;
+    gap: 14px;
+    min-height: 116px;
+    padding: 11px;
+    border-radius: 22px;
     background: #ffffff;
-    border: 1px solid rgba(229, 231, 235, 0.9);
+    border: 1px solid rgba(78, 205, 214, 0.22);
     box-shadow:
-      0 10px 28px rgba(15, 23, 42, 0.08),
-      0 2px 8px rgba(15, 23, 42, 0.04);
+      0 14px 34px rgba(15, 23, 42, 0.07),
+      0 5px 16px rgba(78, 205, 214, 0.08);
     box-sizing: border-box;
   }
 
   .op-mob-property__media {
     position: relative;
-    flex: 0 0 96px;
-    width: 96px;
-    height: 92px;
+    flex: 0 0 104px;
+    width: 104px;
+    height: 104px;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 17px;
     background: linear-gradient(135deg, #e8f1f4 0%, #e8f1f4 100%);
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
   }
@@ -851,7 +860,7 @@
     gap: 4px;
     flex: 1;
     min-width: 0;
-    padding: 2px 0;
+    padding: 3px 0;
   }
 
   .op-mob-property__head {
@@ -891,8 +900,8 @@
 
   .op-mob-property__title {
     margin: 0;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 750;
     line-height: 1.3;
     letter-spacing: -0.01em;
     color: #111827;
@@ -907,7 +916,7 @@
   .op-mob-property__location {
     margin: 0;
     font-size: 12px;
-    color: #6b7280;
+    color: #738086;
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -924,7 +933,7 @@
 
   .op-mob-property__price {
     margin: 0;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 800;
     color: #111827;
     line-height: 1.2;
@@ -934,18 +943,18 @@
 
   .op-mob-property__open {
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 1.5px solid #111827;
+    border: 1.5px solid var(--op-tiffany);
     border-radius: 50%;
-    background: #111827;
+    background: var(--op-tiffany);
     color: #ffffff;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.16);
+    box-shadow: 0 8px 18px rgba(78, 205, 214, 0.28);
     transition:
       background 0.18s ease,
       transform 0.16s ease,
@@ -954,8 +963,8 @@
 
   .op-mob-property__open:active {
     transform: scale(0.98);
-    background: #1f2937;
-    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.14);
+    background: var(--op-tiffany-dark);
+    box-shadow: 0 5px 14px rgba(59, 192, 203, 0.3);
   }
 
   /* —— Рекламные блоки (как в desktop rail) —— */

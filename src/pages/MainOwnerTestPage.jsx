@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Calendar,
   Eye,
+  EyeOff,
   Gavel,
   Heart,
   TrendingUp,
@@ -31,6 +32,7 @@ import {
   Plus,
   Clock,
   DollarSign,
+  User,
 } from 'lucide-react'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
@@ -42,8 +44,8 @@ import {
   OwnerCabinetEndingSoonSkeleton,
 } from '../components/OwnerCabinetOverviewSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerSalesAnalyticsDrawer from '../components/OwnerSalesAnalyticsDrawer'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
-import OwnerFloatingMobileNav from '../components/OwnerFloatingMobileNav'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
@@ -60,8 +62,10 @@ import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getOwnerProfileTabPath } from './ownerProfileTestTabs'
 import { OWNER_TEST_STANDALONE_HREF_MAP, OWNER_VIEWS, ownerTestHref } from '../utils/ownerTestNav'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { getCurrencySymbol } from '../utils/currency'
 import { publicAsset } from '../utils/publicAsset'
 import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
+import { openOwnerAiChat } from '../utils/ownerCabinetChat'
 import './MainOwnerTestPage.css'
 import './MainOwnerTestPage.mobile.css'
 
@@ -369,6 +373,64 @@ function formatBidAmount(value, currency = 'USD', locale) {
     currency: currency || 'USD',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function formatSalePortfolioAmount(value, currency = 'USD', locale = 'ru-RU') {
+  const amount = Number(value)
+  if (!Number.isFinite(amount)) return '—'
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: String(currency || 'USD').toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(amount)
+  } catch {
+    return `${amount.toLocaleString(locale, { maximumFractionDigits: 0 })} ${currency || ''}`.trim()
+  }
+}
+
+function formatAuctionDeadline(value, locale = 'ru-RU') {
+  const ts = parseMotTime(value)
+  if (!ts) return '—'
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date(ts))
+    .replace(/\.$/, '')
+}
+
+function AuctionCountdown({ endTime, copy }) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const endTs = parseMotTime(endTime)
+  const diff = endTs ? Math.max(0, endTs - now) : 0
+  const days = Math.floor(diff / 86400000)
+  const hours = Math.floor((diff % 86400000) / 3600000)
+  const minutes = Math.floor((diff % 3600000) / 60000)
+  const seconds = Math.floor((diff % 60000) / 1000)
+  const clock = [hours, minutes, seconds].map((part) => String(part).padStart(2, '0')).join(':')
+
+  return (
+    <span className="mot-finance__auction-time" aria-label={copy.timeLeft}>
+      <small><Clock size={13} aria-hidden />{copy.timeLeft}</small>
+      <strong>
+        {!endTs || diff <= 0 ? copy.finished : (
+          <>
+            {days > 0 ? <span>{days}{copy.daysShort}</span> : null}
+            <span>{clock}</span>
+          </>
+        )}
+      </strong>
+    </span>
+  )
 }
 
 function formatRelativeTime(value, t, locale) {
@@ -810,6 +872,7 @@ function useMotMobile() {
 
 export default function MainOwnerTestPage() {
   const { t, i18n } = useTranslation()
+  const { user } = useUser()
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const lang = i18n.language
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
@@ -832,7 +895,9 @@ export default function MainOwnerTestPage() {
   const [testDriveRows, setTestDriveRows] = useState([])
   const [ownerBidRows, setOwnerBidRows] = useState([])
   const [bidDrawerOpen, setBidDrawerOpen] = useState(false)
+  const [analyticsDrawerOpen, setAnalyticsDrawerOpen] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(true)
+  const [portfolioAmountVisible, setPortfolioAmountVisible] = useState(true)
   const isMobile = useMotMobile()
 
   const datePresets = useMemo(
@@ -1431,358 +1496,322 @@ export default function MainOwnerTestPage() {
     [chartMax, chartSeries.buckets, intlLocale, isMobile]
   )
 
+  const dashboardCopy = useMemo(() => {
+    const ru = i18n.language?.startsWith('ru')
+    return ru
+      ? {
+          eyebrow: 'Портфель продавца',
+          title: 'Аналитика',
+          menu: 'Меню',
+          profile: 'Профиль',
+          hello: user?.firstName ? `Добрый день, ${user.firstName}` : 'Добрый день',
+          portfolioLabel: 'Стоимость всех объектов',
+          live: 'Данные обновлены',
+          properties: 'Мои объекты',
+          propertiesHint: 'Объекты в вашем портфеле',
+          bookings: 'Бронирования',
+          bookingsHint: 'Заявки на просмотр',
+          aiAssistant: 'ИИ-помощник',
+          pending: 'ожидают ответа',
+          add: 'Добавить',
+          addHint: 'Новый объект',
+          open: 'Открыть',
+          upcoming: 'Ближайшие аукционы',
+          upcomingHint: 'Ваши объекты с ближайшим завершением торгов',
+          all: 'Все объекты',
+          noAuctions: 'Ближайших аукционов пока нет',
+          noAuctionsHint: 'Когда вы запустите торги, они появятся здесь в порядке завершения.',
+          noProperties: 'Добавьте первый объект, чтобы увидеть аналитику портфеля.',
+          currentBid: 'Текущая ставка',
+          noBids: 'Ставок нет',
+          timeLeft: 'До завершения',
+          finished: 'Завершён',
+          daysShort: 'д ',
+          statusActive: 'Идут торги',
+        }
+      : {
+          eyebrow: 'Seller portfolio',
+          title: 'Analytics',
+          menu: 'Menu',
+          profile: 'Profile',
+          hello: user?.firstName ? `Good afternoon, ${user.firstName}` : 'Good afternoon',
+          portfolioLabel: 'Value of all properties',
+          live: 'Up to date',
+          properties: 'My properties',
+          propertiesHint: 'Properties in your portfolio',
+          bookings: 'Bookings',
+          bookingsHint: 'Viewing requests',
+          aiAssistant: 'AI assistant',
+          pending: 'need a response',
+          add: 'Add',
+          addHint: 'New property',
+          open: 'Open',
+          upcoming: 'Upcoming auctions',
+          upcomingHint: 'Your auctions ending soonest',
+          all: 'All properties',
+          noAuctions: 'No upcoming auctions yet',
+          noAuctionsHint: 'Once you start an auction, it will appear here ordered by end time.',
+          noProperties: 'Add your first property to see portfolio analytics.',
+          currentBid: 'Current bid',
+          noBids: 'No bids yet',
+          timeLeft: 'Time left',
+          finished: 'Finished',
+          daysShort: 'd ',
+          statusActive: 'Live auction',
+        }
+  }, [i18n.language, user?.firstName])
+
+  const salePortfolio = useMemo(() => {
+    const totalsByCurrency = new Map()
+    propertyStatsRows.forEach((row) => {
+      const price = Number(row.priceAmount)
+      if (!Number.isFinite(price) || price <= 0) return
+      const currency = String(row.currency || 'USD').toUpperCase()
+      totalsByCurrency.set(currency, (totalsByCurrency.get(currency) || 0) + price)
+    })
+
+    const entries = [...totalsByCurrency.entries()].sort((a, b) => b[1] - a[1])
+    const [primaryCurrency = 'USD', primaryTotal = 0] = entries[0] || []
+    return {
+      primaryCurrency,
+      primaryTotal,
+      formatted: formatSalePortfolioAmount(primaryTotal, primaryCurrency, intlLocale),
+    }
+  }, [intlLocale, propertyStatsRows])
+
+  const activeBookings = useMemo(
+    () => testDriveRows.filter((row) => row.statusKey !== 'cancelled'),
+    [testDriveRows]
+  )
+  const pendingBookingCount = useMemo(
+    () => testDriveRows.filter((row) => row.statusKey === 'pending').length,
+    [testDriveRows]
+  )
+  const propertyPreviewRows = useMemo(() => propertyStatsRows.slice(0, 3), [propertyStatsRows])
+  const bookingPreviewRows = useMemo(
+    () => [...activeBookings]
+      .sort((a, b) => (parseMotTime(a.startDate) || Infinity) - (parseMotTime(b.startDate) || Infinity))
+      .slice(0, 3),
+    [activeBookings]
+  )
+
+  const openOwnerView = useCallback((view, params = {}) => {
+    if (goTo) {
+      goTo(view, params)
+      return
+    }
+    window.location.assign(ownerTestHref(view, params))
+  }, [goTo])
+
+  const openCabinetMenu = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+  }, [])
+
   const mainColumn = (
-    <div className="mot-main">
-      <div className="mot-hero-shell">
-        <div className="mot-hero-shell__bg" aria-hidden />
-        <div className="mot-hero-shell__shine" aria-hidden />
-        <header className="mot-header mot-desktop-only">
-          <div className="mot-header__copy">
-            <h1 className="mot-header__title mot-hero-copy__line mot-hero-copy__line--1">{t('ownerTest_dashboardTitle')}</h1>
-            <p className="mot-header__subtitle mot-hero-copy__line mot-hero-copy__line--2">{figmaLabels.dataForMonth}</p>
-          </div>
-          <div className="mot-header__actions">
-            <label className="mot-search-pill">
-              <Search size={17} strokeWidth={2.2} aria-hidden />
-              <input type="search" placeholder={figmaLabels.search} />
-            </label>
-            <div className={`mot-date-control${datePopoverOpen ? ' mot-date-control--expanded' : ''}`}>
+    <div className="mot-main mot-finance">
+      <main className="mot-finance__canvas">
+        <section className="mot-finance__wallet" aria-label={dashboardCopy.portfolioLabel}>
+          <div className="mot-finance__wallet-head">
+            <button type="button" className="mot-finance__menu-button" onClick={openCabinetMenu}>
+              <Menu size={18} strokeWidth={2} aria-hidden />
+              <span>{dashboardCopy.menu}</span>
+            </button>
+            <div className="mot-finance__wallet-actions">
               <button
                 type="button"
-                className={`mot-date-pill${datePopoverOpen ? ' mot-date-pill--active' : ''}`}
+                className="mot-finance__analytics-button"
                 aria-haspopup="dialog"
-                aria-expanded={datePopoverOpen}
-                onClick={() => {
-                  setDraftRange(selectedRange)
-                  setDatePopoverOpen((prev) => !prev)
-                }}
+                aria-expanded={analyticsDrawerOpen}
+                onClick={() => setAnalyticsDrawerOpen(true)}
               >
-                <Calendar size={18} strokeWidth={2} aria-hidden />
-                <span>{dateRangeLabel(selectedRange, intlLocale)}</span>
-                <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
+                <TrendingUp size={16} strokeWidth={2.1} aria-hidden />
+                <span>{dashboardCopy.title}</span>
               </button>
-              <DateRangePopover
-                open={datePopoverOpen}
-                draftRange={draftRange}
-                onDraftChange={setDraftRange}
-                onPreset={setDraftRange}
-                onApply={handleApplyRange}
-                onClose={closeDatePopover}
-                t={t}
-                locale={intlLocale}
-                datePresets={datePresets}
-              />
-            </div>
-            <OwnerSupportButton className="mot-icon-btn" />
-            <OwnerNotificationsButton
-              className="mot-icon-btn"
-              badgeClassName="mot-icon-btn__badge"
-              items={bidNotifications}
-            />
-            <OwnerTestProfileMenu />
-          </div>
-        </header>
-
-        <div className="mot-mob-hero mot-mobile-only">
-          <div className="mot-mob-hero__top">
-            <MotMobileHeroAvatar ariaLabel={t('ownerTest_profileAria')} />
-            <div className="mot-mob-hero__actions">
-              <OwnerSupportButton className="mot-mob-hero__notify" iconSize={20} />
-              <OwnerNotificationsButton
-                className="mot-mob-hero__notify"
-                badgeClassName="mot-mob-hero__notify-badge"
-                iconSize={20}
-                items={bidNotifications}
-              />
-            </div>
-          </div>
-          <h1 className="mot-mob-hero__greeting">
-            <span className="mot-hero-copy__line mot-hero-copy__line--1">{t('ownerTest_mobWelcomeLine1')}</span>
-            <span className="mot-hero-copy__line mot-hero-copy__line--2">{t('ownerTest_mobWelcomeLine2')}</span>
-          </h1>
-          <div
-            className={`mot-mob-hero__search-wrap mot-date-control${
-              datePopoverOpen ? ' mot-mob-hero__search-wrap--expanded mot-date-control--expanded' : ''
-            }`}
-          >
-            <label className="mot-mob-hero__search">
-              <Search size={18} strokeWidth={2.2} className="mot-mob-hero__search-icon" aria-hidden />
-              <input
-                type="search"
-                className="mot-mob-hero__search-input"
-                placeholder={figmaLabels.search}
-                aria-label={figmaLabels.search}
-              />
               <button
                 type="button"
-                className={`mot-mob-hero__filter${datePopoverOpen ? ' mot-mob-hero__filter--active' : ''}`}
-                aria-haspopup="dialog"
-                aria-expanded={datePopoverOpen}
-                aria-label={t('ownerTest_dateRangeTitle')}
-                onClick={() => {
-                  setDraftRange(selectedRange)
-                  setDatePopoverOpen((prev) => !prev)
-                }}
+                className="mot-finance__profile-button"
+                aria-label={dashboardCopy.profile}
+                onClick={() => openOwnerView(OWNER_VIEWS.PROFILE, { tab: 'personal' })}
               >
-                <SlidersHorizontal size={18} strokeWidth={2.2} aria-hidden />
+                <User size={18} strokeWidth={2} aria-hidden />
               </button>
-            </label>
-            <DateRangePopover
-              open={datePopoverOpen}
-              draftRange={draftRange}
-              onDraftChange={setDraftRange}
-              onPreset={setDraftRange}
-              onApply={handleApplyRange}
-              onClose={closeDatePopover}
-              t={t}
-              locale={intlLocale}
-              datePresets={datePresets}
-            />
+            </div>
           </div>
-        </div>
 
-        <section className="mot-metrics-wrap mot-mobile-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
-          <div className="mot-metrics mot-metrics--grid">
-            {metrics.map((m) => {
-              const Icon = m.icon
-              return (
-                <article key={m.id} className="mot-card mot-metric mot-metric--mobile">
-                  <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
-                  <div className="mot-metric__mobile-head">
-                    <span className={`mot-metric__icon mot-metric__icon--${m.iconTone}`}>
-                      <Icon size={16} strokeWidth={2.2} aria-hidden />
-                    </span>
-                  </div>
-                  <span className="mot-metric__label">{m.label}</span>
-                  {overviewLoading ? (
-                    <>
-                      <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
-                      <span className="owner-cab-skel-block owner-cab-skel-spark" aria-hidden />
-                    </>
-                  ) : (
-                    <>
-                      <span className="mot-metric__value">{m.value}</span>
-                      <Sparkline
-                        variant={m.spark}
-                        filled
-                        className="mot-metric__spark--mobile-chart"
-                      />
-                    </>
-                  )}
-                </article>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="mot-metrics mot-metrics--summary mot-desktop-only" aria-label={t('ownerTest_ariaKeyMetrics')}>
-          {metrics.map((m) => (
-            <article key={m.id} className="mot-metric mot-metric--summary">
-              <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
-              <h3 className="mot-metric__label">{m.label}</h3>
+          <div className={`mot-finance__balance${overviewLoading ? ' mot-finance__balance--loading' : ''}`}>
+            <div className="mot-finance__balance-line">
               {overviewLoading ? (
-                <>
-                  <span className="owner-cab-skel-line owner-cab-skel-line--metric-value" aria-hidden />
-                  <span className="owner-cab-skel-line owner-cab-skel-line--metric-delta" aria-hidden />
-                </>
+                <span className="mot-finance__shimmer mot-finance__shimmer--balance" aria-hidden />
               ) : (
-                <div className="mot-metric__figures">
-                  <p className="mot-metric__value">{m.value}</p>
-                  <p className="mot-metric__delta mot-metric__delta--summary">{m.delta}</p>
-                </div>
+                <strong aria-live="polite">
+                  {portfolioAmountVisible
+                    ? salePortfolio.formatted
+                    : `•••••• ${getCurrencySymbol(salePortfolio.primaryCurrency).trim()}`}
+                </strong>
               )}
-            </article>
-          ))}
+              <button
+                type="button"
+                className="mot-finance__balance-visibility"
+                aria-label={t(portfolioAmountVisible ? 'walletPage_hideBalance' : 'walletPage_showBalance')}
+                aria-pressed={!portfolioAmountVisible}
+                disabled={overviewLoading}
+                onClick={() => setPortfolioAmountVisible((visible) => !visible)}
+              >
+                {portfolioAmountVisible ? (
+                  <EyeOff size={21} strokeWidth={2} aria-hidden />
+                ) : (
+                  <Eye size={21} strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="mot-finance__quick-grid" aria-label={t('ownerTest_ariaKeyMetrics')}>
+          <button
+            type="button"
+            className="mot-finance__quick-card mot-finance__quick-card--properties"
+            onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}
+          >
+            <span className="mot-finance__quick-card-top">
+              <span className="mot-finance__quick-icon"><Building2 size={19} aria-hidden /></span>
+              {propertyPreviewRows.length > 0 ? (
+                <span className="mot-finance__thumb-stack" aria-hidden>
+                  {propertyPreviewRows.map((row) => (
+                    <img key={row.statsKey || row.id} src={row.image || MOT_EVENT_FALLBACK_IMAGE} alt="" />
+                  ))}
+                </span>
+              ) : null}
+              <ChevronRight size={20} aria-hidden />
+            </span>
+            <span className="mot-finance__quick-title">{dashboardCopy.properties}</span>
+            <strong>{overviewLoading ? '—' : formatMotNumber(propertyStatsRows.length, intlLocale)}</strong>
+            <span className="mot-finance__quick-hint">{dashboardCopy.propertiesHint}</span>
+          </button>
+
+          <button
+            type="button"
+            className="mot-finance__quick-card mot-finance__quick-card--bookings"
+            onClick={() => openOwnerView(OWNER_VIEWS.TEST_DRIVE)}
+          >
+            <span className="mot-finance__quick-card-top">
+              <span className="mot-finance__quick-icon"><Calendar size={19} aria-hidden /></span>
+              {bookingPreviewRows.length > 0 ? (
+                <span className="mot-finance__thumb-stack" aria-hidden>
+                  {bookingPreviewRows.map((row) => (
+                    <img key={row.id} src={row.image || MOT_EVENT_FALLBACK_IMAGE} alt="" />
+                  ))}
+                </span>
+              ) : null}
+              <ChevronRight size={20} aria-hidden />
+            </span>
+            <span className="mot-finance__quick-title">{dashboardCopy.bookings}</span>
+            <strong>{overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}</strong>
+            <span className="mot-finance__quick-hint">
+              {pendingBookingCount > 0
+                ? `${pendingBookingCount} ${dashboardCopy.pending}`
+                : dashboardCopy.bookingsHint}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="mot-finance__quick-card mot-finance__quick-card--add"
+            onClick={handleAddProperty}
+          >
+            <span className="mot-finance__add-icon"><Plus size={23} strokeWidth={2.2} aria-hidden /></span>
+            <span className="mot-finance__quick-title">{dashboardCopy.add}</span>
+            <span className="mot-finance__quick-hint">{dashboardCopy.addHint}</span>
+            <ChevronRight className="mot-finance__add-arrow" size={20} aria-hidden />
+          </button>
+          </div>
         </section>
 
-        <div className="mot-hero-shell__fade" aria-hidden />
-      </div>
+        <nav className="mot-finance__action-bar" aria-label={t('ownerTest_ariaKeyMetrics')}>
+          <button type="button" onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}>
+            <span><Building2 size={21} strokeWidth={1.9} aria-hidden /></span>
+            {dashboardCopy.properties}
+          </button>
+          <button type="button" onClick={() => openOwnerView(OWNER_VIEWS.TEST_DRIVE)}>
+            <span><Calendar size={21} strokeWidth={1.9} aria-hidden /></span>
+            {dashboardCopy.bookings}
+          </button>
+          <button type="button" onClick={openOwnerAiChat} aria-label={t('ownerTest_supportAi')}>
+            <span className="mot-finance__action-ai-mark" aria-hidden>AI</span>
+            {dashboardCopy.aiAssistant}
+          </button>
+          <button type="button" onClick={handleAddProperty}>
+            <span><Plus size={23} strokeWidth={1.9} aria-hidden /></span>
+            {dashboardCopy.add}
+          </button>
+        </nav>
 
-      <div className="mot-content">
-        {overviewLoading ? (
-          <OwnerCabinetEndingSoonSkeleton title={t('ownerTest_endingSoonTitle')} />
-        ) : (
-          <EndingSoonPropertiesStrip
-            properties={endingSoonProperties}
-            hasNoProperties={hasNoProperties}
-            onAddProperty={handleAddProperty}
-            title={t('ownerTest_endingSoonTitle')}
-            t={t}
-            lang={lang}
-            onOpenProperty={(property) =>
-              goTo(OWNER_VIEWS.PROPERTY_ANALYTICS, { propertyId: property.id })
-            }
-            onViewAll={() => goTo(OWNER_VIEWS.PROPERTIES)}
-          />
-        )}
-
-        <MotRatingPromoCard t={t} goTo={goTo} />
-
-        <div className="mot-insights">
-        <section className="mot-row mot-row--chart">
-          <article className="mot-card mot-chart-card">
-            <div className="mot-chart-card__head">
-              <div className="mot-chart-card__intro">
-                <h2 className="mot-card__title">{figmaLabels.viewsAndLikes}</h2>
-                <p className="mot-card__subtitle mot-desktop-only">{figmaLabels.dataForMonth}</p>
-              </div>
-              <div
-                className="mot-chart-card__pills mot-mobile-only"
-                role="group"
-                aria-label={t('ownerTest_ariaChartMetric')}
-              >
-                {chartSeriesDefs.map((series) => {
-                  const active = mobileChartVisible[series.key]
-                  return (
-                    <button
-                      key={series.key}
-                      type="button"
-                      className={`mot-chart-pill${active ? ' mot-chart-pill--active' : ''}`}
-                      aria-pressed={active}
-                      onClick={() => toggleMobileChartSeries(series.key)}
-                    >
-                      <i className="mot-chart-pill__dot" style={{ background: series.color }} aria-hidden />
-                      <span>{series.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="mot-chart-card__tools mot-desktop-only">
-                <div className="mot-chart-mode" role="group" aria-label={t('ownerTest_chartModeAria')}>
-                  <button
-                    type="button"
-                    className={`mot-chart-mode__btn${chartMode === 'trend' ? ' mot-chart-mode__btn--active' : ''}`}
-                    aria-pressed={chartMode === 'trend'}
-                    onClick={() => setChartMode('trend')}
-                  >
-                    {t('ownerTest_chartModeTrend')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`mot-chart-mode__btn${chartMode === 'total' ? ' mot-chart-mode__btn--active' : ''}`}
-                    aria-pressed={chartMode === 'total'}
-                    onClick={() => setChartMode('total')}
-                  >
-                    {t('ownerTest_chartModeTotal')}
-                  </button>
-                </div>
-                <div className={`mot-chart-filter${chartFilterOpen ? ' mot-chart-filter--open' : ''}`}>
-                <button
-                  type="button"
-                  className="mot-select-pill"
-                  aria-haspopup="listbox"
-                  aria-expanded={chartFilterOpen}
-                  onClick={() => setChartFilterOpen((prev) => !prev)}
-                >
-                  {chartFilterLabel}
-                  <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-                </button>
-                <div className="mot-chart-filter__menu" role="listbox" aria-label={t('ownerTest_ariaChartMetric')}>
-                  {chartFilters.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      className={`mot-chart-filter__option${
-                        chartMetricFilter === filter.id ? ' mot-chart-filter__option--active' : ''
-                      }`}
-                      role="option"
-                      aria-selected={chartMetricFilter === filter.id}
-                      onClick={() => {
-                        setChartMetricFilter(filter.id)
-                        setChartFilterOpen(false)
-                      }}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              </div>
+        <section className="mot-finance__auctions" aria-labelledby="mot-upcoming-auctions-heading">
+          <div className="mot-finance__sheet-handle" aria-hidden />
+          <div className="mot-finance__section-head">
+            <div>
+              <h2 id="mot-upcoming-auctions-heading">{dashboardCopy.upcoming}</h2>
+              <p>{dashboardCopy.upcomingHint}</p>
             </div>
-            <div className="mot-chart-card__legend mot-desktop-only">
-              {visibleChartSeries.map((series) => (
-                <span key={series.key} className="mot-legend-item">
-                  <i style={{ background: series.color }} /> {series.label}
-                </span>
+            <button type="button" onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}>
+              {dashboardCopy.all}
+              <ChevronRight size={17} aria-hidden />
+            </button>
+          </div>
+
+          {overviewLoading ? (
+            <div className="mot-finance__auction-loading" aria-busy="true">
+              {[0, 1, 2].map((item) => <span key={item} className="mot-finance__shimmer" />)}
+            </div>
+          ) : endingSoonProperties.length > 0 ? (
+            <div className="mot-finance__auction-list">
+              {endingSoonProperties.slice(0, 5).map((property) => (
+                <button
+                  key={property.statsKey || property.id}
+                  type="button"
+                  className="mot-finance__auction-row"
+                  onClick={() => openOwnerView(OWNER_VIEWS.PROPERTY_ANALYTICS, { propertyId: property.id })}
+                >
+                  <img src={property.image || MOT_EVENT_FALLBACK_IMAGE} alt="" />
+                  <span className="mot-finance__auction-copy">
+                    <strong>{property.title}</strong>
+                  </span>
+                  <span className="mot-finance__auction-price">
+                    <small>{dashboardCopy.currentBid}</small>
+                    <strong>
+                      {Number(property.currentBidAmount) > 0
+                        ? formatSalePortfolioAmount(property.currentBidAmount, property.currency, intlLocale)
+                        : dashboardCopy.noBids}
+                    </strong>
+                  </span>
+                  <AuctionCountdown endTime={property.auctionEndTime} copy={dashboardCopy} />
+                  <span className="mot-finance__auction-open"><ChevronRight size={19} aria-hidden /></span>
+                </button>
               ))}
             </div>
-            <div className="mot-chart-card__canvas">
-              {overviewLoading ? (
-                <OwnerCabinetChartSkeleton />
-              ) : showChartEmpty ? (
-                <OwnerEmptyStatePanel
-                  className="owner-empty-state--chart"
-                  illustration={OwnerEmptyLikesIllustration}
-                  title={t('ownerTest_chartEmptyTitle')}
-                  description={t('ownerTest_chartEmptyDesc')}
-                />
-              ) : (
-                <Line data={lineChartData} options={lineChartOptions} />
-              )}
-            </div>
-          </article>
-        </section>
-
-        <section className="mot-row mot-row--events">
-          <article className="mot-card mot-activity-card">
-            <div className="mot-activity-card__head mot-section-head">
-              <h2 className="mot-section-head__title">{t('ownerTest_notificationsEyebrow')}</h2>
-              {activeBidNotifications.length > 0 ? (
-                <button
-                  type="button"
-                  className="mot-section-head__link mot-link-btn mot-link-btn--all mot-mobile-only"
-                  onClick={() => setBidDrawerOpen(true)}
-                >
-                  {t('ownerTest_propertiesTabAllShort')}
-                </button>
-              ) : null}
-              {activeBidNotifications.length > 0 ? (
-                <button
-                  type="button"
-                  className="mot-section-head__link mot-link-btn mot-desktop-only"
-                  onClick={() => setBidDrawerOpen(true)}
-                >
-                  {t('ownerTest_notificationsTitle')}
-                </button>
-              ) : null}
-            </div>
-            {visibleBidNotifications.length > 0 ? (
-              <ul className="mot-activity">
-                {visibleBidNotifications.map((item) => (
-                  <ActivityEventRow
-                    key={item.id}
-                    item={item}
-                    openLabel={t('ownerTest_notificationsOpen')}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <div className="mot-activity__empty">
-                <img
-                  className="mot-activity__empty-illustration"
-                  src={MOT_EVENTS_EMPTY_IMAGE}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  aria-hidden="true"
-                />
-                <strong>{t('ownerTest_notificationsEmptyTitle')}</strong>
-                <p>{t('ownerTest_notificationsEmptyText')}</p>
+          ) : (
+            <div className="mot-finance__empty">
+              <span><Gavel size={25} strokeWidth={1.8} aria-hidden /></span>
+              <div>
+                <strong>{hasNoProperties ? dashboardCopy.noProperties : dashboardCopy.noAuctions}</strong>
+                {!hasNoProperties ? <p>{dashboardCopy.noAuctionsHint}</p> : null}
               </div>
-            )}
-          </article>
+              <button type="button" onClick={handleAddProperty}>
+                <Plus size={17} aria-hidden />
+                {dashboardCopy.add}
+              </button>
+            </div>
+          )}
         </section>
-        </div>
-
-      </div>
-
-      <OwnerNotificationsDrawer
-        open={bidDrawerOpen}
-        onClose={() => setBidDrawerOpen(false)}
-        items={activeBidNotifications}
-        onDismiss={dismissBidNotification}
+      </main>
+      <OwnerSalesAnalyticsDrawer
+        open={analyticsDrawerOpen}
+        onClose={() => setAnalyticsDrawerOpen(false)}
+        properties={propertyStatsRows}
+        bids={ownerBidRows}
+        locale={intlLocale}
+        language={i18n.language}
+        loading={overviewLoading}
       />
-
     </div>
   )
 
@@ -1870,11 +1899,6 @@ export default function MainOwnerTestPage() {
 
       {mainColumn}
 
-      <OwnerFloatingMobileNav
-        view={OWNER_VIEWS.HOME}
-        onOpenMenu={() => setMenuOpen(true)}
-        menuOpen={menuOpen}
-      />
     </div>
   )
 }

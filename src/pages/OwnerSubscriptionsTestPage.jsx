@@ -5,6 +5,7 @@ import { Menu, X, Sparkles, Home, BarChart3, Headphones, Megaphone, Infinity, Li
 import { OST_IMAGES } from './ownerSubscriptionsTestImages'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
+import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import Confetti from '../components/Confetti'
@@ -173,6 +174,13 @@ export default function OwnerSubscriptionsTestPage() {
   )
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const openMenu = useCallback(() => {
+    if (isEmbedded) {
+      window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+      return
+    }
+    setMenuOpen(true)
+  }, [isEmbedded])
 
   const activePlanId = useMemo(() => {
     if (successPlanId) return successPlanId
@@ -419,6 +427,14 @@ export default function OwnerSubscriptionsTestPage() {
           <div className="ost-pricing-scene">
             <header className="ost-pricing-hero">
               <div className="ost-pricing-hero__top">
+                <button
+                  type="button"
+                  className="ost-pricing-hero__icon ost-pricing-hero__menu"
+                  aria-label={t('ownerTest_ariaOpenMenu')}
+                  onClick={openMenu}
+                >
+                  <Menu size={22} strokeWidth={2.2} />
+                </button>
                 <p className="ost-pricing-hero__brand">{t('ownerTest_subscriptionDrawerAppName')}</p>
                 <div className="ost-pricing-hero__actions">
                   <OwnerSupportButton className="ost-pricing-hero__icon" iconSize={22} />
@@ -427,6 +443,7 @@ export default function OwnerSubscriptionsTestPage() {
                     badgeClassName="ost-icon-btn__badge"
                     iconSize={22}
                   />
+                  <OwnerTestProfileMenu className="otpm--pricing-hero ost-pricing-hero__profile" />
                 </div>
               </div>
               <h1 className="ost-pricing-hero__title">

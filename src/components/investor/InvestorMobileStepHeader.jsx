@@ -10,10 +10,10 @@ export default function InvestorMobileStepHeader({ step = 1 }) {
   const active = STEPS.find((item) => item.id === step) || STEPS[0]
   return (
     <section className="investor-mobile-step" aria-label="Этап расчёта">
-      <div className="investor-mobile-step__eyebrow">Умный инвестор · шаг {active.id} из 3</div>
+      <div className="investor-mobile-step__eyebrow">Умный инвестор</div>
       <h1>{active.label}</h1>
       <p>{active.copy}</p>
-      <div className="investor-mobile-step__progress" aria-label={`Выполнено ${active.id} из 3 шагов`}>
+      <div className="investor-mobile-step__progress" aria-label={`Этап: ${active.label}`}>
         {STEPS.map((item) => (
           <span
             key={item.id}

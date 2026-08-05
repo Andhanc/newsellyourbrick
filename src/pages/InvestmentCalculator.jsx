@@ -20,8 +20,11 @@ import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import InvestorMobileStepHeader from '../components/investor/InvestorMobileStepHeader';
 import InvestorMobileResultCard from '../components/investor/InvestorMobileResultCard';
-import InvestorMobileHero from '../components/investor/InvestorMobileHero';
 import InvestorAssumptionsSheet from '../components/investor/InvestorAssumptionsSheet';
+import InvestorSourceHero from '../components/investor/InvestorSourceHero';
+import InvestorGoalFlow from '../components/investor/InvestorGoalFlow';
+import InvestorAiExperience from '../components/investor/InvestorAiExperience';
+import { requestInvestorAiAnalysis } from '../services/investorAiService';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { getPropertyCardImage } from '../utils/propertyImage';
 import { buildResponsiveImageProps } from '../utils/responsiveImage';
@@ -48,18 +51,18 @@ import {
   TrendingUp,
   PiggyBank,
   ArrowLeft,
-  Building2,
   RefreshCw,
-  Heart,
-  PenLine,
   Sparkles,
-  PieChart,
   Loader2,
 } from 'lucide-react';
 import './InvestmentCalculator.css';
 
 const PLACEHOLDER_IMG =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg';
+
+// Временно открываем умную панель всем авторизованным пользователям.
+// Вернуть `true`, когда Pro/VIP-гейт снова понадобится.
+const CALCULATOR_PRO_GATE_ENABLED = false;
 
 function listingPriceEuros(property) {
   const n = (v) => {
@@ -85,6 +88,16 @@ function listingThumbProps(property) {
     sizes: '64px',
     fit: 'cover',
     quality: 72,
+    format: 'webp',
+  });
+}
+
+function listingSetupImageProps(property) {
+  return buildResponsiveImageProps(listingThumb(property), {
+    widths: [240, 360, 480],
+    sizes: '(max-width: 768px) 45vw, 260px',
+    fit: 'cover',
+    quality: 80,
     format: 'webp',
   });
 }
@@ -124,6 +137,10 @@ const InvestmentCalculator = () => {
   const [mortgageRate, setMortgageRate] = useState('');
   const [mortgageTerm, setMortgageTerm] = useState('');
   const [downPayment, setDownPayment] = useState('');
+  const [borrowerResidenceCountry, setBorrowerResidenceCountry] = useState('');
+  const [borrowerAge, setBorrowerAge] = useState('');
+  const [borrowerMonthlyIncome, setBorrowerMonthlyIncome] = useState('');
+  const [borrowerMonthlyDebts, setBorrowerMonthlyDebts] = useState('');
 
   /** Упрощённые расходы сделки (Испания): ITP/покупка, продажа, налог с прироста */
   const [buyerCostsPct, setBuyerCostsPct] = useState('8');
@@ -133,8 +150,9 @@ const InvestmentCalculator = () => {
   // Переключение графиков
   const [activeChart, setActiveChart] = useState('income-expenses'); // 'income-expenses' или 'property-value'
 
-  // Мастер: 1 — стратегия, 2 — источник данных, 3 — параметры и график
+  // Мастер: 1 — объект, 2 — цель, 3 — результат
   const [wizardStep, setWizardStep] = useState(1);
+  const [goalStage, setGoalStage] = useState('choose');
   const [investmentStrategy, setInvestmentStrategy] = useState(null);
   const [dataSource, setDataSource] = useState(null);
   const [selectedFavoriteKey, setSelectedFavoriteKey] = useState(null);
@@ -147,12 +165,18 @@ const InvestmentCalculator = () => {
   const [investorScenario, setInvestorScenario] = useState(() => readInvestorScenario());
 
   const [mortgageRates, setMortgageRates] = useState(null);
+  const [analysisStatus, setAnalysisStatus] = useState('idle');
+  const [investorAiAnalysis, setInvestorAiAnalysis] = useState(null);
+  const [investorAiError, setInvestorAiError] = useState('');
+  const investorAiRequestRef = useRef(0);
+  const investorAiAbortRef = useRef(null);
 
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId());
   const [subGateResolved, setSubGateResolved] = useState(false);
   const [subGateAllowed, setSubGateAllowed] = useState(false);
 
   const showSubGateOverlay =
+    CALCULATOR_PRO_GATE_ENABLED &&
     userLoaded &&
     isSiteUserSignedIn(user, userLoaded) &&
     (!subGateResolved || !subGateAllowed);
@@ -404,12 +428,9 @@ const InvestmentCalculator = () => {
   }, [navigate, selectedFavoriteItem]);
 
   useEffect(() => {
-    if (dataSource !== 'favorites' || favoriteAuctions.length === 0) return;
-    const selected = selectedFavoriteKey
-      ? favoriteAuctions.find((item) => item.key === selectedFavoriteKey)
-      : favoriteAuctions[0];
+    if (dataSource !== 'favorites' || !selectedFavoriteKey || favoriteAuctions.length === 0) return;
+    const selected = favoriteAuctions.find((item) => item.key === selectedFavoriteKey);
     if (!selected) return;
-    if (!selectedFavoriteKey) setSelectedFavoriteKey(selected.key);
     if (investmentStrategy) applyPropertyPreset(selected.property, investmentStrategy);
   }, [
     wizardStep,
@@ -435,13 +456,19 @@ const InvestmentCalculator = () => {
   );
 
   const goStep2 = () => {
-    if (isMobile) {
-      const hasObject = dataSource === 'favorites'
-        ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
-        : dataSource === 'manual' && Number(propertyPrice) > 0;
-      if (!hasObject) return;
-    } else if (!investmentStrategy) return;
+    const hasObject = dataSource === 'favorites'
+      ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
+      : dataSource === 'manual' && Number(propertyPrice) > 0;
+    if (!hasObject) return;
+    setGoalStage('choose');
     setWizardStep(2);
+  };
+
+  const selectInvestmentGoal = (goal) => {
+    setInvestmentStrategy(goal);
+    if (goal === 'resale') setRentalIncome('0');
+    if (goal === 'fractional') setOwnershipShare('50');
+    setGoalStage('values');
   };
 
   const requiresRentalIncome = investmentStrategy === 'rent' || investmentStrategy === 'fractional';
@@ -449,24 +476,31 @@ const InvestmentCalculator = () => {
   const goStep3 = () => {
     if (isMobile
       ? (!investmentStrategy || Number(ownershipPeriod) <= 0 || (requiresRentalIncome && Number(rentalIncome) <= 0))
-      : !dataSource) return;
+      : !investmentStrategy) return;
     if (dataSource === 'favorites') loadCatalog();
     setWizardStep(3);
+    beginAiAnalysis();
   };
 
-  const showSourceStep = isMobile ? wizardStep === 1 : wizardStep === 2;
-  const showStrategyStep = isMobile ? wizardStep === 2 : wizardStep === 1;
+  const showSourceStep = wizardStep === 1;
+  const showStrategyStep = wizardStep === 2;
   const canContinueFromObject = dataSource === 'favorites'
     ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
     : dataSource === 'manual' && Number(propertyPrice) > 0;
   const canContinueFromGoal = Boolean(
     investmentStrategy &&
     Number(ownershipPeriod) > 0 &&
-    (!requiresRentalIncome || Number(rentalIncome) > 0)
+    (!requiresRentalIncome || Number(rentalIncome) > 0) &&
+    (investmentStrategy !== 'resale' || marketGrowthRate !== '')
   );
 
   const resetWizard = () => {
+    investorAiAbortRef.current?.abort();
+    setAnalysisStatus('idle');
+    setInvestorAiAnalysis(null);
+    setInvestorAiError('');
     setWizardStep(1);
+    setGoalStage('choose');
     setInvestmentStrategy(null);
     setDataSource(null);
     setSelectedFavoriteKey(null);
@@ -481,6 +515,10 @@ const InvestmentCalculator = () => {
     setRentalGrowthRate('');
     setOperatingExpenses('');
     setUseMortgage(false);
+    setBorrowerResidenceCountry('');
+    setBorrowerAge('');
+    setBorrowerMonthlyIncome('');
+    setBorrowerMonthlyDebts('');
     setMortgageRate('');
     setMortgageTerm('');
     setDownPayment('');
@@ -639,6 +677,101 @@ const InvestmentCalculator = () => {
     capitalGainsTaxPct,
   ]);
 
+  function buildInvestorAiPayload() {
+    const property = selectedFavoriteItem?.property || {};
+    const propertyCountry = property.country || property.country_name || property.address_country || 'Spain';
+    const propertyCity = property.city || property.location || property.municipality || 'Spain';
+    return {
+      locale: i18n.language || 'ru',
+      currency: 'EUR',
+      property: {
+        id: property.id ?? null,
+        title: property.title || property.name || 'Инвестиционный объект',
+        country: propertyCountry,
+        city: propertyCity,
+        type: property.property_type || property.type || 'residential',
+        areaSqm: Number(property.area || property.square_meters || property.total_area || 0),
+        price: Number(propertyPrice) || 0,
+        renovationCost: Number(renovationCost) || 0,
+      },
+      goal: {
+        strategy: investmentStrategy,
+        periodYears: Number(ownershipPeriod) || 10,
+        ownershipSharePct: Number(ownershipShare) || 100,
+      },
+      finance: {
+        annualRent: Number(rentalIncome) || 0,
+        expectedPriceGrowthPct: Number(marketGrowthRate) || 0,
+        expectedRentGrowthPct: Number(rentalGrowthRate) || 0,
+        operatingExpensesPct: Number(operatingExpenses) || 0,
+        buyerCostsPct: Number(buyerCostsPct) || 0,
+        sellerCostsPct: Number(sellerCostsPct) || 0,
+        capitalGainsTaxPct: Number(capitalGainsTaxPct) || 0,
+        useMortgage,
+        mortgageRatePct: Number(mortgageRate) || 0,
+        mortgageTermYears: Number(mortgageTerm) || 25,
+        downPaymentPct: Number(downPayment) || 30,
+      },
+      borrower: {
+        residenceCountry: borrowerResidenceCountry,
+        age: Number(borrowerAge) || 0,
+        monthlyNetIncome: Number(borrowerMonthlyIncome) || 0,
+        monthlyDebtPayments: Number(borrowerMonthlyDebts) || 0,
+      },
+      deterministicSnapshot: {
+        totalInvestment: calculations.totalInvestment,
+        initialEquity: calculations.initialEquity,
+        finalPropertyValue: calculations.finalPropertyValue,
+        totalRentalIncome: calculations.totalRentalIncome,
+        netCashFlow: calculations.netCashFlow,
+        totalProfit: calculations.totalProfit,
+        grossYieldY1: calculations.grossYieldY1,
+        netYieldY1: calculations.netYieldY1,
+        cashOnCashY1: calculations.cashOnCashY1,
+        totalReturnOnEquity: calculations.totalReturnOnEquity,
+      },
+    };
+  }
+
+  async function beginAiAnalysis() {
+    investorAiAbortRef.current?.abort();
+    const controller = new AbortController();
+    investorAiAbortRef.current = controller;
+    const requestId = investorAiRequestRef.current + 1;
+    investorAiRequestRef.current = requestId;
+    setAnalysisStatus('loading');
+    setInvestorAiError('');
+    setInvestorAiAnalysis(null);
+
+    try {
+      const minimumLoader = new Promise((resolve) => window.setTimeout(resolve, 3900));
+      const [analysis] = await Promise.all([
+        requestInvestorAiAnalysis(buildInvestorAiPayload(), { signal: controller.signal }),
+        minimumLoader,
+      ]);
+      if (investorAiRequestRef.current !== requestId) return;
+      setInvestorAiAnalysis(analysis);
+      setAnalysisStatus('ready');
+      scrollMainTo(0, 0, 'instant');
+    } catch (error) {
+      if (error?.name === 'AbortError' || investorAiRequestRef.current !== requestId) return;
+      setInvestorAiError(String(error?.message || error));
+      setAnalysisStatus('error');
+    }
+  }
+
+  const leaveAiResult = () => {
+    investorAiAbortRef.current?.abort();
+    setAnalysisStatus('idle');
+    setInvestorAiAnalysis(null);
+    setInvestorAiError('');
+    setGoalStage('values');
+    setWizardStep(2);
+    scrollMainTo(0, 0, 'smooth');
+  };
+
+  useEffect(() => () => investorAiAbortRef.current?.abort(), []);
+
   // График соотношения доходов к расходам (при отсутствии данных — одна точка 0)
   const hasYearlyData = calculations.yearlyData.length > 0;
   const chartLabels = hasYearlyData
@@ -792,8 +925,8 @@ const InvestmentCalculator = () => {
   const stepper = (
     <div className="calc-stepper" role="list" aria-label={t('calcStepperAria')}>
       {[1, 2, 3].map((n) => {
-        const showStrategyPick = n === 1 && wizardStep >= 2 && strategyStepperSummary;
-        const showSourcePick = n === 2 && wizardStep >= 2 && dataSource && sourceStepperSummary;
+        const showSourcePick = n === 1 && wizardStep >= 2 && dataSource && sourceStepperSummary;
+        const showStrategyPick = n === 2 && wizardStep >= 3 && strategyStepperSummary;
         const pickTitle = showStrategyPick ? strategyStepperSummary : showSourcePick ? sourceStepperSummary : undefined;
         return (
           <div
@@ -804,7 +937,7 @@ const InvestmentCalculator = () => {
             <span className="calc-stepper__num">{n}</span>
             <span className="calc-stepper__label">
               <span className="calc-stepper__title">
-                {n === 1 ? t('calcStep1Short') : n === 2 ? t('calcStep2Short') : t('calcStep3Short')}
+                {n === 1 ? t('calcStep2Short') : n === 2 ? t('calcStep1Short') : t('calcStep3Short')}
               </span>
               {(showStrategyPick || showSourcePick) && (
                 <span className="calc-stepper__pick" title={pickTitle}>
@@ -819,10 +952,9 @@ const InvestmentCalculator = () => {
   );
 
   return (
-    <div className="investment-calculator-page">
+    <div className={`investment-calculator-page${wizardStep <= 2 ? ' investment-calculator-page--start' : ''}${wizardStep === 3 && analysisStatus !== 'idle' ? ' investment-calculator-page--ai-result' : ''}`}>
       <BackgroundIcons />
       <Header />
-      {isMobile && <InvestorMobileHero />}
       <div className="calculator-container">
         {investorScenario && (
           <aside className="calc-context-banner" aria-label="Сценарий из сравнения">
@@ -846,22 +978,15 @@ const InvestmentCalculator = () => {
             </button>
           </aside>
         )}
-        {isMobile && <InvestorMobileStepHeader step={wizardStep} />}
-        {!isMobile && <motion.div
+        {isMobile && wizardStep > 2 && analysisStatus === 'idle' && <InvestorMobileStepHeader step={wizardStep} />}
+        {!isMobile && wizardStep > 2 && analysisStatus === 'idle' && <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="calculator-header"
         >
-          <span className="calculator-badge">
-            {wizardStep === 1 ? t('calcStep1Badge') : wizardStep === 2 ? t('calcStep2Badge') : t('calcStep3Badge')}
-          </span>
           <h1 className="calculator-title">{t('calculator')}</h1>
           <p className="calculator-subtitle">
-            {wizardStep === 1
-              ? t('calcWizardIntroLead')
-              : wizardStep === 2
-                ? t('calcStep2Lead')
-                : t('calcStep3Lead')}
+            {wizardStep === 2 ? t('calcWizardIntroLead') : t('calcStep3Lead')}
           </p>
           <div className="calculator-header__stepper">{stepper}</div>
         </motion.div>}
@@ -875,122 +1000,25 @@ const InvestmentCalculator = () => {
               exit={{ opacity: 0, y: -12 }}
               className="calc-wizard-section"
             >
-              <h2 className="calc-wizard-section__title">{t('calcWizardIntroTitle')}</h2>
-              <div className="calc-strategy-grid">
-                <button
-                  type="button"
-                  className={`calc-strategy-card calc-strategy-card--rent ${investmentStrategy === 'rent' ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setInvestmentStrategy('rent');
-                  }}
-                >
-                  <span className="calc-strategy-card__glow" aria-hidden />
-                  <span className="calc-strategy-card__icon" aria-hidden>
-                    <Building2 size={26} strokeWidth={1.85} />
-                  </span>
-                  <span className="calc-strategy-card__body">
-                    <span className="calc-strategy-card__kicker">{t('calcStrategyRentTitle')}</span>
-                    <span className="calc-strategy-card__desc">{t('calcStrategyRentDesc')}</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={`calc-strategy-card calc-strategy-card--resale ${investmentStrategy === 'resale' ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setInvestmentStrategy('resale');
-                    setRentalIncome('0');
-                  }}
-                >
-                  <span className="calc-strategy-card__glow" aria-hidden />
-                  <span className="calc-strategy-card__icon" aria-hidden>
-                    <TrendingUp size={26} strokeWidth={1.85} />
-                  </span>
-                  <span className="calc-strategy-card__body">
-                    <span className="calc-strategy-card__kicker">{t('calcStrategyResaleTitle')}</span>
-                    <span className="calc-strategy-card__desc">{t('calcStrategyResaleDesc')}</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={`calc-strategy-card calc-strategy-card--fractional ${investmentStrategy === 'fractional' ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setInvestmentStrategy('fractional');
-                    setOwnershipShare('50');
-                  }}
-                >
-                  <span className="calc-strategy-card__glow" aria-hidden />
-                  <span className="calc-strategy-card__icon" aria-hidden>
-                    <PieChart size={26} strokeWidth={1.85} />
-                  </span>
-                  <span className="calc-strategy-card__body">
-                    <span className="calc-strategy-card__kicker">{t('calcStrategyFractionalTitle')}</span>
-                    <span className="calc-strategy-card__desc">{t('calcStrategyFractionalDesc')}</span>
-                  </span>
-                </button>
-              </div>
-              {isMobile && (
-                <div className="calc-mobile-goal-inputs" aria-label="Основные допущения">
-                  <div className="parameter-group">
-                    <label htmlFor="mobile-investor-period">Горизонт, лет</label>
-                    <input
-                      id="mobile-investor-period"
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      max="30"
-                      step="1"
-                      value={ownershipPeriod}
-                      onChange={(event) => setOwnershipPeriod(event.target.value)}
-                      className="parameter-input"
-                    />
-                  </div>
-                  {requiresRentalIncome && (
-                    <div className="parameter-group calc-mobile-goal-inputs__wide">
-                      <label htmlFor="mobile-investor-rent">Ожидаемая аренда в год, €</label>
-                      <input
-                        id="mobile-investor-rent"
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="any"
-                        value={rentalIncome}
-                        onChange={(event) => setRentalIncome(event.target.value)}
-                        className="parameter-input"
-                      />
-                    </div>
-                  )}
-                  <div className="parameter-group">
-                    <label htmlFor="mobile-investor-costs">Расходы при покупке, %</label>
-                    <input
-                      id="mobile-investor-costs"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      max="20"
-                      step="0.1"
-                      value={buyerCostsPct}
-                      onChange={(event) => setBuyerCostsPct(event.target.value)}
-                      className="parameter-input"
-                    />
-                  </div>
-                </div>
-              )}
-              <div className={`calc-wizard-actions ${isMobile ? 'calc-mobile-sticky-action calc-wizard-actions--split' : ''}`}>
-                {isMobile && (
-                  <button type="button" className="calc-wizard-btn calc-wizard-btn--ghost" onClick={() => setWizardStep(1)}>
-                    <ArrowLeft size={18} strokeWidth={2} aria-hidden />
-                    {t('calcBack')}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="calc-wizard-btn calc-wizard-btn--primary"
-                  disabled={isMobile ? !canContinueFromGoal : !investmentStrategy}
-                  onClick={isMobile ? goStep3 : goStep2}
-                >
-                  {t('calcNext')}
-                </button>
-              </div>
+              <InvestorGoalFlow
+                stage={goalStage}
+                selectedGoal={investmentStrategy}
+                onSelectGoal={selectInvestmentGoal}
+                onBackToObject={() => setWizardStep(1)}
+                onBackToGoals={() => setGoalStage('choose')}
+                onContinue={goStep3}
+                canContinue={canContinueFromGoal}
+                ownershipPeriod={ownershipPeriod}
+                onOwnershipPeriodChange={setOwnershipPeriod}
+                rentalIncome={rentalIncome}
+                onRentalIncomeChange={setRentalIncome}
+                buyerCostsPct={buyerCostsPct}
+                onBuyerCostsPctChange={setBuyerCostsPct}
+                marketGrowthRate={marketGrowthRate}
+                onMarketGrowthRateChange={setMarketGrowthRate}
+                ownershipShare={ownershipShare}
+                onOwnershipShareChange={setOwnershipShare}
+              />
             </motion.section>
           )}
 
@@ -1002,172 +1030,55 @@ const InvestmentCalculator = () => {
               exit={{ opacity: 0, y: -12 }}
               className="calc-wizard-section"
             >
-              <h2 className="calc-wizard-section__title">{t('calcStep2Title')}</h2>
-              <p className="calc-wizard-section__subtitle">{t('calcStep2Lead')}</p>
-              <div className="calc-source-grid">
-                <button
-                  type="button"
-                  className={`calc-source-card calc-source-card--favorites ${dataSource === 'favorites' ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setDataSource('favorites');
-                    loadCatalog();
-                  }}
-                >
-                  <span className="calc-source-card__glow" aria-hidden />
-                  <span className="calc-source-card__row">
-                    <span className="calc-source-card__icon-wrap" aria-hidden>
-                      <Heart size={24} strokeWidth={2} />
-                    </span>
-                    <span className="calc-source-card__copy">
-                      <span className="calc-source-card__title">{t('calcSourceFavoritesTitle')}</span>
-                      <span className="calc-source-card__desc">{t('calcSourceFavoritesDesc')}</span>
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={`calc-source-card calc-source-card--manual ${dataSource === 'manual' ? 'is-selected' : ''}`}
-                  onClick={() => {
-                    setDataSource('manual');
-                    setSelectedFavoriteKey(null);
-                  }}
-                >
-                  <span className="calc-source-card__glow" aria-hidden />
-                  <span className="calc-source-card__row">
-                    <span className="calc-source-card__icon-wrap" aria-hidden>
-                      <PenLine size={24} strokeWidth={2} />
-                    </span>
-                    <span className="calc-source-card__copy">
-                      <span className="calc-source-card__title">{t('calcSourceManualTitle')}</span>
-                      <span className="calc-source-card__desc">{t('calcSourceManualDesc')}</span>
-                    </span>
-                  </span>
-                </button>
-              </div>
-
-              {isMobile && dataSource === 'manual' && (
-                <div className="calc-mobile-object-input">
-                  <label htmlFor="mobile-investor-price">Цена покупки, €</label>
-                  <input
-                    id="mobile-investor-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    value={propertyPrice}
-                    onChange={(event) => setPropertyPrice(event.target.value)}
-                    className="parameter-input"
-                  />
-                  <span>Можно уточнить ремонт, аренду и финансирование на экране результата.</span>
-                </div>
-              )}
-
-              {dataSource === 'favorites' && favoriteAuctions.length > 0 && (
-                <div className="calc-step2-fav-wrap">
-                  <div className="calc-fav-picker calc-fav-picker--step2" ref={favDropdownRef}>
-                    <label className="calc-fav-picker__label">{t('calcFavoritesSelectLabel')}</label>
-                    <button
-                      type="button"
-                      className="calc-fav-picker__trigger"
-                      aria-expanded={favDropdownOpen}
-                      onClick={() => setFavDropdownOpen((o) => !o)}
-                    >
-                      {selectedFavoriteItem ? (
-                        <>
-                          <img
-                            className="calc-fav-picker__thumb"
-                            {...listingThumbProps(selectedFavoriteItem.property)}
-                            alt=""
-                            onError={(e) => {
-                              e.currentTarget.src = PLACEHOLDER_IMG;
-                            }}
-                          />
-                          <span className="calc-fav-picker__trigger-text">
-                            <span className="calc-fav-picker__title">
-                              {selectedFavoriteItem.property.title ||
-                                selectedFavoriteItem.property.name ||
-                                t('calcFavoritesPlaceholder')}
-                            </span>
-                            <span className="calc-fav-picker__meta">
-                              {formatCurrency(listingPriceEuros(selectedFavoriteItem.property), i18n.language)}
-                            </span>
-                          </span>
-                        </>
-                      ) : (
-                        <span className="calc-fav-picker__placeholder">{t('calcFavoritesPlaceholder')}</span>
-                      )}
-                      <ChevronDown
-                        size={20}
-                        className={favDropdownOpen ? 'calc-fav-picker__chev is-open' : 'calc-fav-picker__chev'}
-                      />
-                    </button>
-                    {favDropdownOpen && (
-                      <ul className="calc-fav-picker__list" role="listbox">
-                        {favoriteAuctions.map((item) => (
-                          <li key={item.key} role="none">
-                            <button
-                              type="button"
-                              role="option"
-                              aria-selected={item.key === selectedFavoriteKey}
-                              className={`calc-fav-picker__option ${item.key === selectedFavoriteKey ? 'is-active' : ''}`}
-                              onClick={() => pickFavorite(item)}
-                            >
-                              <img
-                                className="calc-fav-picker__thumb"
-                                {...listingThumbProps(item.property)}
-                                alt=""
-                                onError={(e) => {
-                                  e.currentTarget.src = PLACEHOLDER_IMG;
-                                }}
-                              />
-                              <span className="calc-fav-picker__option-text">
-                                <span className="calc-fav-picker__title">
-                                  {item.property.title || item.property.name || ` #${item.property.id}`}
-                                </span>
-                                <span className="calc-fav-picker__meta">
-                                  {formatCurrency(listingPriceEuros(item.property), i18n.language)}
-                                </span>
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <p className="calc-fav-picker__hint">{t('calcFavoritesEditHint')}</p>
-                  </div>
-                </div>
-              )}
-
-              {dataSource === 'favorites' && favoriteAuctions.length === 0 && (
-                <div className="calc-step2-fav-empty">
-                  <p>{t('calcFavoritesEmpty')}</p>
-                  <Link to="/favorites" className="calc-wizard-btn calc-wizard-btn--secondary">
-                    {t('calcFavoritesGo')}
-                  </Link>
-                </div>
-              )}
-
-              <div className={`calc-wizard-actions calc-wizard-actions--split ${isMobile ? 'calc-mobile-sticky-action' : ''}`}>
-                {!isMobile && (
-                  <button type="button" className="calc-wizard-btn calc-wizard-btn--ghost" onClick={() => setWizardStep(1)}>
-                    <ArrowLeft size={18} strokeWidth={2} aria-hidden />
-                    {t('calcBack')}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="calc-wizard-btn calc-wizard-btn--primary"
-                  disabled={isMobile ? !canContinueFromObject : !dataSource}
-                  onClick={isMobile ? goStep2 : goStep3}
-                >
-                  {t('calcNext')}
-                </button>
-              </div>
+              <InvestorSourceHero
+                favoriteItems={favoriteAuctions}
+                selectedSource={dataSource}
+                selectedFavoriteKey={selectedFavoriteKey}
+                propertyPrice={propertyPrice}
+                renovationCost={renovationCost}
+                onSelectFavorites={() => {
+                  setDataSource('favorites');
+                  loadCatalog();
+                }}
+                onSelectManual={() => {
+                  setDataSource('manual');
+                  setSelectedFavoriteKey(null);
+                }}
+                onPickFavorite={pickFavorite}
+                onPropertyPriceChange={setPropertyPrice}
+                onRenovationCostChange={setRenovationCost}
+                getFavoriteImageProps={(item) => listingSetupImageProps(item.property)}
+                getFavoritePriceLabel={(item) =>
+                  formatCurrency(listingPriceEuros(item.property), i18n.language)
+                }
+                onContinue={goStep2}
+                canContinue={canContinueFromObject}
+                onBackToSource={() => {
+                  setDataSource(null);
+                  setSelectedFavoriteKey(null);
+                }}
+              />
             </motion.section>
           )}
         </AnimatePresence>
 
-        {wizardStep === 3 && (
+        {wizardStep === 3 && analysisStatus !== 'idle' && (
+          <InvestorAiExperience
+            status={analysisStatus}
+            analysis={investorAiAnalysis}
+            error={investorAiError}
+            currency="EUR"
+            propertyTitle={selectedFavoriteItem?.property?.title || selectedFavoriteItem?.property?.name}
+            onRetry={beginAiAnalysis}
+            onBack={leaveAiResult}
+            onRestart={resetWizard}
+            onHome={() => navigate('/', { replace: true })}
+            onOpenAssumptions={() => setAssumptionsOpen(true)}
+            onOpenProperty={openCalculatedProperty}
+          />
+        )}
+
+        {wizardStep === 3 && analysisStatus === 'idle' && (
           <>
             {strategyHintKey && (
               <div className="calc-strategy-hint">
@@ -1740,10 +1651,12 @@ const InvestmentCalculator = () => {
 
       <div className="investment-calculator-page__footer-blend" aria-hidden="true" />
 
-      {isMobile && (
-        <InvestorAssumptionsSheet
+      <InvestorAssumptionsSheet
           isOpen={assumptionsOpen}
-          onClose={() => setAssumptionsOpen(false)}
+          onClose={() => {
+            setAssumptionsOpen(false);
+            if (wizardStep === 3 && analysisStatus === 'ready') beginAiAnalysis();
+          }}
           propertyPrice={propertyPrice}
           setPropertyPrice={setPropertyPrice}
           renovationCost={renovationCost}
@@ -1766,37 +1679,78 @@ const InvestmentCalculator = () => {
           setMortgageTerm={setMortgageTerm}
           downPayment={downPayment}
           setDownPayment={setDownPayment}
+          borrowerResidenceCountry={borrowerResidenceCountry}
+          setBorrowerResidenceCountry={setBorrowerResidenceCountry}
+          borrowerAge={borrowerAge}
+          setBorrowerAge={setBorrowerAge}
+          borrowerMonthlyIncome={borrowerMonthlyIncome}
+          setBorrowerMonthlyIncome={setBorrowerMonthlyIncome}
+          borrowerMonthlyDebts={borrowerMonthlyDebts}
+          setBorrowerMonthlyDebts={setBorrowerMonthlyDebts}
         />
-      )}
 
       {showSubGateOverlay && (
-        <div className="calc-sub-gate-overlay">
-          {!subGateResolved ? (
-            <div className="calc-sub-gate-loading" role="status" aria-live="polite">
-              <Loader2 className="calc-sub-gate-loading__icon" size={40} strokeWidth={2} aria-hidden />
-              <p className="calc-sub-gate-loading__text">{t('calcSubGateLoading')}</p>
-            </div>
-          ) : (
-            <div
-              className="calc-sub-gate-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="calc-sub-gate-title"
-            >
-              <div className="calc-sub-gate-modal__inner">
-                <h2 id="calc-sub-gate-title" className="calc-sub-gate-modal__title">
+        <div
+          className="calc-sub-gate-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={subGateResolved ? 'calc-sub-gate-title' : undefined}
+          aria-describedby={subGateResolved ? 'calc-sub-gate-description' : undefined}
+        >
+          <div className="calc-sub-gate-brand" aria-label="Sell Your Brick">
+            <span className="calc-sub-gate-brand__text" aria-hidden="true">
+              <span className="calc-sub-gate-brand__word">Sell</span>
+              <span className="calc-sub-gate-brand__word calc-sub-gate-brand__word--accent">Your</span>
+              <span className="calc-sub-gate-brand__word">Brick</span>
+            </span>
+          </div>
+
+          <div className="calc-sub-gate-message">
+            {!subGateResolved ? (
+              <div className="calc-sub-gate-loading" role="status" aria-live="polite">
+                <Loader2 className="calc-sub-gate-loading__icon" size={34} strokeWidth={2} aria-hidden />
+                <p className="calc-sub-gate-loading__text">{t('calcSubGateLoading')}</p>
+              </div>
+            ) : (
+              <>
+                <img
+                  className="calc-sub-gate-message__image"
+                  src="/images/calculator-pro-gate-illustration.png"
+                  alt=""
+                  width="1254"
+                  height="1254"
+                  decoding="async"
+                />
+                <h2 id="calc-sub-gate-title" className="calc-sub-gate-title">
                   {t('calcSubGateTitle')}
                 </h2>
-                <p className="calc-sub-gate-modal__text">{t('calcSubGateBody')}</p>
-                <div className="calc-sub-gate-modal__actions">
+                <p id="calc-sub-gate-description" className="calc-sub-gate-text">
+                  {t('calcSubGateBody')}
+                </p>
+              </>
+            )}
+          </div>
+
+          {subGateResolved ? (
+            <section className="calc-sub-gate-drawer" aria-label={t('calcSubGateTitle')}>
+              <div className="calc-sub-gate-drawer__handle" aria-hidden="true">
+                <span />
+              </div>
+              <div className="calc-sub-gate-drawer__content">
+                <div className="calc-sub-gate-drawer__copy">
+                  <h3>{t('calcSubGateDrawerTitle')}</h3>
+                  <p>{t('calcSubGateDrawerBody')}</p>
+                </div>
+                <div className="calc-sub-gate-drawer__actions">
                   <button
                     type="button"
-                    className="calc-sub-gate-btn calc-sub-gate-btn--primary"
+                    className="calc-sub-gate-btn calc-sub-gate-btn--primary btn-tiffany-shine"
                     onClick={() =>
                       navigate({ pathname: '/subscriptions', hash: 'subscriptions-pricing-section' })
                     }
                   >
-                    {t('calcSubGateCtaSubscribe')}
+                    <span>{t('calcSubGateCtaSubscribe')}</span>
+                    <span className="calc-sub-gate-btn__arrow" aria-hidden="true">↗</span>
                   </button>
                   <button
                     type="button"
@@ -1807,8 +1761,8 @@ const InvestmentCalculator = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            </section>
+          ) : null}
         </div>
       )}
     </div>

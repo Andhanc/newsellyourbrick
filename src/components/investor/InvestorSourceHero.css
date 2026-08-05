@@ -1,0 +1,955 @@
+.investor-source-hero {
+  width: min(100%, 640px);
+  min-height: 640px;
+  margin: 0 auto;
+  color: #ffffff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__scene {
+  width: 100%;
+}
+
+.investor-source-hero__intro {
+  display: grid;
+  grid-template-rows: auto minmax(280px, 1fr) auto;
+  gap: 0;
+  min-height: 640px;
+}
+
+.investor-source-hero__headline {
+  position: relative;
+  z-index: 4;
+  padding-top: 36px;
+  text-align: left;
+}
+
+.investor-source-hero__headline h1 {
+  max-width: 610px;
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--site-font-family, 'Montserrat', sans-serif);
+  font-size: clamp(46px, 7vw, 70px);
+  font-style: normal;
+  font-weight: 780;
+  line-height: 1.04;
+  letter-spacing: -.047em;
+}
+
+.investor-source-hero__headline h1 > span {
+  display: block;
+}
+
+.investor-source-hero__headline h1 > span:nth-child(2) {
+  white-space: nowrap;
+}
+
+.investor-source-hero__headline h1 > span:last-child {
+  white-space: normal;
+}
+
+.investor-source-hero__headline mark {
+  display: inline-block;
+  margin: 0 -.01em;
+  padding: .1em .14em .14em;
+  border-radius: .18em;
+  background: #f3f3f1;
+  color: #080909;
+  line-height: .92;
+  transform: rotate(-1.5deg);
+}
+
+.investor-source-hero__portfolio {
+  --deal-tilt-1: -3.2deg;
+  --deal-tilt-2: 2.4deg;
+  --deal-tilt-3: -1.8deg;
+  position: relative;
+  display: grid;
+  align-content: center;
+  align-self: center;
+  gap: 16px;
+  width: min(100%, 420px);
+  min-height: clamp(280px, 42vh, 360px);
+  margin: 0 auto;
+  padding: 22px 10px 14px;
+  isolation: isolate;
+}
+
+.investor-source-hero__property-card {
+  --card-delay: 0ms;
+  --card-tilt: 0deg;
+  --card-shift: 0px;
+  --card-surface: linear-gradient(135deg, #f6c25a 0%, #e89a2e 52%, #d97a18 100%);
+  --card-avatar-wash: rgba(255, 236, 188, .34);
+  --card-glow: rgba(239, 159, 47, .38);
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 86px;
+  margin: 0;
+  margin-left: var(--card-shift);
+  padding: 10px 12px 10px 10px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 28px;
+  background: var(--card-surface);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow:
+    0 0 28px var(--card-glow),
+    0 14px 32px rgba(0, 0, 0, .32),
+    inset 0 1px 0 rgba(255, 255, 255, .38),
+    inset 0 -1px 0 rgba(0, 0, 0, .08);
+  transform: rotate(var(--card-tilt));
+  transform-origin: center;
+  animation: investorPropertyCardIn .72s var(--card-delay) cubic-bezier(.16, 1, .3, 1) both;
+  transition: transform .28s cubic-bezier(.16, 1, .3, 1), box-shadow .28s ease;
+}
+
+.investor-source-hero__property-card--amber {
+  --card-surface: linear-gradient(135deg, #f7c45d 0%, #ef9f2f 48%, #e07a16 100%);
+  --card-avatar-wash: rgba(255, 236, 188, .36);
+  --card-glow: rgba(239, 159, 47, .42);
+}
+
+.investor-source-hero__property-card--silver {
+  --card-surface: linear-gradient(135deg, #dfe4ea 0%, #c5ccd6 50%, #aeb7c4 100%);
+  --card-avatar-wash: rgba(255, 255, 255, .42);
+  --card-glow: rgba(197, 204, 214, .4);
+}
+
+.investor-source-hero__property-card--sky {
+  --card-surface: linear-gradient(135deg, #7ec8f5 0%, #4aa7e8 48%, #2f8fd8 100%);
+  --card-avatar-wash: rgba(210, 236, 255, .4);
+  --card-glow: rgba(74, 167, 232, .42);
+}
+
+.investor-source-hero__property-card--1 {
+  --card-delay: 60ms;
+  --card-tilt: var(--deal-tilt-1);
+  --card-shift: -6px;
+  z-index: 3;
+}
+
+.investor-source-hero__property-card--2 {
+  --card-delay: 140ms;
+  --card-tilt: var(--deal-tilt-2);
+  --card-shift: 10px;
+  z-index: 4;
+}
+
+.investor-source-hero__property-card--3 {
+  --card-delay: 220ms;
+  --card-tilt: var(--deal-tilt-3);
+  --card-shift: -2px;
+  z-index: 5;
+}
+
+.investor-source-hero__property-avatar {
+  position: relative;
+  display: block;
+  width: 58px;
+  height: 58px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--card-avatar-wash);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+}
+
+.investor-source-hero__property-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s cubic-bezier(.16, 1, .3, 1);
+}
+
+.investor-source-hero__property-copy {
+  min-width: 0;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+}
+
+.investor-source-hero__property-copy strong,
+.investor-source-hero__property-copy b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.investor-source-hero__property-copy strong {
+  font: 750 15px/1.2 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.02em;
+}
+
+.investor-source-hero__property-copy b {
+  margin-top: 4px;
+  font: 800 18px/1.1 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.03em;
+}
+
+.investor-source-hero__property-card--silver .investor-source-hero__property-copy {
+  color: #1a1d22;
+  text-shadow: none;
+}
+
+.investor-source-hero__property-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 0 12px 0 8px;
+  border-radius: 999px;
+  background: #ff2d8a;
+  color: #ffffff;
+  font: 750 11px/1 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.01em;
+  box-shadow: 0 8px 18px rgba(255, 45, 138, .34);
+}
+
+.investor-source-hero__property-action svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .22);
+}
+
+.investor-source-hero__property-card:hover {
+  z-index: 8;
+  box-shadow:
+    0 0 36px var(--card-glow),
+    0 22px 44px rgba(0, 0, 0, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .42);
+  transform: rotate(var(--card-tilt)) translateY(-4px) scale(1.015);
+}
+
+.investor-source-hero__property-card:hover .investor-source-hero__property-avatar img {
+  transform: scale(1.06);
+}
+
+@keyframes investorPropertyCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px) rotate(calc(var(--card-tilt) - 4deg)) scale(.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--card-tilt)) scale(1);
+  }
+}
+
+.investor-source-hero__start {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  width: min(100%, 520px);
+  min-height: 66px;
+  margin: 0 auto;
+  padding: 7px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #080909;
+  cursor: pointer;
+  font: 800 17px/1 'Montserrat', system-ui, sans-serif;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .28);
+}
+
+.investor-source-hero__start > span:first-child {
+  grid-column: 2;
+  text-align: center;
+}
+
+.investor-source-hero__start-arrow {
+  grid-column: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #080909;
+  background: #080909;
+  color: #fff;
+}
+
+.investor-source-hero__source {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 640px;
+}
+
+.investor-source-hero__source-copy {
+  margin-bottom: 34px;
+  text-align: center;
+}
+
+.investor-source-hero__source-copy h2 {
+  margin: 0;
+  color: #ffffff;
+  font: 850 clamp(38px, 6vw, 58px)/1.02 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.05em;
+}
+
+.investor-source-hero__source-copy p {
+  max-width: 460px;
+  margin: 13px auto 0;
+  color: #8c9095;
+  font: 550 14px/1.5 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__choices {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 560px);
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+}
+
+.investor-source-hero__choice {
+  display: grid;
+  grid-template-columns: 24px 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 28px;
+  background: #151617;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .04);
+  cursor: pointer;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background-color .22s ease;
+}
+
+.investor-source-hero__choice:hover {
+  transform: translateY(-2px);
+}
+
+.investor-source-hero__choice.is-selected {
+  border-color: rgba(255, 255, 255, .78);
+  background: #202122;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .08), 0 18px 42px rgba(0, 0, 0, .34);
+}
+
+.investor-source-hero__choice input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 21px;
+  height: 21px;
+  margin: 0;
+  border: 2px solid #b7c0c8;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.investor-source-hero__choice input:checked {
+  border: 6px solid #080909;
+  background: #fff;
+}
+
+.investor-source-hero__choice input:focus {
+  outline: none;
+}
+
+.investor-source-hero__choice-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #080909;
+}
+
+.investor-source-hero__choice-copy strong,
+.investor-source-hero__choice-copy small {
+  display: block;
+}
+
+.investor-source-hero__choice-copy strong {
+  color: #ffffff;
+  font: 800 15px/1.25 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__choice-copy small {
+  margin-top: 5px;
+  color: #91959a;
+  font: 520 12px/1.35 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__back {
+  align-self: center;
+  margin-top: 24px;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: #a2a6aa;
+  cursor: pointer;
+  font: 700 12px/1 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__setup {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  min-height: 640px;
+  padding-top: 4px;
+}
+
+.investor-source-hero__setup-header {
+  display: grid;
+  gap: 0;
+}
+
+.investor-source-hero__setup-back {
+  justify-self: center;
+  margin: 0;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: #a2a6aa;
+  cursor: pointer;
+  font: 700 12px/1 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__setup-back:hover {
+  color: #ffffff;
+}
+
+.investor-source-hero__setup-footer {
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+}
+
+.investor-source-hero__setup-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font: 800 clamp(34px, 5.5vw, 52px)/1 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.045em;
+}
+
+.investor-source-hero__setup-header p {
+  max-width: 460px;
+  margin: 10px 0 0;
+  color: #8c9095;
+  font: 550 13px/1.45 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  padding: 2px 3px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .28) transparent;
+}
+
+.investor-source-hero__favorite-card {
+  position: relative;
+  min-width: 0;
+  padding: 7px 7px 13px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 24px;
+  background: #f4f4f1;
+  color: #080909;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+  transition: border-color .24s ease, transform .24s cubic-bezier(.16, 1, .3, 1), box-shadow .24s ease;
+}
+
+.investor-source-hero__favorite-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, .38);
+}
+
+.investor-source-hero__favorite-card.is-selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px #080909, 0 0 0 5px rgba(255, 255, 255, .82), 0 22px 46px rgba(0, 0, 0, .45);
+  transform: translateY(-2px);
+}
+
+.investor-source-hero__favorite-image {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.42;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #dfe1df;
+}
+
+.investor-source-hero__favorite-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s cubic-bezier(.16, 1, .3, 1);
+}
+
+.investor-source-hero__favorite-card:hover .investor-source-hero__favorite-image img,
+.investor-source-hero__favorite-card.is-selected .investor-source-hero__favorite-image img {
+  transform: scale(1.045);
+}
+
+.investor-source-hero__favorite-check {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, .84);
+  border-radius: 50%;
+  background: rgba(8, 9, 9, .72);
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(.68) rotate(-12deg);
+  transition: opacity .24s ease, transform .32s cubic-bezier(.16, 1, .3, 1);
+  backdrop-filter: blur(8px);
+}
+
+.investor-source-hero__favorite-card.is-selected .investor-source-hero__favorite-check {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.investor-source-hero__favorite-copy {
+  display: block;
+  padding: 11px 7px 0;
+}
+
+.investor-source-hero__favorite-copy strong,
+.investor-source-hero__favorite-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.investor-source-hero__favorite-copy strong {
+  font: 800 13px/1.25 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.02em;
+}
+
+.investor-source-hero__favorite-copy small {
+  margin-top: 5px;
+  color: #707479;
+  font: 700 12px/1.2 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__empty {
+  align-self: start;
+  border-radius: 34px;
+  background: #f4f4f1;
+  color: #080909;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .34);
+}
+
+.investor-source-hero__manual-fields {
+  display: grid;
+  gap: 12px;
+  align-self: start;
+  min-width: 0;
+}
+
+.investor-source-hero__manual-field {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .11) 0%, rgba(255, 255, 255, .05) 100%);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .1);
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.investor-source-hero__manual-field > span:first-child {
+  color: #9a9ea3;
+  font: 750 12px/1.25 'Montserrat', system-ui, sans-serif;
+  letter-spacing: .01em;
+}
+
+.investor-source-hero__manual-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.investor-source-hero__manual-input input {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  font: 800 clamp(28px, 5vw, 38px)/1.05 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.045em;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.investor-source-hero__manual-input input::-webkit-outer-spin-button,
+.investor-source-hero__manual-input input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.investor-source-hero__manual-input input::placeholder {
+  color: rgba(255, 255, 255, .28);
+}
+
+.investor-source-hero__manual-input b {
+  padding-bottom: 4px;
+  color: rgba(255, 255, 255, .72);
+  font: 800 18px/1 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__manual-field:focus-within {
+  border-color: rgba(255, 255, 255, .42);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .08) 100%);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, .08),
+    0 16px 36px rgba(0, 0, 0, .32),
+    inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+
+.investor-source-hero__manual-note {
+  margin: 4px 6px 0;
+  color: #7a7e83;
+  font: 600 12px/1.45 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__empty {
+  display: grid;
+  justify-items: center;
+  padding: 44px 28px;
+  text-align: center;
+}
+
+.investor-source-hero__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: #080909;
+  color: #ffffff;
+}
+
+.investor-source-hero__empty h3 {
+  margin: 0;
+  font: 800 24px/1.05 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -.035em;
+}
+
+.investor-source-hero__empty p {
+  max-width: 380px;
+  margin: 11px auto 20px;
+  color: #676b70;
+  font: 550 13px/1.5 'Montserrat', system-ui, sans-serif;
+}
+
+.investor-source-hero__empty a {
+  padding: 13px 18px;
+  border-radius: 999px;
+  background: #080909;
+  color: #ffffff;
+  font: 800 12px/1 'Montserrat', system-ui, sans-serif;
+  text-decoration: none;
+}
+
+.investor-source-hero__continue {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 7px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #080909;
+  cursor: pointer;
+  font: 800 16px/1 'Montserrat', system-ui, sans-serif;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .3);
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.investor-source-hero__continue > span:first-child {
+  grid-column: 2;
+}
+
+.investor-source-hero__continue-arrow {
+  grid-column: 3;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #080909;
+  color: #ffffff;
+}
+
+.investor-source-hero__continue:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.investor-source-hero__continue:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.investor-source-hero__start:focus-visible,
+.investor-source-hero__property-card:focus-visible,
+.investor-source-hero__choice:has(input:focus-visible),
+.investor-source-hero__back:focus-visible,
+.investor-source-hero__setup-back:focus-visible,
+.investor-source-hero__favorite-card:focus-visible,
+.investor-source-hero__continue:focus-visible,
+.investor-source-hero__empty a:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, .42);
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .investor-source-hero {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: calc(100svh - 112px);
+  }
+
+  .investor-source-hero__scene {
+    min-height: calc(100svh - 112px);
+  }
+
+  .investor-source-hero__intro {
+    grid-template-rows: auto minmax(280px, 1fr) auto;
+    gap: 0;
+  }
+
+  .investor-source-hero__headline {
+    padding-top: 48px;
+  }
+
+  .investor-source-hero__headline h1 {
+    max-width: none;
+    font-size: clamp(34px, 9.2vw, 42px);
+    line-height: 1.03;
+  }
+
+  .investor-source-hero__portfolio {
+    width: 100%;
+    min-height: clamp(260px, 38svh, 340px);
+    gap: 14px;
+    padding: 16px 8px 10px;
+  }
+
+  .investor-source-hero__property-card {
+    gap: 12px;
+    min-height: 78px;
+    padding: 8px 10px 8px 8px;
+    border-radius: 24px;
+  }
+
+  .investor-source-hero__property-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+
+  .investor-source-hero__property-copy strong {
+    font-size: 14px;
+  }
+
+  .investor-source-hero__property-copy b {
+    font-size: 16px;
+  }
+
+  .investor-source-hero__property-action {
+    min-height: 32px;
+    padding: 0 10px 0 7px;
+    font-size: 10px;
+  }
+
+  .investor-source-hero__start {
+    width: 100%;
+    min-height: 62px;
+  }
+
+  .investor-source-hero__source {
+    justify-content: center;
+  }
+
+  .investor-source-hero__setup {
+    gap: 18px;
+    min-height: calc(100svh - 112px);
+  }
+
+  .investor-source-hero__setup-header h2 {
+    font-size: clamp(31px, 8.5vw, 39px);
+  }
+
+  .investor-source-hero__setup-header p {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .investor-source-hero__favorites-grid {
+    gap: 10px;
+  }
+
+  .investor-source-hero__favorite-card {
+    padding: 6px 6px 11px;
+    border-radius: 21px;
+  }
+
+  .investor-source-hero__favorite-image {
+    border-radius: 16px;
+  }
+
+  .investor-source-hero__favorite-copy {
+    padding: 9px 5px 0;
+  }
+
+  .investor-source-hero__favorite-copy strong {
+    font-size: 12px;
+  }
+
+  .investor-source-hero__favorite-copy small {
+    font-size: 11px;
+  }
+
+  .investor-source-hero__manual-fields {
+    gap: 10px;
+  }
+
+  .investor-source-hero__manual-field {
+    padding: 16px 18px;
+    border-radius: 22px;
+  }
+
+  .investor-source-hero__source-copy {
+    margin-bottom: 28px;
+  }
+
+  .investor-source-hero__source-copy h2 {
+    font-size: 38px;
+  }
+
+  .investor-source-hero__choices {
+    gap: 12px;
+  }
+
+  .investor-source-hero__choice {
+    grid-template-columns: 22px 48px minmax(0, 1fr);
+    gap: 12px;
+    min-height: 92px;
+    padding: 12px 14px;
+    border-radius: 25px;
+  }
+
+  .investor-source-hero__choice-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .investor-source-hero__continue {
+    min-height: 62px;
+  }
+}
+
+@media (max-width: 360px) {
+  .investor-source-hero__headline h1 { font-size: 33px; }
+  .investor-source-hero__portfolio { min-height: 240px; gap: 12px; }
+  .investor-source-hero__property-card {
+    gap: 10px;
+    min-height: 72px;
+    border-radius: 22px;
+  }
+  .investor-source-hero__property-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+  }
+  .investor-source-hero__property-copy strong { font-size: 13px; }
+  .investor-source-hero__property-copy b { font-size: 15px; }
+  .investor-source-hero__property-action {
+    gap: 0;
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .investor-source-hero__property-action svg {
+    width: 20px;
+    height: 20px;
+    padding: 4px;
+  }
+  .investor-source-hero__choice { grid-template-columns: 20px 44px minmax(0, 1fr); }
+  .investor-source-hero__choice-icon { width: 44px; height: 44px; }
+  .investor-source-hero__choice-copy strong { font-size: 14px; }
+  .investor-source-hero__choice-copy small { font-size: 11px; }
+  .investor-source-hero__setup-header h2 { font-size: 29px; }
+  .investor-source-hero__setup-header p { font-size: 11px; }
+  .investor-source-hero__favorite-copy strong { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .investor-source-hero__scene,
+  .investor-source-hero__choice { transition: none; }
+
+  .investor-source-hero__property-card {
+    animation: none;
+    transition: none;
+    transform: rotate(var(--card-tilt));
+  }
+
+  .investor-source-hero__property-avatar img {
+    transition: none;
+  }
+
+  .investor-source-hero__setup,
+  .investor-source-hero__favorite-card,
+  .investor-source-hero__favorite-image img,
+  .investor-source-hero__favorite-check,
+  .investor-source-hero__continue {
+    transition: none;
+  }
+}

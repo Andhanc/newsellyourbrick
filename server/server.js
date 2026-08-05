@@ -41,6 +41,7 @@ import {
 } from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
+import { registerInvestorAiRoutes } from './investorAiRoutes.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
 import { registerNewsRoutes } from './newsRoutes.js';
 import { registerSeoRedirects } from './seoRedirects.js';
@@ -81,6 +82,7 @@ import { formatShareMarketplaceApiItem } from './database/shareMarketplaceQuerie
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
+dotenv.config({ path: join(__dirname, '..', '.env.local'), override: true });
 dotenv.config({ path: join(__dirname, '.env') });
 
 const { Client, LocalAuth } = whatsappPkg;
@@ -171,6 +173,7 @@ app.use((req, res, next) => {
 });
 
 registerIntelligenceIoProxy(app);
+registerInvestorAiRoutes(app);
 registerNewsRoutes(app);
 registerSeoRedirects(app);
 registerSeoSitemap(app);

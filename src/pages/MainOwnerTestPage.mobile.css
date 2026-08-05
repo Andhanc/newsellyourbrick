@@ -1570,3 +1570,1138 @@
     flex: 0 0 88px;
   }
 }
+
+@media (max-width: 900px) {
+  .mot-finance__auctions,
+  .mot-finance__auctions * {
+    font-family: "Montserrat", system-ui, sans-serif !important;
+  }
+
+  .mot-finance__section-head h2 {
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .mot-finance__section-head p {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .mot-finance__section-head > button,
+  .mot-finance__auction-copy > strong,
+  .mot-finance__auction-price strong,
+  .mot-finance__auction-time strong,
+  .mot-finance__auction-status {
+    font-weight: 700;
+  }
+
+  .mot-finance__wallet {
+    margin: 10px 10px 0;
+    padding-right: 18px;
+    padding-left: 18px;
+    border-radius: 38px;
+  }
+
+  .mot-finance__quick-grid {
+    width: 100%;
+    margin: 34px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings {
+    width: 100%;
+    min-width: 0;
+    min-height: 170px;
+    padding: 16px;
+    border-radius: 26px;
+  }
+
+  .mot-finance__quick-card--add {
+    display: none;
+  }
+
+  .mot-finance__quick-hint {
+    max-width: calc(100% - 28px);
+    font-size: 10px;
+  }
+
+  .mot-finance__thumb-stack {
+    right: 12px;
+    bottom: 13px;
+  }
+
+  .mot-finance__thumb-stack img,
+  .mot-finance__thumb-stack > span {
+    width: 31px;
+    height: 31px;
+    margin-left: -9px;
+    border-width: 2px;
+  }
+
+  .mot-finance__auctions {
+    margin: 0 10px;
+    border-radius: 40px 40px 0 0;
+  }
+}
+
+/* ——— Finance dashboard mobile ——— */
+@media (max-width: 900px) {
+  .mot-finance.mot-main {
+    min-height: 100%;
+    background: #101516;
+  }
+
+  .mot-finance__topbar {
+    width: 100%;
+    padding: 20px var(--oc-mob-pad, 16px) 16px;
+    align-items: center;
+    background: #ffffff;
+  }
+
+  .mot-finance__topbar h1 {
+    font-size: 27px;
+  }
+
+  .mot-finance__topbar p {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+
+  .mot-finance__eyebrow {
+    margin-bottom: 4px;
+    font-size: 9px;
+  }
+
+  .mot-finance__canvas {
+    width: 100%;
+    padding: 0 0 calc(22px + env(safe-area-inset-bottom, 0px));
+    background: #101516;
+  }
+
+  .mot-finance__wallet {
+    min-height: 300px;
+    padding: 28px var(--oc-mob-pad, 16px) 42px;
+    border: 0;
+    border-radius: 0 0 32px 32px;
+    background:
+      radial-gradient(circle at 88% 2%, rgba(126, 232, 228, 0.98) 0%, rgba(126, 232, 228, 0.34) 28%, transparent 55%),
+      radial-gradient(circle at 10% 100%, rgba(0, 153, 169, 0.2), transparent 42%),
+      #ffffff;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.12);
+  }
+
+  .mot-finance__wallet::after {
+    width: 280px;
+    height: 280px;
+    right: -135px;
+    bottom: -170px;
+    border-width: 44px;
+  }
+
+  .mot-finance__wallet-grid {
+    background-size: 30px 30px;
+  }
+
+  .mot-finance__wallet-kicker {
+    margin-bottom: 7px;
+    font-size: 10px;
+  }
+
+  .mot-finance__wallet h2 {
+    font-size: 14px;
+  }
+
+  .mot-finance__live {
+    padding: 7px 9px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .mot-finance__balance {
+    margin-top: 34px;
+  }
+
+  .mot-finance__balance strong {
+    overflow-wrap: anywhere;
+    font-size: clamp(38px, 12vw, 56px);
+    line-height: 1;
+  }
+
+  .mot-finance__balance p {
+    max-width: 78%;
+    margin-top: 13px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .mot-finance__balance small {
+    max-width: 78%;
+    font-size: 10px;
+  }
+
+  .mot-finance__portfolio-meta {
+    position: static;
+    margin-top: 25px;
+    gap: 7px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mot-finance__portfolio-meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mot-finance__portfolio-meta span {
+    min-height: 36px;
+    padding: 0 11px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    font-size: 10px;
+  }
+
+  .mot-finance__quick-grid {
+    margin: -18px 0 0;
+    padding: 14px var(--oc-mob-pad, 16px) 18px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    border: 0;
+    border-radius: 0;
+    background: #101516;
+    box-shadow: none;
+    scrollbar-width: none;
+  }
+
+  .mot-finance__quick-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mot-finance__quick-card {
+    width: min(72vw, 260px);
+    min-width: min(72vw, 260px);
+    min-height: 168px;
+    padding: 17px;
+    scroll-snap-align: start;
+    border-radius: 22px;
+  }
+
+  .mot-finance__quick-card:hover {
+    transform: none;
+  }
+
+  .mot-finance__quick-card--add {
+    width: 124px;
+    min-width: 124px;
+  }
+
+  .mot-finance__quick-card > strong {
+    font-size: 29px;
+  }
+
+  .mot-finance__quick-hint {
+    max-width: calc(100% - 76px);
+  }
+
+  .mot-finance__quick-card--add .mot-finance__quick-hint {
+    max-width: 90px;
+  }
+
+  .mot-finance__thumb-stack {
+    right: 15px;
+    bottom: 15px;
+  }
+
+  .mot-finance__thumb-stack img,
+  .mot-finance__thumb-stack > span {
+    width: 34px;
+    height: 34px;
+    margin-left: -10px;
+  }
+
+  .mot-finance__auctions {
+    margin: 0;
+    padding: 13px var(--oc-mob-pad, 16px) 24px;
+    border: 0;
+    border-radius: 30px 30px 0 0;
+    background: #ffffff;
+    box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.12);
+  }
+
+  .mot-finance__sheet-handle {
+    width: 42px;
+    height: 5px;
+    margin: 0 auto 20px;
+    display: block;
+    border-radius: 999px;
+    background: #e4e8e8;
+  }
+
+  .mot-finance__section-head {
+    padding: 0 0 14px;
+    align-items: center;
+  }
+
+  .mot-finance__section-head h2 {
+    font-size: 20px;
+  }
+
+  .mot-finance__section-head p {
+    max-width: 245px;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .mot-finance__section-head > button {
+    padding: 8px 9px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .mot-finance__auction-row {
+    padding: 14px 0;
+    grid-template-columns: 58px minmax(0, 1fr) auto 28px;
+    gap: 11px;
+  }
+
+  .mot-finance__auction-row:hover {
+    transform: none;
+    background: transparent;
+  }
+
+  .mot-finance__auction-position {
+    display: none;
+  }
+
+  .mot-finance__auction-row > img {
+    width: 58px;
+    height: 58px;
+    border-radius: 17px;
+  }
+
+  .mot-finance__auction-copy > strong {
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .mot-finance__auction-status {
+    font-size: 8px;
+  }
+
+  .mot-finance__auction-price {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .mot-finance__auction-price small {
+    display: none;
+  }
+
+  .mot-finance__auction-price strong {
+    max-width: 112px;
+    font-size: 12px;
+  }
+
+  .mot-finance__auction-time {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    margin-top: -25px;
+    padding-left: 0;
+  }
+
+  .mot-finance__auction-time small {
+    display: none;
+  }
+
+  .mot-finance__auction-time strong {
+    color: var(--mot-tiffany-dark);
+    font-size: 10px;
+  }
+
+  .mot-finance__auction-open {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 9px;
+    background: #f2f6f6;
+  }
+
+  .mot-finance__empty {
+    min-height: 170px;
+    padding: 21px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mot-finance__empty div {
+    min-width: calc(100% - 75px);
+  }
+
+  .mot-finance__empty button {
+    margin-left: 70px;
+  }
+
+  .mot-finance__shimmer--balance {
+    width: 82%;
+    height: 52px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mot-finance__wallet {
+    padding-inline: 14px;
+  }
+
+  .mot-finance__live {
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mot-finance__quick-card {
+    width: 76vw;
+    min-width: 76vw;
+  }
+
+  .mot-finance__quick-card--add {
+    width: 116px;
+    min-width: 116px;
+  }
+}
+
+@media (max-width: 900px) {
+  .mot-finance.mot-main,
+  .mot-finance__canvas {
+    background: #111313;
+  }
+
+  .mot-finance__canvas {
+    padding-top: 0;
+  }
+
+  .mot-finance__wallet {
+    min-height: 0;
+    padding: 30px var(--oc-mob-pad, 16px) 26px;
+    overflow: hidden;
+    border-radius: 0 0 30px 30px;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .mot-finance__wallet::after,
+  .mot-finance__wallet-grid,
+  .mot-finance__wallet-glow {
+    display: none;
+  }
+
+  .mot-finance__wallet h2 {
+    font-size: 14px;
+  }
+
+  .mot-finance__live {
+    max-width: none;
+    padding: 7px 10px;
+    color: #ffffff;
+    font-size: 9px;
+  }
+
+  .mot-finance__balance {
+    margin-top: 23px;
+  }
+
+  .mot-finance__balance strong {
+    font-size: clamp(39px, 11.5vw, 55px);
+    font-weight: 720;
+  }
+
+  .mot-finance__balance-line {
+    gap: 10px;
+  }
+
+  .mot-finance__balance-visibility {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .mot-finance__balance p,
+  .mot-finance__balance small {
+    max-width: 100%;
+  }
+
+  .mot-finance__quick-grid {
+    margin: 34px calc(var(--oc-mob-pad, 16px) * -1) 0;
+    padding: 0 var(--oc-mob-pad, 16px);
+    overflow-x: auto;
+    border: 0;
+    background: #ffffff;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add {
+    width: min(56vw, 220px);
+    min-width: min(56vw, 220px);
+    min-height: 150px;
+    background: #f4f4f2;
+  }
+
+  .mot-finance__quick-card--add {
+    width: 118px;
+    min-width: 118px;
+  }
+
+  .mot-finance__action-bar {
+    min-height: 102px;
+    padding: 16px 8px 18px;
+    gap: clamp(6px, 2vw, 12px);
+    justify-content: space-around;
+    background: #111313;
+  }
+
+  .mot-finance__action-bar button {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 88px;
+    font-size: 10px;
+  }
+
+  .mot-finance__action-bar button > span {
+    width: 45px;
+    height: 45px;
+  }
+
+  @media (max-width: 360px) {
+    .mot-finance__action-bar {
+      padding-inline: 4px;
+      gap: 4px;
+    }
+
+    .mot-finance__action-bar button {
+      font-size: 9px;
+    }
+  }
+
+  .mot-finance__auctions {
+    margin: 0;
+    border-radius: 30px 30px 0 0;
+    box-shadow: none;
+  }
+
+  .mot-finance__menu-button,
+  .mot-finance__analytics-button {
+    min-height: 38px;
+    padding-inline: 12px;
+    border-radius: 13px;
+    font-size: 11px;
+  }
+
+  .mot-finance__profile-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mot-finance__menu-button span,
+  .mot-finance__analytics-button svg {
+    display: none;
+  }
+
+  .mot-finance__menu-button {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+/* Final mobile geometry for the finance composition. */
+@media (max-width: 900px) {
+  .mot-finance__wallet {
+    width: 100%;
+    margin: 0;
+    padding-right: 18px;
+    padding-left: 18px;
+    border-radius: 0 0 42px 42px;
+  }
+
+  .mot-finance__quick-grid {
+    width: 100%;
+    margin: 34px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings {
+    width: 100%;
+    min-width: 0;
+    min-height: 170px;
+    padding: 16px;
+    border-radius: 26px;
+  }
+
+  .mot-finance__quick-card--add {
+    display: none;
+  }
+
+  .mot-finance__quick-hint {
+    max-width: calc(100% - 28px);
+    font-size: 10px;
+  }
+
+  .mot-finance__thumb-stack {
+    right: 12px;
+    bottom: 13px;
+  }
+
+  .mot-finance__thumb-stack img,
+  .mot-finance__thumb-stack > span {
+    width: 31px;
+    height: 31px;
+    margin-left: -9px;
+    border-width: 2px;
+  }
+
+  .mot-finance__auctions {
+    width: 100%;
+    margin: 0;
+    border-radius: 42px 42px 0 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .mot-finance__wallet {
+    margin-inline: 0;
+    padding-inline: 14px;
+  }
+
+  .mot-finance__quick-grid {
+    gap: 8px;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings {
+    padding: 13px;
+  }
+
+  .mot-finance__auctions {
+    margin-inline: 0;
+  }
+}
+
+/* Keep all three Tiffany cards present on mobile. */
+@media (max-width: 900px) {
+  .mot-finance__quick-grid {
+    margin: 34px -18px 0;
+    width: calc(100% + 36px);
+    padding: 0 18px 8px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 18px;
+    scrollbar-width: none;
+  }
+
+  .mot-finance__quick-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add {
+    display: flex;
+    flex: 0 0 150px;
+    width: 150px;
+    min-width: 150px;
+    min-height: 174px;
+    scroll-snap-align: start;
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    background:
+      radial-gradient(circle at 88% 4%, rgba(255, 255, 255, 0.34), transparent 36%),
+      linear-gradient(145deg, #54d2da 0%, #3bc0cb 52%, #2aaeb9 100%);
+    color: #ffffff;
+    box-shadow:
+      0 16px 30px rgba(42, 174, 185, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  .mot-finance__quick-card:not(.mot-finance__quick-card--add) {
+    display: block;
+  }
+
+  .mot-finance__quick-card--bookings {
+    background:
+      radial-gradient(circle at 8% 100%, rgba(255, 255, 255, 0.28), transparent 42%),
+      linear-gradient(145deg, #63d7dd 0%, #45c8d1 48%, #31b4bf 100%);
+  }
+
+  .mot-finance__quick-card--add {
+    padding: 16px;
+    background:
+      radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.3), transparent 42%),
+      linear-gradient(145deg, #43c8d1 0%, #2eb4bf 52%, #239da8 100%);
+  }
+
+  .mot-finance__quick-card .mot-finance__quick-hint {
+    max-width: 112px;
+    color: rgba(255, 255, 255, 0.82);
+  }
+}
+
+@media (min-width: 560px) and (max-width: 900px) {
+  .mot-finance__quick-grid {
+    margin-inline: 0;
+    width: 100%;
+    padding-inline: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Property cards in the upcoming-auctions sheet. */
+@media (max-width: 900px) {
+  .mot-finance__auction-list {
+    gap: 12px;
+  }
+
+  .mot-finance__auction-row {
+    min-height: 116px;
+    padding: 11px;
+    grid-template-columns: 82px minmax(0, 1fr) auto 34px;
+    grid-template-rows: auto auto;
+    gap: 8px 11px;
+    border: 1px solid rgba(59, 192, 203, 0.2);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(78, 205, 214, 0.15), transparent 42%),
+      linear-gradient(145deg, #ffffff 0%, #f4fcfb 58%, #e9f9f8 100%);
+    box-shadow:
+      0 12px 26px rgba(35, 157, 168, 0.09),
+      inset 0 1px 0 #ffffff;
+  }
+
+  .mot-finance__auction-row + .mot-finance__auction-row {
+    border-top: 1px solid rgba(59, 192, 203, 0.2);
+  }
+
+  .mot-finance__auction-row:hover {
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(78, 205, 214, 0.15), transparent 42%),
+      linear-gradient(145deg, #ffffff 0%, #f4fcfb 58%, #e9f9f8 100%);
+  }
+
+  .mot-finance__auction-row > img {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 82px;
+    height: 92px;
+    border-radius: 20px;
+    box-shadow: 0 9px 20px rgba(15, 23, 42, 0.14);
+  }
+
+  .mot-finance__auction-copy {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .mot-finance__auction-status {
+    width: fit-content;
+    margin-bottom: 6px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(78, 205, 214, 0.14);
+    color: #118e97;
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .mot-finance__auction-copy > strong {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .mot-finance__auction-copy > small {
+    margin-top: 5px;
+    color: #829295;
+    font-size: 9px;
+  }
+
+  .mot-finance__auction-price {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    padding: 7px 9px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(59, 192, 203, 0.1);
+  }
+
+  .mot-finance__auction-price strong {
+    max-width: 104px;
+    color: #164d52;
+    font-size: 11px;
+  }
+
+  .mot-finance__auction-time {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    align-self: end;
+    width: fit-content;
+    margin: 0;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(78, 205, 214, 0.18), rgba(59, 192, 203, 0.1));
+  }
+
+  .mot-finance__auction-time strong {
+    color: #138f98;
+    font-size: 9px;
+  }
+
+  .mot-finance__auction-open {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    align-self: center;
+    width: 34px;
+    height: 42px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(59, 192, 203, 0.26);
+  }
+}
+
+@media (max-width: 900px) {
+  .mot-finance__section-head > button {
+    min-height: 48px;
+    padding: 5px 5px 5px 16px;
+    gap: 11px;
+    border: 0;
+    border-radius: 999px;
+    background: #0b1322;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    box-shadow: 0 10px 22px rgba(11, 19, 34, 0.14);
+  }
+
+  .mot-finance__section-head > button:hover {
+    background: #0b1322;
+    color: #ffffff;
+  }
+
+  .mot-finance__section-head > button svg {
+    width: 38px;
+    height: 38px;
+    padding: 10px;
+    border-radius: 50%;
+    background: #263044;
+    color: #ffffff;
+    stroke-width: 2.4;
+  }
+}
+
+@media (max-width: 900px) {
+  .mot-finance__auction-row {
+    min-height: 98px;
+    padding: 10px;
+    grid-template-columns: 76px minmax(0, 1fr) auto 34px;
+    grid-template-rows: auto auto;
+    gap: 5px 10px;
+    border: 1px solid #e4eeee;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055);
+  }
+
+  .mot-finance__auction-row + .mot-finance__auction-row {
+    border-top: 1px solid #e4eeee;
+  }
+
+  .mot-finance__auction-row:hover {
+    border-color: #d7e8e9;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055);
+  }
+
+  .mot-finance__auction-row > img {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 76px;
+    height: 76px;
+    border-radius: 17px;
+  }
+
+  .mot-finance__auction-copy {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .mot-finance__auction-copy > strong {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .mot-finance__auction-price {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .mot-finance__auction-price small {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 7px;
+  }
+
+  .mot-finance__auction-price strong {
+    max-width: 112px;
+    color: #17272a;
+    font-size: 11px;
+  }
+
+  .mot-finance__auction-time {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    align-items: flex-end;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: right;
+  }
+
+  .mot-finance__auction-time small {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 2px;
+    color: #879396;
+    font-size: 8px;
+  }
+
+  .mot-finance__auction-time strong {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px;
+    color: #15939d;
+    font-size: 15px;
+    font-weight: 850;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mot-finance__auction-open {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    align-self: center;
+    width: 34px;
+    height: 40px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #11191b;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 559px) {
+  .mot-finance__auction-row {
+    min-height: 88px;
+    grid-template-columns: 64px minmax(0, 1fr) auto 30px;
+    grid-template-rows: auto auto;
+    gap: 4px 8px;
+  }
+
+  .mot-finance__auction-row > img {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 64px;
+    height: 64px;
+    border-radius: 15px;
+  }
+
+  .mot-finance__auction-copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .mot-finance__auction-price {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .mot-finance__auction-time {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .mot-finance__auction-open {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    width: 30px;
+    height: 36px;
+  }
+
+  .mot-finance__auction-copy > strong {
+    font-size: 12px;
+  }
+
+  .mot-finance__auction-time small {
+    font-size: 8px;
+  }
+
+  .mot-finance__auction-time strong {
+    max-width: 96px;
+    font-size: 14px;
+  }
+}
+
+/* Compact mobile metric cards: previews live in the header, leaving the copy unobstructed. */
+@media (max-width: 900px) {
+  .mot-finance__quick-grid {
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add {
+    flex-basis: 156px;
+    width: 156px;
+    min-width: 156px;
+    min-height: 168px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-radius: 24px;
+    background: linear-gradient(145deg, #62d1d9 0%, #43c3cd 58%, #31b5c0 100%);
+    box-shadow:
+      0 10px 24px rgba(42, 174, 185, 0.17),
+      inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  }
+
+  .mot-finance__quick-card--bookings {
+    background: linear-gradient(145deg, #68d3da 0%, #49c5ce 58%, #35b7c1 100%);
+  }
+
+  .mot-finance__quick-card--add {
+    background: linear-gradient(145deg, #55cbd4 0%, #37bac5 58%, #2aaab5 100%);
+  }
+
+  .mot-finance__quick-card-top {
+    min-height: 34px;
+    gap: 6px;
+  }
+
+  .mot-finance__quick-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 11px;
+  }
+
+  .mot-finance__quick-card-top > svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+
+  .mot-finance__quick-card-top .mot-finance__thumb-stack {
+    right: auto;
+    bottom: auto;
+    margin-left: auto;
+  }
+
+  .mot-finance__quick-card-top .mot-finance__thumb-stack img,
+  .mot-finance__quick-card-top .mot-finance__thumb-stack > span {
+    width: 24px;
+    height: 24px;
+    margin-left: -8px;
+    border-width: 2px;
+  }
+
+  .mot-finance__quick-card-top .mot-finance__thumb-stack img:first-child,
+  .mot-finance__quick-card-top .mot-finance__thumb-stack > span:first-child {
+    margin-left: 0;
+  }
+
+  .mot-finance__quick-card .mot-finance__quick-title {
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: 780;
+    line-height: 1.15;
+  }
+
+  .mot-finance__quick-card:not(.mot-finance__quick-card--add) > strong {
+    margin-top: 6px;
+    font-size: 34px;
+    font-weight: 760;
+    line-height: 0.95;
+  }
+
+  .mot-finance__quick-card .mot-finance__quick-hint {
+    max-width: 100%;
+    margin-top: 9px;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+  }
+
+  .mot-finance__add-icon {
+    top: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .mot-finance__add-arrow {
+    right: 15px;
+    bottom: 15px;
+  }
+}
+
+@media (min-width: 560px) and (max-width: 900px) {
+  .mot-finance__quick-card,
+  .mot-finance__quick-card--bookings,
+  .mot-finance__quick-card--add {
+    width: 100%;
+    min-width: 0;
+  }
+}

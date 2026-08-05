@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
 import { SiTelegram, SiWhatsapp } from 'react-icons/si'
@@ -38,6 +38,7 @@ export default function TestDriveBookingPage() {
   const { slugOrId: propertyRouteKey } = useParams()
   const propertyApiKey = propertyRouteKey ? encodeURIComponent(propertyRouteKey) : ''
   const navigate = useNavigate()
+  const routerLocation = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const propertyTable =
     searchParams.get('table') || 'properties_apartments'
@@ -47,7 +48,11 @@ export default function TestDriveBookingPage() {
   const [bookedDates, setBookedDates] = useState([])
   const [myBookedDates, setMyBookedDates] = useState([])
   const [saving, setSaving] = useState(false)
-  const [pendingRange, setPendingRange] = useState(null)
+  const landingRange =
+    routerLocation.state?.testDriveRange?.start && routerLocation.state?.testDriveRange?.end
+      ? routerLocation.state.testDriveRange
+      : null
+  const [pendingRange, setPendingRange] = useState(() => landingRange)
   const [calendarResetKey, setCalendarResetKey] = useState(0)
   const [quoteData, setQuoteData] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -315,6 +320,7 @@ export default function TestDriveBookingPage() {
             onRangeSelected={handleRangeSelected}
             maxWidth="max-w-full"
             className="test-drive-page__calendar-panel"
+            initialRange={calendarResetKey === 0 ? landingRange : null}
           />
           {pendingRange && (
             <div className="test-drive-page__actions">

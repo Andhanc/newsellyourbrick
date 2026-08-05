@@ -204,6 +204,10 @@
   display: none !important;
 }
 
+.opr-mobile-cabinet {
+  display: none;
+}
+
 /* ——— Body ——— */
 .opr-body {
   flex: 1;
