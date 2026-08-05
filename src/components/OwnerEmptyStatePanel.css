@@ -6,8 +6,8 @@
   width: 100%;
   padding: 28px 22px;
   border-radius: 20px;
-  border: 1px dashed rgba(0, 153, 169, 0.24);
-  background: rgba(0, 153, 169, 0.06);
+  border: 1px solid rgba(0, 153, 169, 0.12);
+  background: #ffffff;
   text-align: center;
   box-sizing: border-box;
 }
@@ -21,8 +21,11 @@
 }
 
 .owner-empty-state__art {
-  width: min(200px, 72%);
+  display: block;
+  width: min(240px, 78%);
   height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
   margin-bottom: 2px;
 }
 

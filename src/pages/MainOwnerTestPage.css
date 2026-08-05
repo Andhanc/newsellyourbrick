@@ -3468,6 +3468,13 @@
   color: #ffffff;
 }
 
+.mot-finance__quick-card--add:disabled,
+.mot-finance__quick-card--add[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .mot-finance__quick-card-top .mot-finance__thumb-stack {
   position: static;
   right: auto;
@@ -3711,12 +3718,39 @@
 .mot-finance__empty {
   min-height: 150px;
   padding: 24px;
-  border: 1px dashed rgba(0, 153, 169, 0.24);
+  border: 1px solid rgba(0, 153, 169, 0.12);
   border-radius: 22px;
-  background: #f8fcfc;
+  background: #ffffff;
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+.mot-finance__empty--illustrated {
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+  gap: 12px 18px;
+  padding: 28px 22px;
+}
+
+.mot-finance__empty-art {
+  display: block;
+  width: min(200px, 56%);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.mot-finance__empty--illustrated > div {
+  flex: 1 1 220px;
+  min-width: min(100%, 220px);
+}
+
+.mot-finance__empty--illustrated button {
+  flex: 0 0 auto;
+  margin-inline: auto;
 }
 
 .mot-finance__empty > span {
@@ -3760,6 +3794,12 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.mot-finance__empty button:disabled,
+.mot-finance__empty button[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @keyframes mot-finance-shimmer {
@@ -3928,6 +3968,12 @@
   cursor: pointer;
 }
 
+.mot-finance__action-bar button:disabled,
+.mot-finance__action-bar button[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .mot-finance__action-bar button > span {
   width: 46px;
   height: 46px;
@@ -3982,8 +4028,7 @@
 }
 
 .mot-finance__menu-button,
-.mot-finance__analytics-button,
-.mot-finance__profile-button {
+.mot-finance__analytics-button {
   border: 0;
   font: inherit;
   cursor: pointer;
@@ -4011,6 +4056,8 @@
 .mot-finance__wallet-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
   gap: 8px;
 }
 
@@ -4018,29 +4065,19 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
+  background: var(--mot-gradient-active);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-size: 12px;
   font-weight: 700;
+  box-shadow: 0 8px 18px rgba(0, 153, 169, 0.22);
+  transition: filter 0.18s ease, transform 0.18s ease;
 }
 
-.mot-finance__profile-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: #f3f4f2;
-  color: #343a3b;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.18s ease, color 0.18s ease;
-}
-
-.mot-finance__profile-button:hover {
-  background: rgba(0, 153, 169, 0.12);
-  color: var(--mot-tiffany-dark);
+.mot-finance__analytics-button:hover {
+  filter: brightness(1.04);
 }
 
 .mot-finance__auctions,

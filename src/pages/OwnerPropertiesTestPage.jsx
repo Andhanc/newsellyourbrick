@@ -46,7 +46,6 @@ import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkel
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
-import { RoleSwitchBottomCta } from '../components/RoleSwitchBottomCta'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
@@ -1166,8 +1165,6 @@ export default function OwnerPropertiesTestPage() {
             <OwnerAdStack cards={['premium', 'fastSales']} className="op-owner-ads" />
           </aside>
         </div>
-
-        <RoleSwitchBottomCta targetRole="buyer" />
       </div>
       <FileUploadModal
         isOpen={showFileUploadModal}

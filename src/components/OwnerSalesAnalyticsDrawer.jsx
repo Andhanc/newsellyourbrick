@@ -14,6 +14,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import OwnerEmptyPropertiesIllustration from './OwnerEmptyPropertiesIllustration'
 import './OwnerSalesAnalyticsDrawer.css'
 
 const MONTH_COUNT = 6
@@ -328,7 +329,19 @@ export default function OwnerSalesAnalyticsDrawer({
         </div>
 
         <div className="osa__scroll" role="tabpanel">
-          {activeTab === 'sales' ? (
+          {!loading && properties.length === 0 ? (
+            <div className="osa__empty-state osa__empty-state--illustrated">
+              <OwnerEmptyPropertiesIllustration className="osa__empty-art" />
+              <strong>{ru ? 'Пока нет объектов' : 'No properties yet'}</strong>
+              <span>
+                {ru
+                  ? 'Добавьте первый объект — здесь появится аналитика портфеля'
+                  : 'Add your first property to see portfolio analytics here'}
+              </span>
+            </div>
+          ) : null}
+
+          {properties.length > 0 && activeTab === 'sales' ? (
             <>
           <section className="osa__income-card" aria-labelledby="osa-income-title">
             <div className="osa__income-head">
@@ -443,7 +456,7 @@ export default function OwnerSalesAnalyticsDrawer({
             </>
           ) : null}
 
-          {activeTab === 'reach' ? (
+          {properties.length > 0 && activeTab === 'reach' ? (
             <>
               <section className="osa__reach-summary" aria-labelledby="osa-reach-title">
                 <div className="osa__section-heading">
@@ -504,7 +517,7 @@ export default function OwnerSalesAnalyticsDrawer({
             </>
           ) : null}
 
-          {activeTab === 'bids' ? (
+          {properties.length > 0 && activeTab === 'bids' ? (
             <section className="osa__bids" aria-labelledby="osa-bids-title">
               <div className="osa__bids-head">
                 <span className="osa__bids-icon"><BellRing size={21} aria-hidden /></span>
