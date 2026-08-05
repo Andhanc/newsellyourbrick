@@ -28,6 +28,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const { signIn, isLoaded: signInLoaded } = useSignIn()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
+  const sellerRoleBlocked = isSoftLaunchFeatureBlocked('sellerRole')
   const [isLogin, setIsLogin] = useState(() => {
     const forcedMode = sessionStorage.getItem('login_modal_mode')
     if (forcedMode === 'register') return false
@@ -990,28 +991,47 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                   <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
                 </span>
               </button>
-              <button
-                type="button"
-                className="login-modal__wizard-tile login-modal__wizard-tile--seller login-modal__wizard-tile--locked"
-                disabled
-                aria-disabled="true"
-                aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
-              >
-                <span className="login-modal__wizard-tile-blur" aria-hidden>
-                  <span className="login-modal__wizard-tile-icon">
+              {sellerRoleBlocked ? (
+                <button
+                  type="button"
+                  className="login-modal__wizard-tile login-modal__wizard-tile--seller login-modal__wizard-tile--locked"
+                  disabled
+                  aria-disabled="true"
+                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
+                >
+                  <span className="login-modal__wizard-tile-blur" aria-hidden>
+                    <span className="login-modal__wizard-tile-icon">
+                      <FiShoppingBag />
+                    </span>
+                    <span className="login-modal__wizard-tile-copy">
+                      <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
+                      <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+                    </span>
+                  </span>
+                  <span className="login-modal__wizard-tile-lock">
+                    <span className="login-modal__wizard-tile-lock-badge">
+                      {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="login-modal__wizard-tile login-modal__wizard-tile--seller"
+                  onClick={() => {
+                    setUserRole('seller')
+                    setWizardPhase('welcome')
+                  }}
+                >
+                  <span className="login-modal__wizard-tile-icon" aria-hidden>
                     <FiShoppingBag />
                   </span>
                   <span className="login-modal__wizard-tile-copy">
                     <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
                     <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
                   </span>
-                </span>
-                <span className="login-modal__wizard-tile-lock">
-                  <span className="login-modal__wizard-tile-lock-badge">
-                    {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
-                  </span>
-                </span>
-              </button>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1123,20 +1143,33 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               >
                 {t('roleBuyer')}
               </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={false}
-                className="login-modal__role-card login-modal__role-card--locked"
-                disabled
-                aria-disabled="true"
-                aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
-              >
-                <span className="login-modal__role-card-blur">{t('roleSeller')}</span>
-                <span className="login-modal__role-card-lock">
-                  {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
-                </span>
-              </button>
+              {sellerRoleBlocked ? (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  className="login-modal__role-card login-modal__role-card--locked"
+                  disabled
+                  aria-disabled="true"
+                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
+                >
+                  <span className="login-modal__role-card-blur">{t('roleSeller')}</span>
+                  <span className="login-modal__role-card-lock">
+                    {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={userRole === 'seller'}
+                  className={`login-modal__role-card${userRole === 'seller' ? ' login-modal__role-card--active' : ''}`}
+                  onClick={() => setUserRole('seller')}
+                  disabled={isLoading}
+                >
+                  {t('roleSeller')}
+                </button>
+              )}
             </div>
           </div>
         )}
