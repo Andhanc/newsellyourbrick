@@ -138,12 +138,16 @@ export default function OwnerTestCabinetChrome({ children }) {
     [view, handleNavClick, closeMenu, managerChatOpen]
   )
 
+  const handleAddProperty = useCallback(() => {
+    goTo(OWNER_VIEWS.ADD_PROPERTY)
+    closeMenu()
+  }, [goTo, closeMenu])
+
   const renderAddPropertyCta = (className = '') => (
     <button
       type="button"
-      className={`otc-add-property otc-add-property--disabled${className ? ` ${className}` : ''}`}
-      disabled
-      aria-disabled="true"
+      className={`otc-add-property${className ? ` ${className}` : ''}`}
+      onClick={handleAddProperty}
       title={t('ownerTest_ariaAddProperty')}
     >
       <span className="otc-add-property__icon">

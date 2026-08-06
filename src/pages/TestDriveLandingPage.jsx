@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  FiArrowRight,
-  FiCalendar,
-  FiChevronLeft,
-  FiChevronRight,
   FiChevronDown,
   FiCheckCircle,
   FiHeart,
@@ -51,12 +47,20 @@ const TEST_DRIVE_CARD_IMAGE_FALLBACK = publicAsset(
 )
 
 const TYPE_FILTERS = ['Вилла', 'Апартаменты', 'Таунхаус', 'Дом', 'Пентхаус']
-const CITY_FILTERS = ['Марбелья', 'Барселона', 'Мадрид', 'Валенсия', 'Малага', 'Аликанте', 'Севилья', 'Пальма']
+const CITY_FILTERS = [
+  'Los Cristianos',
+  'Адехе',
+  'Марбелья',
+  'Барселона',
+  'Мадрид',
+  'Валенсия',
+  'Малага',
+  'Аликанте',
+  'Севилья',
+  'Пальма',
+]
 const DURATION_FILTERS = ['3-7 дней', '1-2 недели', '2-4 недели', '1-3 месяца', 'Более 3 месяцев']
 const AMENITY_FILTERS = ['Бассейн', 'Вид на море', 'Терраса', 'Wi-Fi', 'Парковка']
-const TEST_DRIVE_WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-const TEST_DRIVE_MIN_DAYS = 5
-const TEST_DRIVE_MAX_DAYS = 21
 
 const STORY_CARDS = [
   {
@@ -102,50 +106,6 @@ function handleTestDriveImageError(event) {
   image.src = TEST_DRIVE_CARD_IMAGE_FALLBACK
 }
 
-function startOfLocalDay(value) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate())
-}
-
-function toLocalDateKey(value) {
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function testDriveDaysInclusive(start, end) {
-  const duration = startOfLocalDay(end).getTime() - startOfLocalDay(start).getTime()
-  return Math.round(duration / 86_400_000) + 1
-}
-
-function createTestDriveMonthCells(monthDate) {
-  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
-  const mondayOffset = (monthStart.getDay() + 6) % 7
-  const gridStart = new Date(monthStart)
-  gridStart.setDate(monthStart.getDate() - mondayOffset)
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(gridStart)
-    date.setDate(gridStart.getDate() + index)
-    return {
-      date,
-      key: toLocalDateKey(date),
-      inCurrentMonth: date.getMonth() === monthDate.getMonth(),
-    }
-  })
-}
-
-function formatTestDriveMonth(value) {
-  const label = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(value)
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
-
-function formatTestDriveShortDate(value) {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
-    .format(value)
-    .replace('.', '')
-}
-
 const TestDriveLandingPage = () => {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
@@ -160,24 +120,6 @@ const TestDriveLandingPage = () => {
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
-  const [calendarMonth, setCalendarMonth] = useState(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-  )
-  const [arrivalDate, setArrivalDate] = useState(null)
-  const [departureDate, setDepartureDate] = useState(null)
-  const [calendarError, setCalendarError] = useState('')
-
-  const today = useMemo(() => startOfLocalDay(new Date()), [])
-  const calendarCells = useMemo(() => createTestDriveMonthCells(calendarMonth), [calendarMonth])
-  const selectedRange = useMemo(
-    () =>
-      arrivalDate && departureDate
-        ? { start: toLocalDateKey(arrivalDate), end: toLocalDateKey(departureDate) }
-        : null,
-    [arrivalDate, departureDate],
-  )
-  const selectedNights =
-    arrivalDate && departureDate ? testDriveDaysInclusive(arrivalDate, departureDate) - 1 : 0
 
   useEffect(() => {
     let cancelled = false
@@ -274,45 +216,8 @@ const TestDriveLandingPage = () => {
   const openListing = (listing) => {
     if (!ensureCanOpenProperty()) return
     const property = listing.originalProperty || listing
-    navigate(getPropertyTestDrivePath(property), {
-      state: { property, testDriveRange: selectedRange },
-    })
+    navigate(getPropertyTestDrivePath(property), { state: { property } })
   }
-
-  const selectCalendarDate = (date) => {
-    const selected = startOfLocalDay(date)
-    if (selected < today || selected.getMonth() !== calendarMonth.getMonth()) return
-
-    setCalendarError('')
-    if (!arrivalDate || departureDate || selected < arrivalDate) {
-      setArrivalDate(selected)
-      setDepartureDate(null)
-      return
-    }
-
-    const days = testDriveDaysInclusive(arrivalDate, selected)
-    if (days < TEST_DRIVE_MIN_DAYS || days > TEST_DRIVE_MAX_DAYS) {
-      setCalendarError(`Выберите период от ${TEST_DRIVE_MIN_DAYS} до ${TEST_DRIVE_MAX_DAYS} дней`)
-      return
-    }
-
-    setDepartureDate(selected)
-  }
-
-  const shiftCalendarMonth = (direction) => {
-    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + direction, 1))
-    setCalendarError('')
-  }
-
-  const isCalendarDateInRange = (date) => {
-    if (!arrivalDate || !departureDate) return false
-    const value = startOfLocalDay(date).getTime()
-    return value > arrivalDate.getTime() && value < departureDate.getTime()
-  }
-
-  const isCurrentCalendarMonth =
-    calendarMonth.getFullYear() === today.getFullYear() &&
-    calendarMonth.getMonth() === today.getMonth()
 
   const isListingFavorite = (listing) => {
     const favoriteProperty = listing.originalProperty || listing
@@ -330,99 +235,6 @@ const TestDriveLandingPage = () => {
     <div className="test-drive-landing">
       <Header />
       <main className="test-drive-landing__main">
-        <section className="test-drive-calendar-hero" aria-labelledby="test-drive-calendar-title">
-          <div className="test-drive-calendar-hero__intro">
-            <span>Тест-драйв недвижимости</span>
-            <h1 id="test-drive-calendar-title">Когда хотите пожить?</h1>
-            <p>Выберите период от 5 до 21 дня — даты передадим в выбранный объект.</p>
-          </div>
-
-          <div className="test-drive-calendar-card">
-            <div className="test-drive-calendar-card__month">
-              <button
-                type="button"
-                onClick={() => shiftCalendarMonth(-1)}
-                disabled={isCurrentCalendarMonth}
-                aria-label="Предыдущий месяц"
-              >
-                <FiChevronLeft size={21} aria-hidden />
-              </button>
-              <strong>{formatTestDriveMonth(calendarMonth)}</strong>
-              <button type="button" onClick={() => shiftCalendarMonth(1)} aria-label="Следующий месяц">
-                <FiChevronRight size={21} aria-hidden />
-              </button>
-            </div>
-
-            <div className="test-drive-calendar-card__weekdays" aria-hidden>
-              {TEST_DRIVE_WEEKDAYS.map((weekday) => <span key={weekday}>{weekday}</span>)}
-            </div>
-
-            <div className="test-drive-calendar-card__grid" role="grid" aria-label={formatTestDriveMonth(calendarMonth)}>
-              {calendarCells.map(({ date, key, inCurrentMonth }) => {
-                const isPast = date < today
-                const isDisabled = isPast || !inCurrentMonth
-                const isArrival = arrivalDate && key === toLocalDateKey(arrivalDate)
-                const isDeparture = departureDate && key === toLocalDateKey(departureDate)
-                const isInRange = isCalendarDateInRange(date)
-                const isToday = key === toLocalDateKey(today)
-                const stateClass = [
-                  'test-drive-calendar-card__day',
-                  isDisabled ? 'is-disabled' : '',
-                  isToday ? 'is-today' : '',
-                  isInRange ? 'is-in-range' : '',
-                  isArrival ? 'is-arrival' : '',
-                  isDeparture ? 'is-departure' : '',
-                ].filter(Boolean).join(' ')
-
-                return (
-                  <button
-                    type="button"
-                    className={stateClass}
-                    key={key}
-                    disabled={isDisabled}
-                    onClick={() => selectCalendarDate(date)}
-                    aria-label={new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)}
-                    aria-pressed={Boolean(isArrival || isDeparture || isInRange)}
-                  >
-                    {date.getDate()}
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="test-drive-calendar-card__legend" aria-label="Обозначения календаря">
-              <span><i className="is-available" />Можно выбрать</span>
-              <span><i className="is-selected" />Выбрано</span>
-              <span><i className="is-unavailable" />Недоступно</span>
-            </div>
-          </div>
-
-          <div className="test-drive-calendar-selection" aria-live="polite">
-            <div className="test-drive-calendar-selection__dates">
-              <span className="test-drive-calendar-selection__icon" aria-hidden><FiCalendar size={18} /></span>
-              <div>
-                <small>{departureDate ? 'Выбранный период' : arrivalDate ? 'Выберите дату выезда' : 'Выберите даты'}</small>
-                <strong>
-                  {arrivalDate ? formatTestDriveShortDate(arrivalDate) : 'Заезд'}
-                  <FiArrowRight size={14} aria-hidden />
-                  {departureDate ? formatTestDriveShortDate(departureDate) : 'Выезд'}
-                </strong>
-              </div>
-              {selectedNights > 0 ? <em>{selectedNights} ночей</em> : null}
-            </div>
-            {calendarError ? <p className="test-drive-calendar-selection__error">{calendarError}</p> : null}
-            <button
-              type="button"
-              className="test-drive-calendar-selection__action"
-              disabled={!selectedRange}
-              onClick={scrollToCatalog}
-            >
-              {selectedRange ? `Показать ${filteredListings.length} объектов` : 'Сначала выберите даты'}
-              <FiArrowRight size={19} aria-hidden />
-            </button>
-          </div>
-        </section>
-
         <section className="test-drive-hero">
           <picture>
             <source media="(max-width: 640px)" srcSet={HERO_MOBILE_IMAGE} />
@@ -535,13 +347,10 @@ const TestDriveLandingPage = () => {
               <div className="test-drive-results__head">
                 <div>
                   <h2>
-                    {selectedRange ? 'Объекты на выбранные даты' : 'Дома, в которых можно пожить'}{' '}
-                    <span>{loading ? '...' : filteredListings.length}</span>
+                    Дома, в которых можно пожить <span>{loading ? '...' : filteredListings.length}</span>
                   </h2>
                   <p>
-                    {selectedRange
-                      ? `${formatTestDriveShortDate(arrivalDate)} — ${formatTestDriveShortDate(departureDate)} · окончательная доступность подтверждается в объекте`
-                      : activeFilterCount
+                    {activeFilterCount
                       ? `Активных фильтров: ${activeFilterCount}`
                       : 'До 16 вариантов на странице — сравните ощущения до покупки'}
                   </p>

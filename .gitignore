@@ -109,3 +109,9 @@ server/.wwebjs_cache/
 
 # Superdesign local draft templates
 .superdesign/tmp/
+
+# Android build artifacts
+apps/client/dist-android/
+apps/client/android-build.log
+apps/client/.env.production
+*.apk

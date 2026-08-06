@@ -286,24 +286,26 @@ export default function TestDriveBookingPage() {
         onBackToProperty={() => navigate(`/property/${propertyRouteKey}`)}
       />
       <div className="test-drive-page__hero">
-        <button
-          type="button"
-          className="test-drive-page__back"
-          onClick={() => navigate(-1)}
-        >
-          <FiArrowLeft size={22} />
-          <span>Назад</span>
-        </button>
+        <div className="test-drive-page__hero-top">
+          <button
+            type="button"
+            className="test-drive-page__back"
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+          >
+            <FiArrowLeft size={20} strokeWidth={2.25} />
+          </button>
+          <p className="test-drive-page__eyebrow">Тест-драйв недвижимости</p>
+        </div>
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="test-drive-page__title"
         >
-          Тест-драйв: {propertyTitle}
+          {propertyTitle || 'Выбор дат'}
         </motion.h1>
         <p className="test-drive-page__subtitle">
-          Выберите от 5 до 21 дня подряд и способ связи — сразу откроется инструкция. Кнопка ниже —
-          если вы закрыли окно. Занятые даты видны всем пользователям.
+          Отметьте от 5 до 21 дня подряд — затем выберите способ связи.
         </p>
       </div>
 
@@ -366,54 +368,55 @@ export default function TestDriveBookingPage() {
         </div>
 
         <aside className="test-drive-page__hints">
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.05 }}
-          >
-            <h3>Заезд</h3>
-            <p>
-              В первый день заезд с 15:00. Ключи или доступ согласуются с
-              владельцем после подтверждения.
-            </p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3>Проживание</h3>
-            <p>
-              Количество ночей совпадает с выбранным диапазоном (от 5 до 21
-              суток подряд).
-            </p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <h3>Выезд</h3>
-            <p>
-              В последний день освободите объект до 12:00, если иное не
-              согласовано с владельцем.
-            </p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card test-drive-hint-card--accent"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3>Занятые даты</h3>
-            <p>
-              Зелёным — ваши заявки, оранжевым — другие пользователи. После дат выберите связь —
-              откроется инструкция. «Отменить» сбрасывает выбор.
-            </p>
-          </motion.div>
+          <p className="test-drive-page__hints-title">Правила</p>
+          {[
+            {
+              title: 'Заезд с 15:00',
+              text: 'В первый день ключи и доступ согласуются с владельцем после подтверждения.',
+              meta: 'День 1',
+              tag: 'Check-in',
+              delay: 0.05,
+            },
+            {
+              title: 'От 5 до 21 суток',
+              text: 'Выберите подряд идущие даты — столько ночей вы проживёте на объекте.',
+              meta: '5–21 дн.',
+              tag: 'Stay',
+              delay: 0.1,
+            },
+            {
+              title: 'Выезд до 12:00',
+              text: 'В последний день освободите объект до полудня, если иное не согласовано.',
+              meta: 'День N',
+              tag: 'Check-out',
+              delay: 0.15,
+            },
+            {
+              title: 'Занятые даты',
+              text: 'Зелёным — ваши заявки, оранжевым — чужие. После выбора дат укажите способ связи.',
+              meta: 'Статус',
+              tag: 'Calendar',
+              delay: 0.2,
+              accent: true,
+            },
+          ].map((card) => (
+            <motion.article
+              key={card.title}
+              className={`test-drive-rule-card${card.accent ? ' test-drive-rule-card--soft' : ''}`}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: card.delay }}
+            >
+              <div className="test-drive-rule-card__body">
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <div className="test-drive-rule-card__foot">
+                  <span>{card.meta}</span>
+                  <span>{card.tag}</span>
+                </div>
+              </div>
+            </motion.article>
+          ))}
         </aside>
       </div>
       <AnimatePresence>

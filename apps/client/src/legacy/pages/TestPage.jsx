@@ -27,7 +27,6 @@ import {
   FiCopy,
   FiUserPlus,
   FiGift,
-  FiLayers,
   FiAward,
   FiColumns,
   FiInfo,
@@ -47,6 +46,7 @@ import {
 import { startProSubscriptionCheckout, startVipSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
+import { validatePassportImageFile } from '../utils/passportPhotoValidation'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
@@ -242,12 +242,21 @@ function extractedPassportDataToApiPayload(data) {
   if (data.lastName?.trim()) body.last_name = data.lastName.trim()
   if (data.passportSeries?.trim()) body.passport_series = data.passportSeries.trim()
   if (data.passportNumber?.trim()) {
-    const digits = data.passportNumber.replace(/\D/g, '')
-    if (digits) body.passport_number = digits
+    const cleaned = data.passportNumber.replace(/[\s-]/g, '').trim()
+    if (cleaned) body.passport_number = cleaned
   }
   if (data.identificationNumber?.trim()) body.identification_number = data.identificationNumber.trim()
   if (data.address?.trim()) body.address = data.address.trim()
   return body
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'))
+    reader.readAsDataURL(file)
+  })
 }
 
 /** Как в Data.jsx: отображение телефона с «+». */
@@ -574,27 +583,12 @@ function mergeExtractedPassportIntoProfileForm(prev, extracted) {
 function buildDirectionSummaries(t) {
   return [
     {
-      variant: 'shares',
-      areaLabel: t('buyerCabinet_directionAreaInvestments'),
-      headline: t('buyerCabinet_directionHeadlineShares'),
-      subCardTitle: t('buyerCabinet_directionSharesTitle'),
-      subCardSubtitle: t('buyerCabinet_directionSharesSubtitle'),
-      to: '/shares',
-      moreCount: 8,
-      thumbnails: [
-        {
-          src: '/images/external/photo-1600596542815-ffad4c1539a9-1305f3ad61.jpg',
-          alt: t('buyerCabinet_thumbModernHouse'),
-        },
-        {
-          src: '/images/external/photo-1600585154340-be6161a56a0c-d7a57ab629.jpg',
-          alt: t('buyerCabinet_thumbVillaPool'),
-        },
-        {
-          src: '/images/external/photo-1512917774080-9991f1c4c750-6c14f5737b.jpg',
-          alt: t('buyerCabinet_thumbFlatRoofHouse'),
-        },
-      ],
+      variant: 'seller',
+      action: 'becomeSeller',
+      areaLabel: t('buyerCabinet_directionAreaPlatform'),
+      headline: t('becomeSeller'),
+      subCardTitle: t('becomeSeller'),
+      subCardSubtitle: t('buyerCabinet_directionBecomeSellerSubtitle'),
     },
   ]
 }
@@ -747,6 +741,7 @@ function TestPage() {
   const [passportPhotoHints, setPassportPhotoHints] = useState([])
   const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
+  const [passportRecognitionMode, setPassportRecognitionMode] = useState('confirm')
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [profileCompletionExpanded, setProfileCompletionExpanded] = useState(false)
@@ -1663,9 +1658,10 @@ function TestPage() {
       }
       clearAllProfileSaveTimers()
 
-      let extracted = null
       setIsRecognizingPassport(true)
       setPassportPhotoHints([])
+      setExtractedPassportData(null)
+      setPassportRecognitionMode('confirm')
       try {
         const photoValidation = await validatePassportImageFile(file)
         setPassportPhotoHints(photoValidation.hints)
@@ -1673,62 +1669,65 @@ function TestPage() {
           throw new Error(photoValidation.hints[0] || 'Нужно более качественное фото документа')
         }
 
-        const tesseractModule = await import('tesseract.js')
-        const recognize =
-          tesseractModule.recognize ||
-          tesseractModule.default?.recognize
-        if (typeof recognize !== 'function') {
-          throw new Error('OCR engine недоступен')
-        }
-        const {
-          data: { text },
-        } = await recognize(file, 'eng', {
-          logger: () => {},
-        })
-
-        const passportTextCheck = evaluatePassportText(text)
-        setPassportPhotoHints(passportTextCheck.hints)
-        if (!passportTextCheck.isPassportLikely) {
-          throw new Error('Не удалось подтвердить, что на фото именно паспорт. Попробуйте переснять документ крупнее.')
-        }
-
+        const dataUrl = await readFileAsDataUrl(file)
         const response = await fetch(`${API_BASE_URL}/passport/extract`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recognizedText: text }),
+          body: JSON.stringify({
+            imageBase64: dataUrl,
+            mimeType: file.type || 'image/jpeg',
+          }),
         })
 
-        if (!response.ok) {
-          const errorPayload = await response.json().catch(() => null)
-          throw new Error(errorPayload?.error || 'Ошибка при извлечении данных из паспорта')
+        const result = await response.json().catch(() => null)
+        if (!response.ok || !result?.success || !result?.data) {
+          if (result?.code === 'NOT_PASSPORT') {
+            setPassportRecognitionMode('not-document')
+            setShowPassportRecognitionModal(true)
+            return
+          }
+          if (result?.code === 'EMPTY_FIELDS') {
+            setPassportRecognitionMode('unreadable')
+            setShowPassportRecognitionModal(true)
+            return
+          }
+          throw new Error(result?.error || 'Ошибка при извлечении данных из паспорта')
         }
 
-        const result = await response.json()
-        if (!result.success || !result.data) {
-          throw new Error('Не удалось извлечь данные из паспорта')
-        }
-
-        extracted = result.data
-        setExtractedPassportData(extracted)
+        setPassportRecognitionMode('confirm')
+        setExtractedPassportData(result.data)
+        setShowPassportRecognitionModal(true)
       } catch (error) {
         console.error('Ошибка распознавания паспорта:', error)
         showNotification(error.message || 'Не удалось распознать паспорт', 'error')
+        setExtractedPassportData(null)
+      } finally {
         setIsRecognizingPassport(false)
+      }
+    },
+    [numericUserId, clearAllProfileSaveTimers],
+  )
+
+  const handlePassportRecognitionConfirm = useCallback(
+    async (extracted) => {
+      const uid = numericUserId ?? getStoredNumericUserId()
+      if (!uid || !dbUserRowRef.current) {
+        showNotification('Сначала дождитесь загрузки профиля', 'error')
         return
       }
-
-      setIsRecognizingPassport(false)
 
       const body = extractedPassportDataToApiPayload(extracted)
       if (Object.keys(body).length === 0) {
         showNotification('Не удалось извлечь поля с фото — попробуйте другое изображение', 'info')
+        setShowPassportRecognitionModal(false)
+        setExtractedPassportData(null)
         return
       }
 
       clearAllProfileSaveTimers()
       setProfileForm((prev) => mergeExtractedPassportIntoProfileForm(prev, extracted))
-
       setIsSavingExtractPatch(true)
+
       try {
         const userRes = await fetch(`${API_BASE_URL}/users/${uid}`, {
           method: 'PUT',
@@ -1756,7 +1755,10 @@ function TestPage() {
         invalidateVerificationStatusCache(API_BASE_URL, uid)
         void loadVerificationStatus(true)
         setProfileForm(buildProfileFormFromRow(json.data, user, email))
-        setShowPassportRecognitionModal(true)
+        setShowPassportRecognitionModal(false)
+        setExtractedPassportData(null)
+        setDataSheetStep('documents')
+        showNotification(t('buyerData_passportConfirmSaved'), 'success')
       } catch (e) {
         showNotification(e.message || 'Ошибка сохранения', 'error')
         const row = dbUserRowRef.current
@@ -1765,8 +1767,25 @@ function TestPage() {
         setIsSavingExtractPatch(false)
       }
     },
-    [numericUserId, user, email, clearAllProfileSaveTimers, loadVerificationStatus],
+    [numericUserId, user, email, clearAllProfileSaveTimers, loadVerificationStatus, t],
   )
+
+  const handlePassportRecognitionReject = useCallback(() => {
+    setShowPassportRecognitionModal(false)
+    setPassportRecognitionMode('confirm')
+    setExtractedPassportData(null)
+    setPassportPhotoHints([])
+  }, [])
+
+  const handlePassportRecognitionRetry = useCallback(() => {
+    setShowPassportRecognitionModal(false)
+    setPassportRecognitionMode('confirm')
+    setExtractedPassportData(null)
+    setPassportPhotoHints([])
+    window.requestAnimationFrame(() => {
+      passportInputRef.current?.click()
+    })
+  }, [])
 
   const profileFieldsLocked = isRecognizingPassport || isSavingExtractPatch
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
@@ -2575,29 +2594,36 @@ function TestPage() {
                 </div>
                 <ul className="profile-cabinet__rows">
                   {directionSummaries.map((item) => {
-                    const thumbs = (item.thumbnails || []).slice(0, 3)
+                    const isBecomeSeller = item.action === 'becomeSeller'
+                    const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
+                    const inner = (
+                      <>
+                        <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
+                          {isBecomeSeller ? <FiHome size={20} /> : null}
+                        </span>
+                        <span className="profile-cabinet-row__copy">
+                          <strong>{item.subCardTitle || item.headline}</strong>
+                          <span>{item.subCardSubtitle || item.areaLabel}</span>
+                        </span>
+                        <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                      </>
+                    )
                     return (
                       <li key={item.headline}>
-                        <Link to={item.to} className="profile-cabinet-row profile-cabinet-row--shares">
-                          <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
-                            <FiLayers size={20} />
-                          </span>
-                          <span className="profile-cabinet-row__copy">
-                            <strong>{item.subCardTitle || item.headline}</strong>
-                            <span>{item.subCardSubtitle || item.areaLabel}</span>
-                          </span>
-                          <span className="profile-cabinet-row__avatars" aria-hidden>
-                            {thumbs.map((thumb, index) => (
-                              <img
-                                key={`${item.to}-${index}`}
-                                src={thumb.src}
-                                alt=""
-                                style={{ zIndex: thumbs.length - index }}
-                              />
-                            ))}
-                          </span>
-                          <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
-                        </Link>
+                        {isBecomeSeller ? (
+                          <button
+                            type="button"
+                            className={rowClass}
+                            onClick={() => void handleBecomeSellerRegister()}
+                            disabled={sellPurchasedPropertyRoleFlow.loading}
+                          >
+                            {inner}
+                          </button>
+                        ) : (
+                          <Link to={item.to} className={rowClass}>
+                            {inner}
+                          </Link>
+                        )}
                       </li>
                     )
                   })}
@@ -2850,12 +2876,13 @@ function TestPage() {
 
       <PassportRecognitionModal
         isOpen={showPassportRecognitionModal}
-        onClose={() => {
-          setShowPassportRecognitionModal(false)
-          setExtractedPassportData(null)
-        }}
-        onConfirm={() => {}}
+        mode={passportRecognitionMode}
+        onClose={handlePassportRecognitionReject}
+        onReject={handlePassportRecognitionReject}
+        onRetry={handlePassportRecognitionRetry}
+        onConfirm={handlePassportRecognitionConfirm}
         extractedData={extractedPassportData}
+        isSaving={isSavingExtractPatch}
       />
 
 

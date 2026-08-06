@@ -75,6 +75,8 @@ const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticlePage'))
 const MarketerPanel = lazyWithRetry(() => import('./pages/MarketerPanel'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
+const LotteryPage = lazyWithRetry(() => import('./pages/LotteryPage'))
+const AppDownloadPage = lazyWithRetry(() => import('./pages/AppDownloadPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
 const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
@@ -124,6 +126,8 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
     pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
+  const lotteryPage = pathname === '/lottery'
+  const appDownloadPage = pathname === '/app'
   const mobileDiscoverHome = pathname === '/'
   const softLaunchUnavailable = shouldShowSoftLaunchUnavailable(pathname)
 
@@ -135,6 +139,8 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
       ? 'app-layout--calculator-single-scroll'
       : newsArticleScroll
         ? 'app-layout--news-article'
+        : lotteryPage || appDownloadPage
+          ? 'app-layout--lottery'
         : ''
 
   return (
@@ -150,7 +156,7 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
 /** Soft-launch «Пока недоступно» replaces the page — no site footer underneath. */
 function AppChromeFooter() {
   const { pathname } = useLocation()
-  if (shouldShowSoftLaunchUnavailable(pathname)) return null
+  if (shouldShowSoftLaunchUnavailable(pathname) || pathname === '/lottery' || pathname === '/app') return null
   return <LazyFooter />
 }
 
@@ -861,6 +867,14 @@ function App() {
                 }
               />
               <Route
+                path="/app"
+                element={
+                  <LazyPage>
+                    <AppDownloadPage />
+                  </LazyPage>
+                }
+              />
+              <Route
                 path="/sections"
                 element={
                   <LazyPage>
@@ -922,6 +936,14 @@ function App() {
                 element={
                   <LazyPage>
                     <InvestmentCalculator />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/lottery"
+                element={
+                  <LazyPage>
+                    <LotteryPage />
                   </LazyPage>
                 }
               />

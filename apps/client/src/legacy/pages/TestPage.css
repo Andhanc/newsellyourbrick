@@ -543,6 +543,16 @@
   text-decoration: none;
   color: inherit;
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.03);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+button.profile-cabinet-row:disabled {
+  opacity: 0.65;
+  cursor: progress;
 }
 
 .profile-cabinet-row__icon {
@@ -556,6 +566,8 @@
   color: var(--test-teal-dark);
 }
 
+.profile-cabinet-row__icon--seller,
+.profile-cabinet-row--seller .profile-cabinet-row__icon,
 .profile-cabinet-row__icon--shares,
 .profile-cabinet-row--shares .profile-cabinet-row__icon {
   background: rgba(78, 205, 214, 0.16);
@@ -580,6 +592,7 @@
   color: #2eafb9;
 }
 
+.profile-cabinet-row--seller,
 .profile-cabinet-row--shares,
 .profile-cabinet-row--favorites,
 .profile-cabinet-row--compare,

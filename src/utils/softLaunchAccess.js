@@ -19,6 +19,7 @@ const EXACT_ALLOWED = new Set([
   '/debts',
   '/test-drive',
   '/about',
+  '/app',
   '/news',
   '/buyer',
   /** Marketing landing «Для продавца» — not the owner cabinet. */
@@ -37,6 +38,7 @@ const EXACT_ALLOWED = new Set([
   '/compare',
   '/map',
   '/calculator',
+  '/lottery',
 ])
 
 /** UI features blocked during soft-launch (entry points + deep links). */

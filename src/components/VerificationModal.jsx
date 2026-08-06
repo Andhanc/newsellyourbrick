@@ -1,36 +1,72 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as faceapi from 'face-api.js'
 import { showNotification } from '../utils/toastHelper'
 import { saveVerificationPhoto, loadVerificationPhotos, clearVerificationPhotos } from '../utils/verificationStorage'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import BuyerCelebrationModal from './BuyerCelebrationModal'
 import './VerificationModal.css'
 
 let API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
-/** Область рамки (овала/прямоугольника) в координатах превью камеры — для clip-path и сохранения снимка */
-function buildClipPathFromRegion(region) {
-  if (!region) return undefined
-  if (region.kind === 'ellipse') {
-    return `ellipse(${region.rx}px ${region.ry}px at ${region.cx}px ${region.cy}px)`
+/** object-fit: cover — прямоугольник превью → координаты исходного видео */
+function mapPreviewRectToVideoCover(previewW, previewH, videoW, videoH, x, y, w, h) {
+  if (!previewW || !previewH || !videoW || !videoH) return null
+  const scale = Math.max(previewW / videoW, previewH / videoH)
+  const displayedW = videoW * scale
+  const displayedH = videoH * scale
+  const offsetX = (previewW - displayedW) / 2
+  const offsetY = (previewH - displayedH) / 2
+  return {
+    sx: (x - offsetX) / scale,
+    sy: (y - offsetY) / scale,
+    sw: w / scale,
+    sh: h / scale,
   }
-  const { x, y, w, h, previewWidth, previewHeight } = region
-  const top = y
-  const right = previewWidth - x - w
-  const bottom = previewHeight - y - h
-  const left = x
-  return `inset(${top}px ${right}px ${bottom}px ${left}px round 12px)`
 }
 
-/** Овал в координатах кадра видео (для face-api и проверки попадания в рамку на экране) */
+/** Овал в координатах кадра видео (object-fit: cover) */
 function previewEllipseToVideo(clipRegion, videoW, videoH, previewW, previewH) {
   if (!clipRegion || clipRegion.kind !== 'ellipse' || !videoW || !previewW) return null
-  const sx = videoW / previewW
-  const sy = videoH / previewH
+  const mapped = mapPreviewRectToVideoCover(
+    previewW,
+    previewH,
+    videoW,
+    videoH,
+    clipRegion.cx - clipRegion.rx,
+    clipRegion.cy - clipRegion.ry,
+    clipRegion.rx * 2,
+    clipRegion.ry * 2
+  )
+  if (!mapped) return null
   return {
-    cx: clipRegion.cx * sx,
-    cy: clipRegion.cy * sy,
-    rx: clipRegion.rx * sx,
-    ry: clipRegion.ry * sy,
+    cx: mapped.sx + mapped.sw / 2,
+    cy: mapped.sy + mapped.sh / 2,
+    rx: mapped.sw / 2,
+    ry: mapped.sh / 2,
+  }
+}
+
+function clampCropRect(sx, sy, sw, sh, videoW, videoH) {
+  let x = Math.floor(sx)
+  let y = Math.floor(sy)
+  let w = Math.ceil(sw)
+  let h = Math.ceil(sh)
+  if (x < 0) {
+    w += x
+    x = 0
+  }
+  if (y < 0) {
+    h += y
+    y = 0
+  }
+  if (x + w > videoW) w = videoW - x
+  if (y + h > videoH) h = videoH - y
+  return {
+    sx: x,
+    sy: y,
+    sw: Math.max(1, w),
+    sh: Math.max(1, h),
   }
 }
 
@@ -47,10 +83,14 @@ const SELFIE_MIN_DETECTION_SCORE = 0.52
 const SELFIE_MIN_FACE_HEIGHT_IN_OVAL = 0.34
 const SELFIE_MAX_FACE_HEIGHT_IN_OVAL = 0.92
 const SELFIE_VIDEO_EDGE_MARGIN = 0.03
+/** Небольшой запас вокруг овала в сохранённом снимке */
+const SELFIE_CROP_PAD = 0.08
+const PASSPORT_CROP_PAD = 0.03
 const PASSPORT_DETECT_INTERVAL_MS = 280
 const PASSPORT_STABLE_OK_FRAMES = 3
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [photos, setPhotos] = useState({
     passport: null,
@@ -65,6 +105,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [cameraType, setCameraType] = useState(null) // 'passport', 'selfie', 'selfieWithPassport'
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSubmittedCelebration, setShowSubmittedCelebration] = useState(false)
   const [animationClass, setAnimationClass] = useState('')
   const [hintModalOpen, setHintModalOpen] = useState(false)
   const [hintStep, setHintStep] = useState(1)
@@ -78,6 +119,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
   useEffect(() => {
     if (isOpen) {
       setAnimationClass('slide-in')
+      setShowSubmittedCelebration(false)
     }
   }, [isOpen])
 
@@ -325,22 +367,10 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
         
         // Отправляем событие для обновления уведомления о верификации
         window.dispatchEvent(new Event('verification-status-update'))
-        
-        // Вызываем callback для обновления данных в родительском компоненте
-        // Для продавцов onComplete сохранит флаг и закроет модальное окно
-        // Для покупателей показываем alert и закрываем модальное окно
-        if (onComplete) {
-          await onComplete()
-          // Если onComplete не закрыл модальное окно (для покупателей), закрываем здесь
-          // Для продавцов модальное окно закроется в SellerVerificationModal
-        } else {
-          // Если нет onComplete (старый код), показываем alert и закрываем
-          showNotification('Все фотографии успешно отправлены на модерацию!')
-          onClose()
-        }
 
         // После успешной отправки очищаем локальное хранилище фотографий
         clearVerificationPhotos(userId)
+        setShowSubmittedCelebration(true)
       } else {
         const errors = results.filter(r => !r.success).map(r => r.error).join(', ')
         showNotification(`Ошибка при загрузке: ${errors}`)
@@ -351,6 +381,19 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleSubmittedCelebrationGo = async () => {
+    setShowSubmittedCelebration(false)
+    try {
+      if (onComplete) {
+        await onComplete()
+      }
+    } catch (err) {
+      console.warn('onComplete после верификации:', err)
+    }
+    onClose()
+    navigate('/deposit')
   }
 
   const uploadPhoto = async (file, documentType) => {
@@ -448,12 +491,15 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
 
   return (
     <>
-      <div className="verification-modal-overlay" onClick={required ? undefined : onClose}>
+      <div
+        className="verification-modal-overlay"
+        onClick={required || showSubmittedCelebration ? undefined : onClose}
+      >
         <div 
           className={`verification-modal ${animationClass}`}
           onClick={(e) => e.stopPropagation()}
         >
-          {!required && (
+          {!required && !showSubmittedCelebration && (
             <button className="verification-modal__close" onClick={onClose}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -683,8 +729,8 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                   </>
                 ) : (
                   <>
-                    Отправить на модерацию
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    Отправить
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M17.5 2.5L8.75 11.25M17.5 2.5L12.5 17.5L8.75 11.25M17.5 2.5L2.5 7.5L8.75 11.25" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </>
@@ -716,6 +762,15 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
           data={hintData[hintStep]}
         />
       )}
+
+      <BuyerCelebrationModal
+        open={showSubmittedCelebration}
+        title="Поздравляем!"
+        text="Документы отправлены на модерацию. Мы проверим их и сообщим о результате."
+        ctaLabel="К депозиту"
+        onCta={handleSubmittedCelebrationGo}
+        titleId="verification-submitted-celebration-title"
+      />
     </>
   )
 }
@@ -792,7 +847,6 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
 // Компонент камеры
 const Camera = ({ type, onCapture, onClose }) => {
   const videoRef = useRef(null)
-  const blurVideoRef = useRef(null)
   const previewRef = useRef(null)
   const shapeGuideRef = useRef(null)
   const canvasRef = useRef(null)
@@ -1002,9 +1056,6 @@ const Camera = ({ type, onCapture, onClose }) => {
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-      }
-      if (blurVideoRef.current) {
-        blurVideoRef.current.srcObject = stream
       }
     } catch (error) {
       console.error('Ошибка доступа к камере:', error)
@@ -1227,12 +1278,24 @@ const Camera = ({ type, onCapture, onClose }) => {
       const pr = preview.getBoundingClientRect()
       if (!vw || !vh || !pr.width || !pr.height) return
 
-      const scaleX = vw / pr.width
-      const scaleY = vh / pr.height
-      const sx = Math.max(0, Math.floor(region.x * scaleX))
-      const sy = Math.max(0, Math.floor(region.y * scaleY))
-      const sw = Math.min(vw - sx, Math.floor(region.w * scaleX))
-      const sh = Math.min(vh - sy, Math.floor(region.h * scaleY))
+      const mapped = mapPreviewRectToVideoCover(
+        pr.width,
+        pr.height,
+        vw,
+        vh,
+        region.x,
+        region.y,
+        region.w,
+        region.h
+      )
+      if (!mapped) {
+        applyPassportGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inFrame: false })
+        return
+      }
+      const sx = Math.max(0, Math.floor(mapped.sx))
+      const sy = Math.max(0, Math.floor(mapped.sy))
+      const sw = Math.min(vw - sx, Math.floor(mapped.sw))
+      const sh = Math.min(vh - sy, Math.floor(mapped.sh))
       if (sw < 80 || sh < 80) {
         passportStableOkRef.current = 0
         applyPassportGateUi({ canShoot: false, hint: 'Подведите паспорт к рамке', inFrame: false })
@@ -1369,9 +1432,6 @@ const Camera = ({ type, onCapture, onClose }) => {
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
-    if (blurVideoRef.current) {
-      blurVideoRef.current.srcObject = null
-    }
     selfieStableOkRef.current = 0
     passportStableOkRef.current = 0
     passportScanBusyRef.current = false
@@ -1398,49 +1458,79 @@ const Camera = ({ type, onCapture, onClose }) => {
 
     const w = video.videoWidth
     const h = video.videoHeight
-    canvas.width = w
-    canvas.height = h
-
     const preview = previewRef.current
-    const canComposite =
-      useFrameBlur && clipRegion && preview && w > 0 && h > 0
+    const canCrop = useFrameBlur && clipRegion && preview && w > 0 && h > 0
 
-    if (canComposite) {
+    if (canCrop) {
       const pr = preview.getBoundingClientRect()
-      const scaleX = w / pr.width
-      const scaleY = h / pr.height
-      const blurPx = Math.max(3, Math.round(10 * ((scaleX + scaleY) / 2)))
+      let crop = null
 
-      context.filter = `blur(${blurPx}px)`
-      context.drawImage(video, 0, 0, w, h)
-      context.filter = 'none'
-
-      context.save()
       if (clipRegion.kind === 'ellipse') {
-        const cx = clipRegion.cx * scaleX
-        const cy = clipRegion.cy * scaleY
-        const rx = clipRegion.rx * scaleX
-        const ry = clipRegion.ry * scaleY
-        context.beginPath()
-        context.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
-        context.clip()
-      } else {
-        const x = clipRegion.x * scaleX
-        const y = clipRegion.y * scaleY
-        const rw = clipRegion.w * scaleX
-        const rh = clipRegion.h * scaleY
-        const rad = Math.min(12 * scaleX, rw / 2, rh / 2)
-        context.beginPath()
-        if (typeof context.roundRect === 'function') {
-          context.roundRect(x, y, rw, rh, rad)
-        } else {
-          context.rect(x, y, rw, rh)
+        const ellipse = previewEllipseToVideo(clipRegion, w, h, pr.width, pr.height)
+        if (ellipse) {
+          const padX = ellipse.rx * SELFIE_CROP_PAD
+          const padY = ellipse.ry * SELFIE_CROP_PAD
+          crop = clampCropRect(
+            ellipse.cx - ellipse.rx - padX,
+            ellipse.cy - ellipse.ry - padY,
+            (ellipse.rx + padX) * 2,
+            (ellipse.ry + padY) * 2,
+            w,
+            h
+          )
         }
-        context.clip()
+      } else {
+        const mapped = mapPreviewRectToVideoCover(
+          pr.width,
+          pr.height,
+          w,
+          h,
+          clipRegion.x,
+          clipRegion.y,
+          clipRegion.w,
+          clipRegion.h
+        )
+        if (mapped) {
+          const padX = mapped.sw * PASSPORT_CROP_PAD
+          const padY = mapped.sh * PASSPORT_CROP_PAD
+          crop = clampCropRect(
+            mapped.sx - padX,
+            mapped.sy - padY,
+            mapped.sw + padX * 2,
+            mapped.sh + padY * 2,
+            w,
+            h
+          )
+        }
       }
-      context.drawImage(video, 0, 0, w, h)
-      context.restore()
+
+      if (crop) {
+        canvas.width = crop.sw
+        canvas.height = crop.sh
+        if (type === 'selfie') {
+          // Как на превью: фронтальная камера зеркалится
+          context.translate(crop.sw, 0)
+          context.scale(-1, 1)
+        }
+        context.drawImage(
+          video,
+          crop.sx,
+          crop.sy,
+          crop.sw,
+          crop.sh,
+          0,
+          0,
+          crop.sw,
+          crop.sh
+        )
+      } else {
+        canvas.width = w
+        canvas.height = h
+        context.drawImage(video, 0, 0)
+      }
     } else {
+      canvas.width = w
+      canvas.height = h
       context.drawImage(video, 0, 0)
     }
 
@@ -1467,34 +1557,12 @@ const Camera = ({ type, onCapture, onClose }) => {
         </button>
 
         <div className="camera-preview" ref={previewRef}>
-          {useFrameBlur ? (
-            <div className="camera-preview__video-stack">
-              <video
-                ref={blurVideoRef}
-                autoPlay
-                playsInline
-                className={`camera-video camera-video--blur-layer ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
-              />
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className={`camera-video camera-video--sharp-layer ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
-                style={
-                  clipRegion
-                    ? { clipPath: buildClipPathFromRegion(clipRegion), opacity: 1 }
-                    : { opacity: 0 }
-                }
-              />
-            </div>
-          ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className={`camera-video ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
-            />
-          )}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className={`camera-video ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
+          />
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
           {/* Контур для селфи (только для второго шага) */}
@@ -1507,16 +1575,28 @@ const Camera = ({ type, onCapture, onClose }) => {
                     selfieFaceOk ? 'face-detected' : selfieInOvalFrame ? 'face-aligning' : ''
                   }`}
                 />
-                <div className="camera-face-guide__text" role="status" aria-live="polite">
+                <div
+                  className={`camera-guide-hint ${
+                    selfieFaceOk
+                      ? 'camera-guide-hint--ok'
+                      : selfieInOvalFrame
+                        ? 'camera-guide-hint--progress'
+                        : ''
+                  }`}
+                  role="status"
+                  aria-live="polite"
+                >
                   {selfieFaceHint || 'Расположите лицо в овале'}
                 </div>
               </div>
               {selfieFaceOk && (
-                <div className="camera-face-notification">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Можно нажать затвор</span>
+                <div className="camera-ready-chip" role="status">
+                  <span className="camera-ready-chip__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  <span className="camera-ready-chip__text">Можно нажать затвор</span>
                 </div>
               )}
             </div>
@@ -1526,13 +1606,23 @@ const Camera = ({ type, onCapture, onClose }) => {
           {type === 'passport' && (
             <div className="camera-passport-overlay">
               <div className="camera-passport-guide">
-                <div ref={shapeGuideRef} className="camera-passport-guide__rect" />
                 <div
-                  className={`camera-passport-guide__text ${
+                  ref={shapeGuideRef}
+                  className={`camera-passport-guide__rect ${
+                    passportOk ? 'is-ok' : passportInFrame ? 'is-progress' : ''
+                  }`}
+                >
+                  <span className="camera-guide-corner camera-guide-corner--tl" aria-hidden="true" />
+                  <span className="camera-guide-corner camera-guide-corner--tr" aria-hidden="true" />
+                  <span className="camera-guide-corner camera-guide-corner--bl" aria-hidden="true" />
+                  <span className="camera-guide-corner camera-guide-corner--br" aria-hidden="true" />
+                </div>
+                <div
+                  className={`camera-guide-hint ${
                     passportOk
-                      ? 'camera-passport-guide__text--ok'
+                      ? 'camera-guide-hint--ok'
                       : passportInFrame
-                        ? 'camera-passport-guide__text--progress'
+                        ? 'camera-guide-hint--progress'
                         : ''
                   }`}
                   role="status"
@@ -1542,11 +1632,13 @@ const Camera = ({ type, onCapture, onClose }) => {
                 </div>
               </div>
               {passportOk && (
-                <div className="camera-face-notification">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Можно нажать затвор</span>
+                <div className="camera-ready-chip" role="status">
+                  <span className="camera-ready-chip__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  <span className="camera-ready-chip__text">Можно нажать затвор</span>
                 </div>
               )}
             </div>

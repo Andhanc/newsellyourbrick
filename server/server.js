@@ -2933,36 +2933,59 @@ function extractPassportDataFromMrz(recognizedText = "") {
 }
 
 /**
- * POST /api/passport/extract - Извлечь данные из распознанного текста паспорта с помощью AI
- * Принимает распознанный текст (OCR сделан на клиенте) и извлекает структурированные данные
+ * POST /api/passport/extract
+ * 1) Предпочтительно: фото → Google Gemini (OpenRouter) → поля паспорта
+ * 2) Fallback: recognizedText → локальный MRZ-парсер
  */
 app.post('/api/passport/extract', async (req, res) => {
   try {
+    const imageBase64 = req.body?.imageBase64 || req.body?.image || null;
+    const mimeType = req.body?.mimeType || null;
     const recognizedText = req.body?.recognizedText;
 
-    if (!recognizedText || !recognizedText.trim()) {
-      return res.status(400).json({ success: false, error: 'Распознанный текст не предоставлен' });
+    if (imageBase64) {
+      console.log('🛂 Извлечение данных паспорта через Gemini vision...');
+      const { extractPassportFieldsWithGemini } = await import('./services/passportAiExtract.js');
+      const extractedData = await extractPassportFieldsWithGemini({ imageBase64, mimeType });
+      console.log('✅ Данные паспорта извлечены (Gemini):', {
+        passportNumber: extractedData.passportNumber,
+        identificationNumber: extractedData.identificationNumber,
+        confidence: extractedData.confidence,
+      });
+      return res.json({ success: true, data: extractedData });
+    }
+
+    if (!recognizedText || !String(recognizedText).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Загрузите фото паспорта или передайте распознанный текст',
+      });
     }
 
     console.log('🛂 Извлечение данных из MRZ паспорта...');
-
     const extractedData = extractPassportDataFromMrz(recognizedText);
 
     if (!extractedData) {
       return res.status(422).json({
         success: false,
-        error: 'Не удалось распознать MRZ-зону паспорта. Попробуйте фото более высокого качества (нижние 2 строки паспорта должны быть видны полностью).',
+        error:
+          'Не удалось распознать MRZ-зону паспорта. Попробуйте фото более высокого качества (нижние 2 строки паспорта должны быть видны полностью).',
       });
     }
 
-    console.log('✅ Данные успешно извлечены:', extractedData);
+    console.log('✅ Данные успешно извлечены (MRZ):', extractedData);
     res.json({
       success: true,
       data: extractedData,
     });
   } catch (error) {
     console.error('❌ Ошибка при извлечении данных из паспорта:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const status = error?.code === 'NOT_PASSPORT' || error?.code === 'EMPTY_FIELDS' ? 422 : 500;
+    res.status(status).json({
+      success: false,
+      code: error?.code || 'PASSPORT_EXTRACT_FAILED',
+      error: error.message,
+    });
   }
 });
 
