@@ -6,6 +6,7 @@ import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
 import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
+import YandexMetrikaHits from './components/YandexMetrikaHits'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import PrivateClubKickModal from './components/PrivateClubKickModal'
 
@@ -627,6 +628,7 @@ function App() {
       <HeavyRouteChunksPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
+      <YandexMetrikaHits />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
       <PrivateClubKickModal />
