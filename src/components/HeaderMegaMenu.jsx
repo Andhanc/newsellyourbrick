@@ -25,6 +25,7 @@ import {
   PieChart,
   PlusCircle,
   ShoppingBag,
+  Smartphone,
   Sparkles,
   Store,
   User,
@@ -77,7 +78,7 @@ const LINK_ICONS = {
   headerMegaForSellerPage: Store,
   headerMegaForBuyerPage: ShoppingBag,
   news: Newspaper,
-  footerOurTeam: Users,
+  appDownloadPage: Smartphone,
   privateClubPageTitle: Lock,
 }
 
@@ -117,7 +118,7 @@ const FOR_YOU_COLUMN = {
     { labelKey: 'headerMegaForSellerPage', path: '/seller' },
     { labelKey: 'headerMegaForBuyerPage', path: '/buyer' },
     { labelKey: 'news', path: '/news' },
-    { labelKey: 'footerOurTeam', path: '/about' },
+    { labelKey: 'appDownloadPage', path: '/app' },
     { labelKey: 'privateClubPageTitle', path: '/private-club' },
   ],
 }
@@ -168,6 +169,8 @@ function matchesMenuPath(pathname, search, linkPath) {
       pathname.startsWith('/shares/')
   } else if (base === '/about') {
     pathMatch = pathname === '/about' || pathname.startsWith('/about/')
+  } else if (base === '/app') {
+    pathMatch = pathname === '/app'
   } else if (base === '/owner-test/profile') {
     pathMatch = pathname === '/owner-test/profile' || pathname === '/owner-test'
   } else {

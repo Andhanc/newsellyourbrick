@@ -199,6 +199,8 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
 
   const staticKeys = {
     '/about': 'aboutUs',
+    '/app': 'appDownloadPage',
+    '/news': 'news',
     '/sections': 'sectionsNavTitle',
     '/map': 'mapLink',
     '/calculator': 'calculator',

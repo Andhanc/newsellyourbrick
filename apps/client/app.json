@@ -14,7 +14,7 @@
     "android": {
       "package": "com.sellyourbrick.app",
       "adaptiveIcon": {
-        "backgroundColor": "#4ecdd6",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -55,8 +55,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "",
-      "mediaOrigin": "",
+      "apiBaseUrl": "https://newsellyourbrick-production-6ed8.up.railway.app/api",
+      "mediaOrigin": "https://newsellyourbrick-production-6ed8.up.railway.app",
       "eas": {
         "projectId": "sellyourbrick-local"
       }

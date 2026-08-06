@@ -7,7 +7,6 @@ import {
   Coins,
   CreditCard,
   LoaderCircle,
-  LockKeyhole,
   ShieldCheck,
   WalletCards,
 } from 'lucide-react'
@@ -55,10 +54,11 @@ const DepositTopUpPicker = ({
       {view === 'choice' ? (
         <div className="deposit-picker__choice">
           <span className="deposit-picker__eyebrow">
-            <ShieldCheck size={15} aria-hidden /> Защищённое пополнение
+            <ShieldCheck size={15} strokeWidth={2.2} aria-hidden />
+            {t('depositPicker_secureEyebrow', { defaultValue: 'Защищённое пополнение' })}
           </span>
           <h2 id="deposit-picker-title" className="deposit-picker__title">
-            {t('depositPicker_title', { defaultValue: 'Как пополнить депозит?' })}
+            {t('depositPicker_title', { defaultValue: 'Способ пополнения' })}
           </h2>
           <p id="deposit-picker-description" className="deposit-picker__subtitle">
             Выберите удобный способ. Перед оплатой вы увидите сумму и итоговые условия.
@@ -74,14 +74,26 @@ const DepositTopUpPicker = ({
               onClick={handleCardPayment}
             >
               <span className="deposit-picker__method-icon" aria-hidden>
-                {stripeCheckoutLoading ? <LoaderCircle className="deposit-picker__spinner" size={25} /> : <CreditCard size={25} />}
+                {stripeCheckoutLoading ? (
+                  <LoaderCircle className="deposit-picker__spinner" size={22} />
+                ) : (
+                  <CreditCard size={22} strokeWidth={2} />
+                )}
               </span>
               <span className="deposit-picker__method-copy">
-                <span className="deposit-picker__method-badge">Рекомендуем</span>
-                <strong>{t('depositPicker_cardLabel', { defaultValue: 'Банковская карта' })}</strong>
-                <small>{t('depositPicker_cardDesc', { defaultValue: 'Быстрый переход к защищённой оплате' })}</small>
+                <span className="deposit-picker__method-title-row">
+                  <strong>{t('depositPicker_cardLabel', { defaultValue: 'Банковская карта' })}</strong>
+                  <span className="deposit-picker__method-badge">
+                    {t('depositPicker_recommended', { defaultValue: 'Рекомендуем' })}
+                  </span>
+                </span>
+                <small>
+                  {t('depositPicker_cardDesc', { defaultValue: 'Быстрый переход к защищённой оплате' })}
+                </small>
               </span>
-              <ChevronRight size={21} aria-hidden />
+              <span className="deposit-picker__method-chevron" aria-hidden>
+                <ChevronRight size={18} strokeWidth={2.2} />
+              </span>
             </button>
 
             <button
@@ -91,30 +103,36 @@ const DepositTopUpPicker = ({
               onClick={() => setView('crypto')}
             >
               <span className="deposit-picker__method-icon deposit-picker__method-icon--crypto" aria-hidden>
-                <Coins size={25} />
+                <Coins size={22} strokeWidth={2} />
               </span>
               <span className="deposit-picker__method-copy">
-                <strong>{cryptoTitle}</strong>
-                <small>{t('depositPicker_cryptoDesc', { defaultValue: 'Оплата через подключённый TON-кошелёк' })}</small>
+                <span className="deposit-picker__method-title-row">
+                  <strong>{cryptoTitle}</strong>
+                </span>
+                <small>
+                  {t('depositPicker_cryptoDesc', { defaultValue: 'Оплата через подключённый TON-кошелёк' })}
+                </small>
               </span>
-              <ChevronRight size={21} aria-hidden />
+              <span className="deposit-picker__method-chevron" aria-hidden>
+                <ChevronRight size={18} strokeWidth={2.2} />
+              </span>
             </button>
-          </div>
-
-          <div className="deposit-picker__trust">
-            <LockKeyhole size={18} aria-hidden />
-            <p><strong>Сначала подтверждение.</strong> Мы не списываем средства без вашего финального действия на платёжном экране.</p>
           </div>
         </div>
       ) : (
         <div className="deposit-picker__crypto">
           <button type="button" className="deposit-picker__back" onClick={() => setView('choice')}>
-            <ArrowLeft size={19} aria-hidden />
+            <ArrowLeft size={18} strokeWidth={2.2} aria-hidden />
             {t('depositPicker_back', { defaultValue: 'Другой способ' })}
           </button>
 
-          <span className="deposit-picker__eyebrow"><WalletCards size={15} aria-hidden /> TON Connect</span>
-          <h2 id="deposit-picker-title" className="deposit-picker__title">{cryptoTitle}</h2>
+          <span className="deposit-picker__eyebrow">
+            <WalletCards size={15} strokeWidth={2.2} aria-hidden />
+            TON Connect
+          </span>
+          <h2 id="deposit-picker-title" className="deposit-picker__title">
+            {cryptoTitle}
+          </h2>
           <p id="deposit-picker-description" className="deposit-picker__subtitle">
             Подключите кошелёк, проверьте адрес и подтвердите перевод в приложении.
           </p>
@@ -124,18 +142,29 @@ const DepositTopUpPicker = ({
               <>
                 <div className="deposit-picker__wallet-row">
                   <span className="deposit-picker__wallet-avatar" aria-hidden>
-                    {tonWallet.icon ? <img src={tonWallet.icon} alt="" /> : <WalletCards size={24} />}
+                    {tonWallet.icon ? <img src={tonWallet.icon} alt="" /> : <WalletCards size={22} />}
                   </span>
                   <span className="deposit-picker__wallet-copy">
-                    <strong>{tonWallet.name || t('depositPicker_tonWalletDefaultName', { defaultValue: 'TON Wallet' })}</strong>
-                    <small title={tonAddress}>{shortenAddress ? shortenAddress(tonAddress) : `${tonAddress.slice(0, 6)}…${tonAddress.slice(-4)}`}</small>
+                    <strong>
+                      {tonWallet.name ||
+                        t('depositPicker_tonWalletDefaultName', { defaultValue: 'TON Wallet' })}
+                    </strong>
+                    <small title={tonAddress}>
+                      {shortenAddress
+                        ? shortenAddress(tonAddress)
+                        : `${tonAddress.slice(0, 6)}…${tonAddress.slice(-4)}`}
+                    </small>
                   </span>
-                  <span className="deposit-picker__connected"><Check size={14} aria-hidden /> Подключён</span>
+                  <span className="deposit-picker__connected">
+                    <Check size={14} strokeWidth={2.4} aria-hidden /> Подключён
+                  </span>
                 </div>
 
                 {tonPaymentSuccess ? (
                   <div className="deposit-picker__success" role="status">
-                    <Check size={19} aria-hidden />
+                    <span className="deposit-picker__success-icon" aria-hidden>
+                      <Check size={20} strokeWidth={2.4} />
+                    </span>
                     {t('depositPicker_paymentSuccess', { defaultValue: 'Перевод подтверждён' })}
                   </div>
                 ) : (
@@ -146,7 +175,9 @@ const DepositTopUpPicker = ({
                     disabled={tonPaymentLoading}
                     aria-busy={tonPaymentLoading || undefined}
                   >
-                    {tonPaymentLoading ? <LoaderCircle className="deposit-picker__spinner" size={20} aria-hidden /> : null}
+                    {tonPaymentLoading ? (
+                      <LoaderCircle className="deposit-picker__spinner" size={18} aria-hidden />
+                    ) : null}
                     {tonPaymentLoading
                       ? t('depositPicker_payWaiting', { defaultValue: 'Ожидаем подтверждение…' })
                       : t('depositPicker_payButton', { defaultValue: 'Перейти к подтверждению' })}
@@ -155,8 +186,12 @@ const DepositTopUpPicker = ({
 
                 <p className="deposit-picker__crypto-note">
                   {tonPaymentLoading
-                    ? t('depositPicker_payPhoneHint', { defaultValue: 'Подтвердите запрос в приложении кошелька на телефоне.' })
-                    : t('depositPicker_payCrossDevice', { defaultValue: 'Окно кошелька откроется на этом устройстве.' })}
+                    ? t('depositPicker_payPhoneHint', {
+                        defaultValue: 'Подтвердите запрос в приложении кошелька на телефоне.',
+                      })
+                    : t('depositPicker_payCrossDevice', {
+                        defaultValue: 'Окно кошелька откроется на этом устройстве.',
+                      })}
                 </p>
 
                 <div className="deposit-picker__wallet-actions">
@@ -170,10 +205,20 @@ const DepositTopUpPicker = ({
               </>
             ) : (
               <div className="deposit-picker__disconnected">
-                <span className="deposit-picker__crypto-mark" aria-hidden><Coins size={29} /></span>
+                <span className="deposit-picker__crypto-mark" aria-hidden>
+                  <Coins size={28} strokeWidth={2} />
+                </span>
                 <h3>Подключите TON-кошелёк</h3>
-                <p>{t('depositPicker_connectHint', { defaultValue: 'Сайт покажет адрес и сумму до того, как вы подтвердите перевод.' })}</p>
-                <button type="button" className="deposit-picker__pay" onClick={() => tonConnectUI?.openModal?.()}>
+                <p>
+                  {t('depositPicker_connectHint', {
+                    defaultValue: 'Сайт покажет адрес и сумму до того, как вы подтвердите перевод.',
+                  })}
+                </p>
+                <button
+                  type="button"
+                  className="deposit-picker__pay"
+                  onClick={() => tonConnectUI?.openModal?.()}
+                >
                   {t('depositPicker_connectWallet', { defaultValue: 'Подключить кошелёк' })}
                 </button>
               </div>

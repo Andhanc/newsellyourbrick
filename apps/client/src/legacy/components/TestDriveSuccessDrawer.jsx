@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarCheck2, Clock3, MessageCircle } from 'lucide-react'
+import { FiArrowRight, FiCalendar, FiClock, FiMessageCircle } from 'react-icons/fi'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import './TestDriveSuccessDrawer.css'
 
@@ -31,7 +31,7 @@ export default function TestDriveSuccessDrawer({
     <BuyerSheetShell
       isOpen={isOpen}
       onClose={onClose}
-      tone="success"
+      tone="detail"
       titleId="test-drive-success-title"
       describedBy="test-drive-success-description"
       closeLabel="Закрыть подтверждение тест-драйва"
@@ -40,7 +40,7 @@ export default function TestDriveSuccessDrawer({
         <div className="test-drive-success__actions">
           <button type="button" className="test-drive-success__primary" onClick={onOpenBookings}>
             <span>Открыть мои бронирования</span>
-            <ArrowRight size={19} aria-hidden />
+            <FiArrowRight size={18} aria-hidden />
           </button>
           <button type="button" className="test-drive-success__secondary" onClick={onBackToProperty}>
             Вернуться к объекту
@@ -49,24 +49,21 @@ export default function TestDriveSuccessDrawer({
       )}
     >
       <div className="test-drive-success__content">
-        <img
-          className="test-drive-success__visual"
-          src="/images/profile/profile-booking-vacation.png"
-          alt=""
-          aria-hidden="true"
-        />
-        <span className="test-drive-success__eyebrow">
-          <CalendarCheck2 size={15} aria-hidden /> Оплата подтверждена
-        </span>
-        <h2 id="test-drive-success-title">Тест-драйв забронирован</h2>
+        <p className="test-drive-success__eyebrow">
+          <FiCalendar size={14} aria-hidden />
+          Оплата подтверждена
+        </p>
+        <h2 id="test-drive-success-title" className="test-drive-success__title">
+          Тест-драйв забронирован
+        </h2>
         <p id="test-drive-success-description" className="test-drive-success__lead">
-          Бронирование сохранено. Даты, статус и дальнейшие инструкции всегда доступны в кабинете.
+          Бронирование сохранено. Даты, статус и инструкции всегда доступны в кабинете.
         </p>
 
         <article className="test-drive-success__ticket">
           <div className="test-drive-success__date">
             <strong>{startLabel}</strong>
-            <span>—</span>
+            <span aria-hidden>—</span>
             <strong>{endLabel}</strong>
           </div>
           <h3>{propertyTitle || 'Выбранный объект'}</h3>
@@ -75,14 +72,18 @@ export default function TestDriveSuccessDrawer({
 
         <div className="test-drive-success__steps" aria-label="Что делать дальше">
           <article>
-            <span aria-hidden><MessageCircle size={19} /></span>
+            <span aria-hidden>
+              <FiMessageCircle size={18} />
+            </span>
             <div>
               <strong>Ожидайте детали связи</strong>
               <p>Контакт и инструкции придут в {channelLabel}.</p>
             </div>
           </article>
           <article>
-            <span aria-hidden><Clock3 size={19} /></span>
+            <span aria-hidden>
+              <FiClock size={18} />
+            </span>
             <div>
               <strong>Проверьте время заезда</strong>
               <p>Перед поездкой откройте бронь и сверьте комментарий владельца.</p>

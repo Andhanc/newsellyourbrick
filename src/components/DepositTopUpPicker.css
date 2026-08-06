@@ -1,74 +1,120 @@
-.deposit-picker.buyer-sheet { z-index: 13380; }
-.deposit-picker .buyer-sheet__surface { width: min(100%, 520px); }
-.deposit-picker .buyer-sheet__body { padding-top: 8px; }
+.deposit-picker.buyer-sheet {
+  z-index: 13380;
+}
+
+.deposit-picker .buyer-sheet__surface {
+  width: min(100%, 520px);
+  background: #ffffff;
+}
+
+.deposit-picker .buyer-sheet__body {
+  padding-top: 6px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+}
 
 .deposit-picker__choice,
 .deposit-picker__crypto {
-  max-width: 470px;
+  --dp-tiffany: #4ecdd6;
+  --dp-tiffany-mid: #0099a9;
+  --dp-tiffany-dark: #3bc0cb;
+  --dp-tiffany-soft: #f0fafb;
+  --dp-ink: #0f172a;
+  --dp-muted: #64748b;
+  --dp-line: #e2e8f0;
+  --dp-surface: #ffffff;
+  --dp-surface-muted: #f8fafc;
+
+  max-width: 460px;
   margin: 0 auto;
-  font-family: var(--buyer-font-body);
+  font-family: 'Montserrat', system-ui, sans-serif;
 }
 
 .deposit-picker__eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-  color: var(--buyer-teal-deep);
-  font: 760 10px/1 var(--buyer-font-display);
-  letter-spacing: .08em;
+  gap: 7px;
+  margin: 0 0 14px;
+  color: var(--dp-tiffany-dark);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .deposit-picker__title {
-  max-width: 390px;
   margin: 0;
-  color: var(--buyer-ink);
-  font: 820 clamp(29px, 8vw, 38px)/1.02 var(--buyer-font-display);
-  letter-spacing: -.045em;
+  max-width: 18ch;
+  color: var(--dp-ink);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: clamp(1.55rem, 6.2vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .deposit-picker__subtitle {
-  max-width: 420px;
-  margin: 10px 0 20px;
-  color: var(--buyer-text-muted);
-  font: 500 14px/1.5 var(--buyer-font-body);
+  max-width: 36rem;
+  margin: 12px 0 26px;
+  color: var(--dp-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.65;
 }
 
-.deposit-picker__methods { display: grid; gap: 10px; }
+.deposit-picker__methods {
+  display: grid;
+  gap: 10px;
+}
 
 .deposit-picker__method {
   position: relative;
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) 22px;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 86px;
-  padding: 13px 14px;
-  border: 1px solid var(--buyer-line);
-  border-radius: 19px;
-  background: var(--buyer-white);
-  color: var(--buyer-ink);
-  box-shadow: 0 10px 28px rgba(12, 55, 58, .06);
+  min-height: 84px;
+  padding: 16px;
+  border: 1px solid #e8edf2;
+  border-radius: 18px;
+  background: #f4f6f8;
+  color: var(--dp-ink);
+  box-shadow: none;
   cursor: pointer;
   text-align: left;
-  transition: transform var(--buyer-duration-fast), border-color var(--buyer-duration-fast), box-shadow var(--buyer-duration-fast);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .deposit-picker__method--recommended {
-  border-color: color-mix(in srgb, var(--buyer-teal) 40%, transparent);
-  background: linear-gradient(135deg, var(--buyer-white), var(--buyer-mint));
-  box-shadow: 0 16px 34px rgba(0, 111, 123, .11);
+  background: #f1f5f7;
+  border-color: #e2e8ee;
+  box-shadow: none;
 }
 
-.deposit-picker__method:active { transform: scale(.985); }
-.deposit-picker__method:disabled { cursor: wait; opacity: .72; }
+.deposit-picker__method:hover:not(:disabled) {
+  transform: none;
+  background: #eef2f5;
+  border-color: #dce3ea;
+  box-shadow: none;
+}
+
+.deposit-picker__method:active:not(:disabled) {
+  transform: none;
+  background: #e8eef2;
+}
+
+.deposit-picker__method:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .deposit-picker__method:focus-visible,
 .deposit-picker__back:focus-visible,
 .deposit-picker__pay:focus-visible,
 .deposit-picker__wallet-actions button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--buyer-teal) 34%, transparent);
+  outline: 2px solid var(--dp-tiffany);
   outline-offset: 2px;
 }
 
@@ -77,84 +123,154 @@
   place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: 15px;
-  background: var(--buyer-teal-deep);
-  color: var(--buyer-white);
+  border-radius: 999px;
+  color: #64748b;
+  background: #e8edf2;
+  box-shadow: none;
 }
 
-.deposit-picker__method-icon--crypto { background: var(--buyer-ink); }
-.deposit-picker__method-copy { display: grid; min-width: 0; gap: 3px; }
-.deposit-picker__method-copy strong { font: 760 14px/1.2 var(--buyer-font-display); }
-.deposit-picker__method-copy small { color: var(--buyer-text-muted); font: 500 11px/1.35 var(--buyer-font-body); }
+.deposit-picker__method-icon--crypto {
+  color: #64748b;
+  background: #e8edf2;
+  box-shadow: none;
+}
+
+.deposit-picker__method--recommended .deposit-picker__method-icon {
+  color: var(--dp-tiffany-mid);
+  background: rgba(78, 205, 214, 0.16);
+}
+
+.deposit-picker__method-copy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.deposit-picker__method-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.deposit-picker__method-copy strong {
+  font-size: 0.98rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.deposit-picker__method-copy small {
+  color: #7b8794;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .deposit-picker__method-badge {
   width: max-content;
-  margin-bottom: 1px;
-  padding: 4px 6px;
-  border-radius: 999px;
-  background: var(--buyer-ink);
-  color: var(--buyer-white);
-  font: 720 8px/1 var(--buyer-font-display);
-  letter-spacing: .06em;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--dp-tiffany-mid);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.deposit-picker__trust {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 13px;
-  border-radius: 16px;
-  background: var(--buyer-mint);
-  color: var(--buyer-teal-deep);
+.deposit-picker__method-chevron {
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
 }
-.deposit-picker__trust svg { flex: 0 0 auto; margin-top: 1px; }
-.deposit-picker__trust p { margin: 0; font: 500 11px/1.45 var(--buyer-font-body); }
-.deposit-picker__trust strong { font-weight: 760; }
+
+.deposit-picker__method--recommended .deposit-picker__method-chevron {
+  color: #94a3b8;
+}
 
 .deposit-picker__back {
   display: inline-flex;
   min-width: 44px;
   min-height: 44px;
   align-items: center;
-  gap: 7px;
-  margin: -4px 0 12px;
-  padding: 0 10px 0 0;
+  gap: 8px;
+  margin: -2px 0 14px;
+  padding: 0 8px 0 0;
   border: 0;
   background: transparent;
-  color: var(--buyer-teal-deep);
+  color: var(--dp-tiffany-dark);
   cursor: pointer;
-  font: 720 12px/1 var(--buyer-font-display);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .deposit-picker__crypto-card {
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--buyer-teal) 22%, transparent);
-  border-radius: 21px;
-  background: var(--buyer-white);
-  box-shadow: 0 18px 44px rgba(10, 57, 61, .09);
+  padding: 18px;
+  border: 1px solid rgba(78, 205, 214, 0.24);
+  border-radius: 22px;
+  background: var(--dp-surface);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
 }
 
 .deposit-picker__wallet-row {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
+
 .deposit-picker__wallet-avatar {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
   border-radius: 14px;
-  background: var(--buyer-cloud);
-  color: var(--buyer-teal-deep);
+  background: var(--dp-surface-muted);
+  color: var(--dp-tiffany-dark);
 }
-.deposit-picker__wallet-avatar img { width: 100%; height: 100%; object-fit: contain; }
-.deposit-picker__wallet-copy { display: grid; min-width: 0; gap: 4px; }
-.deposit-picker__wallet-copy strong { font: 750 13px/1.2 var(--buyer-font-display); }
-.deposit-picker__wallet-copy small { overflow: hidden; color: var(--buyer-text-muted); font: 500 11px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
-.deposit-picker__connected { display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 999px; background: var(--buyer-mint); color: var(--buyer-teal-deep); font: 700 9px/1 var(--buyer-font-display); }
+
+.deposit-picker__wallet-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.deposit-picker__wallet-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.deposit-picker__wallet-copy strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.deposit-picker__wallet-copy small {
+  overflow: hidden;
+  color: var(--dp-muted);
+  font: 500 0.78rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-picker__connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(78, 205, 214, 0.14);
+  color: var(--dp-tiffany-dark);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
 
 .deposit-picker__pay {
   display: inline-flex;
@@ -163,48 +279,169 @@
   gap: 8px;
   width: 100%;
   min-height: 56px;
-  margin-top: 16px;
+  margin-top: 18px;
   border: 0;
-  border-radius: 16px;
-  background: var(--buyer-teal-deep);
-  color: var(--buyer-white);
-  box-shadow: 0 13px 29px rgba(0, 111, 123, .24);
+  border-radius: 999px;
+  background: #4ecdd6;
+  background-image: linear-gradient(135deg, #6ad6dd 0%, #4ecdd6 48%, #3bc0cb 100%);
+  color: #ffffff;
+  box-shadow:
+    0 4px 16px rgba(78, 205, 214, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  font: 760 14px/1 var(--buyer-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
 }
-.deposit-picker__pay:disabled { cursor: wait; opacity: .72; }
-.deposit-picker__spinner { animation: deposit-picker-spin .8s linear infinite; }
-@keyframes deposit-picker-spin { to { transform: rotate(1turn); } }
+
+.deposit-picker__pay:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 8px 24px rgba(78, 205, 214, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.deposit-picker__pay:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+  filter: none;
+}
+
+.deposit-picker__spinner {
+  animation: deposit-picker-spin 0.8s linear infinite;
+}
+
+@keyframes deposit-picker-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
 
 .deposit-picker__success {
   display: flex;
   min-height: 56px;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  margin-top: 16px;
-  border-radius: 16px;
-  background: var(--buyer-mint);
-  color: var(--buyer-teal-deep);
-  font: 750 13px/1.2 var(--buyer-font-display);
+  gap: 10px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: var(--dp-tiffany-soft);
+  color: var(--dp-tiffany-dark);
+  font-size: 0.95rem;
+  font-weight: 700;
 }
-.deposit-picker__crypto-note { margin: 10px 2px 0; color: var(--buyer-text-muted); text-align: center; font: 500 10px/1.45 var(--buyer-font-body); }
-.deposit-picker__wallet-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--buyer-line); }
-.deposit-picker__wallet-actions button { min-width: 44px; min-height: 44px; border: 0; border-radius: 13px; background: var(--buyer-cloud); color: var(--buyer-ink); cursor: pointer; font: 690 10px/1.2 var(--buyer-font-display); }
 
-.deposit-picker__disconnected { padding: 8px 4px 2px; text-align: center; }
-.deposit-picker__crypto-mark { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 12px; border-radius: 19px; background: var(--buyer-ink); color: var(--buyer-white); box-shadow: 0 12px 28px rgba(5, 5, 5, .16); }
-.deposit-picker__disconnected h3 { margin: 0; font: 780 17px/1.15 var(--buyer-font-display); letter-spacing: -.02em; }
-.deposit-picker__disconnected p { max-width: 320px; margin: 8px auto 0; color: var(--buyer-text-muted); font: 500 12px/1.45 var(--buyer-font-body); }
+.deposit-picker__success-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(145deg, #6ad6dd 0%, #3bc0cb 100%);
+}
+
+.deposit-picker__crypto-note {
+  margin: 12px 4px 0;
+  color: var(--dp-muted);
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.deposit-picker__wallet-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dp-line);
+}
+
+.deposit-picker__wallet-actions button {
+  min-width: 44px;
+  min-height: 48px;
+  border: 1px solid var(--dp-line);
+  border-radius: 999px;
+  background: var(--dp-surface-muted);
+  color: var(--dp-ink);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.deposit-picker__wallet-actions button:hover {
+  background: #ffffff;
+  border-color: rgba(78, 205, 214, 0.45);
+}
+
+.deposit-picker__disconnected {
+  padding: 10px 4px 2px;
+  text-align: center;
+}
+
+.deposit-picker__crypto-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  color: #ffffff;
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+
+.deposit-picker__disconnected h3 {
+  margin: 0;
+  color: var(--dp-ink);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.deposit-picker__disconnected p {
+  max-width: 32rem;
+  margin: 10px auto 0;
+  color: var(--dp-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.55;
+}
 
 @media (max-width: 480px) {
-  .deposit-picker .buyer-sheet__surface { border-radius: 28px 28px 0 0; }
-  .deposit-picker .buyer-sheet__body { padding-inline: 16px; }
-  .deposit-picker__method { min-height: 88px; }
-  .deposit-picker__title { padding-right: 28px; }
+  .deposit-picker .buyer-sheet__surface {
+    border-radius: 28px 28px 0 0;
+  }
+
+  .deposit-picker .buyer-sheet__body {
+    padding-inline: 18px;
+  }
+
+  .deposit-picker__title {
+    padding-right: 36px;
+    max-width: none;
+  }
+
+  .deposit-picker__method {
+    min-height: 88px;
+    padding: 17px 15px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .deposit-picker__method,
-  .deposit-picker__spinner { transition: none; animation-duration: 1ms !important; }
+  .deposit-picker__pay,
+  .deposit-picker__spinner {
+    transition: none;
+    animation: none !important;
+  }
 }

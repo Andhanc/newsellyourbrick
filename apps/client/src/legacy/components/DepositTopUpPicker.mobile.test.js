@@ -12,11 +12,10 @@ test('top-up choice uses the shared accessible buyer sheet', () => {
   assert.doesNotMatch(jsx, /deposit-picker-overlay/)
 })
 
-test('payment methods explain the next step and preserve truthful trust copy', () => {
+test('payment methods explain the next step and keep recommended stripe option', () => {
   assert.match(jsx, /Банковская карта/)
   assert.match(jsx, /Криптокошелёк/)
   assert.match(jsx, /Перед оплатой вы увидите сумму и итоговые условия/)
-  assert.match(jsx, /deposit-picker__trust/)
   assert.match(jsx, /deposit-picker__method--recommended/)
 })
 

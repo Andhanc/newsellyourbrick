@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import "./TestDriveRangeCalendar.css";
 
 interface CalendarDay {
   date: Date;
@@ -429,94 +430,175 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
     );
   };
 
+  const legend =
+    locale === "ru"
+      ? {
+          free: "Свободно",
+          picked: "Выбрано",
+          mine: "Ваша бронь",
+          taken: "Занято",
+        }
+      : {
+          free: "Available",
+          picked: "Selected",
+          mine: "Your booking",
+          taken: "Booked",
+        };
+
+  const selectedDays =
+    confirmedRange && anchor && rangeEnd
+      ? daysInclusive(anchor, rangeEnd)
+      : anchor && rangeEnd
+        ? daysInclusive(anchor, rangeEnd)
+        : null;
+
   return (
     <motion.div
-      initial={{ scale: 0.96, y: 8, opacity: 0 }}
+      initial={{ scale: 0.98, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
-      transition={{ duration: 0.45 }}
-      className={cn(
-        "rounded-3xl shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/90 to-indigo-50/40 p-7 md:p-10 w-full",
-        maxWidth,
-        className
-      )}
+      transition={{ duration: 0.4 }}
+      className={cn("td-range-cal", maxWidth, className)}
     >
-      <div className="flex items-center justify-between mb-10 md:mb-12">
-        <button
-          type="button"
-          onClick={prevMonth}
-          className="p-3 rounded-2xl bg-white/80 shadow-sm border border-slate-200/80 hover:bg-white hover:shadow-md transition-all"
-          aria-label={locale === "ru" ? "Предыдущий месяц" : "Previous month"}
-        >
-          <ChevronLeft className="w-7 h-7 text-slate-700" />
-        </button>
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight px-2 text-center">
-          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-        </h2>
-        <button
-          type="button"
-          onClick={nextMonth}
-          className="p-3 rounded-2xl bg-white/80 shadow-sm border border-slate-200/80 hover:bg-white hover:shadow-md transition-all"
-          aria-label={locale === "ru" ? "Следующий месяц" : "Next month"}
-        >
-          <ChevronRight className="w-7 h-7 text-slate-700" />
-        </button>
+      <div className="td-range-cal__header">
+        <div className="td-range-cal__heading">
+          <button
+            type="button"
+            className="td-range-cal__nav"
+            onClick={prevMonth}
+            aria-label={locale === "ru" ? "Предыдущий месяц" : "Previous month"}
+          >
+            <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+          <AnimatePresence mode="wait">
+            <motion.h2
+              key={`${currentDate.getFullYear()}-${currentDate.getMonth()}`}
+              className="td-range-cal__month"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+            >
+              {monthNames[currentDate.getMonth()]}
+            </motion.h2>
+          </AnimatePresence>
+          <button
+            type="button"
+            className="td-range-cal__nav"
+            onClick={nextMonth}
+            aria-label={locale === "ru" ? "Следующий месяц" : "Next month"}
+          >
+            <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className="td-range-cal__meta">
+          <span className="td-range-cal__meta-days">
+            {selectedDays != null
+              ? `${selectedDays} ${locale === "ru" ? "дн." : "days"}`
+              : locale === "ru"
+                ? "5–21 дн."
+                : "5–21 days"}
+          </span>
+          <span className="td-range-cal__meta-label">
+            {locale === "ru" ? "Диапазон" : "Range"}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 mb-4 md:mb-5">
+      <div className="td-range-cal__weekdays" aria-hidden>
         {weekShort.map((day) => (
-          <div
-            key={day}
-            className="p-2.5 text-center text-sm font-semibold text-slate-500 uppercase tracking-wide"
-          >
+          <div key={day} className="td-range-cal__weekday">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 md:gap-2">
+      <div
+        className="td-range-cal__grid"
+        role="grid"
+        aria-label={monthNames[currentDate.getMonth()]}
+      >
         {days.map((day, index) => {
           const ymd = toYmd(day.date);
           const isBooked = bookedSet.has(ymd);
           const isMyBooked = isBooked && myBookedSet.has(ymd);
           const past = startOfDay(day.date) < startOfDay(new Date());
           const disabled = past || isBooked;
-          const inRange = anchor && rangeEnd && isInPreviewRange(day.date);
+          const inRange = Boolean(anchor && rangeEnd && isInPreviewRange(day.date));
+          const isStart = Boolean(anchor && ymd === toYmd(anchor));
+          const isEnd = Boolean(rangeEnd && ymd === toYmd(rangeEnd));
+          const isEndpoint = isStart || isEnd;
+          const isPicked = Boolean(
+            confirmedRange && inRange && !isBooked
+          );
+          const stateClass = [
+            "td-range-cal__cell",
+            !day.isCurrentMonth ? "is-outside" : "",
+            past && !isBooked ? "is-past" : "",
+            day.isToday && !disabled ? "is-today" : "",
+            inRange && !isBooked && !isPicked ? "is-in-range" : "",
+            (isEndpoint || isPicked) && !isBooked ? "is-endpoint" : "",
+            isMyBooked ? "is-my-booked" : "",
+            isBooked && !isMyBooked ? "is-other-booked" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
           return (
-            <motion.button
+            <button
               type="button"
               key={`${ymd}-${index}`}
-              whileHover={!disabled ? { scale: 1.04 } : undefined}
-              whileTap={!disabled ? { scale: 0.97 } : undefined}
+              className={stateClass}
               disabled={disabled}
               onClick={() => handleDayClick(day.date)}
-              className={cn(
-                "p-3 md:p-4 rounded-2xl text-center text-base md:text-lg font-semibold transition-all duration-150 min-h-[52px] md:min-h-[58px] flex items-center justify-center",
-                !day.isCurrentMonth && "text-slate-300",
-                day.isCurrentMonth && !disabled && "text-slate-800",
-                disabled && "opacity-40 cursor-not-allowed line-through",
-                isBooked &&
-                  isMyBooked &&
-                  "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-300",
-                isBooked &&
-                  !isMyBooked &&
-                  "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
-                day.isToday && !disabled && "ring-2 ring-sky-400 ring-offset-2 ring-offset-transparent",
-                inRange && !disabled && !isBooked && "bg-sky-100 text-sky-950",
-                anchor &&
-                  rangeEnd &&
-                  toYmd(day.date) === toYmd(anchor) &&
-                  "bg-[#0099A9] text-white ring-0 shadow-md shadow-teal-500/25"
+              aria-label={day.date.toLocaleDateString(
+                locale === "ru" ? "ru-RU" : "en-US",
+                { day: "numeric", month: "long", year: "numeric" }
               )}
+              aria-pressed={Boolean(isEndpoint || isPicked || (inRange && !disabled))}
             >
-              {day.date.getDate()}
-            </motion.button>
+              <span className="td-range-cal__day">{day.date.getDate()}</span>
+              <svg
+                className="td-range-cal__check"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden
+              >
+                <path
+                  d="M3.5 8.2 6.4 11l6.1-6.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           );
         })}
       </div>
 
-      {error && (
-        <p className="mt-5 text-sm text-red-600 text-center font-medium">{error}</p>
-      )}
+      <div
+        className="td-range-cal__legend"
+        aria-label={locale === "ru" ? "Обозначения" : "Legend"}
+      >
+        <span>
+          <i className="is-free" aria-hidden />
+          {legend.free}
+        </span>
+        <span>
+          <i className="is-picked" aria-hidden />
+          {legend.picked}
+        </span>
+        <span>
+          <i className="is-mine" aria-hidden />
+          {legend.mine}
+        </span>
+        <span>
+          <i className="is-taken" aria-hidden />
+          {legend.taken}
+        </span>
+      </div>
+
+      {error ? <p className="td-range-cal__error">{error}</p> : null}
     </motion.div>
   );
 };

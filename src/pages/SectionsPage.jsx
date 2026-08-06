@@ -27,6 +27,7 @@ import {
   Newspaper,
   PieChart,
   Search,
+  Smartphone,
   Store,
   User,
   Users,
@@ -84,7 +85,7 @@ const SECTION_LINK_ICONS = {
   chat: MessageSquare,
   aiAssistant: Bot,
   footerTechSupport: MessageSquare,
-  footerOurTeam: Users,
+  appDownloadPage: Smartphone,
   footerForInvestors: Briefcase,
   sectionsForBanks: Landmark,
   footerDocumentsSection: FileText,
@@ -164,7 +165,7 @@ const MAIN_SECTIONS = [
     sectionTitleKey: 'footerColCompany',
     items: [
       { titleKey: 'aboutUs', path: '/about#about-intro' },
-      { titleKey: 'footerOurTeam', path: '/about' },
+      { titleKey: 'appDownloadPage', path: '/app' },
       { titleKey: 'footerForInvestors', path: '/about#about-intro' },
       { titleKey: 'sectionsForBanks', path: '/about' },
       { titleKey: 'footerDocumentsSection', path: '/data', requiresAuth: true },
@@ -251,6 +252,8 @@ function matchesSectionLink(pathname, search, linkPath) {
       pathname.startsWith('/shares/')
   } else if (base === '/about') {
     pathMatch = pathname === '/about' || pathname.startsWith('/about/')
+  } else if (base === '/app') {
+    pathMatch = pathname === '/app'
   } else if (base === '/sections') {
     pathMatch = pathname === '/sections'
   } else {

@@ -151,7 +151,7 @@ const Footer = () => {
         { to: '/about#about-intro', label: t('aboutUs') },
         { to: '/seller', label: t('footerForSeller') },
         { to: '/buyer', label: t('sectionsBuyerPageLink') },
-        { to: '/about#about-agents', label: t('footerOurTeam') },
+        { to: '/app', label: t('appDownloadPage') },
         { to: '/about#contacts', label: t('footerBecomePartner') },
       ],
     },

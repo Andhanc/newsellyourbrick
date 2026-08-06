@@ -135,25 +135,48 @@
 
 .seller-verification-modal__btn {
   width: 100%;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
-  color: #fff;
+  min-height: 56px;
+  padding: 14px 24px;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 999px;
+  background: #4ecdd6;
+  background-image: linear-gradient(135deg, #6ad6dd 0%, #4ecdd6 48%, #3bc0cb 100%);
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
+  box-shadow:
+    0 4px 16px rgba(78, 205, 214, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .seller-verification-modal__btn:hover {
-  background: linear-gradient(135deg, #007d8a 0%, #006672 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 153, 169, 0.4);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 8px 24px rgba(78, 205, 214, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.seller-verification-modal__btn:active {
+  transform: translateY(0);
+  filter: none;
+}
+
+.seller-verification-modal__btn:focus-visible {
+  outline: 2px solid #4ecdd6;
+  outline-offset: 2px;
 }
 
 .seller-verification-modal__btn svg {

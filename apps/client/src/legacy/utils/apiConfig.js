@@ -1,25 +1,46 @@
 /**
- * Утилита для определения API Base URL
+ * API Base URL for Vite web and Expo Android/iOS DOM.
  *
- * Локально фронт ходит на относительный `/api` — Vite проксирует на бэкенд
- * (см. vite.config.js: `SERVER_PORT` или 3000). То же прокси задано для `vite preview`.
- * Если видите «Failed to fetch» или 404 по `/api/*`, поднимите API:
- * `npm run server` или `npm run dev:all`.
+ * Web (Vite): relative `/api` via proxy.
+ * Native DOM (file:): absolute production API — relative paths do not work.
  */
 
-// Используем относительный путь для работы через Vite proxy
-const API_BASE_URL = '/api'
+const PRODUCTION_API =
+  'https://newsellyourbrick-production-6ed8.up.railway.app/api'
+
+function normalizeBase(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  return raw.replace(/\/+$/, '')
+}
+
+function resolveApiBaseUrl() {
+  const fromExpo =
+    typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_API_BASE_URL : ''
+  if (normalizeBase(fromExpo)) return normalizeBase(fromExpo)
+
+  const fromVite = import.meta.env?.VITE_API_BASE_URL
+  if (normalizeBase(fromVite)) return normalizeBase(fromVite)
+
+  // Android/iOS Expo DOM runs under file:// — relative /api cannot reach the backend.
+  if (typeof window !== 'undefined' && window.location?.protocol === 'file:') {
+    return PRODUCTION_API
+  }
+
+  return '/api'
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 
 /**
  * Получает API Base URL
- * Возвращает localhost URL для локальной разработки
  */
 export async function getApiBaseUrl() {
   return API_BASE_URL
 }
 
 /**
- * Синхронная версия - возвращает localhost URL
+ * Синхронная версия
  */
 export function getApiBaseUrlSync() {
   return API_BASE_URL
@@ -31,5 +52,3 @@ export function getApiBaseUrlSync() {
 export function resetApiUrlCache() {
   // Не используется, но оставляем для совместимости
 }
-
-
