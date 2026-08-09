@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve, sep } from 'path';
 import multer from 'multer';
 import fs from 'fs';
+import { execSync } from 'child_process';
 const { readFileSync } = fs;
 import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
@@ -1300,6 +1301,48 @@ let currentQRCode = null; // Сохраняем текущий QR-код для 
 let waLastQrAt = null;
 let waLastInitError = null;
 let waConnectionState = null;
+/**
+ * WhatsApp обновляет QR примерно каждые 20 с; после ~40–60 с код уже недействителен.
+ * Старый PNG в админке → телефон показывает «ошибка» при скане. По умолчанию 45 с.
+ */
+const WA_QR_MAX_AGE_MS = Math.max(
+  15000,
+  Number.parseInt(String(process.env.WA_QR_MAX_AGE_MS || '45000'), 10) || 45000
+);
+
+function isWhatsAppQrPayloadValid(qr) {
+  if (!qr || typeof qr !== 'string') return false;
+  const s = qr.trim();
+  // getQR(undefined) в wwebjs даёт "undefined,..." — такой код нельзя сканировать
+  if (!s || s.startsWith('undefined,') || s.startsWith('null,')) return false;
+  return s.includes(',') && s.length > 40;
+}
+
+/** Актуальная строка QR или null, если протухла / битая. */
+function getFreshWhatsAppQr() {
+  if (!isWhatsAppQrPayloadValid(currentQRCode) || !waLastQrAt) {
+    return null;
+  }
+  const age = Date.now() - waLastQrAt;
+  if (age > WA_QR_MAX_AGE_MS) {
+    return null;
+  }
+  return currentQRCode;
+}
+
+function clearStaleWhatsAppQrIfNeeded() {
+  if (!currentQRCode || !waLastQrAt) return false;
+  if (isWhatsAppQrPayloadValid(currentQRCode) && Date.now() - waLastQrAt <= WA_QR_MAX_AGE_MS) {
+    return false;
+  }
+  if (currentQRCode) {
+    console.warn(
+      `[WA] QR устарел или битый (возраст ${waLastQrAt ? Math.round((Date.now() - waLastQrAt) / 1000) : '?'} с) — скрываем из админки. Нажмите «Запросить новый QR».`
+    );
+  }
+  currentQRCode = null;
+  return true;
+}
 
 // ========== СИСТЕМА ОТСЛЕЖИВАНИЯ ОБЪЕКТОВ БЕЗ СТАВОК ==========
 // Map для хранения таймеров объектов: propertyId -> timeoutId
@@ -1395,6 +1438,10 @@ const waClientOptions = {
   authStrategy: new LocalAuth({
     dataPath: join(__dirname, '.wwebjs_auth')
   }),
+  // Старый UA из wwebjs (Chrome/101) + свежий Chrome 151 → WhatsApp часто отклоняет связку после скана.
+  userAgent:
+    process.env.WA_USER_AGENT ||
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   puppeteer: {
     ...(waPuppeteerLaunch.mode === 'executablePath'
       ? { executablePath: waPuppeteerLaunch.executablePath }
@@ -1465,43 +1512,24 @@ waClient.on('error', (err) => {
 });
 
 waClient.on('qr', (qr) => {
-  // Сохраняем QR-код для отображения в футере
+  if (!isWhatsAppQrPayloadValid(qr)) {
+    console.warn('[WA] Пропускаем битый QR payload (ref пустой/undefined)');
+    return;
+  }
   currentQRCode = qr;
   waLastQrAt = Date.now();
-  
-  // Выводим компактный QR-код
-  console.log('\n📲 WhatsApp QR-код для сканирования:');
+
+  console.log('\n📲 WhatsApp QR-код для сканирования (действителен ~20–40 с):');
   console.log('═══════════════════════════════════════════════════════');
   try {
-    // Используем минимальный размер QR-кода для консоли
-    // qrcode-terminal автоматически использует small: true для компактного вывода
     qrcode.generate(qr, { small: true });
   } catch (e) {
-    // Если не удалось сгенерировать, просто выводим URL
-    console.log('⚠️ Не удалось сгенерировать QR-код, используйте код ниже');
+    console.log('⚠️ Не удалось нарисовать QR в терминале — откройте админку → WhatsApp');
   }
   console.log('═══════════════════════════════════════════════════════');
-  console.log('💡 Альтернатива: Введите этот код вручную в WhatsApp:');
-  console.log('');
-  console.log('   Инструкция:');
-  console.log('   1. Откройте WhatsApp на телефоне');
-  console.log('   2. Перейдите в Настройки → Устройства → Связать устройство');
-  console.log('   3. Нажмите "Связать устройство вручную"');
-  console.log('   4. Введите код ниже (без пробелов и переносов строк):');
-  console.log('');
-  
-  // Разбиваем длинную строку на части для лучшей читаемости
-  // Но выводим код целиком, чтобы его можно было скопировать
-  const chunkSize = 70; // Длина строки для отображения
-  for (let i = 0; i < qr.length; i += chunkSize) {
-    const chunk = qr.substring(i, i + chunkSize);
-    console.log(`   ${chunk}`);
-  }
-  
-  console.log('');
-  console.log('   ⚠️ ВАЖНО: Скопируйте весь код выше (все строки) и вставьте в WhatsApp');
-  console.log('   Код должен быть одной непрерывной строкой без пробелов!');
-  console.log('═══════════════════════════════════════════════════════\n');
+  console.log('💡 Сканируйте QR в WhatsApp: Настройки → Связанные устройства → Привязать устройство');
+  console.log('   Не вводите длинную строку 2@… вручную — это не 8-значный pairing code.');
+  console.log('   Если в телефоне «ошибка» — код уже протух: нажмите «Запросить новый QR» в админке.\n');
 });
 
 // Обработчик события authenticated - клиент успешно авторизован
@@ -1750,15 +1778,20 @@ const WA_INIT_RETRY_DELAY = 30000; // 30 секунд между попытка�
 
 function buildWaDiag() {
   const authPath = join(__dirname, '.wwebjs_auth');
+  const fresh = getFreshWhatsAppQr();
+  const ageMs = waLastQrAt ? Date.now() - waLastQrAt : null;
   return {
     lastQrAt: waLastQrAt,
+    qrAgeMs: ageMs,
+    qrMaxAgeMs: WA_QR_MAX_AGE_MS,
+    qrFresh: Boolean(fresh),
     lastError: waLastInitError,
     connectionState: waConnectionState,
     initAttempts: waInitAttempts,
     sessionFolderExists: fs.existsSync(authPath),
     remoteWebCache: waDisableRemoteWebVersion ? 'off' : 'remote',
     remoteCacheUrl: waDisableRemoteWebVersion ? null : waRemoteVersionPath || waDefaultRemoteCacheUrl,
-    pairingCodeLength: currentQRCode ? currentQRCode.length : 0,
+    pairingCodeLength: fresh ? fresh.length : 0,
     chromeExecutable:
       waPuppeteerLaunch.mode === 'executablePath' ? waPuppeteerLaunch.executablePath : null,
     puppeteerChannel: waPuppeteerLaunch.mode === 'channel' ? waPuppeteerLaunch.channel : null,
@@ -6835,18 +6868,63 @@ function assertWhatsAppPairingReset(req) {
   return Boolean(local && process.env.NODE_ENV !== 'production');
 }
 
+async function wipeWhatsAppAuthFolder() {
+  const authPath = join(__dirname, '.wwebjs_auth');
+  try {
+    if (fs.existsSync(authPath)) {
+      fs.rmSync(authPath, { recursive: true, force: true });
+      console.log('[WA] Удалена папка сессии:', authPath);
+    }
+  } catch (e) {
+    console.warn('[WA] Не удалось удалить .wwebjs_auth:', e?.message || e);
+  }
+}
+
+/** Зависший headless Chrome держит userDataDir → initialize падает с «browser is already running». */
+function killOrphanWhatsAppChrome() {
+  const sessionPath = join(__dirname, '.wwebjs_auth', 'session');
+  if (process.platform !== 'darwin' && process.platform !== 'linux') return;
+  try {
+    execSync(`pkill -f "user-data-dir=${sessionPath}" || true`, { stdio: 'ignore' });
+    console.log('[WA] Остановлены процессы Chrome с user-data-dir сессии WA');
+  } catch (e) {
+    console.warn('[WA] pkill orphan Chrome:', e?.message || e);
+  }
+}
+
 async function restartWhatsAppPairingRequest() {
   waClientReady = false;
   currentQRCode = null;
+  waLastQrAt = null;
+  waLastInitError = null;
+  console.log('[WA] Сброс pairing: logout/destroy + очистка .wwebjs_auth + initialize…');
   try {
     await waClient.logout();
   } catch (e) {
     console.warn('[WA] logout:', e?.message || e);
+    try {
+      await waClient.destroy();
+    } catch (e2) {
+      console.warn('[WA] destroy:', e2?.message || e2);
+    }
   }
+  killOrphanWhatsAppChrome();
+  // Дать ОС отпустить файлы профиля Chrome
+  await new Promise((r) => setTimeout(r, 800));
+  await wipeWhatsAppAuthFolder();
   try {
     await waClient.initialize();
   } catch (e) {
-    console.error('[WA] initialize after pairing reset:', e?.message || e);
+    const msg = e?.message || String(e);
+    if (/already running/i.test(msg)) {
+      console.warn('[WA] initialize: browser already running — повторный pkill + wipe');
+      killOrphanWhatsAppChrome();
+      await new Promise((r) => setTimeout(r, 1200));
+      await wipeWhatsAppAuthFolder();
+      await waClient.initialize();
+      return;
+    }
+    console.error('[WA] initialize after pairing reset:', msg);
     throw e;
   }
 }
@@ -6880,14 +6958,16 @@ app.post('/api/whatsapp/restart-pairing', async (req, res) => {
  */
 app.get('/api/whatsapp/status', async (req, res) => {
   try {
+    clearStaleWhatsAppQrIfNeeded();
+    const freshQr = getFreshWhatsAppQr();
     const diag = {
-      hasQr: Boolean(currentQRCode),
+      hasQr: Boolean(freshQr),
       pairingResetRequiresSecret: Boolean(PAIRING_RESET_SECRET),
       canRestartPairing: canShowWhatsAppPairingReset(req),
       webVersionCache: waDisableRemoteWebVersion ? 'off' : 'remote',
       waDiag: buildWaDiag(),
-      /** Строка для связки «устройство вручную», пока не отсканировали QR (тот же источник, что и PNG). */
-      pairingCodeRaw: currentQRCode || null,
+      /** Debug-only payload QR (не путать с 8-значным pairing code WhatsApp). */
+      pairingCodeRaw: null,
     };
     // Сначала проверяем локальное состояние клиента
     let localReady = waClientReady;
@@ -6961,16 +7041,19 @@ app.get('/api/whatsapp/status', async (req, res) => {
       success: false,
       ready: false,
       state: 'NOT_READY',
-      message: 'WhatsApp клиент не готов. Убедитесь, что WhatsApp Web авторизован на сервере.',
+      message: freshQr
+        ? 'Отсканируйте свежий QR в течение ~30 секунд (Настройки → Связанные устройства).'
+        : 'WhatsApp клиент не готов. Нажмите «Запросить новый QR», дождитесь картинки и сразу отсканируйте её.',
       info: clientInfo
     });
   } catch (error) {
+    clearStaleWhatsAppQrIfNeeded();
     return res.status(500).json({
       success: false,
       ready: false,
       state: 'ERROR',
       error: error.message,
-      hasQr: Boolean(currentQRCode),
+      hasQr: Boolean(getFreshWhatsAppQr()),
       pairingResetRequiresSecret: Boolean(PAIRING_RESET_SECRET),
       canRestartPairing: canShowWhatsAppPairingReset(req),
       webVersionCache: waDisableRemoteWebVersion ? 'off' : 'remote',
@@ -6983,7 +7066,8 @@ app.get('/api/whatsapp/status', async (req, res) => {
  * HEAD /api/whatsapp/qr — только проверка наличия QR (без генерации PNG; для опроса из админки).
  */
 app.head('/api/whatsapp/qr', (req, res) => {
-  if (!currentQRCode) {
+  clearStaleWhatsAppQrIfNeeded();
+  if (!getFreshWhatsAppQr()) {
     return res.status(404).end();
   }
   res.setHeader('Cache-Control', 'no-store');
@@ -6995,16 +7079,21 @@ app.head('/api/whatsapp/qr', (req, res) => {
  */
 app.get('/api/whatsapp/qr', async (req, res) => {
   try {
-    if (!currentQRCode) {
+    clearStaleWhatsAppQrIfNeeded();
+    const freshQr = getFreshWhatsAppQr();
+    if (!freshQr) {
       return res.status(404).json({
         success: false,
-        error: 'QR-код недоступен. WhatsApp клиент уже авторизован или QR-код еще не сгенерирован.'
+        error:
+          'QR-код недоступен или уже протух (обычно живёт ~20–40 с). Нажмите «Запросить новый QR» и отсканируйте сразу, как появится картинка.',
+        qrMaxAgeMs: WA_QR_MAX_AGE_MS,
+        lastQrAt: waLastQrAt,
       });
     }
 
     // Пытаемся использовать библиотеку qrcode для генерации изображения
     try {
-      const qrImageBuffer = await QRCodePNG.toBuffer(currentQRCode, {
+      const qrImageBuffer = await QRCodePNG.toBuffer(freshQr, {
         type: 'png',
         width: 300,
         margin: 2,
