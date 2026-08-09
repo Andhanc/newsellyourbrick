@@ -14,5 +14,6 @@ export function getNotificationItemClass(notification) {
   if (type === 'payment_deadline') return 'notification-item--warning'
   if (type === 'test_drive_request') return 'notification-item--warning'
   if (type === 'test_drive_result') return 'notification-item--success'
+  if (type === 'test_drive_survey') return 'notification-item--warning'
   return 'notification-item--property'
 }

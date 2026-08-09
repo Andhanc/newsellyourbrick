@@ -843,6 +843,82 @@ export async function reconcileOrphanedPropertyReservationCheckouts(stripe) {
   return { processed, skipped };
 }
 
+async function findActiveTestDriveBookingForUserProperty(userId, propertyId, propertyTable) {
+  return getPrisma().test_drive_bookings.findFirst({
+    where: {
+      user_id: Number(userId),
+      property_id: Number(propertyId),
+      property_table: String(propertyTable || 'properties_apartments'),
+      status: { in: ['pending', 'approved', 'paid'] },
+    },
+    orderBy: { id: 'desc' },
+  });
+}
+
+async function ensureTestDriveSurveyBuyerNotification({
+  bookingId,
+  userId,
+  propertyId,
+  propertyTable,
+  propertyTitle,
+  surveyToken,
+}) {
+  const tok = String(surveyToken || '').trim();
+  const uid = Number(userId);
+  const bid = Number(bookingId);
+  if (!tok || !uid || !bid) return { created: false };
+
+  // Check recent survey notifs for this booking (data is JSON string)
+  const recent = await getPrisma().notifications.findMany({
+    where: { user_id: uid, type: 'test_drive_survey' },
+    orderBy: { id: 'desc' },
+    take: 40,
+    select: { id: true, data: true },
+  });
+  const already = recent.some((n) => {
+    try {
+      const raw = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+      return Number(raw?.booking_id) === bid;
+    } catch {
+      return false;
+    }
+  });
+  if (already) return { created: false, existed: true };
+
+  const propTitle = propertyTitle || `Объект #${propertyId}`;
+  await notificationQueries.create({
+    user_id: uid,
+    type: 'test_drive_survey',
+    title: 'Пройдите опрос по тест-драйву',
+    message: `Расскажите, что понравилось в «${propTitle}», планируете ли покупку и оцените объект звёздами — это займёт пару минут.`,
+    data: {
+      booking_id: bid,
+      property_id: Number(propertyId),
+      property_table: propertyTable || 'properties_apartments',
+      survey_token: tok,
+      action_path: `/test-drive/survey/${tok}`,
+      action_label: 'Пройти опрос',
+      next_step: 'Откройте опрос и поделитесь впечатлениями — это поможет улучшить объекты.',
+    },
+    is_read: 0,
+    view_count: 0,
+  });
+  return { created: true };
+}
+
+async function refundTestDriveCheckoutIfPaid(stripe, sess) {
+  try {
+    const pi = sess?.payment_intent;
+    const piId = typeof pi === 'string' ? pi : pi?.id;
+    if (!piId || !stripe) return { refunded: false };
+    await stripe.refunds.create({ payment_intent: piId });
+    return { refunded: true };
+  } catch (e) {
+    console.warn('[Stripe] test-drive conflict refund failed:', e?.message || e);
+    return { refunded: false, error: e?.message || 'refund_failed' };
+  }
+}
+
 export async function processTestDriveBookingPaidSession(stripe, session) {
   if (!stripe || !session?.id) {
     return { ok: false, error: 'invalid_session' };
@@ -891,9 +967,6 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     return { ok: false, error: 'bad_day_count' };
   }
 
-  const existingPayment = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
-  if (existingPayment) return { ok: true, already: true };
-
   const property = await propertyQueries.getById(propertyId, null);
   if (!property) return { ok: false, error: 'property_not_found' };
   const testDriveEnabled =
@@ -919,57 +992,108 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     });
   }
 
+  const finishExistingBooking = async (bookingId) => {
+    const bid = Number(bookingId);
+    if (!bid) return { ok: true, already: true };
+    try {
+      await testDriveBookingQueries.ensureSurveyBroadcastTokenIfMissing(bid);
+      const row = await getPrisma().test_drive_bookings.findUnique({
+        where: { id: bid },
+        select: { id: true, survey_token: true },
+      });
+      await ensureTestDriveSurveyBuyerNotification({
+        bookingId: bid,
+        userId,
+        propertyId,
+        propertyTable: tableResolved,
+        propertyTitle: property.title,
+        surveyToken: row?.survey_token,
+      });
+    } catch (e) {
+      console.warn('[Stripe] test-drive ensure survey on existing booking:', e?.message || e);
+    }
+    return { ok: true, already: true, bookingId: bid };
+  };
+
+  const existingPayment = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
+  if (existingPayment) {
+    const pay = await getPrisma().stripe_payments.findUnique({
+      where: { dedupe_key: sess.id },
+      select: { billing_reason: true },
+    });
+    let bookingIdFromPay = null;
+    try {
+      const reason =
+        typeof pay?.billing_reason === 'string'
+          ? JSON.parse(pay.billing_reason)
+          : pay?.billing_reason;
+      bookingIdFromPay = Number(reason?.booking_id) || null;
+    } catch {
+      bookingIdFromPay = null;
+    }
+    if (bookingIdFromPay) return finishExistingBooking(bookingIdFromPay);
+    const sameDates = await getPrisma().test_drive_bookings.findFirst({
+      where: {
+        user_id: Number(userId),
+        property_id: Number(propertyId),
+        property_table: tableResolved,
+        start_date: startDate,
+        end_date: endDate,
+        status: { in: ['pending', 'approved', 'paid'] },
+      },
+      select: { id: true },
+    });
+    if (sameDates) return finishExistingBooking(sameDates.id);
+    const anyMine = await findActiveTestDriveBookingForUserProperty(
+      userId,
+      propertyId,
+      tableResolved,
+    );
+    if (anyMine) return finishExistingBooking(anyMine.id);
+    return { ok: true, already: true };
+  }
+
+  const existingMine = await findActiveTestDriveBookingForUserProperty(
+    userId,
+    propertyId,
+    tableResolved,
+  );
+  if (existingMine) {
+    const sameDates =
+      String(existingMine.start_date) === startDate && String(existingMine.end_date) === endDate;
+    if (sameDates) {
+      return finishExistingBooking(existingMine.id);
+    }
+    await refundTestDriveCheckoutIfPaid(stripe, sess);
+    return {
+      ok: false,
+      error: 'already_requested',
+      bookingId: existingMine.id,
+      refunded: true,
+    };
+  }
+
   const existingForDates = await getPrisma().test_drive_bookings.findMany({
     where: {
       property_id: Number(propertyId),
       property_table: tableResolved,
       status: { in: ['pending', 'approved', 'paid'] },
     },
-    select: { start_date: true, end_date: true },
+    select: { id: true, user_id: true, start_date: true, end_date: true },
   });
   const overlap = existingForDates.some((r) => !(endDate < r.start_date || r.end_date < startDate));
   if (overlap) {
-    const sameExisting = await getPrisma().test_drive_bookings.findFirst({
-      where: {
-        property_id: Number(propertyId),
-        property_table: tableResolved,
-        user_id: Number(userId),
-        start_date: startDate,
-        end_date: endDate,
-        status: { in: ['approved', 'paid'] },
-      },
-      select: { id: true },
-    });
+    const sameExisting = existingForDates.find(
+      (r) =>
+        Number(r.user_id) === Number(userId) &&
+        String(r.start_date) === startDate &&
+        String(r.end_date) === endDate,
+    );
     if (sameExisting) {
-      return { ok: true, already: true, bookingId: sameExisting.id };
+      return finishExistingBooking(sameExisting.id);
     }
-    return { ok: false, error: 'dates_unavailable' };
-  }
-
-  const existingMine = await getPrisma().test_drive_bookings.count({
-    where: {
-      user_id: Number(userId),
-      property_id: Number(propertyId),
-      property_table: tableResolved,
-      status: { in: ['pending', 'approved', 'paid'] },
-    },
-  });
-  if (existingMine > 0) {
-    const sameMine = await getPrisma().test_drive_bookings.findFirst({
-      where: {
-        user_id: Number(userId),
-        property_id: Number(propertyId),
-        property_table: tableResolved,
-        start_date: startDate,
-        end_date: endDate,
-        status: { in: ['approved', 'paid', 'pending'] },
-      },
-      select: { id: true },
-    });
-    if (sameMine) {
-      return { ok: true, already: true, bookingId: sameMine.id };
-    }
-    return { ok: false, error: 'already_requested' };
+    await refundTestDriveCheckoutIfPaid(stripe, sess);
+    return { ok: false, error: 'dates_unavailable', refunded: true };
   }
 
   const contactCh = normalizeTestDriveContactChannel(sess.metadata?.buyer_contact_channel);
@@ -985,9 +1109,10 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     },
   });
 
+  let surveyTok = '';
   try {
     await testDriveBookingQueries.ensureTable();
-    const surveyTok = crypto.randomBytes(24).toString('hex');
+    surveyTok = crypto.randomBytes(24).toString('hex');
     const schedIso = scheduledSurveyWhatsAppAtIso(startDate);
     await testDriveBookingQueries.setSurveyBroadcastAfterPayment(bookingRow.id, surveyTok, schedIso);
     await testDriveBookingQueries.initializeExitFeedbackAfterPayment(bookingRow.id, endDate);
@@ -1069,6 +1194,21 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     }
   } catch (e) {
     console.warn('[Stripe] test-drive owner notification:', e?.message || e);
+  }
+
+  if (surveyTok) {
+    try {
+      await ensureTestDriveSurveyBuyerNotification({
+        bookingId: bookingRow.id,
+        userId,
+        propertyId,
+        propertyTable: tableResolved,
+        propertyTitle: property.title,
+        surveyToken: surveyTok,
+      });
+    } catch (e) {
+      console.warn('[Stripe] test-drive buyer survey notification:', e?.message || e);
+    }
   }
 
   return { ok: true, bookingId: bookingRow.id };
@@ -2195,6 +2335,21 @@ export function registerStripeBillingRoutes(app) {
       }
       const property = await propertyQueries.getById(propertyId, propertyType || null);
       if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+      const tableResolved = property.source_table || propertyTable || 'properties_apartments';
+      const existingMine = await findActiveTestDriveBookingForUserProperty(
+        userId,
+        propertyId,
+        tableResolved,
+      );
+      if (existingMine) {
+        return res.status(409).json({
+          success: false,
+          error: 'already_requested',
+          message:
+            'У вас уже есть активная бронь тест-драйва на этот объект. Откройте «Мои бронирования».',
+          data: { booking_id: existingMine.id },
+        });
+      }
       const testDriveEnabled =
         property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
       if (!testDriveEnabled) {
@@ -2348,8 +2503,24 @@ export function registerStripeBillingRoutes(app) {
         console.warn('[Stripe] confirm-test-drive-checkout failed:', result.error, {
           sessionId,
           userId,
+          refunded: !!result.refunded,
         });
-        return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
+        const errorMessages = {
+          already_requested:
+            'У вас уже есть активная бронь тест-драйва на этот объект. Повторная оплата возвращена на карту.',
+          dates_unavailable:
+            'Эти даты уже заняты. Повторная оплата возвращена на карту — выберите другие даты.',
+          not_paid: 'Оплата ещё не подтверждена Stripe. Обновите страницу через минуту.',
+          test_drive_disabled: 'Тест-драйв для этого объекта недоступен.',
+          property_not_found: 'Объект не найден.',
+        };
+        return res.status(400).json({
+          success: false,
+          error: result.error || 'confirm_failed',
+          message: errorMessages[result.error] || 'Не удалось подтвердить оплату тест-драйва',
+          refunded: !!result.refunded,
+          data: result.bookingId ? { booking_id: result.bookingId } : undefined,
+        });
       }
       return res.json({
         success: true,
