@@ -16,6 +16,17 @@
   visibility: visible !important;
   opacity: 1 !important;
   overflow: visible;
+  box-sizing: border-box;
+}
+
+/* Нулевой депозит (широкая плашка): по центру экрана, без обрезания слева */
+.deposit-button:not(.deposit-button--compact) {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  min-width: 0;
 }
 
 .deposit-button__glow {

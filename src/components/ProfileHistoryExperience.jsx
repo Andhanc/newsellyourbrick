@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   FiActivity,
   FiArrowRight,
@@ -21,16 +22,18 @@ const CATEGORY_ICONS = {
   debts: FiActivity,
 }
 
-const CATEGORY_LABELS = {
-  bids: 'СТАВКА',
-  properties: 'ОБЪЕКТ',
-  shares: 'ДОЛЯ',
-  debts: 'ДОЛГ',
+const CATEGORY_LABEL_KEYS = {
+  bids: 'profileHistory_catBids',
+  properties: 'profileHistory_catProperties',
+  shares: 'profileHistory_catShares',
+  debts: 'profileHistory_catDebts',
 }
 
 function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
+  const { t } = useTranslation()
   const canOpenDrawer = Boolean(item.purchaseChannel && onOpenPurchased)
-  const meta = CATEGORY_LABELS[categoryKey] || 'ИСТОРИЯ'
+  const labelKey = CATEGORY_LABEL_KEYS[categoryKey]
+  const meta = labelKey ? t(labelKey) : t('profileHistory_catFallback')
   const open = () => {
     if (canOpenDrawer) onOpenPurchased(item)
   }
@@ -59,7 +62,9 @@ function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
           <p className="profile-history-list-card__desc">{item.subtitle}</p>
         ) : null}
         <div className="profile-history-list-card__stats">
-          <span>{categoryKey === 'bids' ? 'Ставка' : 'Сумма'}</span>
+          <span>
+            {categoryKey === 'bids' ? t('profileHistory_metaBid') : t('profileHistory_metaAmount')}
+          </span>
           <strong>{item.amount || '—'}</strong>
           {item.purchaseDate ? (
             <>
@@ -109,6 +114,7 @@ export default function ProfileHistoryExperience({
   locale = 'ru-RU',
   embedded = false,
 }) {
+  const { t } = useTranslation()
   const dashboard = useMemo(() => buildProfileHistoryDashboard(sections), [sections])
   const [activeCategory, setActiveCategory] = useState('all')
   const normalizedQuery = String(query || '').trim().toLowerCase()
@@ -165,37 +171,36 @@ export default function ProfileHistoryExperience({
       <div className="profile-history-panel">
         <div className="profile-history-panel__intro">
           <h2 id="profile-history-sheet-title" className="profile-history-panel__title">
-            История операций
+            {t('profileHistory_title')}
           </h2>
-          <p className="profile-history-panel__lead">
-            Покупки, доли и ставки — в одном списке. Откройте карточку, чтобы продолжить.
-          </p>
+          <p className="profile-history-panel__lead">{t('profileHistory_lead')}</p>
         </div>
 
         {loading ? (
           <div className="profile-history-experience__loading" aria-busy="true">
-            Загружаем историю…
+            {t('profileHistory_loading')}
           </div>
         ) : isEmpty ? (
           <div className="profile-history-empty">
-            <p className="profile-history-empty__text">
-              Пока нет операций. Начните с торгов — подходящие объекты появятся в истории.
-            </p>
+            <p className="profile-history-empty__text">{t('profileHistory_empty')}</p>
             <Link to="/auction" className="profile-history-empty__cta" onClick={onClose}>
-              Перейти к торгам
+              {t('profileHistory_goAuction')}
               <FiArrowRight size={16} aria-hidden />
             </Link>
           </div>
         ) : (
           <>
-            <div className="profile-history-categories-rail" aria-label="Категории истории">
+            <div
+              className="profile-history-categories-rail"
+              aria-label={t('profileHistory_categoriesAria')}
+            >
               <button
                 type="button"
                 className={`profile-history-cat-chip${
                   activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
                 }`}
                 onClick={() => setActiveCategory('all')}
-                aria-label={`Все, ${allItems.length}`}
+                aria-label={t('profileHistory_allAria', { count: allItems.length })}
               >
                 <span className="profile-history-cat-chip__icon-wrap">
                   <span className="profile-history-cat-chip__icon" aria-hidden>
@@ -203,7 +208,7 @@ export default function ProfileHistoryExperience({
                   </span>
                   <span className="profile-history-cat-chip__count">{allItems.length}</span>
                 </span>
-                <span className="profile-history-cat-chip__label">Все</span>
+                <span className="profile-history-cat-chip__label">{t('profileHistory_all')}</span>
               </button>
               {categories.map((category) => {
                 const Icon = CATEGORY_ICONS[category.key]
@@ -237,12 +242,12 @@ export default function ProfileHistoryExperience({
                 type="search"
                 value={query}
                 onChange={(event) => onQueryChange(event.target.value)}
-                placeholder="Найти объект или операцию"
+                placeholder={t('profileHistory_searchPlaceholder')}
                 autoComplete="off"
               />
             </label>
 
-            <div className="profile-history-list" aria-label="Список истории">
+            <div className="profile-history-list" aria-label={t('profileHistory_listAria')}>
               {visibleItems.length ? (
                 visibleItems.map((item) => (
                   <HistoryListCard
@@ -255,7 +260,9 @@ export default function ProfileHistoryExperience({
                 ))
               ) : (
                 <p className="profile-history-category__empty">
-                  {normalizedQuery ? 'Совпадений не найдено' : 'В этой категории пока пусто'}
+                  {normalizedQuery
+                    ? t('profileHistory_noMatches')
+                    : t('profileHistory_categoryEmpty')}
                 </p>
               )}
             </div>

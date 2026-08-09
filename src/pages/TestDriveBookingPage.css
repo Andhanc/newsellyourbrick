@@ -254,7 +254,7 @@
   background: linear-gradient(135deg, #6ad6dd 0%, #3bc0cb 52%, #2aa8b4 100%);
   padding: 20px 20px 18px;
   box-shadow: 0 16px 36px rgba(42, 168, 180, 0.22);
-  color: #0f172a;
+  color: #fff;
 }
 
 .test-drive-rule-card--soft {
@@ -271,7 +271,7 @@
 
 .test-drive-rule-card h3 {
   margin: 0 0 8px;
-  color: #0b1220;
+  color: #fff;
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -281,7 +281,7 @@
 .test-drive-rule-card p {
   margin: 0;
   flex: 1;
-  color: rgba(15, 23, 42, 0.72);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.45;
@@ -293,7 +293,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 16px;
-  color: rgba(15, 23, 42, 0.55);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 0.7rem;
   font-weight: 700;
 }

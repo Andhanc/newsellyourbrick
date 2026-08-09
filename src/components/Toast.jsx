@@ -109,7 +109,7 @@ const Toast = ({
 
   return (
     <article
-      className={`toast toast--${type} ${isVisible ? 'toast--visible' : 'toast--leaving'}`}
+      className={`toast toast--${type}${!message ? ' toast--compact' : ''} ${isVisible ? 'toast--visible' : 'toast--leaving'}`}
       role={type === 'error' ? 'alert' : 'status'}
       aria-live={announcement}
       aria-atomic="true"

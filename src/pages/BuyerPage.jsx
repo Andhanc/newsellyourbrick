@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   FiArrowRight,
-  FiBarChart2,
-  FiBell,
   FiCheck,
   FiCreditCard,
   FiCrosshair,
   FiEdit3,
   FiGlobe,
-  FiGrid,
   FiLayers,
   FiLock,
   FiSearch,
@@ -23,143 +21,187 @@ import { publicAsset } from '@/utils/publicAsset'
 import './BuyerPage.css'
 import './SellerPage.css'
 
-const platformStats = [
-  { value: '$1B+', label: 'сделок на платформе' },
-  { value: '20K+', label: 'покупателей' },
-  { value: '8-12%', label: 'средняя доходность' },
-]
-
-const serviceCards = [
-  {
-    Icon: FiSearch,
-    title: 'Smart Suggestions',
-    text: 'AI подбирает объекты под ваш бюджет, срок и допустимый риск.',
-  },
-  {
-    Icon: FiShield,
-    title: '99% Trusted Investor',
-    text: 'Проверяем документы, продавца, спрос и прозрачность сделки.',
-  },
-  {
-    Icon: FiCrosshair,
-    title: 'Invest Where it Matters',
-    text: 'Показываем зоны с высоким спросом и ростом цены.',
-    wide: true,
-  },
-]
-
-const benefits = [
-  {
-    Icon: FiGlobe,
-    title: 'Глобальный доступ',
-    text: 'Смотрите международные объекты, закрытые предложения и локации роста в одном кабинете.',
-    textShort: 'Мировые объекты и закрытые лоты в одном кабинете.',
-  },
-  {
-    Icon: FiZap,
-    title: 'Быстрые решения',
-    text: 'Сравнивайте доходность, риски и ликвидность без ручных таблиц и долгих созвонов.',
-    textShort: 'Сравнивайте доходность и риски без созвонов.',
-  },
-  {
-    Icon: FiLock,
-    title: 'Прозрачная покупка',
-    text: 'Каждый объект проходит проверку документов, продавца, истории цены и спроса.',
-    textShort: 'Проверка документов, продавца и цены.',
-  },
-]
-
-const showcaseCards = [
-  {
-    Icon: FiLayers,
-    title: 'Начните с умных шаблонов подбора',
-    titleShort: 'Умные шаблоны',
-    text: 'Не нужно собирать объекты вручную — платформа предлагает готовые сценарии покупки под разные цели.',
-    textShort: 'Готовые сценарии покупки без ручного поиска.',
-  },
-  {
-    Icon: FiZap,
-    title: 'Меняйте критерии — подбор адаптируется сам',
-    titleShort: 'Гибкий подбор',
-    text: 'Подбор перестраивается под ваш бюджет, срок и допустимый риск — без таблиц и долгих созвонов.',
-    textShort: 'Подбор подстраивается под бюджет, срок и риск.',
-  },
-  {
-    Icon: FiEdit3,
-    title: 'Оставайтесь в едином стандарте проверки',
-    titleShort: 'Единая проверка',
-    text: 'Каждый объект проходит один чек-лист: документы, продавец, спрос и прозрачность сделки.',
-    textShort: 'Один чек-лист: документы, продавец, спрос.',
-  },
-  {
-    Icon: FiSliders,
-    title: 'Редактируйте сценарий простыми контролами',
-    titleShort: 'Простые контролы',
-    text: 'Пара кликов — и вы меняете фильтры, доходность или срок. Сравнение объектов остаётся наглядным.',
-    textShort: 'Фильтры и срок меняются в пару кликов.',
-  },
-]
-
-const plans = [
-  {
-    name: 'Starter',
-    eyebrow: 'Базовый',
-    price: '€0',
-    oldPrice: '€29',
-    discount: '−100%',
-    saving: 'Бесплатно вместо €29',
-    subtitle: 'Быстрый старт',
-    subtitleShort: 'Быстрый старт',
-    height: 'short',
-    features: ['Аукцион', 'Покупка недвижимости', 'AI-помощник'],
-    featuresShort: ['Аукцион', 'Покупка', 'AI-помощник'],
-  },
-  {
-    name: 'Pro',
-    eyebrow: 'Рекомендуем',
-    price: '€149',
-    oldPrice: '€199',
-    discount: '−25%',
-    saving: 'Экономия €50 в месяц',
-    subtitle: 'Больше функций, аналитика и персональный менеджер',
-    subtitleShort: 'Аналитика и менеджер',
-    height: 'medium',
-    badge: 'Выбор покупателей',
-    features: ['Все возможности Starter', 'Аналитика', 'Калькулятор', 'Персональный менеджер'],
-    featuresShort: ['Всё из Starter', 'Аналитика', 'Калькулятор', 'Менеджер'],
-  },
-  {
-    name: 'VIP',
-    eyebrow: 'Премиум',
-    price: '€499',
-    oldPrice: '€699',
-    discount: '−29%',
-    saving: 'Экономия €200 в месяц',
-    subtitle: 'Максимум функций и приоритет на каждом этапе',
-    subtitleShort: 'Приоритет и закрытые лоты',
-    height: 'tall',
-    features: ['Все возможности Pro', 'Приоритет в аукционах', 'VIP-менеджер', 'Закрытые лоты'],
-    featuresShort: ['Всё из Pro', 'Приоритет', 'VIP-менеджер', 'Закрытые лоты'],
-  },
-]
-
 function scrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 export default function BuyerPage() {
+  const { t, i18n } = useTranslation()
   const [selectedPlan, setSelectedPlan] = useState('Pro')
   const [modalTitle, setModalTitle] = useState('')
 
+  const platformStats = useMemo(
+    () => [
+      { value: '$1B+', label: t('buyerLanding_stat1Label') },
+      { value: '20K+', label: t('buyerLanding_stat2Label') },
+      { value: '8-12%', label: t('buyerLanding_stat3Label') },
+    ],
+    [t, i18n.language],
+  )
+
+  const serviceCards = useMemo(
+    () => [
+      {
+        Icon: FiSearch,
+        title: t('buyerLanding_svc1Title'),
+        text: t('buyerLanding_svc1Text'),
+      },
+      {
+        Icon: FiShield,
+        title: t('buyerLanding_svc2Title'),
+        text: t('buyerLanding_svc2Text'),
+      },
+      {
+        Icon: FiCrosshair,
+        title: t('buyerLanding_svc3Title'),
+        text: t('buyerLanding_svc3Text'),
+        wide: true,
+      },
+    ],
+    [t, i18n.language],
+  )
+
+  const benefits = useMemo(
+    () => [
+      {
+        Icon: FiGlobe,
+        title: t('buyerLanding_benefit1Title'),
+        text: t('buyerLanding_benefit1Text'),
+        textShort: t('buyerLanding_benefit1TextShort'),
+      },
+      {
+        Icon: FiZap,
+        title: t('buyerLanding_benefit2Title'),
+        text: t('buyerLanding_benefit2Text'),
+        textShort: t('buyerLanding_benefit2TextShort'),
+      },
+      {
+        Icon: FiLock,
+        title: t('buyerLanding_benefit3Title'),
+        text: t('buyerLanding_benefit3Text'),
+        textShort: t('buyerLanding_benefit3TextShort'),
+      },
+    ],
+    [t, i18n.language],
+  )
+
+  const showcaseCards = useMemo(
+    () => [
+      {
+        Icon: FiLayers,
+        title: t('buyerLanding_showcase1Title'),
+        titleShort: t('buyerLanding_showcase1TitleShort'),
+        text: t('buyerLanding_showcase1Text'),
+        textShort: t('buyerLanding_showcase1TextShort'),
+      },
+      {
+        Icon: FiZap,
+        title: t('buyerLanding_showcase2Title'),
+        titleShort: t('buyerLanding_showcase2TitleShort'),
+        text: t('buyerLanding_showcase2Text'),
+        textShort: t('buyerLanding_showcase2TextShort'),
+      },
+      {
+        Icon: FiEdit3,
+        title: t('buyerLanding_showcase3Title'),
+        titleShort: t('buyerLanding_showcase3TitleShort'),
+        text: t('buyerLanding_showcase3Text'),
+        textShort: t('buyerLanding_showcase3TextShort'),
+      },
+      {
+        Icon: FiSliders,
+        title: t('buyerLanding_showcase4Title'),
+        titleShort: t('buyerLanding_showcase4TitleShort'),
+        text: t('buyerLanding_showcase4Text'),
+        textShort: t('buyerLanding_showcase4TextShort'),
+      },
+    ],
+    [t, i18n.language],
+  )
+
+  const plans = useMemo(
+    () => [
+      {
+        name: 'Starter',
+        eyebrow: t('buyerLanding_planStarterEyebrow'),
+        price: '€0',
+        oldPrice: '€29',
+        discount: '−100%',
+        saving: t('buyerLanding_planStarterSaving'),
+        subtitle: t('buyerLanding_planStarterSubtitle'),
+        subtitleShort: t('buyerLanding_planStarterSubtitle'),
+        height: 'short',
+        features: [
+          t('buyerLanding_planStarterFeat0'),
+          t('buyerLanding_planStarterFeat1'),
+          t('buyerLanding_planStarterFeat2'),
+        ],
+        featuresShort: [
+          t('buyerLanding_planStarterFeat0Short'),
+          t('buyerLanding_planStarterFeat1Short'),
+          t('buyerLanding_planStarterFeat2Short'),
+        ],
+      },
+      {
+        name: 'Pro',
+        eyebrow: t('buyerLanding_planProEyebrow'),
+        price: '€149',
+        oldPrice: '€199',
+        discount: '−25%',
+        saving: t('buyerLanding_planProSaving'),
+        subtitle: t('buyerLanding_planProSubtitle'),
+        subtitleShort: t('buyerLanding_planProSubtitleShort'),
+        height: 'medium',
+        badge: t('buyerLanding_planProBadge'),
+        features: [
+          t('buyerLanding_planProFeat0'),
+          t('buyerLanding_planProFeat1'),
+          t('buyerLanding_planProFeat2'),
+          t('buyerLanding_planProFeat3'),
+        ],
+        featuresShort: [
+          t('buyerLanding_planProFeat0Short'),
+          t('buyerLanding_planProFeat1Short'),
+          t('buyerLanding_planProFeat2Short'),
+          t('buyerLanding_planProFeat3Short'),
+        ],
+      },
+      {
+        name: 'VIP',
+        eyebrow: t('buyerLanding_planVipEyebrow'),
+        price: '€499',
+        oldPrice: '€699',
+        discount: '−29%',
+        saving: t('buyerLanding_planVipSaving'),
+        subtitle: t('buyerLanding_planVipSubtitle'),
+        subtitleShort: t('buyerLanding_planVipSubtitleShort'),
+        height: 'tall',
+        features: [
+          t('buyerLanding_planVipFeat0'),
+          t('buyerLanding_planVipFeat1'),
+          t('buyerLanding_planVipFeat2'),
+          t('buyerLanding_planVipFeat3'),
+        ],
+        featuresShort: [
+          t('buyerLanding_planVipFeat0Short'),
+          t('buyerLanding_planVipFeat1Short'),
+          t('buyerLanding_planVipFeat2Short'),
+          t('buyerLanding_planVipFeat3Short'),
+        ],
+      },
+    ],
+    [t, i18n.language],
+  )
+
   const selectedPlanData = useMemo(
     () => plans.find((plan) => plan.name === selectedPlan) ?? plans[1],
-    [selectedPlan],
+    [plans, selectedPlan],
   )
 
   return (
     <>
       <Header />
-      <main className="buyer-page" aria-label="Информационная страница покупателя SellYourBrick">
+      <main className="buyer-page" aria-label={t('buyerLanding_pageAria')}>
       <section className="buyer-hero-viewport" id="buyer-map">
         <div className="buyer-hero__stage-wrap">
           <div className="buyer-hero__stage">
@@ -168,7 +210,7 @@ export default function BuyerPage() {
             />
           </div>
 
-          <div className="buyer-stats" aria-label="Цифры платформы">
+          <div className="buyer-stats" aria-label={t('buyerLanding_statsAria')}>
             {platformStats.map((stat) => (
               <article className="buyer-stat" key={stat.label}>
                 <strong>{stat.value}</strong>
@@ -179,25 +221,19 @@ export default function BuyerPage() {
         </div>
 
         <div className="buyer-hero__head">
-          <h1>Покупайте объект легко!</h1>
-          <p className="buyer-hero__lead">
-            Подбор под бюджет и цель, доходность и проверка на карте — без хаоса в поиске.
-          </p>
+          <h1>{t('buyerLanding_heroTitle')}</h1>
+          <p className="buyer-hero__lead">{t('buyerLanding_heroLead')}</p>
         </div>
       </section>
 
       <section className="buyer-service-section" aria-labelledby="buyer-service-title">
         <div className="buyer-container buyer-service">
           <div className="buyer-service__copy">
-            <span>Reason to choose us</span>
-            <h2 id="buyer-service-title">
-              Ценность умной покупки
-            </h2>
-            <p>
-              Мы берем на себя тяжелую работу: проверяем объект, считаем доходность, сравниваем сценарии и показываем покупателю только сильные варианты.
-            </p>
+            <span>{t('buyerLanding_serviceEyebrow')}</span>
+            <h2 id="buyer-service-title">{t('buyerLanding_serviceTitle')}</h2>
+            <p>{t('buyerLanding_serviceLead')}</p>
             <button type="button" className="buyer-dark-button" onClick={() => scrollTo('buyer-benefits')}>
-              Найти лучший объект
+              {t('buyerLanding_serviceCta')}
               <FiArrowRight aria-hidden />
             </button>
           </div>
@@ -227,8 +263,8 @@ export default function BuyerPage() {
           />
           <div className="seller-features__content">
             <h2 id="buyer-benefits-title">
-              Что получает покупатель
-              <span>на платформе</span>
+              {t('buyerLanding_benefitsTitle')}
+              <span>{t('buyerLanding_benefitsTitleSpan')}</span>
             </h2>
             <div className="seller-features__grid">
               {benefits.map(({ Icon, title, text, textShort }) => (
@@ -242,7 +278,7 @@ export default function BuyerPage() {
                     <span className="seller-feature-card__text seller-feature-card__text--short">{textShort}</span>
                   </p>
                   <button type="button" className="seller-feature-card__link" onClick={() => setModalTitle(title)}>
-                    Перейти
+                    {t('buyerLanding_benefitLink')}
                     <FiArrowRight aria-hidden />
                   </button>
                 </article>
@@ -256,15 +292,13 @@ export default function BuyerPage() {
         <div className="buyer-container buyer-showcase">
           <div className="buyer-showcase__copy">
             <h2 id="buyer-showcase-title">
-              Как покупать
-              <span>недвижимость</span>
-              <span className="buyer-showcase__title-line">в SellYourBrick</span>
+              {t('buyerLanding_showcaseTitle')}
+              <span>{t('buyerLanding_showcaseTitleSpan')}</span>
+              <span className="buyer-showcase__title-line">{t('buyerLanding_showcaseTitleBrand')}</span>
             </h2>
-            <p>
-              Забудьте о хаотичном поиске и десятках созвонов без цифр. Умные подборки дают покупателю понятный маршрут от интереса до сделки.
-            </p>
+            <p>{t('buyerLanding_showcaseLead')}</p>
             <button type="button" className="buyer-dark-button" onClick={() => scrollTo('buyer-plans')}>
-              Узнать больше
+              {t('buyerLanding_showcaseCta')}
             </button>
           </div>
 
@@ -293,16 +327,14 @@ export default function BuyerPage() {
       <section className="buyer-plans" id="buyer-plans" aria-labelledby="buyer-plans-title">
         <img className="buyer-plans__bg" src={publicAsset('images/test-drive/hero-resort.png')} alt="" aria-hidden />
         <div className="buyer-container buyer-plans__content">
-          <h2 id="buyer-plans-title">Оформите подписку и покупайте раньше рынка</h2>
-          <p>
-            Выберите тариф, чтобы видеть больше данных, получать персональные подборки и быстрее забирать лучшие объекты.
-          </p>
+          <h2 id="buyer-plans-title">{t('buyerLanding_plansTitle')}</h2>
+          <p>{t('buyerLanding_plansLead')}</p>
           <div className="buyer-plans__offer-note">
             <FiTrendingUp aria-hidden />
-            <span>Сейчас все тарифы доступны по специальной цене</span>
+            <span>{t('buyerLanding_plansOfferNote')}</span>
           </div>
 
-          <div className="buyer-plan-grid" aria-label="Тарифы подписки">
+          <div className="buyer-plan-grid" aria-label={t('buyerLanding_plansAria')}>
             {plans.map((plan) => (
               <article
                 className={`buyer-plan buyer-plan--${plan.height}${selectedPlan === plan.name ? ' is-selected' : ''}`}
@@ -338,14 +370,14 @@ export default function BuyerPage() {
                     <del className="buyer-plan__price-was">{plan.oldPrice}</del>
                     <div className="buyer-plan__price-current">
                       <strong>{plan.price}</strong>
-                      <span>/ месяц</span>
+                      <span>{t('buyerLanding_perMonth')}</span>
                     </div>
                   </div>
                   <span className="buyer-plan__price-saving">{plan.saving}</span>
                 </div>
 
-                <span className="buyer-plan__features-title">В тариф входит</span>
-                <ul aria-label={`Возможности тарифа ${plan.name}`}>
+                <span className="buyer-plan__features-title">{t('buyerLanding_featuresTitle')}</span>
+                <ul aria-label={t('buyerLanding_featuresAria', { name: plan.name })}>
                   {plan.features.map((feature, index) => (
                     <li key={feature}>
                       <FiCheck aria-hidden />
@@ -365,11 +397,11 @@ export default function BuyerPage() {
                   {selectedPlan === plan.name ? (
                     <>
                       <FiCheck aria-hidden />
-                      Тариф выбран
+                      {t('buyerLanding_planSelected')}
                     </>
                   ) : (
                     <>
-                      Выбрать тариф
+                      {t('buyerLanding_selectPlan')}
                       <FiArrowRight aria-hidden />
                     </>
                   )}
@@ -379,7 +411,7 @@ export default function BuyerPage() {
 
             <div className="buyer-subscribe-panel">
               <div className="buyer-subscribe-panel__copy">
-                <span>Выбран тариф</span>
+                <span>{t('buyerLanding_selectedLabel')}</span>
                 <strong>{selectedPlanData.name}</strong>
                 <p>
                   <span className="buyer-subscribe-panel__desc buyer-subscribe-panel__desc--full">
@@ -392,14 +424,16 @@ export default function BuyerPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setModalTitle(`Оформить ${selectedPlanData.name}`)}
-                aria-label={`Оформить подписку ${selectedPlanData.name}`}
+                onClick={() => setModalTitle(t('buyerLanding_modalCheckoutTitle', { name: selectedPlanData.name }))}
+                aria-label={t('buyerLanding_subscribeAria', { name: selectedPlanData.name })}
               >
                 <FiCreditCard aria-hidden />
                 <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--full">
-                  Оформить подписку
+                  {t('buyerLanding_subscribeCta')}
                 </span>
-                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--short">Оформить</span>
+                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--short">
+                  {t('buyerLanding_subscribeCtaShort')}
+                </span>
               </button>
             </div>
           </div>
@@ -408,13 +442,18 @@ export default function BuyerPage() {
 
       {modalTitle && (
         <div className="buyer-modal" role="dialog" aria-modal="true" aria-labelledby="buyer-modal-title">
-          <button className="buyer-modal__scrim" type="button" aria-label="Закрыть" onClick={() => setModalTitle('')} />
+          <button
+            className="buyer-modal__scrim"
+            type="button"
+            aria-label={t('buyerLanding_modalClose')}
+            onClick={() => setModalTitle('')}
+          />
           <div className="buyer-modal__panel">
             <p>SellYourBrick</p>
             <h2 id="buyer-modal-title">{modalTitle}</h2>
-            <span>Здесь подключим реальный сценарий: каталог, консультацию, просмотр объекта или оплату подписки.</span>
+            <span>{t('buyerLanding_modalHint')}</span>
             <button type="button" className="buyer-pill-button" onClick={() => setModalTitle('')}>
-              Понятно
+              {t('buyerLanding_modalOk')}
             </button>
           </div>
         </div>

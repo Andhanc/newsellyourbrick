@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises'
 const summary = await readFile(new URL('./CompareDecisionSummary.jsx', import.meta.url), 'utf8').catch(() => '')
 
 test('decision summary presents signals without claiming an objective winner', () => {
-  assert.match(summary, /Сигналы сравнения/)
-  assert.match(summary, /ориентир/i)
+  assert.match(summary, /comparePage_decisionTitle/)
+  assert.match(summary, /comparePage_decisionMeta|ориентир/i)
   assert.doesNotMatch(summary, /объективных полей/i)
   assert.doesNotMatch(summary, /впереди/i)
   assert.doesNotMatch(summary, /балл[а-я.]/i)
@@ -15,13 +15,13 @@ test('decision summary presents signals without claiming an objective winner', (
 test('decision summary requires an explicit calculator object', () => {
   assert.match(summary, /onOpenCalculator\('left'\)/)
   assert.match(summary, /onOpenCalculator\('right'\)/)
-  assert.match(summary, /Не является гарантией/)
+  assert.match(summary, /comparePage_decisionDisclaimer/)
 })
 
 test('decision summary keeps both properties identifiable and both actions tappable', () => {
   assert.match(summary, /getPropertyCardImage/)
   assert.match(summary, /compare-decision__property/)
   assert.match(summary, /compare-decision__action/)
-  assert.match(summary, /Объект 1/)
-  assert.match(summary, /Объект 2/)
+  assert.match(summary, /comparePage_object1|comparePage_signalsLabel/)
+  assert.match(summary, /comparePage_object2|comparePage_signalsLabel/)
 })

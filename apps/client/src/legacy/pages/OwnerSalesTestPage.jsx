@@ -30,61 +30,56 @@ import './OwnerSalesTestPage.mobile.css'
 const DESIGN_SALES_ROWS = [
   {
     id: 'demo-sale-1',
-    title: 'Апартаменты в центре',
-    location: 'Лос-Анджелес, США',
+    titleKey: 'ownerTest_demoSale1Title',
+    locationKey: 'ownerTest_demoSale1Location',
     image: OSL_IMAGES.thumbVilla,
     buyer: 'John Smith',
     dealAmount: '850 000 €',
-    saleDate: '12 мая 2024',
-    statusLabel: 'Завершено',
+    saleDateIso: '2024-05-12',
     statusTone: 'completed',
     tab: 'completed',
   },
   {
     id: 'demo-sale-2',
-    title: 'Вилла в пригороде',
-    location: 'Лос-Анджелес, США',
+    titleKey: 'ownerTest_demoSale2Title',
+    locationKey: 'ownerTest_demoSale2Location',
     image: OSL_IMAGES.thumbApartment,
     buyer: 'Michael Brown',
     dealAmount: '1 250 000 €',
-    saleDate: '8 мая 2024',
-    statusLabel: 'В процессе',
+    saleDateIso: '2024-05-08',
     statusTone: 'in-progress',
     tab: 'in_progress',
   },
   {
     id: 'demo-sale-3',
-    title: 'Коммерческая недвижимость',
-    location: 'Москва, Россия',
+    titleKey: 'ownerTest_demoSale3Title',
+    locationKey: 'ownerTest_demoSale3Location',
     image: OSL_IMAGES.thumbLoft,
     buyer: 'Robert Johnson',
     dealAmount: '950 000 €',
-    saleDate: '5 мая 2024',
-    statusLabel: 'Завершено',
+    saleDateIso: '2024-05-05',
     statusTone: 'completed',
     tab: 'completed',
   },
   {
     id: 'demo-sale-4',
-    title: 'Вилла у моря',
-    location: 'Малибу, США',
+    titleKey: 'ownerTest_demoSale4Title',
+    locationKey: 'ownerTest_demoSale4Location',
     image: OSL_IMAGES.thumbPenthouse,
     buyer: 'Emily Johnson',
     dealAmount: '2 450 000 €',
-    saleDate: '2 мая 2024',
-    statusLabel: 'В ожидании',
+    saleDateIso: '2024-05-02',
     statusTone: 'pending',
     tab: 'pending',
   },
   {
     id: 'demo-sale-5',
-    title: 'Пентхаус у моря',
-    location: 'Майами, США',
+    titleKey: 'ownerTest_demoSale5Title',
+    locationKey: 'ownerTest_demoSale5Location',
     image: OSL_IMAGES.thumbVilla,
     buyer: 'James Wilson',
     dealAmount: '780 000 €',
-    saleDate: '30 апр 2024',
-    statusLabel: 'Отменено',
+    saleDateIso: '2024-04-30',
     statusTone: 'cancelled',
     tab: 'cancelled',
   },
@@ -111,7 +106,18 @@ function getRowStatus(row, t) {
   if (row.tab === 'pending') {
     return { ...row, statusLabel: t('ownerTest_salesStatusPending'), statusTone: 'pending' }
   }
-  if (row.statusLabel && row.statusTone) return row
+  if (row.tab === 'in_progress' || row.statusTone === 'in-progress') {
+    return { ...row, statusLabel: t('ownerTest_salesStatusInProgress'), statusTone: 'in-progress' }
+  }
+  if (row.statusTone === 'completed') {
+    return { ...row, statusLabel: t('ownerTest_salesStatusCompleted'), statusTone: 'completed' }
+  }
+  if (row.statusTone === 'cancelled') {
+    return { ...row, statusLabel: t('ownerTest_salesStatusCancelled'), statusTone: 'cancelled' }
+  }
+  if (row.statusTone === 'pending') {
+    return { ...row, statusLabel: t('ownerTest_salesStatusPending'), statusTone: 'pending' }
+  }
   return { ...row, statusLabel: t('ownerTest_salesStatusInProgress'), statusTone: 'in-progress' }
 }
 
@@ -143,7 +149,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -223,7 +229,11 @@ export default function OwnerSalesTestPage() {
       getRowStatus(
         {
           ...row,
-          saleDate: row.saleDate || formatSaleDate(row.raw?.sold_at || row.raw?.created_at, intlLocale),
+          title: row.titleKey ? t(row.titleKey) : row.title,
+          location: row.locationKey ? t(row.locationKey) : row.location,
+          saleDate:
+            row.saleDate ||
+            formatSaleDate(row.saleDateIso || row.raw?.sold_at || row.raw?.created_at, intlLocale),
         },
         t
       )

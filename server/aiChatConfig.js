@@ -18,7 +18,8 @@ const PROVIDERS = {
   pollinations: {
     id: 'pollinations',
     url: 'https://text.pollinations.ai/openai',
-    defaultModel: 'openai',
+    // openai-fast — единственная anonymous-модель на legacy API (см. /models)
+    defaultModel: 'openai-fast',
     keyEnv: ['POLLINATIONS_API_KEY', 'VITE_POLLINATIONS_API_KEY'],
     needsKey: false,
   },

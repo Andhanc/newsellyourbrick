@@ -1644,6 +1644,10 @@ html.site-footer-near .shares-floats .deposit-button {
   transition-delay: 0s;
 }
 
+.shares-floats .deposit-button:not(.deposit-button--compact) {
+  transform: translateX(-50%);
+}
+
 html.site-footer-near .shares-floats > button.ai-button {
   opacity: 0 !important;
   visibility: hidden !important;

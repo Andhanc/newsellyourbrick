@@ -1,29 +1,29 @@
 /* Desktop auction — part 1: topbar, title, gallery, bid card top (≥961px) */
 @media (min-width: 961px) {
   .property-detail-page-new--auction-desktop-v3 {
-    --pd-v3-primary: #4a96a6;
-    --pd-v3-primary-dark: #3f8798;
-    --pd-v3-primary-soft: #f0f7f9;
-    --pd-v3-primary-border: rgba(74, 150, 166, 0.22);
-    --pd-v3-primary-ring: rgba(74, 150, 166, 0.12);
+    --pd-v3-primary: #4ecdd6;
+    --pd-v3-primary-dark: #3bc0cb;
+    --pd-v3-primary-soft: #dff6f8;
+    --pd-v3-primary-border: rgba(78, 205, 214, 0.22);
+    --pd-v3-primary-ring: rgba(78, 205, 214, 0.12);
     --pd-v3-primary-focus: #8eb5c4;
-    --pd-v3-success: #4a96a6;
+    --pd-v3-success: #4ecdd6;
     --pd-v3-success-soft: #ecfdf3;
     --pd-v3-success-border: rgba(22, 163, 74, 0.22);
     --pd-v3-card-radius: 16px;
     --pd-v3-sidebar-w: 380px;
     --pd-v3-content-max: 1320px;
     --pd-v3-content-gutter: 24px;
-    --pd-v3-tiffany-glass-bg: linear-gradient(135deg, rgba(74, 150, 166, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
-    --pd-v3-tiffany-glass-bg-hover: linear-gradient(135deg, rgba(74, 150, 166, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
+    --pd-v3-tiffany-glass-bg: linear-gradient(135deg, rgba(78, 205, 214, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
+    --pd-v3-tiffany-glass-bg-hover: linear-gradient(135deg, rgba(78, 205, 214, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
     --pd-v3-tiffany-glass-border: rgba(255, 255, 255, 0.3);
     --pd-v3-tiffany-glass-border-hover: rgba(255, 255, 255, 0.4);
     --pd-v3-tiffany-glass-shadow:
-      0 4px 16px rgba(74, 150, 166, 0.3),
+      0 4px 16px rgba(78, 205, 214, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.3),
       inset 0 -1px 0 rgba(0, 0, 0, 0.1);
     --pd-v3-tiffany-glass-shadow-hover:
-      0 6px 20px rgba(74, 150, 166, 0.4),
+      0 6px 20px rgba(78, 205, 214, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.4),
       inset 0 -1px 0 rgba(0, 0, 0, 0.15);
     --pd-v3-font: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -200,7 +200,7 @@
       .pd-v3-bidding--actions
       .bidding-section__submit-btn:not(.bidding-section__submit-btn--winner),
     .property-detail-page-new--auction-desktop-v3 .pd-v3-app-banner__iphone-cta {
-      background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+      background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
     }
 
     .property-detail-page-new--auction-desktop-v3
@@ -211,7 +211,7 @@
       .pd-v3-bidding--actions
       .bidding-section__submit-btn:not(.bidding-section__submit-btn--winner):hover:not(:disabled),
     .property-detail-page-new--auction-desktop-v3 .pd-v3-app-banner__iphone-cta:hover {
-      background: linear-gradient(135deg, #5aa5b5 0%, #3f8798 100%) !important;
+      background: linear-gradient(135deg, #6fd4dc 0%, #3bc0cb 100%) !important;
     }
   }
 
@@ -394,7 +394,7 @@
     background: #fff;
     border-color: var(--pd-v3-primary-border);
     color: var(--pd-v3-primary);
-    box-shadow: 0 4px 14px rgba(74, 150, 166, 0.1);
+    box-shadow: 0 4px 14px rgba(78, 205, 214, 0.1);
     transform: translateY(-1px);
   }
 
@@ -429,7 +429,7 @@
   .pd-v3-topbar__profile:hover {
     border-color: var(--pd-v3-primary-border);
     background: #fff;
-    box-shadow: 0 4px 16px rgba(74, 150, 166, 0.1);
+    box-shadow: 0 4px 16px rgba(78, 205, 214, 0.1);
     transform: translateY(-1px);
   }
 
@@ -1100,7 +1100,7 @@
     min-width: 50px;
     height: 50px;
     border-radius: 12px;
-    border: 1px solid rgba(74, 150, 166, 0.28);
+    border: 1px solid rgba(78, 205, 214, 0.28);
     background: var(--pd-v3-primary-soft);
     color: var(--pd-v3-primary-dark);
   }
@@ -1387,14 +1387,29 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
+  }
+
+  .pd-v3-bid-history--ranked {
+    gap: 8px;
   }
 
   .pd-v3-bid-history__item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 22px 32px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
+    padding: 8px 12px 8px 8px;
+    border-radius: 999px;
+    background: #f8fafc;
+  }
+
+  .pd-v3-bid-history__place {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
   }
 
   .pd-v3-bid-history__avatar {
@@ -1405,9 +1420,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
+    background: #fff;
     color: #64748b;
     overflow: hidden;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
   }
 
   .pd-v3-bid-history__flag {
@@ -1416,7 +1432,6 @@
   }
 
   .pd-v3-bid-history__name {
-    flex: 1 1 auto;
     min-width: 0;
     font-size: var(--pd-v3-fs-body-sm);
     font-weight: 600;
@@ -1428,14 +1443,16 @@
     text-overflow: ellipsis;
   }
 
-  .pd-v3-bid-history__time {
+  .pd-v3-bid-history__amount {
     flex: 0 0 auto;
-    margin-left: auto;
-    font-size: var(--pd-v3-fs-caption);
-    font-weight: 500;
-    color: #94a3b8;
-    line-height: 1.35;
+    font-size: 12px;
+    font-weight: 750;
+    color: #334155;
     white-space: nowrap;
+  }
+
+  .pd-v3-bid-history__time {
+    display: none;
   }
 
   .pd-v3-bid-history__empty {
@@ -1530,7 +1547,7 @@
 
   .pd-v3-security-list__icon {
     flex: 0 0 auto;
-    color: #4a96a6;
+    color: #4ecdd6;
   }
 
   .pd-v3-security-list__footer {
@@ -1713,9 +1730,9 @@
     max-width: 100%;
     padding: 9px 16px 9px 12px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 42%, #3f8798 100%);
+    background: linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 42%, #3bc0cb 100%);
     border: 1px solid #8eb5c4;
-    box-shadow: 0 2px 8px rgba(74, 150, 166, 0.35);
+    box-shadow: 0 2px 8px rgba(78, 205, 214, 0.35);
     transition:
       border-color 0.2s ease,
       box-shadow 0.2s ease,
@@ -1724,7 +1741,7 @@
 
   .pd-v3-amenity-chip:hover {
     border-color: #a7f3f0;
-    box-shadow: 0 4px 14px rgba(74, 150, 166, 0.45);
+    box-shadow: 0 4px 14px rgba(78, 205, 214, 0.45);
     transform: translateY(-1px);
   }
 
@@ -1809,7 +1826,7 @@
   }
 
   .pd-v3-doc-card:hover {
-    border-color: rgba(74, 150, 166, 0.35);
+    border-color: rgba(78, 205, 214, 0.35);
     background: #f0fafb;
   }
 
@@ -1900,16 +1917,16 @@
 
   /* ——— App banner ——— */
   .pd-v3-app-banner {
-    --pd-app-tiffany: #4a96a6;
-    --pd-app-tiffany-deep: #3f8798;
+    --pd-app-tiffany: #4ecdd6;
+    --pd-app-tiffany-deep: #3bc0cb;
     --pd-app-tiffany-light: #8eb5c4;
-    --pd-app-tiffany-soft: #f0f7f9;
+    --pd-app-tiffany-soft: #dff6f8;
     position: relative;
     overflow: hidden;
     border-radius: 20px;
     background: var(--pd-app-tiffany);
     box-shadow:
-      0 16px 40px rgba(74, 150, 166, 0.24),
+      0 16px 40px rgba(78, 205, 214, 0.24),
       0 2px 8px rgba(63, 135, 152, 0.14);
   }
 
@@ -1920,7 +1937,7 @@
     background:
       radial-gradient(ellipse 80% 120% at 100% 50%, rgba(255, 255, 255, 0.4) 0%, transparent 58%),
       radial-gradient(ellipse 60% 90% at 0% 100%, rgba(63, 135, 152, 0.32) 0%, transparent 55%),
-      linear-gradient(102deg, #3f8798 0%, #4a96a6 36%, #8eb5c4 70%, #f0f7f9 100%);
+      linear-gradient(102deg, #3bc0cb 0%, #4ecdd6 36%, #8eb5c4 70%, #dff6f8 100%);
   }
 
   .pd-v3-app-banner__close {
@@ -2265,7 +2282,7 @@
     gap: 3px;
     background:
       linear-gradient(180deg, rgba(15, 23, 42, 0.04) 0%, rgba(15, 23, 42, 0.78) 100%),
-      linear-gradient(135deg, #93c5fd 0%, #38bdf8 28%, #5aa5b5 58%, #5aa5b5 100%);
+      linear-gradient(135deg, #93c5fd 0%, #38bdf8 28%, #6fd4dc 58%, #6fd4dc 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   }
 
@@ -2587,7 +2604,7 @@
     font-size: var(--pd-v3-fs-caption);
     font-weight: 600;
     line-height: 1.35;
-    color: #3f8798;
+    color: #3bc0cb;
     letter-spacing: 0.01em;
   }
 
@@ -2597,7 +2614,7 @@
     font-weight: 800;
     line-height: 1.15;
     letter-spacing: var(--pd-v3-ls-tight);
-    color: #3f8798;
+    color: #3bc0cb;
     white-space: nowrap;
   }
 

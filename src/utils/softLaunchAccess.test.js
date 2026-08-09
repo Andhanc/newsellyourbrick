@@ -48,6 +48,7 @@ const ALLOWED = [
   '/map',
   '/calculator',
   '/lottery',
+  '/chat',
   '/oauth-bridge',
   '/auth/telegram-callback',
   '/main',
@@ -75,7 +76,6 @@ const ALLOWED = [
 ]
 
 const BLOCKED = [
-  '/chat',
   '/sections',
   '/sellyourbrick',
   '/search-results',
@@ -118,15 +118,17 @@ test('admin and marketer are exempt', () => {
   }
 })
 
-test('seller cabinet and released tools stay available while AI features remain blocked', () => {
+test('seller cabinet and released tools stay available; AI assistant is live', () => {
   assert.equal(isSoftLaunchFeatureBlocked('sellerRole'), false)
   assert.equal(isSoftLaunchFeatureBlocked('sellerCabinet'), false)
-  assert.equal(isSoftLaunchFeatureBlocked('aiAssistant'), true)
+  assert.equal(isSoftLaunchFeatureBlocked('aiAssistant'), false)
   assert.equal(isSoftLaunchFeatureBlocked('aiRealEstate'), true)
   assert.equal(isSoftLaunchFeatureBlocked('smartInvestor'), false)
   assert.equal(isSoftLaunchFeatureBlocked('map'), false)
   assert.equal(getSoftLaunchBlockedFeatureForHref('/calculator'), null)
-  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1'), 'aiAssistant')
+  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1'), null)
+  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1&embed=1'), null)
+  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat'), null)
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?manager=1'), 'managerChat')
   assert.equal(isSoftLaunchHrefBlocked('/map'), false)
   assert.equal(isSoftLaunchHrefBlocked('/bonuses'), false)
@@ -136,4 +138,5 @@ test('seller cabinet and released tools stay available while AI features remain 
   assert.equal(isSoftLaunchHrefBlocked('/owner-test/properties'), false)
   assert.equal(isSoftLaunchHrefBlocked('/owner/property/new'), false)
   assert.equal(isSoftLaunchHrefBlocked('/property/p-1/edit'), false)
+  assert.equal(shouldShowSoftLaunchUnavailable('/chat'), false)
 })

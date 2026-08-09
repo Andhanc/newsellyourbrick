@@ -1,8 +1,9 @@
 import { ArrowRight, SearchX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import './BuyerEmptyState.css'
 
 export default function BuyerEmptyState({
-  eyebrow = 'Продолжим поиск',
+  eyebrow,
   title,
   description,
   primaryLabel,
@@ -14,6 +15,8 @@ export default function BuyerEmptyState({
   imageAlt = '',
   className = '',
 }) {
+  const { t } = useTranslation()
+  const resolvedEyebrow = eyebrow === undefined ? t('buyerEmpty_continueSearch') : eyebrow
   const illustrated = Boolean(image)
 
   return (
@@ -34,7 +37,7 @@ export default function BuyerEmptyState({
           <Icon size={30} strokeWidth={1.8} />
         </span>
       )}
-      {eyebrow ? <span className="buyer-empty-state__eyebrow">{eyebrow}</span> : null}
+      {resolvedEyebrow ? <span className="buyer-empty-state__eyebrow">{resolvedEyebrow}</span> : null}
       {title ? <h2>{title}</h2> : null}
       {description ? <p>{description}</p> : null}
       <div className="buyer-empty-state__actions">

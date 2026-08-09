@@ -314,7 +314,7 @@ const Bonuses = () => {
             <button
               type="button"
               className="bonuses-hero__scroll-button"
-              aria-label={i18n.language === 'ru' ? 'Перейти к бонусным заданиям' : 'Explore bonus tasks'}
+              aria-label={t('bonusesExploreTasksAria')}
               onClick={() => document.getElementById('bonuses-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
               <FiChevronDown size={24} strokeWidth={2.7} aria-hidden />
@@ -497,7 +497,7 @@ const Bonuses = () => {
                 <span className="bonuses-cinema__spectral-sweep" aria-hidden />
                 <div className="bonuses-cinema__back-scroll">
                   <header className="bonuses-drawer__header">
-                    <span className="bonuses-drawer__eyebrow">Инструкция · № {String(selectedTask.id).padStart(2, '0')}</span>
+                    <span className="bonuses-drawer__eyebrow">{t('bonusesDrawerEyebrow', { id: String(selectedTask.id).padStart(2, '0') })}</span>
                     <h2 id="bonuses-task-drawer-title" className="bonuses-drawer__title">
                       {t(selectedTask.titleKey)}
                     </h2>

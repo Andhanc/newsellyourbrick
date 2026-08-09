@@ -182,11 +182,19 @@ export function SiteNotificationsProvider({ children }) {
         if (cancelled) return
         const currentNotificationIds = new Set(notificationsList.map((n) => n.id))
         if (!isFirstNotificationsLoadRef.current) {
-          const newBidOutbidNotifications = notificationsList.filter(
+          const newLiveNotifications = notificationsList.filter(
             (n) =>
-              n.type === 'bid_outbid' &&
               !previousNotificationIds.current.has(n.id) &&
-              n.view_count === 0,
+              n.view_count === 0 &&
+              (n.type === 'bid_outbid' ||
+                n.type === 'test_drive_result' ||
+                n.type === 'test_drive_survey'),
+          )
+          const newBidOutbidNotifications = newLiveNotifications.filter(
+            (n) => n.type === 'bid_outbid',
+          )
+          const otherLiveNotifications = newLiveNotifications.filter(
+            (n) => n.type !== 'bid_outbid',
           )
           if (newBidOutbidNotifications.length > 0) {
             newBidOutbidNotifications.forEach((notif) => {
@@ -197,44 +205,37 @@ export function SiteNotificationsProvider({ children }) {
                 t('toastBidOutbidFallback', 'Your bid has been outbid!')
               showToast({
                 type: 'warning',
-                title: notif.title || 'Вашу ставку перебили',
+                title: notif.title || t('toastBidOutbidTitle', 'Вашу ставку перебили'),
                 message,
                 duration: 6500,
                 dedupeKey: `bid_outbid:${propertyId ?? notif.id}`,
                 action: {
-                  label: propertyId != null ? 'Вернуться к торгам' : 'Открыть уведомления',
+                  label:
+                    propertyId != null
+                      ? t('toastBidOutbidCta', 'Вернуться к торгам')
+                      : t('toastOpenNotifications', 'Открыть уведомления'),
                   onClick: () => {
-                    if (propertyId != null) navigate(getPropertyDetailPath(propertyId, { classic: false }))
-                    else setIsOpen(true)
+                    if (propertyId != null) {
+                      navigate(getPropertyDetailPath(propertyId, { classic: false }))
+                    } else {
+                      setIsOpen(true)
+                    }
                   },
                 },
               })
             })
           }
-          const newTestDriveResult = notificationsList.filter(
-            (n) =>
-              n.type === 'test_drive_result' &&
-              !previousNotificationIds.current.has(n.id) &&
-              n.view_count === 0,
-          )
-          if (newTestDriveResult.length > 0) {
-            newTestDriveResult.forEach((notif) => {
-              const payload = parseNotificationData(notif.data)
-              const message =
-                notif.message || t('toastTestDriveUpdate', 'Test-drive update')
-              showToast({
-                type: notif.title?.includes('отклон') ? 'warning' : 'success',
-                title: notif.title || 'Статус просмотра обновлён',
-                message,
-                duration: 6500,
-                dedupeKey: `test_drive_result:${payload?.booking_id ?? notif.id}`,
-                action: {
-                  label: 'Открыть бронирование',
-                  onClick: () => navigate(
-                    `/profile/bookings${payload?.booking_id != null ? `?booking=${payload.booking_id}` : ''}`,
-                  ),
-                },
-              })
+          if (otherLiveNotifications.length > 0) {
+            showToast({
+              type: 'info',
+              title: t('toastNewNotification', 'У вас новое уведомление'),
+              message: '',
+              duration: 4500,
+              dedupeKey: 'notifications:new',
+              action: {
+                label: t('toastOpenNotification', 'Открыть'),
+                onClick: () => setIsOpen(true),
+              },
             })
           }
         } else {

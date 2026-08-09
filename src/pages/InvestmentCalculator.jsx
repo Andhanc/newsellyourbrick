@@ -686,7 +686,7 @@ const InvestmentCalculator = () => {
       currency: 'EUR',
       property: {
         id: property.id ?? null,
-        title: property.title || property.name || 'Инвестиционный объект',
+        title: property.title || property.name || t('calcDefaultPropertyTitle'),
         country: propertyCountry,
         city: propertyCity,
         type: property.property_type || property.type || 'residential',
@@ -958,13 +958,13 @@ const InvestmentCalculator = () => {
       <Header />
       <div className="calculator-container">
         {investorScenario && (
-          <aside className="calc-context-banner" aria-label="Сценарий из сравнения">
+          <aside className="calc-context-banner" aria-label={t('calcCompareScenarioAria')}>
             <span className="calc-context-banner__icon" aria-hidden>
               <Sparkles size={18} strokeWidth={2.2} />
             </span>
             <span className="calc-context-banner__copy">
-              <strong>Сценарий из сравнения · 2 объекта</strong>
-              <span>Открыт выбранный объект. Пара сохранена — его можно переключить ниже.</span>
+              <strong>{t('calcCompareScenarioTitle')}</strong>
+              <span>{t('calcCompareScenarioBody')}</span>
             </span>
             <button
               type="button"
@@ -975,7 +975,7 @@ const InvestmentCalculator = () => {
                 resetWizard();
               }}
             >
-              Сбросить
+              {t('calcCompareScenarioReset')}
             </button>
           </aside>
         )}
@@ -1121,14 +1121,26 @@ const InvestmentCalculator = () => {
                   calculations.netCashFlow / Math.max(1, (Number(ownershipPeriod) || 1) * 12),
                   i18n.language
                 )}
-                headlineLabel={investmentStrategy === 'resale' ? 'Итоговая прибыль' : 'Денежный поток за период'}
-                yieldLabel={investmentStrategy === 'resale' ? 'Доходность за период' : 'Доходность в год'}
+                headlineLabel={
+                  investmentStrategy === 'resale'
+                    ? t('calcMobileHeadlineProfit')
+                    : t('calcMobileHeadlineCashFlow')
+                }
+                yieldLabel={
+                  investmentStrategy === 'resale'
+                    ? t('calcMobileYieldPeriod')
+                    : t('calcMobileYieldAnnual')
+                }
                 profit={formatCurrency(
                   investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow,
                   i18n.language
                 )}
                 isPositive={(investmentStrategy === 'resale' ? calculations.totalProfit : calculations.netCashFlow) >= 0}
-                assumptions={`${ownershipPeriod || 0} лет · рост ${marketGrowthRate || 0}% · расходы ${operatingExpenses || 0}%`}
+                assumptions={t('calcMobileAssumptions', {
+                  years: ownershipPeriod || 0,
+                  growth: marketGrowthRate || 0,
+                  costs: operatingExpenses || 0,
+                })}
                 propertyTitle={selectedFavoriteItem?.property?.title || selectedFavoriteItem?.property?.name}
                 propertyImage={selectedFavoriteItem ? listingThumb(selectedFavoriteItem.property) : null}
                 onOpenAssumptions={() => setAssumptionsOpen(true)}

@@ -147,13 +147,12 @@ const PROFILE_DATA_BLOCKS = [
 ]
 
 const PROFILE_REVIEW_BLOCKS = [
-  { id: 'phone', title: 'Телефон', keys: ['phone'] },
-  { id: 'identity', title: 'Имя', keys: ['first_name', 'last_name'] },
-  { id: 'contacts', title: 'Контакты', keys: ['email'] },
-  { id: 'address', title: 'Адрес', keys: ['country', 'address'] },
+  { id: 'phone', keys: ['phone'] },
+  { id: 'identity', keys: ['first_name', 'last_name'] },
+  { id: 'contacts', keys: ['email'] },
+  { id: 'address', keys: ['country', 'address'] },
   {
     id: 'documents',
-    title: 'Документы',
     keys: ['passport_number', 'identification_number'],
   },
 ]
@@ -1286,7 +1285,7 @@ function TestPage() {
     user?.fullName ||
     [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
     userData.name ||
-    'Пользователь'
+    t('buyerCabinet_userPlaceholder')
   const idForChip =
     publicIdDisplay ??
     (() => {
@@ -1295,7 +1294,10 @@ function TestPage() {
     })() ??
     '—'
   const roleRaw = userData.role || localStorage.getItem('userRole') || 'buyer'
-  const roleLabel = roleRaw === 'seller' || roleRaw === 'owner' ? 'Продавец' : 'Покупатель'
+  const roleLabel =
+    roleRaw === 'seller' || roleRaw === 'owner'
+      ? t('buyerCabinet_roleSeller')
+      : t('buyerCabinet_roleBuyer')
 
   const email =
     user?.primaryEmailAddress?.emailAddress ||
@@ -1537,8 +1539,7 @@ function TestPage() {
 
         if (json.requiresVerification) {
           showNotification(
-            json.error ||
-              'Для смены email нужно подтвердить адрес. Письмо может быть отправлено на почту.',
+            json.error || t('buyerData_emailChangeVerify'),
             'info',
           )
           setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
@@ -1546,7 +1547,7 @@ function TestPage() {
         }
 
         if (res.status === 409) {
-          showNotification(json.error || 'Конфликт данных профиля', 'error')
+          showNotification(json.error || t('buyerData_profileConflict'), 'error')
           if (fieldKey === 'email') {
             setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
           }
@@ -1560,10 +1561,10 @@ function TestPage() {
         }
 
         if (!res.ok) {
-          throw new Error(json.error || 'Не удалось сохранить')
+          throw new Error(json.error || t('buyerData_saveFailed'))
         }
         if (!json.success || !json.data) {
-          throw new Error(json.error || 'Не удалось сохранить')
+          throw new Error(json.error || t('buyerData_saveFailed'))
         }
 
         setDbUserRow(json.data)
@@ -1572,7 +1573,7 @@ function TestPage() {
         invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
         void loadVerificationStatus(true)
       } catch (e) {
-        showNotification(e.message || 'Ошибка сохранения', 'error')
+        showNotification(e.message || t('buyerData_saveError'), 'error')
         setProfileForm(buildProfileFormFromRow(row, user, email))
         setProfileFieldSavedOk((prev) => ({ ...prev, [fieldKey]: false }))
       } finally {
@@ -1653,7 +1654,7 @@ function TestPage() {
     async (file) => {
       const uid = numericUserId ?? getStoredNumericUserId()
       if (!uid || !dbUserRowRef.current) {
-        showNotification('Сначала дождитесь загрузки профиля', 'error')
+        showNotification(t('buyerData_waitProfileLoad'), 'error')
         return
       }
       clearAllProfileSaveTimers()
@@ -1666,7 +1667,7 @@ function TestPage() {
         const photoValidation = await validatePassportImageFile(file)
         setPassportPhotoHints(photoValidation.hints)
         if (photoValidation.shouldBlock) {
-          throw new Error(photoValidation.hints[0] || 'Нужно более качественное фото документа')
+          throw new Error(photoValidation.hints[0] || t('buyerData_passportPhotoQuality'))
         }
 
         const dataUrl = await readFileAsDataUrl(file)
@@ -1737,7 +1738,7 @@ function TestPage() {
         const json = await userRes.json().catch(() => ({}))
 
         if (!userRes.ok || !json.success || !json.data) {
-          throw new Error(json.error || 'Не удалось сохранить распознанные данные')
+          throw new Error(json.error || t('buyerData_passportSaveFailed'))
         }
 
         setDbUserRow(json.data)
@@ -1760,7 +1761,7 @@ function TestPage() {
         setDataSheetStep('documents')
         showNotification(t('buyerData_passportConfirmSaved'), 'success')
       } catch (e) {
-        showNotification(e.message || 'Ошибка сохранения', 'error')
+        showNotification(e.message || t('buyerData_saveError'), 'error')
         const row = dbUserRowRef.current
         if (row) setProfileForm(buildProfileFormFromRow(row, user, email))
       } finally {
@@ -1791,6 +1792,17 @@ function TestPage() {
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
     isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
   )
+  const isContactsStepComplete = PROFILE_MAIN_FIELDS.every((f) =>
+    isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
+  )
+  const isDocumentsStepComplete = PROFILE_PASSPORT_FIELDS.every((f) =>
+    isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
+  )
+  const dataSheetStepCompletion = {
+    contacts: isContactsStepComplete,
+    documents: isDocumentsStepComplete,
+    review: isProfileFullyCompleted,
+  }
   const shouldPulseSaveButton =
     dataSheetOpen &&
     !dbUserLoading &&
@@ -1814,7 +1826,7 @@ function TestPage() {
           return t(PROFILE_FIELD_I18N[f.key] || f.labelKey)
         })
         .join(', ')
-      showNotification(`Заполните поля: ${names}`, 'info')
+      showNotification(t('buyerData_fillFields', { names }), 'info')
       return
     }
     if (
@@ -1838,9 +1850,7 @@ function TestPage() {
     const prevEmail = normalizedEmailValue(row.email)
     const emailChanged = nextEmail !== prevEmail
     if (emailChanged) {
-      const confirmed = window.confirm(
-        'Вы действительно хотите изменить email? Старый адрес будет заменён новым.',
-      )
+      const confirmed = window.confirm(t('buyerData_emailChangeConfirm'))
       if (!confirmed) {
         return
       }
@@ -1863,8 +1873,7 @@ function TestPage() {
 
       if (json.requiresVerification) {
         showNotification(
-          json.error ||
-            'Для смены email нужно подтвердить адрес. Письмо может быть отправлено на почту.',
+          json.error || t('buyerData_emailChangeVerify'),
           'info',
         )
         setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
@@ -1872,7 +1881,7 @@ function TestPage() {
       }
 
       if (res.status === 409) {
-        showNotification(json.error || 'Пользователь с таким email уже существует', 'error')
+        showNotification(json.error || t('buyerData_emailAlreadyExists'), 'error')
         setProfileForm((prev) => ({ ...prev, email: row.email ?? '' }))
         return
       }
@@ -1894,10 +1903,10 @@ function TestPage() {
           }
           return
         }
-        throw new Error(json.error || 'Не удалось сохранить')
+        throw new Error(json.error || t('buyerData_saveFailed'))
       }
       if (!json.success || !json.data) {
-        throw new Error(json.error || 'Не удалось сохранить')
+        throw new Error(json.error || t('buyerData_saveFailed'))
       }
 
       setDbUserRow(json.data)
@@ -1910,7 +1919,7 @@ function TestPage() {
       void loadVerificationStatus(true)
       setShowProfileCompleteCelebration(true)
     } catch (e) {
-      showNotification(e.message || 'Ошибка сохранения', 'error')
+      showNotification(e.message || t('buyerData_saveError'), 'error')
       setProfileForm(buildProfileFormFromRow(row, user, email))
     } finally {
       setProfileSaveAllLoading(false)
@@ -2269,10 +2278,10 @@ function TestPage() {
 
   const toastGuideMessage =
     toastGuideStep === 1
-      ? 'Нажмите, чтобы посмотреть необходимые данные'
+      ? t('buyerData_toastTapHint')
       : toastGuideStep === 2
-        ? 'Вот список полей, которые нужно заполнить'
-        : 'Нажмите, чтобы перейти к заполнению'
+        ? t('buyerData_toastListHint')
+        : t('buyerData_toastGoHint')
 
   const toastGuideSpotlightActive = false
 
@@ -2478,18 +2487,18 @@ function TestPage() {
                     <p className="profile-cabinet__role">{roleLabel}</p>
                   </div>
                 </div>
-                <div className="profile-cabinet__stats" aria-label="Статистика кабинета">
+                <div className="profile-cabinet__stats" aria-label={t('buyerCabinet_statsAria')}>
                   <div className="profile-cabinet__stat">
                     <strong>{profileStatHistory}</strong>
-                    <span>История</span>
+                    <span>{t('buyerCabinet_statHistory')}</span>
                   </div>
                   <div className="profile-cabinet__stat">
                     <strong>{profileStatBookings}</strong>
-                    <span>Брони</span>
+                    <span>{t('buyerCabinet_statBookings')}</span>
                   </div>
                   <div className="profile-cabinet__stat">
                     <strong>{profileStatProfile}</strong>
-                    <span>Профиль</span>
+                    <span>{t('buyerCabinet_statProfile')}</span>
                   </div>
                 </div>
               </header>
@@ -2586,7 +2595,7 @@ function TestPage() {
                 ) : null}
               </section>
 
-              <section className="profile-cabinet__list" aria-label="Ключевые направления">
+              <section className="profile-cabinet__list" aria-label={t('buyerCabinet_directionsListAria')}>
                 <div className="profile-cabinet__section-head">
                   <div className="profile-cabinet__section-copy">
                     <h3 className="profile-cabinet__section-title">{t('buyerCabinet_directionsTitle')}</h3>
@@ -2659,7 +2668,7 @@ function TestPage() {
                 <AuctionCategoryCtaCards variant="profilePage" />
               </div>
 
-              <section className="profile-cabinet__mobile-actions" aria-label="Действия профиля">
+              <section className="profile-cabinet__mobile-actions" aria-label={t('buyerCabinet_mobileActionsAria')}>
                 <Link to="/bonuses" className="profile-cabinet__mobile-action">
                   <FiGift size={16} aria-hidden />
                   <span>{t('buyerData_moreBonusesCta')}</span>
@@ -3042,21 +3051,32 @@ function TestPage() {
               </h2>
               <p className="profile-data-panel__lead">{t('buyerData_profileAutosaveHint')}</p>
             </div>
-                <nav className="test-data-steps" aria-label="Шаги заполнения профиля">
+                <nav className="test-data-steps" aria-label={t('buyerCabinet_dataStepsAria')}>
                   {[
-                    { id: 'contacts', label: 'Контакты' },
-                    { id: 'documents', label: 'Документы' },
-                    { id: 'review', label: 'Проверка' },
+                    { id: 'contacts', label: t('buyerCabinet_stepContacts') },
+                    { id: 'documents', label: t('buyerCabinet_stepDocuments') },
+                    { id: 'review', label: t('buyerCabinet_stepReview') },
                   ].map((step, index) => {
                     const active = dataSheetStep === step.id
+                    const complete = Boolean(dataSheetStepCompletion[step.id])
                     return (
                       <button
                         key={step.id}
                         type="button"
-                        className={`test-data-steps__item${active ? ' test-data-steps__item--active' : ''}`}
+                        className={`test-data-steps__item${active ? ' test-data-steps__item--active' : ''}${
+                          complete ? ' test-data-steps__item--complete' : ''
+                        }`}
                         onClick={() => setDataSheetStep(step.id)}
+                        aria-current={active ? 'step' : undefined}
                       >
-                        <span className="test-data-steps__index">{index + 1}</span>
+                        <span
+                          className={`test-data-steps__index${
+                            complete ? ' test-data-steps__index--complete' : ''
+                          }`}
+                          aria-hidden
+                        >
+                          {complete ? <FiCheck size={14} strokeWidth={2.75} /> : index + 1}
+                        </span>
                         <span className="test-data-steps__label">{step.label}</span>
                       </button>
                     )
@@ -3144,7 +3164,7 @@ function TestPage() {
                                   })()}
 
                                   {countryDropdownOpen ? (
-                                    <div className="test-country-select__menu" role="listbox" aria-label="Список стран">
+                                    <div className="test-country-select__menu" role="listbox" aria-label={t('buyerCabinet_countriesListAria')}>
                                       <input
                                         type="text"
                                         className="test-country-select__search"
@@ -3213,7 +3233,7 @@ function TestPage() {
                                     : ''
                                 }`}
                                 role="img"
-                                aria-label="Сохранено"
+                                aria-label={t('buyerCabinet_savedAria')}
                                 aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
                               >
                                 <FiCheck size={18} strokeWidth={2.5} aria-hidden />
@@ -3232,7 +3252,7 @@ function TestPage() {
                           className="test-data-panel__step-next"
                           onClick={() => setDataSheetStep('documents')}
                         >
-                          Далее
+                          {t('buyerCabinet_next')}
                           <FiArrowRight size={16} aria-hidden />
                         </button>
                       </div>
@@ -3356,7 +3376,7 @@ function TestPage() {
                                     : ''
                                 }`}
                                 role="img"
-                                aria-label="Сохранено"
+                                aria-label={t('buyerCabinet_savedAria')}
                                 aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
                               >
                                 <FiCheck size={18} strokeWidth={2.5} aria-hidden />
@@ -3381,7 +3401,7 @@ function TestPage() {
                           className="test-data-panel__step-next"
                           onClick={() => setDataSheetStep('review')}
                         >
-                          Далее
+                          {t('buyerCabinet_next')}
                           <FiArrowRight size={16} aria-hidden />
                         </button>
                       </div>
@@ -3501,7 +3521,7 @@ function TestPage() {
                 {t('buyerCabinet_cardSubscriptionsTitle')}
               </h2>
               <p className="profile-subscriptions-panel__lead">
-                Выберите тариф — доступ к торгам, аналитике и приоритетной поддержке.
+                {t('buyerCabinet_subscriptionsLead')}
               </p>
             </div>
             {subscriptionSheetLoading ? (
@@ -3624,15 +3644,15 @@ function TestPage() {
               {showProfileCompleteCelebration ? (
                 <>
                   <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
-                    Поздравляем!
+                    {t('buyerCabinet_profileCompleteTitle')}
                   </h2>
-                  <p className="test-profile-complete-modal__text">Вы успешно зарегистрировали профиль.</p>
+                  <p className="test-profile-complete-modal__text">{t('buyerCabinet_profileCompleteText')}</p>
                   <button
                     type="button"
                     className="test-profile-complete-modal__btn"
                     onClick={handleProfileCompleteCelebrationGo}
                   >
-                    Перейти
+                    {t('buyerCabinet_profileCompleteCta')}
                   </button>
                 </>
               ) : vipClubCheckoutCelebration ? (

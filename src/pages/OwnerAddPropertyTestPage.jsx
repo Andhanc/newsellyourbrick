@@ -724,7 +724,9 @@ export default function OwnerAddPropertyTestPage() {
       }
       if (result.error === 'profile_incomplete') {
         showNotification(
-          `Для публикации объекта необходимо заполнить профиль. Не заполнены: ${result.missingProfileFields.join(', ')}.`,
+          t('oap_publishProfileIncomplete', {
+            fields: result.missingProfileFields.join(', '),
+          }),
         )
         if (goTo) {
           goTo(OWNER_VIEWS.PROFILE)

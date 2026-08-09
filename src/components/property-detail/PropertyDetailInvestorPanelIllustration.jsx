@@ -20,30 +20,30 @@ export default function PropertyDetailInvestorPanelIllustration({ className = ''
           <stop offset="1" stopColor="#1a1f3a" />
         </linearGradient>
         <linearGradient id="pdx-inv-chart" x1="48" y1="132" x2="272" y2="72" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4a96a6" />
-          <stop offset="0.55" stopColor="#3f8798" />
-          <stop offset="1" stopColor="#5aa5b5" />
+          <stop stopColor="#4ecdd6" />
+          <stop offset="0.55" stopColor="#3bc0cb" />
+          <stop offset="1" stopColor="#6fd4dc" />
         </linearGradient>
         <linearGradient id="pdx-inv-area" x1="160" y1="72" x2="160" y2="148" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4a96a6" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#4a96a6" stopOpacity="0" />
+          <stop stopColor="#4ecdd6" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#4ecdd6" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="pdx-inv-stat-a" x1="18" y1="18" x2="98" y2="72" gradientUnits="userSpaceOnUse">
           <stop stopColor="#34d399" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#4a96a6" stopOpacity="0.12" />
+          <stop offset="1" stopColor="#4ecdd6" stopOpacity="0.12" />
         </linearGradient>
         <linearGradient id="pdx-inv-stat-b" x1="104" y1="18" x2="184" y2="72" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4a96a6" stopOpacity="0.22" />
-          <stop offset="1" stopColor="#3f8798" stopOpacity="0.1" />
+          <stop stopColor="#4ecdd6" stopOpacity="0.22" />
+          <stop offset="1" stopColor="#3bc0cb" stopOpacity="0.1" />
         </linearGradient>
         <filter id="pdx-inv-glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#4a96a6" floodOpacity="0.24" />
+          <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#4ecdd6" floodOpacity="0.24" />
         </filter>
       </defs>
 
       <rect width="320" height="188" fill="url(#pdx-inv-bg)" />
-      <circle cx="48" cy="36" r="52" fill="#4a96a6" fillOpacity="0.13" />
-      <circle cx="278" cy="156" r="58" fill="#3f8798" fillOpacity="0.11" />
+      <circle cx="48" cy="36" r="52" fill="#4ecdd6" fillOpacity="0.13" />
+      <circle cx="278" cy="156" r="58" fill="#3bc0cb" fillOpacity="0.11" />
 
       {/* KPI cards */}
       <rect x="14" y="14" width="78" height="50" rx="10" fill="url(#pdx-inv-stat-a)" stroke="rgba(255,255,255,0.1)" />
@@ -79,7 +79,7 @@ export default function PropertyDetailInvestorPanelIllustration({ className = ''
         {t('propertyDetailInvestorPromoPreviewForecast')}
       </text>
 
-      <rect x="226" y="78" width="34" height="14" rx="7" fill="rgba(74,150,166,0.42)" stroke="rgba(142,181,196,0.5)" />
+      <rect x="226" y="78" width="34" height="14" rx="7" fill="rgba(78, 205, 214,0.42)" stroke="rgba(142,181,196,0.5)" />
       <text x="233" y="88" fill="#ffffff" fontSize="7" fontWeight="700" fontFamily="Montserrat, sans-serif">
         {t('propertyDetailInvestorPromoPreviewIncome')}
       </text>
@@ -132,13 +132,13 @@ export default function PropertyDetailInvestorPanelIllustration({ className = ''
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="52" cy="148" r="3" fill="#5aa5b5" />
-      <circle cx="118" cy="128" r="3" fill="#4a96a6" />
-      <circle cx="198" cy="114" r="3" fill="#3f8798" />
+      <circle cx="52" cy="148" r="3" fill="#6fd4dc" />
+      <circle cx="118" cy="128" r="3" fill="#4ecdd6" />
+      <circle cx="198" cy="114" r="3" fill="#3bc0cb" />
       <circle cx="288" cy="78" r="3.5" fill="#e3f0f3" stroke="#ffffff" strokeOpacity="0.35" />
 
       {/* Legend */}
-      <circle cx="228" cy="166" r="2.5" fill="#5aa5b5" />
+      <circle cx="228" cy="166" r="2.5" fill="#6fd4dc" />
       <text x="234" y="169" fill="rgba(255,255,255,0.45)" fontSize="6.5" fontWeight="600" fontFamily="Montserrat, sans-serif">
         {t('propertyDetailInvestorPromoPreviewLegend')}
       </text>

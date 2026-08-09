@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { FiChevronLeft, FiChevronRight, FiPlay } from 'react-icons/fi'
 import './PropertyDetailDesktopGallery.css'
 
@@ -31,10 +32,12 @@ export default function PropertyDetailDesktopGallery({
   actions = null,
   badge = '',
 }) {
+  const { t } = useTranslation()
+
   if (!media.length) {
     return (
       <div className="pdx-gallery pdx-gallery--empty">
-        <p className="pdx-gallery__empty">Нет фотографий</p>
+        <p className="pdx-gallery__empty">{t('propertyDetail_galleryEmptyShort')}</p>
       </div>
     )
   }
@@ -81,10 +84,10 @@ export default function PropertyDetailDesktopGallery({
         {actions ? <div className="pdx-gallery__actions">{actions}</div> : null}
         {media.length > 1 ? (
           <>
-            <button type="button" className="pdx-gallery__nav pdx-gallery__nav--prev" onClick={onPrev} aria-label="Previous">
+            <button type="button" className="pdx-gallery__nav pdx-gallery__nav--prev" onClick={onPrev} aria-label={t('previousImage')}>
               <FiChevronLeft size={22} />
             </button>
-            <button type="button" className="pdx-gallery__nav pdx-gallery__nav--next" onClick={onNext} aria-label="Next">
+            <button type="button" className="pdx-gallery__nav pdx-gallery__nav--next" onClick={onNext} aria-label={t('nextImage')}>
               <FiChevronRight size={22} />
             </button>
             <span className="pdx-gallery__counter">
@@ -108,7 +111,7 @@ export default function PropertyDetailDesktopGallery({
               >
                 {src ? <img src={src} alt="" loading="lazy" /> : <span className="pdx-gallery__thumb-video"><FiPlay size={14} /></span>}
                 {hiddenThumbCount > 0 && isLastVisible ? (
-                  <span className="pdx-gallery__thumb-more">+{hiddenThumbCount} фото</span>
+                  <span className="pdx-gallery__thumb-more">{t('propertyDetail_galleryMorePhotos', { count: hiddenThumbCount })}</span>
                 ) : null}
               </button>
             )

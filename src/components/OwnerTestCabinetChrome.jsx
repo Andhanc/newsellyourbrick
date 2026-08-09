@@ -258,20 +258,20 @@ export default function OwnerTestCabinetChrome({ children }) {
 
       <div className="otc-stage">
         {showPurchasedDraftHint ? (
-          <aside className="otc-purchased-draft-hint" aria-label="Незавершённый объект">
+          <aside className="otc-purchased-draft-hint" aria-label={t('ownerTest_purchasedDraftAria')}>
             <span className="otc-purchased-draft-hint__icon" aria-hidden>
               <Building2 size={20} strokeWidth={2.1} />
             </span>
             <span className="otc-purchased-draft-hint__copy">
-              <strong>У вас есть незаполненный объект</strong>
+              <strong>{t('ownerTest_purchasedDraftTitle')}</strong>
               <small>
                 {pendingPurchasedListing.title
-                  ? `Продолжите оформление «${pendingPurchasedListing.title}»`
-                  : 'Данные покупки уже перенесены в черновик'}
+                  ? t('ownerTest_purchasedDraftContinue', { title: pendingPurchasedListing.title })
+                  : t('ownerTest_purchasedDraftHint')}
               </small>
             </span>
             <button type="button" onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}>
-              <span>Перейти</span>
+              <span>{t('ownerTest_purchasedDraftGo')}</span>
               <ArrowRight size={17} aria-hidden />
             </button>
           </aside>

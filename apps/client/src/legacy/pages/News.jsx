@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   FiChevronLeft,
@@ -12,108 +13,110 @@ import { fetchPublishedArticles } from '@/services/newsApi'
 import { scrollMainTo } from '@/utils/mainScroll'
 import './News.css'
 
-const STATIC_HERO_SLIDES = [
-  {
-    id: 'turkey-resorts',
-    slug: null,
-    image: '/news/hero-turkey.png',
-    badge: 'Идеи для поездок',
-    title: '8 небанальных курортов Турции без «всё включено»',
-    date: '5 апр 2026',
-    views: 994,
-    comments: 4,
-    likes: 24,
-  },
-]
+function getStaticHeroSlides(t) {
+  return [
+    {
+      id: 'turkey-resorts',
+      slug: null,
+      image: '/news/hero-turkey.png',
+      badge: t('newsPage_static_heroBadge'),
+      title: t('newsPage_static_heroTitle'),
+      date: t('newsPage_static_heroDate'),
+      views: 994,
+      comments: 4,
+      likes: 24,
+    },
+  ]
+}
 
-const STATIC_PORA_ARTICLES = [
-  {
-    id: 'crimea-top',
-    slug: null,
-    size: 'large',
-    image:
-      '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
-    badge: '🌊 К морю!',
-    title: 'Топ-10 курортных городов и посёлков южного берега Крыма',
-    excerpt:
-      'Южный берег Крыма — это не только Ялта и Алушта. Рассказываем о посёлках и городах, куда стоит поехать за морем, природой и спокойным отдыхом.',
-    date: '25 мар 2026',
-    views: 960,
-    comments: 2,
-    likes: 38,
-  },
-  {
-    id: 'kaliningrad-small',
-    slug: null,
-    size: 'large',
-    image:
-      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Малые города Калининградской области, в которые стоит заехать',
-    excerpt:
-      'Зеленоградск, Светлогорск, Балтийск и другие уютные точки региона — маршрут на выходные без толп и сюрпризов для глаз.',
-    date: '22 мар 2026',
-    views: 743,
-    comments: 3,
-    likes: 21,
-  },
-  {
-    id: 'architecture',
-    slug: null,
-    size: 'medium',
-    image:
-      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Города с необычной архитектурой: куда поехать в 2026',
-    excerpt: 'От модерна до авангарда — подборка городов, где прогулки превращаются в экскурсию.',
-    date: '15 мар 2026',
-    views: 654,
-    comments: 1,
-    likes: 17,
-  },
-  {
-    id: 'beach-aerial',
-    slug: null,
-    size: 'medium',
-    image:
-      '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
-    badge: '🌊 К морю!',
-    title: 'Пляжи России: 7 мест с чистой водой и инфраструктурой',
-    excerpt: 'Собрали побережья, куда удобно добраться из крупных городов и где комфортно отдыхать с детьми.',
-    date: '10 мар 2026',
-    views: 1204,
-    comments: 8,
-    likes: 56,
-  },
-  {
-    id: 'wine-route',
-    slug: null,
-    size: 'small',
-    image:
-      '/images/external/photo-1510812431401-41d2bd2722f3-b97a9ab704.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Винные маршруты Краснодарского края на выходные',
-    excerpt: 'Дегустации, винодельни и гастрономия — план поездки на 2–3 дня.',
-    date: '5 мар 2026',
-    views: 489,
-    comments: 0,
-    likes: 12,
-  },
-  {
-    id: 'kazan-nn',
-    slug: null,
-    size: 'small',
-    image:
-      '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Казань или Нижний Новгород — куда лучше поехать в 2026 году',
-    excerpt: 'Сравниваем атмосферу, достопримечательности и бюджет поездки на 3–4 дня.',
-    date: '20 апр 2026',
-    views: 871,
-    comments: 2,
-    likes: 11,
-  },
-]
+function getStaticPoraArticles(t) {
+  return [
+    {
+      id: 'crimea-top',
+      slug: null,
+      size: 'large',
+      image:
+        '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
+      badge: t('newsPage_static_crimeaBadge'),
+      title: t('newsPage_static_crimeaTitle'),
+      excerpt: t('newsPage_static_crimeaExcerpt'),
+      date: t('newsPage_static_crimeaDate'),
+      views: 960,
+      comments: 2,
+      likes: 38,
+    },
+    {
+      id: 'kaliningrad-small',
+      slug: null,
+      size: 'large',
+      image:
+        '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
+      badge: t('newsPage_static_kaliningradBadge'),
+      title: t('newsPage_static_kaliningradTitle'),
+      excerpt: t('newsPage_static_kaliningradExcerpt'),
+      date: t('newsPage_static_kaliningradDate'),
+      views: 743,
+      comments: 3,
+      likes: 21,
+    },
+    {
+      id: 'architecture',
+      slug: null,
+      size: 'medium',
+      image:
+        '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
+      badge: t('newsPage_static_architectureBadge'),
+      title: t('newsPage_static_architectureTitle'),
+      excerpt: t('newsPage_static_architectureExcerpt'),
+      date: t('newsPage_static_architectureDate'),
+      views: 654,
+      comments: 1,
+      likes: 17,
+    },
+    {
+      id: 'beach-aerial',
+      slug: null,
+      size: 'medium',
+      image:
+        '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
+      badge: t('newsPage_static_beachBadge'),
+      title: t('newsPage_static_beachTitle'),
+      excerpt: t('newsPage_static_beachExcerpt'),
+      date: t('newsPage_static_beachDate'),
+      views: 1204,
+      comments: 8,
+      likes: 56,
+    },
+    {
+      id: 'wine-route',
+      slug: null,
+      size: 'small',
+      image:
+        '/images/external/photo-1510812431401-41d2bd2722f3-b97a9ab704.jpg',
+      badge: t('newsPage_static_wineBadge'),
+      title: t('newsPage_static_wineTitle'),
+      excerpt: t('newsPage_static_wineExcerpt'),
+      date: t('newsPage_static_wineDate'),
+      views: 489,
+      comments: 0,
+      likes: 12,
+    },
+    {
+      id: 'kazan-nn',
+      slug: null,
+      size: 'small',
+      image:
+        '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
+      badge: t('newsPage_static_kazanBadge'),
+      title: t('newsPage_static_kazanTitle'),
+      excerpt: t('newsPage_static_kazanExcerpt'),
+      date: t('newsPage_static_kazanDate'),
+      views: 871,
+      comments: 2,
+      likes: 11,
+    },
+  ]
+}
 
 const TELEGRAM_HREF =
   (import.meta.env?.VITE_MANAGER_TELEGRAM_URL || '').trim() || 'https://t.me/'
@@ -204,6 +207,7 @@ function buildNewsGridRows(articles) {
 }
 
 function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
+  const { t } = useTranslation()
   if (!slides.length) return null
 
   const safeIndex =
@@ -216,7 +220,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
   }
 
   return (
-    <section className="news-hero" aria-label="Главная новость">
+    <section className="news-hero" aria-label={t('newsPage_heroAria')}>
       <div className="news-hero__frame">
         <div
           className="news-hero__track"
@@ -240,7 +244,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
                 e.stopPropagation()
                 onPrev()
               }}
-              aria-label="Предыдущая новость"
+              aria-label={t('newsPage_heroPrev')}
             >
               <FiChevronLeft size={28} />
             </button>
@@ -251,7 +255,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
                 e.stopPropagation()
                 onNext()
               }}
-              aria-label="Следующая новость"
+              aria-label={t('newsPage_heroNext')}
             >
               <FiChevronRight size={28} />
             </button>
@@ -275,14 +279,14 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
         </div>
 
         {canNavigate ? (
-          <div className="news-hero__dots" role="tablist" aria-label="Слайды">
+          <div className="news-hero__dots" role="tablist" aria-label={t('newsPage_heroSlidesAria')}>
             {slides.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
                 role="tab"
                 aria-selected={i === safeIndex}
-                aria-label={`Слайд ${i + 1}`}
+                aria-label={t('newsPage_heroSlideAria', { n: i + 1 })}
                 className={`news-hero__dot${i === safeIndex ? ' news-hero__dot--active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -298,11 +302,12 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
 }
 
 function NewsSocialBanner() {
+  const { t } = useTranslation()
   return (
-    <section className="news-social" aria-label="SellYourBrick в соцсетях">
+    <section className="news-social" aria-label={t('newsPage_socialAria')}>
       <div className="news-social__inner">
         <div className="news-social__copy">
-          <p className="news-social__eyebrow">Следите за нами</p>
+          <p className="news-social__eyebrow">{t('newsPage_socialEyebrow')}</p>
           <h2 className="news-social__brand" aria-label="SellYourBrick">
             <span className="news-social__brand-word">Sell</span>
             <span className="news-social__brand-word news-social__brand-word--accent">
@@ -310,9 +315,7 @@ function NewsSocialBanner() {
             </span>
             <span className="news-social__brand-word">Brick</span>
           </h2>
-          <p className="news-social__tagline">
-            Новости, подборки и советы по недвижимости — в мессенджерах и соцсетях
-          </p>
+          <p className="news-social__tagline">{t('newsPage_socialTagline')}</p>
         </div>
         <ul className="news-social__links">
           {SOCIAL_LINKS.map((item) => {
@@ -340,9 +343,19 @@ function NewsSocialBanner() {
 }
 
 const News = () => {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [heroIndex, setHeroIndex] = useState(0)
   const [published, setPublished] = useState([])
+
+  const staticPoraArticles = useMemo(
+    () => getStaticPoraArticles(t),
+    [t, i18n.language],
+  )
+  const staticHeroSlides = useMemo(
+    () => getStaticHeroSlides(t),
+    [t, i18n.language],
+  )
 
   useEffect(() => {
     scrollMainTo(0, 0)
@@ -369,8 +382,8 @@ const News = () => {
     if (published.length) {
       return dedupeArticlesById(published).map(mapArticle)
     }
-    return STATIC_PORA_ARTICLES
-  }, [published])
+    return staticPoraArticles
+  }, [published, staticPoraArticles])
 
   const heroSlides = useMemo(() => {
     const fromPublished = dedupeArticlesById(published)
@@ -378,8 +391,8 @@ const News = () => {
       .slice(0, 5)
       .map(publishedToHeroSlide)
     if (fromPublished.length) return fromPublished
-    return STATIC_HERO_SLIDES
-  }, [published])
+    return staticHeroSlides
+  }, [published, staticHeroSlides])
 
   const { duoRow1, duoRow2, trioRow1, trioRow2 } = useMemo(
     () => buildNewsGridRows(gridArticles),
@@ -427,7 +440,7 @@ const News = () => {
             onOpen={handleArticleOpen}
           />
 
-          <section className="news-section" aria-label="Статьи">
+          <section className="news-section" aria-label={t('newsPage_sectionAria')}>
             {duoRow1.length > 0 ? (
               <div className="news-grid news-grid--duo">
                 {duoRow1.map((article) => (

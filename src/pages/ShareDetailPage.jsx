@@ -36,9 +36,9 @@ function isShareDbRouteId(routeId) {
 const DEMO_SHARE_OBJECTS = [
   {
     id: 'share-demo-1',
-    title: 'Квартира в центре, 2-комн.',
-    location: 'Минск, ул. Примерная, 10',
-    description: 'Уютная двухкомнатная квартира в центре города. Ремонт, балкон, паркинг во дворе.',
+    title: 'City-center apartment, 2 bedrooms',
+    location: 'Minsk, Sample Street 10',
+    description: 'Cozy two-bedroom apartment in the city center. Renovated, balcony, courtyard parking.',
     image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
     images: [
       '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
@@ -56,9 +56,9 @@ const DEMO_SHARE_OBJECTS = [
   },
   {
     id: 'share-demo-2',
-    title: 'Апартаменты с видом на море',
-    location: 'Барселона, Eixample',
-    description: 'Просторные апартаменты с панорамным видом. Терраса, консьерж.',
+    title: 'Sea-view apartments',
+    location: 'Barcelona, Eixample',
+    description: 'Spacious apartments with panoramic views. Terrace and concierge.',
     image: '/images/external/photo-1502672260266-1c1ef2d93688-97c7b765e8.jpg',
     images: [
       '/images/external/photo-1502672260266-1c1ef2d93688-97c7b765e8.jpg',
@@ -76,9 +76,9 @@ const DEMO_SHARE_OBJECTS = [
   },
   {
     id: 'share-demo-3',
-    title: 'Студия в историческом центре',
-    location: 'Вена, 1-й район',
-    description: 'Компактная студия в самом центре Вены. Полная меблировка, вид во двор.',
+    title: 'Studio in the historic center',
+    location: 'Vienna, 1st district',
+    description: 'Compact studio in the heart of Vienna. Fully furnished, courtyard view.',
     image: '/images/external/photo-1502672023488-70e25813eb80-62911a5aab.jpg',
     images: [
       '/images/external/photo-1502672023488-70e25813eb80-62911a5aab.jpg',

@@ -76,11 +76,11 @@ test('returns only mapped API records and never pads with demo listings', () => 
   assert.deepEqual(realTestDriveListings([], () => ({ id: 'demo' })), [])
 })
 
-test('matches Russian type filters against real API property types', () => {
-  assert.equal(matchesSelectedTestDriveType('villa', ['Вилла']), true)
-  assert.equal(matchesSelectedTestDriveType('apartment', ['Апартаменты']), true)
-  assert.equal(matchesSelectedTestDriveType('commercial', ['Апартаменты']), true)
-  assert.equal(matchesSelectedTestDriveType('house', ['Вилла']), false)
+test('matches English type filter ids against real API property types', () => {
+  assert.equal(matchesSelectedTestDriveType('villa', ['villa']), true)
+  assert.equal(matchesSelectedTestDriveType('apartment', ['apartment']), true)
+  assert.equal(matchesSelectedTestDriveType('commercial', ['apartment']), true)
+  assert.equal(matchesSelectedTestDriveType('house', ['villa']), false)
   assert.equal(matchesSelectedTestDriveType('commercial', []), true)
 })
 
@@ -96,13 +96,13 @@ test('duration filters use only known API stay bounds for every visible option',
   const listing = { minStayDays: 4, maxStayDays: 120 }
 
   assert.equal(matchesSelectedTestDriveDurations(listing, []), true)
-  assert.equal(matchesSelectedTestDriveDurations(listing, ['3-7 дней']), true)
-  assert.equal(matchesSelectedTestDriveDurations(listing, ['1-2 недели']), true)
-  assert.equal(matchesSelectedTestDriveDurations(listing, ['2-4 недели']), true)
-  assert.equal(matchesSelectedTestDriveDurations(listing, ['1-3 месяца']), true)
-  assert.equal(matchesSelectedTestDriveDurations(listing, ['Более 3 месяцев']), true)
+  assert.equal(matchesSelectedTestDriveDurations(listing, ['3-7_days']), true)
+  assert.equal(matchesSelectedTestDriveDurations(listing, ['1-2_weeks']), true)
+  assert.equal(matchesSelectedTestDriveDurations(listing, ['2-4_weeks']), true)
+  assert.equal(matchesSelectedTestDriveDurations(listing, ['1-3_months']), true)
+  assert.equal(matchesSelectedTestDriveDurations(listing, ['over_3_months']), true)
   assert.equal(matchesSelectedTestDriveDurations({ minStayDays: null, maxStayDays: null }, []), true)
-  assert.equal(matchesSelectedTestDriveDurations({ minStayDays: null, maxStayDays: null }, ['3-7 дней']), false)
+  assert.equal(matchesSelectedTestDriveDurations({ minStayDays: null, maxStayDays: null }, ['3-7_days']), false)
 })
 
 test('price sorting puts known prices before request-only listings', () => {
@@ -132,10 +132,10 @@ test('matches selected amenities against boolean and structured property data', 
   }
 
   assert.equal(matchesSelectedTestDriveAmenities(listing, []), true)
-  assert.equal(matchesSelectedTestDriveAmenities(listing, ['Бассейн']), true)
-  assert.equal(matchesSelectedTestDriveAmenities(listing, ['Вид на море', 'Терраса']), true)
-  assert.equal(matchesSelectedTestDriveAmenities(listing, ['Wi-Fi', 'Парковка']), true)
-  assert.equal(matchesSelectedTestDriveAmenities(listing, ['Лифт']), false)
+  assert.equal(matchesSelectedTestDriveAmenities(listing, ['pool']), true)
+  assert.equal(matchesSelectedTestDriveAmenities(listing, ['sea_view', 'terrace']), true)
+  assert.equal(matchesSelectedTestDriveAmenities(listing, ['wifi', 'parking']), true)
+  assert.equal(matchesSelectedTestDriveAmenities(listing, ['elevator']), false)
 })
 
 test('maps real amenity fields through to a test-drive listing', () => {

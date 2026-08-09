@@ -146,10 +146,27 @@ export default function TestDriveBookingPage() {
         })
         const data = await res.json()
         if (!res.ok || !data.success) {
-          showToast(data.error || 'Не удалось подтвердить оплату', 'error')
+          const msg =
+            data.message ||
+            ({
+              already_requested:
+                'У вас уже есть активная бронь на этот объект. Откройте «Мои бронирования».',
+              dates_unavailable: 'Эти даты уже заняты. Выберите другие.',
+              not_paid: 'Оплата ещё обрабатывается. Обновите страницу через минуту.',
+            }[data.error] ||
+              data.error ||
+              'Не удалось подтвердить оплату')
+          showToast(msg, 'error')
+          if (data.error === 'already_requested') {
+            const newParams = new URLSearchParams(searchParams)
+            newParams.delete('test_drive_checkout')
+            newParams.delete('session_id')
+            setSearchParams(newParams, { replace: true })
+          }
           return
         }
         setBookingSuccess(data.data || {})
+        window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
         const newParams = new URLSearchParams(searchParams)
         newParams.delete('test_drive_checkout')
         newParams.delete('session_id')
@@ -263,7 +280,15 @@ export default function TestDriveBookingPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.success || !data.url) {
-        showToast(data.error || 'Не удалось создать оплату', 'error')
+        const msg =
+          data.message ||
+          (data.error === 'already_requested'
+            ? 'У вас уже есть активная бронь тест-драйва на этот объект. Откройте «Мои бронирования».'
+            : data.error || 'Не удалось создать оплату')
+        showToast(msg, 'error')
+        if (data.error === 'already_requested' && data.data?.booking_id) {
+          navigate('/profile/bookings')
+        }
         return
       }
       window.location.href = data.url

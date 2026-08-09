@@ -475,6 +475,93 @@ function broadcastUserCabinetEvent(userId, payload) {
   });
 }
 
+/**
+ * In-app + email: предыдущего лидера перебили.
+ * Toast «Вернуться к торгам» поднимается через notifications_refresh → SiteNotificationsContext.
+ */
+async function notifyUserBidOutbid({
+  userId,
+  property,
+  propertyId,
+  newBidAmount,
+  previousBidAmount,
+}) {
+  const uid = Number(userId);
+  const pid = Number(propertyId);
+  if (!Number.isFinite(uid) || uid <= 0 || !Number.isFinite(pid) || pid <= 0) return;
+
+  const propertyTitle = (property && property.title) || 'объект';
+  const currency = (property && property.currency) || 'EUR';
+  const amount = Number(newBidAmount);
+  const formattedNewBid = new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: String(currency).trim() || 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(amount) ? amount : 0);
+  const message =
+    `Ваша ставка на объект "${propertyTitle}" была перебита. ` +
+    `Новая максимальная ставка: ${formattedNewBid}. ` +
+    `Вы можете сделать новую ставку, чтобы вернуться в игру!`;
+
+  await notificationQueries.create({
+    user_id: uid,
+    type: 'bid_outbid',
+    title: 'Вашу ставку перебили',
+    message,
+    data: JSON.stringify({
+      property_id: pid,
+      property_title: propertyTitle,
+      new_bid_amount: Number.isFinite(amount) ? amount : null,
+      previous_bid_amount:
+        previousBidAmount != null && Number.isFinite(Number(previousBidAmount))
+          ? Number(previousBidAmount)
+          : null,
+    }),
+    is_read: 0,
+    view_count: 0,
+  });
+
+  broadcastUserCabinetEvent(uid, { type: 'notifications_refresh' });
+
+  let user = null;
+  try {
+    user = await userQueries.getById(uid);
+  } catch (userErr) {
+    console.warn('[bid_outbid] Не удалось загрузить пользователя:', userErr?.message || userErr);
+  }
+
+  const link = buildPropertyPublicLink(pid, property?.slug || property?.url_slug || null);
+  const fullText = `${message}\n\nВернуться к торгам: ${link}`;
+
+  try {
+    const email = user?.email && String(user.email).trim();
+    if (!email) {
+      console.log(`[bid_outbid] Нет email у user_id=${uid}, письмо пропущено`);
+    } else {
+      await sendCrmEmailViaEmailJS(email, 'Вашу ставку перебили — Sellyourbrick', fullText);
+    }
+  } catch (emailErr) {
+    console.warn('[bid_outbid] Email не отправлен:', emailErr?.message || emailErr);
+  }
+
+  try {
+    const phone = user?.phone_number || user?.phone || '';
+    if (!String(phone).replace(/\D/g, '')) {
+      console.log(`[bid_outbid] Нет телефона у user_id=${uid}, WhatsApp пропущен`);
+    } else {
+      const wa = await trySendWhatsAppDigits(phone, fullText);
+      if (wa.ok) {
+        console.log(`[bid_outbid] WhatsApp отправлен user_id=${uid}`);
+      } else {
+        console.warn(`[bid_outbid] WhatsApp не отправлен user_id=${uid}:`, wa.error);
+      }
+    }
+  } catch (waErr) {
+    console.warn('[bid_outbid] WhatsApp ошибка:', waErr?.message || waErr);
+  }
+}
+
 /** Таблица Prisma для избранного/ставок по строке объекта (getByUserId раньше не всегда имел source_table). */
 function engagementTableFromPropertyRow(p) {
   if (!p) return 'properties_apartments';
@@ -1801,7 +1888,8 @@ app.get('/api/users/:id', async (req, res) => {
 
 /**
  * POST /api/users/:userId/private-club/redeem-promo
- * body: { code: string } — промокод VIP закрытого клуба (+30 дней). Список кодов: env VIP_CLUB_PROMO_CODES (по умолчанию ADMIN).
+ * body: { code: string } — промокод VIP закрытого клуба (+30 дней).
+ * Список кодов: env VIP_CLUB_PROMO_CODES (по умолчанию 1111). UI принимает 4 символа.
  */
 app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
   try {
@@ -1816,7 +1904,7 @@ app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
     if (!code) {
       return res.status(400).json({ success: false, error: 'Укажите промокод' });
     }
-    const envCodes = (process.env.VIP_CLUB_PROMO_CODES || 'ADMIN')
+    const envCodes = (process.env.VIP_CLUB_PROMO_CODES || '1111')
       .split(/[\s,;]+/)
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
@@ -14792,27 +14880,12 @@ app.post('/api/bids', async (req, res) => {
             previousHighestBidder.user_id !== userIdNum &&
             bidAmountNum > previousHighestBidder.bid_amount
           ) {
-            const propertyTitle = property.title || 'объект';
-            const currency = property.currency || 'USD';
-            const formattedNewBid = new Intl.NumberFormat('ru-RU', {
-              style: 'currency',
-              currency,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }).format(bidAmountNum);
-            await notificationQueries.create({
-              user_id: previousHighestBidder.user_id,
-              type: 'bid_outbid',
-              title: 'Вашу ставку перебили',
-              message: `Ваша ставка на объект "${propertyTitle}" была перебита. Новая максимальная ставка: ${formattedNewBid}. Вы можете сделать новую ставку, чтобы вернуться в игру!`,
-              data: JSON.stringify({
-                property_id: propertyIdNum,
-                property_title: propertyTitle,
-                new_bid_amount: bidAmountNum,
-                previous_bid_amount: previousHighestBidder.bid_amount,
-              }),
-              is_read: 0,
-              view_count: 0,
+            await notifyUserBidOutbid({
+              userId: previousHighestBidder.user_id,
+              property,
+              propertyId: propertyIdNum,
+              newBidAmount: bidAmountNum,
+              previousBidAmount: previousHighestBidder.bid_amount,
             });
           }
         } catch (notifError) {
@@ -14877,7 +14950,12 @@ app.post('/api/bids', async (req, res) => {
             propertyTable: tableName,
             property,
             basePrice,
-            onAutoBidPlaced: async ({ userId, bidAmount }) => {
+            onAutoBidPlaced: async ({
+              userId,
+              bidAmount,
+              previousLeaderId,
+              previousBidAmount,
+            }) => {
               const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
               broadcastPropertyBidEvent(propertyIdNum, {
                 type: 'bid_placed',
@@ -14888,6 +14966,26 @@ app.post('/api/bids', async (req, res) => {
                 user_id: userId,
                 from_ceiling: true,
               });
+              if (
+                previousLeaderId != null &&
+                Number(previousLeaderId) !== Number(userId) &&
+                Number(bidAmount) > Number(previousBidAmount || 0)
+              ) {
+                try {
+                  await notifyUserBidOutbid({
+                    userId: previousLeaderId,
+                    property,
+                    propertyId: propertyIdNum,
+                    newBidAmount: bidAmount,
+                    previousBidAmount,
+                  });
+                } catch (outbidErr) {
+                  console.warn(
+                    'Уведомление outbid (ceiling):',
+                    outbidErr?.message || outbidErr,
+                  );
+                }
+              }
               try {
                 const updatedAt = new Date().toISOString();
                 if (tableName === 'properties_apartments') {

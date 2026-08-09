@@ -461,7 +461,7 @@ export default function OwnerTestDriveSplitView({
           type="button"
           onClick={() => shiftVisibleCalendar(-1)}
           aria-label={calendarView === 'week'
-            ? (i18n.language === 'ru' ? 'Предыдущая неделя' : 'Previous week')
+            ? (t('ownerTestDriveSplitPrevWeek'))
             : t('ownerTestDriveCalendarPrev')}
         >
           <ChevronLeft size={20} strokeWidth={2.1} aria-hidden />
@@ -471,7 +471,7 @@ export default function OwnerTestDriveSplitView({
           type="button"
           onClick={() => shiftVisibleCalendar(1)}
           aria-label={calendarView === 'week'
-            ? (i18n.language === 'ru' ? 'Следующая неделя' : 'Next week')
+            ? (t('ownerTestDriveSplitNextWeek'))
             : t('ownerTestDriveCalendarNext')}
         >
           <ChevronRight size={20} strokeWidth={2.1} aria-hidden />
@@ -535,7 +535,7 @@ export default function OwnerTestDriveSplitView({
         })}
       </div>
 
-      <div className="otd-mob-booking-calendar__legend" aria-label={i18n.language === 'ru' ? 'Объекты в календаре' : 'Properties in calendar'}>
+      <div className="otd-mob-booking-calendar__legend" aria-label={t('ownerTestDriveSplitCalendarLegend')}>
         {calendarLegendItems.length ? calendarLegendItems.map((property) => (
           <button
             type="button"
@@ -548,7 +548,7 @@ export default function OwnerTestDriveSplitView({
             <small>{property.bookings}</small>
           </button>
         )) : (
-          <p>{i18n.language === 'ru' ? 'Новые брони появятся здесь автоматически' : 'New bookings will appear here automatically'}</p>
+          <p>{t('ownerTestDriveSplitBookingsEmpty')}</p>
         )}
       </div>
 
@@ -636,7 +636,13 @@ export default function OwnerTestDriveSplitView({
         const active = property.key === selectedKey
         const count = bookingCountByKey.get(property.key) || 0
         const locationLabel =
-          property.location && property.location !== 'Не указано' ? property.location : null
+          property.location &&
+          property.location &&
+          property.location !== t('buyerData_notSpecified') &&
+          property.location !== 'Не указано' &&
+          property.location !== t('ownerTest_locationFallback')
+            ? property.location
+            : null
         return (
           <li key={property.key}>
             <button
@@ -824,8 +830,8 @@ export default function OwnerTestDriveSplitView({
     <section className="otd-property-drawer__bookings" aria-label={t('ownerTestDriveBookingsAsideTitle')}>
       <header className="otd-property-drawer__bookings-head">
         <span>
-          <small>{i18n.language === 'ru' ? 'Заявки на просмотр' : 'Viewing requests'}</small>
-          <strong>{i18n.language === 'ru' ? 'Брони объекта' : 'Property bookings'}</strong>
+          <small>{t('ownerTestDriveSplitViewingRequests')}</small>
+          <strong>{t('ownerTestDriveSplitPropertyBookings')}</strong>
         </span>
         <em>{propertyBookings.length}</em>
       </header>
@@ -866,17 +872,17 @@ export default function OwnerTestDriveSplitView({
 
   const renderMobileDrawerBody = () => (
     <div className="otd-property-drawer__panel otd-property-drawer__panel--bookings">
-      <div className="otd-property-drawer__summary" aria-label={i18n.language === 'ru' ? 'Сводка броней' : 'Booking summary'}>
+      <div className="otd-property-drawer__summary" aria-label={t('ownerTestDriveSplitSummaryAria')}>
         <span>
-          <small>{i18n.language === 'ru' ? 'Всего' : 'Total'}</small>
+          <small>{t('ownerTestDriveSplitTotal')}</small>
           <strong>{tabCounts.all}</strong>
         </span>
         <span>
-          <small>{i18n.language === 'ru' ? 'Ожидают' : 'Pending'}</small>
+          <small>{t('ownerTestDriveSplitPending')}</small>
           <strong>{tabCounts.pending}</strong>
         </span>
         <span>
-          <small>{i18n.language === 'ru' ? 'Подтверждены' : 'Confirmed'}</small>
+          <small>{t('ownerTestDriveSplitConfirmed')}</small>
           <strong>{tabCounts.confirmed}</strong>
         </span>
       </div>
@@ -886,14 +892,14 @@ export default function OwnerTestDriveSplitView({
           <CalendarDays size={18} strokeWidth={2.2} />
         </span>
         <span className="otd-property-drawer__scope-copy">
-          <strong>{i18n.language === 'ru' ? 'Брони только этого объекта' : 'Only this property’s bookings'}</strong>
-          <small>{i18n.language === 'ru' ? 'Фильтровать верхний календарь' : 'Filter the calendar above'}</small>
+          <strong>{t('ownerTestDriveSplitOnlyThis')}</strong>
+          <small>{t('ownerTestDriveSplitFilterCalendar')}</small>
         </span>
         <button
           type="button"
           role="switch"
           aria-checked={selectedPropertyCalendarOnly}
-          aria-label={i18n.language === 'ru' ? 'Брони только этого объекта' : 'Only this property’s bookings'}
+          aria-label={t('ownerTestDriveSplitOnlyThis')}
           className={`otd-property-drawer__scope-switch${selectedPropertyCalendarOnly ? ' is-on' : ''}`}
           onClick={() => setSelectedPropertyCalendarOnly((current) => !current)}
         >
@@ -944,10 +950,14 @@ export default function OwnerTestDriveSplitView({
             />
             <div className="otd-property-drawer__head-copy">
               <span className="otd-property-drawer__eyebrow">
-                {i18n.language === 'ru' ? 'Объект тест-драйва' : 'Test-drive property'}
+                {t('ownerTestDriveSplitPropertyLabel')}
               </span>
               <h2 className="otd-property-drawer__title">{selectedProperty.title}</h2>
-              {selectedProperty.location && selectedProperty.location !== 'Не указано' ? (
+              {selectedProperty.location &&
+              selectedProperty.location &&
+              selectedProperty.location !== t('buyerData_notSpecified') &&
+              selectedProperty.location !== 'Не указано' &&
+              selectedProperty.location !== t('ownerTest_locationFallback') ? (
                 <p className="otd-property-drawer__meta">{selectedProperty.location}</p>
               ) : selectedProperty.displayId ? (
                 <p className="otd-property-drawer__meta">{selectedProperty.displayId}</p>

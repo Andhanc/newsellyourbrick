@@ -58,11 +58,6 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     margin-top: 0;
   }
 
-  /* Hero-экран аукциона: без AI-кнопки */
-  .home-page--auction .ai-button {
-    display: none !important;
-  }
-
   .home-page--auction > .home-list-wrap {
     order: 2;
     overflow-x: clip;
@@ -213,14 +208,14 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   }
 }
 
-/* Страница /auction: AI выше плашки депозита */
+/* Страница /auction: AI чуть выше плашки депозита */
 .home-page--auction .ai-button {
-  bottom: 112px;
+  bottom: 90px;
 }
 
 @media (min-width: 768px) {
   .home-page--auction .ai-button {
-    bottom: 118px;
+    bottom: 98px;
   }
 }
 
@@ -233,15 +228,25 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     transform 0.65s cubic-bezier(0.65, 0, 0.2, 1);
 }
 
+/* html.site-footer-near — единый источник (SiteFooterNearObserver); --footer-near — дубль из React */
+html.site-footer-near .home-auction-floats .deposit-button,
 .home-auction-floats--footer-near .deposit-button {
   opacity: 0 !important;
+  visibility: hidden !important;
   transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
   pointer-events: none !important;
   transition-delay: 0s;
 }
 
+/* После сброса footer-near возвращаем центрирование нулевой плашки */
+.home-auction-floats .deposit-button:not(.deposit-button--compact) {
+  transform: translateX(-50%);
+}
+
+html.site-footer-near .home-auction-floats > button.ai-button,
 .home-auction-floats--footer-near .ai-button {
   opacity: 0 !important;
+  visibility: hidden !important;
   transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
   pointer-events: none !important;
   transition-delay: 0.07s;
@@ -715,6 +720,124 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   margin-top: 4px;
 }
 
+.chat-widget__recommendation-cta {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f3d42;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__navigation {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(17, 24, 39, 0.1);
+}
+
+.chat-widget__navigation-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__navigation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-widget__navigation-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 10px;
+  background: #f3fafb;
+  color: #12353a;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-widget__navigation-link:hover {
+  border-color: #4a96a6;
+  background: #e8f6f8;
+}
+
+.chat-widget__yield {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(74, 150, 166, 0.22);
+  background: linear-gradient(180deg, #f7fcfd, #eef7f8);
+}
+
+.chat-widget__yield-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #12353a;
+  margin-bottom: 10px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__yield-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.chat-widget__yield-grid span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__yield-grid strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 14px;
+  color: #12353a;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__yield-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #4b5563;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chat-widget__yield-cta {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #12353a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+}
+
+.chat-widget__yield-cta:hover {
+  background: #0f2d31;
+}
+
 .chat-widget__typing {
   display: flex;
   gap: 4px;
@@ -793,7 +916,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   }
 }
 
-/* Аукцион, мобилка: вплотную под шапку, низ выше FAB AI (112px + 56px) */
+/* Аукцион, мобилка: вплотную под шапку, низ выше FAB AI (90px + 56px) */
 @media (max-width: 767px) {
   .home-page--auction .home-auction-floats:has(.chat-widget) > .ai-button {
     opacity: 0 !important;
@@ -805,7 +928,7 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
     /* низ видимой pill-шапки, не spacer 104px — иначе зазор и низкая панель */
     --auction-chat-top: calc(env(safe-area-inset-top, 0px) + 4px + 38px);
     /* FAB скрыт при открытом чате */
-    --auction-chat-bottom: calc(112px + 56px + 2px);
+    --auction-chat-bottom: calc(90px + 56px + 2px);
     top: var(--auction-chat-top);
     bottom: var(--auction-chat-bottom);
     height: auto;

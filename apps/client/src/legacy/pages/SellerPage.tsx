@@ -1,7 +1,9 @@
-import { useEffect, useState, type SyntheticEvent } from 'react'
+import { useEffect, useMemo, useState, type SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import {
   FiArrowRight,
+  FiArrowUpRight,
   FiBarChart2,
   FiCheckCircle,
   FiHome,
@@ -11,7 +13,6 @@ import {
   FiTrendingUp,
   FiUsers,
 } from 'react-icons/fi'
-import type { IconType } from 'react-icons'
 import { useAnimatedCounter } from '@/components/about/hooks/useAnimatedCounter'
 import { useInView } from '@/components/about/hooks/useInView'
 import Header from '@/components/Header'
@@ -21,114 +22,6 @@ import './SellerPage.css'
 
 const sellerAboutChartBadgeSrc = publicAsset('images/seller-page/seller-about-chart-badge.png')
 const sellerAboutPortraitSrc = publicAsset('images/seller-page/seller-about-portrait.png')
-
-type SellerCard = {
-  icon: IconType
-  title: string
-  copy: string
-  accent?: boolean
-  action?: string
-}
-
-const sellerToolkitCards: SellerCard[] = [
-  {
-    icon: FiHome,
-    title: 'Сильная упаковка',
-    copy: 'Подготовим фото, документы и презентацию, которая раскрывает ценность вашего объекта.',
-  },
-  {
-    icon: FiTrendingUp,
-    title: 'Стратегия цены',
-    copy: 'Сравним рынок и спрос, чтобы вы уверенно выбрали цену и не уступили лишнего.',
-    accent: true,
-  },
-  {
-    icon: FiUsers,
-    title: 'Доступ к покупателям',
-    copy: 'Покажем объект частным покупателям, инвесторам и участникам закрытых клубов.',
-  },
-  {
-    icon: FiShield,
-    title: 'Контроль до сделки',
-    copy: 'Соберём предложения, переговоры и статусы в одном понятном процессе до финала.',
-  },
-]
-
-const sellerVisionPoints = [
-  'Понимаете реальную позицию объекта на рынке',
-  'Видите спрос и предложения в одном месте',
-  'Сами выбираете цену и условия сделки',
-]
-
-const sellerMissionPoints = [
-  'Готовим объект к сильному выходу на рынок',
-  'Показываем его подходящим покупателям',
-  'Помогаем пройти переговоры до закрытия сделки',
-]
-
-const sellerServiceCards: SellerCard[] = [
-  {
-    icon: FiBarChart2,
-    title: 'Стратегия цены',
-    copy: 'Покажем потенциал объекта, реальный спрос и сценарии продажи до публикации.',
-    action: 'Оценить объект',
-  },
-  {
-    icon: FiLayers,
-    title: 'Маркетинг объекта',
-    copy: 'Создадим подачу, которая выделяет объект и помогает покупателю увидеть его ценность.',
-    accent: true,
-    action: 'Запустить продажу',
-  },
-  {
-    icon: FiTarget,
-    title: 'Сделка под контролем',
-    copy: 'Поможем с предложениями, переговорами и ключевыми этапами до получения результата.',
-    action: 'Стать продавцом',
-  },
-]
-
-const sellerLaunchStats = [
-  {
-    target: 200,
-    prefix: '',
-    suffix: 'K',
-    decimals: 0,
-    label: 'покупателей видят проверенные запуски продавцов',
-  },
-  {
-    target: 200,
-    prefix: '$',
-    suffix: 'M',
-    decimals: 0,
-    label: 'стоимость объектов, подготовленных с SellYourBrick',
-  },
-  {
-    target: 4.8,
-    prefix: '',
-    suffix: '/5',
-    decimals: 1,
-    label: 'оценка продавцами процесса запуска',
-  },
-]
-
-const sellerLaunchPlans = [
-  {
-    title: 'Проверить спрос',
-    copy: 'Узнайте, как рынок реагирует на объект, прежде чем принимать решение о цене.',
-    action: 'Проверить',
-  },
-  {
-    title: 'Продать выгоднее',
-    copy: 'Получите аналитику цены, сильную презентацию и доступ к подходящим покупателям.',
-    action: 'Рассчитать',
-  },
-  {
-    title: 'Закрытая продажа',
-    copy: 'Приватный запуск для дорогих объектов и ограниченного круга покупателей.',
-    action: 'Подробнее',
-  },
-]
 
 function SellerLaunchStatValue({
   target,
@@ -157,6 +50,53 @@ function SellerLaunchStatValue({
 }
 
 function SellerSavingsSection() {
+  const { t } = useTranslation()
+  const sellerLaunchStats = useMemo(
+    () => [
+      {
+        target: 200,
+        prefix: '',
+        suffix: 'K',
+        decimals: 0,
+        label: t('sellerLanding_stat1Label'),
+      },
+      {
+        target: 200,
+        prefix: '$',
+        suffix: 'M',
+        decimals: 0,
+        label: t('sellerLanding_stat2Label'),
+      },
+      {
+        target: 4.8,
+        prefix: '',
+        suffix: '/5',
+        decimals: 1,
+        label: t('sellerLanding_stat3Label'),
+      },
+    ],
+    [t],
+  )
+  const sellerLaunchPlans = useMemo(
+    () => [
+      {
+        title: t('sellerLanding_plan1Title'),
+        copy: t('sellerLanding_plan1Copy'),
+        action: t('sellerLanding_plan1Action'),
+      },
+      {
+        title: t('sellerLanding_plan2Title'),
+        copy: t('sellerLanding_plan2Copy'),
+        action: t('sellerLanding_plan2Action'),
+      },
+      {
+        title: t('sellerLanding_plan3Title'),
+        copy: t('sellerLanding_plan3Copy'),
+        action: t('sellerLanding_plan3Action'),
+      },
+    ],
+    [t],
+  )
   const { ref: statsRef, inView: statsInView } = useInView<HTMLDivElement>({ threshold: 0.35 })
   const [reduceMotion, setReduceMotion] = useState(false)
 
@@ -178,44 +118,41 @@ function SellerSavingsSection() {
         <div className="seller-savings__hero-content">
           <div className="seller-savings__copy">
             <h2 id="seller-savings-title">
-              <span className="seller-savings__title-line">Продайте выгоднее</span>
-              <span className="seller-savings__title-line">Всё под контролем</span>
+              <span className="seller-savings__title-line">{t('sellerLanding_savingsTitle1')}</span>
+              <span className="seller-savings__title-line">{t('sellerLanding_savingsTitle2')}</span>
             </h2>
-            <p>
-              Поможем определить сильную цену, подготовить объект и выйти к покупателям,
-              готовым обсуждать сделку.
-            </p>
+            <p>{t('sellerLanding_savingsLead')}</p>
             <Link
               to="/owner/property/new"
               className="seller-savings__button"
               onClick={() => scrollMainTo(0, 0, 'instant')}
             >
-              Рассчитать продажу
+              {t('sellerLanding_savingsCta')}
               <FiArrowRight />
             </Link>
           </div>
 
-          <div className="seller-savings__card" aria-label="Предварительный сценарий продажи">
+          <div className="seller-savings__card" aria-label={t('sellerLanding_savingsCardAria')}>
             <img
               src={publicAsset('images/seller-page/seller-savings-family-card.png')}
-              alt="Продавец с семьёй рядом с современным домом"
+              alt={t('sellerLanding_savingsCardImgAlt')}
               loading="lazy"
               decoding="async"
             />
             <div className="seller-savings__profit">
-              <span>Ваша выгода</span>
+              <span>{t('sellerLanding_savingsProfitLabel')}</span>
               <strong>$ 22,850</strong>
               <em>+8.07%</em>
             </div>
             <div className="seller-savings__badge">
               <FiCheckCircle />
-              Объект готов к сильному запуску за 12 дней
+              {t('sellerLanding_savingsBadge')}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="seller-savings__stats" ref={statsRef} aria-label="Результаты запусков продавцов">
+      <div className="seller-savings__stats" ref={statsRef} aria-label={t('sellerLanding_launchStatsAria')}>
         {sellerLaunchStats.map((stat) => (
           <article key={stat.label}>
             <SellerLaunchStatValue
@@ -243,13 +180,11 @@ function SellerSavingsSection() {
         <div className="seller-savings__lifestyle-shade" />
         <div className="seller-savings__lifestyle-badge">
           <FiCheckCircle />
-          Продавцы выбирают SellYourBrick в 2026
+          {t('sellerLanding_lifestyleBadge')}
         </div>
         <div className="seller-savings__lifestyle-head">
-          <h2 id="seller-savings-lifestyle-title">Продажа на ваших условиях начинается здесь</h2>
-          <p>
-            Выберите подходящий сценарий, проверьте потенциал объекта и запустите продажу уверенно.
-          </p>
+          <h2 id="seller-savings-lifestyle-title">{t('sellerLanding_lifestyleTitle')}</h2>
+          <p>{t('sellerLanding_lifestyleLead')}</p>
         </div>
         <div className="seller-savings__plans">
           {sellerLaunchPlans.map((plan) => (
@@ -269,10 +204,38 @@ function SellerSavingsSection() {
 }
 
 function SellerToolkitSection() {
+  const { t } = useTranslation()
+  const sellerToolkitCards = useMemo(
+    () => [
+      {
+        icon: FiHome,
+        title: t('sellerLanding_toolkit1Title'),
+        copy: t('sellerLanding_toolkit1Copy'),
+      },
+      {
+        icon: FiTrendingUp,
+        title: t('sellerLanding_toolkit2Title'),
+        copy: t('sellerLanding_toolkit2Copy'),
+        accent: true,
+      },
+      {
+        icon: FiUsers,
+        title: t('sellerLanding_toolkit3Title'),
+        copy: t('sellerLanding_toolkit3Copy'),
+      },
+      {
+        icon: FiShield,
+        title: t('sellerLanding_toolkit4Title'),
+        copy: t('sellerLanding_toolkit4Copy'),
+      },
+    ],
+    [t],
+  )
+
   return (
     <section className="seller-toolkit" aria-labelledby="seller-toolkit-title">
       <h2 id="seller-toolkit-title" className="seller-visually-hidden">
-        Почему продавцы выбирают SellYourBrick
+        {t('sellerLanding_toolkitTitle')}
       </h2>
       <div className="seller-toolkit__grid">
         {sellerToolkitCards.map((card) => {
@@ -307,13 +270,23 @@ function handleSellerAboutPortraitError(event: SyntheticEvent<HTMLImageElement>)
 }
 
 function SellerAboutSection() {
+  const { t } = useTranslation()
+  const sellerVisionPoints = useMemo(
+    () => [t('sellerLanding_vision1'), t('sellerLanding_vision2'), t('sellerLanding_vision3')],
+    [t],
+  )
+  const sellerMissionPoints = useMemo(
+    () => [t('sellerLanding_mission1'), t('sellerLanding_mission2'), t('sellerLanding_mission3')],
+    [t],
+  )
+
   return (
     <section className="seller-about" aria-labelledby="seller-about-title">
       <div className="seller-about__media">
         <img
           className="seller-about__portrait"
           src={sellerAboutPortraitSrc}
-          alt="Продавец проверяет аналитику объекта на смартфоне"
+          alt={t('sellerLanding_aboutPortraitAlt')}
           width={420}
           height={512}
           loading="eager"
@@ -326,7 +299,8 @@ function SellerAboutSection() {
           </span>
           <span>
             <strong>185+</strong>
-            продавцов уже в SellYourBrick
+            {' '}
+            {t('sellerLanding_aboutBadgeSellers')}
           </span>
         </div>
         <img
@@ -342,19 +316,17 @@ function SellerAboutSection() {
       </div>
 
       <div className="seller-about__content">
-        <span className="seller-about__label">Почему SellYourBrick</span>
+        <span className="seller-about__label">{t('sellerLanding_aboutLabel')}</span>
         <h2 id="seller-about-title">
-          Вы не просто размещаете{' '}
-          <span className="seller-about__title-accent">объект</span> — вы запускаете продажу
+          {t('sellerLanding_aboutTitleBefore')}{' '}
+          <span className="seller-about__title-accent">{t('sellerLanding_aboutTitleAccent')}</span>{' '}
+          {t('sellerLanding_aboutTitleAfter')}
         </h2>
-        <p className="seller-about__lead">
-          Мы соединяем аналитику, профессиональную презентацию и доступ к покупателям в одном
-          сервисе. Вы принимаете решения на основе цифр и сохраняете контроль над сделкой.
-        </p>
+        <p className="seller-about__lead">{t('sellerLanding_aboutLead')}</p>
 
         <div className="seller-about__columns">
           <div>
-            <h3>Ваша выгода</h3>
+            <h3>{t('sellerLanding_visionTitle')}</h3>
             <ul>
               {sellerVisionPoints.map((point) => (
                 <li key={point}>
@@ -365,7 +337,7 @@ function SellerAboutSection() {
             </ul>
           </div>
           <div>
-            <h3>Что берём на себя</h3>
+            <h3>{t('sellerLanding_missionTitle')}</h3>
             <ul>
               {sellerMissionPoints.map((point) => (
                 <li key={point}>
@@ -382,7 +354,7 @@ function SellerAboutSection() {
           className="seller-about__button btn-tiffany-shine"
           onClick={() => scrollMainTo(0, 0, 'instant')}
         >
-          Стать продавцом
+          {t('sellerLanding_aboutCta')}
         </Link>
       </div>
     </section>
@@ -390,6 +362,32 @@ function SellerAboutSection() {
 }
 
 function SellerServicesSection() {
+  const { t } = useTranslation()
+  const sellerServiceCards = useMemo(
+    () => [
+      {
+        icon: FiBarChart2,
+        title: t('sellerLanding_service1Title'),
+        copy: t('sellerLanding_service1Copy'),
+        action: t('sellerLanding_service1Action'),
+      },
+      {
+        icon: FiLayers,
+        title: t('sellerLanding_service2Title'),
+        copy: t('sellerLanding_service2Copy'),
+        accent: true,
+        action: t('sellerLanding_service2Action'),
+      },
+      {
+        icon: FiTarget,
+        title: t('sellerLanding_service3Title'),
+        copy: t('sellerLanding_service3Copy'),
+        action: t('sellerLanding_service3Action'),
+      },
+    ],
+    [t],
+  )
+
   return (
     <section className="seller-services" aria-labelledby="seller-services-title">
       <img
@@ -403,11 +401,9 @@ function SellerServicesSection() {
       <div className="seller-services__shade" aria-hidden="true" />
 
       <div className="seller-services__head">
-        <span className="seller-services__label">Полный цикл</span>
-        <h2 id="seller-services-title">Всё, чтобы продать уверенно и на своих условиях</h2>
-        <p>
-          От первой оценки до закрытия сделки — понятный процесс без хаоса и неизвестности.
-        </p>
+        <span className="seller-services__label">{t('sellerLanding_servicesLabel')}</span>
+        <h2 id="seller-services-title">{t('sellerLanding_servicesTitle')}</h2>
+        <p>{t('sellerLanding_servicesLead')}</p>
       </div>
 
       <div className="seller-services__grid">
@@ -425,7 +421,7 @@ function SellerServicesSection() {
               <p>{card.copy}</p>
               <Link to="/owner/property/new" onClick={() => scrollMainTo(0, 0, 'instant')}>
                 {card.action}
-                <FiArrowRight />
+                <FiArrowUpRight />
               </Link>
             </article>
           )

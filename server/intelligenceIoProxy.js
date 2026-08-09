@@ -38,15 +38,26 @@ export function registerIntelligenceIoProxy(app) {
         let message = text.slice(0, 500)
         try {
           const parsed = JSON.parse(text)
-          if (parsed?.deprecation_notice) {
+          const errObj = parsed?.error
+          const errMsg =
+            typeof errObj === 'string'
+              ? errObj
+              : String(errObj?.message || parsed?.details?.error?.message || '')
+          if (upstream.status === 402 || /PAYMENT_REQUIRED|budget too low|Insufficient/i.test(errMsg)) {
+            message =
+              'AI-провайдер вернул 402 (нужны кредиты/Pollen). Добавьте OPENROUTER_API_KEY или GROQ_API_KEY в .env, либо пополните ключ Pollinations на enter.pollinations.ai.'
+          } else if (parsed?.deprecation_notice && provider.id === 'pollinations' && provider.apiKey) {
             message =
               'Ошибка Pollinations API. Уберите POLLINATIONS_API_KEY из .env (для тестов ключ не нужен) и перезапустите npm start.'
+          } else if (errMsg) {
+            message = errMsg
           } else if (parsed?.error) {
-            message = String(parsed.error)
+            message = String(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error))
           }
         } catch {
           /* raw text */
         }
+        console.warn(`[api/ai/intelligence-chat] upstream ${provider.id} ${upstream.status}:`, message.slice(0, 200))
         return res.status(upstream.status).json({ detail: message })
       }
       const ct = upstream.headers.get('content-type') || 'application/json; charset=utf-8'

@@ -14,7 +14,6 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
-import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
@@ -42,9 +41,7 @@ const PropertyDetail = () => {
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [bidError, setBidError] = useState('')
   const [bidHistoryRefresh, setBidHistoryRefresh] = useState(0)
-  const [outbidNotification, setOutbidNotification] = useState(null)
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
-  const shownNotificationIdsRef = useRef(new Set())
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const userData = getUserData()
   const userId = userData?.id
@@ -444,96 +441,6 @@ const PropertyDetail = () => {
     }
   }, [normalizedProperty?.id, normalizedProperty?.is_auction, currentBid])
 
-  // Проверяем уведомления о перебитой ставке для текущего объекта
-  useEffect(() => {
-    if (!normalizedProperty?.id || !normalizedProperty?.is_auction || !userId) return
-
-    const checkNotifications = async () => {
-      try {
-        // Загружаем уведомления пользователя
-        const response = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            console.log('🔍 Проверка уведомлений для объекта:', normalizedProperty.id)
-            console.log('🔍 Все уведомления:', data.data)
-            console.log('🔍 Уведомления bid_outbid:', data.data.filter(n => n.type === 'bid_outbid'))
-            
-            // Ищем уведомления о перебитой ставке для текущего объекта
-            const outbidNotifs = data.data.filter(n => {
-              if (n.type !== 'bid_outbid') return false
-              if (shownNotificationIdsRef.current.has(n.id)) return false
-              if (n.view_count !== 0) return false
-              
-              // data уже парсится на сервере, но на всякий случай проверяем
-              let notificationData = n.data
-              if (typeof notificationData === 'string') {
-                try {
-                  notificationData = JSON.parse(notificationData)
-                } catch (e) {
-                  console.warn('Ошибка парсинга data уведомления:', e)
-                  return false
-                }
-              }
-              
-              // Сравниваем property_id (может быть число или строка)
-              const notifPropertyId = notificationData?.property_id
-              const currentPropertyId = parseInt(normalizedProperty.id)
-              
-              console.log('🔍 Сравнение property_id:', {
-                notifPropertyId,
-                currentPropertyId,
-                notifPropertyIdType: typeof notifPropertyId,
-                currentPropertyIdType: typeof currentPropertyId,
-                match: notifPropertyId == currentPropertyId || parseInt(notifPropertyId) === currentPropertyId
-              })
-              
-              return notifPropertyId && (
-                notifPropertyId == currentPropertyId || 
-                parseInt(notifPropertyId) === currentPropertyId
-              )
-            })
-
-            if (outbidNotifs.length > 0) {
-              // Берем самое свежее уведомление
-              const latestNotif = outbidNotifs.sort((a, b) => 
-                new Date(b.created_at) - new Date(a.created_at)
-              )[0]
-              
-              // Убеждаемся, что data парсится правильно
-              let parsedData = latestNotif.data
-              if (typeof parsedData === 'string') {
-                try {
-                  parsedData = JSON.parse(parsedData)
-                } catch (e) {
-                  console.warn('Ошибка парсинга data:', e)
-                }
-              }
-              
-              const notificationToShow = {
-                ...latestNotif,
-                data: parsedData
-              }
-              
-              setOutbidNotification(notificationToShow)
-              shownNotificationIdsRef.current.add(latestNotif.id)
-              console.log('🔔 ✅ Показано уведомление о перебитой ставке на странице объекта:', latestNotif.id, notificationToShow)
-            } else {
-              console.log('🔍 Уведомления о перебитой ставке для этого объекта не найдены')
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('Ошибка проверки уведомлений:', error)
-      }
-    }
-
-    checkNotifications()
-    const onFocus = () => checkNotifications()
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
-  }, [normalizedProperty?.id, normalizedProperty?.is_auction, userId])
-
   if (isLoading) {
     return (
       <div className="property-detail-page">
@@ -551,18 +458,6 @@ const PropertyDetail = () => {
       </div>
     )
   }
-
-  const handleCloseOutbidNotification = () => {
-    setOutbidNotification(null)
-  }
-
-  const handleGoToPropertyFromNotification = (propertyId) => {
-    // Если мы уже на странице этого объекта, просто прокручиваем к форме ставки
-    if (propertyId === parseInt(normalizedProperty?.id)) {
-      const bidForm = document.querySelector('.bid-form') || document.querySelector('.property-bid-section')
-      if (bidForm) {
-        bidForm.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
     }
   }
 
@@ -570,13 +465,6 @@ const PropertyDetail = () => {
     console.error('Property not found. ID:', id, 'Available IDs:', properties.map(p => p.id))
     return (
       <div className="property-detail-page">
-        {outbidNotification && (
-          <BidOutbidNotification
-            notification={outbidNotification}
-            onClose={handleCloseOutbidNotification}
-            onGoToProperty={handleGoToPropertyFromNotification}
-          />
-        )}
         <div className="property-detail">
           <div className="not-found">
             <h2>Объект не найден</h2>
@@ -802,13 +690,6 @@ const PropertyDetail = () => {
 
   return (
     <div className="property-detail-page">
-      {outbidNotification && (
-        <BidOutbidNotification
-          notification={outbidNotification}
-          onClose={handleCloseOutbidNotification}
-          onGoToProperty={handleGoToPropertyFromNotification}
-        />
-      )}
       <div className="property-detail">
         <div className="detail-header">
           <button onClick={handleBackClick} className="back-button">

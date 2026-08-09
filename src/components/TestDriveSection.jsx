@@ -137,9 +137,13 @@ export default function TestDriveSection({
           ? ru
             ? 'Проверка…'
             : 'Checking…'
-          : ru
-            ? 'Выбрать даты тест-драйва'
-            : 'Choose test drive dates'}
+          : isPromoLayout
+            ? ru
+              ? 'Выбрать даты'
+              : 'Pick dates'
+            : ru
+              ? 'Выбрать даты тест-драйва'
+              : 'Choose test drive dates'}
       </button>
       {!allDone && !loading && (
         <p className="property-detail-test-drive__hint">

@@ -21,6 +21,7 @@ test('notification center is an accessible grouped inbox', () => {
   assert.match(source, /aria-labelledby="notification-panel-title"/)
   assert.match(source, /groupBuyerNotifications/)
   assert.match(source, /notification-panel__group/)
+  assert.match(source, /notification-panel__tabs/)
   assert.match(source, /notification-panel__unread/)
   assert.match(source, /markAllNotificationsRead/)
 })
@@ -28,9 +29,10 @@ test('notification center is an accessible grouped inbox', () => {
 test('notification center has explicit loading, empty and item states', () => {
   assert.match(source, /notification-panel__skeleton/)
   assert.match(source, /notification-panel__empty/)
-  assert.match(source, /Важные шаги по сделке появятся здесь/)
+  assert.match(source, /notificationsEmptyDesc/)
   assert.match(source, /notification-item--unread/)
   assert.match(source, /notification-item__time/)
+  assert.match(source, /notification-item__icon/)
 })
 
 test('notification center is a mobile bottom sheet and desktop side panel', () => {
@@ -46,7 +48,8 @@ test('notification center is a mobile bottom sheet and desktop side panel', () =
 test('live outbid and booking updates use structured actionable toasts', () => {
   assert.match(context, /dedupeKey:/)
   assert.match(context, /action:\s*\{/)
-  assert.match(context, /title:/)
+  assert.match(context, /toastNewNotification/)
+  assert.match(context, /toastOpenNotification/)
   assert.match(context, /markAllNotificationsRead/)
 })
 

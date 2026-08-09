@@ -15,7 +15,7 @@ test('places the live ownership chart below the mobile share title', () => {
   assert.match(panel, /const showChart = mode !== 'purchase'/)
   assert.match(panel, /const showPurchase = mode !== 'chart'/)
   assert.match(page, /property-detail-mobile-share-chart[\s\S]*?<ShareDetailPurchasePanel[\s\S]*?mode="chart"/)
-  assert.match(page, /isShareListing \? \[aboutTab, galleryTab\]/)
+  assert.match(page, /isShareListing\s*\?\s*\[aboutTab,\s*galleryTab\]/)
 })
 
 test('uses a dedicated fixed mobile bar to buy several shares', () => {

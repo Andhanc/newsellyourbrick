@@ -28,6 +28,10 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
+import {
+  getListingAuctionTimerStatus,
+  isListingAuctionTimerCritical,
+} from '../utils/formatListingAuctionTimeLeft'
 import './AuctionPropertyCard.css'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { resolveBuyerListingState } from '../utils/resolveBuyerListingState'
@@ -132,11 +136,22 @@ function AuctionCardOverlayCountdown({ endTime }) {
   }, [endTime])
 
   void tick
+  const diffMs = endTime ? new Date(endTime).getTime() - Date.now() : 0
+  if (!endTime || diffMs <= 0) return null
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const statusClass = getListingAuctionTimerStatus(days)
+  const isCritical = isListingAuctionTimerCritical(days)
   const timeText = formatAuctionCardCountdown(endTime)
   if (!timeText) return null
 
   return (
-    <div className="auction-card__countdown-pill" role="timer">
+    <div
+      className={`auction-card__countdown-pill ${statusClass}${
+        isCritical ? ' timer-critical' : ''
+      }`}
+      role="timer"
+    >
       <Clock size={14} strokeWidth={2.2} aria-hidden />
       <span>{timeText}</span>
     </div>

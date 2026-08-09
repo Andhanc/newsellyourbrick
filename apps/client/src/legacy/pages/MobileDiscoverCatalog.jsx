@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FaApple, FaGooglePlay } from 'react-icons/fa'
 import { FiArrowRight, FiArrowUpRight } from 'react-icons/fi'
 import Footer from '../components/Footer'
@@ -30,87 +31,91 @@ const FORMAT_CARD_META = {
   shares: { tone: 'sheet' },
 }
 
-const FALLBACK_NEWS = [
-  {
-    id: 'crimea-top',
-    slug: null,
-    image: '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
-    badge: 'К морю',
-    title: 'Топ-10 курортных городов южного берега Крыма',
-    excerpt: 'Куда стоит поехать за морем, природой и спокойным отдыхом.',
-    date: '25 мар 2026',
-  },
-  {
-    id: 'kaliningrad-small',
-    slug: null,
-    image: '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Малые города Калининградской области на выходные',
-    excerpt: 'Зеленоградск, Светлогорск и другие уютные точки без толп.',
-    date: '22 мар 2026',
-  },
-  {
-    id: 'architecture',
-    slug: null,
-    image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg',
-    badge: 'Архитектура',
-    title: 'Города с необычной архитектурой: куда поехать в 2026',
-    excerpt: 'От модерна до авангарда — прогулки, которые превращаются в экскурсию.',
-    date: '15 мар 2026',
-  },
-  {
-    id: 'beach-aerial',
-    slug: null,
-    image: '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
-    badge: 'К морю',
-    title: 'Пляжи с чистой водой и удобной инфраструктурой',
-    excerpt: 'Побережья, куда комфортно добраться из крупных городов.',
-    date: '10 мар 2026',
-  },
-]
+function getFallbackNews(t) {
+  return [
+    {
+      id: 'crimea-top',
+      slug: null,
+      image: '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
+      badge: t('newsPage_static_crimeaBadge'),
+      title: t('newsPage_static_crimeaTitle'),
+      excerpt: t('newsPage_static_crimeaExcerpt'),
+      date: t('newsPage_static_crimeaDate'),
+    },
+    {
+      id: 'kaliningrad-small',
+      slug: null,
+      image: '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
+      badge: t('newsPage_static_kaliningradBadge'),
+      title: t('newsPage_static_kaliningradTitle'),
+      excerpt: t('newsPage_static_kaliningradExcerpt'),
+      date: t('newsPage_static_kaliningradDate'),
+    },
+    {
+      id: 'architecture',
+      slug: null,
+      image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg',
+      badge: t('newsPage_static_architectureBadge'),
+      title: t('newsPage_static_architectureTitle'),
+      excerpt: t('newsPage_static_architectureExcerpt'),
+      date: t('newsPage_static_architectureDate'),
+    },
+    {
+      id: 'beach-aerial',
+      slug: null,
+      image: '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
+      badge: t('newsPage_static_beachBadge'),
+      title: t('newsPage_static_beachTitle'),
+      excerpt: t('newsPage_static_beachExcerpt'),
+      date: t('newsPage_static_beachDate'),
+    },
+  ]
+}
 
-const SHOWCASE_SECTIONS = [
-  {
-    id: 'auction',
-    sectionId: 'invest-objects-auction',
-    variant: 'auction',
-    title: 'Аукцион',
-    subtitle: 'Находите скрытые возможности и приобретайте объекты по лучшей цене',
-    ctaLabel: 'Перейти',
-    to: '/auction?filter=auction',
-    itemsKey: 'auctionSection',
-  },
-  {
-    id: 'buy_now',
-    sectionId: 'invest-objects-buy-now',
-    variant: 'buyNow',
-    title: 'Купить сейчас',
-    subtitle: 'Готовые объекты по фиксированной цене без торгов',
-    ctaLabel: 'Перейти',
-    to: '/auction?filter=buy_now',
-    itemsKey: 'buyNowSection',
-  },
-  {
-    id: 'shares',
-    sectionId: 'invest-objects-shares',
-    variant: 'shares',
-    title: 'Доли',
-    subtitle: 'Инвестируйте в доли крупных объектов от минимальных сумм',
-    ctaLabel: 'Перейти',
-    to: '/shares',
-    itemsKey: 'sharesSection',
-  },
-  {
-    id: 'debts',
-    sectionId: 'invest-objects-debts',
-    variant: 'debts',
-    title: 'Долги',
-    subtitle: 'Инвестируйте в долговые инструменты под залог недвижимости',
-    ctaLabel: 'Перейти',
-    to: '/debts',
-    itemsKey: 'debtsSection',
-  },
-]
+function getShowcaseSections(t) {
+  return [
+    {
+      id: 'auction',
+      sectionId: 'invest-objects-auction',
+      variant: 'auction',
+      title: t('auction'),
+      subtitle: t('discoverPage_showcaseAuctionSubtitle'),
+      ctaLabel: t('goTo'),
+      to: '/auction?filter=auction',
+      itemsKey: 'auctionSection',
+    },
+    {
+      id: 'buy_now',
+      sectionId: 'invest-objects-buy-now',
+      variant: 'buyNow',
+      title: t('buyNowSectionTitle'),
+      subtitle: t('discoverPage_showcaseBuyNowSubtitle'),
+      ctaLabel: t('goTo'),
+      to: '/auction?filter=buy_now',
+      itemsKey: 'buyNowSection',
+    },
+    {
+      id: 'shares',
+      sectionId: 'invest-objects-shares',
+      variant: 'shares',
+      title: t('shares'),
+      subtitle: t('discoverPage_showcaseSharesSubtitle'),
+      ctaLabel: t('goTo'),
+      to: '/shares',
+      itemsKey: 'sharesSection',
+    },
+    {
+      id: 'debts',
+      sectionId: 'invest-objects-debts',
+      variant: 'debts',
+      title: t('debtsTitle'),
+      subtitle: t('discoverPage_showcaseDebtsSubtitle'),
+      ctaLabel: t('goTo'),
+      to: '/debts',
+      itemsKey: 'debtsSection',
+    },
+  ]
+}
 
 function FormatCard({ id, index, tone = 'sheet', photo, children }) {
   return (
@@ -184,21 +189,20 @@ function DebtsFlow({ index, children }) {
 }
 
 function AppDownloadSection() {
+  const { t } = useTranslation()
   return (
     <section className="md-app-download" aria-labelledby="md-app-download-title">
       <div className="md-app-download__inner">
-        <p className="md-app-download__kicker">Мобильное приложение</p>
+        <p className="md-app-download__kicker">{t('discoverPage_appKicker')}</p>
         <h2 id="md-app-download-title" className="md-app-download__title">
           <span className="md-app-download__brand">
             <span>Sell</span>
             <span className="md-app-download__brand-accent">Your</span>
             <span>Brick</span>
           </span>
-          <span className="md-app-download__title-rest">всегда с собой</span>
+          <span className="md-app-download__title-rest">{t('discoverPage_appTitleRest')}</span>
         </h2>
-        <p className="md-app-download__lead">
-          Аукционы, покупки и инвестиции — всё в одном приложении
-        </p>
+        <p className="md-app-download__lead">{t('discoverPage_appLead')}</p>
 
         <div className="md-app-download__actions">
           <a
@@ -211,7 +215,7 @@ function AppDownloadSection() {
               <FaApple />
             </span>
             <span className="md-app-download__btn-copy">
-              <span className="md-app-download__btn-eyebrow">Загрузить в</span>
+              <span className="md-app-download__btn-eyebrow">{t('discoverPage_downloadOn')}</span>
               <span className="md-app-download__btn-label">App Store</span>
             </span>
           </a>
@@ -226,7 +230,7 @@ function AppDownloadSection() {
               <FaGooglePlay />
             </span>
             <span className="md-app-download__btn-copy">
-              <span className="md-app-download__btn-eyebrow">Доступно в</span>
+              <span className="md-app-download__btn-eyebrow">{t('discoverPage_availableOn')}</span>
               <span className="md-app-download__btn-label">Google Play</span>
             </span>
           </a>
@@ -237,6 +241,7 @@ function AppDownloadSection() {
 }
 
 function NewsSection({ articles }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [featured, ...rest] = articles
 
@@ -251,16 +256,14 @@ function NewsSection({ articles }) {
         <header className="md-news__header">
           <div className="md-news__title-row">
             <h2 id="md-news-title" className="md-news__title">
-              Новости
+              {t('news')}
             </h2>
             <Link to="/news" className="md-news__all">
-              <span>Все новости</span>
+              <span>{t('sybLandingNewsViewAll')}</span>
               <FiArrowRight aria-hidden />
             </Link>
           </div>
-          <p className="md-news__subtitle">
-            Идеи для поездок, рынок и свежие материалы о недвижимости
-          </p>
+          <p className="md-news__subtitle">{t('discoverPage_newsSubtitle')}</p>
         </header>
 
         {featured ? (
@@ -295,7 +298,7 @@ function NewsSection({ articles }) {
                   <p className="md-news-feature__excerpt">{featured.excerpt}</p>
                 ) : null}
                 <span className="md-news-feature__cta" aria-hidden>
-                  Читать
+                  {t('newsPage_heroRead')}
                   <FiArrowUpRight />
                 </span>
               </div>
@@ -335,7 +338,7 @@ function NewsSection({ articles }) {
                       </div>
                       <h3 className="md-news-card__title">{article.title}</h3>
                       <span className="md-news-card__cta" aria-hidden>
-                        Читать
+                        {t('newsPage_heroRead')}
                         <FiArrowUpRight />
                       </span>
                     </div>
@@ -354,11 +357,12 @@ function NewsSection({ articles }) {
  * Property catalog on Mobile Discover — one full screen per sale format.
  */
 export default function MobileDiscoverCatalog() {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const rootRef = useRef(null)
   const jumpingRef = useRef(false)
   const wheelAcc = useRef(0)
-  const [newsArticles, setNewsArticles] = useState(FALLBACK_NEWS)
+  const [newsArticles, setNewsArticles] = useState(() => getFallbackNews(t))
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const {
     loading,
@@ -375,8 +379,12 @@ export default function MobileDiscoverCatalog() {
     debtsSection,
   }
 
+  const showcaseSections = getShowcaseSections(t)
+
   useEffect(() => {
     let cancelled = false
+    const fallback = getFallbackNews(t)
+    setNewsArticles(fallback)
     fetchPublishedArticles()
       .then((articles) => {
         if (cancelled || !Array.isArray(articles) || articles.length === 0) return
@@ -384,13 +392,13 @@ export default function MobileDiscoverCatalog() {
           id: article.id,
           slug: article.slug,
           image: article.image,
-          badge: article.badge || 'Новости',
+          badge: article.badge || t('newsPage_mobileBadgeFallback'),
           title: article.title,
           excerpt: article.excerpt,
           date: article.date,
         }))
         const filled = [...fromApi]
-        for (const item of FALLBACK_NEWS) {
+        for (const item of fallback) {
           if (filled.length >= 4) break
           if (filled.some((a) => a.id === item.id || a.title === item.title)) continue
           filled.push(item)
@@ -401,12 +409,12 @@ export default function MobileDiscoverCatalog() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t, i18n.language])
 
   const showPropertyAuthRequiredToast = useCallback(() => {
-    showNotification('Войдите в аккаунт, чтобы открыть карточку объекта.', 'warning', 7000)
+    showNotification(t('discoverPage_authToOpenProperty'), 'warning', 7000)
     requestOpenLoginModal({ wizard: true })
-  }, [])
+  }, [t])
 
   const renderSection = (section) => {
     const items = itemsByKey[section.itemsKey]
@@ -702,10 +710,10 @@ export default function MobileDiscoverCatalog() {
     }
   }, [loading])
 
-  const auction = SHOWCASE_SECTIONS.find((s) => s.id === 'auction')
-  const buyNow = SHOWCASE_SECTIONS.find((s) => s.id === 'buy_now')
-  const shares = SHOWCASE_SECTIONS.find((s) => s.id === 'shares')
-  const debts = SHOWCASE_SECTIONS.find((s) => s.id === 'debts')
+  const auction = showcaseSections.find((s) => s.id === 'auction')
+  const buyNow = showcaseSections.find((s) => s.id === 'buy_now')
+  const shares = showcaseSections.find((s) => s.id === 'shares')
+  const debts = showcaseSections.find((s) => s.id === 'debts')
 
   const formatCards = [
     auction ? { id: 'auction', node: renderSection(auction) } : null,

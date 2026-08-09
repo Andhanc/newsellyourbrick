@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import {
   ArrowDownRight,
@@ -20,10 +21,10 @@ import './OwnerSalesAnalyticsDrawer.css'
 const MONTH_COUNT = 6
 const TYPE_ORDER = ['auction', 'buy_now', 'shares', 'debts']
 const TYPE_META = {
-  auction: { ru: 'Аукционы', en: 'Auctions', color: '#3bc0cb' },
-  buy_now: { ru: 'Прямые продажи', en: 'Direct sales', color: '#23d49a' },
-  shares: { ru: 'Доли', en: 'Shares', color: '#ffca28' },
-  debts: { ru: 'Долги', en: 'Debts', color: '#ff4e58' },
+  auction: { labelKey: 'osa_typeAuction', color: '#3bc0cb' },
+  buy_now: { labelKey: 'osa_typeBuyNow', color: '#23d49a' },
+  shares: { labelKey: 'osa_typeShares', color: '#ffca28' },
+  debts: { labelKey: 'osa_typeDebts', color: '#ff4e58' },
 }
 
 function finiteNumber(...values) {
@@ -148,9 +149,9 @@ export default function OwnerSalesAnalyticsDrawer({
   language = 'ru',
   loading = false,
 }) {
+  const { t } = useTranslation()
   const closeRef = useRef(null)
   const [activeTab, setActiveTab] = useState('sales')
-  const ru = String(language || '').startsWith('ru')
 
   useEffect(() => {
     if (!open || typeof document === 'undefined') return undefined
@@ -213,7 +214,7 @@ export default function OwnerSalesAnalyticsDrawer({
 
     const types = TYPE_ORDER.map((key) => ({
       key,
-      label: ru ? TYPE_META[key].ru : TYPE_META[key].en,
+      label: t(TYPE_META[key].labelKey),
       color: TYPE_META[key].color,
       count: sold.filter((row) => row.listingType === key).length,
     }))
@@ -266,7 +267,7 @@ export default function OwnerSalesAnalyticsDrawer({
       popular: reachRows.slice(0, 5),
       bidFeed,
     }
-  }, [bids, locale, properties, ru])
+  }, [bids, locale, properties, t])
 
   if (!open || typeof document === 'undefined') return null
 
@@ -290,15 +291,15 @@ export default function OwnerSalesAnalyticsDrawer({
         <div className="osa__handle" aria-hidden><span /></div>
         <header className="osa__header">
           <div>
-            <span className="osa__eyebrow">{ru ? 'Кабинет продавца' : 'Seller dashboard'}</span>
-            <h2 id="osa-title">{ru ? 'Аналитика' : 'Analytics'}</h2>
+            <span className="osa__eyebrow">{t('osa_eyebrow')}</span>
+            <h2 id="osa-title">{t('osa_title')}</h2>
           </div>
-          <button ref={closeRef} type="button" className="osa__close" onClick={onClose} aria-label={ru ? 'Закрыть' : 'Close'}>
+          <button ref={closeRef} type="button" className="osa__close" onClick={onClose} aria-label={t('osa_close')}>
             <X size={21} aria-hidden />
           </button>
         </header>
 
-        <div className="osa__tabs" role="tablist" aria-label={ru ? 'Раздел аналитики' : 'Analytics section'}>
+        <div className="osa__tabs" role="tablist" aria-label={t('osa_tabsAria')}>
           <button
             type="button"
             role="tab"
@@ -306,7 +307,7 @@ export default function OwnerSalesAnalyticsDrawer({
             className={`osa__tab${activeTab === 'sales' ? ' osa__tab--active' : ''}`}
             onClick={() => setActiveTab('sales')}
           >
-            {ru ? 'Продажи' : 'Sales'}
+            {t('osa_tabSales')}
           </button>
           <button
             type="button"
@@ -315,7 +316,7 @@ export default function OwnerSalesAnalyticsDrawer({
             className={`osa__tab${activeTab === 'reach' ? ' osa__tab--active' : ''}`}
             onClick={() => setActiveTab('reach')}
           >
-            {ru ? 'Охват' : 'Reach'}
+            {t('osa_tabReach')}
           </button>
           <button
             type="button"
@@ -324,7 +325,7 @@ export default function OwnerSalesAnalyticsDrawer({
             className={`osa__tab${activeTab === 'bids' ? ' osa__tab--active' : ''}`}
             onClick={() => setActiveTab('bids')}
           >
-            {ru ? 'Ставки' : 'Bids'}
+            {t('osa_tabBids')}
           </button>
         </div>
 
@@ -332,11 +333,9 @@ export default function OwnerSalesAnalyticsDrawer({
           {!loading && properties.length === 0 ? (
             <div className="osa__empty-state osa__empty-state--illustrated">
               <OwnerEmptyPropertiesIllustration className="osa__empty-art" />
-              <strong>{ru ? 'Пока нет объектов' : 'No properties yet'}</strong>
+              <strong>{t('osa_emptyTitle')}</strong>
               <span>
-                {ru
-                  ? 'Добавьте первый объект — здесь появится аналитика портфеля'
-                  : 'Add your first property to see portfolio analytics here'}
+                {t('osa_emptyText')}
               </span>
             </div>
           ) : null}
@@ -346,20 +345,20 @@ export default function OwnerSalesAnalyticsDrawer({
           <section className="osa__income-card" aria-labelledby="osa-income-title">
             <div className="osa__income-head">
               <div>
-                <span>{ru ? 'Получено за месяц' : 'Received this month'}</span>
+                <span>{t('osa_receivedMonth')}</span>
                 <strong id="osa-income-title">
                   {loading ? '—' : formatMoney(analytics.currentAmount, analytics.currency, locale, true)}
                 </strong>
                 <small className={positiveDelta ? 'osa__delta osa__delta--up' : 'osa__delta osa__delta--down'}>
                   <DeltaIcon size={14} aria-hidden />
                   {Math.abs(analytics.delta).toLocaleString(locale, { maximumFractionDigits: 1 })}%
-                  <em>{ru ? ' к прошлому месяцу' : ' vs previous month'}</em>
+                  <em>{t('osa_vsPrevMonth')}</em>
                 </small>
               </div>
               <span className="osa__income-icon" aria-hidden><BadgeEuro size={22} /></span>
             </div>
 
-            <div className="osa__bar-chart" aria-label={ru ? 'Доход по месяцам' : 'Monthly income'}>
+            <div className="osa__bar-chart" aria-label={t('osa_monthlyIncome')}>
               {analytics.monthly.map((month, index) => {
                 const height = month.value > 0
                   ? Math.max(14, Math.round((month.value / analytics.maxMonth) * 100))
@@ -380,15 +379,15 @@ export default function OwnerSalesAnalyticsDrawer({
               })}
             </div>
             <p className="osa__income-note">
-              {ru ? 'Сумма всех ставок и завершённых продаж' : 'All bids and completed sales combined'}
+              {t('osa_bidsSalesCombined')}
             </p>
           </section>
 
           <section className="osa__mix-card" aria-labelledby="osa-mix-title">
             <div className="osa__section-heading">
               <div>
-                <span>{ru ? 'Структура продаж' : 'Sales mix'}</span>
-                <h3 id="osa-mix-title">{ru ? 'Что продаётся' : 'What is selling'}</h3>
+                <span>{t('osa_salesMix')}</span>
+                <h3 id="osa-mix-title">{t('osa_whatSelling')}</h3>
               </div>
               <strong>{analytics.sold.length}</strong>
             </div>
@@ -397,7 +396,7 @@ export default function OwnerSalesAnalyticsDrawer({
               <div className="osa__donut" style={{ '--osa-donut': analytics.donut }} aria-hidden>
                 <div className="osa__donut-center">
                   <strong>{analytics.sold.length}</strong>
-                  <span>{ru ? 'продано' : 'sold'}</span>
+                  <span>{t('osa_sold')}</span>
                 </div>
               </div>
               <div className="osa__legend">
@@ -415,41 +414,41 @@ export default function OwnerSalesAnalyticsDrawer({
           <section className="osa__metrics" aria-labelledby="osa-metrics-title">
             <div className="osa__section-heading">
               <div>
-                <span>{ru ? 'Полезные цифры' : 'Useful numbers'}</span>
-                <h3 id="osa-metrics-title">{ru ? 'Эффективность продаж' : 'Sales performance'}</h3>
+                <span>{t('osa_usefulNumbers')}</span>
+                <h3 id="osa-metrics-title">{t('osa_salesPerf')}</h3>
               </div>
             </div>
 
             <div className="osa__metric-grid">
               <article>
                 <span><Building2 size={17} aria-hidden /></span>
-                <small>{ru ? 'Продано объектов' : 'Properties sold'}</small>
+                <small>{t('osa_soldProps')}</small>
                 <strong>{analytics.sold.length}</strong>
               </article>
               <article>
                 <span><BadgeEuro size={17} aria-hidden /></span>
-                <small>{ru ? 'Средний чек' : 'Average sale'}</small>
+                <small>{t('osa_avgSale')}</small>
                 <strong>{formatMoney(analytics.averageSale, analytics.currency, locale, true)}</strong>
               </article>
               <article>
                 <span><Gavel size={17} aria-hidden /></span>
-                <small>{ru ? 'Ставок за месяц' : 'Bids this month'}</small>
+                <small>{t('osa_bidsMonth')}</small>
                 <strong>{analytics.currentMonthBidCount}</strong>
               </article>
               <article>
                 <span><Percent size={17} aria-hidden /></span>
-                <small>{ru ? 'Конверсия в продажу' : 'Sales conversion'}</small>
+                <small>{t('osa_conversion')}</small>
                 <strong>{analytics.conversion.toLocaleString(locale, { maximumFractionDigits: 1 })}%</strong>
               </article>
             </div>
 
             <div className="osa__insight">
-              <span>{ru ? 'Максимальная ставка' : 'Highest bid'}</span>
+              <span>{t('osa_highestBid')}</span>
               <strong>{formatMoney(analytics.maxBid, analytics.currency, locale, true)}</strong>
               <small>
                 {analytics.topType
-                  ? `${ru ? 'Лидер по продажам' : 'Top sales type'} — ${analytics.topType.label}`
-                  : ru ? 'Данные появятся после первой продажи' : 'Data appears after the first sale'}
+                  ? `${t('osa_topType')} — ${analytics.topType.label}`
+                  : t('osa_afterFirstSale')}
               </small>
             </div>
           </section>
@@ -461,19 +460,19 @@ export default function OwnerSalesAnalyticsDrawer({
               <section className="osa__reach-summary" aria-labelledby="osa-reach-title">
                 <div className="osa__section-heading">
                   <div>
-                    <span>{ru ? 'Общая аудитория' : 'Total audience'}</span>
-                    <h3 id="osa-reach-title">{ru ? 'Охват объектов' : 'Property reach'}</h3>
+                    <span>{t('osa_totalAudience')}</span>
+                    <h3 id="osa-reach-title">{t('osa_propertyReach')}</h3>
                   </div>
                 </div>
                 <div className="osa__reach-grid">
                   <article>
                     <span className="osa__reach-icon"><Eye size={20} aria-hidden /></span>
-                    <small>{ru ? 'Просмотры' : 'Views'}</small>
+                    <small>{t('osa_views')}</small>
                     <strong>{loading ? '—' : analytics.totalViews.toLocaleString(locale)}</strong>
                   </article>
                   <article>
                     <span className="osa__reach-icon osa__reach-icon--likes"><Heart size={20} aria-hidden /></span>
-                    <small>{ru ? 'Лайки' : 'Likes'}</small>
+                    <small>{t('osa_likes')}</small>
                     <strong>{loading ? '—' : analytics.totalLikes.toLocaleString(locale)}</strong>
                   </article>
                 </div>
@@ -482,8 +481,8 @@ export default function OwnerSalesAnalyticsDrawer({
               <section className="osa__popular" aria-labelledby="osa-popular-title">
                 <div className="osa__section-heading">
                   <div>
-                    <span>{ru ? 'По просмотрам и лайкам' : 'By views and likes'}</span>
-                    <h3 id="osa-popular-title">{ru ? 'Топ-5 популярных' : 'Top 5 popular'}</h3>
+                    <span>{t('osa_byViewsLikes')}</span>
+                    <h3 id="osa-popular-title">{t('osa_top5')}</h3>
                   </div>
                   <span className="osa__popular-trophy"><Trophy size={18} aria-hidden /></span>
                 </div>
@@ -497,8 +496,8 @@ export default function OwnerSalesAnalyticsDrawer({
                           alt=""
                         />
                         <div className="osa__popular-copy">
-                          <strong>{property.title || (ru ? `Объект №${property.id}` : `Property #${property.id}`)}</strong>
-                          <span>{property.location || property.address || (ru ? 'Объект недвижимости' : 'Property')}</span>
+                          <strong>{property.title || (t('osa_propertyNumber', { id: property.id }))}</strong>
+                          <span>{property.location || property.address || (t('osa_propertyFallback'))}</span>
                         </div>
                         <div className="osa__popular-stats">
                           <span><Eye size={13} aria-hidden />{property.reachViews.toLocaleString(locale)}</span>
@@ -510,7 +509,7 @@ export default function OwnerSalesAnalyticsDrawer({
                 ) : (
                   <div className="osa__empty-state">
                     <Eye size={25} aria-hidden />
-                    <strong>{ru ? 'Данных о просмотрах пока нет' : 'No reach data yet'}</strong>
+                    <strong>{t('osa_noReach')}</strong>
                   </div>
                 )}
               </section>
@@ -522,8 +521,8 @@ export default function OwnerSalesAnalyticsDrawer({
               <div className="osa__bids-head">
                 <span className="osa__bids-icon"><BellRing size={21} aria-hidden /></span>
                 <div>
-                  <span>{ru ? 'Все объекты' : 'All properties'}</span>
-                  <h3 id="osa-bids-title">{ru ? 'Уведомления о ставках' : 'Bid notifications'}</h3>
+                  <span>{t('osa_allProperties')}</span>
+                  <h3 id="osa-bids-title">{t('osa_bidNotices')}</h3>
                 </div>
                 <strong>{analytics.bidFeed.length}</strong>
               </div>
@@ -533,15 +532,15 @@ export default function OwnerSalesAnalyticsDrawer({
                   {analytics.bidFeed.map((bid) => {
                     const buyerId = bid.user_id_number || bid.user_id
                     const propertyId = bid.propertyId || bid.property_id
-                    const title = bid.propertyTitle || (ru ? `Объект №${propertyId}` : `Property #${propertyId}`)
+                    const title = bid.propertyTitle || (t('osa_propertyNumber', { id: propertyId }))
                     return (
                       <article className="osa__bid-row" key={bid.feedId}>
                         <span className="osa__bid-avatar"><UserRound size={19} aria-hidden /></span>
                         <div className="osa__bid-copy">
-                          <span>{ru ? 'Новая ставка' : 'New bid'}<i /></span>
+                          <span>{t('osa_newBid')}<i /></span>
                           <strong>{title}</strong>
                           <small>
-                            {buyerId ? (ru ? `Участник #${buyerId}` : `Bidder #${buyerId}`) : (ru ? 'Участник аукциона' : 'Auction bidder')}
+                            {buyerId ? (t('osa_bidder', { id: buyerId })) : (t('osa_auctionBidder'))}
                             {' · '}{formatBidDate(bid.feedDate, locale)}
                           </small>
                         </div>
@@ -555,8 +554,8 @@ export default function OwnerSalesAnalyticsDrawer({
               ) : (
                 <div className="osa__empty-state osa__empty-state--bids">
                   <Gavel size={27} aria-hidden />
-                  <strong>{ru ? 'Ставок пока нет' : 'No bids yet'}</strong>
-                  <span>{ru ? 'Новые ставки появятся здесь' : 'New bids will appear here'}</span>
+                  <strong>{t('osa_noBids')}</strong>
+                  <span>{t('osa_noBidsHint')}</span>
                 </div>
               )}
             </section>

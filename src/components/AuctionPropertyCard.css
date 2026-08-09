@@ -314,6 +314,47 @@
   text-overflow: ellipsis;
 }
 
+/* Urgency bands — same thresholds as ListingCardAuctionTimer / PropertyTimer */
+.auction-card__countdown-pill.timer-long,
+.auction-card__countdown-pill.timer-long svg {
+  color: #0099a9;
+}
+
+.auction-card__countdown-pill.timer-medium,
+.auction-card__countdown-pill.timer-medium svg {
+  color: #f97316;
+}
+
+.auction-card__countdown-pill.timer-short,
+.auction-card__countdown-pill.timer-short svg,
+.auction-card__countdown-pill.timer-critical,
+.auction-card__countdown-pill.timer-critical svg {
+  color: #dc2626;
+}
+
+.auction-card__countdown-pill.timer-critical span {
+  animation: auction-card-countdown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes auction-card-countdown-pulse {
+  0%,
+  100% {
+    color: #111827;
+    opacity: 1;
+  }
+
+  50% {
+    color: #dc2626;
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auction-card__countdown-pill.timer-critical span {
+    animation: none;
+  }
+}
+
 .auction-card__timer-prices {
   display: none;
 }

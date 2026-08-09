@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowDown } from 'lucide-react'
 import { FiChevronDown, FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
@@ -27,10 +28,32 @@ const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 const API_PAGE_SIZE = 100
 const HERO_IMAGE = publicAsset('images/sellyourbrick/about/about-category-shares.jpg')
 const SHARES_EMPTY_IMAGE = publicAsset('images/shares-empty-illustration.png')
-const STATUS_FILTERS = ['Сбор открыт', 'Почти собрано', 'Сбор завершён']
+/** Stable English IDs — match `statusKey` from normalizeMarketplaceShare */
+const STATUS_FILTER_IDS = ['open', 'almost_full', 'completed']
 
-function normalizeText(value) {
-  return String(value || '').trim().toLocaleLowerCase('ru-RU')
+const STATUS_LABEL_KEYS = {
+  open: 'sharesPage_statusOpen',
+  almost_full: 'sharesPage_statusAlmostFull',
+  completed: 'sharesPage_statusCompleted',
+}
+
+const LOCALE_BY_LANG = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  de: 'de-DE',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  sv: 'sv-SE',
+  pl: 'pl-PL',
+}
+
+function toIntlLocale(lang) {
+  const code = String(lang || 'ru').split('-')[0]
+  return LOCALE_BY_LANG[code] || 'en-US'
+}
+
+function normalizeText(value, locale = 'en-US') {
+  return String(value || '').trim().toLocaleLowerCase(locale)
 }
 
 function finiteValues(list, key) {
@@ -60,6 +83,8 @@ function getShareFavoriteCategory(share) {
 }
 
 export default function Shares() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = toIntlLocale(i18n.language)
   const navigate = useNavigate()
   const location = useLocation()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
@@ -92,7 +117,7 @@ export default function Shares() {
           )
           const payload = await response.json().catch(() => null)
           if (!response.ok || payload?.success === false || !Array.isArray(payload?.data)) {
-            throw new Error(payload?.error || 'Не удалось загрузить объекты')
+            throw new Error(payload?.error || 'LOAD_FAILED')
           }
           records.push(...payload.data)
           offset += payload.data.length
@@ -102,7 +127,7 @@ export default function Shares() {
       } catch (error) {
         if (!cancelled) {
           setShares([])
-          setLoadError(error?.message || 'Не удалось загрузить объекты')
+          setLoadError(error?.message || 'LOAD_FAILED')
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -136,10 +161,11 @@ export default function Shares() {
   const priceCeiling = priceValues.length ? Math.ceil(Math.max(...priceValues) / 100) * 100 : null
 
   const filteredShares = useMemo(() => {
-    const search = normalizeText(query)
+    const search = normalizeText(query, intlLocale)
     const filtered = shares.filter((share) => {
       const haystack = normalizeText(
         `${share.title} ${share.location} ${share.type} ${share.statusLabel}`,
+        intlLocale,
       )
       const yieldMatches =
         yieldMax == null || (Number.isFinite(share.annualYield) && share.annualYield <= yieldMax)
@@ -151,13 +177,23 @@ export default function Shares() {
         (!search || haystack.includes(search)) &&
         (selectedTypes.length === 0 || selectedTypes.includes(share.type)) &&
         (selectedLocations.length === 0 || selectedLocations.includes(share.city)) &&
-        (selectedStatuses.length === 0 || selectedStatuses.includes(share.statusLabel)) &&
+        (selectedStatuses.length === 0 || selectedStatuses.includes(share.statusKey)) &&
         yieldMatches &&
         priceMatches
       )
     })
     return sortMarketplaceShares(filtered, sort)
-  }, [query, selectedLocations, selectedStatuses, selectedTypes, sharePriceMax, shares, sort, yieldMax])
+  }, [
+    intlLocale,
+    query,
+    selectedLocations,
+    selectedStatuses,
+    selectedTypes,
+    sharePriceMax,
+    shares,
+    sort,
+    yieldMax,
+  ])
 
   const pagination = useMemo(
     () => paginateSharesMarketplace(filteredShares, page),
@@ -210,6 +246,8 @@ export default function Shares() {
     })
   }
 
+  const statusLabel = (id) => t(STATUS_LABEL_KEYS[id] || STATUS_LABEL_KEYS.open)
+
   const filterPanelProps = {
     filteredCount: filteredShares.length,
     typeOptions,
@@ -229,6 +267,7 @@ export default function Shares() {
     onToggleStatus: (value) => toggleFilter(value, setSelectedStatuses),
     onYieldMaxChange: setYieldMax,
     onSharePriceMaxChange: setSharePriceMax,
+    statusLabel,
   }
 
   return (
@@ -251,16 +290,13 @@ export default function Shares() {
 
         <div className="shares-hero-scene__inner">
           <div className="shares-hero-scene__copy">
-            <span className="shares-hero-scene__eyebrow">Соинвестирование</span>
+            <span className="shares-hero-scene__eyebrow">{t('coInvestment')}</span>
             <h1 id="shares-hero-title" className="shares-hero-scene__title">
-              Доли в недвижимость
+              {t('sharesPage_heroTitle')}
             </h1>
-            <p className="shares-hero-scene__lead">
-              Инвестируйте в проверенные объекты частями: условия, доступность и прогноз доходности
-              видны до покупки. Доходность не гарантируется.
-            </p>
+            <p className="shares-hero-scene__lead">{t('sharesPage_heroLead')}</p>
             <button type="button" className="shares-hero-scene__cta" onClick={scrollToCatalog}>
-              <span>Смотреть объекты</span>
+              <span>{t('sharesPage_heroCta')}</span>
               <span className="shares-hero-scene__cta-icon" aria-hidden>
                 <ArrowDown size={18} strokeWidth={2.4} />
               </span>
@@ -272,7 +308,7 @@ export default function Shares() {
           type="button"
           className="shares-hero-scene__scroll"
           onClick={scrollToCatalog}
-          aria-label="Перейти к каталогу"
+          aria-label={t('sharesPage_scrollToCatalogAria')}
         >
           <span className="shares-hero-scene__scroll-arrow" aria-hidden="true" />
         </button>
@@ -299,20 +335,24 @@ export default function Shares() {
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Город или объект"
-                    aria-label="Поиск по городу или объекту"
+                    placeholder={t('sharesPage_searchPlaceholder')}
+                    aria-label={t('sharesPage_searchAria')}
                   />
                   {query ? (
                     <button
                       type="button"
                       className="debts-listing-search__clear"
                       onClick={() => setQuery('')}
-                      aria-label="Очистить поиск"
+                      aria-label={t('testDriveLanding_clearSearch')}
                     >
                       ×
                     </button>
                   ) : null}
-                  <button type="submit" className="debts-listing-search__go" aria-label="Найти">
+                  <button
+                    type="submit"
+                    className="debts-listing-search__go"
+                    aria-label={t('testDriveLanding_find')}
+                  >
                     <FiSearch aria-hidden />
                   </button>
                 </form>
@@ -322,7 +362,7 @@ export default function Shares() {
                     type="button"
                     className={`filters-button${activeFilterCount > 0 ? ' is-active' : ''}`}
                     aria-expanded={filtersDrawerOpen}
-                    aria-label="Фильтры"
+                    aria-label={t('sharesPage_filters')}
                     onClick={() => setFiltersDrawerOpen(true)}
                   >
                     <svg
@@ -336,7 +376,7 @@ export default function Shares() {
                     >
                       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                     </svg>
-                    <span className="filters-button__label">Фильтры</span>
+                    <span className="filters-button__label">{t('sharesPage_filters')}</span>
                     {activeFilterCount > 0 ? (
                       <span className="filters-badge" aria-hidden="true">
                         {activeFilterCount}
@@ -348,10 +388,10 @@ export default function Shares() {
 
               <label className="shares-invest-sort shares-invest-sort--desktop">
                 <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                  <option value="new">По умолчанию</option>
-                  <option value="yield">По прогнозу доходности</option>
-                  <option value="collected">По заполнению сбора</option>
-                  <option value="price">Сначала доступные доли</option>
+                  <option value="new">{t('sharesPage_sortDefault')}</option>
+                  <option value="yield">{t('sharesPage_sortYield')}</option>
+                  <option value="collected">{t('sharesPage_sortCollected')}</option>
+                  <option value="price">{t('sharesPage_sortPrice')}</option>
                 </select>
               </label>
             </div>
@@ -359,8 +399,8 @@ export default function Shares() {
             <SharesMobileFiltersDrawer
               isOpen={filtersDrawerOpen}
               onClose={() => setFiltersDrawerOpen(false)}
-              title="Фильтры объектов"
-              applyLabel={`Показать ${filteredShares.length} объектов`}
+              title={t('sharesPage_filtersDrawerTitle')}
+              applyLabel={t('sharesPage_showObjects', { count: filteredShares.length })}
               onApply={() => setFiltersDrawerOpen(false)}
               onReset={resetFilters}
             >
@@ -372,7 +412,7 @@ export default function Shares() {
             </SharesMobileFiltersDrawer>
 
             {loading ? (
-              <div className="shares-invest-grid" aria-label="Загрузка объектов">
+              <div className="shares-invest-grid" aria-label={t('sharesPage_loadingAria')}>
                 {Array.from({ length: Math.min(6, SHARES_MARKETPLACE_PAGE_SIZE) }, (_, index) => (
                   <SharesPropertyCardSkeleton key={index} />
                 ))}
@@ -382,9 +422,9 @@ export default function Shares() {
                 className="shares-market-state"
                 image={SHARES_EMPTY_IMAGE}
                 eyebrow={null}
-                title="Не удалось загрузить объекты"
-                description="Проверьте соединение и попробуйте позже — или посмотрите другие предложения на платформе."
-                primaryLabel="Смотреть другие объекты"
+                title={t('sharesPage_loadError')}
+                description={t('sharesPage_loadErrorDesc')}
+                primaryLabel={t('sharesPage_seeOtherObjects')}
                 onPrimary={() => navigate('/auction')}
               />
             ) : pagination.items.length ? (
@@ -411,13 +451,19 @@ export default function Shares() {
                 className="shares-market-state"
                 image={SHARES_EMPTY_IMAGE}
                 eyebrow={null}
-                title={shares.length ? 'По этим условиям объектов нет' : 'Сейчас нет открытых объектов'}
+                title={
+                  shares.length
+                    ? t('sharesPage_emptyFilteredTitle')
+                    : t('sharesPage_emptyCatalogTitle')
+                }
                 description={
                   shares.length
-                    ? 'Сбросьте фильтры или расширьте поиск — покажем только реальные доступные предложения.'
-                    : 'Каталог обновится, когда появятся новые предложения с долями. А пока можно посмотреть другие объекты.'
+                    ? t('sharesPage_emptyFilteredDesc')
+                    : t('sharesPage_emptyCatalogDesc')
                 }
-                primaryLabel={shares.length ? 'Сбросить фильтры' : 'Смотреть другие объекты'}
+                primaryLabel={
+                  shares.length ? t('sharesFilterReset') : t('sharesPage_seeOtherObjects')
+                }
                 onPrimary={shares.length ? resetFilters : () => navigate('/auction')}
               />
             )}
@@ -451,36 +497,54 @@ function SharesFiltersPanel({
   onToggleStatus,
   onYieldMaxChange,
   onSharePriceMaxChange,
+  statusLabel,
   showSort = false,
 }) {
+  const { t } = useTranslation()
+
   return (
-    <aside className={className} aria-label="Фильтры">
+    <aside className={className} aria-label={t('sharesPage_filters')}>
       <header>
         <div>
-          <span>Настройте выбор</span>
-          <h2>Фильтры</h2>
+          <span>{t('sharesPage_filtersSetup')}</span>
+          <h2>{t('sharesPage_filters')}</h2>
         </div>
         <button type="button" onClick={onReset}>
-          Сбросить
+          {t('sharesPage_reset')}
         </button>
       </header>
       {typeOptions.length ? (
-        <FilterGroup title="Тип объекта" options={typeOptions} values={selectedTypes} onToggle={onToggleType} />
+        <FilterGroup
+          title={t('sharesFilterObjectType')}
+          options={typeOptions}
+          values={selectedTypes}
+          onToggle={onToggleType}
+        />
       ) : null}
       {locationOptions.length ? (
         <FilterGroup
-          title="Город"
+          title={t('sharesFilterCity')}
           options={locationOptions}
           values={selectedLocations}
           onToggle={onToggleLocation}
         />
       ) : null}
-      <FilterGroup title="Статус сбора" options={STATUS_FILTERS} values={selectedStatuses} onToggle={onToggleStatus} />
+      <FilterGroup
+        title={t('sharesPage_statusTitle')}
+        options={STATUS_FILTER_IDS}
+        values={selectedStatuses}
+        onToggle={onToggleStatus}
+        getLabel={statusLabel}
+      />
       {yieldCeiling != null ? (
         <RangeFilter
-          title="Прогноз доходности"
-          minLabel="от 0%"
-          maxLabel={yieldMax == null ? `до ${yieldCeiling}%` : `до ${yieldMax}%`}
+          title={t('sharesPage_yieldForecast')}
+          minLabel={t('sharesPage_yieldFrom0')}
+          maxLabel={
+            yieldMax == null
+              ? t('sharesPage_yieldUpTo', { value: yieldCeiling })
+              : t('sharesPage_yieldUpTo', { value: yieldMax })
+          }
           value={yieldMax ?? yieldCeiling}
           min={0}
           max={yieldCeiling}
@@ -489,9 +553,13 @@ function SharesFiltersPanel({
       ) : null}
       {priceCeiling != null ? (
         <RangeFilter
-          title="Цена одной доли"
-          minLabel="от €0"
-          maxLabel={sharePriceMax == null ? `до €${priceCeiling}` : `до €${sharePriceMax}`}
+          title={t('sharesPage_pricePerShare')}
+          minLabel={t('sharesPage_priceFrom0')}
+          maxLabel={
+            sharePriceMax == null
+              ? t('sharesFilterPriceUpTo', { amount: `€${priceCeiling}` })
+              : t('sharesFilterPriceUpTo', { amount: `€${sharePriceMax}` })
+          }
           value={sharePriceMax ?? priceCeiling}
           min={0}
           max={priceCeiling}
@@ -502,26 +570,26 @@ function SharesFiltersPanel({
       {showSort ? (
         <div className="shares-invest-filter-block shares-invest-filter-block--sort">
           <span className="shares-invest-filter-block__title shares-invest-filter-block__title--static">
-            Сортировка
+            {t('sharesPage_sortLabel')}
           </span>
           <label className="shares-invest-sort shares-invest-sort--drawer">
             <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
-              <option value="new">По умолчанию</option>
-              <option value="yield">По прогнозу доходности</option>
-              <option value="collected">По заполнению сбора</option>
-              <option value="price">Сначала доступные доли</option>
+              <option value="new">{t('sharesPage_sortDefault')}</option>
+              <option value="yield">{t('sharesPage_sortYield')}</option>
+              <option value="collected">{t('sharesPage_sortCollected')}</option>
+              <option value="price">{t('sharesPage_sortPrice')}</option>
             </select>
           </label>
         </div>
       ) : null}
       <button type="button" className="shares-invest-filters__apply shares-invest-filters__apply--sidebar">
-        Показать {filteredCount} объектов
+        {t('sharesPage_showObjects', { count: filteredCount })}
       </button>
     </aside>
   )
 }
 
-function FilterGroup({ title, options, values, onToggle }) {
+function FilterGroup({ title, options, values, onToggle, getLabel }) {
   return (
     <div className="shares-invest-filter-block">
       <div className="shares-invest-filter-block__title">
@@ -532,7 +600,7 @@ function FilterGroup({ title, options, values, onToggle }) {
         {options.map((option) => (
           <label key={option}>
             <input type="checkbox" checked={values.includes(option)} onChange={() => onToggle(option)} />
-            <span>{option}</span>
+            <span>{getLabel ? getLabel(option) : option}</span>
           </label>
         ))}
       </div>

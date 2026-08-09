@@ -1,4 +1,18 @@
 .private-club-vip-root {
+  /* Яркий Tiffany как у «Подробнее» / .btn-tiffany-shine на главной */
+  --pcv-ink: var(--site-color-text, #0f172a);
+  --pcv-ink-soft: #475569;
+  --pcv-ink-muted: var(--site-color-muted, #64748b);
+  --pcv-line: var(--site-color-border, #e2e8f0);
+  --pcv-surface: var(--site-color-surface, #ffffff);
+  --pcv-surface-muted: var(--site-color-bg, #f8fafc);
+  --pcv-tiffany: #4ecdd6;
+  --pcv-tiffany-mid: #3bc0cb;
+  --pcv-tiffany-dark: #2aa8b4;
+  --pcv-tiffany-soft: #e8fafb;
+  --pcv-tiffany-glow: rgba(78, 205, 214, 0.28);
+  --pcv-font: var(--site-font-family);
+
   position: fixed;
   inset: 0;
   z-index: 10050;
@@ -7,6 +21,7 @@
   justify-content: center;
   padding: 16px;
   box-sizing: border-box;
+  font-family: var(--pcv-font);
 }
 
 .private-club-vip__backdrop {
@@ -16,8 +31,8 @@
   padding: 0;
   margin: 0;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(6px);
 }
 
 .private-club-vip {
@@ -25,25 +40,53 @@
   z-index: 1;
   width: 100%;
   max-width: 440px;
-  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
+  /* Мягкий холст — сквозь вырезы тикетов видно фон, не «кружки» */
+  --pcv-ticket-hole: #f1f5f9;
+  background:
+    radial-gradient(ellipse 90% 55% at 0% 0%, rgba(78, 205, 214, 0.1), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 8%, rgba(59, 192, 203, 0.07), transparent 50%),
+    var(--pcv-ticket-hole);
+  border: 1px solid color-mix(in srgb, var(--pcv-tiffany) 22%, var(--pcv-line));
   border-radius: 24px;
-  padding: 28px 26px 30px;
-  box-shadow:
-    0 24px 48px -12px rgba(15, 23, 42, 0.25),
-    0 0 0 1px rgba(148, 163, 184, 0.2);
+  padding: 28px 24px 26px;
   box-sizing: border-box;
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
-  animation: privateClubVipIn 0.28s ease-out;
+  font-family: var(--pcv-font);
+  color: var(--pcv-ink);
+  box-shadow:
+    0 24px 56px -20px rgba(15, 23, 42, 0.28),
+    0 0 0 1px rgba(78, 205, 214, 0.06);
+}
+
+.private-club-vip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, #2aa8b4 0%, #4ecdd6 48%, #3bc0cb 100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .private-club-vip--modal {
+    animation: privateClubVipIn 0.28s ease-out;
+  }
+
+  .private-club-vip--drawer {
+    animation: privateClubDrawerIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 @keyframes privateClubVipIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -53,18 +96,21 @@
   margin-top: auto;
   margin-bottom: 0;
   border-radius: 24px 24px 0 0;
-  padding-top: 12px;
-  animation: privateClubDrawerIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  border-bottom: 0;
+  padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  --pcv-ticket-hole: #f1f5f9;
+}
+
+.private-club-vip--drawer::before {
+  display: none;
 }
 
 @keyframes privateClubDrawerIn {
   from {
     transform: translateY(100%);
-    opacity: 0.6;
   }
   to {
     transform: translateY(0);
-    opacity: 1;
   }
 }
 
@@ -78,7 +124,7 @@
   height: 4px;
   border-radius: 999px;
   background: #cbd5e1;
-  margin: 0 auto 16px;
+  margin: 0 auto 14px;
 }
 
 .private-club-vip--modal .private-club-vip__handle {
@@ -91,99 +137,229 @@
   right: 14px;
   width: 40px;
   height: 40px;
-  border: none;
+  border: 1px solid var(--pcv-line);
   border-radius: 999px;
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
+  background: var(--pcv-surface);
+  color: var(--pcv-ink-soft);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 
 .private-club-vip__close:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  border-color: color-mix(in srgb, var(--pcv-tiffany) 45%, transparent);
+  color: var(--pcv-ink);
+}
+
+.private-club-vip__header {
+  margin: 0 44px 20px 0;
+}
+
+.private-club-vip__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.22), rgba(59, 192, 203, 0.12));
+  color: var(--pcv-tiffany-dark);
+  border: 1px solid color-mix(in srgb, var(--pcv-tiffany) 35%, transparent);
+  font-family: var(--pcv-font);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .private-club-vip__title {
-  margin: 0 40px 10px 0;
-  font-size: 1.35rem;
+  margin: 0 0 8px;
+  font-family: var(--pcv-font);
+  font-size: clamp(1.35rem, 4.2vw, 1.6rem);
   font-weight: 800;
+  font-style: normal;
   letter-spacing: -0.03em;
-  color: #0f172a;
+  color: var(--pcv-ink);
   line-height: 1.2;
 }
 
 .private-club-vip__lead {
-  margin: 0 0 22px;
-  font-size: 0.95rem;
-  line-height: 1.55;
-  color: #64748b;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--pcv-ink-muted);
 }
 
-.private-club-vip__block {
-  margin-bottom: 4px;
+.private-club-vip__paths {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ——— Ticket cards ——— */
+.private-club-vip__ticket {
+  --ticket-notch: 15px;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  /* Тень повторяет силуэт с вырезами */
+  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.1));
+}
+
+.private-club-vip__ticket-body {
+  position: relative;
+  padding: 18px 20px;
+  border-radius: 16px;
+  overflow: hidden;
+  /* Матовый белый + насыщенный тифани */
+  background: #ffffff;
+  border: 2px solid var(--pcv-tiffany);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pcv-tiffany) 20%, #ffffff);
+  /*
+    Настоящие вырезы через mask — без псевдо-кружков.
+    Сквозь дырки виден фон модалки (--pcv-ticket-hole), без «бликов».
+  */
+  -webkit-mask-image:
+    radial-gradient(circle var(--ticket-notch) at 0% 50%, #0000 99%, #000 100%),
+    radial-gradient(circle var(--ticket-notch) at 100% 50%, #0000 99%, #000 100%);
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(circle var(--ticket-notch) at 0% 50%, #0000 99%, #000 100%),
+    radial-gradient(circle var(--ticket-notch) at 100% 50%, #0000 99%, #000 100%);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+}
+
+.private-club-vip__ticket--subscribe .private-club-vip__ticket-body,
+.private-club-vip__ticket--promo .private-club-vip__ticket-body {
+  background: #ffffff;
+  border-color: var(--pcv-tiffany);
+}
+
+/* Перфорация — только пунктир, отступ от вырезов, без точек */
+.private-club-vip__ticket-perf {
+  position: relative;
+  height: 0;
+  margin: 16px calc(var(--ticket-notch) + 4px) 18px;
+  border: 0;
+  border-top: 1.5px dashed color-mix(in srgb, var(--pcv-tiffany) 50%, #94a3b8);
+}
+
+.private-club-vip__panel-head {
+  margin: 0;
+  padding: 0 2px;
+}
+
+.private-club-vip__kicker {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pcv-tiffany) 40%, transparent);
+  background: color-mix(in srgb, var(--pcv-tiffany) 12%, #fff);
+  font-size: 0.66rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pcv-tiffany-dark);
+  line-height: 1.2;
+}
+
+.private-club-vip__ticket--promo .private-club-vip__kicker {
+  border-color: color-mix(in srgb, var(--pcv-tiffany) 28%, var(--pcv-line));
+  background: color-mix(in srgb, var(--pcv-tiffany) 8%, #fff);
+  color: var(--pcv-tiffany-dark);
 }
 
 .private-club-vip__label {
   display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: none;
+  color: var(--pcv-ink);
+  line-height: 1.2;
+}
+
+.private-club-vip__ticket--promo .private-club-vip__label {
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.private-club-vip__panel-note {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--pcv-ink-muted);
+}
+
+.private-club-vip__promo-hint {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--pcv-ink-muted);
 }
 
 .private-club-vip__btn {
   width: 100%;
+  min-height: 50px;
   border: none;
-  border-radius: 14px;
-  padding: 14px 18px;
+  border-radius: 999px;
+  padding: 14px 20px;
   font-size: 0.95rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    opacity 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .private-club-vip__btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-.private-club-vip__btn--primary {
-  color: #0f172a;
-  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%);
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
-}
-
-.private-club-vip__btn--primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(245, 158, 11, 0.4);
+.private-club-vip__btn--primary.btn-tiffany-shine {
+  /* fill/shine — tiffany-shine-button.css (как «Подробнее» на главной) */
+  border: none;
+  color: #fff;
 }
 
 .private-club-vip__btn--secondary {
-  margin-top: 10px;
+  margin-top: 14px;
   color: #fff;
-  background: linear-gradient(135deg, #007580 0%, #00605a 100%);
-  box-shadow: 0 4px 14px rgba(0, 153, 169, 0.3);
+  background: var(--pcv-tiffany-mid);
+  border: none;
 }
 
 .private-club-vip__btn--secondary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0, 153, 169, 0.35);
+  background: var(--pcv-tiffany-dark);
+}
+
+.private-club-vip__btn--secondary:disabled {
+  color: var(--pcv-tiffany-dark);
+  background: rgba(78, 205, 214, 0.14);
+  border: 1.5px solid color-mix(in srgb, var(--pcv-tiffany) 40%, transparent);
+}
+
+.private-club-vip__btn--secondary.btn-tiffany-shine {
+  border: none;
+  color: #fff;
 }
 
 .private-club-vip__hint {
   margin: 10px 0 0;
-  font-size: 0.8rem;
-  color: #94a3b8;
+  font-size: 0.78rem;
+  color: var(--pcv-ink-muted);
   line-height: 1.45;
 }
 
@@ -191,10 +367,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 20px 0;
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-weight: 600;
+  margin: 14px 0;
+  padding: 0;
+  color: var(--pcv-ink-muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .private-club-vip__divider::before,
@@ -202,30 +381,98 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  background: color-mix(in srgb, var(--pcv-tiffany) 22%, var(--pcv-line));
 }
 
-.private-club-vip__input {
-  width: 100%;
+.private-club-vip__divider span {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pcv-tiffany) 20%, var(--pcv-line));
+  background: var(--pcv-surface);
+  color: var(--pcv-tiffany-dark);
+  line-height: 1;
+}
+
+.private-club-vip__code-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.private-club-vip__code-cell {
+  width: 46px;
+  height: 52px;
+  flex: 0 0 46px;
+  min-width: 0;
   box-sizing: border-box;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid color-mix(in srgb, var(--pcv-tiffany) 22%, #d5dee7);
   border-radius: 12px;
-  padding: 12px 14px;
-  font-size: 1rem;
-  font-family: inherit;
   background: #fff;
-  color: #0f172a;
-  margin-bottom: 4px;
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--pcv-ink);
+  text-transform: uppercase;
+  caret-color: var(--pcv-tiffany-mid);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
-.private-club-vip__input:focus {
+.private-club-vip__code-cell.is-filled {
+  border-color: color-mix(in srgb, var(--pcv-tiffany) 55%, var(--pcv-line));
+  background: color-mix(in srgb, var(--pcv-tiffany) 6%, #fff);
+  color: var(--pcv-ink);
+}
+
+.private-club-vip__code-cell:focus {
   outline: none;
-  border-color: #007580;
-  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.2);
+  border-color: var(--pcv-tiffany);
+  background: #fff;
+  color: var(--pcv-ink);
+  box-shadow: 0 0 0 3px var(--pcv-tiffany-glow);
+}
+
+.private-club-vip__code-cell:disabled {
+  opacity: 0.7;
 }
 
 @media (max-width: 767px) {
-  .private-club-vip-root:has(.private-club-vip--drawer) {
-    padding-bottom: env(safe-area-inset-bottom, 0);
+  .private-club-vip__ticket {
+    --ticket-notch: 10px;
+  }
+
+  .private-club-vip__ticket-body {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .private-club-vip__code-row {
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .private-club-vip__code-cell {
+    width: 42px;
+    height: 48px;
+    flex-basis: 42px;
+    border-radius: 11px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .private-club-vip,
+  .private-club-vip__close,
+  .private-club-vip__btn,
+  .private-club-vip__code-cell {
+    animation: none !important;
+    transition: none !important;
   }
 }

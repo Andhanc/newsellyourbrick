@@ -10,9 +10,11 @@ import '../pages/Home.css'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
+import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import {
   ensureLiveChatSession,
   fetchLiveChatMessagesSince,
@@ -161,6 +163,7 @@ const Chat = () => {
   const [inputMessage, setInputMessage] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [userPreferences, setUserPreferences] = useState(defaultAssistantPreferences)
+  const [catalogProperties, setCatalogProperties] = useState(() => getCachedList() || [])
   const [techSupportMode, setTechSupportMode] = useState('ai')
   const [managerChatMessages, setManagerChatMessages] = useState([])
   const [liveChatToken, setLiveChatToken] = useState(null)
@@ -209,6 +212,20 @@ const Chat = () => {
       chatHistoryLoadedRef.current = true
     }
   }, [chatUserId])
+
+  useEffect(() => {
+    let cancelled = false
+    const cached = getCachedList()
+    if (cached?.length) setCatalogProperties(cached)
+    fetchAuctionList()
+      .then((list) => {
+        if (!cancelled && Array.isArray(list) && list.length) setCatalogProperties(list)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Сохраняем историю, предпочтения и синхронизируем лид для админки
   useEffect(() => {
@@ -542,7 +559,7 @@ const Chat = () => {
       const aiResponse = await askPropertyAssistant(
         [...tsPrev, userMessageObj],
         mergedPrefs,
-        []
+        catalogProperties
       )
 
       const botMessage = {
@@ -553,7 +570,9 @@ const Chat = () => {
         date: 'Сегодня',
         timestamp: new Date(),
         buttons: aiResponse?.buttons ?? null,
-        recommendations: aiResponse?.recommendations ?? null
+        recommendations: aiResponse?.recommendations ?? null,
+        navigation: aiResponse?.navigation ?? null,
+        yieldEstimate: aiResponse?.yieldEstimate ?? null
       }
 
       setMessages(prev => ({
@@ -962,6 +981,92 @@ const Chat = () => {
                       >
                         <div className="message-content">
                           <p>{message.text}</p>
+                          {message.sender === 'bot' && message.yieldEstimate && (
+                            <div className="chat-widget__yield">
+                              <div className="chat-widget__yield-title">{t('chatYieldTitle')}</div>
+                              <div className="chat-widget__yield-grid">
+                                <div>
+                                  <span>{t('chatYieldPrice')}</span>
+                                  <strong>{Number(message.yieldEstimate.price).toLocaleString('ru-RU')} €</strong>
+                                </div>
+                                <div>
+                                  <span>{t('chatYieldAnnual')}</span>
+                                  <strong>{Number(message.yieldEstimate.annualRent).toLocaleString('ru-RU')} €</strong>
+                                </div>
+                                <div>
+                                  <span>{t('chatYieldMonthly')}</span>
+                                  <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString('ru-RU')} €</strong>
+                                </div>
+                                <div>
+                                  <span>{t('chatYieldRate')}</span>
+                                  <strong>{message.yieldEstimate.yieldPercent}%</strong>
+                                </div>
+                              </div>
+                              {message.yieldEstimate.note ? (
+                                <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
+                              ) : null}
+                              <button
+                                type="button"
+                                className="chat-widget__yield-cta"
+                                onClick={() => navigate('/calculator')}
+                              >
+                                {t('chatYieldInvestorCta')}
+                              </button>
+                            </div>
+                          )}
+                          {message.sender === 'bot' && message.navigation?.length > 0 && (
+                            <div className="chat-widget__navigation">
+                              <div className="chat-widget__navigation-title">{t('chatNavigationTitle')}</div>
+                              <div className="chat-widget__navigation-list">
+                                {message.navigation.map((nav) => (
+                                  <button
+                                    key={nav.path}
+                                    type="button"
+                                    className="chat-widget__navigation-link"
+                                    onClick={() => navigate(nav.path)}
+                                  >
+                                    <span>{nav.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {message.sender === 'bot' && message.recommendations?.length > 0 && (
+                            <div className="chat-widget__recommendations">
+                              <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
+                              {message.recommendations.map((recId) => {
+                                const property = catalogProperties.find(
+                                  (item) => String(item.id) === String(recId) || String(item.key) === String(recId),
+                                )
+                                if (!property) return null
+                                return (
+                                  <button
+                                    key={recId}
+                                    type="button"
+                                    className="chat-widget__recommendation-link"
+                                    onClick={() =>
+                                      navigate(getPropertyDetailPath(property.id ?? property.key, { property }), {
+                                        state: { property },
+                                      })
+                                    }
+                                  >
+                                    <div className="chat-widget__recommendation-item">
+                                      <div className="chat-widget__recommendation-title">
+                                        {property.name || property.title || t('listingDefault')}
+                                      </div>
+                                      <div className="chat-widget__recommendation-location">{property.location}</div>
+                                      <div className="chat-widget__recommendation-price">
+                                        {property.price
+                                          ? `${Number(property.price).toLocaleString('ru-RU')} €`
+                                          : t('priceNotSpecified')}
+                                      </div>
+                                      <div className="chat-widget__recommendation-cta">{t('chatOpenListing')}</div>
+                                    </div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
                           {message.sender === 'bot' && message.buttons && message.buttons.length > 0 && (
                             <div
                               className={`chat-msg-buttons${

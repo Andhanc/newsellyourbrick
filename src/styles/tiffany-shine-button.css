@@ -102,6 +102,8 @@
 .auth-alert-modal__button,
 .purchase-success-modal__btn--primary,
 .private-club-vip-celebration__btn--primary,
+.private-club-vip__btn--primary,
+.private-club-vip__btn--secondary.btn-tiffany-shine,
 .debts-advanced-filters-drawer__btn--primary,
 .debts-toolbar__panel-btn--primary,
 .deposit-button .deposit-button__content-wrapper,
@@ -132,7 +134,8 @@
 .mot-finance__empty button,
 .otc-add-property,
 .mot-btn--primary,
-.op-btn--primary {
+.op-btn--primary,
+.property-ai-picker__actions button {
   border: none !important;
   border-color: transparent !important;
   color: #ffffff !important;
@@ -258,7 +261,8 @@
 .mot-finance__quick-card--add:hover,
 .otc-add-property:hover,
 .mot-btn--primary:hover,
-.op-btn--primary:hover {
+.op-btn--primary:hover,
+.property-ai-picker__actions button:hover:not(:disabled) {
   color: #ffffff !important;
   background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill-hover) !important;
   background-size: 220% 100%, 100% 100% !important;

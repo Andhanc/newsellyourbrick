@@ -157,7 +157,15 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
 /** Soft-launch «Пока недоступно» replaces the page — no site footer underneath. */
 function AppChromeFooter() {
   const { pathname } = useLocation()
-  if (shouldShowSoftLaunchUnavailable(pathname) || pathname === '/lottery' || pathname === '/app') return null
+  if (
+    shouldShowSoftLaunchUnavailable(pathname) ||
+    pathname === '/lottery' ||
+    pathname === '/app' ||
+    pathname.startsWith('/test-drive/survey/') ||
+    pathname.startsWith('/test-drive/feedback/')
+  ) {
+    return null
+  }
   return <LazyFooter />
 }
 

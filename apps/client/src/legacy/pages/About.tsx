@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ElementType, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { HiArrowUpRight } from 'react-icons/hi2';
 import Header from '@/components/Header';
@@ -17,66 +18,111 @@ const ASSETS = {
   blueLoop: publicAsset('images/sellyourbrick/about-corporate/blue-glass-loop.png'),
 };
 
-const analyticsCards = [
-  {
-    label: 'Всего инвестировано',
-    eyebrow: 'капитал',
-    value: '€41.5млн',
-  },
-  {
-    label: 'Возвращено инвесторам',
-    eyebrow: 'выплаты',
-    value: '€24млн',
-  },
-];
-
-const capabilities = [
-  { label: 'Анализ и отбор объектов', active: true },
-  { label: 'Инвестирование онлайн' },
-  { label: 'Управление и доход' },
-];
-
-const metricCards = [
-  {
-    value: 131,
-    suffix: '',
-    text: 'Профинансированные проекты — реальные сделки и объекты, каждый проверен и одобрен до публикации на платформе.',
-  },
-  {
-    value: 46,
-    suffix: '',
-    text: 'Завершённые выходы — проекты полностью закрыты, капитал возвращён, прибыль распределена инвесторам.',
-  },
-];
-
-const systemNotes = [
-  {
-    title: 'Актив в реестре',
-    text: 'Каждая позиция привязана к конкретному объекту с юридическим титулом — не к обещанию в презентации.',
-  },
-  {
-    title: 'Проверка до сделки',
-    text: 'Due diligence, оценка и стресс-сценарии — до того, как проект появится у инвесторов.',
-  },
-];
-
-const partnerNotes = [
-  'Лицензированная компания',
-  'SellYourBrick',
-  'Прозрачная отчётность',
-  'Защита капитала',
-  'Проверенные объекты',
-];
-
-function ArrowBadge({ className = '', label = 'Подробнее' }: { className?: string; label?: string }) {
+function ArrowBadge({ className = '', label }: { className?: string; label?: string }) {
+  const { t } = useTranslation();
+  const resolvedLabel = label === undefined ? t('aboutCorp_moreDetails') : label;
   return (
     <span
       className={`al-arrow-badge ${className}`}
-      aria-hidden={label ? undefined : true}
-      aria-label={label || undefined}
+      aria-hidden={resolvedLabel ? undefined : true}
+      aria-label={resolvedLabel || undefined}
     >
-      <HiArrowUpRight aria-hidden />
+      <HiArrowUpRight aria-hidden strokeWidth={3} />
     </span>
+  );
+}
+
+function CapabilitiesMenu() {
+  const { t } = useTranslation();
+  const capabilities = useMemo(
+    () => [
+      { label: t('aboutCorp_cap1'), active: true },
+      { label: t('aboutCorp_cap2') },
+      { label: t('aboutCorp_cap3') },
+    ],
+    [t],
+  );
+  const [activeIndex, setActiveIndex] = useState(
+    Math.max(
+      0,
+      capabilities.findIndex((item) => item.active),
+    ),
+  );
+  const rootRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const arrowRef = useRef<HTMLButtonElement>(null);
+  const [arrowOffset, setArrowOffset] = useState(0);
+
+  const syncArrow = () => {
+    const root = rootRef.current;
+    const item = itemRefs.current[activeIndex];
+    const arrow = arrowRef.current;
+    if (!root || !item || !arrow) return;
+
+    const rootTop = root.getBoundingClientRect().top;
+    const itemBox = item.getBoundingClientRect();
+    const arrowHeight = arrow.offsetHeight;
+    setArrowOffset(itemBox.top - rootTop + (itemBox.height - arrowHeight) / 2);
+  };
+
+  useEffect(() => {
+    syncArrow();
+
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === 'undefined') return undefined;
+
+    const observer = new ResizeObserver(() => syncArrow());
+    observer.observe(root);
+    itemRefs.current.forEach((item) => {
+      if (item) observer.observe(item);
+    });
+
+    return () => observer.disconnect();
+  }, [activeIndex]);
+
+  const selectNext = () => {
+    setActiveIndex((current) => (current + 1) % capabilities.length);
+  };
+
+  return (
+    <div
+      className="al-capabilities"
+      ref={rootRef}
+      style={{ '--al-cap-arrow-y': `${arrowOffset}px` } as CSSProperties}
+    >
+      <button
+        ref={arrowRef}
+        type="button"
+        className="al-capabilities__arrow"
+        onClick={selectNext}
+        aria-label={t('aboutCorp_nextProcessStep')}
+      >
+        <HiArrowUpRight aria-hidden strokeWidth={2.6} />
+      </button>
+      <ul aria-labelledby="scale-title">
+        {capabilities.map((item, index) => {
+          const isActive = index === activeIndex;
+          return (
+            <li
+              key={item.label}
+              className={isActive ? 'is-active' : undefined}
+              ref={(node) => {
+                itemRefs.current[index] = node;
+              }}
+            >
+              <button
+                type="button"
+                className="al-capabilities__item"
+                aria-current={isActive ? 'step' : undefined}
+                onClick={() => setActiveIndex(index)}
+              >
+                {item.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -99,6 +145,7 @@ function Reveal({
 }
 
 function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const { i18n } = useTranslation();
   const ref = useRef<HTMLElement>(null);
   const [display, setDisplay] = useState(0);
 
@@ -135,14 +182,83 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
 
   return (
     <strong ref={ref}>
-      {display.toLocaleString('ru-RU')}
+      {display.toLocaleString(i18n.language || 'en')}
       {suffix}
     </strong>
   );
 }
 
 export default function About() {
+  const { t } = useTranslation();
   const location = useLocation();
+
+  const analyticsCards = useMemo(
+    () => [
+      {
+        label: t('aboutCorp_analyticsInvestedLabel'),
+        eyebrow: t('aboutCorp_analyticsInvestedEyebrow'),
+        value: t('aboutCorp_analyticsInvestedValue'),
+      },
+      {
+        label: t('aboutCorp_analyticsReturnedLabel'),
+        eyebrow: t('aboutCorp_analyticsReturnedEyebrow'),
+        value: t('aboutCorp_analyticsReturnedValue'),
+      },
+    ],
+    [t],
+  );
+
+  const metricCards = useMemo(
+    () => [
+      {
+        value: 131,
+        suffix: '',
+        label: t('aboutCorp_metric1Label'),
+        text: t('aboutCorp_metric1Text'),
+      },
+      {
+        value: 46,
+        suffix: '',
+        label: t('aboutCorp_metric2Label'),
+        text: t('aboutCorp_metric2Text'),
+      },
+    ],
+    [t],
+  );
+
+  const systemNotes = useMemo(
+    () => [
+      {
+        title: t('aboutCorp_systemNote1Title'),
+        text: t('aboutCorp_systemNote1Text'),
+      },
+      {
+        title: t('aboutCorp_systemNote2Title'),
+        text: t('aboutCorp_systemNote2Text'),
+      },
+    ],
+    [t],
+  );
+
+  const systemHighlights = useMemo(
+    () => [
+      { label: t('aboutCorp_highlight1Label'), detail: t('aboutCorp_highlight1Detail') },
+      { label: t('aboutCorp_highlight2Label'), detail: t('aboutCorp_highlight2Detail') },
+      { label: t('aboutCorp_highlight3Label'), detail: t('aboutCorp_highlight3Detail') },
+    ],
+    [t],
+  );
+
+  const partnerNotes = useMemo(
+    () => [
+      t('aboutCorp_partnerNote1'),
+      t('aboutCorp_partnerNote2'),
+      t('aboutCorp_partnerNote3'),
+      t('aboutCorp_partnerNote4'),
+      t('aboutCorp_partnerNote5'),
+    ],
+    [t],
+  );
 
   useEffect(() => {
     document.body.classList.add('al-about-route');
@@ -186,14 +302,14 @@ export default function About() {
         <section className="al-hero" id="about-intro" aria-labelledby="about-hero-title">
           <div className="al-shell al-hero__grid">
             <Reveal className="al-hero__visual" delay={0}>
-              <img src={ASSETS.hero} alt="Современный жилой комплекс SellYourBrick" />
+              <img src={ASSETS.hero} alt={t('aboutCorp_heroImgAlt')} />
               <div className="al-hero__shade" aria-hidden />
               <ArrowBadge className="al-hero__arrow" />
             </Reveal>
 
             <Reveal className="al-hero__copy" delay={80}>
               <div className="al-hero__title-row">
-                <p className="al-hero__eyebrow">О платформе</p>
+                <p className="al-hero__eyebrow">{t('aboutCorp_heroEyebrow')}</p>
                 <h1 id="about-hero-title">
                   <span className="al-hero__brand">
                     <span>Sell</span>
@@ -201,14 +317,11 @@ export default function About() {
                     <span>Brick</span>
                   </span>
                 </h1>
-                <span className="al-pill al-hero__pill">Инвестиции</span>
+                <span className="al-pill al-hero__pill">{t('aboutCorp_heroPill')}</span>
               </div>
               <div className="al-hero__subcopy">
-                <h2>Недвижимость без лишних барьеров</h2>
-                <p>
-                  Открываем доступ к премиальной недвижимости и сопровождаем сделку с прозрачными
-                  условиями на каждом этапе.
-                </p>
+                <h2>{t('aboutCorp_heroSubhead')}</h2>
+                <p>{t('aboutCorp_heroLead')}</p>
               </div>
             </Reveal>
           </div>
@@ -217,12 +330,9 @@ export default function About() {
         <section className="al-analytics" id="analytics" aria-labelledby="analytics-title">
           <div className="al-shell al-analytics__grid">
             <Reveal className="al-analytics__intro">
-              <p>
-                Мы работаем на рынке Испании и объединяем экспертизу в недвижимости, современные
-                технологии и глубокое понимание локального рынка.
-              </p>
+              <p>{t('aboutCorp_analyticsIntro')}</p>
               <ArrowBadge />
-              <h2 id="analytics-title">Реальные цифры</h2>
+              <h2 id="analytics-title">{t('aboutCorp_analyticsTitle')}</h2>
             </Reveal>
 
             <Reveal className="al-analytics__cards" delay={90}>
@@ -240,33 +350,32 @@ export default function About() {
           </div>
         </section>
 
-        <section className="al-partner" aria-labelledby="partner-title">
+        <section className="al-partner" id="about-agents" aria-labelledby="partner-title">
           <div className="al-shell al-partner__stage">
             <img className="al-partner__plant" src={ASSETS.botanical} alt="" aria-hidden />
             <Reveal className="al-partner-card">
               <div className="al-partner-card__top">
-                <h2 id="partner-title">Надёжный партнёр</h2>
-                <p>
-                  Каждый инвестор входит в сделки с ясностью, а мы сопровождаем процесс от первого
-                  шага до подписания документов.
-                </p>
+                <h2 id="partner-title">{t('aboutCorp_partnerTitle')}</h2>
+                <p>{t('aboutCorp_partnerLead')}</p>
               </div>
-              <img src={ASSETS.analyticsTeam} alt="Команда экспертов SellYourBrick" />
+              <img src={ASSETS.analyticsTeam} alt={t('aboutCorp_teamImgAlt')} />
               <div className="al-partner-card__main">
                 <ArrowBadge />
                 <div>
                   <h3>SellYourBrick</h3>
-                  <p>
-                    Доступ к лучшим объектам, профессиональный анализ, прозрачная отчётность и
-                    полное сопровождение на каждом этапе.
-                  </p>
+                  <p>{t('aboutCorp_partnerBrandLead')}</p>
                 </div>
               </div>
             </Reveal>
-            <div className="al-partner__notes" aria-label="Гарантии платформы">
-              {partnerNotes.map((note, index) =>
-                index === 1 ? <strong key={note}>{note}</strong> : <span key={note}>{note}</span>,
-              )}
+            <div className="al-partner__notes" aria-label={t('aboutCorp_guaranteesAria')}>
+              {partnerNotes.map((note, index) => (
+                <span
+                  key={note}
+                  className={index === 1 ? 'al-partner__notes-item is-accent' : 'al-partner__notes-item'}
+                >
+                  {note}
+                </span>
+              ))}
             </div>
           </div>
         </section>
@@ -274,34 +383,18 @@ export default function About() {
         <section className="al-scale" id="scale" aria-labelledby="scale-title">
           <div className="al-shell al-scale__grid">
             <Reveal className="al-scale__image-card">
-              <img src={ASSETS.meeting} alt="Команда SellYourBrick на стратегической сессии" />
+              <img src={ASSETS.meeting} alt={t('aboutCorp_meetingImgAlt')} />
               <div className="al-scale__overlay">
-                <h2>Как это работает</h2>
-                <strong>12–18%</strong>
-                <p>Средняя годовая доходность по проектам платформы.</p>
+                <h2 id="scale-title">{t('aboutCorp_scaleTitle')}</h2>
+                <strong>{t('aboutCorp_scaleYield')}</strong>
+                <p>{t('aboutCorp_scaleYieldText')}</p>
               </div>
             </Reveal>
 
             <Reveal className="al-scale__copy" delay={120}>
-              <p className="al-section-note">
-                Простой процесс — надёжный результат: от анализа и отбора объектов до управления
-                активом и регулярных выплат инвесторам.
-              </p>
-              <span className="al-code">6–18 мес.</span>
-              <div className="al-capabilities">
-                <HiArrowUpRight aria-hidden />
-                <ul aria-labelledby="scale-title">
-                  {capabilities.map((item) => (
-                    <li
-                      key={item.label}
-                      id={item.active ? 'scale-title' : undefined}
-                      className={item.active ? 'is-active' : undefined}
-                    >
-                      {item.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <p className="al-section-note">{t('aboutCorp_scaleNote')}</p>
+              <span className="al-code">{t('aboutCorp_scaleHorizon')}</span>
+              <CapabilitiesMenu />
             </Reveal>
           </div>
         </section>
@@ -310,15 +403,10 @@ export default function About() {
           <div className="al-shell">
             <Reveal className="al-metrics__intro">
               <h2 id="metrics-title">
-                <span className="al-metrics__title-lead">Мы не просто говорим о доходности.</span>
-                <br />
-                Мы её обеспечиваем.
+                {t('aboutCorp_metricsTitle')}
+                <span className="al-metrics__title-tail"> {t('aboutCorp_metricsTitleTail')}</span>
               </h2>
-              <p>
-                41 миллион евро в работе, 35 тысяч доверяющих инвесторов и десятки успешно
-                завершённых проектов — цифры, которые подтверждаются банковскими выписками, а не
-                презентациями.
-              </p>
+              <p>{t('aboutCorp_metricsLead')}</p>
             </Reveal>
 
             <div className="al-metrics__grid">
@@ -332,40 +420,64 @@ export default function About() {
                 </Reveal>
               ))}
             </div>
+
+            <Reveal className="al-metrics__mobile" delay={90}>
+              {metricCards.map((metric) => (
+                <div className="al-metrics__mobile-item" key={metric.label}>
+                  <div className="al-metrics__mobile-item__top">
+                    <AnimatedNumber value={metric.value} suffix={metric.suffix} />
+                    <ArrowBadge className="al-metrics__mobile-mark" label="" />
+                  </div>
+                  <p>{metric.text}</p>
+                </div>
+              ))}
+            </Reveal>
           </div>
         </section>
 
         <section className="al-systems" id="systems" aria-labelledby="systems-title">
           <div className="al-shell al-systems__grid">
             <Reveal className="al-systems__copy">
-              {systemNotes.map((note) => (
+              {systemNotes.map((note, index) => (
                 <article key={note.title}>
-                  <h2 id={note.title === 'Актив в реестре' ? 'systems-title' : undefined}>{note.title}</h2>
+                  <h2 id={index === 0 ? 'systems-title' : undefined}>{note.title}</h2>
                   <p>{note.text}</p>
                 </article>
               ))}
-              <div className="al-system-tags">
-                <span>Испания · реестр</span>
+              <div className="al-system-tags al-system-tags--desktop">
+                <span>{t('aboutCorp_tagSpain')}</span>
                 <span>SellYourBrick</span>
               </div>
             </Reveal>
 
+            <div className="al-system-tags al-system-tags--mobile" aria-label={t('aboutCorp_tagsAria')}>
+              <span>{t('aboutCorp_tagSpain')}</span>
+              <span>SellYourBrick</span>
+            </div>
+
             <Reveal className="al-system-visual" delay={120}>
               <img src={ASSETS.blueLoop} alt="" aria-hidden />
               <article className="al-system-card">
-                <h2>
-                  Инвестируйте в
-                  <br />
-                  кирпичи, а не в
-                  <br />
-                  обещания
-                </h2>
-                <p>
-                  Возврат капитала подтверждается банковскими выписками. Задержки и риски публикуем
-                  так же открыто, как успехи.
-                </p>
+                <div className="al-system-card__head">
+                  <h2>
+                    {t('aboutCorp_systemCardTitleL1')}
+                    <br />
+                    {t('aboutCorp_systemCardTitleL2')}
+                    <br />
+                    {t('aboutCorp_systemCardTitleL3')}
+                  </h2>
+                  <p>{t('aboutCorp_systemCardLead')}</p>
+                </div>
+                <ul className="al-system-card__points">
+                  {systemHighlights.map((item) => (
+                    <li key={item.label}>
+                      <strong>{item.label}</strong>
+                      <span>{item.detail}</span>
+                    </li>
+                  ))}
+                </ul>
                 <div className="al-system-card__footer">
-                  <span>LTV 61.5%</span>
+                  <span>{t('aboutCorp_ltv')}</span>
                 </div>
                 <ArrowBadge className="al-system-card__arrow" />
               </article>
@@ -376,26 +488,21 @@ export default function About() {
         <section className="al-cta" id="contacts" aria-labelledby="cta-title">
           <div className="al-shell al-cta__inner">
             <Reveal className="al-cta__copy">
-              <span className="al-pill al-pill--dark">Следующий шаг</span>
+              <span className="al-pill al-pill--dark">{t('aboutCorp_ctaPill')}</span>
               <h2 id="cta-title">
-                <span className="al-cta__title-lead">
-                  Покупка или<span className="al-cta__title-mobile-break"><br /></span> продажа —
-                </span>
+                <span className="al-cta__title-lead">{t('aboutCorp_ctaTitleLead')}</span>
                 <br />
-                <span className="al-cta__title-tail">на одной платформе</span>
+                <span className="al-cta__title-tail">{t('aboutCorp_ctaTitleTail')}</span>
               </h2>
-              <p>
-                Выберите раздел под вашу задачу. Регистрация бесплатна — сопровождаем сделку от
-                первого шага до оформления документов.
-              </p>
+              <p>{t('aboutCorp_ctaLead')}</p>
             </Reveal>
             <Reveal className="al-cta__actions" delay={90}>
               <Link className="al-primary-link" to="/buyer">
-                Искать недвижимость
+                {t('aboutCorp_ctaPrimary')}
                 <HiArrowUpRight aria-hidden />
               </Link>
               <Link className="al-secondary-link" to="/seller">
-                Разместить объект
+                {t('aboutCorp_ctaSecondary')}
               </Link>
             </Reveal>
           </div>

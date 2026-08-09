@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import '../styles/drawerDismiss.css'
@@ -24,13 +25,16 @@ function focusableElements(root) {
 export default function SharesMobileFiltersDrawer({
   isOpen,
   onClose,
-  title = 'Фильтры',
+  title,
   children,
   onApply,
   applyLabel,
   onReset,
-  resetLabel = 'Сбросить',
+  resetLabel,
 }) {
+  const { t } = useTranslation()
+  const resolvedTitle = title ?? t('filters')
+  const resolvedResetLabel = resetLabel ?? t('catalogResetFilters')
   const panelRef = useRef(null)
   const closeButtonRef = useRef(null)
   const previouslyFocusedRef = useRef(null)
@@ -114,13 +118,13 @@ export default function SharesMobileFiltersDrawer({
         tabIndex={-1}
       >
         <div className="shares-mobile-filters-drawer__header">
-          <h2 id="shares-mobile-filters-drawer-title">{title}</h2>
+          <h2 id="shares-mobile-filters-drawer-title">{resolvedTitle}</h2>
           <button
             ref={closeButtonRef}
             type="button"
             className="shares-mobile-filters-drawer__close"
             onClick={handleRequestClose}
-            aria-label="Закрыть"
+            aria-label={t('closeAria')}
           >
             <FiX size={20} aria-hidden />
           </button>
@@ -135,7 +139,7 @@ export default function SharesMobileFiltersDrawer({
             </button>
             {onReset ? (
               <button type="button" className="shares-mobile-filters-drawer__reset" onClick={onReset}>
-                {resetLabel}
+                {resolvedResetLabel}
               </button>
             ) : null}
           </div>

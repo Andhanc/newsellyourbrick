@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  FiArrowRight,
   FiArrowUp,
   FiClock,
   FiDownload,
   FiExternalLink,
   FiFileText,
+  FiMessageCircle,
   FiRefreshCw,
+  FiShield,
+  FiTrendingUp,
   FiX,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, isAuthenticated } from '../services/authService'
@@ -19,10 +23,10 @@ import {
 import './PropertyAiExperience.css'
 
 const SCENARIOS = [
-  { id: 'risks', label: 'Плюсы и риски', question: 'Какие у этого объекта главные плюсы и риски?' },
-  { id: 'investment', label: 'Инвестиционный потенциал', question: 'Какой инвестиционный потенциал у этого объекта?' },
-  { id: 'details', label: 'Подробный разбор', question: 'Сделай подробный разбор этого объекта.' },
-  { id: 'custom', label: 'Свой вопрос', question: '' },
+  { id: 'risks', label: 'Плюсы и риски', question: 'Какие у этого объекта главные плюсы и риски?', Icon: FiShield },
+  { id: 'investment', label: 'Инвестиционный потенциал', question: 'Какой инвестиционный потенциал у этого объекта?', Icon: FiTrendingUp },
+  { id: 'details', label: 'Подробный разбор', question: 'Сделай подробный разбор этого объекта.', Icon: FiFileText },
+  { id: 'custom', label: 'Свой вопрос', question: '', Icon: FiMessageCircle },
 ]
 
 const STATUS_COPY = {
@@ -30,6 +34,10 @@ const STATUS_COPY = {
   analyzing: ['Анализируем объект', 'Gemini изучает характеристики и фотографии'],
   rendering: ['Оформляем презентацию', 'Создаём страницы и собираем PDF'],
 }
+
+const LAUNCHER_HOLD_MS = 1100
+const LAUNCHER_MORPH_MS = 2000
+const LAUNCHER_MORPH_EASE = 'cubic-bezier(0.45, 0.05, 0.25, 1)'
 
 function propertyImages(property) {
   const source = property?.images || property?.photos || []
@@ -71,6 +79,7 @@ export default function PropertyAiExperience({
 }) {
   const [view, setView] = useState('closed')
   const [launcherExpanded, setLauncherExpanded] = useState(true)
+  const [launcherMorphing, setLauncherMorphing] = useState(false)
   const [job, setJob] = useState(null)
   const [question, setQuestion] = useState('')
   const [customQuestion, setCustomQuestion] = useState('')
@@ -80,6 +89,13 @@ export default function PropertyAiExperience({
   const [pdfBusy, setPdfBusy] = useState(false)
   const [revealedLineCount, setRevealedLineCount] = useState(0)
   const pollAbortRef = useRef(null)
+  const launcherRef = useRef(null)
+  const sparkRef = useRef(null)
+  const morphTimerRef = useRef(null)
+  const sparkAnimRef = useRef(null)
+  const prevViewRef = useRef(view)
+  const viewRef = useRef(view)
+  viewRef.current = view
   const propertyId = property?.id
   const propertyTable = property?.source_table || property?.property_table || property?.table || ''
   const images = useMemo(() => propertyImages(property).slice(0, 2), [property])
@@ -203,19 +219,93 @@ export default function PropertyAiExperience({
     }
   }
 
+  const cancelLauncherMorph = useCallback(() => {
+    if (morphTimerRef.current != null) {
+      window.clearTimeout(morphTimerRef.current)
+      morphTimerRef.current = null
+    }
+    if (sparkAnimRef.current) {
+      try {
+        sparkAnimRef.current.cancel()
+      } catch {
+        /* ignore */
+      }
+      sparkAnimRef.current = null
+    }
+    if (sparkRef.current) sparkRef.current.style.transform = ''
+    setLauncherMorphing(false)
+  }, [])
+
+  // Геометрию ведёт CSS transition (правый якорь + transform).
+  // Expand/collapse — одно и то же переключение класса, без WAAPI/FLIP.
+  const runLauncherMorph = useCallback((expanded, sparkRotationDeg) => {
+    cancelLauncherMorph()
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLauncherExpanded(expanded)
+      return
+    }
+
+    setLauncherMorphing(true)
+    setLauncherExpanded(expanded)
+
+    const spark = sparkRef.current
+    if (spark) {
+      const animation = spark.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: `rotate(${sparkRotationDeg}deg)` }],
+        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE },
+      )
+      sparkAnimRef.current = animation
+      animation.finished.catch(() => {}).then(() => {
+        if (sparkAnimRef.current !== animation) return
+        spark.style.transform = ''
+        sparkAnimRef.current = null
+      })
+    }
+
+    morphTimerRef.current = window.setTimeout(() => {
+      morphTimerRef.current = null
+      setLauncherMorphing(false)
+    }, LAUNCHER_MORPH_MS)
+  }, [cancelLauncherMorph])
+
+  const collapseLauncherWithMorph = useCallback(() => {
+    runLauncherMorph(false, 360)
+  }, [runLauncherMorph])
+
+  const expandLauncherWithMorph = useCallback(() => {
+    runLauncherMorph(true, -360)
+  }, [runLauncherMorph])
+
   useEffect(() => () => pollAbortRef.current?.abort(), [])
   useEffect(() => {
+    cancelLauncherMorph()
     setLauncherExpanded(true)
     if (deferLauncherCollapse) return undefined
-    const timer = window.setTimeout(() => setLauncherExpanded(false), 1400)
-    return () => window.clearTimeout(timer)
-  }, [deferLauncherCollapse, propertyId])
+    const timer = window.setTimeout(() => collapseLauncherWithMorph(), LAUNCHER_HOLD_MS)
+    return () => {
+      window.clearTimeout(timer)
+      cancelLauncherMorph()
+    }
+  }, [cancelLauncherMorph, collapseLauncherWithMorph, deferLauncherCollapse, propertyId])
 
   useEffect(() => {
     if (view !== 'closed') document.body.classList.add('property-ai-is-open')
     else document.body.classList.remove('property-ai-is-open')
     return () => document.body.classList.remove('property-ai-is-open')
   }, [view])
+
+  useEffect(() => {
+    const prevView = prevViewRef.current
+    prevViewRef.current = view
+    if (view !== 'closed' || prevView === 'closed') return undefined
+    // После закрытия модалки плашка снова сворачивается в кружок
+    const timer = window.setTimeout(() => {
+      if (viewRef.current !== 'closed') return
+      collapseLauncherWithMorph()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [collapseLauncherWithMorph, view])
 
   useEffect(() => {
     setRevealedLineCount(0)
@@ -234,8 +324,10 @@ export default function PropertyAiExperience({
 
   const statusCopy = STATUS_COPY[job?.status]
   const handleLauncherClick = () => {
+    // Пока идёт морфинг — игнор; модалку открываем только на полностью развёрнутой плашке
+    if (launcherMorphing) return
     if (!launcherExpanded) {
-      setLauncherExpanded(true)
+      expandLauncherWithMorph()
       return
     }
     setView('picker')
@@ -244,12 +336,13 @@ export default function PropertyAiExperience({
   return (
     <section className={`property-ai-experience${desktop ? ' property-ai-experience--desktop' : ''}`}>
       <button
+        ref={launcherRef}
         type="button"
         className={`property-ai-launcher${launcherExpanded ? '' : ' property-ai-launcher--collapsed'}`}
         onClick={handleLauncherClick}
         aria-label={launcherExpanded ? 'Открыть Недвижимость AI' : 'Развернуть Недвижимость AI'}
       >
-        <span className="property-ai-spark" aria-hidden>✦</span>
+        <span ref={sparkRef} className="property-ai-spark" aria-hidden>✦</span>
         <span className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
       </button>
 
@@ -263,7 +356,25 @@ export default function PropertyAiExperience({
             </div>
             <h2 id="property-ai-picker-title">РАССКАЖУ ПРО ЭТОТ<br />ОБЪЕКТ</h2>
             <div className="property-ai-picker__actions">
-              {SCENARIOS.map((scenario) => <button key={scenario.id} type="button" onClick={() => selectScenario(scenario)}>{scenario.label}</button>)}
+              {SCENARIOS.map((scenario) => {
+                const Icon = scenario.Icon
+                return (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    className="btn-tiffany-shine"
+                    onClick={() => selectScenario(scenario)}
+                  >
+                    <span className="property-ai-picker__action-icon" aria-hidden>
+                      <Icon size={18} strokeWidth={2.4} />
+                    </span>
+                    <span className="property-ai-picker__action-label">{scenario.label}</span>
+                    <span className="property-ai-picker__action-arrow" aria-hidden>
+                      <FiArrowRight size={18} strokeWidth={2.4} />
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

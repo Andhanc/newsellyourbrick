@@ -132,11 +132,11 @@
    Для критического (`timer-critical`) цветом управляет анимация, поэтому исключаем его. */
 .property-timer.timer-long:not(.timer-critical) .time-value,
 .property-timer.timer-long:not(.timer-critical) .timer-compact-time {
-  color: #0099A9;
+  color: #4ecdd6;
 }
 .property-timer.timer-long:not(.timer-critical),
 .property-timer.compact.timer-long:not(.timer-critical) .timer-compact-time {
-  border-color: #0099A9;
+  border-color: #4ecdd6;
 }
 
 .property-timer.timer-medium:not(.timer-critical) .time-value,
@@ -324,7 +324,7 @@
 
 .property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-value,
 .property-timer--plain.timer-long:not(.timer-critical) .property-timer-plain-sep {
-  color: #0099A9;
+  color: #4ecdd6;
 }
 
 .property-timer--plain.timer-medium:not(.timer-critical) .property-timer-plain-value,

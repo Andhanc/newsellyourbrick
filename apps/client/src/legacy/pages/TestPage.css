@@ -1253,8 +1253,23 @@ button.profile-cabinet-row:disabled {
   font-size: 12px;
 }
 
+.profile-data-experience .test-data-steps__index--complete {
+  background: #3bc0cb;
+  color: #fff;
+}
+
 .profile-data-experience .test-data-steps__item--active .test-data-steps__index {
   background: #3bc0cb;
+  color: #fff;
+}
+
+.profile-data-experience .test-data-steps__item--complete:not(.test-data-steps__item--active) {
+  color: #0f172a;
+}
+
+.profile-data-experience .test-data-steps__item--complete:not(.test-data-steps__item--active)
+  .test-data-steps__index {
+  background: rgba(59, 192, 203, 0.9);
   color: #fff;
 }
 
@@ -2836,8 +2851,18 @@ button.profile-cabinet-row:disabled {
   flex-shrink: 0;
 }
 
+.test-data-steps__index--complete {
+  background: var(--test-teal-dark, #3bc0cb);
+  color: #fff;
+}
+
 .test-data-steps__item--active .test-data-steps__index {
   background: var(--test-teal-dark);
+  color: #fff;
+}
+
+.test-data-steps__item--complete:not(.test-data-steps__item--active) .test-data-steps__index {
+  background: var(--test-teal-dark, #3bc0cb);
   color: #fff;
 }
 

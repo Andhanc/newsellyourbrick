@@ -70,3 +70,34 @@ export function flagEmojiForStoredCountry(country) {
 
   return null
 }
+
+/** ISO alpha-2 для флага (картинка на весь круг). */
+export function countryCodeForStoredCountry(country) {
+  if (country == null) return null
+  const s = String(country).trim()
+  if (!s) return null
+
+  const exact = countryList.find((c) => c.name === s)
+  if (exact?.code) return exact.code
+
+  const lower = s.toLowerCase()
+  const byNameCi = countryList.find((c) => c.name.toLowerCase() === lower)
+  if (byNameCi?.code) return byNameCi.code
+
+  if (/^[a-zA-Z]{2}$/.test(s)) {
+    const code = s.toUpperCase()
+    const byCode = countryList.find((c) => c.code === code)
+    if (byCode?.code) return byCode.code
+    if (/^[A-Z]{2}$/.test(code)) return code
+  }
+
+  // через кэш локализованных имён → флаг → код
+  const cache = buildLocalizedNameCache()
+  const flag = cache.get(lower)
+  if (flag) {
+    const byFlag = countryList.find((c) => c.flag === flag)
+    if (byFlag?.code) return byFlag.code
+  }
+
+  return null
+}

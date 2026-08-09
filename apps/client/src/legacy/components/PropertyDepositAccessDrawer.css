@@ -56,7 +56,7 @@
   width: 38px;
   height: 38px;
   padding: 0;
-  border: 1px solid rgba(74, 150, 166, 0.17);
+  border: 1px solid rgba(78, 205, 214, 0.17);
   border-radius: 50%;
   color: #3f6470;
   background: rgba(255, 255, 255, 0.9);
@@ -78,7 +78,7 @@
   content: '';
   position: absolute;
   border-radius: 50%;
-  background: rgba(74, 150, 166, 0.08);
+  background: rgba(78, 205, 214, 0.08);
 }
 
 .property-deposit-drawer__visual::before { width: 120px; height: 120px; left: -48px; top: -38px; }
@@ -157,7 +157,7 @@
   text-align: left;
 }
 
-.property-deposit-drawer__content li svg { color: #4a96a6; stroke-width: 3; }
+.property-deposit-drawer__content li svg { color: #4ecdd6; stroke-width: 3; }
 
 .property-deposit-drawer__cta {
   display: flex;
@@ -170,7 +170,7 @@
   border: 0;
   border-radius: 16px;
   color: #fff;
-  background: linear-gradient(135deg, #3f8798 0%, #4a96a6 48%, #65b9bd 100%);
+  background: linear-gradient(135deg, #3bc0cb 0%, #4ecdd6 48%, #65b9bd 100%);
   box-shadow: 0 12px 28px rgba(63, 135, 152, 0.3), inset 0 1px rgba(255, 255, 255, 0.3);
   font: inherit;
   font-size: 15px;

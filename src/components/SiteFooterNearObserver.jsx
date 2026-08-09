@@ -1,23 +1,35 @@
 import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { setSiteFooterNear } from '../utils/siteDocumentLayoutFlags'
 
 /**
  * Единый IntersectionObserver для #site-footer на всех маршрутах с AppLayout.
+ * При смене маршрута сбрасываем флаг: иначе после короткой страницы (например /wallet)
+ * класс html.site-footer-near залипает и прячет плашку депозита на /auction до hard refresh.
+ *
+ * Footer lazy (Suspense): ждём появления #site-footer через MutationObserver,
+ * а не только 1–2 rAF — иначе плашки депозита/AI никогда не подписались бы на футер.
  */
 export default function SiteFooterNearObserver() {
   const layoutScrollRef = useLayoutScrollRef()
+  const { pathname } = useLocation()
 
   useEffect(() => {
-    const footer = document.getElementById('site-footer')
-    if (!footer) return undefined
+    setSiteFooterNear(false)
+
+    let observer = null
+    let mo = null
+    let cancelled = false
 
     const getScrollRoot = () =>
       layoutScrollRef?.current || document.querySelector('.app-layout') || null
 
-    let observer = null
-
     const connect = () => {
+      if (cancelled) return false
+      const footer = document.getElementById('site-footer')
+      if (!footer) return false
+
       if (observer) {
         observer.disconnect()
         observer = null
@@ -33,17 +45,27 @@ export default function SiteFooterNearObserver() {
         }
       )
       observer.observe(footer)
+      return true
     }
 
-    connect()
-    const raf = requestAnimationFrame(() => connect())
+    if (!connect()) {
+      const watchRoot = getScrollRoot() || document.body
+      mo = new MutationObserver(() => {
+        if (connect()) {
+          mo?.disconnect()
+          mo = null
+        }
+      })
+      mo.observe(watchRoot, { childList: true, subtree: true })
+    }
 
     return () => {
-      cancelAnimationFrame(raf)
+      cancelled = true
+      mo?.disconnect()
       if (observer) observer.disconnect()
       setSiteFooterNear(false)
     }
-  }, [layoutScrollRef])
+  }, [layoutScrollRef, pathname])
 
   return null
 }

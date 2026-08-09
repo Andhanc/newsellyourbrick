@@ -525,11 +525,83 @@
   font-weight: 700;
 }
 
+.td-checkin-modal__stars-wrap {
+  margin: 18px 0 8px;
+  text-align: center;
+}
+
+.td-checkin-modal__stars-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--td-checkin-ink, #0f172a);
+  margin-bottom: 12px;
+}
+
+.td-checkin-modal__stars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.td-checkin-modal__star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    transform 0.14s ease;
+}
+
+.td-checkin-modal__star:hover {
+  background: rgba(251, 191, 36, 0.14);
+}
+
+.td-checkin-modal__star:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.35);
+}
+
+.td-checkin-modal__star-char {
+  display: block;
+  font-size: 2.05rem;
+  line-height: 1;
+  color: #e2e8f0;
+  transition:
+    color 0.18s ease,
+    transform 0.14s ease,
+    filter 0.18s ease;
+}
+
+.td-checkin-modal__star:hover .td-checkin-modal__star-char {
+  color: #fcd34d;
+  transform: scale(1.06);
+}
+
+.td-checkin-modal__star--on .td-checkin-modal__star-char {
+  color: #f59e0b;
+  filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.35));
+}
+
+.td-checkin-modal__star:active {
+  transform: scale(0.94);
+}
+
 .td-checkin-modal__section .td-checkin-modal__btn--primary {
   width: 100%;
   justify-content: center;
   min-height: 50px;
   font-size: 16px;
+  margin-top: 12px;
 }
 
 .td-checkin-modal__footer {
