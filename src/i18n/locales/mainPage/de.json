@@ -5587,7 +5587,7 @@
   "roleSwitch_pitchBuyerTitle": "Bereit, Käufer zu werden?",
   "roleSwitch_pitchSellerBody": "Inserieren Sie Objekte mit einem Klick — geprüfte Investoren, transparente Auktionen und Dokumentensupport.",
   "roleSwitch_pitchSellerCta": "Loslegen",
-  "roleSwitch_pitchSellerGoogleNote": "Sie haben sich mit Google angemeldet — legen Sie ein Passwort fest, bevor Sie Ihr Verkäufer-Kabinett erstellen. Ihr Käufer-Kabinett bleibt passwortlos; melden Sie sich weiterhin mit Google an.",
+  "roleSwitch_pitchSellerGoogleNote": "Sie haben sich mit Google angemeldet — legen Sie zuerst ein Passwort für das Käufer-Kabinett fest und danach ein anderes für das Verkäufer-Kabinett. Über das Passwort erkennen wir den Kabinett-Typ.",
   "roleSwitch_pitchSellerTitle": "Bereit, Verkäufer zu werden?",
   "roleSwitch_profileAria": "Profildaten",
   "roleSwitch_profileCountry": "Land",
@@ -5598,8 +5598,8 @@
   "roleSwitch_saving": "Speichern…",
   "roleSwitch_sellerCabinet": "Verkäufer-Kabinett",
   "roleSwitch_sellerCabinetDesc": "Meine Objekte, Analytics, Verkäufe",
-  "roleSwitch_setupGoogleNote": "Dieses Passwort gilt nur für das Verkäufer-Kabinett. Sie können sich weiterhin mit Google im Käufer-Kabinett anmelden.",
-  "roleSwitch_setupSubtitle": "Legen Sie ein Passwort für Ihr Verkäufer-Kabinett fest. Ihre Kaufhistorie bleibt im Käufer-Kabinett.",
+  "roleSwitch_setupGoogleNote": "Dieses Passwort gilt nur für das Verkäufer-Kabinett und muss sich vom Käufer-Passwort unterscheiden. Sie können sich weiterhin mit Google oder dem Käufer-Passwort anmelden.",
+  "roleSwitch_setupSubtitle": "Legen Sie ein Passwort für das Verkäufer-Kabinett fest. Es muss sich vom Käufer-Passwort unterscheiden.",
   "roleSwitch_setupTitle": "Kabinett erstellen",
   "roleSwitch_switchConfirm": "Wechseln",
   "roleSwitch_switchGoogleCta": "Mit Google anmelden",
@@ -5701,5 +5701,10 @@
   "tdSurvey_s6_summaryAria": "Answer summary",
   "toastBidOutbidTitle": "Ihr Gebot wurde überboten",
   "toastBidOutbidCta": "Zurück zum Gebot",
-  "toastOpenNotifications": "Benachrichtigungen öffnen"
+  "toastOpenNotifications": "Benachrichtigungen öffnen",
+  "roleSwitch_buyerPasswordTitle": "Passwort für das Käufer-Kabinett",
+  "roleSwitch_buyerPasswordSubtitle": "Ihr Käuferkonto hat noch kein Passwort. Legen Sie eines fest, bevor Sie ein Verkäufer-Kabinett erstellen.",
+  "roleSwitch_buyerPasswordGoogleNote": "Eine E-Mail — zwei Kabinette. Die Rolle beim Login wird über das Passwort erkannt: zuerst Käufer-Passwort speichern, dann ein separates Verkäufer-Passwort.",
+  "roleSwitch_buyerPasswordLabel": "Passwort für das Käufer-Kabinett",
+  "roleSwitch_buyerPasswordSave": "Speichern und weiter"
 }

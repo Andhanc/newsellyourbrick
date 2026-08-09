@@ -130,11 +130,11 @@
   "roleSwitch_pitchSellerTitle": "Ready to become a seller?",
   "roleSwitch_pitchSellerBody": "List properties on the platform in one click — verified investors, transparent auctions, and document support.",
   "roleSwitch_pitchSellerCta": "Get started",
-  "roleSwitch_pitchSellerGoogleNote": "You signed in with Google — set a password before creating your seller cabinet. Your buyer cabinet stays passwordless; sign in with Google as before.",
-  "roleSwitch_setupGoogleNote": "This password is only for the seller cabinet. You can still sign in to the buyer cabinet with Google.",
+  "roleSwitch_pitchSellerGoogleNote": "Zalogowałeś się przez Google — najpierw ustaw hasło do kabinetu kupującego, a potem inne hasło do kabinetu sprzedawcy. Hasło określa, który kabinet otworzyć.",
+  "roleSwitch_setupGoogleNote": "To hasło jest tylko do kabinetu sprzedawcy i musi różnić się od hasła kupującego. Do kabinetu kupującego możesz nadal logować się przez Google lub jego hasłem.",
   "roleSwitch_cancel": "Not now",
   "roleSwitch_setupTitle": "Create your cabinet",
-  "roleSwitch_setupSubtitle": "Set a password for your seller cabinet. Your purchase history stays in the buyer cabinet.",
+  "roleSwitch_setupSubtitle": "Ustaw hasło do kabinetu sprzedawcy. Musi różnić się od hasła kupującego.",
   "roleSwitch_profileAria": "Profile data",
   "roleSwitch_profileName": "Name",
   "roleSwitch_profileEmail": "Email",
@@ -4943,5 +4943,10 @@
   "tdSurvey_s6_summaryAria": "Answer summary",
   "toastBidOutbidTitle": "Twoja oferta została przebita",
   "toastBidOutbidCta": "Wróć do licytacji",
-  "toastOpenNotifications": "Otwórz powiadomienia"
+  "toastOpenNotifications": "Otwórz powiadomienia",
+  "roleSwitch_buyerPasswordTitle": "Hasło kabinetu kupującego",
+  "roleSwitch_buyerPasswordSubtitle": "Konto kupującego nie ma jeszcze hasła. Ustaw je przed utworzeniem kabinetu sprzedawcy.",
+  "roleSwitch_buyerPasswordGoogleNote": "Jeden e-mail — dwa kabinety. Rolę przy logowaniu określa hasło: najpierw zapisz hasło kupującego, potem osobne hasło sprzedawcy.",
+  "roleSwitch_buyerPasswordLabel": "Hasło do kabinetu kupującego",
+  "roleSwitch_buyerPasswordSave": "Zapisz i kontynuuj"
 }

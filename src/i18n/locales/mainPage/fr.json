@@ -5586,7 +5586,7 @@
   "roleSwitch_pitchBuyerTitle": "Prêt à devenir acheteur ?",
   "roleSwitch_pitchSellerBody": "Mettez des biens en ligne en un clic — investisseurs vérifiés, enchères transparentes et support documentaire.",
   "roleSwitch_pitchSellerCta": "Commencer",
-  "roleSwitch_pitchSellerGoogleNote": "Vous vous êtes connecté avec Google — définissez un mot de passe avant de créer votre espace vendeur. Votre espace acheteur reste sans mot de passe ; connectez-vous toujours avec Google.",
+  "roleSwitch_pitchSellerGoogleNote": "Vous vous êtes connecté avec Google — définissez d’abord un mot de passe pour l’espace acheteur, puis un mot de passe différent pour le vendeur. Le mot de passe détermine le cabinet.",
   "roleSwitch_pitchSellerTitle": "Prêt à devenir vendeur ?",
   "roleSwitch_profileAria": "Données du profil",
   "roleSwitch_profileCountry": "Pays",
@@ -5597,8 +5597,8 @@
   "roleSwitch_saving": "Enregistrement…",
   "roleSwitch_sellerCabinet": "Espace vendeur",
   "roleSwitch_sellerCabinetDesc": "Mes biens, analyses, ventes",
-  "roleSwitch_setupGoogleNote": "Ce mot de passe est uniquement pour l’espace vendeur. Vous pouvez toujours vous connecter à l’espace acheteur avec Google.",
-  "roleSwitch_setupSubtitle": "Définissez un mot de passe pour votre espace vendeur. Votre historique d’achat reste dans l’espace acheteur.",
+  "roleSwitch_setupGoogleNote": "Ce mot de passe est uniquement pour l’espace vendeur et doit différer de celui de l’acheteur. Vous pouvez toujours vous connecter à l’espace acheteur avec Google ou son mot de passe.",
+  "roleSwitch_setupSubtitle": "Définissez un mot de passe pour l’espace vendeur. Il doit différer de celui de l’acheteur.",
   "roleSwitch_setupTitle": "Créer votre espace",
   "roleSwitch_switchConfirm": "Basculer",
   "roleSwitch_switchGoogleCta": "Se connecter avec Google",
@@ -5700,5 +5700,10 @@
   "tdSurvey_s6_summaryAria": "Answer summary",
   "toastBidOutbidTitle": "Votre enchère a été surenchérie",
   "toastBidOutbidCta": "Retour aux enchères",
-  "toastOpenNotifications": "Ouvrir les notifications"
+  "toastOpenNotifications": "Ouvrir les notifications",
+  "roleSwitch_buyerPasswordTitle": "Mot de passe de l’espace acheteur",
+  "roleSwitch_buyerPasswordSubtitle": "Votre compte acheteur n’a pas encore de mot de passe. Définissez-en un avant de créer l’espace vendeur.",
+  "roleSwitch_buyerPasswordGoogleNote": "Un e-mail — deux cabinets. Le rôle à la connexion est déterminé par le mot de passe : enregistrez d’abord celui de l’acheteur, puis un mot de passe vendeur distinct.",
+  "roleSwitch_buyerPasswordLabel": "Mot de passe pour l’espace acheteur",
+  "roleSwitch_buyerPasswordSave": "Enregistrer et continuer"
 }
