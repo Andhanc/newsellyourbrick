@@ -13,35 +13,39 @@ test('keeps the launcher fixed until the global footer observer marks the footer
 
 test('collapses the launcher after entry and makes the first collapsed click expand it', () => {
   assert.match(jsx, /const \[launcherExpanded, setLauncherExpanded\] = useState\(true\)/)
+  assert.match(jsx, /launcherMorphing/)
   assert.match(jsx, /deferLauncherCollapse/)
   assert.match(jsx, /collapseLauncherWithMorph/)
   assert.match(jsx, /expandLauncherWithMorph/)
+  assert.match(jsx, /if \(launcherMorphing\) return/)
   assert.match(jsx, /if \(!launcherExpanded\) \{\s*expandLauncherWithMorph\(\)\s*return\s*\}/)
   assert.match(jsx, /property-ai-launcher--collapsed/)
   assert.match(css, /\.property-ai-launcher\.property-ai-launcher--collapsed\s*\{[^}]*width:\s*62px/)
   assert.match(css, /\.property-ai-launcher__label/)
 })
 
-test('releases WAAPI fill forwards so the launcher can expand again', () => {
-  assert.match(jsx, /Снимаем fill:forwards/)
-  assert.match(jsx, /runLauncherMorph/)
-  assert.match(jsx, /animation\.cancel\(\)/)
-})
-
-test('smoothly moves the collapsing launcher to the right edge', () => {
-  assert.match(css, /\.property-ai-launcher\s*\{[^}]*width:\s*360px/)
-  assert.match(css, /transform:\s*translate3d\(calc\(180px - 50vw/)
+test('morphs launcher with CSS transitions on a stable right anchor', () => {
+  assert.match(css, /\.property-ai-launcher\s*\{[^}]*right:\s*var\(--launcher-inset-right\)/)
+  assert.match(css, /transform:\s*translate3d\(calc\(50% - 50vw \+ var\(--launcher-inset-right\)\)/)
   assert.match(css, /\.property-ai-launcher\.property-ai-launcher--collapsed\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\)/)
-  assert.match(css, /\.property-ai-launcher--morphing/)
+  assert.match(css, /--launcher-morph-duration:\s*2s/)
+  assert.match(jsx, /Геометрию ведёт CSS transition/)
+  assert.doesNotMatch(jsx, /commitStyles/)
   assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*width:\s*min\(/)
 })
 
 test('spins the spark once while the launcher morphs into a circle', () => {
-  assert.match(jsx, /LAUNCHER_MORPH_MS\s*=\s*2800/)
+  assert.match(jsx, /LAUNCHER_MORPH_MS\s*=\s*2000/)
   assert.match(jsx, /collapseLauncherWithMorph/)
-  assert.match(jsx, /rotate\(360deg\)/)
+  assert.match(jsx, /rotate\(360deg\)|rotate\(\$\{sparkRotationDeg\}deg\)/)
   assert.match(jsx, /sparkRef/)
   assert.match(css, /\.property-ai-launcher--collapsed \.property-ai-launcher__label\s*\{[^}]*max-width:\s*0/)
+})
+
+test('collapses the launcher again after the AI modal closes', () => {
+  assert.match(jsx, /prevViewRef/)
+  assert.match(jsx, /После закрытия модалки плашка снова сворачивается в кружок/)
+  assert.match(jsx, /collapseLauncherWithMorph/)
 })
 
 test('keeps the spark on the left edge and centers the launcher label', () => {
@@ -50,12 +54,6 @@ test('keeps the spark on the left edge and centers the launcher label', () => {
   assert.match(css, /\.property-ai-spark\s*\{[^}]*left:\s*var\(--launcher-spark-inset\)/)
   assert.match(css, /--launcher-spark-inset:\s*17px/)
   assert.match(css, /\.property-ai-launcher__label\s*\{[^}]*text-align:\s*center/)
-})
-
-test('FLIP collapse measures dx after restoring width to avoid a left jump', () => {
-  assert.match(jsx, /const invertedBox = el\.getBoundingClientRect\(\)/)
-  assert.match(jsx, /const dx = firstBox\.left - invertedBox\.left/)
-  assert.doesNotMatch(jsx, /const dx = firstBox\.left - lastBox\.left/)
 })
 
 test('defers the entry collapse while the initial property drawer is open', () => {

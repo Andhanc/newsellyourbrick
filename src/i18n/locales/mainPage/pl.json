@@ -4841,7 +4841,7 @@
   "propertyDetail_depositViewAria": "Top up your deposit to view",
   "propertyDetail_depositViewPrompt": "Top up your deposit to view",
   "propertyDetail_depositViewCta": "Tap to top up your deposit",
-  "propertyDetail_outbidToast": "Your bid was outbid! Current highest bid: {{amount}}",
+  "propertyDetail_outbidToast": "Twoja oferta została przebita. Nowa najwyższa oferta: {{amount}}. Złóż nową ofertę, aby wrócić do gry!",
   "propertyDetail_reservedHoursBids": "Property reserved for {{hours}} hours. Bids temporarily unavailable.",
   "propertyDetail_invalidBidAmount": "Please enter a valid bid amount",
   "propertyDetail_minBidToast": "Minimum bid: {{min}} (current max + {{step}})",
@@ -4940,5 +4940,8 @@
   "tdSurvey_s5_intro": "That is what a test drive is for: after living here, do you want to move toward a deal?",
   "tdSurvey_s5_comment_ph": "What would convince you to buy — or what is holding you back?",
   "tdSurvey_s6_badge": "Step 6 · Summary",
-  "tdSurvey_s6_summaryAria": "Answer summary"
+  "tdSurvey_s6_summaryAria": "Answer summary",
+  "toastBidOutbidTitle": "Twoja oferta została przebita",
+  "toastBidOutbidCta": "Wróć do licytacji",
+  "toastOpenNotifications": "Otwórz powiadomienia"
 }

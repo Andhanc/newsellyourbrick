@@ -5077,7 +5077,7 @@
   "propertyDetail_depositViewAria": "Rechargez le dépôt pour consulter",
   "propertyDetail_depositViewPrompt": "Rechargez le dépôt pour consulter",
   "propertyDetail_depositViewCta": "Appuyez pour recharger le dépôt",
-  "propertyDetail_outbidToast": "Votre enchère a été dépassée ! Enchère maximale actuelle : {{amount}}",
+  "propertyDetail_outbidToast": "Votre enchère a été surenchérie. Nouvelle enchère max : {{amount}}. Placez une nouvelle enchère pour revenir dans la course !",
   "propertyDetail_reservedHoursBids": "Bien réservé pour {{hours}} heures. Enchères temporairement indisponibles.",
   "propertyDetail_invalidBidAmount": "Veuillez saisir un montant d’enchère valide",
   "propertyDetail_minBidToast": "Enchère minimale : {{min}} (maximum actuel + {{step}})",
@@ -5697,5 +5697,8 @@
   "tdSurvey_s5_intro": "That is what a test drive is for: after living here, do you want to move toward a deal?",
   "tdSurvey_s5_comment_ph": "What would convince you to buy — or what is holding you back?",
   "tdSurvey_s6_badge": "Step 6 · Summary",
-  "tdSurvey_s6_summaryAria": "Answer summary"
+  "tdSurvey_s6_summaryAria": "Answer summary",
+  "toastBidOutbidTitle": "Votre enchère a été surenchérie",
+  "toastBidOutbidCta": "Retour aux enchères",
+  "toastOpenNotifications": "Ouvrir les notifications"
 }

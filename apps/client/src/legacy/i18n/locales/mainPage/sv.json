@@ -5051,7 +5051,7 @@
   "propertyDetail_depositViewAria": "Fyll på depositumet för att visa",
   "propertyDetail_depositViewPrompt": "Fyll på depositumet för att visa",
   "propertyDetail_depositViewCta": "Tryck för att fylla på depositumet",
-  "propertyDetail_outbidToast": "Ditt bud har överbjudits! Högsta bud just nu: {{amount}}",
+  "propertyDetail_outbidToast": "Ditt bud har överbjudits. Nytt högsta bud: {{amount}}. Lägg ett nytt bud för att komma tillbaka!",
   "propertyDetail_reservedHoursBids": "Objektet är reserverat i {{hours}} timmar. Bud tillfälligt otillgängliga.",
   "propertyDetail_invalidBidAmount": "Ange ett giltigt budbelopp",
   "propertyDetail_minBidToast": "Lägsta bud: {{min}} (aktuellt max + {{step}})",
@@ -5640,5 +5640,8 @@
   "chatYieldAnnual": "Annual rent",
   "chatYieldMonthly": "Monthly",
   "chatYieldRate": "Gross yield",
-  "chatYieldInvestorCta": "Open smart investor panel"
+  "chatYieldInvestorCta": "Open smart investor panel",
+  "toastBidOutbidTitle": "Ditt bud har överbjudits",
+  "toastBidOutbidCta": "Tillbaka till budgivningen",
+  "toastOpenNotifications": "Öppna aviseringar"
 }

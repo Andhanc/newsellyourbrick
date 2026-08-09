@@ -5051,7 +5051,7 @@
   "propertyDetail_depositViewAria": "Rechargez le dépôt pour consulter",
   "propertyDetail_depositViewPrompt": "Rechargez le dépôt pour consulter",
   "propertyDetail_depositViewCta": "Appuyez pour recharger le dépôt",
-  "propertyDetail_outbidToast": "Votre enchère a été dépassée ! Enchère maximale actuelle : {{amount}}",
+  "propertyDetail_outbidToast": "Votre enchère a été surenchérie. Nouvelle enchère max : {{amount}}. Placez une nouvelle enchère pour revenir dans la course !",
   "propertyDetail_reservedHoursBids": "Bien réservé pour {{hours}} heures. Enchères temporairement indisponibles.",
   "propertyDetail_invalidBidAmount": "Veuillez saisir un montant d’enchère valide",
   "propertyDetail_minBidToast": "Enchère minimale : {{min}} (maximum actuel + {{step}})",
@@ -5640,5 +5640,8 @@
   "chatYieldAnnual": "Annual rent",
   "chatYieldMonthly": "Monthly",
   "chatYieldRate": "Gross yield",
-  "chatYieldInvestorCta": "Open smart investor panel"
+  "chatYieldInvestorCta": "Open smart investor panel",
+  "toastBidOutbidTitle": "Votre enchère a été surenchérie",
+  "toastBidOutbidCta": "Retour aux enchères",
+  "toastOpenNotifications": "Ouvrir les notifications"
 }

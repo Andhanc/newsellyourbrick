@@ -5051,7 +5051,7 @@
   "propertyDetail_depositViewAria": "Recargue el depósito para ver",
   "propertyDetail_depositViewPrompt": "Recargue el depósito para ver",
   "propertyDetail_depositViewCta": "Pulse para recargar el depósito",
-  "propertyDetail_outbidToast": "¡Su puja fue superada! Puja máxima actual: {{amount}}",
+  "propertyDetail_outbidToast": "Su puja fue superada. Nueva puja máxima: {{amount}}. Haga una nueva puja para volver al juego!",
   "propertyDetail_reservedHoursBids": "Inmueble reservado durante {{hours}} horas. Pujas temporalmente no disponibles.",
   "propertyDetail_invalidBidAmount": "Introduzca un importe de puja válido",
   "propertyDetail_minBidToast": "Puja mínima: {{min}} (máximo actual + {{step}})",
@@ -5640,5 +5640,8 @@
   "chatYieldAnnual": "Annual rent",
   "chatYieldMonthly": "Monthly",
   "chatYieldRate": "Gross yield",
-  "chatYieldInvestorCta": "Open smart investor panel"
+  "chatYieldInvestorCta": "Open smart investor panel",
+  "toastBidOutbidTitle": "Su puja ha sido superada",
+  "toastBidOutbidCta": "Volver a la subasta",
+  "toastOpenNotifications": "Abrir notificaciones"
 }

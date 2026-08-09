@@ -5275,7 +5275,7 @@
   "propertyDetail_depositViewAria": "Top up your deposit to view",
   "propertyDetail_depositViewPrompt": "Top up your deposit to view",
   "propertyDetail_depositViewCta": "Tap to top up your deposit",
-  "propertyDetail_outbidToast": "Your bid was outbid! Current highest bid: {{amount}}",
+  "propertyDetail_outbidToast": "Your bid was outbid. New highest bid: {{amount}}. Place a new bid to get back in the game!",
   "propertyDetail_reservedHoursBids": "Property reserved for {{hours}} hours. Bids temporarily unavailable.",
   "propertyDetail_invalidBidAmount": "Please enter a valid bid amount",
   "propertyDetail_minBidToast": "Minimum bid: {{min}} (current max + {{step}})",
@@ -5640,5 +5640,8 @@
   "buyerWalletTest_legalNavAria": "Documents and policies",
   "buyerWalletTest_policyAgreement": "User agreement",
   "buyerWalletTest_buyerDocumentation": "Buyer documentation",
-  "privateClubVipGatePromoDigit": "Promo code character {{n}}"
+  "privateClubVipGatePromoDigit": "Promo code character {{n}}",
+  "toastBidOutbidTitle": "Your bid has been outbid",
+  "toastBidOutbidCta": "Return to bidding",
+  "toastOpenNotifications": "Open notifications"
 }

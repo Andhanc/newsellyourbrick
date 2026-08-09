@@ -5352,7 +5352,7 @@
   "propertyDetail_depositViewAria": "Для просмотра пополните депозит",
   "propertyDetail_depositViewPrompt": "Пополните депозит для просмотра",
   "propertyDetail_depositViewCta": "Нажмите, чтобы перейти к пополнению",
-  "propertyDetail_outbidToast": "Вашу ставку перебили! Текущая максимальная ставка: {{amount}}",
+  "propertyDetail_outbidToast": "Вашу ставку перебили. Новая максимальная ставка: {{amount}}. Сделайте новую ставку, чтобы вернуться в игру!",
   "propertyDetail_reservedHoursBids": "Объект забронирован на {{hours}} часов. Ставки временно недоступны.",
   "propertyDetail_invalidBidAmount": "Пожалуйста, введите корректную сумму ставки",
   "propertyDetail_minBidToast": "Минимальная ставка: {{min}} (текущая максимальная + {{step}})",
@@ -5701,5 +5701,8 @@
   "buyerWalletTest_legalNavAria": "Документы и политики",
   "buyerWalletTest_policyAgreement": "Пользовательское соглашение",
   "buyerWalletTest_buyerDocumentation": "Документация покупателя",
-  "privateClubVipGatePromoDigit": "Символ промокода {{n}}"
+  "privateClubVipGatePromoDigit": "Символ промокода {{n}}",
+  "toastBidOutbidTitle": "Вашу ставку перебили",
+  "toastBidOutbidCta": "Вернуться к торгам",
+  "toastOpenNotifications": "Открыть уведомления"
 }

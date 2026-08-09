@@ -5052,7 +5052,7 @@
   "propertyDetail_depositViewAria": "Einzahlung aufladen, um Inhalte zu sehen",
   "propertyDetail_depositViewPrompt": "Einzahlung aufladen, um Inhalte zu sehen",
   "propertyDetail_depositViewCta": "Tippen, um die Einzahlung aufzuladen",
-  "propertyDetail_outbidToast": "Ihr Gebot wurde überboten! Höchstgebot: {{amount}}",
+  "propertyDetail_outbidToast": "Ihr Gebot wurde überboten. Neues Höchstgebot: {{amount}}. Setzen Sie ein neues Gebot, um wieder dabei zu sein!",
   "propertyDetail_reservedHoursBids": "Objekt für {{hours}} Stunden reserviert. Gebote vorübergehend nicht möglich.",
   "propertyDetail_invalidBidAmount": "Bitte geben Sie einen gültigen Gebotsbetrag ein",
   "propertyDetail_minBidToast": "Mindestgebot: {{min}} (aktuelles Maximum + {{step}})",
@@ -5641,5 +5641,8 @@
   "chatYieldAnnual": "Annual rent",
   "chatYieldMonthly": "Monthly",
   "chatYieldRate": "Gross yield",
-  "chatYieldInvestorCta": "Open smart investor panel"
+  "chatYieldInvestorCta": "Open smart investor panel",
+  "toastBidOutbidTitle": "Ihr Gebot wurde überboten",
+  "toastBidOutbidCta": "Zurück zum Gebot",
+  "toastOpenNotifications": "Benachrichtigungen öffnen"
 }

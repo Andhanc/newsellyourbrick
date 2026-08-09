@@ -5078,7 +5078,7 @@
   "propertyDetail_depositViewAria": "Einzahlung aufladen, um Inhalte zu sehen",
   "propertyDetail_depositViewPrompt": "Einzahlung aufladen, um Inhalte zu sehen",
   "propertyDetail_depositViewCta": "Tippen, um die Einzahlung aufzuladen",
-  "propertyDetail_outbidToast": "Ihr Gebot wurde überboten! Höchstgebot: {{amount}}",
+  "propertyDetail_outbidToast": "Ihr Gebot wurde überboten. Neues Höchstgebot: {{amount}}. Setzen Sie ein neues Gebot, um wieder dabei zu sein!",
   "propertyDetail_reservedHoursBids": "Objekt für {{hours}} Stunden reserviert. Gebote vorübergehend nicht möglich.",
   "propertyDetail_invalidBidAmount": "Bitte geben Sie einen gültigen Gebotsbetrag ein",
   "propertyDetail_minBidToast": "Mindestgebot: {{min}} (aktuelles Maximum + {{step}})",
@@ -5698,5 +5698,8 @@
   "tdSurvey_s5_intro": "That is what a test drive is for: after living here, do you want to move toward a deal?",
   "tdSurvey_s5_comment_ph": "What would convince you to buy — or what is holding you back?",
   "tdSurvey_s6_badge": "Step 6 · Summary",
-  "tdSurvey_s6_summaryAria": "Answer summary"
+  "tdSurvey_s6_summaryAria": "Answer summary",
+  "toastBidOutbidTitle": "Ihr Gebot wurde überboten",
+  "toastBidOutbidCta": "Zurück zum Gebot",
+  "toastOpenNotifications": "Benachrichtigungen öffnen"
 }

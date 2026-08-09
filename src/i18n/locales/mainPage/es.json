@@ -5077,7 +5077,7 @@
   "propertyDetail_depositViewAria": "Recargue el depósito para ver",
   "propertyDetail_depositViewPrompt": "Recargue el depósito para ver",
   "propertyDetail_depositViewCta": "Pulse para recargar el depósito",
-  "propertyDetail_outbidToast": "¡Su puja fue superada! Puja máxima actual: {{amount}}",
+  "propertyDetail_outbidToast": "Su puja fue superada. Nueva puja máxima: {{amount}}. Haga una nueva puja para volver al juego!",
   "propertyDetail_reservedHoursBids": "Inmueble reservado durante {{hours}} horas. Pujas temporalmente no disponibles.",
   "propertyDetail_invalidBidAmount": "Introduzca un importe de puja válido",
   "propertyDetail_minBidToast": "Puja mínima: {{min}} (máximo actual + {{step}})",
@@ -5697,5 +5697,8 @@
   "tdSurvey_s5_intro": "That is what a test drive is for: after living here, do you want to move toward a deal?",
   "tdSurvey_s5_comment_ph": "What would convince you to buy — or what is holding you back?",
   "tdSurvey_s6_badge": "Step 6 · Summary",
-  "tdSurvey_s6_summaryAria": "Answer summary"
+  "tdSurvey_s6_summaryAria": "Answer summary",
+  "toastBidOutbidTitle": "Su puja ha sido superada",
+  "toastBidOutbidCta": "Volver a la subasta",
+  "toastOpenNotifications": "Abrir notificaciones"
 }

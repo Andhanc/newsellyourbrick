@@ -19,9 +19,12 @@ body.property-ai-is-open {
   --launcher-spark-size: 28px;
   /* Слева на плашке = центр круга 62px: (62 - 28) / 2 */
   --launcher-spark-inset: 17px;
+  --launcher-morph-duration: 2s;
+  --launcher-morph-ease: cubic-bezier(0.45, 0.05, 0.25, 1);
   position: fixed;
-  right: var(--launcher-inset-right);
+  /* Всегда правый якорь: плашка растёт влево, transform уводит к центру */
   left: auto;
+  right: var(--launcher-inset-right);
   bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 9990;
   box-sizing: border-box;
@@ -43,11 +46,12 @@ body.property-ai-is-open {
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
-  transform: translate3d(calc(180px - 50vw + var(--launcher-inset-right)), 0, 0);
+  /* 50% = половина ширины плашки → центр экрана при правом якоре */
+  transform: translate3d(calc(50% - 50vw + var(--launcher-inset-right)), 0, 0);
   transition:
-    width 0.55s cubic-bezier(0.4, 0.05, 0.2, 1),
-    padding 0.55s cubic-bezier(0.4, 0.05, 0.2, 1),
-    transform 0.55s cubic-bezier(0.4, 0.05, 0.2, 1),
+    width var(--launcher-morph-duration) var(--launcher-morph-ease),
+    padding var(--launcher-morph-duration) var(--launcher-morph-ease),
+    transform var(--launcher-morph-duration) var(--launcher-morph-ease),
     box-shadow 0.55s ease,
     opacity 0.28s ease;
 }
@@ -60,13 +64,6 @@ body.property-ai-is-open {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
 }
 
-/* WAAPI ведёт морфинг — CSS transition не должен мешать */
-.property-ai-launcher--morphing,
-.property-ai-launcher--morphing .property-ai-launcher__label,
-.property-ai-launcher--morphing .property-ai-spark {
-  transition: none !important;
-}
-
 .property-ai-launcher__label {
   display: block;
   flex: 0 1 auto;
@@ -77,8 +74,8 @@ body.property-ai-is-open {
   white-space: nowrap;
   text-align: center;
   transition:
-    max-width 0.55s cubic-bezier(0.4, 0.05, 0.2, 1),
-    opacity 0.35s ease;
+    max-width var(--launcher-morph-duration) var(--launcher-morph-ease),
+    opacity 0.45s ease;
 }
 
 .property-ai-launcher--collapsed .property-ai-launcher__label {
@@ -95,7 +92,7 @@ html.site-footer-near .property-ai-launcher {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transform: translate3d(calc(180px - 50vw + var(--launcher-inset-right)), 90px, 0);
+  transform: translate3d(calc(50% - 50vw + var(--launcher-inset-right)), 90px, 0);
 }
 
 html.site-footer-near .property-ai-launcher--collapsed {
@@ -754,16 +751,11 @@ html.site-footer-near .property-ai-launcher--collapsed {
     min-width: 56px;
     height: 56px;
     font-size: 18px;
-    transform: translate3d(calc(160px - 50vw + var(--launcher-inset-right)), 0, 0);
   }
 
   .property-ai-launcher.property-ai-launcher--collapsed {
     width: 56px;
     min-width: 56px;
-  }
-
-  html.site-footer-near .property-ai-launcher {
-    transform: translate3d(calc(160px - 50vw + var(--launcher-inset-right)), 90px, 0);
   }
 
   .property-ai-chat {
@@ -835,16 +827,11 @@ html.site-footer-near .property-ai-launcher--collapsed {
     height: 56px;
     padding: 6px 20px;
     font-size: 17px;
-    transform: translate3d(calc(155px - 50vw + var(--launcher-inset-right)), 0, 0);
   }
 
   .property-ai-launcher.property-ai-launcher--collapsed {
     width: 56px;
     min-width: 56px;
-  }
-
-  html.site-footer-near .property-ai-launcher {
-    transform: translate3d(calc(155px - 50vw + var(--launcher-inset-right)), 90px, 0);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-ai-launcher {

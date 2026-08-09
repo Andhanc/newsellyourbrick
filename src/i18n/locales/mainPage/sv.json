@@ -5077,7 +5077,7 @@
   "propertyDetail_depositViewAria": "Fyll på depositumet för att visa",
   "propertyDetail_depositViewPrompt": "Fyll på depositumet för att visa",
   "propertyDetail_depositViewCta": "Tryck för att fylla på depositumet",
-  "propertyDetail_outbidToast": "Ditt bud har överbjudits! Högsta bud just nu: {{amount}}",
+  "propertyDetail_outbidToast": "Ditt bud har överbjudits. Nytt högsta bud: {{amount}}. Lägg ett nytt bud för att komma tillbaka!",
   "propertyDetail_reservedHoursBids": "Objektet är reserverat i {{hours}} timmar. Bud tillfälligt otillgängliga.",
   "propertyDetail_invalidBidAmount": "Ange ett giltigt budbelopp",
   "propertyDetail_minBidToast": "Lägsta bud: {{min}} (aktuellt max + {{step}})",
@@ -5697,5 +5697,8 @@
   "tdSurvey_s5_intro": "That is what a test drive is for: after living here, do you want to move toward a deal?",
   "tdSurvey_s5_comment_ph": "What would convince you to buy — or what is holding you back?",
   "tdSurvey_s6_badge": "Step 6 · Summary",
-  "tdSurvey_s6_summaryAria": "Answer summary"
+  "tdSurvey_s6_summaryAria": "Answer summary",
+  "toastBidOutbidTitle": "Ditt bud har överbjudits",
+  "toastBidOutbidCta": "Tillbaka till budgivningen",
+  "toastOpenNotifications": "Öppna aviseringar"
 }

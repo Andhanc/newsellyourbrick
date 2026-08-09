@@ -190,7 +190,42 @@ export function SiteNotificationsProvider({ children }) {
                 n.type === 'test_drive_result' ||
                 n.type === 'test_drive_survey'),
           )
-          if (newLiveNotifications.length > 0) {
+          const newBidOutbidNotifications = newLiveNotifications.filter(
+            (n) => n.type === 'bid_outbid',
+          )
+          const otherLiveNotifications = newLiveNotifications.filter(
+            (n) => n.type !== 'bid_outbid',
+          )
+          if (newBidOutbidNotifications.length > 0) {
+            newBidOutbidNotifications.forEach((notif) => {
+              const payload = parseNotificationData(notif.data)
+              const propertyId = payload?.property_id
+              const message =
+                notif.message ||
+                t('toastBidOutbidFallback', 'Your bid has been outbid!')
+              showToast({
+                type: 'warning',
+                title: notif.title || t('toastBidOutbidTitle', 'Вашу ставку перебили'),
+                message,
+                duration: 6500,
+                dedupeKey: `bid_outbid:${propertyId ?? notif.id}`,
+                action: {
+                  label:
+                    propertyId != null
+                      ? t('toastBidOutbidCta', 'Вернуться к торгам')
+                      : t('toastOpenNotifications', 'Открыть уведомления'),
+                  onClick: () => {
+                    if (propertyId != null) {
+                      navigate(getPropertyDetailPath(propertyId, { classic: false }))
+                    } else {
+                      setIsOpen(true)
+                    }
+                  },
+                },
+              })
+            })
+          }
+          if (otherLiveNotifications.length > 0) {
             showToast({
               type: 'info',
               title: t('toastNewNotification', 'У вас новое уведомление'),

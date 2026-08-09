@@ -36,7 +36,7 @@ const STATUS_COPY = {
 }
 
 const LAUNCHER_HOLD_MS = 1100
-const LAUNCHER_MORPH_MS = 2800
+const LAUNCHER_MORPH_MS = 2000
 const LAUNCHER_MORPH_EASE = 'cubic-bezier(0.45, 0.05, 0.25, 1)'
 
 function propertyImages(property) {
@@ -79,6 +79,7 @@ export default function PropertyAiExperience({
 }) {
   const [view, setView] = useState('closed')
   const [launcherExpanded, setLauncherExpanded] = useState(true)
+  const [launcherMorphing, setLauncherMorphing] = useState(false)
   const [job, setJob] = useState(null)
   const [question, setQuestion] = useState('')
   const [customQuestion, setCustomQuestion] = useState('')
@@ -90,8 +91,11 @@ export default function PropertyAiExperience({
   const pollAbortRef = useRef(null)
   const launcherRef = useRef(null)
   const sparkRef = useRef(null)
-  const labelRef = useRef(null)
-  const morphAnimsRef = useRef([])
+  const morphTimerRef = useRef(null)
+  const sparkAnimRef = useRef(null)
+  const prevViewRef = useRef(view)
+  const viewRef = useRef(view)
+  viewRef.current = view
   const propertyId = property?.id
   const propertyTable = property?.source_table || property?.property_table || property?.table || ''
   const images = useMemo(() => propertyImages(property).slice(0, 2), [property])
@@ -215,232 +219,63 @@ export default function PropertyAiExperience({
     }
   }
 
-  const clearLauncherInlineStyles = useCallback(() => {
-    const el = launcherRef.current
-    const spark = sparkRef.current
-    const label = labelRef.current
-    if (el) {
-      el.classList.remove('property-ai-launcher--morphing')
-      el.style.width = ''
-      el.style.transform = ''
-      el.style.padding = ''
-    }
-    if (spark) spark.style.transform = ''
-    if (label) {
-      label.style.maxWidth = ''
-      label.style.opacity = ''
-      label.style.width = ''
-    }
-  }, [])
-
   const cancelLauncherMorph = useCallback(() => {
-    morphAnimsRef.current.forEach((animation) => {
+    if (morphTimerRef.current != null) {
+      window.clearTimeout(morphTimerRef.current)
+      morphTimerRef.current = null
+    }
+    if (sparkAnimRef.current) {
       try {
-        animation.cancel()
+        sparkAnimRef.current.cancel()
       } catch {
         /* ignore */
       }
-    })
-    morphAnimsRef.current = []
-    clearLauncherInlineStyles()
-  }, [clearLauncherInlineStyles])
+      sparkAnimRef.current = null
+    }
+    if (sparkRef.current) sparkRef.current.style.transform = ''
+    setLauncherMorphing(false)
+  }, [])
 
-  const runLauncherMorph = useCallback((anims) => {
-    morphAnimsRef.current = anims
-    Promise.all(anims.map((animation) => animation.finished.catch(() => {}))).then(() => {
-      if (!launcherRef.current) return
-      // Снимаем fill:forwards, иначе CSS-разворот по клику не применяется
-      anims.forEach((animation) => {
-        try {
-          animation.cancel()
-        } catch {
-          /* ignore */
-        }
+  // Геометрию ведёт CSS transition (правый якорь + transform).
+  // Expand/collapse — одно и то же переключение класса, без WAAPI/FLIP.
+  const runLauncherMorph = useCallback((expanded, sparkRotationDeg) => {
+    cancelLauncherMorph()
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLauncherExpanded(expanded)
+      return
+    }
+
+    setLauncherMorphing(true)
+    setLauncherExpanded(expanded)
+
+    const spark = sparkRef.current
+    if (spark) {
+      const animation = spark.animate(
+        [{ transform: 'rotate(0deg)' }, { transform: `rotate(${sparkRotationDeg}deg)` }],
+        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE },
+      )
+      sparkAnimRef.current = animation
+      animation.finished.catch(() => {}).then(() => {
+        if (sparkAnimRef.current !== animation) return
+        spark.style.transform = ''
+        sparkAnimRef.current = null
       })
-      morphAnimsRef.current = []
-      clearLauncherInlineStyles()
-    })
-  }, [clearLauncherInlineStyles])
+    }
+
+    morphTimerRef.current = window.setTimeout(() => {
+      morphTimerRef.current = null
+      setLauncherMorphing(false)
+    }, LAUNCHER_MORPH_MS)
+  }, [cancelLauncherMorph])
 
   const collapseLauncherWithMorph = useCallback(() => {
-    const el = launcherRef.current
-    const spark = sparkRef.current
-    const label = labelRef.current
-    if (!el) {
-      setLauncherExpanded(false)
-      return
-    }
-
-    cancelLauncherMorph()
-
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setLauncherExpanded(false)
-      return
-    }
-
-    const firstBox = el.getBoundingClientRect()
-    const labelWidth = label ? Math.ceil(label.scrollWidth) : 0
-    const firstPadding = getComputedStyle(el).padding
-
-    // FLIP синхронно до paint: иначе один кадр со «скачком» влево
-    el.classList.add('property-ai-launcher--morphing')
-    el.classList.add('property-ai-launcher--collapsed')
-    const lastBox = el.getBoundingClientRect()
-    const lastWidth = lastBox.width
-
-    // Правый якорь + исходная ширина; звезда absolute слева — сама приедет в центр круга
-    el.style.width = `${firstBox.width}px`
-    el.style.padding = firstPadding
-    if (label) {
-      label.style.maxWidth = `${labelWidth}px`
-      label.style.opacity = '1'
-    }
-    if (spark) spark.style.transform = 'rotate(0deg)'
-
-    const invertedBox = el.getBoundingClientRect()
-    const dx = firstBox.left - invertedBox.left
-    el.style.transform = `translate3d(${dx}px, 0, 0)`
-    el.getBoundingClientRect()
-
-    setLauncherExpanded(false)
-
-    const anims = [
-      el.animate(
-        [
-          {
-            width: `${firstBox.width}px`,
-            transform: `translate3d(${dx}px, 0, 0)`,
-            padding: firstPadding,
-          },
-          {
-            width: `${lastWidth}px`,
-            transform: 'translate3d(0, 0, 0)',
-            padding: '0px',
-          },
-        ],
-        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-      ),
-    ]
-
-    if (label) {
-      anims.push(
-        label.animate(
-          [
-            { maxWidth: `${labelWidth}px`, opacity: 1 },
-            { maxWidth: '0px', opacity: 0 },
-          ],
-          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-        ),
-      )
-    }
-
-    if (spark) {
-      anims.push(
-        spark.animate(
-          [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }],
-          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-        ),
-      )
-    }
-
-    runLauncherMorph(anims)
-  }, [cancelLauncherMorph, runLauncherMorph])
+    runLauncherMorph(false, 360)
+  }, [runLauncherMorph])
 
   const expandLauncherWithMorph = useCallback(() => {
-    const el = launcherRef.current
-    const spark = sparkRef.current
-    const label = labelRef.current
-    if (!el) {
-      setLauncherExpanded(true)
-      return
-    }
-
-    cancelLauncherMorph()
-
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setLauncherExpanded(true)
-      return
-    }
-
-    const firstBox = el.getBoundingClientRect()
-
-    el.classList.add('property-ai-launcher--morphing')
-    el.classList.remove('property-ai-launcher--collapsed')
-    if (label) {
-      label.style.maxWidth = 'none'
-      label.style.width = 'auto'
-      label.style.opacity = '0'
-    }
-    el.style.width = ''
-    el.style.padding = ''
-    el.style.transform = ''
-
-    const lastBox = el.getBoundingClientRect()
-    const lastWidth = lastBox.width
-    const lastPadding = getComputedStyle(el).padding
-    const labelWidth = label ? Math.ceil(label.scrollWidth) : 0
-
-    el.style.transform = 'translate3d(0, 0, 0)'
-    const baseExpandedBox = el.getBoundingClientRect()
-    const endDx = lastBox.left - baseExpandedBox.left
-
-    el.style.width = `${firstBox.width}px`
-    el.style.padding = '0px'
-    el.style.transform = 'translate3d(0, 0, 0)'
-    if (label) {
-      label.style.maxWidth = '0px'
-      label.style.opacity = '0'
-    }
-    if (spark) spark.style.transform = 'rotate(0deg)'
-
-    const invertedBox = el.getBoundingClientRect()
-    const startDx = firstBox.left - invertedBox.left
-    el.style.transform = `translate3d(${startDx}px, 0, 0)`
-    el.getBoundingClientRect()
-
-    setLauncherExpanded(true)
-
-    const anims = [
-      el.animate(
-        [
-          {
-            width: `${firstBox.width}px`,
-            transform: `translate3d(${startDx}px, 0, 0)`,
-            padding: '0px',
-          },
-          {
-            width: `${lastWidth}px`,
-            transform: `translate3d(${endDx}px, 0, 0)`,
-            padding: lastPadding,
-          },
-        ],
-        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-      ),
-    ]
-
-    if (label) {
-      anims.push(
-        label.animate(
-          [
-            { maxWidth: '0px', opacity: 0 },
-            { maxWidth: `${labelWidth}px`, opacity: 1 },
-          ],
-          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-        ),
-      )
-    }
-
-    if (spark) {
-      anims.push(
-        spark.animate(
-          [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-360deg)' }],
-          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
-        ),
-      )
-    }
-
-    runLauncherMorph(anims)
-  }, [cancelLauncherMorph, runLauncherMorph])
+    runLauncherMorph(true, -360)
+  }, [runLauncherMorph])
 
   useEffect(() => () => pollAbortRef.current?.abort(), [])
   useEffect(() => {
@@ -461,6 +296,18 @@ export default function PropertyAiExperience({
   }, [view])
 
   useEffect(() => {
+    const prevView = prevViewRef.current
+    prevViewRef.current = view
+    if (view !== 'closed' || prevView === 'closed') return undefined
+    // После закрытия модалки плашка снова сворачивается в кружок
+    const timer = window.setTimeout(() => {
+      if (viewRef.current !== 'closed') return
+      collapseLauncherWithMorph()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [collapseLauncherWithMorph, view])
+
+  useEffect(() => {
     setRevealedLineCount(0)
     if (!answerLines.length) return undefined
     const timer = window.setInterval(() => {
@@ -477,6 +324,8 @@ export default function PropertyAiExperience({
 
   const statusCopy = STATUS_COPY[job?.status]
   const handleLauncherClick = () => {
+    // Пока идёт морфинг — игнор; модалку открываем только на полностью развёрнутой плашке
+    if (launcherMorphing) return
     if (!launcherExpanded) {
       expandLauncherWithMorph()
       return
@@ -494,7 +343,7 @@ export default function PropertyAiExperience({
         aria-label={launcherExpanded ? 'Открыть Недвижимость AI' : 'Развернуть Недвижимость AI'}
       >
         <span ref={sparkRef} className="property-ai-spark" aria-hidden>✦</span>
-        <span ref={labelRef} className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
+        <span className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
       </button>
 
       {view === 'picker' && (

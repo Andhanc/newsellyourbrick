@@ -238,6 +238,9 @@ export async function evaluateBidCeilings(
         await sleep(AUTO_BID_DELAY_MS)
       }
 
+      const previousLeaderId = leaderId
+      const previousBidAmount = currentMax
+
       const created = await prisma.bids.create({
         data: {
           user_id: uid,
@@ -263,7 +266,13 @@ export async function evaluateBidCeilings(
       placed.push({ bidId: created.id, userId: uid, bidAmount })
 
       if (typeof onAutoBidPlaced === 'function') {
-        await onAutoBidPlaced({ userId: uid, bidAmount, currentMax })
+        await onAutoBidPlaced({
+          userId: uid,
+          bidAmount,
+          currentMax,
+          previousLeaderId,
+          previousBidAmount,
+        })
       }
     }
   }

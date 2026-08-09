@@ -4814,7 +4814,7 @@
   "propertyDetail_depositViewAria": "Top up your deposit to view",
   "propertyDetail_depositViewPrompt": "Top up your deposit to view",
   "propertyDetail_depositViewCta": "Tap to top up your deposit",
-  "propertyDetail_outbidToast": "Your bid was outbid! Current highest bid: {{amount}}",
+  "propertyDetail_outbidToast": "Twoja oferta została przebita. Nowa najwyższa oferta: {{amount}}. Złóż nową ofertę, aby wrócić do gry!",
   "propertyDetail_reservedHoursBids": "Property reserved for {{hours}} hours. Bids temporarily unavailable.",
   "propertyDetail_invalidBidAmount": "Please enter a valid bid amount",
   "propertyDetail_minBidToast": "Minimum bid: {{min}} (current max + {{step}})",
@@ -4882,5 +4882,8 @@
   "chatYieldAnnual": "Annual rent",
   "chatYieldMonthly": "Monthly",
   "chatYieldRate": "Gross yield",
-  "chatYieldInvestorCta": "Open smart investor panel"
+  "chatYieldInvestorCta": "Open smart investor panel",
+  "toastBidOutbidTitle": "Twoja oferta została przebita",
+  "toastBidOutbidCta": "Wróć do licytacji",
+  "toastOpenNotifications": "Otwórz powiadomienia"
 }
