@@ -1093,7 +1093,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
                   onError={() => setHeroImageFailed(true)}
                 />
                 <div className="opa-property-card__body" ref={mobileDetailsRef}>
-                  <span className="opa-property-card__details-eyebrow opa-mobile-only">Детали объекта</span>
+                  <span className="opa-property-card__details-eyebrow opa-mobile-only">{t('ownerTest_analyticsPropertyDetails')}</span>
                   <h2 className="opa-property-card__title">{property.title}</h2>
                   <p className="opa-property-card__details-location opa-mobile-only">
                     <MapPin size={16} strokeWidth={2.2} aria-hidden />

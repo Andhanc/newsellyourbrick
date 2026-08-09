@@ -225,33 +225,32 @@ html.login-modal-open button.ai-button {
 }
 
 /*
- * У футера на мобилке: всегда убираем FAB AI (и депозит), чтобы не перекрывать языки.
+ * У футера: убираем FAB AI и депозит, чтобы не перекрывать футер / языки.
  * Открытая панель чата / AI (.chat-dock-active) остаётся на экране.
  */
-@media (max-width: 768px) {
-  html.site-footer-near button.ai-button,
-  html.site-footer-near .ai-assistant-dock > button.ai-button,
-  html.site-footer-near .home-auction-floats > button.ai-button,
-  html.site-footer-near .shares-floats > button.ai-button,
-  html.site-footer-near .property-list-header button.ai-button {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
-  }
+html.site-footer-near button.ai-button,
+html.site-footer-near .ai-assistant-dock > button.ai-button,
+html.site-footer-near .home-auction-floats > button.ai-button,
+html.site-footer-near .shares-floats > button.ai-button,
+html.site-footer-near .property-list-header button.ai-button {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+}
 
-  html.site-footer-near .home-auction-floats .deposit-button,
-  html.site-footer-near .shares-floats .deposit-button {
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
-  }
+html.site-footer-near .home-auction-floats .deposit-button,
+html.site-footer-near .shares-floats .deposit-button {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+}
 
-  html.site-footer-near.chat-dock-active .chat-widget {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    transform: none !important;
-  }
+html.site-footer-near.chat-dock-active .chat-widget {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: none !important;
 }
 

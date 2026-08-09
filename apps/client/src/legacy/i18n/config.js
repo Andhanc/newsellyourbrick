@@ -67,11 +67,24 @@ function initI18nOnce() {
   if (initPromise) return initPromise
 
   initPromise = (async () => {
+    // Load the active locale before init so first paint never flashes raw keys
+    // (e.g. SoftLaunch «Пока недоступно» mounts immediately).
+    // Always preload English too — fallbackLng only works if the fallback bundle is present.
+    const initialMod = await (LOCALE_LOADERS[initialLng] || LOCALE_LOADERS.en)()
+    const initialData = initialMod.default ?? initialMod
+    const resources = {
+      [initialLng]: { translation: initialData },
+    }
+    if (initialLng !== 'en') {
+      const enMod = await LOCALE_LOADERS.en()
+      resources.en = { translation: enMod.default ?? enMod }
+    }
+
     await i18n
       .use(LanguageDetector)
       .use(initReactI18next)
       .init({
-        resources: {},
+        resources,
         lng: initialLng,
         fallbackLng: {
           default: ['en'],
@@ -92,11 +105,26 @@ function initI18nOnce() {
         partialBundledLanguages: true,
       })
 
-    await loadLanguageBundle(initialLng)
+    // Mark as loaded for loadLanguageBundle() short-circuit
+    if (!i18n.hasResourceBundle(initialLng, 'translation')) {
+      i18n.addResourceBundle(initialLng, 'translation', initialData, true, true)
+    }
+    if (resources.en && !i18n.hasResourceBundle('en', 'translation')) {
+      i18n.addResourceBundle('en', 'translation', resources.en.translation, true, true)
+    }
 
+    // Preload next language as soon as it changes (avoid raw-key flash)
     i18n.on('languageChanged', (lng) => {
       void loadLanguageBundle(lng)
     })
+
+    // Prefer loading the target bundle before language flips when callers use changeLanguage
+    const originalChangeLanguage = i18n.changeLanguage.bind(i18n)
+    i18n.changeLanguage = async (lng, ...rest) => {
+      const code = normalizeAppLanguage(lng)
+      await loadLanguageBundle(code)
+      return originalChangeLanguage(code, ...rest)
+    }
 
     return i18n
   })()

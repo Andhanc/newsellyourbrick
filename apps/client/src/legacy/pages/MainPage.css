@@ -2879,8 +2879,10 @@ a.property-link {
     transform 0.65s cubic-bezier(0.65, 0, 0.2, 1);
 }
 
-.ai-assistant-dock--footer-near .ai-button {
+.ai-assistant-dock--footer-near .ai-button,
+html.site-footer-near .ai-assistant-dock > button.ai-button {
   opacity: 0 !important;
+  visibility: hidden !important;
   transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
   pointer-events: none !important;
   transition-delay: 0s;

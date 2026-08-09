@@ -11,27 +11,38 @@ function parseTestDriveData(raw) {
 }
 
 const TYPE_FILTER_ALIASES = {
-  'вилла': ['villa'],
-  'апартаменты': ['apartment', 'apartments', 'commercial', 'flat'],
-  'таунхаус': ['townhouse', 'town_house'],
-  'дом': ['house'],
-  'пентхаус': ['penthouse'],
+  villa: ['villa'],
+  apartment: ['apartment', 'apartments', 'commercial', 'flat'],
+  townhouse: ['townhouse', 'town_house'],
+  house: ['house'],
+  penthouse: ['penthouse'],
 }
 
 const AMENITY_FILTER_ALIASES = {
-  'бассейн': ['pool', 'pool_private', 'pool_communal', 'pool_outdoor', 'бассейн'],
-  'вид на море': ['sea_view', 'ocean_view', 'вид на море'],
-  'терраса': ['terrace', 'rooftop_terrace', 'терраса'],
-  'wi-fi': ['wifi', 'wi-fi', 'internet', 'интернет'],
-  'парковка': ['parking', 'underground_parking', 'covered_parking', 'open_parking', 'surface_parking', 'parking_onsite', 'парковка'],
+  pool: ['pool', 'pool_private', 'pool_communal', 'pool_outdoor', 'бассейн'],
+  sea_view: ['sea_view', 'ocean_view', 'вид на море'],
+  terrace: ['terrace', 'rooftop_terrace', 'терраса'],
+  wifi: ['wifi', 'wi-fi', 'internet', 'интернет'],
+  parking: ['parking', 'underground_parking', 'covered_parking', 'open_parking', 'surface_parking', 'parking_onsite', 'парковка'],
 }
 
 const DURATION_FILTER_RANGES = {
-  '3-7 дней': [3, 7],
-  '1-2 недели': [8, 14],
-  '2-4 недели': [15, 28],
-  '1-3 месяца': [29, 90],
-  'Более 3 месяцев': [91, Number.POSITIVE_INFINITY],
+  '3-7_days': [3, 7],
+  '1-2_weeks': [8, 14],
+  '2-4_weeks': [15, 28],
+  '1-3_months': [29, 90],
+  over_3_months: [91, Number.POSITIVE_INFINITY],
+}
+
+const CITY_FILTER_ALIASES = {
+  Marbella: ['marbella', 'марбелья'],
+  Barcelona: ['barcelona', 'барселона'],
+  Madrid: ['madrid', 'мадрид'],
+  Valencia: ['valencia', 'валенсия'],
+  Malaga: ['malaga', 'málaga', 'малага'],
+  Alicante: ['alicante', 'аликанте'],
+  Sevilla: ['sevilla', 'seville', 'севилья'],
+  Palma: ['palma', 'palma de mallorca', 'пальма'],
 }
 
 function firstFiniteNumber(...values) {
@@ -123,6 +134,21 @@ export function matchesSelectedTestDriveDurations(listing, selectedDurations) {
     if (!range) return false
     const [rangeStart, rangeEnd] = range
     return minStayDays <= rangeEnd && maxStayDays >= rangeStart
+  })
+}
+
+export function matchesSelectedTestDriveCity(city, selectedCities) {
+  if (!selectedCities.length) return true
+
+  const normalizedCity = String(city || '').trim().toLowerCase()
+  if (!normalizedCity) return false
+
+  return selectedCities.some((selectedCity) => {
+    const key = String(selectedCity || '').trim()
+    if (!key) return false
+    if (normalizedCity === key.toLowerCase()) return true
+    const aliases = CITY_FILTER_ALIASES[key] || CITY_FILTER_ALIASES[key.charAt(0).toUpperCase() + key.slice(1)]
+    return Boolean(aliases?.includes(normalizedCity))
   })
 }
 

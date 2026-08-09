@@ -39,7 +39,7 @@ test('comparison table and mobile cards use the shared truthful price resolver',
 
 test('comfort comparison distinguishes missing source data from a known zero score', () => {
   assert.match(page, /function hasComfortData/)
-  assert.match(page, /comfortKnownL \? `\$\{cL\} \/ \$\{comfortMax\}` : 'Нет данных'/)
+  assert.match(page, /comfortKnownL \? `\$\{cL\} \/ \$\{comfortMax\}` : t\('comparePage_noData'\)/)
   assert.match(page, /comfortKnownL && comfortKnownR \? compareMetric\(cL, cR, 'higher'\) : null/)
 })
 

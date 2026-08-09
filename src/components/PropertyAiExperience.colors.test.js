@@ -11,15 +11,22 @@ const pdfRenderer = await readFile(
 test('keeps the chat Tiffany while the PDF uses the warm editorial palette', () => {
   assert.doesNotMatch(css, /#ffe000/i)
   assert.doesNotMatch(pdfRenderer, /#ffe000/i)
-  assert.match(css, /--property-ai-accent:\s*#0099a9/i)
-  assert.match(css, /--property-ai-accent-soft:\s*rgba\(0,\s*153,\s*169,\s*0\.18\)/i)
+  assert.match(css, /--property-ai-accent:\s*#4ecdd6/i)
+  assert.match(css, /--property-ai-accent-deep:\s*#3bc0cb/i)
+  assert.match(css, /--property-ai-accent-soft:\s*rgba\(78,\s*205,\s*214,\s*0\.18\)/i)
+  assert.match(css, /\.property-ai-launcher\s*\{[^}]*background:\s*#000/)
+  assert.match(css, /\.property-ai-picker\s*\{[^}]*background:\s*#000/)
+  assert.match(css, /\.property-ai-picker__action-icon/)
+  assert.match(css, /\.property-ai-picker__action-arrow/)
+  assert.doesNotMatch(css, /\.property-ai-picker\s*\{[^}]*#8ae8ef/)
+  assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*background:\s*var\(--property-ai-accent\)/)
+  assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*#4a96a6/)
   assert.match(pdfRenderer, /--report-clay:#a45d3b/i)
   assert.match(pdfRenderer, /--report-paper:#fbfaf8/i)
 })
 
 test('uses white content on solid accent surfaces', () => {
   const solidSurfaceSelectors = [
-    'property-ai-picker__thumbs span',
     'property-ai-user-message',
     'property-ai-progress__orb',
     'property-ai-pdf-card__icon',

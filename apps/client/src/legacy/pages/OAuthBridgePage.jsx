@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth, useUser, AuthenticateWithRedirectCallback } from '@clerk/clerk-react'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 
@@ -8,6 +9,7 @@ import { getCabinetHomePath } from '../utils/cabinetRoutes'
  * он с forceRedirect открывал лишний экран sign-in на accounts.dev после уже успешного входа).
  */
 export default function OAuthBridgePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
@@ -54,7 +56,7 @@ export default function OAuthBridgePage() {
       }}
     >
       <div style={{ width: 32, height: 32, border: '3px solid #0099A9', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <span>Завершение входа…</span>
+      <span>{t('oauthBridge_finishing')}</span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )

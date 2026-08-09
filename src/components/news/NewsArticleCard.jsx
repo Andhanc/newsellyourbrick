@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { FiArrowUpRight } from 'react-icons/fi'
 import NewsArticleMeta from './NewsArticleMeta'
 
 export default function NewsArticleCard({ article, onOpen }) {
+  const { t } = useTranslation()
   const sizeClass =
     article.size === 'large'
       ? 'news-card--large'
@@ -32,7 +34,7 @@ export default function NewsArticleCard({ article, onOpen }) {
           <p className="news-card__excerpt">{article.excerpt}</p>
           {article.slug ? (
             <span className="news-card__read">
-              Читать статью <FiArrowUpRight size={17} aria-hidden />
+              {t('newsPage_cardRead')} <FiArrowUpRight size={17} aria-hidden />
             </span>
           ) : null}
         </div>

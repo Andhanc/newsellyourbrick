@@ -18,6 +18,19 @@
   overflow: visible;
 }
 
+/* Нулевой депозит / скелетон: широкая плашка по центру экрана (не обрезается слева). */
+.deposit-button:not(.deposit-button--compact) {
+  left: 50%;
+  right: auto;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  transform: translateX(-50%);
+}
+
+.deposit-button:not(.deposit-button--compact) .deposit-button__amount {
+  white-space: nowrap;
+}
+
 .deposit-button__glow {
   position: absolute;
   inset: -2px;
@@ -432,6 +445,14 @@
     right: 20px !important;
     min-width: 180px;
     height: 70px;
+  }
+
+  .deposit-button:not(.deposit-button--compact) {
+    max-width: calc(100vw - 32px);
+  }
+
+  .deposit-button:not(.deposit-button--compact) .deposit-button__amount {
+    font-size: 16px;
   }
 
   .deposit-button__content-wrapper {

@@ -6,9 +6,10 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(6, 47, 46, 0.62);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Как у «Сделать ставку»: тёмный slate, без зелёного */
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   font-family: 'Montserrat', system-ui, sans-serif;
 }
 
@@ -21,7 +22,7 @@
   border-radius: 28px;
   background: #ffffff;
   box-shadow:
-    0 32px 64px rgba(6, 47, 46, 0.28),
+    0 32px 64px rgba(15, 23, 42, 0.28),
     0 0 0 1px rgba(255, 255, 255, 0.08);
   color: #0f172a;
 }

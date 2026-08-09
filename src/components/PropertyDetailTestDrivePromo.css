@@ -17,7 +17,7 @@
   overflow: hidden;
   isolation: isolate;
   color: #ffffff;
-  background: linear-gradient(112deg, #0099A9 0%, #0aaea9 46%, #007d8a 100%);
+  background: linear-gradient(112deg, #6fd4dc 0%, #4ecdd6 46%, #3bc0cb 100%);
 }
 
 .property-detail-test-drive-promo__banner--no-photo {
@@ -188,14 +188,14 @@
   padding: 0 24px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0099A9 0%, #007d8a 100%);
+  background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
   color: #ffffff;
   font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(10, 154, 150, 0.28);
+  box-shadow: 0 8px 22px rgba(78, 205, 214, 0.28);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -204,7 +204,7 @@
 
 .property-detail-test-drive-promo__actions .property-detail-test-drive__cta:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(10, 154, 150, 0.36);
+  box-shadow: 0 12px 28px rgba(78, 205, 214, 0.36);
 }
 
 .property-detail-test-drive-promo__actions .property-detail-test-drive__cta:disabled {

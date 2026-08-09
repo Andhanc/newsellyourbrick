@@ -1,4 +1,11 @@
 .property-detail-page-new {
+  /* Тиффани с главной (Hero «ВСЕ ОБЪЕКТЫ» #4ecdd6) — единый акцент на всех страницах объекта */
+  --pd-tiffany: #4ecdd6;
+  --pd-tiffany-deep: #3bc0cb;
+  --pd-tiffany-soft: #dff6f8;
+  --pd-tiffany-soft-border: rgba(78, 205, 214, 0.35);
+  --pd-tiffany-ring: rgba(78, 205, 214, 0.14);
+  --pd-tiffany-glow: rgba(78, 205, 214, 0.32);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -283,14 +290,14 @@
 .winner-celebration__title {
   font-size: 48px;
   font-weight: 800;
-  color: #4a96a6;
+  color: #4ecdd6;
   margin: 0 0 12px 0;
   font-family: 'Montserrat', sans-serif;
-  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 50%, #3f8798 100%);
+  background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 50%, #3bc0cb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 4px 12px rgba(74, 150, 166, 0.3);
+  text-shadow: 0 4px 12px rgba(78, 205, 214, 0.3);
 }
 
 .winner-celebration__subtitle {
@@ -825,13 +832,13 @@
 
 .property-detail-sidebar__document-item:hover {
   background: #f9fafb;
-  border-color: #4a96a6;
+  border-color: #4ecdd6;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(74, 150, 166, 0.1);
+  box-shadow: 0 2px 8px rgba(78, 205, 214, 0.1);
 }
 
 .property-detail-sidebar__document-icon {
-  color: #4a96a6;
+  color: #4ecdd6;
   flex-shrink: 0;
 }
 
@@ -881,19 +888,19 @@
   }
 }
 
-/* Чипы удобств: насыщённый Tiffany (#4a96a6), обводка в тон, блик по фону при hover */
+/* Чипы удобств: насыщённый Tiffany (#4ecdd6), обводка в тон, блик по фону при hover */
 .amenity-tag {
   display: inline-flex;
   align-items: center;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 42%, #3f8798 100%);
+  background: linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 42%, #3bc0cb 100%);
   border: 1px solid #8eb5c4;
   border-radius: 8px;
   font-size: 14px;
   color: #ffffff;
   font-weight: 600;
   transition: border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
-  box-shadow: 0 2px 8px rgba(74, 150, 166, 0.35);
+  box-shadow: 0 2px 8px rgba(78, 205, 214, 0.35);
   max-width: 100%;
   white-space: normal;
   text-align: left;
@@ -909,7 +916,7 @@
       transparent 62%,
       transparent 100%
     ),
-    linear-gradient(135deg, #5aa5b5 0%, #4a96a6 42%, #3f8798 100%);
+    linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 42%, #3bc0cb 100%);
   background-size: 220% 100%, 100% 100%;
   background-position: -160% 0, 0 0;
   background-repeat: no-repeat;
@@ -930,12 +937,12 @@
       transparent 62%,
       transparent 100%
     ),
-    linear-gradient(135deg, #5aa5b5 0%, #4a96a6 45%, #3f8798 100%);
+    linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 45%, #3bc0cb 100%);
   background-position: 160% 0, 0 0;
   border-color: #a7f3f0;
   transform: translateY(-1px);
   box-shadow:
-    0 2px 12px rgba(74, 150, 166, 0.45),
+    0 2px 12px rgba(78, 205, 214, 0.45),
     0 0 0 1px rgba(167, 243, 240, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
@@ -1704,7 +1711,7 @@
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #0099a9;
+    color: var(--pd-tiffany);
     cursor: pointer;
   }
 
@@ -1731,13 +1738,13 @@
     min-height: 46px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #0099a9 0%, #007d8a 100%);
+    background: linear-gradient(135deg, var(--pd-tiffany) 0%, var(--pd-tiffany-deep) 100%);
     color: #ffffff;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 0.9375rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 153, 169, 0.22);
+    box-shadow: 0 8px 20px var(--pd-tiffany-glow);
   }
 }
 
@@ -1799,7 +1806,7 @@
 }
 
 .current-bid-value-wrapper--animated .current-bid-value {
-  color: #4a96a6 !important;
+  color: #4ecdd6 !important;
   font-weight: 700;
   transition: color 0.3s ease;
 }
@@ -1808,7 +1815,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #4a96a6;
+  color: #4ecdd6;
   animation: arrowBounce 0.6s ease-out;
   margin-left: 4px;
 }
@@ -1888,13 +1895,13 @@
 .price-overlay__value {
   font-size: 32px;
   font-weight: 700;
-  color: #4a96a6;
+  color: #4ecdd6;
   font-family: 'Montserrat', sans-serif;
   animation: priceOverlayValuePulse 0.6s ease-out;
 }
 
 .price-overlay__arrow {
-  color: #4a96a6;
+  color: #4ecdd6;
   animation: arrowBounce 0.6s ease-out;
   flex-shrink: 0;
 }
@@ -1929,11 +1936,11 @@
   }
   50% {
     transform: scale(1.15);
-    color: #4a96a6;
+    color: #4ecdd6;
   }
   100% {
     transform: scale(1);
-    color: #4a96a6;
+    color: #4ecdd6;
   }
 }
 
@@ -2041,7 +2048,7 @@
   border-color: transparent;
   border-width: 1px;
   box-shadow:
-    0 10px 24px rgba(74, 150, 166, 0.45),
+    0 10px 24px rgba(78, 205, 214, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
@@ -2181,7 +2188,7 @@
   padding: 10px 8px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(74, 150, 166, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -2195,16 +2202,16 @@
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 4px 16px rgba(74, 150, 166, 0.3),
+    0 4px 16px rgba(78, 205, 214, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .bidding-section__quick-btn:hover {
-  background: linear-gradient(135deg, rgba(74, 150, 166, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
   transform: translateY(-1px);
   box-shadow:
-    0 6px 20px rgba(74, 150, 166, 0.4),
+    0 6px 20px rgba(78, 205, 214, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -2225,7 +2232,7 @@
   cursor: not-allowed !important;
   transform: none !important;
   box-shadow:
-    0 2px 10px rgba(74, 150, 166, 0.2),
+    0 2px 10px rgba(78, 205, 214, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
@@ -2308,7 +2315,7 @@
   padding: 12px 20px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(74, 150, 166, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -2318,7 +2325,7 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
-    0 4px 16px rgba(74, 150, 166, 0.3),
+    0 4px 16px rgba(78, 205, 214, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -2339,7 +2346,7 @@
 .bidding-section__submit-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4fcfca 0%, #18b6b1 52%, #0e9d98 100%);
   box-shadow:
-    0 10px 24px rgba(74, 150, 166, 0.45),
+    0 10px 24px rgba(78, 205, 214, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
@@ -2354,7 +2361,7 @@
 .bidding-section__submit-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow:
-    0 2px 10px rgba(74, 150, 166, 0.28),
+    0 2px 10px rgba(78, 205, 214, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -2404,12 +2411,12 @@
   width: 52px;
   min-width: 52px;
   padding: 0;
-  border: 1px solid rgba(74, 150, 166, 0.35);
+  border: 1px solid rgba(78, 205, 214, 0.35);
   border-radius: 14px;
-  background: linear-gradient(145deg, #f0f7f9 0%, #ffffff 100%);
-  color: #3f8798;
+  background: linear-gradient(145deg, #dff6f8 0%, #ffffff 100%);
+  color: #3bc0cb;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(74, 150, 166, 0.18);
+  box-shadow: 0 4px 14px rgba(78, 205, 214, 0.18);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -2423,9 +2430,9 @@
 
 .bidding-section__ceiling-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: #4a96a6;
-  background: linear-gradient(145deg, #e3f0f3 0%, #f0f7f9 100%);
-  box-shadow: 0 6px 18px rgba(74, 150, 166, 0.28);
+  border-color: #4ecdd6;
+  background: linear-gradient(145deg, #e3f0f3 0%, #dff6f8 100%);
+  box-shadow: 0 6px 18px rgba(78, 205, 214, 0.28);
 }
 
 .bidding-section__ceiling-btn:disabled {
@@ -2435,10 +2442,10 @@
 }
 
 .bidding-section__ceiling-btn--active {
-  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+  background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
   border-color: transparent;
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(74, 150, 166, 0.35);
+  box-shadow: 0 6px 20px rgba(78, 205, 214, 0.35);
 }
 
 .property-detail-sidebar__buy-now-btn {
@@ -2515,7 +2522,7 @@
   box-sizing: border-box;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, rgba(74, 150, 166, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.85) 0%, rgba(63, 135, 152, 0.85) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
@@ -2529,7 +2536,7 @@
   margin: 16px 0 20px;
   display: block;
   box-shadow:
-    0 4px 16px rgba(74, 150, 166, 0.3),
+    0 4px 16px rgba(78, 205, 214, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
@@ -2564,12 +2571,12 @@
 }
 
 .property-detail-sidebar__buy-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(74, 150, 166, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.95) 0%, rgba(63, 135, 152, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(74, 150, 166, 0.4),
+    0 6px 20px rgba(78, 205, 214, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
@@ -2648,7 +2655,7 @@
   padding: 12px 20px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(74, 150, 166, 0.22);
+  border: 1px solid rgba(78, 205, 214, 0.22);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
   font-family: 'Montserrat', system-ui, sans-serif;
   font-size: 13px;
@@ -3049,12 +3056,12 @@
 @keyframes property-test-drive-highlight {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 150, 166, 0);
+    box-shadow: 0 0 0 0 rgba(78, 205, 214, 0);
     border-color: rgba(148, 163, 184, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(74, 150, 166, 0.22);
-    border-color: rgba(74, 150, 166, 0.55);
+    box-shadow: 0 0 0 4px rgba(78, 205, 214, 0.22);
+    border-color: rgba(78, 205, 214, 0.55);
   }
 }
 
@@ -3084,11 +3091,11 @@
 }
 
 .property-detail-test-drive__conditions li.is-done {
-  color: #3f8798;
+  color: #3bc0cb;
 }
 
 .property-detail-test-drive__check {
-  color: #4a96a6;
+  color: #4ecdd6;
   flex-shrink: 0;
 }
 
@@ -3106,15 +3113,15 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  background: linear-gradient(135deg, #5aa5b5 0%, #4a96a6 52%, #3f8798 100%);
+  background: linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 52%, #3bc0cb 100%);
   color: #fff;
-  box-shadow: 0 8px 24px rgba(74, 150, 166, 0.35);
+  box-shadow: 0 8px 24px rgba(78, 205, 214, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .property-detail-test-drive__cta:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(74, 150, 166, 0.45);
+  box-shadow: 0 10px 28px rgba(78, 205, 214, 0.45);
 }
 
 .property-detail-test-drive__cta:disabled {
@@ -3132,7 +3139,7 @@
 
 /* Ожидание верификации для ставок — Tiffany, белый текст */
 .auction-verification-pending-banner {
-  background: linear-gradient(135deg, #4a96a6 0%, #3f8798 100%);
+  background: linear-gradient(135deg, #4ecdd6 0%, #3bc0cb 100%);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   padding: 12px;
@@ -3162,12 +3169,12 @@
 /* ——— Мобильный редизайн аукциона (референс, ≤960px) ——— */
 @media (max-width: 960px) {
   .property-detail-page-new--auction-mobile-v2 {
-    --pd-tiffany: #4a96a6;
-    --pd-tiffany-deep: #3f8798;
-    --pd-tiffany-soft: #f0f7f9;
-    --pd-tiffany-soft-border: rgba(74, 150, 166, 0.35);
-    --pd-tiffany-ring: rgba(74, 150, 166, 0.14);
-    --pd-tiffany-glow: rgba(74, 150, 166, 0.32);
+    --pd-tiffany: #4ecdd6;
+    --pd-tiffany-deep: #3bc0cb;
+    --pd-tiffany-soft: #dff6f8;
+    --pd-tiffany-soft-border: rgba(78, 205, 214, 0.35);
+    --pd-tiffany-ring: rgba(78, 205, 214, 0.14);
+    --pd-tiffany-glow: rgba(78, 205, 214, 0.32);
     background: #ffffff;
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
@@ -3179,7 +3186,7 @@
   .property-detail-mobile-share-chart {
     margin-top: 18px;
     padding: 16px;
-    border: 1px solid rgba(0, 153, 169, 0.2);
+    border: 1px solid rgba(78, 205, 214, 0.2);
     border-radius: 20px;
     background: linear-gradient(145deg, #ffffff 0%, #f3fcfd 100%);
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
@@ -3623,12 +3630,16 @@
     order: 2;
   }
 
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tab-panel--gallery {
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tab-panel--buy-now {
     order: 3;
   }
 
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tab-panel--bids {
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tab-panel--gallery {
     order: 4;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tab-panel--bids {
+    order: 5;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-sidebar__buy-now-btn,
@@ -3697,9 +3708,16 @@
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tabs {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     border-bottom: 1px solid #e2e8f0;
     margin-bottom: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tabs__tab {
@@ -3707,11 +3725,13 @@
     border: none;
     padding: 0 0 12px;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     color: #94a3b8;
     cursor: pointer;
     position: relative;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-tabs__tab--active {
@@ -3762,60 +3782,91 @@
   .property-detail-mobile-buy-now {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-    padding: 0;
-    background: transparent;
-    border: none;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 4px;
+    padding: 22px 18px 18px;
+    border: 1px solid rgba(0, 153, 169, 0.16);
+    border-radius: 16px;
+    background:
+      linear-gradient(165deg, #f0fafb 0%, #ffffff 42%, #ffffff 100%);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
   }
 
-  .property-detail-mobile-buy-now__price-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  .property-detail-mobile-tab-panel--buy-now .property-detail-mobile-buy-now {
+    margin-top: 4px;
   }
 
-  .property-detail-mobile-buy-now__label {
+  .property-detail-mobile-buy-now__eyebrow {
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-    line-height: 1.3;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0099a9;
+    line-height: 1.2;
   }
 
   .property-detail-mobile-buy-now__value {
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 800;
     color: #0f172a;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+
+  .property-detail-mobile-buy-now__hint {
+    margin: 0 0 6px;
+    max-width: 28em;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.45;
   }
 
   .property-detail-mobile-buy-now__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     min-height: 48px;
-    padding: 0 20px;
-    border: none;
+    margin-top: 4px;
+    padding: 13px 20px;
+    border: 0;
     border-radius: 999px;
-    background: linear-gradient(135deg, #d0d8f0 0%, #e8e8f5 40%, #f0e0eb 70%, #f8e8f0 100%);
-    color: #111827;
+    color: #ffffff !important;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 15px;
     font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    box-shadow: 0 8px 20px rgba(0, 153, 169, 0.26);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      opacity 0.15s ease,
+      filter 0.15s ease;
+  }
+
+  .property-detail-mobile-buy-now__btn:hover:not(:disabled) {
+    filter: brightness(1.03);
+    box-shadow: 0 10px 24px rgba(0, 153, 169, 0.32);
   }
 
   .property-detail-mobile-buy-now__btn:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: translateY(1px) scale(0.99);
   }
 
   .property-detail-mobile-buy-now__btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
+    filter: none;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-description {
@@ -4010,7 +4061,7 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-extra-amenities__check {
     flex-shrink: 0;
     margin-top: 3px;
-    color: #4a96a6;
+    color: #4ecdd6;
     stroke-width: 2.75;
   }
 
@@ -4073,10 +4124,10 @@
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    color: #4a96a6;
+    color: #4ecdd6;
     background: #ffffff;
-    border: 1px solid rgba(74, 150, 166, 0.2);
-    box-shadow: 0 2px 8px rgba(74, 150, 166, 0.1);
+    border: 1px solid rgba(78, 205, 214, 0.2);
+    box-shadow: 0 2px 8px rgba(78, 205, 214, 0.1);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-documents__meta {
@@ -4101,8 +4152,8 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #3f8798;
-    background: rgba(74, 150, 166, 0.12);
+    color: #3bc0cb;
+    background: rgba(78, 205, 214, 0.12);
     padding: 3px 8px;
     border-radius: 6px;
   }
@@ -4130,7 +4181,7 @@
   .property-detail-page-new--auction-mobile-v2
     .property-detail-mobile-deposit-gate--combined {
     margin-top: 4px;
-    border: 1px solid rgba(74, 150, 166, 0.16);
+    border: 1px solid rgba(78, 205, 214, 0.16);
     border-radius: 22px;
     background: linear-gradient(180deg, #f9fcfd 0%, #f3f8f9 100%);
     box-shadow: 0 14px 36px rgba(63, 135, 152, 0.1);
@@ -4150,7 +4201,7 @@
     order: initial;
     margin: 0;
     padding: 18px 0 0;
-    border-top: 1px solid rgba(74, 150, 166, 0.14);
+    border-top: 1px solid rgba(78, 205, 214, 0.14);
   }
 
   .property-detail-page-new--auction-mobile-v2
@@ -4222,7 +4273,7 @@
     justify-content: center;
     gap: 6px;
     margin-top: -4px;
-    color: #3f8798;
+    color: #3bc0cb;
     font-size: 11px;
     font-weight: 700;
     line-height: 1.3;
@@ -4288,9 +4339,9 @@
     padding: 14px 20px;
     border-radius: 999px;
     background: #ffffff;
-    border: 1px solid rgba(74, 150, 166, 0.28);
+    border: 1px solid rgba(78, 205, 214, 0.28);
     box-shadow:
-      0 8px 28px rgba(74, 150, 166, 0.18),
+      0 8px 28px rgba(78, 205, 214, 0.18),
       0 2px 6px rgba(15, 23, 42, 0.06);
     color: var(--pd-tiffany-deep);
     transition: transform 0.15s ease;
@@ -4349,7 +4400,7 @@
   }
 
   .property-detail-mobile-about-bid__price-col--animated .property-detail-mobile-about-bid__value {
-    color: #3f8798;
+    color: #3bc0cb;
   }
 
   .property-detail-mobile-about-bid__value {
@@ -4363,7 +4414,7 @@
   }
 
   .property-detail-mobile-about-bid__arrow {
-    color: #3f8798;
+    color: #3bc0cb;
     flex-shrink: 0;
     margin-bottom: 2px;
   }
@@ -4386,11 +4437,11 @@
   }
 
   .property-detail-mobile-about-leader--you {
-    border-color: rgba(74, 150, 166, 0.35);
+    border-color: rgba(78, 205, 214, 0.35);
     background: linear-gradient(145deg, #ffffff 0%, #e6f6f8 100%);
     box-shadow:
-      0 4px 16px rgba(74, 150, 166, 0.12),
-      inset 0 0 0 1px rgba(74, 150, 166, 0.08);
+      0 4px 16px rgba(78, 205, 214, 0.12),
+      inset 0 0 0 1px rgba(78, 205, 214, 0.08);
   }
 
   .property-detail-mobile-about-leader__flag-wrap {
@@ -4516,12 +4567,18 @@
     display: none;
   }
 
-  /* «Минимальная цена продажи» и «Купить сейчас» — только на вкладке «Описание» (mobile-about) */
+  /* «Минимальная цена продажи» и «Купить сейчас» в sidebar — скрыты на mobile (свой таб) */
   .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-about
     .property-detail-sidebar__current-bid:has(+ .property-detail-sidebar__buy-now-btn),
   .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-about
     .property-detail-sidebar__buy-now-btn,
   .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-about
+    .property-detail-sidebar__buy-btn--winner,
+  .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-buy_now
+    .property-detail-sidebar__current-bid:has(+ .property-detail-sidebar__buy-now-btn),
+  .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-buy_now
+    .property-detail-sidebar__buy-now-btn,
+  .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-buy_now
     .property-detail-sidebar__buy-btn--winner,
   .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-gallery
     .property-detail-sidebar__current-bid:has(+ .property-detail-sidebar__buy-now-btn),
@@ -4699,7 +4756,7 @@
     font-weight: 600;
     color: var(--pd-tiffany-deep);
     background: var(--pd-tiffany-soft);
-    border: 1px solid rgba(74, 150, 166, 0.22);
+    border: 1px solid rgba(78, 205, 214, 0.22);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-gallery__pill--video {
@@ -4743,7 +4800,7 @@
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-gallery__thumb--active {
     border-color: var(--pd-tiffany);
-    box-shadow: 0 0 0 3px rgba(74, 150, 166, 0.2);
+    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.2);
     transform: scale(1.02);
   }
 
@@ -4826,10 +4883,10 @@
     border-radius: 22px;
     background:
       radial-gradient(120% 80% at 100% 0%, rgba(255, 255, 255, 0.55) 0%, transparent 55%),
-      linear-gradient(145deg, #4a96a6 0%, #3f8798 48%, #2d6d7a 100%);
+      linear-gradient(145deg, #4ecdd6 0%, #3bc0cb 48%, #2d6d7a 100%);
     border: 1px solid rgba(255, 255, 255, 0.28);
     box-shadow:
-      0 16px 40px rgba(74, 150, 166, 0.28),
+      0 16px 40px rgba(78, 205, 214, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.35);
     color: #ffffff;
   }
@@ -4837,9 +4894,9 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__leader-hero--you {
     background:
       radial-gradient(120% 80% at 100% 0%, rgba(255, 255, 255, 0.6) 0%, transparent 55%),
-      linear-gradient(145deg, #5aa5b5 0%, #3f8798 50%, #2a6570 100%);
+      linear-gradient(145deg, #6fd4dc 0%, #3bc0cb 50%, #2a6570 100%);
     box-shadow:
-      0 18px 44px rgba(74, 150, 166, 0.32),
+      0 18px 44px rgba(78, 205, 214, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 
@@ -5073,7 +5130,7 @@
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__cta--secondary {
     color: var(--pd-tiffany-deep);
     background: #ffffff;
-    border: 1px solid rgba(74, 150, 166, 0.35);
+    border: 1px solid rgba(78, 205, 214, 0.35);
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__cta:active:not(:disabled) {
@@ -5199,7 +5256,7 @@
 
   .property-detail-page-new--auction-mobile-v2 .bidding-section__input:focus {
     border-color: var(--pd-tiffany);
-    box-shadow: 0 0 0 3px rgba(74, 150, 166, 0.12);
+    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.12);
   }
 
   .property-detail-page-new--auction-mobile-v2 .recent-bid-item__amount {
@@ -5305,7 +5362,6 @@
       box-shadow 0.2s ease;
   }
 
-  html.site-footer-near .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bottom-bar,
   .property-detail-mobile-bottom-bar--footer-near {
     opacity: 0;
     visibility: hidden;
@@ -5313,7 +5369,6 @@
     transform: translateY(100%);
   }
 
-  html.site-footer-near .property-detail-page-new--auction-mobile-v2,
   .property-detail-page-new--auction-mobile-v2.property-detail-page-new--bid-bar-hidden {
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
@@ -5374,12 +5429,12 @@
 
 @media (min-width: 961px) {
   .property-detail-page-new--auction-mobile-v2 {
-    --pd-tiffany: #4a96a6;
-    --pd-tiffany-deep: #3f8798;
-    --pd-tiffany-soft: #f0f7f9;
-    --pd-tiffany-soft-border: rgba(74, 150, 166, 0.35);
-    --pd-tiffany-ring: rgba(74, 150, 166, 0.14);
-    --pd-tiffany-glow: rgba(74, 150, 166, 0.32);
+    --pd-tiffany: #4ecdd6;
+    --pd-tiffany-deep: #3bc0cb;
+    --pd-tiffany-soft: #dff6f8;
+    --pd-tiffany-soft-border: rgba(78, 205, 214, 0.35);
+    --pd-tiffany-ring: rgba(78, 205, 214, 0.14);
+    --pd-tiffany-glow: rgba(78, 205, 214, 0.32);
     --pd-card-radius: 20px;
     --pd-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.06);
     --pd-auction-header-h: 56px;
@@ -5961,7 +6016,7 @@
     padding: 24px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(74, 150, 166, 0.28);
+    border: 1px solid rgba(78, 205, 214, 0.28);
     box-shadow: var(--pd-card-shadow);
   }
 
@@ -6011,8 +6066,8 @@
 
   .property-detail-auction-desktop-gallery__item:hover {
     transform: translateY(-3px);
-    border-color: rgba(74, 150, 166, 0.45);
-    box-shadow: 0 16px 32px rgba(74, 150, 166, 0.14);
+    border-color: rgba(78, 205, 214, 0.45);
+    box-shadow: 0 16px 32px rgba(78, 205, 214, 0.14);
   }
 
   .property-detail-auction-desktop-gallery__item img {
@@ -6209,7 +6264,7 @@
     padding: 24px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(74, 150, 166, 0.28);
+    border: 1px solid rgba(78, 205, 214, 0.28);
     box-shadow: var(--pd-card-shadow);
   }
 
@@ -6325,9 +6380,9 @@
   .property-detail-auction-desktop-bids-leader--you {
     background:
       radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 58%),
-      linear-gradient(135deg, #5aa5b5 0%, #4a96a6 45%, #3f8798 100%);
+      linear-gradient(135deg, #6fd4dc 0%, #4ecdd6 45%, #3bc0cb 100%);
     box-shadow:
-      0 16px 40px rgba(74, 150, 166, 0.28),
+      0 16px 40px rgba(78, 205, 214, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.35);
   }
 
@@ -6564,7 +6619,7 @@
     margin-top: 6px;
     min-height: 24px;
     border-radius: 1px;
-    background: linear-gradient(180deg, rgba(74, 150, 166, 0.45) 0%, #e2e8f0 100%);
+    background: linear-gradient(180deg, rgba(78, 205, 214, 0.45) 0%, #e2e8f0 100%);
   }
 
   .property-detail-auction-desktop-bids-item__card {
@@ -6585,8 +6640,8 @@
   }
 
   .property-detail-auction-desktop-bids-item:hover .property-detail-auction-desktop-bids-item__card {
-    border-color: rgba(74, 150, 166, 0.35);
-    box-shadow: 0 8px 22px rgba(74, 150, 166, 0.1);
+    border-color: rgba(78, 205, 214, 0.35);
+    box-shadow: 0 8px 22px rgba(78, 205, 214, 0.1);
     transform: translateY(-1px);
   }
 
@@ -6608,7 +6663,7 @@
     background: linear-gradient(180deg, #f8fafc 0%, var(--pd-tiffany-soft) 100%);
     color: #64748b;
     font-size: 1.15rem;
-    border: 1px solid rgba(74, 150, 166, 0.12);
+    border: 1px solid rgba(78, 205, 214, 0.12);
   }
 
   .property-detail-auction-desktop-bids-item__user-meta {
@@ -6822,7 +6877,7 @@
     color: var(--pd-tiffany-deep);
     background: var(--pd-tiffany-soft);
     border: 1px solid var(--pd-tiffany-soft-border);
-    box-shadow: 0 2px 8px rgba(74, 150, 166, 0.1);
+    box-shadow: 0 2px 8px rgba(78, 205, 214, 0.1);
   }
 
   .property-detail-auction-desktop-amenities__list--extra .property-detail-auction-desktop-amenities__item {
@@ -6917,9 +6972,9 @@
   }
 
   .property-detail-auction-desktop-documents__item:hover {
-    border-color: rgba(74, 150, 166, 0.4);
+    border-color: rgba(78, 205, 214, 0.4);
     background: linear-gradient(180deg, #ffffff 0%, var(--pd-tiffany-soft) 100%);
-    box-shadow: 0 8px 22px rgba(74, 150, 166, 0.1);
+    box-shadow: 0 8px 22px rgba(78, 205, 214, 0.1);
     transform: translateY(-1px);
   }
 
@@ -6933,8 +6988,8 @@
     border-radius: 12px;
     color: var(--pd-tiffany-deep);
     background: #ffffff;
-    border: 1px solid rgba(74, 150, 166, 0.22);
-    box-shadow: 0 2px 10px rgba(74, 150, 166, 0.1);
+    border: 1px solid rgba(78, 205, 214, 0.22);
+    box-shadow: 0 2px 10px rgba(78, 205, 214, 0.1);
   }
 
   .property-detail-auction-desktop-documents__meta {
@@ -7007,7 +7062,7 @@
     padding: 16px 24px;
     font-size: 15px;
     box-shadow:
-      0 12px 36px rgba(74, 150, 166, 0.2),
+      0 12px 36px rgba(78, 205, 214, 0.2),
       0 4px 12px rgba(15, 23, 42, 0.08);
   }
 
@@ -7087,7 +7142,7 @@
     padding: 12px 18px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(74, 150, 166, 0.22);
+    border: 1px solid rgba(78, 205, 214, 0.22);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     z-index: 1000;
     font-size: 13px;
@@ -7303,9 +7358,9 @@
     padding: 22px;
     background: #ffffff;
     border-radius: var(--pd-card-radius);
-    border: 1px solid rgba(74, 150, 166, 0.28);
+    border: 1px solid rgba(78, 205, 214, 0.28);
     box-shadow:
-      0 4px 24px rgba(74, 150, 166, 0.1),
+      0 4px 24px rgba(78, 205, 214, 0.1),
       0 12px 36px rgba(15, 23, 42, 0.08);
     overflow: visible;
     transition: box-shadow 0.25s ease;
@@ -7314,7 +7369,7 @@
   .property-detail-auction-desktop__bid-panel:hover,
   .property-detail-auction-desktop__bid-card:hover {
     box-shadow:
-      0 6px 28px rgba(74, 150, 166, 0.14),
+      0 6px 28px rgba(78, 205, 214, 0.14),
       0 16px 44px rgba(15, 23, 42, 0.1);
   }
 
@@ -7537,9 +7592,9 @@
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader.property-detail-mobile-about-leader--you {
     background: linear-gradient(135deg, #e6f6f8 0%, #d1fae5 100%);
-    border-color: rgba(74, 150, 166, 0.32);
+    border-color: rgba(78, 205, 214, 0.32);
     box-shadow:
-      0 4px 16px rgba(74, 150, 166, 0.12),
+      0 4px 16px rgba(78, 205, 214, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 

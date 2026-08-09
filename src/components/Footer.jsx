@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -8,6 +8,7 @@ import { MdSentimentDissatisfied } from 'react-icons/md'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
+import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
@@ -34,18 +35,19 @@ const Footer = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
-  const languageDropdownRef = useRef(null)
   const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
+  const [isLanguageDrawerOpen, setIsLanguageDrawerOpen] = useState(false)
 
+  const activeLangCode = (i18n.language || 'ru').split('-')[0]
   const currentLanguage =
-    UI_LANGUAGES.find((lang) => lang.code === (i18n.language || 'ru').split('-')[0]) ||
-    UI_LANGUAGES[0]
+    UI_LANGUAGES.find((lang) => lang.code === activeLangCode) || UI_LANGUAGES[0]
+
+  const closeLanguageDrawer = useCallback(() => setIsLanguageDrawerOpen(false), [])
 
   const handleLanguageChange = async (langCode) => {
     try {
       await i18n.changeLanguage(langCode)
-      setIsLanguageDropdownOpen(false)
+      setIsLanguageDrawerOpen(false)
     } catch (error) {
       console.error('Error changing language:', error)
     }
@@ -66,18 +68,6 @@ const Footer = () => {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [storeComingSoonOpen, closeStoreComingSoon])
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
-        setIsLanguageDropdownOpen(false)
-      }
-    }
-    if (isLanguageDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isLanguageDropdownOpen])
 
   const goWallet = () => {
     scrollToTop()
@@ -204,7 +194,7 @@ const Footer = () => {
   return (
     <footer
       id="site-footer"
-      className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}${isLanguageDropdownOpen ? ' footer--language-open' : ''}`}
+      className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}`}
     >
       <div className="footer__container">
         <nav className="footer__nav-grid" aria-label={t('footerAllSections')}>
@@ -291,42 +281,22 @@ const Footer = () => {
               </div>
             </button>
 
-            <div
-              className="footer__language-selector footer__language-selector--inline"
-              ref={languageDropdownRef}
-            >
+            <div className="footer__language-selector footer__language-selector--inline">
               <button
                 type="button"
                 className="footer__language-selector-btn footer__language-selector-btn--compact"
-                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                onClick={() => setIsLanguageDrawerOpen(true)}
                 aria-label={t('selectLanguageAria')}
-                aria-expanded={isLanguageDropdownOpen}
+                aria-expanded={isLanguageDrawerOpen}
+                aria-haspopup="dialog"
               >
                 <span className={`footer__language-flag ${currentLanguage.flagClass}`} />
                 <span className="footer__language-name">{currentLanguage.name}</span>
                 <FiChevronDown
                   size={14}
-                  className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
+                  className={`footer__language-chevron${isLanguageDrawerOpen ? ' footer__language-chevron--open' : ''}`}
                 />
               </button>
-              {isLanguageDropdownOpen && (
-                <div className="footer__language-dropdown">
-                  {UI_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      className={`footer__language-option ${(i18n.language || 'ru').split('-')[0] === lang.code ? 'footer__language-option--active' : ''}`}
-                      onClick={() => handleLanguageChange(lang.code)}
-                    >
-                      <span className={`footer__language-flag ${lang.flagClass}`} />
-                      <span className="footer__language-name">{lang.name}</span>
-                      {(i18n.language || 'ru').split('-')[0] === lang.code && (
-                        <FiCheck size={16} className="footer__language-check" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -369,6 +339,46 @@ const Footer = () => {
             document.body,
           )
         : null}
+
+      <BuyerSheetShell
+        isOpen={isLanguageDrawerOpen}
+        onClose={closeLanguageDrawer}
+        titleId="footer-language-drawer-title"
+        closeLabel={t('close')}
+        className="footer-lang-drawer"
+        tone="detail"
+      >
+        <div className="footer-lang-drawer__header">
+          <p id="footer-language-drawer-title" className="footer-lang-drawer__title">
+            {t('selectLanguage')}
+          </p>
+          <p className="footer-lang-drawer__subtitle">
+            {currentLanguage.name}
+          </p>
+        </div>
+        <ul className="footer-lang-drawer__list" role="listbox" aria-labelledby="footer-language-drawer-title">
+          {UI_LANGUAGES.map((lang) => {
+            const isActive = activeLangCode === lang.code
+            return (
+              <li key={lang.code}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  className={`footer-lang-drawer__option${isActive ? ' footer-lang-drawer__option--active' : ''}`}
+                  onClick={() => handleLanguageChange(lang.code)}
+                >
+                  <span className={`footer__language-flag footer-lang-drawer__flag ${lang.flagClass}`} />
+                  <span className="footer-lang-drawer__name">{lang.name}</span>
+                  {isActive ? (
+                    <FiCheck size={18} className="footer-lang-drawer__check" aria-hidden />
+                  ) : null}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </BuyerSheetShell>
     </footer>
   )
 }

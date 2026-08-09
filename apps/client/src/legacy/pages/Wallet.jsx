@@ -754,8 +754,8 @@ const WalletInner = () => {
                 onClick={() => setBalanceVisible((prev) => !prev)}
                 aria-label={
                   balanceVisible
-                    ? t('walletPage_hideBalance', { defaultValue: 'Скрыть баланс' })
-                    : t('walletPage_showBalance', { defaultValue: 'Показать баланс' })
+                    ? t('walletPage_hideBalance')
+                    : t('walletPage_showBalance')
                 }
                 aria-pressed={!balanceVisible}
               >
@@ -767,7 +767,7 @@ const WalletInner = () => {
                 ? t('walletPage_emptyHint')
                 : balanceVisible
                   ? t('walletPage_accountMask', { amount: formatAmount(analytics.totalDeposit) })
-                  : t('walletPage_accountMaskHidden', { defaultValue: 'Всего пополнено · ••••••' })}
+                  : t('walletPage_accountMaskHidden')}
             </span>
           </div>
 

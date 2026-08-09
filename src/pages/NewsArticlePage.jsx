@@ -28,6 +28,7 @@ import './NewsArticlePage.css'
 export default function NewsArticlePage() {
   const navigate = useNavigate()
   const { slug } = useParams()
+  const { t } = useTranslation()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -63,7 +64,7 @@ export default function NewsArticlePage() {
         }
       })
       .catch((e) => {
-        if (!cancelled) setError(e?.message || 'Статья не найдена')
+        if (!cancelled) setError(e?.message || t('newsPage_articleNotFound'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -71,12 +72,11 @@ export default function NewsArticlePage() {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, t])
 
-  const { t: tSeo } = useTranslation()
   const articleSeo = useMemo(
-    () => (article ? buildNewsArticlePageSeo(article, tSeo) : null),
-    [article, tSeo],
+    () => (article ? buildNewsArticlePageSeo(article, t) : null),
+    [article, t],
   )
   usePageSeoOverride(articleSeo)
 
@@ -136,11 +136,11 @@ export default function NewsArticlePage() {
     }
     try {
       await navigator.clipboard.writeText(url)
-      window.alert('Ссылка скопирована')
+      window.alert(t('newsPage_articleLinkCopied'))
     } catch {
-      window.prompt('Скопируйте ссылку', url)
+      window.prompt(t('newsPage_articleCopyPrompt'), url)
     }
-  }, [article?.title])
+  }, [article?.title, t])
 
   const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id)
@@ -170,12 +170,16 @@ export default function NewsArticlePage() {
                     className="news-article-page__back-btn"
                     onClick={goToNewsList}
                   />
-                  <span className="news-article-page__toolbar-title">Новости</span>
+                  <span className="news-article-page__toolbar-title">
+                    {t('newsPage_articleToolbarTitle')}
+                  </span>
                 </div>
               </aside>
             </div>
             <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
-            <p className="news-article-page__status news-article-page__content">Загрузка…</p>
+            <p className="news-article-page__status news-article-page__content">
+              {t('newsPage_articleLoading')}
+            </p>
           </div>
         </main>
       </div>
@@ -198,19 +202,21 @@ export default function NewsArticlePage() {
               className={`news-article-page__sidebar${
                 hasToc ? '' : ' news-article-page__sidebar--no-toc'
               }`}
-              aria-label={hasToc ? 'Навигация по статье' : undefined}
+              aria-label={hasToc ? t('newsPage_articleTocAria') : undefined}
             >
               <div ref={toolbarRef} className="news-article-page__toolbar">
                 <PageBackButton
                   className="news-article-page__back-btn"
                   onClick={goToNewsList}
                 />
-                <span className="news-article-page__toolbar-title">Новости</span>
+                <span className="news-article-page__toolbar-title">
+                  {t('newsPage_articleToolbarTitle')}
+                </span>
                 <button
                   type="button"
                   className="news-article-page__share news-article-page__share--toolbar"
                   onClick={handleShare}
-                  aria-label="Поделиться новостью"
+                  aria-label={t('newsPage_articleShareNews')}
                 >
                   <FiShare2 size={19} aria-hidden />
                 </button>
@@ -218,7 +224,9 @@ export default function NewsArticlePage() {
 
               {hasToc ? (
                 <div ref={tocPanelRef} className="news-article-page__toc-panel">
-                  <h2 className="news-article-page__toc-title">Содержание</h2>
+                  <h2 className="news-article-page__toc-title">
+                    {t('newsPage_articleTocTitle')}
+                  </h2>
                   <nav ref={tocNavRef} className="news-article-page__toc-nav">
                     <ul className="news-article-page__toc-list">
                       {(article.sections || []).map((section, index) => (
@@ -267,7 +275,7 @@ export default function NewsArticlePage() {
                 type="button"
                 className="news-article-page__share news-article-page__share--content"
                 onClick={handleShare}
-                aria-label="Поделиться"
+                aria-label={t('newsPage_articleShare')}
               >
                 <FiShare2 size={20} />
               </button>
@@ -292,7 +300,7 @@ export default function NewsArticlePage() {
 
             <p className="news-article-page__back-wrap">
               <Link to="/news" className="news-article-page__back">
-                ← Все новости
+                {t('newsPage_articleBackAll')}
               </Link>
             </p>
           </article>

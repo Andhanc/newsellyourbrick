@@ -1,59 +1,43 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiMinus, FiPlus } from 'react-icons/fi'
 import './MobileDiscoverFaq.css'
 
-const FAQ_ITEMS = [
-  {
-    id: 'auction',
-    question: 'Как участвовать в аукционе?',
-    answer:
-      'Выберите объект, внесите обеспечительный платёж и делайте ставки до окончания таймера. Побеждает участник с лучшей ценой — дальше сделка проходит через платформу.',
-  },
-  {
-    id: 'buy-now',
-    question: 'Чем «Купить сейчас» отличается от аукциона?',
-    answer:
-      'В формате «Купить сейчас» цена фиксирована: без торгов и ожидания. Подходит, если хотите быстро закрыть сделку по понятной стоимости.',
-  },
-  {
-    id: 'shares',
-    question: 'Что такое доли и с какой суммы можно войти?',
-    answer:
-      'Доли позволяют инвестировать в крупные объекты частями. Стартовый порог зависит от лота — часто это заметно ниже стоимости целого объекта.',
-  },
-  {
-    id: 'debts',
-    question: 'Как работают инвестиции в долги?',
-    answer:
-      'Вы вкладываетесь в долговые инструменты под залог недвижимости и получаете доход по условиям конкретного предложения. Риски и ставка указаны в карточке.',
-  },
-  {
-    id: 'safe',
-    question: 'Насколько безопасно покупать через SellYourBrick?',
-    answer:
-      'Сделки и платежи проходят в контуре платформы, а по объектам доступны ключевые данные и сопровождение. Перед покупкой всегда изучайте карточку и условия формата.',
-  },
+const FAQ_ITEM_IDS = [
+  { id: 'auction', questionKey: 'auctionPage_faqAuctionQuestion', answerKey: 'auctionPage_faqAuctionAnswer' },
+  { id: 'buy-now', questionKey: 'auctionPage_faqBuyNowQuestion', answerKey: 'auctionPage_faqBuyNowAnswer' },
+  { id: 'shares', questionKey: 'auctionPage_faqSharesQuestion', answerKey: 'auctionPage_faqSharesAnswer' },
+  { id: 'debts', questionKey: 'auctionPage_faqDebtsQuestion', answerKey: 'auctionPage_faqDebtsAnswer' },
+  { id: 'safe', questionKey: 'auctionPage_faqSafeQuestion', answerKey: 'auctionPage_faqSafeAnswer' },
 ]
 
 function MobileDiscoverFaq({ idPrefix = 'md-faq' } = {}) {
-  const [openId, setOpenId] = useState(FAQ_ITEMS[0]?.id ?? null)
+  const { t } = useTranslation()
+  const [openId, setOpenId] = useState(FAQ_ITEM_IDS[0]?.id ?? null)
   const titleId = `${idPrefix}-title`
+  const faqItems = useMemo(
+    () =>
+      FAQ_ITEM_IDS.map((item) => ({
+        id: item.id,
+        question: t(item.questionKey),
+        answer: t(item.answerKey),
+      })),
+    [t],
+  )
 
   return (
     <section className="md-faq" aria-labelledby={titleId}>
       <div className="md-faq__inner">
         <header className="md-faq__header">
           <h2 id={titleId} className="md-faq__title">
-            Частые{' '}
-            <span className="md-faq__title-accent">вопросы</span>
+            {t('auctionPage_faqTitlePrefix')}{' '}
+            <span className="md-faq__title-accent">{t('auctionPage_faqTitleAccent')}</span>
           </h2>
-          <p className="md-faq__subtitle">
-            Коротко о форматах продажи, рисках и том, как начать на платформе
-          </p>
+          <p className="md-faq__subtitle">{t('auctionPage_faqSubtitle')}</p>
         </header>
 
         <ul className="md-faq__list">
-          {FAQ_ITEMS.map((item) => {
+          {faqItems.map((item) => {
             const isOpen = openId === item.id
             const triggerId = `${idPrefix}-q-${item.id}`
             const panelId = `${idPrefix}-a-${item.id}`

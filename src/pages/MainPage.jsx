@@ -87,7 +87,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
-import { useLayoutScrollRef } from '../context/LayoutScrollContext'
+import useSiteFooterNear from '../hooks/useSiteFooterNear'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { buildAuctionFilterPath, legacyCategoryToSlug } from '../utils/auctionFilterUrl'
@@ -651,8 +651,7 @@ function MainPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [managerChatInput, setManagerChatInput] = useState('')
-  const [aiAssistantHiddenByFooter, setAiAssistantHiddenByFooter] = useState(false)
-  const layoutScrollRef = useLayoutScrollRef()
+  const aiAssistantHiddenByFooter = useSiteFooterNear()
   /** Совпадает с hero @media (max-width: 768px): в ряд две CTA — короткая подпись на обеих */
   const [isHeroCtaAdaptive, setIsHeroCtaAdaptive] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
@@ -2199,7 +2198,9 @@ function MainPage() {
         sender: 'bot',
         timestamp: new Date(),
         buttons: response.buttons,
-        recommendations: response.recommendations
+        recommendations: response.recommendations,
+        navigation: response.navigation,
+        yieldEstimate: response.yieldEstimate,
       }
 
       setChatMessages((prev) => [...prev, botMessage])
@@ -2211,7 +2212,9 @@ function MainPage() {
         sender: 'bot',
         timestamp: new Date(),
         buttons: null,
-        recommendations: null
+        recommendations: null,
+        navigation: null,
+        yieldEstimate: null,
       }
       setChatMessages((prev) => [...prev, errorMessage])
     } finally {
@@ -2239,42 +2242,6 @@ function MainPage() {
       new CustomEvent('aiChatStateChange', { detail: { isOpen: isChatOpen } })
     )
   }, [isChatOpen])
-
-  useEffect(() => {
-    const footer = document.getElementById('site-footer')
-    if (!footer) return
-
-    const getScrollRoot = () =>
-      layoutScrollRef?.current || document.querySelector('.app-layout') || null
-
-    let observer = null
-
-    const connect = () => {
-      if (observer) {
-        observer.disconnect()
-        observer = null
-      }
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          setAiAssistantHiddenByFooter(Boolean(entry?.isIntersecting))
-        },
-        {
-          root: getScrollRoot(),
-          rootMargin: '0px 0px -12% 0px',
-          threshold: [0, 0.02, 0.5],
-        }
-      )
-      observer.observe(footer)
-    }
-
-    connect()
-    const raf = requestAnimationFrame(() => connect())
-
-    return () => {
-      cancelAnimationFrame(raf)
-      if (observer) observer.disconnect()
-    }
-  }, [layoutScrollRef])
 
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
@@ -3105,11 +3072,67 @@ function MainPage() {
               >
                 <div className="chat-widget__message-content">
                   {message.text}
+                  {message.yieldEstimate && (
+                    <div className="chat-widget__yield">
+                      <div className="chat-widget__yield-title">{t('chatYieldTitle')}</div>
+                      <div className="chat-widget__yield-grid">
+                        <div>
+                          <span>{t('chatYieldPrice')}</span>
+                          <strong>{Number(message.yieldEstimate.price).toLocaleString('ru-RU')} €</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldAnnual')}</span>
+                          <strong>{Number(message.yieldEstimate.annualRent).toLocaleString('ru-RU')} €</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldMonthly')}</span>
+                          <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString('ru-RU')} €</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldRate')}</span>
+                          <strong>{message.yieldEstimate.yieldPercent}%</strong>
+                        </div>
+                      </div>
+                      {message.yieldEstimate.note ? (
+                        <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="chat-widget__yield-cta"
+                        onClick={() => {
+                          navigate('/calculator')
+                          setIsChatOpen(false)
+                        }}
+                      >
+                        {t('chatYieldInvestorCta')}
+                      </button>
+                    </div>
+                  )}
+                  {message.navigation && message.navigation.length > 0 && (
+                    <div className="chat-widget__navigation">
+                      <div className="chat-widget__navigation-title">{t('chatNavigationTitle')}</div>
+                      <div className="chat-widget__navigation-list">
+                        {message.navigation.map((nav) => (
+                          <button
+                            key={nav.path}
+                            type="button"
+                            className="chat-widget__navigation-link"
+                            onClick={() => {
+                              navigate(nav.path)
+                              setIsChatOpen(false)
+                            }}
+                          >
+                            <span>{nav.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {message.recommendations && message.recommendations.length > 0 && (
                     <div className="chat-widget__recommendations">
                       <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
                       {message.recommendations.map((recId) => {
-                        const property = allProperties.find(p => p.id === recId)
+                        const property = allProperties.find(p => p.id === recId || String(p.id) === String(recId))
                         if (!property) return null
                         const propertyName = property.name || property.title || t('listingDefault')
                         const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : t('priceNotSpecified')
@@ -3137,6 +3160,7 @@ function MainPage() {
                                 {propertyArea && <span>{propertyArea} {t('squareMeters')}</span>}
                               </div>
                               <div className="chat-widget__recommendation-price">{propertyPrice}</div>
+                              <div className="chat-widget__recommendation-cta">{t('chatOpenListing')}</div>
                             </div>
                           </a>
                         )

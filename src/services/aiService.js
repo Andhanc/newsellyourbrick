@@ -1,4 +1,17 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
+import {
+  buildOfflineAssistantReply,
+  buildSiteMapPromptBlock,
+  detectAssistantReplyLanguage,
+  detectNavigationFromMessage,
+  ensureInvestorPanelNavigation,
+  extractYieldInputsFromMessage,
+  wantsExplicitYieldCalc,
+  looksLikeModelReasoningLeak,
+  pickLocalRecommendations,
+  sanitizeNavigationLinks,
+  stripModelReasoning,
+} from '../utils/siteAssistantHelpers'
 
 /** Модель в теле запроса; на сервере подменяется на модель активного провайдера (Pollinations / OpenRouter / …). */
 const AI_MODEL = 'deepseek-ai/DeepSeek-V3.2'
@@ -45,6 +58,11 @@ function stripMarkdown(text) {
     .trim();
 }
 
+/** Очищает content модели: reasoning-теги + markdown. */
+function cleanAssistantDisplayText(text) {
+  return stripMarkdown(stripModelReasoning(text || ''))
+}
+
 /**
  * Запасная эвристика, если классификатор недоступен или ответил false при явном запросе менеджера.
  */
@@ -85,6 +103,14 @@ export function heuristicManagerContactIntent(userMessage) {
 export async function detectManagerContactIntent(userMessage) {
   const text = (userMessage || '').trim();
   if (text.length < 4) return false;
+
+  // Без намёка на менеджера/звонок не тратим запрос к LLM (и не ловим 402 у провайдера)
+  const maybeManager =
+    /(менеджер|оператор|консультант|специалист|перезвон|связ|позвон|human|live\s+agent|whatsapp|telegram|заявк)/i.test(
+      text,
+    )
+  if (!maybeManager) return false
+  if (heuristicManagerContactIntent(userMessage)) return true
 
   const systemPrompt = `Ты классификатор намерений. Пользователь пишет в чат поддержки недвижимости.
 Ответь ТОЛЬКО JSON без текста вокруг: {"wantsManager":true} или {"wantsManager":false}
@@ -133,6 +159,105 @@ wantsManager = false если пользователь только выбира
 }
 
 /**
+ * Нормализует JSON-ответ ассистента: рекомендации, навигация, ориентир доходности.
+ */
+function normalizeAssistantPayload(parsed, {
+  fallbackText = '',
+  userMessage = '',
+  userPreferences = {},
+  availableProperties = [],
+} = {}) {
+  let recommendations = parsed?.recommendations
+  if (recommendations && Array.isArray(recommendations)) {
+    recommendations = recommendations
+      .map((id) => {
+        if (typeof id === 'string' && !/^\d+$/.test(id.trim())) {
+          const bySlug = availableProperties.find(
+            (p) => String(p.slug || '') === id || String(p.key || '') === id,
+          )
+          return bySlug?.id ?? null
+        }
+        const numId = typeof id === 'string' ? parseInt(id, 10) : id
+        return Number.isFinite(numId) ? numId : null
+      })
+      .filter((id) => id !== null)
+  } else {
+    recommendations = null
+  }
+
+  const catalogIds = new Set(
+    availableProperties.map((p) => p?.id).filter((id) => id != null).map((id) => Number(id)),
+  )
+  if (recommendations?.length && catalogIds.size) {
+    recommendations = recommendations.filter((id) => catalogIds.has(Number(id)))
+  }
+
+  const meaningfulKeys = ['purpose', 'budget', 'location', 'propertyType', 'rooms']
+  const prefCount = meaningfulKeys.filter((k) => {
+    const v = userPreferences?.[k]
+    return v !== null && v !== undefined && v !== ''
+  }).length
+  const wantsListing =
+    /(подбер|покаж(и|ите)\s+(объект|вариант|лот)|рекоменд|что\s+есть|найд(и|ите)|какие\s+есть|варианты)/i.test(
+      String(userMessage || ''),
+    )
+  if (!recommendations?.length && (wantsListing || prefCount >= 2)) {
+    const local = pickLocalRecommendations(userPreferences, availableProperties, 3)
+    recommendations = local.length ? local : null
+  }
+
+  let navigation = sanitizeNavigationLinks(parsed?.navigation)
+  const detectedNav = detectNavigationFromMessage(userMessage)
+  if (detectedNav.length) {
+    const seen = new Set(navigation.map((n) => n.path))
+    for (const item of detectedNav) {
+      if (!seen.has(item.path)) {
+        navigation.push(item)
+        seen.add(item.path)
+      }
+    }
+    navigation = navigation.slice(0, 6)
+  }
+
+  let yieldEstimate = null
+  // Карточка доходности только при явном запросе расчёта — не на «инвестировать / посоветуй».
+  if (wantsExplicitYieldCalc(userMessage)) {
+    const y = parsed?.yieldEstimate
+    if (y && typeof y === 'object') {
+      const price = Number(y.price)
+      const yieldPercent = Number(y.yieldPercent ?? y.yield)
+      const annualRent = Number(y.annualRent)
+      const monthlyIncome = Number(y.monthlyIncome ?? y.monthlyRent)
+      if (Number.isFinite(price) && price > 0 && Number.isFinite(yieldPercent)) {
+        yieldEstimate = {
+          price: Math.round(price),
+          annualRent: Number.isFinite(annualRent) ? Math.round(annualRent) : Math.round((price * yieldPercent) / 100),
+          monthlyIncome: Number.isFinite(monthlyIncome)
+            ? Math.round(monthlyIncome)
+            : Math.round(((price * yieldPercent) / 100) / 12),
+          yieldPercent: Math.round(yieldPercent * 10) / 10,
+          note: String(y.note || 'Ориентировочный расчёт. Для точного сценария откройте Умную панель инвестора.'),
+        }
+      }
+    }
+    if (!yieldEstimate) {
+      yieldEstimate = extractYieldInputsFromMessage(userMessage, userPreferences)
+    }
+  }
+
+  navigation = ensureInvestorPanelNavigation(navigation, userPreferences, userMessage, yieldEstimate)
+
+  return {
+    text: cleanAssistantDisplayText(parsed?.text || fallbackText || ''),
+    buttons: Array.isArray(parsed?.buttons) ? parsed.buttons : null,
+    needsMoreInfo: parsed?.needsMoreInfo !== false,
+    recommendations,
+    navigation: navigation.length ? navigation : null,
+    yieldEstimate,
+  }
+}
+
+/**
  * Отправляет запрос к AI для подбора недвижимости
  * @param {Array} conversationHistory - История сообщений чата
  * @param {Object} userPreferences - Предпочтения пользователя (цель, бюджет, локация и т.д.)
@@ -140,381 +265,275 @@ wantsManager = false если пользователь только выбира
  * @returns {Promise<Object>} Ответ от AI с текстом и возможными кнопками
  */
 export async function askPropertyAssistant(conversationHistory, userPreferences, availableProperties) {
-  // Подсчитываем количество собранной информации
-  const collectedInfoCount = Object.values(userPreferences).filter(v => v !== null && v !== '').length
-  
-  const limitedHistory = conversationHistory.slice(-6);
-  
-  const systemPrompt = `Ты — профессиональный консультант по недвижимости на платформе SellYourBrick. Твоя задача — помочь клиенту найти идеальный вариант недвижимости через аукцион, рассказать о платформе, процессе покупки, получении ВНЖ и всех деталях сделки.
+  const props = Array.isArray(availableProperties) ? availableProperties : []
+  const prefs = userPreferences && typeof userPreferences === 'object' ? userPreferences : {}
+  const lastUserMessage =
+    [...(conversationHistory || [])].reverse().find((m) => m?.sender === 'user')?.text || ''
+
+  const collectedInfoCount = Object.values(prefs).filter((v) => v !== null && v !== '').length
+  const limitedHistory = (conversationHistory || []).slice(-6)
+  const siteMapBlock = buildSiteMapPromptBlock()
+  const replyLang = detectAssistantReplyLanguage(lastUserMessage)
+  const replyLangRule =
+    replyLang === 'ru'
+      ? 'Отвечай СТРОГО на русском языке.'
+      : replyLang === 'es'
+        ? 'Responde ESTRICTAMENTE en español.'
+        : 'Reply STRICTLY in English.'
+
+  const systemPrompt = `Ты — умный помощник SellYourBrick. Помогаешь с платформой, подбором объектов, навигацией по сайту и ориентировочным расчётом доходности.
+${replyLangRule} Поддерживаются только языки: русский, английский, испанский. Запрещены внутренние рассуждения и ответы на других языках.
 
 **О ПЛАТФОРМЕ SELLYOURBRICK:**
-SellYourBrick — это уникальная платформа для покупки недвижимости через аукционы в Испании и Дубае. Мы специализируемся на:
-- Аукционной продаже недвижимости (виллы, квартиры, апартаменты, дома, земельные участки)
-- Прозрачных торгах с фиксированным временем окончания
-- Безопасных сделках с полной юридической поддержкой
-- Помощи в получении ВНЖ при покупке недвижимости
-- Профессиональном консультировании на всех этапах
+SellYourBrick — платформа покупки недвижимости через аукционы в Испании и Дубае, а также доли (shares), test-drive объектов, сравнение лотов и умную панель инвестора.
+Специализация: прозрачные аукционы, безопасные сделки, консультации по ВНЖ, инвестиции и аренда.
 
-**КАК РАБОТАЕТ АУКЦИОН:**
-1. **Регистрация и верификация**: Пользователь регистрируется на платформе и проходит верификацию документов
-2. **Просмотр лотов**: Доступны все активные аукционы с подробной информацией о недвижимости
-3. **Размещение ставок**: Участники делают ставки, которые должны быть выше текущей максимальной
-4. **Таймер обратного отсчета**: Каждый аукцион имеет фиксированное время окончания (endTime)
-5. **Автоматическое продление**: Если ставка сделана в последние минуты, аукцион автоматически продлевается
-6. **Победитель**: Участник с самой высокой ставкой на момент окончания аукциона становится покупателем
-7. **Оформление сделки**: После победы начинается процесс оформления документов и передачи недвижимости
+**КАК РАБОТАЕТ АУКЦИОН (кратко):**
+Регистрация → просмотр лотов → ставки выше текущей → таймер окончания → автопродление при поздней ставке → побеждает лучшая ставка → оформление через платформу.
 
-**ПРЕИМУЩЕСТВА АУКЦИОНОВ:**
-- Возможность купить недвижимость по выгодной цене
-- Прозрачность процесса торгов
-- Фиксированные сроки — нет долгих переговоров
-- Честная конкуренция между участниками
-- Безопасность сделок через платформу
+**ВНЖ:**
+Испания: ориентир от €500,000 (Golden Visa / инвестиционный ВНЖ), сроки обычно 2–3 месяца.
+Дубай: резидентская виза инвестора в недвижимость, ориентир от ~€250,000 (зависит от объекта), сроки обычно 1–2 месяца.
+Давай суть без длинных списков, детали уточняй по запросу.
 
-**ВНЖ В ИСПАНИИ ПРИ ПОКУПКЕ НЕДВИЖИМОСТИ:**
-При покупке недвижимости в Испании на сумму от €500,000 можно получить вид на жительство (ВНЖ) по программе "Golden Visa" (Золотая виза):
-- **Минимальная сумма**: €500,000 (может быть снижена до €250,000 в некоторых регионах)
-- **Тип ВНЖ**: ВНЖ для инвесторов (Residencia por inversión)
-- **Преимущества**: 
-  - Право жить в Испании
-  - Безвизовый въезд в страны Шенгена
-  - Возможность получить ПМЖ через 5 лет
-  - Воссоединение семьи
-- **Документы**: 
-  - Договор купли-продажи
-  - Справка о регистрации недвижимости
-  - Подтверждение оплаты (минимум €500,000)
-  - Медицинская страховка
-  - Справка о несудимости
-  - Справка о доходах
-- **Сроки**: Обычно 2-3 месяца после подачи документов
+**ДОКУМЕНТЫ И СДЕЛКА:**
+Паспорт, подтверждение средств, страховка, для Испании — NIE и нотариат, для Дубая — регистрация в DLD. Полный чек-лист — по запросу.
 
-**ВНЖ В ДУБАЕ (ОАЭ) ПРИ ПОКУПКЕ НЕДВИЖИМОСТИ:**
-При покупке недвижимости в Дубае можно получить резидентскую визу:
-- **Минимальная сумма**: Обычно от 1,000,000 AED (около €250,000)
-- **Тип визы**: Резидентская виза инвестора в недвижимость
-- **Преимущества**:
-  - Право жить в Дубае
-  - Открытие банковского счета
-  - Регистрация компании (при определенных условиях)
-  - Воссоединение семьи (супруг/супруга и дети)
-  - Налоговые льготы
-- **Документы**:
-  - Договор купли-продажи (MOU)
-  - Справка о регистрации в DLD (Dubai Land Department)
-  - Подтверждение оплаты
-  - Медицинская страховка
-  - Справка о несудимости
-  - Фотографии
-  - Медицинское обследование в ОАЭ
-- **Сроки**: Обычно 1-2 месяца после покупки
-- **Действие визы**: Обычно 2-3 года с возможностью продления
-
-**НЕОБХОДИМЫЕ ДОКУМЕНТЫ ДЛЯ ПОКУПКИ НЕДВИЖИМОСТИ:**
-
-**Общие документы:**
-1. **Паспорт** (действующий, с копиями всех страниц)
-2. **Документы, подтверждающие личность** (ID карта, водительские права)
-3. **Справка о доходах** (за последние 6-12 месяцев)
-4. **Выписка с банковского счета** (подтверждение наличия средств)
-5. **Справка о несудимости** (из страны происхождения, апостиль)
-6. **Медицинская страховка** (действующая в стране покупки)
-
-**Для Испании дополнительно:**
-- NIE (Número de Identificación de Extranjero) — налоговый номер иностранца
-- Договор купли-продажи (Compraventa)
-- Регистрация в реестре недвижимости (Registro de la Propiedad)
-- Уплата налогов (ITP — Impuesto sobre Transmisiones Patrimoniales, около 6-10%)
-- Нотариальное заверение сделки
-
-**Для Дубая дополнительно:**
-- Виза для въезда в ОАЭ
-- Договор купли-продажи (MOU) через DLD
-- Регистрация в Dubai Land Department
-- Уплата регистрационного сбора (4% от стоимости)
-- Медицинское обследование в ОАЭ (для получения резидентской визы)
-
-**ПРОЦЕСС ПОКУПКИ НА SELLYOURBRICK:**
-1. **Регистрация** → Создание аккаунта и верификация
-2. **Выбор недвижимости** → Просмотр доступных лотов
-3. **Участие в аукционе** → Размещение ставок
-4. **Победа в аукционе** → Получение уведомления о победе
-5. **Оформление документов** → Подготовка всех необходимых документов
-6. **Оплата** → Перевод средств через безопасный эскроу
-7. **Регистрация права собственности** → Оформление в реестре
-8. **Получение ключей** → Передача недвижимости
+**РАЗДЕЛЫ САЙТА (для navigation используй ТОЛЬКО эти path):**
+${siteMapBlock}
 
 **ТВОЯ РОЛЬ:**
-- Помогай клиентам найти подходящую недвижимость через аукцион
-- Рассказывай о платформе SellYourBrick и преимуществах аукционов
-- Консультируй по вопросам ВНЖ в Испании и Дубае
-- Объясняй необходимые документы и процесс покупки
-- Задавай уточняющие вопросы для понимания потребностей (минимум 3-4 уточнения, сейчас собрано: ${collectedInfoCount})
-- Будь дружелюбным, профессиональным и информативным
-- Рекомендуй только недвижимость из доступных объявлений
+- Отвечай на вопросы о проекте, аукционах, ВНЖ, документах, долях, test-drive
+- Подбирай объекты только из ДОСТУПНОЙ НЕДВИЖИМОСТИ (поле recommendations = массив id)
+- Давай навигацию по сайту через массив navigation: [{ "path": "/map", "label": "Карта" }]
+- Можешь дать минимальный ориентир доходности (yieldEstimate) ТОЛЬКО если пользователь ЯВНО просит посчитать доходность/ROI/аренду. На вопросы «как лучше покупать», «тип покупки/объекта», «посоветуй инвестиции» — yieldEstimate = null, ответь по сути и предложи /calculator без карточки чисел
+- Уточняй цель, бюджет (€), локацию, тип — сейчас собрано полей: ${collectedInfoCount}
+- Будь кратким и дружелюбным
+- Язык ответа = язык последнего сообщения пользователя. Допустимы только русский, английский или испанский.
+- НИКОГДА не пиши рассуждения, chain-of-thought, «Okay the user is asking…», «Let me recall…». Только готовый ответ клиенту
 
-**ДОСТУПНАЯ НЕДВИЖИМОСТЬ:**
-${JSON.stringify(availableProperties.slice(0, 20).map(p => ({
+**ДОСТУПНАЯ НЕДВИЖИМОСТЬ (${Math.min(props.length, 24)} из ${props.length}):**
+${JSON.stringify(props.slice(0, 24).map(p => ({
   id: p.id,
-  name: (p.name || p.title || `Объявление ${p.id}`).slice(0, 60),
+  name: (p.name || p.title || ('Объявление ' + p.id)).slice(0, 60),
   location: (p.location || 'Локация не указана').slice(0, 40),
   price: p.price || 0,
   currentBid: p.currentBid || null,
   area: p.area || p.sqft || null,
   rooms: p.rooms || p.beds || null,
-  isAuction: p.isAuction || false
+  isAuction: p.isAuction || p.is_auction || false
 })), null, 0)}
 
 **ПРЕДПОЧТЕНИЯ КЛИЕНТА:**
-${JSON.stringify(userPreferences, null, 0)}
+${JSON.stringify(prefs, null, 0)}
 
-**ПРАВИЛА ОТВЕТОВ:**
-1. Если клиент спрашивает о платформе SellYourBrick — расскажи о ней подробно
-2. Если спрашивает про аукцион — объясни как он работает
-3. Если спрашивает про ВНЖ — дай подробную информацию по Испании и/или Дубаю
-4. Если спрашивает про документы — перечисли все необходимые
-5. Если хочет подобрать недвижимость — задавай уточняющие вопросы (цель, бюджет, локация, тип)
-6. Используй кнопки для быстрого выбора (цель: для себя/под сдачу/инвестиции/ВНЖ)
-7. После сбора информации (минимум 3-4 уточнения) рекомендую конкретные объявления
-8. В рекомендациях указывай ID объявлений в массиве recommendations
-9. Работай только с недвижимостью в Испании и Дубае
-10. Отвечай на русском языке
-11. Будь информативным, но не слишком длинным
-12. При рекомендации учитывай все предпочтения клиента
-13. ВСЕГДА уточняй бюджет в ЕВРО (€), не в рублях. Все цены на недвижимость указаны в евро.
-14. Если клиент спрашивает про конкретный объект — используй информацию из доступной недвижимости
+**ПРАВИЛА:**
+1. Про платформу / аукцион / ВНЖ / документы — краткий полезный ответ, needsMoreInfo=false
+2. Подбор: при 2+ предпочтениях или явной просьбе «подбери/покажи объекты» — recommendations (до 5 id из списка)
+3. Навигация: если просит карту, калькулятор, доли, избранное, новости и т.п. — заполни navigation и коротко объясни
+4. Доходность: yieldEstimate заполняй ТОЛЬКО при явном запросе («посчитай доходность», ROI, арендный доход). Если в сообщении есть бюджет, но вопрос про тип покупки/объекта/совет — yieldEstimate = null, ответь текстом и дай navigation на /calculator
+5. Цены только в евро (€)
+6. Не выдумывай объекты вне списка. Если каталог пуст — скажи об этом и дай navigation на /auction
+7. Кнопки buttons — короткие варианты ответа пользователя (не ссылки). Ссылки только в navigation и recommendations
 
-**ФОРМАТ ОТВЕТА:**
-Отвечай ТОЛЬКО в формате JSON (без дополнительного текста):
+**ФОРМАТ ОТВЕТА (ТОЛЬКО JSON):**
 {
   "text": "Текст ответа",
   "buttons": ["Вариант 1", "Вариант 2"] или null,
   "needsMoreInfo": true/false,
-  "recommendations": [1, 2, 3] или null
+  "recommendations": [1, 2] или null,
+  "navigation": [{"path": "/calculator", "label": "Умная панель инвестора"}] или null,
+  "yieldEstimate": {"price": 250000, "annualRent": 12000, "monthlyIncome": 1000, "yieldPercent": 4.8, "note": "Ориентир"} или null
 }
 
-**СТИЛЬ ТЕКСТА (ОБЯЗАТЕЛЬНО):**
-- Пиши текст в поле "text" простым языком, без markdown: не используй ** для выделения, не используй ##, -, списки только переносами строк.
-- Ответы короткие: 2–4 предложения где возможно, по делу. Без длинных перечислений — только суть.
-- Если клиент спрашивает общее (платформа, аукцион, ВНЖ) — дай суть в 3–5 предложениях.
-
-Если нужны уточнения, установи "needsMoreInfo": true и предложи кнопки для выбора.
-Если готов дать рекомендации (после 3-4 уточнений), установи "recommendations" с массивом ID объявлений (максимум 5 рекомендаций).
-Если клиент задает общий вопрос — установи "needsMoreInfo": false и дай краткий информативный ответ.`;
+**СТИЛЬ:**
+- Без markdown (** ## списков с -). 2–5 предложений.
+- При рекомендации объектов: 1–2 фразы + карточки придут из recommendations.
+- При доходе всегда упомяни Умную панель инвестора.
+- Поле text — только финальный ответ клиенту на его языке, без английских внутренних заметок.`;
 
   const messages = [
-    { role: "system", content: systemPrompt },
-    ...limitedHistory.map(msg => ({
+    { role: 'system', content: systemPrompt },
+    ...limitedHistory.map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
-      content: msg.text
-    }))
-  ];
+      content: msg.text,
+    })),
+  ]
+
+  const offlineOrError = (errorText) => {
+    const offline = buildOfflineAssistantReply(lastUserMessage, prefs, props, { force: true })
+    if (offline?.text) return offline
+    return {
+      text: errorText,
+      buttons: null,
+      needsMoreInfo: false,
+      recommendations: null,
+      navigation: null,
+      yieldEstimate: null,
+    }
+  }
+
+  // Быстрые локальные ответы (FAQ / навигация / yield) — без зависимости от LLM
+  const offlineFirst = buildOfflineAssistantReply(lastUserMessage, prefs, props)
+  if (offlineFirst?.text) {
+    return offlineFirst
+  }
+
+  const emptyResult = (text, extra = {}) => ({
+    text,
+    buttons: null,
+    needsMoreInfo: false,
+    recommendations: null,
+    navigation: null,
+    yieldEstimate: null,
+    ...extra,
+  })
 
   try {
     console.log('🤖 Отправка запроса к AI сервису...', {
       url: getChatCompletionsUrl(),
       model: AI_MODEL,
-      messagesCount: messages.length
-    });
+      messagesCount: messages.length,
+      catalogSize: props.length,
+    })
 
     const payload = {
-      "model": AI_MODEL,
-      "messages": messages,
-      "temperature": 0.7,
-      "max_tokens": 400
-    };
+      model: AI_MODEL,
+      messages,
+      temperature: 0.7,
+      max_tokens: 700,
+    }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 45000)
 
     const response = await postIntelligenceChat(payload, {
-      signal: controller.signal
-    });
+      signal: controller.signal,
+    })
 
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API Error ${response.status}:`, errorText);
-      
-      if (response.status === 503) {
-        console.error('🔑 AI: провайдер не настроен на сервере')
-        return {
-          text: 'Ошибка: AI на сервере не настроен. В .env укажите AI_PROVIDER=pollinations (без ключа) или OPENROUTER_API_KEY и перезапустите npm start.',
-          buttons: null,
-          needsMoreInfo: false,
-          recommendations: null
-        };
-      }
+      const errorText = await response.text()
+      console.error(`❌ API Error ${response.status}:`, errorText)
 
+      if (response.status === 503) {
+        return offlineOrError(
+          'Ошибка: AI на сервере не настроен. В .env укажите OPENROUTER_API_KEY или GROQ_API_KEY и перезапустите сервер.',
+        )
+      }
       if (response.status === 401) {
-        console.error('🔑 Ошибка авторизации: API ключ недействителен или истек');
-        return {
-          text: isIntelligenceProxyActive()
-            ? 'Ошибка: ключ AI отклонён. Для тестов задайте AI_PROVIDER=pollinations в .env или получите ключ на openrouter.ai/keys (OPENROUTER_API_KEY). Перезапустите сервер.'
-            : 'Ошибка: сервер AI отклонил ключ. Проверьте OPENROUTER_API_KEY / GROQ_API_KEY в .env.',
-          buttons: null,
-          needsMoreInfo: false,
-          recommendations: null
-        };
+        return offlineOrError(
+          'Ключ AI отклонён или без средств. Добавьте OPENROUTER_API_KEY / GROQ_API_KEY в .env или продолжите с подсказками ниже.',
+        )
       }
-      
       if (response.status === 429) {
-        console.error('⏱️ Превышен лимит запросов к API');
-        return {
-          text: "Превышен лимит запросов. Пожалуйста, подождите немного и попробуйте снова.",
-          buttons: null,
-          needsMoreInfo: false,
-          recommendations: null
-        };
+        return offlineOrError('Превышен лимит запросов к AI. Ниже — ответ по базе знаний сайта.')
       }
-      
       if (response.status >= 500) {
-        console.error('🔴 Ошибка сервера AI');
-        return {
-          text: "Временная ошибка сервера AI. Попробуйте позже.",
-          buttons: null,
-          needsMoreInfo: false,
-          recommendations: null
-        };
+        return offlineOrError('Временная ошибка AI. Ниже — ответ по базе знаний сайта.')
       }
-      
-      return {
-        text: `Ошибка подключения к AI-сервису (код ${response.status}). Попробуйте позже.`,
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+      return offlineOrError(
+          response.status === 402
+            ? 'AI-провайдер требует оплату/кредиты (402). Пока отвечаю по базе знаний сайта — можно подобрать объекты и открыть разделы.'
+            : `Ошибка AI (код ${response.status}). Ниже — ответ по базе знаний сайта.`,
+        )
     }
 
-    const data = await response.json();
+    const data = await response.json()
     console.log('✅ Получен ответ от AI сервиса:', {
       hasChoices: !!data.choices,
-      choicesCount: data.choices?.length || 0
-    });
+      choicesCount: data.choices?.length || 0,
+    })
 
     if (data.choices && data.choices.length > 0) {
-      let messageContent = data.choices[0].message?.content || "";
-      console.log('📝 Длина ответа:', messageContent.length);
-
-      // Удаляем возможные служебные метки
-      while (messageContent.includes("</think>")) {
-        messageContent = messageContent.split("</think>").pop().trim();
+      const choiceMsg = data.choices[0].message || {}
+      let messageContent = choiceMsg.content || ''
+      // Некоторые reasoning-модели кладут мысли в отдельное поле — не показываем его
+      if (choiceMsg.reasoning && !messageContent) {
+        messageContent = ''
       }
-      messageContent = messageContent.replace(/<\/?redacted_reasoning>/g, "").trim();
-      messageContent = messageContent.replace(/<\/?think>/g, "").trim();
+      console.log('📝 Длина ответа:', messageContent.length)
 
-      // Пытаемся распарсить JSON из ответа
+      messageContent = stripModelReasoning(messageContent)
+
       try {
-        // Ищем JSON в ответе (может быть обернут в markdown код блоки)
-        let jsonText = messageContent;
-        
-        // Удаляем markdown код блоки если есть
-        jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-        
-        // Ищем JSON объект
-        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        let jsonText = messageContent
+        jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          
-          // Валидируем recommendations - должны быть массивом чисел
-          let recommendations = parsed.recommendations;
-          if (recommendations && Array.isArray(recommendations)) {
-            recommendations = recommendations
-              .map(id => {
-                const numId = typeof id === 'string' ? parseInt(id, 10) : id;
-                return isNaN(numId) ? null : numId;
-              })
-              .filter(id => id !== null);
-          } else {
-            recommendations = null;
+          const parsed = JSON.parse(jsonMatch[0])
+          const normalized = normalizeAssistantPayload(parsed, {
+            fallbackText: '',
+            userMessage: lastUserMessage,
+            userPreferences: prefs,
+            availableProperties: props,
+          })
+          if (looksLikeModelReasoningLeak(normalized.text)) {
+            return offlineOrError('Не удалось сформировать чистый ответ. Ниже — ответ по базе знаний сайта.')
           }
-          
-          return {
-            text: stripMarkdown(parsed.text || messageContent),
-            buttons: Array.isArray(parsed.buttons) ? parsed.buttons : null,
-            needsMoreInfo: parsed.needsMoreInfo !== false,
-            recommendations: recommendations
-          };
+          // Язык ответа должен совпадать с языком пользователя (ru / en / es)
+          if (normalized.text) {
+            const hasCyr = /[а-яё]/i.test(normalized.text)
+            const hasLat = /[a-z]/i.test(normalized.text)
+            if (replyLang === 'ru' && hasLat && !hasCyr) {
+              return offlineOrError('Ответ AI на другом языке. Ниже — ответ по-русски.')
+            }
+            if (replyLang === 'es' && hasCyr) {
+              return offlineOrError('Respuesta AI en otro idioma. Aquí la versión en español.')
+            }
+            if (replyLang === 'en' && hasCyr) {
+              return offlineOrError('AI replied in another language. Here is the English answer.')
+            }
+          }
+          return normalized
         }
       } catch (parseError) {
-        console.log("Не удалось распарсить JSON, используем текст как есть:", parseError);
+        console.log('Не удалось распарсить JSON, используем текст как есть:', parseError)
       }
 
-      // Если не удалось распарсить, возвращаем текст
-      if (!messageContent || !messageContent.trim()) {
-        messageContent = "К сожалению, не удалось получить ответ от AI-сервиса. Попробуйте переформулировать вопрос.";
+      if (!messageContent || !messageContent.trim() || looksLikeModelReasoningLeak(messageContent)) {
+        return offlineOrError('Не удалось получить корректный ответ AI. Ниже — ответ по базе знаний сайта.')
       }
 
-      return {
-        text: stripMarkdown(messageContent),
-        buttons: null,
-        needsMoreInfo: true,
-        recommendations: null
-      };
-    } else {
-      console.error("Unexpected API response format:", data);
-      return {
-        text: "Не удалось получить ответ от сервиса. Попробуйте позже.",
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+      return normalizeAssistantPayload(
+        { text: messageContent, buttons: null, needsMoreInfo: true, recommendations: null },
+        {
+          fallbackText: messageContent,
+          userMessage: lastUserMessage,
+          userPreferences: prefs,
+          availableProperties: props,
+        },
+      )
     }
+
+    console.error('Unexpected API response format:', data)
+    return offlineOrError('Не удалось получить ответ AI. Ниже — ответ по базе знаний сайта.')
   } catch (error) {
-    console.error("❌ AI Service Error:", error);
-    console.error("Ошибка детали:", {
+    console.error('❌ AI Service Error:', error)
+    console.error('Ошибка детали:', {
       name: error.name,
       message: error.message,
-      stack: error.stack
-    });
-    
+      stack: error.stack,
+    })
+
     if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-      console.error('⏱️ Запрос прерван по таймауту (45 сек)');
-      return {
-        text: "Не удалось получить ответ за отведённое время. Упростите вопрос или попробуйте позже.",
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+      return offlineOrError('AI отвечает слишком долго. Ниже — ответ по базе знаний сайта.')
     }
-    
     if (error.name === 'TimeoutError' || error.message?.includes('timeout')) {
-      console.error('⏱️ Таймаут запроса');
-      return {
-        text: "Запрос занимает слишком много времени. Попробуйте упростить вопрос.",
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+      return offlineOrError('Запрос к AI слишком долгий. Ниже — ответ по базе знаний сайта.')
     }
-    
-    if (error.message?.includes('Network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
-      console.error('🌐 Ошибка сети');
-      return {
-        text: "Ошибка сети. Проверьте подключение к интернету и попробуйте снова.",
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+    if (
+      error.message?.includes('Network') ||
+      error.message?.includes('fetch') ||
+      error.message?.includes('Failed to fetch')
+    ) {
+      return offlineOrError('Ошибка сети к AI. Ниже — ответ по базе знаний сайта.')
     }
-
     if (error.message?.includes('CORS')) {
-      console.error('🚫 Ошибка CORS');
-      return {
-        text: "Ошибка доступа к сервису. Пожалуйста, сообщите администратору.",
-        buttons: null,
-        needsMoreInfo: false,
-        recommendations: null
-      };
+      return offlineOrError('Ошибка доступа к AI. Ниже — ответ по базе знаний сайта.')
     }
-
-    return {
-      text: `Произошла ошибка при обработке запроса: ${error.message || 'Неизвестная ошибка'}. Попробуйте позже.`,
-      buttons: null,
-      needsMoreInfo: false,
-      recommendations: null
-    };
+    return offlineOrError('Не удалось получить ответ AI. Ниже — ответ по базе знаний сайта.')
   }
 }
 

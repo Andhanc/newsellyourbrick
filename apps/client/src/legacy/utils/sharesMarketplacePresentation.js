@@ -133,6 +133,7 @@ export function normalizeMarketplaceShare(raw = {}) {
     currency: String(raw.currency || 'EUR').trim().toUpperCase(),
     sale_type: 'share',
     is_shared_ownership: true,
+    statusKey: resolveShareStatusKey(state, collectedPercent),
     statusLabel:
       state.blocksInvestment
         ? state.ctaLabel
@@ -142,6 +143,19 @@ export function normalizeMarketplaceShare(raw = {}) {
             ? 'Почти собрано'
             : 'Сбор открыт',
   }
+}
+
+/** Stable English IDs for marketplace status filters / badges. */
+export function resolveShareStatusKey(state = {}, collectedPercent = null) {
+  if (state.blocksInvestment) {
+    if (state.state === 'sold') return 'completed'
+    if (state.state === 'reserved') return 'reserved'
+    if (state.state === 'unavailable') return 'unavailable'
+    return String(state.state || 'unavailable')
+  }
+  if (collectedPercent == null) return 'pending'
+  if (collectedPercent >= 80) return 'almost_full'
+  return 'open'
 }
 
 export function formatForecastYield(value, locale = 'ru-RU') {

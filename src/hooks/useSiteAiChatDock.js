@@ -5,6 +5,7 @@ import { getUserData, isAuthenticated, getStoredNumericUserId } from '../service
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getManagerContactButtons } from '../services/liveChatApi'
+import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
 import { useManagerLiveChat } from './useManagerLiveChat'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -21,6 +22,12 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [isSlowAIResponse, setIsSlowAIResponse] = useState(false)
+  const [catalogProperties, setCatalogProperties] = useState(() => {
+    if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {
+      return recommendationProperties
+    }
+    return getCachedList() || []
+  })
   const [userPreferences, setUserPreferences] = useState({
     purpose: null,
     budget: null,
@@ -41,6 +48,34 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
   const lastChatUserIdRef = useRef(null)
 
   const isLoggedIn = isAuthenticated() || (user && userLoaded)
+
+  useEffect(() => {
+    if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {
+      setCatalogProperties(recommendationProperties)
+    }
+  }, [recommendationProperties])
+
+  useEffect(() => {
+    if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) return undefined
+    let cancelled = false
+    const cached = getCachedList()
+    if (cached?.length) setCatalogProperties(cached)
+    fetchAuctionList(dbUserId ?? undefined)
+      .then((list) => {
+        if (!cancelled && Array.isArray(list) && list.length) setCatalogProperties(list)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [recommendationProperties, dbUserId])
+
+  const propertiesForAi = useMemo(() => {
+    if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {
+      return recommendationProperties
+    }
+    return catalogProperties
+  }, [recommendationProperties, catalogProperties])
 
   const getChatUserId = useMemo(() => {
     if (isLoggedIn) {
@@ -310,6 +345,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     }
 
     const lowerMessage = userMessage.toLowerCase()
+    const nextPreferences = { ...userPreferences }
 
     if (
       lowerMessage.includes('для себя') ||
@@ -317,20 +353,20 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
       lowerMessage.includes('сам') ||
       lowerMessage.includes('личн')
     ) {
-      setUserPreferences((prev) => ({ ...prev, purpose: 'для себя' }))
+      nextPreferences.purpose = 'для себя'
     } else if (
       lowerMessage.includes('под сдачу') ||
       lowerMessage === 'под сдачу' ||
       lowerMessage.includes('сдачу') ||
       lowerMessage.includes('аренд')
     ) {
-      setUserPreferences((prev) => ({ ...prev, purpose: 'под сдачу' }))
+      nextPreferences.purpose = 'под сдачу'
     } else if (
       lowerMessage.includes('инвестиц') ||
       lowerMessage === 'инвестиции' ||
       lowerMessage.includes('инвест')
     ) {
-      setUserPreferences((prev) => ({ ...prev, purpose: 'инвестиции' }))
+      nextPreferences.purpose = 'инвестиции'
     }
 
     if (
@@ -343,7 +379,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
       lowerMessage.includes('barcelona') ||
       lowerMessage.includes('madrid')
     ) {
-      setUserPreferences((prev) => ({ ...prev, location: 'Испания' }))
+      nextPreferences.location = 'Испания'
     } else if (
       lowerMessage.includes('дубай') ||
       lowerMessage.includes('dubai') ||
@@ -351,7 +387,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
       lowerMessage.includes('оаэ') ||
       lowerMessage.includes('emirates')
     ) {
-      setUserPreferences((prev) => ({ ...prev, location: 'Дубай' }))
+      nextPreferences.location = 'Дубай'
     }
 
     const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
@@ -370,7 +406,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
         budget /= eurToRubRate
       }
 
-      setUserPreferences((prev) => ({ ...prev, budget }))
+      nextPreferences.budget = budget
     }
 
     if (
@@ -378,22 +414,24 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
       lowerMessage.includes('апартамент') ||
       lowerMessage.includes('apartment')
     ) {
-      setUserPreferences((prev) => ({ ...prev, propertyType: 'квартира' }))
+      nextPreferences.propertyType = 'квартира'
     } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
-      setUserPreferences((prev) => ({ ...prev, propertyType: 'вилла' }))
+      nextPreferences.propertyType = 'вилла'
     } else if (
       lowerMessage.includes('дом') ||
       lowerMessage.includes('таунхаус') ||
       lowerMessage.includes('townhouse') ||
       lowerMessage.includes('house')
     ) {
-      setUserPreferences((prev) => ({ ...prev, propertyType: 'дом' }))
+      nextPreferences.propertyType = 'дом'
     }
 
     const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
     if (roomsMatch) {
-      setUserPreferences((prev) => ({ ...prev, rooms: parseInt(roomsMatch[1], 10) }))
+      nextPreferences.rooms = parseInt(roomsMatch[1], 10)
     }
+
+    setUserPreferences(nextPreferences)
 
     let wantsManager = false
     try {
@@ -403,7 +441,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     }
 
     if (wantsManager) {
-      const alreadyDone = userPreferences.preferredContact
+      const alreadyDone = nextPreferences.preferredContact
       if (alreadyDone) {
         const methodLabel =
           alreadyDone === 'phone'
@@ -430,7 +468,7 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
         ])
         return
       }
-      if (userPreferences.managerContactPendingChoice) {
+      if (nextPreferences.managerContactPendingChoice) {
         setChatMessages((prev) => [
           ...prev,
           {
@@ -445,11 +483,11 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
         return
       }
 
-      setUserPreferences((prev) => ({
-        ...prev,
+      setUserPreferences({
+        ...nextPreferences,
         managerContactRequested: true,
         managerContactPendingChoice: true,
-      }))
+      })
       setChatMessages((prev) => [
         ...prev,
         {
@@ -475,8 +513,8 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     try {
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
-        userPreferences,
-        recommendationProperties,
+        nextPreferences,
+        propertiesForAi,
       )
 
       setChatMessages((prev) => [
@@ -488,6 +526,8 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
           timestamp: new Date(),
           buttons: response.buttons,
           recommendations: response.recommendations,
+          navigation: response.navigation,
+          yieldEstimate: response.yieldEstimate,
         },
       ])
     } catch (error) {
@@ -501,6 +541,8 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
           timestamp: new Date(),
           buttons: null,
           recommendations: null,
+          navigation: null,
+          yieldEstimate: null,
         },
       ])
     } finally {
@@ -543,5 +585,6 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     managerThreadUi,
     liveChatToken,
     submitManagerMessage,
+    catalogProperties: propertiesForAi,
   }
 }

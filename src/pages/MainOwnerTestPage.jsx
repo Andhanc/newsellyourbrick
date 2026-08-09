@@ -925,20 +925,20 @@ export default function MainOwnerTestPage() {
     [t]
   )
 
-  const figmaLabels = useMemo(() => {
-    const ru = i18n.language?.startsWith('ru')
-    return {
-      addObject: ru ? 'Добавить объект' : 'Add property',
-      activeAuctions: ru ? 'Активных аукционов' : 'Active auctions',
-      allObjects: ru ? 'Всего объектов' : 'Total properties',
-      bidsByObjects: ru ? 'Ставки по объектам' : 'Bids by property',
-      dataForMonth: ru ? 'Данные за июнь 2026' : 'Data for June 2026',
-      likes: ru ? 'Лайки объектов' : 'Property likes',
-      plans: ru ? 'Смотреть планы' : 'View plans',
-      search: ru ? 'Поиск...' : 'Search...',
-      viewsAndLikes: ru ? 'Просмотры и лайки' : 'Views and likes',
-    }
-  }, [i18n.language])
+  const figmaLabels = useMemo(
+    () => ({
+      addObject: t('ownerTest_figmaAddObject'),
+      activeAuctions: t('ownerTest_figmaActiveAuctions'),
+      allObjects: t('ownerTest_figmaAllObjects'),
+      bidsByObjects: t('ownerTest_figmaBidsByObjects'),
+      dataForMonth: t('ownerTest_figmaDataForMonth'),
+      likes: t('ownerTest_figmaLikes'),
+      plans: t('ownerTest_figmaPlans'),
+      search: t('ownerTest_figmaSearch'),
+      viewsAndLikes: t('ownerTest_figmaViewsAndLikes'),
+    }),
+    [t],
+  )
 
   const toggleMobileChartSeries = useCallback((key) => {
     setMobileChartVisible((prev) => {
@@ -1490,68 +1490,40 @@ export default function MainOwnerTestPage() {
     [chartMax, chartSeries.buckets, intlLocale, isMobile]
   )
 
-  const dashboardCopy = useMemo(() => {
-    const ru = i18n.language?.startsWith('ru')
-    return ru
-      ? {
-          eyebrow: 'Портфель продавца',
-          title: 'Аналитика',
-          menu: 'Меню',
-          hello: user?.firstName ? `Добрый день, ${user.firstName}` : 'Добрый день',
-          portfolioLabel: 'Стоимость всех объектов',
-          live: 'Данные обновлены',
-          properties: 'Мои объекты',
-          propertiesHint: 'Объекты в вашем портфеле',
-          bookings: 'Бронирования',
-          bookingsHint: 'Заявки на просмотр',
-          aiAssistant: 'ИИ-помощник',
-          pending: 'ожидают ответа',
-          add: 'Добавить',
-          addHint: 'Новый объект',
-          open: 'Открыть',
-          upcoming: 'Ближайшие аукционы',
-          upcomingHint: 'Ваши объекты с ближайшим завершением торгов',
-          all: 'Все объекты',
-          noAuctions: 'Ближайших аукционов пока нет',
-          noAuctionsHint: 'Когда вы запустите торги, они появятся здесь в порядке завершения.',
-          noProperties: 'Добавьте первый объект, чтобы увидеть аналитику портфеля.',
-          currentBid: 'Текущая ставка',
-          noBids: 'Ставок нет',
-          timeLeft: 'До завершения',
-          finished: 'Завершён',
-          daysShort: 'д ',
-          statusActive: 'Идут торги',
-        }
-      : {
-          eyebrow: 'Seller portfolio',
-          title: 'Analytics',
-          menu: 'Menu',
-          hello: user?.firstName ? `Good afternoon, ${user.firstName}` : 'Good afternoon',
-          portfolioLabel: 'Value of all properties',
-          live: 'Up to date',
-          properties: 'My properties',
-          propertiesHint: 'Properties in your portfolio',
-          bookings: 'Bookings',
-          bookingsHint: 'Viewing requests',
-          aiAssistant: 'AI assistant',
-          pending: 'need a response',
-          add: 'Add',
-          addHint: 'New property',
-          open: 'Open',
-          upcoming: 'Upcoming auctions',
-          upcomingHint: 'Your auctions ending soonest',
-          all: 'All properties',
-          noAuctions: 'No upcoming auctions yet',
-          noAuctionsHint: 'Once you start an auction, it will appear here ordered by end time.',
-          noProperties: 'Add your first property to see portfolio analytics.',
-          currentBid: 'Current bid',
-          noBids: 'No bids yet',
-          timeLeft: 'Time left',
-          finished: 'Finished',
-          daysShort: 'd ',
-          statusActive: 'Live auction',
-        }
-  }, [i18n.language, user?.firstName])
+  const dashboardCopy = useMemo(
+    () => ({
+      eyebrow: t('ownerTest_dashEyebrow'),
+      title: t('ownerTest_dashTitle'),
+      menu: t('ownerTest_dashMenu'),
+      hello: user?.firstName
+        ? t('ownerTest_dashHelloNamed', { name: user.firstName })
+        : t('ownerTest_dashHello'),
+      portfolioLabel: t('ownerTest_dashPortfolioLabel'),
+      live: t('ownerTest_dashLive'),
+      properties: t('ownerTest_dashProperties'),
+      propertiesHint: t('ownerTest_dashPropertiesHint'),
+      bookings: t('ownerTest_dashBookings'),
+      bookingsHint: t('ownerTest_dashBookingsHint'),
+      aiAssistant: t('ownerTest_dashAiAssistant'),
+      pending: t('ownerTest_dashPending'),
+      add: t('ownerTest_dashAdd'),
+      addHint: t('ownerTest_dashAddHint'),
+      open: t('ownerTest_dashOpen'),
+      upcoming: t('ownerTest_dashUpcoming'),
+      upcomingHint: t('ownerTest_dashUpcomingHint'),
+      all: t('ownerTest_dashAll'),
+      noAuctions: t('ownerTest_dashNoAuctions'),
+      noAuctionsHint: t('ownerTest_dashNoAuctionsHint'),
+      noProperties: t('ownerTest_dashNoProperties'),
+      currentBid: t('ownerTest_dashCurrentBid'),
+      noBids: t('ownerTest_dashNoBids'),
+      timeLeft: t('ownerTest_dashTimeLeft'),
+      finished: t('ownerTest_dashFinished'),
+      daysShort: t('ownerTest_dashDaysShort'),
+      statusActive: t('ownerTest_dashStatusActive'),
+    }),
+    [t, user?.firstName],
+  )
 
   const salePortfolio = useMemo(() => {
     const totalsByCurrency = new Map()

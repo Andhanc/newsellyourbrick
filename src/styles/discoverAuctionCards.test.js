@@ -87,6 +87,37 @@ test('main-page buy-now card swaps timer and favorite, widens timer, and stacks 
   )
 })
 
+test('auction listing reuses the same glass timer chrome as the main-page cards', () => {
+  assert.match(
+    css,
+    /\.invest-showcase--auction[\s\S]*\.auction-card__media-top[\s\S]*bottom:\s*10px\s*!important[\s\S]*width:\s*95%\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.invest-showcase--auction[\s\S]*\.auction-card__timer-prices[\s\S]*display:\s*flex\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__countdown-pill[\s\S]*font-size:\s*0\.62rem\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*36px\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn-text-short[\s\S]*display:\s*inline\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media[\s\S]*aspect-ratio:\s*4\s*\/\s*3\s*!important/,
+  )
+})
+
 test('main-page auction card mirrors the compact layout and keeps only a tiffany bid action', () => {
   assert.match(
     css,
@@ -102,17 +133,19 @@ test('main-page auction card mirrors the compact layout and keeps only a tiffany
   assert.match(card, /state\.showGreenTimer && 'auction-card--timer-pricing'/)
 })
 
-test('phone cards stack their actions and use the homepage tiffany shine', () => {
+test('phone listing cards put short CTAs in one row and use the homepage tiffany shine', () => {
   assert.match(
     mobileLayoutCss,
     /\.auction-mobile-layout[\s\S]*--auction-tiffany:\s*#4ecdd6/,
   )
   assert.match(
     mobileLayoutCss,
-    /\.auction-mobile-layout[\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/,
+    /\.auction-mobile-layout[\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
   )
   assert.match(mobileLayoutCss, /#8ee6ed\s+52%/)
   assert.match(card, /auction-card__btn-arrow/)
+  assert.match(card, /auctionCardBidShort/)
+  assert.match(card, /auctionCardBuyShort/)
 })
 
 test('card view groups lots by visible action count and keeps sold lots openable', () => {

@@ -35,22 +35,22 @@ function formatDateRange(start, end) {
   }
 }
 
-function bookingNextStep(statusKey) {
+function bookingNextStep(statusKey, t) {
   switch (statusKey) {
     case 'pending':
-      return 'Заявка отправлена. Владелец проверит даты — ответ появится в уведомлениях.'
+      return t('buyerBookings_next_pending')
     case 'paid':
-      return 'Оплата подтверждена. Дождитесь финального подтверждения владельца.'
+      return t('buyerBookings_next_paid')
     case 'approved':
-      return 'Проверьте детали визита и заполните анкету до заселения, если она доступна.'
+      return t('buyerBookings_next_approved')
     case 'completed':
-      return 'Визит завершён. Объект можно снова открыть и перейти к решению о покупке.'
+      return t('buyerBookings_next_completed')
     case 'rejected':
-      return 'Эти даты недоступны. Вернитесь к объекту и выберите другой период.'
+      return t('buyerBookings_next_rejected')
     case 'cancelled':
-      return 'Бронь закрыта. Можно открыть объект и создать новую заявку.'
+      return t('buyerBookings_next_cancelled')
     default:
-      return 'Откройте детали брони — там собраны актуальный статус и следующий шаг.'
+      return t('buyerBookings_next_default')
   }
 }
 
@@ -143,7 +143,7 @@ export default function MyBookingsPage() {
           setCancelNotice({
             id: hit.id,
             reason: String(hit.data.reason || ''),
-            title: hit.title || 'Бронь отменена продавцом',
+            title: hit.title || i18n.t('buyerBookings_cancelledBySellerTitle'),
           })
         }
       } catch {
@@ -253,15 +253,15 @@ export default function MyBookingsPage() {
                 setSelectedBooking(null)
               }}
             >
-              Открыть объект <FiArrowRight aria-hidden />
+              {t('buyerBookings_openProperty')} <FiArrowRight aria-hidden />
             </button>
           ) : null
         }
       >
         {selectedBooking ? (
           <div className="my-bookings-next-sheet__content">
-            <span className="my-bookings-next-sheet__eyebrow">План визита</span>
-            <h2 id="booking-next-step-title">Что делать дальше</h2>
+            <span className="my-bookings-next-sheet__eyebrow">{t('buyerBookings_visitPlanEyebrow')}</span>
+            <h2 id="booking-next-step-title">{t('buyerBookings_whatsNextTitle')}</h2>
             <p className="my-bookings-next-sheet__property">
               {selectedBooking.property_title ||
                 t('buyerBookings_propertyFallback', { id: selectedBooking.property_id })}
@@ -271,9 +271,9 @@ export default function MyBookingsPage() {
               <span>{formatDateRange(selectedBooking.start_date, selectedBooking.end_date)}</span>
             </div>
             <ol className="my-bookings-next-sheet__steps">
-              <li><FiCheckCircle aria-hidden /><span>Мы сохраняем актуальный статус брони в этом разделе.</span></li>
-              <li><FiClock aria-hidden /><span>{bookingNextStep(String(selectedBooking.status || '').toLowerCase())}</span></li>
-              <li><FiMapPin aria-hidden /><span>Адрес и инструкции владельца появятся в деталях заявки.</span></li>
+              <li><FiCheckCircle aria-hidden /><span>{t('buyerBookings_planBulletStatus')}</span></li>
+              <li><FiClock aria-hidden /><span>{bookingNextStep(String(selectedBooking.status || '').toLowerCase(), t)}</span></li>
+              <li><FiMapPin aria-hidden /><span>{t('buyerBookings_planBulletAddress')}</span></li>
             </ol>
           </div>
         ) : null}
@@ -283,14 +283,14 @@ export default function MyBookingsPage() {
           <div className="my-bookings-cancel-modal" role="dialog" aria-modal="true">
             <h3 className="my-bookings-cancel-modal__title">{cancelNotice.title}</h3>
             <p className="my-bookings-cancel-modal__text">
-              Причина от продавца: <strong>{cancelNotice.reason}</strong>
+              {t('buyerBookings_sellerReason')} <strong>{cancelNotice.reason}</strong>
             </p>
             <button
               type="button"
               className="my-bookings-card__cta"
               onClick={closeCancelNotice}
             >
-              Понятно
+              {t('buyerBookings_gotIt')}
             </button>
           </div>
         </div>
@@ -305,31 +305,31 @@ export default function MyBookingsPage() {
         <main className="profile-main my-bookings-main buyer-cabinet-layout-main">
           <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
           <div className="my-bookings-header">
-            <span className="my-bookings-header__eyebrow">Личный кабинет</span>
+            <span className="my-bookings-header__eyebrow">{t('buyerBookings_cabinetEyebrow')}</span>
             <h1 className="my-bookings-title">{t('buyerBookings_title')}</h1>
             <p className="my-bookings-subtitle">{t('buyerBookings_subtitle')}</p>
           </div>
 
           {!loading && !error && spotlightBooking ? (
-            <section className="my-bookings-spotlight" aria-label="Ближайший визит">
+            <section className="my-bookings-spotlight" aria-label={t('buyerBookings_spotlightAria')}>
               <div className="my-bookings-spotlight__top">
-                <span className="my-bookings-spotlight__eyebrow">Ближайший шаг</span>
-                <span className="my-bookings-spotlight__count">{activeBookings.length} активных</span>
+                <span className="my-bookings-spotlight__eyebrow">{t('buyerBookings_spotlightEyebrow')}</span>
+                <span className="my-bookings-spotlight__count">{t('buyerBookings_activeCount', { count: activeBookings.length })}</span>
               </div>
               <h2>{spotlightBooking.property_title || t('buyerBookings_propertyFallback', { id: spotlightBooking.property_id })}</h2>
               <p>{formatDateRange(spotlightBooking.start_date, spotlightBooking.end_date)}</p>
               <button type="button" onClick={() => setSelectedBooking(spotlightBooking)}>
-                Посмотреть план <FiArrowRight aria-hidden />
+                {t('buyerBookings_viewPlan')} <FiArrowRight aria-hidden />
               </button>
             </section>
           ) : null}
 
           {!loading && !error && visibleBookings.length > 0 ? (
-            <div className="my-bookings-filters" role="group" aria-label="Фильтр бронирований">
+            <div className="my-bookings-filters" role="group" aria-label={t('buyerBookings_filterAria')}>
               {[
-                ['active', 'Активные'],
-                ['all', 'Все'],
-                ['closed', 'Завершённые'],
+                ['active', t('buyerBookings_filterActive')],
+                ['all', t('buyerBookings_filterAll')],
+                ['closed', t('buyerBookings_filterClosed')],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -352,10 +352,10 @@ export default function MyBookingsPage() {
           )}
           {!loading && error && (
             <div className="my-bookings-state my-bookings-state--error" role="alert">
-              <strong>Не удалось загрузить бронирования</strong>
+              <strong>{t('buyerBookings_loadFailed')}</strong>
               <span>{error}</span>
               <button type="button" className="my-bookings-state__retry" onClick={() => loadBookings(false)}>
-                Попробовать снова
+                {t('buyerBookings_retry')}
               </button>
             </div>
           )}
@@ -367,14 +367,14 @@ export default function MyBookingsPage() {
               <p className="my-bookings-empty__title">{t('buyerBookings_emptyTitle')}</p>
               <p className="my-bookings-empty__text">{t('buyerBookings_emptyText')}</p>
               <button type="button" className="my-bookings-empty__action" onClick={() => navigate('/test-drive')}>
-                Выбрать объект для тест-драйва <FiArrowRight aria-hidden />
+                {t('buyerBookings_pickTestDrive')} <FiArrowRight aria-hidden />
               </button>
             </div>
           )}
           {!loading && !error && visibleBookings.length > 0 && filteredBookings.length === 0 ? (
             <div className="my-bookings-empty my-bookings-empty--filter">
-              <p className="my-bookings-empty__title">В этом разделе пока пусто</p>
-              <p className="my-bookings-empty__text">Переключите фильтр, чтобы увидеть остальные бронирования.</p>
+              <p className="my-bookings-empty__title">{t('buyerBookings_filterEmptyTitle')}</p>
+              <p className="my-bookings-empty__text">{t('buyerBookings_filterEmptyText')}</p>
             </div>
           ) : null}
           {!loading && !error && filteredBookings.length > 0 && (
@@ -489,12 +489,12 @@ export default function MyBookingsPage() {
                       ) : null}
                       <p className="my-bookings-card__hint">{t('buyerBookings_hint')}</p>
                       <div className="my-bookings-card__next-copy">
-                        <span>Следующий шаг</span>
-                        <p>{bookingNextStep(statusKey)}</p>
+                        <span>{t('buyerBookings_nextStepLabel')}</span>
+                        <p>{bookingNextStep(statusKey, t)}</p>
                       </div>
                       {b.owner_comment ? (
                         <div className="my-bookings-card__hint" style={{ marginTop: 8 }}>
-                          <strong>Комментарий владельца:</strong> {b.owner_comment}
+                          <strong>{t('buyerBookings_ownerCommentLabel')}</strong> {b.owner_comment}
                         </div>
                       ) : null}
                       <div className="my-bookings-card__footer">
@@ -503,7 +503,7 @@ export default function MyBookingsPage() {
                           className="my-bookings-card__next"
                           onClick={() => setSelectedBooking(b)}
                         >
-                          Что дальше <FiArrowRight size={18} aria-hidden />
+                          {t('buyerBookings_whatsNextCta')} <FiArrowRight size={18} aria-hidden />
                         </button>
                         {showSurveyCta ? (
                           <button

@@ -4,7 +4,7 @@ import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiMapPin, FiX, FiMap, FiSearch } from 'react-icons/fi'
+import { FiMapPin, FiX, FiMap, FiSearch, FiMinimize2 } from 'react-icons/fi'
 import { MapPinned } from 'lucide-react'
 import PageBackButton from '../components/PageBackButton'
 import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
@@ -152,11 +152,11 @@ function createMapPinThumbImg() {
   return img
 }
 
-function buildMapPinClusterElement(item, onActivate) {
+function buildMapPinClusterElement(item, onActivate, clusterTitle) {
   const el = document.createElement('div')
   el.className = 'map-pin-thumb-stack map-pin-thumb-stack--enter'
   el.setAttribute('role', 'button')
-  el.title = `${item.count} объектов`
+  el.title = clusterTitle || `${item.count}`
 
   const properties = item.properties || []
   const preview = properties.slice(0, Math.min(3, properties.length))
@@ -192,6 +192,7 @@ function buildMapPinPointElement({
   compact,
   priceStr,
   onActivate,
+  showOnMapLabel,
 }) {
   const el = document.createElement('div')
   el.className = [
@@ -203,7 +204,7 @@ function buildMapPinPointElement({
     .filter(Boolean)
     .join(' ')
   el.setAttribute('role', 'button')
-  el.title = property.title || 'Показать на карте'
+  el.title = property.title || showOnMapLabel || ''
 
   const inner = document.createElement('div')
   inner.className = 'map-pin-mini__inner'
@@ -600,17 +601,21 @@ const MapPage = () => {
         bounds.extend(lngLat)
 
         if (item.type === 'cluster') {
-          const el = buildMapPinClusterElement(item, () => {
-            const targetZoom = Math.min(
-              Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
-              SATELLITE_MAP_MAX_ZOOM,
-            )
-            map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
-            if (item.count === 1 && item.properties?.[0]) {
-              setSelectedProperty(item.properties[0])
-              if (isMobile) setResultsSheetState('half')
-            }
-          })
+          const el = buildMapPinClusterElement(
+            item,
+            () => {
+              const targetZoom = Math.min(
+                Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
+                SATELLITE_MAP_MAX_ZOOM,
+              )
+              map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
+              if (item.count === 1 && item.properties?.[0]) {
+                setSelectedProperty(item.properties[0])
+                if (isMobile) setResultsSheetState('half')
+              }
+            },
+            t('mapPage_clusterCountTitle', { count: item.count }),
+          )
 
           scheduleMapPinMiniReveal(el, miniCardIndex)
           miniCardIndex += 1
@@ -648,6 +653,7 @@ const MapPage = () => {
           compact: compactPins,
           priceStr,
           onActivate: focusProperty,
+          showOnMapLabel: t('mapPage_showOnMap'),
         })
 
         scheduleMapPinMiniReveal(el, miniCardIndex)
@@ -671,7 +677,7 @@ const MapPage = () => {
         })
       }
     },
-    [sortedProperties, selectedProperty, mapReady, isMobile],
+    [sortedProperties, selectedProperty, mapReady, isMobile, t],
   )
 
   useEffect(() => {
@@ -692,7 +698,6 @@ const MapPage = () => {
 
   // ─── Ресайз при раскрытии карты ─────────────────────────────────────────
   useEffect(() => {
-    if (!mapExpanded) return
     const t1 = setTimeout(() => mapInstanceRef.current?.resize(), 50)
     const t2 = setTimeout(() => mapInstanceRef.current?.resize(), 300)
     const t3 = setTimeout(() => mapInstanceRef.current?.resize(), 600)
@@ -701,6 +706,15 @@ const MapPage = () => {
       clearTimeout(t2)
       clearTimeout(t3)
     }
+  }, [mapExpanded])
+
+  useEffect(() => {
+    if (!mapExpanded) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMapExpanded(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [mapExpanded])
 
   useEffect(() => {
@@ -763,7 +777,7 @@ const MapPage = () => {
   const focusOnProperty = useCallback((property) => {
     const coords = getPropertyCoordinates(property)
     if (!coords) {
-      showNotification('У объекта пока нет координат для отображения на карте')
+      showNotification(t('mapPage_noCoordsNotify'))
       return
     }
     // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
@@ -781,7 +795,7 @@ const MapPage = () => {
         wrap.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
       })
     }
-  }, [isMobile, mapExpanded])
+  }, [isMobile, mapExpanded, t])
 
   // ─── Рендер ──────────────────────────────────────────────────────────────
   return (
@@ -801,15 +815,15 @@ const MapPage = () => {
               aria-expanded={resultsSheetState === 'expanded'}
               aria-label={
                 resultsSheetState === 'expanded'
-                  ? 'Свернуть список объектов'
-                  : 'Развернуть список объектов'
+                  ? t('mapPage_collapseListAria')
+                  : t('mapPage_expandListAria')
               }
             >
               <span aria-hidden />
               <strong>
                 {loading
-                  ? 'Ищем объекты'
-                  : `${sortedProperties.length} ${t('mapFiltersObjects', { defaultValue: 'объектов' })}`}
+                  ? t('mapPage_searching')
+                  : `${sortedProperties.length} ${t('mapFiltersObjects')}`}
               </strong>
             </button>
             <div className={`map-list-search-bar${filtersMenuOpen ? ' is-filters-open' : ''}`}>
@@ -822,7 +836,7 @@ const MapPage = () => {
                     className="map-page-search-box__input"
                     inputMode="search"
                     enterKeyHint="search"
-                    placeholder={t('mapSearchPlaceholder', { defaultValue: 'Название или адрес' })}
+                    placeholder={t('mapSearchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => isMobile && setResultsSheetState('expanded')}
@@ -845,7 +859,7 @@ const MapPage = () => {
                   className={`map-list-filters-burger${filtersMenuOpen ? ' is-open' : ''}${activeFilterCount > 0 ? ' has-active' : ''}`}
                   aria-expanded={filtersMenuOpen}
                   aria-controls="map-page-filters-panel"
-                  aria-label={t('mapFiltersMenuAriaLabel', { defaultValue: 'Фильтры' })}
+                  aria-label={t('mapFiltersMenuAriaLabel')}
                   onClick={() => {
                     if (isMobile) {
                       setFiltersMenuOpen(true)
@@ -884,7 +898,7 @@ const MapPage = () => {
                 </span>
               ) : (
                 <>
-                  <strong>{sortedProperties.length}</strong> {t('mapFiltersObjects', { defaultValue: 'объектов' })}
+                  <strong>{sortedProperties.length}</strong> {t('mapFiltersObjects')}
                 </>
               )}
             </p>
@@ -896,21 +910,23 @@ const MapPage = () => {
                 <BuyerEmptyState
                   className="map-list-empty"
                   icon={MapPinned}
-                  eyebrow="Карта остаётся полезной"
-                  title={mapFilters.likedOnly ? 'Избранное ещё не отмечено' : 'На карте пока пусто'}
+                  eyebrow={t('mapPage_emptyEyebrow')}
+                  title={mapFilters.likedOnly ? t('mapPage_emptyTitleLiked') : t('mapPage_emptyTitle')}
                   description={
                     searchNormalized
-                      ? 'По этому запросу точек нет. Сбросим поиск и покажем все доступные объекты.'
+                      ? t('mapPage_emptyDescSearch')
                       : mapFilters.likedOnly
-                        ? 'Добавьте сердечком интересные объекты — они появятся здесь для быстрого сравнения районов.'
-                        : 'Снимем фильтры и покажем весь доступный каталог с координатами.'
+                        ? t('mapPage_emptyDescLiked')
+                        : t('mapPage_emptyDescFilters')
                   }
-                  primaryLabel={mapFilters.likedOnly ? 'Показать все объекты' : 'Сбросить параметры'}
+                  primaryLabel={
+                    mapFilters.likedOnly ? t('mapPage_emptyPrimaryLiked') : t('mapPage_emptyPrimaryReset')
+                  }
                   onPrimary={() => {
                     setMapFilters(EMPTY_MAP_FILTERS)
                     setSearchQuery('')
                   }}
-                  secondaryLabel="Открыть каталог"
+                  secondaryLabel={t('mapPage_emptySecondaryCatalog')}
                   onSecondary={() => navigate('/auction')}
                 />
               ) : (
@@ -947,16 +963,20 @@ const MapPage = () => {
                 />
               </div>
             )}
-            {!mapExpanded && (
-              <button
-                type="button"
-                className="map-expand-btn"
-                onClick={() => setMapExpanded(true)}
-                aria-label={t('mapExpandBtnAriaLabel', { defaultValue: 'Развернуть карту' })}
-              >
-                <HiOutlineArrowsExpand size={18} aria-hidden />
-              </button>
-            )}
+            <button
+              type="button"
+              className={`map-expand-btn${mapExpanded ? ' map-expand-btn--collapse' : ''}`}
+              onClick={() => setMapExpanded((expanded) => !expanded)}
+              aria-label={mapExpanded
+                ? t('mapCollapseBtnAriaLabel')
+                : t('mapExpandBtnAriaLabel')}
+              title={mapExpanded ? t('mapPage_collapseTitle') : t('mapPage_expandTitle')}
+              aria-pressed={mapExpanded}
+            >
+              {mapExpanded
+                ? <FiMinimize2 size={18} aria-hidden />
+                : <HiOutlineArrowsExpand size={18} aria-hidden />}
+            </button>
             {mapOpenHintProperty && (
               <div
                 className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
@@ -966,7 +986,7 @@ const MapPage = () => {
                   type="button"
                   className="map-open-hint__dismiss"
                   onClick={() => setMapOpenHintProperty(null)}
-                  aria-label="Скрыть подсказку"
+                  aria-label={t('mapPage_dismissHintAria')}
                 >
                   <FiX size={18} />
                 </button>
@@ -987,7 +1007,7 @@ const MapPage = () => {
                   />
                 </div>
                 <div className="map-open-hint__main">
-                  <p className="map-open-hint__label">Объект на карте</p>
+                  <p className="map-open-hint__label">{t('mapPage_hintLabel')}</p>
                   <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
                   <p className="map-open-hint__price">
                     {formatPrice(
@@ -1006,16 +1026,9 @@ const MapPage = () => {
                     }), { state: { property: mapOpenHintProperty } })
                   }}
                 >
-                  Открыть объект
+                  {t('mapPage_openProperty')}
                 </button>
               </div>
-            )}
-            {mapExpanded && (
-              <PageBackButton
-                className="page-back-button--icon-only map-page-map-toolbar__back map-page-map-toolbar__back--fullscreen"
-                onClick={() => setMapExpanded(false)}
-                iconSize={20}
-              />
             )}
           </div>
         </div>
@@ -1037,7 +1050,7 @@ const MapPage = () => {
                   className="map-filters-sheet__reset"
                   onClick={() => setMapFilters({ ...EMPTY_MAP_FILTERS })}
                 >
-                  Сбросить
+                  {t('mapFiltersReset')}
                 </button>
               ) : null}
               <button
@@ -1048,16 +1061,16 @@ const MapPage = () => {
                   setResultsSheetState('half')
                 }}
               >
-                Показать · {sortedProperties.length}
+                {t('mapPage_showCount', { count: sortedProperties.length })}
               </button>
             </div>
           )}
         >
           <div className="map-filters-sheet__head">
-            <p>Поиск на карте</p>
-            <h2 id="map-mobile-filters-title">Настройте подборку</h2>
+            <p>{t('mapSearch')}</p>
+            <h2 id="map-mobile-filters-title">{t('mapPage_filtersSheetTitle')}</h2>
             <span id="map-mobile-filters-description">
-              Покажем только реальные объекты, которые подходят выбранным параметрам.
+              {t('mapPage_filtersSheetDesc')}
             </span>
           </div>
           <MapPageFilters
@@ -1079,10 +1092,10 @@ const MapPage = () => {
         ].filter(Boolean).join(' ')}
         onClick={scrollToMap}
         onAnimationEnd={handleMapFabAnimationEnd}
-        aria-label={t('mapFloatBtnAriaLabel', { defaultValue: 'Перейти к карте' })}
+        aria-label={t('mapFloatBtnAriaLabel')}
         aria-hidden={mapFabPhase === 'hidden'}
       >
-        <span className="map-float-map-btn__label">{t('mapFloatBtnLabel', { defaultValue: 'Карта' })}</span>
+        <span className="map-float-map-btn__label">{t('mapFloatBtnLabel')}</span>
         <FiMap size={18} aria-hidden />
       </button>
     </div>

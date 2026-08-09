@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  FiArrowRight,
   FiArrowUp,
   FiClock,
   FiDownload,
   FiExternalLink,
   FiFileText,
+  FiMessageCircle,
   FiRefreshCw,
+  FiShield,
+  FiTrendingUp,
   FiX,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, isAuthenticated } from '../services/authService'
@@ -19,10 +23,10 @@ import {
 import './PropertyAiExperience.css'
 
 const SCENARIOS = [
-  { id: 'risks', label: 'Плюсы и риски', question: 'Какие у этого объекта главные плюсы и риски?' },
-  { id: 'investment', label: 'Инвестиционный потенциал', question: 'Какой инвестиционный потенциал у этого объекта?' },
-  { id: 'details', label: 'Подробный разбор', question: 'Сделай подробный разбор этого объекта.' },
-  { id: 'custom', label: 'Свой вопрос', question: '' },
+  { id: 'risks', label: 'Плюсы и риски', question: 'Какие у этого объекта главные плюсы и риски?', Icon: FiShield },
+  { id: 'investment', label: 'Инвестиционный потенциал', question: 'Какой инвестиционный потенциал у этого объекта?', Icon: FiTrendingUp },
+  { id: 'details', label: 'Подробный разбор', question: 'Сделай подробный разбор этого объекта.', Icon: FiFileText },
+  { id: 'custom', label: 'Свой вопрос', question: '', Icon: FiMessageCircle },
 ]
 
 const STATUS_COPY = {
@@ -30,6 +34,10 @@ const STATUS_COPY = {
   analyzing: ['Анализируем объект', 'Gemini изучает характеристики и фотографии'],
   rendering: ['Оформляем презентацию', 'Создаём страницы и собираем PDF'],
 }
+
+const LAUNCHER_HOLD_MS = 1100
+const LAUNCHER_MORPH_MS = 2800
+const LAUNCHER_MORPH_EASE = 'cubic-bezier(0.45, 0.05, 0.25, 1)'
 
 function propertyImages(property) {
   const source = property?.images || property?.photos || []
@@ -80,6 +88,10 @@ export default function PropertyAiExperience({
   const [pdfBusy, setPdfBusy] = useState(false)
   const [revealedLineCount, setRevealedLineCount] = useState(0)
   const pollAbortRef = useRef(null)
+  const launcherRef = useRef(null)
+  const sparkRef = useRef(null)
+  const labelRef = useRef(null)
+  const morphAnimsRef = useRef([])
   const propertyId = property?.id
   const propertyTable = property?.source_table || property?.property_table || property?.table || ''
   const images = useMemo(() => propertyImages(property).slice(0, 2), [property])
@@ -203,13 +215,244 @@ export default function PropertyAiExperience({
     }
   }
 
+  const clearLauncherInlineStyles = useCallback(() => {
+    const el = launcherRef.current
+    const spark = sparkRef.current
+    const label = labelRef.current
+    if (el) {
+      el.classList.remove('property-ai-launcher--morphing')
+      el.style.width = ''
+      el.style.transform = ''
+      el.style.padding = ''
+    }
+    if (spark) spark.style.transform = ''
+    if (label) {
+      label.style.maxWidth = ''
+      label.style.opacity = ''
+      label.style.width = ''
+    }
+  }, [])
+
+  const cancelLauncherMorph = useCallback(() => {
+    morphAnimsRef.current.forEach((animation) => {
+      try {
+        animation.cancel()
+      } catch {
+        /* ignore */
+      }
+    })
+    morphAnimsRef.current = []
+    clearLauncherInlineStyles()
+  }, [clearLauncherInlineStyles])
+
+  const runLauncherMorph = useCallback((anims) => {
+    morphAnimsRef.current = anims
+    Promise.all(anims.map((animation) => animation.finished.catch(() => {}))).then(() => {
+      if (!launcherRef.current) return
+      // Снимаем fill:forwards, иначе CSS-разворот по клику не применяется
+      anims.forEach((animation) => {
+        try {
+          animation.cancel()
+        } catch {
+          /* ignore */
+        }
+      })
+      morphAnimsRef.current = []
+      clearLauncherInlineStyles()
+    })
+  }, [clearLauncherInlineStyles])
+
+  const collapseLauncherWithMorph = useCallback(() => {
+    const el = launcherRef.current
+    const spark = sparkRef.current
+    const label = labelRef.current
+    if (!el) {
+      setLauncherExpanded(false)
+      return
+    }
+
+    cancelLauncherMorph()
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLauncherExpanded(false)
+      return
+    }
+
+    const firstBox = el.getBoundingClientRect()
+    const labelWidth = label ? Math.ceil(label.scrollWidth) : 0
+    const firstPadding = getComputedStyle(el).padding
+
+    // FLIP синхронно до paint: иначе один кадр со «скачком» влево
+    el.classList.add('property-ai-launcher--morphing')
+    el.classList.add('property-ai-launcher--collapsed')
+    const lastBox = el.getBoundingClientRect()
+    const lastWidth = lastBox.width
+
+    // Правый якорь + исходная ширина; звезда absolute слева — сама приедет в центр круга
+    el.style.width = `${firstBox.width}px`
+    el.style.padding = firstPadding
+    if (label) {
+      label.style.maxWidth = `${labelWidth}px`
+      label.style.opacity = '1'
+    }
+    if (spark) spark.style.transform = 'rotate(0deg)'
+
+    const invertedBox = el.getBoundingClientRect()
+    const dx = firstBox.left - invertedBox.left
+    el.style.transform = `translate3d(${dx}px, 0, 0)`
+    el.getBoundingClientRect()
+
+    setLauncherExpanded(false)
+
+    const anims = [
+      el.animate(
+        [
+          {
+            width: `${firstBox.width}px`,
+            transform: `translate3d(${dx}px, 0, 0)`,
+            padding: firstPadding,
+          },
+          {
+            width: `${lastWidth}px`,
+            transform: 'translate3d(0, 0, 0)',
+            padding: '0px',
+          },
+        ],
+        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+      ),
+    ]
+
+    if (label) {
+      anims.push(
+        label.animate(
+          [
+            { maxWidth: `${labelWidth}px`, opacity: 1 },
+            { maxWidth: '0px', opacity: 0 },
+          ],
+          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+        ),
+      )
+    }
+
+    if (spark) {
+      anims.push(
+        spark.animate(
+          [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }],
+          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+        ),
+      )
+    }
+
+    runLauncherMorph(anims)
+  }, [cancelLauncherMorph, runLauncherMorph])
+
+  const expandLauncherWithMorph = useCallback(() => {
+    const el = launcherRef.current
+    const spark = sparkRef.current
+    const label = labelRef.current
+    if (!el) {
+      setLauncherExpanded(true)
+      return
+    }
+
+    cancelLauncherMorph()
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLauncherExpanded(true)
+      return
+    }
+
+    const firstBox = el.getBoundingClientRect()
+
+    el.classList.add('property-ai-launcher--morphing')
+    el.classList.remove('property-ai-launcher--collapsed')
+    if (label) {
+      label.style.maxWidth = 'none'
+      label.style.width = 'auto'
+      label.style.opacity = '0'
+    }
+    el.style.width = ''
+    el.style.padding = ''
+    el.style.transform = ''
+
+    const lastBox = el.getBoundingClientRect()
+    const lastWidth = lastBox.width
+    const lastPadding = getComputedStyle(el).padding
+    const labelWidth = label ? Math.ceil(label.scrollWidth) : 0
+
+    el.style.transform = 'translate3d(0, 0, 0)'
+    const baseExpandedBox = el.getBoundingClientRect()
+    const endDx = lastBox.left - baseExpandedBox.left
+
+    el.style.width = `${firstBox.width}px`
+    el.style.padding = '0px'
+    el.style.transform = 'translate3d(0, 0, 0)'
+    if (label) {
+      label.style.maxWidth = '0px'
+      label.style.opacity = '0'
+    }
+    if (spark) spark.style.transform = 'rotate(0deg)'
+
+    const invertedBox = el.getBoundingClientRect()
+    const startDx = firstBox.left - invertedBox.left
+    el.style.transform = `translate3d(${startDx}px, 0, 0)`
+    el.getBoundingClientRect()
+
+    setLauncherExpanded(true)
+
+    const anims = [
+      el.animate(
+        [
+          {
+            width: `${firstBox.width}px`,
+            transform: `translate3d(${startDx}px, 0, 0)`,
+            padding: '0px',
+          },
+          {
+            width: `${lastWidth}px`,
+            transform: `translate3d(${endDx}px, 0, 0)`,
+            padding: lastPadding,
+          },
+        ],
+        { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+      ),
+    ]
+
+    if (label) {
+      anims.push(
+        label.animate(
+          [
+            { maxWidth: '0px', opacity: 0 },
+            { maxWidth: `${labelWidth}px`, opacity: 1 },
+          ],
+          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+        ),
+      )
+    }
+
+    if (spark) {
+      anims.push(
+        spark.animate(
+          [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-360deg)' }],
+          { duration: LAUNCHER_MORPH_MS, easing: LAUNCHER_MORPH_EASE, fill: 'forwards' },
+        ),
+      )
+    }
+
+    runLauncherMorph(anims)
+  }, [cancelLauncherMorph, runLauncherMorph])
+
   useEffect(() => () => pollAbortRef.current?.abort(), [])
   useEffect(() => {
+    cancelLauncherMorph()
     setLauncherExpanded(true)
     if (deferLauncherCollapse) return undefined
-    const timer = window.setTimeout(() => setLauncherExpanded(false), 1400)
-    return () => window.clearTimeout(timer)
-  }, [deferLauncherCollapse, propertyId])
+    const timer = window.setTimeout(() => collapseLauncherWithMorph(), LAUNCHER_HOLD_MS)
+    return () => {
+      window.clearTimeout(timer)
+      cancelLauncherMorph()
+    }
+  }, [cancelLauncherMorph, collapseLauncherWithMorph, deferLauncherCollapse, propertyId])
 
   useEffect(() => {
     if (view !== 'closed') document.body.classList.add('property-ai-is-open')
@@ -235,7 +478,7 @@ export default function PropertyAiExperience({
   const statusCopy = STATUS_COPY[job?.status]
   const handleLauncherClick = () => {
     if (!launcherExpanded) {
-      setLauncherExpanded(true)
+      expandLauncherWithMorph()
       return
     }
     setView('picker')
@@ -244,13 +487,14 @@ export default function PropertyAiExperience({
   return (
     <section className={`property-ai-experience${desktop ? ' property-ai-experience--desktop' : ''}`}>
       <button
+        ref={launcherRef}
         type="button"
         className={`property-ai-launcher${launcherExpanded ? '' : ' property-ai-launcher--collapsed'}`}
         onClick={handleLauncherClick}
         aria-label={launcherExpanded ? 'Открыть Недвижимость AI' : 'Развернуть Недвижимость AI'}
       >
-        <span className="property-ai-spark" aria-hidden>✦</span>
-        <span className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
+        <span ref={sparkRef} className="property-ai-spark" aria-hidden>✦</span>
+        <span ref={labelRef} className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
       </button>
 
       {view === 'picker' && (
@@ -263,7 +507,25 @@ export default function PropertyAiExperience({
             </div>
             <h2 id="property-ai-picker-title">РАССКАЖУ ПРО ЭТОТ<br />ОБЪЕКТ</h2>
             <div className="property-ai-picker__actions">
-              {SCENARIOS.map((scenario) => <button key={scenario.id} type="button" onClick={() => selectScenario(scenario)}>{scenario.label}</button>)}
+              {SCENARIOS.map((scenario) => {
+                const Icon = scenario.Icon
+                return (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    className="btn-tiffany-shine"
+                    onClick={() => selectScenario(scenario)}
+                  >
+                    <span className="property-ai-picker__action-icon" aria-hidden>
+                      <Icon size={18} strokeWidth={2.4} />
+                    </span>
+                    <span className="property-ai-picker__action-label">{scenario.label}</span>
+                    <span className="property-ai-picker__action-arrow" aria-hidden>
+                      <FiArrowRight size={18} strokeWidth={2.4} />
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

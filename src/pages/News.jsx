@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   FiArrowUpRight,
@@ -15,108 +16,110 @@ import { fetchPublishedArticles } from '@/services/newsApi'
 import { scrollMainElementIntoView, scrollMainTo } from '@/utils/mainScroll'
 import './News.css'
 
-const STATIC_HERO_SLIDES = [
-  {
-    id: 'turkey-resorts',
-    slug: null,
-    image: '/news/hero-turkey.png',
-    badge: 'Идеи для поездок',
-    title: '8 небанальных курортов Турции без «всё включено»',
-    date: '5 апр 2026',
-    views: 994,
-    comments: 4,
-    likes: 24,
-  },
-]
+function getStaticHeroSlides(t) {
+  return [
+    {
+      id: 'turkey-resorts',
+      slug: null,
+      image: '/news/hero-turkey.png',
+      badge: t('newsPage_static_heroBadge'),
+      title: t('newsPage_static_heroTitle'),
+      date: t('newsPage_static_heroDate'),
+      views: 994,
+      comments: 4,
+      likes: 24,
+    },
+  ]
+}
 
-const STATIC_PORA_ARTICLES = [
-  {
-    id: 'crimea-top',
-    slug: null,
-    size: 'large',
-    image:
-      '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
-    badge: '🌊 К морю!',
-    title: 'Топ-10 курортных городов и посёлков южного берега Крыма',
-    excerpt:
-      'Южный берег Крыма — это не только Ялта и Алушта. Рассказываем о посёлках и городах, куда стоит поехать за морем, природой и спокойным отдыхом.',
-    date: '25 мар 2026',
-    views: 960,
-    comments: 2,
-    likes: 38,
-  },
-  {
-    id: 'kaliningrad-small',
-    slug: null,
-    size: 'large',
-    image:
-      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Малые города Калининградской области, в которые стоит заехать',
-    excerpt:
-      'Зеленоградск, Светлогорск, Балтийск и другие уютные точки региона — маршрут на выходные без толп и сюрпризов для глаз.',
-    date: '22 мар 2026',
-    views: 743,
-    comments: 3,
-    likes: 21,
-  },
-  {
-    id: 'architecture',
-    slug: null,
-    size: 'medium',
-    image:
-      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Города с необычной архитектурой: куда поехать в 2026',
-    excerpt: 'От модерна до авангарда — подборка городов, где прогулки превращаются в экскурсию.',
-    date: '15 мар 2026',
-    views: 654,
-    comments: 1,
-    likes: 17,
-  },
-  {
-    id: 'beach-aerial',
-    slug: null,
-    size: 'medium',
-    image:
-      '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
-    badge: '🌊 К морю!',
-    title: 'Пляжи России: 7 мест с чистой водой и инфраструктурой',
-    excerpt: 'Собрали побережья, куда удобно добраться из крупных городов и где комфортно отдыхать с детьми.',
-    date: '10 мар 2026',
-    views: 1204,
-    comments: 8,
-    likes: 56,
-  },
-  {
-    id: 'wine-route',
-    slug: null,
-    size: 'small',
-    image:
-      '/images/external/photo-1510812431401-41d2bd2722f3-b97a9ab704.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Винные маршруты Краснодарского края на выходные',
-    excerpt: 'Дегустации, винодельни и гастрономия — план поездки на 2–3 дня.',
-    date: '5 мар 2026',
-    views: 489,
-    comments: 0,
-    likes: 12,
-  },
-  {
-    id: 'kazan-nn',
-    slug: null,
-    size: 'small',
-    image:
-      '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
-    badge: 'Идеи для поездок',
-    title: 'Казань или Нижний Новгород — куда лучше поехать в 2026 году',
-    excerpt: 'Сравниваем атмосферу, достопримечательности и бюджет поездки на 3–4 дня.',
-    date: '20 апр 2026',
-    views: 871,
-    comments: 2,
-    likes: 11,
-  },
-]
+function getStaticPoraArticles(t) {
+  return [
+    {
+      id: 'crimea-top',
+      slug: null,
+      size: 'large',
+      image:
+        '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
+      badge: t('newsPage_static_crimeaBadge'),
+      title: t('newsPage_static_crimeaTitle'),
+      excerpt: t('newsPage_static_crimeaExcerpt'),
+      date: t('newsPage_static_crimeaDate'),
+      views: 960,
+      comments: 2,
+      likes: 38,
+    },
+    {
+      id: 'kaliningrad-small',
+      slug: null,
+      size: 'large',
+      image:
+        '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
+      badge: t('newsPage_static_kaliningradBadge'),
+      title: t('newsPage_static_kaliningradTitle'),
+      excerpt: t('newsPage_static_kaliningradExcerpt'),
+      date: t('newsPage_static_kaliningradDate'),
+      views: 743,
+      comments: 3,
+      likes: 21,
+    },
+    {
+      id: 'architecture',
+      slug: null,
+      size: 'medium',
+      image:
+        '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
+      badge: t('newsPage_static_architectureBadge'),
+      title: t('newsPage_static_architectureTitle'),
+      excerpt: t('newsPage_static_architectureExcerpt'),
+      date: t('newsPage_static_architectureDate'),
+      views: 654,
+      comments: 1,
+      likes: 17,
+    },
+    {
+      id: 'beach-aerial',
+      slug: null,
+      size: 'medium',
+      image:
+        '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
+      badge: t('newsPage_static_beachBadge'),
+      title: t('newsPage_static_beachTitle'),
+      excerpt: t('newsPage_static_beachExcerpt'),
+      date: t('newsPage_static_beachDate'),
+      views: 1204,
+      comments: 8,
+      likes: 56,
+    },
+    {
+      id: 'wine-route',
+      slug: null,
+      size: 'small',
+      image:
+        '/images/external/photo-1510812431401-41d2bd2722f3-b97a9ab704.jpg',
+      badge: t('newsPage_static_wineBadge'),
+      title: t('newsPage_static_wineTitle'),
+      excerpt: t('newsPage_static_wineExcerpt'),
+      date: t('newsPage_static_wineDate'),
+      views: 489,
+      comments: 0,
+      likes: 12,
+    },
+    {
+      id: 'kazan-nn',
+      slug: null,
+      size: 'small',
+      image:
+        '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
+      badge: t('newsPage_static_kazanBadge'),
+      title: t('newsPage_static_kazanTitle'),
+      excerpt: t('newsPage_static_kazanExcerpt'),
+      date: t('newsPage_static_kazanDate'),
+      views: 871,
+      comments: 2,
+      likes: 11,
+    },
+  ]
+}
 
 const TELEGRAM_HREF =
   (import.meta.env?.VITE_MANAGER_TELEGRAM_URL || '').trim() || 'https://t.me/'
@@ -213,6 +216,7 @@ function buildNewsGridRows(articles) {
 }
 
 function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
+  const { t } = useTranslation()
   if (!slides.length) return null
 
   const safeIndex =
@@ -225,7 +229,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
   }
 
   return (
-    <section className="news-hero" aria-label="Главная новость">
+    <section className="news-hero" aria-label={t('newsPage_heroAria')}>
       <div className="news-hero__frame">
         <div
           className="news-hero__track"
@@ -249,7 +253,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
                 e.stopPropagation()
                 onPrev()
               }}
-              aria-label="Предыдущая новость"
+              aria-label={t('newsPage_heroPrev')}
             >
               <FiChevronLeft size={28} />
             </button>
@@ -260,7 +264,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
                 e.stopPropagation()
                 onNext()
               }}
-              aria-label="Следующая новость"
+              aria-label={t('newsPage_heroNext')}
             >
               <FiChevronRight size={28} />
             </button>
@@ -274,7 +278,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
             onClick={() => openSlide(slide)}
             disabled={!slide.slug}
           >
-            <span className="news-hero__kicker">Главный материал</span>
+            <span className="news-hero__kicker">{t('newsPage_heroKicker')}</span>
             {slide.badge ? <span className="news-hero__badge">{slide.badge}</span> : null}
             <h2 className="news-hero__title">{slide.title}</h2>
             <div className="news-hero__footer">
@@ -285,7 +289,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
               />
               {slide.slug ? (
                 <span className="news-hero__read">
-                  Читать <FiArrowUpRight size={18} aria-hidden />
+                  {t('newsPage_heroRead')} <FiArrowUpRight size={18} aria-hidden />
                 </span>
               ) : null}
             </div>
@@ -293,14 +297,14 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
         </div>
 
         {canNavigate ? (
-          <div className="news-hero__dots" role="tablist" aria-label="Слайды">
+          <div className="news-hero__dots" role="tablist" aria-label={t('newsPage_heroSlidesAria')}>
             {slides.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
                 role="tab"
                 aria-selected={i === safeIndex}
-                aria-label={`Слайд ${i + 1}`}
+                aria-label={t('newsPage_heroSlideAria', { n: i + 1 })}
                 className={`news-hero__dot${i === safeIndex ? ' news-hero__dot--active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -316,6 +320,7 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
 }
 
 function NewsMobileHero({ articles, onExplore, onSubscribe }) {
+  const { t } = useTranslation()
   if (!articles.length) return null
 
   const lead = articles[0]
@@ -327,7 +332,7 @@ function NewsMobileHero({ articles, onExplore, onSubscribe }) {
       type="button"
       className={`news-mobile-feature__card news-mobile-feature__card--${position}`}
       onClick={onExplore}
-      aria-label={`Показать новости. ${label}: ${article.title}`}
+      aria-label={t('newsPage_mobileShowAria', { label, title: article.title })}
     >
       <span className="news-mobile-feature__image">
         <img
@@ -338,7 +343,9 @@ function NewsMobileHero({ articles, onExplore, onSubscribe }) {
       </span>
       <span className="news-mobile-feature__card-copy">
         <span className="news-mobile-feature__badge">
-          {position === 'center' ? 'Главное' : article.badge || 'Новости'}
+          {position === 'center'
+            ? t('newsPage_mobileBadgeMain')
+            : article.badge || t('newsPage_mobileBadgeFallback')}
         </span>
         <strong>{article.title}</strong>
         <span className="news-mobile-feature__date">{article.date}</span>
@@ -350,25 +357,23 @@ function NewsMobileHero({ articles, onExplore, onSubscribe }) {
     <section className="news-mobile-feature" aria-labelledby="news-mobile-title">
       <div className="news-mobile-feature__veil" aria-hidden />
       <div className="news-mobile-feature__content">
-        <p className="news-mobile-feature__eyebrow">SellYourBrick Journal</p>
-        <h1 id="news-mobile-title">Новости, которые помогают видеть рынок яснее</h1>
+        <p className="news-mobile-feature__eyebrow">{t('newsPage_mobileEyebrow')}</p>
+        <h1 id="news-mobile-title">{t('newsPage_mobileTitle')}</h1>
 
-        <div className="news-mobile-feature__cards" aria-label="Главные материалы">
-          {renderCard(left, 'left', 'Материал редакции')}
-          {renderCard(lead, 'center', 'Главный материал')}
-          {renderCard(right, 'right', 'Материал редакции')}
+        <div className="news-mobile-feature__cards" aria-label={t('newsPage_mobileCardsAria')}>
+          {renderCard(left, 'left', t('newsPage_mobileCardLabelEditor'))}
+          {renderCard(lead, 'center', t('newsPage_mobileCardLabelFeatured'))}
+          {renderCard(right, 'right', t('newsPage_mobileCardLabelEditor'))}
         </div>
 
-        <p className="news-mobile-feature__lead">
-          Рынок, города и инвестиции — коротко и по делу.
-        </p>
+        <p className="news-mobile-feature__lead">{t('newsPage_mobileLead')}</p>
         <button
           type="button"
           className="news-mobile-feature__subscribe"
           onClick={onSubscribe}
         >
           <FiBell size={17} aria-hidden />
-          Подписаться на новости
+          {t('newsPage_mobileSubscribe')}
         </button>
       </div>
     </section>
@@ -376,11 +381,12 @@ function NewsMobileHero({ articles, onExplore, onSubscribe }) {
 }
 
 function NewsSocialBanner() {
+  const { t } = useTranslation()
   return (
-    <section className="news-social" aria-label="SellYourBrick в соцсетях">
+    <section className="news-social" aria-label={t('newsPage_socialAria')}>
       <div className="news-social__inner">
         <div className="news-social__copy">
-          <p className="news-social__eyebrow">Следите за нами</p>
+          <p className="news-social__eyebrow">{t('newsPage_socialEyebrow')}</p>
           <h2 className="news-social__brand" aria-label="SellYourBrick">
             <span className="news-social__brand-word">Sell</span>
             <span className="news-social__brand-word news-social__brand-word--accent">
@@ -388,10 +394,7 @@ function NewsSocialBanner() {
             </span>
             <span className="news-social__brand-word">Brick</span>
           </h2>
-          <p className="news-social__tagline">
-            Новости рынка, закрытые подборки и советы экспертов — в наших
-            мессенджерах и соцсетях.
-          </p>
+          <p className="news-social__tagline">{t('newsPage_socialTagline')}</p>
         </div>
         <ul className="news-social__links">
           {SOCIAL_LINKS.map((item) => {
@@ -419,10 +422,20 @@ function NewsSocialBanner() {
 }
 
 const News = () => {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [heroIndex, setHeroIndex] = useState(0)
   const [published, setPublished] = useState([])
   const [subscriptionOpen, setSubscriptionOpen] = useState(false)
+
+  const staticPoraArticles = useMemo(
+    () => getStaticPoraArticles(t),
+    [t, i18n.language],
+  )
+  const staticHeroSlides = useMemo(
+    () => getStaticHeroSlides(t),
+    [t, i18n.language],
+  )
 
   useEffect(() => {
     scrollMainTo(0, 0)
@@ -449,8 +462,8 @@ const News = () => {
     if (published.length) {
       return dedupeArticlesById(published).map(mapArticle)
     }
-    return STATIC_PORA_ARTICLES
-  }, [published])
+    return staticPoraArticles
+  }, [published, staticPoraArticles])
 
   const heroSlides = useMemo(() => {
     const fromPublished = dedupeArticlesById(published)
@@ -458,8 +471,8 @@ const News = () => {
       .slice(0, 5)
       .map(publishedToHeroSlide)
     if (fromPublished.length) return fromPublished
-    return STATIC_HERO_SLIDES
-  }, [published])
+    return staticHeroSlides
+  }, [published, staticHeroSlides])
 
   const { duoRow1, duoRow2, trioRow1, trioRow2 } = useMemo(
     () => buildNewsGridRows(gridArticles),
@@ -469,8 +482,8 @@ const News = () => {
   const heroCount = heroSlides.length
 
   const mobileArticles = useMemo(
-    () => dedupeArticlesById([...heroSlides, ...gridArticles, ...STATIC_PORA_ARTICLES]),
-    [heroSlides, gridArticles],
+    () => dedupeArticlesById([...heroSlides, ...gridArticles, ...staticPoraArticles]),
+    [heroSlides, gridArticles, staticPoraArticles],
   )
   const mobileFeaturedArticles = mobileArticles.slice(0, 3)
   const mobileFeedArticles = gridArticles
@@ -518,23 +531,21 @@ const News = () => {
           <header className="news-masthead">
             <div className="news-masthead__copy">
               <p className="news-masthead__eyebrow">
-                <span aria-hidden /> SellYourBrick Journal
+                <span aria-hidden /> {t('newsPage_mastheadEyebrow')}
               </p>
-              <h1 className="news-masthead__title">Новости</h1>
-              <p className="news-masthead__lead">
-                Недвижимость, инвестиции и города — спокойно, ясно и по делу.
-              </p>
+              <h1 className="news-masthead__title">{t('newsPage_mastheadTitle')}</h1>
+              <p className="news-masthead__lead">{t('newsPage_mastheadLead')}</p>
             </div>
-            <div className="news-masthead__edition" aria-label="Выпуск 1, 2026 год">
-              <span className="news-masthead__edition-label">Выпуск</span>
+            <div className="news-masthead__edition" aria-label={t('newsPage_editionAria')}>
+              <span className="news-masthead__edition-label">{t('newsPage_editionLabel')}</span>
               <strong>01</strong>
               <span>2026</span>
             </div>
-            <ul className="news-masthead__topics" aria-label="Темы журнала">
-              <li>Рынок</li>
-              <li>Инвестиции</li>
-              <li>Города</li>
-              <li>Стиль жизни</li>
+            <ul className="news-masthead__topics" aria-label={t('newsPage_topicsAria')}>
+              <li>{t('newsPage_topicMarket')}</li>
+              <li>{t('newsPage_topicInvest')}</li>
+              <li>{t('newsPage_topicCities')}</li>
+              <li>{t('newsPage_topicLifestyle')}</li>
             </ul>
           </header>
 
@@ -547,11 +558,11 @@ const News = () => {
             onOpen={handleArticleOpen}
           />
 
-          <section className="news-section" aria-label="Статьи">
+          <section className="news-section" aria-label={t('newsPage_sectionAria')}>
             <div className="news-section__heading">
               <div>
-                <p className="news-section__eyebrow">Редакционная подборка</p>
-                <h2>Свежие материалы</h2>
+                <p className="news-section__eyebrow">{t('newsPage_sectionEyebrow')}</p>
+                <h2>{t('newsPage_sectionTitle')}</h2>
               </div>
               <span className="news-section__count">
                 {String(gridArticles.length).padStart(2, '0')}
@@ -604,7 +615,7 @@ const News = () => {
                     <span className="news-mobile-feed__brand-accent">Your</span>
                     <span>Brick</span>
                   </span>
-                  <span className="news-mobile-feed__title-line">Новости</span>
+                  <span className="news-mobile-feed__title-line">{t('newsPage_mobileFeedTitle')}</span>
                 </h2>
               </div>
               <div className="news-mobile-feed__list">

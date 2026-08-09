@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import CompareInvestorProDrawer from '../components/CompareInvestorProDrawer'
 import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalculatorAccess'
 import axios from 'axios'
@@ -57,30 +58,30 @@ function ComparePickCardSkeleton() {
   )
 }
 
-function formatTypeLabel(groupKey) {
-  if (!groupKey) return 'Объект'
+function formatTypeLabel(groupKey, t) {
+  if (!groupKey) return t('comparePage_typeObject')
   if (groupKey.startsWith('mock:')) {
     const sub = groupKey.slice(5)
     const m = {
-      recommended: 'Подборка',
-      nearby: 'Рядом',
-      kvaritra: 'Квартира (демо)',
-      apartment: 'Квартира (демо)',
-      villa: 'Вилла (демо)',
-      flat: 'Квартира (демо)',
-      townhouse: 'Таунхаус (демо)',
-      property: 'Объект',
+      recommended: t('comparePage_typeRecommended'),
+      nearby: t('comparePage_typeNearby'),
+      kvaritra: t('comparePage_typeApartmentDemo'),
+      apartment: t('comparePage_typeApartmentDemo'),
+      villa: t('comparePage_typeVillaDemo'),
+      flat: t('comparePage_typeApartmentDemo'),
+      townhouse: t('comparePage_typeTownhouseDemo'),
+      property: t('comparePage_typeObject'),
     }
     return m[sub] || sub
   }
-  if (groupKey === 'properties_apartments') return 'Квартира'
-  if (groupKey === 'properties_houses') return 'Дом'
-  if (groupKey === 'properties') return 'Объект'
+  if (groupKey === 'properties_apartments') return t('comparePage_typeApartment')
+  if (groupKey === 'properties_houses') return t('comparePage_typeHouse')
+  if (groupKey === 'properties') return t('comparePage_typeObject')
   return groupKey
 }
 
-function formatPrice(price, currency = 'USD') {
-  if (price == null || price === '') return '—'
+function formatPrice(price, currency = 'USD', dash = '—') {
+  if (price == null || price === '') return dash
   return formatPropertyPrice(price, currency, { compact: true })
 }
 
@@ -131,14 +132,14 @@ function houseFloorsCount(p) {
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
-function formatFloorInBuilding(p) {
+function formatFloorInBuilding(p, t) {
   const f = Number(p.floor ?? p.floor_number)
   const tf = Number(p.total_floors ?? p.totalFloors)
   const hasF = Number.isFinite(f) && f > 0
   const hasTf = Number.isFinite(tf) && tf > 0
-  if (hasF && hasTf) return `${f} из ${tf}`
+  if (hasF && hasTf) return t('comparePage_floorOf', { floor: f, total: tf })
   if (hasF) return String(f)
-  return '—'
+  return t('comparePage_dash')
 }
 
 function truthyAmenityFlag(v) {
@@ -195,27 +196,28 @@ function yearBuiltNum(p) {
   return Number.isFinite(n) && n >= 1700 && n <= 2200 ? n : null
 }
 
-const BUILDING_TYPE_RU = {
-  monolithic: 'Монолитный',
-  brick: 'Кирпичный',
-  panel: 'Панельный',
-  block: 'Блочный',
-  wood: 'Деревянный',
-  frame: 'Каркасный',
-  aerated_concrete: 'Газобетонный',
-  foam_concrete: 'Пенобетонный',
-  other: 'Другой',
+const BUILDING_TYPE_KEYS = {
+  monolithic: 'comparePage_building_monolithic',
+  brick: 'comparePage_building_brick',
+  panel: 'comparePage_building_panel',
+  block: 'comparePage_building_block',
+  wood: 'comparePage_building_wood',
+  frame: 'comparePage_building_frame',
+  aerated_concrete: 'comparePage_building_aerated_concrete',
+  foam_concrete: 'comparePage_building_foam_concrete',
+  other: 'comparePage_building_other',
 }
 
-function formatBuildingMaterial(p) {
+function formatBuildingMaterial(p, t) {
   const code = p.building_type || p.buildingType
-  if (!code) return '—'
+  if (!code) return t('comparePage_dash')
   const s = String(code)
-  return BUILDING_TYPE_RU[s] || s
+  const key = BUILDING_TYPE_KEYS[s]
+  return key ? t(key) : s
 }
 
 /** Полный снимок для запроса к ИИ */
-function serializePropertyForAi(p) {
+function serializePropertyForAi(p, t) {
   return {
     id: p.id,
     name: (p.name || p.title || '').slice(0, 200),
@@ -237,7 +239,7 @@ function serializePropertyForAi(p) {
     floors_in_house: p.floors ?? null,
     year_built: yearBuiltNum(p),
     building_type_code: p.building_type || p.buildingType || null,
-    building_type_label: formatBuildingMaterial(p) !== '—' ? formatBuildingMaterial(p) : null,
+    building_type_label: formatBuildingMaterial(p, t) !== t('comparePage_dash') ? formatBuildingMaterial(p, t) : null,
     comfort_flags_score: comfortScore(p),
     description: String(p.description || '').slice(0, 2000),
     source_table: p.source_table || null,
@@ -288,14 +290,14 @@ function mapAuctionCardToCalculatorSource(property) {
   }
 }
 
-async function estimateMarketPrice(initialSource) {
+async function estimateMarketPrice(initialSource, t) {
   const mapped = mapListingToCalculatorData(initialSource)
   const areaNum = parseInt(mapped.area, 10)
   if (!mapped.area || !Number.isFinite(areaNum) || areaNum < 1) {
-    throw new Error('Нужна площадь объекта для расчёта')
+    throw new Error(t('comparePage_errNeedArea'))
   }
   if (!String(mapped.city || '').trim()) {
-    throw new Error('Нужны город или населённый пункт в карточке')
+    throw new Error(t('comparePage_errNeedCity'))
   }
 
   let district = mapped.district || 'all'
@@ -341,7 +343,7 @@ async function estimateMarketPrice(initialSource) {
   )
 
   if (!response.data?.success) {
-    throw new Error(response.data?.error || 'Ошибка при расчёте')
+    throw new Error(response.data?.error || t('comparePage_errCalc'))
   }
   return response.data.data
 }
@@ -354,10 +356,10 @@ function sanitizeCalcAddress(value = '') {
   return text
 }
 
-function formatCalcEur(price) {
-  if (price == null || price === '') return '—'
+function formatCalcEur(price, dash = '—') {
+  if (price == null || price === '') return dash
   const n = Number(price)
-  if (!Number.isFinite(n)) return '—'
+  if (!Number.isFinite(n)) return dash
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'EUR',
@@ -366,7 +368,8 @@ function formatCalcEur(price) {
   }).format(n)
 }
 
-function buildRows(left, right) {
+function buildRows(left, right, t) {
+  const dash = t('comparePage_dash')
   const pL = resolvePositivePropertyPrice(left)
   const pR = resolvePositivePropertyPrice(right)
   const isAuc = shouldRenderAuctionRows(left, right)
@@ -377,9 +380,9 @@ function buildRows(left, right) {
 
   rows.push({
     id: 'price',
-    label: isAuc ? 'Текущая ставка / цена сделки' : 'Цена',
-    left: pL != null ? formatPrice(pL, left?.currency) : '—',
-    right: pR != null ? formatPrice(pR, right?.currency) : '—',
+    label: isAuc ? t('comparePage_rowPriceAuction') : t('comparePage_rowPrice'),
+    left: pL != null ? formatPrice(pL, left?.currency, dash) : dash,
+    right: pR != null ? formatPrice(pR, right?.currency, dash) : dash,
     winner: compareMetric(pL, pR, 'lower'),
     decisionSignal: true,
   })
@@ -387,9 +390,9 @@ function buildRows(left, right) {
   if (isAuc && (startL != null || startR != null)) {
     rows.push({
       id: 'auction_start',
-      label: 'Стартовая цена аукциона',
-      left: startL != null ? formatPrice(startL, left?.currency) : '—',
-      right: startR != null ? formatPrice(startR, right?.currency) : '—',
+      label: t('comparePage_rowAuctionStart'),
+      left: startL != null ? formatPrice(startL, left?.currency, dash) : dash,
+      right: startR != null ? formatPrice(startR, right?.currency, dash) : dash,
       winner: compareMetric(startL, startR, 'lower'),
       decisionSignal: true,
     })
@@ -403,18 +406,18 @@ function buildRows(left, right) {
   if (pR != null && aR != null && aR > 0) ppmR = pR / aR
   rows.push({
     id: 'ppm',
-    label: 'Цена за м² (по текущей цене)',
-    left: ppmL != null ? formatPrice(ppmL, left?.currency) : '—',
-    right: ppmR != null ? formatPrice(ppmR, right?.currency) : '—',
+    label: t('comparePage_rowPpm'),
+    left: ppmL != null ? formatPrice(ppmL, left?.currency, dash) : dash,
+    right: ppmR != null ? formatPrice(ppmR, right?.currency, dash) : dash,
     winner: compareMetric(ppmL, ppmR, 'lower'),
     decisionSignal: true,
   })
 
   rows.push({
     id: 'area',
-    label: 'Общая площадь',
-    left: aL != null ? `${aL} м²` : '—',
-    right: aR != null ? `${aR} м²` : '—',
+    label: t('comparePage_rowArea'),
+    left: aL != null ? t('comparePage_areaM2', { area: aL }) : dash,
+    right: aR != null ? t('comparePage_areaM2', { area: aR }) : dash,
     winner: compareMetric(aL, aR, 'higher'),
   })
 
@@ -423,9 +426,9 @@ function buildRows(left, right) {
   if (livL != null || livR != null) {
     rows.push({
       id: 'living_area',
-      label: 'Жилая площадь',
-      left: livL != null ? `${livL} м²` : '—',
-      right: livR != null ? `${livR} м²` : '—',
+      label: t('comparePage_rowLivingArea'),
+      left: livL != null ? t('comparePage_areaM2', { area: livL }) : dash,
+      right: livR != null ? t('comparePage_areaM2', { area: livR }) : dash,
       winner: compareMetric(livL, livR, 'higher'),
     })
   }
@@ -436,9 +439,9 @@ function buildRows(left, right) {
   if (bothHouse && (landL != null || landR != null)) {
     rows.push({
       id: 'land_area',
-      label: 'Площадь участка',
-      left: landL != null ? `${landL} м²` : '—',
-      right: landR != null ? `${landR} м²` : '—',
+      label: t('comparePage_rowLandArea'),
+      left: landL != null ? t('comparePage_areaM2', { area: landL }) : dash,
+      right: landR != null ? t('comparePage_areaM2', { area: landR }) : dash,
       winner: compareMetric(landL, landR, 'higher'),
     })
   }
@@ -447,9 +450,9 @@ function buildRows(left, right) {
   const bR = Number(right.beds || right.rooms || right.bedrooms || 0) || null
   rows.push({
     id: 'beds',
-    label: bothHouse ? 'Спальни / комнаты' : 'Комнаты',
-    left: bL != null && bL > 0 ? String(bL) : '—',
-    right: bR != null && bR > 0 ? String(bR) : '—',
+    label: bothHouse ? t('comparePage_rowBedsHouse') : t('comparePage_rowBeds'),
+    left: bL != null && bL > 0 ? String(bL) : dash,
+    right: bR != null && bR > 0 ? String(bR) : dash,
     winner: compareMetric(bL, bR, 'higher'),
   })
 
@@ -457,9 +460,9 @@ function buildRows(left, right) {
   const btR = Number(right.baths || right.bathrooms || 0) || null
   rows.push({
     id: 'baths',
-    label: 'Санузлы',
-    left: btL != null && btL > 0 ? String(btL) : '—',
-    right: btR != null && btR > 0 ? String(btR) : '—',
+    label: t('comparePage_rowBaths'),
+    left: btL != null && btL > 0 ? String(btL) : dash,
+    right: btR != null && btR > 0 ? String(btR) : dash,
     winner: compareMetric(btL, btR, 'higher'),
   })
 
@@ -467,9 +470,9 @@ function buildRows(left, right) {
   const yR = yearBuiltNum(right)
   rows.push({
     id: 'year',
-    label: 'Год постройки',
-    left: yL != null ? String(yL) : '—',
-    right: yR != null ? String(yR) : '—',
+    label: t('comparePage_rowYear'),
+    left: yL != null ? String(yL) : dash,
+    right: yR != null ? String(yR) : dash,
     winner: compareMetric(yL, yR, 'higher'),
   })
 
@@ -479,9 +482,9 @@ function buildRows(left, right) {
     if (hfL != null || hfR != null) {
       rows.push({
         id: 'house_floors',
-        label: 'Этажей в доме',
-        left: hfL != null ? String(hfL) : '—',
-        right: hfR != null ? String(hfR) : '—',
+        label: t('comparePage_rowHouseFloors'),
+        left: hfL != null ? String(hfL) : dash,
+        right: hfR != null ? String(hfR) : dash,
         winner: compareMetric(hfL, hfR, 'higher'),
       })
     }
@@ -491,9 +494,9 @@ function buildRows(left, right) {
   if (bothApt) {
     rows.push({
       id: 'floor',
-      label: 'Этаж (в доме)',
-      left: formatFloorInBuilding(left),
-      right: formatFloorInBuilding(right),
+      label: t('comparePage_rowFloor'),
+      left: formatFloorInBuilding(left, t),
+      right: formatFloorInBuilding(right, t),
       winner: null,
       displayOnly: true,
     })
@@ -506,17 +509,17 @@ function buildRows(left, right) {
   const comfortMax = bothHouse ? 8 : 7
   rows.push({
     id: 'comfort',
-    label: 'Удобства',
-    left: comfortKnownL ? `${cL} / ${comfortMax}` : 'Нет данных',
-    right: comfortKnownR ? `${cR} / ${comfortMax}` : 'Нет данных',
+    label: t('comparePage_rowComfort'),
+    left: comfortKnownL ? `${cL} / ${comfortMax}` : t('comparePage_noData'),
+    right: comfortKnownR ? `${cR} / ${comfortMax}` : t('comparePage_noData'),
     winner: comfortKnownL && comfortKnownR ? compareMetric(cL, cR, 'higher') : null,
   })
 
   rows.push({
     id: 'material',
-    label: 'Материал постройки',
-    left: formatBuildingMaterial(left),
-    right: formatBuildingMaterial(right),
+    label: t('comparePage_rowMaterial'),
+    left: formatBuildingMaterial(left, t),
+    right: formatBuildingMaterial(right, t),
     winner: null,
     displayOnly: true,
   })
@@ -603,6 +606,7 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
 }
 
 const Compare = () => {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const isMobile = useMobileLayout(767)
   const { favoritesLoading } = usePropertyFavorites()
@@ -646,7 +650,7 @@ const Compare = () => {
       }
       if (selectedKeys.length === 1) {
         if (g !== groupFilter) {
-          showNotification('Сравнивайте только объекты одного типа (например, квартиру с квартирой)')
+          showNotification(t('comparePage_sameTypeOnly'))
           return
         }
         if (item.key === selectedKeys[0]) return
@@ -655,7 +659,7 @@ const Compare = () => {
       }
       setSelectedKeys([item.key])
     },
-    [selectedKeys, groupFilter]
+    [selectedKeys, groupFilter, t]
   )
 
   const clearSelection = () => setSelectedKeys([])
@@ -695,8 +699,8 @@ const Compare = () => {
 
   const tableRows = useMemo(() => {
     if (!pair) return []
-    return buildRows(pair.left.property, pair.right.property)
-  }, [pair])
+    return buildRows(pair.left.property, pair.right.property, t)
+  }, [pair, t, i18n.language])
 
   const decisionSummary = useMemo(() => summarizeComparisonRows(tableRows), [tableRows])
 
@@ -718,19 +722,19 @@ const Compare = () => {
     setAiError(null)
     try {
       const result = await askPropertyCompareAssistant(
-        serializePropertyForAi(pair.left.property),
-        serializePropertyForAi(pair.right.property),
+        serializePropertyForAi(pair.left.property, t),
+        serializePropertyForAi(pair.right.property, t),
         { signal },
       )
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiResult(result)
     } catch (error) {
       if (aiRequestGuardRef.current.isCurrent(requestId) && error?.name !== 'AbortError') {
-        setAiError(error?.message || 'Не удалось получить AI-разбор')
+        setAiError(error?.message || t('comparePage_aiErrorFallback'))
       }
     } finally {
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
     }
-  }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved])
+  }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved, t])
 
   useEffect(() => {
     aiRequestGuardRef.current.cancel()
@@ -780,30 +784,32 @@ const Compare = () => {
     try {
       // По очереди: два параллельных calculate-price грузят два Puppeteer — сервер часто падает (502 / ECONNRESET).
       try {
-        const leftVal = await estimateMarketPrice(leftSrc)
+        const leftVal = await estimateMarketPrice(leftSrc, t)
         setCalcData((prev) => ({ ...prev, left: leftVal }))
       } catch (e) {
-        nextErr.left = e?.message || 'Не удалось рассчитать для первого объекта'
+        nextErr.left = e?.message || t('comparePage_errCalcLeft')
         setCalcError((prev) => ({ ...prev, left: nextErr.left }))
       }
 
       try {
-        const rightVal = await estimateMarketPrice(rightSrc)
+        const rightVal = await estimateMarketPrice(rightSrc, t)
         setCalcData((prev) => ({ ...prev, right: rightVal }))
       } catch (e) {
-        nextErr.right = e?.message || 'Не удалось рассчитать для второго объекта'
+        nextErr.right = e?.message || t('comparePage_errCalcRight')
         setCalcError((prev) => ({ ...prev, right: nextErr.right }))
       }
 
       if (nextErr.left && nextErr.right) {
         showNotification(nextErr.left, 'error')
       } else if (nextErr.left || nextErr.right) {
-        showNotification('Расчёт выполнен частично: проверьте подсказки под колонками', 'warning')
+        showNotification(t('comparePage_errCalcPartial'), 'warning')
       }
     } finally {
       setCalcLoading(false)
     }
-  }, [pair])
+  }, [pair, t])
+
+  const dash = t('comparePage_dash')
 
   return (
     <div className="compare-page">
@@ -819,13 +825,13 @@ const Compare = () => {
             />
           </div>
           <div className="compare-header__copy">
-            <h1 className="compare-title">Сравнение</h1>
+            <h1 className="compare-title">{t('comparePage_title')}</h1>
             <p className="compare-subtitle">
-              Выберите два объекта одного типа из «Понравилось» — сравним цену, площадь и ключевые параметры.
+              {t('comparePage_subtitle')}
             </p>
             <div className="compare-header-actions">
               <Link to="/favorites" className="compare-link-muted">
-                ← К списку «Понравилось»
+                {t('comparePage_backToFavorites')}
               </Link>
             </div>
           </div>
@@ -834,7 +840,7 @@ const Compare = () => {
         {listLoading ? (
           <section className="compare-pick-section" aria-busy="true">
             <div className="compare-pick-toolbar">
-              <h2 className="compare-pick-heading">Объекты из избранного</h2>
+              <h2 className="compare-pick-heading">{t('comparePage_fromFavorites')}</h2>
             </div>
             <div className="compare-hint compare-hint--skeleton" aria-hidden="true">
               <span className="compare-skel-line compare-skel-line--hint" />
@@ -857,13 +863,13 @@ const Compare = () => {
             </div>
             <div className="compare-empty__copy">
               <h2 id="compare-empty-title" className="compare-empty-title">
-                Нечего сравнивать
+                {t('comparePage_emptyTitle')}
               </h2>
               <p className="compare-empty-text">
-                Добавьте объекты в «Понравилось», затем вернитесь сюда — и выберите пару.
+                {t('comparePage_emptyText')}
               </p>
               <button type="button" className="compare-empty-button" onClick={() => navigate('/auction')}>
-                Перейти к аукционам
+                {t('comparePage_goToAuctions')}
                 <FiArrowRight size={16} aria-hidden />
               </button>
             </div>
@@ -873,27 +879,26 @@ const Compare = () => {
             <section className="compare-pick-section" aria-labelledby="compare-pick-heading">
               <div className="compare-pick-toolbar">
                 <h2 id="compare-pick-heading" className="compare-pick-heading">
-                  Объекты из избранного
+                  {t('comparePage_fromFavorites')}
                 </h2>
                 {groupFilter && (
-                  <span className="compare-type-pill">Тип: {formatTypeLabel(groupFilter)}</span>
+                  <span className="compare-type-pill">{t('comparePage_typePill', { type: formatTypeLabel(groupFilter, t) })}</span>
                 )}
                 {selectedKeys.length > 0 && (
                   <button type="button" className="compare-clear-btn" onClick={clearSelection}>
-                    Сбросить выбор
+                    {t('comparePage_clearSelection')}
                   </button>
                 )}
               </div>
               <p className="compare-hint">
-                {selectedKeys.length === 0 && 'Нажмите на карточку, чтобы выбрать первый объект.'}
-                {selectedKeys.length === 1 &&
-                  'Выберите второй объект того же типа. Остальные карточки недоступны.'}
-                {selectedKeys.length === 2 && 'Ниже — сравнение по ключевым параметрам. Любой объект можно заменить.'}
+                {selectedKeys.length === 0 && t('comparePage_hint0')}
+                {selectedKeys.length === 1 && t('comparePage_hint1')}
+                {selectedKeys.length === 2 && t('comparePage_hint2')}
               </p>
               {isMobile && pair ? (
                 <div className="compare-pick-locked">
-                  <span>Пара выбрана — сравнение уже готово ниже.</span>
-                  <button type="button" onClick={clearSelection}>Выбрать другую пару</button>
+                  <span>{t('comparePage_pairLocked')}</span>
+                  <button type="button" onClick={clearSelection}>{t('comparePage_pickOtherPair')}</button>
                 </div>
               ) : (
                 <ComparePickListingGrid
@@ -908,7 +913,7 @@ const Compare = () => {
             {pair && (
               <section className="compare-table-section" aria-labelledby="compare-table-heading">
                 <h2 id="compare-table-heading" className="compare-table-heading">
-                  Сравнение
+                  {t('comparePage_title')}
                 </h2>
                 {isMobile ? (
                   <>
@@ -930,7 +935,7 @@ const Compare = () => {
                     <thead>
                       <tr>
                         <th scope="col" className="compare-table-param">
-                          Параметр
+                          {t('comparePage_param')}
                         </th>
                         <th scope="col" className="compare-table-col">
                           <span className="compare-table-col-head">
@@ -962,7 +967,7 @@ const Compare = () => {
                           >
                             {row.left}
                             {!row.displayOnly && row.winner === 'left' && (
-                              <span className="compare-win-tag">лучше</span>
+                              <span className="compare-win-tag">{t('comparePage_better')}</span>
                             )}
                           </td>
                           <td
@@ -977,7 +982,7 @@ const Compare = () => {
                           >
                             {row.right}
                             {!row.displayOnly && row.winner === 'right' && (
-                              <span className="compare-win-tag">лучше</span>
+                              <span className="compare-win-tag">{t('comparePage_better')}</span>
                             )}
                           </td>
                         </tr>
@@ -993,18 +998,18 @@ const Compare = () => {
                       <div className="compare-investor-cta-copy">
                         <h2 id="compare-investor-cta-heading" className="compare-investor-cta-title">
                           <FiBarChart2 className="compare-investor-cta-title-icon" aria-hidden />
-                          Умная панель инвестора
+                          {t('comparePage_investorTitle')}
                         </h2>
                         <p className="compare-investor-cta-text">
-                          Выберите, какой из двух объектов перенести в подробный финансовый сценарий.
+                          {t('comparePage_investorText')}
                         </p>
                       </div>
                       <div className="compare-investor-cta-actions">
                         <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('left')}>
-                          Рассчитать объект 1 <FiArrowRight size={18} aria-hidden />
+                          {t('comparePage_calcObject1')} <FiArrowRight size={18} aria-hidden />
                         </button>
                         <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('right')}>
-                          Рассчитать объект 2 <FiArrowRight size={18} aria-hidden />
+                          {t('comparePage_calcObject2')} <FiArrowRight size={18} aria-hidden />
                         </button>
                       </div>
                     </div>
@@ -1015,7 +1020,7 @@ const Compare = () => {
                   <div className="compare-ai-head">
                     <h2 id="compare-ai-heading" className="compare-ai-title">
                       <HiOutlineSparkles className="compare-ai-title-icon" aria-hidden />
-                      Рекомендация и инфраструктура (ИИ)
+                      {t('comparePage_aiTitle')}
                     </h2>
                     <button
                       type="button"
@@ -1023,35 +1028,34 @@ const Compare = () => {
                       onClick={requestAiAnalysis}
                       disabled={aiLoading || !subscriptionResolved}
                       aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                      title={!subscriptionResolved ? 'Подождите, пока мы проверим доступ к AI-разбору' : undefined}
+                      title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
                     >
                       <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
-                      {aiResult ? 'Обновить анализ' : 'Получить AI-разбор'}
+                      {aiResult ? t('comparePage_aiRefresh') : t('comparePage_aiGet')}
                     </button>
                   </div>
                   <p className="compare-ai-disclaimer">
-                    ИИ опирается на адрес и описание объектов и общеизвестные сведения о локациях. Перед сделкой
-                    проверьте расстояния на карте и актуальную инфраструктуру.
+                    {t('comparePage_aiDisclaimer')}
                   </p>
                   {!subscriptionResolved ? (
                     <p id="compare-ai-entitlement-help" className="compare-ai-entitlement-help" role="status" aria-live="polite">
-                      Проверяем доступ к AI-разбору. Кнопка станет доступна после проверки.
+                      {t('comparePage_aiEntitlementHelp')}
                     </p>
                   ) : null}
 
                   {!aiLoading && !aiError && !aiResult && (
                     <div className="compare-ai-idle">
-                      <strong>Разбор запускаете вы</strong>
-                      <span>Помощник сопоставит описание и окружение только после вашего нажатия.</span>
+                      <strong>{t('comparePage_aiIdleStrong')}</strong>
+                      <span>{t('comparePage_aiIdleText')}</span>
                       <button
                         type="button"
                         className="compare-ai-idle-action"
                         onClick={requestAiAnalysis}
                         disabled={!subscriptionResolved}
                         aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                        title={!subscriptionResolved ? 'Подождите, пока мы проверим доступ к AI-разбору' : undefined}
+                        title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
                       >
-                        Получить AI-разбор
+                        {t('comparePage_aiGet')}
                       </button>
                     </div>
                   )}
@@ -1059,7 +1063,7 @@ const Compare = () => {
                   {aiLoading && (
                     <div className="compare-ai-loading" role="status" aria-live="polite">
                       <span className="compare-ai-loading-dot" />
-                      Запрашиваем анализ у умного помощника…
+                      {t('comparePage_aiLoading')}
                     </div>
                   )}
 
@@ -1067,7 +1071,7 @@ const Compare = () => {
                     <div className="compare-ai-error" role="alert">
                       {aiError}
                       <button type="button" className="compare-ai-retry" onClick={requestAiAnalysis}>
-                        Повторить
+                        {t('comparePage_aiRetry')}
                       </button>
                     </div>
                   )}
@@ -1086,11 +1090,11 @@ const Compare = () => {
                             <h3>{row.aspect}</h3>
                             <div className="compare-ai-mobile-values">
                               <div className={row.winner === 'left' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
-                                <span>Объект 1</span>
+                                <span>{t('comparePage_object1')}</span>
                                 <strong>{row.left}</strong>
                               </div>
                               <div className={row.winner === 'right' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
-                                <span>Объект 2</span>
+                                <span>{t('comparePage_object2')}</span>
                                 <strong>{row.right}</strong>
                               </div>
                             </div>
@@ -1098,8 +1102,8 @@ const Compare = () => {
                         ))}
                         {aiScores ? (
                           <p className="compare-ai-mobile-score">
-                            По строкам AI: объект 1 — {aiScores.left}, объект 2 — {aiScores.right}
-                            {aiScores.tie > 0 ? `, паритет — ${aiScores.tie}` : ''}.
+                            {t('comparePage_aiMobileScore', { left: aiScores.left, right: aiScores.right })}
+                            {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}.
                           </p>
                         ) : null}
                       </div>
@@ -1109,7 +1113,7 @@ const Compare = () => {
                         <thead>
                           <tr>
                             <th scope="col" className="compare-table-param">
-                              Инфраструктура и окружение
+                              {t('comparePage_aiInfraHeading')}
                             </th>
                             <th scope="col" className="compare-table-col">
                               <span className="compare-table-col-head">
@@ -1140,7 +1144,7 @@ const Compare = () => {
                                   .join(' ')}
                               >
                                 {row.left}
-                                {row.winner === 'left' && <span className="compare-win-tag">лучше</span>}
+                                {row.winner === 'left' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
                               </td>
                               <td
                                 className={[
@@ -1153,20 +1157,19 @@ const Compare = () => {
                                   .join(' ')}
                               >
                                 {row.right}
-                                {row.winner === 'right' && <span className="compare-win-tag">лучше</span>}
+                                {row.winner === 'right' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
                               </td>
                             </tr>
                           ))}
                           {aiScores && (
                             <tr className="compare-table-summary-row">
                               <th scope="row" className="compare-table-param">
-                                Итог по строкам ИИ
+                                {t('comparePage_aiSummaryRow')}
                               </th>
                               <td colSpan={2} className="compare-table-summary compare-table-summary--tie">
                                 <strong>
-                                  Преимуществ по оценке ИИ: первый объект — {aiScores.left}, второй —{' '}
-                                  {aiScores.right}
-                                  {aiScores.tie > 0 ? `, паритет — ${aiScores.tie}` : ''}
+                                  {t('comparePage_aiSummaryText', { left: aiScores.left, right: aiScores.right })}
+                                  {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}
                                 </strong>
                               </td>
                             </tr>
@@ -1179,8 +1182,7 @@ const Compare = () => {
 
                   {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
                     <p className="compare-ai-note">
-                      Таблица не разобралась из ответа модели — ориентируйтесь на текст выше или нажмите
-                      «Обновить анализ».
+                      {t('comparePage_aiNote')}
                     </p>
                   )}
                 </section>
@@ -1195,29 +1197,28 @@ const Compare = () => {
                     {calcLoading ? (
                       <>
                         <FiLoader size={18} className="compare-calculator-trigger-spin" aria-hidden />
-                        Расчёт…
+                        {t('comparePage_calcRunning')}
                       </>
                     ) : (
-                      'Рассчитать стоимость объектов'
+                      t('comparePage_calcButton')
                     )}
                   </button>
                   {!canRunCompareCalculator && (
                     <p className="compare-calculator-hint">
-                      Для расчёта нужны площадь и понятная локация (город в поле, в адресе или в названии объявления) у
-                      обеих карточек.
+                      {t('comparePage_calcHint')}
                     </p>
                   )}
                 </div>
 
                 {(calcLoading || calcData.left || calcData.right || calcError.left || calcError.right) && (
                   <div className="compare-calculator-results" aria-live="polite">
-                    <h3 className="compare-calculator-results-title">Оценка рынка (калькулятор)</h3>
+                    <h3 className="compare-calculator-results-title">{t('comparePage_calcResultsTitle')}</h3>
                     <div className="compare-table-wrap compare-calculator-results-wrap">
                       <table className="compare-table">
                         <thead>
                           <tr>
                             <th scope="col" className="compare-table-param">
-                              Показатель
+                              {t('comparePage_calcMetric')}
                             </th>
                             <th scope="col" className="compare-table-col">
                               <span className="compare-table-col-head">
@@ -1234,61 +1235,61 @@ const Compare = () => {
                         <tbody>
                           <tr>
                             <th scope="row" className="compare-table-param">
-                              Рекомендуемая цена
+                              {t('comparePage_calcRecommendedPrice')}
                             </th>
                             <td className="compare-table-cell compare-calculator-result-cell">
                               {calcLoading && !calcData.left ? (
                                 <span className="compare-calculator-pending">
                                   <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
-                                  Считаем…
+                                  {t('comparePage_calcPending')}
                                 </span>
                               ) : calcError.left ? (
                                 <span className="compare-calculator-cell-error">{calcError.left}</span>
                               ) : (
-                                formatCalcEur(calcData.left?.recommendedPrice)
+                                formatCalcEur(calcData.left?.recommendedPrice, dash)
                               )}
                             </td>
                             <td className="compare-table-cell compare-calculator-result-cell">
                               {calcLoading && !calcData.right ? (
                                 <span className="compare-calculator-pending">
                                   <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
-                                  Считаем…
+                                  {t('comparePage_calcPending')}
                                 </span>
                               ) : calcError.right ? (
                                 <span className="compare-calculator-cell-error">{calcError.right}</span>
                               ) : (
-                                formatCalcEur(calcData.right?.recommendedPrice)
+                                formatCalcEur(calcData.right?.recommendedPrice, dash)
                               )}
                             </td>
                           </tr>
                           <tr>
                             <th scope="row" className="compare-table-param">
-                              Ориентир за м²
+                              {t('comparePage_calcPricePerSqm')}
                             </th>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm)}</td>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm)}</td>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm, dash)}</td>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm, dash)}</td>
                           </tr>
                           <tr>
                             <th scope="row" className="compare-table-param">
-                              Источники данных
+                              {t('comparePage_calcSources')}
                             </th>
                             <td className="compare-table-cell compare-calculator-meta">
                               {calcData.left?.searchParams?.sources?.length
                                 ? calcData.left.searchParams.sources.join(', ')
-                                : '—'}
+                                : dash}
                             </td>
                             <td className="compare-table-cell compare-calculator-meta">
                               {calcData.right?.searchParams?.sources?.length
                                 ? calcData.right.searchParams.sources.join(', ')
-                                : '—'}
+                                : dash}
                             </td>
                           </tr>
                           <tr>
                             <th scope="row" className="compare-table-param">
-                              Примечание
+                              {t('comparePage_calcNote')}
                             </th>
-                            <td className="compare-table-cell compare-calculator-note">{calcData.left?.note || '—'}</td>
-                            <td className="compare-table-cell compare-calculator-note">{calcData.right?.note || '—'}</td>
+                            <td className="compare-table-cell compare-calculator-note">{calcData.left?.note || dash}</td>
+                            <td className="compare-table-cell compare-calculator-note">{calcData.right?.note || dash}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -1296,7 +1297,7 @@ const Compare = () => {
 
                     <div className="compare-calculator-similar-grid">
                       <div className="compare-calculator-similar-col">
-                        <h4 className="compare-calculator-similar-heading">Похожие объявления (слева)</h4>
+                        <h4 className="compare-calculator-similar-heading">{t('comparePage_similarLeft')}</h4>
                         {calcData.left?.similarProperties?.length ? (
                           <ul className="compare-calculator-similar-list">
                             {calcData.left.similarProperties.slice(0, 6).map((prop, idx) => {
@@ -1304,27 +1305,27 @@ const Compare = () => {
                               return (
                                 <li key={key} className="compare-calculator-similar-item">
                                   <span className="compare-calculator-similar-price">
-                                    {formatCalcEur(prop.price)}
+                                    {formatCalcEur(prop.price, dash)}
                                     {prop.source ? (
                                       <span className="compare-calculator-similar-source"> · {prop.source}</span>
                                     ) : null}
                                   </span>
                                   <span className="compare-calculator-similar-dims">
-                                    {prop.area ? `${prop.area} м²` : ''}
-                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${prop.rooms} комн.` : ''}
+                                    {prop.area ? t('comparePage_areaM2', { area: prop.area }) : ''}
+                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${t('comparePage_similarRooms', { count: prop.rooms })}` : ''}
                                   </span>
                                 </li>
                               )
                             })}
                           </ul>
                         ) : calcData.left && !calcError.left ? (
-                          <p className="compare-calculator-similar-empty">Объявлений мало или нет</p>
+                          <p className="compare-calculator-similar-empty">{t('comparePage_similarEmpty')}</p>
                         ) : (
-                          !calcLoading && <p className="compare-calculator-similar-empty">—</p>
+                          !calcLoading && <p className="compare-calculator-similar-empty">{dash}</p>
                         )}
                       </div>
                       <div className="compare-calculator-similar-col">
-                        <h4 className="compare-calculator-similar-heading">Похожие объявления (справа)</h4>
+                        <h4 className="compare-calculator-similar-heading">{t('comparePage_similarRight')}</h4>
                         {calcData.right?.similarProperties?.length ? (
                           <ul className="compare-calculator-similar-list">
                             {calcData.right.similarProperties.slice(0, 6).map((prop, idx) => {
@@ -1332,23 +1333,23 @@ const Compare = () => {
                               return (
                                 <li key={key} className="compare-calculator-similar-item">
                                   <span className="compare-calculator-similar-price">
-                                    {formatCalcEur(prop.price)}
+                                    {formatCalcEur(prop.price, dash)}
                                     {prop.source ? (
                                       <span className="compare-calculator-similar-source"> · {prop.source}</span>
                                     ) : null}
                                   </span>
                                   <span className="compare-calculator-similar-dims">
-                                    {prop.area ? `${prop.area} м²` : ''}
-                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${prop.rooms} комн.` : ''}
+                                    {prop.area ? t('comparePage_areaM2', { area: prop.area }) : ''}
+                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${t('comparePage_similarRooms', { count: prop.rooms })}` : ''}
                                   </span>
                                 </li>
                               )
                             })}
                           </ul>
                         ) : calcData.right && !calcError.right ? (
-                          <p className="compare-calculator-similar-empty">Объявлений мало или нет</p>
+                          <p className="compare-calculator-similar-empty">{t('comparePage_similarEmpty')}</p>
                         ) : (
-                          !calcLoading && <p className="compare-calculator-similar-empty">—</p>
+                          !calcLoading && <p className="compare-calculator-similar-empty">{dash}</p>
                         )}
                       </div>
                     </div>

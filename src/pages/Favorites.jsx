@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
 import {
@@ -31,25 +32,25 @@ import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
 const FAVORITES_CARD_SKELETON_COUNT = 4
 const EMPTY_ILLUSTRATION = '/images/favorites-empty-reference-style.png'
 
-const recommendedProperties = [
+const RECOMMENDED_PROPERTY_KEYS = [
   {
-    title: 'Резиденция у моря',
-    location: 'Коста-Адехе, Тенерифе',
+    titleKey: 'favoritesPage_rec1Title',
+    locationKey: 'favoritesPage_rec1Location',
     image: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
   },
   {
-    title: 'Апартаменты в бизнес-квартале',
-    location: 'Барселона, Испания',
+    titleKey: 'favoritesPage_rec2Title',
+    locationKey: 'favoritesPage_rec2Location',
     image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg',
   },
   {
-    title: 'Современная вилла с садом',
-    location: 'Марбелья, Испания',
+    titleKey: 'favoritesPage_rec3Title',
+    locationKey: 'favoritesPage_rec3Location',
     image: '/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg',
   },
   {
-    title: 'Пентхаус с панорамными окнами',
-    location: 'Лиссабон, Португалия',
+    titleKey: 'favoritesPage_rec4Title',
+    locationKey: 'favoritesPage_rec4Location',
     image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
   },
 ]
@@ -97,6 +98,7 @@ function FavoritesGrid({
 }
 
 const Favorites = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [guideOpen, setGuideOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -111,6 +113,16 @@ const Favorites = () => {
     () => (price, currency = 'USD') =>
       formatPropertyPrice(price ?? 0, currency, { compact: true }),
     [],
+  )
+
+  const recommendedProperties = useMemo(
+    () =>
+      RECOMMENDED_PROPERTY_KEYS.map((property) => ({
+        title: t(property.titleKey),
+        location: t(property.locationKey),
+        image: property.image,
+      })),
+    [t],
   )
 
   useEffect(() => {
@@ -172,18 +184,18 @@ const Favorites = () => {
         <div className="favorites-header">
           <h1 className="favorites-title">
             <PiHeartStraight className="favorites-title-icon" aria-hidden />
-            Понравилось
+            {t('footerLiked')}
           </h1>
-          <nav className="favorites-breadcrumbs" aria-label="Хлебные крошки">
-            <Link to="/auction">Главная</Link>
+          <nav className="favorites-breadcrumbs" aria-label={t('favoritesPage_breadcrumbsAria')}>
+            <Link to="/auction">{t('home')}</Link>
             <span aria-hidden>•</span>
-            <span>Понравилось</span>
+            <span>{t('footerLiked')}</span>
           </nav>
           {!listLoading ? (
             <p className="favorites-summary">
               {favoriteAuctions.length > 0
-                ? `${favoriteAuctions.length} сохранённых объектов — цены и статусы обновляются из каталога`
-                : 'Соберите здесь варианты, к которым хотите вернуться'}
+                ? t('favoritesPage_summaryCount', { count: favoriteAuctions.length })
+                : t('favoritesPage_summaryEmpty')}
             </p>
           ) : null}
         </div>
@@ -239,14 +251,13 @@ const Favorites = () => {
               loading="eager"
             />
             <h2 id="favorites-empty-title" className="favorites-empty-title">
-              Пока ничего нет
+              {t('favoritesPage_emptyTitle')}
             </h2>
             <p className="favorites-empty-text">
-              Добавляйте понравившиеся объекты в избранное,
-              чтобы быстро возвращаться к ним позже
+              {t('favoritesPage_emptyText')}
             </p>
             <button className="favorites-empty-button" onClick={() => navigate('/auction')}>
-              Перейти в каталог
+              {t('favoritesPage_goToCatalog')}
               <PiArrowRight size={18} aria-hidden />
             </button>
             <button
@@ -254,7 +265,7 @@ const Favorites = () => {
               type="button"
               onClick={() => setGuideOpen(true)}
             >
-              Как это работает?
+              {t('favoritesPage_howItWorks')}
               <PiQuestion size={16} aria-hidden />
             </button>
           </section>
@@ -278,22 +289,22 @@ const Favorites = () => {
 
         <section className="favorites-compare" aria-labelledby="favorites-compare-title">
           <div className="favorites-compare__copy">
-            <h2 id="favorites-compare-title">Сравните объекты</h2>
+            <h2 id="favorites-compare-title">{t('favoritesPage_compareTitle')}</h2>
             <p>
-              Сопоставьте цены, характеристики и локацию — всё на одном экране.
+              {t('favoritesPage_compareText')}
             </p>
           </div>
           <Link to="/compare" className="favorites-compare__button">
-            Перейти к сравнению
+            {t('favoritesPage_goToCompare')}
             <PiArrowRight size={17} aria-hidden />
           </Link>
         </section>
 
         <section className="favorites-recommendations" aria-labelledby="favorites-recommendations-title">
           <div className="favorites-recommendations__header">
-            <h2 id="favorites-recommendations-title">Вам может понравиться</h2>
+            <h2 id="favorites-recommendations-title">{t('favoritesPage_recommendationsTitle')}</h2>
             <Link to="/auction" className="favorites-recommendations__all">
-              Смотреть все
+              {t('favoritesPage_seeAll')}
               <PiArrowRight size={22} aria-hidden />
             </Link>
           </div>
@@ -334,18 +345,17 @@ const Favorites = () => {
               navigate('/auction')
             }}
           >
-            Перейти в каталог
+            {t('favoritesPage_goToCatalog')}
             <PiArrowRight size={16} aria-hidden />
           </button>
         )}
       >
         <div className="favorites-guide__content">
           <span className="favorites-guide__illustration" aria-hidden><PiHeartStraight /></span>
-          <p className="favorites-eyebrow">Ваш личный шорт-лист</p>
-          <h2 id="favorites-guide-title">Как работает избранное</h2>
+          <p className="favorites-eyebrow">{t('favoritesPage_guideEyebrow')}</p>
+          <h2 id="favorites-guide-title">{t('favoritesPage_guideTitle')}</h2>
           <p id="favorites-guide-description">
-            Нажмите на сердечко в карточке объекта, и он появится здесь. Когда вариантов
-            станет два или больше, сравнение поможет увидеть цены и характеристики рядом.
+            {t('favoritesPage_guideTextMobile')}
           </p>
         </div>
       </BuyerSheetShell> : guideOpen ? (
@@ -363,15 +373,13 @@ const Favorites = () => {
               className="favorites-guide__close"
               type="button"
               onClick={() => setGuideOpen(false)}
-              aria-label="Закрыть"
+              aria-label={t('close')}
             >
               <PiX size={20} aria-hidden />
             </button>
-            <h2 id="favorites-guide-title">Как работает избранное</h2>
+            <h2 id="favorites-guide-title">{t('favoritesPage_guideTitle')}</h2>
             <p>
-              Нажмите на сердечко в карточке объекта, и он появится здесь.
-              Когда накопится несколько вариантов, откройте сравнение и
-              посмотрите характеристики рядом.
+              {t('favoritesPage_guideTextDesktop')}
             </p>
             <button
               className="favorites-guide__action"
@@ -381,7 +389,7 @@ const Favorites = () => {
                 navigate('/auction')
               }}
             >
-              Перейти в каталог
+              {t('favoritesPage_goToCatalog')}
               <PiArrowRight size={20} aria-hidden />
             </button>
           </div>
@@ -389,12 +397,12 @@ const Favorites = () => {
       ) : null}
 
       {isMobile && favoriteAuctions.length >= 2 ? (
-        <aside className="favorites-compare-tray" aria-label="Сравнение избранных объектов">
+        <aside className="favorites-compare-tray" aria-label={t('favoritesPage_compareTrayAria')}>
           <div>
-            <strong>Готовы сравнить?</strong>
-            <span>{favoriteAuctions.length} объектов в подборке</span>
+            <strong>{t('favoritesPage_compareTrayTitle')}</strong>
+            <span>{t('favoritesPage_compareTrayCount', { count: favoriteAuctions.length })}</span>
           </div>
-          <Link to="/compare">Сравнить</Link>
+          <Link to="/compare">{t('favoritesPage_compareAction')}</Link>
         </aside>
       ) : null}
     </div>

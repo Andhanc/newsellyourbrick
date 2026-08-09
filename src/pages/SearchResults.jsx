@@ -266,7 +266,7 @@ const SearchResults = () => {
         <div className="search-results search-results--loading">
           <div className="search-results__loading">
             <div className="search-results__spinner"></div>
-            <p>Поиск недвижимости...</p>
+            <p>{t('searchResults_loading')}</p>
           </div>
         </div>
         <Footer />
@@ -314,22 +314,22 @@ const SearchResults = () => {
                 <>
                   <div className="search-results__mobile-head">
                     <div>
-                      <p className="search-results__eyebrow">Каталог покупателя</p>
-                      <h1>Найдите свой объект</h1>
+                      <p className="search-results__eyebrow">{t('searchResults_eyebrow')}</p>
+                      <h1>{t('searchResults_title')}</h1>
                       <p className="search-results__mobile-count">
                         {totalUniqueCount > 0
-                          ? `${totalUniqueCount} ${t('mapFiltersObjects', { defaultValue: 'объектов' })}`
-                          : 'Подберём новые варианты'}
+                          ? `${totalUniqueCount} ${t('mapFiltersObjects')}`
+                          : t('searchResults_emptyCount')}
                       </p>
                     </div>
                     <button
                       type="button"
                       className="search-results__map-button"
                       onClick={() => navigate('/map')}
-                      aria-label="Открыть объекты на карте"
+                      aria-label={t('searchResults_mapAria')}
                     >
                       <Map size={18} aria-hidden />
-                      <span>Карта</span>
+                      <span>{t('mapLink')}</span>
                     </button>
                   </div>
                   <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
@@ -436,12 +436,12 @@ const SearchResults = () => {
                 {totalUniqueCount === 0 ? (
                   <BuyerEmptyState
                     className="search-results__empty"
-                    eyebrow="Новый шанс для выбора"
-                    title="Подходящих объектов пока нет"
-                    description="Снимем ограничения и снова покажем весь каталог — ваши параметры поиска не потеряются навсегда."
-                    primaryLabel="Показать весь каталог"
+                    eyebrow={t('searchResults_emptyEyebrow')}
+                    title={t('searchResults_emptyTitle')}
+                    description={t('searchResults_emptyDesc')}
+                    primaryLabel={t('searchResults_emptyPrimary')}
                     onPrimary={handleResetFilters}
-                    secondaryLabel="Все направления"
+                    secondaryLabel={t('searchResults_emptySecondary')}
                     onSecondary={() => navigate('/sections')}
                   />
                 ) : (

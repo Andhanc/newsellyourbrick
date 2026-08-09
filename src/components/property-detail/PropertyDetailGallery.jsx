@@ -78,7 +78,7 @@ export default function PropertyDetailGallery({
               className="property-detail-gallery__nav property-detail-gallery__nav--prev"
               onClick={handlePreviousImage}
               disabled={actionsDisabled || galleryImages.length <= 1}
-              aria-label={t('previousImage') || 'Предыдущее фото'}
+              aria-label={t('previousImage')}
             >
               <FiChevronLeft size={24} />
             </button>
@@ -87,7 +87,7 @@ export default function PropertyDetailGallery({
               className="property-detail-gallery__nav property-detail-gallery__nav--next"
               onClick={handleNextImage}
               disabled={actionsDisabled || galleryImages.length <= 1}
-              aria-label={t('nextImage') || 'Следующее фото'}
+              aria-label={t('nextImage')}
             >
               <FiChevronRight size={24} />
             </button>
@@ -105,7 +105,7 @@ export default function PropertyDetailGallery({
               className="property-detail-gallery__action-btn"
               onClick={onShare}
               disabled={actionsDisabled}
-              aria-label={t('share') || 'Поделиться'}
+              aria-label={t('share')}
             >
               <FiShare2 size={20} />
             </button>
@@ -118,7 +118,7 @@ export default function PropertyDetailGallery({
               }`}
               onClick={onToggleFavorite}
               disabled={actionsDisabled}
-              aria-label={t('addToFavorites') || 'В избранное'}
+              aria-label={t('addToFavorites')}
             >
               {isFavorite ? <FaHeart size={20} /> : <FiHeart size={20} />}
             </button>

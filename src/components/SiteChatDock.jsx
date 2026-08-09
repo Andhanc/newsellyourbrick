@@ -1,9 +1,11 @@
-import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
+import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle, FiArrowRight } from 'react-icons/fi'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useSiteAiChatDock } from '../hooks/useSiteAiChatDock'
 import useMobileLayout from '../hooks/useMobileLayout'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import '../pages/Home.css'
 import './SiteChatDock.css'
 
@@ -17,17 +19,40 @@ export default function SiteChatDock({
   onRecommendationClick,
 }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const chat = useSiteAiChatDock({ recommendationProperties })
   const isMobile = useMobileLayout(767)
+  const catalog = chat.catalogProperties || recommendationProperties || []
 
   const findRecommendation = (recId) => {
     if (typeof resolveRecommendationProperty === 'function') {
       return resolveRecommendationProperty(recId)
     }
-    return recommendationProperties.find(
+    return catalog.find(
       (item) => String(item.id) === String(recId) || String(item.key) === String(recId),
     )
   }
+
+  const openRecommendation = (property) => {
+    if (!property) return
+    if (typeof onRecommendationClick === 'function') {
+      onRecommendationClick(property)
+    } else {
+      navigate(getPropertyDetailPath(property.id ?? property.key, { property }), {
+        state: { property },
+      })
+    }
+    chat.closeChatDock()
+  }
+
+  const openNavigationPath = (path) => {
+    if (!path) return
+    navigate(path)
+    chat.closeChatDock()
+  }
+
+  const formatEuro = (value) =>
+    `${Number(value || 0).toLocaleString('ru-RU')} €`
 
   const renderManagerChat = (inDrawer = false) => {
     const titleId = inDrawer ? 'site-manager-drawer-title' : 'site-manager-dock-title'
@@ -166,6 +191,58 @@ export default function SiteChatDock({
               >
                 <div className="chat-widget__message-content">
                   {message.text}
+                  {message.yieldEstimate && (
+                    <div className="chat-widget__yield">
+                      <div className="chat-widget__yield-title">{t('chatYieldTitle')}</div>
+                      <div className="chat-widget__yield-grid">
+                        <div>
+                          <span>{t('chatYieldPrice')}</span>
+                          <strong>{formatEuro(message.yieldEstimate.price)}</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldAnnual')}</span>
+                          <strong>{formatEuro(message.yieldEstimate.annualRent)}</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldMonthly')}</span>
+                          <strong>{formatEuro(message.yieldEstimate.monthlyIncome)}</strong>
+                        </div>
+                        <div>
+                          <span>{t('chatYieldRate')}</span>
+                          <strong>{message.yieldEstimate.yieldPercent}%</strong>
+                        </div>
+                      </div>
+                      {message.yieldEstimate.note ? (
+                        <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="chat-widget__yield-cta"
+                        onClick={() => openNavigationPath('/calculator')}
+                      >
+                        {t('chatYieldInvestorCta')}
+                        <FiArrowRight size={16} aria-hidden />
+                      </button>
+                    </div>
+                  )}
+                  {message.navigation && message.navigation.length > 0 && (
+                    <div className="chat-widget__navigation">
+                      <div className="chat-widget__navigation-title">{t('chatNavigationTitle')}</div>
+                      <div className="chat-widget__navigation-list">
+                        {message.navigation.map((nav) => (
+                          <button
+                            key={nav.path}
+                            type="button"
+                            className="chat-widget__navigation-link"
+                            onClick={() => openNavigationPath(nav.path)}
+                          >
+                            <span>{nav.label}</span>
+                            <FiArrowRight size={16} aria-hidden />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {message.recommendations && message.recommendations.length > 0 && (
                     <div className="chat-widget__recommendations">
                       <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
@@ -174,7 +251,7 @@ export default function SiteChatDock({
                         if (!property) return null
                         const propertyName = property.name || property.title || t('listingDefault')
                         const propertyPrice = property.price
-                          ? `${Number(property.price).toLocaleString('ru-RU')} €`
+                          ? formatEuro(property.price)
                           : t('priceNotSpecified')
                         const propertyArea = property.area || property.sqft
                         const propertyRooms = property.rooms || property.beds
@@ -184,12 +261,7 @@ export default function SiteChatDock({
                             key={recId}
                             type="button"
                             className="chat-widget__recommendation-link"
-                            onClick={() => {
-                              if (typeof onRecommendationClick === 'function') {
-                                onRecommendationClick(property)
-                              }
-                              chat.closeChatDock()
-                            }}
+                            onClick={() => openRecommendation(property)}
                           >
                             <div className="chat-widget__recommendation-item">
                               <div className="chat-widget__recommendation-title">{propertyName}</div>
@@ -203,6 +275,7 @@ export default function SiteChatDock({
                                 ) : null}
                               </div>
                               <div className="chat-widget__recommendation-price">{propertyPrice}</div>
+                              <div className="chat-widget__recommendation-cta">{t('chatOpenListing')}</div>
                             </div>
                           </button>
                         )

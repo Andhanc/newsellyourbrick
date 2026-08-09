@@ -39,11 +39,11 @@ const EXACT_ALLOWED = new Set([
   '/map',
   '/calculator',
   '/lottery',
+  '/chat',
 ])
 
 /** UI features blocked during soft-launch (entry points + deep links). */
 const BLOCKED_FEATURES = new Set([
-  'aiAssistant',
   'aiRealEstate',
   'managerChat',
 ])
@@ -152,9 +152,11 @@ export function getSoftLaunchBlockedFeatureForHref(href = '') {
     isSoftLaunchFeatureBlocked('smartInvestor')
   ) return 'smartInvestor'
   if (path === '/chat' || path.startsWith('/chat/')) {
-    if (query.includes('assistant=1')) return 'aiAssistant'
-    if (query.includes('manager=1')) return 'managerChat'
-    return 'aiRealEstate'
+    if (query.includes('manager=1')) {
+      return isSoftLaunchFeatureBlocked('managerChat') ? 'managerChat' : null
+    }
+    // /chat, ?assistant=1, ?embed=1 — умный помощник
+    return isSoftLaunchFeatureBlocked('aiAssistant') ? 'aiAssistant' : null
   }
   if (
     (path === '/map' || path.startsWith('/map/')) &&

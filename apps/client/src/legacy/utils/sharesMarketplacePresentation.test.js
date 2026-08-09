@@ -59,6 +59,35 @@ test('does not manufacture price, inventory, yield, image, or status defaults', 
   assert.equal(share.annualYield, null)
   assert.equal(share.image, '')
   assert.equal(share.statusLabel, 'Условия уточняются')
+  assert.equal(share.statusKey, 'pending')
+})
+
+test('assigns stable English statusKey for open and almost-full funding', () => {
+  const open = normalizeMarketplaceShare({
+    id: 1,
+    title: 'Open',
+    total_shares: 20,
+    shares_sold: 4,
+  })
+  assert.equal(open.statusKey, 'open')
+  assert.equal(open.statusLabel, 'Сбор открыт')
+
+  const almost = normalizeMarketplaceShare({
+    id: 2,
+    title: 'Almost',
+    total_shares: 20,
+    shares_sold: 17,
+  })
+  assert.equal(almost.statusKey, 'almost_full')
+  assert.equal(almost.statusLabel, 'Почти собрано')
+
+  const done = normalizeMarketplaceShare({
+    id: 3,
+    title: 'Done',
+    total_shares: 20,
+    shares_sold: 20,
+  })
+  assert.equal(done.statusKey, 'completed')
 })
 
 test('labels annual return as a forecast and shows an honest unknown value', () => {

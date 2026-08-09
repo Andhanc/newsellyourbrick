@@ -1801,7 +1801,8 @@ app.get('/api/users/:id', async (req, res) => {
 
 /**
  * POST /api/users/:userId/private-club/redeem-promo
- * body: { code: string } — промокод VIP закрытого клуба (+30 дней). Список кодов: env VIP_CLUB_PROMO_CODES (по умолчанию ADMIN).
+ * body: { code: string } — промокод VIP закрытого клуба (+30 дней).
+ * Список кодов: env VIP_CLUB_PROMO_CODES (по умолчанию VIP1). UI принимает 4 символа.
  */
 app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
   try {
@@ -1816,7 +1817,7 @@ app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
     if (!code) {
       return res.status(400).json({ success: false, error: 'Укажите промокод' });
     }
-    const envCodes = (process.env.VIP_CLUB_PROMO_CODES || 'ADMIN')
+    const envCodes = (process.env.VIP_CLUB_PROMO_CODES || 'VIP1')
       .split(/[\s,;]+/)
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);

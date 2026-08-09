@@ -21,8 +21,8 @@ test('smart investor prefers router property data and restores a safe session sc
 })
 
 test('comparison context is visible and can be cleared on mobile', () => {
-  assert.match(calculatorSource, /Сценарий из сравнения/)
-  assert.match(calculatorSource, /2 объекта/)
+  assert.match(calculatorSource, /calcCompareScenarioAria/)
+  assert.match(calculatorSource, /calcCompareScenarioTitle/)
   assert.match(calculatorSource, /clearInvestorScenario/)
   assert.match(calculatorCss, /\.calc-context-banner/)
   assert.match(calculatorCss, /min-height:\s*var\(--buyer-touch\)/)

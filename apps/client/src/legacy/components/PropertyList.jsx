@@ -859,9 +859,9 @@ const PropertyList = ({
             image={AUCTION_EMPTY_IMAGE}
             imageAlt=""
             eyebrow={null}
-            title="Объектов пока нет"
-            description="Новые предложения появятся здесь. А пока посмотрите другие направления."
-            primaryLabel="Смотреть другие объекты"
+            title={t('auctionPage_emptyTitle')}
+            description={t('auctionPage_emptyDesc')}
+            primaryLabel={t('auctionPage_emptyPrimary')}
             onPrimary={() => navigate('/sections')}
           />
         ) : (
@@ -1078,7 +1078,7 @@ const PropertyList = ({
                   {isReserved && (
                     <div className="property-reserved-overlay">
                       <div className="reserved-overlay-icon">🔒</div>
-                      <div className="reserved-overlay-text">Забронировано</div>
+                      <div className="reserved-overlay-text">{t('reserved')}</div>
                     </div>
                   )}
                   {(hasBuyNowPrice || hasTestDrive) &&

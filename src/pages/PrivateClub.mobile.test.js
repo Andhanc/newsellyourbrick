@@ -36,8 +36,11 @@ test('preserves readable mobile type and safe header spacing', () => {
 })
 
 test('uses compact balanced hero copy instead of a forced text staircase', () => {
-  assert.match(page, /Закрытый клуб<\/span>[\s\S]*?<span>премиальных сделок\.<\/span>/)
-  assert.match(page, /Закрытые лоты, личный менеджер и сообщество инвесторов — всё для быстрых и уверенных сделок\./)
+  assert.match(
+    page,
+    /t\('privateClubLanding_heroTitle1'\)[\s\S]*?t\('privateClubLanding_heroTitle2'\)/,
+  )
+  assert.match(page, /t\('privateClubLanding_heroLead'\)/)
   assert.match(
     mobile,
     /\.vip-club-hero h1 span\s*\{[\s\S]*?display:\s*inline[\s\S]*?white-space:\s*normal/,
@@ -50,7 +53,7 @@ test('places one centered hero action below the image', () => {
   assert.doesNotMatch(page, /scrollToSection/)
   assert.match(
     page,
-    /className="vip-club-hero__stage"[\s\S]*?<div className="vip-club-hero__actions">[\s\S]*?Стать VIP участником/,
+    /className="vip-club-hero__stage"[\s\S]*?<div className="vip-club-hero__actions">[\s\S]*?t\('privateClubLanding_joinCta'\)/,
   )
   assert.match(
     mobile,
@@ -59,9 +62,9 @@ test('places one centered hero action below the image', () => {
 })
 
 test('keeps supporting descriptions concise', () => {
-  assert.match(page, /Закрытые возможности, экспертиза и личное сопровождение — для уверенных решений\./)
-  assert.match(page, /Общайтесь с инвесторами и получайте рекомендации экспертов клуба\./)
-  assert.match(page, /Закрытые объекты, личный сервис и сильное сообщество — чтобы решать быстрее\./)
+  assert.match(page, /t\('privateClubLanding_aboutLead'\)/)
+  assert.match(page, /t\('privateClubLanding_whatsappLead'\)/)
+  assert.match(page, /t\('privateClubLanding_storiesLead'\)/)
   assert.doesNotMatch(page, /Мы объединили лучших инвесторов и экспертов/)
   assert.doesNotMatch(page, /Реальные сценарии:/)
 })

@@ -4,6 +4,7 @@ import { Clock } from 'lucide-react'
 import {
   formatListingAuctionTimeLeft,
   getListingAuctionTimerStatus,
+  isListingAuctionTimerCritical,
 } from '../utils/formatListingAuctionTimeLeft'
 import './ListingCardAuctionTimer.css'
 
@@ -20,7 +21,7 @@ function ListingCardAuctionTimer({ endTime, endedLabel, className = '' }) {
   const isEnded = !endTime || diffMs <= 0
   const days = isEnded ? 0 : Math.floor(diffMs / (1000 * 60 * 60 * 24))
   const statusClass = getListingAuctionTimerStatus(days)
-  const isCritical = !isEnded && days < 30
+  const isCritical = !isEnded && isListingAuctionTimerCritical(days)
   const timeText = isEnded ? null : formatListingAuctionTimeLeft(endTime, t)
 
   void tick

@@ -1,20 +1,25 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import './InvestorMobileStepHeader.css'
 
-const STEPS = [
-  { id: 1, label: 'Объект', copy: 'Выберите, что будем оценивать' },
-  { id: 2, label: 'Цель', copy: 'Укажите, как хотите зарабатывать' },
-  { id: 3, label: 'Результат', copy: 'Сверьте доходность и риски' },
-]
-
 export default function InvestorMobileStepHeader({ step = 1 }) {
-  const active = STEPS.find((item) => item.id === step) || STEPS[0]
+  const { t } = useTranslation()
+  const steps = useMemo(
+    () => [
+      { id: 1, label: t('smartInvestor_step1Label'), copy: t('smartInvestor_step1Copy') },
+      { id: 2, label: t('smartInvestor_step2Label'), copy: t('smartInvestor_step2Copy') },
+      { id: 3, label: t('smartInvestor_step3Label'), copy: t('smartInvestor_step3Copy') },
+    ],
+    [t],
+  )
+  const active = steps.find((item) => item.id === step) || steps[0]
   return (
-    <section className="investor-mobile-step" aria-label="Этап расчёта">
-      <div className="investor-mobile-step__eyebrow">Умный инвестор</div>
+    <section className="investor-mobile-step" aria-label={t('smartInvestor_stepAria')}>
+      <div className="investor-mobile-step__eyebrow">{t('smartInvestor_brand')}</div>
       <h1>{active.label}</h1>
       <p>{active.copy}</p>
-      <div className="investor-mobile-step__progress" aria-label={`Этап: ${active.label}`}>
-        {STEPS.map((item) => (
+      <div className="investor-mobile-step__progress" aria-label={t('smartInvestor_stepProgress', { label: active.label })}>
+        {steps.map((item) => (
           <span
             key={item.id}
             className={item.id <= active.id ? 'is-filled' : ''}
@@ -23,9 +28,12 @@ export default function InvestorMobileStepHeader({ step = 1 }) {
         ))}
       </div>
       <ol className="investor-mobile-step__labels">
-        {STEPS.map((item) => <li key={item.id} className={item.id === active.id ? 'is-active' : ''}>{item.label}</li>)}
+        {steps.map((item) => (
+          <li key={item.id} className={item.id === active.id ? 'is-active' : ''}>
+            {item.label}
+          </li>
+        ))}
       </ol>
     </section>
   )
 }
-

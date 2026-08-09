@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   FiArrowUpRight,
   FiBookmark,
@@ -21,56 +22,60 @@ import './MobileDiscoverPage.css'
 const HERO_IMAGE = publicAsset('images/mobile-discover/hero-townhouses.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
 
-const SALE_CARDS = [
-  {
-    id: 'auction',
-    title: 'Аукцион',
-    description: 'Участвуйте в торгах и приобретайте объекты по лучшей цене',
-    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
-    imagePosition: '36% center',
-    to: '/auction?filter=auction',
-    theme: 'auction',
-    Icon: MdGavel,
-  },
-  {
-    id: 'buy_now',
-    title: 'Купить сейчас',
-    description: 'Покупайте недвижимость по фиксированной цене без ожидания',
-    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
-    imagePosition: '42% center',
-    to: '/auction?filter=buy_now',
-    theme: 'buy',
-    Icon: FiShoppingBag,
-  },
-  {
-    id: 'debts',
-    title: 'Долги',
-    description: 'Инвестируйте в объекты с задолженностью и получайте высокую доходность',
-    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
-    imagePosition: '46% center',
-    to: '/debts',
-    theme: 'debts',
-    Icon: MdOutlineReceiptLong,
-  },
-  {
-    id: 'shares',
-    title: 'Доли',
-    description: 'Покупайте доли в премиальных объектах и инвестируйте с умом',
-    image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
-    imagePosition: '42% center',
-    to: CO_INVESTMENT_PATH,
-    theme: 'shares',
-    Icon: FiPieChart,
-  },
-]
+function getSaleCards(t) {
+  return [
+    {
+      id: 'auction',
+      title: t('auction'),
+      description: t('discoverPage_saleAuctionDesc'),
+      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
+      imagePosition: '36% center',
+      to: '/auction?filter=auction',
+      theme: 'auction',
+      Icon: MdGavel,
+    },
+    {
+      id: 'buy_now',
+      title: t('buyNowSectionTitle'),
+      description: t('discoverPage_saleBuyNowDesc'),
+      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
+      imagePosition: '42% center',
+      to: '/auction?filter=buy_now',
+      theme: 'buy',
+      Icon: FiShoppingBag,
+    },
+    {
+      id: 'debts',
+      title: t('debtsTitle'),
+      description: t('discoverPage_saleDebtsDesc'),
+      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
+      imagePosition: '46% center',
+      to: '/debts',
+      theme: 'debts',
+      Icon: MdOutlineReceiptLong,
+    },
+    {
+      id: 'shares',
+      title: t('shares'),
+      description: t('discoverPage_saleSharesDesc'),
+      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
+      imagePosition: '42% center',
+      to: CO_INVESTMENT_PATH,
+      theme: 'shares',
+      Icon: FiPieChart,
+    },
+  ]
+}
 
-const MENU_ITEMS = [
-  { id: 'auction', label: 'Аукцион', to: '/auction?filter=auction', Icon: MdGavel },
-  { id: 'buy', label: 'Купить', to: '/auction?filter=buy_now', Icon: FiShoppingBag },
-  { id: 'shares', label: 'Доли', to: CO_INVESTMENT_PATH, Icon: FiPieChart },
-  { id: 'debts', label: 'Долги', to: '/debts', Icon: MdOutlineReceiptLong },
-  { id: 'ai', label: 'AI', to: '/chat', Icon: HiOutlineSparkles },
-]
+function getMenuItems(t) {
+  return [
+    { id: 'auction', label: t('auction'), to: '/auction?filter=auction', Icon: MdGavel },
+    { id: 'buy', label: t('buy'), to: '/auction?filter=buy_now', Icon: FiShoppingBag },
+    { id: 'shares', label: t('shares'), to: CO_INVESTMENT_PATH, Icon: FiPieChart },
+    { id: 'debts', label: t('debtsTitle'), to: '/debts', Icon: MdOutlineReceiptLong },
+    { id: 'ai', label: 'AI', to: '/chat', Icon: HiOutlineSparkles },
+  ]
+}
 
 const WHEEL_THRESHOLD = 40
 const TOUCH_THRESHOLD = 56
@@ -89,6 +94,7 @@ function prefersReducedMotion() {
  * Intentional up → white flash → hero.
  */
 export default function MobileDiscoverPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
@@ -106,6 +112,9 @@ export default function MobileDiscoverPage() {
   const [stageEntered, setStageEntered] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
   const [activeSaleCard, setActiveSaleCard] = useState(0)
+
+  const saleCards = getSaleCards(t)
+  const menuItems = getMenuItems(t)
 
   screenRef.current = screen
 
@@ -332,17 +341,15 @@ export default function MobileDiscoverPage() {
       <div className={`md-flash${flashClass}`} aria-hidden="true" />
 
       {screen === 'hero' && (
-        <section className="md-hero" aria-label="Welcome">
+        <section className="md-hero" aria-label={t('discoverPage_welcomeAria')}>
           <div className="md-hero__glow" aria-hidden="true" />
 
           <div className="md-hero__copy">
             <h1 className="md-hero__title">
-              <span className="md-hero__title-line">Find Your Dream</span>
-              <span className="md-hero__title-line">Home Easily</span>
+              <span className="md-hero__title-line">{t('discoverPage_heroTitleLine1')}</span>
+              <span className="md-hero__title-line">{t('discoverPage_heroTitleLine2')}</span>
             </h1>
-            <p className="md-hero__lead">
-              Now you can find your dream house easily and quickly at a low price
-            </p>
+            <p className="md-hero__lead">{t('discoverPage_heroLead')}</p>
           </div>
 
           <div className="md-hero__visual" aria-hidden="true">
@@ -362,7 +369,7 @@ export default function MobileDiscoverPage() {
             type="button"
             className="md-hero__scroll"
             onClick={() => goTo('stage')}
-            aria-label="Go to next screen"
+            aria-label={t('discoverPage_goToNextScreen')}
           >
             <span className="md-hero__scroll-arrow" aria-hidden="true" />
           </button>
@@ -373,7 +380,7 @@ export default function MobileDiscoverPage() {
         <section
           ref={stageScrollRef}
           className={`md-stage${stageEntered ? ' is-ready' : ''}`}
-          aria-label="Sale formats"
+          aria-label={t('discoverPage_saleFormatsAria')}
         >
           <div className={`md-site-nav${stageEntered ? ' is-in' : ''}`}>
             <Header />
@@ -382,14 +389,18 @@ export default function MobileDiscoverPage() {
           <div className="md-stage__sheet">
             <div className="md-stage__intro">
               <h2 className="md-stage__title">
-                Four <span className="md-stage__title-accent">Sales</span> Strategies
+                {t('discoverPage_stageTitlePrefix')}{' '}
+                <span className="md-stage__title-accent">
+                  {t('discoverPage_stageTitleAccent')}
+                </span>{' '}
+                {t('discoverPage_stageTitleSuffix')}
               </h2>
-              <p className="md-stage__subtitle">Discover the best home for you</p>
+              <p className="md-stage__subtitle">{t('discoverPage_stageSubtitle')}</p>
             </div>
 
             <div className="md-cards-wrap">
               <div ref={cardsRef} className="md-cards" role="list">
-                {SALE_CARDS.map((card, index) => {
+                {saleCards.map((card, index) => {
                   const isSaved = saved.has(card.id)
                   const CardIcon = card.Icon
                   return (
@@ -424,13 +435,15 @@ export default function MobileDiscoverPage() {
                           </div>
                           <div className="md-card__actions">
                             <Link className="md-card__cta" to={card.to}>
-                              Подробнее
+                              {t('aboutCorp_moreDetails')}
                               <FiArrowUpRight aria-hidden />
                             </Link>
                             <button
                               type="button"
                               className={`md-card__save${isSaved ? ' is-on' : ''}`}
-                              aria-label={isSaved ? 'Убрать из избранного' : 'Сохранить'}
+                              aria-label={
+                                isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
+                              }
                               aria-pressed={isSaved}
                               onClick={() => toggleSaved(card.id)}
                             >
@@ -444,8 +457,12 @@ export default function MobileDiscoverPage() {
                 })}
               </div>
 
-              <div className="md-cards-dots" role="tablist" aria-label="Форматы продажи">
-                {SALE_CARDS.map((card, index) => (
+              <div
+                className="md-cards-dots"
+                role="tablist"
+                aria-label={t('discoverPage_saleFormatsDotsAria')}
+              >
+                {saleCards.map((card, index) => (
                   <button
                     key={card.id}
                     type="button"
@@ -460,17 +477,17 @@ export default function MobileDiscoverPage() {
             </div>
 
             <div className="md-welcome__copy">
-              <h2 className="md-welcome__title">Buying Property Is Easy!</h2>
+              <h2 className="md-welcome__title">{t('discoverPage_welcomeTitle')}</h2>
               <p className="md-welcome__lead">
-                Find your next space, feel at home.
+                {t('discoverPage_welcomeLeadLine1')}
                 <br />
-                Where comfort meets convenience.
+                {t('discoverPage_welcomeLeadLine2')}
               </p>
             </div>
           </div>
 
           <div className="md-welcome-flow">
-            <section className="md-welcome" aria-label="Welcome">
+            <section className="md-welcome" aria-label={t('discoverPage_welcomeAria')}>
               <div
                 className="md-welcome__media"
                 style={{ backgroundImage: `url("${WELCOME_HOUSE}")` }}
@@ -506,16 +523,20 @@ export default function MobileDiscoverPage() {
                     type="search"
                     value={welcomeQuery}
                     onChange={(event) => setWelcomeQuery(event.target.value)}
-                    placeholder="Search city, villa, apartment…"
-                    aria-label="Search properties"
+                    placeholder={t('discoverPage_searchPlaceholder')}
+                    aria-label={t('discoverPage_searchAria')}
                   />
-                  <button type="submit" className="md-welcome__search-go" aria-label="Search">
+                  <button
+                    type="submit"
+                    className="md-welcome__search-go"
+                    aria-label={t('search')}
+                  >
                     <FiSearch aria-hidden />
                   </button>
                 </form>
 
                 <Link className="md-welcome__cta" to="/auction">
-                  View all properties
+                  {t('discoverPage_viewAllProperties')}
                 </Link>
               </div>
 
@@ -539,18 +560,18 @@ export default function MobileDiscoverPage() {
               <button
                 type="button"
                 className="md-fab__away"
-                aria-label="Close menu"
+                aria-label={t('closeMenu')}
                 onClick={() => setMenuOpen(false)}
               />
             )}
 
             <nav
               className="md-fab__rail"
-              aria-label="Sale formats menu"
+              aria-label={t('discoverPage_fabMenuAria')}
               aria-hidden={!menuOpen}
               inert={!menuOpen ? true : undefined}
             >
-              {MENU_ITEMS.map((item, index) => {
+              {menuItems.map((item, index) => {
                 const Icon = item.Icon
                 return (
                   <Link
@@ -573,7 +594,7 @@ export default function MobileDiscoverPage() {
               type="button"
               className="md-fab__toggle"
               aria-expanded={menuOpen}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={menuOpen ? t('closeMenu') : t('discoverPage_openMenu')}
               onClick={() => setMenuOpen((open) => !open)}
             >
               {menuOpen ? <FiX aria-hidden /> : <FiGrid aria-hidden />}
