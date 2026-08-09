@@ -455,6 +455,12 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               chk.error ||
                 'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
             )
+          } else if (chk.status === 'buyer_password_required') {
+            setRegisterBottomError('')
+            setError(
+              chk.error ||
+                'Сначала войдите в кабинет покупателя и задайте пароль, затем создайте кабинет продавца с другим паролем.'
+            )
           } else {
             setRegisterBottomError('')
             setError(chk.error || 'Не удалось проверить email')
@@ -736,6 +742,12 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
           setRegisterBottomError(
             chk.error ||
               'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
+          )
+        } else if (chk.status === 'buyer_password_required') {
+          setRegisterBottomError('')
+          setError(
+            chk.error ||
+              'Сначала войдите в кабинет покупателя и задайте пароль, затем создайте кабинет продавца с другим паролем.'
           )
         } else {
           setRegisterBottomError('')

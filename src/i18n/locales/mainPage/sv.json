@@ -5586,7 +5586,7 @@
   "roleSwitch_pitchBuyerTitle": "Redo att bli köpare?",
   "roleSwitch_pitchSellerBody": "Lägg upp objekt på plattformen med ett klick — verifierade investerare, transparenta auktioner och dokumentsupport.",
   "roleSwitch_pitchSellerCta": "Kom igång",
-  "roleSwitch_pitchSellerGoogleNote": "Du loggade in med Google — ställ in ett lösenord innan du skapar säljarkabinettet. Ditt köparkabinett förblir utan lösenord; logga in med Google som tidigare.",
+  "roleSwitch_pitchSellerGoogleNote": "Du loggade in med Google — ställ först in ett lösenord för köparkabinettet och sedan ett annat för säljarkabinettet. Lösenordet avgör vilket kabinett som öppnas.",
   "roleSwitch_pitchSellerTitle": "Redo att bli säljare?",
   "roleSwitch_profileAria": "Profildata",
   "roleSwitch_profileCountry": "Land",
@@ -5597,8 +5597,8 @@
   "roleSwitch_saving": "Sparar…",
   "roleSwitch_sellerCabinet": "Säljarkabinett",
   "roleSwitch_sellerCabinetDesc": "Mina objekt, analys, försäljning",
-  "roleSwitch_setupGoogleNote": "Detta lösenord gäller bara säljarkabinettet. Du kan fortfarande logga in i köparkabinettet med Google.",
-  "roleSwitch_setupSubtitle": "Ställ in ett lösenord för säljarkabinettet. Din köphistorik stannar i köparkabinettet.",
+  "roleSwitch_setupGoogleNote": "Detta lösenord gäller bara säljarkabinettet och måste skilja sig från köparens. Du kan fortfarande logga in i köparkabinettet med Google eller dess lösenord.",
+  "roleSwitch_setupSubtitle": "Ställ in ett lösenord för säljarkabinettet. Det måste skilja sig från köparens lösenord.",
   "roleSwitch_setupTitle": "Skapa ditt kabinett",
   "roleSwitch_switchConfirm": "Byt",
   "roleSwitch_switchGoogleCta": "Logga in med Google",
@@ -5700,5 +5700,10 @@
   "tdSurvey_s6_summaryAria": "Answer summary",
   "toastBidOutbidTitle": "Ditt bud har överbjudits",
   "toastBidOutbidCta": "Tillbaka till budgivningen",
-  "toastOpenNotifications": "Öppna aviseringar"
+  "toastOpenNotifications": "Öppna aviseringar",
+  "roleSwitch_buyerPasswordTitle": "Lösenord för köparkabinettet",
+  "roleSwitch_buyerPasswordSubtitle": "Ditt köparkonto har ännu inget lösenord. Ställ in ett innan du skapar säljarkabinettet.",
+  "roleSwitch_buyerPasswordGoogleNote": "En e-post — två kabinett. Rollen vid inloggning bestäms av lösenordet: spara först köparens, sedan ett separat säljarlösenord.",
+  "roleSwitch_buyerPasswordLabel": "Lösenord för köparkabinettet",
+  "roleSwitch_buyerPasswordSave": "Spara och fortsätt"
 }

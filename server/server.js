@@ -5354,6 +5354,15 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
       });
     }
     const buyer = buyers[0];
+    if (!buyer.password) {
+      return res.status(400).json({
+        success: false,
+        status: 'buyer_password_required',
+        buyerId: buyer.id,
+        error:
+          'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
+      });
+    }
     const { password } = req.body;
     if (password && typeof password === 'string' && buyer.password) {
       const hashedTry = crypto.createHash('sha256').update(password).digest('hex');
@@ -5457,6 +5466,62 @@ app.get('/api/auth/linked-roles', async (req, res) => {
 });
 
 /**
+ * POST /api/auth/linked-roles/set-password — задать пароль текущему кабинету, если его ещё нет
+ * (нужно Google-покупателям перед созданием кабинета продавца).
+ */
+app.post('/api/auth/linked-roles/set-password', async (req, res) => {
+  try {
+    const userId = parseInt(String(req.body.userId), 10);
+    const password = req.body.password;
+
+    if (!userId || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите userId и password',
+      });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: passwordValidation.message,
+        passwordValidation: {
+          missing: passwordValidation.missing,
+          present: passwordValidation.present,
+        },
+      });
+    }
+
+    const user = await userQueries.getById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    if (user.password) {
+      return res.status(400).json({
+        success: false,
+        status: 'already_has_password',
+        error: 'Пароль для этого кабинета уже установлен',
+        user: linkedRolePublicUser(user),
+      });
+    }
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    await userQueries.update(userId, { password: hashedPassword });
+    const updated = await userQueries.getById(userId);
+
+    return res.json({
+      success: true,
+      user: linkedRolePublicUser(updated),
+    });
+  } catch (error) {
+    console.error('❌ linked-roles/set-password:', error);
+    res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
  * POST /api/auth/linked-roles/create — создать связанный кабинет (покупатель ↔ продавец)
  */
 app.post('/api/auth/linked-roles/create', async (req, res) => {
@@ -5518,6 +5583,15 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'Кабинет продавца можно создать только из кабинета покупателя',
+      });
+    }
+
+    if (wantsSeller && isBuyerCabinetRole(sourceRole) && !sourceUser.password) {
+      return res.status(400).json({
+        success: false,
+        status: 'buyer_password_required',
+        error:
+          'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
       });
     }
 
@@ -5649,6 +5723,14 @@ app.post('/api/auth/email/register', async (req, res) => {
         return res.status(409).json({
           success: false,
           error: 'Аккаунт уже оформлен как продавец',
+        });
+      }
+      if (!linkBuyer.password) {
+        return res.status(400).json({
+          success: false,
+          status: 'buyer_password_required',
+          error:
+            'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
         });
       }
       const others = await userQueries.getAllByEmail(emailLower);

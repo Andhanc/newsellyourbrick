@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
 import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
-import { getUserData, loginWithEmail, validatePassword } from '../services/authService'
+import { getUserData, loginWithEmail, saveUserData, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
-import { createLinkedRole, fetchLinkedRoles } from '../utils/roleSwitchApi'
+import { createLinkedRole, fetchLinkedRoles, setLinkedRolePassword } from '../utils/roleSwitchApi'
 import {
   applyPurchasedPropertyListingPrefill,
   readPendingSellPurchasedProperty,
@@ -231,19 +231,25 @@ export function useRoleSwitchFlow(targetRole) {
 
   const continueFromPitch = useCallback(async () => {
     setError('')
+    setPasswordHints(null)
     setLoading(true)
     try {
       const preview = await loadProfilePreview()
       setProfilePreview(preview)
-      setPhase('setup')
+      const status = await refreshLinkedStatus()
+      const buyerNeedsPassword =
+        targetRole === 'seller' &&
+        Boolean(status?.buyer) &&
+        status.buyer.hasPassword === false
+      setPhase(buyerNeedsPassword ? 'buyer-password' : 'setup')
     } catch {
       setPhase('setup')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [targetRole, refreshLinkedStatus])
 
-  const submitSetup = useCallback(
+  const submitBuyerPassword = useCallback(
     async (password) => {
       setError('')
       setPasswordHints(null)
@@ -263,10 +269,65 @@ export function useRoleSwitchFlow(targetRole) {
 
       setLoading(true)
       try {
+        await setLinkedRolePassword({ userId, password })
+        await refreshLinkedStatus()
+        const current = getUserData()
+        if (current) {
+          saveUserData({ ...current, hasPassword: true })
+        }
+        setPhase('setup')
+        setError('')
+        setPasswordHints(null)
+        return true
+      } catch (e) {
+        if (e.passwordValidation) {
+          setPasswordHints(e.passwordValidation)
+        }
+        setError(e.message || 'Не удалось сохранить пароль покупателя')
+        return false
+      } finally {
+        setLoading(false)
+      }
+    },
+    [refreshLinkedStatus],
+  )
+
+  const submitSetup = useCallback(
+    async (password) => {
+      setError('')
+      setPasswordHints(null)
+
+      const validation = validatePassword(password)
+      if (!validation.valid) {
+        setError(validation.message)
+        setPasswordHints(validation)
+        return false
+      }
+
+      const userId = getStoredUserId()
+      if (!userId) {
+        setError('Пользователь не авторизован')
+        return false
+      }
+
+      if (targetRole === 'seller') {
+        const status = linkedStatus || (await refreshLinkedStatus())
+        if (status?.buyer && status.buyer.hasPassword === false) {
+          setPhase('buyer-password')
+          setError('Сначала задайте пароль для кабинета покупателя')
+          return false
+        }
+      }
+
+      setLoading(true)
+      try {
         await createLinkedRole({ userId, targetRole, password })
         await refreshLinkedStatus()
         return await switchToRole(targetRole, password)
       } catch (e) {
+        if (e.status === 'buyer_password_required') {
+          setPhase('buyer-password')
+        }
         if (e.passwordValidation) {
           setPasswordHints(e.passwordValidation)
         }
@@ -276,7 +337,7 @@ export function useRoleSwitchFlow(targetRole) {
         setLoading(false)
       }
     },
-    [targetRole, refreshLinkedStatus, switchToRole],
+    [targetRole, linkedStatus, refreshLinkedStatus, switchToRole],
   )
 
   const selectCabinet = useCallback(
@@ -407,6 +468,7 @@ export function useRoleSwitchFlow(targetRole) {
     openCabinetPicker,
     closeAll,
     continueFromPitch,
+    submitBuyerPassword,
     submitSetup,
     selectCabinet,
     submitSwitchPassword,

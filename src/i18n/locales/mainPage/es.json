@@ -5586,7 +5586,7 @@
   "roleSwitch_pitchBuyerTitle": "¿Listo para ser comprador?",
   "roleSwitch_pitchSellerBody": "Publique inmuebles en la plataforma en un clic: inversores verificados, subastas transparentes y soporte documental.",
   "roleSwitch_pitchSellerCta": "Empezar",
-  "roleSwitch_pitchSellerGoogleNote": "Inició sesión con Google: establezca una contraseña antes de crear su panel de vendedor. Su panel de comprador sigue sin contraseña; inicie sesión con Google como antes.",
+  "roleSwitch_pitchSellerGoogleNote": "Inició sesión con Google: primero establezca una contraseña para el panel de comprador y luego otra distinta para el de vendedor. Usamos la contraseña para elegir el panel.",
   "roleSwitch_pitchSellerTitle": "¿Listo para ser vendedor?",
   "roleSwitch_profileAria": "Datos del perfil",
   "roleSwitch_profileCountry": "País",
@@ -5597,8 +5597,8 @@
   "roleSwitch_saving": "Guardando…",
   "roleSwitch_sellerCabinet": "Panel del vendedor",
   "roleSwitch_sellerCabinetDesc": "Mis inmuebles, analítica, ventas",
-  "roleSwitch_setupGoogleNote": "Esta contraseña es solo para el panel de vendedor. Puede seguir iniciando sesión en el panel de comprador con Google.",
-  "roleSwitch_setupSubtitle": "Establezca una contraseña para su panel de vendedor. El historial de compras permanece en el panel de comprador.",
+  "roleSwitch_setupGoogleNote": "Esta contraseña es solo para el panel de vendedor y debe ser distinta de la del comprador. Puede seguir entrando al panel de comprador con Google o su contraseña.",
+  "roleSwitch_setupSubtitle": "Establezca una contraseña para el panel de vendedor. Debe ser distinta de la del comprador.",
   "roleSwitch_setupTitle": "Crear su panel",
   "roleSwitch_switchConfirm": "Cambiar",
   "roleSwitch_switchGoogleCta": "Iniciar sesión con Google",
@@ -5700,5 +5700,10 @@
   "tdSurvey_s6_summaryAria": "Answer summary",
   "toastBidOutbidTitle": "Su puja ha sido superada",
   "toastBidOutbidCta": "Volver a la subasta",
-  "toastOpenNotifications": "Abrir notificaciones"
+  "toastOpenNotifications": "Abrir notificaciones",
+  "roleSwitch_buyerPasswordTitle": "Contraseña del panel de comprador",
+  "roleSwitch_buyerPasswordSubtitle": "Su cuenta de comprador aún no tiene contraseña. Establézcala antes de crear el panel de vendedor.",
+  "roleSwitch_buyerPasswordGoogleNote": "Un correo — dos paneles. El rol al iniciar sesión se determina por la contraseña: primero guarde la del comprador, luego una distinta para el vendedor.",
+  "roleSwitch_buyerPasswordLabel": "Contraseña para el panel de comprador",
+  "roleSwitch_buyerPasswordSave": "Guardar y continuar"
 }

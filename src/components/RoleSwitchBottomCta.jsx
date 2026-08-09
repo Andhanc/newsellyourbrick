@@ -37,6 +37,7 @@ export function RoleSwitchModals({ flow }) {
     targetRole,
     closeAll,
     continueFromPitch,
+    submitBuyerPassword,
     submitSetup,
     selectCabinet,
     submitSwitchPassword,
@@ -110,6 +111,75 @@ export function RoleSwitchModals({ flow }) {
     )
   }
 
+  if (phase === 'buyer-password') {
+    const handleBuyerPasswordSubmit = async (e) => {
+      e.preventDefault()
+      const ok = await submitBuyerPassword(password)
+      if (ok) setPassword('')
+    }
+
+    return (
+      <>
+        {switchingOverlay}
+        <RoleSwitchDrawerShell
+          isOpen
+          onClose={resetAndClose}
+          ariaLabelledBy="role-switch-buyer-password-title"
+          maxHeightRatio={0.9}
+          closeLabel={closeLabel}
+        >
+          <div className="role-switch-setup__body">
+            <h2 id="role-switch-buyer-password-title" className="role-switch-setup__title">
+              {t('roleSwitch_buyerPasswordTitle')}
+            </h2>
+            <p className="role-switch-setup__subtitle">{t('roleSwitch_buyerPasswordSubtitle')}</p>
+            <p className="role-switch-setup__google-note">{t('roleSwitch_buyerPasswordGoogleNote')}</p>
+
+            <div className="role-switch-profile" aria-label={t('roleSwitch_profileAria')}>
+              <div className="role-switch-profile__row">
+                <span className="role-switch-profile__label">{t('roleSwitch_profileName')}</span>
+                <span className="role-switch-profile__value">{profilePreview.name}</span>
+              </div>
+              <div className="role-switch-profile__row">
+                <span className="role-switch-profile__label">{t('roleSwitch_profileEmail')}</span>
+                <span className="role-switch-profile__value">{profilePreview.email}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleBuyerPasswordSubmit}>
+              <div className="role-switch-field">
+                <label htmlFor="role-switch-buyer-password">{t('roleSwitch_buyerPasswordLabel')}</label>
+                <input
+                  id="role-switch-buyer-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('roleSwitch_passwordPlaceholder')}
+                  required
+                />
+              </div>
+              <p className="role-switch-hint">{t('roleSwitch_passwordHint')}</p>
+              {passwordHints?.missing?.length ? (
+                <p className="role-switch-hint" role="status">
+                  {t('roleSwitch_passwordMissing', { items: passwordHints.missing.join(', ') })}
+                </p>
+              ) : null}
+              {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
+              <button
+                type="submit"
+                className="role-switch-btn role-switch-btn--primary"
+                disabled={loading || !password}
+              >
+                {loading ? t('roleSwitch_saving') : t('roleSwitch_buyerPasswordSave')}
+              </button>
+            </form>
+          </div>
+        </RoleSwitchDrawerShell>
+      </>
+    )
+  }
+
   if (phase === 'setup') {
     const handleSubmit = async (e) => {
       e.preventDefault()
@@ -132,9 +202,7 @@ export function RoleSwitchModals({ flow }) {
             {t('roleSwitch_setupTitle')}
           </h2>
           <p className="role-switch-setup__subtitle">{t('roleSwitch_setupSubtitle')}</p>
-          {targetRole === 'seller' &&
-          linkedStatus?.buyer &&
-          linkedStatus.buyer.hasPassword === false ? (
+          {targetRole === 'seller' ? (
             <p className="role-switch-setup__google-note">{t('roleSwitch_setupGoogleNote')}</p>
           ) : null}
 

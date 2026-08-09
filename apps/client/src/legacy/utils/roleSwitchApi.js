@@ -30,3 +30,20 @@ export async function createLinkedRole({ userId, targetRole, password }) {
   }
   return data
 }
+
+/** Задать пароль текущему кабинету, если пароля ещё нет (Google → покупатель). */
+export async function setLinkedRolePassword({ userId, password }) {
+  const response = await fetch(`${API_BASE_URL}/auth/linked-roles/set-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, password }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const err = new Error(data.error || 'Не удалось сохранить пароль')
+    err.status = data.status || null
+    err.passwordValidation = data.passwordValidation || null
+    throw err
+  }
+  return data
+}
