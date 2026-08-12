@@ -5,6 +5,7 @@ import {
   applyPurchasedPropertyListingPrefill,
   buildPurchasedPropertySnapshot,
   fetchPropertySnapshot,
+  promotePendingPurchasedPropertyToSellerArrival,
   readPendingSellPurchasedProperty,
   storePendingSellPurchasedProperty,
 } from './purchasedPropertyListingPrefill'
@@ -112,8 +113,8 @@ export async function completePendingSellAfterSellerLogin(navigate) {
   if (!isSellerRole(readUserRole())) return false
 
   try {
-    await applyPurchasedPropertyListingPrefill(snapshot.id)
-    navigate(buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY))
+    promotePendingPurchasedPropertyToSellerArrival({ sellerUserId: getStoredUserId() })
+    navigate(buildOwnerTestPath(OWNER_VIEWS.HOME))
     return true
   } catch (e) {
     console.warn('completePendingSellAfterSellerLogin:', e)

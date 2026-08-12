@@ -90,7 +90,7 @@ function liveRowToChatItem(s) {
   };
 }
 
-const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
+const AdminChat = ({ onAdminSectionBadgeRefresh, targetUserId = null, onTargetHandled }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMessage, setInputMessage] = useState('');
@@ -133,6 +133,14 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
     const live = (liveSessions || []).map((s) => liveRowToChatItem(s));
     return [ai, ...live];
   }, [liveSessions]);
+
+  useEffect(() => {
+    const target = Number(targetUserId);
+    if (!Number.isFinite(target) || target <= 0 || liveSessions.length === 0) return;
+    const row = liveSessions.find((session) => Number(session.user_id) === target);
+    if (row) setSelectedChat(liveRowToChatItem(row));
+    onTargetHandled?.();
+  }, [liveSessions, onTargetHandled, targetUserId]);
 
   useEffect(() => {
     if (!selectedChat && chats.length > 0) {

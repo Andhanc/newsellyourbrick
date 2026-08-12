@@ -565,6 +565,31 @@ export async function processPropertyReservationPaidSession(stripe, session) {
 
   const existing = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
   if (existing) {
+    // Webhook может повториться после того, как stripe_payments уже записан, но
+    // синхронизация доменного статуса победителя ещё не успела завершиться.
+    // Повторный вызов в таком случае должен не просто выйти, а довести статус.
+    if (sess.metadata?.purchase_variant === 'auctionWinner') {
+      const winner = await getPrisma().auction_winners.findFirst({
+        where: { user_id: userId, property_id: propertyId },
+        orderBy: { id: 'desc' },
+        select: { id: true, status: true, deposit_paid_at: true },
+      });
+      if (winner) {
+        const nowIso = new Date().toISOString();
+        const terminalStatus = ['completed', 'cancelled'].includes(
+          String(winner.status || '').toLowerCase(),
+        );
+        await getPrisma().auction_winners.update({
+          where: { id: winner.id },
+          data: {
+            deposit_paid: 1,
+            deposit_paid_at: winner.deposit_paid_at || nowIso,
+            status: terminalStatus ? winner.status : 'deposit_paid',
+            updated_at: nowIso,
+          },
+        });
+      }
+    }
     return { ok: true, already: true };
   }
 
@@ -609,11 +634,17 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
   }
 
-  const minSaleMajorBase = computeMinimumSalePriceMajor(property);
+  const metadataMinSaleMajor = Number.parseFloat(String(sess.metadata?.min_sale_major || ''));
+  const minSaleMajorBase =
+    Number.isFinite(metadataMinSaleMajor) && metadataMinSaleMajor > 0
+      ? metadataMinSaleMajor
+      : computeMinimumSalePriceMajor(property);
   if (!(minSaleMajorBase > 0)) {
     return { ok: false, error: 'invalid_minimum_price' };
   }
-  const propertyCurrencyNorm = normalizeStripeCurrency(property.currency || curLower);
+  const propertyCurrencyNorm = normalizeStripeCurrency(
+    sess.metadata?.property_currency || property.currency || curLower
+  );
   const propertyCurrency = propertyCurrencyNorm.ok ? propertyCurrencyNorm.currency : curLower;
   let minSaleMajor = minSaleMajorBase;
   if (propertyCurrency !== curLower) {
@@ -685,7 +716,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
         propertyTitle: property.title || `Объект #${propertyId}`,
         propertyDescription: property.description || null,
         propertyPrice: minSaleMajor,
-        propertyCurrency: (property.currency || 'USD').toString().toUpperCase(),
+        // minSaleMajor выше приведён именно к валюте Checkout.
+        propertyCurrency: curLower.toUpperCase(),
         propertyLocation: property.location || property.address || null,
         propertyType: property.property_type || null,
         propertyArea: property.area != null ? String(property.area) : null,
@@ -723,6 +755,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
 
     const billingPayload = {
       type: 'property_reservation',
+      purchase_variant:
+        sess.metadata?.purchase_variant === 'auctionWinner' ? 'auctionWinner' : 'buyNow',
       minimum_sale_price: minSaleMajor,
       ten_percent: tenPctMajor,
       paid_stripe_cents: stripeCents,
@@ -764,6 +798,74 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
 
     await propertyQueries.reserve(propertyId, userId, createdRequestId);
+
+    if (sess.metadata?.purchase_variant === 'auctionWinner') {
+      const prisma = getPrisma();
+      const winner = await prisma.auction_winners.findFirst({
+        where: { user_id: userId, property_id: propertyId },
+        orderBy: { id: 'desc' },
+        select: { id: true, status: true, deposit_paid_at: true },
+      });
+      if (winner) {
+        const nowIso = new Date().toISOString();
+        const terminalStatus = ['completed', 'cancelled'].includes(
+          String(winner.status || '').toLowerCase(),
+        );
+        await prisma.auction_winners.update({
+          where: { id: winner.id },
+          data: {
+            deposit_paid: 1,
+            deposit_paid_at: winner.deposit_paid_at || nowIso,
+            status: terminalStatus ? winner.status : 'deposit_paid',
+            updated_at: nowIso,
+          },
+        });
+      } else {
+        console.warn('[Stripe] paid auction reservation has no matching auction_winners row', {
+          userId,
+          propertyId,
+          checkoutSessionId: sess.id,
+        });
+      }
+    }
+
+    // Уведомление создаём в том же подтверждённом paid-сценарии, поэтому кабинет
+    // никогда не сообщает об оплате, опираясь только на клиентский redirect.
+    try {
+      await notificationQueries.create({
+        user_id: userId,
+        type: 'property_reservation_paid',
+        title: 'Резерв оплачен',
+        message: `Оплата резерва по объекту «${property.title || `Объект #${propertyId}`}» подтверждена. Сделка уже в обработке.`,
+        data: {
+          purchase_request_id: Number(createdRequestId),
+          property_id: Number(propertyId),
+          paid: true,
+          action_path: `/profile/purchased/${propertyId}`,
+          action_label: 'Следить за сделкой',
+        },
+        is_read: 0,
+        view_count: 0,
+      });
+      if (sellerId) {
+        await notificationQueries.create({
+          user_id: Number(sellerId),
+          type: 'property_reservation_received',
+          title: 'Объект зарезервирован',
+          message: `Покупатель оплатил резерв по объекту «${property.title || `Объект #${propertyId}`}».`,
+          data: {
+            purchase_request_id: Number(createdRequestId),
+            property_id: Number(propertyId),
+            buyer_id: Number(userId),
+            paid: true,
+          },
+          is_read: 0,
+          view_count: 0,
+        });
+      }
+    } catch (notificationError) {
+      console.warn('[Stripe] reservation paid notification:', notificationError?.message || notificationError);
+    }
 
     return { ok: true };
   } catch (e) {
@@ -2126,7 +2228,34 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const minSaleMajor = computeMinimumSalePriceMajor(property);
+      const purchaseVariant =
+        req.body?.purchaseVariant === 'auctionWinner' ? 'auctionWinner' : 'buyNow';
+      let minSaleMajor = computeMinimumSalePriceMajor(property);
+      let saleCurrencyRaw = property.currency || 'usd';
+      if (purchaseVariant === 'auctionWinner') {
+        const winner = await getPrisma().auction_winners.findFirst({
+          where: { property_id: propertyId, user_id: userId },
+          orderBy: { id: 'desc' },
+          select: {
+            winning_bid_amount: true,
+            currency: true,
+            auction_end_date: true,
+          },
+        });
+        const winningAmount = Number(winner?.winning_bid_amount);
+        const auctionEndedAt = winner?.auction_end_date ? new Date(winner.auction_end_date).getTime() : NaN;
+        if (!winner || !Number.isFinite(winningAmount) || winningAmount <= 0) {
+          return res.status(403).json({
+            success: false,
+            error: 'Оплата доступна только подтверждённому победителю аукциона',
+          });
+        }
+        if (!Number.isFinite(auctionEndedAt) || auctionEndedAt > Date.now()) {
+          return res.status(409).json({ success: false, error: 'Аукцион ещё не завершён' });
+        }
+        minSaleMajor = winningAmount;
+        saleCurrencyRaw = winner.currency || property.currency || 'usd';
+      }
       if (!(minSaleMajor > 0)) {
         return res.status(400).json({
           success: false,
@@ -2134,7 +2263,7 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const curNorm = normalizeStripeCurrency(property.currency || 'usd');
+      const curNorm = normalizeStripeCurrency(saleCurrencyRaw);
       if (!curNorm.ok) {
         return res.status(400).json({ success: false, error: curNorm.error });
       }
@@ -2267,6 +2396,7 @@ export function registerStripeBillingRoutes(app) {
           wallet_applied_major: String(walletAppliedMajor),
           signing_intent_id: signingIntentId,
           policy_version: RESERVATION_POLICY_VERSION,
+          purchase_variant: purchaseVariant,
         },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
       });
@@ -3274,6 +3404,9 @@ export function registerStripeBillingRoutes(app) {
           return {
             ...row,
             billing,
+            purchase_request_status: billing.purchase_request_id
+              ? (await purchaseRequestQueries.getById(billing.purchase_request_id))?.status || null
+              : null,
             property_image,
             property_title,
             property_location,

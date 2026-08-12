@@ -10,6 +10,7 @@ import OwnerSubscriptionsTestPage from './OwnerSubscriptionsTestPage'
 import OwnerWalletTestPage from './OwnerWalletTestPage'
 import OwnerProfileTestPage from './OwnerProfileTestPage'
 import OwnerAddPropertyTestPage from './OwnerAddPropertyTestPage'
+import SellerPurchasedPropertyArrivalDrawer from '../components/SellerPurchasedPropertyArrivalDrawer'
 
 function OwnerTestViewRouter() {
   const { view } = useOwnerTestNav()
@@ -45,13 +46,21 @@ function OwnerTestPageContent() {
   const { view } = useOwnerTestNav()
 
   if (view === OWNER_VIEWS.ADD_PROPERTY) {
-    return <OwnerTestViewRouter />
+    return (
+      <>
+        <OwnerTestViewRouter />
+        <SellerPurchasedPropertyArrivalDrawer />
+      </>
+    )
   }
 
   return (
-    <OwnerTestCabinetChrome>
-      <OwnerTestViewRouter />
-    </OwnerTestCabinetChrome>
+    <>
+      <OwnerTestCabinetChrome>
+        <OwnerTestViewRouter />
+      </OwnerTestCabinetChrome>
+      <SellerPurchasedPropertyArrivalDrawer />
+    </>
   )
 }
 

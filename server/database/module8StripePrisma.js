@@ -140,6 +140,31 @@ export const stripeSubscriptionQueries = {
     return rows.map(toPlain);
   },
 
+  /**
+   * Источник истины для действий администратора по сделке: оплаченный Stripe-резерв,
+   * в billing_reason которого зафиксирован id запроса на покупку.
+   */
+  findPaidReservationByPurchaseRequestId: async (purchaseRequestId) => {
+    const requestId = parseInt(purchaseRequestId, 10);
+    if (!Number.isFinite(requestId)) return null;
+    const rows = await getPrisma().stripe_payments.findMany({
+      where: { plan_key: 'property_reservation', status: 'paid' },
+      orderBy: { paid_at: 'desc' },
+      take: 2000,
+    });
+    for (const row of rows) {
+      try {
+        const billing = JSON.parse(row.billing_reason || '{}');
+        if (Number(billing.purchase_request_id) === requestId) {
+          return { ...toPlain(row), billing };
+        }
+      } catch {
+        /* пропускаем старые записи с невалидным JSON */
+      }
+    }
+    return null;
+  },
+
   /** Платежи тест-драйва пользователя (billing_reason JSON содержит booking_id). */
   listTestDriveBookingPaymentsByUserId: async (userId, limit = 120) => {
     const uid = parseInt(userId, 10);

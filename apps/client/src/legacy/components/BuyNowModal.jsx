@@ -330,23 +330,37 @@ const BuyNowModal = ({
   if (!isOpen) return null
 
   return (
-    <div className="buy-now-modal-overlay" onClick={onClose}>
+    <div className="buy-now-modal-overlay" onClick={onClose} role="presentation">
       <div
-        className={`buy-now-modal buy-now-modal--v2 ${isAuctionWinner ? 'buy-now-modal--auction-winner' : ''}`}
+        className={[
+          'buy-now-modal',
+          'buy-now-modal--v2',
+          isAuctionWinner ? 'buy-now-modal--auction-winner' : '',
+          agreed ? 'buy-now-modal--signing' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buy-now-modal-title"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="buy-now-modal__drawer-handle" aria-hidden="true">
+          <span className="buy-now-modal__drawer-handle-pill" />
+        </div>
+
         <button
           className="buy-now-modal__close"
           type="button"
           onClick={onClose}
           aria-label={t('buyNowModalCloseAria')}
         >
-          <FiX size={22} />
+          <FiX size={20} />
         </button>
 
         <div className="buy-now-modal__content buy-now-modal__content--v2">
           <header className="buy-now-modal__head">
-            <h2 className="buy-now-modal__title">
+            <h2 id="buy-now-modal-title" className="buy-now-modal__title">
               {isAuctionWinner ? t('auctionWinPaymentModalTitle') : t('buyNowModalTitle')}
             </h2>
             <p className="buy-now-modal__subtitle">{propertyTitle}</p>
@@ -355,156 +369,168 @@ const BuyNowModal = ({
             )}
           </header>
 
-          <div className="buy-now-modal__sums">
-            {isAuctionWinner ? (
-              <>
-                <div className="buy-now-modal__sum-card">
-                  <span className="buy-now-modal__sum-label">{t('auctionWinPaymentModalWinningBidLabel')}</span>
-                  <span className="buy-now-modal__sum-value">
-                    {currencySymbol}
-                    {winningBidNum != null ? formatMoney(winningBidNum) : '—'}
-                  </span>
-                  <span className="buy-now-modal__sum-footnote">{t('auctionWinPaymentModalWinningBidHint')}</span>
-                </div>
-                <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
-                  <span className="buy-now-modal__sum-label">
-                    <FiPercent size={14} aria-hidden /> {t('auctionWinPaymentModalReserveLabel')}
-                  </span>
-                  <span className="buy-now-modal__sum-value">
-                    {reserveDisplaySymbol}
-                    {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
-                  </span>
-                  <span className="buy-now-modal__sum-footnote">{t('auctionWinPaymentModalReserveHint')}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="buy-now-modal__sum-card">
-                  <span className="buy-now-modal__sum-label">{t('buyNowModalMinPriceLabel')}</span>
-                  <span className="buy-now-modal__sum-value">
-                    {currencySymbol}
-                    {formatMoney(minSalePrice)}
-                  </span>
-                  <span className="buy-now-modal__sum-footnote">{t('buyNowModalFullPriceHint')}</span>
-                </div>
-                <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
-                  <span className="buy-now-modal__sum-label">
-                    <FiPercent size={14} aria-hidden /> {t('buyNowModalReservePercentLabel')}
-                  </span>
-                  <span className="buy-now-modal__sum-value">
-                    {reserveDisplaySymbol}
-                    {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
-                  </span>
-                  <span className="buy-now-modal__sum-footnote">{t('buyNowModalReserveHint')}</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="buy-now-modal__wallet-row">
-            <div className="buy-now-modal__wallet-row-text">
-              <span className="buy-now-modal__wallet-title">{t('buyNowModalWalletTitle')}</span>
-              {walletBalanceEur != null && (
-                <span className="buy-now-modal__wallet-meta">
-                  {walletBalanceEur.toLocaleString(locale === 'ru' ? 'ru-RU' : locale, {
-                    maximumFractionDigits: 0,
-                  })}{' '}
-                  €
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={useWalletDeposit}
-              disabled={!canUseWallet}
-              className={`buy-now-modal__switch ${useWalletDeposit ? 'buy-now-modal__switch--on' : ''} ${
-                !canUseWallet ? 'buy-now-modal__switch--disabled' : ''
-              }`}
-              onClick={() => {
-                if (!canUseWallet) return
-                setUseWalletDeposit((v) => !v)
-              }}
-            >
-              <span className="buy-now-modal__switch-knob" />
-            </button>
-          </div>
-          {walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
-            <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
-          )}
-
-          <section className="buy-now-modal__how">
-            <h3 className="buy-now-modal__how-title">
-              {isAuctionWinner ? t('auctionWinPaymentModalHowTitle') : t('buyNowModalHowTitle')}
-            </h3>
-            <div className="buy-now-modal__how-grid">
+          <div className="buy-now-modal__body">
+            <div className="buy-now-modal__sums">
               {isAuctionWinner ? (
                 <>
-                  <div className="buy-now-modal__how-item">
-                    <FiAward className="buy-now-modal__how-icon" aria-hidden />
-                    <div>
-                      <strong>{t('auctionWinPaymentModalHowStep1Title')}</strong>
-                      <span>{t('auctionWinPaymentModalHowStep1Desc')}</span>
-                    </div>
+                  <div className="buy-now-modal__sum-card">
+                    <span className="buy-now-modal__sum-label">
+                      {t('auctionWinPaymentModalWinningBidLabel')}
+                    </span>
+                    <span className="buy-now-modal__sum-value">
+                      {currencySymbol}
+                      {winningBidNum != null ? formatMoney(winningBidNum) : '—'}
+                    </span>
+                    <span className="buy-now-modal__sum-footnote">
+                      {t('auctionWinPaymentModalWinningBidHint')}
+                    </span>
                   </div>
-                  <div className="buy-now-modal__how-item">
-                    <FiPhone className="buy-now-modal__how-icon" aria-hidden />
-                    <div>
-                      <strong>{t('auctionWinPaymentModalHowStep2Title')}</strong>
-                      <span>{t('auctionWinPaymentModalHowStep2Desc')}</span>
-                    </div>
+                  <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
+                    <span className="buy-now-modal__sum-label">
+                      <FiPercent size={13} aria-hidden /> {t('auctionWinPaymentModalReserveLabel')}
+                    </span>
+                    <span className="buy-now-modal__sum-value">
+                      {reserveDisplaySymbol}
+                      {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
+                    </span>
+                    <span className="buy-now-modal__sum-footnote">
+                      {t('auctionWinPaymentModalReserveHint')}
+                    </span>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="buy-now-modal__how-item">
-                    <FiCreditCard className="buy-now-modal__how-icon" aria-hidden />
-                    <div>
-                      <strong>{t('buyNowModalHowReserveTitle')}</strong>
-                      <span>{t('buyNowModalHowReserveDesc')}</span>
-                    </div>
+                  <div className="buy-now-modal__sum-card">
+                    <span className="buy-now-modal__sum-label">{t('buyNowModalMinPriceLabel')}</span>
+                    <span className="buy-now-modal__sum-value">
+                      {currencySymbol}
+                      {formatMoney(minSalePrice)}
+                    </span>
+                    <span className="buy-now-modal__sum-footnote">{t('buyNowModalFullPriceHint')}</span>
                   </div>
-                  <div className="buy-now-modal__how-item">
-                    <FiPhone className="buy-now-modal__how-icon" aria-hidden />
-                    <div>
-                      <strong>{t('buyNowModalHowManagerTitle')}</strong>
-                      <span>{t('buyNowModalHowManagerDesc')}</span>
-                    </div>
+                  <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
+                    <span className="buy-now-modal__sum-label">
+                      <FiPercent size={13} aria-hidden /> {t('buyNowModalReservePercentLabel')}
+                    </span>
+                    <span className="buy-now-modal__sum-value">
+                      {reserveDisplaySymbol}
+                      {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
+                    </span>
+                    <span className="buy-now-modal__sum-footnote">{t('buyNowModalReserveHint')}</span>
                   </div>
                 </>
               )}
             </div>
-          </section>
 
-          <section className="buy-now-modal__legal">
-            <h3 className="buy-now-modal__legal-title">{t('buyNowModalConsentTitle')}</h3>
-            <button type="button" className="buy-now-modal__pdf-btn" onClick={openPdf}>
-              <FiExternalLink size={17} />
-              {t('buyNowModalPdfTerms')}
-            </button>
-            <label className={`buy-now-modal__check ${!pdfOpened ? 'buy-now-modal__check--disabled' : ''}`}>
-              <input
-                type="checkbox"
-                checked={agreed}
-                disabled={!pdfOpened}
-                onChange={(e) => setAgreed(e.target.checked)}
-              />
-              <span>{t('buyNowModalAgreeCheckbox')}</span>
-            </label>
-
-            {agreed && (
-              <div className="buy-now-modal__signature-block">
-                <div className="buy-now-modal__signature-head">
-                  <span className="buy-now-modal__signature-label">{t('buyNowModalSignatureLabel')}</span>
-                  <button type="button" className="buy-now-modal__clear-sig" onClick={clearSignature}>
-                    <FiTrash2 size={15} />
-                    {t('buyNowModalClearSignature')}
-                  </button>
-                </div>
-                <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen} />
+            <div className="buy-now-modal__wallet-row">
+              <div className="buy-now-modal__wallet-row-text">
+                <span className="buy-now-modal__wallet-title">{t('buyNowModalWalletTitle')}</span>
+                {walletBalanceEur != null && (
+                  <span className="buy-now-modal__wallet-meta">
+                    {walletBalanceEur.toLocaleString(locale === 'ru' ? 'ru-RU' : locale, {
+                      maximumFractionDigits: 0,
+                    })}{' '}
+                    €
+                  </span>
+                )}
               </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={useWalletDeposit}
+                disabled={!canUseWallet}
+                className={`buy-now-modal__switch ${useWalletDeposit ? 'buy-now-modal__switch--on' : ''} ${
+                  !canUseWallet ? 'buy-now-modal__switch--disabled' : ''
+                }`}
+                onClick={() => {
+                  if (!canUseWallet) return
+                  setUseWalletDeposit((v) => !v)
+                }}
+              >
+                <span className="buy-now-modal__switch-knob" />
+              </button>
+            </div>
+            {walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
+              <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
             )}
-          </section>
+
+            <section className="buy-now-modal__how">
+              <h3 className="buy-now-modal__how-title">
+                {isAuctionWinner ? t('auctionWinPaymentModalHowTitle') : t('buyNowModalHowTitle')}
+              </h3>
+              <div className="buy-now-modal__how-grid">
+                {isAuctionWinner ? (
+                  <>
+                    <div className="buy-now-modal__how-item">
+                      <FiAward className="buy-now-modal__how-icon" aria-hidden />
+                      <div>
+                        <strong>{t('auctionWinPaymentModalHowStep1Title')}</strong>
+                        <span>{t('auctionWinPaymentModalHowStep1Desc')}</span>
+                      </div>
+                    </div>
+                    <div className="buy-now-modal__how-item">
+                      <FiPhone className="buy-now-modal__how-icon" aria-hidden />
+                      <div>
+                        <strong>{t('auctionWinPaymentModalHowStep2Title')}</strong>
+                        <span>{t('auctionWinPaymentModalHowStep2Desc')}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="buy-now-modal__how-item">
+                      <FiCreditCard className="buy-now-modal__how-icon" aria-hidden />
+                      <div>
+                        <strong>{t('buyNowModalHowReserveTitle')}</strong>
+                        <span>{t('buyNowModalHowReserveDesc')}</span>
+                      </div>
+                    </div>
+                    <div className="buy-now-modal__how-item">
+                      <FiPhone className="buy-now-modal__how-icon" aria-hidden />
+                      <div>
+                        <strong>{t('buyNowModalHowManagerTitle')}</strong>
+                        <span>{t('buyNowModalHowManagerDesc')}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className="buy-now-modal__legal">
+              <div className="buy-now-modal__legal-top">
+                <h3 className="buy-now-modal__legal-title">{t('buyNowModalConsentTitle')}</h3>
+                <button type="button" className="buy-now-modal__pdf-btn" onClick={openPdf}>
+                  <FiExternalLink size={15} />
+                  {t('buyNowModalPdfTerms')}
+                </button>
+                <label
+                  className={`buy-now-modal__check ${!pdfOpened ? 'buy-now-modal__check--disabled' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    disabled={!pdfOpened}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                  />
+                  <span>{t('buyNowModalAgreeCheckbox')}</span>
+                </label>
+              </div>
+
+              {agreed && (
+                <div className="buy-now-modal__signature-block">
+                  <div className="buy-now-modal__signature-head">
+                    <span className="buy-now-modal__signature-label">{t('buyNowModalSignatureLabel')}</span>
+                    <button type="button" className="buy-now-modal__clear-sig" onClick={clearSignature}>
+                      <FiTrash2 size={14} />
+                      {t('buyNowModalClearSignature')}
+                    </button>
+                  </div>
+                  <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen} />
+                </div>
+              )}
+            </section>
+          </div>
 
           <div className="buy-now-modal__actions">
             <button

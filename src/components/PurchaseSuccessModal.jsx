@@ -95,6 +95,9 @@ export default function PurchaseSuccessModal({
       footer={footer}
     >
       <div className="purchase-success-modal__body">
+        <div className="purchase-success-modal__confetti" aria-hidden>
+          {Array.from({ length: 24 }, (_, index) => <i key={index} />)}
+        </div>
         <img
           className="purchase-success-modal__illustration"
           src="/images/property-detail/deposit-success-check-3d.png"

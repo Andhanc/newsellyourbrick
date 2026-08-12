@@ -9,12 +9,14 @@ import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import '../pages/Home.css'
 import './SiteChatDock.css'
 
+const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
+
 export default function SiteChatDock({
   wrapperClassName = 'site-chat-dock',
   footerNear = false,
   hideFab = false,
   children,
-  recommendationProperties = [],
+  recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES,
   resolveRecommendationProperty,
   onRecommendationClick,
 }) {

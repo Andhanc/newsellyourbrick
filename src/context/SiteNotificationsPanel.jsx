@@ -87,6 +87,10 @@ function notificationNextStep(notification, dataObj) {
       return 'Откройте бронирования, чтобы выбрать другой объект или новые даты.'
     case 'buy_now_approved':
       return 'Проверьте покупку и срок следующего платежа в истории.'
+    case 'property_reservation_paid':
+      return 'Следите за оформлением сделки в профиле — сейчас оплачен только резерв.'
+    case 'buy_now_completed':
+      return 'Сделка завершена. Теперь объект можно выставить на продажу.'
     case 'outbid':
     case 'bid_outbid':
       return 'Откройте объект и решите, повышать ли ставку до завершения торгов.'

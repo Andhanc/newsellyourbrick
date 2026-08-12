@@ -4455,9 +4455,43 @@ app.get('/api/purchase-requests', async (req, res) => {
       ? await purchaseRequestQueries.getCountByStatus(status)
       : await purchaseRequestQueries.getCount();
 
+    const reservationPayments = await stripeSubscriptionQueries.listAllReservationPurchasesWithUsers(2000);
+    const paymentByRequestId = new Map();
+    for (const payment of reservationPayments) {
+      try {
+        const billing = JSON.parse(payment.billing_reason || '{}');
+        const requestId = Number(billing.purchase_request_id);
+        if (Number.isFinite(requestId) && !paymentByRequestId.has(requestId)) {
+          paymentByRequestId.set(requestId, { payment, billing });
+        }
+      } catch {
+        /* старые платежи без JSON не относятся к резервам */
+      }
+    }
+    const enrichedRequests = requests.map((request) => {
+      const match = paymentByRequestId.get(Number(request.id));
+      const payment = match?.payment;
+      const billing = match?.billing || {};
+      const paid = payment?.status === 'paid';
+      return {
+        ...request,
+        reservation_payment: {
+          verified: paid,
+          status: payment?.status || 'not_found',
+          amount_cents: payment?.amount_cents ?? null,
+          currency: payment?.currency || request.property_currency || null,
+          paid_at: payment?.paid_at || null,
+          stripe_checkout_session_id: payment?.stripe_checkout_session_id || null,
+          wallet_applied_major: billing.wallet_applied_major ?? 0,
+          total_paid_toward_price: billing.total_paid_toward_price ?? null,
+          remaining_to_full_purchase: billing.remaining_to_full_purchase ?? null,
+        },
+      };
+    });
+
     res.json({ 
       success: true, 
-      data: requests, 
+      data: enrichedRequests,
       total,
       limit,
       offset 
@@ -4512,6 +4546,51 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
+    }
+
+    // Сделку нельзя завершить по неподтверждённой заявке: проверяем именно запись,
+    // созданную после paid/succeeded Stripe Checkout, а не флаг с клиента.
+    let paidReservation = null;
+    if (status === 'completed' || status === 'cancelled') {
+      paidReservation =
+        await stripeSubscriptionQueries.findPaidReservationByPurchaseRequestId(req.params.id);
+    }
+    if (status === 'completed') {
+      if (!paidReservation) {
+        return res.status(409).json({
+          success: false,
+          code: 'RESERVATION_PAYMENT_REQUIRED',
+          error: 'Нельзя завершить сделку: Stripe не подтвердил оплату резерва.',
+        });
+      }
+    }
+
+    let auctionWinnerForStatus = null;
+    if (
+      (status === 'completed' || status === 'cancelled') &&
+      paidReservation?.billing?.purchase_variant === 'auctionWinner'
+    ) {
+      const buyerIdNum = parseInt(String(request.buyer_id || '').trim(), 10);
+      const propertyIdNum = parseInt(String(request.property_id || '').trim(), 10);
+      if (!Number.isFinite(buyerIdNum) || !Number.isFinite(propertyIdNum)) {
+        return res.status(409).json({
+          success: false,
+          code: 'AUCTION_WINNER_LINK_INVALID',
+          error: 'Оплаченная аукционная заявка не связана с покупателем или объектом.',
+        });
+      }
+      auctionWinnerForStatus = await getPrisma().auction_winners.findFirst({
+        where: { user_id: buyerIdNum, property_id: propertyIdNum },
+        orderBy: { id: 'desc' },
+        select: { id: true },
+      });
+      if (!auctionWinnerForStatus) {
+        return res.status(409).json({
+          success: false,
+          code: 'AUCTION_WINNER_NOT_FOUND',
+          error: 'Не найдена запись победителя для оплаченной аукционной заявки.',
+        });
+      }
     }
 
     // Письма (как напоминания по EmailJS) — без email нельзя перевести в «в обработку» или «завершить»
@@ -4575,6 +4654,20 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       } catch (unreserveError) {
         console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
       }
+    }
+
+    // Для аукциона Stripe-reservation является источником истины: только billing
+    // подтверждённого платежа связывает заявку с purchase_variant=auctionWinner.
+    // Gate для completed выше остаётся обязательным; отмена синхронизируется лишь
+    // когда оплаченный резерв действительно найден.
+    if (auctionWinnerForStatus) {
+      await getPrisma().auction_winners.update({
+        where: { id: auctionWinnerForStatus.id },
+        data: {
+          status,
+          updated_at: new Date().toISOString(),
+        },
+      });
     }
 
     await purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
@@ -4671,10 +4764,13 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
               user_id: buyerIdForNotif,
               type: 'buy_now_completed',
               title: 'Объект ваш!',
-              message: `Вы успешно приобрели объект «${propertyTitle}».`,
+              message: `Сделка по объекту «${propertyTitle}» завершена. Теперь вы можете выставить его на продажу как продавец.`,
               data: {
                 request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
-                property_id: safePropertyId
+                property_id: safePropertyId,
+                action_path: safePropertyId ? `/profile/purchased/${safePropertyId}` : '/profile',
+                action_label: 'Продать объект',
+                next_step: 'Откройте объект, чтобы перейти в кабинет продавца и создать объявление.'
               },
               is_read: 0,
               view_count: 0
