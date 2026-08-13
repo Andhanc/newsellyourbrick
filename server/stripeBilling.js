@@ -12,6 +12,7 @@ import {
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
+import { sendPushToUserSafely } from './services/pushNotifications.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -296,6 +297,36 @@ export async function processSharePurchasePaidSession(stripe, session) {
       agreementSignature: signingIntentId ? '' : agreementSignatureLegacy,
       policyVersion,
     });
+
+    const shareTitle = property.title || `Объект #${propertyId}`;
+    try {
+      await notificationQueries.create({
+        user_id: userId,
+        type: 'share_purchase_paid',
+        title: 'Покупка долей завершена',
+        message: `Покупка ${sharesCount} долей объекта «${shareTitle}» успешно подтверждена.`,
+        data: {
+          property_id: propertyId,
+          shares_count: sharesCount,
+          paid: true,
+          action_path: '/profile',
+        },
+        is_read: 0,
+        view_count: 0,
+      });
+    } catch (notificationError) {
+      console.warn('[Stripe] share purchase in-app notification:', notificationError?.message || notificationError);
+    }
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Успешная покупка',
+        body: `Покупка ${sharesCount} долей объекта «${shareTitle}» подтверждена.`,
+        data: { type: 'purchase_success', propertyId, path: '/profile' },
+        channelId: 'transactions',
+      },
+      'share_purchase_paid',
+    );
     return { ok: true };
   } catch (e) {
     const msg = e?.message || 'process_failed';
@@ -847,6 +878,20 @@ export async function processPropertyReservationPaidSession(stripe, session) {
         is_read: 0,
         view_count: 0,
       });
+      await sendPushToUserSafely(
+        userId,
+        {
+          title: 'Успешная покупка',
+          body: `Оплата резерва по объекту «${property.title || `Объект #${propertyId}`}» подтверждена.`,
+          data: {
+            type: 'purchase_success',
+            propertyId: Number(propertyId),
+            path: `/property/${propertyId}`,
+          },
+          channelId: 'transactions',
+        },
+        'property_reservation_paid',
+      );
       if (sellerId) {
         await notificationQueries.create({
           user_id: Number(sellerId),
@@ -1527,6 +1572,17 @@ export async function creditWalletDepositFromPaidInvoice(invoice, subscription) 
         console.warn('[Stripe] transactions insert:', e.message);
       }
     });
+
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Баланс пополнен',
+        body: `Успешно зачислено ${Number(amountEur).toLocaleString('ru-RU')} € на депозит.`,
+        data: { type: 'deposit_top_up_success', path: '/wallet', amount: amountEur },
+        channelId: 'transactions',
+      },
+      'stripe_wallet_deposit',
+    );
 
     return { ok: true, credited: true, amountEur };
   } catch (e) {

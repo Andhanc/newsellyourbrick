@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { apiFetch } from '../api/client'
 import { secureStorage, storage } from '../platform/storage'
+import { unregisterStoredPushNotifications } from '../notifications/push'
 
 export type SessionUser = {
   id: number | string
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const login = useCallback(async (email: string, password: string, role?: 'buyer' | 'seller') => {
-    const result = await apiFetch<{ success?: boolean; user: SessionUser; error?: string }>(
+    const result = await apiFetch<{ success?: boolean; user: SessionUser; authToken?: string; error?: string }>(
       '/auth/email/login',
       {
         method: 'POST',
@@ -115,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!result?.user?.id) {
       throw { message: (result as any)?.error || 'Не удалось войти' }
     }
+    if (!result.authToken) throw { message: 'Сервер не выдал мобильную сессию' }
+    await secureStorage.setItem('authToken', result.authToken)
     await persistUser(result.user)
     setUser(result.user)
     return result.user
@@ -122,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (input: { email: string; password: string; name: string; role?: 'buyer' | 'seller' }) => {
-      const result = await apiFetch<{ success?: boolean; user: SessionUser; error?: string }>(
+      const result = await apiFetch<{ success?: boolean; user: SessionUser; authToken?: string; error?: string }>(
         '/auth/email/register',
         {
           method: 'POST',
@@ -137,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!result?.user?.id) {
         throw { message: (result as any)?.error || 'Не удалось зарегистрироваться' }
       }
+      if (!result.authToken) throw { message: 'Сервер не выдал мобильную сессию' }
+      await secureStorage.setItem('authToken', result.authToken)
       await persistUser(result.user)
       setUser(result.user)
       return result.user
@@ -145,6 +150,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(async () => {
+    const authToken = await secureStorage.getItem('authToken')
+    await unregisterStoredPushNotifications(authToken)
+    if (authToken) {
+      await apiFetch('/auth/mobile/logout', { method: 'POST', token: authToken }).catch(() => undefined)
+    }
     await persistUser(null)
     setUser(null)
   }, [])

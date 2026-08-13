@@ -15,7 +15,13 @@ function readExtra(): Extra {
  * Absolute API base for Android; relative `/api` works on Expo Web when proxied.
  */
 export function getApiBaseUrl(): string {
+  const extra = readExtra().apiBaseUrl
   const fromEnv = process.env.EXPO_PUBLIC_API_BASE_URL
+  // A native build cannot reach the developer machine through localhost. The app config
+  // contains the Railway production endpoint and must win over a web-only local .env.
+  if (Platform.OS !== 'web' && extra && extra.trim()) {
+    return extra.replace(/\/+$/, '')
+  }
   if (fromEnv && fromEnv.trim()) {
     let base = fromEnv.replace(/\/+$/, '')
     // Prefer localhost over 127.0.0.1 on web to avoid Private Network Access quirks.
@@ -24,7 +30,6 @@ export function getApiBaseUrl(): string {
     }
     return base
   }
-  const extra = readExtra().apiBaseUrl
   if (extra && extra.trim()) return extra.replace(/\/+$/, '')
   if (Platform.OS === 'web') return '/api'
   // Android emulator → host machine
@@ -32,9 +37,10 @@ export function getApiBaseUrl(): string {
 }
 
 export function getMediaOrigin(): string {
+  const extra = readExtra().mediaOrigin
+  if (Platform.OS !== 'web' && extra && extra.trim()) return extra.replace(/\/+$/, '')
   const fromEnv = process.env.EXPO_PUBLIC_MEDIA_ORIGIN
   if (fromEnv && fromEnv.trim()) return fromEnv.replace(/\/+$/, '')
-  const extra = readExtra().mediaOrigin
   if (extra && extra.trim()) return extra.replace(/\/+$/, '')
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && window.location?.origin) {

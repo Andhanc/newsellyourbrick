@@ -17,7 +17,11 @@ import TestDriveLandingPage from '../legacy/pages/TestDriveLandingPage'
 import About from '../legacy/pages/About'
 import BuyerPage from '../legacy/pages/BuyerPage'
 import SellerPage from '../legacy/pages/SellerPage'
-import Footer from '../legacy/components/Footer'
+import AppDownloadPage from '../legacy/pages/AppDownloadPage'
+import LotteryPage from '../legacy/pages/LotteryPage'
+import SectionsPage from '../legacy/pages/SectionsPage'
+import SellYourBrickLandingPage from '../legacy/pages/SellYourBrickLandingPage'
+import PrivateClub from '../legacy/pages/PrivateClub'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 
 type PublicPageProps = {
@@ -44,11 +48,15 @@ function PublicRoutes() {
                 <Route path="/about" element={<About />} />
                 <Route path="/buyer" element={<BuyerPage />} />
                 <Route path="/seller" element={<SellerPage />} />
+                <Route path="/app" element={<AppDownloadPage />} />
+                <Route path="/lottery" element={<LotteryPage />} />
+                <Route path="/sections" element={<SectionsPage />} />
+                <Route path="/sellyourbrick" element={<SellYourBrickLandingPage />} />
+                <Route path="/private-club" element={<PrivateClub />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </main>
-          {!isDiscover ? <Footer /> : null}
         </div>
       </div>
     </PropertyFavoritesProvider>

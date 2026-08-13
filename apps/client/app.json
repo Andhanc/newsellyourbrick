@@ -2,7 +2,7 @@
   "expo": {
     "name": "SellYourBrick",
     "slug": "sellyourbrick",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "sellyourbrick",
@@ -20,6 +20,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "versionCode": 2,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -36,7 +37,10 @@
               "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -49,7 +53,15 @@
       "expo-router",
       "expo-font",
       "expo-image",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#00A6A6",
+          "defaultChannel": "transactions"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -58,8 +70,10 @@
       "apiBaseUrl": "https://newsellyourbrick-production-6ed8.up.railway.app/api",
       "mediaOrigin": "https://newsellyourbrick-production-6ed8.up.railway.app",
       "eas": {
-        "projectId": "sellyourbrick-local"
-      }
-    }
+        "projectId": "40a04dbe-f0b1-44af-a294-e184520ae46e"
+      },
+      "router": {}
+    },
+    "owner": "vlad_teta"
   }
 }

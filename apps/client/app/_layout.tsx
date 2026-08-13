@@ -11,6 +11,7 @@ import {
 import { View, ActivityIndicator } from 'react-native'
 import { AuthProvider } from '../src/auth/session'
 import { colors } from '../src/theme/tokens'
+import { PushNotificationsProvider } from '../src/notifications/push-provider'
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -29,8 +30,10 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+      <PushNotificationsProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+      </PushNotificationsProvider>
     </AuthProvider>
   )
 }

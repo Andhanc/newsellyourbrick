@@ -79,6 +79,16 @@ import {
   isAuctionDepositSufficient,
 } from './utils/auctionDeposit.js';
 import { formatShareMarketplaceApiItem } from './database/shareMarketplaceQueries.js';
+import {
+  registerExpoPushToken,
+  unregisterExpoPushToken,
+  sendPushToUserSafely,
+} from './services/pushNotifications.js';
+import {
+  authenticateMobileRequest,
+  issueMobileAuthSession,
+  revokeMobileAuthSession,
+} from './services/mobileAuthSessions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -522,6 +532,17 @@ async function notifyUserBidOutbid({
     is_read: 0,
     view_count: 0,
   });
+
+  await sendPushToUserSafely(
+    uid,
+    {
+      title: 'Вашу ставку перебили',
+      body: message,
+      data: { type: 'bid_outbid', propertyId: pid, path: `/property/${pid}` },
+      channelId: 'auctions',
+    },
+    'bid_outbid',
+  );
 
   broadcastUserCabinetEvent(uid, { type: 'notifications_refresh' });
 
@@ -1095,6 +1116,38 @@ app.use(express.json({ limit: '18mb' }));
 registerPropertyAiRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
+
+app.post('/api/push-tokens', async (req, res) => {
+  try {
+    const session = await authenticateMobileRequest(req);
+    if (!session) return res.status(401).json({ success: false, error: 'mobile_auth_required' });
+    const row = await registerExpoPushToken({
+      userId: session.userId,
+      token: req.body?.token,
+      platform: req.body?.platform,
+      deviceId: req.body?.deviceId,
+    });
+    res.json({ success: true, data: row });
+  } catch (error) {
+    const code = error?.message || 'push_token_registration_failed';
+    const status = code === 'user_not_found' ? 404 : 400;
+    res.status(status).json({ success: false, error: code });
+  }
+});
+
+app.delete('/api/push-tokens', async (req, res) => {
+  try {
+    const session = await authenticateMobileRequest(req);
+    if (!session) return res.status(401).json({ success: false, error: 'mobile_auth_required' });
+    const result = await unregisterExpoPushToken({
+      userId: session.userId,
+      token: req.body?.token,
+    });
+    res.json({ success: true, data: { disabled: result.count || 0 } });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error?.message || 'push_token_unregister_failed' });
+  }
+});
 
 registerStripeBillingRoutes(app);
 
@@ -4775,6 +4828,20 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
               is_read: 0,
               view_count: 0
             });
+            await sendPushToUserSafely(
+              buyerIdForNotif,
+              {
+                title: 'Покупка завершена',
+                body: `Сделка по объекту «${propertyTitle}» успешно завершена. Объект уже в вашем кабинете.`,
+                data: {
+                  type: 'purchase_success',
+                  propertyId: safePropertyId,
+                  path: safePropertyId ? `/property/${safePropertyId}` : '/profile',
+                },
+                channelId: 'transactions',
+              },
+              'buy_now_completed',
+            );
           } else if (status === 'rejected' || status === 'cancelled') {
             await notificationQueries.create({
               user_id: buyerIdForNotif,
@@ -5938,6 +6005,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     }
 
     const createdUserFinal = linkBuyer ? await userQueries.getById(createdUser.id) : createdUser;
+    const authToken = await issueMobileAuthSession(createdUserFinal.id);
 
     console.log('✅ Пользователь успешно сохранен в БД:', {
       id: createdUserFinal.id,
@@ -5953,6 +6021,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     
     res.status(201).json({ 
       success: true, 
+      authToken,
       user: {
         id: createdUserFinal.id,
         name: `${createdUserFinal.first_name} ${createdUserFinal.last_name}`.trim(),
@@ -6055,11 +6124,13 @@ app.post('/api/auth/email/login', async (req, res) => {
     // Пароль верный, обновляем статус онлайн (update может сгенерировать user_id_number для старых записей)
     await userQueries.update(user.id, { is_online: 1 });
     const refreshedUser = await userQueries.getById(user.id) || user;
+    const authToken = await issueMobileAuthSession(refreshedUser.id);
 
     console.log('✅ Вход успешен:', { id: refreshedUser.id, email: refreshedUser.email, role: refreshedUser.role });
 
     res.json({
       success: true,
+      authToken,
       user: {
         id: refreshedUser.id,
         name: `${refreshedUser.first_name} ${refreshedUser.last_name}`.trim() || refreshedUser.email || 'Пользователь',
@@ -6076,6 +6147,15 @@ app.post('/api/auth/email/login', async (req, res) => {
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/auth/mobile/logout', async (req, res) => {
+  try {
+    const result = await revokeMobileAuthSession(req);
+    res.json({ success: true, data: { revoked: result.count || 0 } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error?.message || 'mobile_logout_failed' });
   }
 });
 
@@ -14709,6 +14789,17 @@ app.post('/api/users/:id/deposit/top-up', async (req, res) => {
         },
       });
     });
+
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Баланс пополнен',
+        body: 'Депозит успешно пополнен на 3 000 €.',
+        data: { type: 'deposit_top_up_success', path: '/wallet', amount: 3000 },
+        channelId: 'transactions',
+      },
+      'deposit_top_up',
+    );
     
     res.json({
       success: true,
@@ -14769,6 +14860,17 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
         },
       });
     });
+
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Вывод оформлен',
+        body: `Заявка на вывод ${Number(amount).toLocaleString('ru-RU')} € успешно оформлена.`,
+        data: { type: 'withdraw_success', path: '/wallet', amount: Number(amount) },
+        channelId: 'transactions',
+      },
+      'deposit_withdraw',
+    );
     
     res.json({
       success: true,
@@ -15998,6 +16100,22 @@ async function insertAuctionWinnerRow(prisma, row) {
       is_read: 0,
       view_count: 0,
     });
+
+    await sendPushToUserSafely(
+      user_id,
+      {
+        title: 'Вы выиграли аукцион',
+        body: `Поздравляем! Вы победили в аукционе по объекту «${propertyTitle}».`,
+        data: {
+          type: 'auction_won',
+          propertyId: property_id,
+          winnerId: createdWinner.id,
+          path: `/property/${property_id}`,
+        },
+        channelId: 'auctions',
+      },
+      'auction_won',
+    );
 
     await notificationQueries.create({
       user_id,
