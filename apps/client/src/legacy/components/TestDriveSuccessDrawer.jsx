@@ -1,4 +1,4 @@
-import { FiArrowRight, FiCalendar, FiClock, FiMessageCircle } from 'react-icons/fi'
+import { FiArrowRight, FiCalendar, FiClock, FiMessageCircle, FiStar } from 'react-icons/fi'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import './TestDriveSuccessDrawer.css'
 
@@ -87,6 +87,15 @@ export default function TestDriveSuccessDrawer({
             <div>
               <strong>Проверьте время заезда</strong>
               <p>Перед поездкой откройте бронь и сверьте комментарий владельца.</p>
+            </div>
+          </article>
+          <article>
+            <span aria-hidden>
+              <FiStar size={18} />
+            </span>
+            <div>
+              <strong>Пройдите короткий опрос</strong>
+              <p>В уведомлениях появилась ссылка — расскажите, что понравилось, и оцените объект.</p>
             </div>
           </article>
         </div>

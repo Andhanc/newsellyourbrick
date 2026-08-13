@@ -390,7 +390,6 @@ function Home() {
     [navigate],
   )
 
-
   useEffect(() => {
     const node = faqSentinelRef.current
     if (!node || showFaq) return undefined

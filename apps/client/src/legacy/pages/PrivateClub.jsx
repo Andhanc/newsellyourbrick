@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import {
   RiArrowRightLine,
+  RiArrowRightUpLine,
   RiLockLine,
   RiNotification3Line,
   RiUserStarLine,
@@ -298,7 +299,7 @@ export default function PrivateClub() {
                       <p>{card.text}</p>
                       <button type="button" className="vip-club-story-card__cta" onClick={openJoinGate}>
                         {t('privateClubLanding_storyMore')}
-                        <RiArrowRightLine aria-hidden />
+                        <RiArrowRightUpLine aria-hidden />
                       </button>
                     </div>
                   </article>

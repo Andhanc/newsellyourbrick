@@ -386,10 +386,19 @@ const WhatsApp = () => {
                 <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp не подключён к серверу</span>
                 <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
                   {whatsappStatus.hasQr
-                    ? 'Откройте WhatsApp на телефоне → Настройки → Связанные устройства → Привязать устройство — и наведите камеру на QR.'
+                    ? 'Откройте WhatsApp → Настройки → Связанные устройства → Привязать устройство и сразу наведите камеру на QR (код живёт ~20–40 секунд).'
                     : whatsappStatus.message ||
                       'Сервер запрашивает QR у WhatsApp Web… Это может занять до минуты после перезапуска backend.'}
                 </p>
+                {whatsappStatus.waDiag && !whatsappStatus.ready && whatsappStatus.waDiag.lastQrAt && !whatsappStatus.waDiag.qrFresh ? (
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#b45309' }}>
+                    Последний QR уже протух
+                    {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
+                      ? ` (~${Math.round(whatsappStatus.waDiag.qrAgeMs / 1000)} с назад)`
+                      : ''}
+                    . Нажмите «Запросить новый QR» и сканируйте сразу, как появится картинка.
+                  </p>
+                ) : null}
                 {whatsappStatus.pairingResetRequiresSecret ? (
                   <label style={{ display: 'block', marginTop: '10px', fontSize: '0.85rem', color: '#374151' }}>
                     Секрет сброса (WA_PAIRING_RESET_SECRET):
@@ -461,9 +470,18 @@ const WhatsApp = () => {
                       {whatsappStatus.waDiag.remoteWebCache ?? '—'}
                     </div>
                     {whatsappStatus.waDiag.lastQrAt ? (
-                      <div style={{ marginTop: '4px', color: '#007d8a' }}>
-                        QR хотя бы раз приходил на сервер:{' '}
+                      <div style={{ marginTop: '4px', color: whatsappStatus.waDiag.qrFresh ? '#007d8a' : '#b45309' }}>
+                        Последний QR на сервере:{' '}
                         {new Date(whatsappStatus.waDiag.lastQrAt).toLocaleString()}
+                        {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
+                          ? ` (возраст ~${Math.round(whatsappStatus.waDiag.qrAgeMs / 1000)} с`
+                          : ''}
+                        {typeof whatsappStatus.waDiag.qrMaxAgeMs === 'number'
+                          ? `, лимит ${Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000)} с)`
+                          : typeof whatsappStatus.waDiag.qrAgeMs === 'number'
+                            ? ')'
+                            : ''}
+                        {whatsappStatus.waDiag.qrFresh === false ? ' — протух' : ''}
                       </div>
                     ) : (
                       <div style={{ marginTop: '6px', color: '#92400e' }}>
@@ -534,42 +552,18 @@ const WhatsApp = () => {
                   </>
                 )}
               </div>
-              {whatsappStatus.pairingCodeRaw ? (
-                <div style={{ marginTop: '14px' }}>
-                  <label style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 600 }}>
-                    Связать устройство вручную (если картинка не открывается — тот же код, что в QR):
-                  </label>
-                  <textarea
-                    readOnly
-                    value={whatsappStatus.pairingCodeRaw}
-                    rows={4}
-                    spellCheck={false}
-                    style={{
-                      width: '100%',
-                      marginTop: '8px',
-                      padding: '10px',
-                      fontFamily: 'ui-monospace, monospace',
-                      fontSize: '11px',
-                      lineHeight: 1.35,
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn-qr-refresh"
-                    style={{ marginTop: '8px' }}
-                    onClick={() => {
-                      void navigator.clipboard?.writeText(whatsappStatus.pairingCodeRaw || '');
-                    }}
-                  >
-                    Копировать код
-                  </button>
-                </div>
+              {whatsappStatus.waDiag?.lastQrAt && whatsappStatus.hasQr ? (
+                <p className="whatsapp-qr-hint" style={{ color: '#007d8a' }}>
+                  QR свежий — сканируйте сейчас (не через минуту).
+                  {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
+                    ? ` Возраст кода: ~${Math.max(0, Math.round(whatsappStatus.waDiag.qrAgeMs / 1000))} с.`
+                    : ''}
+                </p>
               ) : null}
-              <p className="whatsapp-qr-hint">Пока аккаунт не подключён, статус обновляется каждые ~5 секунд (можно «Обновить QR»).</p>
+              <p className="whatsapp-qr-hint">
+                Кнопка «Обновить QR» только перезагружает картинку. Если WhatsApp пишет ошибку —
+                код уже истёк: жмите «Запросить новый QR» и сканируйте сразу.
+              </p>
             </div>
           </div>
         )}

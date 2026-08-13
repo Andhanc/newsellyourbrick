@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
 import { SiTelegram, SiWhatsapp } from 'react-icons/si'
@@ -14,35 +13,28 @@ import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
-const LOCALE_BY_LANG = {
-  ru: 'ru-RU',
-  en: 'en-US',
-  de: 'de-DE',
-  es: 'es-ES',
-  fr: 'fr-FR',
-  sv: 'sv-SE',
-  pl: 'pl-PL',
-}
-
-function toIntlLocale(lang) {
-  const code = String(lang || 'ru').split('-')[0]
-  return LOCALE_BY_LANG[code] || 'en-US'
-}
-
-function toCalendarLocale(lang) {
-  return String(lang || 'ru').split('-')[0] === 'ru' ? 'ru' : 'en'
-}
-
-const CONTACT_OPTION_DEFS = [
-  { id: 'telegram', labelKey: 'testDriveBooking_contactTelegram', hintKey: 'testDriveBooking_contactTelegramHint', Icon: SiTelegram },
-  { id: 'whatsapp', labelKey: 'testDriveBooking_contactWhatsapp', hintKey: 'testDriveBooking_contactWhatsappHint', Icon: SiWhatsapp },
-  { id: 'email', labelKey: 'testDriveBooking_contactEmail', hintKey: 'testDriveBooking_contactEmailHint', Icon: FiMail },
+const CONTACT_OPTIONS = [
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    hint: 'Напишем вам в Telegram',
+    Icon: SiTelegram,
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    hint: 'Свяжемся через WhatsApp',
+    Icon: SiWhatsapp,
+  },
+  {
+    id: 'email',
+    label: 'Почта',
+    hint: 'Отправим письмо на email',
+    Icon: FiMail,
+  },
 ]
 
 export default function TestDriveBookingPage() {
-  const { t, i18n } = useTranslation()
-  const intlLocale = toIntlLocale(i18n.language)
-  const calendarLocale = toCalendarLocale(i18n.language)
   const { slugOrId: propertyRouteKey } = useParams()
   const propertyApiKey = propertyRouteKey ? encodeURIComponent(propertyRouteKey) : ''
   const navigate = useNavigate()
@@ -74,20 +66,9 @@ export default function TestDriveBookingPage() {
   const [bookingSuccess, setBookingSuccess] = useState(null)
   const confirmingSessionRef = useRef(null)
 
-  const contactOptions = useMemo(
-    () =>
-      CONTACT_OPTION_DEFS.map(({ id, labelKey, hintKey, Icon }) => ({
-        id,
-        label: t(labelKey),
-        hint: t(hintKey),
-        Icon,
-      })),
-    [t],
-  )
-
   const currencyFmt = (amount, currency) => {
     try {
-      return new Intl.NumberFormat(intlLocale, {
+      return new Intl.NumberFormat('ru-RU', {
         style: 'currency',
         currency: (currency || 'USD').toUpperCase(),
         maximumFractionDigits: 2,
@@ -105,21 +86,21 @@ export default function TestDriveBookingPage() {
 
   useEffect(() => {
     if (!import.meta.env?.DEV || searchParams.get('buyer_booking_preview') !== '1') return
-    setPropertyTitle(t('testDriveBooking_previewTitle'))
+    setPropertyTitle('Вилла с бассейном у Средиземного моря')
     setBookingSuccess({
       booking_id: 142,
       start_date: '2026-08-12',
       end_date: '2026-08-18',
       buyer_contact_channel: 'telegram',
     })
-  }, [searchParams, t])
+  }, [searchParams])
 
   useEffect(() => {
     const load = async () => {
       try {
         const { getApiBaseUrl } = await import('../utils/apiConfig')
         API_BASE_URL = await getApiBaseUrl()
-        const lang = (localStorage.getItem('i18nextLng') || i18n.language || 'ru').split('-')[0]
+        const lang = (localStorage.getItem('i18nextLng') || 'ru').split('-')[0]
         const pr = await fetch(`${API_BASE_URL}/properties/${propertyApiKey}?lang=${lang}`)
         const pj = await pr.json()
         if (pj.success && pj.data) {
@@ -146,7 +127,7 @@ export default function TestDriveBookingPage() {
       }
     }
     load()
-  }, [propertyRouteKey, propertyApiKey, propertyTable, i18n.language])
+  }, [propertyRouteKey, propertyApiKey, propertyTable])
 
   useEffect(() => {
     const checkoutResult = searchParams.get('test_drive_checkout')
@@ -165,21 +146,38 @@ export default function TestDriveBookingPage() {
         })
         const data = await res.json()
         if (!res.ok || !data.success) {
-          showToast(data.error || t('testDriveBooking_toastConfirmFail'), 'error')
+          const msg =
+            data.message ||
+            ({
+              already_requested:
+                'У вас уже есть активная бронь на этот объект. Откройте «Мои бронирования».',
+              dates_unavailable: 'Эти даты уже заняты. Выберите другие.',
+              not_paid: 'Оплата ещё обрабатывается. Обновите страницу через минуту.',
+            }[data.error] ||
+              data.error ||
+              'Не удалось подтвердить оплату')
+          showToast(msg, 'error')
+          if (data.error === 'already_requested') {
+            const newParams = new URLSearchParams(searchParams)
+            newParams.delete('test_drive_checkout')
+            newParams.delete('session_id')
+            setSearchParams(newParams, { replace: true })
+          }
           return
         }
         setBookingSuccess(data.data || {})
+        window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
         const newParams = new URLSearchParams(searchParams)
         newParams.delete('test_drive_checkout')
         newParams.delete('session_id')
         setSearchParams(newParams, { replace: true })
       } catch {
-        showToast(t('testDriveBooking_toastConfirmError'), 'error')
+        showToast('Ошибка подтверждения оплаты', 'error')
       } finally {
         if (confirmingSessionRef.current === sid) confirmingSessionRef.current = null
       }
     })()
-  }, [searchParams, setSearchParams, t])
+  }, [searchParams, setSearchParams])
 
   const handleRangeSelected = (range) => {
     setPendingRange(range)
@@ -225,7 +223,7 @@ export default function TestDriveBookingPage() {
     )
     const data = await res.json()
     if (!res.ok || !data.success) {
-      throw new Error(data.error || t('testDriveBooking_toastQuoteFail'))
+      throw new Error(data.error || 'Не удалось рассчитать стоимость')
     }
     return data.data
   }
@@ -233,7 +231,7 @@ export default function TestDriveBookingPage() {
   const handleOpenPayment = async () => {
     if (!pendingRange) return
     if (!contactChannel) {
-      showToast(t('testDriveBooking_toastPickContact'), 'error')
+      showToast('Выберите способ связи: Telegram, WhatsApp или почту', 'error')
       setContactPickerOpen(true)
       return
     }
@@ -249,7 +247,7 @@ export default function TestDriveBookingPage() {
       setQuoteData(quote)
       setPaymentStep(2)
     } catch (e) {
-      showToast(e.message || t('testDriveBooking_toastCalcError'), 'error')
+      showToast(e.message || 'Ошибка расчета', 'error')
     } finally {
       setSaving(false)
     }
@@ -282,19 +280,24 @@ export default function TestDriveBookingPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.success || !data.url) {
-        showToast(data.error || t('testDriveBooking_toastCheckoutFail'), 'error')
+        const msg =
+          data.message ||
+          (data.error === 'already_requested'
+            ? 'У вас уже есть активная бронь тест-драйва на этот объект. Откройте «Мои бронирования».'
+            : data.error || 'Не удалось создать оплату')
+        showToast(msg, 'error')
+        if (data.error === 'already_requested' && data.data?.booking_id) {
+          navigate('/profile/bookings')
+        }
         return
       }
       window.location.href = data.url
     } catch {
-      showToast(t('testDriveBooking_toastNetwork'), 'error')
+      showToast('Ошибка сети', 'error')
     } finally {
       setCheckoutLoading(false)
     }
   }
-
-  const contactLabel =
-    contactOptions.find((c) => c.id === contactChannel)?.label || contactChannel
 
   return (
     <div className="test-drive-page">
@@ -308,32 +311,37 @@ export default function TestDriveBookingPage() {
         onBackToProperty={() => navigate(`/property/${propertyRouteKey}`)}
       />
       <div className="test-drive-page__hero">
-        <button
-          type="button"
-          className="test-drive-page__back"
-          onClick={() => navigate(-1)}
-        >
-          <FiArrowLeft size={22} />
-          <span>{t('testDriveBooking_back')}</span>
-        </button>
+        <div className="test-drive-page__hero-top">
+          <button
+            type="button"
+            className="test-drive-page__back"
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+          >
+            <FiArrowLeft size={20} strokeWidth={2.25} />
+          </button>
+          <p className="test-drive-page__eyebrow">Тест-драйв недвижимости</p>
+        </div>
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="test-drive-page__title"
         >
-          {t('testDriveBooking_title', { title: propertyTitle })}
+          {propertyTitle || 'Выбор дат'}
         </motion.h1>
-        <p className="test-drive-page__subtitle">{t('testDriveBooking_subtitle')}</p>
+        <p className="test-drive-page__subtitle">
+          Отметьте от 5 до 21 дня подряд — затем выберите способ связи.
+        </p>
       </div>
 
       <div className="test-drive-page__layout">
         <div className="test-drive-page__calendar-wrap">
           {saving && (
-            <div className="test-drive-page__saving">{t('testDriveBooking_saving')}</div>
+            <div className="test-drive-page__saving">Отправка заявки…</div>
           )}
           <TestDriveRangeCalendar
             key={calendarResetKey}
-            locale={calendarLocale}
+            locale="ru"
             bookedDates={bookedDates}
             myBookedDates={myBookedDates}
             onRangeSelected={handleRangeSelected}
@@ -344,19 +352,21 @@ export default function TestDriveBookingPage() {
           {pendingRange && (
             <div className="test-drive-page__actions">
               <p className="test-drive-page__picked">
-                {t('testDriveBooking_selected')}{' '}
-                <strong>{pendingRange.start}</strong> —{' '}
+                Выбрано: <strong>{pendingRange.start}</strong> —{' '}
                 <strong>{pendingRange.end}</strong>
               </p>
               {contactChannel ? (
                 <p className="test-drive-page__contact-picked">
-                  {t('testDriveBooking_contact')}: <strong>{contactLabel}</strong>
+                  Связь:{' '}
+                  <strong>
+                    {CONTACT_OPTIONS.find((c) => c.id === contactChannel)?.label || contactChannel}
+                  </strong>
                   <button
                     type="button"
                     className="test-drive-page__contact-change"
                     onClick={() => setContactPickerOpen(true)}
                   >
-                    {t('testDriveBooking_change')}
+                    Изменить
                   </button>
                 </p>
               ) : null}
@@ -367,7 +377,7 @@ export default function TestDriveBookingPage() {
                   disabled={saving}
                   onClick={handleCancelSelection}
                 >
-                  {t('testDriveBooking_cancel')}
+                  Отменить
                 </button>
                 <button
                   type="button"
@@ -375,7 +385,7 @@ export default function TestDriveBookingPage() {
                   disabled={saving || !contactChannel}
                   onClick={handleOpenPayment}
                 >
-                  {t('testDriveBooking_request')}
+                  Запросить тест-драйв
                 </button>
               </div>
             </div>
@@ -383,42 +393,55 @@ export default function TestDriveBookingPage() {
         </div>
 
         <aside className="test-drive-page__hints">
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.05 }}
-          >
-            <h3>{t('testDriveBooking_hintCheckInTitle')}</h3>
-            <p>{t('testDriveBooking_hintCheckInText')}</p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3>{t('testDriveBooking_hintStayTitle')}</h3>
-            <p>{t('testDriveBooking_hintStayText')}</p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <h3>{t('testDriveBooking_hintCheckOutTitle')}</h3>
-            <p>{t('testDriveBooking_hintCheckOutText')}</p>
-          </motion.div>
-          <motion.div
-            className="test-drive-hint-card test-drive-hint-card--accent"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3>{t('testDriveBooking_hintBusyTitle')}</h3>
-            <p>{t('testDriveBooking_hintBusyText')}</p>
-          </motion.div>
+          <p className="test-drive-page__hints-title">Правила</p>
+          {[
+            {
+              title: 'Заезд с 15:00',
+              text: 'В первый день ключи и доступ согласуются с владельцем после подтверждения.',
+              meta: 'День 1',
+              tag: 'Check-in',
+              delay: 0.05,
+            },
+            {
+              title: 'От 5 до 21 суток',
+              text: 'Выберите подряд идущие даты — столько ночей вы проживёте на объекте.',
+              meta: '5–21 дн.',
+              tag: 'Stay',
+              delay: 0.1,
+            },
+            {
+              title: 'Выезд до 12:00',
+              text: 'В последний день освободите объект до полудня, если иное не согласовано.',
+              meta: 'День N',
+              tag: 'Check-out',
+              delay: 0.15,
+            },
+            {
+              title: 'Занятые даты',
+              text: 'Зелёным — ваши заявки, оранжевым — чужие. После выбора дат укажите способ связи.',
+              meta: 'Статус',
+              tag: 'Calendar',
+              delay: 0.2,
+              accent: true,
+            },
+          ].map((card) => (
+            <motion.article
+              key={card.title}
+              className={`test-drive-rule-card${card.accent ? ' test-drive-rule-card--soft' : ''}`}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: card.delay }}
+            >
+              <div className="test-drive-rule-card__body">
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <div className="test-drive-rule-card__foot">
+                  <span>{card.meta}</span>
+                  <span>{card.tag}</span>
+                </div>
+              </div>
+            </motion.article>
+          ))}
         </aside>
       </div>
       <AnimatePresence>
@@ -465,15 +488,15 @@ export default function TestDriveBookingPage() {
               </div>
             ) : null}
             <h3 id="test-drive-contact-title" className="test-drive-contact-sheet__title">
-              {t('testDriveBooking_contactTitle')}
+              Как с вами связаться?
             </h3>
             <p className="test-drive-contact-sheet__subtitle">
-              {t('testDriveBooking_contactSubtitle')}
+              Выберите удобный канал — так владелец поймёт, куда писать или звонить для согласования заезда.
             </p>
             <div
               className={`test-drive-contact-grid${isMobile ? ' test-drive-contact-grid--drawer' : ''}`}
             >
-              {contactOptions.map(({ id, label, hint, Icon }) => (
+              {CONTACT_OPTIONS.map(({ id, label, hint, Icon }) => (
                 <button
                   key={id}
                   type="button"
@@ -497,7 +520,7 @@ export default function TestDriveBookingPage() {
               className="test-drive-page__btn test-drive-page__btn--ghost test-drive-contact-sheet__close"
               onClick={() => setContactPickerOpen(false)}
             >
-              {t('testDriveBooking_close')}
+              Закрыть
             </button>
             </motion.div>
           </motion.div>
@@ -547,39 +570,36 @@ export default function TestDriveBookingPage() {
               </div>
             ) : null}
             <h3 id="test-drive-pay-title" className="test-drive-pay-sheet__title">
-              {paymentStep === 1
-                ? t('testDriveBooking_payStep1Title')
-                : t('testDriveBooking_payStep2Title')}
+              {paymentStep === 1 ? 'Инструкция и правила тест-драйва' : 'Шаг 2: оплата тест-драйва'}
             </h3>
             <div className="test-drive-pay-sheet__scroll">
               {paymentStep === 1 ? (
                 <>
                   <p className="test-drive-pay-sheet__text">
-                    {t('testDriveBooking_payIntro')}
+                    Оплата проходит одним платежом: отдельно сумма за выбранные сутки проживания и страховой депозит
+                    (если он задан для объекта). После оплаты бронирование сразу отобразится у вас, у продавца и в
+                    админ-панели.
                   </p>
                   <ul className="test-drive-pay-sheet__rules">
-                    <li>{t('testDriveBooking_rule1')}</li>
-                    <li>{t('testDriveBooking_rule2')}</li>
-                    <li>{t('testDriveBooking_rule3')}</li>
+                    <li>Заезд в первый день с 15:00, выезд в последний день до 12:00.</li>
+                    <li>Соблюдайте правила объекта и бережно относитесь к имуществу.</li>
+                    <li>
+                      Страховой депозит: при отсутствии нарушений после проживания он возвращается на вашу карту в
+                      течение одной недели с момента выезда (срок зачисления может зависеть от банка).
+                    </li>
                   </ul>
                 </>
               ) : (
                 <>
                   <p className="test-drive-pay-sheet__text">
-                    {t('testDriveBooking_selected')}{' '}
-                    <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
+                    Выбрано: <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
                   </p>
                   {quoteData ? (
                     <div className="test-drive-pay-sheet__summary">
+                      <p>Суток: <strong>{quoteData.day_count}</strong></p>
+                      <p>Стоимость за сутки: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
                       <p>
-                        {t('testDriveBooking_days')}: <strong>{quoteData.day_count}</strong>
-                      </p>
-                      <p>
-                        {t('testDriveBooking_dailyPrice')}:{' '}
-                        <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong>
-                      </p>
-                      <p>
-                        {t('testDriveBooking_stayTotal')}:{' '}
+                        Проживание:{' '}
                         <strong>
                           {currencyFmt(
                             quoteData.stay_total ?? quoteData.day_count * quoteData.daily_price,
@@ -587,22 +607,19 @@ export default function TestDriveBookingPage() {
                           )}
                         </strong>
                       </p>
-                      <p>
-                        {t('testDriveBooking_deposit')}:{' '}
-                        <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong>
-                      </p>
+                      <p>Страховой депозит: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
                       {Number(quoteData.insurance_deposit) > 0 ? (
                         <p className="test-drive-pay-sheet__deposit-note">
-                          {t('testDriveBooking_depositNote')}
+                          Депозит удерживается вместе с оплатой суток. Если правила проживания не нарушались, в течение
+                          недели после выезда сумма депозита возвращается на ту же карту.
                         </p>
                       ) : null}
                       <p className="test-drive-pay-sheet__total-line">
-                        {t('testDriveBooking_total')}:{' '}
-                        <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong>
+                        Итого к оплате: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong>
                       </p>
                     </div>
                   ) : (
-                    <p className="test-drive-pay-sheet__text">{t('testDriveBooking_calculating')}</p>
+                    <p className="test-drive-pay-sheet__text">Расчет суммы...</p>
                   )}
                 </>
               )}
@@ -615,7 +632,7 @@ export default function TestDriveBookingPage() {
                   disabled={saving}
                   onClick={handleContinueToStep2}
                 >
-                  {t('testDriveBooking_goToPayment')}
+                  Перейти к оплате
                 </button>
               ) : (
                 <button
@@ -624,9 +641,7 @@ export default function TestDriveBookingPage() {
                   disabled={checkoutLoading || !quoteData}
                   onClick={handlePay}
                 >
-                  {checkoutLoading
-                    ? t('testDriveBooking_redirecting')
-                    : t('testDriveBooking_pay')}
+                  {checkoutLoading ? 'Переход к оплате...' : 'Оплатить'}
                 </button>
               )}
             </div>

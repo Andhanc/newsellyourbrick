@@ -35,6 +35,15 @@
   animation: buyNowOverlayIn 0.28s ease-out;
 }
 
+/* Покупка - приоритетный сценарий: плавающие помощники не должны перекрывать
+   текст, подпись и CTA ни на одном адаптиве. */
+html.buy-now-modal-open .property-ai-launcher,
+html.buy-now-modal-open button.ai-button {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @keyframes buyNowOverlayIn {
   from {
     opacity: 0;
@@ -156,7 +165,7 @@
 .buy-now-modal__sums {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
+  gap: 0;
   flex-shrink: 0;
 }
 
@@ -165,15 +174,17 @@
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
-  padding: clamp(0.55rem, 1.2vh, 0.8rem) clamp(0.6rem, 1.2vw, 0.85rem);
-  background: var(--bnm-muted);
-  border: 1px solid var(--bnm-line);
-  border-radius: 12px;
+  padding: clamp(0.45rem, 1vh, 0.65rem) 0.8rem clamp(0.45rem, 1vh, 0.65rem) 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
 
 .buy-now-modal__sum-card--accent {
-  background: var(--bnm-tiffany-wash);
-  border-color: rgba(78, 205, 214, 0.35);
+  padding-right: 0;
+  padding-left: 0.85rem;
+  background: transparent;
+  border-left: 1px solid var(--bnm-line);
 }
 
 .buy-now-modal__sum-label {
@@ -228,10 +239,11 @@
   justify-content: space-between;
   gap: 0.75rem;
   flex-shrink: 0;
-  padding: clamp(0.55rem, 1.15vh, 0.75rem) 0.85rem;
-  background: var(--bnm-surface);
+  padding: clamp(0.65rem, 1.35vh, 0.85rem) 0;
+  background: transparent;
   border: 1px solid var(--bnm-line);
-  border-radius: 12px;
+  border-width: 1px 0;
+  border-radius: 0;
 }
 
 .buy-now-modal__wallet-row-text {
@@ -276,7 +288,7 @@
 .buy-now-modal__how-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.45rem;
+  gap: 0;
 }
 
 .buy-now-modal__how-item {
@@ -284,10 +296,16 @@
   align-items: flex-start;
   gap: 0.45rem;
   min-width: 0;
-  padding: clamp(0.45rem, 1vh, 0.65rem) 0.55rem;
-  background: var(--bnm-muted);
-  border: 1px solid var(--bnm-line);
-  border-radius: 10px;
+  padding: clamp(0.35rem, 0.8vh, 0.55rem) 0.7rem clamp(0.35rem, 0.8vh, 0.55rem) 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.buy-now-modal__how-item + .buy-now-modal__how-item {
+  padding-right: 0;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--bnm-line);
 }
 
 .buy-now-modal__how-icon {
@@ -322,11 +340,83 @@
   gap: 0.55rem;
   flex: 1;
   min-height: 0;
-  padding: clamp(0.6rem, 1.2vh, 0.85rem) 0.8rem;
-  background: var(--bnm-warm);
-  border: 1px solid var(--bnm-line);
-  border-radius: 14px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
+}
+
+.buy-now-modal__legal--terms {
+  justify-content: center;
+  padding: clamp(0.35rem, 1.2vh, 0.7rem) 0;
+  text-align: center;
+}
+
+.buy-now-modal__terms-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  place-items: center;
+  margin: 0 auto 4px;
+  border: 1px solid rgba(78, 205, 214, 0.45);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bnm-tiffany-mid);
+}
+
+.buy-now-modal__legal--terms .buy-now-modal__legal-title {
+  color: var(--bnm-ink);
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: -.01em;
+  text-transform: none;
+}
+
+.buy-now-modal__terms-copy {
+  margin: 0;
+  color: var(--bnm-ink-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.buy-now-modal__legal--terms .buy-now-modal__check {
+  align-items: flex-start;
+  padding: 10px 0;
+  border: 1px solid var(--bnm-line);
+  border-width: 1px 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.buy-now-modal__legal--signature {
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+}
+
+.buy-now-modal__signature-summary {
+  display: grid;
+  padding: 6px 0 12px;
+  border-bottom: 1px solid var(--bnm-line);
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.buy-now-modal__signature-summary span,
+.buy-now-modal__signature-summary small {
+  color: var(--bnm-ink-muted);
+  font-size: 10px;
+}
+
+.buy-now-modal__signature-summary strong {
+  margin: 4px 0;
+  color: var(--bnm-tiffany-mid);
+  font-size: 24px;
+  letter-spacing: -.035em;
 }
 
 .buy-now-modal__legal-top {
@@ -403,9 +493,10 @@
 
 .buy-now-modal--v2 .share-signature-pad__frame {
   width: 100%;
-  height: clamp(64px, 10vh, 88px);
-  border-radius: 10px;
-  border-color: var(--bnm-line);
+  height: clamp(130px, 22vh, 180px);
+  border: 2px dashed #b9cbd0;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, .05) inset;
 }
 
 .buy-now-modal--v2 .share-signature-pad__hint {
@@ -416,10 +507,39 @@
 .buy-now-modal--v2 .buy-now-modal__actions {
   flex-shrink: 0;
   margin-top: var(--bnm-gap);
-  gap: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+}
+
+.buy-now-modal--v2 .buy-now-modal__actions > .buy-now-modal__cta:only-child {
+  grid-column: 1 / -1;
+}
+
+.buy-now-modal__back {
+  display: inline-flex;
+  min-width: 100px;
+  min-height: clamp(48px, 7.5vh, 56px);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: 1px solid var(--bnm-line);
+  border-radius: 999px;
+  background: var(--bnm-surface);
+  color: var(--bnm-ink-soft);
+  cursor: pointer;
+  font-family: var(--bnm-font);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .buy-now-modal__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  position: relative;
   width: 100%;
   min-height: clamp(48px, 7.5vh, 56px);
   padding: 0 1.25rem;
@@ -440,6 +560,16 @@
     transform 0.15s ease,
     filter 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.buy-now-modal--v2 .buy-now-modal__cta > svg {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .buy-now-modal__cta:hover:not(:disabled) {
@@ -513,11 +643,53 @@
   }
 
   .buy-now-modal--v2 .share-signature-pad__frame {
-    height: 68px;
+    height: 116px;
   }
 
   .buy-now-modal--v2 .share-signature-pad__hint {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .buy-now-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .buy-now-modal--v2 {
+    width: 100%;
+    max-width: none;
+    max-height: 94dvh;
+    border-width: 1px 0 0;
+    border-radius: 28px 28px 0 0;
+  }
+
+  .buy-now-modal__drawer-handle {
+    display: block;
+    flex: 0 0 18px;
+  }
+
+  .buy-now-modal__drawer-handle::before {
+    display: block;
+    width: 42px;
+    height: 4px;
+    margin: 9px auto 0;
+    border-radius: 999px;
+    background: #d0d5dd;
+    content: '';
+  }
+
+  .buy-now-modal__content--v2 {
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .buy-now-modal__head {
+    padding-right: 2.6rem;
+  }
+
+  .buy-now-modal--v2 .share-signature-pad__frame {
+    height: clamp(150px, 24vh, 200px);
   }
 }
 
@@ -1413,6 +1585,16 @@
   /* Цены остаются в 2 колонки — экономия высоты */
   .buy-now-modal--v2 .buy-now-modal__sums {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .buy-now-modal--v2 .buy-now-modal__sum-footnote,
+  .buy-now-modal--v2 .buy-now-modal__how-item span:last-child {
+    -webkit-line-clamp: 3;
+  }
+
+  .buy-now-modal--v2 .buy-now-modal__sum-card,
+  .buy-now-modal--v2 .buy-now-modal__how-item {
+    min-height: 0;
   }
 
   .buy-now-modal--v2 .share-signature-pad__frame {

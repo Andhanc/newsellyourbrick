@@ -7,6 +7,7 @@ import {
 } from './oapLocationGeocode'
 
 export const PENDING_SELL_PROPERTY_KEY = 'pendingSellPurchasedProperty'
+export const PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY = 'purchasedPropertySellerArrival'
 export const PURCHASED_LISTING_DRAFT_FLAG = 'purchasedSource'
 export const DRAFT_ORIGIN_PURCHASED_PREFILL = 'purchased-prefill'
 export const DRAFT_ORIGIN_USER = 'user'
@@ -165,6 +166,66 @@ export function clearPendingSellPurchasedProperty() {
   } catch {
     // ignore
   }
+}
+
+const SELLER_ARRIVAL_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * Keeps the purchased-property handoff across the full buyer → seller reload.
+ * It deliberately has a separate key from the pending action: the pending item
+ * is only consumed once the seller explicitly asks us to prepare the listing.
+ */
+export function storePurchasedPropertySellerArrival(snapshot, { sellerUserId = null } = {}) {
+  if (!snapshot?.id) return null
+  const arrival = {
+    id: snapshot.id,
+    title: snapshot.title || snapshot.name || '',
+    image: snapshot.image || snapshot.images?.[0] || '',
+    location: snapshot.location || snapshot.address || '',
+    property_type: snapshot.property_type || snapshot.propertyType || '',
+    sellerUserId: sellerUserId ? String(sellerUserId) : null,
+    savedAt: Date.now(),
+  }
+  try {
+    localStorage.setItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY, JSON.stringify(arrival))
+  } catch {
+    return null
+  }
+  return arrival
+}
+
+export function readPurchasedPropertySellerArrival() {
+  try {
+    const raw = localStorage.getItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+    if (!raw) return null
+    const arrival = JSON.parse(raw)
+    if (!arrival?.id || Date.now() - Number(arrival.savedAt || 0) > SELLER_ARRIVAL_MAX_AGE_MS) {
+      localStorage.removeItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+      return null
+    }
+    const currentUserId = localStorage.getItem('userId')
+    if (arrival.sellerUserId && currentUserId && String(arrival.sellerUserId) !== String(currentUserId)) {
+      return null
+    }
+    return arrival
+  } catch {
+    return null
+  }
+}
+
+export function clearPurchasedPropertySellerArrival({ clearPending = false } = {}) {
+  try {
+    localStorage.removeItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+  } catch {
+    // ignore
+  }
+  if (clearPending) clearPendingSellPurchasedProperty()
+}
+
+export function promotePendingPurchasedPropertyToSellerArrival(options = {}) {
+  const pending = readPendingSellPurchasedProperty()
+  if (!pending?.id) return null
+  return storePurchasedPropertySellerArrival(pending, options)
 }
 
 export async function fetchPropertySnapshot(propertyId, lang = 'ru') {

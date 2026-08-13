@@ -36,3 +36,8 @@ export function getListingAuctionTimerStatus(days) {
   if (days >= 60) return 'timer-medium'
   return 'timer-short'
 }
+
+/** Critical/flashing red band — same threshold as PropertyTimer / listing cards. */
+export function isListingAuctionTimerCritical(days) {
+  return Number.isFinite(days) && days < 30
+}

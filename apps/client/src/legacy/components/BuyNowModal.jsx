@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiX, FiPercent, FiCreditCard, FiPhone, FiExternalLink, FiTrash2, FiAward } from 'react-icons/fi'
+import { FiX, FiPercent, FiCreditCard, FiPhone, FiExternalLink, FiTrash2, FiAward, FiArrowLeft, FiArrowRight, FiLock } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated } from '../services/authService'
@@ -33,12 +33,18 @@ const BuyNowModal = ({
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
   const [reserveInEur, setReserveInEur] = useState(null)
   const [pdfOpened, setPdfOpened] = useState(false)
-  const [pdfViewerUrl, setPdfViewerUrl] = useState('')
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  const [signatureReady, setSignatureReady] = useState(false)
+  const [step, setStep] = useState(1)
   const signaturePadRef = useRef(null)
 
   const isAuctionWinner = variant === 'auctionWinner'
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    document.documentElement.classList.add('buy-now-modal-open')
+    return () => document.documentElement.classList.remove('buy-now-modal-open')
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -115,9 +121,9 @@ const BuyNowModal = ({
     if (!isOpen) {
       setUseWalletDeposit(false)
       setPdfOpened(false)
-      setPdfViewerUrl('')
-      setIsPdfViewerOpen(false)
       setAgreed(false)
+      setSignatureReady(false)
+      setStep(1)
       setStripeLoading(false)
     }
   }, [isOpen])
@@ -126,6 +132,7 @@ const BuyNowModal = ({
     if (!isOpen) return
     setPdfOpened(false)
     setAgreed(false)
+    setSignatureReady(false)
     signaturePadRef.current?.clear()
   }, [useWalletDeposit, isOpen])
 
@@ -133,14 +140,14 @@ const BuyNowModal = ({
   const currency = (property?.currency || 'USD').toUpperCase()
   const currencySymbol = getCurrencySymbol(currency)
 
-  const minSalePriceRaw =
-    Number(property?.price) ||
-    Number(property?.minimumSalePrice) ||
-    Number(property?.auction_starting_price) ||
-    Number(property?.auctionStartingPrice) ||
-    Number(property?.currentBid) ||
-    (isAuctionWinner ? Number(winningBidAmount) : 0) ||
-    0
+  const minSalePriceRaw = isAuctionWinner
+    ? Number(winningBidAmount) || Number(property?.currentBid) || 0
+    : Number(property?.price) ||
+      Number(property?.minimumSalePrice) ||
+      Number(property?.auction_starting_price) ||
+      Number(property?.auctionStartingPrice) ||
+      Number(property?.currentBid) ||
+      0
   const minSalePrice = Math.round(minSalePriceRaw * 100) / 100
   const tenPercent = Math.round(minSalePrice * DEPOSIT_FRACTION * 100) / 100
   const reserveBasisForWallet =
@@ -209,12 +216,11 @@ const BuyNowModal = ({
 
   const openPdf = () => {
     try {
-      const { url, openedInNewTab } = launchReserveTermsPdf()
+      launchReserveTermsPdf()
+      // После явного действия пользователя считаем документ открытым. При
+      // rel=noopener браузеры намеренно возвращают null даже для успешной вкладки,
+      // поэтому проверка window.open() блокировала согласие в рабочем сценарии.
       setPdfOpened(true)
-      if (!openedInNewTab) {
-        setPdfViewerUrl(url)
-        setIsPdfViewerOpen(true)
-      }
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
     }
@@ -222,6 +228,7 @@ const BuyNowModal = ({
 
   const clearSignature = () => {
     signaturePadRef.current?.clear()
+    setSignatureReady(false)
   }
 
   const handleStripeReservation = async () => {
@@ -306,6 +313,7 @@ const BuyNowModal = ({
         returnPath,
         useDeposit: useDepositFlag,
         signingIntentId: intentData.signingIntentId,
+        purchaseVariant: isAuctionWinner ? 'auctionWinner' : 'buyNow',
       })
       if (!result.ok) {
         showNotification(result.error || t('buyNowModalErrorCheckout'), 'error')
@@ -324,10 +332,19 @@ const BuyNowModal = ({
     !property?.id ||
     minSalePrice <= 0 ||
     !agreed ||
+    !signatureReady ||
     (useWalletDeposit && !canUseWallet) ||
     !hasValidWinningBid
 
   if (!isOpen) return null
+
+  const goForward = () => {
+    if (step === 1) {
+      setStep(2)
+      return
+    }
+    if (step === 2 && agreed && pdfOpened) setStep(3)
+  }
 
   return (
     <div className="buy-now-modal-overlay" onClick={onClose} role="presentation">
@@ -336,7 +353,7 @@ const BuyNowModal = ({
           'buy-now-modal',
           'buy-now-modal--v2',
           isAuctionWinner ? 'buy-now-modal--auction-winner' : '',
-          agreed ? 'buy-now-modal--signing' : '',
+          step === 3 ? 'buy-now-modal--signing' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -361,7 +378,11 @@ const BuyNowModal = ({
         <div className="buy-now-modal__content buy-now-modal__content--v2">
           <header className="buy-now-modal__head">
             <h2 id="buy-now-modal-title" className="buy-now-modal__title">
-              {isAuctionWinner ? t('auctionWinPaymentModalTitle') : t('buyNowModalTitle')}
+              {step === 1
+                ? (isAuctionWinner ? t('auctionWinPaymentModalTitle') : t('buyNowModalTitle'))
+                : step === 2
+                  ? 'Условия резерва'
+                  : 'Подпишите и оплатите'}
             </h2>
             <p className="buy-now-modal__subtitle">{propertyTitle}</p>
             {isAuctionWinner && (
@@ -370,7 +391,8 @@ const BuyNowModal = ({
           </header>
 
           <div className="buy-now-modal__body">
-            <div className="buy-now-modal__sums">
+            {step === 1 ? <>
+              <div className="buy-now-modal__sums">
               {isAuctionWinner ? (
                 <>
                   <div className="buy-now-modal__sum-card">
@@ -420,9 +442,9 @@ const BuyNowModal = ({
                   </div>
                 </>
               )}
-            </div>
+              </div>
 
-            <div className="buy-now-modal__wallet-row">
+              <div className="buy-now-modal__wallet-row">
               <div className="buy-now-modal__wallet-row-text">
                 <span className="buy-now-modal__wallet-title">{t('buyNowModalWalletTitle')}</span>
                 {walletBalanceEur != null && (
@@ -437,6 +459,7 @@ const BuyNowModal = ({
               <button
                 type="button"
                 role="switch"
+                aria-label={t('buyNowModalWalletTitle')}
                 aria-checked={useWalletDeposit}
                 disabled={!canUseWallet}
                 className={`buy-now-modal__switch ${useWalletDeposit ? 'buy-now-modal__switch--on' : ''} ${
@@ -449,12 +472,12 @@ const BuyNowModal = ({
               >
                 <span className="buy-now-modal__switch-knob" />
               </button>
-            </div>
-            {walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
-              <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
-            )}
+              </div>
+              {walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
+                <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
+              )}
 
-            <section className="buy-now-modal__how">
+              <section className="buy-now-modal__how">
               <h3 className="buy-now-modal__how-title">
                 {isAuctionWinner ? t('auctionWinPaymentModalHowTitle') : t('buyNowModalHowTitle')}
               </h3>
@@ -495,11 +518,17 @@ const BuyNowModal = ({
                   </>
                 )}
               </div>
-            </section>
+              </section>
+            </> : null}
 
-            <section className="buy-now-modal__legal">
-              <div className="buy-now-modal__legal-top">
-                <h3 className="buy-now-modal__legal-title">{t('buyNowModalConsentTitle')}</h3>
+            {step === 2 ? (
+              <section className="buy-now-modal__legal buy-now-modal__legal--terms">
+                <div className="buy-now-modal__terms-icon"><FiLock size={25} /></div>
+                <div className="buy-now-modal__legal-top">
+                  <h3 className="buy-now-modal__legal-title">Перед оплатой внимательно прочитайте документ</h3>
+                  <p className="buy-now-modal__terms-copy">
+                    В нём зафиксированы сумма резерва, срок бронирования и порядок дальнейшего оформления сделки.
+                  </p>
                 <button type="button" className="buy-now-modal__pdf-btn" onClick={openPdf}>
                   <FiExternalLink size={15} />
                   {t('buyNowModalPdfTerms')}
@@ -516,8 +545,16 @@ const BuyNowModal = ({
                   <span>{t('buyNowModalAgreeCheckbox')}</span>
                 </label>
               </div>
+              </section>
+            ) : null}
 
-              {agreed && (
+            {step === 3 ? (
+              <section className="buy-now-modal__legal buy-now-modal__legal--signature">
+                <div className="buy-now-modal__signature-summary">
+                  <span>К оплате сейчас</span>
+                  <strong>{reserveDisplaySymbol}{formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}</strong>
+                  <small>Stripe подтвердит платёж до создания заявки</small>
+                </div>
                 <div className="buy-now-modal__signature-block">
                   <div className="buy-now-modal__signature-head">
                     <span className="buy-now-modal__signature-label">{t('buyNowModalSignatureLabel')}</span>
@@ -526,51 +563,48 @@ const BuyNowModal = ({
                       {t('buyNowModalClearSignature')}
                     </button>
                   </div>
-                  <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen} />
+                  <ShareSignaturePad
+                    ref={signaturePadRef}
+                    active={step === 3 && isOpen}
+                    onInkChange={setSignatureReady}
+                  />
                 </div>
-              )}
-            </section>
+              </section>
+            ) : null}
           </div>
 
           <div className="buy-now-modal__actions">
-            <button
-              type="button"
-              className="buy-now-modal__cta"
-              onClick={handleStripeReservation}
-              disabled={payDisabled}
-            >
-              {stripeLoading
-                ? t('buyNowModalRedirecting')
-                : isAuctionWinner
-                  ? t('auctionWinPaymentModalPayCta')
-                  : t('buyNowModalPayReserve')}
-            </button>
+            {step > 1 ? (
+              <button type="button" className="buy-now-modal__back" onClick={() => setStep((value) => Math.max(1, value - 1))}>
+                <FiArrowLeft size={18} /> Назад
+              </button>
+            ) : null}
+            {step < 3 ? (
+              <button
+                type="button"
+                className="buy-now-modal__cta"
+                onClick={goForward}
+                disabled={step === 2 && (!pdfOpened || !agreed)}
+              >
+                Продолжить <FiArrowRight size={18} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="buy-now-modal__cta"
+                onClick={handleStripeReservation}
+                disabled={payDisabled}
+              >
+                {stripeLoading
+                  ? t('buyNowModalRedirecting')
+                  : isAuctionWinner
+                    ? t('auctionWinPaymentModalPayCta')
+                    : t('buyNowModalPayReserve')}
+              </button>
+            )}
           </div>
         </div>
       </div>
-
-      {isPdfViewerOpen && (
-        <div className="buy-now-modal__pdf-viewer-overlay" onClick={() => setIsPdfViewerOpen(false)}>
-          <div className="buy-now-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
-            <div className="buy-now-modal__pdf-viewer-head">
-              <strong>{t('buyNowModalPdfTerms')}</strong>
-              <button
-                type="button"
-                className="buy-now-modal__pdf-viewer-close"
-                onClick={() => setIsPdfViewerOpen(false)}
-                aria-label={t('buyNowModalCloseAria')}
-              >
-                <FiX size={18} />
-              </button>
-            </div>
-            <iframe
-              title="Reserve terms PDF"
-              src={pdfViewerUrl}
-              className="buy-now-modal__pdf-viewer-frame"
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

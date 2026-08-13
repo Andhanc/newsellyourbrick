@@ -19,6 +19,7 @@ const EXACT_ALLOWED = new Set([
   '/debts',
   '/test-drive',
   '/about',
+  '/app',
   '/news',
   '/buyer',
   /** Marketing landing «Для продавца» — not the owner cabinet. */

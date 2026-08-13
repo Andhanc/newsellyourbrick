@@ -15,4 +15,3 @@ export async function requestInvestorAiAnalysis(payload, { signal } = {}) {
   }
   return data.analysis
 }
-

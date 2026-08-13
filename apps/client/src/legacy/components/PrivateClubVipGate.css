@@ -445,7 +445,7 @@
 
 @media (max-width: 767px) {
   .private-club-vip__ticket {
-    --ticket-notch: 10px;
+    --ticket-notch: 13px;
   }
 
   .private-club-vip__ticket-body {

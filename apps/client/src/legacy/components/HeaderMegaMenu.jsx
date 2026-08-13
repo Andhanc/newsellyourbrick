@@ -11,7 +11,6 @@ import {
   Compass,
   Gavel,
   Gift,
-  Handshake,
   Heart,
   History,
   Home,
@@ -22,9 +21,11 @@ import {
   LogOut,
   Map,
   MessageSquare,
+  Newspaper,
   PieChart,
   PlusCircle,
   ShoppingBag,
+  Smartphone,
   Sparkles,
   Store,
   User,
@@ -46,6 +47,10 @@ import {
   readStoredUserRole,
 } from '../utils/cabinetRoutes'
 import { APP_VERSION } from '../utils/appVersion'
+import {
+  isSoftLaunchFeatureBlocked,
+  isSoftLaunchHrefBlocked,
+} from '../utils/softLaunchAccess'
 import './HeaderMegaMenu.css'
 
 const MOBILE_MEGA_MENU_BREAKPOINT = 1023
@@ -72,8 +77,8 @@ const LINK_ICONS = {
   aboutUs: Info,
   headerMegaForSellerPage: Store,
   headerMegaForBuyerPage: ShoppingBag,
-  footerBecomePartner: Handshake,
-  footerOurTeam: Users,
+  news: Newspaper,
+  appDownloadPage: Smartphone,
   privateClubPageTitle: Lock,
 }
 
@@ -112,8 +117,8 @@ const FOR_YOU_COLUMN = {
     { labelKey: 'aboutUs', path: '/about' },
     { labelKey: 'headerMegaForSellerPage', path: '/seller' },
     { labelKey: 'headerMegaForBuyerPage', path: '/buyer' },
-    { labelKey: 'footerBecomePartner', path: '/about#partner-title' },
-    { labelKey: 'footerOurTeam', path: '/about' },
+    { labelKey: 'news', path: '/news' },
+    { labelKey: 'appDownloadPage', path: '/app' },
     { labelKey: 'privateClubPageTitle', path: '/private-club' },
   ],
 }
@@ -164,6 +169,8 @@ function matchesMenuPath(pathname, search, linkPath) {
       pathname.startsWith('/shares/')
   } else if (base === '/about') {
     pathMatch = pathname === '/about' || pathname.startsWith('/about/')
+  } else if (base === '/app') {
+    pathMatch = pathname === '/app'
   } else if (base === '/owner-test/profile') {
     pathMatch = pathname === '/owner-test/profile' || pathname === '/owner-test'
   } else {
@@ -312,7 +319,18 @@ export default function HeaderMegaMenu({
 
   const handleLink = (link) => {
     if (link.action === 'ai') {
+      if (isSoftLaunchFeatureBlocked('aiAssistant')) {
+        navigate('/chat?assistant=1')
+        closeAfterNav?.()
+        return
+      }
       window.dispatchEvent(new CustomEvent('openAIChat'))
+      closeAfterNav?.()
+      return
+    }
+
+    if (link.path && isSoftLaunchHrefBlocked(link.path)) {
+      navigate(link.path)
       closeAfterNav?.()
       return
     }
@@ -349,14 +367,30 @@ export default function HeaderMegaMenu({
           </h3>
         </div>
         <ul id={`mega-links-${column.id}`} className="header-mega-menu__links">
-          {column.links.map((link) => (
-            <li key={`${column.id}-${link.labelKey}`}>
-              <button type="button" className="header-mega-menu__link" onClick={() => handleLink(link)}>
-                <span className="header-mega-menu__link-icon">{renderLinkIcon(link.labelKey, 15)}</span>
-                <span>{t(link.labelKey)}</span>
-              </button>
-            </li>
-          ))}
+          {column.links.map((link) => {
+            const locked =
+              link.action === 'ai'
+                ? isSoftLaunchFeatureBlocked('aiAssistant')
+                : Boolean(link.path && isSoftLaunchHrefBlocked(link.path))
+            return (
+              <li key={`${column.id}-${link.labelKey}`}>
+                <button
+                  type="button"
+                  className={`header-mega-menu__link${locked ? ' header-mega-menu__link--locked' : ''}`}
+                  onClick={() => handleLink(link)}
+                  aria-disabled={locked || undefined}
+                >
+                  <span className="header-mega-menu__link-icon">{renderLinkIcon(link.labelKey, 15)}</span>
+                  <span className="header-mega-menu__link-label">{t(link.labelKey)}</span>
+                  {locked ? (
+                    <span className="header-mega-menu__link-lock">
+                      {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </section>
     )

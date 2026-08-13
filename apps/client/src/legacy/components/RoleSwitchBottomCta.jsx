@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiHome, FiTrendingUp, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
+import {
+  FiArrowRight,
+  FiCheck,
+  FiEye,
+  FiEyeOff,
+  FiHome,
+  FiLock,
+  FiShield,
+  FiTrendingUp,
+} from 'react-icons/fi'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { publicAsset } from '../utils/publicAsset'
@@ -23,6 +32,103 @@ function RoleSwitchSwitchingOverlay({ show, message }) {
   )
 }
 
+function RoleSwitchProgress({ current, total, label }) {
+  return (
+    <div className="role-switch-progress" aria-label={label}>
+      <div className="role-switch-progress__meta">
+        <span>{label}</span>
+      </div>
+      <div className="role-switch-progress__track" aria-hidden>
+        {Array.from({ length: total }, (_, index) => (
+          <span
+            key={index}
+            className={index < current ? 'role-switch-progress__segment role-switch-progress__segment--active' : 'role-switch-progress__segment'}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RoleSwitchPasswordField({
+  id,
+  label,
+  password,
+  setPassword,
+  showPassword,
+  setShowPassword,
+  placeholder,
+  showPasswordLabel,
+  hidePasswordLabel,
+  requirementsId,
+}) {
+  return (
+    <div className="role-switch-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="role-switch-field__password-wrap">
+        <FiLock className="role-switch-field__password-icon" size={17} aria-hidden />
+        <input
+          id={id}
+          className="role-switch-field__password-input"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder={placeholder}
+          aria-describedby={requirementsId}
+          required
+        />
+        <button
+          type="button"
+          className="role-switch-field__password-toggle"
+          onClick={() => setShowPassword((visible) => !visible)}
+          aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
+        >
+          {showPassword ? <FiEyeOff size={19} /> : <FiEye size={19} />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function RoleSwitchPasswordChecklist({ id, password, t, includeDifferent = false }) {
+  const rules = [
+    { label: t('roleSwitch_passwordRequirementUpper'), met: /[A-ZА-Я]/.test(password) },
+    { label: t('roleSwitch_passwordRequirementDigit'), met: /[0-9]/.test(password) },
+    { label: t('roleSwitch_passwordRequirementSpecial'), met: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password) },
+  ]
+  const metCount = rules.filter((rule) => rule.met).length
+
+  return (
+    <div id={id} className="role-switch-password-checklist">
+      <p className="role-switch-password-checklist__title">{t('roleSwitch_passwordRequirementsTitle')}</p>
+      <div className="role-switch-password-checklist__grid" role="list">
+        {rules.map((rule) => (
+          <span
+            key={rule.label}
+            className={rule.met ? 'role-switch-password-rule role-switch-password-rule--met' : 'role-switch-password-rule'}
+            role="listitem"
+          >
+            <span className="role-switch-password-rule__icon" aria-hidden>
+              {rule.met ? <FiCheck size={13} /> : null}
+            </span>
+            {rule.label}
+          </span>
+        ))}
+        {includeDifferent ? (
+          <span className="role-switch-password-rule role-switch-password-rule--note" role="listitem">
+            <FiShield className="role-switch-password-rule__shield" size={15} aria-hidden />
+            {t('roleSwitch_passwordRequirementDifferent')}
+          </span>
+        ) : null}
+      </div>
+      <span className="role-switch-sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {t('roleSwitch_passwordRequirementsProgress', { current: metCount, total: rules.length })}
+      </span>
+    </div>
+  )
+}
+
 export function RoleSwitchModals({ flow }) {
   const { t } = useTranslation()
   const {
@@ -31,7 +137,6 @@ export function RoleSwitchModals({ flow }) {
     profilePreview,
     loading,
     error,
-    passwordHints,
     pendingSwitchRole,
     isCurrentSeller,
     targetRole,
@@ -47,6 +152,7 @@ export function RoleSwitchModals({ flow }) {
   } = flow
 
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [switchPassword, setSwitchPassword] = useState('')
   const [showSwitchPassword, setShowSwitchPassword] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
@@ -54,6 +160,7 @@ export function RoleSwitchModals({ flow }) {
   const resetAndClose = () => {
     if (switching) return
     setPassword('')
+    setShowPassword(false)
     setSwitchPassword('')
     closeAll()
   }
@@ -69,6 +176,10 @@ export function RoleSwitchModals({ flow }) {
 
   const pitchVariant = targetRole === 'buyer' ? 'buyer' : 'seller'
   const closeLabel = t('closeModalAria')
+  const sellerNeedsBuyerPassword =
+    targetRole === 'seller' && linkedStatus?.buyer && linkedStatus.buyer.hasPassword === false
+  const setupTotalSteps = sellerNeedsBuyerPassword ? 3 : 2
+  const progressLabel = (current) => t('roleSwitch_stepLabel', { current, total: setupTotalSteps })
 
   if (phase === 'pitch') {
     return (
@@ -88,12 +199,23 @@ export function RoleSwitchModals({ flow }) {
           aria-hidden
         />
         <div className="role-switch-pitch__body">
+          <RoleSwitchProgress current={1} total={setupTotalSteps} label={progressLabel(1)} />
+          {targetRole === 'seller' ? (
+            <span className="role-switch-pitch__eyebrow">{t('roleSwitch_pitchSellerEyebrow')}</span>
+          ) : null}
           <h2 id="role-switch-pitch-title" className="role-switch-pitch__title">
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerTitle') : t('roleSwitch_pitchSellerTitle')}
           </h2>
           <p className="role-switch-pitch__text">
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerBody') : t('roleSwitch_pitchSellerBody')}
           </p>
+          {targetRole === 'seller' ? (
+            <div className="role-switch-pitch__benefits" aria-label={t('roleSwitch_pitchSellerBenefitsAria')}>
+              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitOne')}</span>
+              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitTwo')}</span>
+              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitThree')}</span>
+            </div>
+          ) : null}
           {targetRole === 'seller' &&
           linkedStatus?.buyer &&
           linkedStatus.buyer.hasPassword === false ? (
@@ -101,6 +223,7 @@ export function RoleSwitchModals({ flow }) {
           ) : null}
           <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerCta') : t('roleSwitch_pitchSellerCta')}
+            <FiArrowRight size={18} aria-hidden />
           </button>
           <button type="button" className="role-switch-btn role-switch-btn--ghost" onClick={resetAndClose}>
             {t('roleSwitch_cancel')}
@@ -115,7 +238,10 @@ export function RoleSwitchModals({ flow }) {
     const handleBuyerPasswordSubmit = async (e) => {
       e.preventDefault()
       const ok = await submitBuyerPassword(password)
-      if (ok) setPassword('')
+      if (ok) {
+        setPassword('')
+        setShowPassword(false)
+      }
     }
 
     return (
@@ -129,6 +255,7 @@ export function RoleSwitchModals({ flow }) {
           closeLabel={closeLabel}
         >
           <div className="role-switch-setup__body">
+            <RoleSwitchProgress current={2} total={3} label={t('roleSwitch_stepLabel', { current: 2, total: 3 })} />
             <h2 id="role-switch-buyer-password-title" className="role-switch-setup__title">
               {t('roleSwitch_buyerPasswordTitle')}
             </h2>
@@ -147,24 +274,23 @@ export function RoleSwitchModals({ flow }) {
             </div>
 
             <form onSubmit={handleBuyerPasswordSubmit}>
-              <div className="role-switch-field">
-                <label htmlFor="role-switch-buyer-password">{t('roleSwitch_buyerPasswordLabel')}</label>
-                <input
-                  id="role-switch-buyer-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('roleSwitch_passwordPlaceholder')}
-                  required
-                />
-              </div>
-              <p className="role-switch-hint">{t('roleSwitch_passwordHint')}</p>
-              {passwordHints?.missing?.length ? (
-                <p className="role-switch-hint" role="status">
-                  {t('roleSwitch_passwordMissing', { items: passwordHints.missing.join(', ') })}
-                </p>
-              ) : null}
+              <RoleSwitchPasswordField
+                id="role-switch-buyer-password"
+                label={t('roleSwitch_buyerPasswordLabel')}
+                password={password}
+                setPassword={setPassword}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
+                placeholder={t('roleSwitch_passwordPlaceholder')}
+                showPasswordLabel={t('showPassword')}
+                hidePasswordLabel={t('hidePassword')}
+                requirementsId="role-switch-buyer-password-requirements"
+              />
+              <RoleSwitchPasswordChecklist
+                id="role-switch-buyer-password-requirements"
+                password={password}
+                t={t}
+              />
               {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
               <button
                 type="submit"
@@ -184,7 +310,10 @@ export function RoleSwitchModals({ flow }) {
     const handleSubmit = async (e) => {
       e.preventDefault()
       const ok = await submitSetup(password)
-      if (ok) setPassword('')
+      if (ok) {
+        setPassword('')
+        setShowPassword(false)
+      }
     }
 
     return (
@@ -198,12 +327,23 @@ export function RoleSwitchModals({ flow }) {
         closeLabel={closeLabel}
       >
         <div className="role-switch-setup__body">
+          <RoleSwitchProgress
+            current={setupTotalSteps}
+            total={setupTotalSteps}
+            label={progressLabel(setupTotalSteps)}
+          />
           <h2 id="role-switch-setup-title" className="role-switch-setup__title">
-            {t('roleSwitch_setupTitle')}
+            {targetRole === 'seller' ? t('roleSwitch_setupSellerTitle') : t('roleSwitch_setupTitle')}
           </h2>
           <p className="role-switch-setup__subtitle">{t('roleSwitch_setupSubtitle')}</p>
           {targetRole === 'seller' ? (
-            <p className="role-switch-setup__google-note">{t('roleSwitch_setupGoogleNote')}</p>
+            <div className="role-switch-password-explainer">
+              <span className="role-switch-password-explainer__icon" aria-hidden><FiShield size={20} /></span>
+              <span>
+                <strong>{t('roleSwitch_passwordWhyTitle')}</strong>
+                <small>{t('roleSwitch_passwordWhyBody')}</small>
+              </span>
+            </div>
           ) : null}
 
           <div className="role-switch-profile" aria-label={t('roleSwitch_profileAria')}>
@@ -226,27 +366,32 @@ export function RoleSwitchModals({ flow }) {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="role-switch-field">
-              <label htmlFor="role-switch-password">{t('roleSwitch_passwordLabel')}</label>
-              <input
-                id="role-switch-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('roleSwitch_passwordPlaceholder')}
-                required
-              />
-            </div>
-            <p className="role-switch-hint">{t('roleSwitch_passwordHint')}</p>
-            {passwordHints?.missing?.length ? (
-              <p className="role-switch-hint" role="status">
-                {t('roleSwitch_passwordMissing', { items: passwordHints.missing.join(', ') })}
-              </p>
-            ) : null}
+            <RoleSwitchPasswordField
+              id="role-switch-password"
+              label={targetRole === 'seller' ? t('roleSwitch_sellerPasswordLabel') : t('roleSwitch_passwordLabel')}
+              password={password}
+              setPassword={setPassword}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              placeholder={t('roleSwitch_passwordPlaceholder')}
+              showPasswordLabel={t('showPassword')}
+              hidePasswordLabel={t('hidePassword')}
+              requirementsId="role-switch-seller-password-requirements"
+            />
+            <RoleSwitchPasswordChecklist
+              id="role-switch-seller-password-requirements"
+              password={password}
+              t={t}
+              includeDifferent={targetRole === 'seller'}
+            />
             {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
             <button type="submit" className="role-switch-btn role-switch-btn--primary" disabled={loading || !password}>
-              {loading ? t('roleSwitch_saving') : t('roleSwitch_saveAndOpen')}
+              {loading
+                ? t('roleSwitch_saving')
+                : targetRole === 'seller'
+                  ? t('roleSwitch_createSellerCabinet')
+                  : t('roleSwitch_saveAndOpen')}
+              {!loading ? <FiArrowRight size={18} aria-hidden /> : null}
             </button>
           </form>
         </div>
@@ -341,12 +486,12 @@ export function RoleSwitchModals({ flow }) {
             onClose={resetAndClose}
             onBack={goBackToCabinet}
             backLabel={t('roleSwitch_back')}
-            ariaLabelledBy="role-switch-switch-title"
+            ariaLabelledBy="role-switch-switch-google-title"
             maxHeightRatio={0.58}
             closeLabel={closeLabel}
           >
             <div className="role-switch-setup__body">
-              <h2 id="role-switch-switch-title" className="role-switch-setup__title">
+              <h2 id="role-switch-switch-google-title" className="role-switch-setup__title">
                 {t('roleSwitch_switchTitle', { cabinet: targetLabel })}
               </h2>
               <p className="role-switch-setup__subtitle">{t('roleSwitch_switchGoogleSubtitle')}</p>

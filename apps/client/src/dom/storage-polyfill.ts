@@ -80,3 +80,61 @@ function ensureStorage(name: StorageName) {
 
 ensureStorage('localStorage')
 ensureStorage('sessionStorage')
+
+function nativeDomPublicAssetUrl(value: string) {
+  const raw = String(value || '').trim()
+  if (typeof window === 'undefined') return raw
+  const isBundledNativeDom = window.location?.pathname.includes('/www.bundle/')
+  if (
+    (window.location?.protocol !== 'file:' && !isBundledNativeDom) ||
+    !raw.startsWith('/') ||
+    raw.startsWith('//')
+  ) {
+    return raw
+  }
+  return new URL(`.${raw}`, document.baseURI).href
+}
+
+function fixNativeDomPublicAssets(root: ParentNode) {
+  const elements: Element[] = []
+  if (root instanceof Element) elements.push(root)
+  elements.push(...root.querySelectorAll('img, video, source'))
+
+  for (const element of elements) {
+    for (const attribute of ['src', 'poster']) {
+      const current = element.getAttribute(attribute)
+      if (!current) continue
+      const next = nativeDomPublicAssetUrl(current)
+      if (next !== current) element.setAttribute(attribute, next)
+    }
+  }
+}
+
+if (typeof document !== 'undefined') {
+  const startAssetObserver = () => {
+    fixNativeDomPublicAssets(document)
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes') {
+          fixNativeDomPublicAssets(mutation.target as Element)
+          continue
+        }
+        for (const node of mutation.addedNodes) {
+          if (node instanceof Element) fixNativeDomPublicAssets(node)
+        }
+      }
+    })
+    observer.observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['src', 'poster'],
+    })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startAssetObserver, { once: true })
+  } else {
+    startAssetObserver()
+  }
+}

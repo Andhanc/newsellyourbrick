@@ -59,6 +59,7 @@ import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
+import { fetchUserDeposit } from '../utils/depositApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
@@ -727,6 +728,7 @@ function TestPage() {
   )
   const [dbUserRow, setDbUserRow] = useState(null)
   const [dbUserLoading, setDbUserLoading] = useState(false)
+  const [depositAmount, setDepositAmount] = useState(null)
   const [verificationStatusHydrated, setVerificationStatusHydrated] = useState(false)
   const [profileForm, setProfileForm] = useState(emptyProfileForm)
   const [savingField, setSavingField] = useState(null)
@@ -748,6 +750,8 @@ function TestPage() {
   /** После клика по строке в тосте — скрываем тост, чтобы не перекрывал поля ввода. */
   const [profileCompletionToastDismissedForInput, setProfileCompletionToastDismissedForInput] = useState(false)
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
+  /** 'saved' | 'moderation' — текст модалки после сохранения данных профиля */
+  const [profileCelebrationKind, setProfileCelebrationKind] = useState('saved')
   const [subscriptionCheckoutCelebration, setSubscriptionCheckoutCelebration] = useState(false)
   const [vipClubCheckoutCelebration, setVipClubCheckoutCelebration] = useState(false)
   /** Конфетти на поздравлении: ~5 с генерации, потом только долёт существующих частиц. */
@@ -985,6 +989,35 @@ function TestPage() {
   }, [dataSheetOpen])
 
   useEffect(() => {
+    if (!resolvedNumericUserId) {
+      setDepositAmount(null)
+      return undefined
+    }
+    let cancelled = false
+    const loadDeposit = async () => {
+      try {
+        const deposit = await fetchUserDeposit(API_BASE_URL, resolvedNumericUserId, {
+          ttlMs: 15000,
+          force: false,
+        })
+        if (cancelled) return
+        const amount =
+          deposit && typeof deposit.depositAmount === 'number' ? deposit.depositAmount : 0
+        setDepositAmount(amount)
+      } catch {
+        if (!cancelled) setDepositAmount(0)
+      }
+    }
+    void loadDeposit()
+    const onFocus = () => void loadDeposit()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [resolvedNumericUserId])
+
+  useEffect(() => {
     if (!isLoaded) return
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
@@ -994,16 +1027,27 @@ function TestPage() {
 
   const loadVerificationStatus = useCallback(async (force = false) => {
     const id = numericUserId ?? getStoredNumericUserId()
-    if (!id) return
+    if (!id) return null
     try {
       const s = await fetchVerificationStatus(API_BASE_URL, id, { ttlMs: 20000, force })
       if (s) setVerificationStatus(s)
+      return s
     } catch {
-      /* ignore */
+      return null
     } finally {
       setVerificationStatusHydrated(true)
     }
   }, [numericUserId])
+
+  const openProfileDataCelebration = useCallback(async ({ forceStatus = true } = {}) => {
+    const status = forceStatus ? await loadVerificationStatus(true) : verificationStatus
+    setProfileCelebrationKind(status?.isReady ? 'moderation' : 'saved')
+    setShowPassportRecognitionModal(false)
+    setPassportRecognitionMode('confirm')
+    setExtractedPassportData(null)
+    setDataSheetOpen(false)
+    setShowProfileCompleteCelebration(true)
+  }, [loadVerificationStatus, verificationStatus])
 
   useEffect(() => {
     if (resolvedNumericUserId == null || resolvedNumericUserId === '') {
@@ -1742,6 +1786,7 @@ function TestPage() {
         }
 
         setDbUserRow(json.data)
+        setProfileForm(buildProfileFormFromRow(json.data, user, email))
         setProfileFieldSavedOk((prev) => {
           const next = { ...prev }
           for (const apiKey of Object.keys(body)) {
@@ -1754,12 +1799,7 @@ function TestPage() {
         })
         invalidateUserByIdCache(API_BASE_URL, uid)
         invalidateVerificationStatusCache(API_BASE_URL, uid)
-        void loadVerificationStatus(true)
-        setProfileForm(buildProfileFormFromRow(json.data, user, email))
-        setShowPassportRecognitionModal(false)
-        setExtractedPassportData(null)
-        setDataSheetStep('documents')
-        showNotification(t('buyerData_passportConfirmSaved'), 'success')
+        await openProfileDataCelebration({ forceStatus: true })
       } catch (e) {
         showNotification(e.message || t('buyerData_saveError'), 'error')
         const row = dbUserRowRef.current
@@ -1768,7 +1808,7 @@ function TestPage() {
         setIsSavingExtractPatch(false)
       }
     },
-    [numericUserId, user, email, clearAllProfileSaveTimers, loadVerificationStatus, t],
+    [numericUserId, user, email, clearAllProfileSaveTimers, openProfileDataCelebration],
   )
 
   const handlePassportRecognitionReject = useCallback(() => {
@@ -1898,8 +1938,7 @@ function TestPage() {
             setSavePulseDismissed(true)
             invalidateUserByIdCache(API_BASE_URL, persistUserId)
             invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
-            void loadVerificationStatus(true)
-            setShowProfileCompleteCelebration(true)
+            await openProfileDataCelebration({ forceStatus: true })
           }
           return
         }
@@ -1916,8 +1955,7 @@ function TestPage() {
       setSavePulseDismissed(true)
       invalidateUserByIdCache(API_BASE_URL, persistUserId)
       invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
-      void loadVerificationStatus(true)
-      setShowProfileCompleteCelebration(true)
+      await openProfileDataCelebration({ forceStatus: true })
     } catch (e) {
       showNotification(e.message || t('buyerData_saveError'), 'error')
       setProfileForm(buildProfileFormFromRow(row, user, email))
@@ -1933,7 +1971,7 @@ function TestPage() {
     numericUserId,
     user,
     email,
-    loadVerificationStatus,
+    openProfileDataCelebration,
     savePulseDismissed,
   ])
 
@@ -1974,6 +2012,12 @@ function TestPage() {
   }, [verificationStatus, profileCompletionStats.pct])
 
   const needsProfileOnboarding = profileCompletionStats.pct < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
+  const showDataAttentionDot =
+    Boolean(resolvedNumericUserId) &&
+    verificationStatusHydrated &&
+    profileCompletionStats.pct < 100
+  const showDepositAttentionDot =
+    Boolean(resolvedNumericUserId) && depositAmount != null && Number(depositAmount) <= 0
 
   /** Пока профиль &lt; 78% — флаг для логики заполнения данных (без UI-подсказок). */
   const profileGateActive =
@@ -2174,6 +2218,7 @@ function TestPage() {
       }
     }
     setShowProfileCompleteCelebration(false)
+    setProfileCelebrationKind('saved')
     setDataSheetOpen(false)
     scrollMainTo(0, 0, 'smooth')
   }, [resolvedNumericUserId])
@@ -2535,12 +2580,26 @@ function TestPage() {
                           : isSubscriptions
                             ? subscriptionPlanLabel || 'Starter'
                             : card.description
+                    const showAttentionDot =
+                      (isData && showDataAttentionDot) ||
+                      (card.to === '/deposit' && showDepositAttentionDot)
                     const className = `profile-folder-card profile-folder-card--${card.accent || 'teal'}${
                       active ? ' profile-folder-card--active' : ''
-                    }`
+                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}`
+                    const attentionLabel = isData
+                      ? t('buyerCabinet_cardDataAttentionAria')
+                      : t('buyerCabinet_cardDepositAttentionAria')
                     const inner = (
                       <>
                         <span className="profile-folder-card__glow" aria-hidden />
+                        {showAttentionDot ? (
+                          <span
+                            className="profile-folder-card__attention-dot"
+                            title={attentionLabel}
+                            aria-label={attentionLabel}
+                            role="status"
+                          />
+                        ) : null}
                         <span className="profile-folder-card__icon" aria-hidden>
                           <img src={card.iconSrc} alt="" loading="lazy" decoding="async" draggable={false} />
                         </span>
@@ -3643,16 +3702,23 @@ function TestPage() {
             >
               {showProfileCompleteCelebration ? (
                 <>
+                  <div className="test-profile-complete-modal__icon" aria-hidden>
+                    <FiCheckCircle size={36} strokeWidth={2.2} />
+                  </div>
                   <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
-                    {t('buyerCabinet_profileCompleteTitle')}
+                    {t('buyerData_celebrationTitle')}
                   </h2>
-                  <p className="test-profile-complete-modal__text">{t('buyerCabinet_profileCompleteText')}</p>
+                  <p className="test-profile-complete-modal__text">
+                    {profileCelebrationKind === 'moderation'
+                      ? t('buyerData_celebrationModerationBody')
+                      : t('buyerData_celebrationSavedBody')}
+                  </p>
                   <button
                     type="button"
                     className="test-profile-complete-modal__btn"
                     onClick={handleProfileCompleteCelebrationGo}
                   >
-                    {t('buyerCabinet_profileCompleteCta')}
+                    {t('buyerData_celebrationCtaProfile')}
                   </button>
                 </>
               ) : vipClubCheckoutCelebration ? (

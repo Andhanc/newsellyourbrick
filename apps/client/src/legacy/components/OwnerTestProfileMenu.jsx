@@ -49,6 +49,7 @@ export default function OwnerTestProfileMenu({
   activeTab,
   onTabSelect,
   onLogout,
+  onNavigate,
   className = '',
 }) {
   const { t } = useTranslation()
@@ -64,14 +65,24 @@ export default function OwnerTestProfileMenu({
   })
   const displayRole = role?.trim() || profileCtx?.roleLabel || sellerRoleLabel
   const photoUrl = useOwnerTestUserPhoto()
-  const [photoFailed, setPhotoFailed] = useState(false)
+  const clerkPhoto = user?.imageUrl || user?.profileImageUrl || null
+  const avatarCandidates = useMemo(() => {
+    const list = []
+    if (photoUrl) list.push(photoUrl)
+    if (clerkPhoto && clerkPhoto !== photoUrl) list.push(clerkPhoto)
+    return list
+  }, [photoUrl, clerkPhoto])
+  const [avatarIndex, setAvatarIndex] = useState(0)
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
   const gradientId = useId()
 
   useEffect(() => {
-    setPhotoFailed(false)
-  }, [photoUrl])
+    setAvatarIndex(0)
+  }, [photoUrl, clerkPhoto])
+
+  const activeAvatar = avatarCandidates[avatarIndex] || null
+  const showAvatar = Boolean(activeAvatar)
 
   useEffect(() => {
     if (!open) return undefined
@@ -95,6 +106,10 @@ export default function OwnerTestProfileMenu({
   }, [open])
 
   const closeMenu = () => setOpen(false)
+  const handleNavigate = () => {
+    closeMenu()
+    onNavigate?.()
+  }
 
   const handleLogout = useCallback(async () => {
     closeMenu()
@@ -112,15 +127,17 @@ export default function OwnerTestProfileMenu({
           to={getOwnerProfileTabPath('personal')}
           className="otpm__identity"
           aria-label={t('ownerTest_profileAria')}
-          onClick={closeMenu}
+          onClick={handleNavigate}
         >
           <span className="otpm__avatar" aria-hidden>
-            {photoUrl && !photoFailed ? (
+            {showAvatar ? (
               <img
-                src={photoUrl}
+                src={activeAvatar}
                 alt=""
                 className="otpm__avatar-img"
-                onError={() => setPhotoFailed(true)}
+                referrerPolicy="no-referrer"
+                decoding="async"
+                onError={() => setAvatarIndex((prev) => prev + 1)}
               />
             ) : (
               <svg viewBox="0 0 40 40">
@@ -181,7 +198,7 @@ export default function OwnerTestProfileMenu({
                 to={getOwnerProfileTabPath(tab.id)}
                 role="menuitem"
                 className="otpm__item"
-                onClick={closeMenu}
+                onClick={handleNavigate}
               >
                 {tab.label}
               </Link>

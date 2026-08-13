@@ -28,7 +28,10 @@ export function PushNotificationsProvider({ children }: { children: ReactNode })
       return
     }
     void registerPushNotifications(user.id).catch((error) => {
-      console.warn('[push] registration failed:', error instanceof Error ? error.message : error)
+      const message = error instanceof Error ? error.message : String(error || '')
+      if (message !== 'Mobile auth token is missing') {
+        console.warn('[push] registration failed:', message)
+      }
     })
   }, [loading, user?.id])
 

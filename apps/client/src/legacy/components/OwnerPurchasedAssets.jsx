@@ -37,6 +37,30 @@ function intlLocale() {
   return map[code] || 'en-US'
 }
 
+function ReservationDealProgress({ completed, cancelled, t }) {
+  const steps = [
+    { key: 'reserve', label: t('ownerPurchased_progressReserve', 'Резерв оплачен') },
+    { key: 'processing', label: t('ownerPurchased_progressProcessing', 'Оформление сделки') },
+    { key: 'completed', label: t('ownerPurchased_progressCompleted', 'Сделка завершена') },
+  ]
+  return (
+    <div className={`owner-purchased-progress${cancelled ? ' is-cancelled' : ''}`}>
+      <div className="owner-purchased-progress__line" aria-hidden />
+      {steps.map((step, index) => {
+        const done = completed || index < 2
+        const current = !completed && index === 1
+        return (
+          <div key={step.key} className={`owner-purchased-progress__step${done ? ' is-done' : ''}${current ? ' is-current' : ''}`}>
+            <span aria-hidden>{done ? '✓' : index + 1}</span>
+            <small>{step.label}</small>
+          </div>
+        )
+      })}
+      {cancelled ? <p>{t('ownerPurchased_progressCancelled', 'Сделка отменена')}</p> : null}
+    </div>
+  )
+}
+
 /**
  * Кабинет продавца: аукционы, доли и «Купить сейчас».
  * Продажа Buy Now доступна только после статуса «Завершён» у purchase request в админке.
@@ -227,8 +251,13 @@ export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuye
       const b = row.billing || {}
       const prId = b.purchase_request_id != null ? Number(b.purchase_request_id) : null
       const isDealCompleted =
-        prId != null && !Number.isNaN(prId) && completedPurchaseRequestIds.has(prId)
-      return { ...row, isDealCompleted }
+        row.purchase_request_status === 'completed' ||
+        (prId != null && !Number.isNaN(prId) && completedPurchaseRequestIds.has(prId))
+      return {
+        ...row,
+        isDealCompleted,
+        isDealCancelled: row.purchase_request_status === 'cancelled',
+      }
     })
   }, [reservationPurchases, completedPurchaseRequestIds])
 
@@ -386,6 +415,7 @@ export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuye
                   const b = row.billing || {}
                   const pid = b.property_id
                   const isDealCompleted = Boolean(row.isDealCompleted)
+                  const isDealCancelled = Boolean(row.isDealCancelled)
                   const minSale = b.minimum_sale_price
                   const paidStripe = (row.amount_cents || 0) / 100
                   const walletEur = b.wallet_eur_applied || 0
@@ -442,7 +472,7 @@ export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuye
                             <p className="owner-purchased-card__badge">
                               {isDealCompleted
                                 ? t('ownerPurchased_dealCompletedBadge')
-                                : t('buyerHistory_reserveBuyNowChannel')}
+                                : t('ownerPurchased_reserveOnlyBadge', 'Оплачен только резерв · продажа продолжается')}
                             </p>
                             <p className="owner-purchased-card__date">{formatDate(row.paid_at)}</p>
                           </div>
@@ -459,7 +489,13 @@ export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuye
                       )}
 
                       {!isDealCompleted ? (
-                        <dl className="owner-purchased-card__dl owner-purchased-card__dl--payment">
+                        <>
+                          <div className="owner-purchased-card__notice">
+                            <strong>{t('ownerPurchased_reserveNoticeTitle', 'Это ещё не полная покупка')}</strong>
+                            <p>{t('ownerPurchased_reserveNoticeText', 'Резерв подтверждён. Менеджер сопровождает документы и оставшуюся оплату до завершения сделки.')}</p>
+                          </div>
+                          <ReservationDealProgress completed={false} cancelled={isDealCancelled} t={t} />
+                          <dl className="owner-purchased-card__dl owner-purchased-card__dl--payment">
                           <div>
                             <dt>{t('buyerHistory_totalPaid')}</dt>
                             <dd>
@@ -478,8 +514,11 @@ export default function OwnerPurchasedAssets({ userId, linkedBuyerId: linkedBuye
                               <dd>€{walletEur.toLocaleString(billingLocale)}</dd>
                             </div>
                           )}
-                        </dl>
-                      ) : null}
+                          </dl>
+                        </>
+                      ) : (
+                        <ReservationDealProgress completed t={t} />
+                      )}
 
                       {pid != null && (
                         <div className="owner-purchased-card__footer">

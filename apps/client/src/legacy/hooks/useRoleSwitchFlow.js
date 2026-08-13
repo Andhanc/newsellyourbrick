@@ -3,10 +3,9 @@ import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
 import { getUserData, loginWithEmail, saveUserData, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
-import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { createLinkedRole, fetchLinkedRoles, setLinkedRolePassword } from '../utils/roleSwitchApi'
 import {
-  applyPurchasedPropertyListingPrefill,
+  promotePendingPurchasedPropertyToSellerArrival,
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
@@ -128,17 +127,10 @@ export function useRoleSwitchFlow(targetRole) {
 
         const pendingSell = readPendingSellPurchasedProperty()
         if (pendingSell?.id && gotSeller) {
-          try {
-            await applyPurchasedPropertyListingPrefill(pendingSell.id)
-          } catch (e) {
-            console.warn('switchToRole prefill:', e)
-          }
+          promotePendingPurchasedPropertyToSellerArrival({ sellerUserId: result.user?.id })
         }
 
-        const targetPath =
-          pendingSell?.id && gotSeller
-            ? buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
-            : getCabinetHomePath(newRole)
+        const targetPath = getCabinetHomePath(newRole)
 
         if (result.user?.id) {
           try {

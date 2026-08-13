@@ -1,15 +1,16 @@
 .vip-club-page {
-  --vip-teal: #18b8ee;
-  --vip-teal-deep: #087dbb;
-  --vip-teal-soft: #e8f8ff;
-  --vip-mint: #bff1ff;
-  --vip-mint-glow: rgba(95, 207, 255, 0.42);
+  /* Тиффани с главной / DESIGN.md */
+  --vip-teal: #0099A9;
+  --vip-teal-deep: #007d8a;
+  --vip-teal-soft: #f0fafb;
+  --vip-mint: #dff6f8;
+  --vip-mint-glow: rgba(0, 153, 169, 0.32);
   --vip-ink: #050505;
   --vip-muted: rgba(5, 5, 5, 0.58);
   --vip-border: rgba(0, 153, 169, 0.22);
   --vip-header-h: 104px;
-  --vip-story-accent: #49acc4;
-  --vip-story-accent-deep: #2d8fa8;
+  --vip-story-accent: #0099A9;
+  --vip-story-accent-deep: #007d8a;
   --vip-block-gap: clamp(96px, 13vh, 168px);
   --vip-card-shadow:
     0 24px 56px -18px rgba(5, 5, 5, 0.14),
@@ -17,7 +18,7 @@
     0 0 0 1px rgba(5, 5, 5, 0.05);
   --vip-card-shadow-hover:
     0 32px 72px -16px rgba(5, 5, 5, 0.18),
-    0 14px 32px -10px rgba(24, 184, 238, 0.12),
+    0 14px 32px -10px rgba(0, 153, 169, 0.12),
     0 0 0 1px rgba(5, 5, 5, 0.06);
   min-height: 100vh;
   background: #ffffff;
@@ -115,7 +116,7 @@
 
 .vip-club-btn--primary:hover {
   transform: translateY(-1px);
-  background: #089f9b;
+  background: var(--vip-teal-deep);
 }
 
 .vip-club-fold {
@@ -129,9 +130,9 @@
   padding: clamp(12px, 1.8vh, 20px) 0 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 18% 78%, rgba(24, 184, 238, 0.14) 0%, rgba(24, 184, 238, 0) 28%),
-    radial-gradient(circle at 82% 74%, rgba(52, 230, 179, 0.16) 0%, rgba(52, 230, 179, 0) 30%),
-    linear-gradient(180deg, #ffffff 0%, #ffffff 30%, #f8feff 62%, #eef9ff 100%);
+    radial-gradient(circle at 18% 78%, rgba(0, 153, 169, 0.12) 0%, rgba(0, 153, 169, 0) 28%),
+    radial-gradient(circle at 82% 74%, rgba(110, 231, 216, 0.14) 0%, rgba(110, 231, 216, 0) 30%),
+    linear-gradient(180deg, #ffffff 0%, #ffffff 30%, #f8fcfd 62%, #f0fafb 100%);
 }
 
 .vip-club-hero {
@@ -171,9 +172,9 @@
   background:
     radial-gradient(
       ellipse 70% 58% at 50% 58%,
-      rgba(69, 222, 255, 0.42) 0%,
-      rgba(124, 242, 210, 0.28) 32%,
-      rgba(205, 249, 255, 0.12) 56%,
+      rgba(0, 153, 169, 0.36) 0%,
+      rgba(110, 231, 216, 0.24) 32%,
+      rgba(240, 250, 251, 0.14) 56%,
       rgba(255, 255, 255, 0) 74%
     );
   filter: blur(36px);
@@ -186,7 +187,7 @@
   border-radius: 50%;
   background: radial-gradient(
     ellipse 62% 50% at 50% 60%,
-    rgba(16, 184, 238, 0.22) 0%,
+    rgba(0, 153, 169, 0.2) 0%,
     rgba(255, 255, 255, 0) 68%
   );
   filter: blur(22px);
@@ -347,7 +348,7 @@
   justify-content: center;
   min-height: 28px;
   padding: 0 12px;
-  border: 1px solid rgba(0, 153, 170, 0.18);
+  border: 1px solid rgba(0, 153, 169, 0.18);
   border-radius: 999px;
   background: #fff;
   color: var(--vip-ink);
@@ -535,7 +536,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(73, 172, 196, 0.22);
+  border: 1px solid rgba(0, 153, 169, 0.22);
   border-radius: 50%;
   background: #fff;
   color: #94a3b8;
@@ -559,8 +560,8 @@
 }
 
 .vip-club-stories__arrow--next:hover {
-  background: #267f96;
-  border-color: #267f96;
+  background: var(--vip-teal-deep);
+  border-color: var(--vip-teal-deep);
   color: #fff;
 }
 

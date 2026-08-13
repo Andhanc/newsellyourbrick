@@ -46,7 +46,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -124,7 +124,10 @@ export default function OwnerTestDrivePage() {
       <div className="otd-workspace">
         <div className="otd-content otd-content--split">
           <p className="otd-split-lead otd-desktop-only">{t('ownerTestDriveAnalyticsHeroHint')}</p>
-          <OwnerTestDriveSplitView userId={userId} isMobile={isMobile} />
+          <OwnerTestDriveSplitView
+            userId={userId}
+            isMobile={isMobile}
+          />
         </div>
       </div>
     </div>

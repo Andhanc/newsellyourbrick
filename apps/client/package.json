@@ -52,8 +52,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild:android": "expo prebuild --platform android --no-install",
-    "android:release:apk": "npm run prebuild:android && (cd android && ./gradlew app:assembleRelease)",
-    "android:release:aab": "npm run prebuild:android && (cd android && ./gradlew app:bundleRelease)",
+    "android:release:apk": "export EXPO_NO_BUNDLE_SPLITTING=1 JAVA_HOME=${JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home} ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk} && npm run prebuild:android && (cd android && ./gradlew app:assembleRelease)",
+    "android:release:aab": "export EXPO_NO_BUNDLE_SPLITTING=1 JAVA_HOME=${JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home} ANDROID_HOME=${ANDROID_HOME:-$HOME/Library/Android/sdk} ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk} && npm run prebuild:android && (cd android && ./gradlew app:bundleRelease)",
     "web": "expo start --web --port 8082",
     "export:web": "npx expo export --platform web --output-dir dist-web",
     "typecheck": "tsc --noEmit"

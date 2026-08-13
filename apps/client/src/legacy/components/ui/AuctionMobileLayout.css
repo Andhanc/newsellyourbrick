@@ -390,10 +390,10 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__btn {
-  padding: 6px 4px;
-  font-size: 0.62rem;
+  padding: 7px 6px;
+  font-size: 0.66rem;
   border-radius: 10px;
-  min-height: 34px;
+  min-height: 36px;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__favorite {
@@ -1986,7 +1986,7 @@
   .auction-mobile-layout
     .discover-auction-cards.auction-mobile-stack--desktop-cards
     .auction-card__media {
-    aspect-ratio: 4 / 3 !important;
+    aspect-ratio: 3 / 2 !important;
     background: #dfe8e8;
   }
 
@@ -2009,14 +2009,7 @@
     .discover-auction-cards.properties-grid--auction-cards
     .auction-card__actions {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6px !important;
-  }
-
-  .auction-mobile-layout
-    .discover-auction-cards
-    .auction-card__actions--single {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .auction-mobile-layout

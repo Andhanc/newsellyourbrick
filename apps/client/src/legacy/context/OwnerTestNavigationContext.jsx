@@ -20,6 +20,7 @@ export function OwnerTestNavigationProvider({ children }) {
   )
 
   // После Stripe возвращаем на мастер добавления объекта (черновик в localStorage).
+  // Важно: session_id должен сохраниться — без него публикация не стартует.
   useEffect(() => {
     const checkout = routeState.listing_fee_checkout
     if (!checkout) return
@@ -27,12 +28,20 @@ export function OwnerTestNavigationProvider({ children }) {
     const nextPath = buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
     const nextQuery = buildOwnerTestQueryParams({
       listing_fee_checkout: checkout,
+      session_id: routeState.session_id,
       tab: routeState.tab,
       highlight: routeState.highlight,
     })
     const qs = nextQuery.toString()
     navigate(qs ? `${nextPath}?${qs}` : nextPath, { replace: true })
-  }, [navigate, routeState.highlight, routeState.listing_fee_checkout, routeState.tab, routeState.view])
+  }, [
+    navigate,
+    routeState.highlight,
+    routeState.listing_fee_checkout,
+    routeState.session_id,
+    routeState.tab,
+    routeState.view,
+  ])
 
   // Поддержка legacy URL /owner-test?view=...: канонизируем к path-based ссылке.
   useEffect(() => {
@@ -42,6 +51,7 @@ export function OwnerTestNavigationProvider({ children }) {
       tab: routeState.tab,
       highlight: routeState.highlight,
       listing_fee_checkout: routeState.listing_fee_checkout,
+      session_id: routeState.session_id,
     })
     const qs = nextQuery.toString()
     navigate(qs ? `${nextPath}?${qs}` : nextPath, { replace: true })
@@ -50,6 +60,7 @@ export function OwnerTestNavigationProvider({ children }) {
     routeState.highlight,
     routeState.legacyViewUsed,
     routeState.listing_fee_checkout,
+    routeState.session_id,
     routeState.propertyId,
     routeState.tab,
     routeState.view,
@@ -67,6 +78,7 @@ export function OwnerTestNavigationProvider({ children }) {
         tab: params.tab,
         highlight: params.highlight,
         listing_fee_checkout: params.listing_fee_checkout,
+        session_id: params.session_id,
       })
       const qs = sp.toString()
       navigate(qs ? `${path}?${qs}` : path, { replace: false })

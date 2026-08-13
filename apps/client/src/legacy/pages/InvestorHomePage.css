@@ -1429,15 +1429,21 @@
 
 .invest-home-page .invest-showcase .home-showcase__slot > * {
   width: 100%;
-  flex: 1 1 auto;
-  min-height: 100%;
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
 }
 
-/* Компактные карточки витрины: шире по слоту, ниже по высоте */
+.invest-home-page .invest-showcase .invest-showcase__scroller,
+.invest-home-page .invest-showcase .home-showcase__scroller {
+  align-items: flex-start;
+}
+
+/* Компактные карточки витрины: превью 3:2 как на /auction */
 .invest-home-page .invest-showcase .auction-card__media,
 .invest-home-page .invest-showcase .shares-v2-card__media,
 .invest-home-page .invest-showcase .debts-property-card__media {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 2;
 }
 
 .invest-home-page .invest-showcase .auction-card__body {
@@ -1455,8 +1461,24 @@
 }
 
 .invest-home-page .invest-showcase .auction-card__spec {
-  padding: 4px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+.invest-home-page .invest-showcase .auction-card__spec-value {
   font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.invest-home-page .invest-showcase .auction-card__spec-label {
+  font-size: 0.58rem;
+  line-height: 1.15;
 }
 
 .invest-home-page .invest-showcase .auction-card__price-panel {

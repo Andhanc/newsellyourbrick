@@ -4,13 +4,15 @@ import { useTranslation } from 'react-i18next'
 import {
   FiCalendar,
   FiArrowRight,
-  FiInbox,
   FiChevronLeft,
   FiChevronRight,
   FiBarChart2,
   FiArrowLeft,
 } from 'react-icons/fi'
 import { formatMoneyFromMinorUnits } from '../utils/formatStripeMoney'
+import OwnerEmptyStatePanel from './OwnerEmptyStatePanel'
+import OwnerEmptyPropertiesIllustration from './OwnerEmptyPropertiesIllustration'
+import OwnerEmptyBookingsIllustration from './OwnerEmptyBookingsIllustration'
 import './OwnerTestDriveSection.css'
 
 function formatDateRange(start, end, locale) {
@@ -284,13 +286,14 @@ export default function OwnerTestDriveSection({
           ) : null}
 
           {!loading && !error && propertyOptions.length === 0 ? (
-            <div className="owner-test-drive__empty-state">
-              <div className="owner-test-drive__empty-icon">
-                <FiInbox size={40} strokeWidth={1.25} aria-hidden />
-              </div>
-              <p className="owner-test-drive__empty-title">{t('ownerTestDriveNoTdListingsTitle')}</p>
-              <p className="owner-test-drive__empty-text">{t('ownerTestDriveNoTdListingsText')}</p>
-            </div>
+            <OwnerEmptyStatePanel
+              className="owner-test-drive__empty-panel"
+              illustration={OwnerEmptyPropertiesIllustration}
+              title={t('ownerTest_emptyNoPropertiesTitle')}
+              description={t('ownerTest_emptyNoPropertiesDesc')}
+              actionLabel={t('ownerTest_ariaAddProperty')}
+              actionHref="/owner-add-property-test"
+            />
           ) : null}
 
           {!loading && !error && propertyOptions.length > 0 && !selectedKey ? (
@@ -423,7 +426,10 @@ export default function OwnerTestDriveSection({
                 <aside className="owner-td-bookings-aside">
                   <h4 className="owner-td-bookings-aside__title">{t('ownerTestDriveBookingsAsideTitle')}</h4>
                   {sortedPropertyBookings.length === 0 ? (
-                    <p className="owner-td-bookings-aside__empty">{t('ownerTestDriveBookingsAsideEmpty')}</p>
+                    <div className="owner-td-bookings-aside__empty-block">
+                      <OwnerEmptyBookingsIllustration className="owner-td-bookings-aside__empty-art" />
+                      <p className="owner-td-bookings-aside__empty">{t('ownerTestDriveBookingsAsideEmpty')}</p>
+                    </div>
                   ) : (
                     <ul className="owner-td-booking-cards">
                       {sortedPropertyBookings.map((b) => {
@@ -517,13 +523,12 @@ export default function OwnerTestDriveSection({
         ) : null}
 
         {!loading && !error && bookings.length === 0 ? (
-          <div className="owner-test-drive__empty-state">
-            <div className="owner-test-drive__empty-icon">
-              <FiInbox size={40} strokeWidth={1.25} aria-hidden />
-            </div>
-            <p className="owner-test-drive__empty-title">{t('ownerTestDriveEmptyTitle')}</p>
-            <p className="owner-test-drive__empty-text">{t('ownerTestDriveEmptyText')}</p>
-          </div>
+            <OwnerEmptyStatePanel
+              className="owner-test-drive__empty-panel"
+              illustration={OwnerEmptyBookingsIllustration}
+              title={t('ownerTestDriveEmptyTitle')}
+              description={t('ownerTestDriveEmptyText')}
+            />
         ) : null}
 
         {!loading && !error && bookings.length > 0 ? (

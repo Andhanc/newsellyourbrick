@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
-import { showNotification } from '../utils/toastHelper'
-import i18n from '../i18n/config'
 import {
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
@@ -65,7 +63,7 @@ export default function UserCabinetSseBridge() {
           if (data.type === 'user_verification') {
             window.dispatchEvent(new Event('verification-status-update'))
             if (data.action === 'approved') {
-              showNotification(i18n.t('verificationApprovedLiveToast'), 'success', 6000)
+              window.dispatchEvent(new Event('verification-approved-celebration'))
             }
           }
           if (data.type === 'property_moderation') {

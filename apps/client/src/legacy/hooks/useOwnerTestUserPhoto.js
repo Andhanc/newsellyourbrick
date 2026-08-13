@@ -1,29 +1,36 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import { getUserData, saveUserData } from '../services/authService'
+import { CLERK_DB_USER_SYNCED, getStoredNumericUserId, getUserData, saveUserData } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
 import { OWNER_TEST_API_BASE_URL } from '../utils/ownerTestProfile'
 
 function resolvePhotoPath(photoPath, apiBaseUrl = OWNER_TEST_API_BASE_URL) {
   if (!photoPath) return null
-  if (String(photoPath).startsWith('http')) return photoPath
-  const baseUrl = apiBaseUrl.replace(/\/api$/, '')
+  if (String(photoPath).startsWith('http') || String(photoPath).startsWith('data:')) {
+    return photoPath
+  }
+  const baseUrl = String(apiBaseUrl).replace(/\/api\/?$/, '')
   const normalizedPath = String(photoPath).startsWith('/') ? photoPath : `/${photoPath}`
   return `${baseUrl}${normalizedPath}`
 }
 
 async function loadOwnerTestUserPhoto(clerkUser) {
+  const userData = getUserData()
+  const storedPicture = userData?.picture ? resolvePhotoPath(userData.picture) : null
   const clerkPhoto = clerkUser?.imageUrl || clerkUser?.profileImageUrl || null
+
+  // Сначала локально сохранённое / загруженное в профиль фото, затем Clerk
+  if (storedPicture) return storedPicture
   if (clerkPhoto) return clerkPhoto
 
-  const userData = getUserData()
-  if (userData?.picture) return userData.picture
-
-  const dbUserId = localStorage.getItem('userId')
-  if (!dbUserId || !/^\d+$/.test(dbUserId)) return null
+  const dbUserId = getStoredNumericUserId()
+  if (!dbUserId) return null
 
   try {
-    const result = await fetchUserById(OWNER_TEST_API_BASE_URL, dbUserId, { includeMeta: true })
+    const result = await fetchUserById(OWNER_TEST_API_BASE_URL, dbUserId, {
+      includeMeta: true,
+      force: true,
+    })
     if (!result.ok || !result.user?.user_photo) return null
 
     const photo = resolvePhotoPath(result.user.user_photo)
@@ -39,7 +46,10 @@ async function loadOwnerTestUserPhoto(clerkUser) {
 
 export function useOwnerTestUserPhoto() {
   const { user, isLoaded } = useUser()
-  const [photoUrl, setPhotoUrl] = useState(null)
+  const [photoUrl, setPhotoUrl] = useState(() => {
+    const stored = getUserData()?.picture
+    return stored ? resolvePhotoPath(stored) : null
+  })
 
   useEffect(() => {
     if (!isLoaded) return undefined
@@ -57,12 +67,18 @@ export function useOwnerTestUserPhoto() {
       load()
     }
 
+    const onUserSynced = () => {
+      load()
+    }
+
     window.addEventListener('focus', onFocus)
+    window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
     return () => {
       cancelled = true
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
     }
-  }, [isLoaded, user])
+  }, [isLoaded, user?.id, user?.imageUrl])
 
   return photoUrl
 }

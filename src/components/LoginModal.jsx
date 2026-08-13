@@ -22,7 +22,14 @@ const LazyVerificationDocumentsModal = lazy(() => import('./VerificationDocument
 const LazyAnimatedCharacters = lazy(() => import('./AnimatedCharacters'))
 
 /** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
-const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => {
+const LoginModal = ({
+  isOpen,
+  onClose,
+  authEntryVariant = 'header_wizard',
+  nativeEmailLogin = null,
+  nativeEmailRegister = null,
+  nativeSocialAuthUnavailable = false,
+}) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
@@ -254,6 +261,28 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     setIsLoading(true)
     
     if (isLogin) {
+      if (nativeEmailLogin) {
+        try {
+          const result = await nativeEmailLogin({
+            email: formData.email.trim(),
+            password: formData.password,
+            role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+          })
+          if (!result?.success || !result?.user) {
+            setError(result?.error || 'Неверный email или пароль')
+            setIsLoading(false)
+            return
+          }
+          saveUserData(result.user, 'email')
+          setIsLoading(false)
+          navigate(getCabinetHomePath(result.user.role || userRole))
+        } catch (nativeAuthError) {
+          setError(nativeAuthError?.message || 'Произошла ошибка при входе. Попробуйте позже.')
+          setIsLoading(false)
+        }
+        return
+      }
+
       // Сначала пробуем войти как администратор (по username или email)
       try {
         const API_BASE_URL = await getApiBaseUrl();
@@ -478,6 +507,29 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       } else {
         setSellerRegistrationBuyerId(null)
       }
+
+      if (nativeEmailRegister) {
+        try {
+          const result = await nativeEmailRegister({
+            email: formData.email.trim(),
+            password: formData.password,
+            name: formData.name.trim(),
+            role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+          })
+          if (!result?.success || !result?.user) {
+            setError(result?.error || 'Не удалось зарегистрироваться')
+            setIsLoading(false)
+            return
+          }
+          saveUserData(result.user, 'email')
+          setIsLoading(false)
+          navigate(getCabinetHomePath(result.user.role || userRole))
+        } catch (nativeAuthError) {
+          setError(nativeAuthError?.message || 'Произошла ошибка при регистрации. Попробуйте позже.')
+          setIsLoading(false)
+        }
+        return
+      }
       
       try {
         const result = await registerWithEmail(formData.email, formData.password, formData.name)
@@ -505,6 +557,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleGoogleAuth = async () => {
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     try {
       setIsLoading(true)
       setError('')
@@ -600,6 +656,10 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleFacebookAuth = async () => {
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     try {
       setIsLoading(true)
       setError('')
@@ -695,12 +755,20 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleWhatsAppLogin = () => {
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     setError('')
     // Открываем модальное окно для ввода номера телефона и кода
     setShowWhatsAppModal(true)
   }
 
   const handleTelegramClick = () => {
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     if (telegramBotUsername) return // виджет сам обрабатывает клик
     showNotification('Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение, чтобы включить вход через Telegram.')
   }

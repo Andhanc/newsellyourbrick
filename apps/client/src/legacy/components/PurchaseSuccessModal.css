@@ -7,9 +7,66 @@
 }
 
 .purchase-success-modal__body {
+  position: relative;
   max-width: 460px;
   margin: 0 auto;
   text-align: left;
+}
+
+.purchase-success-modal__confetti {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.purchase-success-modal__confetti i {
+  --angle: calc(var(--i) * 15deg);
+  --distance: calc(92px + var(--i) * 2px);
+  position: absolute;
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  background: #4ecdd6;
+  opacity: 0;
+  transform: rotate(var(--angle)) translateY(0);
+  animation: purchaseSuccessConfetti 1.25s cubic-bezier(.2,.7,.2,1) both;
+  animation-delay: calc((var(--i) % 6) * 34ms);
+}
+
+.purchase-success-modal__confetti i:nth-child(3n + 1) { background: #f4c95d; }
+.purchase-success-modal__confetti i:nth-child(3n + 2) { background: #ff7c70; }
+.purchase-success-modal__confetti i:nth-child(1) { --i: 1; }
+.purchase-success-modal__confetti i:nth-child(2) { --i: 2; }
+.purchase-success-modal__confetti i:nth-child(3) { --i: 3; }
+.purchase-success-modal__confetti i:nth-child(4) { --i: 4; }
+.purchase-success-modal__confetti i:nth-child(5) { --i: 5; }
+.purchase-success-modal__confetti i:nth-child(6) { --i: 6; }
+.purchase-success-modal__confetti i:nth-child(7) { --i: 7; }
+.purchase-success-modal__confetti i:nth-child(8) { --i: 8; }
+.purchase-success-modal__confetti i:nth-child(9) { --i: 9; }
+.purchase-success-modal__confetti i:nth-child(10) { --i: 10; }
+.purchase-success-modal__confetti i:nth-child(11) { --i: 11; }
+.purchase-success-modal__confetti i:nth-child(12) { --i: 12; }
+.purchase-success-modal__confetti i:nth-child(13) { --i: 13; }
+.purchase-success-modal__confetti i:nth-child(14) { --i: 14; }
+.purchase-success-modal__confetti i:nth-child(15) { --i: 15; }
+.purchase-success-modal__confetti i:nth-child(16) { --i: 16; }
+.purchase-success-modal__confetti i:nth-child(17) { --i: 17; }
+.purchase-success-modal__confetti i:nth-child(18) { --i: 18; }
+.purchase-success-modal__confetti i:nth-child(19) { --i: 19; }
+.purchase-success-modal__confetti i:nth-child(20) { --i: 20; }
+.purchase-success-modal__confetti i:nth-child(21) { --i: 21; }
+.purchase-success-modal__confetti i:nth-child(22) { --i: 22; }
+.purchase-success-modal__confetti i:nth-child(23) { --i: 23; }
+.purchase-success-modal__confetti i:nth-child(24) { --i: 24; }
+
+@keyframes purchaseSuccessConfetti {
+  0% { opacity: 1; transform: rotate(var(--angle)) translateY(0) rotate(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateY(calc(var(--distance) * -1)) rotate(240deg); }
 }
 
 .purchase-success-modal__illustration {
@@ -203,4 +260,6 @@
   .purchase-success-modal__btn {
     transition: none;
   }
+
+  .purchase-success-modal__confetti { display: none; }
 }

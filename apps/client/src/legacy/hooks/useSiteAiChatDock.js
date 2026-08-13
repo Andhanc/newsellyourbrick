@@ -10,7 +10,9 @@ import { useManagerLiveChat } from './useManagerLiveChat'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 
-export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
+const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
+
+export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES } = {}) {
   const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const dbUserId = getStoredNumericUserId()

@@ -451,6 +451,7 @@
     padding: 0 !important;
     border-radius: 0 !important;
     background: transparent !important;
+    color: #0f2732 !important;
     font-size: 0.86rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.035em;
@@ -470,28 +471,7 @@
     svg {
     width: 14px !important;
     height: 14px !important;
-  }
-
-  /* Restore urgency colors on glass timer (green / orange / red / flashing red) */
-  .discover-auction-cards .auction-card__countdown-pill.timer-long,
-  .discover-auction-cards .auction-card__countdown-pill.timer-long svg {
-    color: #0099a9 !important;
-  }
-
-  .discover-auction-cards .auction-card__countdown-pill.timer-medium,
-  .discover-auction-cards .auction-card__countdown-pill.timer-medium svg {
-    color: #f97316 !important;
-  }
-
-  .discover-auction-cards .auction-card__countdown-pill.timer-short,
-  .discover-auction-cards .auction-card__countdown-pill.timer-short svg,
-  .discover-auction-cards .auction-card__countdown-pill.timer-critical,
-  .discover-auction-cards .auction-card__countdown-pill.timer-critical svg {
-    color: #dc2626 !important;
-  }
-
-  .discover-auction-cards .auction-card__countdown-pill.timer-critical span {
-    animation: auction-card-countdown-pulse 1s ease-in-out infinite;
+    color: #16a9b6 !important;
   }
 
   .discover-auction-cards
@@ -723,7 +703,21 @@
     display: none !important;
   }
 
-  /* Compact 2-col listing: same structure, tighter rhythm so two cards fit cleanly */
+  .discover-auction-cards:is(
+      .invest-showcase--auction,
+      .invest-showcase--buy-now,
+      .discover-auction-cards--buy-now
+    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
+    .auction-card__media,
+  .discover-auction-cards
+    .properties-grid--auction-cards
+    .auction-card__media,
+  .discover-auction-cards
+    .auction-mobile-stack--desktop-cards
+    .auction-card__media {
+    aspect-ratio: 4 / 3 !important;
+  }
+
   .discover-auction-cards:is(
       .invest-showcase--auction,
       .invest-showcase--buy-now,
@@ -930,20 +924,7 @@
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6px !important;
-  }
-
-  .discover-auction-cards:is(
-      .invest-showcase--auction,
-      .invest-showcase--buy-now,
-      .discover-auction-cards--buy-now
-    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
-    .auction-card__actions--single,
-  .discover-auction-cards
-    .properties-grid--auction-cards
-    .auction-card__actions--single {
-    grid-template-columns: 1fr !important;
+    gap: 7px !important;
   }
 
   .discover-auction-cards:is(
@@ -958,72 +939,10 @@
   .discover-auction-cards
     .auction-mobile-stack--desktop-cards
     .auction-card__btn {
-    min-height: 34px !important;
-    padding: 6px 4px !important;
-    border-radius: 10px !important;
-    font-size: 0.62rem !important;
-  }
-
-  .discover-auction-cards:is(
-      .invest-showcase--auction,
-      .invest-showcase--buy-now,
-      .discover-auction-cards--buy-now
-    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
-    .auction-card__btn-text-full,
-  .discover-auction-cards
-    .properties-grid--auction-cards
-    .auction-card__btn-text-full,
-  .discover-auction-cards
-    .auction-mobile-stack--desktop-cards
-    .auction-card__btn-text-full {
-    display: none !important;
-  }
-
-  .discover-auction-cards:is(
-      .invest-showcase--auction,
-      .invest-showcase--buy-now,
-      .discover-auction-cards--buy-now
-    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
-    .auction-card__btn-text-short,
-  .discover-auction-cards
-    .properties-grid--auction-cards
-    .auction-card__btn-text-short,
-  .discover-auction-cards
-    .auction-mobile-stack--desktop-cards
-    .auction-card__btn-text-short {
-    display: inline !important;
-  }
-
-  .discover-auction-cards:is(
-      .invest-showcase--auction,
-      .invest-showcase--buy-now,
-      .discover-auction-cards--buy-now
-    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
-    .auction-card__btn-arrow,
-  .discover-auction-cards
-    .properties-grid--auction-cards
-    .auction-card__btn-arrow,
-  .discover-auction-cards
-    .auction-mobile-stack--desktop-cards
-    .auction-card__btn-arrow {
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-  /* Listing cards: taller photo block than the home 3:2 carousel cards */
-  .discover-auction-cards:is(
-      .invest-showcase--auction,
-      .invest-showcase--buy-now,
-      .discover-auction-cards--buy-now
-    ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
-    .auction-card__media,
-  .discover-auction-cards
-    .properties-grid--auction-cards
-    .auction-card__media,
-  .discover-auction-cards
-    .auction-mobile-stack--desktop-cards
-    .auction-card__media {
-    aspect-ratio: 4 / 3 !important;
+    min-height: 38px !important;
+    padding: 8px 10px !important;
+    border-radius: 11px !important;
+    font-size: 0.68rem !important;
   }
 
   .discover-auction-cards:is(

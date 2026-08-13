@@ -210,6 +210,7 @@ export async function startPropertyReservationCheckout({
   returnPath,
   useDeposit,
   signingIntentId,
+  purchaseVariant,
 } = {}) {
   try {
     const { res, data } = await fetchBillingJson('/billing/create-property-reservation-checkout', {
@@ -223,6 +224,7 @@ export async function startPropertyReservationCheckout({
         returnPath: returnPath || undefined,
         useDeposit: useDeposit === true,
         signingIntentId: signingIntentId || undefined,
+        purchaseVariant: purchaseVariant || undefined,
       }),
     })
     if (!res.ok) {

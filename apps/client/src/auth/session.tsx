@@ -116,8 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!result?.user?.id) {
       throw { message: (result as any)?.error || 'Не удалось войти' }
     }
-    if (!result.authToken) throw { message: 'Сервер не выдал мобильную сессию' }
-    await secureStorage.setItem('authToken', result.authToken)
+    if (result.authToken) {
+      await secureStorage.setItem('authToken', result.authToken)
+    } else {
+      // Backward compatibility while Railway is still running the pre-mobile-session release.
+      // Login itself is valid; push registration starts automatically after backend deployment.
+      await secureStorage.removeItem('authToken')
+    }
     await persistUser(result.user)
     setUser(result.user)
     return result.user
@@ -140,8 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!result?.user?.id) {
         throw { message: (result as any)?.error || 'Не удалось зарегистрироваться' }
       }
-      if (!result.authToken) throw { message: 'Сервер не выдал мобильную сессию' }
-      await secureStorage.setItem('authToken', result.authToken)
+      if (result.authToken) {
+        await secureStorage.setItem('authToken', result.authToken)
+      } else {
+        await secureStorage.removeItem('authToken')
+      }
       await persistUser(result.user)
       setUser(result.user)
       return result.user
