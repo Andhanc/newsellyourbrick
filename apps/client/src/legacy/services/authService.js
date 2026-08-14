@@ -1147,6 +1147,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           return {
             success: true,
             user: userData,
+            authToken: data.authToken || null,
             is_blocked: false
           }
         }
@@ -2059,7 +2060,8 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           saveUserData(data.user, 'email')
           return {
             success: true,
-            user: data.user
+            user: data.user,
+            authToken: data.authToken || null
           }
         } else {
           // Backend вернул ошибку
@@ -2491,4 +2493,3 @@ export async function resetPasswordWithToken(email, resetToken, password, role =
   }
   return { success: true, message: data.message || 'Пароль обновлён' }
 }
-

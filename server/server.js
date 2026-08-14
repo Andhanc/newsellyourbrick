@@ -15,6 +15,7 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 const { readFileSync } = fs;
 import crypto from 'crypto';
+import { createClerkClient, verifyToken as verifyClerkToken } from '@clerk/backend';
 import qrcode from 'qrcode-terminal';
 import QRCodePNG from 'qrcode';
 import whatsappPkg from 'whatsapp-web.js';
@@ -3768,8 +3769,10 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       // Пользователь существует - авторизуем и обновляем статус онлайн
       await userQueries.update(user.id, { is_online: 1 });
       const updatedUser = await userQueries.getById(user.id);
+      const authToken = await issueMobileAuthSession(updatedUser.id);
       return res.json({ 
         success: true, 
+        authToken,
         user: {
           id: updatedUser.id,
           name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || updatedUser.phone_number,
@@ -3817,6 +3820,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     
     const result = await userQueries.create(newUser);
     const createdUser = await userQueries.getById(result.lastInsertRowid);
+    const authToken = await issueMobileAuthSession(createdUser.id);
 
     if (referrerId) {
       try {
@@ -3828,6 +3832,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     
     return res.status(201).json({ 
       success: true, 
+      authToken,
       user: {
         id: createdUser.id,
         name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
@@ -6219,6 +6224,130 @@ function usersForCabinetRole(users, role) {
   });
 }
 
+function mobilePublicUser(user, fallback = {}) {
+  return {
+    id: user.id,
+    name:
+      `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
+      fallback.name ||
+      user.email ||
+      'Пользователь',
+    email: user.email,
+    phone: user.phone_number,
+    picture: user.user_photo || fallback.picture || null,
+    role: user.role || fallback.role || 'buyer',
+    is_verified: user.is_verified,
+    is_blocked: user.is_blocked === 1,
+    ...(user.user_id_number ? { user_id_number: user.user_id_number } : {}),
+  };
+}
+
+/**
+ * POST /api/auth/clerk/mobile
+ * Проверяет Clerk session JWT на сервере, получает профиль напрямую из Clerk,
+ * синхронизирует пользователя с нашей БД и выдаёт долгоживущую mobile-сессию приложения.
+ */
+app.post('/api/auth/clerk/mobile', async (req, res) => {
+  try {
+    const header = String(req.headers.authorization || '').trim();
+    const clerkToken = /^Bearer\s+(.+)$/i.exec(header)?.[1]?.trim();
+    if (!clerkToken) {
+      return res.status(401).json({ success: false, error: 'Clerk session token required' });
+    }
+
+    const secretKey = String(process.env.CLERK_SECRET_KEY || '').trim();
+    if (!secretKey) {
+      return res.status(503).json({
+        success: false,
+        error: 'Clerk backend не настроен: добавьте CLERK_SECRET_KEY в Railway Variables',
+        code: 'CLERK_BACKEND_NOT_CONFIGURED',
+      });
+    }
+
+    const claims = await verifyClerkToken(clerkToken, { secretKey });
+    const clerkUserId = String(claims?.sub || '').trim();
+    if (!clerkUserId) {
+      return res.status(401).json({ success: false, error: 'Invalid Clerk session' });
+    }
+
+    const clerkClient = createClerkClient({ secretKey });
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const primaryEmailId = clerkUser.primaryEmailAddressId;
+    const primaryEmail = clerkUser.emailAddresses?.find((item) => item.id === primaryEmailId);
+    const email = String(primaryEmail?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || '')
+      .trim()
+      .toLowerCase();
+    if (!email) {
+      return res.status(422).json({
+        success: false,
+        error: 'Clerk не вернул email. Разрешите email для выбранного провайдера.',
+      });
+    }
+
+    const requestedRole = String(req.body?.role || 'buyer').toLowerCase();
+    const role = requestedRole === 'seller' || requestedRole === 'owner' ? 'seller' : 'buyer';
+    const mode = req.body?.mode === 'register' ? 'register' : 'login';
+    const candidates = await userQueries.getAllByEmail(email);
+    let user = usersForCabinetRole(candidates, role)[0] || null;
+
+    if (user && mode === 'register') {
+      return res.status(409).json({
+        success: false,
+        error: 'Этот аккаунт уже зарегистрирован. Выберите «Вход».',
+        code: 'ALREADY_REGISTERED',
+      });
+    }
+    if (!user && mode === 'login') {
+      return res.status(404).json({
+        success: false,
+        error: 'Аккаунт не найден. Выберите «Регистрация» и войдите тем же способом.',
+        code: 'NEED_REGISTER',
+      });
+    }
+
+    const fullName =
+      [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ').trim() ||
+      clerkUser.username ||
+      email.split('@')[0];
+    const picture = clerkUser.imageUrl || null;
+
+    if (!user) {
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      const result = await userQueries.create({
+        first_name: nameParts[0] || 'Пользователь',
+        last_name: nameParts.slice(1).join(' '),
+        email,
+        phone_number: null,
+        user_photo: picture,
+        role,
+        is_verified: 0,
+        is_online: 1,
+      });
+      user = await userQueries.getById(result.lastInsertRowid);
+    } else {
+      if (user.is_blocked === 1) {
+        return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
+      }
+      await userQueries.update(user.id, {
+        is_online: 1,
+        ...(picture ? { user_photo: picture } : {}),
+      });
+      user = await userQueries.getById(user.id);
+    }
+
+    const authToken = await issueMobileAuthSession(user.id);
+    return res.json({
+      success: true,
+      authToken,
+      user: mobilePublicUser(user, { name: fullName, picture, role }),
+    });
+  } catch (error) {
+    console.error('Clerk mobile auth failed:', error);
+    const message = String(error?.message || 'Clerk authorization failed');
+    return res.status(401).json({ success: false, error: message });
+  }
+});
+
 /**
  * POST /api/auth/email/forgot-password/send-code — отправить 4-значный код
  */
@@ -6641,9 +6770,11 @@ app.post('/api/auth/google', async (req, res) => {
         user_photo: googlePicture || user.user_photo
       });
       const updatedUser = await userQueries.getById(user.id);
+      const authToken = await issueMobileAuthSession(updatedUser.id);
       
       res.json({ 
         success: true, 
+        authToken,
         user: {
           id: updatedUser.id,
           name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || googleName,
@@ -6683,9 +6814,11 @@ app.post('/api/auth/google', async (req, res) => {
       
       const result = await userQueries.create(newUser);
       const createdUser = await userQueries.getById(result.lastInsertRowid);
+      const authToken = await issueMobileAuthSession(createdUser.id);
       
       res.status(201).json({ 
         success: true, 
+        authToken,
         user: {
           id: createdUser.id,
           name: googleName,

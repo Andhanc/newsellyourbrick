@@ -23,6 +23,12 @@ type AuthContextValue = {
     name: string
     role?: 'buyer' | 'seller'
   }) => Promise<SessionUser>
+  adoptSession: (user: SessionUser, authToken?: string | null) => Promise<SessionUser>
+  loginWithClerk: (input: {
+    clerkToken: string
+    role: 'buyer' | 'seller'
+    mode: 'login' | 'register'
+  }) => Promise<SessionUser>
   logout: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -61,7 +67,13 @@ async function persistUser(user: SessionUser | null) {
   }
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  clerkSignOut,
+}: {
+  children: ReactNode
+  clerkSignOut?: () => Promise<unknown>
+}) {
   const [user, setUser] = useState<SessionUser | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -157,19 +169,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const adoptSession = useCallback(async (nextUser: SessionUser, authToken?: string | null) => {
+    if (!nextUser?.id) throw { message: 'Backend не вернул пользователя' }
+    if (authToken) {
+      await secureStorage.setItem('authToken', authToken)
+    } else {
+      await secureStorage.removeItem('authToken')
+    }
+    await persistUser(nextUser)
+    setUser(nextUser)
+    return nextUser
+  }, [])
+
+  const loginWithClerk = useCallback(
+    async (input: {
+      clerkToken: string
+      role: 'buyer' | 'seller'
+      mode: 'login' | 'register'
+    }) => {
+      const result = await apiFetch<{
+        success?: boolean
+        user: SessionUser
+        authToken?: string
+        error?: string
+      }>('/auth/clerk/mobile', {
+        method: 'POST',
+        token: input.clerkToken,
+        body: JSON.stringify({ role: input.role, mode: input.mode }),
+      })
+      if (!result?.user?.id) {
+        throw { message: result?.error || 'Не удалось связать Clerk с профилем' }
+      }
+      return adoptSession(result.user, result.authToken)
+    },
+    [adoptSession],
+  )
+
   const logout = useCallback(async () => {
     const authToken = await secureStorage.getItem('authToken')
     await unregisterStoredPushNotifications(authToken)
     if (authToken) {
       await apiFetch('/auth/mobile/logout', { method: 'POST', token: authToken }).catch(() => undefined)
     }
+    await clerkSignOut?.().catch(() => undefined)
     await persistUser(null)
     setUser(null)
-  }, [])
+  }, [clerkSignOut])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refresh }),
-    [user, loading, login, register, logout, refresh],
+    () => ({ user, loading, login, register, adoptSession, loginWithClerk, logout, refresh }),
+    [user, loading, login, register, adoptSession, loginWithClerk, logout, refresh],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

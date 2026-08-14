@@ -14,8 +14,8 @@ const NativeLoginModal = LoginModal as unknown as (props: {
   onClose: () => void
   authEntryVariant: string
   nativeEmailLogin: (input: NativeLoginInput) => Promise<NativeAuthResult>
-  nativeEmailRegister: (input: NativeRegisterInput) => Promise<NativeAuthResult>
-  nativeSocialAuthUnavailable: boolean
+  nativeSocialAuth: (input: NativeSocialAuthInput) => Promise<NativeAuthResult>
+  nativeAuthSuccess: (input: NativeSessionInput) => Promise<NativeAuthResult>
 }) => React.ReactNode
 
 type AuthRole = 'buyer' | 'seller'
@@ -32,6 +32,7 @@ export type NativeAuthResult = {
   success: boolean
   user?: NativeAuthUser
   error?: string
+  cancelled?: boolean
 }
 
 export type NativeLoginInput = {
@@ -44,11 +45,24 @@ export type NativeRegisterInput = NativeLoginInput & {
   name: string
 }
 
+export type NativeSocialAuthInput = {
+  provider: 'google' | 'facebook'
+  mode: 'login' | 'register'
+  role: AuthRole
+}
+
+export type NativeSessionInput = {
+  user: NativeAuthUser
+  authToken?: string | null
+}
+
 type AuthPageProps = {
   onClose: () => Promise<void>
   onNavigate: (path: string) => Promise<void>
   onLogin: (input: NativeLoginInput) => Promise<NativeAuthResult>
   onRegister: (input: NativeRegisterInput) => Promise<NativeAuthResult>
+  onSocialAuth: (input: NativeSocialAuthInput) => Promise<NativeAuthResult>
+  onAuthSuccess: (input: NativeSessionInput) => Promise<NativeAuthResult>
   dom?: import('expo/dom').DOMProps
 }
 
@@ -66,7 +80,7 @@ function NavigationBridge({ onNavigate }: Pick<AuthPageProps, 'onNavigate'>) {
   return null
 }
 
-function AuthModal({ onClose, onNavigate, onLogin, onRegister }: Omit<AuthPageProps, 'dom'>) {
+function AuthModal({ onClose, onNavigate, onLogin, onSocialAuth, onAuthSuccess }: Omit<AuthPageProps, 'dom'>) {
   return (
     <>
       <NavigationBridge onNavigate={onNavigate} />
@@ -75,8 +89,8 @@ function AuthModal({ onClose, onNavigate, onLogin, onRegister }: Omit<AuthPagePr
         onClose={() => void onClose()}
         authEntryVariant="header_wizard"
         nativeEmailLogin={onLogin}
-        nativeEmailRegister={onRegister}
-        nativeSocialAuthUnavailable
+        nativeSocialAuth={onSocialAuth}
+        nativeAuthSuccess={onAuthSuccess}
       />
     </>
   )

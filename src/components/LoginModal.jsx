@@ -28,6 +28,8 @@ const LoginModal = ({
   authEntryVariant = 'header_wizard',
   nativeEmailLogin = null,
   nativeEmailRegister = null,
+  nativeSocialAuth = null,
+  nativeAuthSuccess = null,
   nativeSocialAuthUnavailable = false,
 }) => {
   const { t } = useTranslation()
@@ -557,6 +559,29 @@ const LoginModal = ({
   }
 
   const handleGoogleAuth = async () => {
+    if (nativeSocialAuth) {
+      try {
+        setIsLoading(true)
+        setError('')
+        const result = await nativeSocialAuth({
+          provider: 'google',
+          mode: isLogin ? 'login' : 'register',
+          role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+        })
+        if (result?.cancelled) return
+        if (!result?.success || !result?.user) {
+          setError(result?.error || 'Не удалось войти через Google')
+          return
+        }
+        saveUserData(result.user, 'clerk')
+        navigate(getCabinetHomePath(result.user.role || userRole))
+      } catch (nativeAuthError) {
+        setError(nativeAuthError?.message || 'Не удалось войти через Google')
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
     if (nativeSocialAuthUnavailable) {
       setError('В мобильном приложении сейчас доступен вход по email и паролю.')
       return
@@ -656,6 +681,29 @@ const LoginModal = ({
   }
 
   const handleFacebookAuth = async () => {
+    if (nativeSocialAuth) {
+      try {
+        setIsLoading(true)
+        setError('')
+        const result = await nativeSocialAuth({
+          provider: 'facebook',
+          mode: isLogin ? 'login' : 'register',
+          role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+        })
+        if (result?.cancelled) return
+        if (!result?.success || !result?.user) {
+          setError(result?.error || 'Не удалось войти через Facebook')
+          return
+        }
+        saveUserData(result.user, 'clerk')
+        navigate(getCabinetHomePath(result.user.role || userRole))
+      } catch (nativeAuthError) {
+        setError(nativeAuthError?.message || 'Не удалось войти через Facebook')
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
     if (nativeSocialAuthUnavailable) {
       setError('В мобильном приложении сейчас доступен вход по email и паролю.')
       return
@@ -755,10 +803,6 @@ const LoginModal = ({
   }
 
   const handleWhatsAppLogin = () => {
-    if (nativeSocialAuthUnavailable) {
-      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
-      return
-    }
     setError('')
     // Открываем модальное окно для ввода номера телефона и кода
     setShowWhatsAppModal(true)
@@ -773,7 +817,15 @@ const LoginModal = ({
     showNotification('Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение, чтобы включить вход через Telegram.')
   }
 
-  const handleWhatsAppSuccess = (user) => {
+  const handleWhatsAppSuccess = async (user, authToken = null) => {
+    if (nativeAuthSuccess) {
+      const adopted = await nativeAuthSuccess({ user, authToken })
+      if (!adopted?.success || !adopted?.user) {
+        setError(adopted?.error || 'Не удалось сохранить сессию WhatsApp')
+        return
+      }
+      user = adopted.user
+    }
     // Успешная авторизация через WhatsApp
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
     const isRegister = !isLogin
@@ -847,7 +899,15 @@ const LoginModal = ({
     }
   }
 
-  const handleEmailVerificationSuccess = (user) => {
+  const handleEmailVerificationSuccess = async (user, authToken = null) => {
+    if (nativeAuthSuccess) {
+      const adopted = await nativeAuthSuccess({ user, authToken })
+      if (!adopted?.success || !adopted?.user) {
+        setError(adopted?.error || 'Не удалось сохранить сессию')
+        return
+      }
+      user = adopted.user
+    }
     // Успешная регистрация через email
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
 
@@ -1274,15 +1334,15 @@ const LoginModal = ({
             type="button"
             className="login-modal__social-btn login-modal__social-btn--facebook"
             onClick={handleFacebookAuth}
-            disabled={isLoading || !signInLoaded}
+            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
             aria-label={
               isLoading
                 ? t('socialConnecting')
                 : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))
             }
             style={{ 
-              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
             <FaFacebook size={20} />
@@ -1304,11 +1364,11 @@ const LoginModal = ({
             type="button"
             className="login-modal__social-btn login-modal__social-btn--google"
             onClick={handleGoogleAuth}
-            disabled={isLoading || !signInLoaded}
+            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
             aria-label={isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
             style={{ 
-              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
             <FaGoogle size={20} />

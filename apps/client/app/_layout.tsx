@@ -1,4 +1,6 @@
 import { Stack } from 'expo-router'
+import { ClerkProvider, useClerk } from '@clerk/expo'
+import { tokenCache } from '@clerk/expo/token-cache'
 import { StatusBar } from 'expo-status-bar'
 import {
   useFonts,
@@ -13,7 +15,21 @@ import { AuthProvider } from '../src/auth/session'
 import { colors } from '../src/theme/tokens'
 import { PushNotificationsProvider } from '../src/notifications/push-provider'
 
+function AppProviders() {
+  const { signOut } = useClerk()
+
+  return (
+    <AuthProvider clerkSignOut={signOut}>
+      <PushNotificationsProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+      </PushNotificationsProvider>
+    </AuthProvider>
+  )
+}
+
 export default function RootLayout() {
+  const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
   const [loaded] = useFonts({
     Montserrat_400Regular,
     Montserrat_700Bold,
@@ -28,12 +44,13 @@ export default function RootLayout() {
     )
   }
 
+  if (!clerkPublishableKey) {
+    throw new Error('Expo Clerk configuration is missing: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY')
+  }
+
   return (
-    <AuthProvider>
-      <PushNotificationsProvider>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-      </PushNotificationsProvider>
-    </AuthProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+      <AppProviders />
+    </ClerkProvider>
   )
 }
