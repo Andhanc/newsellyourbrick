@@ -117,18 +117,6 @@ export function BuyerCabinetBelowSkeleton({ directionsTitle, directionsSubtitle,
               </div>
             </div>
             <div className="test-cabinet-home-discover buyer-cab-skel-discover">
-              <div className="buyer-cab-skel-referral">
-                <div className="buyer-cab-skel-referral__head">
-                  <span className="buyer-cab-skel-referral__icon" />
-                  <span className="buyer-cab-skel-line buyer-cab-skel-line--ref-title" />
-                </div>
-                <span className="buyer-cab-skel-line buyer-cab-skel-line--ref-label" />
-                <div className="buyer-cab-skel-referral__row">
-                  <span className="buyer-cab-skel-line buyer-cab-skel-line--ref-input" />
-                  <span className="buyer-cab-skel-referral__copy" />
-                </div>
-                <span className="buyer-cab-skel-line buyer-cab-skel-line--ref-hint" />
-              </div>
               <div className="buyer-cab-skel-bonus-row">
                 <span className="buyer-cab-skel-bonus-row__icon" />
                 <span className="buyer-cab-skel-bonus-row__text">

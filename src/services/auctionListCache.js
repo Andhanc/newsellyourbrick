@@ -11,6 +11,7 @@ import { compositeBidAmountKey, propertyBidsApiQuery, resolvePropertySourceTable
 import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import {
   resolveAuctionCurrentBidValue,
@@ -166,26 +167,9 @@ async function fetchMaxBidForProperty(apiBaseUrl, propertyId, sourceTable) {
 /** Параллельные вызовы fetchAuctionList с одинаковым viewer_user_id сливаем в один промис. */
 const fetchAuctionListInFlightByKey = new Map()
 
-function isPrivateClubLotForAuctionSort(p) {
-  const v = p?.private_club_only
-  return v === 1 || v === true || v === '1'
-}
-
-function auctionListEndSortKey(p) {
-  const raw = p?.endTime ?? p?.test_timer_end_date ?? p?.auction_end_date ?? ''
-  const t = raw ? new Date(raw).getTime() : 0
-  return Number.isFinite(t) ? t : 0
-}
-
-/** VIP-лоты закрытого клуба — в начале списка, далее по дате окончания аукциона. */
+/** VIP-лоты закрытого клуба — в начале списка, далее по ближайшему окончанию таймера. */
 function sortAuctionListPrivateClubFirst(list) {
-  if (!Array.isArray(list) || list.length <= 1) return list
-  return [...list].sort((a, b) => {
-    const d =
-      (isPrivateClubLotForAuctionSort(b) ? 1 : 0) - (isPrivateClubLotForAuctionSort(a) ? 1 : 0)
-    if (d !== 0) return d
-    return auctionListEndSortKey(a) - auctionListEndSortKey(b)
-  })
+  return sortListingsByAuctionTimer(list, { privateClubFirst: true })
 }
 
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {

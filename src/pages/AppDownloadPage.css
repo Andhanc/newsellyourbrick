@@ -6,14 +6,21 @@
   --app-dl-tiffany-deep: #2aa8b4;
   --app-dl-soft: #f8fafc;
   position: relative;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100vh;
-  max-height: 100dvh;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: #fff;
   color: var(--app-dl-ink);
   font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.app-layout:has(.app-dl) {
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+}
+
+.app-layout:has(.app-dl) .app-layout__content {
+  overflow: visible;
 }
 
 .app-dl__page {
@@ -21,9 +28,8 @@
   z-index: 1;
   display: grid;
   grid-template-rows: minmax(0, 1.22fr) auto;
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app-dl__visual {

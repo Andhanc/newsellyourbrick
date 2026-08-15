@@ -16,6 +16,7 @@ import PrivateClubVipCelebrationModal from '../components/PrivateClubVipCelebrat
 import { getUserData } from '../services/authService'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { ensureMainScrollReady, scrollMainTo } from '../utils/mainScroll'
 import './PrivateClub.css'
 
 const HERO_IMAGE = '/images/vip-club/vip-hero-monex-transparent.png?v=2'
@@ -108,6 +109,11 @@ export default function PrivateClub() {
       setNumericUserId(null)
     }
   }, [user, clerkLoaded])
+
+  useEffect(() => {
+    ensureMainScrollReady()
+    scrollMainTo(0, 0, 'instant')
+  }, [])
 
   const openJoinGate = () => {
     if (!isSiteUserSignedIn(user, clerkLoaded)) {

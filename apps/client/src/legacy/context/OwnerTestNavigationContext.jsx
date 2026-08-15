@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { OwnerTestNavigationContext } from './ownerTestNavContext'
 import {
   OWNER_VIEWS,
   buildOwnerTestPath,
@@ -7,8 +8,6 @@ import {
   resolveOwnerTestRoute,
   scrollOwnerCabinetToTop,
 } from '../utils/ownerTestNav'
-
-const OwnerTestNavigationContext = createContext(null)
 
 export function OwnerTestNavigationProvider({ children }) {
   const navigate = useNavigate()
@@ -87,6 +86,7 @@ export function OwnerTestNavigationProvider({ children }) {
   )
 
   useEffect(() => {
+    if (view === OWNER_VIEWS.ADD_PROPERTY) return undefined
     const frameId = window.requestAnimationFrame(() => {
       scrollOwnerCabinetToTop()
       window.requestAnimationFrame(scrollOwnerCabinetToTop)

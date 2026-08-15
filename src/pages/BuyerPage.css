@@ -12,15 +12,21 @@
   --buyer-black-58: rgba(5, 5, 5, 0.58);
   --buyer-shadow: 0 22px 64px rgba(0, 125, 138, 0.14);
   min-height: 100vh;
-  overflow-x: clip;
+  /* No overflow-x:clip here — it computes overflow-y:auto and traps scroll away from .app-layout. */
   background: var(--buyer-white);
   color: var(--buyer-black);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.app-layout:has(.buyer-page),
+.app-layout:has(.buyer-page) {
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+  background: var(--buyer-white);
+}
+
 .app-layout:has(.buyer-page) .app-layout__content {
-  overflow-x: clip;
+  overflow: visible;
   background: var(--buyer-white);
 }
 

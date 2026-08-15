@@ -661,6 +661,7 @@ model property_translations {
   description          String?
   additional_amenities String?
   location             String?
+  extra_json           String?
   created_at           String? @default("datetime('now')")
 
   @@unique([property_id, property_table, lang_code], map: "sqlite_autoindex_property_translations_1")
@@ -917,6 +918,7 @@ model live_chat_sessions {
   display_label         String?
   created_at            DateTime?            @default(now())
   updated_at            DateTime?            @default(now())
+  admin_last_read_message_id Int?            @default(0)
   users                 users?               @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
   live_chat_messages    live_chat_messages[]
 

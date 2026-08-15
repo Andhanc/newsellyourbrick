@@ -232,8 +232,8 @@ const InvestmentCalculator = () => {
         const r = await fetch(`${API_BASE_URL}/users/${dbUserId}/subscription-billing`);
         const json = await r.json();
         if (cancelled) return;
-        const sub = json?.success && json?.data ? json.data.subscription : null;
-        setSubGateAllowed(subscriptionUnlocksCalculator(sub));
+        const data = json?.success && json?.data ? json.data : null;
+        setSubGateAllowed(subscriptionUnlocksCalculator(data?.subscription ?? null, data?.vipClub));
       } catch {
         if (!cancelled) setSubGateAllowed(false);
       } finally {

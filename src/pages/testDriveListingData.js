@@ -11,11 +11,11 @@ function parseTestDriveData(raw) {
 }
 
 const TYPE_FILTER_ALIASES = {
-  villa: ['villa'],
-  apartment: ['apartment', 'apartments', 'commercial', 'flat'],
-  townhouse: ['townhouse', 'town_house'],
-  house: ['house'],
-  penthouse: ['penthouse'],
+  villa: ['villa', 'вилла'],
+  apartment: ['apartment', 'apartments', 'commercial', 'flat', 'апартаменты'],
+  townhouse: ['townhouse', 'town_house', 'таунхаус'],
+  house: ['house', 'дом'],
+  penthouse: ['penthouse', 'пентхаус'],
 }
 
 const AMENITY_FILTER_ALIASES = {
@@ -35,14 +35,16 @@ const DURATION_FILTER_RANGES = {
 }
 
 const CITY_FILTER_ALIASES = {
-  Marbella: ['marbella', 'марбелья'],
-  Barcelona: ['barcelona', 'барселона'],
-  Madrid: ['madrid', 'мадрид'],
-  Valencia: ['valencia', 'валенсия'],
-  Malaga: ['malaga', 'málaga', 'малага'],
-  Alicante: ['alicante', 'аликанте'],
-  Sevilla: ['sevilla', 'seville', 'севилья'],
-  Palma: ['palma', 'palma de mallorca', 'пальма'],
+  los_cristianos: ['los cristianos', 'лос кристанос'],
+  adeje: ['adeje', 'адехе'],
+  marbella: ['marbella', 'марбелья'],
+  barcelona: ['barcelona', 'барселона'],
+  madrid: ['madrid', 'мадрид'],
+  valencia: ['valencia', 'валенсия'],
+  malaga: ['malaga', 'málaga', 'малага'],
+  alicante: ['alicante', 'аликанте'],
+  sevilla: ['sevilla', 'seville', 'севилья'],
+  palma: ['palma', 'palma de mallorca', 'пальма'],
 }
 
 function firstFiniteNumber(...values) {
@@ -108,6 +110,17 @@ export function matchesSelectedTestDriveType(type, selectedTypes) {
       normalizedType === normalizedSelectedType ||
       TYPE_FILTER_ALIASES[normalizedSelectedType]?.includes(normalizedType)
     )
+  })
+}
+
+export function matchesSelectedTestDriveCity(city, selectedCities) {
+  if (!selectedCities.length) return true
+
+  const normalizedCity = String(city || '').trim().toLowerCase()
+  return selectedCities.some((selectedCity) => {
+    const key = String(selectedCity || '').trim().toLowerCase()
+    if (normalizedCity === key) return true
+    return (CITY_FILTER_ALIASES[key] || []).includes(normalizedCity)
   })
 }
 

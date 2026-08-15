@@ -70,6 +70,15 @@ export async function updatePropertyAiReport(reportId, patch = {}) {
   return reportSelect(rows[0])
 }
 
+/** Активный job считаем живым только короткое окно — иначе UI вечно крутит «Gemini обрабатывает». */
+const ACTIVE_REPORT_TTL_SECONDS = 180
+
+/**
+ * Переиспользовать можно:
+ * - готовый completed за 24ч;
+ * - живой queued/analyzing/rendering, обновлённый недавно (генерация ещё идёт).
+ * Застрявшие analyzing после рестарта/падения больше не отдаём.
+ */
 export async function findReusablePropertyAiReport({ conversationId, category, question, model }) {
   const prisma = getPrisma()
   const rows = await prisma.$queryRaw`
@@ -78,12 +87,47 @@ export async function findReusablePropertyAiReport({ conversationId, category, q
       AND category = ${category}
       AND question = ${question}
       AND model = ${model}
-      AND status IN ('queued', 'analyzing', 'rendering', 'completed')
       AND created_at > NOW() - INTERVAL '24 hours'
-    ORDER BY created_at DESC
+      AND (
+        status = 'completed'
+        OR (
+          status IN ('queued', 'analyzing', 'rendering')
+          AND updated_at > NOW() - (${ACTIVE_REPORT_TTL_SECONDS} * INTERVAL '1 second')
+        )
+      )
+    ORDER BY
+      CASE WHEN status = 'completed' THEN 0 ELSE 1 END,
+      created_at DESC
     LIMIT 1
   `
   return reportSelect(rows[0])
+}
+
+/** Пометить протухшие in-flight отчёты failed, чтобы новый запрос стартовал чистую генерацию. */
+export async function failStalePropertyAiReports({ conversationId, olderThanSeconds = ACTIVE_REPORT_TTL_SECONDS } = {}) {
+  const prisma = getPrisma()
+  const seconds = Math.max(30, Number(olderThanSeconds) || ACTIVE_REPORT_TTL_SECONDS)
+  const rows = conversationId
+    ? await prisma.$queryRaw`
+        UPDATE property_ai_reports
+        SET status = 'failed',
+            error = COALESCE(NULLIF(error, ''), 'Генерация прервалась. Запустите анализ ещё раз.'),
+            updated_at = NOW()
+        WHERE conversation_id = ${conversationId}
+          AND status IN ('queued', 'analyzing', 'rendering')
+          AND updated_at <= NOW() - (${seconds} * INTERVAL '1 second')
+        RETURNING id
+      `
+    : await prisma.$queryRaw`
+        UPDATE property_ai_reports
+        SET status = 'failed',
+            error = COALESCE(NULLIF(error, ''), 'Генерация прервалась. Запустите анализ ещё раз.'),
+            updated_at = NOW()
+        WHERE status IN ('queued', 'analyzing', 'rendering')
+          AND updated_at <= NOW() - (${seconds} * INTERVAL '1 second')
+        RETURNING id
+      `
+  return rows.map((row) => row.id)
 }
 
 export async function getOwnedPropertyAiReport({ reportId, userId, includePdf = false }) {

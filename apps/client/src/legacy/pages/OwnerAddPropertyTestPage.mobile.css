@@ -241,7 +241,18 @@
     justify-content: stretch;
   }
 
-  html.oap-page-active #site-footer {
+  /* Journey footer: back + Далее в одном ряду, не grid 1fr 1fr */
+  .oap-footer--journey {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    gap: 0;
+    padding: 12px var(--ost-mob-pad, 16px) calc(12px + env(safe-area-inset-bottom, 0px));
+    background: #faf8f5;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+  }
+
+  html.oap-page-active:not(.oap-journey-mobile-active) #site-footer {
     display: block !important;
   }
 
@@ -252,6 +263,11 @@
   .oap-footer__actions {
     width: auto;
     display: contents;
+  }
+
+  .oap-footer--journey .oap-journey-footer__actions {
+    display: flex;
+    width: 100%;
   }
 
   .oap-btn--back,

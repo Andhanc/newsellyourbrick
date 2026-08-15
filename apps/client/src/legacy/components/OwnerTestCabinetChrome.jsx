@@ -178,7 +178,7 @@ export default function OwnerTestCabinetChrome({ children }) {
             className="otc-mob-topbar__menu"
             aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
+            onClick={() => window.dispatchEvent(new CustomEvent('owner-test:open-menu'))}
           >
             <Menu size={22} strokeWidth={2.2} aria-hidden />
           </button>

@@ -34,6 +34,17 @@ export function lazyWithRetry(importFn, chunkId) {
         sessionStorage.removeItem(reloadKey)
         return m
       } catch (second) {
+        const pathname = typeof window !== 'undefined' ? window.location.pathname || '' : ''
+        const isOwnerTestPath =
+          pathname === '/owner-test' ||
+          pathname.startsWith('/owner-test/') ||
+          pathname === '/main-owner-test' ||
+          pathname === '/owner-test-drive' ||
+          /^\/owner-[a-z0-9-]*-test(\/|$)/.test(pathname)
+        if (isOwnerTestPath) {
+          sessionStorage.removeItem(reloadKey)
+          throw second
+        }
         if (sessionStorage.getItem(reloadKey) !== '1') {
           sessionStorage.setItem(reloadKey, '1')
           window.location.reload()

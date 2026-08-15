@@ -16,6 +16,16 @@
   font-family: var(--site-font-family, 'Montserrat', sans-serif);
 }
 
+.app-layout:has(.news-page) {
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+}
+
+.app-layout:has(.news-page) .app-layout__content {
+  overflow: visible;
+}
+
 .news-page__main {
   padding: 30px 0 76px;
 }

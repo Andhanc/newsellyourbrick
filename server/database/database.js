@@ -61,6 +61,7 @@ export {
   appendPropertyAiMessage,
   createPropertyAiReport,
   ensurePropertyAiConversation,
+  failStalePropertyAiReports,
   findReusablePropertyAiReport,
   getOwnedPropertyAiReport,
   listPropertyAiHistory,

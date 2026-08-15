@@ -171,7 +171,7 @@ body:has(.investment-calculator-page--ai-result) .app-footer-skeleton {
   overflow-y: visible;
 }
 
-/* Full-screen lottery / app download: the scene owns the viewport and has no site footer. */
+/* Full-screen lottery: the scene owns the viewport and has no site footer. */
 .app-layout.app-layout--lottery {
   overflow: hidden;
   background: #44c9db;

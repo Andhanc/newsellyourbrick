@@ -1932,6 +1932,21 @@ function userHasActiveStripeVipPlan(state) {
   return String(state.plan_key || '').toLowerCase() === 'vip';
 }
 
+/** VIP Club = промо vip_until или активная подписка Stripe VIP. */
+function buildVipClubPayload(userRow, subscriptionState) {
+  const nowMs = Date.now();
+  const untilRaw = userRow?.vip_until || null;
+  const untilMs = untilRaw ? new Date(untilRaw).getTime() : 0;
+  const dbActive = Boolean(untilMs && untilMs > nowMs);
+  const stripeVip = userHasActiveStripeVipPlan(subscriptionState);
+  const periodEnd = subscriptionState?.current_period_end || null;
+  return {
+    active: dbActive || stripeVip,
+    until: untilRaw || (stripeVip ? periodEnd : null) || null,
+    grantedAt: userRow?.vip_granted_at || null,
+  };
+}
+
 function userHasActiveOwnerSubscriptionPlan(state, planKey) {
   if (!state) return false;
   const st = String(state.status || '').toLowerCase();
@@ -3388,13 +3403,7 @@ export function registerStripeBillingRoutes(app) {
       const state = await stripeSubscriptionQueries.getStateByUserId(userId);
       const payments = await stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
       const userRow = await userQueries.getById(userId);
-      const nowMs = Date.now();
-      const untilMs = userRow?.vip_until ? new Date(userRow.vip_until).getTime() : 0;
-      const vipClub = {
-        active: Boolean(untilMs && untilMs > nowMs),
-        until: userRow?.vip_until || null,
-        grantedAt: userRow?.vip_granted_at || null,
-      };
+      const vipClub = buildVipClubPayload(userRow, state);
       return res.json({
         success: true,
         data: {

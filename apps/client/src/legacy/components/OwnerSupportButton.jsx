@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bot, HelpCircle, MessageCircle } from 'lucide-react'
+import { openOwnerAiChat, openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import './OwnerSupportButton.css'
 
 const MENU_GAP = 10
@@ -94,7 +94,15 @@ export default function OwnerSupportButton({ className = '', iconSize = 20 }) {
         }}
       >
         <p className="otsb__menu-title">{t('ownerTest_supportMenuTitle')}</p>
-        <Link to="/chat?manager=1" className="otsb__menu-item" role="menuitem" onClick={close}>
+        <button
+          type="button"
+          className="otsb__menu-item"
+          role="menuitem"
+          onClick={() => {
+            close()
+            openOwnerManagerChat()
+          }}
+        >
           <span className="otsb__menu-icon otsb__menu-icon--chat" aria-hidden>
             <MessageCircle size={18} strokeWidth={2} />
           </span>
@@ -102,8 +110,16 @@ export default function OwnerSupportButton({ className = '', iconSize = 20 }) {
             <span className="otsb__menu-label">{t('ownerTest_supportChat')}</span>
             <span className="otsb__menu-desc">{t('ownerTest_supportChatDesc')}</span>
           </span>
-        </Link>
-        <Link to="/chat" className="otsb__menu-item" role="menuitem" onClick={close}>
+        </button>
+        <button
+          type="button"
+          className="otsb__menu-item"
+          role="menuitem"
+          onClick={() => {
+            close()
+            openOwnerAiChat()
+          }}
+        >
           <span className="otsb__menu-icon otsb__menu-icon--ai" aria-hidden>
             <Bot size={18} strokeWidth={2} />
           </span>
@@ -111,7 +127,7 @@ export default function OwnerSupportButton({ className = '', iconSize = 20 }) {
             <span className="otsb__menu-label">{t('ownerTest_supportAi')}</span>
             <span className="otsb__menu-desc">{t('ownerTest_supportAiDesc')}</span>
           </span>
-        </Link>
+        </button>
       </div>
     ) : null
 

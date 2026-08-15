@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FiArrowRight,
@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi'
 import BuyerMapScene from '@/components/BuyerMapScene'
 import Header from '@/components/Header'
+import { useViewerVipAccess } from '@/hooks/useViewerVipAccess'
 import { publicAsset } from '@/utils/publicAsset'
 import './BuyerPage.css'
 import './SellerPage.css'
@@ -27,8 +28,21 @@ function scrollTo(id) {
 
 export default function BuyerPage() {
   const { t, i18n } = useTranslation()
+  const { numericUserId, ownedPlanName } = useViewerVipAccess()
+  // Marketing default for guests; logged-in users sync to their real tier below.
   const [selectedPlan, setSelectedPlan] = useState('Pro')
+  const [userPickedPlan, setUserPickedPlan] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
+
+  useEffect(() => {
+    if (!numericUserId || userPickedPlan) return
+    setSelectedPlan(ownedPlanName)
+  }, [numericUserId, ownedPlanName, userPickedPlan])
+
+  const pickPlan = (name) => {
+    setUserPickedPlan(true)
+    setSelectedPlan(name)
+  }
 
   const platformStats = useMemo(
     () => [
@@ -157,13 +171,11 @@ export default function BuyerPage() {
           t('buyerLanding_planProFeat0'),
           t('buyerLanding_planProFeat1'),
           t('buyerLanding_planProFeat2'),
-          t('buyerLanding_planProFeat3'),
         ],
         featuresShort: [
           t('buyerLanding_planProFeat0Short'),
           t('buyerLanding_planProFeat1Short'),
           t('buyerLanding_planProFeat2Short'),
-          t('buyerLanding_planProFeat3Short'),
         ],
       },
       {
@@ -342,11 +354,11 @@ export default function BuyerPage() {
                 role="button"
                 tabIndex={0}
                 aria-pressed={selectedPlan === plan.name}
-                onClick={() => setSelectedPlan(plan.name)}
+                onClick={() => pickPlan(plan.name)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setSelectedPlan(plan.name)
+                    pickPlan(plan.name)
                   }
                 }}
               >
@@ -391,7 +403,7 @@ export default function BuyerPage() {
                 <button
                   type="button"
                   className={selectedPlan === plan.name ? 'buyer-plan__button is-selected' : 'buyer-plan__button'}
-                  onClick={() => setSelectedPlan(plan.name)}
+                  onClick={() => pickPlan(plan.name)}
                   aria-pressed={selectedPlan === plan.name}
                 >
                   {selectedPlan === plan.name ? (

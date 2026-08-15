@@ -35,7 +35,7 @@ import {
   formatOwnerAuctionTimerFullCountdown,
   getOwnerAuctionTimerFlags,
 } from '../utils/ownerTestTimer'
-import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
+import { OWNER_TEST_STANDALONE_HREF_MAP, scrollOwnerCabinetToTop } from '../utils/ownerTestNav'
 import { getOwnerProfileTabPath } from './ownerProfileTestTabs'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
@@ -427,6 +427,29 @@ function ListingTypeBadge({ type }) {
   return <span className={`op-type op-type--${type}`}>{label}</span>
 }
 
+function ModerationStatusBadge({ moderationKey }) {
+  const { t } = useTranslation()
+  const key = String(moderationKey || '').toLowerCase()
+  if (!key || key === 'draft') {
+    return (
+      <span className="op-moderation op-moderation--draft">{t('ownerTest_moderationDraft')}</span>
+    )
+  }
+  if (key === 'approved') {
+    return (
+      <span className="op-moderation op-moderation--approved">{t('ownerTest_moderationApproved')}</span>
+    )
+  }
+  if (key === 'rejected') {
+    return (
+      <span className="op-moderation op-moderation--rejected">{t('ownerTest_moderationRejected')}</span>
+    )
+  }
+  return (
+    <span className="op-moderation op-moderation--pending">{t('ownerTest_moderationPending')}</span>
+  )
+}
+
 function AmountCell({ row }) {
   const { t } = useTranslation()
   const { label, value } = getOwnerPropertyAmount(row, t)
@@ -615,6 +638,13 @@ export default function OwnerPropertiesTestPage() {
   const [timerNow, setTimerNow] = useState(() => Date.now())
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
 
+  const handlePageChange = useCallback((nextPage) => {
+    setCurrentPage(nextPage)
+    requestAnimationFrame(() => {
+      scrollOwnerCabinetToTop()
+    })
+  }, [])
+
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const openMobileMenu = useCallback(() => {
@@ -772,7 +802,8 @@ export default function OwnerPropertiesTestPage() {
         tab: filterTab,
         query: searchQuery,
         listingTypes: propertyFilters.listingTypes,
-        sortBy: propertyFilters.sortBy,
+        // В «Мои объекты» по умолчанию всегда сначала самые новые.
+        sortBy: propertyFilters.sortBy || 'date_desc',
       }),
     [properties, filterTab, searchQuery, propertyFilters]
   )
@@ -1050,7 +1081,7 @@ export default function OwnerPropertiesTestPage() {
                   <tbody>
                     {paginatedProperties.map((row) => (
                       <tr
-                        key={row.id}
+                        key={row.rowKey || row.id}
                         className="op-table__row--clickable"
                         onClick={() => openPropertyAnalytics(row.id)}
                         onKeyDown={(e) => {
@@ -1069,6 +1100,9 @@ export default function OwnerPropertiesTestPage() {
                             <div className="op-object-cell__text">
                               <p className="op-object-cell__title">{row.title}</p>
                               <p className="op-object-cell__meta">{row.location}</p>
+                              <div className="op-object-cell__badges">
+                                <ModerationStatusBadge moderationKey={row.moderationKey} />
+                              </div>
                               <p className="op-object-cell__id">{row.displayId || row.id}</p>
                             </div>
                           </div>
@@ -1098,7 +1132,7 @@ export default function OwnerPropertiesTestPage() {
                 {paginatedProperties.map((row) => {
                   const amount = getOwnerPropertyAmount(row, t)
                   return (
-                    <li key={row.id} className="op-mob-list__item">
+                    <li key={row.rowKey || `${row.listingType}-${row.id}`} className="op-mob-list__item">
                       <article className="op-mob-property">
                         <div className="op-mob-property__media">
                           <img src={row.image} alt="" className="op-mob-property__photo" loading="lazy" />
@@ -1106,7 +1140,10 @@ export default function OwnerPropertiesTestPage() {
                         <div className="op-mob-property__body">
                           <div className="op-mob-property__head">
                             <h3 className="op-mob-property__title">{row.title}</h3>
-                            <ListingTypeBadge type={row.listingType} />
+                            <div className="op-mob-property__badges">
+                              <ListingTypeBadge type={row.listingType} />
+                              <ModerationStatusBadge moderationKey={row.moderationKey} />
+                            </div>
                           </div>
                           <p className="op-mob-property__location">{row.location}</p>
                           <div className="op-mob-property__foot">
@@ -1131,7 +1168,7 @@ export default function OwnerPropertiesTestPage() {
                 currentPage={safeCurrentPage}
                 totalPages={totalPages}
                 totalItems={visibleProperties.length}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
               </>
               )}

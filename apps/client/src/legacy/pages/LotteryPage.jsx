@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import * as THREE from 'three'
 import { ArrowLeft, ArrowUpRight, CalendarDays, Check, MousePointer2, Sparkles, Ticket, X } from 'lucide-react'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
@@ -206,6 +207,8 @@ function boxMaterials(frontTexture, backColor, edgeColor = 0xdcccad) {
 
 function LotteryThreeScene() {
   const mountRef = useRef(null)
+  const { t } = useTranslation()
+  const sceneAria = t('lottery_sceneAria')
 
   useEffect(() => {
     const mount = mountRef.current
@@ -232,7 +235,7 @@ function LotteryThreeScene() {
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.14
       renderer.setClearColor(0x000000, 0)
-      renderer.domElement.setAttribute('aria-label', 'Интерактивная 3D-композиция: паспорт, лотерейный билет и ключ')
+      renderer.domElement.setAttribute('aria-label', sceneAria)
       renderer.domElement.setAttribute('role', 'img')
       renderer.domElement.style.touchAction = 'none'
       mount.appendChild(renderer.domElement)
@@ -474,12 +477,14 @@ function LotteryThreeScene() {
       if (renderer?.domElement?.parentNode === mount) mount.removeChild(renderer.domElement)
       return undefined
     }
-  }, [])
+  }, [sceneAria])
 
   return <div className="lottery-scene" ref={mountRef} />
 }
 
 function TicketDialog({ onClose }) {
+  const { t } = useTranslation()
+
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose()
@@ -497,24 +502,29 @@ function TicketDialog({ onClose }) {
         aria-labelledby="lottery-dialog-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button type="button" className="lottery-dialog__close" onClick={onClose} aria-label="Закрыть">
+        <button
+          type="button"
+          className="lottery-dialog__close"
+          onClick={onClose}
+          aria-label={t('lottery_closeAria')}
+        >
           <X size={19} aria-hidden />
         </button>
         <span className="lottery-dialog__icon" aria-hidden>
           <Ticket size={24} strokeWidth={2.2} />
         </span>
-        <p className="lottery-dialog__eyebrow">Активный билет</p>
+        <p className="lottery-dialog__eyebrow">{t('lottery_ticketEyebrow')}</p>
         <h2 id="lottery-dialog-title">{LOTTERY_TICKET}</h2>
         <div className="lottery-dialog__status">
           <Check size={16} strokeWidth={2.6} aria-hidden />
-          Билет участвует в розыгрыше
+          {t('lottery_ticketStatus')}
         </div>
         <div className="lottery-dialog__meta">
-          <span>Дата розыгрыша</span>
-          <strong>30 сентября, 20:00</strong>
+          <span>{t('lottery_drawDateLabel')}</span>
+          <strong>{t('lottery_drawDateValue')}</strong>
         </div>
         <button type="button" className="lottery-dialog__button" onClick={onClose}>
-          Понятно
+          {t('lottery_gotIt')}
         </button>
       </div>
     </div>
@@ -522,9 +532,13 @@ function TicketDialog({ onClose }) {
 }
 
 export default function LotteryPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [ticketOpen, setTicketOpen] = useState(false)
-  const profileName = useMemo(() => getUserData()?.name?.trim() || 'Ваш профиль', [])
+  const profileName = useMemo(
+    () => getUserData()?.name?.trim() || t('lottery_defaultProfile'),
+    [t],
+  )
 
   const goBack = () => {
     if (window.history.length > 1) navigate(-1)
@@ -537,12 +551,17 @@ export default function LotteryPage() {
       <div className="lottery-page__glow lottery-page__glow--two" aria-hidden />
 
       <header className="lottery-header">
-        <button type="button" className="lottery-header__back" onClick={goBack} aria-label="Назад">
+        <button
+          type="button"
+          className="lottery-header__back"
+          onClick={goBack}
+          aria-label={t('lottery_backAria')}
+        >
           <ArrowLeft size={20} strokeWidth={2.3} aria-hidden />
         </button>
         <OwnerTestProfileMenu
           name={profileName}
-          role="Участник лотереи"
+          role={t('lottery_role')}
           className="lottery-profile"
         />
         <span className="lottery-header__spacer" aria-hidden />
@@ -552,47 +571,47 @@ export default function LotteryPage() {
         <div className="lottery-hero__copy">
           <p className="lottery-hero__eyebrow">
             <Sparkles size={15} strokeWidth={2.1} aria-hidden />
-            Ваш билет участвует
+            {t('lottery_eyebrow')}
           </p>
-          <h1 id="lottery-title">Лотерея</h1>
-          <p className="lottery-hero__lead">Паспорт готов. Билет внутри. Удача — следующий пункт назначения.</p>
+          <h1 id="lottery-title">{t('lottery_title')}</h1>
+          <p className="lottery-hero__lead">{t('lottery_lead')}</p>
         </div>
 
         <div className="lottery-scene-wrap">
           <LotteryThreeScene />
           <span className="lottery-scene-hint">
             <MousePointer2 size={14} strokeWidth={2} aria-hidden />
-            Потяните, чтобы покрутить
+            {t('lottery_dragHint')}
           </span>
         </div>
 
-        <div className="lottery-facts" aria-label="Информация о розыгрыше">
+        <div className="lottery-facts" aria-label={t('lottery_factsAria')}>
           <span className="lottery-fact lottery-fact--active">
             <Ticket size={15} aria-hidden />
-            1 билет
+            {t('lottery_factTickets')}
           </span>
           <span className="lottery-fact">
             <CalendarDays size={15} aria-hidden />
-            30 сентября
+            {t('lottery_factDate')}
           </span>
           <span className="lottery-fact">
             <Sparkles size={15} aria-hidden />
-            1 победитель
+            {t('lottery_factWinners')}
           </span>
         </div>
       </section>
 
-      <section className="lottery-prize-card" aria-label="Главный приз">
+      <section className="lottery-prize-card" aria-label={t('lottery_prizeAria')}>
         <div>
-          <p className="lottery-prize-card__eyebrow">Главный приз</p>
+          <p className="lottery-prize-card__eyebrow">{t('lottery_prizeEyebrow')}</p>
           <h2>
             <strong>€10 000</strong>
-            <span>на покупку недвижимости</span>
+            <span>{t('lottery_prizeForProperty')}</span>
           </h2>
-          <p>Розыгрыш 30 сентября · участие подтверждено</p>
+          <p>{t('lottery_prizeMeta')}</p>
         </div>
         <button type="button" onClick={() => setTicketOpen(true)}>
-          <span>Мой билет</span>
+          <span>{t('lottery_myTicket')}</span>
           <ArrowUpRight size={15} strokeWidth={2.4} aria-hidden />
         </button>
       </section>

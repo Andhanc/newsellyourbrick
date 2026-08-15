@@ -41,12 +41,22 @@
   --al-block-gap: clamp(40px, 5vw, 64px);
 
   min-height: 100%;
-  overflow-x: clip;
+  /* No overflow-x:clip here — it computes overflow-y:auto and traps scroll away from .app-layout. */
   background: var(--al-soft);
   color: var(--al-ink);
   font-family: var(--al-font);
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+}
+
+.app-layout:has(.al-page) {
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+}
+
+.app-layout:has(.al-page) .app-layout__content {
+  overflow: visible;
 }
 
 .al-page h1,

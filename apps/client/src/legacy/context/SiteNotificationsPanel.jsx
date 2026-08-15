@@ -210,7 +210,7 @@ function NotificationItem({
             <button
               type="button"
               className="notification-item__button"
-              onClick={() => openRoute(`/profile/bookings?booking=${dataObj.booking_id}`)}
+              onClick={() => openRoute(`/profile?bookings=1&booking=${dataObj.booking_id}`)}
             >
               {t('goTo')}<FiArrowRight aria-hidden />
             </button>
@@ -246,7 +246,7 @@ function NotificationItem({
           </div>
         ) : notification.type === 'buy_now_approved' ? (
           <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="notification-item__button" onClick={() => openRoute('/history')}>
+            <button type="button" className="notification-item__button" onClick={() => openRoute('/profile?history=1')}>
               Открыть покупки<FiArrowRight aria-hidden />
             </button>
           </div>

@@ -14,6 +14,7 @@ export default function PropertyDetailTestDrivePromo({
   i18nLang,
   className = '',
   imageUrl = '',
+  paused = false,
 }) {
   const { t } = useTranslation()
   const promoPhoto =
@@ -21,7 +22,7 @@ export default function PropertyDetailTestDrivePromo({
 
   return (
     <section
-      className={`property-detail-test-drive-promo${className ? ` ${className}` : ''}`}
+      className={`property-detail-test-drive-promo${paused ? ' property-detail-test-drive-promo--paused' : ''}${className ? ` ${className}` : ''}`}
       aria-labelledby="property-test-drive-promo-title"
     >
       <div
@@ -39,6 +40,11 @@ export default function PropertyDetailTestDrivePromo({
           />
         ) : null}
         <span className="property-detail-test-drive-promo__veil" aria-hidden />
+        {paused ? (
+          <div className="property-detail-test-drive-promo__paused" role="status">
+            <span>{t('propertyDetailTestDrivePaused')}</span>
+          </div>
+        ) : null}
 
         <div className="property-detail-test-drive-promo__copy">
           <div className="property-detail-test-drive-promo__kicker">
@@ -61,6 +67,7 @@ export default function PropertyDetailTestDrivePromo({
               hasTestDrive={hasTestDrive}
               i18nLang={i18nLang}
               layout="promo"
+              paused={paused}
             />
           </div>
         </div>

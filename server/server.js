@@ -24,7 +24,11 @@ import { SPAIN_CITIES, DISTRICTS_BY_CITY, getDistrictOptions } from './data/prop
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
-import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
+import {
+  parseExtraJson,
+  SITE_LANG_CODES,
+  translateAndPersistProperty,
+} from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
@@ -5057,25 +5061,34 @@ app.get('/api/assistant-leads/:id', async (req, res) => {
 });
 
 /**
- * POST /api/live-chat/sessions — создать или вернуть существующую сессию чата с менеджером (по assistant_session_id).
+ * POST /api/live-chat/sessions — создать или вернуть существующую сессию (один чат на user_id).
  */
 app.post('/api/live-chat/sessions', async (req, res) => {
   try {
     const { assistantSessionId, userId, waitMessage } = req.body || {};
     const asst = assistantSessionId && String(assistantSessionId).trim();
+    const uid = userId ? parseInt(userId, 10) : null;
     let session = null;
     let createdNew = false;
-    if (asst) {
+    if (Number.isFinite(uid) && uid > 0) {
+      session = await liveChatQueries.mergeSessionsForUser(uid);
+    }
+    if (!session && asst) {
       session = await liveChatQueries.findLatestSessionByAssistantId(asst);
     }
     if (!session) {
       const created = await liveChatQueries.createSession({
-        userId: userId ? parseInt(userId, 10) : null,
+        userId: Number.isFinite(uid) && uid > 0 ? uid : null,
         assistantSessionId: asst || null,
         waitMessage
       });
       session = await liveChatQueries.getSessionById(created.id);
       createdNew = true;
+    } else if (waitMessage) {
+      const appended = await liveChatQueries.appendSystemNoticeIfNew(session.id, waitMessage);
+      if (appended) {
+        createdNew = true;
+      }
     }
     const messages = await liveChatQueries.getMessages(session.id, 0);
     if (createdNew) {
@@ -5193,22 +5206,41 @@ app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
 });
 
 /**
- * GET /api/admin/live-chat/user-messages-since?since=ISO — число сообщений от посетителя после метки «просмотрено»
+ * POST /api/admin/live-chat/sessions/:id/read — отметить диалог прочитанным
+ */
+app.post('/api/admin/live-chat/sessions/:id/read', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    const session = await liveChatQueries.getSessionById(id);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const row = await liveChatQueries.markSessionRead(id);
+    return res.json({ success: true, data: row });
+  } catch (error) {
+    console.error('❌ POST admin live-chat read:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/live-chat/read-all — отметить все диалоги прочитанными
+ */
+app.post('/api/admin/live-chat/read-all', async (req, res) => {
+  try {
+    await liveChatQueries.markAllSessionsRead();
+    return res.json({ success: true, data: { count: 0 } });
+  } catch (error) {
+    console.error('❌ POST admin live-chat read-all:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/live-chat/user-messages-since — число непрочитанных сообщений посетителей
  */
 app.get('/api/admin/live-chat/user-messages-since', async (req, res) => {
   try {
-    const raw = req.query && req.query.since != null ? String(req.query.since).trim() : '';
-    const since = raw ? new Date(raw) : new Date(0);
-    if (Number.isNaN(since.getTime())) {
-      return res.status(400).json({ success: false, error: 'Некорректный since' });
-    }
-    const prisma = getPrisma();
-    const count = await prisma.live_chat_messages.count({
-      where: {
-        created_at: { gt: since },
-        sender_role: { in: ['user', 'client', 'visitor'] },
-      },
-    });
+    const count = await liveChatQueries.countUnreadUserMessages();
     return res.json({ success: true, data: { count } });
   } catch (error) {
     console.error('❌ GET /api/admin/live-chat/user-messages-since:', error);
@@ -11316,7 +11348,7 @@ app.get('/api/properties/shares', async (req, res) => {
 });
 
 /**
- * POST /api/properties/:id/translate - Перевести объявление на все языки сайта (MyMemory API) и сохранить в БД
+ * POST /api/properties/:id/translate - Перевести объявление на все языки сайта и сохранить в БД
  */
 app.post('/api/properties/:id/translate', async (req, res) => {
   const sendError = (status, message) => {
@@ -11324,36 +11356,15 @@ app.post('/api/properties/:id/translate', async (req, res) => {
   };
   try {
     const { id } = req.params;
-    const propertyTable = req.body?.property_table || req.query?.property_table || null;
-    const requestedPropertyType = req.query.property_type || null;
+    const requestedPropertyType = req.query.property_type || req.body?.property_type || null;
     const property = await propertyQueries.getById(id, requestedPropertyType);
     if (!property) {
       return sendError(404, 'Объявление не найдено');
     }
-    const table = propertyTable || property.source_table || 'properties_apartments';
-    const translations = await translatePropertyToAllLanguages(property).catch((err) => {
-      console.error('POST /api/properties/:id/translate translate error:', err);
-      throw err;
-    });
-    const prisma = getPrisma();
-    await prisma.property_translations.deleteMany({
-      where: { property_id: Number(id), property_table: String(table) },
-    });
-    for (const [langCode, data] of Object.entries(translations)) {
-      await prisma.property_translations.create({
-        data: {
-          property_id: Number(id),
-          property_table: String(table),
-          lang_code: String(langCode),
-          title: data.title || '',
-          description: data.description || '',
-          additional_amenities: data.additional_amenities || '',
-          location: data.location || '',
-          created_at: new Date().toISOString(),
-        },
-      });
+    if (req.body?.property_table) {
+      property.source_table = req.body.property_table;
     }
-    console.log(`✅ Переводы сохранены для property_id=${id}, table=${table}, языков: ${Object.keys(translations).length}`);
+    const { translations } = await translateAndPersistProperty(getPrisma(), property);
     return res.json({ success: true, message: 'Перевод готов', translations: Object.keys(translations) });
   } catch (err) {
     console.error('POST /api/properties/:id/translate error:', err);
@@ -11375,7 +11386,15 @@ app.get('/api/properties/:id/translations', async (req, res) => {
     const table = propertyTable || property.source_table || 'properties_apartments';
     const rows = await getPrisma().property_translations.findMany({
       where: { property_id: Number(id), property_table: String(table) },
-      select: { lang_code: true, title: true, description: true, additional_amenities: true, location: true, created_at: true },
+      select: {
+        lang_code: true,
+        title: true,
+        description: true,
+        additional_amenities: true,
+        location: true,
+        extra_json: true,
+        created_at: true,
+      },
       orderBy: { lang_code: 'asc' },
     });
     const byLang = {};
@@ -11385,6 +11404,7 @@ app.get('/api/properties/:id/translations', async (req, res) => {
         description: r.description,
         additional_amenities: r.additional_amenities,
         location: r.location,
+        ...parseExtraJson(r.extra_json),
         created_at: r.created_at,
       };
     });
@@ -13234,25 +13254,9 @@ app.get('/api/properties/:id', async (req, res) => {
 
     // Подстановка перевода по языку (lang из футера сайта)
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
-    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang)) {
+    if (lang && SITE_LANG_CODES.includes(lang)) {
       try {
-        const table = property.source_table || 'properties_apartments';
-        const tr = await getPrisma().property_translations.findUnique({
-          where: {
-            property_id_property_table_lang_code: {
-              property_id: propertyId,
-              property_table: String(table),
-              lang_code: String(lang),
-            },
-          },
-          select: { title: true, description: true, additional_amenities: true, location: true },
-        });
-        if (tr) {
-          if (tr.title) formatted.title = tr.title;
-          if (tr.description) formatted.description = tr.description;
-          if (tr.additional_amenities != null) formatted.additional_amenities = tr.additional_amenities;
-          if (tr.location != null) formatted.location = tr.location;
-        }
+        await mergePropertyTranslations([formatted], lang);
       } catch (e) {
         console.warn('GET /api/properties/:id - подстановка перевода:', e.message);
       }
@@ -13575,6 +13579,22 @@ app.get('/api/properties/user/:userId', async (req, res) => {
     } catch (bidAggErr) {
       console.warn('GET /api/properties/user — агрегация ставок:', bidAggErr?.message || bidAggErr);
     }
+
+    formattedProperties = [...formattedProperties].sort((a, b) => {
+      const idA = Number(a?.id || 0);
+      const idB = Number(b?.id || 0);
+      if (idB !== idA) return idB - idA;
+      const parseTs = (value) => {
+        if (value == null) return 0;
+        const s = String(value).trim().toLowerCase();
+        if (!s || s === "datetime('now')" || s === 'datetime("now")' || s === 'current_timestamp') {
+          return 0;
+        }
+        const ts = new Date(value).getTime();
+        return Number.isFinite(ts) && ts > 0 ? ts : 0;
+      };
+      return parseTs(b?.created_at) - parseTs(a?.created_at);
+    });
 
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
@@ -14033,6 +14053,17 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
   }
 });
 
+async function translateListingOrWarn(property, label) {
+  if (!property?.id) return { ok: false, error: 'no property' };
+  try {
+    const result = await translateAndPersistProperty(getPrisma(), property);
+    return { ok: true, languages: Object.keys(result.translations || {}) };
+  } catch (err) {
+    console.error(`[translate] ${label}:`, err?.message || err);
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 /**
  * PUT /api/properties/:id/approve - Одобрить объявление
  */
@@ -14298,20 +14329,6 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         });
       }
 
-      try {
-        await prisma.property_translations.deleteMany({
-          where: {
-            property_id: Number(originalPropertyId),
-            property_table: appliedPropertyTable,
-          },
-        });
-        console.log(
-          `🌐 Переводы сброшены для property_id=${originalPropertyId}, table=${appliedPropertyTable}`
-        );
-      } catch (trErr) {
-        console.warn('⚠️ Не удалось сбросить переводы после одобрения редактирования:', trErr?.message || trErr);
-      }
-      
       console.log(`✅ Оригинальный объект ID ${originalPropertyId} обновлен (${editTargetTable})`);
       console.log(`   Статус модерации: approved, rejection_reason: очищен`);
       
@@ -14338,6 +14355,9 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         is_auction: updatedOriginal.is_auction,
         auction_dates: updatedOriginal.is_auction ? `${updatedOriginal.auction_start_date} - ${updatedOriginal.auction_end_date}` : 'N/A'
       });
+
+      updatedOriginal.source_table = updatedOriginal.source_table || appliedPropertyTable;
+      const editTranslation = await translateListingOrWarn(updatedOriginal, `edit approve id=${originalPropertyId}`);
       
       // Создаем уведомление для пользователя
       try {
@@ -14387,6 +14407,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         success: true,
         message: 'Изменения одобрены и применены к оригинальному объекту',
         original_property_id: originalPropertyId,
+        translated: editTranslation.ok,
+        translations: editTranslation.languages || [],
         data: updatedOriginal,
       });
     } else {
@@ -14398,6 +14420,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         is_auction: property.is_auction,
         source_table: property.source_table || 'unknown'
       });
+
+      const publishTranslation = await translateListingOrWarn(property, `approve id=${id}`);
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
       console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved, тип=${property.property_type}`);
@@ -14577,7 +14601,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           user_id: property.user_id,
           type: 'property_approved',
           title: 'Ваш объект прошел верификацию',
-          message: `Ваш объект "${property.title}" прошел верификацию, в скором времени он будет опубликован на платформе`,
+          message: `Ваш объект "${property.title}" прошел верификацию, переведён на языки сайта и опубликован на платформе`,
           data: JSON.stringify({ property_id: id })
         });
       } catch (notifError) {
@@ -14629,7 +14653,9 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       res.json({ 
         success: true, 
-        message: 'Объявление одобрено',
+        message: 'Объявление переведено и опубликовано',
+        translated: publishTranslation.ok,
+        translations: publishTranslation.languages || [],
         data: {
           id: updatedProperty.id,
           title: updatedProperty.title,

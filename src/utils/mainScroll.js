@@ -1,6 +1,25 @@
+import { forceResetSiteNavScrollLock, setSiteNavDrawerOpen } from './siteNavDrawerDocumentFlag'
+
 /** Основной скролл приложения — контейнер `.app-layout` (document больше не скроллится). */
 
 export const MAIN_SCROLL_SELECTOR = '.app-layout'
+
+/** Снимает типичные «залипшие» блокировки скролла перед лендингами и маркетинговыми страницами. */
+export function ensureMainScrollReady() {
+  document.documentElement.classList.remove('md-page-active')
+  forceResetSiteNavScrollLock()
+  setSiteNavDrawerOpen(false)
+
+  const layout = getMainScrollEl()
+  if (layout instanceof HTMLElement) {
+    layout.style.removeProperty('overflow')
+    layout.style.removeProperty('overflow-y')
+    layout.style.removeProperty('overflow-x')
+  }
+
+  document.body.style.removeProperty('overflow')
+  document.documentElement.style.removeProperty('overflow')
+}
 
 export function getMainScrollEl() {
   if (typeof document === 'undefined') return null

@@ -23,12 +23,14 @@ import './styles/buyer-mobile-tokens.css'
 import './styles/tiffany-shine-button.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
-import { scrollMainTo } from './utils/mainScroll'
+import { ensureMainScrollReady, scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import OwnerTestCabinetPageFallback from './components/OwnerTestCabinetPageFallback'
 import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
+import GlobalManagerChatHost from './components/GlobalManagerChatHost'
+import GlobalAiChatHost from './components/GlobalAiChatHost'
 import MobileDiscoverPage from './pages/MobileDiscoverPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
@@ -57,9 +59,7 @@ const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheck
 const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyPage'))
 const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveExitFeedbackPage'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
-const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
-const History = lazyWithRetry(() => import('./pages/History'))
 const PurchasedObjectGuidePage = lazyWithRetry(() => import('./pages/PurchasedObjectGuidePage'))
 const Chat = lazyWithRetry(() => import('./pages/Chat'))
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
@@ -94,6 +94,12 @@ const OwnerTestLegacyProfileRedirect = lazyWithRetry(() =>
 )
 const LegacyProfileRedirect = lazyWithRetry(() =>
   import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyProfileRedirect }))
+)
+const LegacyHistoryRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyHistoryRedirect }))
+)
+const LegacyBookingsRedirect = lazyWithRetry(() =>
+  import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyBookingsRedirect }))
 )
 const LegacyOwnerCabinetRedirect = lazyWithRetry(() =>
   import('./components/LegacyRouteRedirects').then((m) => ({ default: m.LegacyOwnerCabinetRedirect }))
@@ -248,6 +254,8 @@ function ScrollToTop() {
   const location = useLocation()
 
   useEffect(() => {
+    // Mega-menu scroll lock can stick after in-menu navigation; clear before scrolling.
+    ensureMainScrollReady()
     scrollMainTo(0, 0, 'instant')
   }, [location.pathname])
 
@@ -649,6 +657,8 @@ function App() {
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <SiteFooterNearObserver />
       <ChatDockActiveBridge />
+      <GlobalManagerChatHost />
+      <GlobalAiChatHost />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <SiteAdsErrorBoundary>
           <SiteAdsHost />
@@ -730,7 +740,7 @@ function App() {
                 path="/profile/bookings"
                 element={
                   <LazyPage>
-                    <MyBookingsPage />
+                    <LegacyBookingsRedirect />
                   </LazyPage>
                 }
               />
@@ -787,7 +797,7 @@ function App() {
                 path="/history"
                 element={
                   <LazyPage>
-                    <History />
+                    <LegacyHistoryRedirect />
                   </LazyPage>
                 }
               />

@@ -412,6 +412,33 @@
   color: #475569;
 }
 
+.oap-documents-step__upload-note-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.oap-documents-step__upload-note-current {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.oap-documents-step__upload-note-sep {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.oap-documents-step__upload-note-max {
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+}
+
 .oap-documents-step__gallery-row {
   display: flex;
   align-items: stretch;

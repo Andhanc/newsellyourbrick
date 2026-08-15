@@ -61,6 +61,40 @@
     );
 }
 
+.property-detail-test-drive-promo__paused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.property-detail-test-drive-promo__paused span {
+  max-width: min(100%, 420px);
+  padding: 12px 22px;
+  border-radius: 14px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: rgba(71, 85, 105, 0.94);
+  color: #f8fafc;
+  font-size: clamp(0.92rem, 3.4vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.28);
+}
+
+.property-detail-test-drive-promo--paused .property-detail-test-drive-promo__copy {
+  filter: blur(3px);
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+}
+
 .property-detail-test-drive-promo__copy {
   position: relative;
   z-index: 2;

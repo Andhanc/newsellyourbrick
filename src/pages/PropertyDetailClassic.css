@@ -3053,12 +3053,49 @@
 
 /* Тест-драйв под удобствами */
 .property-detail-test-drive {
+  position: relative;
   margin-top: 20px;
   padding: 20px;
+  overflow: hidden;
   border-radius: 16px;
   background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
   border: 1px solid rgba(148, 163, 184, 0.35);
   scroll-margin-top: 96px;
+}
+
+.property-detail-test-drive__paused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.12) 0%,
+    rgba(15, 23, 42, 0.42) 100%
+  );
+}
+
+.property-detail-test-drive__paused span {
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: rgba(71, 85, 105, 0.94);
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.property-detail-test-drive--paused > :not(.property-detail-test-drive__paused) {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
 }
 
 .property-detail-test-drive--highlight {

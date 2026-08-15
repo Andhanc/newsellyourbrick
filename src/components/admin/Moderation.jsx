@@ -871,7 +871,9 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
               });
             }, 5 * 60 * 1000); // 5 минут
             
-            showNotification('Объявление одобрено. Владельцу отправлено уведомление.');
+            showNotification(data.translated === false
+              ? 'Объявление опубликовано. Перевод не удался — можно перевести позже.'
+              : 'Объявление переведено на все языки сайта и опубликовано.');
             // Закрываем детальный вид
             setSelectedProperty(null);
             

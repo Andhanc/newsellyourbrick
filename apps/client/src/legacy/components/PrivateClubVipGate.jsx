@@ -7,6 +7,7 @@ import { getUserData } from '../services/authService'
 import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
+import { userHasVipAccess } from '../hooks/useCabinetOverviewData'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './PrivateClubVipGate.css'
 
@@ -21,13 +22,31 @@ function normalizePromoChunk(value) {
     .replace(/[^A-Z0-9]/g, '')
 }
 
+function formatVipUntilDate(iso, language) {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (!Number.isFinite(date.getTime())) return ''
+  try {
+    return date.toLocaleDateString(language || 'ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  } catch {
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+}
+
 export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClubActivated }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
   const [promoDigits, setPromoDigits] = useState(EMPTY_PROMO)
   const [submitting, setSubmitting] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [vipActive, setVipActive] = useState(false)
+  const [vipUntil, setVipUntil] = useState(null)
   const inputRefs = useRef([])
+  const bodyScrollRef = useRef(null)
   const lastAutoSubmitRef = useRef('')
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches
@@ -40,6 +59,37 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
+
+  const loadVipState = useCallback(async () => {
+    const uid = userId ?? getUserData()?.id ?? localStorage.getItem('userId')
+    if (!uid) {
+      setVipActive(false)
+      setVipUntil(null)
+      return
+    }
+    try {
+      const res = await fetch(`${API_BASE}/users/${uid}/subscription-billing`)
+      const json = res.ok ? await res.json().catch(() => null) : null
+      const data = json?.success && json?.data ? json.data : null
+      setVipActive(
+        userHasVipAccess({
+          subscription: data?.subscription ?? null,
+          vipClub: data?.vipClub,
+        }),
+      )
+      setVipUntil(data?.vipClub?.until || data?.subscription?.current_period_end || null)
+    } catch {
+      setVipActive(false)
+      setVipUntil(null)
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (!open) return undefined
+    void loadVipState()
+    window.addEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, loadVipState)
+    return () => window.removeEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, loadVipState)
+  }, [open, loadVipState])
 
   useEffect(() => {
     if (!open) {
@@ -55,15 +105,29 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
     document.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const focusTimer = window.setTimeout(() => {
-      inputRefs.current[0]?.focus?.()
-    }, 280)
+
+    const resetBodyScroll = () => {
+      if (bodyScrollRef.current) bodyScrollRef.current.scrollTop = 0
+    }
+    resetBodyScroll()
+    const scrollResetRaf = window.requestAnimationFrame(resetBodyScroll)
+    const scrollResetTimer = window.setTimeout(resetBodyScroll, 340)
+
+    // На мобиле и при уже активном VIP не фокусируем промокод.
+    const focusTimer = isMobile || vipActive
+      ? null
+      : window.setTimeout(() => {
+          inputRefs.current[0]?.focus?.()
+        }, 280)
+
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
-      window.clearTimeout(focusTimer)
+      window.cancelAnimationFrame(scrollResetRaf)
+      window.clearTimeout(scrollResetTimer)
+      if (focusTimer != null) window.clearTimeout(focusTimer)
     }
-  }, [open, requestClose])
+  }, [open, requestClose, isMobile, vipActive])
 
   const clearPromo = useCallback(() => {
     setPromoDigits(EMPTY_PROMO())
@@ -235,7 +299,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
   )
 
   useEffect(() => {
-    if (!open || submitting) return
+    if (!open || submitting || vipActive) return
     const code = promoDigits.join('')
     if (code.length !== PROMO_LENGTH || promoDigits.some((digit) => !digit)) return
     if (lastAutoSubmitRef.current === code) return
@@ -244,7 +308,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
       void redeemPromo(code)
     }, 160)
     return () => window.clearTimeout(timer)
-  }, [promoDigits, open, submitting, redeemPromo])
+  }, [promoDigits, open, submitting, redeemPromo, vipActive])
 
   if (!visible || typeof document === 'undefined') return null
 
@@ -256,6 +320,10 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
       : ' drawer-dismiss-modal--closing'
     : ''
   const promoComplete = promoDigits.every(Boolean)
+  const vipUntilLabel = formatVipUntilDate(vipUntil, i18n.resolvedLanguage || i18n.language)
+  const vipUntilHint = vipUntilLabel
+    ? t('privateClubVipGateActiveUntil', { date: vipUntilLabel })
+    : t('privateClubVipGateActiveHint')
 
   return createPortal(
     <div className="private-club-vip-root" role="presentation">
@@ -276,98 +344,124 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
           <FiX size={20} />
         </button>
 
+        <div className="private-club-vip__body" ref={bodyScrollRef}>
         <div className="private-club-vip__header">
           <span className="private-club-vip__eyebrow" aria-hidden>
             <RiVipDiamondLine size={15} />
             VIP
           </span>
           <h2 id="private-club-vip-title" className="private-club-vip__title">
-            {t('privateClubVipGateTitle')}
+            {vipActive ? t('privateClubVipGateActiveTitle') : t('privateClubVipGateTitle')}
           </h2>
-          <p className="private-club-vip__lead">{t('privateClubVipGateLead')}</p>
+          <p className="private-club-vip__lead">
+            {vipActive ? t('privateClubVipGateActiveLead') : t('privateClubVipGateLead')}
+          </p>
         </div>
 
-        <div className="private-club-vip__paths">
+        <div className={`private-club-vip__paths${vipActive ? ' private-club-vip__paths--single' : ''}`}>
           <section
-            className="private-club-vip__ticket private-club-vip__ticket--subscribe"
+            className={`private-club-vip__ticket private-club-vip__ticket--subscribe${
+              vipActive ? ' private-club-vip__ticket--active' : ''
+            }`}
             aria-labelledby="private-club-vip-sub-label"
           >
             <div className="private-club-vip__ticket-body">
               <div className="private-club-vip__panel-head">
-                <p className="private-club-vip__kicker">{t('privateClubVipGateSubscribeKicker')}</p>
-                <p id="private-club-vip-sub-label" className="private-club-vip__label">
-                  {t('privateClubVipGateSubscribe')}
+                <p className="private-club-vip__kicker">
+                  {vipActive ? t('privateClubVipGateActiveKicker') : t('privateClubVipGateSubscribeKicker')}
                 </p>
-                <p className="private-club-vip__panel-note">{t('privateClubVipGateSubscribeNote')}</p>
+                <p id="private-club-vip-sub-label" className="private-club-vip__label">
+                  {vipActive ? t('privateClubVipGateSubscribeActive') : t('privateClubVipGateSubscribe')}
+                </p>
+                <p className="private-club-vip__panel-note">
+                  {vipActive ? t('privateClubVipGateSubscribeActiveNote') : t('privateClubVipGateSubscribeNote')}
+                </p>
               </div>
               <div className="private-club-vip__ticket-perf" aria-hidden />
-              <button
-                type="button"
-                className="private-club-vip__btn private-club-vip__btn--primary btn-tiffany-shine"
-                onClick={onVipCheckout}
-                disabled={checkoutLoading || submitting}
-              >
-                {checkoutLoading ? t('privateClubVipGatePromoSubmitting') : t('privateClubVipGateCtaVip')}
-              </button>
-              <p className="private-club-vip__hint">{t('privateClubVipGateStripeHint')}</p>
+              {vipActive ? (
+                <>
+                  <p className="private-club-vip__status" role="status">
+                    {t('privateClubVipGateActiveBadge')}
+                  </p>
+                  <p className="private-club-vip__hint">{vipUntilHint}</p>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="private-club-vip__btn private-club-vip__btn--primary btn-tiffany-shine"
+                    onClick={onVipCheckout}
+                    disabled={checkoutLoading || submitting}
+                  >
+                    {checkoutLoading ? t('privateClubVipGatePromoSubmitting') : t('privateClubVipGateCtaVip')}
+                  </button>
+                  <p className="private-club-vip__hint">{t('privateClubVipGateStripeHint')}</p>
+                </>
+              )}
             </div>
           </section>
 
-          <div className="private-club-vip__divider" role="separator" aria-label={t('privateClubVipGateOr')}>
-            <span>{t('privateClubVipGateOr')}</span>
-          </div>
+          {!vipActive && (
+            <>
+              <div className="private-club-vip__divider" role="separator" aria-label={t('privateClubVipGateOr')}>
+                <span>{t('privateClubVipGateOr')}</span>
+              </div>
 
-          <form
-            className="private-club-vip__ticket private-club-vip__ticket--promo"
-            onSubmit={onPromoSubmit}
-          >
-            <div className="private-club-vip__ticket-body">
-              <div className="private-club-vip__panel-head">
-                <p className="private-club-vip__kicker">{t('privateClubVipGatePromoKicker')}</p>
-                <label className="private-club-vip__label" id="private-club-promo-label" htmlFor="private-club-promo-first">
-                  {t('privateClubVipGatePromoLabel')}
-                </label>
-                <p className="private-club-vip__panel-note">{t('privateClubVipGatePromoPlaceholder')}</p>
-              </div>
-              <div className="private-club-vip__ticket-perf" aria-hidden />
-              <div
-                className="private-club-vip__code-row"
-                role="group"
-                aria-labelledby="private-club-promo-label"
-                onPaste={handleCodePaste}
+              <form
+                className="private-club-vip__ticket private-club-vip__ticket--promo"
+                onSubmit={onPromoSubmit}
               >
-                {promoDigits.map((digit, index) => (
-                  <input
-                    key={index}
-                    id={index === 0 ? 'private-club-promo-first' : undefined}
-                    ref={(el) => {
-                      inputRefs.current[index] = el
-                    }}
-                    type="text"
-                    inputMode="text"
-                    autoCapitalize="characters"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={1}
-                    className={`private-club-vip__code-cell${digit ? ' is-filled' : ''}`}
-                    value={digit}
-                    onChange={(e) => handleCodeChange(index, e.target.value)}
-                    onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                    aria-label={t('privateClubVipGatePromoDigit', { n: index + 1 })}
-                    disabled={submitting}
-                  />
-                ))}
-              </div>
-              <p className="private-club-vip__promo-hint">{t('privateClubVipGatePromoHint')}</p>
-              <button
-                type="submit"
-                className={`private-club-vip__btn private-club-vip__btn--secondary${promoComplete ? ' btn-tiffany-shine' : ''}`}
-                disabled={submitting || !promoComplete}
-              >
-                {submitting ? t('privateClubVipGatePromoSubmitting') : t('privateClubVipGatePromoSubmit')}
-              </button>
-            </div>
-          </form>
+                <div className="private-club-vip__ticket-body">
+                  <div className="private-club-vip__panel-head">
+                    <p className="private-club-vip__kicker">{t('privateClubVipGatePromoKicker')}</p>
+                    <label className="private-club-vip__label" id="private-club-promo-label" htmlFor="private-club-promo-first">
+                      {t('privateClubVipGatePromoLabel')}
+                    </label>
+                    <p className="private-club-vip__panel-note">{t('privateClubVipGatePromoPlaceholder')}</p>
+                  </div>
+                  <div
+                    className="private-club-vip__code-row"
+                    role="group"
+                    aria-labelledby="private-club-promo-label"
+                    onPaste={handleCodePaste}
+                  >
+                    {promoDigits.map((digit, index) => (
+                      <input
+                        key={index}
+                        id={index === 0 ? 'private-club-promo-first' : undefined}
+                        ref={(el) => {
+                          inputRefs.current[index] = el
+                        }}
+                        type="text"
+                        inputMode="text"
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        maxLength={1}
+                        className={`private-club-vip__code-cell${digit ? ' is-filled' : ''}`}
+                        value={digit}
+                        onChange={(e) => handleCodeChange(index, e.target.value)}
+                        onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                        aria-label={t('privateClubVipGatePromoDigit', { n: index + 1 })}
+                        disabled={submitting}
+                      />
+                    ))}
+                  </div>
+                  <div className="private-club-vip__promo-foot">
+                    <p className="private-club-vip__promo-hint">{t('privateClubVipGatePromoHint')}</p>
+                    <button
+                      type="submit"
+                      className={`private-club-vip__btn private-club-vip__btn--secondary${promoComplete ? ' btn-tiffany-shine' : ''}`}
+                      disabled={submitting || !promoComplete}
+                    >
+                      {submitting ? t('privateClubVipGatePromoSubmitting') : t('privateClubVipGatePromoSubmit')}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </>
+          )}
+        </div>
         </div>
       </div>
     </div>,

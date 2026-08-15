@@ -38,6 +38,45 @@
   z-index: 1;
 }
 
+.pdx-test-drive-banner--paused .pdx-test-drive-banner__content,
+.pdx-test-drive-banner--paused .pdx-test-drive-banner__calendar {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pdx-test-drive-banner__paused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.12) 0%,
+    rgba(15, 23, 42, 0.42) 100%
+  );
+}
+
+.pdx-test-drive-banner__paused span {
+  max-width: min(100%, 420px);
+  padding: 12px 22px;
+  border-radius: 14px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: rgba(71, 85, 105, 0.94);
+  color: #f8fafc;
+  font-size: clamp(0.92rem, 1.6vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.28);
+}
+
 .pdx-test-drive-banner__content {
   max-width: 520px;
 }

@@ -164,49 +164,102 @@
 
 .auction-period-hint {
   margin-bottom: 12px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(10, 186, 181, 0.04) 100%);
-  border: 1px solid rgba(10, 186, 181, 0.24);
-  border-radius: 14px;
-  color: #0f3f3d;
+  padding: 16px 16px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(240, 250, 251, 0.92) 100%),
+    linear-gradient(135deg, rgba(0, 153, 169, 0.1) 0%, rgba(0, 153, 169, 0.03) 100%);
+  border: 1px solid rgba(0, 153, 169, 0.22);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  color: #0f172a;
   line-height: 1.5;
 }
 
+.auction-period-hint__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.auction-period-hint__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  color: #007d8a;
+  background: linear-gradient(145deg, #e6f7f9 0%, #d7f1f4 100%);
+  border: 1px solid rgba(0, 153, 169, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 .auction-period-hint__title {
-  margin: 0 0 6px;
+  margin: 2px 0 0;
   font-size: 14px;
   font-weight: 700;
-  color: #0a5f5b;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: #0f172a;
 }
 
 .auction-period-hint__text {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-size: 13px;
   font-weight: 500;
-  color: #134e4a;
+  color: #475569;
+  line-height: 1.55;
 }
 
 .auction-period-hint__list {
-  margin: 0 0 10px;
-  padding-left: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #115e59;
+  gap: 8px;
 }
 
 .auction-period-hint__list li {
-  padding-left: 2px;
+  position: relative;
+  padding: 0 0 0 18px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.auction-period-hint__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #0099a9;
+  box-shadow: 0 0 0 3px rgba(0, 153, 169, 0.14);
 }
 
 .auction-period-hint__earliest {
-  margin: 0;
-  padding-top: 10px;
-  border-top: 1px solid rgba(10, 186, 181, 0.18);
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 153, 169, 0.08);
+  border: 1px solid rgba(0, 153, 169, 0.14);
   font-size: 12px;
   font-weight: 600;
-  color: #0f766e;
+  color: #007d8a;
+  line-height: 1.45;
+}
+
+/* Embedded / journey — keep the callout card, just tighten spacing */
+.auction-period-picker--embedded .auction-period-hint,
+.auction-period-picker--journey .auction-period-hint {
+  margin: 0 0 4px;
 }
 
 /* Embedded variant — flat field inside OAP pricing wizard */
@@ -279,18 +332,6 @@
 
 .auction-period-picker--embedded .auction-period-date-input:hover {
   color: #0f172a;
-}
-
-.auction-period-picker--embedded .auction-period-hint {
-  margin-top: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  font-size: 11px;
-  font-weight: 400;
-  color: #9ca3af;
-  line-height: 1.35;
 }
 
 .auction-period-picker--embedded .auction-period-error {
@@ -432,6 +473,19 @@
 .auction-period-inline__day--empty {
   min-height: 40px;
   cursor: default;
+}
+
+.auction-period-inline__day--disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.auction-period-inline__day--disabled .auction-period-inline__day-num {
+  color: #9ca3af;
+  background: transparent;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(107, 114, 128, 0.9);
 }
 
 .auction-period-inline__summary {

@@ -57,6 +57,18 @@ export function getCabinetSubscriptionsPath(role = readStoredUserRole()) {
   return '/profile?subscriptions=1'
 }
 
+/** История покупок / сделок покупателя (лист в кабинете). */
+export function getCabinetHistoryPath(role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) return OWNER_CABINET_HOME_PATH
+  return '/profile?history=1'
+}
+
+/** Бронирования test-drive покупателя (лист в кабинете). */
+export function getCabinetBookingsPath(role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) return '/owner-test/test-drive'
+  return '/profile?bookings=1'
+}
+
 export function isCabinetSubscriptionsPath(pathname, search = '', role = readStoredUserRole()) {
   if (isSellerCabinetRole(role)) {
     return (
@@ -66,6 +78,21 @@ export function isCabinetSubscriptionsPath(pathname, search = '', role = readSto
   }
   const params = new URLSearchParams(search)
   return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('subscriptions') === '1'
+}
+
+export function isCabinetHistoryPath(pathname, search = '', role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) return false
+  const params = new URLSearchParams(search)
+  return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('history') === '1'
+}
+
+export function isCabinetBookingsPath(pathname, search = '', role = readStoredUserRole()) {
+  if (isSellerCabinetRole(role)) {
+    return pathname === '/owner-test/test-drive' || pathname.startsWith('/owner-test/test-drive/')
+  }
+  if (/^\/profile\/bookings(\/|$)/.test(pathname)) return true
+  const params = new URLSearchParams(search)
+  return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('bookings') === '1'
 }
 
 /** Ссылка на поле в разделе «Данные» (например из VerificationToast). */

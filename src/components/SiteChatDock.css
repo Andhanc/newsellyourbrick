@@ -162,12 +162,9 @@
   line-height: 1.55;
 }
 
-.site-ai-drawer .chat-widget__message--bot .chat-widget__message-content {
-  border: 1px solid rgba(132, 151, 154, 0.2);
+.site-ai-drawer .chat-widget__message--bot .chat-widget__message-content,
+.site-ai-drawer .chat-widget__message--manager .chat-widget__message-content {
   border-bottom-left-radius: 6px;
-  box-shadow:
-    0 10px 28px rgba(3, 35, 38, 0.055),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .site-ai-drawer .chat-widget__message--user .chat-widget__message-content {

@@ -3093,12 +3093,9 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   word-wrap: break-word;
 }
 
-.chat-widget__message--bot .chat-widget__message-content {
-  background: #ffffff;
-  color: #111827;
-  border: 1px solid rgba(17, 24, 39, 0.1);
+.chat-widget__message--bot .chat-widget__message-content,
+.chat-widget__message--manager .chat-widget__message-content {
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px -4px rgba(17, 24, 39, 0.1);
 }
 
 .chat-widget__message--user .chat-widget__message-content {
@@ -3249,8 +3246,7 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
 }
 
 .chat-widget__message--manager .chat-widget__message-content {
-  background: #dbeafe;
-  border: 1px solid #bfdbfe;
+  border-bottom-left-radius: 4px;
 }
 
 .chat-widget__message--system {
@@ -4028,6 +4024,10 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
 
 .footer__flag--fr {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%2300295E' d='M0 0h20v30H0z'/%3E%3Cpath fill='%23FFFFFF' d='M20 0h20v30H20z'/%3E%3Cpath fill='%23ED2939' d='M40 0h20v30H40z'/%3E%3C/svg%3E");
+}
+
+.footer__flag--pl {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23fff' d='M0 0h60v15H0z'/%3E%3Cpath fill='%23DC143C' d='M0 15h60v15H0z'/%3E%3C/svg%3E");
 }
 
 .footer__flag--sv {
@@ -13987,13 +13987,8 @@ body:has(.hero-section) .site-ads-host {
     grid-template-columns: 1fr !important;
   }
 
-  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text-full,
-  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text-full {
-    display: none !important;
-  }
-
-  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text-short,
-  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text-short {
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text {
     display: inline !important;
   }
 

@@ -64,16 +64,20 @@
 }
 
 .auction-listing-sale-toggle__btn:not(.auction-listing-sale-toggle__btn--active):focus-visible {
-  outline: 2px solid rgba(74, 150, 166, 0.55);
+  outline: 2px solid rgba(78, 205, 214, 0.55);
   outline-offset: 2px;
 }
 
 .auction-listing-sale-toggle__btn--active {
   color: #ffffff;
-  background: linear-gradient(135deg, #3f8798 0%, #4a96a6 100%);
+  background: var(
+    --syb-tiffany-btn-fill,
+    linear-gradient(118deg, #1f9aa6 0%, #2eb4bf 38%, #4ecdd6 62%, #2aa8b4 100%)
+  );
   box-shadow:
-    0 4px 14px -6px rgba(74, 150, 166, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    0 6px 16px rgba(59, 192, 203, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.08);
 }
 
 .auction-listing-sale-toggle__btn--active:hover,
