@@ -30,6 +30,22 @@ const authServiceSource = await readFile(
   new URL('../legacy/services/authService.js', import.meta.url),
   'utf8',
 )
+const nativePropertySource = await readFile(
+  new URL('../../app/property/[slugOrId].tsx', import.meta.url),
+  'utf8',
+)
+const mirroredMenuRouteSources = await Promise.all(
+  [
+    '../../app/favorites.tsx',
+    '../../app/wallet.tsx',
+    '../../app/history.tsx',
+    '../../app/subscriptions.tsx',
+    '../../app/chat.tsx',
+    '../../app/calculator.tsx',
+    '../../app/compare.tsx',
+    '../../app/property/[slugOrId].tsx',
+  ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
+)
 
 test('profile save celebration invokes the native Android vibration bridge once per opening', () => {
   assert.match(screenSource, /Vibration\.vibrate\(\[0, 350, 120, 350, 120, 450, 120, 450\], false\)/)
@@ -85,4 +101,29 @@ test('native role switching adopts the new backend session before routing', () =
   assert.match(roleSwitchSource, /hasNativeSessionSwitch\(\)/)
   assert.match(roleSwitchSource, /await switchNativeSession\(/)
   assert.match(roleSwitchSource, /authToken:\s*result\.authToken \|\| null/)
+})
+
+test('side-menu screens render the same legacy pages as the website', () => {
+  for (const routeSource of mirroredMenuRouteSources) {
+    assert.match(routeSource, /PublicPageScreen/)
+  }
+  for (const path of [
+    '/calculator',
+    '/chat',
+    '/compare',
+    '/favorites',
+    '/wallet',
+    '/subscriptions',
+    '/history',
+  ]) {
+    assert.match(domSource, new RegExp(`path="${path.replace('/', '\\/')}"`))
+  }
+})
+
+test('property and liked pages share the website favorites provider and backend flow', () => {
+  assert.match(nativePropertySource, /PublicPageScreen/)
+  assert.match(domSource, /<PropertyFavoritesProvider>/)
+  assert.match(domSource, /path="\/property\/:slugOrId" element=\{<PropertyDetailPage \/>\}/)
+  assert.match(domSource, /path="\/favorites" element=\{<Favorites \/>\}/)
+  assert.match(screenSource, /segments\[propertyIndex \+ 2\] === 'test-drive'/)
 })

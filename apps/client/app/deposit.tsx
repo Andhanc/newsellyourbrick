@@ -1,5 +1,6 @@
-import { Redirect } from 'expo-router'
+import { PublicPageScreen } from '../src/dom/public-page-screen'
+import { useLegacyRoutePath } from '../src/routing/use-legacy-route-path'
 
-export default function DepositRedirect() {
-  return <Redirect href="/wallet" />
+export default function DepositRoute() {
+  return <PublicPageScreen initialPath={useLegacyRoutePath('/wallet')} />
 }

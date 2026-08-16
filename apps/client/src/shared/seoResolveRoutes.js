@@ -1,13 +1,13 @@
-import { isCatalogCountrySegment } from '../src/utils/catalogGeoUrl.js';
+import { isCatalogCountrySegment } from '../legacy/utils/catalogGeoUrl.js';
 import {
   matchCountryKey,
   getCountryLabel,
   getCanonicalRegionLabel,
-} from '../src/utils/propertySearchLocation.js';
+} from '../legacy/utils/propertySearchLocation.js';
 import {
   isAuctionRoute,
   parseAuctionFilterPath,
-} from '../src/utils/auctionFilterUrl.js';
+} from '../legacy/utils/auctionFilterUrl.js';
 import { resolveStaticPageSeo } from './seoStaticResolve.js';
 
 const CO_INVESTMENT_PATH = '/co-investment';

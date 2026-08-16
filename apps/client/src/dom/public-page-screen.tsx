@@ -20,7 +20,9 @@ function normalizeLegacyPath(target: string) {
   const propertyIndex = segments.lastIndexOf('property')
 
   if (propertyIndex >= 0 && segments[propertyIndex + 1]) {
-    return `/property/${encodeURIComponent(decodeURIComponent(segments[propertyIndex + 1]))}${suffix}`
+    const propertyPath = `/property/${encodeURIComponent(decodeURIComponent(segments[propertyIndex + 1]))}`
+    const nestedPath = segments[propertyIndex + 2] === 'test-drive' ? '/test-drive' : ''
+    return `${propertyPath}${nestedPath}${suffix}`
   }
 
   if ((segments[0] === 'shares' || segments[0] === 'co-investment') && segments[1]) {

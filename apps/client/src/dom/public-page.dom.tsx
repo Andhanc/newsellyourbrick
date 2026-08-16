@@ -26,12 +26,22 @@ import PrivateClub from '../legacy/pages/PrivateClub'
 import SearchResults from '../legacy/pages/SearchResults'
 import MapPage from '../legacy/pages/MapPage'
 import Bonuses from '../legacy/pages/Bonuses'
+import Chat from '../legacy/pages/Chat'
+import Compare from '../legacy/pages/Compare'
+import Favorites from '../legacy/pages/Favorites'
+import InvestmentCalculator from '../legacy/pages/InvestmentCalculator'
+import PropertyDetailPage from '../legacy/pages/PropertyDetailPage'
+import Subscriptions from '../legacy/pages/Subscriptions'
+import Wallet from '../legacy/pages/Wallet'
 import PurchasedObjectGuidePage from '../legacy/pages/PurchasedObjectGuidePage'
 import TestDriveBookingPage from '../legacy/pages/TestDriveBookingPage'
 import TestDriveSurveyPage from '../legacy/pages/TestDriveSurveyPage'
 import TestDriveExitFeedbackPage from '../legacy/pages/TestDriveExitFeedbackPage'
 import CabinetProfileRoute from '../legacy/components/CabinetProfileRoute'
-import { LegacyBookingsRedirect } from '../legacy/components/LegacyRouteRedirects'
+import {
+  LegacyBookingsRedirect,
+  LegacyHistoryRedirect,
+} from '../legacy/components/LegacyRouteRedirects'
 import OwnerTestRoute from '../legacy/pages/OwnerTestRoute'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
@@ -117,6 +127,14 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
                 <Route path="/search-results/:country/:city" element={<SearchResults />} />
                 <Route path="/map" element={<MapPage />} />
                 <Route path="/bonuses" element={<Bonuses />} />
+                <Route path="/calculator" element={<InvestmentCalculator />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/compare" element={<Compare />} />
+                <Route path="/wallet" element={<Wallet />} />
+                <Route path="/subscriptions" element={<Subscriptions />} />
+                <Route path="/history" element={<LegacyHistoryRedirect />} />
+                <Route path="/property/:slugOrId" element={<PropertyDetailPage />} />
                 <Route path="/profile" element={<CabinetProfileRoute />} />
                 <Route path="/profile/bookings" element={<LegacyBookingsRedirect />} />
                 <Route path="/owner-test" element={<OwnerTestRoute />} />
