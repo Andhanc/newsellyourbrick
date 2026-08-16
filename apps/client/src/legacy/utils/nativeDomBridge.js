@@ -1,5 +1,16 @@
 let nativeSessionSwitch = null
 let nativeProfileSavedVibration = null
+let nativeNavigate = null
+
+export function setNativeNavigate(handler) {
+  nativeNavigate = typeof handler === 'function' ? handler : null
+}
+
+export async function navigateNativeDom(path) {
+  if (!nativeNavigate) return false
+  await nativeNavigate(path)
+  return true
+}
 
 export function setNativeSessionSwitch(handler) {
   nativeSessionSwitch = typeof handler === 'function' ? handler : null

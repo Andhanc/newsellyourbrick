@@ -94,7 +94,7 @@ function prefersReducedMotion() {
  * Intentional down → white flash → stage.
  * Intentional up → white flash → hero.
  */
-export default function MobileDiscoverPage() {
+export default function MobileDiscoverPage({ hideFooter = false }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const shellRef = useRef(null)
@@ -550,7 +550,7 @@ export default function MobileDiscoverPage() {
               </div>
             </section>
 
-            <MobileDiscoverCatalog />
+            <MobileDiscoverCatalog hideFooter={hideFooter} />
           </div>
 
           <div className={`md-fab${menuOpen ? ' is-open' : ''}`}>

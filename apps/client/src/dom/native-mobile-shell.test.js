@@ -10,6 +10,14 @@ const roleSwitchSource = await readFile(
   new URL('../legacy/hooks/useRoleSwitchFlow.js', import.meta.url),
   'utf8',
 )
+const discoverSource = await readFile(
+  new URL('../legacy/pages/MobileDiscoverCatalog.jsx', import.meta.url),
+  'utf8',
+)
+const loginSource = await readFile(
+  new URL('../legacy/components/LoginModal.jsx', import.meta.url),
+  'utf8',
+)
 
 test('profile save celebration invokes the native Android vibration bridge once per opening', () => {
   assert.match(screenSource, /Vibration\.vibrate\(\[0, 350, 120, 350, 120, 450, 120, 450\], false\)/)
@@ -24,6 +32,14 @@ test('native Expo pages suppress only the website footer', () => {
     shellCss,
     /\.expo-public-page #site-footer,[\s\S]*\.expo-public-page \.footer,[\s\S]*display:\s*none !important/,
   )
+  assert.match(domSource, /<MobileDiscoverPage hideFooter \/>/)
+  assert.match(discoverSource, /!hideFooter/)
+})
+
+test('all email login fallbacks use the native router instead of file URLs', () => {
+  assert.match(loginSource, /await navigateAfterAuth\(redirectPath\)/)
+  assert.match(loginSource, /navigateNativeDom\(path\)/)
+  assert.doesNotMatch(loginSource, /window\.location\.href = redirectPath/)
 })
 
 test('native role switching adopts the new backend session before routing', () => {

@@ -12,6 +12,7 @@ import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
+import { isBundledNativeDom, navigateNativeDom } from '../utils/nativeDomBridge'
 import './LoginModal.css'
 
 const LazyWhatsAppVerificationModal = lazy(() => import('./WhatsAppVerificationModal'))
@@ -77,6 +78,19 @@ const LoginModal = ({
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env?.VITE_TELEGRAM_BOT_USERNAME)
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
+
+  const navigateAfterAuth = async (path) => {
+    if (nativeNavigate) {
+      await nativeNavigate(path)
+      return
+    }
+    if (isBundledNativeDom()) {
+      const forwarded = await navigateNativeDom(path)
+      if (!forwarded) navigate(path, { replace: true })
+      return
+    }
+    window.location.assign(path)
+  }
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
@@ -395,8 +409,9 @@ const LoginModal = ({
             
             console.log('✅ Вход успешен, редирект на:', redirectPath, 'для роли:', userRole);
             
-            // Обновляем страницу для применения изменений
-            window.location.href = redirectPath;
+            // В Expo DOM абсолютный browser redirect превращается в file:///profile.
+            // Всегда передаём внутренний путь нативному Expo Router.
+            await navigateAfterAuth(redirectPath);
           }
         } else {
           // Проверяем, заблокирован ли пользователь
@@ -969,7 +984,7 @@ const LoginModal = ({
       await nativeNavigate('/profile')
     } else {
       // На сайте полное обновление синхронизирует локальную email-сессию со всем интерфейсом.
-      window.location.href = '/profile'
+      await navigateAfterAuth('/profile')
     }
   }
 

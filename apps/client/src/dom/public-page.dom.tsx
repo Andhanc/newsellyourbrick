@@ -35,6 +35,7 @@ import { LegacyBookingsRedirect } from '../legacy/components/LegacyRouteRedirect
 import OwnerTestRoute from '../legacy/pages/OwnerTestRoute'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
+  setNativeNavigate,
   setNativeProfileSavedVibration,
   setNativeSessionSwitch,
 } from '../legacy/utils/nativeDomBridge'
@@ -94,7 +95,7 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
           <main className={`app-layout${isDiscover ? ' app-layout--mobile-discover' : ''}`}>
             <div className="app-layout__content">
               <Routes>
-                <Route path="/" element={<MobileDiscoverPage />} />
+                <Route path="/" element={<MobileDiscoverPage hideFooter />} />
                 <Route path="/auction" element={<Home />} />
                 <Route path="/auction/:segment1/:segment2?" element={<Home />} />
                 <Route path="/co-investment" element={<Shares />} />
@@ -135,11 +136,13 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
 function syncNativeSession(
   user: PublicPageProps['nativeUser'],
   onLogout: PublicPageProps['onLogout'],
+  onNavigate: PublicPageProps['onNavigate'],
   onSwitchSession: PublicPageProps['onSwitchSession'],
   onProfileSavedVibration: PublicPageProps['onProfileSavedVibration'],
 ) {
   setNativeClerkUser(user)
   setNativeClerkSignOut(onLogout)
+  setNativeNavigate(onNavigate)
   setNativeSessionSwitch(onSwitchSession)
   setNativeProfileSavedVibration(onProfileSavedVibration)
   if (typeof window === 'undefined') return
@@ -168,7 +171,7 @@ export default function PublicPage({
   onProfileSavedVibration,
   nativeUser,
 }: PublicPageProps) {
-  syncNativeSession(nativeUser, onLogout, onSwitchSession, onProfileSavedVibration)
+  syncNativeSession(nativeUser, onLogout, onNavigate, onSwitchSession, onProfileSavedVibration)
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <PublicRoutes initialPath={initialPath} onNavigate={onNavigate} />

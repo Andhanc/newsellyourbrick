@@ -8,6 +8,7 @@ import '../legacy/i18n/config'
 import '../legacy/App.css'
 import '../legacy/components/LoginModal.css'
 import LoginModal from '../legacy/components/LoginModal'
+import { setNativeNavigate } from '../legacy/utils/nativeDomBridge'
 
 const NativeLoginModal = LoginModal as unknown as (props: {
   isOpen: boolean
@@ -82,6 +83,7 @@ function NavigationBridge({ onNavigate }: Pick<AuthPageProps, 'onNavigate'>) {
 }
 
 function AuthModal({ onClose, onNavigate, onLogin, onSocialAuth, onAuthSuccess }: Omit<AuthPageProps, 'dom'>) {
+  setNativeNavigate(onNavigate)
   return (
     <>
       <NavigationBridge onNavigate={onNavigate} />

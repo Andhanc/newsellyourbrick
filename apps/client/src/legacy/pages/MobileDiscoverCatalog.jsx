@@ -355,7 +355,7 @@ function NewsSection({ articles }) {
 /**
  * Property catalog on Mobile Discover — one full screen per sale format.
  */
-export default function MobileDiscoverCatalog() {
+export default function MobileDiscoverCatalog({ hideFooter = false }) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const rootRef = useRef(null)
@@ -781,9 +781,11 @@ export default function MobileDiscoverCatalog() {
       <div className="md-free-tail" data-md-free-tail="">
         <NewsSection articles={newsArticles} />
         <MobileDiscoverFaq />
-        <div className="md-footer-wrap">
-          <Footer />
-        </div>
+        {!hideFooter ? (
+          <div className="md-footer-wrap">
+            <Footer />
+          </div>
+        ) : null}
       </div>
     </div>
   )
