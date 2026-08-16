@@ -32,6 +32,7 @@ import TestDriveSurveyPage from '../legacy/pages/TestDriveSurveyPage'
 import TestDriveExitFeedbackPage from '../legacy/pages/TestDriveExitFeedbackPage'
 import CabinetProfileRoute from '../legacy/components/CabinetProfileRoute'
 import { LegacyBookingsRedirect } from '../legacy/components/LegacyRouteRedirects'
+import OwnerTestRoute from '../legacy/pages/OwnerTestRoute'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
   setNativeClerkSignOut,
@@ -97,6 +98,9 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
                 <Route path="/bonuses" element={<Bonuses />} />
                 <Route path="/profile" element={<CabinetProfileRoute />} />
                 <Route path="/profile/bookings" element={<LegacyBookingsRedirect />} />
+                <Route path="/owner-test" element={<OwnerTestRoute />} />
+                <Route path="/owner-test/:view" element={<OwnerTestRoute />} />
+                <Route path="/owner-test/:view/:propertyId" element={<OwnerTestRoute />} />
                 <Route path="/profile/purchased/:propertyId" element={<PurchasedObjectGuidePage />} />
                 <Route path="/property/:slugOrId/test-drive" element={<TestDriveBookingPage />} />
                 <Route path="/test-drive/survey/:token" element={<TestDriveSurveyPage />} />

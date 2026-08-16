@@ -33,10 +33,6 @@ function normalizeLegacyPath(target: string) {
     '/shares': '/co-investment',
   }
 
-  if (pathname === '/owner-test' || pathname.startsWith('/owner-test/')) {
-    return `/owner${suffix}`
-  }
-
   return `${aliases[pathname] || pathname}${suffix}`
 }
 
