@@ -5,16 +5,26 @@ import {
   getStoredNumericUserId,
 } from '../services/authService'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
-import { userHasVipAccess } from './useCabinetOverviewData'
+import { effectiveDisplayTier, userHasVipAccess } from './useCabinetOverviewData'
+import { canAccessBuyerFeature } from '../utils/subscriptionAccess'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
+function tierToPlanName(tier) {
+  if (tier === 'vip') return 'VIP'
+  if (tier === 'starter') return 'Starter'
+  return 'Pro'
+}
+
 /**
- * Лёгкая проверка VIP для листингов (аукцион): без истории/превью кабинета из useCabinetOverviewData.
+ * Лёгкая проверка VIP / тарифа для листингов и лендингов:
+ * без истории/превью кабинета из useCabinetOverviewData.
  */
 export function useViewerVipAccess() {
   const [numericUserId, setNumericUserId] = useState(() => getStoredNumericUserId())
   const [cabinetVipActive, setCabinetVipActive] = useState(false)
+  const [displayTier, setDisplayTier] = useState(/** @type {'starter' | 'pro' | 'vip'} */ ('starter'))
+  const [resolved, setResolved] = useState(false)
 
   useEffect(() => {
     const applyFromStorage = () => {
@@ -41,6 +51,8 @@ export function useViewerVipAccess() {
       }
       if (!uid) {
         setCabinetVipActive(false)
+        setDisplayTier('starter')
+        setResolved(true)
         return
       }
       try {
@@ -48,38 +60,41 @@ export function useViewerVipAccess() {
         const json = res.ok ? await res.json().catch(() => null) : null
         if (cancelled) return
         const data = json?.success && json?.data ? json.data : null
-        setCabinetVipActive(
-          userHasVipAccess({
-            subscription: data?.subscription ?? null,
-            vipClub: data?.vipClub,
-          }),
-        )
+        const subscription = data?.subscription ?? null
+        const vipClub = data?.vipClub
+        setCabinetVipActive(userHasVipAccess({ subscription, vipClub }))
+        setDisplayTier(effectiveDisplayTier(subscription, vipClub))
+        setResolved(true)
       } catch {
-        if (!cancelled) setCabinetVipActive(false)
+        if (!cancelled) {
+          setCabinetVipActive(false)
+          setDisplayTier('starter')
+          setResolved(true)
+        }
       }
     }
 
-    const schedule =
-      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
-        ? () => window.requestIdleCallback(() => void loadVip(), { timeout: 4500 })
-        : () => window.setTimeout(() => void loadVip(), 900)
-
-    const handle = schedule()
+    void loadVip()
     const onBillingUpdated = () => void loadVip()
     window.addEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBillingUpdated)
 
     return () => {
       cancelled = true
       window.removeEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBillingUpdated)
-      if (typeof handle === 'number') {
-        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-          window.cancelIdleCallback(handle)
-        } else if (typeof window !== 'undefined') {
-          window.clearTimeout(handle)
-        }
-      }
     }
   }, [numericUserId])
 
-  return { cabinetVipActive, numericUserId }
+  const canAccess = (feature) => {
+    if (!resolved) return false
+    return canAccessBuyerFeature(displayTier, feature)
+  }
+
+  return {
+    cabinetVipActive,
+    numericUserId,
+    displayTier,
+    ownedPlanName: tierToPlanName(displayTier),
+    resolved,
+    canAccess,
+  }
 }

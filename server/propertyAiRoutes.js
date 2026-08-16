@@ -4,6 +4,7 @@ import {
   appendPropertyAiMessage,
   createPropertyAiReport,
   ensurePropertyAiConversation,
+  failStalePropertyAiReports,
   findReusablePropertyAiReport,
   getOwnedPropertyAiReport,
   listPropertyAiHistory,
@@ -89,6 +90,7 @@ export function registerPropertyAiRoutes(app) {
         propertyId,
         propertyTable: property.source_table,
       })
+      await failStalePropertyAiReports({ conversationId: conversation.id })
       const reusable = await findReusablePropertyAiReport({
         conversationId: conversation.id,
         category: request.category,

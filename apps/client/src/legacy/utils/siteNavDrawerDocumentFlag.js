@@ -64,10 +64,7 @@ function acquireScrollLock() {
   SCROLL_LOCK_STATE.count += 1
 }
 
-function releaseScrollLock() {
-  SCROLL_LOCK_STATE.count = Math.max(0, SCROLL_LOCK_STATE.count - 1)
-  if (SCROLL_LOCK_STATE.count > 0) return
-
+function clearScrollLockSideEffects() {
   document.removeEventListener('touchmove', onTouchMove)
   document.removeEventListener('wheel', onWheel)
 
@@ -86,6 +83,25 @@ function releaseScrollLock() {
     el.style.overflowY = overflowY
   })
   SCROLL_LOCK_STATE.nested = []
+}
+
+function releaseScrollLock() {
+  SCROLL_LOCK_STATE.count = Math.max(0, SCROLL_LOCK_STATE.count - 1)
+  if (SCROLL_LOCK_STATE.count > 0) return
+  clearScrollLockSideEffects()
+}
+
+/** Сбрасывает «залипшую» блокировку после навигации (счётчик мог рассинхронизироваться). */
+export function forceResetSiteNavScrollLock() {
+  document.documentElement.classList.remove('site-nav-drawer-open')
+  if (SCROLL_LOCK_STATE.count > 0) {
+    SCROLL_LOCK_STATE.count = 0
+    clearScrollLockSideEffects()
+  }
+  SCROLL_LOCK_STATE.bodyOverflow = ''
+  SCROLL_LOCK_STATE.htmlOverflow = ''
+  SCROLL_LOCK_STATE.appLayoutOverflow = ''
+  SCROLL_LOCK_STATE.appLayoutOverflowY = ''
 }
 
 export function setSiteNavDrawerOpen(open) {

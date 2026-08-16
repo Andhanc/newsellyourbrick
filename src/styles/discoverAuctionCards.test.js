@@ -39,9 +39,8 @@ test('discover theme matches portal auction cards: pricing stack and tiffany CTA
   assert.match(css, /\.discover-auction-cards \.auction-card__btn--outline/)
   assert.match(css, /#0099A9/)
   assert.match(css, /#16a34a/)
-  assert.match(css, /\.auction-card__btn-text-full[\s\S]*display:\s*inline\s*!important/)
-  assert.match(css, /\.auction-card__btn-text-short[\s\S]*display:\s*none\s*!important/)
-  assert.match(css, /aspect-ratio:\s*3\s*\/\s*2\s*!important/)
+  assert.match(css, /\.discover-auction-cards \.auction-card__btn-text\s*\{[\s\S]*display:\s*inline/)
+  assert.match(css, /aspect-ratio:\s*4\s*\/\s*3\s*!important/)
   assert.match(css, /\.auction-card__until-pill[\s\S]*display:\s*none\s*!important/)
   assert.match(css, /\.auction-card__countdown-pill[\s\S]*max-width:\s*100%\s*!important/)
 })
@@ -58,7 +57,7 @@ test('keeps two columns when bid and buy-now actions are both present', () => {
   )
 })
 
-test('main-page buy-now card swaps timer and favorite, widens timer, and stacks actions', () => {
+test('main-page buy-now card swaps timer and favorite, widens timer, and keeps dual CTAs in one row', () => {
   assert.match(
     css,
     /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__favorite[\s\S]*top:\s*8px\s*!important[\s\S]*bottom:\s*auto\s*!important/,
@@ -69,7 +68,7 @@ test('main-page buy-now card swaps timer and favorite, widens timer, and stacks 
   )
   assert.match(
     css,
-    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
   )
   assert.ok(
     card.includes('`${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`'),
@@ -84,6 +83,29 @@ test('main-page buy-now card swaps timer and favorite, widens timer, and stacks 
   assert.match(
     css,
     /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__btn[\s\S]*font-size:\s*0\.88rem\s*!important/,
+  )
+})
+
+test('overlay countdown restores urgency color classes on auction cards', () => {
+  assert.match(card, /auction-card__countdown-pill/)
+  assert.match(card, /getListingAuctionTimerStatus/)
+  assert.match(card, /isListingAuctionTimerCritical/)
+  assert.match(card, /timer-critical/)
+  assert.match(css, /\.auction-card__countdown-pill\.timer-long/)
+  assert.match(css, /\.auction-card__countdown-pill\.timer-medium/)
+  assert.match(css, /\.auction-card__countdown-pill\.timer-short/)
+  assert.match(css, /auction-card-countdown-pulse/)
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-long[\s\S]*color:\s*#0099A9\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-medium[\s\S]*color:\s*#f97316\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-short[\s\S]*color:\s*#dc2626\s*!important/,
   )
 })
 
@@ -108,13 +130,11 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
     css,
     /\.properties-grid--auction-cards[\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
   )
+  assert.match(card, /auction-card__btn-text/)
+  assert.match(card, /visibleActionCount === 1[\s\S]*placeBid/)
   assert.match(
     css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn-text-short[\s\S]*display:\s*inline\s*!important/,
-  )
-  assert.match(
-    css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media[\s\S]*aspect-ratio:\s*4\s*\/\s*3\s*!important/,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media[\s\S]*aspect-ratio:\s*5\s*\/\s*4\s*!important/,
   )
 })
 
@@ -148,9 +168,11 @@ test('phone listing cards put short CTAs in one row and use the homepage tiffany
   assert.match(card, /auctionCardBuyShort/)
 })
 
-test('card view groups lots by visible action count and keeps sold lots openable', () => {
+test('card view keeps ending-soon timer order ahead of action-group grouping', () => {
   assert.match(mobileLayout, /getAuctionCardActionGroup/)
   assert.match(mobileLayout, /actionGroup:\s*getAuctionCardActionGroup/)
+  assert.match(mobileLayout, /compareListingsByAuctionTimer/)
+  assert.match(mobileLayout, /byTimer/)
   assert.match(card, /auction-card--actions-\$\{visibleActionCount\}/)
   assert.match(card, /auction-card__sold-cta-open/)
   assert.match(card, /onOpen\(property\)/)

@@ -146,7 +146,10 @@ export default function OwnerTestDrivePage() {
             className="otd-mob-topbar__menu"
             aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+              setMenuOpen(true)
+            }}
           >
             <Menu size={22} strokeWidth={2} />
           </button>

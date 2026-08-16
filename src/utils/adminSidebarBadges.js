@@ -108,7 +108,7 @@ export function countUnseenPurchasePending(requests) {
   return countUnseenPurchaseActionable(requests);
 }
 
-const SECTIONS_CLEARED_ON_VIEW = new Set(['chat', 'purchase_requests']);
+const SECTIONS_CLEARED_ON_VIEW = new Set(['purchase_requests']);
 
 export function recomputeStatisticsBadge(badges = {}) {
   return (
@@ -166,9 +166,6 @@ export function buildModerationBadgesPatch(pendingDocuments = [], pendingPropert
 /** Пометить раздел просмотренным (localStorage). */
 export function markAdminSectionViewed(sectionId) {
   switch (sectionId) {
-    case 'chat':
-      markLiveChatAllViewed();
-      break;
     case 'purchase_requests':
       markPurchaseRequestsViewed();
       break;

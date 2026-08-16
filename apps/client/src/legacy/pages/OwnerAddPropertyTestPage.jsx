@@ -35,11 +35,17 @@ import { scrollMainTo } from '../utils/mainScroll'
 import {
   OAP_DRAFT_SAVE_DEBOUNCE_MS,
   loadOapDraft,
+  loadOapDraftForRestore,
   saveOapDraftPayload,
-  clearOapDraft,
+  saveOapDraftFormSync,
+  clearOapDraftAfterPublish,
+  isOapDraftSaveSuppressed,
+  suppressOapDraftSaves,
   buildOapDraftPayload,
   restoreOapDraftState,
   hasMeaningfulDraftData,
+  persistOapDraftMediaNow,
+  OAP_DRAFT_KEY_PREFIX,
 } from '../utils/oapAddPropertyDraft'
 import {
   PURCHASED_LISTING_DRAFT_FLAG,
@@ -377,6 +383,15 @@ export default function OwnerAddPropertyTestPage() {
   }, [mobileScreen, isMobile, scrollJourneyToTop])
 
   useEffect(() => {
+    if (!isMobile) {
+      document.documentElement.classList.remove('oap-journey-mobile-active')
+      return undefined
+    }
+    document.documentElement.classList.add('oap-journey-mobile-active')
+    return () => document.documentElement.classList.remove('oap-journey-mobile-active')
+  }, [isMobile])
+
+  useEffect(() => {
     preloadOapWizardImages()
   }, [])
 
@@ -409,6 +424,19 @@ export default function OwnerAddPropertyTestPage() {
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
   const saveDraftTimeoutRef = useRef(null)
+  const draftSnapshotRef = useRef({
+    form: INITIAL_FORM,
+    step: 1,
+    mobileScreen: 1,
+    selectedAmenities: [],
+  })
+  const draftMediaRef = useRef({
+    photos: [],
+    videos: [],
+    requiredDocuments: { ownership: null, noDebts: null },
+    additionalDocuments: [],
+    purchasedListingMeta: null,
+  })
 
   const buildingTypeOptions = useMemo(
     () => [
@@ -684,6 +712,7 @@ export default function OwnerAddPropertyTestPage() {
       await buildOapDraftPayload({
         form,
         step,
+        mobileScreen,
         photos,
         videos,
         requiredDocuments,
@@ -740,7 +769,48 @@ export default function OwnerAddPropertyTestPage() {
     }
 
     setShowVerificationModal(false)
-    clearOapDraft()
+
+    // Stop autosave first — otherwise unmount/debounce rewrites the cleared draft.
+    draftReadyRef.current = false
+    if (saveDraftTimeoutRef.current) {
+      clearTimeout(saveDraftTimeoutRef.current)
+      saveDraftTimeoutRef.current = null
+    }
+    clearOapDraftAfterPublish()
+
+    draftSnapshotRef.current = {
+      form: INITIAL_FORM,
+      step: 1,
+      mobileScreen: 1,
+      selectedAmenities: [],
+    }
+    draftMediaRef.current = {
+      photos: [],
+      videos: [],
+      requiredDocuments: { ownership: null, noDebts: null },
+      additionalDocuments: [],
+      purchasedListingMeta: null,
+    }
+    setForm(INITIAL_FORM)
+    setPhotos([])
+    setVideos([])
+    setRequiredDocuments({ ownership: null, noDebts: null })
+    setAdditionalDocuments([])
+    setSelectedAmenities([])
+    setPurchasedListingMeta(null)
+    setParamErrors({})
+    setLocationErrors({})
+    setDocumentErrors({})
+    setTestDriveErrors({})
+    setListingErrors({})
+    setPricingErrors({})
+    setStep(1)
+    setMobileScreen(1)
+
+    // Allow a fresh wizard draft again (empty form won't persist until user enters data).
+    suppressOapDraftSaves(4000)
+    draftReadyRef.current = true
+
     window.dispatchEvent(new CustomEvent('owner-properties-update'))
     setShowJourneyPublishDrawer(true)
     setIsSubmitting(false)
@@ -1145,7 +1215,7 @@ export default function OwnerAddPropertyTestPage() {
         clearStalePurchasedPrefillDraft()
       }
 
-      const draft = loadOapDraft()
+      const draft = loadOapDraftForRestore()
       if (!draft || !hasMeaningfulDraftData(draft)) {
         draftReadyRef.current = true
         return
@@ -1159,8 +1229,13 @@ export default function OwnerAddPropertyTestPage() {
 
       const mergedForm = { ...INITIAL_FORM, ...restored.form }
       setForm(mergedForm)
-      setStep(migrateWizardStep(restored.step))
-      setMobileScreen(mapStepToJourneyScreen(migrateWizardStep(restored.step)))
+      const restoredStep = migrateWizardStep(restored.step)
+      setStep(restoredStep)
+      const nextMobileScreen =
+        typeof restored.mobileScreen === 'number'
+          ? restored.mobileScreen
+          : mapStepToJourneyScreen(restoredStep)
+      setMobileScreen(nextMobileScreen)
       const restoredPhotos =
         restored.photos?.length > 0
           ? restored.photos
@@ -1187,6 +1262,23 @@ export default function OwnerAddPropertyTestPage() {
       if (draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
         setPurchasedListingMeta(draft[PURCHASED_LISTING_DRAFT_FLAG])
       }
+
+      // Пересохраняем под текущий ключ пользователя, чтобы следующий визит точно нашёл данные.
+      saveOapDraftPayload({
+        ...draft,
+        form: mergedForm,
+        step: restoredStep,
+        mobileScreen: nextMobileScreen,
+        selectedAmenities: restored.selectedAmenities,
+        savedAt: Date.now(),
+      })
+      saveOapDraftFormSync({
+        form: mergedForm,
+        step: restoredStep,
+        mobileScreen: nextMobileScreen,
+        selectedAmenities: restored.selectedAmenities,
+      })
+
       draftReadyRef.current = true
     })()
 
@@ -1195,47 +1287,121 @@ export default function OwnerAddPropertyTestPage() {
     }
   }, [])
 
+  draftSnapshotRef.current = { form, step, mobileScreen, selectedAmenities }
+  draftMediaRef.current = {
+    photos,
+    videos,
+    requiredDocuments,
+    additionalDocuments,
+    purchasedListingMeta,
+  }
+
+  const flushFullDraft = useCallback(() => {
+    if (!draftReadyRef.current) return
+    if (isOapDraftSaveSuppressed()) return
+    void (async () => {
+      if (isOapDraftSaveSuppressed() || !draftReadyRef.current) return
+      const snapshot = draftSnapshotRef.current
+      const media = draftMediaRef.current
+      const existingDraft = loadOapDraftForRestore()
+      const payload = attachListingDraftMetadata(
+        await buildOapDraftPayload({
+          form: snapshot.form,
+          step: snapshot.step,
+          mobileScreen: snapshot.mobileScreen,
+          photos: media.photos,
+          videos: media.videos,
+          requiredDocuments: media.requiredDocuments,
+          additionalDocuments: media.additionalDocuments,
+          selectedAmenities: snapshot.selectedAmenities,
+        }),
+        { purchasedMeta: media.purchasedListingMeta, existingDraft },
+      )
+      if (isOapDraftSaveSuppressed() || !draftReadyRef.current) return
+      if (!hasMeaningfulDraftData(payload)) return
+      saveOapDraftPayload(payload)
+      saveOapDraftPayload(payload, OAP_DRAFT_KEY_PREFIX)
+      saveOapDraftFormSync({
+        form: payload.form,
+        step: payload.step,
+        mobileScreen: payload.mobileScreen,
+        selectedAmenities: payload.selectedAmenities,
+      })
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (!draftReadyRef.current) return undefined
+    saveOapDraftFormSync(draftSnapshotRef.current)
+    return undefined
+  }, [form, step, mobileScreen, selectedAmenities])
+
+  useEffect(() => {
+    if (!draftReadyRef.current) return undefined
+
+    const snapshot = draftSnapshotRef.current
+    void persistOapDraftMediaNow({
+      photos,
+      videos,
+      requiredDocuments,
+      additionalDocuments,
+      form: snapshot.form,
+      step: snapshot.step,
+      mobileScreen: snapshot.mobileScreen,
+      selectedAmenities: snapshot.selectedAmenities,
+    })
+    return undefined
+  }, [photos, videos, requiredDocuments, additionalDocuments])
+
   useEffect(() => {
     if (!draftReadyRef.current) return undefined
 
     if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
     saveDraftTimeoutRef.current = setTimeout(() => {
       saveDraftTimeoutRef.current = null
-      void (async () => {
-        const existingDraft = loadOapDraft()
-        const payload = attachListingDraftMetadata(
-          await buildOapDraftPayload({
-            form,
-            step,
-            photos,
-            videos,
-            requiredDocuments,
-            additionalDocuments,
-            selectedAmenities,
-          }),
-          { purchasedMeta: purchasedListingMeta, existingDraft },
-        )
-        if (!hasMeaningfulDraftData(payload)) {
-          clearOapDraft()
-          return
-        }
-        saveOapDraftPayload(payload)
-      })()
+      flushFullDraft()
     }, OAP_DRAFT_SAVE_DEBOUNCE_MS)
 
     return () => {
-      if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
+      if (saveDraftTimeoutRef.current) {
+        clearTimeout(saveDraftTimeoutRef.current)
+        saveDraftTimeoutRef.current = null
+      }
     }
   }, [
     form,
     step,
+    mobileScreen,
     photos,
     videos,
     requiredDocuments,
     additionalDocuments,
     selectedAmenities,
     purchasedListingMeta,
+    flushFullDraft,
   ])
+
+  useEffect(() => {
+    return () => {
+      if (!draftReadyRef.current) return
+      saveOapDraftFormSync(draftSnapshotRef.current)
+      flushFullDraft()
+    }
+  }, [flushFullDraft])
+
+  useEffect(() => {
+    const onPageHide = () => {
+      if (!draftReadyRef.current) return
+      saveOapDraftFormSync(draftSnapshotRef.current)
+      flushFullDraft()
+    }
+    window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('beforeunload', onPageHide)
+    return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      window.removeEventListener('beforeunload', onPageHide)
+    }
+  }, [flushFullDraft])
 
   useEffect(() => {
     if (isEmbedded) return undefined
@@ -1244,8 +1410,12 @@ export default function OwnerAddPropertyTestPage() {
   }, [isEmbedded])
 
   useEffect(() => {
+    if (isMobile) {
+      scrollJourneyToTop()
+      return
+    }
     scrollMainTo(0, 0, 'auto')
-  }, [step])
+  }, [step, isMobile, scrollJourneyToTop])
 
   useEffect(() => {
     return () => {
@@ -1454,6 +1624,9 @@ export default function OwnerAddPropertyTestPage() {
         descriptionMaxLength={DESCRIPTION_MAX_LENGTH}
         onTitleChange={(value) => updateField('title', value)}
         onDescriptionChange={(value) => updateField('description', value)}
+        onNext={handleJourneyNext}
+        nextLabel={isSubmitting ? t('oap_publishSubmitting') : t('oap_publishNext')}
+        nextDisabled={!canProceedJourney || isSubmitting}
       />
     ),
     2: () => renderStepBasics({ mobileSection: 'type-location', hideWizardChrome: true }),
@@ -1505,27 +1678,29 @@ export default function OwnerAddPropertyTestPage() {
                 {journeyScreenContent[mobileScreen]?.()}
               </div>
             </div>
-            <footer className="oap-footer oap-footer--journey">
-              <div className="oap-journey-footer__actions">
-                <button
-                  type="button"
-                  className="oap-journey-footer__back"
-                  aria-label={t('oap_publishBack')}
-                  onClick={handleJourneyBack}
-                  disabled={mobileScreen === 1 || isSubmitting}
-                >
-                  <ArrowLeft size={22} strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
-                  onClick={handleJourneyNext}
-                  disabled={!canProceedJourney || isSubmitting}
-                >
-                  {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
-                </button>
-              </div>
-            </footer>
+            {mobileScreen !== 1 ? (
+              <footer className="oap-footer oap-footer--journey">
+                <div className="oap-journey-footer__actions">
+                  <button
+                    type="button"
+                    className="oap-journey-footer__back"
+                    aria-label={t('oap_publishBack')}
+                    onClick={handleJourneyBack}
+                    disabled={isSubmitting}
+                  >
+                    <ArrowLeft size={22} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    onClick={handleJourneyNext}
+                    disabled={!canProceedJourney || isSubmitting}
+                  >
+                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                  </button>
+                </div>
+              </footer>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -1559,27 +1734,29 @@ export default function OwnerAddPropertyTestPage() {
                 {journeyScreenContent[mobileScreen]?.()}
               </div>
             </div>
-            <footer className="oap-footer oap-footer--journey oap-footer--journey-desktop">
-              <div className="oap-journey-footer__actions">
-                <button
-                  type="button"
-                  className="oap-journey-footer__back"
-                  aria-label={t('oap_publishBack')}
-                  onClick={handleJourneyBack}
-                  disabled={mobileScreen === 1 || isSubmitting}
-                >
-                  <ArrowLeft size={22} strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
-                  onClick={handleJourneyNext}
-                  disabled={!canProceedJourney || isSubmitting}
-                >
-                  {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
-                </button>
-              </div>
-            </footer>
+            {mobileScreen !== 1 ? (
+              <footer className="oap-footer oap-footer--journey oap-footer--journey-desktop">
+                <div className="oap-journey-footer__actions">
+                  <button
+                    type="button"
+                    className="oap-journey-footer__back"
+                    aria-label={t('oap_publishBack')}
+                    onClick={handleJourneyBack}
+                    disabled={isSubmitting}
+                  >
+                    <ArrowLeft size={22} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    onClick={handleJourneyNext}
+                    disabled={!canProceedJourney || isSubmitting}
+                  >
+                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                  </button>
+                </div>
+              </footer>
+            ) : null}
           </div>
         </div>
       )}

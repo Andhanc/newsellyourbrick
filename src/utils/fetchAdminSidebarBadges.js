@@ -2,8 +2,6 @@ import { getApiBaseUrl } from './apiConfig';
 import {
   countUnseenPurchaseActionable,
   countUnseenTestDriveCancellations,
-  readAdminLs,
-  LS_LIVE_CHAT_ALL_READ,
 } from './adminSidebarBadges';
 
 export const ADMIN_SIDEBAR_BADGE_IDS = [
@@ -91,11 +89,7 @@ export async function fetchAdminSidebarBadges() {
     fetch(`${base}/properties/pending`).catch(() => null),
     fetch(`${base}/documents/unreviewed`).catch(() => null),
     (async () => {
-      const sinceRaw = readAdminLs(LS_LIVE_CHAT_ALL_READ);
-      const since = sinceRaw || '1970-01-01T00:00:00.000Z';
-      return fetch(
-        `${base}/admin/live-chat/user-messages-since?since=${encodeURIComponent(since)}`,
-      ).catch(() => null);
+      return fetch(`${base}/admin/live-chat/user-messages-since`).catch(() => null);
     })(),
     fetch(`${base}/purchase-requests?limit=1000`).catch(() => null),
     fetch(`${base}/bonus-submissions/pending`).catch(() => null),

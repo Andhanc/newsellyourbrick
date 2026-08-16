@@ -55,11 +55,48 @@ function compactProperty(property = {}) {
   return Object.fromEntries(keys.filter((key) => property[key] != null).map((key) => [key, property[key]]))
 }
 
+/** Не отдаём в Gemini битые /uploads (на Railway файлы часто 404) — иначе запрос зависает. */
+export async function pickReachablePropertyAiImages(urls = [], overrides = {}) {
+  const fetchImpl = overrides.fetchImpl || fetch
+  const timeoutMs = Number(overrides.timeoutMs) || 2500
+  const limit = Math.max(1, Number(overrides.limit) || 4)
+  const selected = []
+  for (const url of urls) {
+    if (selected.length >= limit) break
+    if (!/^https:\/\//i.test(String(url || ''))) continue
+    try {
+      const response = await fetchImpl(url, {
+        method: 'HEAD',
+        redirect: 'follow',
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+      if (response.ok) {
+        selected.push(url)
+        continue
+      }
+      // Некоторые CDN не отдают HEAD — пробуем лёгкий GET.
+      if (response.status === 405 || response.status === 403) {
+        const getResponse = await fetchImpl(url, {
+          method: 'GET',
+          headers: { Range: 'bytes=0-0' },
+          redirect: 'follow',
+          signal: AbortSignal.timeout(timeoutMs),
+        })
+        if (getResponse.ok || getResponse.status === 206) selected.push(url)
+      }
+    } catch {
+      /* skip unreachable */
+    }
+  }
+  return selected
+}
+
 export async function requestPropertyAiModel({ category, question, property }, overrides = {}) {
   const apiKey = normalizeApiKey(overrides.apiKey || process.env.OPENROUTER_API_KEY)
   if (!apiKey) throw new Error('OPENROUTER_API_KEY не настроен')
   const fetchImpl = overrides.fetchImpl || fetch
   const mediaBaseUrl = overrides.mediaBaseUrl || propertyAiMediaBaseUrl()
+  const pickImages = overrides.pickImages || pickReachablePropertyAiImages
 
   const system = `Ты — осторожный аналитик недвижимости SellYourBrick. Отвечай на русском языке.
 Сначала прямо ответь на заданный вопрос в поле directAnswer: 2–4 содержательных предложения.
@@ -72,9 +109,11 @@ export async function requestPropertyAiModel({ category, question, property }, o
 Сделай короткий ответ для чата и содержание красивого отчёта на 6–7 страниц. Не возвращай HTML или markdown.`
   const text = `Категория: ${category}\nВопрос: ${question}\nДанные объекта:\n${JSON.stringify(compactProperty(property), null, 2)}`
   const content = [{ type: 'text', text }]
-  for (const value of (Array.isArray(property.images) ? property.images : []).slice(0, 4)) {
-    const url = resolvePropertyAiImageUrl(value, mediaBaseUrl)
-    if (!url || !/^(?:https:|data:)/i.test(url)) continue
+  const candidateUrls = (Array.isArray(property.images) ? property.images : [])
+    .map((value) => resolvePropertyAiImageUrl(value, mediaBaseUrl))
+    .filter(Boolean)
+  const imageUrls = await pickImages(candidateUrls, { fetchImpl, limit: 4 })
+  for (const url of imageUrls) {
     content.push({ type: 'image_url', image_url: { url } })
   }
 

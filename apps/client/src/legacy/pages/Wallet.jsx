@@ -51,6 +51,10 @@ import {
   clearWalletEntryFrom,
   setWalletEntryFrom,
 } from '../utils/walletNavigation'
+import {
+  fetchIsBuyerProfileCompleteForDeposit,
+} from '../utils/depositProfileGate'
+import { getCabinetDataPath } from '../utils/cabinetRoutes'
 import './Wallet.css'
 import './Wallet.bank.css'
 
@@ -250,6 +254,37 @@ const WalletInner = () => {
   const tonWallet = useTonWallet()
   const [tonPaymentLoading, setTonPaymentLoading] = useState(false)
   const [tonPaymentSuccess, setTonPaymentSuccess] = useState(false)
+  const [topUpGateLoading, setTopUpGateLoading] = useState(false)
+
+  const ensureProfileCompleteForTopUp = async () => {
+    if (!dbUserId) {
+      requestOpenLoginModal({ wizard: true })
+      return false
+    }
+    const apiBase = typeof API_BASE_URL === 'string' ? API_BASE_URL : ''
+    const { complete, checked } = await fetchIsBuyerProfileCompleteForDeposit(dbUserId, apiBase)
+    // При сбое API не блокируем; при успешной проверке и неполном профиле — в данные.
+    if (checked && !complete) {
+      showNotification(t('walletPage_profileIncompleteForDeposit'), 'error')
+      setShowTopUpPicker(false)
+      navigate(getCabinetDataPath(), {
+        state: { from: '/wallet', depositProfileGate: true },
+      })
+      return false
+    }
+    return true
+  }
+
+  const handleOpenTopUp = async () => {
+    if (topUpGateLoading) return
+    setTopUpGateLoading(true)
+    try {
+      const ok = await ensureProfileCompleteForTopUp()
+      if (ok) setShowTopUpPicker(true)
+    } finally {
+      setTopUpGateLoading(false)
+    }
+  }
 
   const shortenAddress = (addr) => {
     if (!addr || addr.length < 12) return addr || ''
@@ -258,6 +293,8 @@ const WalletInner = () => {
 
   const handlePayUsdt = async () => {
     if (!tonConnectUI || !tonAddress) return
+    const profileOk = await ensureProfileCompleteForTopUp()
+    if (!profileOk) return
     setTonPaymentLoading(true)
     setTonPaymentSuccess(false)
     try {
@@ -568,6 +605,8 @@ const WalletInner = () => {
       requestOpenLoginModal({ wizard: true })
       return
     }
+    const profileOk = await ensureProfileCompleteForTopUp()
+    if (!profileOk) return
     setStripeCheckoutLoading(true)
     try {
       const customerEmail =
@@ -647,7 +686,9 @@ const WalletInner = () => {
 
   const handleInfoTopUp = () => {
     setIsDepositInfoOpen(false)
-    window.setTimeout(() => setShowTopUpPicker(true), DRAWER_DISMISS_MS.panel)
+    window.setTimeout(() => {
+      void handleOpenTopUp()
+    }, DRAWER_DISMISS_MS.panel)
   }
 
   const handleBookNow = () => {
@@ -775,7 +816,8 @@ const WalletInner = () => {
             <button
               type="button"
               className="wallet-bank__cta wallet-bank__cta--primary"
-              onClick={() => setShowTopUpPicker(true)}
+              onClick={() => void handleOpenTopUp()}
+              disabled={topUpGateLoading}
             >
               <FiArrowDownLeft aria-hidden />
               <span>{t('walletPage_addMoney')}</span>
@@ -815,7 +857,12 @@ const WalletInner = () => {
               {t('walletPage_quickActions')}
             </h2>
             <div className="wallet-bank__quick-grid">
-              <button type="button" className="wallet-bank__quick-item" onClick={() => setShowTopUpPicker(true)}>
+              <button
+                type="button"
+                className="wallet-bank__quick-item"
+                onClick={() => void handleOpenTopUp()}
+                disabled={topUpGateLoading}
+              >
                 <span className="wallet-bank__quick-icon" aria-hidden><FiPlus /></span>
                 <span>{t('walletPage_quickTopUp')}</span>
               </button>

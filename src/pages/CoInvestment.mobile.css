@@ -222,9 +222,11 @@
 /* ——— Catalog shell ——— */
 
 .shares-page--shares-redesign .shares-container--shares-main {
-  width: min(1280px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 28px 0 48px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 28px 24px 48px 0;
+  box-sizing: border-box;
 }
 
 .shares-page--shares-redesign .shares-invest-catalog {
@@ -365,7 +367,7 @@
 
 .shares-page--shares-redesign .shares-invest-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -530,9 +532,9 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   .shares-page--shares-redesign .shares-invest-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

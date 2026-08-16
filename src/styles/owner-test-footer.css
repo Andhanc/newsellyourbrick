@@ -70,7 +70,7 @@ html.owner-test-cabinet-active #site-footer {
   html.ost-page-active .app-layout,
   html.osl-page-active .app-layout,
   html.opr-page-active .app-layout,
-  html.oap-page-active .app-layout {
+  html.oap-page-active:not(.oap-journey-mobile-active) .app-layout {
     overflow-y: auto !important;
     overflow-x: hidden;
     height: auto !important;
@@ -84,7 +84,7 @@ html.owner-test-cabinet-active #site-footer {
   html.ost-page-active .app-layout__content,
   html.osl-page-active .app-layout__content,
   html.opr-page-active .app-layout__content,
-  html.oap-page-active .app-layout__content {
+  html.oap-page-active:not(.oap-journey-mobile-active) .app-layout__content {
     overflow: visible !important;
     flex: 0 0 auto !important;
     min-height: 0;
@@ -97,7 +97,7 @@ html.owner-test-cabinet-active #site-footer {
   html.ost-page-active .ost,
   html.osl-page-active .osl,
   html.opr-page-active .opr,
-  html.oap-page-active .oap {
+  html.oap-page-active:not(.oap-journey-mobile-active) .oap {
     height: auto !important;
     min-height: 100dvh;
     overflow: visible !important;
@@ -110,7 +110,7 @@ html.owner-test-cabinet-active #site-footer {
   html.ost-page-active .ost-body,
   html.osl-page-active .osl-body,
   html.opr-page-active .opr-body,
-  html.oap-page-active .oap-shell {
+  html.oap-page-active:not(.oap-journey-mobile-active) .oap-shell {
     overflow: visible !important;
     flex: none !important;
     min-height: auto !important;
@@ -124,10 +124,29 @@ html.owner-test-cabinet-active #site-footer {
   html.ost-page-active .ost-content,
   html.osl-page-active .osl-workspace,
   html.opr-page-active .opr-workspace,
-  html.oap-page-active .oap-content {
+  html.oap-page-active:not(.oap-journey-mobile-active) .oap-content {
     overflow: visible !important;
     flex: none !important;
     min-height: auto !important;
+  }
+
+  /* Мобильный journey-wizard: фиксированный chrome, скролл только внутри шага */
+  html.oap-journey-mobile-active .app-layout {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  html.oap-journey-mobile-active .app-layout__content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html.oap-journey-mobile-active #site-footer {
+    display: none !important;
   }
 
   /* Фиксированный tabbar не перекрывает футер при прокрутке вниз */

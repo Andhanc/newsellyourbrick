@@ -145,11 +145,11 @@ const MAIN_SECTIONS = [
     sectionTitleKey: 'footerColProfile',
     items: [
       { titleKey: 'profile', path: '/profile', requiresAuth: true },
-      { titleKey: 'history', path: '/history', requiresAuth: true },
+      { titleKey: 'history', path: '/profile?history=1', requiresAuth: true },
       { titleKey: 'wallet', path: '/wallet', requiresAuth: true, wallet: true },
       { titleKey: 'buyerCabinet_tileDepositTitle', path: '/deposit', requiresAuth: true, wallet: true },
       { titleKey: 'footerPersonalData', path: '/data', requiresAuth: true },
-      { titleKey: 'buyerCabinet_myBookings', path: '/profile/bookings', requiresAuth: true },
+      { titleKey: 'buyerCabinet_myBookings', path: '/profile?bookings=1', requiresAuth: true },
     ],
   },
   {
@@ -203,7 +203,7 @@ const SELLER_SECTIONS = [
     sectionTitleKey: 'sectionsGroupSellerAccount',
     items: [
       { titleKey: 'profile', path: '/profile', requiresAuth: true },
-      { titleKey: 'history', path: '/history', requiresAuth: true },
+      { titleKey: 'history', path: '/profile?history=1', requiresAuth: true },
       { titleKey: 'footerPersonalData', path: '/data', requiresAuth: true },
     ],
   },

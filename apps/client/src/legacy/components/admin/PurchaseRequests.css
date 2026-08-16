@@ -164,9 +164,15 @@
   height: 40px;
   flex: 0 0 40px;
   place-items: center;
+  line-height: 0;
   border-radius: 13px;
   background: #eaf8f9;
   color: var(--pr-teal-dark);
+}
+
+.purchase-request-card__icon svg,
+.purchase-request-section-title__icon svg {
+  display: block;
 }
 
 .purchase-request-card__main > span:last-child {
@@ -257,6 +263,11 @@
 }
 
 .purchase-request-modal-overlay {
+  --pr-ink: #101828;
+  --pr-muted: #667085;
+  --pr-line: #e7eaee;
+  --pr-teal: #0099a9;
+  --pr-teal-dark: #007d8a;
   position: fixed;
   inset: 0;
   z-index: 12000;
@@ -266,6 +277,8 @@
   padding: 24px;
   background: rgba(16, 24, 40, .55);
   backdrop-filter: blur(8px);
+  color: var(--pr-ink);
+  font-family: 'Montserrat', system-ui, sans-serif;
 }
 
 .purchase-request-modal {
@@ -311,11 +324,16 @@
   height: 40px;
   flex: 0 0 40px;
   place-items: center;
+  line-height: 0;
   border: 0;
   border-radius: 50%;
   background: #f2f4f7;
   color: #475467;
   cursor: pointer;
+}
+
+.purchase-request-modal__header button svg {
+  display: block;
 }
 
 .purchase-request-modal__content {
@@ -344,7 +362,12 @@
   width: 46px;
   height: 46px;
   place-items: center;
+  line-height: 0;
   border-radius: 14px;
+}
+
+.purchase-payment-proof__icon svg {
+  display: block;
 }
 
 .purchase-payment-proof.is-paid .purchase-payment-proof__icon { background: #eaf8f0; color: #087443; }
@@ -382,10 +405,16 @@
   display: grid;
   width: 38px;
   height: 38px;
+  flex: 0 0 38px;
   place-items: center;
+  line-height: 0;
   border-radius: 12px;
   background: #f2f4f7;
   color: #475467;
+}
+
+.purchase-request-contact-card__icon svg {
+  display: block;
 }
 
 .purchase-request-contact-card__head span,
@@ -413,9 +442,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 18px;
   color: #344054;
   font-size: 11px;
+  line-height: 1.3;
   text-decoration: none;
+}
+
+.purchase-request-contact-icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  line-height: 0;
+}
+
+.purchase-request-contact-icon svg {
+  display: block;
 }
 
 .purchase-request-contact-card__contacts a.is-empty { color: #98a2b3; pointer-events: none; }
@@ -436,6 +480,13 @@
   font: inherit;
   font-size: 11px;
   font-weight: 750;
+  line-height: 1;
+}
+
+.purchase-request-contact-card__chat .purchase-request-contact-icon {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
 }
 
 .purchase-request-contact-card__chat:disabled { opacity: .45; cursor: not-allowed; }
@@ -515,11 +566,26 @@
   font: inherit;
   font-size: 13px;
   font-weight: 750;
+  line-height: 1;
 }
 
-.modal-action-btn--completed { background: var(--pr-teal); color: #fff; box-shadow: 0 10px 22px rgba(0,153,169,.22); }
+.modal-action-btn svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.modal-action-btn--completed {
+  background: var(--pr-teal, #0099a9);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(0, 153, 169, .22);
+}
 .modal-action-btn--cancelled { background: #fff0f0; color: #c22929; }
-.modal-action-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.modal-action-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.modal-action-btn--completed:disabled {
+  background: #e7f4f6;
+  color: #0b6b75;
+  opacity: 1;
+}
 
 @media (max-width: 900px) {
   .purchase-request-card { grid-template-columns: minmax(220px, 1fr) auto; }

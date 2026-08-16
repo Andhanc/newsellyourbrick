@@ -14,12 +14,13 @@ import { HiOutlineSparkles } from 'react-icons/hi2'
 import { MdGavel, MdOutlineReceiptLong } from 'react-icons/md'
 import Header from '../components/Header'
 import MobileDiscoverCatalog from './MobileDiscoverCatalog'
+import SiteChatDock from '../components/SiteChatDock'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MobileDiscoverPage.css'
 
-const HERO_IMAGE = publicAsset('images/mobile-discover/hero-townhouses.png')
+const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
 
 function getSaleCards(t) {
@@ -73,7 +74,7 @@ function getMenuItems(t) {
     { id: 'buy', label: t('buy'), to: '/auction?filter=buy_now', Icon: FiShoppingBag },
     { id: 'shares', label: t('shares'), to: CO_INVESTMENT_PATH, Icon: FiPieChart },
     { id: 'debts', label: t('debtsTitle'), to: '/debts', Icon: MdOutlineReceiptLong },
-    { id: 'ai', label: 'AI', to: '/chat', Icon: HiOutlineSparkles },
+    { id: 'ai', label: 'AI', action: 'ai', Icon: HiOutlineSparkles },
   ]
 }
 
@@ -334,6 +335,7 @@ export default function MobileDiscoverPage() {
     flashPhase === 'cover' ? ' is-cover' : flashPhase === 'reveal' ? ' is-reveal' : ''
 
   return (
+    <SiteChatDock wrapperClassName="md-discover-ai-floats">
     <div
       ref={shellRef}
       className={`md md--${screen}${flashPhase !== 'idle' ? ' is-flashing' : ''}`}
@@ -534,10 +536,6 @@ export default function MobileDiscoverPage() {
                     <FiSearch aria-hidden />
                   </button>
                 </form>
-
-                <Link className="md-welcome__cta" to="/auction">
-                  {t('discoverPage_viewAllProperties')}
-                </Link>
               </div>
 
               <svg
@@ -573,6 +571,25 @@ export default function MobileDiscoverPage() {
             >
               {menuItems.map((item, index) => {
                 const Icon = item.Icon
+                if (item.action === 'ai') {
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="md-fab__item"
+                      style={{ '--md-fab-i': index }}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        window.dispatchEvent(new CustomEvent('openAIChat'))
+                      }}
+                    >
+                      <span className="md-fab__item-icon" aria-hidden>
+                        <Icon />
+                      </span>
+                      <span className="md-fab__item-label">{item.label}</span>
+                    </button>
+                  )
+                }
                 return (
                   <Link
                     key={item.id}
@@ -603,5 +620,6 @@ export default function MobileDiscoverPage() {
         </section>
       )}
     </div>
+    </SiteChatDock>
   )
 }

@@ -82,10 +82,12 @@ function ContactCard({ title, icon: Icon, name, email, phone, userId, onOpenChat
       </div>
       <div className="purchase-request-contact-card__contacts">
         <a className={!email ? 'is-empty' : ''} href={email ? `mailto:${email}` : undefined}>
-          <FiMail size={15} /> {email || 'Почта не указана'}
+          <span className="purchase-request-contact-icon" aria-hidden="true"><FiMail size={15} /></span>
+          <span>{email || 'Почта не указана'}</span>
         </a>
         <a className={!phone ? 'is-empty' : ''} href={phone ? `tel:${phone}` : undefined}>
-          <FiPhone size={15} /> {phone || 'Телефон не указан'}
+          <span className="purchase-request-contact-icon" aria-hidden="true"><FiPhone size={15} /></span>
+          <span>{phone || 'Телефон не указан'}</span>
         </a>
       </div>
       <button
@@ -94,7 +96,7 @@ function ContactCard({ title, icon: Icon, name, email, phone, userId, onOpenChat
         disabled={!userId || !onOpenChat}
         onClick={() => onOpenChat?.(Number(userId))}
       >
-        <FiMessageCircle size={17} />
+        <span className="purchase-request-contact-icon" aria-hidden="true"><FiMessageCircle size={17} /></span>
         Чат с пользователем
       </button>
     </section>
@@ -187,7 +189,7 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          assistantSessionId: `admin_purchase_user_${numericUserId}`,
+          assistantSessionId: `user_${numericUserId}`,
           userId: numericUserId,
           waitMessage: 'Чат по оформлению покупки. Менеджер готов помочь.',
         }),

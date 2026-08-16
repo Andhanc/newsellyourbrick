@@ -1,4 +1,5 @@
 import { formatListingAuctionTimeLeft } from './formatListingAuctionTimeLeft'
+import { sortListingsByAuctionTimer } from './sortListingsByAuctionTimer'
 
 const RISK_LEVELS = [
   { id: 'red', filterValue: 'red' },
@@ -57,6 +58,7 @@ export function formatDebtYieldPercent(value, locale = 'ru') {
 }
 
 export const DEBTS_SORT_OPTIONS = [
+  { value: 'ending_soon', labelKey: 'debtsSortEndingSoon' },
   { value: 'newest', labelKey: 'debtsSortNewest' },
   { value: 'price_asc', labelKey: 'debtsSortPriceAsc' },
   { value: 'price_desc', labelKey: 'debtsSortPriceDesc' },
@@ -81,7 +83,7 @@ function getCreatedTs(property) {
   return Number.isNaN(ts) ? 0 : ts
 }
 
-export function sortDebts(properties = [], sortKey = 'newest') {
+export function sortDebts(properties = [], sortKey = 'ending_soon') {
   const items = [...properties]
   switch (sortKey) {
     case 'price_asc':
@@ -96,8 +98,10 @@ export function sortDebts(properties = [], sortKey = 'newest') {
       })
     }
     case 'newest':
-    default:
       return items.sort((a, b) => getCreatedTs(b) - getCreatedTs(a))
+    case 'ending_soon':
+    default:
+      return sortListingsByAuctionTimer(items, { privateClubFirst: false })
   }
 }
 

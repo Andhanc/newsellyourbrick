@@ -53,8 +53,47 @@ function normalizeAdminListRow(row) {
     const v = o[k];
     if (typeof v === 'bigint') o[k] = Number(v);
     else if (v instanceof Date) o[k] = v.toISOString();
+    else if (k === 'client_vip_club_active') o[k] = v === true || v === 1 || v === 't';
+    else if (k === 'unread_count' || k === 'admin_last_read_message_id') o[k] = Number(v) || 0;
   }
   return o;
+}
+
+function adminLiveChatSessionListQuery(extraSql = Prisma.empty) {
+  return Prisma.sql`
+    SELECT s.id, s.public_token, s.user_id, s.assistant_session_id, s.display_label, s.created_at, s.updated_at,
+      s.admin_last_read_message_id,
+      (SELECT m.body FROM live_chat_messages m WHERE m.session_id = s.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
+      (
+        SELECT COUNT(*)::int
+        FROM live_chat_messages m
+        WHERE m.session_id = s.id
+          AND LOWER(m.sender_role) IN ('user', 'client', 'visitor')
+          AND m.id > COALESCE(s.admin_last_read_message_id, 0)
+      ) AS unread_count,
+      u.first_name AS client_first_name,
+      u.last_name AS client_last_name,
+      u.email AS client_email,
+      u.phone_number AS client_phone,
+      u.user_photo AS client_user_photo,
+      u.telegram_photo_url AS client_telegram_photo_url,
+      al.email AS lead_email,
+      al.phone AS lead_phone,
+      al.summary AS lead_summary,
+      CASE
+        WHEN u.vip_until IS NOT NULL AND u.vip_until > NOW() THEN true
+        WHEN LOWER(COALESCE(ss.plan_key, '')) = 'vip'
+          AND LOWER(COALESCE(ss.status, '')) NOT IN ('canceled', 'unpaid', 'incomplete_expired', 'incomplete')
+          AND COALESCE(ss.status, '') <> ''
+        THEN true
+        ELSE false
+      END AS client_vip_club_active
+    FROM live_chat_sessions s
+    LEFT JOIN users u ON s.user_id = u.id
+    LEFT JOIN stripe_subscription_state ss ON ss.user_id = u.id
+    LEFT JOIN assistant_leads al ON al.session_id = s.assistant_session_id
+    ${extraSql}
+  `;
 }
 
 export const whatsappUserQueries = {
@@ -392,6 +431,40 @@ export const assistantLeadQueries = {
   },
 };
 
+function liveChatUserAliases(userId) {
+  const uid = Number(userId);
+  if (!Number.isFinite(uid) || uid <= 0) return [];
+  return [`user_${uid}`, `admin_purchase_user_${uid}`, String(uid)];
+}
+
+function canonicalLiveChatAssistantId(userId) {
+  const uid = Number(userId);
+  if (!Number.isFinite(uid) || uid <= 0) return null;
+  return `user_${uid}`;
+}
+
+function pickCanonicalLiveSession(sessions, userId) {
+  if (!Array.isArray(sessions) || sessions.length === 0) return null;
+  const preferredAsst = canonicalLiveChatAssistantId(userId);
+  return (
+    sessions.find((s) => s.assistant_session_id === preferredAsst) ||
+    sessions.find((s) => Number(s.user_id) === Number(userId)) ||
+    sessions[0]
+  );
+}
+
+async function findSessionsForRegisteredUser(prisma, userId) {
+  const uid = Number(userId);
+  if (!Number.isFinite(uid) || uid <= 0) return [];
+  const aliases = liveChatUserAliases(uid);
+  return prisma.live_chat_sessions.findMany({
+    where: {
+      OR: [{ user_id: uid }, { assistant_session_id: { in: aliases } }],
+    },
+    orderBy: { id: 'asc' },
+  });
+}
+
 export const liveChatQueries = {
   findLatestSessionByAssistantId: async (assistantSessionId) => {
         const asst = assistantSessionId && String(assistantSessionId).trim();
@@ -404,10 +477,112 @@ export const liveChatQueries = {
     return liveSessionToPlain(row);
   },
 
+  findLatestSessionByUserId: async (userId) => {
+    const uid = Number(userId);
+    if (!Number.isFinite(uid) || uid <= 0) return null;
+    const prisma = getPrisma();
+    const row = await prisma.live_chat_sessions.findFirst({
+      where: { user_id: uid },
+      orderBy: { updated_at: 'desc' },
+    });
+    return liveSessionToPlain(row);
+  },
+
+  /** Один диалог на зарегистрированного пользователя: склеивает дубли и возвращает каноническую сессию. */
+  mergeSessionsForUser: async (userId) => {
+    const uid = Number(userId);
+    if (!Number.isFinite(uid) || uid <= 0) return null;
+    const prisma = getPrisma();
+    const sessions = await findSessionsForRegisteredUser(prisma, uid);
+    if (sessions.length === 0) return null;
+    const canonical = pickCanonicalLiveSession(sessions, uid);
+    const extras = sessions.filter((s) => s.id !== canonical.id);
+    const preferredAsst = canonicalLiveChatAssistantId(uid);
+    const needsNormalize =
+      Number(canonical.user_id) !== uid ||
+      canonical.assistant_session_id !== preferredAsst;
+
+    if (extras.length === 0 && !needsNormalize) {
+      return liveSessionToPlain(canonical);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const readIds = [canonical.admin_last_read_message_id, ...extras.map((s) => s.admin_last_read_message_id)]
+        .map((n) => Number(n) || 0);
+      const maxRead = Math.max(0, ...readIds);
+      for (const extra of extras) {
+        await tx.live_chat_messages.updateMany({
+          where: { session_id: extra.id },
+          data: { session_id: canonical.id },
+        });
+        await tx.live_chat_sessions.delete({ where: { id: extra.id } });
+      }
+      await tx.live_chat_sessions.update({
+        where: { id: canonical.id },
+        data: {
+          user_id: uid,
+          assistant_session_id: preferredAsst,
+          admin_last_read_message_id: maxRead,
+          updated_at: new Date(),
+        },
+      });
+    });
+    const merged = await prisma.live_chat_sessions.findUnique({ where: { id: canonical.id } });
+    return liveSessionToPlain(merged);
+  },
+
+  mergeDuplicateUserSessions: async () => {
+    const prisma = getPrisma();
+    const grouped = await prisma.$queryRaw`
+      SELECT user_id
+      FROM live_chat_sessions
+      WHERE user_id IS NOT NULL
+      GROUP BY user_id
+      HAVING COUNT(*) > 1
+    `;
+    const ids = new Set(
+      (Array.isArray(grouped) ? grouped : [])
+        .map((row) => Number(row.user_id))
+        .filter((id) => Number.isFinite(id) && id > 0),
+    );
+    const aliasRows = await prisma.live_chat_sessions.findMany({
+      where: { assistant_session_id: { startsWith: 'admin_purchase_user_' } },
+      select: { assistant_session_id: true },
+    });
+    for (const row of aliasRows) {
+      const match = String(row.assistant_session_id || '').match(/^admin_purchase_user_(\d+)$/);
+      if (match) ids.add(Number(match[1]));
+    }
+    for (const uid of ids) {
+      await liveChatQueries.mergeSessionsForUser(uid);
+    }
+  },
+
+  appendSystemNoticeIfNew: async (sessionId, waitMessage) => {
+    const text = waitMessage && String(waitMessage).trim();
+    const sid = parseInt(sessionId, 10);
+    if (!text || !Number.isFinite(sid)) return false;
+    const prisma = getPrisma();
+    const last = await prisma.live_chat_messages.findFirst({
+      where: { session_id: sid },
+      orderBy: { id: 'desc' },
+      select: { sender_role: true, body: true },
+    });
+    if (last && last.sender_role === 'system' && String(last.body || '').trim() === text) {
+      return false;
+    }
+    const msgId = await liveChatQueries.addMessage(sid, 'system', text);
+    return Boolean(msgId);
+  },
+
   createSession: async ({ userId, assistantSessionId, waitMessage }) => {
         const prisma = getPrisma();
     const token = randomUUID();
-    const asst = assistantSessionId ? String(assistantSessionId).trim() : null;
+    const asst =
+      (userId && Number.isFinite(Number(userId)) && Number(userId) > 0
+        ? `user_${Number(userId)}`
+        : null) ||
+      (assistantSessionId ? String(assistantSessionId).trim() : null);
     const label =
       (asst && String(asst).replace(/^user_/, '').slice(0, 72)) || 'Гость';
     const body =
@@ -461,25 +636,10 @@ export const liveChatQueries = {
   },
 
   listSessionsForAdmin: async () => {
+        await liveChatQueries.mergeDuplicateUserSessions();
         const prisma = getPrisma();
     const rows = await prisma.$queryRaw(
-      Prisma.sql`
-        SELECT s.id, s.public_token, s.user_id, s.assistant_session_id, s.display_label, s.created_at, s.updated_at,
-          (SELECT m.body FROM live_chat_messages m WHERE m.session_id = s.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
-          u.first_name AS client_first_name,
-          u.last_name AS client_last_name,
-          u.email AS client_email,
-          u.phone_number AS client_phone,
-          u.user_photo AS client_user_photo,
-          u.telegram_photo_url AS client_telegram_photo_url,
-          al.email AS lead_email,
-          al.phone AS lead_phone,
-          al.summary AS lead_summary
-        FROM live_chat_sessions s
-        LEFT JOIN users u ON s.user_id = u.id
-        LEFT JOIN assistant_leads al ON al.session_id = s.assistant_session_id
-        ORDER BY s.updated_at DESC NULLS LAST
-      `
+      adminLiveChatSessionListQuery(Prisma.sql`ORDER BY s.updated_at DESC NULLS LAST`)
     );
     return Array.isArray(rows) ? rows.map(normalizeAdminListRow) : rows;
   },
@@ -489,23 +649,7 @@ export const liveChatQueries = {
     if (isNaN(n)) return null;
     const prisma = getPrisma();
     const rows = await prisma.$queryRaw(
-      Prisma.sql`
-        SELECT s.id, s.public_token, s.user_id, s.assistant_session_id, s.display_label, s.created_at, s.updated_at,
-          (SELECT m.body FROM live_chat_messages m WHERE m.session_id = s.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
-          u.first_name AS client_first_name,
-          u.last_name AS client_last_name,
-          u.email AS client_email,
-          u.phone_number AS client_phone,
-          u.user_photo AS client_user_photo,
-          u.telegram_photo_url AS client_telegram_photo_url,
-          al.email AS lead_email,
-          al.phone AS lead_phone,
-          al.summary AS lead_summary
-        FROM live_chat_sessions s
-        LEFT JOIN users u ON s.user_id = u.id
-        LEFT JOIN assistant_leads al ON al.session_id = s.assistant_session_id
-        WHERE s.id = ${n}
-      `
+      adminLiveChatSessionListQuery(Prisma.sql`WHERE s.id = ${n}`)
     );
     const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
     return row ? normalizeAdminListRow(row) : null;
@@ -571,5 +715,51 @@ export const liveChatQueries = {
       },
     });
     return liveMsgToPlain(row);
+  },
+
+  markSessionRead: async (id) => {
+    const n = parseInt(id, 10);
+    if (isNaN(n)) return null;
+    const prisma = getPrisma();
+    await prisma.$executeRaw`
+      UPDATE live_chat_sessions
+      SET admin_last_read_message_id = COALESCE(
+        (SELECT MAX(m.id) FROM live_chat_messages m WHERE m.session_id = live_chat_sessions.id),
+        0
+      )
+      WHERE id = ${n}
+    `;
+    return liveChatQueries.getSessionListRowById(n);
+  },
+
+  markAllSessionsRead: async () => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw`
+      UPDATE live_chat_sessions
+      SET admin_last_read_message_id = COALESCE(
+        (SELECT MAX(m.id) FROM live_chat_messages m WHERE m.session_id = live_chat_sessions.id),
+        0
+      )
+    `;
+    return { ok: true };
+  },
+
+  countUnreadUserMessages: async () => {
+    const prisma = getPrisma();
+    const rows = await prisma.$queryRaw`
+      SELECT COALESCE(SUM(u.cnt), 0)::int AS count
+      FROM (
+        SELECT (
+          SELECT COUNT(*)::int
+          FROM live_chat_messages m
+          WHERE m.session_id = s.id
+            AND LOWER(m.sender_role) IN ('user', 'client', 'visitor')
+            AND m.id > COALESCE(s.admin_last_read_message_id, 0)
+        ) AS cnt
+        FROM live_chat_sessions s
+      ) u
+    `;
+    const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return Number(row?.count || 0);
   },
 };

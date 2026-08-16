@@ -8,7 +8,6 @@ import './PropertyDetailDesktopTestDriveBanner.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
-const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 const CALENDAR_WEEKS = [
   [null, null, 1, 2, 3, 4, 5],
   [6, 7, 8, 9, 10, 11, 12],
@@ -18,12 +17,25 @@ const CALENDAR_WEEKS = [
 ]
 const SELECTED_DAYS = new Set([15, 16, 17])
 
+function getWeekdayShorts(language) {
+  const locale = String(language || 'ru').split('-')[0]
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+  // 2024-01-01 was Monday — produce Mon…Sun order
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(Date.UTC(2024, 0, 1 + index))
+    return formatter.format(date).replace(/\.$/, '')
+  })
+}
+
 function TestDriveMiniCalendar() {
+  const { t, i18n } = useTranslation()
+  const weekDays = getWeekdayShorts(i18n.language)
+
   return (
     <div className="pdx-test-drive-banner__calendar" aria-hidden>
-      <p className="pdx-test-drive-banner__calendar-title">Выберите даты</p>
+      <p className="pdx-test-drive-banner__calendar-title">{t('pdxTestDrive_calendarTitle')}</p>
       <div className="pdx-test-drive-banner__calendar-grid">
-        {WEEK_DAYS.map((day) => (
+        {weekDays.map((day) => (
           <span key={day} className="pdx-test-drive-banner__calendar-weekday">
             {day}
           </span>
@@ -61,7 +73,7 @@ function TestDriveMiniCalendar() {
           }),
         )}
       </div>
-      <p className="pdx-test-drive-banner__calendar-foot">3 дня · 2 ночи</p>
+      <p className="pdx-test-drive-banner__calendar-foot">{t('pdxTestDrive_calendarFoot')}</p>
     </div>
   )
 }
@@ -73,6 +85,7 @@ const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailD
     propertyTable,
     propertyType,
     imageUrl = '',
+    paused = false,
   },
   ref,
 ) {
@@ -114,6 +127,7 @@ const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailD
   }, [fetchEligibility])
 
   const handleBook = () => {
+    if (paused) return
     const table = encodeURIComponent(propertyTable || 'properties_apartments')
     const basePath = getPropertyDetailPath({
       id: propertyId,
@@ -132,31 +146,34 @@ const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailD
     <section
       ref={ref}
       id="property-test-drive-section"
-      className="pdx-test-drive-banner"
+      className={`pdx-test-drive-banner${paused ? ' pdx-test-drive-banner--paused' : ''}`}
       aria-labelledby="pdx-test-drive-banner-title"
     >
       <div
         className="pdx-test-drive-banner__surface"
         style={{ '--pdx-test-drive-photo': `url("${promoPhoto}")` }}
       >
+        {paused ? (
+          <div className="pdx-test-drive-banner__paused" role="status">
+            <span>{t('propertyDetailTestDrivePaused')}</span>
+          </div>
+        ) : null}
         <div className="pdx-test-drive-banner__content">
-          <span className="pdx-test-drive-banner__eyebrow">Тест-драйв</span>
+          <span className="pdx-test-drive-banner__eyebrow">{t('pdxTestDrive_eyebrow')}</span>
           <h2 id="pdx-test-drive-banner-title" className="pdx-test-drive-banner__title">
-            Попробуйте пожить в объекте до покупки
+            {t('pdxTestDrive_title')}
           </h2>
-          <p className="pdx-test-drive-banner__lead">
-            Забронируйте тест-драйв на несколько дней и убедитесь, что это ваш идеальный выбор.
-          </p>
+          <p className="pdx-test-drive-banner__lead">{t('pdxTestDrive_lead')}</p>
           <button
             type="button"
             className="pdx-test-drive-banner__cta"
-            disabled={loading || !canRequest}
+            disabled={paused || loading || !canRequest}
             onClick={handleBook}
           >
-            {loading ? 'Проверка…' : 'Забронировать тест-драйв'}
+            {loading ? t('pdxTestDrive_checking') : t('pdxTestDrive_cta')}
             {!loading ? <FiArrowRight size={16} aria-hidden /> : null}
           </button>
-          {!loading && !canRequest ? (
+          {!paused && !loading && !canRequest ? (
             <p className="pdx-test-drive-banner__hint">
               {t('propertyDetailTestDriveDepositHint', {
                 defaultValue: 'Пополните депозит на платформе, чтобы забронировать тест-драйв.',

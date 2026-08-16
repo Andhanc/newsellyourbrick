@@ -342,6 +342,19 @@
   box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
 }
 
+.moderation-property-detail__btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.moderation-property-detail__btn--approve:disabled:hover,
+.moderation-property-detail__btn--reject:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .moderation-property-detail__btn--reject {
   background: #fee2e2;
   color: #dc2626;
@@ -690,8 +703,31 @@
 .moderation-property-detail__translate-text {
   margin: 0;
   font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+}
+
+.moderation-property-detail__translate-langs {
+  margin: 0;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #374151;
+  color: #0099A9;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.moderation-property-detail__translate-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moderation-property-detail__translate-spinner {
+    animation: none;
+  }
 }
 
 .moderation-property-detail__translate-block {
@@ -817,5 +853,146 @@
   height: 100%;
   min-height: 0;
 }
+
+.moderation-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.62);
+  font-family: var(--site-font-family);
+  color: var(--site-color-text);
+}
+
+.moderation-confirm__panel {
+  width: min(440px, 100%);
+  padding: 32px 28px 24px;
+  background: var(--site-color-surface);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-card-radius);
+  text-align: left;
+}
+
+.moderation-confirm__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: var(--site-color-accent);
+  background: color-mix(in srgb, var(--site-color-accent) 10%, var(--site-color-surface));
+  border-radius: 16px;
+}
+
+.moderation-confirm__mark--reject {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.moderation-confirm__kicker {
+  margin: 0 0 8px;
+  font-family: var(--site-font-family);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--site-color-accent);
+}
+
+.moderation-confirm__title {
+  margin: 0 0 10px;
+  font-family: var(--site-font-family);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--site-color-text);
+}
+
+.moderation-confirm__text {
+  margin: 0;
+  max-width: 36rem;
+  font-family: var(--site-font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--site-color-muted);
+}
+
+.moderation-confirm__langs {
+  margin: 12px 0 0;
+  font-family: var(--site-font-family);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--site-color-subtle);
+}
+
+.moderation-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.moderation-confirm__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  font-family: var(--site-font-family);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.moderation-confirm__btn--ghost {
+  background: var(--site-color-surface);
+  border-color: var(--site-color-border);
+  color: var(--site-color-text);
+}
+
+.moderation-confirm__btn--ghost:hover {
+  border-color: color-mix(in srgb, var(--site-color-accent) 45%, transparent);
+}
+
+.moderation-confirm__btn--approve {
+  background: var(--site-color-accent);
+  color: #ffffff;
+}
+
+.moderation-confirm__btn--approve:hover {
+  background: var(--site-color-accent-dark);
+}
+
+.moderation-confirm__btn--reject {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.moderation-confirm__btn--reject:hover {
+  background: #b91c1c;
+}
+
+@media (max-width: 480px) {
+  .moderation-confirm__actions {
+    flex-direction: column-reverse;
+  }
+
+  .moderation-confirm__btn {
+    width: 100%;
+  }
+}
+
 
 

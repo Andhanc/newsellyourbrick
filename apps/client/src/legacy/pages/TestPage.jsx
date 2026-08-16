@@ -24,12 +24,11 @@ import {
   FiLogOut,
   FiSend,
   FiX,
-  FiCopy,
-  FiUserPlus,
   FiGift,
   FiAward,
   FiColumns,
   FiInfo,
+  FiMessageCircle,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -580,8 +579,8 @@ function mergeExtractedPassportIntoProfileForm(prev, extracted) {
   }
 }
 
-function buildDirectionSummaries(t) {
-  return [
+function buildDirectionSummaries(t, { vipActive = false } = {}) {
+  const items = [
     {
       variant: 'seller',
       action: 'becomeSeller',
@@ -591,6 +590,17 @@ function buildDirectionSummaries(t) {
       subCardSubtitle: t('buyerCabinet_directionBecomeSellerSubtitle'),
     },
   ]
+  if (vipActive) {
+    items.push({
+      variant: 'manager',
+      action: 'managerChat',
+      areaLabel: t('buyerCabinet_directionAreaVipClub'),
+      headline: t('buyerCabinet_directionPersonalManagerTitle'),
+      subCardTitle: t('buyerCabinet_directionPersonalManagerTitle'),
+      subCardSubtitle: t('buyerCabinet_directionPersonalManagerSubtitle'),
+    })
+  }
+  return items
 }
 
 function buildMainCards(t) {
@@ -605,14 +615,15 @@ function buildMainCards(t) {
     {
       title: t('buyerCabinet_cardHistoryTitle'),
       description: t('buyerCabinet_cardHistorySubtitle'),
-      to: '/history',
+      to: '/profile?history=1',
+      sheet: 'history',
       iconSrc: '/images/profile/shortcuts/history.png',
       accent: 'ocean',
     },
     {
       title: t('buyerCabinet_cardBookingsTitle'),
       description: t('buyerCabinet_cardBookingsSubtitle'),
-      to: '/profile/bookings',
+      to: '/profile?bookings=1',
       sheet: 'bookings',
       iconSrc: '/images/profile/shortcuts/bookings.png',
       accent: 'violet',
@@ -678,7 +689,13 @@ function TestPage() {
     cabinetSubscriptionTier,
     cabinetVipActive,
   } = useCabinetOverviewData({ loadHistory: historyLoadRequested })
-  const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
+  const directionSummaries = useMemo(() => {
+    const items = buildDirectionSummaries(t, { vipActive: cabinetVipActive })
+    if (hasBothLinkedRoles) {
+      return items.filter((item) => item.action !== 'becomeSeller')
+    }
+    return items
+  }, [t, cabinetVipActive, hasBothLinkedRoles])
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
     const { primary, logout } = buildQuickLinks(t)
@@ -763,29 +780,6 @@ function TestPage() {
   const [purchaseDrawerView, setPurchaseDrawerView] = useState('details')
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
-  )
-  const [profileReferralCopied, setProfileReferralCopied] = useState(false)
-  const profileReferralCopyTimerRef = useRef(null)
-
-  const profileReferralUrl = useMemo(() => {
-    if (!resolvedNumericUserId || typeof window === 'undefined') return ''
-    return `${window.location.origin}/?ref=${resolvedNumericUserId}`
-  }, [resolvedNumericUserId])
-
-  const copyProfileReferralLink = useCallback(() => {
-    if (!profileReferralUrl || !navigator.clipboard?.writeText) return
-    void navigator.clipboard.writeText(profileReferralUrl).then(() => {
-      setProfileReferralCopied(true)
-      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
-      profileReferralCopyTimerRef.current = setTimeout(() => setProfileReferralCopied(false), 2600)
-    })
-  }, [profileReferralUrl])
-
-  useEffect(
-    () => () => {
-      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
-    },
-    [],
   )
 
   const dbUserRowRef = useRef(dbUserRow)
@@ -1178,6 +1172,30 @@ function TestPage() {
     navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
   }, [searchParams, navigate])
 
+  useEffect(() => {
+    if (searchParams.get('history') !== '1') return
+    setHistorySheetOpen(true)
+    setDataSheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('history')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+  }, [searchParams, navigate])
+
+  useEffect(() => {
+    if (searchParams.get('bookings') !== '1') return
+    setBookingsSheetOpen(true)
+    setDataSheetOpen(false)
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('bookings')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+  }, [searchParams, navigate])
+
   /** Возврат с Stripe Checkout Pro: подтверждение сессии и поздравление на профиле (как после верификации). */
   useEffect(() => {
     const celebrationFlag = searchParams.get('subscription_celebration') === '1'
@@ -1453,7 +1471,6 @@ function TestPage() {
           { text: t('buyerPricing_featP0') },
           { text: t('buyerPricing_featP1') },
           { text: t('buyerPricing_featP2') },
-          { text: t('buyerPricing_featP3') },
         ],
       },
       vip: {
@@ -2367,6 +2384,15 @@ function TestPage() {
     setLegalSheetOpen(true)
   }, [])
 
+  const openCabinetDataSheet = useCallback(() => {
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    setLegalSheetOpen(false)
+    setDataSheetOpen(true)
+    scrollMainTo(0, 0, 'instant')
+  }, [])
+
   const syncFoldersDotIndex = useCallback(() => {
     const rail = foldersRailRef.current
     if (!rail) return
@@ -2420,7 +2446,7 @@ function TestPage() {
         setDataSheetOpen((open) => !open)
         return
       }
-      if (card.to === '/history' || card.sheet === 'history') {
+      if (card.to === '/history' || card.to === '/profile?history=1' || card.sheet === 'history') {
         setDataSheetOpen(false)
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
@@ -2560,7 +2586,7 @@ function TestPage() {
                   onScroll={handleFoldersRailScroll}
                 >
                   {mainCards.map((card) => {
-                    const isHistory = card.to === '/history'
+                    const isHistory = card.sheet === 'history' || card.to === '/profile?history=1' || card.to === '/history'
                     const isSubscriptions = card.sheet === 'subscriptions'
                     const isBookings = card.sheet === 'bookings'
                     const isData = card.sheet === 'data'
@@ -2573,13 +2599,11 @@ function TestPage() {
                       (isBookings && bookingsSheetOpen) ||
                       (isManagerChat && isManagerChatOpen)
                     const meta =
-                      isHistory && !historyLoading && historyCount > 0
-                        ? `${historyCount}`
-                        : isBookings && visibleBookingsSheetRows.length > 0
-                          ? `${visibleBookingsSheetRows.length}`
-                          : isSubscriptions
-                            ? subscriptionPlanLabel || 'Starter'
-                            : card.description
+                      isBookings && visibleBookingsSheetRows.length > 0
+                        ? `${visibleBookingsSheetRows.length}`
+                        : isSubscriptions
+                          ? subscriptionPlanLabel || 'Starter'
+                          : card.description
                     const showAttentionDot =
                       (isData && showDataAttentionDot) ||
                       (card.to === '/deposit' && showDepositAttentionDot)
@@ -2654,20 +2678,29 @@ function TestPage() {
                 ) : null}
               </section>
 
+              <ProfileVipClubPromo
+                className="profile-cabinet__vip-promo"
+                titleId="profile-cabinet-vip-promo-title"
+              />
+
+              <div className="profile-cabinet__desk">
               <section className="profile-cabinet__list" aria-label={t('buyerCabinet_directionsListAria')}>
                 <div className="profile-cabinet__section-head">
                   <div className="profile-cabinet__section-copy">
                     <h3 className="profile-cabinet__section-title">{t('buyerCabinet_directionsTitle')}</h3>
+                    <p className="profile-cabinet__section-sub">{t('buyerCabinet_directionsSubtitle')}</p>
                   </div>
                 </div>
                 <ul className="profile-cabinet__rows">
                   {directionSummaries.map((item) => {
                     const isBecomeSeller = item.action === 'becomeSeller'
+                    const isManagerChat = item.action === 'managerChat'
+                    const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
                     const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
                     const inner = (
                       <>
                         <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
-                          {isBecomeSeller ? <FiHome size={20} /> : null}
+                          {DirectionIcon ? <DirectionIcon size={20} /> : null}
                         </span>
                         <span className="profile-cabinet-row__copy">
                           <strong>{item.subCardTitle || item.headline}</strong>
@@ -2677,7 +2710,7 @@ function TestPage() {
                       </>
                     )
                     return (
-                      <li key={item.headline}>
+                      <li key={item.action || item.headline}>
                         {isBecomeSeller ? (
                           <button
                             type="button"
@@ -2685,6 +2718,10 @@ function TestPage() {
                             onClick={() => void handleBecomeSellerRegister()}
                             disabled={sellPurchasedPropertyRoleFlow.loading}
                           >
+                            {inner}
+                          </button>
+                        ) : isManagerChat ? (
+                          <button type="button" className={rowClass} onClick={() => void openManagerChatModal()}>
                             {inner}
                           </button>
                         ) : (
@@ -2723,6 +2760,45 @@ function TestPage() {
                 </ul>
               </section>
 
+              <aside className="profile-cabinet__aside">
+                <section className="profile-cabinet__docs" aria-labelledby="profile-cabinet-docs-title">
+                  <div className="profile-cabinet__section-head">
+                    <div className="profile-cabinet__section-copy">
+                      <h3 id="profile-cabinet-docs-title" className="profile-cabinet__section-title">
+                        {t('buyerCabinet_docsTitle')}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="profile-cabinet__docs-stack">
+                    <button type="button" className="profile-cabinet-row" onClick={openCabinetDataSheet}>
+                      <span className="profile-cabinet-row__icon" aria-hidden>
+                        <FiFileText size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('buyerCabinet_docsFilesTitle')}</strong>
+                        <span>{t('buyerCabinet_docsFilesSubtitle')}</span>
+                      </span>
+                      <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row"
+                      onClick={() => openLegalSheet('agreement')}
+                    >
+                      <span className="profile-cabinet-row__icon" aria-hidden>
+                        <FiBookOpen size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('buyerCabinet_docsAgreementsTitle')}</strong>
+                        <span>{t('buyerCabinet_docsAgreementsSubtitle')}</span>
+                      </span>
+                      <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </div>
+                </section>
+              </aside>
+              </div>
+
               <div className="profile-cabinet__directions-cta">
                 <AuctionCategoryCtaCards variant="profilePage" />
               </div>
@@ -2741,6 +2817,15 @@ function TestPage() {
                   <span>{quickLogoutLink.title}</span>
                 </button>
               </section>
+
+              <div className="profile-cabinet__role-switch">
+                <RoleSwitchBottomCta
+                  targetRole="seller"
+                  flow={sellPurchasedPropertyRoleFlow}
+                  renderModals={false}
+                  onOpen={handleOpenSellerRoleFlow}
+                />
+              </div>
             </div>
           )}
 
@@ -2775,6 +2860,50 @@ function TestPage() {
                       </div>
                     </div>
                     <div className="test-quick-row test-quick-row--primary">
+                      {directionSummaries.map((item) => {
+                        const isBecomeSeller = item.action === 'becomeSeller'
+                        const isManagerChat = item.action === 'managerChat'
+                        const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                        if (!DirectionIcon) return null
+                        const inner = (
+                          <>
+                            <span className="test-quick-pill__icon">
+                              <DirectionIcon size={17} aria-hidden />
+                            </span>
+                            <span className="test-quick-pill__body">
+                              <span className="test-quick-pill__title">{item.subCardTitle || item.headline}</span>
+                              <span className="test-quick-pill__sub">{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                          </>
+                        )
+                        if (isBecomeSeller) {
+                          return (
+                            <button
+                              key={item.action}
+                              type="button"
+                              className="test-quick-pill"
+                              onClick={() => void handleBecomeSellerRegister()}
+                              disabled={sellPurchasedPropertyRoleFlow.loading}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
+                        if (isManagerChat) {
+                          return (
+                            <button
+                              key={item.action}
+                              type="button"
+                              className="test-quick-pill test-quick-pill--manager"
+                              onClick={() => void openManagerChatModal()}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
+                        return null
+                      })}
                       {quickLinksPrimary.map((link) => {
                         const Icon = link.icon
                         const isBecomeSeller = link.action === 'becomeSeller'
@@ -2810,46 +2939,6 @@ function TestPage() {
                       })}
                     </div>
                     <div className="test-cabinet-home-discover" aria-label={t('buyerData_profileDiscoverAria')}>
-                      {profileReferralUrl ? (
-                        <div className="test-cabinet-home-discover__referral-card">
-                          <div className="test-cabinet-home-discover__referral-card-head">
-                            <span className="test-cabinet-home-discover__referral-card-icon" aria-hidden>
-                              <FiUserPlus size={18} strokeWidth={2} />
-                            </span>
-                            <span className="test-cabinet-home-discover__referral-card-title">{t('bonus9Title')}</span>
-                          </div>
-                          <label
-                            className="test-cabinet-home-discover__referral-label"
-                            htmlFor="test-cabinet-referral-url"
-                          >
-                            {t('bonusesReferralLabel')}
-                          </label>
-                          <div className="test-cabinet-home-discover__referral-row">
-                            <input
-                              id="test-cabinet-referral-url"
-                              readOnly
-                              type="text"
-                              className="test-cabinet-home-discover__referral-input"
-                              value={profileReferralUrl}
-                              aria-label={t('bonusesReferralLabel')}
-                            />
-                            <button
-                              type="button"
-                              className="test-cabinet-home-discover__referral-copy"
-                              onClick={copyProfileReferralLink}
-                              title={t('bonusesCopyLink')}
-                              aria-label={t('bonusesCopyLinkAria')}
-                            >
-                              {profileReferralCopied ? (
-                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                              ) : (
-                                <FiCopy size={18} aria-hidden />
-                              )}
-                            </button>
-                          </div>
-                          <p className="test-cabinet-home-discover__referral-hint">{t('bonusesReferralHint')}</p>
-                        </div>
-                      ) : null}
                       <Link to="/bonuses" className="test-cabinet-home-discover__bonuses-cta">
                         <span className="test-cabinet-home-discover__bonuses-cta-icon" aria-hidden>
                           <FiGift size={20} strokeWidth={2} />

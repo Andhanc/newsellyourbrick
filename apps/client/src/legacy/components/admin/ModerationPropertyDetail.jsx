@@ -24,6 +24,22 @@ const TRANSLATION_LANGUAGES = [
   { code: 'sv', name: 'Svenska' },
 ];
 
+const EXTRA_TRANSLATION_LABELS = [
+  ['location', 'Локация'],
+  ['address', 'Адрес'],
+  ['city', 'Город'],
+  ['country', 'Страна'],
+  ['additional_amenities', 'Доп. удобства'],
+  ['renovation', 'Ремонт'],
+  ['condition', 'Состояние'],
+  ['heating', 'Отопление'],
+  ['water_supply', 'Водоснабжение'],
+  ['sewerage', 'Канализация'],
+  ['commercial_type', 'Тип коммерции'],
+  ['business_hours', 'Часы работы'],
+  ['debt_other', 'Прочие долги'],
+];
+
 // Моковые изображения для недвижимости
 const mockPropertyImages = [
   '/images/external/photo-1560448204-e02f11c3d0e2-ef4b1c9172.jpg',
@@ -56,6 +72,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
   const [approveAsPrivateClub, setApproveAsPrivateClub] = useState(false);
   const [debtDocuments, setDebtDocuments] = useState(property.debt_documents || []);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [translationsByLang, setTranslationsByLang] = useState({});
   const [selectedTranslationLang, setSelectedTranslationLang] = useState('ru');
 
@@ -506,16 +523,43 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
   };
 
   const handleApproveClick = () => {
-    if (window.confirm('Вы уверены, что хотите одобрить этот объект недвижимости?')) {
-      onApprove(property.id, debtSeverity, approveAsPrivateClub);
-    }
+    if (isTranslating) return;
+    setConfirmAction('approve');
   };
 
   const handleRejectClick = () => {
-    if (window.confirm('Вы уверены, что хотите отклонить этот объект недвижимости?')) {
-      onReject(property.id);
+    if (isTranslating) return;
+    setConfirmAction('reject');
+  };
+
+  const closeConfirm = () => {
+    if (isTranslating) return;
+    setConfirmAction(null);
+  };
+
+  const handleConfirmApprove = async () => {
+    setConfirmAction(null);
+    setIsTranslating(true);
+    try {
+      await onApprove(property.id, debtSeverity, approveAsPrivateClub);
+    } finally {
+      setIsTranslating(false);
     }
   };
+
+  const handleConfirmReject = () => {
+    setConfirmAction(null);
+    onReject(property.id);
+  };
+
+  useEffect(() => {
+    if (!confirmAction) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeConfirm();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [confirmAction, isTranslating]);
 
   return (
     <div className="moderation-property-detail">
@@ -523,7 +567,9 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         <div className="moderation-property-detail__translate-overlay" aria-hidden="true">
           <div className="moderation-property-detail__translate-preloader">
             <div className="moderation-property-detail__translate-spinner" />
-            <p className="moderation-property-detail__translate-text">ИИ переводит объявление на все языки...</p>
+            <p className="moderation-property-detail__translate-text">Переводим объявление на все языки сайта</p>
+            <p className="moderation-property-detail__translate-langs">English · Deutsch · Español · Français · Svenska</p>
+            <p className="moderation-property-detail__translate-hint">После перевода объявление будет опубликовано</p>
           </div>
         </div>
       )}
@@ -918,7 +964,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               disabled={isTranslating}
             >
               <FiGlobe size={18} />
-              {isTranslating ? 'Перевод...' : 'Перевести'}
+              {isTranslating ? 'Перевод...' : 'Перевести без публикации'}
             </button>
             {Object.keys(translationsByLang).length > 0 && (
               <div className="moderation-property-detail__translations-view">
@@ -946,12 +992,16 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                       <strong>Описание:</strong>
                       <p>{translationsByLang[selectedTranslationLang].description || '—'}</p>
                     </div>
-                    {(translationsByLang[selectedTranslationLang].additional_amenities != null && translationsByLang[selectedTranslationLang].additional_amenities !== '') && (
-                      <div className="moderation-property-detail__translations-item">
-                        <strong>Доп. удобства:</strong>
-                        <p>{translationsByLang[selectedTranslationLang].additional_amenities}</p>
-                      </div>
-                    )}
+                    {EXTRA_TRANSLATION_LABELS.map(([key, label]) => {
+                      const value = translationsByLang[selectedTranslationLang][key];
+                      if (value == null || value === '') return null;
+                      return (
+                        <div key={key} className="moderation-property-detail__translations-item">
+                          <strong>{label}:</strong>
+                          <p>{value}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -991,13 +1041,15 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             <button
               className="moderation-property-detail__btn moderation-property-detail__btn--approve"
               onClick={handleApproveClick}
+              disabled={isTranslating}
             >
               <FiCheck size={20} />
-              Одобрить
+              {isTranslating ? 'Перевод и публикация...' : 'Одобрить'}
             </button>
             <button
               className="moderation-property-detail__btn moderation-property-detail__btn--reject"
               onClick={handleRejectClick}
+              disabled={isTranslating}
             >
               <FiXCircle size={20} />
               Отклонить
@@ -1388,6 +1440,65 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       )}
 
       {/* Модальное окно с изменениями */}
+      {confirmAction && (
+        <div
+          className="moderation-confirm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="moderation-confirm-title"
+          onClick={closeConfirm}
+        >
+          <div className="moderation-confirm__panel" onClick={(e) => e.stopPropagation()}>
+            {confirmAction === 'approve' ? (
+              <>
+                <span className="moderation-confirm__mark" aria-hidden>
+                  <FiGlobe size={22} />
+                </span>
+                <p className="moderation-confirm__kicker">Модерация</p>
+                <h2 id="moderation-confirm-title" className="moderation-confirm__title">
+                  Опубликовать объявление
+                </h2>
+                <p className="moderation-confirm__text">
+                  Сначала переведём текст на все языки сайта, затем опубликуем объект.
+                </p>
+                <p className="moderation-confirm__langs">EN · DE · ES · FR · SV</p>
+                <div className="moderation-confirm__actions">
+                  <button type="button" className="moderation-confirm__btn moderation-confirm__btn--ghost" onClick={closeConfirm}>
+                    Отмена
+                  </button>
+                  <button type="button" className="moderation-confirm__btn moderation-confirm__btn--approve" onClick={handleConfirmApprove}>
+                    <FiCheck size={18} />
+                    Одобрить и перевести
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="moderation-confirm__mark moderation-confirm__mark--reject" aria-hidden>
+                  <FiXCircle size={22} />
+                </span>
+                <p className="moderation-confirm__kicker">Модерация</p>
+                <h2 id="moderation-confirm-title" className="moderation-confirm__title">
+                  Отклонить объявление
+                </h2>
+                <p className="moderation-confirm__text">
+                  Объект не будет опубликован. Владелец получит уведомление об отклонении.
+                </p>
+                <div className="moderation-confirm__actions">
+                  <button type="button" className="moderation-confirm__btn moderation-confirm__btn--ghost" onClick={closeConfirm}>
+                    Отмена
+                  </button>
+                  <button type="button" className="moderation-confirm__btn moderation-confirm__btn--reject" onClick={handleConfirmReject}>
+                    <FiXCircle size={18} />
+                    Отклонить
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {showChangesModal && (
         <div 
           className="changes-modal-overlay"

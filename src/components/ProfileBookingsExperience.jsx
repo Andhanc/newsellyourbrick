@@ -158,23 +158,26 @@ function BookingTicket({ booking, locale, onOpen }) {
         </span>
       </div>
       <div className="profile-booking-pass__paper">
-        <div className="profile-booking-pass__schedule">
-          <span>{ticket.dateRange}</span>
-          <strong>{t('profileBookings_bookingNumber', { id: ticket.id })}</strong>
-        </div>
-        <div className="profile-booking-pass__route">
-          <div><strong>{t('profileBookings_homeCode')}</strong><span>{t('profileBookings_homeLabel')}</span></div>
-          <FiArrowRight size={22} aria-hidden />
-          <div><strong>{t('profileBookings_stayCode')}</strong><span>{t('profileBookings_stayLabel')}</span></div>
-        </div>
-        <div className="profile-booking-pass__visual">
-          <img src="/images/profile/profile-booking-vacation.png" alt="" />
-        </div>
-        <div className="profile-booking-pass__property">
-          <h4>{ticket.title}</h4>
-          {ticket.property_location ? (
-            <p><FiMapPin size={13} aria-hidden />{ticket.property_location}</p>
-          ) : null}
+        <div className="profile-booking-pass__object">
+          <div className="profile-booking-pass__visual">
+            {ticket.property_cover_url ? (
+              <img src={ticket.property_cover_url} alt="" />
+            ) : (
+              <span className="profile-booking-pass__visual-fallback" aria-hidden>
+                <FiHome size={26} />
+              </span>
+            )}
+          </div>
+          <div className="profile-booking-pass__property">
+            <span className="profile-booking-pass__booking-id">
+              {t('profileBookings_bookingNumber', { id: ticket.id })}
+            </span>
+            <h4>{ticket.title}</h4>
+            {ticket.property_location ? (
+              <p><FiMapPin size={13} aria-hidden />{ticket.property_location}</p>
+            ) : null}
+            <span className="profile-booking-pass__dates">{ticket.dateRange}</span>
+          </div>
         </div>
         <div className="profile-booking-pass__tear" aria-hidden><span /><span /></div>
         <div className="profile-booking-pass__facts">

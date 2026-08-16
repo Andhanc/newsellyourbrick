@@ -159,22 +159,29 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
   }
 
   if (pathname === '/profile') {
+    const params = new URLSearchParams(location.search || '')
+    if (params.get('bookings') === '1') {
+      return [
+        home,
+        { to: '/profile', label: t('profile') },
+        { to: null, label: t('buyerBookings_title') },
+      ]
+    }
+    if (params.get('history') === '1') {
+      return [
+        home,
+        { to: '/profile', label: t('profile') },
+        { to: null, label: t('history') },
+      ]
+    }
     return [home, { to: null, label: t('profile') }]
-  }
-
-  if (pathname === '/profile/bookings') {
-    return [
-      home,
-      { to: '/profile', label: t('profile') },
-      { to: null, label: t('buyerBookings_title') },
-    ]
   }
 
   if (/^\/profile\/bookings\/[^/]+\/check-in$/.test(pathname)) {
     return [
       home,
       { to: '/profile', label: t('profile') },
-      { to: '/profile/bookings', label: t('buyerBookings_title') },
+      { to: '/profile?bookings=1', label: t('buyerBookings_title') },
       { to: null, label: t('buyerBookings_checkInCta') },
     ]
   }
@@ -210,7 +217,6 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
     '/deposit': 'buyerCabinet_tileDepositTitle',
     '/data': 'data',
     '/subscriptions': 'subscriptions',
-    '/history': 'history',
     '/chat': 'chat',
     '/search-results': 'search',
     '/admin': 'adminPanel',

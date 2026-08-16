@@ -17,7 +17,6 @@ const ROUTE_PREFIXES = [
   '/property/',
   '/auction',
   '/profile',
-  '/history',
   '/deposit',
   '/wallet',
   '/compare',

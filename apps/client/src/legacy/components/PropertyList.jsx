@@ -33,6 +33,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
+import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
@@ -315,18 +316,8 @@ const PropertyList = ({
 
     if (!isAuctionRoute(location.pathname)) return list
 
-    const auctionTimerEnded = (p) => isAuctionListingEnded(p)
-
-    return [...list].sort((a, b) => {
-      const rankPc = (p) =>
-        p?.private_club_only === 1 || p?.private_club_only === true || p?.private_club_only === '1' ? 1 : 0
-      const pc = rankPc(b) - rankPc(a)
-      if (pc !== 0) return pc
-      const ea = auctionTimerEnded(a)
-      const eb = auctionTimerEnded(b)
-      if (ea === eb) return 0
-      return ea ? 1 : -1
-    })
+    // Soonest live timer first (private club stays ahead), ended lots last.
+    return sortListingsByAuctionTimer(list)
   }, [
     propertiesToUse,
     location.pathname,
@@ -558,6 +549,10 @@ const PropertyList = ({
         'warning',
         7000
       )
+      return
+    }
+    if (isPrivateClubAuctionLot(property) && !viewerHasVip) {
+      navigate('/private-club')
       return
     }
     const { state } = buildPropertyDetailNavigation(property, {

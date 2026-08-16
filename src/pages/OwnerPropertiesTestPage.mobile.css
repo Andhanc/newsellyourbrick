@@ -892,12 +892,23 @@
     gap: 8px;
   }
 
-  .op-mob-property__head .op-type {
+  .op-mob-property__badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .op-mob-property__head .op-type,
+  .op-mob-property__head .op-moderation {
     flex-shrink: 0;
     padding: 3px 8px;
     font-size: 10px;
     font-weight: 700;
     line-height: 1.2;
+    border-radius: 999px;
+    white-space: nowrap;
   }
 
   .op-mob-list .op-type--auction {
@@ -918,6 +929,26 @@
   .op-mob-list .op-type--debts {
     background: rgba(239, 68, 68, 0.12);
     color: #b91c1c;
+  }
+
+  .op-mob-list .op-moderation--approved {
+    background: rgba(16, 185, 129, 0.14);
+    color: #047857;
+  }
+
+  .op-mob-list .op-moderation--pending {
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
+  }
+
+  .op-mob-list .op-moderation--rejected {
+    background: rgba(239, 68, 68, 0.14);
+    color: #b91c1c;
+  }
+
+  .op-mob-list .op-moderation--draft {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
   }
 
   .op-mob-property__title {

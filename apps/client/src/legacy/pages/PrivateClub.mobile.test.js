@@ -68,3 +68,20 @@ test('keeps supporting descriptions concise', () => {
   assert.doesNotMatch(page, /Мы объединили лучших инвесторов и экспертов/)
   assert.doesNotMatch(page, /Реальные сценарии:/)
 })
+
+test('restores main scroll on mount and avoids clipping the hero fold', () => {
+  assert.match(page, /ensureMainScrollReady\(\)/)
+  assert.match(page, /scrollMainTo\(0,\s*0,\s*'instant'\)/)
+  assert.match(
+    css,
+    /\.vip-club-fold\s*\{[\s\S]*?overflow-y:\s*visible[\s\S]*?\}/,
+  )
+  assert.doesNotMatch(
+    css,
+    /\.vip-club-fold\s*\{[\s\S]*?max-height:\s*calc\(112svh[\s\S]*?\}/,
+  )
+  assert.match(
+    css,
+    /\.app-layout:has\(\.vip-club-page\)\s*\{[\s\S]*?overflow-y:\s*auto !important/,
+  )
+})

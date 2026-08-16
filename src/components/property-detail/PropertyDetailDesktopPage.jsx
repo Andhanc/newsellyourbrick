@@ -1,4 +1,31 @@
+import { useLayoutEffect, useRef } from 'react'
 import './PropertyDetailDesktopPage.css'
+
+const STICKY_GAP_PX = 16
+
+/** Pin a column after it has been fully scrolled: top if shorter than the viewport, else flush to the bottom. */
+function useStickyColumnPin(ref) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+
+    const sync = () => {
+      const scroller = el.closest('.app-layout')
+      const viewportH = scroller instanceof HTMLElement ? scroller.clientHeight : window.innerHeight
+      const top = Math.min(STICKY_GAP_PX, viewportH - el.offsetHeight - STICKY_GAP_PX)
+      el.style.top = `${Math.round(top)}px`
+    }
+
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    window.addEventListener('resize', sync)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', sync)
+    }
+  }, [])
+}
 
 /**
  * Desktop property page — clean layout, no legacy chrome.
@@ -15,6 +42,9 @@ export default function PropertyDetailDesktopPage({
   belowGrid,
   footer,
 }) {
+  const mainRef = useRef(null)
+  useStickyColumnPin(mainRef)
+
   return (
     <div className="pdx-page property-detail-desktop-v4-root">
       <div className="pdx-page__container">
@@ -26,7 +56,7 @@ export default function PropertyDetailDesktopPage({
         ) : null}
 
         <div className="pdx-page__grid">
-          <div className="pdx-page__main">
+          <div className="pdx-page__main" ref={mainRef}>
             <div className="pdx-page__gallery">{gallery}</div>
 
             <div className="pdx-page__head">

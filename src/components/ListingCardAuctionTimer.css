@@ -1,8 +1,16 @@
 .listing-card-auction-timer {
-  padding: 9px 14px 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 54px;
+  min-height: 54px;
+  max-height: 54px;
+  padding: 6px 14px;
   border-top: 1px solid #eef0f3;
   border-bottom: 1px solid #eef0f3;
   background: #ffffff;
+  overflow: hidden;
 }
 
 .listing-card-auction-timer__prefix {
@@ -72,10 +80,8 @@
 }
 
 .listing-card-auction-timer--ended {
-  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
 }
 
 .listing-card-auction-timer__ended {
@@ -90,7 +96,10 @@
 
 @media (max-width: 768px) {
   .listing-card-auction-timer {
-    padding: 7px 10px 6px;
+    height: 50px;
+    min-height: 50px;
+    max-height: 50px;
+    padding: 5px 10px;
   }
 
   .listing-card-auction-timer__prefix {

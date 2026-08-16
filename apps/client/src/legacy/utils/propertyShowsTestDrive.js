@@ -11,11 +11,22 @@ function isDebtProperty(property) {
   )
 }
 
-/** Аукцион завершён или объект продан — промо drawer и запись на тест-драйв не показываем. */
+/** Объект в активной резервации (buy now) — ставки и тест-драйв приостановлены. */
+export function isPropertyReservationActive(property) {
+  if (!property) return false
+  const reserved =
+    property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === '1'
+  if (!reserved || !property.reserved_until) return false
+  const until = new Date(property.reserved_until).getTime()
+  return Number.isFinite(until) && until > Date.now()
+}
+
+/** Аукцион завершён, объект продан или забронирован — промо drawer не показываем. */
 export function propertyBlocksTestDrivePromo(property, { timerExpired = false } = {}) {
   if (!property) return true
   if (isBuyNowPurchaseCompleted(property)) return true
   if (property.status === 'sold') return true
+  if (isPropertyReservationActive(property)) return true
   if (timerExpired) return true
   const endTime = getEffectiveAuctionEndTime(property)
   if (endTime && new Date(endTime).getTime() <= Date.now()) return true

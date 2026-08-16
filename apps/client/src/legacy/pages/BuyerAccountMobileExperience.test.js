@@ -2,10 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-const bookingsSource = await readFile(new URL('./MyBookingsPage.jsx', import.meta.url), 'utf8')
-const bookingsCss = await readFile(new URL('./MyBookingsPage.css', import.meta.url), 'utf8')
-const historySource = await readFile(new URL('./History.jsx', import.meta.url), 'utf8')
-const historyCss = await readFile(new URL('./History.css', import.meta.url), 'utf8')
 const profileSource = await readFile(new URL('./TestPage.jsx', import.meta.url), 'utf8')
 const profileCss = await readFile(new URL('./TestPage.css', import.meta.url), 'utf8')
 const notificationsSource = await readFile(
@@ -21,27 +17,13 @@ const notificationsContextSource = await readFile(
   'utf8',
 )
 
-test('bookings mobile experience guides the buyer by status and next action', () => {
-  assert.match(bookingsSource, /my-bookings-spotlight/)
-  assert.match(bookingsSource, /my-bookings-filters/)
-  assert.match(bookingsSource, /bookingStatusFilter/)
-  assert.match(bookingsSource, /BuyerSheetShell/)
-  assert.match(bookingsSource, /selectedBooking/)
-  assert.match(bookingsSource, /Что делать дальше/)
-  assert.match(bookingsSource, /my-bookings-state__retry/)
-  assert.match(bookingsSource, /\['pending', 'paid', 'approved', 'completed'/)
-  assert.match(bookingsCss, /@media \(max-width: 767px\)[\s\S]*\.my-bookings-spotlight/)
-  assert.match(bookingsCss, /\.my-bookings-filter[\s\S]*min-height:\s*44px/)
-  assert.match(bookingsCss, /\.my-bookings-card__next[\s\S]*min-height:\s*44px/)
-})
-
-test('history mobile experience leads with a truthful portfolio summary', () => {
-  assert.match(historySource, /history-mobile-hero/)
-  assert.match(historySource, /history-mobile-hero__value/)
-  assert.match(historySource, /history-mobile-hero__actions/)
-  assert.match(historyCss, /@media \(max-width: 767px\)[\s\S]*\.history-mobile-hero/)
-  assert.match(historyCss, /\.history-mobile-hero__action[\s\S]*min-height:\s*44px/)
-  assert.match(historyCss, /@media \(max-width: 767px\)[\s\S]*\.history-card[\s\S]*border-radius:\s*24px/)
+test('profile history and bookings open via cabinet deep-links, not legacy pages', () => {
+  assert.match(profileSource, /to: '\/profile\?history=1'/)
+  assert.match(profileSource, /to: '\/profile\?bookings=1'/)
+  assert.match(profileSource, /searchParams\.get\('history'\) !== '1'/)
+  assert.match(profileSource, /searchParams\.get\('bookings'\) !== '1'/)
+  assert.doesNotMatch(profileSource, /to: '\/history'/)
+  assert.doesNotMatch(profileSource, /to: '\/profile\/bookings'/)
 })
 
 test('profile cabinet uses tiffany banner folders layout without onboarding hints', () => {
@@ -73,6 +55,24 @@ test('profile cabinet uses tiffany banner folders layout without onboarding hint
   assert.doesNotMatch(profileCss, /\.profile-cabinet__status\b/)
   assert.match(profileCss, /\.profile-cabinet__info/)
   assert.match(profileCss, /\.test-page--cabinet-v2 \.test-page__below-hero/)
+})
+
+test('buyer cabinet desktop layout expands the mobile cabinet instead of a 560px column', () => {
+  assert.match(profileSource, /profile-cabinet__desk/)
+  assert.match(profileSource, /profile-cabinet__aside/)
+  assert.match(profileSource, /profile-cabinet__vip-promo/)
+  assert.match(profileSource, /buyerCabinet_docsTitle/)
+  assert.match(profileSource, /profile-cabinet__invite-row/)
+  assert.match(profileCss, /\.profile-cabinet__desk/)
+  assert.match(profileCss, /\.profile-cabinet__aside/)
+  assert.match(profileCss, /@media \(min-width: 960px\)/)
+  assert.match(profileCss, /max-width:\s*1160px/)
+  assert.doesNotMatch(
+    profileCss,
+    /@media \(min-width: 720px\)[\s\S]{0,400}\.test-page--cabinet-v2 \.test-page__below-hero\s*\{\s*display:\s*flex/,
+  )
+  assert.match(profileCss, /\.profile-cabinet__vip-promo[\s\S]{0,220}display:\s*none/)
+  assert.match(profileCss, /\.profile-cabinet__folders-rail[\s\S]{0,280}scroll-snap-type:\s*x mandatory/)
 })
 
 test('profile sheets open in BuyerSheetShell drawers with lazy panels', () => {

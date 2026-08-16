@@ -976,6 +976,43 @@
   color: #b91c1c;
 }
 
+.op-object-cell__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.op-moderation {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.op-moderation--approved {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.op-moderation--pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+
+.op-moderation--rejected {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+.op-moderation--draft {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 .op-object-timer {
   display: inline-flex;
   align-items: flex-start;

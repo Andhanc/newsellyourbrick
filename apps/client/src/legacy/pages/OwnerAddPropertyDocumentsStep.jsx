@@ -12,7 +12,6 @@ import {
   CalendarCheck,
   Headphones,
   AlertCircle,
-  Files,
 } from 'lucide-react'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_DOCUMENT_IMAGES } from './oapDocumentImages'
@@ -357,17 +356,6 @@ function DocumentsContent({
             ))}
           </div>
         )}
-      </div>
-
-      <div className="oap-documents-step__upload-note" role="note">
-        <span className="oap-documents-step__upload-note-icon" aria-hidden>
-          <Files size={16} strokeWidth={1.85} />
-        </span>
-        <p className="oap-documents-step__upload-note-text">
-          {isDebtListing
-            ? t('oap_docsMaxDebtFilesHint', { count: MAX_ADDITIONAL_DOCUMENTS })
-            : t('oap_docsMaxFilesHint', { count: MAX_ADDITIONAL_DOCUMENTS })}
-        </p>
       </div>
     </div>
   )

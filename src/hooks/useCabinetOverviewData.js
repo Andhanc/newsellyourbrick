@@ -168,7 +168,7 @@ export function effectivePurchasedTier(sub) {
   return normalizeSubscriptionPlanVisual(sub)
 }
 
-/** VIP: активная подписка Stripe VIP или закрытый клуб (vip_until в БД). */
+/** VIP-клуб = активная подписка Stripe VIP или промо vip_until. */
 export function userHasVipAccess({ subscription, vipClub }) {
   if (vipClub && typeof vipClub === 'object' && vipClub.active) return true
   return effectivePurchasedTier(subscription) === 'vip'

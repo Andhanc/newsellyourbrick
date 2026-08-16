@@ -63,7 +63,7 @@
 }
 
 .oap-content__body--journey {
-  padding: 1rem var(--ost-mob-pad, 16px) calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding: 1rem var(--ost-mob-pad, 16px) 1.25rem;
 }
 
 .oap--journey-flow .oap-mobile-screen {
@@ -468,10 +468,42 @@
 }
 
 @media (max-width: 900px) {
+  html.oap-journey-mobile-active .oap.oap--journey-mobile,
   .oap.oap--journey-mobile {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
+    flex: 1 1 auto !important;
+    width: 100%;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.oap-journey-mobile-active .oap.oap--journey-mobile .oap-shell--journey,
+  .oap.oap--journey-mobile .oap-shell--journey {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html.oap-journey-mobile-active .oap.oap--journey-mobile .oap-content--journey,
+  .oap.oap--journey-mobile .oap-content--journey {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html.oap-journey-mobile-active .oap.oap--journey-mobile .oap-footer--journey,
+  .oap.oap--journey-mobile .oap-footer--journey {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-shrink: 0 !important;
+    position: relative;
+    z-index: 30;
+    grid-template-columns: none;
   }
 
   .oap--journey-mobile .oap-journey-footer__next,
@@ -928,13 +960,36 @@
     max-width: none;
   }
 
-  /* Дом / вилла / квартира: 3 строки — площади+год | счётчики | остальное */
+  /* Дом / вилла: участок+площадь | год+этажи | счётчики | материал+конструкция */
+  .oap--journey-desktop .oap-basics-params__grid--house,
+  .oap--journey-desktop .oap-basics-params__grid--villa {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(1),
   .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(1),
   .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(2),
   .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(2),
   .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(3),
   .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(3),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(4),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(4) {
+    grid-row: 1;
+  }
+
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(5),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(5) {
+    grid-row: 2;
+  }
+
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(6),
+  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(7),
+  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(7) {
+    grid-row: 3;
+  }
+
+  /* Квартира: площади+год | счётчики | этаж+материал+конструкция */
   .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(1),
   .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(1),
   .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(2),
@@ -944,19 +999,11 @@
     grid-row: 1;
   }
 
-  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(4),
-  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(4),
   .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(4),
   .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(4) {
     grid-row: 2;
   }
 
-  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(5),
-  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(5),
-  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(6),
-  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(6),
-  .oap--journey-desktop .oap-basics-params__grid--house > :nth-child(7),
-  .oap--journey-desktop .oap-basics-params__grid--villa > :nth-child(7),
   .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(5),
   .oap--journey-desktop .oap-basics-params__grid--apartments > :nth-child(5),
   .oap--journey-desktop .oap-basics-params__grid--apartment > :nth-child(6),
@@ -976,6 +1023,11 @@
     align-items: center;
   }
 
+  .oap--journey-desktop .oap-basics-count-picker__controls {
+    width: fit-content;
+    max-width: 100%;
+  }
+
   .oap--journey-desktop .oap-basics-count-picker__track {
     display: inline-flex;
     align-items: center;
@@ -983,17 +1035,23 @@
     gap: 2px;
     width: fit-content;
     max-width: 100%;
+    flex: 0 1 auto;
     min-height: 48px;
     padding: 6px 10px;
   }
 
   .oap--journey-desktop .oap-basics-count-picker__option {
     margin: 0;
-    min-width: 38px;
-    min-height: 36px;
+    min-width: 44px;
+    min-height: 32px;
+    padding: 0 14px;
   }
 
   .oap--journey-desktop .oap-basics-count-picker__option--plus {
-    min-width: 44px;
+    min-width: 52px;
+  }
+
+  .oap--journey-desktop .oap-basics-count-picker__exact {
+    width: 56px;
   }
 }

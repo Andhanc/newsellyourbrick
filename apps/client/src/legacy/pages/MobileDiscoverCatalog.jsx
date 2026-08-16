@@ -16,8 +16,12 @@ import { publicAsset } from '../utils/publicAsset'
 import './InvestorHomePage.css'
 import '../styles/discoverAuctionCards.css'
 
-const BUY_NOW_PHOTO = publicAsset('images/mobile-discover/buy-now-summer.png')
-const DEBTS_PHOTO = publicAsset('images/mobile-discover/debts-summer-cliff.png')
+const BUY_NOW_PHOTO = publicAsset(
+  'images/home-sale-formats/summer-2026/sale-format-auction-summer.webp',
+)
+const DEBTS_PHOTO = publicAsset(
+  'images/home-sale-formats/summer-2026/sale-format-shares-summer.webp',
+)
 const CARD_GESTURE = 140
 const TOUCH_GESTURE = 72
 const JUMP_LOCK_MS = 680

@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 const OWNER_CABINET_HOME_PATH = '/owner-test'
 
@@ -30,6 +30,20 @@ export function LegacyProfileRedirect() {
       replace
     />
   )
+}
+
+/** Устаревшая /history → лист истории в кабинете покупателя. */
+export function LegacyHistoryRedirect() {
+  return <Navigate to="/profile?history=1" replace />
+}
+
+/** Устаревшая /profile/bookings → лист бронирований в кабинете. */
+export function LegacyBookingsRedirect() {
+  const [params] = useSearchParams()
+  const booking = params.get('booking')
+  const search = new URLSearchParams({ bookings: '1' })
+  if (booking) search.set('booking', booking)
+  return <Navigate to={`/profile?${search.toString()}`} replace />
 }
 
 /** Устаревшая тестовая /jeton → главная. */

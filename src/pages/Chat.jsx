@@ -312,15 +312,20 @@ const Chat = () => {
     }
   }, [resumeLiveManagerIfNeeded])
 
-  // /chat?manager=1 — редирект на главную и открытие той же правой панели, что у AI (без блюра и без ожидания на /chat)
+  // /chat и /chat?manager=1 — актуальные модалки, без старой страницы «Сообщения»
   useLayoutEffect(() => {
     const raw = searchParams.get('manager')
-    if (raw == null || raw === '') return
-    if (!MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())) return
+    const isManager =
+      raw != null && raw !== '' && MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())
+    const eventName = isManager ? 'openManagerChat' : 'openAIChat'
 
-    navigate('/', { replace: true })
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/', { replace: true })
+    }
     const tmr = window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('openManagerChat'))
+      window.dispatchEvent(new CustomEvent(eventName))
     }, 0)
     return () => clearTimeout(tmr)
   }, [searchParams, navigate])

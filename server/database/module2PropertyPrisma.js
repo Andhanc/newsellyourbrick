@@ -20,6 +20,35 @@ function parseJsonSafe(val, fallback) {
   }
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
+/** Prisma @default("datetime('now')") на Postgres пишет литерал, а не timestamp. */
+function isBogusSqlNowLiteral(value) {
+  if (value == null) return true;
+  const s = String(value).trim().toLowerCase();
+  return !s || s === "datetime('now')" || s === 'datetime("now")' || s === 'current_timestamp';
+}
+
+function propertyCreatedTs(row) {
+  const raw = row?.created_at;
+  if (isBogusSqlNowLiteral(raw)) return 0;
+  const ts = new Date(raw).getTime();
+  return Number.isFinite(ts) && ts > 0 ? ts : 0;
+}
+
+function sortPropertiesNewestFirst(rows) {
+  return [...(rows || [])].sort((a, b) => {
+    const idA = Number(a?.id || 0)
+    const idB = Number(b?.id || 0)
+    if (idB !== idA) return idB - idA
+    const tb = propertyCreatedTs(b)
+    const ta = propertyCreatedTs(a)
+    return tb - ta
+  })
+}
+
 function parseApartmentRow(property) {
   if (!property) return null;
   const p = { ...property };
@@ -480,6 +509,8 @@ export const apartmentQueries = {
       debt_other: propertyData.debt_other ?? null,
       debt_amount: propertyData.debt_amount != null ? propertyData.debt_amount : null,
       debt_severity: propertyData.debt_severity ?? null,
+      created_at: propertyData.created_at || nowIso(),
+      updated_at: propertyData.updated_at || nowIso(),
     };
     const created = await prisma.properties_apartments.create({ data });
     return { lastInsertRowid: created.id, changes: 1 };
@@ -496,7 +527,7 @@ export const apartmentQueries = {
         const prisma = getPrisma();
     const rows = await prisma.properties_apartments.findMany({
       where: { user_id: Number(userId) },
-      orderBy: { created_at: 'desc' },
+      orderBy: { id: 'desc' },
       take: limit,
       skip: offset,
     });
@@ -702,6 +733,8 @@ export const houseQueries = {
       debt_other: propertyData.debt_other ?? null,
       debt_amount: propertyData.debt_amount != null ? propertyData.debt_amount : null,
       debt_severity: propertyData.debt_severity ?? null,
+      created_at: propertyData.created_at || nowIso(),
+      updated_at: propertyData.updated_at || nowIso(),
     };
     const created = await prisma.properties_houses.create({ data });
     return { lastInsertRowid: created.id, changes: 1 };
@@ -718,7 +751,7 @@ export const houseQueries = {
         const prisma = getPrisma();
     const rows = await prisma.properties_houses.findMany({
       where: { user_id: Number(userId) },
-      orderBy: { created_at: 'desc' },
+      orderBy: { id: 'desc' },
       take: limit,
       skip: offset,
     });
@@ -975,13 +1008,29 @@ export const propertyQueries = {
     return mergeShareRowsPage(apartments, houses, safeOffset, safeLimit);
   },
 
-  getByUserId: async (userId, limit = 50, offset = 0) => {
-        const [apartments, houses] = await Promise.all([
-      apartmentQueries.getByUserId(userId, limit, offset),
-      houseQueries.getByUserId(userId, limit, offset),
+  getByUserId: async (userId, limit = 2000, offset = 0) => {
+    // Тянем все объекты пользователя из обеих таблиц; новизна = created_at, иначе id.
+    const fetchSize = Math.max(Number(limit) || 2000, 2000)
+    const [apartments, houses] = await Promise.all([
+      apartmentQueries.getByUserId(userId, fetchSize, 0),
+      houseQueries.getByUserId(userId, fetchSize, 0),
     ]);
-    const all = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return all.slice(0, limit);
+    const all = sortPropertiesNewestFirst(
+      [...apartments, ...houses]
+        .filter(Boolean)
+        .map((row) => {
+          const created = row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+          const updated = row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at
+          return {
+            ...row,
+            created_at: created,
+            updated_at: updated,
+          }
+        })
+    );
+    const start = Math.max(Number(offset) || 0, 0)
+    const end = start + Math.max(Number(limit) || 2000, 1)
+    return all.slice(start, end);
   },
 
   getById: async (id, propertyType = null) => {

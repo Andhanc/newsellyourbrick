@@ -28,6 +28,7 @@ const ALLOWED = [
   '/test-drive/survey/tok',
   '/test-drive/feedback/tok',
   '/about',
+  '/app',
   '/news',
   '/news/some-slug',
   '/buyer',
@@ -36,10 +37,10 @@ const ALLOWED = [
   '/wallet',
   '/deposit',
   '/profile',
-  '/profile/bookings',
   '/profile/bookings/b1/check-in',
-  '/data',
   '/history',
+  '/profile/bookings',
+  '/data',
   '/subscriptions',
   '/bonuses',
   '/favorites',
@@ -128,7 +129,8 @@ test('seller cabinet and released tools stay available; AI assistant is live', (
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1'), null)
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?assistant=1&embed=1'), null)
   assert.equal(getSoftLaunchBlockedFeatureForHref('/chat'), null)
-  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?manager=1'), 'managerChat')
+  assert.equal(getSoftLaunchBlockedFeatureForHref('/chat?manager=1'), null)
+  assert.equal(isSoftLaunchFeatureBlocked('managerChat'), false)
   assert.equal(isSoftLaunchHrefBlocked('/map'), false)
   assert.equal(isSoftLaunchHrefBlocked('/bonuses'), false)
   assert.equal(isSoftLaunchHrefBlocked('/news'), false)

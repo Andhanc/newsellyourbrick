@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { SiAndroid, SiApple } from 'react-icons/si'
 import Header from '../components/Header'
 import { publicAsset } from '../utils/publicAsset'
@@ -11,24 +12,24 @@ const ANDROID_APK_URL = 'https://litter.catbox.moe/znl6kx.apk'
 const PROPERTIES = [
   {
     id: 'adeje',
-    title: 'Вилла в Adeje',
-    place: 'Тенерифе',
+    titleKey: 'appDl_prop_adeje_title',
+    placeKey: 'appDl_prop_adeje_place',
     price: '€485 000',
     image: publicAsset('images/test-drive/property-marbella-card.jpg'),
     endsInMs: 2 * 60 * 60 * 1000 + 14 * 60 * 1000 + 37 * 1000,
   },
   {
     id: 'cristianos',
-    title: 'Costamar',
-    place: 'Los Cristianos',
+    titleKey: 'appDl_prop_cristianos_title',
+    placeKey: 'appDl_prop_cristianos_place',
     price: '€312 500',
     image: publicAsset('images/test-drive/property-barcelona.png'),
     endsInMs: 5 * 60 * 60 * 1000 + 42 * 60 * 1000 + 8 * 1000,
   },
   {
     id: 'abamah',
-    title: 'Абама Гольф',
-    place: 'Guía de Isora',
+    titleKey: 'appDl_prop_abamah_title',
+    placeKey: 'appDl_prop_abamah_place',
     price: '€690 000',
     image: publicAsset('images/test-drive/property-sorrento.png'),
     endsInMs: 11 * 60 * 60 * 1000 + 3 * 60 * 1000 + 51 * 1000,
@@ -48,6 +49,7 @@ function formatRemain(ms) {
 }
 
 export default function AppDownloadPage() {
+  const { t } = useTranslation()
   const [remain, setRemain] = useState(() =>
     Object.fromEntries(PROPERTIES.map((p) => [p.id, p.endsInMs]))
   )
@@ -85,7 +87,7 @@ export default function AppDownloadPage() {
                 <div className="app-dl__glass" />
                 <div className="app-dl__lock-ui">
                   <p className="app-dl__clock">9:41</p>
-                  <p className="app-dl__date">Понедельник, 6 июня</p>
+                  <p className="app-dl__date">{t('appDl_lockDate')}</p>
                 </div>
               </div>
 
@@ -104,13 +106,13 @@ export default function AppDownloadPage() {
                     <div className="app-dl__notif-body">
                       <div className="app-dl__notif-row">
                         <div className="app-dl__notif-meta">
-                          <strong>{item.title}</strong>
-                          <span className="app-dl__notif-place">{item.place}</span>
+                          <strong>{t(item.titleKey)}</strong>
+                          <span className="app-dl__notif-place">{t(item.placeKey)}</span>
                         </div>
                         <span className="app-dl__notif-price">{item.price}</span>
                       </div>
                       <div className="app-dl__notif-timer" role="timer">
-                        <span>Аукцион</span>
+                        <span>{t('appDl_auctionLabel')}</span>
                         <time>{formatRemain(remain[item.id])}</time>
                       </div>
                     </div>
@@ -123,12 +125,8 @@ export default function AppDownloadPage() {
 
         <section className="app-dl__copy">
           <div className="app-dl__copy-inner">
-            <h1 className="app-dl__title">
-              Не пропустите ставки и&nbsp;торги
-            </h1>
-            <p className="app-dl__lead">
-              Объекты, цены и таймер аукциона — всегда под рукой.
-            </p>
+            <h1 className="app-dl__title">{t('appDl_title')}</h1>
+            <p className="app-dl__lead">{t('appDl_lead')}</p>
 
             <div className="app-dl__actions">
               <a
@@ -141,7 +139,7 @@ export default function AppDownloadPage() {
                   <SiAndroid size={24} />
                 </span>
                 <span className="app-dl__store-text">
-                  <small>Скачать</small>
+                  <small>{t('appDl_download')}</small>
                   <strong>Android</strong>
                 </span>
               </a>
@@ -150,7 +148,7 @@ export default function AppDownloadPage() {
                   <SiApple size={24} />
                 </span>
                 <span className="app-dl__store-text">
-                  <small>Скоро</small>
+                  <small>{t('appDl_soon')}</small>
                   <strong>iOS</strong>
                 </span>
               </button>

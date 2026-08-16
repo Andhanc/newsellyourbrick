@@ -41,6 +41,8 @@ import { FiX } from 'react-icons/fi'
 import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
 import { getUserData, logout } from '../services/authService'
 import {
+  getCabinetBookingsPath,
+  getCabinetHistoryPath,
   getCabinetProfilePath,
   getCabinetWalletPath,
   isSellerCabinetRole,
@@ -145,9 +147,9 @@ function buildRoleColumn(role) {
     icon: ShoppingBag,
     links: [
       { labelKey: 'profile', path: getCabinetProfilePath(role), requiresAuth: true },
-      { labelKey: 'ownerTest_tabBookings', path: '/profile/bookings', requiresAuth: true },
+      { labelKey: 'ownerTest_tabBookings', path: getCabinetBookingsPath(role), requiresAuth: true },
       { labelKey: 'buyerCabinet_tileDepositTitle', path: getCabinetWalletPath(role), requiresAuth: true },
-      { labelKey: 'history', path: '/history', requiresAuth: true },
+      { labelKey: 'history', path: getCabinetHistoryPath(role), requiresAuth: true },
       { labelKey: 'bonuses', path: '/bonuses', requiresAuth: true },
     ],
   }

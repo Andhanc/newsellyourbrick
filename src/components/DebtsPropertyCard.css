@@ -124,6 +124,14 @@
   color: #0099A9;
 }
 
+.debts-property-card__timer-slot {
+  flex: 0 0 auto;
+}
+
+.debts-property-card__timer-slot:empty {
+  display: none;
+}
+
 .debts-property-card__body {
   display: flex;
   flex-direction: column;

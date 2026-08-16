@@ -1,154 +1,38 @@
-import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle, FiArrowRight } from 'react-icons/fi'
-import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
-import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import { useSiteAiChatDock } from '../hooks/useSiteAiChatDock'
-import useMobileLayout from '../hooks/useMobileLayout'
-import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
-import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { useEffect, useState } from 'react'
 import '../pages/Home.css'
-import './SiteChatDock.css'
-
-const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
 
 export default function SiteChatDock({
   wrapperClassName = 'site-chat-dock',
   footerNear = false,
   hideFab = false,
   children,
-  recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES,
-  resolveRecommendationProperty,
-  onRecommendationClick,
 }) {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const chat = useSiteAiChatDock({ recommendationProperties })
-  const isMobile = useMobileLayout(767)
-  const catalog = chat.catalogProperties || recommendationProperties || []
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
 
-  const findRecommendation = (recId) => {
-    if (typeof resolveRecommendationProperty === 'function') {
-      return resolveRecommendationProperty(recId)
+  useEffect(() => {
+    const onAi = (event) => setIsChatOpen(Boolean(event.detail?.isOpen))
+    const onManager = (event) => setIsManagerChatOpen(Boolean(event.detail?.isOpen))
+    window.addEventListener('aiChatStateChange', onAi)
+    window.addEventListener('managerChatStateChange', onManager)
+    return () => {
+      window.removeEventListener('aiChatStateChange', onAi)
+      window.removeEventListener('managerChatStateChange', onManager)
     }
-    return catalog.find(
-      (item) => String(item.id) === String(recId) || String(item.key) === String(recId),
-    )
-  }
+  }, [])
 
-  const openRecommendation = (property) => {
-    if (!property) return
-    if (typeof onRecommendationClick === 'function') {
-      onRecommendationClick(property)
-    } else {
-      navigate(getPropertyDetailPath(property.id ?? property.key, { property }), {
-        state: { property },
-      })
+  const handleFabClick = () => {
+    if (isChatOpen) {
+      window.dispatchEvent(new CustomEvent('closeAIChat'))
+      return
     }
-    chat.closeChatDock()
-  }
-
-  const openNavigationPath = (path) => {
-    if (!path) return
-    navigate(path)
-    chat.closeChatDock()
-  }
-
-  const formatEuro = (value) =>
-    `${Number(value || 0).toLocaleString('ru-RU')} €`
-
-  const renderManagerChat = (inDrawer = false) => {
-    const titleId = inDrawer ? 'site-manager-drawer-title' : 'site-manager-dock-title'
-
-    return (
-      <div
-        className={`chat-widget ${
-          inDrawer
-            ? 'chat-widget--sheet-drawer chat-widget--manager-drawer'
-            : `chat-widget--manager-dock${
-                chat.isChatOpen ? ' chat-widget--stacked-above-ai' : ''
-              }`
-        }`}
-        role={inDrawer ? undefined : 'dialog'}
-        aria-labelledby={inDrawer ? undefined : titleId}
-      >
-        <div className="chat-widget__header">
-          <div className="chat-widget__header-info">
-            <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
-            <div className="chat-widget__header-text">
-              <h3 id={titleId} className="chat-widget__title">{t('chatManagerTitle')}</h3>
-              <span className="chat-widget__status">{t('chatManagerOnline')}</span>
-            </div>
-          </div>
-          {!inDrawer ? (
-            <button
-              type="button"
-              className="chat-widget__close"
-              onClick={chat.closeManagerChatDock}
-              aria-label={t('closeChat')}
-            >
-              <FiX size={20} />
-            </button>
-          ) : null}
-        </div>
-
-        <div className="chat-widget__messages" ref={chat.managerMessagesRef} aria-live="polite">
-          {chat.managerConnecting && (
-            <div className="chat-widget__message chat-widget__message--bot">
-              <div className="chat-widget__message-content">
-                <div className="chat-widget__typing" aria-hidden>
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
-              </div>
-            </div>
-          )}
-          {!chat.managerConnecting &&
-            chat.managerThreadUi.map((message) => (
-              <div
-                key={message.id}
-                className={`chat-widget__message ${
-                  message.sender === 'user'
-                    ? 'chat-widget__message--user'
-                    : message.sender === 'manager'
-                      ? 'chat-widget__message--manager'
-                      : 'chat-widget__message--system'
-                }`}
-              >
-                <div className="chat-widget__message-content">{message.text}</div>
-                <div className="chat-widget__message-time">{message.time}</div>
-              </div>
-            ))}
-        </div>
-
-        <form className="chat-widget__input-form" onSubmit={chat.submitManagerMessage}>
-          <input
-            type="text"
-            className="chat-widget__input"
-            placeholder={t('chatPlaceholder')}
-            value={chat.managerChatInput}
-            onChange={(e) => chat.setManagerChatInput(e.target.value)}
-            autoComplete="off"
-            disabled={chat.managerConnecting || !chat.liveChatToken}
-          />
-          <button
-            type="submit"
-            className="chat-widget__send"
-            aria-label={t('sendMessage')}
-            disabled={chat.managerConnecting || !chat.liveChatToken}
-          >
-            <FiSend size={18} />
-          </button>
-        </form>
-      </div>
-    )
+    window.dispatchEvent(new CustomEvent('openAIChat'))
   }
 
   return (
     <div
       className={`${wrapperClassName}${footerNear ? ` ${wrapperClassName}--footer-near` : ''}`.trim()}
-      aria-hidden={footerNear && !chat.isChatOpen && !chat.isManagerChatOpen}
+      aria-hidden={footerNear && !isChatOpen && !isManagerChatOpen}
     >
       {children}
 
@@ -156,241 +40,12 @@ export default function SiteChatDock({
         <button
           type="button"
           className="ai-button"
-          onClick={chat.toggleChat}
+          onClick={handleFabClick}
           aria-label="AI Assistant"
-          aria-expanded={chat.isChatOpen}
+          aria-expanded={isChatOpen}
         >
           AI
         </button>
-      ) : null}
-
-      <BuyerSheetShell
-        isOpen={chat.isChatOpen}
-        onClose={chat.closeChatDock}
-        titleId="site-ai-drawer-title"
-        closeLabel={t('closeChat')}
-        className="site-ai-drawer"
-      >
-        <div className="chat-widget chat-widget--sheet-drawer chat-widget--ai-drawer">
-          <div className="chat-widget__header">
-            <div className="chat-widget__header-info">
-              <div className="chat-widget__avatar">AI</div>
-              <div className="chat-widget__header-text">
-                <h3 id="site-ai-drawer-title" className="chat-widget__title">{t('chatTitle')}</h3>
-                <span className="chat-widget__status">{t('chatOnline')}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="chat-widget__messages" ref={chat.chatMessagesRef} aria-live="polite">
-            {chat.chatMessages.map((message, idx) => (
-              <div
-                key={message.id}
-                ref={idx === chat.chatMessages.length - 1 ? chat.lastMessageRef : null}
-                className={`chat-widget__message ${
-                  message.sender === 'user' ? 'chat-widget__message--user' : 'chat-widget__message--bot'
-                }`}
-              >
-                <div className="chat-widget__message-content">
-                  {message.text}
-                  {message.yieldEstimate && (
-                    <div className="chat-widget__yield">
-                      <div className="chat-widget__yield-title">{t('chatYieldTitle')}</div>
-                      <div className="chat-widget__yield-grid">
-                        <div>
-                          <span>{t('chatYieldPrice')}</span>
-                          <strong>{formatEuro(message.yieldEstimate.price)}</strong>
-                        </div>
-                        <div>
-                          <span>{t('chatYieldAnnual')}</span>
-                          <strong>{formatEuro(message.yieldEstimate.annualRent)}</strong>
-                        </div>
-                        <div>
-                          <span>{t('chatYieldMonthly')}</span>
-                          <strong>{formatEuro(message.yieldEstimate.monthlyIncome)}</strong>
-                        </div>
-                        <div>
-                          <span>{t('chatYieldRate')}</span>
-                          <strong>{message.yieldEstimate.yieldPercent}%</strong>
-                        </div>
-                      </div>
-                      {message.yieldEstimate.note ? (
-                        <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="chat-widget__yield-cta"
-                        onClick={() => openNavigationPath('/calculator')}
-                      >
-                        {t('chatYieldInvestorCta')}
-                        <FiArrowRight size={16} aria-hidden />
-                      </button>
-                    </div>
-                  )}
-                  {message.navigation && message.navigation.length > 0 && (
-                    <div className="chat-widget__navigation">
-                      <div className="chat-widget__navigation-title">{t('chatNavigationTitle')}</div>
-                      <div className="chat-widget__navigation-list">
-                        {message.navigation.map((nav) => (
-                          <button
-                            key={nav.path}
-                            type="button"
-                            className="chat-widget__navigation-link"
-                            onClick={() => openNavigationPath(nav.path)}
-                          >
-                            <span>{nav.label}</span>
-                            <FiArrowRight size={16} aria-hidden />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {message.recommendations && message.recommendations.length > 0 && (
-                    <div className="chat-widget__recommendations">
-                      <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
-                      {message.recommendations.map((recId) => {
-                        const property = findRecommendation(recId)
-                        if (!property) return null
-                        const propertyName = property.name || property.title || t('listingDefault')
-                        const propertyPrice = property.price
-                          ? formatEuro(property.price)
-                          : t('priceNotSpecified')
-                        const propertyArea = property.area || property.sqft
-                        const propertyRooms = property.rooms || property.beds
-
-                        return (
-                          <button
-                            key={recId}
-                            type="button"
-                            className="chat-widget__recommendation-link"
-                            onClick={() => openRecommendation(property)}
-                          >
-                            <div className="chat-widget__recommendation-item">
-                              <div className="chat-widget__recommendation-title">{propertyName}</div>
-                              <div className="chat-widget__recommendation-location">{property.location}</div>
-                              <div className="chat-widget__recommendation-details">
-                                {propertyRooms ? <span>{t('roomCount', { count: propertyRooms })}</span> : null}
-                                {propertyArea ? (
-                                  <span>
-                                    {propertyArea} {t('squareMeters')}
-                                  </span>
-                                ) : null}
-                              </div>
-                              <div className="chat-widget__recommendation-price">{propertyPrice}</div>
-                              <div className="chat-widget__recommendation-cta">{t('chatOpenListing')}</div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-                {message.buttons && message.buttons.length > 0 && (
-                  <div
-                    className={`chat-widget__buttons${
-                      message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
-                        ? ' chat-widget__buttons--contact'
-                        : ''
-                    }`}
-                  >
-                    {message.buttons.map((button, index) => {
-                      if (typeof button === 'object' && button?.type === 'contact_pref') {
-                        const IconCmp =
-                          button.value === 'phone'
-                            ? FiPhone
-                            : button.value === 'email'
-                              ? FiMail
-                              : button.value === 'whatsapp'
-                                ? WhatsAppIcon
-                                : button.value === 'telegram'
-                                  ? TelegramIcon
-                                  : FiMessageCircle
-                        return (
-                          <button
-                            key={index}
-                            type="button"
-                            className="chat-widget__button chat-widget__button--contact"
-                            onClick={() =>
-                              !chat.isLoadingAI && chat.handleButtonClick(null, { contactPref: button.value })
-                            }
-                            disabled={chat.isLoadingAI}
-                          >
-                            <IconCmp size={18} aria-hidden />
-                            <span>{button.label}</span>
-                          </button>
-                        )
-                      }
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          className="chat-widget__button"
-                          onClick={() => !chat.isLoadingAI && chat.handleButtonClick(button)}
-                          disabled={chat.isLoadingAI}
-                        >
-                          {button}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-                <div className="chat-widget__message-time">
-                  {message.timestamp.toLocaleTimeString('ru-RU', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-              </div>
-            ))}
-            {chat.isLoadingAI && (
-              <div className="chat-widget__message chat-widget__message--bot">
-                <div className="chat-widget__message-content">
-                  <div className="chat-widget__typing">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  {chat.isSlowAIResponse && (
-                    <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <form className="chat-widget__input-form" onSubmit={chat.handleChatSubmit}>
-            <input
-              type="text"
-              className="chat-widget__input"
-              placeholder={chat.isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
-              value={chat.chatInput}
-              onChange={chat.handleChatInputChange}
-              disabled={chat.isLoadingAI}
-            />
-            <button
-              type="submit"
-              className="chat-widget__send"
-              aria-label={t('sendMessage')}
-              disabled={chat.isLoadingAI}
-            >
-              <FiSend size={18} />
-            </button>
-          </form>
-        </div>
-      </BuyerSheetShell>
-
-      {isMobile ? (
-        <BuyerSheetShell
-          isOpen={chat.isManagerChatOpen}
-          onClose={chat.closeManagerChatDock}
-          titleId="site-manager-drawer-title"
-          closeLabel={t('closeChat')}
-          className="site-ai-drawer site-manager-drawer"
-        >
-          {renderManagerChat(true)}
-        </BuyerSheetShell>
-      ) : chat.isManagerChatOpen ? (
-        renderManagerChat()
       ) : null}
     </div>
   )

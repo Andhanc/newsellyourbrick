@@ -20,7 +20,10 @@ test('sends relative listing photos to the multimodal model as absolute URLs', a
   }, {
     apiKey: 'test-key',
     mediaBaseUrl: 'https://sell.example/',
-    fetchImpl: async (_url, options) => {
+    fetchImpl: async (url, options) => {
+      if (options?.method === 'HEAD' || options?.method === 'GET') {
+        return { ok: true, status: 200, json: async () => ({}) }
+      }
       requestBody = JSON.parse(options.body)
       return {
         ok: true,
@@ -35,6 +38,33 @@ test('sends relative listing photos to the multimodal model as absolute URLs', a
   assert.ok(requestBody.response_format.json_schema.schema.required.includes('neighborhoodSummary'))
   assert.equal(requestBody.response_format.json_schema.schema.properties.strengths.minItems, 2)
   assert.equal(requestBody.response_format.json_schema.schema.properties.risks.minItems, 2)
+})
+
+test('skips unreachable listing photos instead of blocking Gemini', async () => {
+  let requestBody
+  await requestPropertyAiModel({
+    category: 'custom',
+    question: 'Что важно знать?',
+    property: { id: 3, title: 'Дом', images: ['/uploads/missing.jpg', 'https://cdn.example/ok.jpg'] },
+  }, {
+    apiKey: 'test-key',
+    mediaBaseUrl: 'https://sell.example/',
+    fetchImpl: async (url, options) => {
+      if (options?.method === 'HEAD' || options?.method === 'GET') {
+        const ok = String(url).includes('ok.jpg')
+        return { ok, status: ok ? 200 : 404, json: async () => ({}) }
+      }
+      requestBody = JSON.parse(options.body)
+      return {
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: '{"shortAnswer":"Ответ"}' } }] }),
+      }
+    },
+  })
+
+  const userContent = requestBody.messages[1].content
+  assert.equal(userContent.length, 2)
+  assert.equal(userContent[1].image_url.url, 'https://cdn.example/ok.jpg')
 })
 
 test('moves a report through analysis, rendering, and completion', async () => {

@@ -5,5 +5,6 @@ export const UI_LANGUAGES = [
   { code: 'de', name: 'Deutsch', flagClass: 'footer__flag--de' },
   { code: 'es', name: 'Español', flagClass: 'footer__flag--es' },
   { code: 'fr', name: 'Français', flagClass: 'footer__flag--fr' },
+  { code: 'pl', name: 'Polski', flagClass: 'footer__flag--pl' },
   { code: 'sv', name: 'Svenska', flagClass: 'footer__flag--sv' },
 ]

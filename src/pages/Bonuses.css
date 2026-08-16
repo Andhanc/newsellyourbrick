@@ -14,12 +14,23 @@
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  /* clip only horizontally; keep page expanding so .app-layout remains the scroller */
-  overflow-x: clip;
-  overflow-y: visible;
+  /* Do not set overflow-x/y here: overflow-x:clip + overflow-y:visible
+     computes to overflow-y:auto and traps wheel/touch inside a nested scroller,
+     so .app-layout never receives scroll. */
   background: var(--bonuses-mint);
   color: var(--bonuses-ink);
   font-family: Montserrat, Inter, system-ui, sans-serif;
+}
+
+/* Same pattern as Private Club: keep the shared app scroller as the only vertical scroller. */
+.app-layout:has(.bonuses-page) {
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+}
+
+.app-layout:has(.bonuses-page) .app-layout__content {
+  overflow: visible;
 }
 
 .bonuses-page .new-header {
@@ -1214,7 +1225,7 @@
     min-height: 83svh;
     padding:
       calc(env(safe-area-inset-top, 0px) + 106px)
-      20px
+      24px
       calc(22px + env(safe-area-inset-bottom, 0px));
     border-radius: 0 0 34px 34px;
     background:
@@ -1244,20 +1255,25 @@
     order: 2;
     width: 100%;
     max-width: none;
+    min-width: 0;
     align-self: flex-start;
     margin: 8px 0 0;
+    padding-right: 4px;
     color: #ffffff;
-    font-size: clamp(1.55rem, 7.3vw, 2.15rem);
+    font-size: clamp(1.28rem, 6.1vw, 1.85rem);
     font-weight: 840;
-    letter-spacing: -0.045em;
-    line-height: 1.03;
+    letter-spacing: -0.04em;
+    line-height: 1.12;
     text-align: left;
-    text-wrap: wrap;
+    text-wrap: pretty;
+    overflow-wrap: break-word;
+    hyphens: manual;
   }
 
   .bonuses-hero__title-line:first-child,
   .bonuses-hero__title-line--bottom {
-    white-space: nowrap;
+    display: block;
+    white-space: normal;
   }
 
   .bonuses-hero__title-accent {
@@ -1432,7 +1448,7 @@
 
 @media (max-width: 390px) {
   .bonuses-hero__title {
-    font-size: clamp(1.45rem, 7.2vw, 1.8rem);
+    font-size: clamp(1.22rem, 6vw, 1.62rem);
   }
 
   .bonuses-hero__visual {

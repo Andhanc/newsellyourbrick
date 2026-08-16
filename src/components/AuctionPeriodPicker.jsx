@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Clock3 } from 'lucide-react'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 import { getMinAuctionEndDate } from '../utils/oapPricingValidation'
 import './AuctionPeriodPicker.css'
@@ -207,9 +207,10 @@ const AuctionPeriodPicker = ({
     return check > start && check < end
   }
 
-  const shouldRenderDay = (date) => {
-    if (!date) return false
-    return isDateSelectable(date) || isDateStart(date) || isDateEnd(date) || isDateInRange(date)
+  const isDateUnavailable = (date) => {
+    if (!date) return true
+    if (isDateStart(date) || isDateEnd(date)) return false
+    return !isDateSelectable(date)
   }
 
   const handleDayClick = (date, event) => {
@@ -281,25 +282,41 @@ const AuctionPeriodPicker = ({
 
         <div className="auction-period-inline__days" role="grid" aria-label={t('oap_pricingAuctionPeriod')}>
           {days.map((date, index) => {
-            if (!date || !shouldRenderDay(date)) {
+            if (!date) {
               return (
                 <div
-                  key={date ? toYmd(date) : `empty-${index}`}
+                  key={`empty-${index}`}
                   className="auction-period-inline__day auction-period-inline__day--empty"
                   aria-hidden
                 />
               )
             }
 
+            const selectable = isDateSelectable(date)
+            const unavailable = isDateUnavailable(date)
             const dayClassNames = [
               'auction-period-inline__day',
               isDateStart(date) ? 'auction-period-inline__day--start' : '',
               isDateEnd(date) ? 'auction-period-inline__day--end' : '',
-              isDateInRange(date) ? 'auction-period-inline__day--in-range' : '',
-              isDateSelectable(date) ? 'auction-period-inline__day--selectable' : '',
+              !unavailable && isDateInRange(date) ? 'auction-period-inline__day--in-range' : '',
+              selectable ? 'auction-period-inline__day--selectable' : '',
+              unavailable ? 'auction-period-inline__day--disabled' : '',
             ]
               .filter(Boolean)
               .join(' ')
+
+            if (unavailable) {
+              return (
+                <div
+                  key={toYmd(date)}
+                  className={dayClassNames}
+                  aria-disabled="true"
+                  title={t('auctionPeriodMinDurationTitle')}
+                >
+                  <span className="auction-period-inline__day-num">{date.getDate()}</span>
+                </div>
+              )
+            }
 
             return (
               <button
@@ -307,6 +324,7 @@ const AuctionPeriodPicker = ({
                 type="button"
                 className={dayClassNames}
                 aria-pressed={isDateEnd(date)}
+                disabled={!selectable}
                 onClick={(event) => handleDayClick(date, event)}
               >
                 <span className="auction-period-inline__day-num">{date.getDate()}</span>
@@ -351,7 +369,12 @@ const AuctionPeriodPicker = ({
   const minDurationHint =
     !disableMinConstraints ? (
       <aside className="auction-period-hint" aria-label={t('auctionPeriodMinDurationTitle')}>
-        <p className="auction-period-hint__title">{t('auctionPeriodMinDurationTitle')}</p>
+        <div className="auction-period-hint__head">
+          <span className="auction-period-hint__icon" aria-hidden="true">
+            <Clock3 size={18} strokeWidth={2.25} />
+          </span>
+          <p className="auction-period-hint__title">{t('auctionPeriodMinDurationTitle')}</p>
+        </div>
         <p className="auction-period-hint__text">{t('auctionPeriodMinDurationLead')}</p>
         <ul className="auction-period-hint__list">
           <li>{t('auctionPeriodMinDurationReasonBuyers')}</li>

@@ -70,9 +70,9 @@ export function useSubscriptionCalculatorAccess() {
         const base = await getApiBaseUrl()
         const res = await fetch(`${base}/users/${uid}/subscription-billing`)
         const json = await res.json().catch(() => ({}))
-        const sub = json?.success && json?.data ? json.data.subscription : null
+        const data = json?.success && json?.data ? json.data : null
         if (!cancelled) {
-          setAllowed(subscriptionUnlocksCalculator(sub))
+          setAllowed(subscriptionUnlocksCalculator(data?.subscription ?? null, data?.vipClub))
           setResolved(true)
         }
       } catch {

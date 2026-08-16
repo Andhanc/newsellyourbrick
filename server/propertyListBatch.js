@@ -2,8 +2,13 @@
  * Пакетная загрузка данных для списков недвижимости (убирает N+1 к БД).
  */
 import { getPrisma } from './database/prismaClient.js';
+import {
+  EXTRA_TRANSLATION_FIELDS,
+  parseExtraJson,
+  SITE_LANG_CODES,
+} from './services/aiPropertyTranslate.js';
 
-const LIST_LANGS = new Set(['ru', 'en', 'de', 'es', 'fr', 'sv']);
+const LIST_LANGS = new Set(SITE_LANG_CODES);
 
 function chunk(arr, size) {
   const out = [];
@@ -36,6 +41,22 @@ function trMapKey(propertyId, propertyTable) {
   return `${Number(propertyId)}::${propertyTable}`;
 }
 
+export function applyPropertyTranslationRow(prop, tr) {
+  if (!prop || !tr) return prop;
+  if (tr.title) {
+    prop.title = tr.title;
+    prop.name = tr.title;
+  }
+  if (tr.description) prop.description = tr.description;
+  if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
+  if (tr.location != null) prop.location = tr.location;
+  const extra = parseExtraJson(tr.extra_json);
+  for (const key of EXTRA_TRANSLATION_FIELDS) {
+    if (extra[key] != null && extra[key] !== '') prop[key] = extra[key];
+  }
+  return prop;
+}
+
 /**
  * Подставляет переводы title/description/... для элементов списка одним-двумя запросами.
  * @param {Array<{ id: unknown, source_table?: string|null, title?: unknown, name?: unknown }>} props
@@ -60,6 +81,7 @@ export async function mergePropertyTranslations(props, lang) {
         description: true,
         additional_amenities: true,
         location: true,
+        extra_json: true,
       },
     });
     const byKey = new Map(rows.map((r) => [trMapKey(r.property_id, r.property_table), r]));
@@ -67,13 +89,7 @@ export async function mergePropertyTranslations(props, lang) {
       const table = translationPropertyTable(prop.source_table, prop.property_type);
       const tr = byKey.get(trMapKey(prop.id, table));
       if (!tr) continue;
-      if (tr.title) {
-        prop.title = tr.title;
-        prop.name = tr.title;
-      }
-      if (tr.description) prop.description = tr.description;
-      if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
-      if (tr.location != null) prop.location = tr.location;
+      applyPropertyTranslationRow(prop, tr);
     }
   }
 }

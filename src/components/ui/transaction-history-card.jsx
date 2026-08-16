@@ -16,7 +16,7 @@ export default function TransactionHistoryCard({
   listTitle = 'Последние операции',
   items = [],
   defaultSelectedId,
-  historyHref = '/history',
+  historyHref = '/profile?history=1',
   historyButtonLabel = 'Вся история',
   className,
 }) {

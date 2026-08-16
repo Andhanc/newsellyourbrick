@@ -14,7 +14,7 @@ import OwnerEmptyPropertiesIllustration from './OwnerEmptyPropertiesIllustration
 import OwnerEmptyBookingsIllustration from './OwnerEmptyBookingsIllustration'
 import OwnerTestDriveSplitSkeleton from './OwnerTestDriveSplitSkeleton'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
-import { OWNER_VIEWS } from '../utils/ownerTestNav'
+import { OWNER_VIEWS, scrollOwnerCabinetToTop } from '../utils/ownerTestNav'
 import OwnerTestDriveDetailModal from './OwnerTestDriveDetailModal'
 import { fetchOwnerProperties } from '../utils/ownerPropertiesList'
 import {
@@ -33,6 +33,83 @@ const FALLBACK_PROPERTY_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 const SELECT_EMPTY_IMAGE = publicAsset('images/owner-properties-test/owner-testdrive-select-empty.png')
 const PROPERTY_CALENDAR_COLORS = ['#f65bad', '#78dc58', '#9bdfe7', '#ffd45b', '#b797f4', '#ff8a65']
+const PAGE_SIZE = 10
+
+function getVisiblePages(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => ({ type: 'page', value: index + 1 }))
+  }
+
+  const items = [{ type: 'page', value: 1 }]
+  if (currentPage > 3) items.push({ type: 'ellipsis' })
+
+  const start = Math.max(2, currentPage - 1)
+  const end = Math.min(totalPages - 1, currentPage + 1)
+  for (let page = start; page <= end; page += 1) {
+    items.push({ type: 'page', value: page })
+  }
+
+  if (currentPage < totalPages - 2) items.push({ type: 'ellipsis' })
+  if (totalPages > 1) items.push({ type: 'page', value: totalPages })
+  return items
+}
+
+function TestDrivePropertiesPagination({ currentPage, totalPages, totalItems, onPageChange }) {
+  const { t } = useTranslation()
+  const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
+  const pageEnd = Math.min(currentPage * PAGE_SIZE, totalItems)
+  const pageItems = getVisiblePages(currentPage, totalPages)
+
+  return (
+    <footer className="otd-pagination">
+      <p className="otd-pagination__info">
+        {totalItems === 0
+          ? t('ownerTest_propertiesNoItems')
+          : `${pageStart}–${pageEnd} / ${totalItems} ${t('ownerTest_tabProperties')}`}
+      </p>
+      {totalPages > 1 ? (
+        <div className="otd-pagination__controls">
+          <button
+            type="button"
+            className="otd-page-btn"
+            aria-label={t('ownerTest_paginationPrev')}
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          {pageItems.map((item, index) =>
+            item.type === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="otd-page-ellipsis" aria-hidden>
+                …
+              </span>
+            ) : (
+              <button
+                key={item.value}
+                type="button"
+                className={`otd-page-btn${item.value === currentPage ? ' otd-page-btn--active' : ''}`}
+                aria-label={`${t('ownerTest_tabProperties')} ${item.value}`}
+                aria-current={item.value === currentPage ? 'page' : undefined}
+                onClick={() => onPageChange(item.value)}
+              >
+                {item.value}
+              </button>
+            )
+          )}
+          <button
+            type="button"
+            className="otd-page-btn"
+            aria-label={t('ownerTest_paginationNext')}
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      ) : null}
+    </footer>
+  )
+}
 
 function hasTestDriveFlag(prop) {
   const raw = prop?.raw ?? prop
@@ -116,6 +193,7 @@ export default function OwnerTestDriveSplitView({
   const [selectedAggregateDate, setSelectedAggregateDate] = useState('')
   const [selectedPropertyCalendarOnly, setSelectedPropertyCalendarOnly] = useState(false)
   const [mobileDrawerTop, setMobileDrawerTop] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
   const calendarView = 'month'
   const [calWeekStart, setCalWeekStart] = useState(() => startOfCalendarWeek(new Date()))
   const calendarInitializedRef = useRef(false)
@@ -231,6 +309,30 @@ export default function OwnerTestDriveSplitView({
       String(a.title).localeCompare(String(b.title), locale)
     )
   }, [properties, bookings, locale])
+
+  const totalPropertyPages = Math.max(1, Math.ceil(propertyOptions.length / PAGE_SIZE))
+  const safeCurrentPage = Math.min(currentPage, totalPropertyPages)
+  const paginatedPropertyOptions = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE
+    return propertyOptions.slice(start, start + PAGE_SIZE)
+  }, [propertyOptions, safeCurrentPage])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [propertyOptions.length])
+
+  useEffect(() => {
+    if (currentPage > totalPropertyPages) {
+      setCurrentPage(totalPropertyPages)
+    }
+  }, [currentPage, totalPropertyPages])
+
+  const handlePageChange = useCallback((nextPage) => {
+    setCurrentPage(nextPage)
+    requestAnimationFrame(() => {
+      scrollOwnerCabinetToTop()
+    })
+  }, [])
 
   const propertyBookings = useMemo(() => {
     if (!selectedKey) return []
@@ -450,6 +552,15 @@ export default function OwnerTestDriveSplitView({
     }
   }, [drawerVisible, requestDrawerClose, updateMobileDrawerTop])
 
+  useEffect(() => {
+    const closeOnMenuOpen = () => {
+      if (!selectedKey && !drawerVisible) return
+      requestDrawerClose()
+    }
+    window.addEventListener('owner-test:open-menu', closeOnMenuOpen)
+    return () => window.removeEventListener('owner-test:open-menu', closeOnMenuOpen)
+  }, [selectedKey, drawerVisible, requestDrawerClose])
+
   const renderMobileHero = () => (
     <article
       ref={mobileCalendarRef}
@@ -632,7 +743,7 @@ export default function OwnerTestDriveSplitView({
 
   const renderPropertyCards = () => (
     <ul className="otd-split__cards">
-      {propertyOptions.map((property) => {
+      {paginatedPropertyOptions.map((property) => {
         const active = property.key === selectedKey
         const count = bookingCountByKey.get(property.key) || 0
         const locationLabel =
@@ -1010,6 +1121,12 @@ export default function OwnerTestDriveSplitView({
               <span className="otd-split__left-count">{propertyOptions.length}</span>
             </header>
             {renderPropertyCards()}
+            <TestDrivePropertiesPagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPropertyPages}
+              totalItems={propertyOptions.length}
+              onPageChange={handlePageChange}
+            />
           </section>
         ) : null}
 
