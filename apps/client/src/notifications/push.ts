@@ -46,14 +46,41 @@ async function ensureAndroidChannels() {
   })
 }
 
+async function ensureNotificationsPermission() {
+  const current = await Notifications.getPermissionsAsync()
+  const permission =
+    current.status === 'granted' ? current : await Notifications.requestPermissionsAsync()
+  return permission.status === 'granted'
+}
+
+export async function scheduleFirstFavoriteNotification(body: string) {
+  if (Platform.OS === 'web') return false
+  const localizedBody = String(body || '').trim()
+  if (!localizedBody) return false
+
+  await ensureAndroidChannels()
+  if (!(await ensureNotificationsPermission())) return false
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'SellYourBrick',
+      body: localizedBody,
+      sound: 'default',
+      data: {
+        path: '/auction',
+        type: 'first_favorite_recommendation',
+      },
+    },
+    trigger: Platform.OS === 'android' ? { channelId: 'auctions' } : null,
+  })
+  return true
+}
+
 export async function registerPushNotifications(userId: number | string) {
   if (Platform.OS === 'web') return null
 
   await ensureAndroidChannels()
-  const current = await Notifications.getPermissionsAsync()
-  const permission =
-    current.status === 'granted' ? current : await Notifications.requestPermissionsAsync()
-  if (permission.status !== 'granted') return null
+  if (!(await ensureNotificationsPermission())) return null
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId

@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import * as Notifications from 'expo-notifications'
 import { useRouter } from 'expo-router'
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 
 import { useAuth } from '../auth/session'
 import {
@@ -15,9 +15,20 @@ export function PushNotificationsProvider({ children }: { children: ReactNode })
   const router = useRouter()
 
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    if (Platform.OS === 'web') return undefined
+
+    const openNotificationPath = (response: Notifications.NotificationResponse | null) => {
+      if (!response) return
       const path = notificationPath(response.notification)
       if (path) router.push(path as never)
+    }
+
+    openNotificationPath(Notifications.getLastNotificationResponse())
+    Notifications.clearLastNotificationResponse()
+
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      openNotificationPath(response)
+      Notifications.clearLastNotificationResponse()
     })
     return () => subscription.remove()
   }, [router])

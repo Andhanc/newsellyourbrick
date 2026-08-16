@@ -30,6 +30,30 @@ const authServiceSource = await readFile(
   new URL('../legacy/services/authService.js', import.meta.url),
   'utf8',
 )
+const favoritesContextSource = await readFile(
+  new URL('../legacy/context/PropertyFavoritesContext.jsx', import.meta.url),
+  'utf8',
+)
+const nativeBridgeSource = await readFile(
+  new URL('../legacy/utils/nativeDomBridge.js', import.meta.url),
+  'utf8',
+)
+const pushSource = await readFile(new URL('../notifications/push.ts', import.meta.url), 'utf8')
+const pushProviderSource = await readFile(
+  new URL('../notifications/push-provider.tsx', import.meta.url),
+  'utf8',
+)
+const localeFiles = await Promise.all(
+  ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv'].map(async (locale) => ({
+    locale,
+    messages: JSON.parse(
+      await readFile(
+        new URL(`../legacy/i18n/locales/mainPage/${locale}.json`, import.meta.url),
+        'utf8',
+      ),
+    ),
+  })),
+)
 const nativePropertySource = await readFile(
   new URL('../../app/property/[slugOrId].tsx', import.meta.url),
   'utf8',
@@ -126,4 +150,34 @@ test('property and liked pages share the website favorites provider and backend 
   assert.match(domSource, /path="\/property\/:slugOrId" element=\{<PropertyDetailPage \/>\}/)
   assert.match(domSource, /path="\/favorites" element=\{<Favorites \/>\}/)
   assert.match(screenSource, /segments\[propertyIndex \+ 2\] === 'test-drive'/)
+})
+
+test('first favorite drawer also schedules a localized native notification that opens auction', () => {
+  assert.equal(
+    favoritesContextSource.match(
+      /triggerNativeFirstFavoriteNotification\(t\('firstFavoriteNotification_body'\)\)/g,
+    )?.length,
+    2,
+  )
+  assert.match(nativeBridgeSource, /triggerNativeFirstFavoriteNotification/)
+  assert.match(domSource, /setNativeFirstFavoriteNotification\(onFirstFavoriteNotification\)/)
+  assert.match(screenSource, /scheduleFirstFavoriteNotification\(body\)/)
+  assert.match(pushSource, /Notifications\.scheduleNotificationAsync\(/)
+  assert.match(pushSource, /path: '\/auction'/)
+  assert.match(pushSource, /channelId: 'auctions'/)
+  assert.match(pushProviderSource, /Notifications\.getLastNotificationResponse\(\)/)
+  assert.match(pushProviderSource, /Notifications\.addNotificationResponseReceivedListener/)
+  assert.match(pushProviderSource, /router\.push\(path as never\)/)
+
+  for (const { locale, messages } of localeFiles) {
+    assert.equal(
+      typeof messages.firstFavoriteNotification_body,
+      'string',
+      `${locale} notification translation is missing`,
+    )
+    assert.ok(
+      messages.firstFavoriteNotification_body.trim().length > 10,
+      `${locale} notification translation is empty`,
+    )
+  }
 })

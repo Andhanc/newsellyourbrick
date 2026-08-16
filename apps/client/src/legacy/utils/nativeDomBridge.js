@@ -1,5 +1,6 @@
 let nativeSessionSwitch = null
 let nativeProfileSavedVibration = null
+let nativeFirstFavoriteNotification = null
 let nativeNavigate = null
 let nativeSessionAuthenticated
 
@@ -42,6 +43,15 @@ export async function triggerNativeProfileSavedVibration() {
   if (!nativeProfileSavedVibration) return false
   await nativeProfileSavedVibration()
   return true
+}
+
+export function setNativeFirstFavoriteNotification(handler) {
+  nativeFirstFavoriteNotification = typeof handler === 'function' ? handler : null
+}
+
+export async function triggerNativeFirstFavoriteNotification(body) {
+  if (!nativeFirstFavoriteNotification) return false
+  return nativeFirstFavoriteNotification({ body: String(body || '') })
 }
 
 export function isBundledNativeDom() {

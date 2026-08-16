@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
 import PublicPage from './public-page.dom'
 import { useAuth } from '../auth/session'
+import { scheduleFirstFavoriteNotification } from '../notifications/push'
 
 type PublicPageScreenProps = {
   initialPath: string
@@ -84,6 +85,20 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     Vibration.cancel()
     Vibration.vibrate([0, 350, 120, 350, 120, 450, 120, 450], false)
   }, [])
+  const handleFirstFavoriteNotification = useCallback(
+    async ({ body }: { body: string }) => {
+      try {
+        return await scheduleFirstFavoriteNotification(body)
+      } catch (error) {
+        console.warn(
+          '[notifications] first favorite notification failed:',
+          error instanceof Error ? error.message : String(error || ''),
+        )
+        return false
+      }
+    },
+    [],
+  )
 
   if (loading) {
     return (
@@ -107,6 +122,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         onLogout={handleLogout}
         onSwitchSession={handleSwitchSession}
         onProfileSavedVibration={handleProfileSavedVibration}
+        onFirstFavoriteNotification={handleFirstFavoriteNotification}
         nativeAppVersion={Constants.expoConfig?.version || '0.0.0'}
         nativeUser={
           user

@@ -46,6 +46,7 @@ import OwnerTestRoute from '../legacy/pages/OwnerTestRoute'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
   setNativeNavigate,
+  setNativeFirstFavoriteNotification,
   setNativeProfileSavedVibration,
   setNativeSessionAuthenticated,
   setNativeSessionSwitch,
@@ -63,6 +64,7 @@ type PublicPageProps = {
   onLogout: () => Promise<void>
   onSwitchSession: (input: NativeSessionSwitchInput) => Promise<NativeSessionSwitchResult>
   onProfileSavedVibration: () => Promise<void>
+  onFirstFavoriteNotification: (input: { body: string }) => Promise<boolean>
   nativeAppVersion: string
   nativeUser: (NativeClerkUser & { role?: string }) | null
   dom?: import('expo/dom').DOMProps
@@ -160,6 +162,7 @@ function syncNativeSession(
   onNavigate: PublicPageProps['onNavigate'],
   onSwitchSession: PublicPageProps['onSwitchSession'],
   onProfileSavedVibration: PublicPageProps['onProfileSavedVibration'],
+  onFirstFavoriteNotification: PublicPageProps['onFirstFavoriteNotification'],
   nativeAppVersion: PublicPageProps['nativeAppVersion'],
 ) {
   setAppVersion(nativeAppVersion)
@@ -169,6 +172,7 @@ function syncNativeSession(
   setNativeSessionAuthenticated(Boolean(user))
   setNativeSessionSwitch(onSwitchSession)
   setNativeProfileSavedVibration(onProfileSavedVibration)
+  setNativeFirstFavoriteNotification(onFirstFavoriteNotification)
   if (typeof window === 'undefined') return
 
   if (!user) {
@@ -193,6 +197,7 @@ export default function PublicPage({
   onLogout,
   onSwitchSession,
   onProfileSavedVibration,
+  onFirstFavoriteNotification,
   nativeAppVersion,
   nativeUser,
 }: PublicPageProps) {
@@ -202,6 +207,7 @@ export default function PublicPage({
     onNavigate,
     onSwitchSession,
     onProfileSavedVibration,
+    onFirstFavoriteNotification,
     nativeAppVersion,
   )
   return (
