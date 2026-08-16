@@ -99,6 +99,20 @@ button {
   overflow-x: hidden;
 }
 
+.native-dom-loading {
+  width: 32px;
+  height: 32px;
+  margin: 48px auto;
+  border: 3px solid rgba(50, 185, 178, 0.22);
+  border-top-color: #32b9b2;
+  border-radius: 50%;
+  animation: native-dom-loading-spin 0.8s linear infinite;
+}
+
+@keyframes native-dom-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* The native Expo shell has its own navigation and must never render the
    website footer, including pages that mount Footer internally. */
 .expo-public-page #site-footer,

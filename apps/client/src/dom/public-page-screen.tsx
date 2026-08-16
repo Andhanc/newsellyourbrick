@@ -1,11 +1,11 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import Constants from 'expo-constants'
 import { StatusBar } from 'expo-status-bar'
 import { useClerk } from '@clerk/expo'
 import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
-import PublicPage from './public-page-v3.dom'
+import PublicPage from './public-page-v4.dom'
 import { useAuth } from '../auth/session'
 import { scheduleFirstFavoriteNotification } from '../notifications/push'
 
@@ -50,6 +50,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
   const router = useRouter()
   const { user, loading, logout, adoptSession } = useAuth()
   const { signOut: clerkSignOut } = useClerk()
+  const [domReady, setDomReady] = useState(false)
   const nativeAppVersion = Constants.expoConfig?.version || '0.0.0'
   const handleNavigate = useCallback(
     async (target: string) => {
@@ -100,6 +101,9 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     },
     [],
   )
+  const handleDomReady = useCallback(async () => {
+    setDomReady(true)
+  }, [])
 
   if (loading) {
     return (
@@ -124,6 +128,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         onSwitchSession={handleSwitchSession}
         onProfileSavedVibration={handleProfileSavedVibration}
         onFirstFavoriteNotification={handleFirstFavoriteNotification}
+        onReady={handleDomReady}
         nativeAppVersion={nativeAppVersion}
         nativeUser={
           user
@@ -141,6 +146,11 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
           style: styles.dom,
         }}
       />
+      {!domReady ? (
+        <View pointerEvents="none" style={[styles.domFallback, styles.center]}>
+          <ActivityIndicator color="#32b9b2" />
+        </View>
+      ) : null}
     </View>
   )
 }
@@ -157,5 +167,9 @@ const styles = StyleSheet.create({
   center: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  domFallback: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#fff',
   },
 })
