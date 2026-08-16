@@ -13,6 +13,7 @@ const NativeLoginModal = LoginModal as unknown as (props: {
   isOpen: boolean
   onClose: () => void
   authEntryVariant: string
+  nativeNavigate: (path: string) => Promise<void>
   nativeEmailLogin: (input: NativeLoginInput) => Promise<NativeAuthResult>
   nativeSocialAuth: (input: NativeSocialAuthInput) => Promise<NativeAuthResult>
   nativeAuthSuccess: (input: NativeSessionInput) => Promise<NativeAuthResult>
@@ -88,6 +89,7 @@ function AuthModal({ onClose, onNavigate, onLogin, onSocialAuth, onAuthSuccess }
         isOpen
         onClose={() => void onClose()}
         authEntryVariant="header_wizard"
+        nativeNavigate={onNavigate}
         nativeEmailLogin={onLogin}
         nativeSocialAuth={onSocialAuth}
         nativeAuthSuccess={onAuthSuccess}

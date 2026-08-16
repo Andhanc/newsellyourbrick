@@ -26,6 +26,7 @@ const LoginModal = ({
   isOpen,
   onClose,
   authEntryVariant = 'header_wizard',
+  nativeNavigate = null,
   nativeEmailLogin = null,
   nativeEmailRegister = null,
   nativeSocialAuth = null,
@@ -277,7 +278,12 @@ const LoginModal = ({
           }
           saveUserData(result.user, 'email')
           setIsLoading(false)
-          navigate(getCabinetHomePath(result.user.role || userRole))
+          const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+          if (nativeNavigate) {
+            await nativeNavigate(cabinetPath)
+          } else {
+            navigate(cabinetPath)
+          }
         } catch (nativeAuthError) {
           setError(nativeAuthError?.message || 'Произошла ошибка при входе. Попробуйте позже.')
           setIsLoading(false)
@@ -574,7 +580,12 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        navigate(getCabinetHomePath(result.user.role || userRole))
+        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+        if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message || 'Не удалось войти через Google')
       } finally {
@@ -696,7 +707,12 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        navigate(getCabinetHomePath(result.user.role || userRole))
+        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+        if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message || 'Не удалось войти через Facebook')
       } finally {
@@ -836,15 +852,24 @@ const LoginModal = ({
       setShowVerificationDocumentsModal(true)
     } else {
       // Для входа или продавца - обычный флоу
-      onClose()
+      if (!nativeNavigate) onClose()
       showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}!`)
       
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
-        navigate(getCabinetHomePath('seller'))
+        const cabinetPath = getCabinetHomePath('seller')
+        if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
       } else {
-        navigate('/profile')
+        if (nativeNavigate) {
+          await nativeNavigate('/profile')
+        } else {
+          navigate('/profile')
+        }
       }
     }
   }
@@ -913,26 +938,39 @@ const LoginModal = ({
 
     // Для email-регистрации после подтверждения кода сразу активируем сессию
     // и отправляем пользователя в кабинет (как в сценарии продавца).
-    onClose()
+    if (!nativeNavigate) onClose()
     showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
 
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
-      navigate(getCabinetHomePath('seller'))
+      const cabinetPath = getCabinetHomePath('seller')
+      if (nativeNavigate) {
+        await nativeNavigate(cabinetPath)
+      } else {
+        navigate(cabinetPath)
+      }
     } else {
-      navigate('/profile')
+      if (nativeNavigate) {
+        await nativeNavigate('/profile')
+      } else {
+        navigate('/profile')
+      }
     }
     setSellerRegistrationBuyerId(null)
   }
   
-  const handleVerificationDocumentsComplete = () => {
+  const handleVerificationDocumentsComplete = async () => {
     // Документы загружены, закрываем модальное окно и обновляем страницу
     setShowVerificationDocumentsModal(false)
-    onClose()
+    if (!nativeNavigate) onClose()
     showNotification('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
-    // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
-    window.location.href = '/profile'
+    if (nativeNavigate) {
+      await nativeNavigate('/profile')
+    } else {
+      // На сайте полное обновление синхронизирует локальную email-сессию со всем интерфейсом.
+      window.location.href = '/profile'
+    }
   }
 
   /** Переключение «войти» / «зарегистрироваться» с очисткой формы */
