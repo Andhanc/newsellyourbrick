@@ -28,11 +28,13 @@ type AuthContextValue = {
   adoptSession: (user: SessionUser, authToken?: string | null) => Promise<SessionUser>
   loginWithClerk: (input: {
     clerkUserId: string
+    clerkToken?: string | null
     email: string
     name: string
     picture?: string | null
     phone?: string | null
     role: 'buyer' | 'seller'
+    mode: 'login' | 'register'
   }) => Promise<SessionUser>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -190,11 +192,13 @@ export function AuthProvider({
   const loginWithClerk = useCallback(
     async (input: {
       clerkUserId: string
+      clerkToken?: string | null
       email: string
       name: string
       picture?: string | null
       phone?: string | null
       role: 'buyer' | 'seller'
+      mode: 'login' | 'register'
     }) => {
       type WebUser = SessionUser & {
         first_name?: string
@@ -205,6 +209,34 @@ export function AuthProvider({
 
       const email = String(input.email || '').trim().toLowerCase()
       if (!email) throw { message: 'Clerk не вернул email пользователя' }
+
+      // The deployed mobile exchange is the authoritative path: Railway verifies the
+      // Clerk JWT, applies login/register semantics and returns the long-lived token
+      // required by protected mobile APIs such as push-token registration.
+      if (input.clerkToken) {
+        try {
+          const mobileSession = await apiFetch<{
+            success?: boolean
+            user?: SessionUser
+            authToken?: string | null
+            error?: string
+          }>('/auth/clerk/mobile', {
+            method: 'POST',
+            token: input.clerkToken,
+            body: JSON.stringify({ role: input.role, mode: input.mode }),
+          })
+          if (!mobileSession?.user?.id) {
+            throw { message: mobileSession?.error || 'Backend не вернул пользователя' }
+          }
+          return adoptSession(mobileSession.user, mobileSession.authToken)
+        } catch (error) {
+          const apiError = error as { status?: number; body?: { code?: string } }
+          // Keep auth operational while Railway is still serving the release that
+          // predates /api/auth/clerk/mobile. A semantic 404 (NEED_REGISTER) must not
+          // fall through, because it is a real answer from the new endpoint.
+          if (apiError?.status !== 404 || apiError?.body?.code) throw error
+        }
+      }
 
       const fullName = String(input.name || '').trim() || email.split('@')[0] || 'Пользователь'
       const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean)

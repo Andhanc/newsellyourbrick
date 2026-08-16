@@ -98,3 +98,11 @@ button {
   width: 100%;
   overflow-x: hidden;
 }
+
+/* The native Expo shell has its own navigation and must never render the
+   website footer, including pages that mount Footer internally. */
+.expo-public-page #site-footer,
+.expo-public-page .footer,
+.expo-public-page .invest-footer {
+  display: none !important;
+}

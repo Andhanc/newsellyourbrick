@@ -137,14 +137,17 @@ export function AuthPageScreen() {
           clerkUser.username ||
           primaryEmail.split('@')[0] ||
           'Пользователь'
+        const clerkToken = await getClerkInstance().session?.getToken()
 
         const user = await loginWithClerk({
           clerkUserId: clerkUser.id,
+          clerkToken,
           email: primaryEmail,
           name: fullName,
           picture: clerkUser.imageUrl || null,
           phone: primaryPhone,
           role: input.role,
+          mode: input.mode,
         })
         return { success: true, user }
       } catch (error) {
