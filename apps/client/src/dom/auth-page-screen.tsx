@@ -1,5 +1,7 @@
 import { useCallback } from 'react'
-import { getClerkInstance, useAuth as useClerkAuth, useClerk, useSSO } from '@clerk/expo'
+import { getClerkInstance, useAuth as useClerkAuth, useClerk } from '@clerk/expo'
+import { useSSO } from '@clerk/expo/experimental'
+import { useSignInWithGoogle } from '@clerk/expo/google'
 import { StatusBar } from 'expo-status-bar'
 import { useRouter } from 'expo-router'
 import { StyleSheet, View } from 'react-native'
@@ -13,6 +15,18 @@ import AuthPage, {
   type NativeSocialAuthInput,
 } from './auth-page.dom'
 
+const CLERK_SSO_REDIRECT_URL = 'sellyourbrick://sso-callback'
+
+async function waitForClerkUser() {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const clerk = getClerkInstance()
+    const user = clerk.user ?? clerk.session?.user ?? null
+    if (user) return user
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  return null
+}
+
 function authError(error: unknown, fallback: string) {
   if (error && typeof error === 'object' && 'message' in error) {
     const message = String((error as { message?: unknown }).message || '').trim()
@@ -24,9 +38,10 @@ function authError(error: unknown, fallback: string) {
 export function AuthPageScreen() {
   const router = useRouter()
   const { login, register, adoptSession, loginWithClerk } = useAuth()
-  const { getToken, isSignedIn } = useClerkAuth()
+  const { isSignedIn } = useClerkAuth()
   const { signOut: clerkSignOut } = useClerk()
   const { startSSOFlow } = useSSO()
+  const { startGoogleAuthenticationFlow } = useSignInWithGoogle()
 
   const handleClose = useCallback(async () => {
     router.replace('/')
@@ -42,7 +57,7 @@ export function AuthPageScreen() {
   const handleLogin = useCallback(
     async (input: NativeLoginInput): Promise<NativeAuthResult> => {
       try {
-        const user = await login(input.email, input.password, input.role)
+        const user = await login(input.email, input.password)
         return { success: true, user }
       } catch (error) {
         return { success: false, error: authError(error, 'Не удалось войти') }
@@ -78,25 +93,58 @@ export function AuthPageScreen() {
   const handleSocialAuth = useCallback(
     async (input: NativeSocialAuthInput): Promise<NativeAuthResult> => {
       try {
-        let clerkToken = isSignedIn ? await getToken() : null
-        if (!clerkToken) {
-          const result = await startSSOFlow({
-            strategy: input.provider === 'facebook' ? 'oauth_facebook' : 'oauth_google',
-            unsafeMetadata: { role: input.role },
-          })
-          if (!result.createdSessionId || !result.setActive) {
-            return { success: false, cancelled: true }
+        let clerkUser = isSignedIn ? getClerkInstance().user : null
+        if (!clerkUser) {
+          if (input.provider === 'google') {
+            // Android Credential Manager opens the native account chooser immediately.
+            // This avoids browser SSO getting stuck before Chrome opens on Samsung devices.
+            const result = await startGoogleAuthenticationFlow({
+              unsafeMetadata: { role: input.role },
+            })
+            if (!result.createdSessionId || !result.setActive) {
+              return { success: false, cancelled: true }
+            }
+            await result.setActive({ session: result.createdSessionId })
+          } else {
+            const result = await startSSOFlow({
+              strategy: 'oauth_facebook',
+              unsafeMetadata: { role: input.role },
+              // Keep the release callback stable and allowlist this exact URL in Clerk.
+              redirectUrl: CLERK_SSO_REDIRECT_URL,
+              authSessionOptions: { showInRecents: true },
+            })
+            if (result.authSessionResult?.type !== 'success') {
+              return { success: false, cancelled: true }
+            }
           }
-          await result.setActive({ session: result.createdSessionId })
-          clerkToken = (await getClerkInstance().session?.getToken()) ?? null
+          clerkUser = await waitForClerkUser()
         }
-        if (!clerkToken) {
-          return { success: false, error: 'Clerk не создал активную сессию' }
+        if (!clerkUser) {
+          return { success: false, error: 'Clerk не вернул профиль активной сессии' }
         }
+
+        const primaryEmail =
+          clerkUser.primaryEmailAddress?.emailAddress ||
+          clerkUser.emailAddresses?.[0]?.emailAddress ||
+          ''
+        const primaryPhone =
+          clerkUser.primaryPhoneNumber?.phoneNumber ||
+          clerkUser.phoneNumbers?.[0]?.phoneNumber ||
+          null
+        const fullName =
+          clerkUser.fullName ||
+          `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
+          clerkUser.username ||
+          primaryEmail.split('@')[0] ||
+          'Пользователь'
+
         const user = await loginWithClerk({
-          clerkToken,
+          clerkUserId: clerkUser.id,
+          email: primaryEmail,
+          name: fullName,
+          picture: clerkUser.imageUrl || null,
+          phone: primaryPhone,
           role: input.role,
-          mode: input.mode,
         })
         return { success: true, user }
       } catch (error) {
@@ -107,7 +155,7 @@ export function AuthPageScreen() {
         }
       }
     },
-    [clerkSignOut, getToken, isSignedIn, loginWithClerk, startSSOFlow],
+    [clerkSignOut, isSignedIn, loginWithClerk, startGoogleAuthenticationFlow, startSSOFlow],
   )
 
   return (

@@ -9,6 +9,8 @@ export type SessionUser = {
   email?: string
   role?: string
   phone?: string
+  picture?: string
+  clerkUserId?: string
   is_verified?: boolean | number
   is_blocked?: boolean | number
 }
@@ -16,7 +18,7 @@ export type SessionUser = {
 type AuthContextValue = {
   user: SessionUser | null
   loading: boolean
-  login: (email: string, password: string, role?: 'buyer' | 'seller') => Promise<SessionUser>
+  login: (email: string, password: string) => Promise<SessionUser>
   register: (input: {
     email: string
     password: string
@@ -25,9 +27,12 @@ type AuthContextValue = {
   }) => Promise<SessionUser>
   adoptSession: (user: SessionUser, authToken?: string | null) => Promise<SessionUser>
   loginWithClerk: (input: {
-    clerkToken: string
+    clerkUserId: string
+    email: string
+    name: string
+    picture?: string | null
+    phone?: string | null
     role: 'buyer' | 'seller'
-    mode: 'login' | 'register'
   }) => Promise<SessionUser>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -117,12 +122,13 @@ export function AuthProvider({
     }
   }, [refresh])
 
-  const login = useCallback(async (email: string, password: string, role?: 'buyer' | 'seller') => {
+  const login = useCallback(async (email: string, password: string) => {
     const result = await apiFetch<{ success?: boolean; user: SessionUser; authToken?: string; error?: string }>(
       '/auth/email/login',
       {
         method: 'POST',
-        body: JSON.stringify({ email, password, ...(role ? { role } : {}) }),
+        // Match the Vite login exactly: the backend resolves the user's real cabinet role.
+        body: JSON.stringify({ email, password }),
       },
     )
     if (!result?.user?.id) {
@@ -183,24 +189,62 @@ export function AuthProvider({
 
   const loginWithClerk = useCallback(
     async (input: {
-      clerkToken: string
+      clerkUserId: string
+      email: string
+      name: string
+      picture?: string | null
+      phone?: string | null
       role: 'buyer' | 'seller'
-      mode: 'login' | 'register'
     }) => {
+      type WebUser = SessionUser & {
+        first_name?: string
+        last_name?: string
+        phone_number?: string | null
+        user_photo?: string | null
+      }
+
+      const email = String(input.email || '').trim().toLowerCase()
+      if (!email) throw { message: 'Clerk не вернул email пользователя' }
+
+      const fullName = String(input.name || '').trim() || email.split('@')[0] || 'Пользователь'
+      const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean)
+      const phoneDigits = String(input.phone || '').replace(/\D/g, '')
       const result = await apiFetch<{
         success?: boolean
-        user: SessionUser
-        authToken?: string
+        data?: WebUser
         error?: string
-      }>('/auth/clerk/mobile', {
+      }>('/users', {
         method: 'POST',
-        token: input.clerkToken,
-        body: JSON.stringify({ role: input.role, mode: input.mode }),
+        body: JSON.stringify({
+          first_name: firstName || 'Пользователь',
+          last_name: lastNameParts.join(' '),
+          email,
+          phone_number: phoneDigits || null,
+          role: input.role,
+          is_verified: 0,
+          is_online: 1,
+          ...(input.picture ? { user_photo: input.picture } : {}),
+        }),
       })
-      if (!result?.user?.id) {
+
+      if (!result?.data?.id) {
         throw { message: result?.error || 'Не удалось связать Clerk с профилем' }
       }
-      return adoptSession(result.user, result.authToken)
+
+      const dbUser = result.data
+      return adoptSession({
+        ...dbUser,
+        id: dbUser.id,
+        name:
+          dbUser.name ||
+          `${dbUser.first_name || ''} ${dbUser.last_name || ''}`.trim() ||
+          fullName,
+        email: dbUser.email || email,
+        phone: dbUser.phone || dbUser.phone_number || input.phone || undefined,
+        role: dbUser.role || input.role,
+        picture: dbUser.picture || dbUser.user_photo || input.picture || undefined,
+        clerkUserId: input.clerkUserId,
+      }, null)
     },
     [adoptSession],
   )

@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@clerk/expo": "^4.2.8",
+    "@clerk/expo-google-signin": "^1.0.0",
     "@emailjs/browser": "^4.4.1",
     "@expo-google-fonts/montserrat": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.2",
