@@ -23,12 +23,30 @@ export function PushNotificationsProvider({ children }: { children: ReactNode })
       if (path) router.push(path as never)
     }
 
-    openNotificationPath(Notifications.getLastNotificationResponse())
-    Notifications.clearLastNotificationResponse()
+    const clearLastResponseSafely = () => {
+      try {
+        Notifications.clearLastNotificationResponse()
+      } catch (error) {
+        console.warn(
+          '[push] could not clear last notification response:',
+          error instanceof Error ? error.message : String(error || ''),
+        )
+      }
+    }
+
+    try {
+      openNotificationPath(Notifications.getLastNotificationResponse())
+      clearLastResponseSafely()
+    } catch (error) {
+      console.warn(
+        '[push] could not read launch notification:',
+        error instanceof Error ? error.message : String(error || ''),
+      )
+    }
 
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       openNotificationPath(response)
-      Notifications.clearLastNotificationResponse()
+      clearLastResponseSafely()
     })
     return () => subscription.remove()
   }, [router])

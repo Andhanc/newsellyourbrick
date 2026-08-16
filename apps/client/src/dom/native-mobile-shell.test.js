@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const screenSource = await readFile(new URL('./public-page-screen.tsx', import.meta.url), 'utf8')
-const domSource = await readFile(new URL('./public-page.dom.tsx', import.meta.url), 'utf8')
+const domSource = await readFile(new URL('./public-page-v2.dom.tsx', import.meta.url), 'utf8')
+const authScreenSource = await readFile(new URL('./auth-page-screen.tsx', import.meta.url), 'utf8')
+const cacheBustSource = await readFile(new URL('./cache-bust.ts', import.meta.url), 'utf8')
 const shellCss = await readFile(new URL('./legacy-public-shell.css', import.meta.url), 'utf8')
 const profileSource = await readFile(new URL('../legacy/pages/TestPage.jsx', import.meta.url), 'utf8')
 const roleSwitchSource = await readFile(
@@ -115,7 +117,8 @@ test('native backend session is authoritative for the legacy profile guard', () 
 })
 
 test('native side menu receives the Android app version', () => {
-  assert.match(screenSource, /nativeAppVersion=\{Constants\.expoConfig\?\.version \|\| '0\.0\.0'\}/)
+  assert.match(screenSource, /const nativeAppVersion = Constants\.expoConfig\?\.version \|\| '0\.0\.0'/)
+  assert.match(screenSource, /nativeAppVersion=\{nativeAppVersion\}/)
   assert.match(domSource, /setAppVersion\(nativeAppVersion\)/)
   assert.match(appVersionSource, /export function setAppVersion/)
 })
@@ -180,4 +183,16 @@ test('first favorite drawer also schedules a localized native notification that 
       `${locale} notification translation is empty`,
     )
   }
+})
+
+test('DOM entry filenames are versioned so Android WebView cannot reuse stale upgrade HTML', () => {
+  assert.match(screenSource, /from '\.\/public-page-v2\.dom'/)
+  assert.match(authScreenSource, /from '\.\/auth-page-v2\.dom'/)
+  assert.doesNotMatch(screenSource, /from '\.\/public-page\.dom'/)
+  assert.doesNotMatch(authScreenSource, /from '\.\/auth-page\.dom'/)
+  assert.match(screenSource, /injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript/)
+  assert.match(authScreenSource, /injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript/)
+  assert.match(cacheBustSource, /__sybAppVersion/)
+  assert.match(cacheBustSource, /window\.location\.replace/)
+  assert.match(pushProviderSource, /try \{[\s\S]*Notifications\.getLastNotificationResponse\(\)/)
 })

@@ -5,7 +5,8 @@ import { useClerk } from '@clerk/expo'
 import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
-import PublicPage from './public-page.dom'
+import PublicPage from './public-page-v2.dom'
+import { createDomCacheBustScript } from './cache-bust'
 import { useAuth } from '../auth/session'
 import { scheduleFirstFavoriteNotification } from '../notifications/push'
 
@@ -50,6 +51,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
   const router = useRouter()
   const { user, loading, logout, adoptSession } = useAuth()
   const { signOut: clerkSignOut } = useClerk()
+  const nativeAppVersion = Constants.expoConfig?.version || '0.0.0'
   const handleNavigate = useCallback(
     async (target: string) => {
       router.push(normalizeLegacyPath(target) as never)
@@ -123,7 +125,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         onSwitchSession={handleSwitchSession}
         onProfileSavedVibration={handleProfileSavedVibration}
         onFirstFavoriteNotification={handleFirstFavoriteNotification}
-        nativeAppVersion={Constants.expoConfig?.version || '0.0.0'}
+        nativeAppVersion={nativeAppVersion}
         nativeUser={
           user
             ? {
@@ -137,6 +139,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         }
         dom={{
           contentInsetAdjustmentBehavior: 'never',
+          injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript(nativeAppVersion),
           style: styles.dom,
         }}
       />

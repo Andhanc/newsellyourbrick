@@ -3,17 +3,19 @@ import { getClerkInstance, useAuth as useClerkAuth, useClerk } from '@clerk/expo
 import { useSSO } from '@clerk/expo/experimental'
 import { useSignInWithGoogle } from '@clerk/expo/google'
 import { StatusBar } from 'expo-status-bar'
+import Constants from 'expo-constants'
 import { useRouter } from 'expo-router'
 import { StyleSheet, View } from 'react-native'
 
 import { useAuth } from '../auth/session'
+import { createDomCacheBustScript } from './cache-bust'
 import AuthPage, {
   type NativeAuthResult,
   type NativeLoginInput,
   type NativeRegisterInput,
   type NativeSessionInput,
   type NativeSocialAuthInput,
-} from './auth-page.dom'
+} from './auth-page-v2.dom'
 
 const CLERK_SSO_REDIRECT_URL = 'sellyourbrick://sso-callback'
 
@@ -42,6 +44,7 @@ export function AuthPageScreen() {
   const { signOut: clerkSignOut } = useClerk()
   const { startSSOFlow } = useSSO()
   const { startGoogleAuthenticationFlow } = useSignInWithGoogle()
+  const nativeAppVersion = Constants.expoConfig?.version || '0.0.0'
 
   const handleClose = useCallback(async () => {
     router.replace('/')
@@ -173,6 +176,7 @@ export function AuthPageScreen() {
         onAuthSuccess={handleAuthSuccess}
         dom={{
           contentInsetAdjustmentBehavior: 'never',
+          injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript(nativeAppVersion),
           style: styles.dom,
         }}
       />
