@@ -25,6 +25,7 @@ import { getCabinetDataPath, getCabinetProfilePath, getCabinetSubscriptionsPath 
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { fetchUserById } from '../utils/usersApi'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
+import { isBundledNativeDom } from '../utils/nativeDomBridge'
 
 import './BuyerCabinetTestPage.css'
 
@@ -301,7 +302,7 @@ export default function BuyerCabinetTestPage() {
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
-    window.location.assign('/')
+    if (!isBundledNativeDom()) window.location.assign('/')
   }
 
   useEffect(() => {

@@ -9,6 +9,10 @@ import {
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
+import {
+  hasNativeSessionSwitch,
+  switchNativeSession,
+} from '../utils/nativeDomBridge'
 
 const PROFILE_API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -100,8 +104,9 @@ export function useRoleSwitchFlow(targetRole) {
       try {
         sessionStorage.setItem('clerk_logout_in_progress', 'true')
         sessionStorage.setItem('role_switch_in_progress', '1')
+        const usesNativeSessionBridge = hasNativeSessionSwitch()
         try {
-          if (clerkUser && signOut) {
+          if (!usesNativeSessionBridge && clerkUser && signOut) {
             await signOut()
           }
         } catch (e) {
@@ -141,6 +146,17 @@ export function useRoleSwitchFlow(targetRole) {
         }
 
         redirecting = true
+        if (usesNativeSessionBridge) {
+          const switched = await switchNativeSession({
+            user: result.user,
+            authToken: result.authToken || null,
+            path: targetPath,
+          })
+          if (!switched?.success) {
+            throw new Error(switched?.error || 'Не удалось переключить кабинет в приложении')
+          }
+          return true
+        }
         window.location.assign(targetPath)
         return true
       } catch (e) {

@@ -35,6 +35,10 @@ import { LegacyBookingsRedirect } from '../legacy/components/LegacyRouteRedirect
 import OwnerTestRoute from '../legacy/pages/OwnerTestRoute'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
+  setNativeProfileSavedVibration,
+  setNativeSessionSwitch,
+} from '../legacy/utils/nativeDomBridge'
+import {
   setNativeClerkSignOut,
   setNativeClerkUser,
   type NativeClerkUser,
@@ -44,8 +48,21 @@ type PublicPageProps = {
   initialPath: string
   onNavigate: (path: string) => Promise<void>
   onLogout: () => Promise<void>
+  onSwitchSession: (input: NativeSessionSwitchInput) => Promise<NativeSessionSwitchResult>
+  onProfileSavedVibration: () => Promise<void>
   nativeUser: (NativeClerkUser & { role?: string }) | null
   dom?: import('expo/dom').DOMProps
+}
+
+type NativeSessionSwitchInput = {
+  user: NativeClerkUser & { role?: string }
+  authToken?: string | null
+  path: string
+}
+
+type NativeSessionSwitchResult = {
+  success: boolean
+  error?: string
 }
 
 function NativeNavigationBridge({
@@ -118,9 +135,13 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
 function syncNativeSession(
   user: PublicPageProps['nativeUser'],
   onLogout: PublicPageProps['onLogout'],
+  onSwitchSession: PublicPageProps['onSwitchSession'],
+  onProfileSavedVibration: PublicPageProps['onProfileSavedVibration'],
 ) {
   setNativeClerkUser(user)
   setNativeClerkSignOut(onLogout)
+  setNativeSessionSwitch(onSwitchSession)
+  setNativeProfileSavedVibration(onProfileSavedVibration)
   if (typeof window === 'undefined') return
 
   if (!user) {
@@ -139,8 +160,15 @@ function syncNativeSession(
   window.localStorage.setItem('isAdminLoggedIn', String(role === 'admin'))
 }
 
-export default function PublicPage({ initialPath, onNavigate, onLogout, nativeUser }: PublicPageProps) {
-  syncNativeSession(nativeUser, onLogout)
+export default function PublicPage({
+  initialPath,
+  onNavigate,
+  onLogout,
+  onSwitchSession,
+  onProfileSavedVibration,
+  nativeUser,
+}: PublicPageProps) {
+  syncNativeSession(nativeUser, onLogout, onSwitchSession, onProfileSavedVibration)
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <PublicRoutes initialPath={initialPath} onNavigate={onNavigate} />

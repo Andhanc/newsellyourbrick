@@ -49,6 +49,7 @@ import {
   readStoredUserRole,
 } from '../utils/cabinetRoutes'
 import { APP_VERSION } from '../utils/appVersion'
+import { isBundledNativeDom } from '../utils/nativeDomBridge'
 import {
   isSoftLaunchFeatureBlocked,
   isSoftLaunchHrefBlocked,
@@ -429,7 +430,7 @@ export default function HeaderMegaMenu({
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
 
-    window.location.assign('/')
+    if (!isBundledNativeDom()) window.location.assign('/')
   }, [clerkUser, closeAfterNav, menuUser.isLoggedIn, onClose, signOut, t])
 
   const renderMobileFooter = () => {

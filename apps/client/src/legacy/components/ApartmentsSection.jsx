@@ -145,11 +145,11 @@ function ApartmentsSection() {
   }
 
   const handleHeaderClick = () => {
-    window.location.href = '/auction/bidding/apartments'
+    navigate('/auction/bidding/apartments')
   }
 
   const handlePropertyClick = (propertyId) => {
-    window.location.href = '/auction/bidding/apartments'
+    navigate('/auction/bidding/apartments')
   }
 
   return (

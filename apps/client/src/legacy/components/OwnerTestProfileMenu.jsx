@@ -7,6 +7,7 @@ import { getOwnerProfileTabs, getOwnerProfileTabPath } from '../pages/ownerProfi
 import { getUserData, logout } from '../services/authService'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
+import { isBundledNativeDom } from '../utils/nativeDomBridge'
 import './OwnerTestProfileMenu.css'
 
 export async function performOwnerTestLogout({ t, user, signOut, confirm = true }) {
@@ -31,7 +32,7 @@ export async function performOwnerTestLogout({ t, user, signOut, confirm = true 
     sessionStorage.removeItem('clerk_logout_in_progress')
   }
 
-  window.location.assign('/')
+  if (!isBundledNativeDom()) window.location.assign('/')
 }
 
 export function resolveOwnerTestDisplayName({ name, fullName, fallback } = {}) {

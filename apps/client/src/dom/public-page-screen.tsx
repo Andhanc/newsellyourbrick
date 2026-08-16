@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { StatusBar } from 'expo-status-bar'
+import { useClerk } from '@clerk/expo'
 import { useRouter } from 'expo-router'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
 import PublicPage from './public-page.dom'
 import { useAuth } from '../auth/session'
@@ -38,7 +39,8 @@ function normalizeLegacyPath(target: string) {
 
 export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
   const router = useRouter()
-  const { user, loading, logout } = useAuth()
+  const { user, loading, logout, adoptSession } = useAuth()
+  const { signOut: clerkSignOut } = useClerk()
   const handleNavigate = useCallback(
     async (target: string) => {
       router.push(normalizeLegacyPath(target) as never)
@@ -49,6 +51,31 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     await logout()
     router.replace('/login')
   }, [logout, router])
+  const handleSwitchSession = useCallback(
+    async (input: {
+      user: { id: string; name?: string; email?: string; phone?: string; role?: string }
+      authToken?: string | null
+      path: string
+    }) => {
+      try {
+        await clerkSignOut().catch(() => undefined)
+        await adoptSession(input.user, input.authToken)
+        router.replace(normalizeLegacyPath(input.path) as never)
+        return { success: true }
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Не удалось переключить кабинет',
+        }
+      }
+    },
+    [adoptSession, clerkSignOut, router],
+  )
+  const handleProfileSavedVibration = useCallback(async () => {
+    // Nearly two seconds of distinct pulses are easier to notice than one short haptic.
+    Vibration.cancel()
+    Vibration.vibrate([0, 350, 120, 350, 120, 450, 120, 450], false)
+  }, [])
 
   if (loading) {
     return (
@@ -66,6 +93,8 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         initialPath={initialPath}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
+        onSwitchSession={handleSwitchSession}
+        onProfileSavedVibration={handleProfileSavedVibration}
         nativeUser={
           user
             ? {

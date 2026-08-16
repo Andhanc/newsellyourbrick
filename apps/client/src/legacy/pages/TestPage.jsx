@@ -70,6 +70,10 @@ import {
 } from '../utils/purchasedPropertyListingPrefill'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
+import {
+  isBundledNativeDom,
+  triggerNativeProfileSavedVibration,
+} from '../utils/nativeDomBridge'
 import './TestPage.css'
 
 const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
@@ -792,6 +796,7 @@ function TestPage() {
   const dataHydratedForSheetRef = useRef(false)
   const countryGeoTriedRef = useRef(false)
   const saveTimersRef = useRef({})
+  const profileCelebrationVibrationStartedRef = useRef(false)
   const persistFieldRef = useRef(async () => {})
   const passportInputRef = useRef(null)
   const countryFieldRef = useRef(null)
@@ -868,7 +873,7 @@ function TestPage() {
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
-    window.location.assign('/')
+    if (!isBundledNativeDom()) window.location.assign('/')
   }, [user, signOut, t])
 
   const handleBecomeSellerRegister = useCallback(async () => {
@@ -1042,6 +1047,18 @@ function TestPage() {
     setDataSheetOpen(false)
     setShowProfileCompleteCelebration(true)
   }, [loadVerificationStatus, verificationStatus])
+
+  useEffect(() => {
+    if (!showProfileCompleteCelebration) {
+      profileCelebrationVibrationStartedRef.current = false
+      return
+    }
+    if (profileCelebrationVibrationStartedRef.current) return
+    profileCelebrationVibrationStartedRef.current = true
+    void triggerNativeProfileSavedVibration().catch((error) => {
+      console.warn('Native profile-save vibration failed:', error)
+    })
+  }, [showProfileCompleteCelebration])
 
   useEffect(() => {
     if (resolvedNumericUserId == null || resolvedNumericUserId === '') {
