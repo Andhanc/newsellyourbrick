@@ -150,21 +150,6 @@ export function matchesSelectedTestDriveDurations(listing, selectedDurations) {
   })
 }
 
-export function matchesSelectedTestDriveCity(city, selectedCities) {
-  if (!selectedCities.length) return true
-
-  const normalizedCity = String(city || '').trim().toLowerCase()
-  if (!normalizedCity) return false
-
-  return selectedCities.some((selectedCity) => {
-    const key = String(selectedCity || '').trim()
-    if (!key) return false
-    if (normalizedCity === key.toLowerCase()) return true
-    const aliases = CITY_FILTER_ALIASES[key] || CITY_FILTER_ALIASES[key.charAt(0).toUpperCase() + key.slice(1)]
-    return Boolean(aliases?.includes(normalizedCity))
-  })
-}
-
 export function isWithinSelectedTestDrivePrice(listingPrice, selectedPrice, unboundedPrice = 500) {
   if (selectedPrice >= unboundedPrice) return true
   const price = firstPositiveNumber(listingPrice)
