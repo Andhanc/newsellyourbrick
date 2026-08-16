@@ -3,9 +3,8 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const screenSource = await readFile(new URL('./public-page-screen.tsx', import.meta.url), 'utf8')
-const domSource = await readFile(new URL('./public-page-v2.dom.tsx', import.meta.url), 'utf8')
+const domSource = await readFile(new URL('./public-page-v3.dom.tsx', import.meta.url), 'utf8')
 const authScreenSource = await readFile(new URL('./auth-page-screen.tsx', import.meta.url), 'utf8')
-const cacheBustSource = await readFile(new URL('./cache-bust.ts', import.meta.url), 'utf8')
 const shellCss = await readFile(new URL('./legacy-public-shell.css', import.meta.url), 'utf8')
 const profileSource = await readFile(new URL('../legacy/pages/TestPage.jsx', import.meta.url), 'utf8')
 const roleSwitchSource = await readFile(
@@ -185,14 +184,13 @@ test('first favorite drawer also schedules a localized native notification that 
   }
 })
 
-test('DOM entry filenames are versioned so Android WebView cannot reuse stale upgrade HTML', () => {
-  assert.match(screenSource, /from '\.\/public-page-v2\.dom'/)
-  assert.match(authScreenSource, /from '\.\/auth-page-v2\.dom'/)
-  assert.doesNotMatch(screenSource, /from '\.\/public-page\.dom'/)
-  assert.doesNotMatch(authScreenSource, /from '\.\/auth-page\.dom'/)
-  assert.match(screenSource, /injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript/)
-  assert.match(authScreenSource, /injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript/)
-  assert.match(cacheBustSource, /__sybAppVersion/)
-  assert.match(cacheBustSource, /window\.location\.replace/)
-  assert.match(pushProviderSource, /try \{[\s\S]*Notifications\.getLastNotificationResponse\(\)/)
+test('DOM entry filenames are versioned without navigating away from the bundled file URL', () => {
+  assert.match(screenSource, /from '\.\/public-page-v3\.dom'/)
+  assert.match(authScreenSource, /from '\.\/auth-page-v3\.dom'/)
+  assert.doesNotMatch(screenSource, /injectedJavaScriptBeforeContentLoaded/)
+  assert.doesNotMatch(authScreenSource, /injectedJavaScriptBeforeContentLoaded/)
+  assert.doesNotMatch(screenSource, /location\.replace/)
+  assert.doesNotMatch(authScreenSource, /location\.replace/)
+  assert.match(pushProviderSource, /try \{[\s\S]*Notifications\.addNotificationResponseReceivedListener/)
+  assert.match(pushProviderSource, /return undefined/)
 })

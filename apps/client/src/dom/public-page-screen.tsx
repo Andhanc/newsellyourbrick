@@ -5,8 +5,7 @@ import { useClerk } from '@clerk/expo'
 import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
-import PublicPage from './public-page-v2.dom'
-import { createDomCacheBustScript } from './cache-bust'
+import PublicPage from './public-page-v3.dom'
 import { useAuth } from '../auth/session'
 import { scheduleFirstFavoriteNotification } from '../notifications/push'
 
@@ -139,7 +138,6 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         }
         dom={{
           contentInsetAdjustmentBehavior: 'never',
-          injectedJavaScriptBeforeContentLoaded: createDomCacheBustScript(nativeAppVersion),
           style: styles.dom,
         }}
       />

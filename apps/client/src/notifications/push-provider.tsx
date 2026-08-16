@@ -37,18 +37,21 @@ export function PushNotificationsProvider({ children }: { children: ReactNode })
     try {
       openNotificationPath(Notifications.getLastNotificationResponse())
       clearLastResponseSafely()
+
+      const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+        openNotificationPath(response)
+        clearLastResponseSafely()
+      })
+      return () => subscription.remove()
     } catch (error) {
+      // Notification support must never be able to tear down the root React tree.
+      // Some vendor ROMs expose only part of the native notification API.
       console.warn(
-        '[push] could not read launch notification:',
+        '[push] notification response API unavailable:',
         error instanceof Error ? error.message : String(error || ''),
       )
+      return undefined
     }
-
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      openNotificationPath(response)
-      clearLastResponseSafely()
-    })
-    return () => subscription.remove()
   }, [router])
 
   useEffect(() => {

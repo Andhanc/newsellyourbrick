@@ -1,5 +1,7 @@
 'use dom'
 
+// Versioned entry: changing this file path gives Android WebView a fresh bundled URL.
+
 import './storage-polyfill'
 import { useEffect, useRef } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
