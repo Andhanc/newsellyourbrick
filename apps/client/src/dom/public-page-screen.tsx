@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useRouter } from 'expo-router'
-import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import PublicPage from './public-page.dom'
 import { useAuth } from '../auth/session'
@@ -38,7 +38,7 @@ function normalizeLegacyPath(target: string) {
 
 export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
   const router = useRouter()
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth()
   const handleNavigate = useCallback(
     async (target: string) => {
       router.push(normalizeLegacyPath(target) as never)
@@ -49,6 +49,15 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     await logout()
     router.replace('/login')
   }, [logout, router])
+
+  if (loading) {
+    return (
+      <View style={[styles.screen, styles.center]}>
+        <StatusBar hidden />
+        <ActivityIndicator color="#32b9b2" />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.screen}>
@@ -85,5 +94,9 @@ const styles = StyleSheet.create({
   dom: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

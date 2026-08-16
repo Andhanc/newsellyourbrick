@@ -16,7 +16,7 @@ type Tx = {
 
 export default function HistoryRoute() {
   const insets = useSafeAreaInsets()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [items, setItems] = useState<Tx[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +51,9 @@ export default function HistoryRoute() {
         <Text style={styles.title}>История</Text>
         <View style={{ width: 40 }} />
       </View>
-      {!user ? (
+      {authLoading ? (
+        <View style={styles.center}><ActivityIndicator color={colors.mdSky} /></View>
+      ) : !user ? (
         <View style={styles.center}>
           <Text style={styles.empty}>Войдите, чтобы видеть транзакции</Text>
           <Pressable style={styles.btn} onPress={() => router.push('/login')}>

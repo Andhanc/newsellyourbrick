@@ -22,7 +22,7 @@ type DepositInfo = {
 
 export default function WalletRoute() {
   const insets = useSafeAreaInsets()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const params = useLocalSearchParams<{ session_id?: string }>()
   const [info, setInfo] = useState<DepositInfo | null>(null)
@@ -113,7 +113,9 @@ export default function WalletRoute() {
         <Text style={styles.title}>Кошелёк</Text>
         <View style={{ width: 40 }} />
       </View>
-      {!user ? (
+      {authLoading ? (
+        <View style={styles.center}><ActivityIndicator color={colors.mdSky} /></View>
+      ) : !user ? (
         <View style={styles.body}>
           <Text style={styles.note}>Войдите, чтобы видеть депозит и пополнять через Stripe.</Text>
           <Link href="/login" asChild>

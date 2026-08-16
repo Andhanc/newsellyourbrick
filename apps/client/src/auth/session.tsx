@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { apiFetch } from '../api/client'
 import { secureStorage, storage } from '../platform/storage'
 import { unregisterStoredPushNotifications } from '../notifications/push'
@@ -83,33 +83,41 @@ export function AuthProvider({
 }) {
   const [user, setUser] = useState<SessionUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const sessionEpochRef = useRef(0)
 
   const refresh = useCallback(async () => {
+    const sessionEpoch = ++sessionEpochRef.current
     try {
       const raw = await storage.getItem(USER_KEY)
       if (!raw) {
-        setUser(null)
+        if (sessionEpochRef.current === sessionEpoch) setUser(null)
         return
       }
       const parsed = JSON.parse(raw) as SessionUser
       if (!parsed?.id) {
-        setUser(null)
+        if (sessionEpochRef.current === sessionEpoch) setUser(null)
         return
       }
-      try {
-        const fresh = await apiFetch<{ success?: boolean; data?: SessionUser } | SessionUser>(
-          `/users/${encodeURIComponent(String(parsed.id))}`,
-        )
-        const next =
-          (fresh as { data?: SessionUser })?.data ||
-          ((fresh as SessionUser)?.id ? (fresh as SessionUser) : parsed)
-        setUser(next)
-        await persistUser(next)
-      } catch {
-        setUser(parsed)
-      }
+
+      // Restore the device session before touching the network. Protected native
+      // screens must never interpret a slow Railway request as a signed-out user.
+      if (sessionEpochRef.current === sessionEpoch) setUser(parsed)
+
+      // Refresh profile fields in the background. A failed or stale response must
+      // not clear or resurrect a session; only the explicit logout path does that.
+      void apiFetch<{ success?: boolean; data?: SessionUser } | SessionUser>(
+        `/users/${encodeURIComponent(String(parsed.id))}`,
+      )
+        .then((fresh) => {
+          if (sessionEpochRef.current !== sessionEpoch) return
+          const next =
+            (fresh as { data?: SessionUser })?.data ||
+            ((fresh as SessionUser)?.id ? (fresh as SessionUser) : parsed)
+          setUser(next)
+        })
+        .catch(() => undefined)
     } catch {
-      setUser(null)
+      if (sessionEpochRef.current === sessionEpoch) setUser(null)
     }
   }, [])
 
@@ -125,6 +133,7 @@ export function AuthProvider({
   }, [refresh])
 
   const login = useCallback(async (email: string, password: string) => {
+    const sessionEpoch = ++sessionEpochRef.current
     const result = await apiFetch<{ success?: boolean; user: SessionUser; authToken?: string; error?: string }>(
       '/auth/email/login',
       {
@@ -144,12 +153,13 @@ export function AuthProvider({
       await secureStorage.removeItem('authToken')
     }
     await persistUser(result.user)
-    setUser(result.user)
+    if (sessionEpochRef.current === sessionEpoch) setUser(result.user)
     return result.user
   }, [])
 
   const register = useCallback(
     async (input: { email: string; password: string; name: string; role?: 'buyer' | 'seller' }) => {
+      const sessionEpoch = ++sessionEpochRef.current
       const result = await apiFetch<{ success?: boolean; user: SessionUser; authToken?: string; error?: string }>(
         '/auth/email/register',
         {
@@ -171,13 +181,14 @@ export function AuthProvider({
         await secureStorage.removeItem('authToken')
       }
       await persistUser(result.user)
-      setUser(result.user)
+      if (sessionEpochRef.current === sessionEpoch) setUser(result.user)
       return result.user
     },
     [],
   )
 
   const adoptSession = useCallback(async (nextUser: SessionUser, authToken?: string | null) => {
+    const sessionEpoch = ++sessionEpochRef.current
     if (!nextUser?.id) throw { message: 'Backend не вернул пользователя' }
     if (authToken) {
       await secureStorage.setItem('authToken', authToken)
@@ -185,7 +196,7 @@ export function AuthProvider({
       await secureStorage.removeItem('authToken')
     }
     await persistUser(nextUser)
-    setUser(nextUser)
+    if (sessionEpochRef.current === sessionEpoch) setUser(nextUser)
     return nextUser
   }, [])
 
@@ -282,6 +293,7 @@ export function AuthProvider({
   )
 
   const logout = useCallback(async () => {
+    ++sessionEpochRef.current
     const authToken = await secureStorage.getItem('authToken')
     await unregisterStoredPushNotifications(authToken)
     if (authToken) {

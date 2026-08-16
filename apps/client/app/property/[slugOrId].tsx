@@ -47,7 +47,7 @@ const width = Dimensions.get('window').width
 export default function PropertyDetailRoute() {
   const { slugOrId } = useLocalSearchParams<{ slugOrId: string }>()
   const insets = useSafeAreaInsets()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -94,6 +94,10 @@ export default function PropertyDetailRoute() {
 
   const placeBid = async () => {
     if (!property) return
+    if (authLoading) {
+      setActionNote('Восстанавливаем сессию…')
+      return
+    }
     if (!user?.id) {
       router.push('/login')
       return
@@ -122,6 +126,10 @@ export default function PropertyDetailRoute() {
 
   const onFavorite = async () => {
     if (!property) return
+    if (authLoading) {
+      setActionNote('Восстанавливаем сессию…')
+      return
+    }
     const added = await toggleLocalFavorite(property.id)
     if (user?.id) {
       try {
@@ -259,11 +267,11 @@ export default function PropertyDetailRoute() {
                 onChangeText={setBidAmount}
               />
               <Pressable
-                style={[styles.btn, busy && { opacity: 0.7 }]}
-                disabled={busy || !bidAmount}
+                style={[styles.btn, (busy || authLoading) && { opacity: 0.7 }]}
+                disabled={busy || authLoading || !bidAmount}
                 onPress={() => void placeBid()}
               >
-                {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Поставить</Text>}
+                {busy || authLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Поставить</Text>}
               </Pressable>
             </View>
           )}
