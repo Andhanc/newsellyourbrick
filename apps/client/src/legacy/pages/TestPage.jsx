@@ -1017,6 +1017,10 @@ function TestPage() {
   }, [resolvedNumericUserId])
 
   useEffect(() => {
+    // Native Expo Router owns protected-route decisions. The legacy DOM guard can
+    // briefly observe an empty WebView-local session while native props hydrate and
+    // must never bounce a valid email/WhatsApp session back to the home screen.
+    if (isBundledNativeDom()) return
     if (!isLoaded) return
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })

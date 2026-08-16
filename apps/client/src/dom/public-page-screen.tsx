@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
+import Constants from 'expo-constants'
 import { StatusBar } from 'expo-status-bar'
 import { useClerk } from '@clerk/expo'
-import { useRouter } from 'expo-router'
+import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
 
 import PublicPage from './public-page.dom'
@@ -35,6 +36,11 @@ function normalizeLegacyPath(target: string) {
   }
 
   return `${aliases[pathname] || pathname}${suffix}`
+}
+
+function requiresNativeSession(target: string) {
+  const pathname = target.split(/[?#]/, 1)[0] || '/'
+  return pathname === '/profile' || pathname.startsWith('/profile/') || pathname.startsWith('/owner-test')
 }
 
 export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
@@ -86,6 +92,10 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     )
   }
 
+  if (!user && requiresNativeSession(initialPath)) {
+    return <Redirect href="/login" />
+  }
+
   return (
     <View style={styles.screen}>
       <StatusBar hidden />
@@ -95,6 +105,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         onLogout={handleLogout}
         onSwitchSession={handleSwitchSession}
         onProfileSavedVibration={handleProfileSavedVibration}
+        nativeAppVersion={Constants.expoConfig?.version || '0.0.0'}
         nativeUser={
           user
             ? {

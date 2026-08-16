@@ -12,7 +12,11 @@ import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
-import { isBundledNativeDom, navigateNativeDom } from '../utils/nativeDomBridge'
+import {
+  isBundledNativeDom,
+  navigateNativeDom,
+  switchNativeSession,
+} from '../utils/nativeDomBridge'
 import './LoginModal.css'
 
 const LazyWhatsAppVerificationModal = lazy(() => import('./WhatsAppVerificationModal'))
@@ -79,7 +83,18 @@ const LoginModal = ({
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
 
-  const navigateAfterAuth = async (path) => {
+  const navigateAfterAuth = async (path, session = null) => {
+    if (isBundledNativeDom() && session?.user) {
+      const switched = await switchNativeSession({
+        user: session.user,
+        authToken: session.authToken || null,
+        path,
+      })
+      if (!switched?.success) {
+        throw new Error(switched?.error || 'Не удалось сохранить сессию в приложении')
+      }
+      return
+    }
     if (nativeNavigate) {
       await nativeNavigate(path)
       return
@@ -411,7 +426,10 @@ const LoginModal = ({
             
             // В Expo DOM абсолютный browser redirect превращается в file:///profile.
             // Всегда передаём внутренний путь нативному Expo Router.
-            await navigateAfterAuth(redirectPath);
+            await navigateAfterAuth(redirectPath, {
+              user: result.user,
+              authToken: result.authToken || null,
+            });
           }
         } else {
           // Проверяем, заблокирован ли пользователь
@@ -874,13 +892,17 @@ const LoginModal = ({
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
         const cabinetPath = getCabinetHomePath('seller')
-        if (nativeNavigate) {
+        if (isBundledNativeDom() && !nativeAuthSuccess) {
+          await navigateAfterAuth(cabinetPath, { user, authToken })
+        } else if (nativeNavigate) {
           await nativeNavigate(cabinetPath)
         } else {
           navigate(cabinetPath)
         }
       } else {
-        if (nativeNavigate) {
+        if (isBundledNativeDom() && !nativeAuthSuccess) {
+          await navigateAfterAuth('/profile', { user, authToken })
+        } else if (nativeNavigate) {
           await nativeNavigate('/profile')
         } else {
           navigate('/profile')
@@ -960,13 +982,17 @@ const LoginModal = ({
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
       const cabinetPath = getCabinetHomePath('seller')
-      if (nativeNavigate) {
+      if (isBundledNativeDom() && !nativeAuthSuccess) {
+        await navigateAfterAuth(cabinetPath, { user, authToken })
+      } else if (nativeNavigate) {
         await nativeNavigate(cabinetPath)
       } else {
         navigate(cabinetPath)
       }
     } else {
-      if (nativeNavigate) {
+      if (isBundledNativeDom() && !nativeAuthSuccess) {
+        await navigateAfterAuth('/profile', { user, authToken })
+      } else if (nativeNavigate) {
         await nativeNavigate('/profile')
       } else {
         navigate('/profile')

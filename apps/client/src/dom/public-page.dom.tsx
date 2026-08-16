@@ -37,8 +37,10 @@ import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesCo
 import {
   setNativeNavigate,
   setNativeProfileSavedVibration,
+  setNativeSessionAuthenticated,
   setNativeSessionSwitch,
 } from '../legacy/utils/nativeDomBridge'
+import { setAppVersion } from '../legacy/utils/appVersion'
 import {
   setNativeClerkSignOut,
   setNativeClerkUser,
@@ -51,6 +53,7 @@ type PublicPageProps = {
   onLogout: () => Promise<void>
   onSwitchSession: (input: NativeSessionSwitchInput) => Promise<NativeSessionSwitchResult>
   onProfileSavedVibration: () => Promise<void>
+  nativeAppVersion: string
   nativeUser: (NativeClerkUser & { role?: string }) | null
   dom?: import('expo/dom').DOMProps
 }
@@ -139,10 +142,13 @@ function syncNativeSession(
   onNavigate: PublicPageProps['onNavigate'],
   onSwitchSession: PublicPageProps['onSwitchSession'],
   onProfileSavedVibration: PublicPageProps['onProfileSavedVibration'],
+  nativeAppVersion: PublicPageProps['nativeAppVersion'],
 ) {
+  setAppVersion(nativeAppVersion)
   setNativeClerkUser(user)
   setNativeClerkSignOut(onLogout)
   setNativeNavigate(onNavigate)
+  setNativeSessionAuthenticated(Boolean(user))
   setNativeSessionSwitch(onSwitchSession)
   setNativeProfileSavedVibration(onProfileSavedVibration)
   if (typeof window === 'undefined') return
@@ -169,9 +175,17 @@ export default function PublicPage({
   onLogout,
   onSwitchSession,
   onProfileSavedVibration,
+  nativeAppVersion,
   nativeUser,
 }: PublicPageProps) {
-  syncNativeSession(nativeUser, onLogout, onNavigate, onSwitchSession, onProfileSavedVibration)
+  syncNativeSession(
+    nativeUser,
+    onLogout,
+    onNavigate,
+    onSwitchSession,
+    onProfileSavedVibration,
+    nativeAppVersion,
+  )
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <PublicRoutes initialPath={initialPath} onNavigate={onNavigate} />

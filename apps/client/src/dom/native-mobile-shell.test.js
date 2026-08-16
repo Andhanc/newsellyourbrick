@@ -18,6 +18,18 @@ const loginSource = await readFile(
   new URL('../legacy/components/LoginModal.jsx', import.meta.url),
   'utf8',
 )
+const authGateSource = await readFile(
+  new URL('../legacy/utils/siteAuthGate.js', import.meta.url),
+  'utf8',
+)
+const appVersionSource = await readFile(
+  new URL('../legacy/utils/appVersion.js', import.meta.url),
+  'utf8',
+)
+const authServiceSource = await readFile(
+  new URL('../legacy/services/authService.js', import.meta.url),
+  'utf8',
+)
 
 test('profile save celebration invokes the native Android vibration bridge once per opening', () => {
   assert.match(screenSource, /Vibration\.vibrate\(\[0, 350, 120, 350, 120, 450, 120, 450\], false\)/)
@@ -37,9 +49,35 @@ test('native Expo pages suppress only the website footer', () => {
 })
 
 test('all email login fallbacks use the native router instead of file URLs', () => {
-  assert.match(loginSource, /await navigateAfterAuth\(redirectPath\)/)
+  assert.match(loginSource, /await navigateAfterAuth\(redirectPath, \{[\s\S]*authToken: result\.authToken \|\| null/)
   assert.match(loginSource, /navigateNativeDom\(path\)/)
+  assert.match(loginSource, /await switchNativeSession\(/)
+  assert.match(authServiceSource, /authToken: data\.authToken \|\| null/)
   assert.doesNotMatch(loginSource, /window\.location\.href = redirectPath/)
+})
+
+test('WhatsApp and verified email sessions are adopted by the native provider', () => {
+  assert.match(loginSource, /navigateAfterAuth\(cabinetPath, \{ user, authToken \}\)/)
+  assert.match(loginSource, /navigateAfterAuth\('\/profile', \{ user, authToken \}\)/)
+  assert.match(loginSource, /if \(nativeAuthSuccess\)/)
+})
+
+test('native custom auth never fabricates a local-only backend session', () => {
+  assert.match(authServiceSource, /if \(isBundledNativeDom\(\)\) \{[\s\S]*Вход через WhatsApp не выполнен/)
+  assert.match(authServiceSource, /if \(isBundledNativeDom\(\)\) \{[\s\S]*Регистрация не выполнена/)
+})
+
+test('native backend session is authoritative for the legacy profile guard', () => {
+  assert.match(domSource, /setNativeSessionAuthenticated\(Boolean\(user\)\)/)
+  assert.match(authGateSource, /getNativeSessionAuthenticated\(\)/)
+  assert.match(profileSource, /if \(isBundledNativeDom\(\)\) return/)
+  assert.match(screenSource, /<Redirect href="\/login" \/>/)
+})
+
+test('native side menu receives the Android app version', () => {
+  assert.match(screenSource, /nativeAppVersion=\{Constants\.expoConfig\?\.version \|\| '0\.0\.0'\}/)
+  assert.match(domSource, /setAppVersion\(nativeAppVersion\)/)
+  assert.match(appVersionSource, /export function setAppVersion/)
 })
 
 test('native role switching adopts the new backend session before routing', () => {
