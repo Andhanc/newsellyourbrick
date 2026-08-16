@@ -26,12 +26,12 @@ import PrivateClub from '../legacy/pages/PrivateClub'
 import SearchResults from '../legacy/pages/SearchResults'
 import MapPage from '../legacy/pages/MapPage'
 import Bonuses from '../legacy/pages/Bonuses'
-import MyBookingsPage from '../legacy/pages/MyBookingsPage'
 import PurchasedObjectGuidePage from '../legacy/pages/PurchasedObjectGuidePage'
 import TestDriveBookingPage from '../legacy/pages/TestDriveBookingPage'
 import TestDriveSurveyPage from '../legacy/pages/TestDriveSurveyPage'
 import TestDriveExitFeedbackPage from '../legacy/pages/TestDriveExitFeedbackPage'
 import CabinetProfileRoute from '../legacy/components/CabinetProfileRoute'
+import { LegacyBookingsRedirect } from '../legacy/components/LegacyRouteRedirects'
 import { PropertyFavoritesProvider } from '../legacy/context/PropertyFavoritesContext'
 import {
   setNativeClerkSignOut,
@@ -96,7 +96,7 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
                 <Route path="/map" element={<MapPage />} />
                 <Route path="/bonuses" element={<Bonuses />} />
                 <Route path="/profile" element={<CabinetProfileRoute />} />
-                <Route path="/profile/bookings" element={<MyBookingsPage />} />
+                <Route path="/profile/bookings" element={<LegacyBookingsRedirect />} />
                 <Route path="/profile/purchased/:propertyId" element={<PurchasedObjectGuidePage />} />
                 <Route path="/property/:slugOrId/test-drive" element={<TestDriveBookingPage />} />
                 <Route path="/test-drive/survey/:token" element={<TestDriveSurveyPage />} />
