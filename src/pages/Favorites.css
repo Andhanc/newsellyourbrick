@@ -827,45 +827,122 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 66px;
-  padding: 10px 10px 10px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
-  background: rgba(5, 31, 33, 0.94);
+  gap: 14px;
+  min-height: 72px;
+  padding: 11px 11px 11px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(151, 231, 235, 0.22);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 82% 0%, rgba(78, 205, 214, 0.16), transparent 36%),
+    linear-gradient(135deg, rgba(5, 31, 33, 0.97), rgba(4, 42, 45, 0.96));
   color: #fff;
-  box-shadow: 0 20px 46px -24px rgba(2, 24, 26, 0.8);
-  backdrop-filter: blur(18px);
+  box-shadow:
+    0 22px 54px -24px rgba(2, 24, 26, 0.86),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: center bottom;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.28s ease,
+    transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear;
+  will-change: transform, opacity;
 }
 
 .favorites-compare-tray div {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .favorites-compare-tray strong {
-  font-size: 0.84rem;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .favorites-compare-tray span {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.71rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .favorites-compare-tray a {
+  position: relative;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 100px;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 15px;
-  background: #fff;
+  gap: 8px;
+  min-width: 116px;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 17px;
+  background: linear-gradient(145deg, #ffffff, #f1fcfc);
   color: var(--buyer-teal-deep, #006f7b);
+  box-shadow:
+    0 12px 24px -14px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
+  transition:
+    color 0.2s ease,
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s ease;
+}
+
+.favorites-compare-tray a span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.favorites-compare-tray a svg {
+  flex: 0 0 auto;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.favorites-compare-tray a:hover {
+  color: #005e68;
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 28px -14px rgba(0, 0, 0, 0.65),
+    0 0 0 3px rgba(78, 205, 214, 0.12);
+}
+
+.favorites-compare-tray a:hover svg {
+  transform: translateX(3px);
+}
+
+.favorites-compare-tray a:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.favorites-compare-tray a:focus-visible {
+  outline: 3px solid rgba(105, 221, 228, 0.72);
+  outline-offset: 3px;
+}
+
+html.site-footer-near .favorites-compare-tray {
+  pointer-events: none;
+  transform: translate3d(0, 18px, 0) scale(0.96);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.24s ease,
+    transform 0.32s cubic-bezier(0.4, 0, 1, 1),
+    visibility 0s linear 0.32s;
 }
 
 @media (min-width: 769px) {

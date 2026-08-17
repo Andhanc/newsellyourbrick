@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FiRefreshCw } from 'react-icons/fi'
+import { FiCheck, FiRefreshCw, FiRotateCcw } from 'react-icons/fi'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
 import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
@@ -70,12 +70,10 @@ function ObjectHeader({ item, side, index, label, onReplace }) {
 function MetricValue({ row, side, objectTitle }) {
   const { t } = useTranslation()
   const isWinner = !row.displayOnly && row.winner === side
-  const isTie = !row.displayOnly && row.winner === 'tie'
   const value = row[side]
   const classes = [
     'compare-mobile__value',
-    isWinner && 'compare-mobile__value--win',
-    isTie && 'compare-mobile__value--tie',
+    isWinner && 'compare-mobile__value--winner',
     row.displayOnly && 'compare-mobile__value--plain',
   ].filter(Boolean).join(' ')
 
@@ -85,19 +83,21 @@ function MetricValue({ row, side, objectTitle }) {
       aria-label={`${objectTitle}: ${value}${isWinner ? t('comparePage_strongerAriaSuffix') : ''}`}
     >
       <span className="compare-mobile__value-number">{value}</span>
-      {isWinner ? <span className="compare-mobile__winner">{t('comparePage_stronger')}</span> : null}
+      {isWinner ? (
+        <span className="compare-mobile__winner" aria-hidden="true">
+          <FiCheck />
+        </span>
+      ) : null}
     </div>
   )
 }
 
-export default function CompareMobileMetrics({ left, right, rows, onReplace }) {
+export default function CompareMobileMetrics({ left, right, rows, onReplace, onClear }) {
   const { t } = useTranslation()
   const leftView = sideView(left, 1, t)
   const rightView = sideView(right, 2, t)
   const replaceLeft = () => onReplace('left')
   const replaceRight = () => onReplace('right')
-  const noData = t('comparePage_noData')
-  const dash = t('comparePage_dash')
   const groupedRows = rows.map((row) => {
     const group = METRIC_GROUP_DEFS.find((candidate) => candidate.rows.includes(row.id))
     return { row, groupId: group?.id || 'property' }
@@ -113,20 +113,21 @@ export default function CompareMobileMetrics({ left, right, rows, onReplace }) {
       <div className="compare-mobile__pair">
         <ObjectHeader item={left} side="left" index={1} label={t('comparePage_object1')} onReplace={replaceLeft} />
         <ObjectHeader item={right} side="right" index={2} label={t('comparePage_object2')} onReplace={replaceRight} />
+        <div className="compare-mobile__versus" aria-hidden="true">VS</div>
+        <button type="button" className="compare-mobile__clear" onClick={onClear}>
+          <FiRotateCcw aria-hidden="true" />
+          <span>{t('comparePage_clearSelection')}</span>
+        </button>
       </div>
 
       <div className="compare-mobile__metrics">
         {METRIC_GROUP_DEFS.map((group) => {
           const groupRows = groupedRows.get(group.id) || []
           if (groupRows.length === 0) return null
-          const hasIncompleteData = groupRows.some((row) => (
-            row.left === dash || row.right === dash || row.left === noData || row.right === noData
-          ))
           return (
             <section className="compare-mobile__group" key={group.id} aria-labelledby={`compare-mobile-group-${group.id}`}>
               <div className="compare-mobile__group-head">
                 <h3 id={`compare-mobile-group-${group.id}`}>{t(group.labelKey)}</h3>
-                {hasIncompleteData ? <span className="compare-mobile__group-warning">{t('comparePage_incompleteFields')}</span> : null}
               </div>
               <div className="compare-mobile__group-rows">
                 {groupRows.map((row) => (

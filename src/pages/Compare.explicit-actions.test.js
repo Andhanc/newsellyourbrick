@@ -4,12 +4,13 @@ import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
 
-test('AI and paid drawer are opened only from named click handlers', () => {
+test('showdown auto-starts AI only with entitlement and never opens the paid drawer automatically', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
   assert.match(page, /onClick=\{requestAiAnalysis\}/)
+  assert.match(page, /if \(hasCalculatorAccess\) void requestAiAnalysis\(\{ openEntitlement: false \}\)/)
+  assert.match(page, /options\?\.openEntitlement !== false/)
   assert.match(page, /setCompareInvestorDrawerOpen\(true\)/)
   assert.doesNotMatch(page, /setTimeout\([\s\S]{0,240}setCompareInvestorDrawerOpen\(true\)/)
-  assert.doesNotMatch(page, /useEffect\([\s\S]{0,700}askPropertyCompareAssistant/)
 })
 
 test('AI responses are aborted and request-id guarded when the pair changes or the page unmounts', () => {
@@ -54,4 +55,11 @@ test('calculator navigation persists only the explicitly selected comparison obj
 test('desktop investor handoff also requires an explicit left or right choice', () => {
   assert.match(page, /onClick=\{\(\) => openInvestorPanel\('left'\)\}/)
   assert.match(page, /onClick=\{\(\) => openInvestorPanel\('right'\)\}/)
+})
+
+test('market estimate starts automatically once for each selected pair', () => {
+  assert.match(page, /compareCalculatorStartedKeyRef = useRef\(null\)/)
+  assert.match(page, /compareCalculatorStartedKeyRef\.current === pairKey/)
+  assert.match(page, /compareCalculatorStartedKeyRef\.current = pairKey[\s\S]*void runCompareCalculator\(\)/)
+  assert.doesNotMatch(page, /onClick=\{runCompareCalculator\}/)
 })

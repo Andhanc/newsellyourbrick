@@ -22,13 +22,13 @@ function propertyView(item, index, t) {
 function decisionText(summary, t) {
   if (!summary || summary.leader === 'unknown') return t('comparePage_decisionUnknown')
   if (summary.leader === 'tie') {
-    return t('comparePage_decisionTie', { left: summary.left, right: summary.right })
+    return t('comparePage_decisionTie')
   }
   const leader = summary.leader === 'left' ? t('comparePage_object1') : t('comparePage_object2')
   return t('comparePage_decisionLead', {
     leader: leader.toLowerCase(),
-    left: summary.left,
-    right: summary.right,
+    score: summary[summary.leader],
+    count: summary.compared,
   })
 }
 
