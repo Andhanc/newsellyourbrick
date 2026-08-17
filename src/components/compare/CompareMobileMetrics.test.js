@@ -24,6 +24,10 @@ test('mobile comparison keeps both object identities visible', () => {
   assert.match(source, /onReplace\('left'\)/)
   assert.match(source, /onReplace\('right'\)/)
   assert.match(source, /comparePage_replaceAria/)
+  assert.match(source, /compare-mobile__versus/)
+  assert.match(source, /compare-mobile__clear/)
+  assert.match(source, /comparePage_clearSelection/)
+  assert.match(source, /onClick=\{onClear\}/)
 })
 
 test('mobile comparison renders semantic metric cards instead of a table', () => {
@@ -35,8 +39,9 @@ test('mobile comparison renders semantic metric cards instead of a table', () =>
   assert.match(source, /rows\.map/)
   assert.match(source, /compare-mobile__metric/)
   assert.match(source, /compare-mobile__metric-label/)
-  assert.match(source, /compare-mobile__value--win/)
-  assert.match(source, /comparePage_stronger/)
+  assert.match(source, /compare-mobile__value--winner/)
+  assert.match(source, /<FiCheck \/>/)
+  assert.doesNotMatch(source, /comparePage_incompleteFields/)
   assert.doesNotMatch(source, /<table/)
 })
 
@@ -45,10 +50,17 @@ test('mobile comparison has no horizontal scroll and uses readable buyer tokens'
   assert.match(css, /position:\s*sticky/)
   assert.match(css, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
   assert.match(css, /min-height:\s*var\(--buyer-touch\)/)
-  assert.match(css, /\.compare-mobile__value--win[\s\S]*var\(--buyer-mint\)/)
-  assert.match(css, /\.compare-mobile__group-warning/)
+  assert.match(css, /\.compare-mobile__winner[\s\S]*var\(--buyer-teal/)
+  assert.doesNotMatch(css, /\.compare-mobile__group-warning/)
   assert.match(css, /@media\s*\(max-width:\s*360px\)/)
   assert.match(css, /top:\s*var\(--compare-mobile-header-offset,\s*calc\(96px \+ env\(safe-area-inset-top, 0px\)\)\)/)
+  assert.match(css, /\.compare-mobile__versus/)
+  assert.match(css, /\.compare-mobile__clear/)
+})
+
+test('winner check and VS marker stay white on Tiffany circles', () => {
+  assert.match(css, /\.compare-mobile__versus \{[\s\S]*?background: var\(--buyer-teal, #4fc7cf\);[\s\S]*?color: #ffffff;/)
+  assert.match(css, /\.compare-mobile__winner \{[\s\S]*?background: var\(--buyer-teal, #4fc7cf\);[\s\S]*?color: #ffffff;/)
 })
 
 test('mobile comparison relies on the Header spacer without adding a second header-sized gap', () => {

@@ -403,7 +403,10 @@ const Favorites = () => {
             <strong>{t('favoritesPage_compareTrayTitle')}</strong>
             <span>{t('favoritesPage_compareTrayCount', { count: favoriteAuctions.length })}</span>
           </div>
-          <Link to="/compare">{t('favoritesPage_compareAction')}</Link>
+          <Link to="/compare">
+            <span>{t('favoritesPage_compareAction')}</span>
+            <PiArrowRight size={17} aria-hidden />
+          </Link>
         </aside>
       ) : null}
     </div>
