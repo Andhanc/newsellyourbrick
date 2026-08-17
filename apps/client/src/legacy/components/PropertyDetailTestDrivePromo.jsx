@@ -14,6 +14,7 @@ export default function PropertyDetailTestDrivePromo({
   i18nLang,
   className = '',
   imageUrl = '',
+  paused = false,
 }) {
   const { t } = useTranslation()
   const promoPhoto =
@@ -21,7 +22,7 @@ export default function PropertyDetailTestDrivePromo({
 
   return (
     <section
-      className={`property-detail-test-drive-promo${className ? ` ${className}` : ''}`}
+      className={`property-detail-test-drive-promo${paused ? ' property-detail-test-drive-promo--paused' : ''}${className ? ` ${className}` : ''}`}
       aria-labelledby="property-test-drive-promo-title"
     >
       <div
@@ -29,38 +30,47 @@ export default function PropertyDetailTestDrivePromo({
           promoPhoto ? '' : ' property-detail-test-drive-promo__banner--no-photo'
         }`}
       >
-        <span className="property-detail-test-drive-promo__grid" aria-hidden />
+        {promoPhoto ? (
+          <img
+            className="property-detail-test-drive-promo__photo"
+            src={promoPhoto}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        ) : null}
+        <span className="property-detail-test-drive-promo__veil" aria-hidden />
+        {paused ? (
+          <div className="property-detail-test-drive-promo__paused" role="status">
+            <span>{t('propertyDetailTestDrivePaused')}</span>
+          </div>
+        ) : null}
+
         <div className="property-detail-test-drive-promo__copy">
-          <span className="property-detail-test-drive-promo__eyebrow">{t('testDrive')}</span>
+          <div className="property-detail-test-drive-promo__kicker">
+            <span className="property-detail-test-drive-promo__eyebrow">{t('testDrive')}</span>
+            <span className="property-detail-test-drive-promo__dot" aria-hidden />
+            <span className="property-detail-test-drive-promo__meta">
+              {t('propertyDetailTestDriveDaysBadge')}
+            </span>
+          </div>
           <h3 id="property-test-drive-promo-title" className="property-detail-test-drive-promo__title">
             {t('propertyDetailTestDriveHeadline')}
           </h3>
-          <p className="property-detail-test-drive-promo__lead">{t('testDrivePromoDrawerLead')}</p>
-          <span className="property-detail-test-drive-promo__badge">{t('propertyDetailTestDriveDaysBadge')}</span>
+          <p className="property-detail-test-drive-promo__lead">
+            {t('propertyDetailTestDrivePromoLead')}
+          </p>
+          <div className="property-detail-test-drive-promo__actions">
+            <TestDriveSection
+              propertyId={propertyId}
+              propertyTable={propertyTable}
+              hasTestDrive={hasTestDrive}
+              i18nLang={i18nLang}
+              layout="promo"
+              paused={paused}
+            />
+          </div>
         </div>
-        {promoPhoto ? (
-          <span className="property-detail-test-drive-promo__media" aria-hidden>
-            <span className="property-detail-test-drive-promo__photo-frame">
-              <img
-                className="property-detail-test-drive-promo__photo"
-                src={promoPhoto}
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            </span>
-          </span>
-        ) : null}
-      </div>
-
-      <div className="property-detail-test-drive-promo__actions">
-        <TestDriveSection
-          propertyId={propertyId}
-          propertyTable={propertyTable}
-          hasTestDrive={hasTestDrive}
-          i18nLang={i18nLang}
-          layout="promo"
-        />
       </div>
     </section>
   )

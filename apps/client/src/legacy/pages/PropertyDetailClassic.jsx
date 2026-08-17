@@ -41,6 +41,7 @@ import { resolvePropertySourceTable, propertyBidsApiQuery } from '../utils/prope
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
+import BidLeaderboardBoard, { buildBidLeaderboard } from '../components/BidLeaderboardBoard'
 import BuyNowModal from '../components/BuyNowModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
@@ -60,6 +61,8 @@ import PropertyDetailDesktopRelatedSection from '../components/property-detail/P
 import '../components/property-detail/PropertyDetailDesktopTestDriveBanner.css'
 import '../components/property-detail/PropertyDetailDesktopRelatedSection.css'
 import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
+import SubscriptionLock from '../components/SubscriptionLock'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
@@ -149,6 +152,7 @@ import {
   Hash,
   MapPin,
 } from 'lucide-react'
+
 const AMENITY_I18N_SPECIAL = {
   pool: 'propertyDetailAmenityPool',
   garden: 'propertyDetailAmenityGarden',
@@ -282,12 +286,23 @@ function PropertyDetailClassic({
   const testDriveBannerRef = useRef(null)
   const investorPromoRef = useRef(null)
   const [auctionMobileTab, setAuctionMobileTab] = useState('about')
+  const [mobileBidsBoardIn, setMobileBidsBoardIn] = useState(false)
 
   useEffect(() => {
     if (location.state?.auctionTab === PROPERTY_DETAIL_AUCTION_TAB_BIDS) {
       setAuctionMobileTab(PROPERTY_DETAIL_AUCTION_TAB_BIDS)
     }
   }, [location.state?.auctionTab, property?.id])
+
+  useEffect(() => {
+    if (auctionMobileTab !== 'bids') {
+      setMobileBidsBoardIn(false)
+      return undefined
+    }
+    setMobileBidsBoardIn(false)
+    const frame = requestAnimationFrame(() => setMobileBidsBoardIn(true))
+    return () => cancelAnimationFrame(frame)
+  }, [auctionMobileTab])
 
   useEffect(() => {
     if (location.state?.auctionSoldOutNotice !== true) return
@@ -1093,6 +1108,8 @@ function PropertyDetailClassic({
 
   const propertyInfo = displayProperty.title || displayProperty.name
   const isDesktopProperty = useIsDesktopProperty()
+  const { canAccess } = useViewerVipAccess()
+  const docsLocked = !canAccess('documents')
 
   useEffect(() => {
     if (!isDesktopProperty || !showsTestDriveSection) return undefined
@@ -3797,7 +3814,7 @@ function PropertyDetailClassic({
       ? processedDocuments
       : processedDocuments.slice(0, 4)
 
-    return wrapDepositGatedBlock(
+    const gatedDocs = wrapDepositGatedBlock(
       <section className="pd-v3-section pd-v3-section--card property-detail-auction-desktop-only">
         <h2 className="pd-v3-section__title">{t('propertyDetailDocumentsTitle')}</h2>
         <div className="pd-v3-docs-row">
@@ -3841,6 +3858,12 @@ function PropertyDetailClassic({
         ) : null}
       </section>,
       { desktopCard: true },
+    )
+
+    return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+        {gatedDocs}
+      </SubscriptionLock>
     )
   }
 
@@ -3904,13 +3927,6 @@ function PropertyDetailClassic({
     )
   }
 
-  const getBidHistoryPreviewBids = (sortedBids, limit) => {
-    const filtered = showAuctionCompletedWinner
-      ? sortedBids.filter((bid) => !isWinningHistoryBid(bid))
-      : sortedBids
-    return filtered.slice(0, limit)
-  }
-
   const renderAuctionWinnerHistoryInset = (priceFormatter = fmtBidPrice) => {
     if (!showAuctionCompletedWinner) return null
     const winnerLabel =
@@ -3932,12 +3948,12 @@ function PropertyDetailClassic({
   }
 
   const renderAuctionBidHistoryCard = ({ mobile = false } = {}) => {
-    const sortedBids = [...auctionBidsList].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    const leaderboard = buildBidLeaderboard(auctionBidsList).filter(
+      (entry) => !isWinningHistoryBid(entry.bid),
     )
-    const visibleBids = getBidHistoryPreviewBids(sortedBids, mobile ? 4 : 5)
+    const previewRestLimit = mobile ? 1 : 2
 
-    if (!showAuctionCompletedWinner && !sortedBids.length) return null
+    if (!showAuctionCompletedWinner && !leaderboard.length) return null
 
     return (
       <section
@@ -3951,39 +3967,23 @@ function PropertyDetailClassic({
       >
         <h3 className="pd-v3-card__title">{t('propertyDetailBidHistorySidebar')}</h3>
         {renderAuctionWinnerHistoryInset()}
-        {!visibleBids.length ? (
+        {!leaderboard.length ? (
           !showAuctionCompletedWinner ? (
             <p className="pd-v3-bid-history__empty" role="status">
               {t('propertyDetailBidsEmpty')}
             </p>
           ) : null
         ) : (
-          <ul className="pd-v3-bid-history">
-            {visibleBids.map((bid, index) => {
-              const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
-              const playerId = bid.user_id_number || bid.user_id
-              const playerLabel =
-                playerId != null ? `#${playerId}` : t('propertyDetailUnknown')
-
-              return (
-                <li key={bid.id || `pd-v3-bid-${index}`} className="pd-v3-bid-history__item">
-                  <span className="pd-v3-bid-history__avatar" aria-hidden>
-                    {countryFlag ? (
-                      <span className="pd-v3-bid-history__flag">{countryFlag}</span>
-                    ) : (
-                      <FiUser size={16} />
-                    )}
-                  </span>
-                  <span className="pd-v3-bid-history__name">{playerLabel}</span>
-                  <span className="pd-v3-bid-history__time">
-                    {formatRelativeBidTime(bid.created_at)}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
+          <BidLeaderboardBoard
+            className="pd-v3-bid-history-board"
+            leaderboard={leaderboard}
+            formatPrice={(amount) => fmtListingBidPrice(amount)}
+            animateIn
+            restLimit={previewRestLimit}
+            emptyText={t('propertyDetailBidsEmpty')}
+          />
         )}
-        {sortedBids.length > 0 ? (
+        {leaderboard.length > 0 ? (
           <div className="pd-v3-bid-history__footer">
             <button
               type="button"
@@ -4462,60 +4462,23 @@ function PropertyDetailClassic({
     )
   }
 
-  const renderAuctionBidsHistoryPanel = ({
-    listClassName = 'property-detail-mobile-bids__list',
-    rowClassName = 'property-detail-mobile-bids__row',
-  } = {}) => {
-    const sortedBids = [...auctionBidsList].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  const renderMobileBidsTab = () => {
+    const leaderboard = buildBidLeaderboard(auctionBidsList)
+    return (
+      <section
+        className="property-detail-mobile-bids property-detail-mobile-bids--full-history property-detail-mobile-bids--leaderboard"
+        aria-label={t('propertyDetailTabBids')}
+      >
+        <BidLeaderboardBoard
+          className="property-detail-mobile-bids__board"
+          leaderboard={leaderboard}
+          formatPrice={(amount) => fmtBidPrice(amount)}
+          animateIn={mobileBidsBoardIn}
+          emptyText={t('propertyDetailBidsEmpty')}
+        />
+      </section>
     )
-
-    const renderBidRow = (bid, index) => {
-      const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
-      return (
-        <li
-          key={bid.id || `bid-row-${index}-${bid.created_at}`}
-          className={rowClassName}
-        >
-          <div className="property-detail-mobile-bids__row-user">
-            <span className="property-detail-mobile-bids__row-avatar" aria-hidden>
-              {countryFlag || <FiUser size={16} />}
-            </span>
-            <span className="property-detail-mobile-bids__row-id">
-              #{bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
-            </span>
-          </div>
-          <div className="property-detail-mobile-bids__row-meta">
-            <span className="property-detail-mobile-bids__row-amount">
-              {fmtBidPrice(bid.bid_amount)}
-            </span>
-            <span className="property-detail-mobile-bids__row-time">
-              {formatMobileBidDateTime(bid.created_at)}
-            </span>
-          </div>
-        </li>
-      )
-    }
-
-    if (!sortedBids.length) {
-      return (
-        <p className="property-detail-mobile-bids__empty" role="status">
-          {t('propertyDetailBidsEmpty')}
-        </p>
-      )
-    }
-
-    return <ul className={listClassName}>{sortedBids.map(renderBidRow)}</ul>
   }
-
-  const renderMobileBidsTab = () => (
-    <section
-      className="property-detail-mobile-bids property-detail-mobile-bids--full-history"
-      aria-label={t('propertyDetailTabBids')}
-    >
-      {renderAuctionBidsHistoryPanel()}
-    </section>
-  )
 
   const renderMobileAuctionTestDriveBlock = () => {
     if (!isAuctionProperty || !showsTestDriveSection) return null
@@ -4530,6 +4493,7 @@ function PropertyDetailClassic({
           hasTestDrive
           i18nLang={currentLang}
           imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
+          paused={isReservedActive}
         />
       </div>
     )
@@ -4539,6 +4503,7 @@ function PropertyDetailClassic({
     if (!processedDocuments.length) return null
 
     return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
       <section className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
@@ -4573,6 +4538,7 @@ function PropertyDetailClassic({
           ))}
         </ul>
       </section>
+      </SubscriptionLock>
     )
   }
 
@@ -4633,22 +4599,28 @@ function PropertyDetailClassic({
 
     const leaderTitle =
       currentLeader?.country || currentLeader?.bidder_country || undefined
+    const leaderFlag =
+      currentLeader?.countryFlag ||
+      flagEmojiForStoredCountry(currentLeader?.country || currentLeader?.bidder_country || '') ||
+      ''
 
     return (
       <div className="property-detail-mobile-about-bid">
-        <span className="property-detail-mobile-about-bid__label">{bidLabel}</span>
         <div className="property-detail-mobile-about-bid__row">
           <div
             className={`property-detail-mobile-about-bid__price-col${
               priceAnimation ? ' property-detail-mobile-about-bid__price-col--animated' : ''
             }`}
           >
-            <span className="property-detail-mobile-about-bid__value">
-              {fmtBidPrice(displayBidAmount)}
-            </span>
-            {priceAnimation && (
-              <FiArrowUp className="property-detail-mobile-about-bid__arrow" size={18} aria-hidden />
-            )}
+            <span className="property-detail-mobile-about-bid__label">{bidLabel}</span>
+            <div className="property-detail-mobile-about-bid__value-row">
+              <span className="property-detail-mobile-about-bid__value">
+                {fmtBidPrice(displayBidAmount)}
+              </span>
+              {priceAnimation && (
+                <FiArrowUp className="property-detail-mobile-about-bid__arrow" size={18} aria-hidden />
+              )}
+            </div>
           </div>
           {showLeader && leaderId != null && leaderId !== '' && (
             <div
@@ -4657,37 +4629,23 @@ function PropertyDetailClassic({
               }${desktopPanel ? ' property-detail-auction-desktop-leader' : ''}`}
               title={leaderTitle}
             >
-              {desktopPanel ? (
-                <span
-                  className={`property-detail-auction-desktop-leader__trophy${
-                    isCurrentUserLeadingCard
-                      ? ' property-detail-auction-desktop-leader__trophy--you'
-                      : ''
-                  }`}
-                  aria-hidden
-                >
-                  <Trophy size={18} strokeWidth={2.25} />
-                </span>
-              ) : null}
-              {currentLeader.countryFlag && !desktopPanel ? (
-                <span className="property-detail-mobile-about-leader__flag-wrap" aria-hidden>
-                  <span className="property-detail-mobile-about-leader__flag">
-                    {currentLeader.countryFlag}
+              <span className="property-detail-mobile-about-leader__caption">
+                {isCurrentUserLeadingCard
+                  ? t('propertyDetailYouAreWinningShort')
+                  : t('propertyDetailAuctionLeaderShort')}
+              </span>
+              <div className="property-detail-mobile-about-leader__value-row">
+                {leaderFlag ? (
+                  <span className="property-detail-mobile-about-leader__flag-wrap" aria-hidden>
+                    <span className="property-detail-mobile-about-leader__flag">{leaderFlag}</span>
                   </span>
-                </span>
-              ) : null}
-              <span className="property-detail-mobile-about-leader__meta">
-                <span className="property-detail-mobile-about-leader__caption">
-                  {isCurrentUserLeadingCard
-                    ? t('propertyDetailYouAreWinningShort')
-                    : t('propertyDetailAuctionLeaderShort')}
-                </span>
+                ) : null}
                 <span className="property-detail-mobile-about-leader__id">
                   {currentLeader.userIdNumber
                     ? String(currentLeader.userIdNumber)
                     : t('propertyDetailWinnerUserId', { id: leaderId })}
                 </span>
-              </span>
+              </div>
             </div>
           )}
         </div>
@@ -4816,17 +4774,17 @@ function PropertyDetailClassic({
     if (variant === 'mobile-about' || variant === 'mobile-tab') {
       const buyNowLocked =
         isReservedActive || !buyNowEmailOk || !shouldShowAuctionBuyNow
+      const buyNowPriceLabel = fmtBidPrice(displayProperty.price)
       return (
-        <section className="property-detail-mobile-buy-now" aria-label={t('buyNowSectionTitle')}>
-          <h3 className="property-detail-mobile-buy-now__title">{t('buyNowSectionTitle')}</h3>
-          <div className="property-detail-mobile-buy-now__price-row">
-            <span className="property-detail-mobile-buy-now__label">
-              {t('propertyDetailMinSellingPrice')}
-            </span>
-            <span className="property-detail-mobile-buy-now__value">
-              {fmtBidPrice(displayProperty.price)}
-            </span>
-          </div>
+        <section
+          className="property-detail-mobile-buy-now"
+          aria-label={t('propertyDetailTabBuyNow')}
+        >
+          <p className="property-detail-mobile-buy-now__eyebrow">
+            {t('propertyDetailBuyNowFixedPrice')}
+          </p>
+          <p className="property-detail-mobile-buy-now__value">{buyNowPriceLabel}</p>
+          <p className="property-detail-mobile-buy-now__hint">{t('propertyDetailBuyNowHint')}</p>
           <button
             type="button"
             className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
@@ -4838,11 +4796,13 @@ function PropertyDetailClassic({
               !buyNowEmailOk
                 ? t('buyNowEmailRequired')
                 : !shouldShowAuctionBuyNow
-                  ? t('buyNowSectionTitle')
+                  ? t('propertyDetailTabBuyNow')
                   : undefined
             }
           >
-            {isReservedActive ? t('objectReserved') : t('propertyDetailTabBuyNow')}
+            {isReservedActive
+              ? t('objectReserved')
+              : t('propertyDetailBuy')}
           </button>
         </section>
       )
@@ -5641,6 +5601,7 @@ function PropertyDetailClassic({
         hasTestDrive
         i18nLang={currentLang}
         imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
+        paused={isReservedActive}
       />
     )
   }
@@ -5687,7 +5648,7 @@ function PropertyDetailClassic({
   const renderDesktopAuctionDocumentsBlock = () => {
     if (!processedDocuments.length) return null
 
-    return wrapDepositGatedBlock(
+    const gatedAuctionDocs = wrapDepositGatedBlock(
       <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--documents">
         <header className="property-detail-auction-desktop-documents__head">
           <span className="property-detail-auction-desktop-documents__eyebrow">
@@ -5732,6 +5693,12 @@ function PropertyDetailClassic({
         </ul>
       </section>,
       { desktopCard: true },
+    )
+
+    return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+        {gatedAuctionDocs}
+      </SubscriptionLock>
     )
   }
 
@@ -5891,62 +5858,20 @@ function PropertyDetailClassic({
   }
 
   const renderDesktopBidsTab = () => {
-    const sortedBids = [...auctionBidsList].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
+    const leaderboard = buildBidLeaderboard(auctionBidsList)
 
     return (
       <section
-        className="property-detail-auction-desktop-bids-panel property-detail-auction-desktop-bids-panel--full-history"
+        className="property-detail-auction-desktop-bids-panel property-detail-auction-desktop-bids-panel--full-history property-detail-auction-desktop-bids-panel--leaderboard"
         aria-label={t('propertyDetailTabBids')}
       >
-        {!sortedBids.length ? (
-          <p className="property-detail-mobile-bids__empty" role="status">
-            {t('propertyDetailBidsEmpty')}
-          </p>
-        ) : (
-          <ul className="property-detail-auction-desktop-bids-timeline__list">
-            {sortedBids.map((bid, index) => {
-              const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
-              const playerId = bid.user_id_number || bid.user_id || t('propertyDetailUnknown')
-              const isLast = index === sortedBids.length - 1
-
-              return (
-                <li
-                  key={bid.id || `desktop-bid-${index}-${bid.created_at}`}
-                  className={`property-detail-auction-desktop-bids-item${
-                    isLast ? ' property-detail-auction-desktop-bids-item--last' : ''
-                  }`}
-                >
-                  <span className="property-detail-auction-desktop-bids-item__track" aria-hidden>
-                    <span className="property-detail-auction-desktop-bids-item__dot" />
-                    {!isLast ? (
-                      <span className="property-detail-auction-desktop-bids-item__line" />
-                    ) : null}
-                  </span>
-                  <div className="property-detail-auction-desktop-bids-item__card">
-                    <div className="property-detail-auction-desktop-bids-item__user">
-                      <span className="property-detail-auction-desktop-bids-item__avatar" aria-hidden>
-                        {countryFlag || <FiUser size={16} />}
-                      </span>
-                      <div className="property-detail-auction-desktop-bids-item__user-meta">
-                        <span className="property-detail-auction-desktop-bids-item__id">
-                          {playerId}
-                        </span>
-                        <span className="property-detail-auction-desktop-bids-item__time">
-                          {formatMobileBidDateTime(bid.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="property-detail-auction-desktop-bids-item__amount">
-                      {fmtBidPrice(bid.bid_amount)}
-                    </span>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+        <BidLeaderboardBoard
+          className="property-detail-desktop-bids__board"
+          leaderboard={leaderboard}
+          formatPrice={(amount) => fmtBidPrice(amount)}
+          animateIn
+          emptyText={t('propertyDetailBidsEmpty')}
+        />
       </section>
     )
   }
@@ -6230,32 +6155,26 @@ function PropertyDetailClassic({
     }
 
     const renderPdxBidHistory = () => {
-      const sortedBids = [...auctionBidsList].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      const leaderboard = buildBidLeaderboard(auctionBidsList).filter(
+        (entry) => !isWinningHistoryBid(entry.bid),
       )
-      const visibleBids = getBidHistoryPreviewBids(sortedBids, 4)
-      if (!showAuctionCompletedWinner && !sortedBids.length) return null
+      if (!showAuctionCompletedWinner && !leaderboard.length) return null
 
       return (
         <section className="pdx-side-card pdx-bids">
           <p className="pdx-side-card__title">{t('propertyDetailBidHistorySidebar')}</p>
           {renderAuctionWinnerHistoryInset(fmtListingBidPrice)}
-          {visibleBids.length ? (
-          <ul className="pdx-bids__list">
-            {visibleBids.map((bid, index) => {
-              const playerId = bid.user_id_number || bid.user_id
-              const playerLabel = playerId != null ? `#${playerId}` : t('propertyDetailUnknown')
-              return (
-                <li key={bid.id || `pdx-bid-${index}`} className="pdx-bids__item">
-                  <span className="pdx-bids__user">{playerLabel}</span>
-                  <span className="pdx-bids__time">{formatRelativeBidTime(bid.created_at)}</span>
-                  <span className="pdx-bids__amount">{fmtListingBidPrice(bid.bid_amount)}</span>
-                </li>
-              )
-            })}
-          </ul>
+          {leaderboard.length ? (
+            <BidLeaderboardBoard
+              className="pdx-bids__board"
+              leaderboard={leaderboard}
+              formatPrice={(amount) => fmtListingBidPrice(amount)}
+              animateIn
+              restLimit={2}
+              emptyText={t('propertyDetailBidsEmpty')}
+            />
           ) : null}
-          {sortedBids.length > 0 ? (
+          {leaderboard.length > 0 ? (
             <button
               type="button"
               className="pdx-link-button pdx-link-button--center"
@@ -6659,16 +6578,20 @@ function PropertyDetailClassic({
       }
 
       if (desktopInfoTab === 'documents') {
-        if (!processedDocuments.length) {
-          return (
+        const documentsBody = !processedDocuments.length ? (
             <div className="pdx-tab-card__placeholder">
               <strong>{t('propertyDetail_docsEmptyTitle')}</strong>
               <p>{t('propertyDetail_docsEmptyText')}</p>
             </div>
-          )
-        }
+        ) : (
+          <div className="pdx-tab-card__documents">{renderDocumentsContent()}</div>
+        )
 
-        return <div className="pdx-tab-card__documents">{renderDocumentsContent()}</div>
+        return (
+          <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+            {documentsBody}
+          </SubscriptionLock>
+        )
       }
 
       if (desktopInfoTab === 'yield') {
@@ -6790,6 +6713,7 @@ function PropertyDetailClassic({
             imageUrl={
               displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
             }
+            paused={isReservedActive}
           />
         ) : null}
 
@@ -7265,6 +7189,7 @@ function PropertyDetailClassic({
                     }
                     hasTestDrive
                     i18nLang={currentLang}
+                    paused={isReservedActive}
                   />
                 )}
             </div>
@@ -7514,6 +7439,7 @@ function PropertyDetailClassic({
 
             {/* Документы - отдельный блок под property-detail-sidebar__content (только в кабинете продавца) */}
             {(onBack || showDocuments) && processedDocuments.length > 0 && (
+              <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
               <div className="property-detail-sidebar__documents">
                 <h3 className="property-detail-sidebar__documents-title">{t('propertyDetailDocumentsTitle')}</h3>
                 <div className="property-detail-sidebar__documents-content">
@@ -7541,6 +7467,7 @@ function PropertyDetailClassic({
                   ))}
                 </div>
               </div>
+              </SubscriptionLock>
             )}
           </div>
         </div>

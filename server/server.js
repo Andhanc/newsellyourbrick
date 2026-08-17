@@ -15,6 +15,7 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 const { readFileSync } = fs;
 import crypto from 'crypto';
+import { createClerkClient, verifyToken as verifyClerkToken } from '@clerk/backend';
 import qrcode from 'qrcode-terminal';
 import QRCodePNG from 'qrcode';
 import whatsappPkg from 'whatsapp-web.js';
@@ -23,7 +24,11 @@ import { SPAIN_CITIES, DISTRICTS_BY_CITY, getDistrictOptions } from './data/prop
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
-import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
+import {
+  parseExtraJson,
+  SITE_LANG_CODES,
+  translateAndPersistProperty,
+} from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
@@ -79,6 +84,16 @@ import {
   isAuctionDepositSufficient,
 } from './utils/auctionDeposit.js';
 import { formatShareMarketplaceApiItem } from './database/shareMarketplaceQueries.js';
+import {
+  registerExpoPushToken,
+  unregisterExpoPushToken,
+  sendPushToUserSafely,
+} from './services/pushNotifications.js';
+import {
+  authenticateMobileRequest,
+  issueMobileAuthSession,
+  revokeMobileAuthSession,
+} from './services/mobileAuthSessions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -522,6 +537,17 @@ async function notifyUserBidOutbid({
     is_read: 0,
     view_count: 0,
   });
+
+  await sendPushToUserSafely(
+    uid,
+    {
+      title: 'Вашу ставку перебили',
+      body: message,
+      data: { type: 'bid_outbid', propertyId: pid, path: `/property/${pid}` },
+      channelId: 'auctions',
+    },
+    'bid_outbid',
+  );
 
   broadcastUserCabinetEvent(uid, { type: 'notifications_refresh' });
 
@@ -1095,6 +1121,38 @@ app.use(express.json({ limit: '18mb' }));
 registerPropertyAiRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
+
+app.post('/api/push-tokens', async (req, res) => {
+  try {
+    const session = await authenticateMobileRequest(req);
+    if (!session) return res.status(401).json({ success: false, error: 'mobile_auth_required' });
+    const row = await registerExpoPushToken({
+      userId: session.userId,
+      token: req.body?.token,
+      platform: req.body?.platform,
+      deviceId: req.body?.deviceId,
+    });
+    res.json({ success: true, data: row });
+  } catch (error) {
+    const code = error?.message || 'push_token_registration_failed';
+    const status = code === 'user_not_found' ? 404 : 400;
+    res.status(status).json({ success: false, error: code });
+  }
+});
+
+app.delete('/api/push-tokens', async (req, res) => {
+  try {
+    const session = await authenticateMobileRequest(req);
+    if (!session) return res.status(401).json({ success: false, error: 'mobile_auth_required' });
+    const result = await unregisterExpoPushToken({
+      userId: session.userId,
+      token: req.body?.token,
+    });
+    res.json({ success: true, data: { disabled: result.count || 0 } });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error?.message || 'push_token_unregister_failed' });
+  }
+});
 
 registerStripeBillingRoutes(app);
 
@@ -3715,8 +3773,10 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       // Пользователь существует - авторизуем и обновляем статус онлайн
       await userQueries.update(user.id, { is_online: 1 });
       const updatedUser = await userQueries.getById(user.id);
+      const authToken = await issueMobileAuthSession(updatedUser.id);
       return res.json({ 
         success: true, 
+        authToken,
         user: {
           id: updatedUser.id,
           name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || updatedUser.phone_number,
@@ -3764,6 +3824,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     
     const result = await userQueries.create(newUser);
     const createdUser = await userQueries.getById(result.lastInsertRowid);
+    const authToken = await issueMobileAuthSession(createdUser.id);
 
     if (referrerId) {
       try {
@@ -3775,6 +3836,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     
     return res.status(201).json({ 
       success: true, 
+      authToken,
       user: {
         id: createdUser.id,
         name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
@@ -4455,9 +4517,43 @@ app.get('/api/purchase-requests', async (req, res) => {
       ? await purchaseRequestQueries.getCountByStatus(status)
       : await purchaseRequestQueries.getCount();
 
+    const reservationPayments = await stripeSubscriptionQueries.listAllReservationPurchasesWithUsers(2000);
+    const paymentByRequestId = new Map();
+    for (const payment of reservationPayments) {
+      try {
+        const billing = JSON.parse(payment.billing_reason || '{}');
+        const requestId = Number(billing.purchase_request_id);
+        if (Number.isFinite(requestId) && !paymentByRequestId.has(requestId)) {
+          paymentByRequestId.set(requestId, { payment, billing });
+        }
+      } catch {
+        /* старые платежи без JSON не относятся к резервам */
+      }
+    }
+    const enrichedRequests = requests.map((request) => {
+      const match = paymentByRequestId.get(Number(request.id));
+      const payment = match?.payment;
+      const billing = match?.billing || {};
+      const paid = payment?.status === 'paid';
+      return {
+        ...request,
+        reservation_payment: {
+          verified: paid,
+          status: payment?.status || 'not_found',
+          amount_cents: payment?.amount_cents ?? null,
+          currency: payment?.currency || request.property_currency || null,
+          paid_at: payment?.paid_at || null,
+          stripe_checkout_session_id: payment?.stripe_checkout_session_id || null,
+          wallet_applied_major: billing.wallet_applied_major ?? 0,
+          total_paid_toward_price: billing.total_paid_toward_price ?? null,
+          remaining_to_full_purchase: billing.remaining_to_full_purchase ?? null,
+        },
+      };
+    });
+
     res.json({ 
       success: true, 
-      data: requests, 
+      data: enrichedRequests,
       total,
       limit,
       offset 
@@ -4512,6 +4608,51 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
+    }
+
+    // Сделку нельзя завершить по неподтверждённой заявке: проверяем именно запись,
+    // созданную после paid/succeeded Stripe Checkout, а не флаг с клиента.
+    let paidReservation = null;
+    if (status === 'completed' || status === 'cancelled') {
+      paidReservation =
+        await stripeSubscriptionQueries.findPaidReservationByPurchaseRequestId(req.params.id);
+    }
+    if (status === 'completed') {
+      if (!paidReservation) {
+        return res.status(409).json({
+          success: false,
+          code: 'RESERVATION_PAYMENT_REQUIRED',
+          error: 'Нельзя завершить сделку: Stripe не подтвердил оплату резерва.',
+        });
+      }
+    }
+
+    let auctionWinnerForStatus = null;
+    if (
+      (status === 'completed' || status === 'cancelled') &&
+      paidReservation?.billing?.purchase_variant === 'auctionWinner'
+    ) {
+      const buyerIdNum = parseInt(String(request.buyer_id || '').trim(), 10);
+      const propertyIdNum = parseInt(String(request.property_id || '').trim(), 10);
+      if (!Number.isFinite(buyerIdNum) || !Number.isFinite(propertyIdNum)) {
+        return res.status(409).json({
+          success: false,
+          code: 'AUCTION_WINNER_LINK_INVALID',
+          error: 'Оплаченная аукционная заявка не связана с покупателем или объектом.',
+        });
+      }
+      auctionWinnerForStatus = await getPrisma().auction_winners.findFirst({
+        where: { user_id: buyerIdNum, property_id: propertyIdNum },
+        orderBy: { id: 'desc' },
+        select: { id: true },
+      });
+      if (!auctionWinnerForStatus) {
+        return res.status(409).json({
+          success: false,
+          code: 'AUCTION_WINNER_NOT_FOUND',
+          error: 'Не найдена запись победителя для оплаченной аукционной заявки.',
+        });
+      }
     }
 
     // Письма (как напоминания по EmailJS) — без email нельзя перевести в «в обработку» или «завершить»
@@ -4575,6 +4716,20 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       } catch (unreserveError) {
         console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
       }
+    }
+
+    // Для аукциона Stripe-reservation является источником истины: только billing
+    // подтверждённого платежа связывает заявку с purchase_variant=auctionWinner.
+    // Gate для completed выше остаётся обязательным; отмена синхронизируется лишь
+    // когда оплаченный резерв действительно найден.
+    if (auctionWinnerForStatus) {
+      await getPrisma().auction_winners.update({
+        where: { id: auctionWinnerForStatus.id },
+        data: {
+          status,
+          updated_at: new Date().toISOString(),
+        },
+      });
     }
 
     await purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
@@ -4671,14 +4826,31 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
               user_id: buyerIdForNotif,
               type: 'buy_now_completed',
               title: 'Объект ваш!',
-              message: `Вы успешно приобрели объект «${propertyTitle}».`,
+              message: `Сделка по объекту «${propertyTitle}» завершена. Теперь вы можете выставить его на продажу как продавец.`,
               data: {
                 request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
-                property_id: safePropertyId
+                property_id: safePropertyId,
+                action_path: safePropertyId ? `/profile/purchased/${safePropertyId}` : '/profile',
+                action_label: 'Продать объект',
+                next_step: 'Откройте объект, чтобы перейти в кабинет продавца и создать объявление.'
               },
               is_read: 0,
               view_count: 0
             });
+            await sendPushToUserSafely(
+              buyerIdForNotif,
+              {
+                title: 'Покупка завершена',
+                body: `Сделка по объекту «${propertyTitle}» успешно завершена. Объект уже в вашем кабинете.`,
+                data: {
+                  type: 'purchase_success',
+                  propertyId: safePropertyId,
+                  path: safePropertyId ? `/property/${safePropertyId}` : '/profile',
+                },
+                channelId: 'transactions',
+              },
+              'buy_now_completed',
+            );
           } else if (status === 'rejected' || status === 'cancelled') {
             await notificationQueries.create({
               user_id: buyerIdForNotif,
@@ -4889,25 +5061,34 @@ app.get('/api/assistant-leads/:id', async (req, res) => {
 });
 
 /**
- * POST /api/live-chat/sessions — создать или вернуть существующую сессию чата с менеджером (по assistant_session_id).
+ * POST /api/live-chat/sessions — создать или вернуть существующую сессию (один чат на user_id).
  */
 app.post('/api/live-chat/sessions', async (req, res) => {
   try {
     const { assistantSessionId, userId, waitMessage } = req.body || {};
     const asst = assistantSessionId && String(assistantSessionId).trim();
+    const uid = userId ? parseInt(userId, 10) : null;
     let session = null;
     let createdNew = false;
-    if (asst) {
+    if (Number.isFinite(uid) && uid > 0) {
+      session = await liveChatQueries.mergeSessionsForUser(uid);
+    }
+    if (!session && asst) {
       session = await liveChatQueries.findLatestSessionByAssistantId(asst);
     }
     if (!session) {
       const created = await liveChatQueries.createSession({
-        userId: userId ? parseInt(userId, 10) : null,
+        userId: Number.isFinite(uid) && uid > 0 ? uid : null,
         assistantSessionId: asst || null,
         waitMessage
       });
       session = await liveChatQueries.getSessionById(created.id);
       createdNew = true;
+    } else if (waitMessage) {
+      const appended = await liveChatQueries.appendSystemNoticeIfNew(session.id, waitMessage);
+      if (appended) {
+        createdNew = true;
+      }
     }
     const messages = await liveChatQueries.getMessages(session.id, 0);
     if (createdNew) {
@@ -5025,22 +5206,41 @@ app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
 });
 
 /**
- * GET /api/admin/live-chat/user-messages-since?since=ISO — число сообщений от посетителя после метки «просмотрено»
+ * POST /api/admin/live-chat/sessions/:id/read — отметить диалог прочитанным
+ */
+app.post('/api/admin/live-chat/sessions/:id/read', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    const session = await liveChatQueries.getSessionById(id);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const row = await liveChatQueries.markSessionRead(id);
+    return res.json({ success: true, data: row });
+  } catch (error) {
+    console.error('❌ POST admin live-chat read:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/live-chat/read-all — отметить все диалоги прочитанными
+ */
+app.post('/api/admin/live-chat/read-all', async (req, res) => {
+  try {
+    await liveChatQueries.markAllSessionsRead();
+    return res.json({ success: true, data: { count: 0 } });
+  } catch (error) {
+    console.error('❌ POST admin live-chat read-all:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/live-chat/user-messages-since — число непрочитанных сообщений посетителей
  */
 app.get('/api/admin/live-chat/user-messages-since', async (req, res) => {
   try {
-    const raw = req.query && req.query.since != null ? String(req.query.since).trim() : '';
-    const since = raw ? new Date(raw) : new Date(0);
-    if (Number.isNaN(since.getTime())) {
-      return res.status(400).json({ success: false, error: 'Некорректный since' });
-    }
-    const prisma = getPrisma();
-    const count = await prisma.live_chat_messages.count({
-      where: {
-        created_at: { gt: since },
-        sender_role: { in: ['user', 'client', 'visitor'] },
-      },
-    });
+    const count = await liveChatQueries.countUnreadUserMessages();
     return res.json({ success: true, data: { count } });
   } catch (error) {
     console.error('❌ GET /api/admin/live-chat/user-messages-since:', error);
@@ -5842,6 +6042,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     }
 
     const createdUserFinal = linkBuyer ? await userQueries.getById(createdUser.id) : createdUser;
+    const authToken = await issueMobileAuthSession(createdUserFinal.id);
 
     console.log('✅ Пользователь успешно сохранен в БД:', {
       id: createdUserFinal.id,
@@ -5857,6 +6058,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     
     res.status(201).json({ 
       success: true, 
+      authToken,
       user: {
         id: createdUserFinal.id,
         name: `${createdUserFinal.first_name} ${createdUserFinal.last_name}`.trim(),
@@ -5959,11 +6161,13 @@ app.post('/api/auth/email/login', async (req, res) => {
     // Пароль верный, обновляем статус онлайн (update может сгенерировать user_id_number для старых записей)
     await userQueries.update(user.id, { is_online: 1 });
     const refreshedUser = await userQueries.getById(user.id) || user;
+    const authToken = await issueMobileAuthSession(refreshedUser.id);
 
     console.log('✅ Вход успешен:', { id: refreshedUser.id, email: refreshedUser.email, role: refreshedUser.role });
 
     res.json({
       success: true,
+      authToken,
       user: {
         id: refreshedUser.id,
         name: `${refreshedUser.first_name} ${refreshedUser.last_name}`.trim() || refreshedUser.email || 'Пользователь',
@@ -5980,6 +6184,15 @@ app.post('/api/auth/email/login', async (req, res) => {
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/auth/mobile/logout', async (req, res) => {
+  try {
+    const result = await revokeMobileAuthSession(req);
+    res.json({ success: true, data: { revoked: result.count || 0 } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error?.message || 'mobile_logout_failed' });
   }
 });
 
@@ -6042,6 +6255,130 @@ function usersForCabinetRole(users, role) {
     return wantSeller ? isSeller : !isSeller;
   });
 }
+
+function mobilePublicUser(user, fallback = {}) {
+  return {
+    id: user.id,
+    name:
+      `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
+      fallback.name ||
+      user.email ||
+      'Пользователь',
+    email: user.email,
+    phone: user.phone_number,
+    picture: user.user_photo || fallback.picture || null,
+    role: user.role || fallback.role || 'buyer',
+    is_verified: user.is_verified,
+    is_blocked: user.is_blocked === 1,
+    ...(user.user_id_number ? { user_id_number: user.user_id_number } : {}),
+  };
+}
+
+/**
+ * POST /api/auth/clerk/mobile
+ * Проверяет Clerk session JWT на сервере, получает профиль напрямую из Clerk,
+ * синхронизирует пользователя с нашей БД и выдаёт долгоживущую mobile-сессию приложения.
+ */
+app.post('/api/auth/clerk/mobile', async (req, res) => {
+  try {
+    const header = String(req.headers.authorization || '').trim();
+    const clerkToken = /^Bearer\s+(.+)$/i.exec(header)?.[1]?.trim();
+    if (!clerkToken) {
+      return res.status(401).json({ success: false, error: 'Clerk session token required' });
+    }
+
+    const secretKey = String(process.env.CLERK_SECRET_KEY || '').trim();
+    if (!secretKey) {
+      return res.status(503).json({
+        success: false,
+        error: 'Clerk backend не настроен: добавьте CLERK_SECRET_KEY в Railway Variables',
+        code: 'CLERK_BACKEND_NOT_CONFIGURED',
+      });
+    }
+
+    const claims = await verifyClerkToken(clerkToken, { secretKey });
+    const clerkUserId = String(claims?.sub || '').trim();
+    if (!clerkUserId) {
+      return res.status(401).json({ success: false, error: 'Invalid Clerk session' });
+    }
+
+    const clerkClient = createClerkClient({ secretKey });
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const primaryEmailId = clerkUser.primaryEmailAddressId;
+    const primaryEmail = clerkUser.emailAddresses?.find((item) => item.id === primaryEmailId);
+    const email = String(primaryEmail?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || '')
+      .trim()
+      .toLowerCase();
+    if (!email) {
+      return res.status(422).json({
+        success: false,
+        error: 'Clerk не вернул email. Разрешите email для выбранного провайдера.',
+      });
+    }
+
+    const requestedRole = String(req.body?.role || 'buyer').toLowerCase();
+    const role = requestedRole === 'seller' || requestedRole === 'owner' ? 'seller' : 'buyer';
+    const mode = req.body?.mode === 'register' ? 'register' : 'login';
+    const candidates = await userQueries.getAllByEmail(email);
+    let user = usersForCabinetRole(candidates, role)[0] || null;
+
+    if (user && mode === 'register') {
+      return res.status(409).json({
+        success: false,
+        error: 'Этот аккаунт уже зарегистрирован. Выберите «Вход».',
+        code: 'ALREADY_REGISTERED',
+      });
+    }
+    if (!user && mode === 'login') {
+      return res.status(404).json({
+        success: false,
+        error: 'Аккаунт не найден. Выберите «Регистрация» и войдите тем же способом.',
+        code: 'NEED_REGISTER',
+      });
+    }
+
+    const fullName =
+      [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ').trim() ||
+      clerkUser.username ||
+      email.split('@')[0];
+    const picture = clerkUser.imageUrl || null;
+
+    if (!user) {
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      const result = await userQueries.create({
+        first_name: nameParts[0] || 'Пользователь',
+        last_name: nameParts.slice(1).join(' '),
+        email,
+        phone_number: null,
+        user_photo: picture,
+        role,
+        is_verified: 0,
+        is_online: 1,
+      });
+      user = await userQueries.getById(result.lastInsertRowid);
+    } else {
+      if (user.is_blocked === 1) {
+        return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
+      }
+      await userQueries.update(user.id, {
+        is_online: 1,
+        ...(picture ? { user_photo: picture } : {}),
+      });
+      user = await userQueries.getById(user.id);
+    }
+
+    const authToken = await issueMobileAuthSession(user.id);
+    return res.json({
+      success: true,
+      authToken,
+      user: mobilePublicUser(user, { name: fullName, picture, role }),
+    });
+  } catch (error) {
+    console.error('Clerk mobile auth failed:', error);
+    const message = String(error?.message || 'Clerk authorization failed');
+    return res.status(401).json({ success: false, error: message });
+  }
+});
 
 /**
  * POST /api/auth/email/forgot-password/send-code — отправить 4-значный код
@@ -6465,9 +6802,11 @@ app.post('/api/auth/google', async (req, res) => {
         user_photo: googlePicture || user.user_photo
       });
       const updatedUser = await userQueries.getById(user.id);
+      const authToken = await issueMobileAuthSession(updatedUser.id);
       
       res.json({ 
         success: true, 
+        authToken,
         user: {
           id: updatedUser.id,
           name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || googleName,
@@ -6507,9 +6846,11 @@ app.post('/api/auth/google', async (req, res) => {
       
       const result = await userQueries.create(newUser);
       const createdUser = await userQueries.getById(result.lastInsertRowid);
+      const authToken = await issueMobileAuthSession(createdUser.id);
       
       res.status(201).json({ 
         success: true, 
+        authToken,
         user: {
           id: createdUser.id,
           name: googleName,
@@ -11007,7 +11348,7 @@ app.get('/api/properties/shares', async (req, res) => {
 });
 
 /**
- * POST /api/properties/:id/translate - Перевести объявление на все языки сайта (MyMemory API) и сохранить в БД
+ * POST /api/properties/:id/translate - Перевести объявление на все языки сайта и сохранить в БД
  */
 app.post('/api/properties/:id/translate', async (req, res) => {
   const sendError = (status, message) => {
@@ -11015,36 +11356,15 @@ app.post('/api/properties/:id/translate', async (req, res) => {
   };
   try {
     const { id } = req.params;
-    const propertyTable = req.body?.property_table || req.query?.property_table || null;
-    const requestedPropertyType = req.query.property_type || null;
+    const requestedPropertyType = req.query.property_type || req.body?.property_type || null;
     const property = await propertyQueries.getById(id, requestedPropertyType);
     if (!property) {
       return sendError(404, 'Объявление не найдено');
     }
-    const table = propertyTable || property.source_table || 'properties_apartments';
-    const translations = await translatePropertyToAllLanguages(property).catch((err) => {
-      console.error('POST /api/properties/:id/translate translate error:', err);
-      throw err;
-    });
-    const prisma = getPrisma();
-    await prisma.property_translations.deleteMany({
-      where: { property_id: Number(id), property_table: String(table) },
-    });
-    for (const [langCode, data] of Object.entries(translations)) {
-      await prisma.property_translations.create({
-        data: {
-          property_id: Number(id),
-          property_table: String(table),
-          lang_code: String(langCode),
-          title: data.title || '',
-          description: data.description || '',
-          additional_amenities: data.additional_amenities || '',
-          location: data.location || '',
-          created_at: new Date().toISOString(),
-        },
-      });
+    if (req.body?.property_table) {
+      property.source_table = req.body.property_table;
     }
-    console.log(`✅ Переводы сохранены для property_id=${id}, table=${table}, языков: ${Object.keys(translations).length}`);
+    const { translations } = await translateAndPersistProperty(getPrisma(), property);
     return res.json({ success: true, message: 'Перевод готов', translations: Object.keys(translations) });
   } catch (err) {
     console.error('POST /api/properties/:id/translate error:', err);
@@ -11066,7 +11386,15 @@ app.get('/api/properties/:id/translations', async (req, res) => {
     const table = propertyTable || property.source_table || 'properties_apartments';
     const rows = await getPrisma().property_translations.findMany({
       where: { property_id: Number(id), property_table: String(table) },
-      select: { lang_code: true, title: true, description: true, additional_amenities: true, location: true, created_at: true },
+      select: {
+        lang_code: true,
+        title: true,
+        description: true,
+        additional_amenities: true,
+        location: true,
+        extra_json: true,
+        created_at: true,
+      },
       orderBy: { lang_code: 'asc' },
     });
     const byLang = {};
@@ -11076,6 +11404,7 @@ app.get('/api/properties/:id/translations', async (req, res) => {
         description: r.description,
         additional_amenities: r.additional_amenities,
         location: r.location,
+        ...parseExtraJson(r.extra_json),
         created_at: r.created_at,
       };
     });
@@ -12925,25 +13254,9 @@ app.get('/api/properties/:id', async (req, res) => {
 
     // Подстановка перевода по языку (lang из футера сайта)
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
-    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang)) {
+    if (lang && SITE_LANG_CODES.includes(lang)) {
       try {
-        const table = property.source_table || 'properties_apartments';
-        const tr = await getPrisma().property_translations.findUnique({
-          where: {
-            property_id_property_table_lang_code: {
-              property_id: propertyId,
-              property_table: String(table),
-              lang_code: String(lang),
-            },
-          },
-          select: { title: true, description: true, additional_amenities: true, location: true },
-        });
-        if (tr) {
-          if (tr.title) formatted.title = tr.title;
-          if (tr.description) formatted.description = tr.description;
-          if (tr.additional_amenities != null) formatted.additional_amenities = tr.additional_amenities;
-          if (tr.location != null) formatted.location = tr.location;
-        }
+        await mergePropertyTranslations([formatted], lang);
       } catch (e) {
         console.warn('GET /api/properties/:id - подстановка перевода:', e.message);
       }
@@ -13266,6 +13579,22 @@ app.get('/api/properties/user/:userId', async (req, res) => {
     } catch (bidAggErr) {
       console.warn('GET /api/properties/user — агрегация ставок:', bidAggErr?.message || bidAggErr);
     }
+
+    formattedProperties = [...formattedProperties].sort((a, b) => {
+      const idA = Number(a?.id || 0);
+      const idB = Number(b?.id || 0);
+      if (idB !== idA) return idB - idA;
+      const parseTs = (value) => {
+        if (value == null) return 0;
+        const s = String(value).trim().toLowerCase();
+        if (!s || s === "datetime('now')" || s === 'datetime("now")' || s === 'current_timestamp') {
+          return 0;
+        }
+        const ts = new Date(value).getTime();
+        return Number.isFinite(ts) && ts > 0 ? ts : 0;
+      };
+      return parseTs(b?.created_at) - parseTs(a?.created_at);
+    });
 
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
@@ -13724,6 +14053,17 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
   }
 });
 
+async function translateListingOrWarn(property, label) {
+  if (!property?.id) return { ok: false, error: 'no property' };
+  try {
+    const result = await translateAndPersistProperty(getPrisma(), property);
+    return { ok: true, languages: Object.keys(result.translations || {}) };
+  } catch (err) {
+    console.error(`[translate] ${label}:`, err?.message || err);
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 /**
  * PUT /api/properties/:id/approve - Одобрить объявление
  */
@@ -13989,20 +14329,6 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         });
       }
 
-      try {
-        await prisma.property_translations.deleteMany({
-          where: {
-            property_id: Number(originalPropertyId),
-            property_table: appliedPropertyTable,
-          },
-        });
-        console.log(
-          `🌐 Переводы сброшены для property_id=${originalPropertyId}, table=${appliedPropertyTable}`
-        );
-      } catch (trErr) {
-        console.warn('⚠️ Не удалось сбросить переводы после одобрения редактирования:', trErr?.message || trErr);
-      }
-      
       console.log(`✅ Оригинальный объект ID ${originalPropertyId} обновлен (${editTargetTable})`);
       console.log(`   Статус модерации: approved, rejection_reason: очищен`);
       
@@ -14029,6 +14355,9 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         is_auction: updatedOriginal.is_auction,
         auction_dates: updatedOriginal.is_auction ? `${updatedOriginal.auction_start_date} - ${updatedOriginal.auction_end_date}` : 'N/A'
       });
+
+      updatedOriginal.source_table = updatedOriginal.source_table || appliedPropertyTable;
+      const editTranslation = await translateListingOrWarn(updatedOriginal, `edit approve id=${originalPropertyId}`);
       
       // Создаем уведомление для пользователя
       try {
@@ -14078,6 +14407,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         success: true,
         message: 'Изменения одобрены и применены к оригинальному объекту',
         original_property_id: originalPropertyId,
+        translated: editTranslation.ok,
+        translations: editTranslation.languages || [],
         data: updatedOriginal,
       });
     } else {
@@ -14089,6 +14420,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         is_auction: property.is_auction,
         source_table: property.source_table || 'unknown'
       });
+
+      const publishTranslation = await translateListingOrWarn(property, `approve id=${id}`);
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
       console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved, тип=${property.property_type}`);
@@ -14268,7 +14601,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           user_id: property.user_id,
           type: 'property_approved',
           title: 'Ваш объект прошел верификацию',
-          message: `Ваш объект "${property.title}" прошел верификацию, в скором времени он будет опубликован на платформе`,
+          message: `Ваш объект "${property.title}" прошел верификацию, переведён на языки сайта и опубликован на платформе`,
           data: JSON.stringify({ property_id: id })
         });
       } catch (notifError) {
@@ -14320,7 +14653,9 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       res.json({ 
         success: true, 
-        message: 'Объявление одобрено',
+        message: 'Объявление переведено и опубликовано',
+        translated: publishTranslation.ok,
+        translations: publishTranslation.languages || [],
         data: {
           id: updatedProperty.id,
           title: updatedProperty.title,
@@ -14613,6 +14948,17 @@ app.post('/api/users/:id/deposit/top-up', async (req, res) => {
         },
       });
     });
+
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Баланс пополнен',
+        body: 'Депозит успешно пополнен на 3 000 €.',
+        data: { type: 'deposit_top_up_success', path: '/wallet', amount: 3000 },
+        channelId: 'transactions',
+      },
+      'deposit_top_up',
+    );
     
     res.json({
       success: true,
@@ -14673,6 +15019,17 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
         },
       });
     });
+
+    await sendPushToUserSafely(
+      userId,
+      {
+        title: 'Вывод оформлен',
+        body: `Заявка на вывод ${Number(amount).toLocaleString('ru-RU')} € успешно оформлена.`,
+        data: { type: 'withdraw_success', path: '/wallet', amount: Number(amount) },
+        channelId: 'transactions',
+      },
+      'deposit_withdraw',
+    );
     
     res.json({
       success: true,
@@ -15902,6 +16259,22 @@ async function insertAuctionWinnerRow(prisma, row) {
       is_read: 0,
       view_count: 0,
     });
+
+    await sendPushToUserSafely(
+      user_id,
+      {
+        title: 'Вы выиграли аукцион',
+        body: `Поздравляем! Вы победили в аукционе по объекту «${propertyTitle}».`,
+        data: {
+          type: 'auction_won',
+          propertyId: property_id,
+          winnerId: createdWinner.id,
+          path: `/property/${property_id}`,
+        },
+        channelId: 'auctions',
+      },
+      'auction_won',
+    );
 
     await notificationQueries.create({
       user_id,

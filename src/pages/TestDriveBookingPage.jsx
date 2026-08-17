@@ -287,7 +287,7 @@ export default function TestDriveBookingPage() {
             : data.error || 'Не удалось создать оплату')
         showToast(msg, 'error')
         if (data.error === 'already_requested' && data.data?.booking_id) {
-          navigate('/profile/bookings')
+          navigate('/profile?bookings=1')
         }
         return
       }
@@ -307,7 +307,7 @@ export default function TestDriveBookingPage() {
         booking={bookingSuccess}
         propertyTitle={propertyTitle}
         onClose={() => setBookingSuccess(null)}
-        onOpenBookings={() => navigate('/profile/bookings')}
+        onOpenBookings={() => navigate('/profile?bookings=1')}
         onBackToProperty={() => navigate(`/property/${propertyRouteKey}`)}
       />
       <div className="test-drive-page__hero">

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
+  FiArrowUpRight,
+  FiBell,
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi'
@@ -9,8 +11,9 @@ import { SiInstagram, SiTelegram, SiWhatsapp } from 'react-icons/si'
 import Header from '@/components/Header'
 import NewsArticleCard from '@/components/news/NewsArticleCard'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
+import NewsSubscriptionDrawer from '@/components/news/NewsSubscriptionDrawer'
 import { fetchPublishedArticles } from '@/services/newsApi'
-import { scrollMainTo } from '@/utils/mainScroll'
+import { scrollMainElementIntoView, scrollMainTo } from '@/utils/mainScroll'
 import './News.css'
 
 function getStaticHeroSlides(t) {
@@ -120,6 +123,12 @@ function getStaticPoraArticles(t) {
 
 const TELEGRAM_HREF =
   (import.meta.env?.VITE_MANAGER_TELEGRAM_URL || '').trim() || 'https://t.me/'
+
+const MOBILE_FEATURE_IMAGES = {
+  left: '/images/test-drive/property-santorini.png',
+  center: '/images/new-home/new-home-hero-villa.jpg',
+  right: '/images/test-drive/property-sorrento.png',
+}
 
 const SOCIAL_LINKS = [
   { id: 'telegram', label: 'Telegram', href: TELEGRAM_HREF, Icon: SiTelegram },
@@ -269,12 +278,21 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
             onClick={() => openSlide(slide)}
             disabled={!slide.slug}
           >
+            <span className="news-hero__kicker">{t('newsPage_heroKicker')}</span>
+            {slide.badge ? <span className="news-hero__badge">{slide.badge}</span> : null}
             <h2 className="news-hero__title">{slide.title}</h2>
-            <NewsArticleMeta
-              className="news-meta--hero"
-              date={slide.date}
-              views={slide.views}
-            />
+            <div className="news-hero__footer">
+              <NewsArticleMeta
+                className="news-meta--hero"
+                date={slide.date}
+                views={slide.views}
+              />
+              {slide.slug ? (
+                <span className="news-hero__read">
+                  {t('newsPage_heroRead')} <FiArrowUpRight size={18} aria-hidden />
+                </span>
+              ) : null}
+            </div>
           </button>
         </div>
 
@@ -296,6 +314,67 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
             ))}
           </div>
         ) : null}
+      </div>
+    </section>
+  )
+}
+
+function NewsMobileHero({ articles, onExplore, onSubscribe }) {
+  const { t } = useTranslation()
+  if (!articles.length) return null
+
+  const lead = articles[0]
+  const left = articles[1] || lead
+  const right = articles[2] || left
+
+  const renderCard = (article, position, label) => (
+    <button
+      type="button"
+      className={`news-mobile-feature__card news-mobile-feature__card--${position}`}
+      onClick={onExplore}
+      aria-label={t('newsPage_mobileShowAria', { label, title: article.title })}
+    >
+      <span className="news-mobile-feature__image">
+        <img
+          src={MOBILE_FEATURE_IMAGES[position]}
+          alt=""
+          loading={position === 'center' ? 'eager' : 'lazy'}
+        />
+      </span>
+      <span className="news-mobile-feature__card-copy">
+        <span className="news-mobile-feature__badge">
+          {position === 'center'
+            ? t('newsPage_mobileBadgeMain')
+            : article.badge || t('newsPage_mobileBadgeFallback')}
+        </span>
+        <strong>{article.title}</strong>
+        <span className="news-mobile-feature__date">{article.date}</span>
+      </span>
+    </button>
+  )
+
+  return (
+    <section className="news-mobile-feature" aria-labelledby="news-mobile-title">
+      <div className="news-mobile-feature__veil" aria-hidden />
+      <div className="news-mobile-feature__content">
+        <p className="news-mobile-feature__eyebrow">{t('newsPage_mobileEyebrow')}</p>
+        <h1 id="news-mobile-title">{t('newsPage_mobileTitle')}</h1>
+
+        <div className="news-mobile-feature__cards" aria-label={t('newsPage_mobileCardsAria')}>
+          {renderCard(left, 'left', t('newsPage_mobileCardLabelEditor'))}
+          {renderCard(lead, 'center', t('newsPage_mobileCardLabelFeatured'))}
+          {renderCard(right, 'right', t('newsPage_mobileCardLabelEditor'))}
+        </div>
+
+        <p className="news-mobile-feature__lead">{t('newsPage_mobileLead')}</p>
+        <button
+          type="button"
+          className="news-mobile-feature__subscribe"
+          onClick={onSubscribe}
+        >
+          <FiBell size={17} aria-hidden />
+          {t('newsPage_mobileSubscribe')}
+        </button>
       </div>
     </section>
   )
@@ -347,6 +426,7 @@ const News = () => {
   const navigate = useNavigate()
   const [heroIndex, setHeroIndex] = useState(0)
   const [published, setPublished] = useState([])
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false)
 
   const staticPoraArticles = useMemo(
     () => getStaticPoraArticles(t),
@@ -401,6 +481,13 @@ const News = () => {
 
   const heroCount = heroSlides.length
 
+  const mobileArticles = useMemo(
+    () => dedupeArticlesById([...heroSlides, ...gridArticles, ...staticPoraArticles]),
+    [heroSlides, gridArticles, staticPoraArticles],
+  )
+  const mobileFeaturedArticles = mobileArticles.slice(0, 3)
+  const mobileFeedArticles = gridArticles
+
   useEffect(() => {
     if (!heroCount) {
       setHeroIndex(0)
@@ -426,11 +513,42 @@ const News = () => {
     [navigate],
   )
 
+  const handleMobileExplore = useCallback(() => {
+    const feed = document.getElementById('news-mobile-feed')
+    scrollMainElementIntoView(feed, { offset: 82, behavior: 'smooth' })
+  }, [])
+
   return (
     <div className="news-page">
       <Header />
       <main className="news-page__main">
+        <NewsMobileHero
+          articles={mobileFeaturedArticles}
+          onExplore={handleMobileExplore}
+          onSubscribe={() => setSubscriptionOpen(true)}
+        />
         <div className="news-page__container">
+          <header className="news-masthead">
+            <div className="news-masthead__copy">
+              <p className="news-masthead__eyebrow">
+                <span aria-hidden /> {t('newsPage_mastheadEyebrow')}
+              </p>
+              <h1 className="news-masthead__title">{t('newsPage_mastheadTitle')}</h1>
+              <p className="news-masthead__lead">{t('newsPage_mastheadLead')}</p>
+            </div>
+            <div className="news-masthead__edition" aria-label={t('newsPage_editionAria')}>
+              <span className="news-masthead__edition-label">{t('newsPage_editionLabel')}</span>
+              <strong>01</strong>
+              <span>2026</span>
+            </div>
+            <ul className="news-masthead__topics" aria-label={t('newsPage_topicsAria')}>
+              <li>{t('newsPage_topicMarket')}</li>
+              <li>{t('newsPage_topicInvest')}</li>
+              <li>{t('newsPage_topicCities')}</li>
+              <li>{t('newsPage_topicLifestyle')}</li>
+            </ul>
+          </header>
+
           <NewsHero
             slides={heroSlides}
             activeIndex={heroIndex}
@@ -441,6 +559,16 @@ const News = () => {
           />
 
           <section className="news-section" aria-label={t('newsPage_sectionAria')}>
+            <div className="news-section__heading">
+              <div>
+                <p className="news-section__eyebrow">{t('newsPage_sectionEyebrow')}</p>
+                <h2>{t('newsPage_sectionTitle')}</h2>
+              </div>
+              <span className="news-section__count">
+                {String(gridArticles.length).padStart(2, '0')}
+              </span>
+            </div>
+
             {duoRow1.length > 0 ? (
               <div className="news-grid news-grid--duo">
                 {duoRow1.map((article) => (
@@ -474,9 +602,37 @@ const News = () => {
             ) : null}
           </section>
 
+          {mobileFeedArticles.length ? (
+            <section
+              id="news-mobile-feed"
+              className="news-mobile-feed"
+              aria-labelledby="news-mobile-feed-title"
+            >
+              <div className="news-mobile-feed__heading">
+                <h2 id="news-mobile-feed-title">
+                  <span className="news-mobile-feed__brand" aria-label="SellYourBrick">
+                    <span>Sell</span>
+                    <span className="news-mobile-feed__brand-accent">Your</span>
+                    <span>Brick</span>
+                  </span>
+                  <span className="news-mobile-feed__title-line">{t('newsPage_mobileFeedTitle')}</span>
+                </h2>
+              </div>
+              <div className="news-mobile-feed__list">
+                {mobileFeedArticles.map((article) => (
+                  <NewsArticleCard key={`mobile-${article.id}`} article={article} onOpen={handleArticleOpen} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <NewsSocialBanner />
         </div>
       </main>
+      <NewsSubscriptionDrawer
+        isOpen={subscriptionOpen}
+        onClose={() => setSubscriptionOpen(false)}
+      />
     </div>
   )
 }

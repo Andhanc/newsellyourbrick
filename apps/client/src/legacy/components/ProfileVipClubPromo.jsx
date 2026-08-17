@@ -5,16 +5,16 @@ import ProfileVipClubPromoArt from './ProfileVipClubPromoArt'
 import './ProfileVipClubPromo.css'
 
 /** Рекламный баннер закрытого VIP-клуба (тиффани, как промо-полоса). */
-export default function ProfileVipClubPromo({ className = '' }) {
+export default function ProfileVipClubPromo({ className = '', titleId = 'profile-vip-club-promo-title' }) {
   const { t } = useTranslation()
 
   const rootClass = ['profile-vip-club-promo', className].filter(Boolean).join(' ')
 
   return (
-    <Link to="/private-club" className={rootClass} aria-labelledby="profile-vip-club-promo-title">
+    <Link to="/private-club" className={rootClass} aria-labelledby={titleId}>
       <div className="profile-vip-club-promo__inner">
         <div className="profile-vip-club-promo__copy">
-          <h2 id="profile-vip-club-promo-title" className="profile-vip-club-promo__title">
+          <h2 id={titleId} className="profile-vip-club-promo__title">
             {t('profileVipClubPromoTitle')}
           </h2>
           <p className="profile-vip-club-promo__desc">{t('profileVipClubPromoLead')}</p>

@@ -13,7 +13,7 @@ type FavRow = { property_id: number | string; property_table?: string }
 
 export default function FavoritesScreen() {
   const insets = useSafeAreaInsets()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [items, setItems] = useState<CatalogProperty[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -48,8 +48,9 @@ export default function FavoritesScreen() {
   }, [user?.id])
 
   useEffect(() => {
+    if (authLoading) return
     void load()
-  }, [load])
+  }, [authLoading, load])
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top }]}>
@@ -60,7 +61,7 @@ export default function FavoritesScreen() {
         <Text style={styles.title}>Избранное</Text>
         <View style={{ width: 40 }} />
       </View>
-      {loading ? (
+      {authLoading || loading ? (
         <View style={styles.center}><ActivityIndicator color={colors.mdSky} /></View>
       ) : (
         <FlatList

@@ -25,6 +25,7 @@ import { getCabinetDataPath, getCabinetProfilePath, getCabinetSubscriptionsPath 
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { fetchUserById } from '../utils/usersApi'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
+import { isBundledNativeDom } from '../utils/nativeDomBridge'
 
 import './BuyerCabinetTestPage.css'
 
@@ -144,7 +145,7 @@ function planFeatureTranslationKeys(visual) {
   if (visual === 'vip') {
     return ['buyerPricing_featV0', 'buyerPricing_featV1', 'buyerPricing_featV2', 'buyerPricing_featV3']
   }
-  return ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2', 'buyerPricing_featP3']
+  return ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2']
 }
 
 function SubscriptionPlanIcon({ planVisual, className }) {
@@ -301,7 +302,7 @@ export default function BuyerCabinetTestPage() {
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
-    window.location.assign('/')
+    if (!isBundledNativeDom()) window.location.assign('/')
   }
 
   useEffect(() => {
@@ -409,7 +410,7 @@ export default function BuyerCabinetTestPage() {
                     <span className="bwt-action-tile__label">{t('wallet')}</span>
                   </span>
                 </Link>
-                <Link to="/history" className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
+                <Link to="/profile?history=1" className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
                   <span className="bwt-action-tile">
                     <span className="bwt-action-tile__icon" aria-hidden>
                       <IconNavHistory />
@@ -418,7 +419,7 @@ export default function BuyerCabinetTestPage() {
                   </span>
                 </Link>
                 <Link
-                  to="/profile/bookings"
+                  to="/profile?bookings=1"
                   className="bwt-action bwt-action--tile"
                   onClick={() => setServicesMenuOpen(false)}
                 >

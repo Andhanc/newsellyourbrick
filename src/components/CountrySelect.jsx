@@ -265,7 +265,7 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
 
   const locale = useMemo(() => {
     const lang = (i18n.language || 'ru').split('-')[0];
-    return ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) ? lang : 'en';
+    return ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv'].includes(lang) ? lang : 'en';
   }, [i18n.language]);
 
   const displayNames = useMemo(

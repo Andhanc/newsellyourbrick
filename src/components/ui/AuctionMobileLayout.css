@@ -275,6 +275,30 @@
   row-gap: 14px !important;
 }
 
+@media (min-width: 769px) {
+  .auction-mobile-stack.auction-mobile-stack--desktop-cards,
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards,
+  .property-list--auction-desktop .properties-grid.properties-grid--auction-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    column-gap: 16px !important;
+    row-gap: 24px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .auction-mobile-stack.auction-mobile-stack--desktop-cards,
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards.auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .properties-grid.properties-grid--auction-cards,
+  .property-list--auction-desktop .properties-grid.properties-grid--auction-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
 @media (min-width: 480px) {
   .auction-mobile-stack--desktop-cards,
   .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
@@ -313,7 +337,7 @@
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__location {
-  font-size: 0.62rem;
+  font-size: 0.72rem;
 }
 
 .auction-mobile-stack--desktop-cards .auction-card__location svg {
@@ -1986,7 +2010,7 @@
   .auction-mobile-layout
     .discover-auction-cards.auction-mobile-stack--desktop-cards
     .auction-card__media {
-    aspect-ratio: 3 / 2 !important;
+    aspect-ratio: 5 / 4 !important;
     background: #dfe8e8;
   }
 
@@ -2036,8 +2060,8 @@
   .auction-mobile-layout
     .discover-auction-cards
     .auction-card__btn--secondary {
-    border: 1.5px solid #0099a9 !important;
-    color: #007d8a !important;
+    border: 1.5px solid #3bc0cb !important;
+    color: #2aa8b4 !important;
     background: #ffffff !important;
     box-shadow: none !important;
   }

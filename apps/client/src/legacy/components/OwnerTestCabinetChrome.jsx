@@ -138,12 +138,16 @@ export default function OwnerTestCabinetChrome({ children }) {
     [view, handleNavClick, closeMenu, managerChatOpen]
   )
 
+  const handleAddProperty = useCallback(() => {
+    goTo(OWNER_VIEWS.ADD_PROPERTY)
+    closeMenu()
+  }, [goTo, closeMenu])
+
   const renderAddPropertyCta = (className = '') => (
     <button
       type="button"
-      className={`otc-add-property otc-add-property--disabled${className ? ` ${className}` : ''}`}
-      disabled
-      aria-disabled="true"
+      className={`otc-add-property${className ? ` ${className}` : ''}`}
+      onClick={handleAddProperty}
       title={t('ownerTest_ariaAddProperty')}
     >
       <span className="otc-add-property__icon">
@@ -174,7 +178,7 @@ export default function OwnerTestCabinetChrome({ children }) {
             className="otc-mob-topbar__menu"
             aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
+            onClick={() => window.dispatchEvent(new CustomEvent('owner-test:open-menu'))}
           >
             <Menu size={22} strokeWidth={2.2} aria-hidden />
           </button>

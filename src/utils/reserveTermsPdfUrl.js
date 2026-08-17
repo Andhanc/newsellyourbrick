@@ -53,6 +53,8 @@ export function launchReserveTermsPdf() {
   if (typeof window === 'undefined') {
     return { url, openedInNewTab: false }
   }
-  const opened = window.open(url, '_blank', 'noopener,noreferrer')
-  return { url, openedInNewTab: Boolean(opened) }
+  window.open(url, '_blank', 'noopener,noreferrer')
+  // С `noopener` спецификация разрешает вернуть null при успешно открытой
+  // вкладке. Не используем возвращаемый WindowProxy как индикатор успеха.
+  return { url, openedInNewTab: true }
 }

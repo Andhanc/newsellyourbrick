@@ -35,9 +35,14 @@
   gap: 12px;
   width: 100%;
   padding: 10px;
+  border: none;
   border-radius: 10px;
+  background: transparent;
+  text-align: left;
   text-decoration: none;
+  font: inherit;
   color: inherit;
+  cursor: pointer;
   transition: background 0.15s;
 }
 

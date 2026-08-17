@@ -6,6 +6,7 @@ import emailjs from '@emailjs/browser'
 
 import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { isBundledNativeDom } from '../utils/nativeDomBridge'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync()
@@ -1147,6 +1148,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           return {
             success: true,
             user: userData,
+            authToken: data.authToken || null,
             is_blocked: false
           }
         }
@@ -1188,6 +1190,14 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
       }
     } catch (backendError) {
       console.error('❌ Backend недоступен, данные НЕ сохранены в БД:', backendError.message)
+
+      if (isBundledNativeDom()) {
+        return {
+          success: false,
+          error: 'Не удалось подключиться к серверу. Вход через WhatsApp не выполнен.'
+        }
+      }
+
       console.warn('⚠️ Данные сохранены только в localStorage. Запустите backend сервер для полной функциональности.')
       
       // Fallback: создаем пользователя локально (только если backend недоступен)
@@ -2059,7 +2069,8 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           saveUserData(data.user, 'email')
           return {
             success: true,
-            user: data.user
+            user: data.user,
+            authToken: data.authToken || null
           }
         } else {
           // Backend вернул ошибку
@@ -2095,6 +2106,14 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
     } catch (backendError) {
       // Backend недоступен - используем fallback только в этом случае
       console.error('❌ Backend недоступен, данные НЕ сохранены в БД:', backendError.message)
+
+      if (isBundledNativeDom()) {
+        return {
+          success: false,
+          error: 'Не удалось подключиться к серверу. Регистрация не выполнена.'
+        }
+      }
+
       console.warn('⚠️ Данные сохранены только в localStorage. Запустите backend сервер для полной функциональности.')
       
       // Fallback: создаем пользователя локально (только если backend недоступен)
@@ -2354,6 +2373,7 @@ export const loginWithEmail = async (email, password, role = null) => {
         return {
           success: true,
           user: userDataWithRole,
+          authToken: data.authToken || null,
           is_blocked: false
         }
       } else {
@@ -2491,4 +2511,3 @@ export async function resetPasswordWithToken(email, resetToken, password, role =
   }
   return { success: true, message: data.message || 'Пароль обновлён' }
 }
-

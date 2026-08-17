@@ -64,6 +64,22 @@
 
 .pdx-page__main {
   min-width: 0;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+}
+
+/* overflow-x:hidden on .app-layout__content creates a nested scrollport and kills sticky. */
+.app-layout:has(.pdx-page) .app-layout__content {
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+@supports (overflow: clip) {
+  .app-layout:has(.pdx-page) .app-layout__content {
+    overflow-x: clip;
+    overflow-y: clip;
+  }
 }
 
 .pdx-page__below-grid {
@@ -694,6 +710,20 @@
   box-shadow: none;
 }
 
+.pdx-tab-card:has(> .subscription-lock) {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.pdx-tab-card:has(> .subscription-lock) .subscription-lock {
+  min-height: 220px;
+}
+
+.pdx-sidebar-stack > .subscription-lock .pdx-investor-promo {
+  border-radius: inherit;
+}
+
 .pdx-tab-card__description {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
@@ -957,9 +987,8 @@
 }
 
 .pdx-page__aside {
-  position: sticky;
-  top: 88px;
   min-width: 0;
+  align-self: start;
 }
 
 .pdx-sidebar-stack {

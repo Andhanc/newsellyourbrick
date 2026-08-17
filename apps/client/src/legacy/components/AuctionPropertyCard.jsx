@@ -28,6 +28,10 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
+import {
+  getListingAuctionTimerStatus,
+  isListingAuctionTimerCritical,
+} from '../utils/formatListingAuctionTimeLeft'
 import './AuctionPropertyCard.css'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { resolveBuyerListingState } from '../utils/resolveBuyerListingState'
@@ -132,11 +136,22 @@ function AuctionCardOverlayCountdown({ endTime }) {
   }, [endTime])
 
   void tick
+  const diffMs = endTime ? new Date(endTime).getTime() - Date.now() : 0
+  if (!endTime || diffMs <= 0) return null
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const statusClass = getListingAuctionTimerStatus(days)
+  const isCritical = isListingAuctionTimerCritical(days)
   const timeText = formatAuctionCardCountdown(endTime)
   if (!timeText) return null
 
   return (
-    <div className="auction-card__countdown-pill" role="timer">
+    <div
+      className={`auction-card__countdown-pill ${statusClass}${
+        isCritical ? ' timer-critical' : ''
+      }`}
+      role="timer"
+    >
       <Clock size={14} strokeWidth={2.2} aria-hidden />
       <span>{timeText}</span>
     </div>
@@ -508,7 +523,11 @@ export default function AuctionPropertyCard({
               state.showSoldPresentation ? ' auction-card__pricing--sold' : ''
             }`}
           >
-            <div className="auction-card__price-row">
+            <div
+              className={`auction-card__price-row${
+                showBuyNowPriceRow ? ' auction-card__price-row--split' : ''
+              }`}
+            >
               <div className="auction-card__price-main">
                 <span className="auction-card__price-label">
                   <span className="auction-card__price-label-full">
@@ -530,21 +549,20 @@ export default function AuctionPropertyCard({
                   {formatPrice(displayPrice, property.currency)}
                 </span>
               </div>
+              {showBuyNowPriceRow ? (
+                <div className="auction-card__buy-now-row">
+                  <span className="auction-card__price-label">{t('auctionCardBuyShort')}</span>
+                  <span className="auction-card__buy-now-value">
+                    {formatPrice(buyNowPrice, property.currency)}
+                  </span>
+                </div>
+              ) : null}
               {showBidsCount ? (
                 <span className="auction-card__bids-count">
                   {t('auctionCardBidsCount', { count: bidsCount })}
                 </span>
               ) : null}
             </div>
-
-            {showBuyNowPriceRow ? (
-              <div className="auction-card__buy-now-row">
-                <span className="auction-card__price-label">{t('buyNowModalTitle')}</span>
-                <span className="auction-card__buy-now-value">
-                  {formatPrice(buyNowPrice, property.currency)}
-                </span>
-              </div>
-            ) : null}
           </div>
 
           {!showPrivateClubBand && !state.blocksBid ? (
@@ -570,10 +588,14 @@ export default function AuctionPropertyCard({
               >
                 {state.isReserved ? (
                   t('objectReserved')
+                ) : visibleActionCount === 1 ? (
+                  <>
+                    <span className="auction-card__btn-text">{t('placeBid')}</span>
+                    <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
+                  </>
                 ) : (
                   <>
-                    <span className="auction-card__btn-text-full">{t('placeBid')}</span>
-                    <span className="auction-card__btn-text-short">{t('auctionCardBidShort')}</span>
+                    <span className="auction-card__btn-text">{t('auctionCardBidShort')}</span>
                     <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
                   </>
                 )}
@@ -595,11 +617,7 @@ export default function AuctionPropertyCard({
                   {state.isReserved ? (
                     t('objectReserved')
                   ) : (
-                    <>
-                      <span className="auction-card__btn-text-full">{t('buyNowModalTitle')}</span>
-                      <span className="auction-card__btn-text-short">{t('auctionCardBuyShort')}</span>
-                      <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
-                    </>
+                    <span className="auction-card__btn-text">{t('auctionCardBuyShort')}</span>
                   )}
                 </button>
               ) : null}

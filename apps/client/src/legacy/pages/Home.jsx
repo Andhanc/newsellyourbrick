@@ -25,6 +25,7 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
@@ -180,19 +181,7 @@ function Home() {
               return true
             })
             if (toAdd.length === 0) return prev
-            const rankPc = (p) =>
-              p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1' ? 1 : 0
-            const endKey = (p) => {
-              const raw = p.endTime || p.auction_end_date || p.test_timer_end_date || ''
-              const t = raw ? new Date(raw).getTime() : 0
-              return Number.isFinite(t) ? t : 0
-            }
-            const merged = [...toAdd, ...prev]
-            merged.sort((a, b) => {
-              const d = rankPc(b) - rankPc(a)
-              if (d !== 0) return d
-              return endKey(a) - endKey(b)
-            })
+            const merged = sortListingsByAuctionTimer([...toAdd, ...prev])
             return merged
           })
         } catch (_) {}
@@ -390,6 +379,23 @@ function Home() {
     [navigate],
   )
 
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('configureAIChatHost', {
+        detail: {
+          recommendationProperties: auctionProperties,
+          onRecommendationClick: handleRecommendationClick,
+        },
+      }),
+    )
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent('configureAIChatHost', {
+          detail: { recommendationProperties: [] },
+        }),
+      )
+    }
+  }, [auctionProperties, handleRecommendationClick])
 
   useEffect(() => {
     const node = faqSentinelRef.current
@@ -413,8 +419,6 @@ function Home() {
         <SiteChatDockLazy
           wrapperClassName="home-auction-floats"
           footerNear={floatWidgetsHiddenByFooter}
-          recommendationProperties={auctionProperties}
-          onRecommendationClick={handleRecommendationClick}
         >
           {canShowDeposit() &&
             (depositLoading ? (

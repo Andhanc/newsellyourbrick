@@ -6,6 +6,8 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import {
   fetchAdminLiveChatMessages,
   fetchAdminLiveChatSessions,
+  markAdminLiveChatSessionRead,
+  markAllAdminLiveChatSessionsRead,
   sendAdminLiveChatMessage,
 } from '../../services/liveChatApi';
 import { markLiveChatAllViewed, requestAdminSidebarBadgesRefresh } from '../../utils/adminSidebarBadges';
@@ -56,13 +58,13 @@ function formatSessionTime(iso) {
 }
 
 function clientTitleFromRow(s) {
-  if (!s) return 'Сайт';
+  if (!s) return 'Гость';
   const fn = [s.client_first_name, s.client_last_name].filter(Boolean).join(' ').trim();
-  if (fn) return `Сайт · ${fn}`;
-  if (s.client_email) return `Сайт · ${s.client_email}`;
-  if (s.lead_email) return `Сайт · ${s.lead_email}`;
-  if (s.display_label) return `Сайт · ${s.display_label}`;
-  return `Сайт · чат #${s.id}`;
+  if (fn) return fn;
+  if (s.client_email) return s.client_email;
+  if (s.lead_email) return s.lead_email;
+  if (s.display_label) return s.display_label;
+  return `Чат #${s.id}`;
 }
 
 function mapServerRowToMessage(r) {
@@ -72,6 +74,22 @@ function mapServerRowToMessage(r) {
     role: r.sender_role === 'system' ? 'system' : r.sender_role === 'manager' ? 'manager' : 'user',
     timestamp: new Date(r.created_at),
   };
+}
+
+function sortLiveSessions(sessions) {
+  return [...sessions].sort((a, b) => {
+    const aVip = Boolean(a.client_vip_club_active);
+    const bVip = Boolean(b.client_vip_club_active);
+    if (aVip !== bVip) return aVip ? -1 : 1;
+    const aTs = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+    const bTs = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+    return bTs - aTs;
+  });
+}
+
+function isVisitorSenderRole(role) {
+  const value = String(role || '').toLowerCase();
+  return value === 'user' || value === 'client' || value === 'visitor';
 }
 
 function liveRowToChatItem(s) {
@@ -84,15 +102,25 @@ function liveRowToChatItem(s) {
     avatarInitials: initialsFromClientRow(s),
     type: 'live',
     status: 'online',
+    vipClubActive: Boolean(s.client_vip_club_active),
     lastMessage: s.last_message_preview || 'Нет сообщений',
     timestamp: formatSessionTime(s.updated_at),
-    unread: 0,
+    unread: Math.max(0, Number(s.unread_count) || 0),
   };
 }
 
-const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
+function AdminChatVipAvatarBadge() {
+  return (
+    <span className="admin-chat__vip-avatar-badge" title="Участник VIP Club" aria-label="VIP Club">
+      VIP
+    </span>
+  );
+}
+
+const AdminChat = ({ onAdminSectionBadgeRefresh, targetUserId = null, onTargetHandled }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [listFilter, setListFilter] = useState('all');
   const [inputMessage, setInputMessage] = useState('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const messagesEndRef = useRef(null);
@@ -102,11 +130,12 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
 
   const loadLiveSessionsRef = useRef(async () => {});
   const loadLiveThreadRef = useRef(async () => {});
+  const markSessionReadRef = useRef(async () => {});
 
   const loadLiveSessions = useCallback(async () => {
     try {
       const list = await fetchAdminLiveChatSessions();
-      setLiveSessions(Array.isArray(list) ? list : []);
+      setLiveSessions(Array.isArray(list) ? sortLiveSessions(list) : []);
     } catch {
       /* ignore */
     }
@@ -130,9 +159,20 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
       timestamp: '—',
       unread: 0,
     };
-    const live = (liveSessions || []).map((s) => liveRowToChatItem(s));
+    const live = sortLiveSessions(liveSessions || []).map((s) => liveRowToChatItem(s));
     return [ai, ...live];
   }, [liveSessions]);
+
+  useEffect(() => {
+    const target = Number(targetUserId);
+    if (!Number.isFinite(target) || target <= 0 || liveSessions.length === 0) return;
+    const row = liveSessions.find((session) => Number(session.user_id) === target);
+    if (row) {
+      setSelectedChat(liveRowToChatItem(row));
+      void markSessionReadRef.current(row.id);
+    }
+    onTargetHandled?.();
+  }, [liveSessions, onTargetHandled, targetUserId]);
 
   useEffect(() => {
     if (!selectedChat && chats.length > 0) {
@@ -152,8 +192,10 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
         name: clientTitleFromRow(row),
         avatarUrl: resolveClientAvatarUrl(row),
         avatarInitials: initialsFromClientRow(row),
+        vipClubActive: Boolean(row.client_vip_club_active),
         lastMessage: row.last_message_preview || 'Нет сообщений',
         timestamp: formatSessionTime(row.updated_at),
+        unread: Math.max(0, Number(row.unread_count) || 0),
       };
     });
   }, [liveSessions]);
@@ -171,6 +213,9 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
 
   loadLiveThreadRef.current = loadLiveThread;
 
+  const selectedChatRef = useRef(selectedChat);
+  selectedChatRef.current = selectedChat;
+
   useEffect(() => {
     if (!selectedChat || selectedChat.type !== 'live') return undefined;
     loadLiveThread(selectedChat.sessionId);
@@ -181,6 +226,9 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
     if (!row || row.id == null) return;
     const key = `live-${sessionId}`;
     const entry = mapServerRowToMessage(row);
+    const isVisitor = isVisitorSenderRole(row.sender_role);
+    const viewing =
+      selectedChatRef.current?.type === 'live' && selectedChatRef.current.sessionId === sessionId;
     setMessagesByKey((prev) => {
       const list = prev[key] || [];
       if (list.some((m) => m.id === entry.id)) return prev;
@@ -194,14 +242,21 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
         queueMicrotask(() => loadLiveSessionsRef.current());
         return prev;
       }
+      const currentUnread = Math.max(0, Number(prev[idx].unread_count) || 0);
       const updated = {
         ...prev[idx],
         last_message_preview: preview,
         updated_at: ts,
+        unread_count: isVisitor ? (viewing ? 0 : currentUnread + 1) : currentUnread,
       };
       const rest = prev.filter((_, i) => i !== idx);
-      return [updated, ...rest];
+      return sortLiveSessions([updated, ...rest]);
     });
+    if (isVisitor && viewing) {
+      queueMicrotask(() => markSessionReadRef.current(sessionId));
+    } else if (isVisitor) {
+      queueMicrotask(() => requestAdminSidebarBadgesRefresh());
+    }
   }, []);
 
   const applyLiveChatSession = useCallback((session) => {
@@ -211,14 +266,38 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = { ...next[idx], ...session };
-        return next;
+        return sortLiveSessions(next);
       }
-      return [session, ...prev];
+      return sortLiveSessions([session, ...prev]);
     });
   }, []);
 
-  const selectedChatRef = useRef(selectedChat);
-  selectedChatRef.current = selectedChat;
+  const markSessionRead = useCallback(async (sessionId) => {
+    if (!sessionId) return;
+    setLiveSessions((prev) =>
+      prev.map((session) =>
+        session.id === sessionId ? { ...session, unread_count: 0 } : session,
+      ),
+    );
+    try {
+      const row = await markAdminLiveChatSessionRead(sessionId);
+      if (row) {
+        setLiveSessions((prev) => {
+          const idx = prev.findIndex((session) => session.id === row.id);
+          if (idx < 0) return prev;
+          const next = [...prev];
+          next[idx] = { ...next[idx], ...row, unread_count: Number(row.unread_count) || 0 };
+          return next;
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+    requestAdminSidebarBadgesRefresh();
+    void onAdminSectionBadgeRefresh?.();
+  }, [onAdminSectionBadgeRefresh]);
+
+  markSessionReadRef.current = markSessionRead;
 
   const sseHandlerRef = useRef({ applyLiveChatMessage, applyLiveChatSession });
   sseHandlerRef.current = { applyLiveChatMessage, applyLiveChatSession };
@@ -290,7 +369,10 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
       document.body.scrollTop = 0;
     }
     setSelectedChat(chat);
-  }, []);
+    if (chat?.type === 'live' && chat.sessionId) {
+      void markSessionRead(chat.sessionId);
+    }
+  }, [markSessionRead]);
 
   const chatMatchesQuery = (chat, q) => {
     if (!q.trim()) return true;
@@ -312,7 +394,12 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
     return hay.includes(n);
   };
 
-  const filteredChats = chats.filter((chat) => chatMatchesQuery(chat, searchQuery));
+  const filteredChats = chats.filter((chat) => {
+    if (!chatMatchesQuery(chat, searchQuery)) return false;
+    if (listFilter === 'vip') return chat.type === 'live' && chat.vipClubActive;
+    if (listFilter === 'regular') return chat.type === 'live' && !chat.vipClubActive;
+    return true;
+  });
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -447,8 +534,17 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
               className="admin-chat__mark-read-btn"
               onClick={() => {
                 markLiveChatAllViewed();
-                requestAdminSidebarBadgesRefresh({ patch: { chat: 0 } });
-                void onAdminSectionBadgeRefresh?.();
+                setLiveSessions((prev) =>
+                  prev.map((session) => ({ ...session, unread_count: 0 })),
+                );
+                void markAllAdminLiveChatSessionsRead()
+                  .then(() => {
+                    requestAdminSidebarBadgesRefresh({ patch: { chat: 0 } });
+                    void onAdminSectionBadgeRefresh?.();
+                  })
+                  .catch(() => {
+                    requestAdminSidebarBadgesRefresh({ patch: { chat: 0 } });
+                  });
               }}
             >
               Всё просмотрено
@@ -468,11 +564,35 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
           />
         </div>
 
+        <div className="admin-chat__filters" role="tablist" aria-label="Фильтр чатов">
+          {[
+            { id: 'all', label: 'Все' },
+            { id: 'vip', label: 'VIP Club' },
+            { id: 'regular', label: 'Обычные' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={listFilter === item.id}
+              className={`admin-chat__filter ${listFilter === item.id ? 'is-active' : ''}`}
+              onClick={() => setListFilter(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         <div className="admin-chat__list">
-          {filteredChats.map((chat) => (
+          {filteredChats.length === 0 ? (
+            <p className="admin-chat__empty">Нет чатов в этом фильтре</p>
+          ) : (
+            filteredChats.map((chat) => (
             <div
               key={chat.id}
-              className={`admin-chat__item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+              className={`admin-chat__item ${selectedChat?.id === chat.id ? 'active' : ''} ${
+                chat.unread > 0 ? 'admin-chat__item--unread' : ''
+              }`}
               onClick={() => selectChat(chat)}
             >
               <div className="admin-chat__item-avatar">
@@ -488,6 +608,7 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
                   </div>
                 )}
                 {chat.status === 'online' && <span className="admin-chat__status-dot"></span>}
+                {chat.vipClubActive && <AdminChatVipAvatarBadge />}
                 {chat.type === 'ai' && (
                   <div className="admin-chat__ai-badge">
                     <FiZap size={12} />
@@ -497,16 +618,20 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
               <div className="admin-chat__item-content">
                 <div className="admin-chat__item-header">
                   <h3 className="admin-chat__item-name">
-                    {getChatIcon(chat.type)}
-                    {chat.name}
+                    {chat.type === 'ai' && getChatIcon(chat.type)}
+                    <span className="admin-chat__item-name-text">{chat.name}</span>
                   </h3>
                   <span className="admin-chat__item-time">{chat.timestamp}</span>
                 </div>
-                <p className="admin-chat__item-message">{chat.lastMessage}</p>
               </div>
-              {chat.unread > 0 && <div className="admin-chat__item-badge">{chat.unread}</div>}
+              {chat.unread > 0 && (
+                <div className="admin-chat__item-badge" title="Непрочитанные сообщения">
+                  {chat.unread > 99 ? '99+' : chat.unread}
+                </div>
+              )}
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
 
@@ -528,15 +653,18 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
                     </div>
                   )}
                   {selectedChat.status === 'online' && <span className="admin-chat__status-dot"></span>}
+                  {selectedChat.vipClubActive && <AdminChatVipAvatarBadge />}
                 </div>
                 <div>
                   <h3 className="admin-chat__main-name">
-                    {getChatIcon(selectedChat.type)}
-                    {selectedChat.name}
+                    {selectedChat.type === 'ai' && getChatIcon(selectedChat.type)}
+                    <span className="admin-chat__main-name-text">{selectedChat.name}</span>
                   </h3>
                   <span className="admin-chat__main-status">
                     {selectedChat.type === 'live'
-                      ? 'Диалог с сайта · обновления по подключению Live'
+                      ? selectedLiveRow?.client_vip_club_active
+                        ? 'Участник VIP Club'
+                        : 'Онлайн'
                       : selectedChat.status === 'online'
                         ? 'Онлайн'
                         : 'Офлайн'}
@@ -580,6 +708,12 @@ const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
                     <>
                       <dt>Телефон</dt>
                       <dd>{selectedLiveRow.client_phone}</dd>
+                    </>
+                  )}
+                  {selectedLiveRow.client_vip_club_active && (
+                    <>
+                      <dt>VIP Club</dt>
+                      <dd>Активный участник</dd>
                     </>
                   )}
                 </dl>

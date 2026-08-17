@@ -16,6 +16,7 @@ import '../components/DebtsPropertyCard.css'
 import '../components/SharesPropertyCard.css'
 import '../styles/hrShowcaseAuctionCards.css'
 import '../styles/hrShowcaseDebtsCards.css'
+import '../styles/discoverAuctionCards.css'
 import '../components/ui/AuctionMobileLayout.css'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -79,7 +80,7 @@ function FavoritesGrid({
   formatPrice,
 }) {
   return (
-    <div className="hr-showcases hr-showcases--auction-listing">
+    <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
       <div className="properties-grid favorites-page__grid properties-grid--auction-cards auction-mobile-stack--desktop-cards">
         {items.map((item) => (
           <FavoritePropertyCard
@@ -201,7 +202,7 @@ const Favorites = () => {
         </div>
 
         {listLoading ? (
-          <div className="hr-showcases hr-showcases--auction-listing">
+          <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
             <div
               className="properties-grid favorites-page__grid favorites-page__grid--skeleton properties-grid--auction-cards auction-mobile-stack--desktop-cards"
               aria-busy="true"
@@ -402,7 +403,10 @@ const Favorites = () => {
             <strong>{t('favoritesPage_compareTrayTitle')}</strong>
             <span>{t('favoritesPage_compareTrayCount', { count: favoriteAuctions.length })}</span>
           </div>
-          <Link to="/compare">{t('favoritesPage_compareAction')}</Link>
+          <Link to="/compare">
+            <span>{t('favoritesPage_compareAction')}</span>
+            <PiArrowRight size={17} aria-hidden />
+          </Link>
         </aside>
       ) : null}
     </div>

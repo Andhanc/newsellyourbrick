@@ -1,9 +1,10 @@
 /* Mobile Discover — two locked screens, white-jump between them */
 
-/* Hide global layout footer; keep the one embedded under news/FAQ */
+/* Hide global layout footer; keep the one embedded under news/FAQ.
+ * Scope to .app-layout so portaled manager/AI chat (.chat-widget on body) still shows. */
 .md-page-active .app-layout #site-footer,
 .md-page-active .app-footer-skeleton,
-.md-page-active .chat-widget,
+.md-page-active .app-layout .chat-widget,
 .md-page-active [data-site-ads] {
   display: none !important;
 }
@@ -185,7 +186,7 @@
   width: 100%;
   height: 120%;
   object-fit: cover;
-  object-position: center 80%;
+  object-position: center 42%;
   filter: saturate(1.06) hue-rotate(-6deg) brightness(1.03);
   animation: md-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
@@ -434,8 +435,9 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(8, 24, 38, 0.55) 0%, rgba(8, 24, 38, 0.08) 46%),
-    linear-gradient(0deg, rgba(8, 24, 38, 0.48) 0%, transparent 38%);
+    linear-gradient(180deg, rgba(8, 24, 38, 0.74) 0%, rgba(8, 24, 38, 0.3) 40%, rgba(8, 24, 38, 0.2) 58%),
+    linear-gradient(0deg, rgba(8, 24, 38, 0.64) 0%, transparent 42%),
+    rgba(8, 24, 38, 0.22);
   pointer-events: none;
 }
 
@@ -453,7 +455,9 @@
 .md-card__copy {
   max-width: 90%;
   color: #ffffff;
-  text-shadow: 0 2px 14px rgba(4, 18, 30, 0.42);
+  text-shadow:
+    0 1px 2px rgba(4, 18, 30, 0.55),
+    0 2px 16px rgba(4, 18, 30, 0.45);
 }
 
 .md-card__icon {
@@ -583,7 +587,7 @@
 
 .md-welcome__lead {
   margin: 1.05rem auto 0;
-  max-width: 28ch;
+  max-width: min(100%, 48ch);
   font-size: 0.92rem;
   font-weight: 450;
   line-height: 1.55;
@@ -676,9 +680,10 @@
 .md-welcome__search {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  min-height: 56px;
-  padding: 0.35rem 0.4rem 0.35rem 1.2rem;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 68px;
+  padding: 0.45rem 0.5rem 0.45rem 1.4rem;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow:
@@ -694,11 +699,20 @@
   min-width: 0;
   border: 0;
   outline: none;
+  box-shadow: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.94rem;
+  font-size: 1.08rem;
   font-weight: 550;
   color: #0f172a;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.md-welcome__search-input:focus,
+.md-welcome__search-input:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .md-welcome__search-input::placeholder {
@@ -707,9 +721,9 @@
 }
 
 .md-welcome__search-go {
-  flex: 0 0 46px;
-  width: 46px;
-  height: 46px;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
   border: 0;
   border-radius: 50%;
   background: var(--md-sky);
@@ -730,45 +744,11 @@
 }
 
 .md-welcome__search-go svg {
-  width: 18px;
-  height: 18px;
+  width: 21px;
+  height: 21px;
 }
 
-.md-welcome__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  border-radius: 9999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-  text-shadow: 0 1px 8px rgba(15, 23, 42, 0.35);
-  box-shadow:
-    0 10px 28px rgba(15, 23, 42, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  transition: transform 0.15s ease, background 0.18s ease, border-color 0.18s ease;
-}
-
-.md-welcome__cta:active {
-  transform: scale(0.98);
-  background: rgba(255, 255, 255, 0.38);
-}
-
-.md-welcome__cta:hover {
-  background: rgba(255, 255, 255, 0.36);
-  border-color: rgba(255, 255, 255, 0.9);
-}
-
-.md-welcome__search-go:focus-visible,
-.md-welcome__cta:focus-visible,
-.md-welcome__search-input:focus-visible {
+.md-welcome__search-go:focus-visible {
   outline: 2px solid var(--md-sky-deep);
   outline-offset: 2px;
 }
@@ -869,7 +849,8 @@
 }
 
 .md-format-card--photo[data-md-format='buy_now'] .md-format-card__photo {
-  object-position: center 38%;
+  /* Match auction strategy card framing (gavel + pool villa) */
+  object-position: 36% center;
 }
 
 .md-format-card--photo[data-md-format='buy_now'] .md-format-card__shade {
@@ -920,7 +901,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 28%;
+  /* Match shares strategy card framing (pool + resort buildings) */
+  object-position: 42% center;
   display: block;
 }
 
@@ -979,8 +961,11 @@
 
 .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__carousel {
   flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__scroller,
@@ -988,30 +973,74 @@
   /* Horizontal only — vertical gestures must chain to .md-stage */
   touch-action: pan-x pan-y;
   overscroll-behavior-y: auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
-/* Full listing cards — intrinsic height, no flex collapse. */
-.md-catalog.invest-home-page .md-debts-pin__showcase .home-showcase__slot > *,
-.md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card {
-  height: auto;
+/* Full listing cards — equal heights in debts showcase slider */
+.md-catalog.invest-home-page .invest-showcase--debts .invest-showcase__scroller,
+.md-catalog.invest-home-page .invest-showcase--debts .home-showcase__scroller {
+  align-items: stretch;
+}
+
+.md-catalog.invest-home-page .invest-showcase--debts .home-showcase__slot {
+  display: flex;
+  align-self: stretch;
+}
+
+.md-catalog.invest-home-page .invest-showcase--debts .home-showcase__slot > *,
+.md-catalog.invest-home-page .invest-showcase--debts .debts-property-card {
+  height: 100%;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+
+.md-catalog.invest-home-page .invest-showcase--debts .debts-property-card__body {
+  flex: 1 1 auto;
   min-height: 0;
-  flex: 0 0 auto;
+}
+
+.md-catalog.invest-home-page .invest-showcase--debts .debts-property-card__actions {
+  margin-top: auto;
+}
+
+.md-catalog.invest-home-page .invest-showcase--debts .debts-property-card__timer-slot:empty {
+  display: block;
+  height: 50px;
+  min-height: 50px;
+  flex: 0 0 50px;
+}
+
+@media (min-width: 769px) {
+  .md-catalog.invest-home-page .invest-showcase--debts .debts-property-card__timer-slot:empty {
+    height: 54px;
+    min-height: 54px;
+    flex-basis: 54px;
+  }
 }
 
 .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__media,
 .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__body,
+.md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__timer-slot,
 .md-catalog.invest-home-page .md-debts-pin__showcase .listing-card-auction-timer {
   flex-shrink: 0;
 }
 
-.md-debts-pin__showcase .invest-showcase__title {
-  color: var(--md-ink);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+.md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__title {
+  color: #ffffff;
+  text-shadow:
+    0 1px 2px rgba(8, 28, 42, 0.55),
+    0 2px 14px rgba(8, 28, 42, 0.4);
 }
 
-.md-debts-pin__showcase .invest-showcase__subtitle {
-  color: rgba(15, 23, 42, 0.78);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+.md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__subtitle {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow:
+    0 1px 2px rgba(8, 28, 42, 0.5),
+    0 2px 12px rgba(8, 28, 42, 0.35);
 }
 
 .md-debts-pin__app .md-app-download {
@@ -1024,7 +1053,7 @@
 
 .md-debts-pin__app .md-app-download__title {
   margin-top: 0.65rem;
-  font-size: clamp(1.35rem, 5.6vw, 1.7rem);
+  font-size: clamp(1.05rem, 4.2vw, 1.4rem);
 }
 
 .md-debts-pin__app .md-app-download__lead {
@@ -1168,13 +1197,48 @@
 }
 
 .md-catalog.invest-home-page .invest-showcase__cta-pill {
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--md-ink);
-  box-shadow: 0 12px 28px rgba(11, 18, 32, 0.18);
+  /* Мягкая тень на белом листе аукциона визуально «раздувала» кнопку */
+  box-shadow: 0 6px 14px rgba(11, 18, 32, 0.14);
   font-family: var(--md-font);
+  /* Один размер «Перейти» во всех блоках (аукцион / купить / доли / долги) */
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  align-self: start;
+  min-height: 36px;
+  height: 36px;
+  max-height: 36px;
+  padding: 0 3px 0 12px;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.md-catalog.invest-home-page .invest-showcase__cta-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(11, 18, 32, 0.18);
+}
+
+.md-catalog.invest-home-page .invest-showcase__cta-pill-text {
+  display: block;
+  line-height: 1;
+  font-size: inherit;
 }
 
 .md-catalog.invest-home-page .invest-showcase__cta-pill-icon {
   background: rgba(255, 255, 255, 0.14);
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.md-catalog.invest-home-page .invest-showcase__cta-pill-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .md-catalog.invest-home-page .invest-showcase__nav-btn {
@@ -1204,6 +1268,7 @@
   padding-left: 1.1rem;
   padding-right: 1.1rem;
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -1213,14 +1278,54 @@
 
 .md-catalog.invest-home-page .invest-showcase__carousel {
   flex: 0 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+.md-catalog.invest-home-page .invest-showcase__scroller,
+.md-catalog.invest-home-page .home-showcase__scroller {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .md-catalog.invest-home-page .invest-showcase__footer {
   margin-top: 0;
+}
+
+@media (max-width: 1023px) {
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side {
+    display: none !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav--footer {
+    display: inline-flex;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav--footer .invest-showcase__nav-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    position: static;
+    left: auto;
+    right: auto;
+    transform: none;
+  }
+}
+
+.md-catalog.invest-home-page .invest-showcase__nav-btn {
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: var(--md-ink);
+  box-shadow: 0 8px 20px rgba(11, 18, 32, 0.14);
 }
 
 /* Title + «Перейти» on one row; subtitle below */
@@ -1244,26 +1349,59 @@
   min-width: 0;
 }
 
-.md-catalog.invest-home-page .invest-showcase--buy-now .invest-showcase__title {
-  white-space: nowrap;
-  font-size: clamp(1.35rem, 5.2vw, 2.125rem);
+.md-catalog.invest-home-page .invest-showcase--buy-now .invest-showcase__title,
+.md-format-card--photo[data-md-format='buy_now'] .invest-showcase__title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.25rem, 5vw, 1.85rem);
   line-height: 1.15;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: #ffffff;
+  text-shadow:
+    0 1px 2px rgba(8, 28, 42, 0.55),
+    0 2px 14px rgba(8, 28, 42, 0.4);
 }
 
-.md-catalog.invest-home-page .invest-showcase__cta-pill {
+.md-catalog.invest-home-page .invest-showcase--buy-now .invest-showcase__subtitle,
+.md-format-card--photo[data-md-format='buy_now'] .invest-showcase__subtitle {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow:
+    0 1px 2px rgba(8, 28, 42, 0.5),
+    0 2px 12px rgba(8, 28, 42, 0.35);
+}
+
+.md-catalog.invest-home-page .invest-showcase__cta-pill,
+.md-catalog.invest-home-page .invest-showcase--auction .invest-showcase__cta-pill,
+.md-catalog.invest-home-page .invest-showcase--buy-now .invest-showcase__cta-pill,
+.md-catalog.invest-home-page .invest-showcase--shares .invest-showcase__cta-pill,
+.md-catalog.invest-home-page .invest-showcase--debts .invest-showcase__cta-pill {
   grid-column: 2;
   grid-row: 1;
-  align-self: center;
+  align-self: start;
+  justify-self: end;
   width: fit-content;
   max-width: 100%;
-  min-height: 40px;
-  padding: 4px 4px 4px 14px;
+  box-sizing: border-box;
+  min-height: 36px;
+  height: 36px;
+  max-height: 36px;
+  padding: 0 3px 0 12px;
   gap: 8px;
+  font-size: 12px;
+  line-height: 1;
 }
 
-.md-catalog.invest-home-page .invest-showcase__cta-pill-icon {
-  width: 30px;
-  height: 30px;
+.md-catalog.invest-home-page .invest-showcase__cta-pill-icon,
+.md-catalog.invest-home-page .invest-showcase--auction .invest-showcase__cta-pill-icon,
+.md-catalog.invest-home-page .invest-showcase--buy-now .invest-showcase__cta-pill-icon,
+.md-catalog.invest-home-page .invest-showcase--shares .invest-showcase__cta-pill-icon,
+.md-catalog.invest-home-page .invest-showcase--debts .invest-showcase__cta-pill-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .md-catalog.invest-home-page .invest-showcase__subtitle {
@@ -1612,7 +1750,7 @@
 
 .md-format-card--photo .invest-showcase__cta-pill {
   background: var(--md-ink);
-  box-shadow: 0 12px 28px rgba(11, 18, 32, 0.28);
+  box-shadow: 0 6px 14px rgba(11, 18, 32, 0.2);
 }
 
 .md-format-card--photo .invest-showcase__nav-btn {
@@ -1684,14 +1822,17 @@
 .md-app-download__title {
   margin: 0.75rem 0 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.28rem;
-  font-size: clamp(1.45rem, 5.8vw, 1.8rem);
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35em;
+  white-space: nowrap;
+  font-size: clamp(1.05rem, 4.4vw, 1.45rem);
   font-weight: var(--md-heading-weight);
   letter-spacing: var(--md-heading-letter-spacing);
   color: #ffffff;
-  line-height: 1.15;
+  line-height: 1.2;
   font-family: var(--md-font);
   text-shadow: 0 2px 14px rgba(6, 22, 34, 0.4);
 }
@@ -1711,10 +1852,11 @@
 }
 
 .md-app-download__title-rest {
-  font-size: 0.92em;
+  font-size: 1em;
   font-weight: inherit;
   letter-spacing: inherit;
   color: rgba(255, 255, 255, 0.94);
+  white-space: nowrap;
 }
 
 .md-app-download__lead {
@@ -1730,21 +1872,25 @@
 .md-app-download__actions {
   margin-top: 0.95rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
 }
 
 .md-app-download__btn {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  min-height: 54px;
-  padding: 0.55rem 0.9rem;
-  border-radius: 16px;
+  gap: 0.45rem;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 50px;
+  padding: 0.45rem 0.55rem 0.45rem 0.45rem;
+  border-radius: 14px;
   text-decoration: none;
   color: #ffffff;
   font-family: var(--md-font);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .md-app-download__btn:active {
@@ -1752,10 +1898,10 @@
 }
 
 .md-app-download__btn--ios {
-  background: rgba(11, 18, 32, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow:
-    0 12px 28px rgba(6, 22, 34, 0.32),
+    0 12px 28px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
@@ -1785,9 +1931,9 @@
 }
 
 .md-app-download__btn-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.14);
@@ -1796,8 +1942,8 @@
 }
 
 .md-app-download__btn-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
 }
 
 .md-app-download__btn-copy {
@@ -1806,20 +1952,22 @@
   align-items: flex-start;
   gap: 1px;
   text-align: left;
+  min-width: 0;
 }
 
 .md-app-download__btn-eyebrow {
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   font-weight: 600;
   opacity: 0.78;
   line-height: 1.2;
 }
 
 .md-app-download__btn-label {
-  font-size: 1.02rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .md-app-download__btn:focus-visible {
@@ -2212,6 +2360,18 @@
 
 /* ——— FAB: larger, bottom-right, expands left ——— */
 
+.md-discover-ai-floats > .ai-button {
+  right: max(0.85rem, env(safe-area-inset-right, 0px));
+  bottom: calc(1.15rem + var(--md-safe-bottom) + 70px + 0.55rem);
+  z-index: 41;
+}
+
+@media (min-width: 1024px) {
+  .md-discover-ai-floats > .ai-button {
+    right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 .md-fab {
   position: fixed;
   right: max(0.85rem, env(safe-area-inset-right, 0px));
@@ -2463,7 +2623,8 @@
   }
 }
 
-@media (min-width: 768px) {
+/* Tablet: keep the polished phone frame (mobile layout untouched) */
+@media (min-width: 768px) and (max-width: 1023px) {
   .md {
     max-width: 420px;
     margin: 0 auto;
@@ -2480,5 +2641,668 @@
     width: auto;
     max-width: none;
     transform: none;
+  }
+}
+
+/* Desktop: full-bleed layout, same blocks — expanded */
+@media (min-width: 1024px) {
+  .md-page-active .app-layout,
+  .app-layout--mobile-discover {
+    background: #ffffff;
+  }
+
+  .md-page-active .app-layout__content {
+    background: #ffffff;
+  }
+
+  .md {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  /* ——— Hero ——— */
+  .md-hero__copy {
+    padding: clamp(5.5rem, 11vh, 8.5rem) 2rem 0;
+    max-width: 52rem;
+    margin: 0 auto;
+  }
+
+  .md-hero__title {
+    font-size: clamp(3.25rem, 5.2vw, 4.6rem);
+    gap: 0.04em;
+  }
+
+  .md-hero__lead {
+    margin-top: 1.35rem;
+    max-width: 36ch;
+    font-size: clamp(1.2rem, 1.6vw, 1.4rem);
+  }
+
+  .md-hero__visual {
+    height: 68%;
+  }
+
+  .md-hero__image {
+    object-position: center 38%;
+  }
+
+  .md-hero__scroll {
+    width: 56px;
+    height: 56px;
+    bottom: calc(1.75rem + var(--md-safe-bottom));
+  }
+
+  /* ——— Stage intro + strategy cards ——— */
+  .md-stage__sheet {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .md-stage__intro {
+    padding: 1.35rem 0 1.15rem;
+    text-align: center;
+  }
+
+  .md-stage__title {
+    font-size: clamp(1.85rem, 2.6vw, 2.55rem);
+    white-space: normal;
+  }
+
+  .md-stage__subtitle {
+    margin: 0.85rem auto 0;
+    max-width: 42ch;
+    font-size: 1.05rem;
+  }
+
+  .md-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 0.75rem 0 0.5rem;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .md-cards-dots {
+    display: none;
+  }
+
+  .md-card {
+    flex: none;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    scroll-snap-align: unset;
+  }
+
+  .md-card__body {
+    padding: 1.35rem 1.25rem 1.25rem;
+  }
+
+  .md-card__icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .md-card__title {
+    font-size: clamp(1.55rem, 1.8vw, 1.9rem);
+  }
+
+  .md-card__description {
+    font-size: 0.92rem;
+    max-width: 28ch;
+  }
+
+  .md-welcome__copy {
+    padding: 4.5rem 0 2.75rem;
+  }
+
+  .md-welcome__title {
+    font-size: clamp(2.35rem, 3.4vw, 3.15rem);
+  }
+
+  .md-welcome__lead {
+    margin-top: 1.15rem;
+    max-width: min(100%, 52ch);
+    font-size: 1.05rem;
+  }
+
+  /* ——— Welcome photo band ——— */
+  .md-welcome-flow {
+    --md-format-peek: calc(env(safe-area-inset-top, 0px) + 118px);
+    --md-welcome-height: min(72vh, 680px);
+    --md-sheet-radius: 32px;
+  }
+
+  .md-welcome__brand {
+    top: 28%;
+    width: min(36rem, 70vw);
+  }
+
+  .md-welcome__brand-text {
+    font-size: clamp(2.6rem, 4vw, 3.6rem);
+  }
+
+  .md-welcome__actions {
+    left: 50%;
+    right: auto;
+    width: min(40rem, 88%);
+    transform: translateX(-50%);
+    top: calc(28% + 5.75rem);
+  }
+
+  .md-welcome__search {
+    min-height: 74px;
+    padding: 0.5rem 0.55rem 0.5rem 1.55rem;
+  }
+
+  .md-welcome__search-input {
+    font-size: 1.14rem;
+  }
+
+  .md-welcome__search-go {
+    flex: 0 0 60px;
+    width: 60px;
+    height: 60px;
+  }
+
+  .md-welcome__search-go svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* ——— Catalog showcases ——— */
+  .md-format-card {
+    padding-top: var(--md-format-peek);
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .md-format-card__body {
+    overflow: hidden;
+    border-radius: var(--md-sheet-radius, 32px) var(--md-sheet-radius, 32px) 0 0;
+  }
+
+  .md-format-card__photo,
+  .md-format-card__shade {
+    border-radius: var(--md-sheet-radius, 32px) var(--md-sheet-radius, 32px) 0 0;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase .invest-shell {
+    max-width: min(1280px, calc(100vw - 5rem));
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    overflow: visible;
+  }
+
+  /* Desktop: scroller full width (aligned with title); arrows in side gutters */
+  .md-catalog.invest-home-page .invest-showcase__carousel {
+    overflow: visible;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__carousel {
+    overflow: visible;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__track {
+    display: block;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    /* Cards align with title; arrows sit in shell side padding */
+    padding-left: 0;
+    padding-right: 0;
+    overflow: visible;
+    --showcase-nav-size: 60px;
+    --showcase-nav-icon: 28px;
+    --showcase-nav-gap: 0.55rem;
+    --showcase-nav-outset: calc(var(--showcase-nav-size) + 2rem);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side {
+    display: inline-flex;
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    width: var(--showcase-nav-size);
+    height: var(--showcase-nav-size);
+    border: none;
+    background: rgba(255, 255, 255, 0.94);
+    color: rgba(29, 29, 31, 0.86);
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.08),
+      0 0 1px rgba(0, 0, 0, 0.05);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 220ms ease,
+      visibility 220ms ease,
+      transform 220ms ease,
+      background 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side svg {
+    width: var(--showcase-nav-icon);
+    height: var(--showcase-nav-icon);
+    stroke-width: 2.5;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Side gutters — outside cards, in shell padding toward page edges */
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--prev.invest-showcase__nav-btn--side {
+    left: calc(-1 * var(--showcase-nav-outset));
+    transform: translateY(-50%) scale(0.92);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--next.invest-showcase__nav-btn--side {
+    right: calc(-1 * var(--showcase-nav-outset));
+    transform: translateY(-50%) scale(0.92);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--prev.invest-showcase__nav-btn--side.is-visible,
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--next.invest-showcase__nav-btn--side.is-visible {
+    transform: translateY(-50%) scale(1);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side:hover:not(:disabled) {
+    background: #ffffff;
+    color: rgba(29, 29, 31, 0.96);
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.12),
+      0 0 1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-50%) scale(1.04);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side:disabled {
+    cursor: not-allowed;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn--side.is-visible:disabled {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: none;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav--footer {
+    display: none;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__footer {
+    justify-content: center;
+    padding-top: 0.15rem;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase .home-showcase__slot {
+    flex: 0 0 calc((100% - 3 * var(--showcase-gap)) / 4.2);
+    width: calc((100% - 3 * var(--showcase-gap)) / 4.2);
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__scroller,
+  .md-catalog.invest-home-page .home-showcase__scroller {
+    width: 100%;
+    max-width: 100%;
+    scroll-padding-inline: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__nav-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Larger property cards + fill empty sheet space */
+  .md-format-card__body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction,
+  .md-catalog.invest-home-page .invest-showcase--buy-now,
+  .md-catalog.invest-home-page .invest-showcase--shares {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 1.5rem;
+  }
+
+  .md-catalog.invest-home-page .invest-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    justify-content: flex-start;
+    gap: 1.15rem;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase__carousel {
+    flex: 0 0 auto;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .home-showcase__scroller,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .home-showcase__scroller,
+  .md-catalog.invest-home-page .invest-showcase--shares .home-showcase__scroller {
+    align-items: stretch;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .home-showcase__slot,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .home-showcase__slot,
+  .md-catalog.invest-home-page .invest-showcase--shares .home-showcase__slot {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .home-showcase__slot > *,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .home-showcase__slot > *,
+  .md-catalog.invest-home-page .invest-showcase--shares .home-showcase__slot > *,
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__media,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__media {
+    aspect-ratio: 5 / 4 !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__body,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__body {
+    flex: 1 1 auto !important;
+    gap: 10px !important;
+    padding: 12px 12px 14px !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__footer,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__footer {
+    margin-top: auto !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__title,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__title,
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__title-link,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__title-link {
+    font-size: 0.95rem !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__location,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location {
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__spec-label,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__spec-label,
+  .md-catalog.invest-home-page .invest-showcase--auction .auction-card__price-label,
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__price-label {
+    font-size: 0.58rem !important;
+    color: #64748b !important;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase .shares-v2-card__media {
+    aspect-ratio: 5 / 4;
+  }
+
+  /* Debts: equal card heights + readable header on photo */
+  .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__scroller,
+  .md-catalog.invest-home-page .md-debts-pin__showcase .home-showcase__scroller {
+    align-items: stretch;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .home-showcase__slot {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .home-showcase__slot > *,
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(1.3em * 2);
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__location {
+    min-height: 1.3em;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__location span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .debts-property-card__actions {
+    margin-top: auto;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__header {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__title {
+    color: #ffffff;
+    text-shadow:
+      0 1px 2px rgba(8, 28, 42, 0.55),
+      0 2px 14px rgba(8, 28, 42, 0.4);
+  }
+
+  .md-catalog.invest-home-page .md-debts-pin__showcase .invest-showcase__subtitle {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow:
+      0 1px 2px rgba(8, 28, 42, 0.5),
+      0 2px 12px rgba(8, 28, 42, 0.35);
+    font-weight: 550;
+  }
+
+  .md-debts-pin__app .md-app-download__title {
+    font-size: clamp(1.5rem, 1.9vw, 1.9rem);
+  }
+
+  .md-debts-pin__app .md-app-download__lead {
+    font-size: 0.95rem;
+  }
+
+  .md-debts-pin__app {
+    padding-bottom: clamp(3.75rem, 9vh, 6rem);
+  }
+
+  .md-debts-pin__app .md-app-download {
+    padding-bottom: 0.35rem;
+  }
+
+  /* ——— App download ——— */
+  .md-app-download {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .md-app-download__inner {
+    max-width: 52rem;
+    padding: 1.75rem 1.75rem 1.5rem;
+  }
+
+  .md-app-download__title {
+    font-size: clamp(1.55rem, 2vw, 1.95rem);
+    gap: 0.4em;
+  }
+
+  .md-app-download__lead {
+    max-width: 40ch;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1rem;
+  }
+
+  .md-app-download__actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .md-app-download__btn {
+    flex: 0 0 12rem;
+    width: 12rem;
+    max-width: 12rem;
+    min-height: 54px;
+    gap: 0.8rem;
+    box-sizing: border-box;
+    padding: 0.55rem 0.85rem 0.55rem 0.7rem;
+    border-radius: 16px;
+  }
+
+  .md-app-download__btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .md-app-download__btn-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .md-app-download__btn-eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .md-app-download__btn-label {
+    font-size: 1.02rem;
+  }
+
+  .md-app-download__btn--ios {
+    background: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-image: none;
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  /* ——— News ——— */
+  .md-news {
+    padding: 3.25rem 1.5rem 2.5rem;
+  }
+
+  .md-news__inner {
+    max-width: 1160px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 1.25rem 1.5rem;
+    align-items: start;
+  }
+
+  .md-news__header {
+    grid-column: 1 / -1;
+    margin-bottom: 0.35rem;
+  }
+
+  .md-news__title {
+    font-size: clamp(2rem, 2.8vw, 2.55rem);
+  }
+
+  .md-news__subtitle {
+    max-width: 48ch;
+    font-size: 1rem;
+  }
+
+  .md-news-feature {
+    margin: 0;
+  }
+
+  .md-news-feature__media {
+    aspect-ratio: 16 / 11;
+  }
+
+  .md-news__list {
+    gap: 0.75rem;
+  }
+
+  .md-news-card__hit {
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  /* ——— Footer / FAB ——— */
+  .md-footer-wrap {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .md-footer-wrap .footer__container {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .md-fab {
+    right: max(1.5rem, env(safe-area-inset-right, 0px));
+    left: auto;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .md-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+
+  .md-card {
+    aspect-ratio: 3 / 4.15;
+  }
+
+  .md-card__title {
+    font-size: clamp(1.35rem, 1.15vw, 1.65rem);
+  }
+
+  .md-card__description {
+    font-size: 0.86rem;
+    max-width: 22ch;
+  }
+
+  .md-stage__intro {
+    padding: 1.75rem 0 1.35rem;
+  }
+
+  .md-hero__visual {
+    height: 72%;
   }
 }

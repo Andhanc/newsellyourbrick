@@ -1192,7 +1192,7 @@ function MainPage() {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
-      path: '/history',
+      path: '/profile?history=1',
       keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'],
       title: 'История',
       requiresAuth: true,
@@ -1666,14 +1666,15 @@ function MainPage() {
         p.is_debt === 1 ||
         p.is_debt === true ||
         p.has_debt === 1 ||
-        p.has_debt === true
+        p.has_debt === true ||
+        ['red', 'yellow', 'green'].includes(String(p.debt_severity || '').toLowerCase())
       if (isDebt) return false
 
       // Если у лота реально доступна опция "Купить сейчас", это не "чистый" аукцион.
       return !hasBuyNowOption(p)
     }).filter((p) => !isAuctionListingEnded(p))
 
-    return filterBySearch(base).slice(0, 8)
+    return filterBySearch(base).slice(0, 7)
   }, [homeProperties, searchQuery])
 
   const buyNowSection = useMemo(() => {
@@ -1687,12 +1688,13 @@ function MainPage() {
         p.is_debt === 1 ||
         p.is_debt === true ||
         p.has_debt === 1 ||
-        p.has_debt === true
+        p.has_debt === true ||
+        ['red', 'yellow', 'green'].includes(String(p.debt_severity || '').toLowerCase())
       if (isDebt) return false
       return hasBuyNowOption(p)
     }).filter((p) => !isAuctionListingEnded(p))
 
-    return filterBySearch(base).slice(0, 8)
+    return filterBySearch(base).slice(0, 7)
   }, [homeProperties, searchQuery])
 
   const debtsSection = useMemo(() => {
@@ -1703,10 +1705,11 @@ function MainPage() {
        p.is_debt === 1 ||
        p.is_debt === true ||
        p.has_debt === 1 ||
-       p.has_debt === true)
+       p.has_debt === true ||
+       ['red', 'yellow', 'green'].includes(String(p.debt_severity || '').toLowerCase()))
     )
 
-    return filterBySearch(base).slice(0, 8)
+    return filterBySearch(base).slice(0, 7)
   }, [homeProperties, searchQuery])
 
   const sharesSection = useMemo(() => {
@@ -1719,7 +1722,7 @@ function MainPage() {
        p.is_shared_ownership === true)
     )
 
-    return filterBySearch(base).slice(0, 8)
+    return filterBySearch(base).slice(0, 7)
   }, [homeProperties, searchQuery])
 
   // Чтение URL параметров и применение фильтров

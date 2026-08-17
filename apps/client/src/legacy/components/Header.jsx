@@ -9,7 +9,6 @@ import {
   FiUser,
   FiGlobe,
 } from 'react-icons/fi'
-import { isInlineAiChatRoute } from '../utils/inlineAiChatRoutes'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -28,6 +27,10 @@ import {
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import {
+  isSoftLaunchFeatureBlocked,
+  isSoftLaunchHrefBlocked,
+} from '../utils/softLaunchAccess'
 import HeaderPinnedCatalogNav from './HeaderPinnedCatalogNav'
 
 const LoginModalLazy = lazy(() => import('./LoginModal'))
@@ -52,7 +55,6 @@ const Header = () => {
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
-  const [isGlobalAiModalOpen, setIsGlobalAiModalOpen] = useState(false)
   const languageDropdownRef = useRef(null)
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -96,22 +98,14 @@ const Header = () => {
   }, [isSearchOpen])
 
   useEffect(() => {
-    if (isMenuOpen) {
-      const main = document.querySelector('.app-layout')
-      const originalOverflow = main ? main.style.overflow : document.body.style.overflow
-      if (main) main.style.overflow = 'hidden'
-      else document.body.style.overflow = 'hidden'
-      return () => {
-        if (main) main.style.overflow = originalOverflow
-        else document.body.style.overflow = originalOverflow
-      }
-    }
-  }, [isMenuOpen])
-
-  useEffect(() => {
     setSiteNavDrawerOpen(isMenuOpen)
     return () => setSiteNavDrawerOpen(false)
   }, [isMenuOpen])
+
+  useEffect(() => {
+    setIsMenuOpen(false)
+    setIsMenuClosing(false)
+  }, [location.pathname])
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -139,31 +133,6 @@ const Header = () => {
     window.addEventListener('managerChatStateChange', onManager)
     return () => window.removeEventListener('managerChatStateChange', onManager)
   }, [])
-
-  useEffect(() => {
-    const onOpenAIChat = () => {
-      if (!isInlineAiChatRoute(location.pathname)) {
-        setIsGlobalAiModalOpen(true)
-      }
-    }
-    window.addEventListener('openAIChat', onOpenAIChat)
-    return () => window.removeEventListener('openAIChat', onOpenAIChat)
-  }, [location.pathname])
-
-  useEffect(() => {
-    if (!isGlobalAiModalOpen) return undefined
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = originalOverflow
-    }
-  }, [isGlobalAiModalOpen])
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent('globalAiModalStateChange', { detail: { isOpen: isGlobalAiModalOpen } })
-    )
-  }, [isGlobalAiModalOpen])
 
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
   useEffect(() => {
@@ -373,7 +342,7 @@ const Header = () => {
     },
     { path: cabinetDataPath, keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
     { path: cabinetSubscriptionsPath, keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'seller', 'owner', 'admin'] },
-    { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/profile?history=1', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/bonuses', keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания'], titleKey: 'bonuses', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/owner-test', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
     { path: '/owner/property/new', keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'], titleKey: 'addProperty', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
@@ -498,14 +467,26 @@ const Header = () => {
   }
 
   const openLoginOrNavigate = (path, closeMenu = false) => {
-    if (!isSiteUserSignedIn(user, userLoaded)) {
-      setLoginModalEntry('wizard')
-      setIsLoginModalOpen(true)
+    // Manager chat: modal/drawer via GlobalManagerChatHost (not soft-launch navigate).
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      if (!isSiteUserSignedIn(user, userLoaded)) {
+        setLoginModalEntry('wizard')
+        setIsLoginModalOpen(true)
+        if (closeMenu) setIsMenuOpen(false)
+        return
+      }
+      window.dispatchEvent(new CustomEvent('openManagerChat'))
       if (closeMenu) setIsMenuOpen(false)
       return
     }
-    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
-      window.dispatchEvent(new CustomEvent('openManagerChat'))
+    if (isSoftLaunchHrefBlocked(path)) {
+      navigate(path)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      setLoginModalEntry('wizard')
+      setIsLoginModalOpen(true)
       if (closeMenu) setIsMenuOpen(false)
       return
     }
@@ -525,6 +506,10 @@ const Header = () => {
   }
 
   const openAiAssistantFromHeader = () => {
+    if (isSoftLaunchFeatureBlocked('aiAssistant')) {
+      navigate('/chat?assistant=1')
+      return
+    }
     window.dispatchEvent(new CustomEvent('openAIChat'))
   }
 
@@ -679,15 +664,7 @@ const Header = () => {
             </button>
             <button
               type="button"
-              className={`new-header__filter-btn ${
-                isInlineAiChatRoute(location.pathname)
-                  ? isAIChatOpen
-                    ? 'new-header__filter-btn--active'
-                    : ''
-                  : location.pathname === '/chat'
-                    ? 'new-header__filter-btn--active'
-                    : ''
-              }`}
+              className={`new-header__filter-btn ${isAIChatOpen ? 'new-header__filter-btn--active' : ''}`}
               onClick={() => {
                 openAiAssistantFromHeader()
               }}
@@ -903,25 +880,6 @@ const Header = () => {
         </Suspense>
       ) : null}
 
-      {isGlobalAiModalOpen && (
-        <div className="global-ai-modal" role="dialog" aria-modal="true" aria-label={t('aiAssistant')}>
-          <div className="global-ai-modal__panel">
-            <button
-              type="button"
-              className="global-ai-modal__close"
-              onClick={() => setIsGlobalAiModalOpen(false)}
-              aria-label={t('closeChat')}
-            >
-              <FiX size={20} />
-            </button>
-            <iframe
-              title={t('aiAssistant')}
-              className="global-ai-modal__iframe"
-              src="/chat?assistant=1&embed=1"
-            />
-          </div>
-        </div>
-      )}
     </>
   )
 }

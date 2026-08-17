@@ -11,8 +11,8 @@ export default function TestDriveCheckInRoute() {
     <TestDriveCheckInModal
       open
       bookingId={bookingId}
-      onClose={() => navigate('/profile/bookings', { replace: true })}
-      onSuccess={() => navigate('/profile/bookings', { replace: true })}
+      onClose={() => navigate('/profile?bookings=1', { replace: true })}
+      onSuccess={() => navigate('/profile?bookings=1', { replace: true })}
     />
   )
 }

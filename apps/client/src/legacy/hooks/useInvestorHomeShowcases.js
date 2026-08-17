@@ -25,7 +25,8 @@ function isDebtProperty(property) {
     property?.is_debt === 1 ||
     property?.is_debt === true ||
     property?.has_debt === 1 ||
-    property?.has_debt === true
+    property?.has_debt === true ||
+    ['red', 'yellow', 'green'].includes(String(property?.debt_severity || '').toLowerCase())
   )
 }
 

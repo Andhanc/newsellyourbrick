@@ -5,6 +5,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import './AuctionPropertyCard.css'
 import './ui/AuctionMobileLayout.css'
+import '../styles/discoverAuctionCards.css'
 
 function MapPagePropertyGridSkeleton() {
   return (
@@ -24,7 +25,7 @@ function MapPagePropertyGridSkeleton() {
 export function MapPagePropertyGridSkeletons({ count = 6 }) {
   return (
     <div className="map-page-property-grid">
-      <div className="auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards">
+      <div className="discover-auction-cards auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards">
         {Array.from({ length: count }, (_, i) => (
           <MapPagePropertyGridSkeleton key={`map-grid-skel-${i}`} />
         ))}
@@ -53,7 +54,7 @@ export default function MapPagePropertyGrid({
 
   return (
     <div className="map-page-property-grid">
-      <div className="auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards">
+      <div className="discover-auction-cards auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards">
         {properties.map((property) => {
           const isSelected =
             selectedProperty != null &&

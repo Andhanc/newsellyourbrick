@@ -1,6 +1,6 @@
 import { countries as countryList } from '../components/CountrySelect'
 
-const LOCALES = ['ru', 'en', 'de', 'es', 'fr', 'sv']
+const LOCALES = ['ru', 'en', 'de', 'es', 'fr', 'sv', 'pl']
 
 /** Флаг из двухбуквенного кода ISO 3166-1 alpha-2 (региональные индикаторы Unicode) */
 export function flagEmojiFromAlpha2(code) {
@@ -67,6 +67,37 @@ export function flagEmojiForStoredCountry(country) {
   const cache = buildLocalizedNameCache()
   const flag = cache.get(lower)
   if (flag) return flag
+
+  return null
+}
+
+/** ISO alpha-2 для флага (картинка на весь круг). */
+export function countryCodeForStoredCountry(country) {
+  if (country == null) return null
+  const s = String(country).trim()
+  if (!s) return null
+
+  const exact = countryList.find((c) => c.name === s)
+  if (exact?.code) return exact.code
+
+  const lower = s.toLowerCase()
+  const byNameCi = countryList.find((c) => c.name.toLowerCase() === lower)
+  if (byNameCi?.code) return byNameCi.code
+
+  if (/^[a-zA-Z]{2}$/.test(s)) {
+    const code = s.toUpperCase()
+    const byCode = countryList.find((c) => c.code === code)
+    if (byCode?.code) return byCode.code
+    if (/^[A-Z]{2}$/.test(code)) return code
+  }
+
+  // через кэш локализованных имён → флаг → код
+  const cache = buildLocalizedNameCache()
+  const flag = cache.get(lower)
+  if (flag) {
+    const byFlag = countryList.find((c) => c.flag === flag)
+    if (byFlag?.code) return byFlag.code
+  }
 
   return null
 }

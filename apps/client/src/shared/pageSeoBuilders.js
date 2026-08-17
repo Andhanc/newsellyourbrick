@@ -1,10 +1,10 @@
-import { formatPropertyPrice } from '../src/utils/currency.js';
-import { resolvePropertyGeoFields } from '../src/utils/catalogGeoUrl.js';
+import { formatPropertyPrice } from '../legacy/utils/currency.js';
+import { resolvePropertyGeoFields } from '../legacy/utils/catalogGeoUrl.js';
 import {
   getCanonicalRegionLabel,
   matchCountryKey,
   getCountryLabel,
-} from '../src/utils/propertySearchLocation.js';
+} from '../legacy/utils/propertySearchLocation.js';
 
 const PROPERTY_TYPE_I18N = {
   apartment: 'propertyTypeFlat',

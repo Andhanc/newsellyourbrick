@@ -907,7 +907,6 @@
   order: 0 !important;
   --map-controls-inset-top: max(14px, env(safe-area-inset-top, 0px));
   --map-controls-inset-right: max(10px, env(safe-area-inset-right, 0px));
-  --map-zoom-top: var(--map-controls-inset-top);
 }
 
 .maplibregl-map {
@@ -990,6 +989,10 @@
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.14);
   transition: box-shadow 0.2s, background 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.map-expand-btn--collapse {
+  color: #006f7b;
 }
 
 .map-expand-btn:hover {
@@ -1937,7 +1940,6 @@
     min-height: 44px;
   }
 
-  .map-expand-btn,
   .map-float-map-btn {
     display: none;
   }

@@ -42,31 +42,74 @@ function resolveStatus(property) {
   const totalShares = Number(property.total_shares) || 0
   const sharesSold = Number(property.shares_sold) || 0
   if (totalShares > 0 && sharesSold >= totalShares) {
-    return { status: 'Продан', statusKey: 'sold', filterKey: 'sold' }
+    return {
+      status: 'Продан',
+      statusKey: 'sold',
+      filterKey: 'sold',
+      moderationKey: 'approved',
+    }
   }
 
   const reservedUntil = property.reserved_until
   if (reservedUntil) {
     const until = new Date(reservedUntil).getTime()
     if (Number.isFinite(until) && until > Date.now()) {
-      return { status: 'Забронирован', statusKey: 'booked', filterKey: 'booked' }
+      return {
+        status: 'Забронирован',
+        statusKey: 'booked',
+        filterKey: 'booked',
+        moderationKey: 'approved',
+      }
     }
   }
   if (property.is_reserved === true || property.is_reserved === 1) {
-    return { status: 'Забронирован', statusKey: 'booked', filterKey: 'booked' }
+    return {
+      status: 'Забронирован',
+      statusKey: 'booked',
+      filterKey: 'booked',
+      moderationKey: 'approved',
+    }
   }
 
-  const moderation = property.moderation_status
+  const moderation = String(property.moderation_status || '').toLowerCase()
   if (moderation === 'approved' && property.has_pending_edit) {
-    return { status: 'На модерации', statusKey: 'active', filterKey: 'active' }
+    return {
+      status: 'На модерации',
+      statusKey: 'active',
+      filterKey: 'active',
+      moderationKey: 'pending',
+    }
   }
   if (moderation === 'approved') {
-    return { status: 'Активный', statusKey: 'active', filterKey: 'active' }
+    return {
+      status: 'Одобрен',
+      statusKey: 'active',
+      filterKey: 'active',
+      moderationKey: 'approved',
+    }
   }
   if (moderation === 'rejected') {
-    return { status: 'Отклонён', statusKey: 'draft', filterKey: 'draft' }
+    return {
+      status: 'Отклонён',
+      statusKey: 'draft',
+      filterKey: 'draft',
+      moderationKey: 'rejected',
+    }
   }
-  return { status: 'Черновик', statusKey: 'draft', filterKey: 'draft' }
+  if (moderation === 'pending') {
+    return {
+      status: 'На модерации',
+      statusKey: 'draft',
+      filterKey: 'draft',
+      moderationKey: 'pending',
+    }
+  }
+  return {
+    status: 'Черновик',
+    statusKey: 'draft',
+    filterKey: 'draft',
+    moderationKey: 'draft',
+  }
 }
 
 function resolveAuctionEndTime(property) {
@@ -119,9 +162,50 @@ function resolveBookingCount(property) {
   return 0
 }
 
+/** SQLite-style Prisma default leaked into Postgres as a literal string. */
+function isBogusSqlNowLiteral(value) {
+  if (value == null) return true
+  const s = String(value).trim().toLowerCase()
+  return !s || s === "datetime('now')" || s === 'datetime("now")' || s === 'current_timestamp'
+}
+
+function toEpochMs(value) {
+  if (value == null || value === '') return 0
+  if (isBogusSqlNowLiteral(value)) return 0
+  if (typeof value === 'number' && Number.isFinite(value)) return value > 0 ? value : 0
+  const ts = new Date(value).getTime()
+  return Number.isFinite(ts) && ts > 0 ? ts : 0
+}
+
+export function getOwnerPropertyRecencyTs(row) {
+  if (!row) return 0
+  if (Number.isFinite(row.createdAtTs) && row.createdAtTs > 0) return row.createdAtTs
+  const raw = row.raw || row
+  // Только дата создания: updated_at меняется при правках и ломает «новизну добавления».
+  return (
+    toEpochMs(raw.created_at) ||
+    toEpochMs(raw.createdAt) ||
+    toEpochMs(row.createdAt) ||
+    0
+  )
+}
+
+export function sortOwnerPropertiesByNewest(rows) {
+  return [...(rows || [])].sort((a, b) => {
+    // В БД у многих объектов created_at = литерал datetime('now'), поэтому
+    // надёжный порядок «только что добавил» — больший id (autoincrement).
+    const idA = Number(a?.id) || 0
+    const idB = Number(b?.id) || 0
+    if (idB !== idA) return idB - idA
+    const byDate = getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a)
+    if (byDate) return byDate
+    return String(b?.rowKey || '').localeCompare(String(a?.rowKey || ''))
+  })
+}
+
 export function mapApiPropertyToOwnerListRow(prop) {
   const listingType = mapListingType(prop)
-  const { status, statusKey, filterKey } = resolveStatus(prop)
+  const { status, statusKey, filterKey, moderationKey } = resolveStatus(prop)
   const currency = prop.currency || 'USD'
   const priceNum = Number(prop.price)
   const currentBidNum = resolveCurrentBid(prop, listingType)
@@ -132,9 +216,17 @@ export function mapApiPropertyToOwnerListRow(prop) {
   const bidsCount = Number(prop.bids_count ?? prop.bidsCount) || 0
   const bookingsCount = resolveBookingCount(prop)
   const displayId = `OB-${prop.id}`
+  const sourceTable =
+    prop.source_table ||
+    (prop.property_type === 'house' || prop.property_type === 'villa'
+      ? 'properties_houses'
+      : 'properties_apartments')
+  const createdAtTs = toEpochMs(prop.created_at ?? prop.createdAt)
+  const updatedAtTs = toEpochMs(prop.updated_at ?? prop.updatedAt)
 
   const row = {
     id: prop.id,
+    rowKey: `${sourceTable}:${prop.id}`,
     displayId,
     title: prop.title || prop.name || 'Без названия',
     location: prop.location || prop.address || 'Не указано',
@@ -142,6 +234,7 @@ export function mapApiPropertyToOwnerListRow(prop) {
     status,
     statusKey,
     filterKey,
+    moderationKey,
     listingType,
     currency,
     priceAmount: finiteNumber(priceNum),
@@ -157,8 +250,10 @@ export function mapApiPropertyToOwnerListRow(prop) {
     price: formatMoney(priceNum, currency),
     currentBid: currentBidNum != null ? formatMoney(currentBidNum, currency) : null,
     auctionEndTime: resolveAuctionEndTime(prop),
-    date: prop.created_at
-      ? new Date(prop.created_at).toLocaleDateString('ru-RU', {
+    createdAtTs,
+    updatedAtTs,
+    date: createdAtTs
+      ? new Date(createdAtTs).toLocaleDateString('ru-RU', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
@@ -184,7 +279,7 @@ export async function fetchOwnerProperties(userId) {
     return []
   }
 
-  const rows = result.data.map(mapApiPropertyToOwnerListRow)
+  const rows = sortOwnerPropertiesByNewest(result.data.map(mapApiPropertyToOwnerListRow))
   setOwnerPropertiesLiveCache(rows)
   return rows
 }
@@ -222,25 +317,31 @@ export function filterOwnerProperties(
     return Number.isFinite(num) ? num : 0
   }
   const byPrice = (row) => {
-    const num = Number(row.raw?.price)
+    const num = Number(row.raw?.price ?? row.priceAmount)
     return Number.isFinite(num) ? num : 0
-  }
-  const byDate = (row) => {
-    const ts = new Date(row.raw?.created_at || 0).getTime()
-    return Number.isFinite(ts) ? ts : 0
   }
 
   result = [...result].sort((a, b) => {
     switch (sortBy) {
-      case 'views_desc':
-        return byViews(b) - byViews(a)
-      case 'price_desc':
-        return byPrice(b) - byPrice(a)
-      case 'price_asc':
-        return byPrice(a) - byPrice(b)
+      case 'views_desc': {
+        const byV = byViews(b) - byViews(a)
+        return byV || getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a)
+      }
+      case 'price_desc': {
+        const byP = byPrice(b) - byPrice(a)
+        return byP || getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a)
+      }
+      case 'price_asc': {
+        const byP = byPrice(a) - byPrice(b)
+        return byP || getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a)
+      }
       case 'date_desc':
       default:
-        return byDate(b) - byDate(a)
+        return (
+          (Number(b?.id) || 0) - (Number(a?.id) || 0) ||
+          getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a) ||
+          String(b?.rowKey || '').localeCompare(String(a?.rowKey || ''))
+        )
     }
   })
 

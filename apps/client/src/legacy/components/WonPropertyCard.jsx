@@ -282,7 +282,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onS
         onClose={() => setIsBuyNowModalOpen(false)}
         variant="auctionWinner"
         winningBidAmount={auctionWinningBid}
-        stripeReturnPath="/history"
+        stripeReturnPath="/profile?history=1"
         property={{
           id: purchase.propertyId,
           title: purchase.propertyTitle,

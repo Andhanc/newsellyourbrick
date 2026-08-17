@@ -2,10 +2,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getInterfaceLanguageNativeName } from '../utils/interfaceLanguages'
 import {
+  getCabinetBookingsPath,
   getCabinetDataPath,
+  getCabinetHistoryPath,
   getCabinetProfilePath,
   getCabinetSubscriptionsPath,
+  isCabinetBookingsPath,
   isCabinetDataPath,
+  isCabinetHistoryPath,
   isCabinetProfilePath,
   isCabinetSubscriptionsPath,
 } from '../utils/cabinetRoutes'
@@ -48,6 +52,8 @@ export default function BuyerCabinetSidebar({
   const profilePath = getCabinetProfilePath()
   const dataPath = getCabinetDataPath()
   const subscriptionsPath = getCabinetSubscriptionsPath()
+  const bookingsPath = getCabinetBookingsPath()
+  const historyPath = getCabinetHistoryPath()
 
   const goBackFromCabinet = () => {
     // React Router (History API) кладёт в state.idx индекс записи; на первой странице сессии idx === 0
@@ -150,13 +156,30 @@ export default function BuyerCabinetSidebar({
           <span>{t('data')}</span>
           {showDataIndicator ? <span className="nav-item-indicator" /> : null}
         </Link>
-        <Link to="/profile/bookings" className={navClass('/profile/bookings')}>
+        <Link
+          to={bookingsPath}
+          className={isCabinetBookingsPath(pathname, search) ? 'nav-item active' : 'nav-item'}
+        >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
             <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
             <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5" />
             <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <span>{t('buyerCabinet_myBookings')}</span>
+        </Link>
+        <Link
+          to={historyPath}
+          className={isCabinetHistoryPath(pathname, search) ? 'nav-item active' : 'nav-item'}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+            <path
+              d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path d="M10 6V10L13 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span>{t('history')}</span>
         </Link>
         <Link to={subscriptionsPath} className={isCabinetSubscriptionsPath(pathname, search) ? 'nav-item active' : 'nav-item'}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>

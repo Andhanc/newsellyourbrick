@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import '../styles/owner-cabinet-tokens.css';
 
 .owl {
@@ -23,7 +22,7 @@
     radial-gradient(ellipse 100% 70% at 100% -10%, rgba(0, 153, 169, 0.1) 0%, transparent 58%),
     var(--oc-gradient-page);
   color: var(--owl-text);
-  font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-family: var(--oc-font-family, 'Montserrat', system-ui, -apple-system, sans-serif);
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;

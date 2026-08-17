@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import {
   RiArrowRightLine,
+  RiArrowRightUpLine,
   RiLockLine,
   RiNotification3Line,
   RiUserStarLine,
@@ -15,6 +16,7 @@ import PrivateClubVipCelebrationModal from '../components/PrivateClubVipCelebrat
 import { getUserData } from '../services/authService'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { ensureMainScrollReady, scrollMainTo } from '../utils/mainScroll'
 import './PrivateClub.css'
 
 const HERO_IMAGE = '/images/vip-club/vip-hero-monex-transparent.png?v=2'
@@ -107,6 +109,11 @@ export default function PrivateClub() {
       setNumericUserId(null)
     }
   }, [user, clerkLoaded])
+
+  useEffect(() => {
+    ensureMainScrollReady()
+    scrollMainTo(0, 0, 'instant')
+  }, [])
 
   const openJoinGate = () => {
     if (!isSiteUserSignedIn(user, clerkLoaded)) {
@@ -298,7 +305,7 @@ export default function PrivateClub() {
                       <p>{card.text}</p>
                       <button type="button" className="vip-club-story-card__cta" onClick={openJoinGate}>
                         {t('privateClubLanding_storyMore')}
-                        <RiArrowRightLine aria-hidden />
+                        <RiArrowRightUpLine aria-hidden />
                       </button>
                     </div>
                   </article>

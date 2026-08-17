@@ -6,9 +6,10 @@ import en from './locales/mainPage/en.json'
 import de from './locales/mainPage/de.json'
 import es from './locales/mainPage/es.json'
 import fr from './locales/mainPage/fr.json'
+import pl from './locales/mainPage/pl.json'
 import sv from './locales/mainPage/sv.json'
 
-const SUPPORTED = ['ru', 'en', 'de', 'es', 'fr', 'sv']
+const SUPPORTED = ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv']
 
 const LOCALE_LOADERS = {
   ru: async () => ({ default: ru }),
@@ -16,6 +17,7 @@ const LOCALE_LOADERS = {
   de: async () => ({ default: de }),
   es: async () => ({ default: es }),
   fr: async () => ({ default: fr }),
+  pl: async () => ({ default: pl }),
   sv: async () => ({ default: sv }),
 }
 

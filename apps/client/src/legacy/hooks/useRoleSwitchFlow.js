@@ -3,13 +3,16 @@ import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
 import { getUserData, loginWithEmail, saveUserData, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
-import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { createLinkedRole, fetchLinkedRoles, setLinkedRolePassword } from '../utils/roleSwitchApi'
 import {
-  applyPurchasedPropertyListingPrefill,
+  promotePendingPurchasedPropertyToSellerArrival,
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
+import {
+  hasNativeSessionSwitch,
+  switchNativeSession,
+} from '../utils/nativeDomBridge'
 
 const PROFILE_API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -101,8 +104,9 @@ export function useRoleSwitchFlow(targetRole) {
       try {
         sessionStorage.setItem('clerk_logout_in_progress', 'true')
         sessionStorage.setItem('role_switch_in_progress', '1')
+        const usesNativeSessionBridge = hasNativeSessionSwitch()
         try {
-          if (clerkUser && signOut) {
+          if (!usesNativeSessionBridge && clerkUser && signOut) {
             await signOut()
           }
         } catch (e) {
@@ -128,17 +132,10 @@ export function useRoleSwitchFlow(targetRole) {
 
         const pendingSell = readPendingSellPurchasedProperty()
         if (pendingSell?.id && gotSeller) {
-          try {
-            await applyPurchasedPropertyListingPrefill(pendingSell.id)
-          } catch (e) {
-            console.warn('switchToRole prefill:', e)
-          }
+          promotePendingPurchasedPropertyToSellerArrival({ sellerUserId: result.user?.id })
         }
 
-        const targetPath =
-          pendingSell?.id && gotSeller
-            ? buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY)
-            : getCabinetHomePath(newRole)
+        const targetPath = getCabinetHomePath(newRole)
 
         if (result.user?.id) {
           try {
@@ -149,6 +146,17 @@ export function useRoleSwitchFlow(targetRole) {
         }
 
         redirecting = true
+        if (usesNativeSessionBridge) {
+          const switched = await switchNativeSession({
+            user: result.user,
+            authToken: result.authToken || null,
+            path: targetPath,
+          })
+          if (!switched?.success) {
+            throw new Error(switched?.error || 'Не удалось переключить кабинет в приложении')
+          }
+          return true
+        }
         window.location.assign(targetPath)
         return true
       } catch (e) {

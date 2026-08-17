@@ -144,6 +144,28 @@
   color: #0099a9;
 }
 
+.header-mega-menu__link--locked {
+  position: relative;
+  opacity: 0.78;
+}
+
+.header-mega-menu__link--locked .header-mega-menu__link-label {
+  filter: blur(0.35px);
+}
+
+.header-mega-menu__link-lock {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 153, 169, 0.1);
+  color: #007d8a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 /* Mobile accordion — Apple-style sidebar */
 .header-mega-menu__mobile-list {
   display: none;
@@ -205,9 +227,11 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    touch-action: pan-y;
   }
 
   .header-mega-menu__scroll::-webkit-scrollbar {

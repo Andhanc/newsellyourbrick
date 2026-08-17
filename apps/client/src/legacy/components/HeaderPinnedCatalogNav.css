@@ -59,7 +59,8 @@
 .header-pinned-catalog-nav__dropdown {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;
+  left: 0;
+  right: auto;
   min-width: 220px;
   padding: 8px;
   border-radius: 16px;

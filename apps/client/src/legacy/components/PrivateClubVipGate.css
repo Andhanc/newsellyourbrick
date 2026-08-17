@@ -40,7 +40,6 @@
   z-index: 1;
   width: 100%;
   max-width: 440px;
-  /* Мягкий холст — сквозь вырезы тикетов видно фон, не «кружки» */
   --pcv-ticket-hole: #f1f5f9;
   background:
     radial-gradient(ellipse 90% 55% at 0% 0%, rgba(78, 205, 214, 0.1), transparent 55%),
@@ -93,12 +92,37 @@
 .private-club-vip--drawer {
   max-width: none;
   width: min(100%, 520px);
+  max-height: min(72svh, 620px);
   margin-top: auto;
   margin-bottom: 0;
   border-radius: 24px 24px 0 0;
   border-bottom: 0;
-  padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px));
   --pcv-ticket-hole: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.private-club-vip__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.private-club-vip--drawer .private-club-vip__body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.private-club-vip--drawer .private-club-vip__body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .private-club-vip--drawer::before {
@@ -154,7 +178,7 @@
 }
 
 .private-club-vip__header {
-  margin: 0 44px 20px 0;
+  margin: 0 44px 16px 0;
 }
 
 .private-club-vip__eyebrow {
@@ -295,6 +319,41 @@
   font-weight: 750;
 }
 
+.private-club-vip__ticket--promo .private-club-vip__ticket-body {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 228px;
+  padding-left: calc(var(--ticket-notch) + 14px);
+  padding-right: calc(var(--ticket-notch) + 14px);
+}
+
+.private-club-vip__ticket--promo .private-club-vip__panel-head {
+  grid-row: 1;
+  align-self: end;
+  padding-bottom: 10px;
+}
+
+.private-club-vip__ticket--promo .private-club-vip__code-row {
+  grid-row: 2;
+  align-self: center;
+  margin: 0;
+}
+
+.private-club-vip__promo-foot {
+  grid-row: 3;
+  align-self: start;
+  padding-top: 10px;
+}
+
+.private-club-vip__ticket--promo .private-club-vip__promo-hint {
+  margin: 0;
+}
+
+.private-club-vip__ticket--promo .private-club-vip__btn--secondary {
+  margin-top: 10px;
+}
+
 .private-club-vip__panel-note {
   margin: 0;
   font-size: 0.88rem;
@@ -354,6 +413,26 @@
 .private-club-vip__btn--secondary.btn-tiffany-shine {
   border: none;
   color: #fff;
+}
+
+.private-club-vip__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin: 0;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--pcv-tiffany) 40%, #ffffff);
+  background: var(--pcv-tiffany-soft);
+  color: #0f4d54;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.private-club-vip__ticket--active .private-club-vip__ticket-body {
+  background: color-mix(in srgb, var(--pcv-tiffany-soft) 55%, #ffffff);
 }
 
 .private-club-vip__hint {
@@ -443,14 +522,142 @@
   opacity: 0.7;
 }
 
+@media (min-width: 768px) {
+  .private-club-vip--modal {
+    max-width: min(920px, calc(100vw - 48px));
+    padding: 32px 28px 28px;
+    border-radius: 28px;
+    box-shadow:
+      0 32px 72px -24px rgba(15, 23, 42, 0.34),
+      0 0 0 1px rgba(78, 205, 214, 0.08);
+  }
+
+  .private-club-vip--modal::before {
+    left: 32px;
+    right: 32px;
+  }
+
+  .private-club-vip--modal .private-club-vip__body {
+    overflow: visible;
+  }
+
+  .private-club-vip--modal .private-club-vip__header {
+    margin: 0 auto 24px;
+    padding-right: 40px;
+    max-width: 640px;
+    text-align: center;
+  }
+
+  .private-club-vip--modal .private-club-vip__title {
+    font-size: clamp(1.5rem, 2.2vw, 1.85rem);
+  }
+
+  .private-club-vip--modal .private-club-vip__paths {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .private-club-vip--modal .private-club-vip__paths--single {
+    display: block;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .private-club-vip--modal .private-club-vip__ticket {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .private-club-vip--modal .private-club-vip__ticket--subscribe .private-club-vip__ticket-body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 18px 18px;
+  }
+
+  .private-club-vip--modal .private-club-vip__ticket--promo .private-club-vip__ticket-body {
+    height: 100%;
+    min-height: 260px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .private-club-vip--modal .private-club-vip__panel-head {
+    flex: 0 0 auto;
+  }
+
+  .private-club-vip--modal .private-club-vip__ticket--subscribe .private-club-vip__ticket-perf {
+    margin-top: auto;
+    margin-bottom: 16px;
+  }
+
+  .private-club-vip--modal .private-club-vip__hint {
+    flex: 0 0 auto;
+  }
+
+  .private-club-vip--modal .private-club-vip__ticket--promo .private-club-vip__btn--secondary {
+    margin-top: 10px;
+  }
+
+  .private-club-vip--modal .private-club-vip__divider {
+    flex-direction: column;
+    align-self: stretch;
+    justify-content: center;
+    gap: 10px;
+    width: auto;
+    min-width: 40px;
+    margin: 8px 14px;
+  }
+
+  .private-club-vip--modal .private-club-vip__divider::before,
+  .private-club-vip--modal .private-club-vip__divider::after {
+    flex: 1 1 0;
+    width: 1px;
+    height: auto;
+    min-height: 24px;
+  }
+
+  .private-club-vip--modal .private-club-vip__code-row {
+    gap: 8px;
+  }
+
+  .private-club-vip--modal .private-club-vip__code-cell {
+    width: 42px;
+    height: 48px;
+    flex-basis: 42px;
+    font-size: 1.1rem;
+  }
+}
+
 @media (max-width: 767px) {
+  .private-club-vip--drawer {
+    max-height: min(85svh, 720px);
+    padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .private-club-vip__handle {
+    margin-bottom: 10px;
+  }
+
+  .private-club-vip__header {
+    margin-bottom: 12px;
+  }
+
   .private-club-vip__ticket {
-    --ticket-notch: 10px;
+    --ticket-notch: 13px;
   }
 
   .private-club-vip__ticket-body {
     padding: 16px;
     border-radius: 14px;
+  }
+
+  .private-club-vip__ticket--promo .private-club-vip__ticket-body {
+    padding-left: calc(var(--ticket-notch) + 12px);
+    padding-right: calc(var(--ticket-notch) + 12px);
+    min-height: 210px;
   }
 
   .private-club-vip__code-row {

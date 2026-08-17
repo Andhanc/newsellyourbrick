@@ -1636,14 +1636,25 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 22px 32px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
+    padding: 8px 12px 8px 8px;
+    border-radius: 999px;
+    background: #f8fafc;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__place {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__avatar {
@@ -1654,9 +1665,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
+    background: #fff;
     color: #64748b;
     overflow: hidden;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__flag {
@@ -1665,7 +1677,6 @@
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__name {
-    flex: 1 1 auto;
     min-width: 0;
     font-size: 0.875rem;
     font-weight: 600;
@@ -1676,14 +1687,15 @@
     text-overflow: ellipsis;
   }
 
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__time {
-    flex: 0 0 auto;
-    margin-left: auto;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #94a3b8;
-    line-height: 1.35;
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__amount {
+    font-size: 12px;
+    font-weight: 750;
+    color: #334155;
     white-space: nowrap;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__time {
+    display: none;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history__empty {
@@ -3041,12 +3053,49 @@
 
 /* Тест-драйв под удобствами */
 .property-detail-test-drive {
+  position: relative;
   margin-top: 20px;
   padding: 20px;
+  overflow: hidden;
   border-radius: 16px;
   background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
   border: 1px solid rgba(148, 163, 184, 0.35);
   scroll-margin-top: 96px;
+}
+
+.property-detail-test-drive__paused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.12) 0%,
+    rgba(15, 23, 42, 0.42) 100%
+  );
+}
+
+.property-detail-test-drive__paused span {
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: rgba(71, 85, 105, 0.94);
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.property-detail-test-drive--paused > :not(.property-detail-test-drive__paused) {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
 }
 
 .property-detail-test-drive--highlight {
@@ -3309,8 +3358,23 @@
     .property-detail-mobile-test-drive {
     order: 4;
     display: block;
-    padding: 0 20px 16px;
+    padding: 0;
+    margin: 8px 0 20px;
     box-sizing: border-box;
+  }
+
+  .property-detail-page-new--auction-mobile-v2
+    .property-detail-mobile-test-drive
+    .property-detail-test-drive-promo {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2
+    .property-detail-mobile-test-drive
+    .property-detail-test-drive-promo__actions {
+    padding: 0;
   }
 
   .property-detail-page-new--auction-mobile-v2:not(.property-detail-mobile-tab-about)
@@ -3336,18 +3400,6 @@
   .property-detail-page-new--auction-mobile-v2
     .property-detail-mobile-listing-meta__sep {
     color: #cbd5e1;
-  }
-
-  .property-detail-page-new--auction-mobile-v2
-    .property-detail-mobile-test-drive
-    .property-detail-test-drive-promo {
-    border-radius: 20px;
-  }
-
-  .property-detail-page-new--auction-mobile-v2
-    .property-detail-mobile-test-drive
-    .property-detail-test-drive-promo__actions {
-    padding: 16px 20px 18px;
   }
 
   /* Hero — компактнее, белая карточка выше */
@@ -3782,54 +3834,50 @@
   .property-detail-mobile-buy-now {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
+    gap: 10px;
     margin-top: 4px;
-    padding: 18px 16px 16px;
-    border: 1px solid rgba(78, 205, 214, 0.18);
-    border-radius: 18px;
+    padding: 22px 18px 18px;
+    border: 1px solid rgba(0, 153, 169, 0.16);
+    border-radius: 16px;
     background:
-      linear-gradient(165deg, rgba(240, 250, 251, 0.95) 0%, #ffffff 48%, #ffffff 100%);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-  }
-
-  .property-detail-mobile-buy-now__title {
-    margin: 0;
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.3;
-    color: #0f172a;
+      linear-gradient(165deg, #f0fafb 0%, #ffffff 42%, #ffffff 100%);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
   }
 
   .property-detail-mobile-tab-panel--buy-now .property-detail-mobile-buy-now {
     margin-top: 4px;
   }
 
-  .property-detail-mobile-buy-now__price-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(15, 23, 42, 0.06);
-  }
-
-  .property-detail-mobile-buy-now__label {
+  .property-detail-mobile-buy-now__eyebrow {
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-    line-height: 1.3;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0099a9;
+    line-height: 1.2;
   }
 
   .property-detail-mobile-buy-now__value {
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 24px;
+    font-size: 32px;
     font-weight: 800;
     color: #0f172a;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+
+  .property-detail-mobile-buy-now__hint {
+    margin: 0 0 6px;
+    max-width: 28em;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.45;
   }
 
   .property-detail-mobile-buy-now__btn {
@@ -3838,17 +3886,18 @@
     justify-content: center;
     width: 100%;
     min-height: 48px;
-    padding: 12px 20px;
+    margin-top: 4px;
+    padding: 13px 20px;
     border: 0;
-    border-radius: 14px;
+    border-radius: 999px;
     color: #ffffff !important;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 15px;
-    font-weight: 750;
+    font-weight: 700;
     letter-spacing: 0.01em;
     white-space: nowrap;
     cursor: pointer;
-    box-shadow: 0 8px 20px rgba(78, 205, 214, 0.28);
+    box-shadow: 0 8px 20px rgba(0, 153, 169, 0.26);
     transition:
       transform 0.15s ease,
       box-shadow 0.15s ease,
@@ -3858,7 +3907,7 @@
 
   .property-detail-mobile-buy-now__btn:hover:not(:disabled) {
     filter: brightness(1.03);
-    box-shadow: 0 10px 24px rgba(78, 205, 214, 0.34);
+    box-shadow: 0 10px 24px rgba(0, 153, 169, 0.32);
   }
 
   .property-detail-mobile-buy-now__btn:active:not(:disabled) {
@@ -4368,119 +4417,60 @@
 
   .property-detail-mobile-about-bid {
     width: 100%;
-    margin: 0 0 10px;
+    margin: 16px 0 10px;
     padding: 0 2px;
     box-sizing: border-box;
-  }
-
-  .property-detail-mobile-about-bid__label {
-    display: block;
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: #64748b;
-    line-height: 1.3;
-    margin-bottom: 8px;
   }
 
   .property-detail-mobile-about-bid__row {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
     width: 100%;
     min-width: 0;
   }
 
-  .property-detail-mobile-about-bid__price-col {
-    display: inline-flex;
-    align-items: baseline;
+  .property-detail-mobile-about-bid__price-col,
+  .property-detail-mobile-about-leader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
-    flex: 1 1 0;
     min-width: 0;
   }
 
-  .property-detail-mobile-about-bid__price-col--animated .property-detail-mobile-about-bid__value {
-    color: #3bc0cb;
-  }
-
-  .property-detail-mobile-about-bid__value {
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: clamp(24px, 6.5vw, 30px);
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    white-space: nowrap;
-  }
-
-  .property-detail-mobile-about-bid__arrow {
-    color: #3bc0cb;
-    flex-shrink: 0;
-    margin-bottom: 2px;
+  .property-detail-mobile-about-bid__price-col {
+    flex: 1 1 auto;
   }
 
   .property-detail-mobile-about-leader {
-    flex: 1 1 auto;
-    min-width: 176px;
-    max-width: 52%;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 18px 12px 12px;
-    border-radius: 18px;
-    background: #ffffff;
-    border: 1px solid var(--pd-tiffany-ring);
-    box-shadow:
-      0 4px 14px rgba(15, 23, 42, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    flex: 0 1 auto;
+    align-items: flex-end;
+    max-width: 48%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
   .property-detail-mobile-about-leader--you {
-    border-color: rgba(78, 205, 214, 0.35);
-    background: linear-gradient(145deg, #ffffff 0%, #e6f6f8 100%);
-    box-shadow:
-      0 4px 16px rgba(78, 205, 214, 0.12),
-      inset 0 0 0 1px rgba(78, 205, 214, 0.08);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
-  .property-detail-mobile-about-leader__flag-wrap {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #f8fafc 0%, var(--pd-tiffany-soft) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-
-  .property-detail-mobile-about-leader--you .property-detail-mobile-about-leader__flag-wrap {
-    background: linear-gradient(180deg, #e6f6f8 0%, #d1fae5 100%);
-  }
-
-  .property-detail-mobile-about-leader__flag {
-    font-size: 30px;
-    line-height: 1;
-  }
-
-  .property-detail-mobile-about-leader__meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
+  .property-detail-mobile-about-bid__label,
   .property-detail-mobile-about-leader__caption {
+    display: block;
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.01em;
     color: #64748b;
     line-height: 1.2;
@@ -4491,13 +4481,63 @@
     color: var(--pd-tiffany);
   }
 
+  .property-detail-mobile-about-bid__value-row,
+  .property-detail-mobile-about-leader__value-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 1.15em;
+  }
+
+  .property-detail-mobile-about-bid__price-col--animated .property-detail-mobile-about-bid__value {
+    color: #3bc0cb;
+  }
+
+  .property-detail-mobile-about-bid__value,
   .property-detail-mobile-about-leader__id {
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 20px;
+    font-size: clamp(22px, 6vw, 28px);
     font-weight: 700;
     color: #0f172a;
     line-height: 1.15;
+    letter-spacing: -0.03em;
     white-space: nowrap;
+  }
+
+  .property-detail-mobile-about-leader__id {
+    font-size: clamp(20px, 5.2vw, 24px);
+  }
+
+  .property-detail-mobile-about-bid__arrow {
+    color: #3bc0cb;
+    flex-shrink: 0;
+  }
+
+  .property-detail-mobile-about-leader__flag-wrap {
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+    min-width: 1.2em;
+    border-radius: 0;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+  }
+
+  .property-detail-mobile-about-leader--you .property-detail-mobile-about-leader__flag-wrap {
+    background: transparent;
+  }
+
+  .property-detail-mobile-about-leader__flag {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .property-detail-mobile-about-leader__meta {
+    display: contents;
   }
 
   /* Только на очень узком экране или длинной цене — лидер под строкой */
@@ -4851,6 +4891,42 @@
     margin-top: 4px;
   }
 
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids--leaderboard {
+    margin: 0;
+    padding: 0 0 12px;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__board,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids .bh-empty {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids .bh-empty__image {
+    mix-blend-mode: multiply;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__board .bh-podium,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__board .bh-rank-list {
+    max-width: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history-board {
+    margin: 0 -4px 4px;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history-board .bh-podium,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-ended-history .pd-v3-bid-history-board .bh-rank-list {
+    max-width: none;
+  }
+
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__notice {
     display: flex;
     align-items: center;
@@ -5092,14 +5168,14 @@
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__empty {
     margin: 0;
-    padding: 24px 16px;
+    padding: 16px 8px;
     text-align: center;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
     color: #94a3b8;
-    background: #f8fafc;
-    border-radius: 14px;
-    border: 1px dashed #e2e8f0;
+    background: transparent;
+    border-radius: 0;
+    border: 0;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-bids__actions {
@@ -6280,6 +6356,27 @@
     border-radius: 0;
   }
 
+  .property-detail-auction-desktop-bids-panel--leaderboard {
+    padding: 8px 0 12px;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .property-detail-desktop-bids__board .bh-podium,
+  .property-detail-desktop-bids__board .bh-rank-list,
+  .pdx-bids__board .bh-podium,
+  .pdx-bids__board .bh-rank-list {
+    max-width: none;
+  }
+
+  .pdx-bids__board {
+    margin: 4px 0 12px;
+  }
+
+  .pdx-bids__board .bh-podium {
+    margin-bottom: 16px;
+  }
+
   .property-detail-auction-desktop-bids-panel__head {
     display: flex;
     align-items: flex-start;
@@ -7071,10 +7168,9 @@
 
   /* ——— Desktop: тест-драйв ——— */
   .property-detail-test-drive-promo.property-detail-auction-desktop-test-drive {
-    border-radius: var(--pd-card-radius);
-    box-shadow:
-      0 16px 40px rgba(15, 23, 42, 0.08),
-      0 0 0 1px rgba(226, 232, 240, 0.9);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
   }
 
   .property-detail-auction-desktop-card--map {
@@ -7236,7 +7332,9 @@
   .property-detail-page-new--auction-mobile-v2
     .property-detail-mobile-test-drive
     .property-detail-test-drive-promo {
-    border-radius: 20px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-map-mobile--auction-sheet {
@@ -7529,94 +7627,94 @@
   }
 
   .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__label,
-  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__label {
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__label,
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader__caption,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader__caption {
     display: block;
+    margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #64748b;
-    margin-bottom: 8px;
+    line-height: 1.2;
   }
 
   .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__row,
   .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__row {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
     width: 100%;
   }
 
   .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__price-col,
-  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__price-col {
-    display: inline-flex;
-    align-items: baseline;
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__price-col,
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader,
+  .property-detail-auction-desktop__bid-panel .property-detail-auction-desktop-leader,
+  .property-detail-auction-desktop__bid-card .property-detail-auction-desktop-leader {
+    display: flex;
+    flex-direction: column;
     gap: 6px;
-    flex: 1 1 auto;
     min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
-  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__value,
-  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__value {
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__price-col,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__price-col {
+    flex: 1 1 auto;
+    align-items: flex-start;
   }
 
   .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader,
-  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: 56%;
-  }
-
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader,
   .property-detail-auction-desktop__bid-panel .property-detail-auction-desktop-leader,
   .property-detail-auction-desktop__bid-card .property-detail-auction-desktop-leader {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px 8px 8px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
-    border: 1px solid rgba(245, 158, 11, 0.28);
-    box-shadow:
-      0 4px 14px rgba(245, 158, 11, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    flex: 0 1 auto;
+    max-width: 48%;
+    align-items: flex-end;
+  }
+
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__value,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__value,
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader__id,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader__id {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader__id,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader__id {
+    font-size: 1.35rem;
   }
 
   .property-detail-auction-desktop__bid-panel
     .property-detail-auction-desktop-leader.property-detail-mobile-about-leader--you,
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader.property-detail-mobile-about-leader--you {
-    background: linear-gradient(135deg, #e6f6f8 0%, #d1fae5 100%);
-    border-color: rgba(78, 205, 214, 0.32);
-    box-shadow:
-      0 4px 16px rgba(78, 205, 214, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
   }
 
   .property-detail-auction-desktop-leader__trophy {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-    color: #ffffff;
-    background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.32);
+    display: none;
   }
 
   .property-detail-auction-desktop-leader__trophy--you {
-    background: linear-gradient(145deg, var(--pd-tiffany) 0%, var(--pd-tiffany-deep) 100%);
-    box-shadow: 0 4px 12px var(--pd-tiffany-glow);
+    display: none;
   }
 
   .property-detail-auction-desktop__bid-panel .property-detail-auction-desktop-leader__flag-wrap,
@@ -7627,11 +7725,11 @@
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader
     .property-detail-mobile-about-leader__flag-wrap {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.72);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .property-detail-auction-desktop__bid-panel
@@ -7640,7 +7738,8 @@
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader
     .property-detail-mobile-about-leader__flag {
-    font-size: 20px;
+    font-size: 1.25rem;
+    line-height: 1;
   }
 
   .property-detail-auction-desktop__bid-panel
@@ -7649,10 +7748,7 @@
   .property-detail-auction-desktop__bid-card
     .property-detail-auction-desktop-leader
     .property-detail-mobile-about-leader__meta {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+    display: contents;
   }
 
   .property-detail-auction-desktop__bid-panel
@@ -7662,11 +7758,11 @@
     .property-detail-auction-desktop-leader
     .property-detail-mobile-about-leader__caption {
     flex-shrink: 0;
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #b45309;
+    color: #64748b;
   }
 
   .property-detail-auction-desktop__bid-panel
@@ -7685,13 +7781,24 @@
     .property-detail-auction-desktop-leader
     .property-detail-mobile-about-leader__id {
     flex-shrink: 0;
-    margin-left: 4px;
-    padding-left: 12px;
-    border-left: 1px solid rgba(15, 23, 42, 0.12);
-    font-size: 14px;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+    font-size: 1.35rem;
     font-weight: 800;
     color: #0f172a;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid__value-row,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid__value-row,
+  .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-leader__value-row,
+  .property-detail-auction-desktop__bid-card .property-detail-mobile-about-leader__value-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 1.65rem;
   }
 
   /* Лидер уже в блоке текущей ставки — не дублируем, чтобы панель не скроллилась */

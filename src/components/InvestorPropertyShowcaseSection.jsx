@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AuctionPropertyCard from './AuctionPropertyCard'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from './DebtsPropertyCard'
@@ -52,6 +52,8 @@ export default function InvestorPropertyShowcaseSection({
   const scrollerRef = useRef(null)
   const [activePage, setActivePage] = useState(0)
   const [pageCount, setPageCount] = useState(1)
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
 
   const favoriteCategory = (property) =>
     hasDbBackedProperty(property) ? undefined : 'property'
@@ -78,7 +80,7 @@ export default function InvestorPropertyShowcaseSection({
   const formatPrice = (price, currency = 'USD') =>
     formatPropertyPrice(price ?? 0, currency, { compact: true })
 
-  const skeletonCount = 4
+  const skeletonCount = 7
 
   const renderSkeletons = () => {
     if (variant === 'debts') {
@@ -158,6 +160,15 @@ export default function InvestorPropertyShowcaseSection({
     const scroller = scrollerRef.current
     if (!scroller) return
 
+    const scrollThreshold = 8
+    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth)
+    const scrollable = maxScroll > scrollThreshold
+    const atStart = scroller.scrollLeft <= scrollThreshold
+    const atEnd = scroller.scrollLeft >= maxScroll - scrollThreshold
+
+    setCanScrollPrev(scrollable && !atStart)
+    setCanScrollNext(scrollable && !atEnd)
+
     const slot = scroller.querySelector('.home-showcase__slot')
     if (!slot) {
       setPageCount(1)
@@ -172,7 +183,6 @@ export default function InvestorPropertyShowcaseSection({
     const pages = Math.max(1, Math.ceil(total / visible))
     setPageCount(pages)
 
-    const maxScroll = scroller.scrollWidth - scroller.clientWidth
     if (maxScroll <= 0 || pages <= 1) {
       setActivePage(0)
       return
@@ -182,7 +192,7 @@ export default function InvestorPropertyShowcaseSection({
     setActivePage(Math.min(pages - 1, Math.round(ratio * (pages - 1))))
   }, [items.length, loading])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updatePagination()
     const scroller = scrollerRef.current
     if (!scroller) return undefined
@@ -195,7 +205,13 @@ export default function InvestorPropertyShowcaseSection({
     resizeObserver?.observe(scroller)
     window.addEventListener('resize', updatePagination)
 
+    const rafId = requestAnimationFrame(() => {
+      updatePagination()
+      requestAnimationFrame(updatePagination)
+    })
+
     return () => {
+      cancelAnimationFrame(rafId)
       scroller.removeEventListener('scroll', onScroll)
       resizeObserver?.disconnect()
       window.removeEventListener('resize', updatePagination)
@@ -242,25 +258,55 @@ export default function InvestorPropertyShowcaseSection({
             <h2 className="invest-showcase__title">{title}</h2>
             <p className="invest-showcase__subtitle">{subtitle}</p>
           </div>
-          <button type="button" className="invest-showcase__cta-pill" onClick={onCtaClick}>
-            <span className="invest-showcase__cta-pill-text">Перейти</span>
+          <button
+            type="button"
+            className="invest-showcase__cta-pill liquid-glass--skip"
+            onClick={onCtaClick}
+          >
+            <span className="invest-showcase__cta-pill-text">{ctaLabel || 'Перейти'}</span>
             <span className="invest-showcase__cta-pill-icon" aria-hidden>
-              <FiArrowRight size={18} />
+              <FiArrowRight size={14} />
             </span>
           </button>
         </header>
 
         <div className="invest-showcase__carousel">
-          <div
-            ref={scrollerRef}
-            className="invest-showcase__scroller home-showcase__scroller"
-            aria-busy={loading}
-          >
-            {loading ? renderSkeletons() : renderCards()}
+          <div className="invest-showcase__track">
+            <button
+              type="button"
+              className={`invest-showcase__nav-btn invest-showcase__nav-btn--prev invest-showcase__nav-btn--side${canScrollPrev ? ' is-visible' : ''}`}
+              aria-label="Предыдущие объекты"
+              aria-hidden={!canScrollPrev}
+              tabIndex={canScrollPrev ? 0 : -1}
+              onClick={() => scrollByDirection(-1)}
+              disabled={loading || !canScrollPrev}
+            >
+              <FiChevronLeft size={18} aria-hidden />
+            </button>
+
+            <div
+              ref={scrollerRef}
+              className="invest-showcase__scroller home-showcase__scroller"
+              aria-busy={loading}
+            >
+              {loading ? renderSkeletons() : renderCards()}
+            </div>
+
+            <button
+              type="button"
+              className={`invest-showcase__nav-btn invest-showcase__nav-btn--next invest-showcase__nav-btn--side${canScrollNext ? ' is-visible' : ''}`}
+              aria-label="Следующие объекты"
+              aria-hidden={!canScrollNext}
+              tabIndex={canScrollNext ? 0 : -1}
+              onClick={() => scrollByDirection(1)}
+              disabled={loading || !canScrollNext}
+            >
+              <FiChevronRight size={18} aria-hidden />
+            </button>
           </div>
 
           <div className="invest-showcase__footer">
-            <div className="invest-showcase__nav" role="group" aria-label="Навигация по карточкам">
+            <div className="invest-showcase__nav invest-showcase__nav--footer" role="group" aria-label="Навигация по карточкам">
               <button
                 type="button"
                 className="invest-showcase__nav-btn"

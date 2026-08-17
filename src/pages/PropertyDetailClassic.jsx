@@ -61,6 +61,8 @@ import PropertyDetailDesktopRelatedSection from '../components/property-detail/P
 import '../components/property-detail/PropertyDetailDesktopTestDriveBanner.css'
 import '../components/property-detail/PropertyDetailDesktopRelatedSection.css'
 import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
+import SubscriptionLock from '../components/SubscriptionLock'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
@@ -1106,6 +1108,8 @@ function PropertyDetailClassic({
 
   const propertyInfo = displayProperty.title || displayProperty.name
   const isDesktopProperty = useIsDesktopProperty()
+  const { canAccess } = useViewerVipAccess()
+  const docsLocked = !canAccess('documents')
 
   useEffect(() => {
     if (!isDesktopProperty || !showsTestDriveSection) return undefined
@@ -3810,7 +3814,7 @@ function PropertyDetailClassic({
       ? processedDocuments
       : processedDocuments.slice(0, 4)
 
-    return wrapDepositGatedBlock(
+    const gatedDocs = wrapDepositGatedBlock(
       <section className="pd-v3-section pd-v3-section--card property-detail-auction-desktop-only">
         <h2 className="pd-v3-section__title">{t('propertyDetailDocumentsTitle')}</h2>
         <div className="pd-v3-docs-row">
@@ -3854,6 +3858,12 @@ function PropertyDetailClassic({
         ) : null}
       </section>,
       { desktopCard: true },
+    )
+
+    return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+        {gatedDocs}
+      </SubscriptionLock>
     )
   }
 
@@ -4483,6 +4493,7 @@ function PropertyDetailClassic({
           hasTestDrive
           i18nLang={currentLang}
           imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
+          paused={isReservedActive}
         />
       </div>
     )
@@ -4492,6 +4503,7 @@ function PropertyDetailClassic({
     if (!processedDocuments.length) return null
 
     return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
       <section className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
@@ -4526,6 +4538,7 @@ function PropertyDetailClassic({
           ))}
         </ul>
       </section>
+      </SubscriptionLock>
     )
   }
 
@@ -5588,6 +5601,7 @@ function PropertyDetailClassic({
         hasTestDrive
         i18nLang={currentLang}
         imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
+        paused={isReservedActive}
       />
     )
   }
@@ -5634,7 +5648,7 @@ function PropertyDetailClassic({
   const renderDesktopAuctionDocumentsBlock = () => {
     if (!processedDocuments.length) return null
 
-    return wrapDepositGatedBlock(
+    const gatedAuctionDocs = wrapDepositGatedBlock(
       <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--documents">
         <header className="property-detail-auction-desktop-documents__head">
           <span className="property-detail-auction-desktop-documents__eyebrow">
@@ -5679,6 +5693,12 @@ function PropertyDetailClassic({
         </ul>
       </section>,
       { desktopCard: true },
+    )
+
+    return (
+      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+        {gatedAuctionDocs}
+      </SubscriptionLock>
     )
   }
 
@@ -6558,16 +6578,20 @@ function PropertyDetailClassic({
       }
 
       if (desktopInfoTab === 'documents') {
-        if (!processedDocuments.length) {
-          return (
+        const documentsBody = !processedDocuments.length ? (
             <div className="pdx-tab-card__placeholder">
               <strong>{t('propertyDetail_docsEmptyTitle')}</strong>
               <p>{t('propertyDetail_docsEmptyText')}</p>
             </div>
-          )
-        }
+        ) : (
+          <div className="pdx-tab-card__documents">{renderDocumentsContent()}</div>
+        )
 
-        return <div className="pdx-tab-card__documents">{renderDocumentsContent()}</div>
+        return (
+          <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
+            {documentsBody}
+          </SubscriptionLock>
+        )
       }
 
       if (desktopInfoTab === 'yield') {
@@ -6689,6 +6713,7 @@ function PropertyDetailClassic({
             imageUrl={
               displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
             }
+            paused={isReservedActive}
           />
         ) : null}
 
@@ -7164,6 +7189,7 @@ function PropertyDetailClassic({
                     }
                     hasTestDrive
                     i18nLang={currentLang}
+                    paused={isReservedActive}
                   />
                 )}
             </div>
@@ -7413,6 +7439,7 @@ function PropertyDetailClassic({
 
             {/* Документы - отдельный блок под property-detail-sidebar__content (только в кабинете продавца) */}
             {(onBack || showDocuments) && processedDocuments.length > 0 && (
+              <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
               <div className="property-detail-sidebar__documents">
                 <h3 className="property-detail-sidebar__documents-title">{t('propertyDetailDocumentsTitle')}</h3>
                 <div className="property-detail-sidebar__documents-content">
@@ -7440,6 +7467,7 @@ function PropertyDetailClassic({
                   ))}
                 </div>
               </div>
+              </SubscriptionLock>
             )}
           </div>
         </div>

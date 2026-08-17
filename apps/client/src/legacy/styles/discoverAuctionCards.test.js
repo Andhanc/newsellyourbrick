@@ -96,6 +96,18 @@ test('overlay countdown restores urgency color classes on auction cards', () => 
   assert.match(css, /\.auction-card__countdown-pill\.timer-medium/)
   assert.match(css, /\.auction-card__countdown-pill\.timer-short/)
   assert.match(css, /auction-card-countdown-pulse/)
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-long[\s\S]*color:\s*#0099A9\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-medium[\s\S]*color:\s*#f97316\s*!important/,
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__countdown-pill\.timer-short[\s\S]*color:\s*#dc2626\s*!important/,
+  )
 })
 
 test('auction listing reuses the same glass timer chrome as the main-page cards', () => {
@@ -113,7 +125,7 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
   )
   assert.match(
     css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*34px\s*!important/,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*36px\s*!important/,
   )
   assert.match(
     css,
@@ -159,9 +171,11 @@ test('phone cards keep row CTAs and the homepage tiffany shine', () => {
   assert.match(card, /auctionCardBuyShort/)
 })
 
-test('card view groups lots by visible action count and keeps sold lots openable', () => {
+test('card view keeps ending-soon timer order ahead of action-group grouping', () => {
   assert.match(mobileLayout, /getAuctionCardActionGroup/)
   assert.match(mobileLayout, /actionGroup:\s*getAuctionCardActionGroup/)
+  assert.match(mobileLayout, /compareListingsByAuctionTimer/)
+  assert.match(mobileLayout, /byTimer/)
   assert.match(card, /auction-card--actions-\$\{visibleActionCount\}/)
   assert.match(card, /auction-card__sold-cta-open/)
   assert.match(card, /onOpen\(property\)/)

@@ -215,7 +215,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
         if (result.success) {
           // Успешная регистрация
           if (onSuccess) {
-            onSuccess(result.user)
+            await onSuccess(result.user, result.authToken || null)
           }
           onClose()
         } else {
@@ -405,4 +405,3 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
 }
 
 export default EmailVerificationModal
-

@@ -10,7 +10,10 @@ import { FiArrowRight, FiBarChart2, FiRefreshCw, FiLoader } from 'react-icons/fi
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
+import CompareMobileMarketEstimate from '../components/compare/CompareMobileMarketEstimate'
+import CompareMobilePicker from '../components/compare/CompareMobilePicker'
 import CompareDecisionSummary from '../components/compare/CompareDecisionSummary'
+import { CompareShowdown } from '../components/compare/CompareShowdown'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import useMobileLayout from '../hooks/useMobileLayout'
 import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
@@ -23,6 +26,7 @@ import './Compare.css'
 import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
 import { writeInvestorScenario } from '../utils/investorScenarioContext'
+import { scrollMainElementIntoView } from '../utils/mainScroll'
 import {
   isAuctionListing,
   resolvePositivePropertyPrice,
@@ -32,7 +36,7 @@ import {
 import { createCompareAiRequestGuard } from '../utils/compareAiRequestGuard'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
-const COMPARE_HEADER_ILLUSTRATION = '/images/favorites-compare-reference-style.png'
+const COMPARE_HERO_DOSSIERS = '/images/compare/compare-hero-dossiers-v2.webp'
 
 /** Плейсхолдер карточки выбора, пока каталог и избранное подгружаются */
 function ComparePickCardSkeleton() {
@@ -617,6 +621,7 @@ const Compare = () => {
   const listLoading = catalogLoading || favoritesLoading
   const [compareInvestorDrawerOpen, setCompareInvestorDrawerOpen] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState(() => [])
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
@@ -627,6 +632,14 @@ const Compare = () => {
   const [calcLoading, setCalcLoading] = useState(false)
   const [calcData, setCalcData] = useState(() => ({ left: null, right: null }))
   const [calcError, setCalcError] = useState(() => ({ left: null, right: null }))
+  const compareCalculatorStartedKeyRef = useRef(null)
+  const heroRef = useRef(null)
+  const [heroVisible, setHeroVisible] = useState(true)
+  const [showdownStage, setShowdownStage] = useState('idle')
+  const [showdownMinDone, setShowdownMinDone] = useState(false)
+  const [showdownForceDone, setShowdownForceDone] = useState(false)
+  const [showdownAnalysisStartedKey, setShowdownAnalysisStartedKey] = useState(null)
+  const [showdownCompletedKey, setShowdownCompletedKey] = useState(null)
 
   const firstKey = selectedKeys[0] ?? null
   const firstItem = useMemo(
@@ -655,6 +668,7 @@ const Compare = () => {
         }
         if (item.key === selectedKeys[0]) return
         setSelectedKeys([selectedKeys[0], item.key])
+        setPickerOpen(false)
         return
       }
       setSelectedKeys([item.key])
@@ -662,14 +676,21 @@ const Compare = () => {
     [selectedKeys, groupFilter, t]
   )
 
-  const clearSelection = () => setSelectedKeys([])
+  const clearSelection = () => {
+    setSelectedKeys([])
+    setPickerOpen(false)
+    window.requestAnimationFrame(() => {
+      if (heroRef.current) scrollMainElementIntoView(heroRef.current, { offset: 0, behavior: 'smooth' })
+    })
+  }
 
   const replaceSelectedSide = useCallback((side) => {
     setSelectedKeys((previous) => {
       if (previous.length !== 2) return previous
       return side === 'left' ? [previous[1]] : [previous[0]]
     })
-  }, [])
+    if (isMobile) setPickerOpen(true)
+  }, [isMobile])
 
   const pair = useMemo(() => {
     if (selectedKeys.length !== 2) return null
@@ -678,6 +699,8 @@ const Compare = () => {
     if (!a || !b) return null
     return { left: a, right: b }
   }, [favoriteAuctions, selectedKeys])
+
+  const pairKey = pair ? `${pair.left.key}::${pair.right.key}` : null
 
   const openInvestorPanel = useCallback((side) => {
     const selected = selectComparisonItem(pair, side)
@@ -709,11 +732,11 @@ const Compare = () => {
     [aiResult]
   )
 
-  const requestAiAnalysis = useCallback(async () => {
+  const requestAiAnalysis = useCallback(async (options = {}) => {
     if (!pair || aiLoading) return
     if (!subscriptionResolved) return
     if (!hasCalculatorAccess) {
-      setCompareInvestorDrawerOpen(true)
+      if (options?.openEntitlement !== false) setCompareInvestorDrawerOpen(true)
       return
     }
 
@@ -753,6 +776,21 @@ const Compare = () => {
     setCalcError({ left: null, right: null })
     setCalcLoading(false)
   }, [pair?.left?.key, pair?.right?.key])
+
+  useEffect(() => {
+    const hero = heroRef.current
+    if (!hero || typeof IntersectionObserver === 'undefined') return undefined
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.3)),
+      {
+        root: document.querySelector('.app-layout'),
+        threshold: [0, 0.3, 0.65],
+      },
+    )
+    observer.observe(hero)
+    return () => observer.disconnect()
+  }, [])
 
   const canRunCompareCalculator = useMemo(() => {
     if (!pair) return false
@@ -809,33 +847,171 @@ const Compare = () => {
     }
   }, [pair, t])
 
+  useEffect(() => {
+    if (!pairKey) {
+      compareCalculatorStartedKeyRef.current = null
+      return
+    }
+    if (!canRunCompareCalculator || compareCalculatorStartedKeyRef.current === pairKey) return
+    compareCalculatorStartedKeyRef.current = pairKey
+    void runCompareCalculator()
+  }, [canRunCompareCalculator, pairKey, runCompareCalculator])
+
+  const aiReadyForShowdown = Boolean(
+    subscriptionResolved && (!hasCalculatorAccess || aiResult || aiError),
+  )
+  const calcReadyForShowdown = Boolean(
+    !canRunCompareCalculator || (
+      !calcLoading &&
+      (calcData.left || calcError.left) &&
+      (calcData.right || calcError.right)
+    ),
+  )
+
+  useEffect(() => {
+    if (!isMobile || !pairKey) {
+      setShowdownStage('idle')
+      setShowdownCompletedKey(null)
+      return undefined
+    }
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    setShowdownStage('playing')
+    setShowdownMinDone(false)
+    setShowdownForceDone(false)
+    setShowdownAnalysisStartedKey(null)
+    setShowdownCompletedKey(null)
+
+    const minimumTimer = window.setTimeout(
+      () => setShowdownMinDone(true),
+      reduceMotion ? 180 : 1900,
+    )
+    const fallbackTimer = window.setTimeout(
+      () => setShowdownForceDone(true),
+      reduceMotion ? 360 : 8000,
+    )
+
+    return () => {
+      window.clearTimeout(minimumTimer)
+      window.clearTimeout(fallbackTimer)
+    }
+  }, [isMobile, pairKey])
+
+  useEffect(() => {
+    if (
+      showdownStage !== 'playing' ||
+      !pair ||
+      !pairKey ||
+      !subscriptionResolved ||
+      showdownAnalysisStartedKey === pairKey
+    ) return
+
+    setShowdownAnalysisStartedKey(pairKey)
+    if (hasCalculatorAccess) void requestAiAnalysis({ openEntitlement: false })
+  }, [
+    hasCalculatorAccess,
+    pair,
+    pairKey,
+    requestAiAnalysis,
+    showdownAnalysisStartedKey,
+    showdownStage,
+    subscriptionResolved,
+  ])
+
+  useEffect(() => {
+    if (showdownStage !== 'playing' || !showdownMinDone || !pairKey) return
+    const analysisReady = showdownAnalysisStartedKey === pairKey && aiReadyForShowdown && calcReadyForShowdown
+    if (analysisReady || showdownForceDone) setShowdownStage('exiting')
+  }, [
+    aiReadyForShowdown,
+    calcReadyForShowdown,
+    pairKey,
+    showdownAnalysisStartedKey,
+    showdownForceDone,
+    showdownMinDone,
+    showdownStage,
+  ])
+
+  useEffect(() => {
+    if (showdownStage !== 'exiting' || !pairKey) return undefined
+    const finishTimer = window.setTimeout(() => {
+      setShowdownStage('complete')
+      setShowdownCompletedKey(pairKey)
+      window.requestAnimationFrame(() => {
+        const target = document.querySelector('.compare-table-section')
+        if (target) scrollMainElementIntoView(target, { offset: 118, behavior: 'smooth' })
+      })
+    }, 340)
+    return () => window.clearTimeout(finishTimer)
+  }, [pairKey, showdownStage])
+
+  useEffect(() => {
+    const layout = document.querySelector('.app-layout')
+    if (!layout) return undefined
+    const active = showdownStage === 'playing' || showdownStage === 'exiting'
+    layout.classList.toggle('compare-showdown-open', active)
+    return () => layout.classList.remove('compare-showdown-open')
+  }, [showdownStage])
+
   const dash = t('comparePage_dash')
 
   return (
-    <div className="compare-page">
+    <div
+      className={`compare-page${heroVisible ? ' compare-page--hero-visible' : ''}${showdownStage === 'playing' || showdownStage === 'exiting' ? ' compare-page--showdown-active' : ''}`}
+    >
       <Header />
-      <div className="compare-container">
-        <div className="compare-header">
-          <div className="compare-header__visual" aria-hidden>
+      <CompareShowdown
+        pair={pair}
+        stage={showdownStage}
+      />
+      <section ref={heroRef} className="compare-hero" aria-labelledby="compare-hero-title">
+        {isMobile ? (
+          <CompareMobilePicker
+            items={favoriteAuctions}
+            selectedKeys={selectedKeys}
+            groupFilter={groupFilter}
+            open={pickerOpen}
+            onOpen={() => setPickerOpen(true)}
+            onClose={() => setPickerOpen(false)}
+            onBack={() => navigate('/favorites')}
+            onToggleSelect={toggleSelect}
+            loading={listLoading}
+          />
+        ) : <div className="compare-hero__panel">
+          <div className="compare-hero__copy">
+            <div className="compare-hero__brand" aria-label="SellYourBrick">
+              <span className="compare-hero__brand-word">Sell</span>
+              <span className="compare-hero__brand-word compare-hero__brand-word--accent">Your</span>
+              <span className="compare-hero__brand-word">Brick</span>
+            </div>
+            <h1 id="compare-hero-title" className="compare-hero__title">
+              {t('comparePage_heroTitle')}
+            </h1>
+          </div>
+
+          <div className="compare-hero__visual" aria-hidden="true">
             <img
-              src={COMPARE_HEADER_ILLUSTRATION}
+              src={COMPARE_HERO_DOSSIERS}
               alt=""
-              className="compare-header__image"
-              loading="lazy"
+              className="compare-hero__image"
+              width="900"
+              height="1350"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </div>
-          <div className="compare-header__copy">
-            <h1 className="compare-title">{t('comparePage_title')}</h1>
-            <p className="compare-subtitle">
-              {t('comparePage_subtitle')}
-            </p>
-            <div className="compare-header-actions">
-              <Link to="/favorites" className="compare-link-muted">
-                {t('comparePage_backToFavorites')}
-              </Link>
-            </div>
-          </div>
-        </div>
+        </div>}
+      </section>
+
+      <div
+        className={`compare-container${listLoading || favoriteAuctions.length > 0 ? ' compare-container--has-card-strip' : ''}${isMobile && !pair ? ' compare-container--mobile-idle' : ''}`}
+      >
+        {!isMobile && <div className="compare-after-hero-nav">
+          <Link to="/favorites" className="compare-link-muted">
+            {t('comparePage_backToFavorites')}
+          </Link>
+        </div>}
 
         {listLoading ? (
           <section className="compare-pick-section" aria-busy="true">
@@ -876,7 +1052,7 @@ const Compare = () => {
           </section>
         ) : (
           <>
-            <section className="compare-pick-section" aria-labelledby="compare-pick-heading">
+            {(!isMobile || !pair) && <section className="compare-pick-section" aria-labelledby="compare-pick-heading">
               <div className="compare-pick-toolbar">
                 <h2 id="compare-pick-heading" className="compare-pick-heading">
                   {t('comparePage_fromFavorites')}
@@ -895,23 +1071,19 @@ const Compare = () => {
                 {selectedKeys.length === 1 && t('comparePage_hint1')}
                 {selectedKeys.length === 2 && t('comparePage_hint2')}
               </p>
-              {isMobile && pair ? (
-                <div className="compare-pick-locked">
-                  <span>{t('comparePage_pairLocked')}</span>
-                  <button type="button" onClick={clearSelection}>{t('comparePage_pickOtherPair')}</button>
-                </div>
-              ) : (
-                <ComparePickListingGrid
-                  items={favoriteAuctions}
-                  selectedKeys={selectedKeys}
-                  groupFilter={groupFilter}
-                  onToggleSelect={toggleSelect}
-                />
-              )}
-            </section>
+              <ComparePickListingGrid
+                items={favoriteAuctions}
+                selectedKeys={selectedKeys}
+                groupFilter={groupFilter}
+                onToggleSelect={toggleSelect}
+              />
+            </section>}
 
             {pair && (
-              <section className="compare-table-section" aria-labelledby="compare-table-heading">
+              <section
+                className={`compare-table-section${isMobile && showdownCompletedKey === pairKey ? ' compare-table-section--cinematic-result' : ''}`}
+                aria-labelledby="compare-table-heading"
+              >
                 <h2 id="compare-table-heading" className="compare-table-heading">
                   {t('comparePage_title')}
                 </h2>
@@ -922,6 +1094,15 @@ const Compare = () => {
                       right={pair.right}
                       rows={tableRows}
                       onReplace={replaceSelectedSide}
+                      onClear={clearSelection}
+                    />
+                    <CompareMobileMarketEstimate
+                      pair={pair}
+                      calcLoading={calcLoading}
+                      calcData={calcData}
+                      calcError={calcError}
+                      dash={dash}
+                      formatValue={formatCalcEur}
                     />
                     <CompareDecisionSummary
                       pair={pair}
@@ -1187,29 +1368,7 @@ const Compare = () => {
                   )}
                 </section>
 
-                <div className="compare-calculator-actions">
-                  <button
-                    type="button"
-                    className="compare-calculator-btn compare-calculator-btn--liquid compare-calculator-trigger"
-                    onClick={runCompareCalculator}
-                    disabled={calcLoading || !canRunCompareCalculator}
-                  >
-                    {calcLoading ? (
-                      <>
-                        <FiLoader size={18} className="compare-calculator-trigger-spin" aria-hidden />
-                        {t('comparePage_calcRunning')}
-                      </>
-                    ) : (
-                      t('comparePage_calcButton')
-                    )}
-                  </button>
-                  {!canRunCompareCalculator && (
-                    <p className="compare-calculator-hint">
-                      {t('comparePage_calcHint')}
-                    </p>
-                  )}
-                </div>
-
+                {!isMobile && <>
                 {(calcLoading || calcData.left || calcData.right || calcError.left || calcError.right) && (
                   <div className="compare-calculator-results" aria-live="polite">
                     <h3 className="compare-calculator-results-title">{t('comparePage_calcResultsTitle')}</h3>
@@ -1355,6 +1514,7 @@ const Compare = () => {
                     </div>
                   </div>
                 )}
+                </>}
               </section>
             )}
           </>

@@ -1656,6 +1656,14 @@
       1.25rem
       calc(28px + env(safe-area-inset-bottom, 0px));
     background: transparent;
+    box-sizing: border-box;
+  }
+
+  .login-modal--form-screen .login-modal__form-panel *,
+  .login-modal--form-screen .login-modal__form-panel *::before,
+  .login-modal--form-screen .login-modal__form-panel *::after {
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .login-modal--form-screen .login-modal__form-panel::before {

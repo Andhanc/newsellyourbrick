@@ -1,7 +1,10 @@
 import { getUserData, isAuthenticated } from '../services/authService'
+import { getNativeSessionAuthenticated } from './nativeDomBridge'
 
 /** Согласовано с MainPage/Header: Clerk-сессия или локальная запись пользователя */
 export function isSiteUserSignedIn(clerkUser, clerkLoaded) {
+  const nativeSession = getNativeSessionAuthenticated()
+  if (typeof nativeSession === 'boolean') return nativeSession
   if (clerkLoaded && clerkUser) return true
   try {
     if (getUserData()?.isLoggedIn) return true

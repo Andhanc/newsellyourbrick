@@ -1367,48 +1367,102 @@
 }
 
 .invest-showcase__cta-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: clamp(12px, 1.4vw, 18px);
-  min-height: 52px;
-  padding: 6px 6px 6px clamp(18px, 1.8vw, 24px);
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 36px;
+  height: 36px;
+  max-height: 36px;
+  padding: 0 3px 0 12px;
   border: 0;
   border-radius: 999px;
   background: #0a0a0a;
   color: #ffffff;
-  font-size: clamp(14px, 1dvh + 0.25vw, 15px);
+  font-size: 12px;
+  line-height: 1;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(10, 10, 10, 0.18);
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(10, 10, 10, 0.14);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .invest-showcase__cta-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px rgba(10, 10, 10, 0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(10, 10, 10, 0.18);
+}
+
+.invest-showcase__cta-pill-text {
+  display: block;
+  line-height: 1;
+  font-size: inherit;
 }
 
 .invest-showcase__cta-pill-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
 
+.invest-showcase__cta-pill-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
 .invest-showcase__carousel {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.invest-showcase__track {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+.invest-showcase__nav-btn--side {
+  display: none;
+}
+
+.invest-showcase__nav-btn--side:not(.is-visible) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.invest-showcase__nav-btn--side.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.invest-showcase__nav-btn--side.is-visible:disabled {
+  opacity: 1;
+  pointer-events: none;
 }
 
 .invest-showcase__scroller {
   display: flex;
   gap: var(--showcase-gap);
   overflow-x: auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   padding: 4px 2px 6px 0;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -1579,7 +1633,8 @@
   min-height: 40px;
 }
 
-.invest-showcase__nav {
+.invest-showcase__nav,
+.invest-showcase__nav--footer {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1600,6 +1655,8 @@
   cursor: pointer;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
   transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .invest-showcase__nav-btn:hover:not(:disabled) {
@@ -1721,14 +1778,17 @@
     max-width: 100%;
     align-self: flex-start;
     justify-content: flex-start;
-    min-height: 44px;
-    padding: 4px 4px 4px 16px;
-    gap: 10px;
+    min-height: 36px;
+    height: 36px;
+    max-height: 36px;
+    padding: 0 3px 0 12px;
+    gap: 8px;
+    font-size: 12px;
   }
 
   .invest-showcase__cta-pill-icon {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
   }
 
   .invest-home-page .invest-showcase .home-showcase__slot {

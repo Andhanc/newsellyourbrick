@@ -6,18 +6,18 @@ import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
-import { useManagerLiveChat } from './useManagerLiveChat'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 
-export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
+const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
+
+export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES } = {}) {
   const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const dbUserId = getStoredNumericUserId()
 
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
-  const [managerChatInput, setManagerChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -94,74 +94,54 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     return sessionId
   }, [isLoggedIn, dbUserId, user, userLoaded])
 
-  const {
-    liveChatToken,
-    managerConnecting,
-    managerMessagesRef,
-    managerThreadUi,
-    enterLiveManagerChat,
-    pauseManagerPolling,
-    sendManagerMessage,
-  } = useManagerLiveChat(getChatUserId, t)
-
-  const openManagerChatDock = useCallback(async () => {
+  const openManagerChatDock = useCallback(() => {
     if (!isSiteUserSignedIn(user, userLoaded)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
-    setIsChatOpen(false)
-    setIsManagerChatOpen(true)
-    try {
-      await enterLiveManagerChat()
-    } catch {
-      setIsManagerChatOpen(false)
-    }
-  }, [enterLiveManagerChat, user, userLoaded])
+    // GlobalManagerChatHost owns manager modal/drawer UI.
+    window.dispatchEvent(new CustomEvent('openManagerChat'))
+  }, [user, userLoaded])
 
   const closeManagerChatDock = useCallback(() => {
-    setIsManagerChatOpen(false)
-    setManagerChatInput('')
-    pauseManagerPolling()
-  }, [pauseManagerPolling])
+    window.dispatchEvent(new CustomEvent('closeManagerChat'))
+  }, [])
 
   const toggleChat = useCallback(() => {
     setIsChatOpen((prev) => {
       const next = !prev
       if (next) {
-        setIsManagerChatOpen(false)
-        pauseManagerPolling()
+        window.dispatchEvent(new CustomEvent('closeManagerChat'))
       }
       return next
     })
-  }, [pauseManagerPolling])
+  }, [])
 
   const closeChatDock = useCallback(() => {
     setIsChatOpen(false)
   }, [])
 
   useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent('managerChatStateChange', { detail: { isOpen: isManagerChatOpen } }),
-    )
-  }, [isManagerChatOpen])
-
-  useEffect(() => {
-    const onOpenManager = () => {
-      void openManagerChatDock()
+    const onManagerState = (event) => {
+      setIsManagerChatOpen(Boolean(event.detail?.isOpen))
     }
-    window.addEventListener('openManagerChat', onOpenManager)
-    return () => window.removeEventListener('openManagerChat', onOpenManager)
-  }, [openManagerChatDock])
+    window.addEventListener('managerChatStateChange', onManagerState)
+    return () => window.removeEventListener('managerChatStateChange', onManagerState)
+  }, [])
 
   useEffect(() => {
     const onOpenAI = () => {
-      setIsManagerChatOpen(false)
-      pauseManagerPolling()
+      window.dispatchEvent(new CustomEvent('closeManagerChat'))
       setIsChatOpen(true)
     }
+    const onCloseAI = () => setIsChatOpen(false)
     window.addEventListener('openAIChat', onOpenAI)
-    return () => window.removeEventListener('openAIChat', onOpenAI)
-  }, [pauseManagerPolling])
+    window.addEventListener('closeAIChat', onCloseAI)
+    return () => {
+      window.removeEventListener('openAIChat', onOpenAI)
+      window.removeEventListener('closeAIChat', onCloseAI)
+    }
+  }, [])
 
   useEffect(() => {
     const chatUserId = getChatUserId
@@ -555,20 +535,13 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     }
   }
 
-  const submitManagerMessage = (e) => {
-    e.preventDefault()
-    if (!managerChatInput.trim() || managerConnecting || !liveChatToken) return
-    const text = managerChatInput.trim()
-    setManagerChatInput('')
-    void sendManagerMessage(text)
-  }
-
   return {
     isChatOpen,
     isManagerChatOpen,
     toggleChat,
     closeChatDock,
     closeManagerChatDock,
+    openManagerChatDock,
     chatMessages,
     chatInput,
     isLoadingAI,
@@ -578,13 +551,6 @@ export function useSiteAiChatDock({ recommendationProperties = [] } = {}) {
     handleChatInputChange,
     handleChatSubmit,
     handleButtonClick,
-    managerChatInput,
-    setManagerChatInput,
-    managerConnecting,
-    managerMessagesRef,
-    managerThreadUi,
-    liveChatToken,
-    submitManagerMessage,
     catalogProperties: propertiesForAi,
   }
 }

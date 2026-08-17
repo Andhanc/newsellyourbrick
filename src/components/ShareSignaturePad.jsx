@@ -4,7 +4,7 @@ import './ShareSignaturePad.css'
 /**
  * Компактное поле подписи: чёрное по белому. ref: { clear(), isEmpty(), toDataURL() }
  */
-const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active }, ref) {
+const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active, onInkChange }, ref) {
   const frameRef = useRef(null)
   const canvasRef = useRef(null)
   const drawing = useRef(false)
@@ -43,7 +43,8 @@ const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active }, ref)
     ctx.fillRect(0, 0, w, h)
     hasInk.current = false
     lastPoint.current = null
-  }, [])
+    onInkChange?.(false)
+  }, [onInkChange])
 
   const getPoint = useCallback((e) => {
     const canvas = canvasRef.current
@@ -96,9 +97,12 @@ const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active }, ref)
       ctx.lineTo(p.x, p.y)
       ctx.stroke()
       lastPoint.current = p
-      hasInk.current = true
+      if (!hasInk.current) {
+        hasInk.current = true
+        onInkChange?.(true)
+      }
     },
-    [getPoint]
+    [getPoint, onInkChange]
   )
 
   const end = useCallback((e) => {

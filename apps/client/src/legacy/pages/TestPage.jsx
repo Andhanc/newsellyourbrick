@@ -24,12 +24,11 @@ import {
   FiLogOut,
   FiSend,
   FiX,
-  FiCopy,
-  FiUserPlus,
   FiGift,
   FiAward,
   FiColumns,
   FiInfo,
+  FiMessageCircle,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -59,6 +58,7 @@ import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
+import { fetchUserDeposit } from '../utils/depositApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
@@ -70,6 +70,10 @@ import {
 } from '../utils/purchasedPropertyListingPrefill'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
+import {
+  isBundledNativeDom,
+  triggerNativeProfileSavedVibration,
+} from '../utils/nativeDomBridge'
 import './TestPage.css'
 
 const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
@@ -579,8 +583,8 @@ function mergeExtractedPassportIntoProfileForm(prev, extracted) {
   }
 }
 
-function buildDirectionSummaries(t) {
-  return [
+function buildDirectionSummaries(t, { vipActive = false } = {}) {
+  const items = [
     {
       variant: 'seller',
       action: 'becomeSeller',
@@ -590,6 +594,17 @@ function buildDirectionSummaries(t) {
       subCardSubtitle: t('buyerCabinet_directionBecomeSellerSubtitle'),
     },
   ]
+  if (vipActive) {
+    items.push({
+      variant: 'manager',
+      action: 'managerChat',
+      areaLabel: t('buyerCabinet_directionAreaVipClub'),
+      headline: t('buyerCabinet_directionPersonalManagerTitle'),
+      subCardTitle: t('buyerCabinet_directionPersonalManagerTitle'),
+      subCardSubtitle: t('buyerCabinet_directionPersonalManagerSubtitle'),
+    })
+  }
+  return items
 }
 
 function buildMainCards(t) {
@@ -604,14 +619,15 @@ function buildMainCards(t) {
     {
       title: t('buyerCabinet_cardHistoryTitle'),
       description: t('buyerCabinet_cardHistorySubtitle'),
-      to: '/history',
+      to: '/profile?history=1',
+      sheet: 'history',
       iconSrc: '/images/profile/shortcuts/history.png',
       accent: 'ocean',
     },
     {
       title: t('buyerCabinet_cardBookingsTitle'),
       description: t('buyerCabinet_cardBookingsSubtitle'),
-      to: '/profile/bookings',
+      to: '/profile?bookings=1',
       sheet: 'bookings',
       iconSrc: '/images/profile/shortcuts/bookings.png',
       accent: 'violet',
@@ -677,7 +693,13 @@ function TestPage() {
     cabinetSubscriptionTier,
     cabinetVipActive,
   } = useCabinetOverviewData({ loadHistory: historyLoadRequested })
-  const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
+  const directionSummaries = useMemo(() => {
+    const items = buildDirectionSummaries(t, { vipActive: cabinetVipActive })
+    if (hasBothLinkedRoles) {
+      return items.filter((item) => item.action !== 'becomeSeller')
+    }
+    return items
+  }, [t, cabinetVipActive, hasBothLinkedRoles])
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
     const { primary, logout } = buildQuickLinks(t)
@@ -727,6 +749,7 @@ function TestPage() {
   )
   const [dbUserRow, setDbUserRow] = useState(null)
   const [dbUserLoading, setDbUserLoading] = useState(false)
+  const [depositAmount, setDepositAmount] = useState(null)
   const [verificationStatusHydrated, setVerificationStatusHydrated] = useState(false)
   const [profileForm, setProfileForm] = useState(emptyProfileForm)
   const [savingField, setSavingField] = useState(null)
@@ -748,6 +771,8 @@ function TestPage() {
   /** После клика по строке в тосте — скрываем тост, чтобы не перекрывал поля ввода. */
   const [profileCompletionToastDismissedForInput, setProfileCompletionToastDismissedForInput] = useState(false)
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
+  /** 'saved' | 'moderation' — текст модалки после сохранения данных профиля */
+  const [profileCelebrationKind, setProfileCelebrationKind] = useState('saved')
   const [subscriptionCheckoutCelebration, setSubscriptionCheckoutCelebration] = useState(false)
   const [vipClubCheckoutCelebration, setVipClubCheckoutCelebration] = useState(false)
   /** Конфетти на поздравлении: ~5 с генерации, потом только долёт существующих частиц. */
@@ -760,29 +785,6 @@ function TestPage() {
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
   )
-  const [profileReferralCopied, setProfileReferralCopied] = useState(false)
-  const profileReferralCopyTimerRef = useRef(null)
-
-  const profileReferralUrl = useMemo(() => {
-    if (!resolvedNumericUserId || typeof window === 'undefined') return ''
-    return `${window.location.origin}/?ref=${resolvedNumericUserId}`
-  }, [resolvedNumericUserId])
-
-  const copyProfileReferralLink = useCallback(() => {
-    if (!profileReferralUrl || !navigator.clipboard?.writeText) return
-    void navigator.clipboard.writeText(profileReferralUrl).then(() => {
-      setProfileReferralCopied(true)
-      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
-      profileReferralCopyTimerRef.current = setTimeout(() => setProfileReferralCopied(false), 2600)
-    })
-  }, [profileReferralUrl])
-
-  useEffect(
-    () => () => {
-      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
-    },
-    [],
-  )
 
   const dbUserRowRef = useRef(dbUserRow)
   const dataTileRef = useRef(null)
@@ -794,6 +796,7 @@ function TestPage() {
   const dataHydratedForSheetRef = useRef(false)
   const countryGeoTriedRef = useRef(false)
   const saveTimersRef = useRef({})
+  const profileCelebrationVibrationStartedRef = useRef(false)
   const persistFieldRef = useRef(async () => {})
   const passportInputRef = useRef(null)
   const countryFieldRef = useRef(null)
@@ -870,7 +873,7 @@ function TestPage() {
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
-    window.location.assign('/')
+    if (!isBundledNativeDom()) window.location.assign('/')
   }, [user, signOut, t])
 
   const handleBecomeSellerRegister = useCallback(async () => {
@@ -985,6 +988,39 @@ function TestPage() {
   }, [dataSheetOpen])
 
   useEffect(() => {
+    if (!resolvedNumericUserId) {
+      setDepositAmount(null)
+      return undefined
+    }
+    let cancelled = false
+    const loadDeposit = async () => {
+      try {
+        const deposit = await fetchUserDeposit(API_BASE_URL, resolvedNumericUserId, {
+          ttlMs: 15000,
+          force: false,
+        })
+        if (cancelled) return
+        const amount =
+          deposit && typeof deposit.depositAmount === 'number' ? deposit.depositAmount : 0
+        setDepositAmount(amount)
+      } catch {
+        if (!cancelled) setDepositAmount(0)
+      }
+    }
+    void loadDeposit()
+    const onFocus = () => void loadDeposit()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [resolvedNumericUserId])
+
+  useEffect(() => {
+    // Native Expo Router owns protected-route decisions. The legacy DOM guard can
+    // briefly observe an empty WebView-local session while native props hydrate and
+    // must never bounce a valid email/WhatsApp session back to the home screen.
+    if (isBundledNativeDom()) return
     if (!isLoaded) return
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
@@ -994,16 +1030,39 @@ function TestPage() {
 
   const loadVerificationStatus = useCallback(async (force = false) => {
     const id = numericUserId ?? getStoredNumericUserId()
-    if (!id) return
+    if (!id) return null
     try {
       const s = await fetchVerificationStatus(API_BASE_URL, id, { ttlMs: 20000, force })
       if (s) setVerificationStatus(s)
+      return s
     } catch {
-      /* ignore */
+      return null
     } finally {
       setVerificationStatusHydrated(true)
     }
   }, [numericUserId])
+
+  const openProfileDataCelebration = useCallback(async ({ forceStatus = true } = {}) => {
+    const status = forceStatus ? await loadVerificationStatus(true) : verificationStatus
+    setProfileCelebrationKind(status?.isReady ? 'moderation' : 'saved')
+    setShowPassportRecognitionModal(false)
+    setPassportRecognitionMode('confirm')
+    setExtractedPassportData(null)
+    setDataSheetOpen(false)
+    setShowProfileCompleteCelebration(true)
+  }, [loadVerificationStatus, verificationStatus])
+
+  useEffect(() => {
+    if (!showProfileCompleteCelebration) {
+      profileCelebrationVibrationStartedRef.current = false
+      return
+    }
+    if (profileCelebrationVibrationStartedRef.current) return
+    profileCelebrationVibrationStartedRef.current = true
+    void triggerNativeProfileSavedVibration().catch((error) => {
+      console.warn('Native profile-save vibration failed:', error)
+    })
+  }, [showProfileCompleteCelebration])
 
   useEffect(() => {
     if (resolvedNumericUserId == null || resolvedNumericUserId === '') {
@@ -1130,6 +1189,30 @@ function TestPage() {
     setBookingsSheetOpen(false)
     const next = new URLSearchParams(searchParams)
     next.delete('subscriptions')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+  }, [searchParams, navigate])
+
+  useEffect(() => {
+    if (searchParams.get('history') !== '1') return
+    setHistorySheetOpen(true)
+    setDataSheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('history')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+  }, [searchParams, navigate])
+
+  useEffect(() => {
+    if (searchParams.get('bookings') !== '1') return
+    setBookingsSheetOpen(true)
+    setDataSheetOpen(false)
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('bookings')
     const qs = next.toString()
     navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
   }, [searchParams, navigate])
@@ -1409,7 +1492,6 @@ function TestPage() {
           { text: t('buyerPricing_featP0') },
           { text: t('buyerPricing_featP1') },
           { text: t('buyerPricing_featP2') },
-          { text: t('buyerPricing_featP3') },
         ],
       },
       vip: {
@@ -1742,6 +1824,7 @@ function TestPage() {
         }
 
         setDbUserRow(json.data)
+        setProfileForm(buildProfileFormFromRow(json.data, user, email))
         setProfileFieldSavedOk((prev) => {
           const next = { ...prev }
           for (const apiKey of Object.keys(body)) {
@@ -1754,12 +1837,7 @@ function TestPage() {
         })
         invalidateUserByIdCache(API_BASE_URL, uid)
         invalidateVerificationStatusCache(API_BASE_URL, uid)
-        void loadVerificationStatus(true)
-        setProfileForm(buildProfileFormFromRow(json.data, user, email))
-        setShowPassportRecognitionModal(false)
-        setExtractedPassportData(null)
-        setDataSheetStep('documents')
-        showNotification(t('buyerData_passportConfirmSaved'), 'success')
+        await openProfileDataCelebration({ forceStatus: true })
       } catch (e) {
         showNotification(e.message || t('buyerData_saveError'), 'error')
         const row = dbUserRowRef.current
@@ -1768,7 +1846,7 @@ function TestPage() {
         setIsSavingExtractPatch(false)
       }
     },
-    [numericUserId, user, email, clearAllProfileSaveTimers, loadVerificationStatus, t],
+    [numericUserId, user, email, clearAllProfileSaveTimers, openProfileDataCelebration],
   )
 
   const handlePassportRecognitionReject = useCallback(() => {
@@ -1898,8 +1976,7 @@ function TestPage() {
             setSavePulseDismissed(true)
             invalidateUserByIdCache(API_BASE_URL, persistUserId)
             invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
-            void loadVerificationStatus(true)
-            setShowProfileCompleteCelebration(true)
+            await openProfileDataCelebration({ forceStatus: true })
           }
           return
         }
@@ -1916,8 +1993,7 @@ function TestPage() {
       setSavePulseDismissed(true)
       invalidateUserByIdCache(API_BASE_URL, persistUserId)
       invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
-      void loadVerificationStatus(true)
-      setShowProfileCompleteCelebration(true)
+      await openProfileDataCelebration({ forceStatus: true })
     } catch (e) {
       showNotification(e.message || t('buyerData_saveError'), 'error')
       setProfileForm(buildProfileFormFromRow(row, user, email))
@@ -1933,7 +2009,7 @@ function TestPage() {
     numericUserId,
     user,
     email,
-    loadVerificationStatus,
+    openProfileDataCelebration,
     savePulseDismissed,
   ])
 
@@ -1974,6 +2050,12 @@ function TestPage() {
   }, [verificationStatus, profileCompletionStats.pct])
 
   const needsProfileOnboarding = profileCompletionStats.pct < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
+  const showDataAttentionDot =
+    Boolean(resolvedNumericUserId) &&
+    verificationStatusHydrated &&
+    profileCompletionStats.pct < 100
+  const showDepositAttentionDot =
+    Boolean(resolvedNumericUserId) && depositAmount != null && Number(depositAmount) <= 0
 
   /** Пока профиль &lt; 78% — флаг для логики заполнения данных (без UI-подсказок). */
   const profileGateActive =
@@ -2174,6 +2256,7 @@ function TestPage() {
       }
     }
     setShowProfileCompleteCelebration(false)
+    setProfileCelebrationKind('saved')
     setDataSheetOpen(false)
     scrollMainTo(0, 0, 'smooth')
   }, [resolvedNumericUserId])
@@ -2322,6 +2405,15 @@ function TestPage() {
     setLegalSheetOpen(true)
   }, [])
 
+  const openCabinetDataSheet = useCallback(() => {
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    setLegalSheetOpen(false)
+    setDataSheetOpen(true)
+    scrollMainTo(0, 0, 'instant')
+  }, [])
+
   const syncFoldersDotIndex = useCallback(() => {
     const rail = foldersRailRef.current
     if (!rail) return
@@ -2375,7 +2467,7 @@ function TestPage() {
         setDataSheetOpen((open) => !open)
         return
       }
-      if (card.to === '/history' || card.sheet === 'history') {
+      if (card.to === '/history' || card.to === '/profile?history=1' || card.sheet === 'history') {
         setDataSheetOpen(false)
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
@@ -2515,7 +2607,7 @@ function TestPage() {
                   onScroll={handleFoldersRailScroll}
                 >
                   {mainCards.map((card) => {
-                    const isHistory = card.to === '/history'
+                    const isHistory = card.sheet === 'history' || card.to === '/profile?history=1' || card.to === '/history'
                     const isSubscriptions = card.sheet === 'subscriptions'
                     const isBookings = card.sheet === 'bookings'
                     const isData = card.sheet === 'data'
@@ -2528,19 +2620,31 @@ function TestPage() {
                       (isBookings && bookingsSheetOpen) ||
                       (isManagerChat && isManagerChatOpen)
                     const meta =
-                      isHistory && !historyLoading && historyCount > 0
-                        ? `${historyCount}`
-                        : isBookings && visibleBookingsSheetRows.length > 0
-                          ? `${visibleBookingsSheetRows.length}`
-                          : isSubscriptions
-                            ? subscriptionPlanLabel || 'Starter'
-                            : card.description
+                      isBookings && visibleBookingsSheetRows.length > 0
+                        ? `${visibleBookingsSheetRows.length}`
+                        : isSubscriptions
+                          ? subscriptionPlanLabel || 'Starter'
+                          : card.description
+                    const showAttentionDot =
+                      (isData && showDataAttentionDot) ||
+                      (card.to === '/deposit' && showDepositAttentionDot)
                     const className = `profile-folder-card profile-folder-card--${card.accent || 'teal'}${
                       active ? ' profile-folder-card--active' : ''
-                    }`
+                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}`
+                    const attentionLabel = isData
+                      ? t('buyerCabinet_cardDataAttentionAria')
+                      : t('buyerCabinet_cardDepositAttentionAria')
                     const inner = (
                       <>
                         <span className="profile-folder-card__glow" aria-hidden />
+                        {showAttentionDot ? (
+                          <span
+                            className="profile-folder-card__attention-dot"
+                            title={attentionLabel}
+                            aria-label={attentionLabel}
+                            role="status"
+                          />
+                        ) : null}
                         <span className="profile-folder-card__icon" aria-hidden>
                           <img src={card.iconSrc} alt="" loading="lazy" decoding="async" draggable={false} />
                         </span>
@@ -2595,20 +2699,29 @@ function TestPage() {
                 ) : null}
               </section>
 
+              <ProfileVipClubPromo
+                className="profile-cabinet__vip-promo"
+                titleId="profile-cabinet-vip-promo-title"
+              />
+
+              <div className="profile-cabinet__desk">
               <section className="profile-cabinet__list" aria-label={t('buyerCabinet_directionsListAria')}>
                 <div className="profile-cabinet__section-head">
                   <div className="profile-cabinet__section-copy">
                     <h3 className="profile-cabinet__section-title">{t('buyerCabinet_directionsTitle')}</h3>
+                    <p className="profile-cabinet__section-sub">{t('buyerCabinet_directionsSubtitle')}</p>
                   </div>
                 </div>
                 <ul className="profile-cabinet__rows">
                   {directionSummaries.map((item) => {
                     const isBecomeSeller = item.action === 'becomeSeller'
+                    const isManagerChat = item.action === 'managerChat'
+                    const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
                     const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
                     const inner = (
                       <>
                         <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
-                          {isBecomeSeller ? <FiHome size={20} /> : null}
+                          {DirectionIcon ? <DirectionIcon size={20} /> : null}
                         </span>
                         <span className="profile-cabinet-row__copy">
                           <strong>{item.subCardTitle || item.headline}</strong>
@@ -2618,7 +2731,7 @@ function TestPage() {
                       </>
                     )
                     return (
-                      <li key={item.headline}>
+                      <li key={item.action || item.headline}>
                         {isBecomeSeller ? (
                           <button
                             type="button"
@@ -2626,6 +2739,10 @@ function TestPage() {
                             onClick={() => void handleBecomeSellerRegister()}
                             disabled={sellPurchasedPropertyRoleFlow.loading}
                           >
+                            {inner}
+                          </button>
+                        ) : isManagerChat ? (
+                          <button type="button" className={rowClass} onClick={() => void openManagerChatModal()}>
                             {inner}
                           </button>
                         ) : (
@@ -2664,6 +2781,45 @@ function TestPage() {
                 </ul>
               </section>
 
+              <aside className="profile-cabinet__aside">
+                <section className="profile-cabinet__docs" aria-labelledby="profile-cabinet-docs-title">
+                  <div className="profile-cabinet__section-head">
+                    <div className="profile-cabinet__section-copy">
+                      <h3 id="profile-cabinet-docs-title" className="profile-cabinet__section-title">
+                        {t('buyerCabinet_docsTitle')}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="profile-cabinet__docs-stack">
+                    <button type="button" className="profile-cabinet-row" onClick={openCabinetDataSheet}>
+                      <span className="profile-cabinet-row__icon" aria-hidden>
+                        <FiFileText size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('buyerCabinet_docsFilesTitle')}</strong>
+                        <span>{t('buyerCabinet_docsFilesSubtitle')}</span>
+                      </span>
+                      <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row"
+                      onClick={() => openLegalSheet('agreement')}
+                    >
+                      <span className="profile-cabinet-row__icon" aria-hidden>
+                        <FiBookOpen size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('buyerCabinet_docsAgreementsTitle')}</strong>
+                        <span>{t('buyerCabinet_docsAgreementsSubtitle')}</span>
+                      </span>
+                      <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </div>
+                </section>
+              </aside>
+              </div>
+
               <div className="profile-cabinet__directions-cta">
                 <AuctionCategoryCtaCards variant="profilePage" />
               </div>
@@ -2682,6 +2838,15 @@ function TestPage() {
                   <span>{quickLogoutLink.title}</span>
                 </button>
               </section>
+
+              <div className="profile-cabinet__role-switch">
+                <RoleSwitchBottomCta
+                  targetRole="seller"
+                  flow={sellPurchasedPropertyRoleFlow}
+                  renderModals={false}
+                  onOpen={handleOpenSellerRoleFlow}
+                />
+              </div>
             </div>
           )}
 
@@ -2716,6 +2881,50 @@ function TestPage() {
                       </div>
                     </div>
                     <div className="test-quick-row test-quick-row--primary">
+                      {directionSummaries.map((item) => {
+                        const isBecomeSeller = item.action === 'becomeSeller'
+                        const isManagerChat = item.action === 'managerChat'
+                        const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                        if (!DirectionIcon) return null
+                        const inner = (
+                          <>
+                            <span className="test-quick-pill__icon">
+                              <DirectionIcon size={17} aria-hidden />
+                            </span>
+                            <span className="test-quick-pill__body">
+                              <span className="test-quick-pill__title">{item.subCardTitle || item.headline}</span>
+                              <span className="test-quick-pill__sub">{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                          </>
+                        )
+                        if (isBecomeSeller) {
+                          return (
+                            <button
+                              key={item.action}
+                              type="button"
+                              className="test-quick-pill"
+                              onClick={() => void handleBecomeSellerRegister()}
+                              disabled={sellPurchasedPropertyRoleFlow.loading}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
+                        if (isManagerChat) {
+                          return (
+                            <button
+                              key={item.action}
+                              type="button"
+                              className="test-quick-pill test-quick-pill--manager"
+                              onClick={() => void openManagerChatModal()}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
+                        return null
+                      })}
                       {quickLinksPrimary.map((link) => {
                         const Icon = link.icon
                         const isBecomeSeller = link.action === 'becomeSeller'
@@ -2751,46 +2960,6 @@ function TestPage() {
                       })}
                     </div>
                     <div className="test-cabinet-home-discover" aria-label={t('buyerData_profileDiscoverAria')}>
-                      {profileReferralUrl ? (
-                        <div className="test-cabinet-home-discover__referral-card">
-                          <div className="test-cabinet-home-discover__referral-card-head">
-                            <span className="test-cabinet-home-discover__referral-card-icon" aria-hidden>
-                              <FiUserPlus size={18} strokeWidth={2} />
-                            </span>
-                            <span className="test-cabinet-home-discover__referral-card-title">{t('bonus9Title')}</span>
-                          </div>
-                          <label
-                            className="test-cabinet-home-discover__referral-label"
-                            htmlFor="test-cabinet-referral-url"
-                          >
-                            {t('bonusesReferralLabel')}
-                          </label>
-                          <div className="test-cabinet-home-discover__referral-row">
-                            <input
-                              id="test-cabinet-referral-url"
-                              readOnly
-                              type="text"
-                              className="test-cabinet-home-discover__referral-input"
-                              value={profileReferralUrl}
-                              aria-label={t('bonusesReferralLabel')}
-                            />
-                            <button
-                              type="button"
-                              className="test-cabinet-home-discover__referral-copy"
-                              onClick={copyProfileReferralLink}
-                              title={t('bonusesCopyLink')}
-                              aria-label={t('bonusesCopyLinkAria')}
-                            >
-                              {profileReferralCopied ? (
-                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                              ) : (
-                                <FiCopy size={18} aria-hidden />
-                              )}
-                            </button>
-                          </div>
-                          <p className="test-cabinet-home-discover__referral-hint">{t('bonusesReferralHint')}</p>
-                        </div>
-                      ) : null}
                       <Link to="/bonuses" className="test-cabinet-home-discover__bonuses-cta">
                         <span className="test-cabinet-home-discover__bonuses-cta-icon" aria-hidden>
                           <FiGift size={20} strokeWidth={2} />
@@ -3643,16 +3812,23 @@ function TestPage() {
             >
               {showProfileCompleteCelebration ? (
                 <>
+                  <div className="test-profile-complete-modal__icon" aria-hidden>
+                    <FiCheckCircle size={36} strokeWidth={2.2} />
+                  </div>
                   <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
-                    {t('buyerCabinet_profileCompleteTitle')}
+                    {t('buyerData_celebrationTitle')}
                   </h2>
-                  <p className="test-profile-complete-modal__text">{t('buyerCabinet_profileCompleteText')}</p>
+                  <p className="test-profile-complete-modal__text">
+                    {profileCelebrationKind === 'moderation'
+                      ? t('buyerData_celebrationModerationBody')
+                      : t('buyerData_celebrationSavedBody')}
+                  </p>
                   <button
                     type="button"
                     className="test-profile-complete-modal__btn"
                     onClick={handleProfileCompleteCelebrationGo}
                   >
-                    {t('buyerCabinet_profileCompleteCta')}
+                    {t('buyerData_celebrationCtaProfile')}
                   </button>
                 </>
               ) : vipClubCheckoutCelebration ? (

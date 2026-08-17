@@ -17,6 +17,7 @@ export default function TestDriveSection({
   hasTestDrive,
   i18nLang,
   layout = 'default',
+  paused = false,
 }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -86,8 +87,13 @@ export default function TestDriveSection({
   return (
     <div
       id="property-test-drive-section"
-      className={`property-detail-test-drive${isPromoLayout ? ' property-detail-test-drive--promo' : ''}`}
+      className={`property-detail-test-drive${isPromoLayout ? ' property-detail-test-drive--promo' : ''}${paused ? ' property-detail-test-drive--paused' : ''}`}
     >
+      {paused && !isPromoLayout ? (
+        <div className="property-detail-test-drive__paused" role="status">
+          <span>{ru ? 'Тест-драйв приостановлен' : 'Test drive paused'}</span>
+        </div>
+      ) : null}
       {!isPromoLayout ? (
       <h3 className="property-detail-info-block__title">
         {ru ? 'Тест-драйв' : 'Test drive'}
@@ -121,8 +127,9 @@ export default function TestDriveSection({
       <button
         type="button"
         className="property-detail-test-drive__cta"
-        disabled={!allDone || loading}
+        disabled={paused || !allDone || loading}
         onClick={() => {
+          if (paused) return
           const table = encodeURIComponent(propertyTable || 'properties_apartments')
           const basePath = getPropertyDetailPath({
             id: propertyId,
@@ -137,11 +144,15 @@ export default function TestDriveSection({
           ? ru
             ? 'Проверка…'
             : 'Checking…'
-          : ru
-            ? 'Выбрать даты тест-драйва'
-            : 'Choose test drive dates'}
+          : isPromoLayout
+            ? ru
+              ? 'Выбрать даты'
+              : 'Pick dates'
+            : ru
+              ? 'Выбрать даты тест-драйва'
+              : 'Choose test drive dates'}
       </button>
-      {!allDone && !loading && (
+      {!paused && !allDone && !loading && (
         <p className="property-detail-test-drive__hint">
           {ru
             ? 'Пополните депозит на платформе, чтобы активировать кнопку.'

@@ -4,12 +4,41 @@ type ChildrenProps = {
   children?: ReactNode
 }
 
+export type NativeClerkUser = {
+  id: string
+  name?: string
+  email?: string
+  phone?: string
+}
+
 const asyncNoop = async () => undefined
 
-const signedOutUser = {
-  user: null,
-  isLoaded: true,
-  isSignedIn: false,
+let nativeUser: Record<string, unknown> | null = null
+let nativeSignOut: (() => Promise<void>) | null = null
+
+export function setNativeClerkUser(user: NativeClerkUser | null) {
+  if (!user) {
+    nativeUser = null
+    return
+  }
+
+  const nameParts = String(user.name || '').trim().split(/\s+/).filter(Boolean)
+  const emailAddress = user.email ? { emailAddress: user.email } : null
+  const phoneNumber = user.phone ? { phoneNumber: user.phone } : null
+  nativeUser = {
+    id: String(user.id),
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' '),
+    fullName: user.name || '',
+    primaryEmailAddress: emailAddress,
+    emailAddresses: emailAddress ? [emailAddress] : [],
+    primaryPhoneNumber: phoneNumber,
+    phoneNumbers: phoneNumber ? [phoneNumber] : [],
+  }
+}
+
+export function setNativeClerkSignOut(signOut: (() => Promise<void>) | null) {
+  nativeSignOut = signOut
 }
 
 const signedOutAuth = {
@@ -61,12 +90,12 @@ export function ClerkProvider({ children }: ChildrenProps) {
   return <>{children}</>
 }
 
-export function SignedIn() {
-  return null
+export function SignedIn({ children }: ChildrenProps) {
+  return nativeUser ? <>{children}</> : null
 }
 
 export function SignedOut({ children }: ChildrenProps) {
-  return <>{children}</>
+  return nativeUser ? null : <>{children}</>
 }
 
 export function AuthenticateWithRedirectCallback() {
@@ -74,11 +103,24 @@ export function AuthenticateWithRedirectCallback() {
 }
 
 export function useUser() {
-  return signedOutUser
+  return {
+    user: nativeUser,
+    isLoaded: true,
+    isSignedIn: Boolean(nativeUser),
+  }
 }
 
 export function useAuth() {
-  return signedOutAuth
+  return nativeUser
+    ? {
+        ...signedOutAuth,
+        isSignedIn: true,
+        userId: String(nativeUser.id || ''),
+        signOut: async () => {
+          await nativeSignOut?.()
+        },
+      }
+    : signedOutAuth
 }
 
 export function useSession() {
@@ -90,5 +132,10 @@ export function useSignIn() {
 }
 
 export function useClerk() {
-  return signedOutClerk
+  return {
+    ...signedOutClerk,
+    signOut: async () => {
+      await nativeSignOut?.()
+    },
+  }
 }

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Bath, Bed, Check } from 'lucide-react'
 import OapSelect from '../components/OapSelect'
@@ -46,6 +47,55 @@ export default function OwnerAddPropertyBasicsStep({
   hideWizardChrome = false,
 }) {
   const { t } = useTranslation()
+  const [exactFlashKeys, setExactFlashKeys] = useState({})
+  const [exactUi, setExactUi] = useState({})
+  const exactInputRefs = useRef({})
+  const exactFlashTimers = useRef({})
+
+  const clearExactUi = (key) => {
+    setExactUi((prev) => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }
+
+  const openExactUi = (key, draft) => {
+    setExactUi((prev) => ({ ...prev, [key]: { open: true, draft } }))
+  }
+
+  const flashExactInput = (key) => {
+    if (exactFlashTimers.current[key]) {
+      clearTimeout(exactFlashTimers.current[key])
+    }
+    setExactFlashKeys((prev) => ({ ...prev, [key]: Date.now() }))
+    exactFlashTimers.current[key] = setTimeout(() => {
+      setExactFlashKeys((prev) => {
+        if (!prev[key]) return prev
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      delete exactFlashTimers.current[key]
+    }, 1800)
+  }
+
+  useEffect(() => {
+    Object.keys(exactFlashKeys).forEach((key) => {
+      const input = exactInputRefs.current[key]
+      if (!input) return
+      input.focus({ preventScroll: true })
+      input.select()
+    })
+  }, [exactFlashKeys])
+
+  useEffect(() => {
+    return () => {
+      Object.values(exactFlashTimers.current).forEach((timerId) => clearTimeout(timerId))
+    }
+  }, [])
+
   const {
     buildingTypeOptions,
     constructionTypeOptions,
@@ -99,15 +149,19 @@ export default function OwnerAddPropertyBasicsStep({
     key,
     label,
     options,
-    { placeholder, required, fullWidth = false } = {}
+    { placeholder, required, fullWidth = false, hideLabel = false } = {}
   ) => (
-    <div key={key} className={fieldClassName(key, { fullWidth })}>
-      {renderFieldLabel(label, { required })}
+    <div
+      key={key}
+      className={`${fieldClassName(key, { fullWidth })}${hideLabel ? ' oap-basics-field--infield-label' : ''}`}
+    >
+      {hideLabel ? null : renderFieldLabel(label, { required })}
       <OapSelect
         value={form[key]}
         placeholder={placeholder}
         options={options}
         onChange={(nextValue) => onParamFieldChange(key, nextValue)}
+        aria-label={label}
       />
       {paramErrors[key] && <span className="oap-basics-field__error">{paramErrors[key]}</span>}
     </div>
@@ -145,39 +199,113 @@ export default function OwnerAddPropertyBasicsStep({
   )
 
   const renderCountPicker = (key, Icon, label, { required = true } = {}) => {
+    const rawDigits = String(form[key] ?? '').replace(/\D/g, '')
+    const numericValue = parseInt(rawDigits, 10)
+    const exactState = exactUi[key]
+    const isPlusMode =
+      Boolean(exactState?.open) || (Number.isFinite(numericValue) && numericValue >= 5)
+    const exactDisplay =
+      exactState?.draft !== undefined ? exactState.draft : rawDigits
     const activeValue = normalizeCountPickerValue(form[key])
 
     return (
       <div
         key={key}
-        className={`oap-basics-count-picker oap-basics-field--full${paramErrors[key] ? ' oap-basics-count-picker--error' : ''}`}
+        className={`oap-basics-count-picker oap-basics-field--full${paramErrors[key] ? ' oap-basics-count-picker--error' : ''}${isPlusMode ? ' oap-basics-count-picker--exact' : ''}`}
       >
         <span className="oap-basics-count-picker__icon" aria-hidden>
           <Icon size={24} strokeWidth={1.75} />
         </span>
-        <div
-          className="oap-basics-count-picker__track"
-          role="radiogroup"
-          aria-label={label}
-          aria-required={required}
-        >
-          {COUNT_PICKER_VALUES.map((value, index) => {
-            const isActive = activeValue === value
-            const displayLabel = index === COUNT_PICKER_VALUES.length - 1 ? '5+' : value
+        <div className="oap-basics-count-picker__controls">
+          <div
+            className="oap-basics-count-picker__track"
+            role="radiogroup"
+            aria-label={label}
+            aria-required={required}
+          >
+            {COUNT_PICKER_VALUES.map((value, index) => {
+              const isPlusOption = index === COUNT_PICKER_VALUES.length - 1
+              const isActive = isPlusOption ? isPlusMode : !isPlusMode && activeValue === value
+              const displayLabel = isPlusOption ? '5+' : value
 
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                className={`oap-basics-count-picker__option${isActive ? ' oap-basics-count-picker__option--active' : ''}${index === COUNT_PICKER_VALUES.length - 1 ? ' oap-basics-count-picker__option--plus' : ''}`}
-                onClick={() => onParamFieldChange(key, value)}
-              >
-                {displayLabel}
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  className={`oap-basics-count-picker__option${isActive ? ' oap-basics-count-picker__option--active' : ''}${isPlusOption ? ' oap-basics-count-picker__option--plus' : ''}`}
+                  onClick={() => {
+                    if (isPlusOption) {
+                      const nextValue =
+                        Number.isFinite(numericValue) && numericValue >= 5 ? String(numericValue) : '5'
+                      onParamFieldChange(key, nextValue)
+                      openExactUi(key, nextValue)
+                      flashExactInput(key)
+                      return
+                    }
+                    clearExactUi(key)
+                    onParamFieldChange(key, value)
+                  }}
+                >
+                  {displayLabel}
+                </button>
+              )
+            })}
+          </div>
+          {isPlusMode ? (
+            <input
+              ref={(node) => {
+                if (node) exactInputRefs.current[key] = node
+                else delete exactInputRefs.current[key]
+              }}
+              type="text"
+              inputMode="numeric"
+              className={`oap-basics-count-picker__exact${exactFlashKeys[key] ? ' oap-basics-count-picker__exact--flash' : ''}`}
+              value={exactDisplay}
+              placeholder="5"
+              aria-label={`${label} (5+)`}
+              onFocus={(e) => {
+                openExactUi(key, exactDisplay)
+                e.target.select()
+              }}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 2)
+                openExactUi(key, digits)
+                if (!digits) return
+
+                const nextValue = parseInt(digits, 10)
+                if (!Number.isFinite(nextValue) || nextValue <= 0) return
+
+                if (nextValue < 5) {
+                  clearExactUi(key)
+                  onParamFieldChange(key, String(nextValue))
+                  return
+                }
+
+                onParamFieldChange(key, String(nextValue))
+              }}
+              onBlur={(e) => {
+                const draftDigits = String(e.target.value ?? '').replace(/\D/g, '')
+                const nextValue = parseInt(draftDigits, 10)
+
+                if (!draftDigits || !Number.isFinite(nextValue) || nextValue <= 0) {
+                  onParamFieldChange(key, '5')
+                  openExactUi(key, '5')
+                  return
+                }
+
+                if (nextValue < 5) {
+                  clearExactUi(key)
+                  onParamFieldChange(key, String(nextValue))
+                  return
+                }
+
+                onParamFieldChange(key, String(nextValue))
+                openExactUi(key, String(nextValue))
+              }}
+            />
+          ) : null}
         </div>
         {paramErrors[key] ? (
           <span className="oap-basics-field__error oap-basics-count-picker__error">{paramErrors[key]}</span>
@@ -194,10 +322,12 @@ export default function OwnerAddPropertyBasicsStep({
             {renderNumberField('area', t('addPropertyDetailsAreaLabel'), {
               placeholder: '0',
               required: true,
+              suffix: t('squareMeters'),
             })}
             {renderNumberField('livingArea', t('addPropertyDetailsLivingAreaLabel'), {
               placeholder: '0',
               required: true,
+              suffix: t('squareMeters'),
             })}
             {renderNumberField('yearBuilt', t('addPropertyDetailsYearBuiltLabel'), {
               placeholder: String(new Date().getFullYear()),
@@ -209,7 +339,7 @@ export default function OwnerAddPropertyBasicsStep({
             </div>
             {renderFloorCombinedField()}
             {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
-              placeholder: t('addPropertyDetailsSelectMaterial'),
+              placeholder: t('oap_paramsMaterialPlaceholder'),
               required: true,
             })}
             {renderSelectField(
@@ -217,7 +347,7 @@ export default function OwnerAddPropertyBasicsStep({
               t('addPropertyConstructionTypePlaceholder'),
               constructionTypeOptions,
               {
-                placeholder: t('addPropertyConstructionTypePlaceholder'),
+                placeholder: t('oap_paramsConstructionPlaceholder'),
               }
             )}
           </>
@@ -229,11 +359,13 @@ export default function OwnerAddPropertyBasicsStep({
           {renderNumberField('area', t('addPropertyDetailsAreaLabel'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderNumberField('livingArea', t('addPropertyDetailsLivingAreaLabel'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderCountPicker('rooms', Bed, t('addPropertyDetailsRoomsLabel'))}
           {renderCountPicker('bathrooms', Bath, t('addPropertyDetailsBathroomsShortLabel'))}
           {renderFloorCombinedField()}
@@ -242,7 +374,7 @@ export default function OwnerAddPropertyBasicsStep({
             required: true,
           })}
           {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
-            placeholder: t('addPropertyDetailsSelectMaterial'),
+            placeholder: t('oap_paramsMaterialPlaceholder'),
             required: true,
           })}
           {renderSelectField(
@@ -250,7 +382,7 @@ export default function OwnerAddPropertyBasicsStep({
             t('addPropertyConstructionTypePlaceholder'),
             constructionTypeOptions,
             {
-              placeholder: t('addPropertyConstructionTypePlaceholder'),
+              placeholder: t('oap_paramsConstructionPlaceholder'),
             }
           )}
         </>
@@ -264,25 +396,27 @@ export default function OwnerAddPropertyBasicsStep({
             {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
               placeholder: '0',
               required: true,
+              suffix: t('squareMeters'),
             })}
             {renderNumberField('area', t('oap_paramsHouseAreaTotal'), {
               placeholder: '0',
               required: true,
+              suffix: t('squareMeters'),
             })}
             {renderNumberField('yearBuilt', t('addPropertyDetailsYearBuiltLabel'), {
               placeholder: String(new Date().getFullYear()),
+              required: true,
+            })}
+            {renderNumberField('totalFloors', t('addPropertyDetailsFloorsCountLabel'), {
+              placeholder: '0',
               required: true,
             })}
             <div className="oap-basics-params__counts-row">
               {renderCountPicker('bedrooms', Bed, t('addPropertyDetailsRoomsLabel'))}
               {renderCountPicker('bathrooms', Bath, t('addPropertyDetailsBathroomsShortLabel'))}
             </div>
-            {renderNumberField('totalFloors', t('addPropertyDetailsFloorsCountLabel'), {
-              placeholder: '0',
-              required: true,
-            })}
             {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
-              placeholder: t('addPropertyDetailsSelectMaterial'),
+              placeholder: t('oap_paramsMaterialPlaceholder'),
               required: true,
             })}
             {renderSelectField(
@@ -290,7 +424,7 @@ export default function OwnerAddPropertyBasicsStep({
               t('addPropertyConstructionTypePlaceholder'),
               constructionTypeOptions,
               {
-                placeholder: t('addPropertyConstructionTypePlaceholder'),
+                placeholder: t('oap_paramsConstructionPlaceholder'),
               }
             )}
           </>
@@ -302,11 +436,13 @@ export default function OwnerAddPropertyBasicsStep({
           {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderNumberField('area', t('oap_paramsHouseAreaTotal'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderCountPicker('bedrooms', Bed, t('addPropertyDetailsRoomsLabel'))}
           {renderCountPicker('bathrooms', Bath, t('addPropertyDetailsBathroomsShortLabel'))}
           {renderNumberField('totalFloors', t('addPropertyDetailsFloorsCountLabel'), {
@@ -318,7 +454,7 @@ export default function OwnerAddPropertyBasicsStep({
             required: true,
           })}
           {renderSelectField('buildingType', t('addPropertyDetailsBuildingMaterialLabel'), buildingTypeOptions, {
-            placeholder: t('addPropertyDetailsSelectMaterial'),
+            placeholder: t('oap_paramsMaterialPlaceholder'),
             required: true,
           })}
           {renderSelectField(
@@ -326,7 +462,7 @@ export default function OwnerAddPropertyBasicsStep({
             t('addPropertyConstructionTypePlaceholder'),
             constructionTypeOptions,
             {
-              placeholder: t('addPropertyConstructionTypePlaceholder'),
+              placeholder: t('oap_paramsConstructionPlaceholder'),
             }
           )}
         </>
@@ -339,7 +475,8 @@ export default function OwnerAddPropertyBasicsStep({
           {renderNumberField('area', t('addPropertyDetailsAreaLabelShort'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderNumberField('floor', t('oap_paramsFloorLevel'), { placeholder: '0' })}
           {renderNumberField('totalFloors', t('addPropertyDetailsTotalFloorsLabel'), { placeholder: '0' })}
           {renderSelectField('commercialType', t('oap_paramsCommercialType'), commercialTypeOptions, {
@@ -351,7 +488,7 @@ export default function OwnerAddPropertyBasicsStep({
             t('addPropertyConstructionTypePlaceholder'),
             constructionTypeOptions,
             {
-              placeholder: t('addPropertyConstructionTypePlaceholder'),
+              placeholder: t('oap_paramsConstructionPlaceholder'),
             }
           )}
         </>
@@ -364,7 +501,8 @@ export default function OwnerAddPropertyBasicsStep({
           {renderNumberField('landArea', t('addPropertyDetailsLandAreaLabel'), {
             placeholder: '0',
             required: true,
-          })}
+              suffix: t('squareMeters'),
+            })}
           {renderSelectField('commercialType', t('oap_paramsLandPurpose'), landPurposeOptions, {
             placeholder: t('oap_paramsSelectPurpose'),
             required: true,

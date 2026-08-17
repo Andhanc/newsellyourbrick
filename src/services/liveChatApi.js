@@ -96,6 +96,24 @@ export async function fetchAdminLiveChatMessages(sessionId) {
   return json.data;
 }
 
+export async function markAdminLiveChatSessionRead(sessionId) {
+  const base = await getApiBaseUrl();
+  const res = await fetch(`${base}/admin/live-chat/sessions/${sessionId}/read`, {
+    method: 'POST',
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'read');
+  return json.data;
+}
+
+export async function markAllAdminLiveChatSessionsRead() {
+  const base = await getApiBaseUrl();
+  const res = await fetch(`${base}/admin/live-chat/read-all`, { method: 'POST' });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'read-all');
+  return json.data;
+}
+
 export async function sendAdminLiveChatMessage(sessionId, text) {
   const base = await getApiBaseUrl();
   const res = await fetch(`${base}/admin/live-chat/sessions/${sessionId}/messages`, {

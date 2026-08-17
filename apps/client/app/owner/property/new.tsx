@@ -45,7 +45,7 @@ const INITIAL: Draft = {
 export default function AddPropertyRoute() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState<Draft>(INITIAL)
   const [busy, setBusy] = useState(false)
@@ -109,6 +109,14 @@ export default function AddPropertyRoute() {
             <Pressable style={styles.btn}><Text style={styles.btnText}>К моим объектам</Text></Pressable>
           </Link>
         </View>
+      </View>
+    )
+  }
+
+  if (authLoading) {
+    return (
+      <View style={[styles.center, { paddingTop: insets.top }]}>
+        <ActivityIndicator color={colors.mdSky} />
       </View>
     )
   }
@@ -202,6 +210,7 @@ export default function AddPropertyRoute() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#fff' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e2e8f0' },
   back: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
   backText: { fontSize: 20 },

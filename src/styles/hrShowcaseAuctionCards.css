@@ -88,15 +88,7 @@
   margin-top: 2px;
 }
 
-.hr-showcases .auction-card__btn-text-short {
-  display: none;
-}
-
-.hr-showcases .auction-card__actions:not(.auction-card__actions--single) .auction-card__btn-text-full {
-  display: none;
-}
-
-.hr-showcases .auction-card__actions:not(.auction-card__actions--single) .auction-card__btn-text-short {
+.hr-showcases .auction-card__btn-text {
   display: inline;
 }
 

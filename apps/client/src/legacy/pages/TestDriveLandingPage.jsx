@@ -2,10 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  FiArrowRight,
-  FiCalendar,
-  FiChevronLeft,
-  FiChevronRight,
   FiChevronDown,
   FiCheckCircle,
   FiHeart,
@@ -53,79 +49,44 @@ const TEST_DRIVE_CARD_IMAGE_FALLBACK = publicAsset(
 )
 
 const TYPE_FILTERS = [
-  { id: 'villa', labelKey: 'testDriveLanding_type_villa' },
-  { id: 'apartment', labelKey: 'testDriveLanding_type_apartment' },
-  { id: 'townhouse', labelKey: 'testDriveLanding_type_townhouse' },
-  { id: 'house', labelKey: 'testDriveLanding_type_house' },
-  { id: 'penthouse', labelKey: 'testDriveLanding_type_penthouse' },
+  { value: 'villa', labelKey: 'testDriveLanding_type_villa' },
+  { value: 'apartment', labelKey: 'testDriveLanding_type_apartment' },
+  { value: 'townhouse', labelKey: 'testDriveLanding_type_townhouse' },
+  { value: 'house', labelKey: 'testDriveLanding_type_house' },
+  { value: 'penthouse', labelKey: 'testDriveLanding_type_penthouse' },
 ]
 const CITY_FILTERS = [
-  { id: 'Marbella', labelKey: 'testDriveLanding_city_marbella' },
-  { id: 'Barcelona', labelKey: 'testDriveLanding_city_barcelona' },
-  { id: 'Madrid', labelKey: 'testDriveLanding_city_madrid' },
-  { id: 'Valencia', labelKey: 'testDriveLanding_city_valencia' },
-  { id: 'Malaga', labelKey: 'testDriveLanding_city_malaga' },
-  { id: 'Alicante', labelKey: 'testDriveLanding_city_alicante' },
-  { id: 'Sevilla', labelKey: 'testDriveLanding_city_sevilla' },
-  { id: 'Palma', labelKey: 'testDriveLanding_city_palma' },
+  { value: 'los_cristianos', labelKey: 'testDriveLanding_city_los_cristianos' },
+  { value: 'adeje', labelKey: 'testDriveLanding_city_adeje' },
+  { value: 'marbella', labelKey: 'testDriveLanding_city_marbella' },
+  { value: 'barcelona', labelKey: 'testDriveLanding_city_barcelona' },
+  { value: 'madrid', labelKey: 'testDriveLanding_city_madrid' },
+  { value: 'valencia', labelKey: 'testDriveLanding_city_valencia' },
+  { value: 'malaga', labelKey: 'testDriveLanding_city_malaga' },
+  { value: 'alicante', labelKey: 'testDriveLanding_city_alicante' },
+  { value: 'sevilla', labelKey: 'testDriveLanding_city_sevilla' },
+  { value: 'palma', labelKey: 'testDriveLanding_city_palma' },
 ]
 const DURATION_FILTERS = [
-  { id: '3-7_days', labelKey: 'testDriveLanding_duration_3_7_days' },
-  { id: '1-2_weeks', labelKey: 'testDriveLanding_duration_1_2_weeks' },
-  { id: '2-4_weeks', labelKey: 'testDriveLanding_duration_2_4_weeks' },
-  { id: '1-3_months', labelKey: 'testDriveLanding_duration_1_3_months' },
-  { id: 'over_3_months', labelKey: 'testDriveLanding_duration_over_3_months' },
+  { value: '3-7_days', labelKey: 'testDriveLanding_duration_3_7_days' },
+  { value: '1-2_weeks', labelKey: 'testDriveLanding_duration_1_2_weeks' },
+  { value: '2-4_weeks', labelKey: 'testDriveLanding_duration_2_4_weeks' },
+  { value: '1-3_months', labelKey: 'testDriveLanding_duration_1_3_months' },
+  { value: 'over_3_months', labelKey: 'testDriveLanding_duration_over_3_months' },
 ]
 const AMENITY_FILTERS = [
-  { id: 'pool', labelKey: 'testDriveLanding_amenity_pool' },
-  { id: 'sea_view', labelKey: 'testDriveLanding_amenity_sea_view' },
-  { id: 'terrace', labelKey: 'testDriveLanding_amenity_terrace' },
-  { id: 'wifi', labelKey: 'testDriveLanding_amenity_wifi' },
-  { id: 'parking', labelKey: 'testDriveLanding_amenity_parking' },
+  { value: 'pool', labelKey: 'testDriveLanding_amenity_pool' },
+  { value: 'sea_view', labelKey: 'testDriveLanding_amenity_sea_view' },
+  { value: 'terrace', labelKey: 'testDriveLanding_amenity_terrace' },
+  { value: 'wifi', labelKey: 'testDriveLanding_amenity_wifi' },
+  { value: 'parking', labelKey: 'testDriveLanding_amenity_parking' },
 ]
-const TEST_DRIVE_WEEKDAY_KEYS = [
-  'testDriveLanding_weekday_mon',
-  'testDriveLanding_weekday_tue',
-  'testDriveLanding_weekday_wed',
-  'testDriveLanding_weekday_thu',
-  'testDriveLanding_weekday_fri',
-  'testDriveLanding_weekday_sat',
-  'testDriveLanding_weekday_sun',
-]
-const TEST_DRIVE_MIN_DAYS = 5
-const TEST_DRIVE_MAX_DAYS = 21
 
 const STORY_CARDS = [
-  {
-    icon: FiHome,
-    titleKey: 'testDriveLanding_story1Title',
-    textKey: 'testDriveLanding_story1Text',
-  },
-  {
-    icon: FiUmbrella,
-    titleKey: 'testDriveLanding_story2Title',
-    textKey: 'testDriveLanding_story2Text',
-  },
-  {
-    icon: FiShield,
-    titleKey: 'testDriveLanding_story3Title',
-    textKey: 'testDriveLanding_story3Text',
-  },
+  { icon: FiHome, titleKey: 'testDriveLanding_story1Title', textKey: 'testDriveLanding_story1Text' },
+  { icon: FiUmbrella, titleKey: 'testDriveLanding_story2Title', textKey: 'testDriveLanding_story2Text' },
+  { icon: FiShield, titleKey: 'testDriveLanding_story3Title', textKey: 'testDriveLanding_story3Text' },
 ]
-
-const LOCALE_BY_LANG = {
-  ru: 'ru-RU',
-  en: 'en-US',
-  de: 'de-DE',
-  es: 'es-ES',
-  fr: 'fr-FR',
-  sv: 'sv-SE',
-}
-
-function toIntlLocale(lang) {
-  const code = String(lang || 'ru').split('-')[0]
-  return LOCALE_BY_LANG[code] || 'en-US'
-}
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase()
@@ -153,53 +114,8 @@ function handleTestDriveImageError(event) {
   image.src = TEST_DRIVE_CARD_IMAGE_FALLBACK
 }
 
-function startOfLocalDay(value) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate())
-}
-
-function toLocalDateKey(value) {
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function testDriveDaysInclusive(start, end) {
-  const duration = startOfLocalDay(end).getTime() - startOfLocalDay(start).getTime()
-  return Math.round(duration / 86_400_000) + 1
-}
-
-function createTestDriveMonthCells(monthDate) {
-  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
-  const mondayOffset = (monthStart.getDay() + 6) % 7
-  const gridStart = new Date(monthStart)
-  gridStart.setDate(monthStart.getDate() - mondayOffset)
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(gridStart)
-    date.setDate(gridStart.getDate() + index)
-    return {
-      date,
-      key: toLocalDateKey(date),
-      inCurrentMonth: date.getMonth() === monthDate.getMonth(),
-    }
-  })
-}
-
-function formatTestDriveMonth(value, locale) {
-  const label = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(value)
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
-
-function formatTestDriveShortDate(value, locale) {
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
-    .format(value)
-    .replace('.', '')
-}
-
 const TestDriveLandingPage = () => {
-  const { t, i18n } = useTranslation()
-  const locale = toIntlLocale(i18n.language)
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [loading, setLoading] = useState(true)
@@ -213,24 +129,6 @@ const TestDriveLandingPage = () => {
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
-  const [calendarMonth, setCalendarMonth] = useState(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-  )
-  const [arrivalDate, setArrivalDate] = useState(null)
-  const [departureDate, setDepartureDate] = useState(null)
-  const [calendarError, setCalendarError] = useState('')
-
-  const today = useMemo(() => startOfLocalDay(new Date()), [])
-  const calendarCells = useMemo(() => createTestDriveMonthCells(calendarMonth), [calendarMonth])
-  const selectedRange = useMemo(
-    () =>
-      arrivalDate && departureDate
-        ? { start: toLocalDateKey(arrivalDate), end: toLocalDateKey(departureDate) }
-        : null,
-    [arrivalDate, departureDate],
-  )
-  const selectedNights =
-    arrivalDate && departureDate ? testDriveDaysInclusive(arrivalDate, departureDate) - 1 : 0
 
   useEffect(() => {
     let cancelled = false
@@ -327,50 +225,8 @@ const TestDriveLandingPage = () => {
   const openListing = (listing) => {
     if (!ensureCanOpenProperty()) return
     const property = listing.originalProperty || listing
-    navigate(getPropertyTestDrivePath(property), {
-      state: { property, testDriveRange: selectedRange },
-    })
+    navigate(getPropertyTestDrivePath(property), { state: { property } })
   }
-
-  const selectCalendarDate = (date) => {
-    const selected = startOfLocalDay(date)
-    if (selected < today || selected.getMonth() !== calendarMonth.getMonth()) return
-
-    setCalendarError('')
-    if (!arrivalDate || departureDate || selected < arrivalDate) {
-      setArrivalDate(selected)
-      setDepartureDate(null)
-      return
-    }
-
-    const days = testDriveDaysInclusive(arrivalDate, selected)
-    if (days < TEST_DRIVE_MIN_DAYS || days > TEST_DRIVE_MAX_DAYS) {
-      setCalendarError(
-        t('testDriveLanding_calendarRangeError', {
-          min: TEST_DRIVE_MIN_DAYS,
-          max: TEST_DRIVE_MAX_DAYS,
-        }),
-      )
-      return
-    }
-
-    setDepartureDate(selected)
-  }
-
-  const shiftCalendarMonth = (direction) => {
-    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + direction, 1))
-    setCalendarError('')
-  }
-
-  const isCalendarDateInRange = (date) => {
-    if (!arrivalDate || !departureDate) return false
-    const value = startOfLocalDay(date).getTime()
-    return value > arrivalDate.getTime() && value < departureDate.getTime()
-  }
-
-  const isCurrentCalendarMonth =
-    calendarMonth.getFullYear() === today.getFullYear() &&
-    calendarMonth.getMonth() === today.getMonth()
 
   const isListingFavorite = (listing) => {
     const favoriteProperty = listing.originalProperty || listing
@@ -388,136 +244,6 @@ const TestDriveLandingPage = () => {
     <div className="test-drive-landing">
       <Header />
       <main className="test-drive-landing__main">
-        <section className="test-drive-calendar-hero" aria-labelledby="test-drive-calendar-title">
-          <div className="test-drive-calendar-hero__intro">
-            <span>{t('testDriveLanding_calendarEyebrow')}</span>
-            <h1 id="test-drive-calendar-title">{t('testDriveLanding_calendarTitle')}</h1>
-            <p>{t('testDriveLanding_calendarLead')}</p>
-          </div>
-
-          <div className="test-drive-calendar-card">
-            <div className="test-drive-calendar-card__month">
-              <button
-                type="button"
-                onClick={() => shiftCalendarMonth(-1)}
-                disabled={isCurrentCalendarMonth}
-                aria-label={t('testDriveLanding_prevMonth')}
-              >
-                <FiChevronLeft size={21} aria-hidden />
-              </button>
-              <strong>{formatTestDriveMonth(calendarMonth, locale)}</strong>
-              <button
-                type="button"
-                onClick={() => shiftCalendarMonth(1)}
-                aria-label={t('testDriveLanding_nextMonth')}
-              >
-                <FiChevronRight size={21} aria-hidden />
-              </button>
-            </div>
-
-            <div className="test-drive-calendar-card__weekdays" aria-hidden>
-              {TEST_DRIVE_WEEKDAY_KEYS.map((weekdayKey) => (
-                <span key={weekdayKey}>{t(weekdayKey)}</span>
-              ))}
-            </div>
-
-            <div
-              className="test-drive-calendar-card__grid"
-              role="grid"
-              aria-label={formatTestDriveMonth(calendarMonth, locale)}
-            >
-              {calendarCells.map(({ date, key, inCurrentMonth }) => {
-                const isPast = date < today
-                const isDisabled = isPast || !inCurrentMonth
-                const isArrival = arrivalDate && key === toLocalDateKey(arrivalDate)
-                const isDeparture = departureDate && key === toLocalDateKey(departureDate)
-                const isInRange = isCalendarDateInRange(date)
-                const isToday = key === toLocalDateKey(today)
-                const stateClass = [
-                  'test-drive-calendar-card__day',
-                  isDisabled ? 'is-disabled' : '',
-                  isToday ? 'is-today' : '',
-                  isInRange ? 'is-in-range' : '',
-                  isArrival ? 'is-arrival' : '',
-                  isDeparture ? 'is-departure' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')
-
-                return (
-                  <button
-                    type="button"
-                    className={stateClass}
-                    key={key}
-                    disabled={isDisabled}
-                    onClick={() => selectCalendarDate(date)}
-                    aria-label={new Intl.DateTimeFormat(locale, {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    }).format(date)}
-                    aria-pressed={Boolean(isArrival || isDeparture || isInRange)}
-                  >
-                    {date.getDate()}
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="test-drive-calendar-card__legend" aria-label={t('testDriveLanding_legendAria')}>
-              <span>
-                <i className="is-available" />
-                {t('testDriveLanding_legendAvailable')}
-              </span>
-              <span>
-                <i className="is-selected" />
-                {t('testDriveLanding_legendSelected')}
-              </span>
-              <span>
-                <i className="is-unavailable" />
-                {t('testDriveLanding_legendUnavailable')}
-              </span>
-            </div>
-          </div>
-
-          <div className="test-drive-calendar-selection" aria-live="polite">
-            <div className="test-drive-calendar-selection__dates">
-              <span className="test-drive-calendar-selection__icon" aria-hidden>
-                <FiCalendar size={18} />
-              </span>
-              <div>
-                <small>
-                  {departureDate
-                    ? t('testDriveLanding_periodSelected')
-                    : arrivalDate
-                      ? t('testDriveLanding_pickCheckout')
-                      : t('testDriveLanding_pickDates')}
-                </small>
-                <strong>
-                  {arrivalDate ? formatTestDriveShortDate(arrivalDate, locale) : t('testDriveLanding_checkIn')}
-                  <FiArrowRight size={14} aria-hidden />
-                  {departureDate
-                    ? formatTestDriveShortDate(departureDate, locale)
-                    : t('testDriveLanding_checkOut')}
-                </strong>
-              </div>
-              {selectedNights > 0 ? <em>{t('testDriveLanding_nights', { count: selectedNights })}</em> : null}
-            </div>
-            {calendarError ? <p className="test-drive-calendar-selection__error">{calendarError}</p> : null}
-            <button
-              type="button"
-              className="test-drive-calendar-selection__action"
-              disabled={!selectedRange}
-              onClick={scrollToCatalog}
-            >
-              {selectedRange
-                ? t('testDriveLanding_showObjects', { count: filteredListings.length })
-                : t('testDriveLanding_pickDatesFirst')}
-              <FiArrowRight size={19} aria-hidden />
-            </button>
-          </div>
-        </section>
-
         <section className="test-drive-hero">
           <picture>
             <source media="(max-width: 640px)" srcSet={HERO_MOBILE_IMAGE} />
@@ -577,7 +303,7 @@ const TestDriveLandingPage = () => {
                 >
                   {t('testDriveLanding_findAvailable')}
                 </button>
-                <Link to="/profile/bookings" className="test-drive-hero-ticket__secondary">
+                <Link to="/profile?bookings=1" className="test-drive-hero-ticket__secondary">
                   {t('testDriveLanding_myBookings')}
                 </Link>
               </div>
@@ -600,7 +326,7 @@ const TestDriveLandingPage = () => {
                 </article>
               ))}
             </div>
-            <Link to="/profile/bookings" className="test-drive-story__button">
+            <Link to="/profile?bookings=1" className="test-drive-story__button">
               {t('testDriveLanding_myBookings')}
             </Link>
           </section>
@@ -626,20 +352,13 @@ const TestDriveLandingPage = () => {
               <div className="test-drive-results__head">
                 <div>
                   <h2>
-                    {selectedRange
-                      ? t('testDriveLanding_resultsDated')
-                      : t('testDriveLanding_resultsDefault')}{' '}
+                    {t('testDriveLanding_resultsDefault')}{' '}
                     <span>{loading ? '...' : filteredListings.length}</span>
                   </h2>
                   <p>
-                    {selectedRange
-                      ? t('testDriveLanding_resultsDatedHint', {
-                          from: formatTestDriveShortDate(arrivalDate, locale),
-                          to: formatTestDriveShortDate(departureDate, locale),
-                        })
-                      : activeFilterCount
-                        ? t('testDriveLanding_activeFilters', { count: activeFilterCount })
-                        : t('testDriveLanding_resultsHint')}
+                    {activeFilterCount
+                      ? t('testDriveLanding_activeFilters', { count: activeFilterCount })
+                      : t('testDriveLanding_resultsHint')}
                   </p>
                 </div>
               </div>
@@ -665,12 +384,12 @@ const TestDriveLandingPage = () => {
                         type="button"
                         className="debts-listing-search__clear"
                         onClick={() => setQuery('')}
-                        aria-label={t('clearSearch')}
+                        aria-label={t('testDriveLanding_clearSearch')}
                       >
                         ×
                       </button>
                     ) : null}
-                    <button type="submit" className="debts-listing-search__go" aria-label={t('search')}>
+                    <button type="submit" className="debts-listing-search__go" aria-label={t('testDriveLanding_find')}>
                       <FiSearch aria-hidden />
                     </button>
                   </form>
@@ -680,7 +399,7 @@ const TestDriveLandingPage = () => {
                       type="button"
                       className={`filters-button${hasActiveFilters ? ' is-active' : ''}`}
                       aria-expanded={filtersDrawerOpen}
-                      aria-label={t('filters')}
+                      aria-label={t('testDriveLanding_filters')}
                       onClick={() => setFiltersDrawerOpen(true)}
                     >
                       <svg
@@ -694,7 +413,7 @@ const TestDriveLandingPage = () => {
                       >
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                       </svg>
-                      <span className="filters-button__label">{t('filters')}</span>
+                      <span className="filters-button__label">{t('testDriveLanding_filters')}</span>
                       {activeFilterCount > 0 ? (
                         <span className="filters-badge" aria-hidden="true">
                           {activeFilterCount}
@@ -717,7 +436,7 @@ const TestDriveLandingPage = () => {
               <SharesMobileFiltersDrawer
                 isOpen={filtersDrawerOpen}
                 onClose={() => setFiltersDrawerOpen(false)}
-                title={t('filters')}
+                title={t('testDriveLanding_filters')}
                 applyLabel={t('testDriveLanding_showObjects', { count: filteredListings.length })}
                 onApply={() => setFiltersDrawerOpen(false)}
                 onReset={resetFilters}
@@ -770,72 +489,72 @@ const TestDriveLandingPage = () => {
                     {pageListings.map((listing) => {
                       const favoriteActive = isListingFavorite(listing)
                       return (
-                        <article className="test-drive-card" key={listing.id}>
-                          <button
-                            type="button"
-                            className={`test-drive-card__favorite${favoriteActive ? ' is-active' : ''}`}
-                            onClick={() => toggleListingFavorite(listing)}
-                            aria-label={
-                              favoriteActive
-                                ? t('testDriveLanding_removeFavorite')
-                                : t('testDriveLanding_addFavorite')
-                            }
-                            aria-pressed={favoriteActive}
-                          >
-                            <FiHeart size={22} aria-hidden />
+                      <article className="test-drive-card" key={listing.id}>
+                        <button
+                          type="button"
+                          className={`test-drive-card__favorite${favoriteActive ? ' is-active' : ''}`}
+                          onClick={() => toggleListingFavorite(listing)}
+                          aria-label={
+                            favoriteActive
+                              ? t('testDriveLanding_removeFavorite')
+                              : t('testDriveLanding_addFavorite')
+                          }
+                          aria-pressed={favoriteActive}
+                        >
+                          <FiHeart size={22} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          className="test-drive-card__image-button"
+                          onClick={() => openListing(listing)}
+                        >
+                          <img
+                            src={listing.image || TEST_DRIVE_CARD_IMAGE_FALLBACK}
+                            alt={listing.title}
+                            onError={handleTestDriveImageError}
+                          />
+                        </button>
+                        <div className="test-drive-card__body">
+                          <button type="button" onClick={() => openListing(listing)}>
+                            {listing.title}
                           </button>
-                          <button
-                            type="button"
-                            className="test-drive-card__image-button"
-                            onClick={() => openListing(listing)}
-                          >
-                            <img
-                              src={listing.image || TEST_DRIVE_CARD_IMAGE_FALLBACK}
-                              alt={listing.title}
-                              onError={handleTestDriveImageError}
-                            />
-                          </button>
-                          <div className="test-drive-card__body">
-                            <button type="button" onClick={() => openListing(listing)}>
-                              {listing.title}
-                            </button>
-                            <p>{listing.location}</p>
-                            <div className="test-drive-card__specs">
-                              {listing.bedrooms != null ? (
-                                <span>{t('testDriveLanding_bedrooms', { count: listing.bedrooms })}</span>
-                              ) : null}
-                              {listing.bathrooms != null ? (
-                                <span>{t('testDriveLanding_bathrooms', { count: listing.bathrooms })}</span>
-                              ) : null}
-                              {listing.area != null ? (
-                                <span>{t('testDriveLanding_areaM2', { area: listing.area })}</span>
-                              ) : null}
-                            </div>
-                            <div className="test-drive-card__footer">
-                              <div className="test-drive-card__price">
-                                {listing.price != null ? (
-                                  <>
-                                    <strong>€{listing.price}</strong>
-                                    <span>{t('testDriveLanding_perNight')}</span>
-                                  </>
-                                ) : (
-                                  <strong>{t('testDriveLanding_onRequest')}</strong>
-                                )}
-                              </div>
-                              {listing.rating != null ? (
-                                <span className="test-drive-card__rating">
-                                  <FaStar size={13} aria-hidden />
-                                  {listing.rating.toFixed(1)}
-                                  {listing.reviews != null ? ` (${listing.reviews})` : null}
-                                </span>
+                          <p>{listing.location}</p>
+                          <div className="test-drive-card__specs">
+                            {listing.bedrooms != null ? (
+                              <span>{t('testDriveLanding_bedrooms', { count: listing.bedrooms })}</span>
+                            ) : null}
+                            {listing.bathrooms != null ? (
+                              <span>{t('testDriveLanding_bathrooms', { count: listing.bathrooms })}</span>
+                            ) : null}
+                            {listing.area != null ? (
+                              <span>{t('testDriveLanding_areaM2', { area: listing.area })}</span>
+                            ) : null}
+                          </div>
+                          <div className="test-drive-card__footer">
+                            <div className="test-drive-card__price">
+                              {listing.price != null ? (
+                                <>
+                                  <strong>€{listing.price}</strong>
+                                  <span>{t('testDriveLanding_perNight')}</span>
+                                </>
                               ) : (
-                                <span className="test-drive-card__rating test-drive-card__rating--new">
-                                  {t('testDriveLanding_new')}
-                                </span>
+                                <strong>{t('testDriveLanding_onRequest')}</strong>
                               )}
                             </div>
+                            {listing.rating != null ? (
+                              <span className="test-drive-card__rating">
+                                <FaStar size={13} aria-hidden />
+                                {listing.rating.toFixed(1)}
+                                {listing.reviews != null ? ` (${listing.reviews})` : null}
+                              </span>
+                            ) : (
+                              <span className="test-drive-card__rating test-drive-card__rating--new">
+                                {t('testDriveLanding_new')}
+                              </span>
+                            )}
                           </div>
-                        </article>
+                        </div>
+                      </article>
                       )
                     })}
                   </div>
@@ -877,9 +596,9 @@ function TestDriveFiltersPanel({
   const { t } = useTranslation()
 
   return (
-    <aside className={className} aria-label={t('filters')}>
+    <aside className={className} aria-label={t('testDriveLanding_filters')}>
       <div className="test-drive-filter-panel__head">
-        <h2>{t('filters')}</h2>
+        <h2>{t('testDriveLanding_filters')}</h2>
         <button type="button" onClick={onReset}>
           {t('testDriveLanding_reset')}
         </button>
@@ -935,7 +654,6 @@ function TestDriveFiltersPanel({
         options={AMENITY_FILTERS}
         values={selectedAmenities}
         onToggle={onToggleAmenity}
-        moreLabel={t('testDriveLanding_showMore')}
         t={t}
       />
 
@@ -970,11 +688,11 @@ function FilterGroup({ title, options, values, onToggle, moreLabel, t }) {
       </button>
       <div className="test-drive-filter-options">
         {options.map((option) => (
-          <label className="test-drive-check" key={option.id}>
+          <label className="test-drive-check" key={option.value}>
             <input
               type="checkbox"
-              checked={values.includes(option.id)}
-              onChange={() => onToggle(option.id)}
+              checked={values.includes(option.value)}
+              onChange={() => onToggle(option.value)}
             />
             <span>{t(option.labelKey)}</span>
           </label>

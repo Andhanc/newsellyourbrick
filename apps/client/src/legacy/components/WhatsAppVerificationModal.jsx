@@ -186,7 +186,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
 
       if (result.success) {
         if (onSuccess) {
-          onSuccess(result.user)
+          await onSuccess(result.user, result.authToken || null)
         }
         onClose()
       } else {
@@ -359,4 +359,3 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
 }
 
 export default WhatsAppVerificationModal
-

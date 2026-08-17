@@ -153,6 +153,90 @@
   color: #0f766e;
 }
 
+.owner-purchased-card__notice {
+  margin: 0 14px 10px;
+  padding: 11px 12px;
+  border: 1px solid #bce8ec;
+  border-radius: 12px;
+  background: #f0fafb;
+}
+
+.owner-purchased-card__notice strong {
+  display: block;
+  color: #075f68;
+  font-size: .78rem;
+}
+
+.owner-purchased-card__notice p {
+  margin: 4px 0 0;
+  color: #4b6970;
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.owner-purchased-progress {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 4px 14px 14px;
+}
+
+.owner-purchased-progress__line {
+  position: absolute;
+  top: 12px;
+  right: 16.66%;
+  left: 16.66%;
+  height: 2px;
+  background: #dce2e7;
+}
+
+.owner-purchased-progress__step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: #98a2b3;
+  text-align: center;
+}
+
+.owner-purchased-progress__step > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #dce2e7;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.owner-purchased-progress__step.is-done > span {
+  border-color: #0099a9;
+  background: #0099a9;
+  color: #fff;
+}
+
+.owner-purchased-progress__step.is-current > span {
+  box-shadow: 0 0 0 5px rgba(0,153,169,.12);
+}
+
+.owner-purchased-progress__step small {
+  max-width: 86px;
+  font-size: .62rem;
+  line-height: 1.25;
+}
+
+.owner-purchased-progress__step.is-done small { color: #3f5960; }
+.owner-purchased-progress > p {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  color: #c22929;
+  font-size: .72rem;
+  text-align: center;
+}
+
 .owner-purchased-card__date {
   margin: 0;
   font-size: 0.78rem;

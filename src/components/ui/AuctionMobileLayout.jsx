@@ -23,6 +23,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '@/utils/auctionReminderBounds'
+import { compareListingsByAuctionTimer } from '@/utils/sortListingsByAuctionTimer'
 import { getPropertyCardImage } from '@/utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
 import { auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../../utils/propertyDetailUrl'
@@ -95,15 +96,22 @@ export default function AuctionMobileLayout({
   }, [view])
 
   const groupedCardProperties = useMemo(() => {
-    if (debtsCards) return properties
-
+    // Keep ending-soon timer order first; action-group is only a tie-breaker
+    // so 2-col card rows stay visually aligned when timers match.
     return properties
       .map((property, index) => ({
         property,
         index,
         actionGroup: getAuctionCardActionGroup(property, viewerHasVip),
       }))
-      .sort((a, b) => a.actionGroup - b.actionGroup || a.index - b.index)
+      .sort((a, b) => {
+        const byTimer = compareListingsByAuctionTimer(a.property, b.property, {
+          privateClubFirst: !debtsCards,
+        })
+        if (byTimer !== 0) return byTimer
+        if (debtsCards) return a.index - b.index
+        return a.actionGroup - b.actionGroup || a.index - b.index
+      })
       .map(({ property }) => property)
   }, [debtsCards, properties, viewerHasVip])
 
@@ -176,7 +184,7 @@ export default function AuctionMobileLayout({
                     : 'discover-auction-cards invest-home-page invest-showcase invest-showcase--auction auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'),
             )}
           >
-            {(view === 'card' ? groupedCardProperties : properties).map((property) =>
+            {groupedCardProperties.map((property) =>
               view === 'card' ? (
                 debtsCards ? (
                   <DebtsPropertyCard

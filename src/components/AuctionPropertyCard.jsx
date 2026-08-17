@@ -588,10 +588,14 @@ export default function AuctionPropertyCard({
               >
                 {state.isReserved ? (
                   t('objectReserved')
+                ) : visibleActionCount === 1 ? (
+                  <>
+                    <span className="auction-card__btn-text">{t('placeBid')}</span>
+                    <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
+                  </>
                 ) : (
                   <>
-                    <span className="auction-card__btn-text-full">{t('placeBid')}</span>
-                    <span className="auction-card__btn-text-short">{t('auctionCardBidShort')}</span>
+                    <span className="auction-card__btn-text">{t('auctionCardBidShort')}</span>
                     <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
                   </>
                 )}
@@ -613,11 +617,7 @@ export default function AuctionPropertyCard({
                   {state.isReserved ? (
                     t('objectReserved')
                   ) : (
-                    <>
-                      <span className="auction-card__btn-text-full">{t('buyNowModalTitle')}</span>
-                      <span className="auction-card__btn-text-short">{t('auctionCardBuyShort')}</span>
-                      <ArrowUpRight className="auction-card__btn-arrow" size={15} aria-hidden />
-                    </>
+                    <span className="auction-card__btn-text">{t('auctionCardBuyShort')}</span>
                   )}
                 </button>
               ) : null}

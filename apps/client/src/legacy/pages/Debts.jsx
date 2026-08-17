@@ -65,7 +65,7 @@ const Debts = () => {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortKey, setSortKey] = useState('newest')
+  const [sortKey, setSortKey] = useState('ending_soon')
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [debtsFilters, setDebtsFilters] = useState(EMPTY_DEBTS_FILTERS)
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
@@ -405,6 +405,22 @@ const Debts = () => {
 
   const riskStats = useMemo(() => getDebtsRiskStats(apiDebts), [apiDebts])
   const filterOptions = useMemo(() => getDebtsFilterOptions(apiDebts), [apiDebts])
+
+  useEffect(() => {
+    if (!showChatDock) return undefined
+    window.dispatchEvent(
+      new CustomEvent('configureAIChatHost', {
+        detail: { recommendationProperties: apiDebts },
+      }),
+    )
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent('configureAIChatHost', {
+          detail: { recommendationProperties: [] },
+        }),
+      )
+    }
+  }, [showChatDock, apiDebts])
 
   const mobileDebtsActiveFilterCount = useMemo(() => {
     let count = debtsPropertyTypes.length + debtsRisks.length
@@ -812,7 +828,7 @@ const Debts = () => {
       <AuctionCategoryCtaCards variant="debtsPage" />
       {showChatDock ? (
         <Suspense fallback={null}>
-          <SiteChatDockLazy wrapperClassName="shares-floats" recommendationProperties={apiDebts}>
+          <SiteChatDockLazy wrapperClassName="shares-floats">
             {dbUserId && canShowBuyerDeposit() ? (
               depositLoading ? (
                 <DepositButtonSkeleton />

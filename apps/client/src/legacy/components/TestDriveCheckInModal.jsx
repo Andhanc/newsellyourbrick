@@ -4,6 +4,7 @@ import { FiArrowLeft, FiCheckCircle, FiUpload, FiX } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
+import BuyerCelebrationModal from './BuyerCelebrationModal'
 import './TestDriveCheckInModal.css'
 
 const STEP_COUNT = 6
@@ -22,6 +23,7 @@ const initialForm = () => ({
   price_improve_comment: '',
   purchase_intent: '',
   purchase_comment: '',
+  overall_rating: null,
 })
 
 function toDataUrls(files) {
@@ -91,7 +93,8 @@ function canSubmitForm(form) {
   for (let j = 0; j < 5; j += 1) {
     if (!isStepValid(j, form)) return false
   }
-  return true
+  const rating = Number(form.overall_rating)
+  return Number.isFinite(rating) && rating >= 1 && rating <= 5
 }
 
 /**
@@ -105,6 +108,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
   const [detail, setDetail] = useState(null)
   const [form, setForm] = useState(initialForm)
   const [activeStep, setActiveStep] = useState(0)
+  const [celebrateOpen, setCelebrateOpen] = useState(false)
 
   const reset = useCallback(() => {
     setForm(initialForm())
@@ -112,6 +116,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
     setDetail(null)
     setLoading(true)
     setSaving(false)
+    setCelebrateOpen(false)
   }, [])
 
   useEffect(() => {
@@ -226,8 +231,15 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
       price_improve_comment: trim(form.price_improve_comment),
       purchase_intent: form.purchase_intent,
       purchase_comment: trim(form.purchase_comment),
+      overall_rating: Math.round(Number(form.overall_rating)),
       submitted_at: new Date().toISOString(),
     }
+  }
+
+  const finishAfterCelebration = () => {
+    setCelebrateOpen(false)
+    onSuccess?.()
+    onClose()
   }
 
   const handleSubmit = async () => {
@@ -268,14 +280,25 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
         showNotification(data.error || t('buyerCheckIn_saveError'), 'error')
         return
       }
-      showNotification(t('tdSurvey_successToast'), 'success')
-      onSuccess?.()
-      onClose()
+      setCelebrateOpen(true)
     } catch {
       showNotification(t('buyerCheckIn_networkError'), 'error')
     } finally {
       setSaving(false)
     }
+  }
+
+  if (celebrateOpen) {
+    return (
+      <BuyerCelebrationModal
+        open
+        title={t('tdSurvey_celebrationTitle')}
+        text={t('tdSurvey_celebrationText')}
+        ctaLabel={t('tdSurvey_celebrationCta')}
+        onCta={finishAfterCelebration}
+        titleId="td-survey-celebration-title"
+      />
+    )
   }
 
   if (!visible) return null
@@ -596,6 +619,34 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
             ) : null}
           </div>
         </div>
+
+        <div className="td-checkin-modal__stars-wrap">
+          <span className="td-checkin-modal__stars-label">{t('tdSurvey_s6_starsLabel')}</span>
+          <div className="td-checkin-modal__stars" role="radiogroup" aria-label={t('tdSurvey_s6_starsLabel')}>
+            {[1, 2, 3, 4, 5].map((n) => {
+              const ratingChosen =
+                typeof form.overall_rating === 'number' &&
+                Number.isFinite(form.overall_rating) &&
+                form.overall_rating >= 1 &&
+                form.overall_rating <= 5
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  className={`td-checkin-modal__star${ratingChosen && n <= form.overall_rating ? ' td-checkin-modal__star--on' : ''}`}
+                  aria-pressed={form.overall_rating === n}
+                  aria-label={t('tdSurvey_s6_starAria', { n })}
+                  onClick={() => setForm((s) => ({ ...s, overall_rating: n }))}
+                >
+                  <span className="td-checkin-modal__star-char" aria-hidden>
+                    ★
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <button
           type="button"
           className="td-checkin-modal__btn td-checkin-modal__btn--primary"

@@ -3093,12 +3093,9 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   word-wrap: break-word;
 }
 
-.chat-widget__message--bot .chat-widget__message-content {
-  background: #ffffff;
-  color: #111827;
-  border: 1px solid rgba(17, 24, 39, 0.1);
+.chat-widget__message--bot .chat-widget__message-content,
+.chat-widget__message--manager .chat-widget__message-content {
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px -4px rgba(17, 24, 39, 0.1);
 }
 
 .chat-widget__message--user .chat-widget__message-content {
@@ -3249,8 +3246,7 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
 }
 
 .chat-widget__message--manager .chat-widget__message-content {
-  background: #dbeafe;
-  border: 1px solid #bfdbfe;
+  border-bottom-left-radius: 4px;
 }
 
 .chat-widget__message--system {
@@ -4030,6 +4026,10 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%2300295E' d='M0 0h20v30H0z'/%3E%3Cpath fill='%23FFFFFF' d='M20 0h20v30H20z'/%3E%3Cpath fill='%23ED2939' d='M40 0h20v30H40z'/%3E%3C/svg%3E");
 }
 
+.footer__flag--pl {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23fff' d='M0 0h60v15H0z'/%3E%3Cpath fill='%23DC143C' d='M0 15h60v15H0z'/%3E%3C/svg%3E");
+}
+
 .footer__flag--sv {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23006AA7' d='M0 0h60v30H0z'/%3E%3Cpath fill='%23FECC00' d='M0 12h60v6H0z'/%3E%3Cpath fill='%23FECC00' d='M18 0h6v30h-6z'/%3E%3C/svg%3E");
 }
@@ -4405,6 +4405,10 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   /* Убеждаемся, что backdrop перекрывает все элементы */
   body:has(.menu-backdrop) {
     overflow: hidden;
+  }
+
+  html:has(.menu-backdrop) .app-layout {
+    overflow: hidden !important;
   }
 
 
@@ -13899,8 +13903,13 @@ body:has(.hero-section) .site-ads-host {
 
 .app:has(.hero-section) .home-showcase__slot > * {
   width: 100% !important;
-  flex: 1 1 auto !important;
-  min-height: 100% !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.app:has(.hero-section) .home-showcase__scroller {
+  align-items: flex-start !important;
 }
 
 @media (max-width: 1100px) and (min-width: 769px) {
@@ -13916,6 +13925,81 @@ body:has(.hero-section) .site-ads-host {
     flex: 0 0 calc((100% - var(--showcase-gap, 16px)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1) !important;
     width: calc((100% - var(--showcase-gap, 16px)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1) !important;
     max-width: none !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card {
+    height: auto !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__meta,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__meta,
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__footer,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__footer {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__body,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__body {
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__footer,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__footer {
+    gap: 8px !important;
+    margin-top: 0 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__title,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__title {
+    font-size: 0.88rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__location,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__location {
+    font-size: 0.62rem !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__spec,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__spec {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__actions,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__actions--single,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__actions--single {
+    grid-template-columns: 1fr !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__btn-text,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__btn-text {
+    display: inline !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__price-label-full,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__price-label-full {
+    display: none !important;
+  }
+
+  .app:has(.hero-section) .apartments-section--auction-showcase .auction-card__price-label-short,
+  .app:has(.hero-section) .apartments-section--buy-now-showcase .auction-card__price-label-short {
+    display: inline !important;
   }
 }
 
@@ -14297,7 +14381,7 @@ body:has(.hero-section) .site-ads-host {
   border: 1px solid rgba(255, 255, 255, 0.6);
   background:
     linear-gradient(145deg, rgba(4, 38, 39, 0.74), rgba(5, 123, 120, 0.48)),
-    url("../../../images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg") center / cover;
+    url("/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg") center / cover;
   box-shadow: var(--premium-shadow);
   transform: perspective(1100px) rotateY(-5deg) rotateX(3deg);
 }

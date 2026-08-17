@@ -97,6 +97,7 @@
 .property-calculator-form__button--primary,
 .verification-rejected-gate__cta,
 .verification-modal__btn--primary,
+.seller-verification-modal__btn,
 .verification-step__btn--primary,
 .auth-alert-modal__button,
 .purchase-success-modal__btn--primary,
@@ -372,4 +373,26 @@
     background-position: 0 0 !important;
     transition: none;
   }
+}
+
+/* Incoming chat bubbles — same static tiffany as «Подробнее» / primary CTA */
+.chat-widget__message--bot .chat-widget__message-content,
+.chat-widget__message--manager .chat-widget__message-content,
+.site-ai-drawer .chat-widget__message--bot .chat-widget__message-content,
+.site-ai-drawer .chat-widget__message--manager .chat-widget__message-content,
+.manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
+.manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content,
+.test-manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
+.test-manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content {
+  background-color: var(--syb-tiffany-btn);
+  background-image: var(--syb-tiffany-btn-fill);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  color: #ffffff !important;
+  border: none;
+  box-shadow:
+    0 6px 16px var(--syb-tiffany-btn-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.08);
 }

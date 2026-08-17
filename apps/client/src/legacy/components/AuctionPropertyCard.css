@@ -196,7 +196,7 @@
 /* --- Media --- */
 .auction-card__media {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 5 / 4;
   overflow: hidden;
   background: #e2e8f0;
 }
@@ -359,7 +359,7 @@
   display: none;
 }
 
-/* --- VIP ribbon on photo --- */
+/* --- VIP ribbon on photo — яркий Tiffany как «Подробнее» --- */
 .auction-card__vip-ribbon {
   position: absolute;
   top: 14px;
@@ -374,15 +374,18 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #e6f6f8;
-  background: linear-gradient(135deg, #0f172a 0%, #3f8798 52%, #0f172a 100%);
-  background-size: 200% 200%;
-  animation: auction-card-vip-bg 4.5s ease-in-out infinite;
-  border: 1px solid rgba(184, 207, 154, 0.55);
+  color: #ffffff;
+  background: var(
+    --syb-tiffany-btn-fill,
+    linear-gradient(118deg, #1f9aa6 0%, #2eb4bf 38%, #4ecdd6 62%, #2aa8b4 100%)
+  );
+  background-size: 100% 100%;
+  animation: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(184, 207, 154, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 6px 16px rgba(59, 192, 203, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.08);
 }
 
 .auction-card__vip-ribbon-dot {
@@ -397,7 +400,7 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: none;
-  color: rgba(226, 232, 240, 0.95);
+  color: #ffffff;
 }
 
 @keyframes auction-card-vip-bg {
@@ -591,7 +594,7 @@
   border: 1px solid rgba(239, 68, 68, 0.22);
 }
 
-/* --- VIP compact strip --- */
+/* --- VIP compact strip — тот же Tiffany, что у «Подробнее» --- */
 .auction-card__vip-strip {
   position: relative;
   display: flex;
@@ -599,11 +602,15 @@
   gap: 8px;
   padding: 7px 12px;
   overflow: hidden;
-  background: linear-gradient(90deg, #0f172a 0%, #3f8798 52%, #0f172a 100%);
-  background-size: 200% 100%;
-  animation: auction-card-vip-bg 5s ease-in-out infinite;
-  border-bottom: 1px solid rgba(184, 207, 154, 0.28);
-  color: #e5f6dc;
+  background: var(
+    --syb-tiffany-btn-fill,
+    linear-gradient(118deg, #1f9aa6 0%, #2eb4bf 38%, #4ecdd6 62%, #2aa8b4 100%)
+  );
+  background-size: 100% 100%;
+  animation: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .auction-card__vip-strip-shine {
@@ -624,7 +631,7 @@
     90deg,
     transparent 0%,
     rgba(255, 255, 255, 0) 35%,
-    rgba(229, 246, 220, 0.22) 50%,
+    rgba(255, 255, 255, 0.45) 50%,
     rgba(255, 255, 255, 0) 65%,
     transparent 100%
   );
@@ -647,7 +654,7 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #f8fafc;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -660,19 +667,21 @@
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border: none;
   border-radius: 999px;
-  background: rgba(184, 207, 154, 0.22);
-  color: #f3ffe9;
+  background: #ffffff;
+  color: #1f9aa6;
   font-size: 0.68rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
 
 .auction-card__vip-strip-cta:hover {
-  background: rgba(184, 207, 154, 0.38);
+  background: #f0fcfd;
+  color: #17838d;
   transform: translateX(1px);
 }
 
@@ -708,10 +717,10 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  min-height: calc(0.78rem * 1.35);
+  min-height: calc(0.86rem * 1.35);
   margin: 0;
   color: var(--ac-muted);
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   line-height: 1.35;
 }
 
@@ -873,6 +882,10 @@
   display: none;
 }
 
+.auction-card__btn-text {
+  display: inline;
+}
+
 .auction-card__price-value {
   width: 100%;
   min-width: 0;
@@ -984,18 +997,32 @@
 }
 
 .auction-card__btn--primary {
-  border: 1.5px solid var(--ac-mint);
+  border: 1.5px solid transparent;
   color: #ffffff;
-  background: var(--ac-mint);
-  box-shadow: 0 6px 16px rgba(0, 153, 169, 0.22);
+  background: var(--syb-tiffany-btn, #3bc0cb);
+  background-image: var(--syb-tiffany-btn-sheen, none),
+    var(
+      --syb-tiffany-btn-fill,
+      linear-gradient(118deg, #1f9aa6 0%, #2eb4bf 38%, #4ecdd6 62%, #2aa8b4 100%)
+    );
+  box-shadow:
+    0 6px 16px rgba(59, 192, 203, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .auction-card__btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: var(--ac-mint-deep);
-  background: var(--ac-mint-deep);
+  border-color: transparent;
+  background: var(--syb-tiffany-btn-deep, #2aa8b4);
+  background-image: var(--syb-tiffany-btn-sheen, none),
+    var(
+      --syb-tiffany-btn-fill-hover,
+      linear-gradient(118deg, #1a8f9a 0%, #2aa8b4 38%, #52ced8 62%, #239aa6 100%)
+    );
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.28);
+  box-shadow:
+    0 10px 22px rgba(59, 192, 203, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Legacy alias — keep secondary styles available for external overrides */
@@ -1107,7 +1134,7 @@
   .properties-grid--auction-cards .auction-card__location,
   .auction-mobile-stack--desktop-cards .auction-card__location {
     min-height: 0;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
   }
 
   .properties-grid--auction-cards .auction-card__specs,
@@ -1295,7 +1322,7 @@
 
   .properties-grid--auction-cards .auction-card__media,
   .auction-mobile-stack--desktop-cards .auction-card__media {
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 5 / 4;
   }
 
   .auction-card__ended-overlay {
@@ -1357,7 +1384,7 @@
   .auction-mobile-stack--desktop-cards .auction-card--ended .auction-card__media {
     flex: none;
     max-height: none;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 5 / 4;
   }
 
   .auction-mobile-stack--desktop-cards .auction-card__image {
@@ -1402,7 +1429,7 @@
   .auction-mobile-stack--desktop-cards .auction-card__location {
     min-height: 0;
     color: #94a3b8;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
   }
 
   .auction-mobile-stack--desktop-cards .auction-card__title {

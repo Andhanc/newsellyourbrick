@@ -550,6 +550,10 @@ body.admin-panel-active .footer .footer__brand-text {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%2300295E' d='M0 0h20v30H0z'/%3E%3Cpath fill='%23FFFFFF' d='M20 0h20v30H20z'/%3E%3Cpath fill='%23ED2939' d='M40 0h20v30H40z'/%3E%3C/svg%3E");
 }
 
+.footer__flag--pl {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23fff' d='M0 0h60v15H0z'/%3E%3Cpath fill='%23DC143C' d='M0 15h60v15H0z'/%3E%3C/svg%3E");
+}
+
 .footer__flag--sv {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23006AA7' d='M0 0h60v30H0z'/%3E%3Cpath fill='%23FECC00' d='M0 12h60v6H0z'/%3E%3Cpath fill='%23FECC00' d='M18 0h6v30h-6z'/%3E%3C/svg%3E");
 }
@@ -2028,12 +2032,12 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 }
 
 .footer-lang-drawer .buyer-sheet__body {
-  padding: 8px 20px 28px;
+  padding: 28px 28px 32px;
 }
 
 .footer-lang-drawer__header {
-  margin: 0 0 18px;
-  padding-right: 40px;
+  margin: 0 0 20px;
+  padding-right: 44px;
 }
 
 .footer-lang-drawer__title {
@@ -2058,18 +2062,18 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .footer-lang-drawer__option {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   width: 100%;
-  min-height: 52px;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 12px 14px;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   background: #ffffff;
@@ -2117,12 +2121,9 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 .footer-lang-drawer__name {
   flex: 1;
   min-width: 0;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .footer-lang-drawer__option--active .footer-lang-drawer__name {

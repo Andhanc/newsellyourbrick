@@ -120,7 +120,7 @@ function DebtsPropertyCard({
         />
       </div>
 
-      {auctionTimerSlot}
+      <div className="debts-property-card__timer-slot">{auctionTimerSlot}</div>
 
       <div className="debts-property-card__body">
         <h3 className="debts-property-card__title">{title}</h3>
@@ -177,7 +177,9 @@ export function DebtsPropertyCardSkeleton() {
   return (
     <article className="debts-property-card debts-property-card--skeleton" aria-hidden>
       <div className="debts-property-card__media debts-property-card__shimmer" />
-      <div className="listing-card-auction-timer debts-property-card__shimmer" />
+      <div className="debts-property-card__timer-slot">
+        <div className="listing-card-auction-timer debts-property-card__shimmer" />
+      </div>
       <div className="debts-property-card__body">
         <div className="debts-property-card__shimmer debts-property-card__shimmer--title" />
         <div className="debts-property-card__shimmer debts-property-card__shimmer--line" />

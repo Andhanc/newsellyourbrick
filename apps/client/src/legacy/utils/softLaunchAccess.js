@@ -19,6 +19,7 @@ const EXACT_ALLOWED = new Set([
   '/debts',
   '/test-drive',
   '/about',
+  '/app',
   '/news',
   '/buyer',
   /** Marketing landing «Для продавца» — not the owner cabinet. */
@@ -26,9 +27,10 @@ const EXACT_ALLOWED = new Set([
   '/private-club',
   '/profile',
   '/profile-legacy',
+  /** Legacy URLs — redirect to /profile?history=1 / ?bookings=1 inside SoftLaunchGate. */
   '/profile/bookings',
-  '/data',
   '/history',
+  '/data',
   '/subscriptions',
   '/wallet',
   '/deposit',
@@ -44,7 +46,6 @@ const EXACT_ALLOWED = new Set([
 /** UI features blocked during soft-launch (entry points + deep links). */
 const BLOCKED_FEATURES = new Set([
   'aiRealEstate',
-  'managerChat',
 ])
 
 function normalizePathname(pathname = '') {

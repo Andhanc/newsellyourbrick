@@ -241,10 +241,10 @@ function isSurveyReportV2(report) {
 
 const V2_HIGHLIGHT_LABELS = {
   interior: 'Интерьер и атмосфера',
-  bed: 'Кровать и спальные принадлежности',
-  price: 'Цена',
+  bed: 'Спальня и отдых',
+  price: 'Соотношение цены и качества',
   kitchen: 'Кухня и техника',
-  location: 'Местоположение и вид',
+  location: 'Локация и вид',
 };
 
 function buildV2QualityAnswers(report) {
@@ -267,46 +267,53 @@ function buildV2QualityAnswers(report) {
 
   const fi = String(report.first_impression || '').trim().toLowerCase();
   const fiLabel = {
-    better: '🎉 Даже лучше, чем думал',
-    as_photos: '👍 Всё хорошо, как на фото',
-    slightly_off: '🤔 Немного не совпало',
+    better: 'Лучше, чем ожидал по объявлению',
+    as_photos: 'Как на фото и в описании',
+    slightly_off: 'Ниже ожиданий — есть расхождения',
   }[fi];
   const fiTone = fi === 'slightly_off' ? 'negative' : 'positive';
-  if (fiLabel) push('v2_fi', 'Первое впечатление: как объект?', fiLabel, fiTone, report.first_impression_comment);
+  if (fiLabel) push('v2_fi', 'Совпал ли объект с ожиданиями?', fiLabel, fiTone, report.first_impression_comment);
 
   const cm = String(report.comfort || '').trim().toLowerCase();
   const cmLabel = {
-    great: '✅ Да, всё отлично',
-    mostly_but_missing: '⚠️ В целом да, но кое-чего не хватало',
+    great: 'Да — жить было удобно и спокойно',
+    mostly_but_missing: 'В целом да, но чего-то не хватало',
   }[cm];
   const cmTone = cm === 'mostly_but_missing' ? 'negative' : 'positive';
-  if (cmLabel) push('v2_comfort', 'Комфорт и удобства', cmLabel, cmTone, report.comfort_missing_comment);
+  if (cmLabel) push('v2_comfort', 'Комфорт проживания', cmLabel, cmTone, report.comfort_missing_comment);
 
   const hl = Array.isArray(report.highlights) ? report.highlights.map(String) : [];
   if (hl.length) {
     const lines = hl.map((k) => V2_HIGHLIGHT_LABELS[k] || k).join(', ');
-    push('v2_hl', 'Что понравилось больше всего', lines, 'positive', report.highlights_comment);
+    push('v2_hl', 'Сильные стороны', lines, 'positive', report.highlights_comment);
   } else if (String(report.highlights_comment || '').trim()) {
-    push('v2_hl', 'Что понравилось больше всего', '—', 'neutral', report.highlights_comment);
+    push('v2_hl', 'Сильные стороны', '—', 'neutral', report.highlights_comment);
   }
 
   const pi = String(report.price_impression || '').trim().toLowerCase();
   const piLabel = {
-    great_value: '💎 Лучшее соотношение цены и качества',
-    fair: '⚖️ Адекватно, ожидаемо',
-    expensive: '💸 Дороговато за такое',
+    great_value: 'Отличное соотношение — объект даёт больше, чем стоит',
+    fair: 'Цена справедливая и ожидаемая',
+    expensive: 'Дорого относительно того, что увидел на месте',
   }[pi];
   const piTone = pi === 'expensive' ? 'negative' : 'positive';
-  if (piLabel) push('v2_price', 'Впечатление от цены', piLabel, piTone, report.price_improve_comment);
+  if (piLabel) push('v2_price', 'Оправдывает ли объект цену?', piLabel, piTone, report.price_improve_comment);
 
   const pur = String(report.purchase_intent || '').trim().toLowerCase();
   const purLabel = {
-    definitely_yes: '❤️ Да, однозначно',
-    rather_yes: '🙂 Скорее да',
-    rather_no: '😐 Скорее нет',
+    definitely_yes: 'Да — хочу двигаться к покупке',
+    rather_yes: 'Скорее да, но нужны уточнения',
+    rather_no: 'Скорее нет — не мой вариант',
   }[pur];
   const purTone = pur === 'rather_no' ? 'negative' : pur === 'definitely_yes' ? 'positive' : 'neutral';
-  if (purLabel) push('v2_pur', 'Планируете приобрести объект?', purLabel, purTone, report.purchase_comment);
+  if (purLabel) push('v2_pur', 'Рассматривает покупку?', purLabel, purTone, report.purchase_comment);
+
+  const rating = Number(report.overall_rating);
+  if (Number.isFinite(rating) && rating >= 1 && rating <= 5) {
+    const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+    const ratingTone = rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral';
+    push('v2_rating', 'Оценка объекта', `${stars} (${Math.round(rating)}/5)`, ratingTone);
+  }
 
   return answers;
 }

@@ -82,7 +82,7 @@ export default function HomePropertyShowcaseSection({
     formatPropertyPrice(price ?? 0, currency, { compact: true })
 
   const renderSkeletons = () => {
-    const count = 4
+    const count = 7
     if (variant === 'debts') {
       return Array.from({ length: count }, (_, i) => (
         <HomeShowcaseSlot key={`sk-debts-${i}`}>

@@ -54,6 +54,7 @@ const AdminPanelPage = () => {
     totalCancelledInDb: null,
   });
   const [adminBadgeTick, setAdminBadgeTick] = useState(0);
+  const [chatTargetUserId, setChatTargetUserId] = useState(null);
   const mainContentRef = useRef(null);
 
   const isClientsSection = activeSection === 'clients';
@@ -254,7 +255,13 @@ const AdminPanelPage = () => {
       case 'moderation':
         return <Moderation onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
       case 'chat':
-        return <AdminChat onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
+        return (
+          <AdminChat
+            onAdminSectionBadgeRefresh={refreshSidebarBadges}
+            targetUserId={chatTargetUserId}
+            onTargetHandled={() => setChatTargetUserId(null)}
+          />
+        );
       case 'smart_assistant':
         return <SmartAssistant />;
       case 'addition':
@@ -279,7 +286,15 @@ const AdminPanelPage = () => {
       case 'clients':
         return <Clients onOpenAdminNav={() => setClientsMenuOpen(true)} />;
       case 'purchase_requests':
-        return <PurchaseRequests onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
+        return (
+          <PurchaseRequests
+            onAdminSectionBadgeRefresh={refreshSidebarBadges}
+            onOpenUserChat={(userId) => {
+              setChatTargetUserId(Number(userId));
+              handleSectionChange('chat');
+            }}
+          />
+        );
       case 'bonuses':
         return (
           <BonusesSubmissions onAdminSectionBadgeRefresh={refreshSidebarBadges} />
@@ -329,5 +344,4 @@ const AdminPanelPage = () => {
 };
 
 export default AdminPanelPage;
-
 

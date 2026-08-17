@@ -112,6 +112,11 @@ html.owner-test-cabinet-active,
     --oc-mob-accent: var(--oc-tiffany);
     --oc-mob-accent-dark: var(--oc-tiffany-dark);
   }
+
+  /* На мобилке оболочка кабинета по умолчанию белая — без серой полосы под шапкой */
+  :where(.otc) {
+    background-color: #ffffff !important;
+  }
 }
 
 @media (min-width: 901px) {

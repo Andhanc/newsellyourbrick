@@ -12,6 +12,11 @@ import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
+import {
+  isBundledNativeDom,
+  navigateNativeDom,
+  switchNativeSession,
+} from '../utils/nativeDomBridge'
 import './LoginModal.css'
 
 const LazyWhatsAppVerificationModal = lazy(() => import('./WhatsAppVerificationModal'))
@@ -22,7 +27,17 @@ const LazyVerificationDocumentsModal = lazy(() => import('./VerificationDocument
 const LazyAnimatedCharacters = lazy(() => import('./AnimatedCharacters'))
 
 /** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
-const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => {
+const LoginModal = ({
+  isOpen,
+  onClose,
+  authEntryVariant = 'header_wizard',
+  nativeNavigate = null,
+  nativeEmailLogin = null,
+  nativeEmailRegister = null,
+  nativeSocialAuth = null,
+  nativeAuthSuccess = null,
+  nativeSocialAuthUnavailable = false,
+}) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
@@ -67,6 +82,30 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env?.VITE_TELEGRAM_BOT_USERNAME)
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
+
+  const navigateAfterAuth = async (path, session = null) => {
+    if (isBundledNativeDom() && session?.user) {
+      const switched = await switchNativeSession({
+        user: session.user,
+        authToken: session.authToken || null,
+        path,
+      })
+      if (!switched?.success) {
+        throw new Error(switched?.error || 'Не удалось сохранить сессию в приложении')
+      }
+      return
+    }
+    if (nativeNavigate) {
+      await nativeNavigate(path)
+      return
+    }
+    if (isBundledNativeDom()) {
+      const forwarded = await navigateNativeDom(path)
+      if (!forwarded) navigate(path, { replace: true })
+      return
+    }
+    window.location.assign(path)
+  }
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
@@ -254,6 +293,33 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     setIsLoading(true)
     
     if (isLogin) {
+      if (nativeEmailLogin) {
+        try {
+          const result = await nativeEmailLogin({
+            email: formData.email.trim(),
+            password: formData.password,
+            role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+          })
+          if (!result?.success || !result?.user) {
+            setError(result?.error || 'Неверный email или пароль')
+            setIsLoading(false)
+            return
+          }
+          saveUserData(result.user, 'email')
+          setIsLoading(false)
+          const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+          if (nativeNavigate) {
+            await nativeNavigate(cabinetPath)
+          } else {
+            navigate(cabinetPath)
+          }
+        } catch (nativeAuthError) {
+          setError(nativeAuthError?.message || 'Произошла ошибка при входе. Попробуйте позже.')
+          setIsLoading(false)
+        }
+        return
+      }
+
       // Сначала пробуем войти как администратор (по username или email)
       try {
         const API_BASE_URL = await getApiBaseUrl();
@@ -358,8 +424,12 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             
             console.log('✅ Вход успешен, редирект на:', redirectPath, 'для роли:', userRole);
             
-            // Обновляем страницу для применения изменений
-            window.location.href = redirectPath;
+            // В Expo DOM абсолютный browser redirect превращается в file:///profile.
+            // Всегда передаём внутренний путь нативному Expo Router.
+            await navigateAfterAuth(redirectPath, {
+              user: result.user,
+              authToken: result.authToken || null,
+            });
           }
         } else {
           // Проверяем, заблокирован ли пользователь
@@ -478,6 +548,29 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       } else {
         setSellerRegistrationBuyerId(null)
       }
+
+      if (nativeEmailRegister) {
+        try {
+          const result = await nativeEmailRegister({
+            email: formData.email.trim(),
+            password: formData.password,
+            name: formData.name.trim(),
+            role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+          })
+          if (!result?.success || !result?.user) {
+            setError(result?.error || 'Не удалось зарегистрироваться')
+            setIsLoading(false)
+            return
+          }
+          saveUserData(result.user, 'email')
+          setIsLoading(false)
+          navigate(getCabinetHomePath(result.user.role || userRole))
+        } catch (nativeAuthError) {
+          setError(nativeAuthError?.message || 'Произошла ошибка при регистрации. Попробуйте позже.')
+          setIsLoading(false)
+        }
+        return
+      }
       
       try {
         const result = await registerWithEmail(formData.email, formData.password, formData.name)
@@ -505,6 +598,38 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleGoogleAuth = async () => {
+    if (nativeSocialAuth) {
+      try {
+        setIsLoading(true)
+        setError('')
+        const result = await nativeSocialAuth({
+          provider: 'google',
+          mode: isLogin ? 'login' : 'register',
+          role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+        })
+        if (result?.cancelled) return
+        if (!result?.success || !result?.user) {
+          setError(result?.error || 'Не удалось войти через Google')
+          return
+        }
+        saveUserData(result.user, 'clerk')
+        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+        if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
+      } catch (nativeAuthError) {
+        setError(nativeAuthError?.message || 'Не удалось войти через Google')
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     try {
       setIsLoading(true)
       setError('')
@@ -600,6 +725,38 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleFacebookAuth = async () => {
+    if (nativeSocialAuth) {
+      try {
+        setIsLoading(true)
+        setError('')
+        const result = await nativeSocialAuth({
+          provider: 'facebook',
+          mode: isLogin ? 'login' : 'register',
+          role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
+        })
+        if (result?.cancelled) return
+        if (!result?.success || !result?.user) {
+          setError(result?.error || 'Не удалось войти через Facebook')
+          return
+        }
+        saveUserData(result.user, 'clerk')
+        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
+        if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
+      } catch (nativeAuthError) {
+        setError(nativeAuthError?.message || 'Не удалось войти через Facebook')
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     try {
       setIsLoading(true)
       setError('')
@@ -701,11 +858,23 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   }
 
   const handleTelegramClick = () => {
+    if (nativeSocialAuthUnavailable) {
+      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      return
+    }
     if (telegramBotUsername) return // виджет сам обрабатывает клик
     showNotification('Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение, чтобы включить вход через Telegram.')
   }
 
-  const handleWhatsAppSuccess = (user) => {
+  const handleWhatsAppSuccess = async (user, authToken = null) => {
+    if (nativeAuthSuccess) {
+      const adopted = await nativeAuthSuccess({ user, authToken })
+      if (!adopted?.success || !adopted?.user) {
+        setError(adopted?.error || 'Не удалось сохранить сессию WhatsApp')
+        return
+      }
+      user = adopted.user
+    }
     // Успешная авторизация через WhatsApp
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
     const isRegister = !isLogin
@@ -716,15 +885,28 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       setShowVerificationDocumentsModal(true)
     } else {
       // Для входа или продавца - обычный флоу
-      onClose()
+      if (!nativeNavigate) onClose()
       showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}!`)
       
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
-        navigate(getCabinetHomePath('seller'))
+        const cabinetPath = getCabinetHomePath('seller')
+        if (isBundledNativeDom() && !nativeAuthSuccess) {
+          await navigateAfterAuth(cabinetPath, { user, authToken })
+        } else if (nativeNavigate) {
+          await nativeNavigate(cabinetPath)
+        } else {
+          navigate(cabinetPath)
+        }
       } else {
-        navigate('/profile')
+        if (isBundledNativeDom() && !nativeAuthSuccess) {
+          await navigateAfterAuth('/profile', { user, authToken })
+        } else if (nativeNavigate) {
+          await nativeNavigate('/profile')
+        } else {
+          navigate('/profile')
+        }
       }
     }
   }
@@ -779,32 +961,57 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     }
   }
 
-  const handleEmailVerificationSuccess = (user) => {
+  const handleEmailVerificationSuccess = async (user, authToken = null) => {
+    if (nativeAuthSuccess) {
+      const adopted = await nativeAuthSuccess({ user, authToken })
+      if (!adopted?.success || !adopted?.user) {
+        setError(adopted?.error || 'Не удалось сохранить сессию')
+        return
+      }
+      user = adopted.user
+    }
     // Успешная регистрация через email
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
 
     // Для email-регистрации после подтверждения кода сразу активируем сессию
     // и отправляем пользователя в кабинет (как в сценарии продавца).
-    onClose()
+    if (!nativeNavigate) onClose()
     showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
 
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
-      navigate(getCabinetHomePath('seller'))
+      const cabinetPath = getCabinetHomePath('seller')
+      if (isBundledNativeDom() && !nativeAuthSuccess) {
+        await navigateAfterAuth(cabinetPath, { user, authToken })
+      } else if (nativeNavigate) {
+        await nativeNavigate(cabinetPath)
+      } else {
+        navigate(cabinetPath)
+      }
     } else {
-      navigate('/profile')
+      if (isBundledNativeDom() && !nativeAuthSuccess) {
+        await navigateAfterAuth('/profile', { user, authToken })
+      } else if (nativeNavigate) {
+        await nativeNavigate('/profile')
+      } else {
+        navigate('/profile')
+      }
     }
     setSellerRegistrationBuyerId(null)
   }
   
-  const handleVerificationDocumentsComplete = () => {
+  const handleVerificationDocumentsComplete = async () => {
     // Документы загружены, закрываем модальное окно и обновляем страницу
     setShowVerificationDocumentsModal(false)
-    onClose()
+    if (!nativeNavigate) onClose()
     showNotification('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
-    // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
-    window.location.href = '/profile'
+    if (nativeNavigate) {
+      await nativeNavigate('/profile')
+    } else {
+      // На сайте полное обновление синхронизирует локальную email-сессию со всем интерфейсом.
+      await navigateAfterAuth('/profile')
+    }
   }
 
   /** Переключение «войти» / «зарегистрироваться» с очисткой формы */
@@ -1206,15 +1413,15 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             type="button"
             className="login-modal__social-btn login-modal__social-btn--facebook"
             onClick={handleFacebookAuth}
-            disabled={isLoading || !signInLoaded}
+            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
             aria-label={
               isLoading
                 ? t('socialConnecting')
                 : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))
             }
             style={{ 
-              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
             <FaFacebook size={20} />
@@ -1236,11 +1443,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             type="button"
             className="login-modal__social-btn login-modal__social-btn--google"
             onClick={handleGoogleAuth}
-            disabled={isLoading || !signInLoaded}
+            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
             aria-label={isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
             style={{ 
-              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
             <FaGoogle size={20} />

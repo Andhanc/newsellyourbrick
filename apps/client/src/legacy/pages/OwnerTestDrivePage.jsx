@@ -46,7 +46,7 @@ function LogoMark({ className = '' }) {
         fill="#fff"
         fontSize="14"
         fontWeight="700"
-        fontFamily="Inter, sans-serif"
+        fontFamily="Montserrat, sans-serif"
       >
         $
       </text>
@@ -124,7 +124,10 @@ export default function OwnerTestDrivePage() {
       <div className="otd-workspace">
         <div className="otd-content otd-content--split">
           <p className="otd-split-lead otd-desktop-only">{t('ownerTestDriveAnalyticsHeroHint')}</p>
-          <OwnerTestDriveSplitView userId={userId} isMobile={isMobile} />
+          <OwnerTestDriveSplitView
+            userId={userId}
+            isMobile={isMobile}
+          />
         </div>
       </div>
     </div>
@@ -143,7 +146,10 @@ export default function OwnerTestDrivePage() {
             className="otd-mob-topbar__menu"
             aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('owner-test:open-menu'))
+              setMenuOpen(true)
+            }}
           >
             <Menu size={22} strokeWidth={2} />
           </button>

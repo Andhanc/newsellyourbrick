@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from './apiConfig'
-import { clearOapDraft, getOapDraftKey, loadOapDraft, saveOapDraftPayload } from './oapAddPropertyDraft'
+import { clearOapDraft, getOapDraftKey, loadOapDraft, loadOapDraftForRestore, saveOapDraftPayload } from './oapAddPropertyDraft'
 import { appendViewerUserIdToPropertyApiUrl } from './propertyDetailUrl'
 import {
   buildFormattedLocation,
@@ -7,6 +7,7 @@ import {
 } from './oapLocationGeocode'
 
 export const PENDING_SELL_PROPERTY_KEY = 'pendingSellPurchasedProperty'
+export const PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY = 'purchasedPropertySellerArrival'
 export const PURCHASED_LISTING_DRAFT_FLAG = 'purchasedSource'
 export const DRAFT_ORIGIN_PURCHASED_PREFILL = 'purchased-prefill'
 export const DRAFT_ORIGIN_USER = 'user'
@@ -167,6 +168,66 @@ export function clearPendingSellPurchasedProperty() {
   }
 }
 
+const SELLER_ARRIVAL_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * Keeps the purchased-property handoff across the full buyer → seller reload.
+ * It deliberately has a separate key from the pending action: the pending item
+ * is only consumed once the seller explicitly asks us to prepare the listing.
+ */
+export function storePurchasedPropertySellerArrival(snapshot, { sellerUserId = null } = {}) {
+  if (!snapshot?.id) return null
+  const arrival = {
+    id: snapshot.id,
+    title: snapshot.title || snapshot.name || '',
+    image: snapshot.image || snapshot.images?.[0] || '',
+    location: snapshot.location || snapshot.address || '',
+    property_type: snapshot.property_type || snapshot.propertyType || '',
+    sellerUserId: sellerUserId ? String(sellerUserId) : null,
+    savedAt: Date.now(),
+  }
+  try {
+    localStorage.setItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY, JSON.stringify(arrival))
+  } catch {
+    return null
+  }
+  return arrival
+}
+
+export function readPurchasedPropertySellerArrival() {
+  try {
+    const raw = localStorage.getItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+    if (!raw) return null
+    const arrival = JSON.parse(raw)
+    if (!arrival?.id || Date.now() - Number(arrival.savedAt || 0) > SELLER_ARRIVAL_MAX_AGE_MS) {
+      localStorage.removeItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+      return null
+    }
+    const currentUserId = localStorage.getItem('userId')
+    if (arrival.sellerUserId && currentUserId && String(arrival.sellerUserId) !== String(currentUserId)) {
+      return null
+    }
+    return arrival
+  } catch {
+    return null
+  }
+}
+
+export function clearPurchasedPropertySellerArrival({ clearPending = false } = {}) {
+  try {
+    localStorage.removeItem(PURCHASED_PROPERTY_SELLER_ARRIVAL_KEY)
+  } catch {
+    // ignore
+  }
+  if (clearPending) clearPendingSellPurchasedProperty()
+}
+
+export function promotePendingPurchasedPropertyToSellerArrival(options = {}) {
+  const pending = readPendingSellPurchasedProperty()
+  if (!pending?.id) return null
+  return storePurchasedPropertySellerArrival(pending, options)
+}
+
 export async function fetchPropertySnapshot(propertyId, lang = 'ru') {
   const base = await getApiBaseUrl()
   const url = appendViewerUserIdToPropertyApiUrl(`${base}/properties/${propertyId}?lang=${lang}`)
@@ -233,16 +294,19 @@ export function isUserOwnedListingDraft(draft) {
   if (draft.draftOrigin === DRAFT_ORIGIN_USER) return true
 
   const form = draft.form || {}
+  if (form.title?.trim() || form.description?.trim()) return true
   if (form.listingMode || form.price || form.auctionStartingPrice || form.minimumSalePrice) return true
+  if (form.propertyType || form.city || form.address || form.country) return true
   if (form.testDrive) return true
-  if ((draft.step || 1) > 2) return true
+  if ((draft.step || 1) > 1) return true
+  if (typeof draft.mobileScreen === 'number' && draft.mobileScreen > 1) return true
   if (draft.requiredDocuments?.ownership || draft.requiredDocuments?.noDebts) return true
   if (Array.isArray(draft.additionalDocuments) && draft.additionalDocuments.length > 0) return true
   if (Array.isArray(draft.videos) && draft.videos.length > 0) return true
   if (Array.isArray(draft.selectedAmenities) && draft.selectedAmenities.length > 0) return true
 
   const photos = draft.photos || []
-  if (photos.some((photo) => photo.dataUrl || photo.file)) return true
+  if (photos.some((photo) => photo.dataUrl || photo.file || photo.storage === 'idb')) return true
   if (photos.length > 0 && !photos.every((photo) => photo.fromPurchased)) return true
 
   return false
@@ -274,9 +338,13 @@ export function attachListingDraftMetadata(payload, { purchasedMeta = null, exis
 
 export function clearStalePurchasedPrefillDraft() {
   try {
-    const draft = loadOapDraft(getOapDraftKey())
+    const draft = loadOapDraftForRestore()
     if (!draft) return false
     if (isUserOwnedListingDraft(draft)) return false
+    // Чистим только «зависший» purchased-prefill, не пользовательский ввод.
+    if (!draft[PURCHASED_LISTING_DRAFT_FLAG] && draft.draftOrigin !== DRAFT_ORIGIN_PURCHASED_PREFILL) {
+      return false
+    }
     clearOapDraft(getOapDraftKey())
     return true
   } catch {

@@ -13,7 +13,7 @@ import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { getCabinetBookingsPath, getCabinetHistoryPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 
@@ -79,6 +79,8 @@ const Footer = () => {
   }
 
   const cabinetProfilePath = getCabinetProfilePath()
+  const cabinetBookingsPath = getCabinetBookingsPath()
+  const cabinetHistoryPath = getCabinetHistoryPath()
 
   const handleFooterProtectedNav = (to, requiresAuth = false) => {
     scrollToTop()
@@ -131,8 +133,8 @@ const Footer = () => {
       links: [
         { to: cabinetProfilePath, label: t('profile'), requiresAuth: true },
         { to: '/wallet', label: t('footerAssets'), requiresAuth: true },
-        { to: '/profile/bookings', label: t('buyerCabinet_myBookings'), requiresAuth: true },
-        { to: '/history', label: t('history'), requiresAuth: true },
+        { to: cabinetBookingsPath, label: t('buyerCabinet_myBookings'), requiresAuth: true },
+        { to: cabinetHistoryPath, label: t('history'), requiresAuth: true },
       ],
     },
     {
@@ -141,7 +143,7 @@ const Footer = () => {
         { to: '/about#about-intro', label: t('aboutUs') },
         { to: '/seller', label: t('footerForSeller') },
         { to: '/buyer', label: t('sectionsBuyerPageLink') },
-        { to: '/about#about-agents', label: t('footerOurTeam') },
+        { to: '/app', label: t('appDownloadPage') },
         { to: '/about#contacts', label: t('footerBecomePartner') },
       ],
     },

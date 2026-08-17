@@ -379,15 +379,15 @@
 
 .properties-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   column-gap: 20px;
   row-gap: 28px;
   align-items: stretch;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .properties-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     column-gap: 20px;
     row-gap: 28px;
   }
@@ -3032,7 +3032,7 @@ a.property-card {
   }
 
   .property-list--auction-desktop .shares-listing-shell--filters-hidden .page-context-heading.page-context-heading--listing-auction {
-    max-width: 1048px;
+    max-width: none;
     margin-inline: auto;
     padding-bottom: 20px;
   }
@@ -3051,11 +3051,11 @@ a.property-card {
 
   .auction-desktop-layout--filters-hidden .auction-desktop-layout__main {
     width: 100%;
-    max-width: 1048px;
+    max-width: none;
   }
 
   .auction-desktop-layout__main--filters-hidden .search-filters-bar--auction-desktop {
-    max-width: 1048px;
+    max-width: none;
     margin-inline: auto;
   }
 
@@ -3083,20 +3083,20 @@ a.property-card {
   }
 
   .auction-desktop-layout--filters-hidden .properties-grid.properties-grid--auction-cards {
-    grid-template-columns: repeat(3, minmax(280px, 336px));
-    justify-content: center;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: stretch;
     width: 100%;
     margin-inline: auto;
   }
 
   .auction-desktop-layout--filters-hidden .auction-card {
-    max-width: 336px;
+    max-width: none;
     width: 100%;
   }
 
   .auction-desktop-layout--filters-hidden .auction-desktop-pagination {
     width: 100%;
-    max-width: 1048px;
+    max-width: none;
     margin-inline: auto;
   }
 
@@ -3155,8 +3155,8 @@ a.property-card {
   }
 
   .property-list--auction-desktop .properties-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 16px;
     row-gap: 24px;
   }
 
@@ -3240,20 +3240,12 @@ a.property-card {
   }
 }
 
-@media (min-width: 769px) and (max-width: 1100px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   .property-list--auction-desktop .properties-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .auction-desktop-layout--filters-hidden .property-list--auction-desktop .properties-grid.properties-grid--auction-cards {
-    grid-template-columns: repeat(2, minmax(280px, 336px));
-  }
-
-  .auction-desktop-layout--filters-hidden .auction-desktop-layout__main {
-    max-width: 712px;
-  }
-
-  .auction-desktop-layout__main--filters-hidden .search-filters-bar--auction-desktop {
-    max-width: 712px;
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
   }
 }

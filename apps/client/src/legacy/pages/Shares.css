@@ -2179,7 +2179,7 @@ html.site-footer-near .shares-floats > button.ai-button {
 
 .debts-listing-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -2271,9 +2271,9 @@ html.site-footer-near .shares-floats > button.ai-button {
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .debts-listing-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2316,10 +2316,11 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page--debts-redesign .shares-container--debts-main {
-  width: var(--debts-page-column-width);
-  max-width: 1250px;
-  margin-inline: auto;
-  padding-inline: 0;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0 24px;
+  box-sizing: border-box;
 }
 
 .shares-page--debts-redesign .auction-cta-cards {
@@ -2383,7 +2384,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   .shares-page--catalog .shares-container,
   .shares-page--debts:not(.shares-page--debts-redesign) .shares-container {
     max-width: 1440px;
-    padding-left: 24px;
+    padding-left: 0;
     padding-right: 24px;
   }
 

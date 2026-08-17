@@ -72,7 +72,7 @@ export default function PricingCards({
   const isYearly = billingCycle === 'yearly'
 
   const starterFeatureKeys = ['buyerPricing_featS0', 'buyerPricing_featS1', 'buyerPricing_featS2']
-  const proFeatureKeys = ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2', 'buyerPricing_featP3']
+  const proFeatureKeys = ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2']
   const vipFeatureKeys = ['buyerPricing_featV0', 'buyerPricing_featV1', 'buyerPricing_featV2', 'buyerPricing_featV3']
 
   const cur = currentPlanVisual

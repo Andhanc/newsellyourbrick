@@ -46,7 +46,7 @@ test('keeps unread items first within a period and preserves newest-first stabil
 
 test('allows only known internal routes', () => {
   assert.equal(safeNotificationRoute('/property/42?tab=bids'), '/property/42?tab=bids')
-  assert.equal(safeNotificationRoute('/profile/bookings?booking=7'), '/profile/bookings?booking=7')
+  assert.equal(safeNotificationRoute('/profile?bookings=1&booking=7'), '/profile?bookings=1&booking=7')
   assert.equal(safeNotificationRoute('/calculator'), '/calculator')
   assert.equal(
     safeNotificationRoute('/test-drive/survey/abc123'),

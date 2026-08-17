@@ -13,6 +13,9 @@ export function OapAddPropertyMobileWelcome({
   descriptionMaxLength = 2000,
   onTitleChange,
   onDescriptionChange,
+  onNext,
+  nextLabel,
+  nextDisabled = false,
 }) {
   const { t } = useTranslation()
   const titleLength = title.length
@@ -121,6 +124,16 @@ export function OapAddPropertyMobileWelcome({
                   : t('oap_presentationGenerate')}
               </span>
             </button>
+            {typeof onNext === 'function' ? (
+              <button
+                type="button"
+                className="oap-mobile-screen__next"
+                onClick={onNext}
+                disabled={nextDisabled}
+              >
+                {nextLabel || t('oap_publishNext')}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

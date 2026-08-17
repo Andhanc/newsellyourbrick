@@ -30,6 +30,12 @@ const STEPS = [
   { id: 'publish', icon: Sparkles },
 ]
 
+const RESERVATION_STEPS = [
+  { id: 'reserve', icon: CheckCircle2, title: 'Резерв оплачен', text: 'Stripe подтвердил платёж, объект закреплён за вами на время оформления.' },
+  { id: 'processing', icon: FileText, title: 'Идёт оформление', text: 'Менеджер проверяет документы, согласует сроки и оставшуюся оплату.' },
+  { id: 'complete', icon: Home, title: 'Сделка завершена', text: 'После полной оплаты и подтверждения объект станет доступен для новой продажи.' },
+]
+
 export default function PurchasedObjectGuidePage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -37,8 +43,6 @@ export default function PurchasedObjectGuidePage() {
   const [property, setProperty] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sellerPromptOpen, setSellerPromptOpen] = useState(false)
-  const [sellerPromptMode, setSellerPromptMode] = useState('register')
   const roleSwitchFlow = useRoleSwitchFlow('seller')
 
   useEffect(() => {
@@ -84,18 +88,14 @@ export default function PurchasedObjectGuidePage() {
       propertySnapshot: snapshot,
       navigate,
       onPromptSellerAction: ({ mode }) => {
-        setSellerPromptMode(mode === 'switch' ? 'switch' : 'register')
-        setSellerPromptOpen(true)
+        void roleSwitchFlow.openSellCabinetFlow(mode === 'switch' ? 'switch' : 'register')
       },
     })
-  }, [navigate, snapshot])
-
-  const handleSellerPromptConfirm = useCallback(() => {
-    setSellerPromptOpen(false)
-    void roleSwitchFlow.openSellCabinetFlow(sellerPromptMode)
-  }, [roleSwitchFlow, sellerPromptMode])
+  }, [navigate, roleSwitchFlow, snapshot])
 
   const title = property?.title || property?.name || t('purchasedGuide_defaultTitle')
+  const dealCompleted = Boolean(property?.buy_now_completed_at || property?.buyNowCompletedAt)
+  const displayedSteps = dealCompleted ? STEPS : RESERVATION_STEPS
 
   return (
     <div className="purchased-guide-page">
@@ -116,8 +116,12 @@ export default function PurchasedObjectGuidePage() {
               <section className="purchased-guide__hero">
                 <div className="purchased-guide__hero-copy">
                   <p className="purchased-guide__eyebrow">{t('purchasedGuide_eyebrow')}</p>
-                  <h1>{t('purchasedGuide_title')}</h1>
-                  <p className="purchased-guide__lead">{t('purchasedGuide_lead')}</p>
+                  <h1>{dealCompleted ? t('purchasedGuide_title') : 'Резерв подтверждён — сделка продолжается'}</h1>
+                  <p className="purchased-guide__lead">
+                    {dealCompleted
+                      ? t('purchasedGuide_lead')
+                      : 'Сейчас оплачен только резерв. Здесь можно следить за оформлением; мы сообщим, когда продажа будет завершена полностью.'}
+                  </p>
                 </div>
                 <article className="purchased-guide__property-card">
                   {imageProps ? (
@@ -145,7 +149,7 @@ export default function PurchasedObjectGuidePage() {
               <section className="purchased-guide__steps" aria-labelledby="purchased-guide-steps-title">
                 <h2 id="purchased-guide-steps-title">{t('purchasedGuide_stepsTitle')}</h2>
                 <ol className="purchased-guide__steps-list">
-                  {STEPS.map((step, index) => {
+                  {displayedSteps.map((step, index) => {
                     const Icon = step.icon
                     return (
                       <li key={step.id} className="purchased-guide__step">
@@ -154,8 +158,8 @@ export default function PurchasedObjectGuidePage() {
                           <Icon size={20} strokeWidth={2} />
                         </span>
                         <div>
-                          <h3>{t(`purchasedGuide_step_${step.id}_title`)}</h3>
-                          <p>{t(`purchasedGuide_step_${step.id}_text`)}</p>
+                          <h3>{step.title || t(`purchasedGuide_step_${step.id}_title`)}</h3>
+                          <p>{step.text || t(`purchasedGuide_step_${step.id}_text`)}</p>
                         </div>
                       </li>
                     )
@@ -163,7 +167,7 @@ export default function PurchasedObjectGuidePage() {
                 </ol>
               </section>
 
-              <section className="purchased-guide__cta">
+              {dealCompleted ? <section className="purchased-guide__cta">
                 <div className="purchased-guide__cta-copy">
                   <h2>{t('purchasedGuide_sellTitle')}</h2>
                   <p>{t('purchasedGuide_sellText')}</p>
@@ -172,38 +176,20 @@ export default function PurchasedObjectGuidePage() {
                   {t('purchasedGuide_sellCta')}
                   <ArrowRight size={18} aria-hidden />
                 </button>
-              </section>
+              </section> : (
+                <section className="purchased-guide__waiting">
+                  <CheckCircle2 size={22} aria-hidden />
+                  <div>
+                    <h2>Следующий шаг — оформление сделки</h2>
+                    <p>Кнопка продажи появится после статуса «Сделка завершена».</p>
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>
       </main>
       <Footer />
-
-      {sellerPromptOpen ? (
-        <div className="purchased-guide-seller-prompt" role="dialog" aria-modal="true">
-          <div className="purchased-guide-seller-prompt__backdrop" onClick={() => setSellerPromptOpen(false)} />
-          <div className="purchased-guide-seller-prompt__panel">
-            <h3>
-              {sellerPromptMode === 'switch'
-                ? t('purchasedGuide_switchPromptTitle')
-                : t('purchasedGuide_sellerPromptTitle')}
-            </h3>
-            <p>
-              {sellerPromptMode === 'switch'
-                ? t('purchasedGuide_switchPromptText')
-                : t('purchasedGuide_sellerPromptText')}
-            </p>
-            <div className="purchased-guide-seller-prompt__actions">
-              <button type="button" className="purchased-guide-seller-prompt__ghost" onClick={() => setSellerPromptOpen(false)}>
-                {t('purchasedGuide_sellerPromptCancel')}
-              </button>
-              <button type="button" className="purchased-guide-seller-prompt__primary" onClick={handleSellerPromptConfirm}>
-                {t('purchasedGuide_sellerPromptConfirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <RoleSwitchModals flow={roleSwitchFlow} />
     </div>

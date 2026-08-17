@@ -20,7 +20,7 @@ export function PurchaseSuccessProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!import.meta.env?.DEV || typeof window === 'undefined') return
+    if (!import.meta.env.DEV || typeof window === 'undefined') return
     const preview = new URLSearchParams(window.location.search).get('buyer_success_preview')
     if (preview !== 'reservation' && preview !== 'share') return
     openPurchaseSuccess({
