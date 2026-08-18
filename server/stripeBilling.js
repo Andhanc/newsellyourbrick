@@ -17,6 +17,7 @@ import { computeReservationSalePriceMajor } from './reservationCheckoutPricing.j
 import { viewerOwnsPropertyRecord } from '../src/utils/listingOwnerGuard.js';
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { sendVipClubWelcomeEmail, shouldSendVipClubWelcomeEmail } from './vipClubWelcomeEmail.js';
+import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -2086,7 +2087,7 @@ export function registerStripeBillingRoutes(app) {
   const priceIdVip = (process.env.STRIPE_PRICE_ID_VIP || '').trim();
   const priceIdVipYear = (process.env.STRIPE_PRICE_ID_VIP_YEAR || '').trim();
   const priceIdDeposit = (process.env.STRIPE_PRICE_ID_DEPOSIT || '').trim();
-  const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  const frontendOrigin = (req) => resolvePublicFrontendBase(process.env, req);
 
   app.post('/api/billing/create-checkout-session', async (req, res) => {
     try {
@@ -2141,8 +2142,8 @@ export function registerStripeBillingRoutes(app) {
           mode: 'subscription',
           payment_method_types: ['card'],
           line_items: [{ price: depositPriceId, quantity: 1 }],
-          success_url: `${frontendBase}/wallet?deposit_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${frontendBase}/wallet?deposit_checkout=canceled`,
+          success_url: `${frontendOrigin(req)}/wallet?deposit_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${frontendOrigin(req)}/wallet?deposit_checkout=canceled`,
           metadata: { app_user_id: userId, checkout_purpose: 'wallet_deposit' },
           subscription_data: {
             metadata: { app_user_id: userId, checkout_purpose: 'wallet_deposit' },
@@ -2183,8 +2184,8 @@ export function registerStripeBillingRoutes(app) {
             ? req.body.returnPath.slice(0, 220)
             : '/owner-test/subscriptions';
         const joiner = returnPath.includes('?') ? '&' : '?';
-        const successUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${plan}`;
-        const cancelUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=canceled`;
+        const successUrl = `${frontendOrigin(req)}${returnPath}${joiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${plan}`;
+        const cancelUrl = `${frontendOrigin(req)}${returnPath}${joiner}subscription_checkout=canceled`;
 
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
@@ -2316,11 +2317,11 @@ export function registerStripeBillingRoutes(app) {
           : '';
       const checkoutReturnJoiner = checkoutReturnPath.includes('?') ? '&' : '?';
       const checkoutSuccessUrl = checkoutReturnPath
-        ? `${frontendBase}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${planKeyMeta}`
-        : `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}${isVip ? '&vip_club=1' : ''}`;
+        ? `${frontendOrigin(req)}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${planKeyMeta}`
+        : `${frontendOrigin(req)}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}${isVip ? '&vip_club=1' : ''}`;
       const checkoutCancelUrl = checkoutReturnPath
-        ? `${frontendBase}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=canceled`
-        : `${frontendBase}/profile`;
+        ? `${frontendOrigin(req)}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=canceled`
+        : `${frontendOrigin(req)}/profile`;
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
@@ -2582,8 +2583,8 @@ export function registerStripeBillingRoutes(app) {
           : `Резерв 10% от цены «Купить сейчас». Объект #${propertyId}`;
 
       const basePath = returnPath || `/property/${propertyId}`;
-      const successUrl = `${frontendBase}${basePath}?reservation_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${frontendBase}${basePath}?reservation_checkout=canceled`;
+      const successUrl = `${frontendOrigin(req)}${basePath}?reservation_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendOrigin(req)}${basePath}?reservation_checkout=canceled`;
 
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -2787,8 +2788,8 @@ export function registerStripeBillingRoutes(app) {
       }
       const totalMajorOut = roundMoneyMajor(stayMajor + depMajor);
       const totalCentsOut = stayCents + depCents;
-      const successUrl = `${frontendBase}${returnPath}?test_drive_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${frontendBase}${returnPath}?test_drive_checkout=canceled`;
+      const successUrl = `${frontendOrigin(req)}${returnPath}?test_drive_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendOrigin(req)}${returnPath}?test_drive_checkout=canceled`;
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
@@ -2996,8 +2997,8 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const successUrl = `${frontendBase}${returnPath}?listing_fee_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${frontendBase}${returnPath}?listing_fee_checkout=canceled`;
+      const successUrl = `${frontendOrigin(req)}${returnPath}?listing_fee_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendOrigin(req)}${returnPath}?listing_fee_checkout=canceled`;
 
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -3265,8 +3266,8 @@ export function registerStripeBillingRoutes(app) {
 
       const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
       const basePath = returnPath || `/shares/${propertyType}-${propertyId}`;
-      const successUrl = `${frontendBase}${basePath}?share_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${frontendBase}${basePath}?share_checkout=canceled`;
+      const successUrl = `${frontendOrigin(req)}${basePath}?share_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendOrigin(req)}${basePath}?share_checkout=canceled`;
 
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
