@@ -5,7 +5,9 @@ import {
   fetchCabinetUserByEmail,
   mapDbUserToSessionUser,
   normalizeOAuthCabinetRole,
+  resolveClerkSyncCabinetRole,
 } from '../utils/resolveCabinetUserByEmail'
+import { hasActiveCabinetSession, readStoredUserRole } from '../utils/cabinetRoutes'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -46,6 +48,11 @@ const ClerkAuthSync = () => {
         return
       }
 
+      if (hasActiveCabinetSession()) {
+        hasSyncedRef.current = true
+        return
+      }
+
       // Формируем имя пользователя
       let userName = 'Пользователь'
       if (user.fullName) {
@@ -80,11 +87,13 @@ const ClerkAuthSync = () => {
         userPhone = user.phoneNumbers[0].phoneNumber || ''
       }
       
-      // Получаем роль из sessionStorage (сохранена при регистрации через Clerk)
-      // Или из publicMetadata Clerk, или по умолчанию 'buyer'
-      const savedRole = sessionStorage.getItem('clerk_oauth_user_role')
-      const userRoleFromMetadata = user.publicMetadata?.role
-      const userRole = savedRole || userRoleFromMetadata || 'buyer'
+      // Получаем роль: OAuth / текущая сессия / metadata Clerk. Не дефолтим в buyer поверх продавца.
+      const userRole = resolveClerkSyncCabinetRole({
+        oauthRole: sessionStorage.getItem('clerk_oauth_user_role'),
+        metadataRole: user.publicMetadata?.role,
+        storedRole: readStoredUserRole(),
+        hasLocalSession: hasActiveCabinetSession(),
+      })
       
       // Синхронизируем данные Clerk с localStorage (как в WhatsApp)
       const clerkUserData = {
@@ -173,12 +182,6 @@ const ClerkAuthSync = () => {
             const nameParts = userName.split(' ')
             const firstName = nameParts[0] || 'Пользователь'
             const lastName = nameParts.slice(1).join(' ') || ''
-            
-            // Получаем роль из sessionStorage (сохранена при регистрации через Clerk)
-            // Или из publicMetadata Clerk, или по умолчанию 'buyer'
-            const savedRole = sessionStorage.getItem('clerk_oauth_user_role')
-            const userRoleFromMetadata = user.publicMetadata?.role
-            const userRole = savedRole || userRoleFromMetadata || 'buyer'
             
             console.log('ClerkAuthSync: Создание пользователя с ролью:', userRole)
             

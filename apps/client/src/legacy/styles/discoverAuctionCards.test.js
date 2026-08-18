@@ -121,7 +121,11 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
   )
   assert.match(
     css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__countdown-pill[\s\S]*font-size:\s*0\.62rem\s*!important/,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media-top[\s\S]*top:\s*auto\s*!important[\s\S]*left:\s*50%\s*!important[\s\S]*transform:\s*translateX\(-50%\)/,
+  )
+  assert.match(
+    css,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__countdown-pill[\s\S]*padding:\s*0\s*!important[\s\S]*font-size:\s*0\.62rem\s*!important/,
   )
   assert.match(
     css,

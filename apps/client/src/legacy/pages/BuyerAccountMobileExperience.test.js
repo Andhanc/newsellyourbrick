@@ -101,6 +101,12 @@ test('profile sheets open in BuyerSheetShell drawers with lazy panels', () => {
   assert.match(profileCss, /\.profile-subscriptions-hero/)
 })
 
+test('subscription choose button starts checkout without the bottom subscribe panel', async () => {
+  const cards = await readFile(new URL('../components/OwnerPricingCards.jsx', import.meta.url), 'utf8')
+  assert.match(cards, /onSelectPlan\?\.\(plan\.id, billingCycle\)/)
+  assert.match(cards, /disabled=\{isCurrent \|\| loading\}/)
+})
+
 test('profile history opens fullscreen with tiffany hero and list/empty states', async () => {
   const historyExperienceSource = await readFile(
     new URL('../components/ProfileHistoryExperience.jsx', import.meta.url),

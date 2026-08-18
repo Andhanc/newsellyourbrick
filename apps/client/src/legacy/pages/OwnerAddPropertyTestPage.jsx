@@ -51,9 +51,13 @@ import {
   PURCHASED_LISTING_DRAFT_FLAG,
   applyPurchasedPropertyListingPrefill,
   attachListingDraftMetadata,
+  clearPendingSellPurchasedProperty,
   clearStalePurchasedPrefillDraft,
   readPendingSellPurchasedProperty,
+  shouldApplyPendingPurchasedPrefill,
+  shouldClearStalePurchasedPrefillOnAddPropertyMount,
 } from '../utils/purchasedPropertyListingPrefill'
+import { isSellerCabinetRole } from '../utils/cabinetRoutes'
 import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
 import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
 import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
@@ -68,6 +72,7 @@ import {
   confirmListingPublicationFeeSession,
 } from '../utils/subscriptionCheckout'
 import { publishOapProperty } from '../utils/oapPublishProperty'
+import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKyc'
 import OapAddPropertyJourneyStrip from '../components/OapAddPropertyJourneyStrip'
 import OapAddPropertyJourneyProgress from '../components/OapAddPropertyJourneyProgress'
 import { preloadOapWizardImages } from './oapWizardImages'
@@ -165,6 +170,7 @@ const INITIAL_FORM = {
   auctionStartingPrice: '',
   auctionStartDate: '',
   auctionEndDate: '',
+  sourcePurchasedPropertyId: '',
 }
 
 function getTypeProfile(propertyType) {
@@ -421,8 +427,11 @@ export default function OwnerAddPropertyTestPage() {
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [showJourneyPublishDrawer, setShowJourneyPublishDrawer] = useState(false)
   const [purchasedListingMeta, setPurchasedListingMeta] = useState(null)
+  const [draftHydrated, setDraftHydrated] = useState(false)
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
+  const handlePublishRef = useRef(null)
+  const handleAfterListingFeeSuccessRef = useRef(null)
   const saveDraftTimeoutRef = useRef(null)
   const draftSnapshotRef = useRef({
     form: INITIAL_FORM,
@@ -735,14 +744,17 @@ export default function OwnerAddPropertyTestPage() {
       return false
     }
 
+    const snapshot = draftSnapshotRef.current
+    const media = draftMediaRef.current
+
     setIsSubmitting(true)
     const result = await publishOapProperty({
-      form,
-      photos,
-      videos,
-      requiredDocuments,
-      additionalDocuments,
-      selectedAmenities,
+      form: snapshot.form,
+      photos: media.photos,
+      videos: media.videos,
+      requiredDocuments: media.requiredDocuments,
+      additionalDocuments: media.additionalDocuments,
+      selectedAmenities: snapshot.selectedAmenities,
       userId,
     })
     if (!result.ok) {
@@ -815,37 +827,25 @@ export default function OwnerAddPropertyTestPage() {
     setShowJourneyPublishDrawer(true)
     setIsSubmitting(false)
     return true
-  }, [
-    userId,
-    form,
-    photos,
-    videos,
-    requiredDocuments,
-    additionalDocuments,
-    selectedAmenities,
-    goTo,
-    navigate,
-  ])
+  }, [userId, goTo, navigate])
+
+  handlePublishRef.current = handlePublish
 
   const handleAfterListingFeeSuccess = useCallback(async () => {
     if (!userId) {
       setShowListingFeeModal(false)
       requestOpenLoginModal({ wizard: true })
-      return
+      return false
     }
 
     const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
     let canPublishWithoutSellerKyc = false
 
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      const data = await res.json().catch(() => ({}))
-      if (data.success && data.data) {
-        const { isVerified, hasDocuments } = data.data
-        if (isVerified === true || hasDocuments === true) {
-          canPublishWithoutSellerKyc = true
-        }
-      }
+      canPublishWithoutSellerKyc = await resolveCanPublishWithoutSellerPhotoKyc(
+        API_BASE_URL,
+        userId,
+      )
     } catch (e) {
       console.warn('OAP: не удалось загрузить verification-status', e)
     }
@@ -853,11 +853,13 @@ export default function OwnerAddPropertyTestPage() {
     setShowListingFeeModal(false)
 
     if (canPublishWithoutSellerKyc) {
-      await handlePublish()
-    } else {
-      setShowVerificationModal(true)
+      return handlePublishRef.current()
     }
-  }, [userId, handlePublish])
+    setShowVerificationModal(true)
+    return 'kyc'
+  }, [userId])
+
+  handleAfterListingFeeSuccessRef.current = handleAfterListingFeeSuccess
 
   const handleVerificationComplete = useCallback(async () => {
     localStorage.setItem('verificationSubmitted', 'true')
@@ -950,11 +952,21 @@ export default function OwnerAddPropertyTestPage() {
       return
     }
 
+    try {
+      const paidSession = sessionStorage.getItem('oap_listing_fee_publish_pending') || ''
+      if (paidSession.startsWith('cs_')) {
+        void handleAfterListingFeeSuccess()
+        return
+      }
+    } catch {
+      // ignore
+    }
+
     setShowListingFeeModal(true)
     setShowPromoInputInFeeModal(false)
     setListingFeePromoCode('')
     setListingFeePromoError(null)
-  }, [form.title, photos.length, userId])
+  }, [form.title, photos.length, userId, handleAfterListingFeeSuccess])
 
   const handleTypeSelect = useCallback((propertyType) => {
     setForm((prev) => ({ ...prev, propertyType }))
@@ -1141,8 +1153,16 @@ export default function OwnerAddPropertyTestPage() {
   }, [location.state?.openListingFeeModal, location.pathname, location.search, navigate])
 
   useEffect(() => {
+    if (!draftHydrated) return undefined
+
     const checkout = searchParams.get('listing_fee_checkout')
     const sessionId = searchParams.get('session_id')
+    let pendingPublish = ''
+    try {
+      pendingPublish = sessionStorage.getItem('oap_listing_fee_publish_pending') || ''
+    } catch {
+      pendingPublish = ''
+    }
 
     if (checkout === 'canceled') {
       const next = new URLSearchParams(searchParams)
@@ -1154,31 +1174,55 @@ export default function OwnerAddPropertyTestPage() {
       setShowPromoInputInFeeModal(false)
       setListingFeePromoCode('')
       setListingFeePromoError(null)
-      return
+      return undefined
     }
 
-    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
-    if (!userId) return
-    if (listingFeeCheckoutHandledRef.current === sessionId) return
+    const paidSessionId =
+      checkout === 'success' && sessionId && sessionId.startsWith('cs_')
+        ? sessionId
+        : pendingPublish.startsWith('cs_')
+          ? pendingPublish
+          : ''
+
+    if (!paidSessionId || !userId) return undefined
+    if (listingFeeCheckoutHandledRef.current === paidSessionId) return undefined
 
     let cancelled = false
     const run = async () => {
-      listingFeeCheckoutHandledRef.current = sessionId
+      listingFeeCheckoutHandledRef.current = paidSessionId
       try {
-        const result = await confirmListingPublicationFeeSession(sessionId, String(userId))
-        if (cancelled) return
+        const result = await confirmListingPublicationFeeSession(paidSessionId, String(userId))
+        if (cancelled) {
+          listingFeeCheckoutHandledRef.current = false
+          return
+        }
         if (result.ok) {
+          try {
+            sessionStorage.setItem('oap_listing_fee_publish_pending', paidSessionId)
+          } catch {
+            // ignore
+          }
           if (result.data?.already) {
             showNotification(t('oap_publishPaymentAlreadyRecorded'))
           } else {
             showNotification(t('oap_publishPaymentReceived'))
           }
+          setStep(TOTAL_STEPS)
+          const outcome = await handleAfterListingFeeSuccessRef.current?.()
+          if (cancelled) return
+          if (outcome === false) {
+            listingFeeCheckoutHandledRef.current = false
+            return
+          }
+          try {
+            sessionStorage.removeItem('oap_listing_fee_publish_pending')
+          } catch {
+            // ignore
+          }
           const next = new URLSearchParams(searchParams)
           next.delete('listing_fee_checkout')
           next.delete('session_id')
           setSearchParams(next, { replace: true })
-          setStep(TOTAL_STEPS)
-          await handleAfterListingFeeSuccess()
         } else {
           showNotification(result.error || t('oap_publishPaymentConfirmError'), 'error')
           listingFeeCheckoutHandledRef.current = false
@@ -1194,15 +1238,15 @@ export default function OwnerAddPropertyTestPage() {
     return () => {
       cancelled = true
     }
-  }, [searchParams, userId, setSearchParams, handleAfterListingFeeSuccess])
+  }, [searchParams, userId, draftHydrated, setSearchParams, t])
 
   useEffect(() => {
     let cancelled = false
 
     ;(async () => {
       const pending = readPendingSellPurchasedProperty()
-      const role = String(localStorage.getItem('userRole') || getUserData()?.role || '').toLowerCase()
-      if (pending?.id && (role === 'seller' || role === 'owner')) {
+      const existingDraft = loadOapDraftForRestore()
+      if (shouldApplyPendingPurchasedPrefill({ pending, existingDraft }) && isSellerCabinetRole()) {
         try {
           const result = await applyPurchasedPropertyListingPrefill(pending.id)
           if (!cancelled && result?.draft?.[PURCHASED_LISTING_DRAFT_FLAG]) {
@@ -1210,20 +1254,31 @@ export default function OwnerAddPropertyTestPage() {
           }
         } catch (e) {
           console.warn('OwnerAddPropertyTestPage pending purchased prefill:', e)
+          if (!cancelled) showNotification(t('ownerPurchased_sellError'), 'error')
         }
       } else {
-        clearStalePurchasedPrefillDraft()
+        if (pending?.id) clearPendingSellPurchasedProperty()
+        if (
+          shouldClearStalePurchasedPrefillOnAddPropertyMount({
+            pending: null,
+            existingDraft,
+          })
+        ) {
+          clearStalePurchasedPrefillDraft()
+        }
       }
 
       const draft = loadOapDraftForRestore()
       if (!draft || !hasMeaningfulDraftData(draft)) {
         draftReadyRef.current = true
+        if (!cancelled) setDraftHydrated(true)
         return
       }
 
       const restored = await restoreOapDraftState(draft)
       if (cancelled || !restored) {
         draftReadyRef.current = true
+        if (!cancelled) setDraftHydrated(true)
         return
       }
 
@@ -1280,6 +1335,7 @@ export default function OwnerAddPropertyTestPage() {
       })
 
       draftReadyRef.current = true
+      if (!cancelled) setDraftHydrated(true)
     })()
 
     return () => {

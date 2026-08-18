@@ -34,7 +34,7 @@ type AuthContextValue = {
     picture?: string | null
     phone?: string | null
     role: 'buyer' | 'seller'
-    mode: 'login' | 'register'
+    mode: 'login' | 'register' | 'auto'
   }) => Promise<SessionUser>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -209,7 +209,7 @@ export function AuthProvider({
       picture?: string | null
       phone?: string | null
       role: 'buyer' | 'seller'
-      mode: 'login' | 'register'
+      mode: 'login' | 'register' | 'auto'
     }) => {
       type WebUser = SessionUser & {
         first_name?: string

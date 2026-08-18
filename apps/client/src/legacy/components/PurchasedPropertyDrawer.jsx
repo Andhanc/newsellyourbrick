@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ArrowLeft,
   ArrowRight,
@@ -97,6 +98,7 @@ export default function PurchasedPropertyDrawer({
 
   const percent = Math.round(item.paymentPercent)
   const isSellView = view === 'sell'
+  const canSell = Boolean(item.isDealCompleted)
 
   useLayoutEffect(() => {
     if (!bodyRef.current) return
@@ -104,7 +106,9 @@ export default function PurchasedPropertyDrawer({
     bodyRef.current.scrollLeft = 0
   }, [view])
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div
       ref={overlayRef}
       className="purchase-drawer__overlay"
@@ -213,14 +217,30 @@ export default function PurchasedPropertyDrawer({
                 <Headphones size={18} aria-hidden />
                 Связаться с менеджером
               </button>
-              <button type="button" className="purchase-drawer__primary" onClick={onSell}>
+              <button
+                type="button"
+                className={`purchase-drawer__primary${canSell ? '' : ' purchase-drawer__primary--locked'}`}
+                onClick={onSell}
+                disabled={!canSell}
+                title={
+                  canSell
+                    ? undefined
+                    : 'Продать объект можно после того, как администратор завершит сделку «Купить сейчас».'
+                }
+              >
                 Продать объект
                 <ArrowRight size={18} aria-hidden />
               </button>
+              {canSell ? null : (
+                <p className="purchase-drawer__sell-hint">
+                  Продать объект станет доступно, когда администратор нажмёт «Завершить» в заявке.
+                </p>
+              )}
             </div>
           </div>
         )}
       </aside>
-    </div>
+    </div>,
+    document.body,
   )
 }

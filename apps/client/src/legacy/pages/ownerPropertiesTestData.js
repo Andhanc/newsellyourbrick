@@ -14,6 +14,19 @@ export function getOwnerListingTypeLabels(t) {
 }
 
 export function getOwnerPropertyAmount(row, t) {
+  if (row?.isPurchased) {
+    const metrics = getOwnerPurchasedMetrics(row, t)
+    if (row.purchaseStatus === 'need_more') {
+      return {
+        label: metrics.remaining.label,
+        value: metrics.remaining.value,
+      }
+    }
+    return {
+      label: metrics.paid.label,
+      value: metrics.paid.value,
+    }
+  }
   if (row.listingType === 'auction') {
     return {
       label: t('bidHistoryCurrentMaxBid'),
@@ -23,6 +36,31 @@ export function getOwnerPropertyAmount(row, t) {
   return {
     label: t('propertyDetailPrice'),
     value: row.price,
+  }
+}
+
+export function getOwnerPurchasedMetrics(row, t) {
+  const remainingNum = Number(row?.remainingAmount)
+  const hasRemaining = Number.isFinite(remainingNum) && remainingNum > 0
+  let remainingValue = t('ownerPurchased_paidInFull')
+  if (row?.purchaseStatus === 'cancelled') {
+    remainingValue = '—'
+  } else if (hasRemaining) {
+    remainingValue = row.remainingFormatted || '—'
+  }
+
+  return {
+    paid: {
+      label: t('ownerPurchased_colPaid'),
+      value: row?.paidFormatted || row?.price || '—',
+    },
+    remaining: {
+      label: t('ownerPurchased_colRemaining'),
+      value: remainingValue,
+      complete: !hasRemaining && row?.purchaseStatus !== 'cancelled',
+    },
+    sharesCount: row?.sharesCount ?? null,
+    pricePerShareFormatted: row?.pricePerShareFormatted || null,
   }
 }
 

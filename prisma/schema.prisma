@@ -797,6 +797,8 @@ model test_drive_bookings {
   survey_whatsapp_status  String?
   survey_whatsapp_sent_at DateTime?
   survey_scheduled_at     DateTime?
+  survey_email_status     String?
+  survey_email_sent_at    DateTime?
   exit_feedback_token            String?
   exit_feedback_whatsapp_status  String?
   exit_feedback_whatsapp_sent_at DateTime?

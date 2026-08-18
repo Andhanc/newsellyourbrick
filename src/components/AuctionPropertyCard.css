@@ -511,7 +511,9 @@
   background: #ffffff;
 }
 
-.auction-card__favorite--active {
+.auction-card__favorite--active,
+.auction-mobile-stack--desktop-cards .auction-card__favorite--active,
+.properties-grid--auction-cards .auction-card__favorite--active {
   color: #f43f5e;
   background: #ffffff;
   border-color: rgba(244, 63, 94, 0.35);
@@ -1404,7 +1406,11 @@
     height: 36px;
     border-color: rgba(226, 232, 240, 0.95);
     background: rgba(255, 255, 255, 0.96);
-    color: #334155;
+  }
+
+  .auction-mobile-stack--desktop-cards .auction-card__favorite--active {
+    color: #f43f5e;
+    border-color: rgba(244, 63, 94, 0.35);
   }
 
   .auction-mobile-stack--desktop-cards .auction-card__photo-icons {

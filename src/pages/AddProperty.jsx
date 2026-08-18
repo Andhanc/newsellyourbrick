@@ -759,6 +759,7 @@ import {
   confirmListingPublicationFeeSession,
   startListingPublicationCheckout,
 } from '../utils/subscriptionCheckout'
+import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKyc'
 import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
 import { applyPricingFieldChange } from '../utils/oapAuctionPriceAuto'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
@@ -4693,14 +4694,10 @@ const AddProperty = ({
     let canPublishWithoutSellerKyc = false
 
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      const data = await res.json().catch(() => ({}))
-      if (data.success && data.data) {
-        const { isVerified, hasDocuments } = data.data
-        if (isVerified === true || hasDocuments === true) {
-          canPublishWithoutSellerKyc = true
-        }
-      }
+      canPublishWithoutSellerKyc = await resolveCanPublishWithoutSellerPhotoKyc(
+        API_BASE_URL,
+        userId,
+      )
     } catch (e) {
       console.warn('AddProperty: не удалось загрузить verification-status', e)
     }

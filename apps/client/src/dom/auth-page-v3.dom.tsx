@@ -51,7 +51,7 @@ export type NativeRegisterInput = NativeLoginInput & {
 
 export type NativeSocialAuthInput = {
   provider: 'google' | 'facebook'
-  mode: 'login' | 'register'
+  mode: 'login' | 'register' | 'auto'
   role: AuthRole
 }
 

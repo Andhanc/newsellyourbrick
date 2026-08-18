@@ -15,6 +15,7 @@ export default function PropertyDetailAuctionBiddingForm({
   fmtBidPrice,
   isReservedActive,
   kycBidBlocked,
+  isOwnListing = false,
   paymentActionsLocked,
   currencyView,
   getQuickBidAmounts,
@@ -121,6 +122,7 @@ export default function PropertyDetailAuctionBiddingForm({
 
   const renderPanelSubmitLabel = () => {
     if (isSubmittingBid) return t('propertyDetailSubmitting')
+    if (isOwnListing) return t('propertyDetail_ownListingCta')
     if (isUserLeader) return t('propertyDetailYouAreWinning')
     if (isReservedActive) return t('objectReserved')
     return t('placeBid')
@@ -171,7 +173,12 @@ export default function PropertyDetailAuctionBiddingForm({
 
       {showBidding && (
         <div className="property-detail-sidebar__bidding-section">
-          {!isPanelLayout && !isSplitDesktopVariant && isReservedActive && (
+          {!isPanelLayout && !isSplitDesktopVariant && isOwnListing && (
+            <div className="property-detail-own-listing-notice" role="status">
+              {t('propertyDetail_ownListingCannotBid')}
+            </div>
+          )}
+          {!isPanelLayout && !isSplitDesktopVariant && isReservedActive && !isOwnListing && (
             <div className="property-detail-bidding-reserved-notice">
               <FiLock size={16} />
               <span>{t('propertyDetailBidsUnavailableReserved')}</span>

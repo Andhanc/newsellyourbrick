@@ -15,6 +15,7 @@ import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import ListingPagePagination from '../components/ListingPagePagination'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
+import DebtsRiskDrawer from '../components/DebtsRiskDrawer'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
@@ -150,6 +151,58 @@ const Debts = () => {
       document.querySelector('.shares-container--debts-main')
     if (target) scrollMainElementIntoView(target, { offset: 16, behavior: 'smooth' })
   }
+
+  const riskCards = useMemo(
+    () => [
+      {
+        id: 'high',
+        color: '#DC2626',
+        icon: ShieldQuestionMark,
+        title: t('debtsHighRisk'),
+        subtitle: t('debtsHighRiskSubtitle'),
+        description: t('debtsHighRiskDescription'),
+        features: [
+          t('debtsHighRiskFeature1'),
+          t('debtsHighRiskFeature2'),
+          t('debtsHighRiskFeature3'),
+          t('debtsHighRiskFeature4'),
+        ],
+        ctaText: t('debtsHighRiskCta'),
+      },
+      {
+        id: 'medium',
+        color: '#CA8A04',
+        icon: ShieldAlert,
+        title: t('debtsMediumRisk'),
+        subtitle: t('debtsMediumRiskSubtitle'),
+        description: t('debtsMediumRiskDescription'),
+        features: [
+          t('debtsMediumRiskFeature1'),
+          t('debtsMediumRiskFeature2'),
+          t('debtsMediumRiskFeature3'),
+          t('debtsMediumRiskFeature4'),
+        ],
+        ctaText: t('debtsMediumRiskCta'),
+      },
+      {
+        id: 'low',
+        color: '#16A34A',
+        icon: ShieldCheck,
+        title: t('debtsLowRisk'),
+        subtitle: t('debtsLowRiskSubtitle'),
+        description: t('debtsLowRiskDescription'),
+        features: [
+          t('debtsLowRiskFeature1'),
+          t('debtsLowRiskFeature2'),
+          t('debtsLowRiskFeature3'),
+          t('debtsLowRiskFeature4'),
+        ],
+        ctaText: t('debtsLowRiskCta'),
+      },
+    ],
+    [t],
+  )
+  const openRisk = riskCards.find((card) => card.id === openRiskCard) || null
 
   const resetDebtsFilters = useCallback(() => {
     setDebtsFilters({ ...EMPTY_DEBTS_FILTERS })
@@ -516,58 +569,27 @@ const Debts = () => {
             <p className="debts-hero-scene__lead">{t('debtsSectionSubtitle')}</p>
           </header>
           <div className="shares-flip-cards shares-flip-cards--debts">
-          <FlipCard
-            color="#DC2626"
-            icon={ShieldQuestionMark}
-            title={t('debtsHighRisk')}
-            subtitle={t('debtsHighRiskSubtitle')}
-            description={t('debtsHighRiskDescription')}
-            features={[
-              t('debtsHighRiskFeature1'),
-              t('debtsHighRiskFeature2'),
-              t('debtsHighRiskFeature3'),
-              t('debtsHighRiskFeature4'),
-            ]}
-            ctaText={t('debtsHighRiskCta')}
-            clickToFlip
-            isFlipped={openRiskCard === 'high'}
-            onFlipChange={(next) => setOpenRiskCard(next ? 'high' : null)}
-          />
-          <FlipCard
-            color="#CA8A04"
-            icon={ShieldAlert}
-            title={t('debtsMediumRisk')}
-            subtitle={t('debtsMediumRiskSubtitle')}
-            description={t('debtsMediumRiskDescription')}
-            features={[
-              t('debtsMediumRiskFeature1'),
-              t('debtsMediumRiskFeature2'),
-              t('debtsMediumRiskFeature3'),
-              t('debtsMediumRiskFeature4'),
-            ]}
-            ctaText={t('debtsMediumRiskCta')}
-            clickToFlip
-            isFlipped={openRiskCard === 'medium'}
-            onFlipChange={(next) => setOpenRiskCard(next ? 'medium' : null)}
-          />
-          <FlipCard
-            color="#16A34A"
-            icon={ShieldCheck}
-            title={t('debtsLowRisk')}
-            subtitle={t('debtsLowRiskSubtitle')}
-            description={t('debtsLowRiskDescription')}
-            features={[
-              t('debtsLowRiskFeature1'),
-              t('debtsLowRiskFeature2'),
-              t('debtsLowRiskFeature3'),
-              t('debtsLowRiskFeature4'),
-            ]}
-            ctaText={t('debtsLowRiskCta')}
-            clickToFlip
-            isFlipped={openRiskCard === 'low'}
-            onFlipChange={(next) => setOpenRiskCard(next ? 'low' : null)}
-          />
+            {riskCards.map((card) => (
+              <FlipCard
+                key={card.id}
+                color={card.color}
+                icon={card.icon}
+                title={card.title}
+                subtitle={card.subtitle}
+                description={card.description}
+                features={card.features}
+                ctaText={card.ctaText}
+                clickToFlip
+                isFlipped={false}
+                onFlipChange={() => setOpenRiskCard(card.id)}
+              />
+            ))}
           </div>
+          <DebtsRiskDrawer
+            open={Boolean(openRisk)}
+            risk={openRisk}
+            onClose={() => setOpenRiskCard(null)}
+          />
         </div>
         <button
           type="button"

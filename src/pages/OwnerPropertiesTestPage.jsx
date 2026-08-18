@@ -19,6 +19,7 @@ import {
   getOwnerListingTypeLabels,
   getOwnerPropertyAmount,
   getOwnerPropertyAnalyticsPath,
+  getOwnerPurchasedMetrics,
 } from './ownerPropertiesTestData'
 import {
   CLERK_DB_USER_SYNCED,
@@ -27,6 +28,11 @@ import {
   filterOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
+import { mergeOwnerListWithPurchases, PURCHASED_TAB_ID } from '../utils/ownerPurchasedListRows'
+import { useOwnerPurchasedListRows } from '../hooks/useOwnerPurchasedListRows'
+import { queueSellPurchasedPropertyListing } from '../utils/purchasedPropertyListingPrefill'
+import { showNotification } from '../utils/toastHelper'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
@@ -41,7 +47,6 @@ import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerEmptyStatePanel from '../components/OwnerEmptyStatePanel'
 import OwnerEmptyPropertiesIllustration from '../components/OwnerEmptyPropertiesIllustration'
-import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import OwnerPropertiesTableSkeleton from '../components/OwnerPropertiesTableSkeleton'
 import OwnerSupportButton from '../components/OwnerSupportButton'
 import FileUploadModal from '../components/FileUploadModal'
@@ -71,6 +76,7 @@ const MOB_LAYOUT_MAX_WIDTH = 900
 
 const FILTER_TAB_KEYS = {
   all: { label: 'ownerTest_propertiesTabAll', shortLabel: 'ownerTest_propertiesTabAllShort' },
+  purchased: { label: 'ownerTest_propertiesTabPurchased', shortLabel: 'ownerTest_propertiesTabPurchasedShort' },
   active: { label: 'ownerTest_propertiesTabActive', shortLabel: 'ownerTest_propertiesTabActive' },
   booked: { label: 'ownerTest_propertiesTabBooked', shortLabel: 'ownerTest_propertiesTabBooked' },
   sold: { label: 'ownerTest_propertiesTabSold', shortLabel: 'ownerTest_propertiesTabSold' },
@@ -427,6 +433,31 @@ function ListingTypeBadge({ type }) {
   return <span className={`op-type op-type--${type}`}>{label}</span>
 }
 
+function PurchaseStatusBadge({ status }) {
+  const { t } = useTranslation()
+  const key = String(status || '').toLowerCase()
+  if (key === 'bought') {
+    return (
+      <span className="op-moderation op-moderation--bought">{t('ownerPurchased_statusBought')}</span>
+    )
+  }
+  if (key === 'need_more') {
+    return (
+      <span className="op-moderation op-moderation--need_more">{t('ownerPurchased_statusNeedMore')}</span>
+    )
+  }
+  if (key === 'cancelled') {
+    return (
+      <span className="op-moderation op-moderation--cancelled">{t('ownerPurchased_progressCancelled')}</span>
+    )
+  }
+  return (
+    <span className="op-moderation op-moderation--wait_approval">
+      {t('ownerPurchased_statusWaitApproval')}
+    </span>
+  )
+}
+
 function ModerationStatusBadge({ moderationKey }) {
   const { t } = useTranslation()
   const key = String(moderationKey || '').toLowerCase()
@@ -458,6 +489,251 @@ function AmountCell({ row }) {
       <span className="op-amount-cell__label">{label}</span>
       <span className="op-amount-cell__value">{value}</span>
     </div>
+  )
+}
+
+function PurchaseMetricCell({ label, value, complete = false }) {
+  return (
+    <div className={`op-amount-cell${complete ? ' op-amount-cell--complete' : ''}`}>
+      {label ? <span className="op-amount-cell__label">{label}</span> : null}
+      <span className="op-amount-cell__value">{value}</span>
+    </div>
+  )
+}
+
+function PurchasedFinanceCells({ row, labeled = false }) {
+  const { t } = useTranslation()
+  const metrics = getOwnerPurchasedMetrics(row, t)
+  return (
+    <>
+      <td>
+        <PurchaseStatusBadge status={row.purchaseStatus} />
+      </td>
+      <td>
+        <PurchaseMetricCell label={labeled ? metrics.paid.label : null} value={metrics.paid.value} />
+      </td>
+      <td>
+        <PurchaseMetricCell
+          label={labeled ? metrics.remaining.label : null}
+          value={metrics.remaining.value}
+          complete={metrics.remaining.complete}
+        />
+      </td>
+    </>
+  )
+}
+
+function ObjectsSection({
+  title,
+  count,
+  purchased = false,
+  rows,
+  timerNow,
+  onOpenRow,
+  onSellPurchased,
+  sellingPropertyId,
+}) {
+  const { t } = useTranslation()
+  if (!rows.length) return null
+
+  return (
+    <section
+      className={`op-objects-section${purchased ? ' op-objects-section--purchased' : ''}`}
+      aria-label={title || undefined}
+    >
+      {title ? (
+        <h2 className="op-objects-section__title">
+          {title}
+          <span className="op-objects-section__count">{count ?? rows.length}</span>
+        </h2>
+      ) : null}
+
+      <div className="op-table-wrap op-desktop-only">
+        <table className={`op-table${purchased ? ' op-table--purchased' : ''}`}>
+          <thead>
+            <tr>
+              <th>{t('ownerTest_tabProperties')}</th>
+              <th>{t('oap_wizardStepListing')}</th>
+              {purchased ? (
+                <>
+                  <th>{t('ownerPurchased_colStatus')}</th>
+                  <th>{t('ownerPurchased_colPaid')}</th>
+                  <th>{t('ownerPurchased_colRemaining')}</th>
+                </>
+              ) : (
+                <>
+                  <th>{t('ownerTest_propertiesTimerLeft')}</th>
+                  <th>{t('ownerTest_metricViews')}</th>
+                  <th>{t('propertyDetailPrice')}</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={row.rowKey || row.id}
+                className="op-table__row--clickable"
+                onClick={() => onOpenRow(row)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onOpenRow(row)
+                  }
+                }}
+                tabIndex={0}
+                role="link"
+                aria-label={
+                  purchased ? row.title : `${t('ownerTest_ariaStatistics')}: ${row.title}`
+                }
+              >
+                <td>
+                  <div className="op-object-cell">
+                    <img src={row.image} alt="" className="op-object-cell__thumb" loading="lazy" />
+                    <div className="op-object-cell__text">
+                      <p className="op-object-cell__title">{row.title}</p>
+                      <p className="op-object-cell__meta">{row.location}</p>
+                      {purchased ? null : (
+                        <div className="op-object-cell__badges">
+                          <ModerationStatusBadge moderationKey={row.moderationKey} />
+                        </div>
+                      )}
+                      <p className="op-object-cell__id">{row.displayId || row.id}</p>
+                      {purchased && row.canSell ? (
+                        <button
+                          type="button"
+                          className="op-purchased-sell"
+                          disabled={Boolean(row.sellBlocked || sellingPropertyId === row.id)}
+                          title={
+                            row.sellBlocked
+                              ? t('ownerPurchased_sellLockedHint')
+                              : t('buyerCabinet_sellProperty')
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (row.sellBlocked) return
+                            onSellPurchased(row)
+                          }}
+                        >
+                          {t('buyerCabinet_sellProperty')}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <ListingTypeBadge type={row.listingType} />
+                </td>
+                {purchased ? (
+                  <PurchasedFinanceCells row={row} />
+                ) : (
+                  <>
+                    <td>
+                      <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} table />
+                    </td>
+                    <td>
+                      <div className="op-stat-cell">
+                        <span className="op-stat-cell__value">{row.views}</span>
+                        <DeltaText value={row.viewsDelta} up={row.viewsUp} />
+                      </div>
+                    </td>
+                    <td>
+                      <AmountCell row={row} />
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul className="op-mob-list op-mobile-only">
+        {rows.map((row) => {
+          const amount = getOwnerPropertyAmount(row, t)
+          const purchaseMetrics = purchased ? getOwnerPurchasedMetrics(row, t) : null
+          return (
+            <li key={row.rowKey || `${row.listingType}-${row.id}`} className="op-mob-list__item">
+              <article
+                className={`op-mob-property${purchased ? ' op-mob-property--purchased' : ''}`}
+                onClick={() => onOpenRow(row)}
+              >
+                <div className="op-mob-property__media">
+                  <img src={row.image} alt="" className="op-mob-property__photo" loading="lazy" />
+                </div>
+                <div className="op-mob-property__body">
+                  <div className="op-mob-property__head">
+                    <h3 className="op-mob-property__title">{row.title}</h3>
+                    <div className="op-mob-property__badges">
+                      <ListingTypeBadge type={row.listingType} />
+                      {purchased ? (
+                        <PurchaseStatusBadge status={row.purchaseStatus} />
+                      ) : (
+                        <ModerationStatusBadge moderationKey={row.moderationKey} />
+                      )}
+                    </div>
+                  </div>
+                  <p className="op-mob-property__location">{row.location}</p>
+                  {purchaseMetrics ? (
+                    <dl className="op-mob-property__finance">
+                      <div>
+                        <dt>{purchaseMetrics.paid.label}</dt>
+                        <dd>{purchaseMetrics.paid.value}</dd>
+                      </div>
+                      <div>
+                        <dt>{purchaseMetrics.remaining.label}</dt>
+                        <dd className={purchaseMetrics.remaining.complete ? 'is-complete' : undefined}>
+                          {purchaseMetrics.remaining.value}
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : null}
+                  <div className="op-mob-property__foot">
+                    {purchaseMetrics ? (
+                      <p className="op-mob-property__id">{row.displayId || row.id}</p>
+                    ) : (
+                      <p className="op-mob-property__price">{amount.value}</p>
+                    )}
+                    {purchased && row.canSell ? (
+                      <button
+                        type="button"
+                        className="op-purchased-sell"
+                        disabled={Boolean(row.sellBlocked || sellingPropertyId === row.id)}
+                        title={
+                          row.sellBlocked
+                            ? t('ownerPurchased_sellLockedHint')
+                            : t('buyerCabinet_sellProperty')
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (row.sellBlocked) return
+                          onSellPurchased(row)
+                        }}
+                        aria-label={t('buyerCabinet_sellProperty')}
+                      >
+                        {t('buyerCabinet_sellProperty')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="op-mob-property__open"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onOpenRow(row)
+                        }}
+                        aria-label={`${t('ownerTest_notificationsOpen')}: ${row.title}`}
+                      >
+                        <ChevronRight size={18} strokeWidth={2.4} aria-hidden />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 
@@ -631,12 +907,29 @@ export default function OwnerPropertiesTestPage() {
   const [properties, setProperties] = useState([])
   const [testDriveRows, setTestDriveRows] = useState([])
   const [propertiesLoading, setPropertiesLoading] = useState(true)
+  const [sellingPropertyId, setSellingPropertyId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [analyticsPeriod, setAnalyticsPeriod] = useState('30d')
   const [propertyFilters, setPropertyFilters] = useState(DEFAULT_PROPERTY_FILTERS)
   const [timerNow, setTimerNow] = useState(() => Date.now())
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
+  const ownerUserId = getOwnerPropertiesUserId()
+  const { rows: purchasedRows, loading: purchasedLoading } = useOwnerPurchasedListRows({
+    userId: ownerUserId,
+  })
+  const allRows = useMemo(
+    () => mergeOwnerListWithPurchases(properties, purchasedRows),
+    [properties, purchasedRows],
+  )
+  const listLoading = propertiesLoading || purchasedLoading
+
+  const handlePageChange = useCallback((nextPage) => {
+    setCurrentPage(nextPage)
+    requestAnimationFrame(() => {
+      scrollOwnerCabinetToTop()
+    })
+  }, [])
 
   const handlePageChange = useCallback((nextPage) => {
     setCurrentPage(nextPage)
@@ -704,7 +997,7 @@ export default function OwnerPropertiesTestPage() {
     }
   }, [loadProperties])
 
-  const tabCounts = useMemo(() => countOwnerPropertiesByTab(properties), [properties])
+  const tabCounts = useMemo(() => countOwnerPropertiesByTab(allRows), [allRows])
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOB_LAYOUT_MAX_WIDTH}px)`)
@@ -765,13 +1058,15 @@ export default function OwnerPropertiesTestPage() {
 
   const filterTabs = useMemo(
     () =>
-      Object.entries(FILTER_TAB_KEYS).map(([id, keys]) => ({
-        id,
-        label: t(keys.label),
-        shortLabel: t(keys.shortLabel),
-        count: tabCounts[id] ?? 0,
-      })),
-    [tabCounts, t]
+      Object.entries(FILTER_TAB_KEYS)
+        .filter(([id]) => id !== 'purchased' || purchasedLoading || (tabCounts.purchased ?? 0) > 0)
+        .map(([id, keys]) => ({
+          id,
+          label: t(keys.label),
+          shortLabel: t(keys.shortLabel),
+          count: tabCounts[id] ?? 0,
+        })),
+    [tabCounts, t, purchasedLoading]
   )
 
   const mobListingTabs = useMemo(() => {
@@ -798,28 +1093,46 @@ export default function OwnerPropertiesTestPage() {
 
   const visibleProperties = useMemo(
     () =>
-      filterOwnerProperties(properties, {
+      filterOwnerProperties(allRows, {
         tab: filterTab,
         query: searchQuery,
         listingTypes: propertyFilters.listingTypes,
         // В «Мои объекты» по умолчанию всегда сначала самые новые.
         sortBy: propertyFilters.sortBy || 'date_desc',
       }),
-    [properties, filterTab, searchQuery, propertyFilters]
+    [allRows, filterTab, searchQuery, propertyFilters]
   )
 
-  const totalPages = Math.max(1, Math.ceil(visibleProperties.length / PAGE_SIZE))
+  const visiblePurchased = useMemo(
+    () => visibleProperties.filter((row) => row.isPurchased),
+    [visibleProperties],
+  )
+  const visibleListings = useMemo(
+    () => visibleProperties.filter((row) => !row.isPurchased),
+    [visibleProperties],
+  )
+  const showSectionTitles = visiblePurchased.length > 0 && visibleListings.length > 0
+  const paginatedCount = filterTab === PURCHASED_TAB_ID ? visiblePurchased.length : visibleListings.length
+
+  const totalPages = Math.max(1, Math.ceil(paginatedCount / PAGE_SIZE))
 
   const safeCurrentPage = Math.min(currentPage, totalPages)
 
-  const paginatedProperties = useMemo(() => {
+  const pagedPurchased = useMemo(() => {
+    if (filterTab !== PURCHASED_TAB_ID) return visiblePurchased
     const start = (safeCurrentPage - 1) * PAGE_SIZE
-    return visibleProperties.slice(start, start + PAGE_SIZE)
-  }, [visibleProperties, safeCurrentPage])
+    return visiblePurchased.slice(start, start + PAGE_SIZE)
+  }, [filterTab, visiblePurchased, safeCurrentPage])
+
+  const pagedListings = useMemo(() => {
+    if (filterTab === PURCHASED_TAB_ID) return []
+    const start = (safeCurrentPage - 1) * PAGE_SIZE
+    return visibleListings.slice(start, start + PAGE_SIZE)
+  }, [filterTab, visibleListings, safeCurrentPage])
 
   const hasVisibleTimers = useMemo(
-    () => paginatedProperties.some((row) => row.auctionEndTime),
-    [paginatedProperties]
+    () => pagedListings.some((row) => row.auctionEndTime),
+    [pagedListings]
   )
 
   useEffect(() => {
@@ -832,6 +1145,12 @@ export default function OwnerPropertiesTestPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [filterTab, searchQuery, propertyFilters])
+
+  useEffect(() => {
+    if (activeTab === 'purchased' && !purchasedLoading && (tabCounts.purchased ?? 0) === 0) {
+      setActiveTab('all')
+    }
+  }, [activeTab, purchasedLoading, tabCounts.purchased])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -848,6 +1167,46 @@ export default function OwnerPropertiesTestPage() {
       }
     },
     [isEmbedded, goTo, navigate]
+  )
+
+  const handleSellPurchasedProperty = useCallback(
+    (row) => {
+      const pid = row?.id != null ? Number(row.id) : null
+      if (!pid || Number.isNaN(pid) || sellingPropertyId != null) return
+      if (row.sellBlocked) return
+
+      setSellingPropertyId(pid)
+      try {
+        queueSellPurchasedPropertyListing({
+          id: pid,
+          title: row.title || '',
+          image: row.image || '',
+        })
+        if (isEmbedded && goTo) {
+          goTo(OWNER_VIEWS.ADD_PROPERTY)
+        } else {
+          navigate('/owner-add-property-test')
+        }
+      } catch (e) {
+        console.warn('OwnerPropertiesTestPage sell purchased:', e)
+        showNotification(t('ownerPurchased_sellError'), 'error')
+      } finally {
+        setSellingPropertyId(null)
+      }
+    },
+    [goTo, isEmbedded, navigate, sellingPropertyId, t],
+  )
+
+  const openPropertyRow = useCallback(
+    (row) => {
+      if (row?.isPurchased) {
+        if (row.requirePropertyAccess !== false && !ensureCanOpenProperty()) return
+        if (row.detailPath) navigate(row.detailPath)
+        return
+      }
+      openPropertyAnalytics(row.id)
+    },
+    [navigate, openPropertyAnalytics],
   )
 
   const renderNavItem = useCallback(
@@ -996,8 +1355,6 @@ export default function OwnerPropertiesTestPage() {
           </div>
         </header>
 
-        <OwnerPurchasedAssets userId={getOwnerPropertiesUserId()} />
-
         <div className="op-workspace">
           <section className="op-mob-metrics op-mobile-only" aria-label={t('ownerTest_ariaPropertySummary')}>
             {mobSummaryStats.map((stat) => (
@@ -1046,10 +1403,10 @@ export default function OwnerPropertiesTestPage() {
             </div>
 
             <div className="op-table-card">
-              {propertiesLoading ? (
+              {listLoading ? (
                 <OwnerPropertiesTableSkeleton />
               ) : visibleProperties.length === 0 ? (
-                properties.length === 0 ? (
+                allRows.length === 0 ? (
                   <OwnerEmptyStatePanel
                     illustration={OwnerEmptyPropertiesIllustration}
                     title={t('ownerTest_emptyNoPropertiesTitle')}
@@ -1067,109 +1424,42 @@ export default function OwnerPropertiesTestPage() {
                 )
               ) : (
               <>
-              <div className="op-table-wrap op-desktop-only">
-                <table className="op-table">
-                  <thead>
-                    <tr>
-                      <th>{t('ownerTest_tabProperties')}</th>
-                      <th>{t('oap_wizardStepListing')}</th>
-                      <th>{t('ownerTest_propertiesTimerLeft')}</th>
-                      <th>{t('ownerTest_metricViews')}</th>
-                      <th>{t('propertyDetailPrice')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedProperties.map((row) => (
-                      <tr
-                        key={row.rowKey || row.id}
-                        className="op-table__row--clickable"
-                        onClick={() => openPropertyAnalytics(row.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            openPropertyAnalytics(row.id)
-                          }
-                        }}
-                        tabIndex={0}
-                        role="link"
-                        aria-label={`${t('ownerTest_ariaStatistics')}: ${row.title}`}
-                      >
-                        <td>
-                          <div className="op-object-cell">
-                            <img src={row.image} alt="" className="op-object-cell__thumb" loading="lazy" />
-                            <div className="op-object-cell__text">
-                              <p className="op-object-cell__title">{row.title}</p>
-                              <p className="op-object-cell__meta">{row.location}</p>
-                              <div className="op-object-cell__badges">
-                                <ModerationStatusBadge moderationKey={row.moderationKey} />
-                              </div>
-                              <p className="op-object-cell__id">{row.displayId || row.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <ListingTypeBadge type={row.listingType} />
-                        </td>
-                        <td>
-                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} table />
-                        </td>
-                        <td>
-                          <div className="op-stat-cell">
-                            <span className="op-stat-cell__value">{row.views}</span>
-                            <DeltaText value={row.viewsDelta} up={row.viewsUp} />
-                          </div>
-                        </td>
-                        <td>
-                          <AmountCell row={row} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {pagedPurchased.length > 0 ? (
+                <ObjectsSection
+                  title={
+                    showSectionTitles || filterTab === PURCHASED_TAB_ID || visibleListings.length === 0
+                      ? t('ownerPurchased_sectionTitle')
+                      : null
+                  }
+                  count={visiblePurchased.length}
+                  purchased
+                  rows={pagedPurchased}
+                  timerNow={timerNow}
+                  onOpenRow={openPropertyRow}
+                  onSellPurchased={handleSellPurchasedProperty}
+                  sellingPropertyId={sellingPropertyId}
+                />
+              ) : null}
+              {pagedListings.length > 0 ? (
+                <ObjectsSection
+                  title={showSectionTitles ? t('ownerTest_listingsSectionTitle') : null}
+                  count={visibleListings.length}
+                  rows={pagedListings}
+                  timerNow={timerNow}
+                  onOpenRow={openPropertyRow}
+                  onSellPurchased={handleSellPurchasedProperty}
+                  sellingPropertyId={sellingPropertyId}
+                />
+              ) : null}
 
-              <ul className="op-mob-list op-mobile-only">
-                {paginatedProperties.map((row) => {
-                  const amount = getOwnerPropertyAmount(row, t)
-                  return (
-                    <li key={row.rowKey || `${row.listingType}-${row.id}`} className="op-mob-list__item">
-                      <article className="op-mob-property">
-                        <div className="op-mob-property__media">
-                          <img src={row.image} alt="" className="op-mob-property__photo" loading="lazy" />
-                        </div>
-                        <div className="op-mob-property__body">
-                          <div className="op-mob-property__head">
-                            <h3 className="op-mob-property__title">{row.title}</h3>
-                            <div className="op-mob-property__badges">
-                              <ListingTypeBadge type={row.listingType} />
-                              <ModerationStatusBadge moderationKey={row.moderationKey} />
-                            </div>
-                          </div>
-                          <p className="op-mob-property__location">{row.location}</p>
-                          <div className="op-mob-property__foot">
-                            <p className="op-mob-property__price">{amount.value}</p>
-                            <button
-                              type="button"
-                              className="op-mob-property__open"
-                              onClick={() => openPropertyAnalytics(row.id)}
-                              aria-label={`${t('ownerTest_notificationsOpen')}: ${row.title}`}
-                            >
-                              <ChevronRight size={18} strokeWidth={2.4} aria-hidden />
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              <PropertiesPagination
-                currentPage={safeCurrentPage}
-                totalPages={totalPages}
-                totalItems={visibleProperties.length}
-                onPageChange={handlePageChange}
-              />
+              {paginatedCount > 0 ? (
+                <PropertiesPagination
+                  currentPage={safeCurrentPage}
+                  totalPages={totalPages}
+                  totalItems={paginatedCount}
+                  onPageChange={handlePageChange}
+                />
+              ) : null}
               </>
               )}
             </div>

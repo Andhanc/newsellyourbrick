@@ -17,6 +17,9 @@ test('integrates the debt insight into desktop and mobile auction layouts', () =
   assert.equal(source.match(/<DebtAuctionInsight/g)?.length, 1)
   assert.equal(source.match(/<PropertyDebtRiskBanner/g)?.length, 1)
   assert.doesNotMatch(source, /property-detail-mobile-badge--debt/)
+  assert.match(source, /viewerOwnsListing/)
+  assert.match(source, /isOwnListing/)
+  assert.match(source, /propertyDetail_ownListingCannotBid/)
 })
 
 test('removes the old duplicated debt FlipCard presentation', () => {

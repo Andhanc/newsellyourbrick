@@ -186,6 +186,7 @@ export async function startOwnerSubscriptionCheckout({
       userId: userId != null ? String(userId) : undefined,
       customerEmail: customerEmail || undefined,
       returnPath: returnPath || undefined,
+      checkout_purpose: 'owner_subscription',
     }),
   })
   const data = await res.json().catch(() => ({}))

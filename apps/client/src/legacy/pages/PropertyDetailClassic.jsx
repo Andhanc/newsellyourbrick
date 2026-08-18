@@ -116,6 +116,7 @@ import {
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
+import { viewerOwnsListing } from '../utils/listingOwnerGuard'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
 import useAuctionDesktopBidPanelDock from '../hooks/useAuctionDesktopBidPanelDock'
@@ -747,7 +748,7 @@ function PropertyDetailClassic({
     feature24: property.feature24 === true || property.feature24 === 1 || property.feature24 === '1',
     feature25: property.feature25 === true || property.feature25 === 1 || property.feature25 === '1',
     feature26: property.feature26 === true || property.feature26 === 1 || property.feature26 === '1',
-    // Цена - используем обычную стоимость объекта (минимальная цена продажи), а не начальную ставку
+    // Цена «Купить сейчас» (не стартовая ставка аукциона и не auction floor)
     price: property.price,
     currentBid: property.currentBid,
     auction_starting_price: property.auction_starting_price || property.auctionStartingPrice,
@@ -1433,11 +1434,19 @@ function PropertyDetailClassic({
   }, [isAuctionProperty, displayProperty?.id, userLoaded, user?.id])
 
   const userRoleForAuction = userData?.role || 'buyer'
+  const clerkEmail =
+    user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''
+  const isOwnListing = viewerOwnsListing({
+    viewerUserId: userData?.id ?? getStoredNumericUserId(),
+    viewerEmail: userData?.email || clerkEmail,
+    listingOwnerUserId: displayProperty?.user_id ?? property?.user_id,
+    listingOwnerEmail: displayProperty?.email ?? property?.email,
+  })
   const auctionKycRequired =
     isAuctionProperty && !roleSkipsAuctionKyc(userRoleForAuction)
   const kycBidBlocked =
     auctionKycRequired && isAuctionDepositSufficient(auctionUserDeposit) && auctionKycVerified === false
-  const disableAuctionBidFields = isReservedActive || kycBidBlocked
+  const disableAuctionBidFields = isReservedActive || kycBidBlocked || isOwnListing
   const aboutDepositContentLocked =
     auctionUserDepositLoaded &&
     (isAuctionProperty || isShareListing || isDebtProperty) &&
@@ -1456,12 +1465,16 @@ function PropertyDetailClassic({
   }, [])
 
   const tryOpenBidDrawer = useCallback(() => {
+    if (isOwnListing) {
+      showToast(t('propertyDetail_ownListingCannotBid'), 'info')
+      return
+    }
     if (requiresAuctionDeposit()) {
       openDepositRequiredModal()
       return
     }
     setIsBidDrawerOpen(true)
-  }, [requiresAuctionDeposit, openDepositRequiredModal])
+  }, [isOwnListing, requiresAuctionDeposit, openDepositRequiredModal, t])
 
   const wrapDepositGatedBlock = (
     block,
@@ -2457,6 +2470,11 @@ function PropertyDetailClassic({
       return
     }
 
+    if (isOwnListing) {
+      showToast(t('propertyDetail_ownListingCannotBuy'), 'info')
+      return
+    }
+
     // Проверяем резервацию перед открытием модального окна
     if (isReservedActive) {
       showNotification(t('objectReservedNotification'))
@@ -2553,6 +2571,11 @@ function PropertyDetailClassic({
       return
     }
 
+    if (isOwnListing) {
+      showToast(t('propertyDetail_ownListingCannotBid'), 'info')
+      return
+    }
+
     // Проверяем авторизацию
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
@@ -2634,6 +2657,11 @@ function PropertyDetailClassic({
   const handleBidSubmit = async () => {
     if (paymentActionsLocked) {
       notifyListingCurrencyOnly('bid')
+      return
+    }
+
+    if (isOwnListing) {
+      showToast(t('propertyDetail_ownListingCannotBid'), 'info')
       return
     }
 
@@ -2750,6 +2778,8 @@ function PropertyDetailClassic({
           const errorData = JSON.parse(errorText)
           if (errorData.code === 'VERIFICATION_PENDING') {
             errorMessage = t('propertyDetailBidVerificationPending')
+          } else if (errorData.code === 'OWN_LISTING') {
+            errorMessage = t('propertyDetail_ownListingCannotBid')
           } else if (errorData.code === 'INSUFFICIENT_AUCTION_DEPOSIT') {
             openDepositRequiredModal()
             errorMessage = errorData.error || errorMessage
@@ -3880,7 +3910,8 @@ function PropertyDetailClassic({
       buyNowPrice > startingPrice &&
       !timerExpired &&
       !isBuyNowSaleCompleted &&
-      effectiveCurrentBid < buyNowPrice
+      effectiveCurrentBid < buyNowPrice &&
+      !isOwnListing
 
     if (!shouldShowBuyNow) return null
 
@@ -4711,6 +4742,10 @@ function PropertyDetailClassic({
       notifyListingCurrencyOnly('bid')
       return
     }
+    if (isOwnListing) {
+      showToast(t('propertyDetail_ownListingCannotBid'), 'info')
+      return
+    }
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
     if (!isClerkAuth && !isOldAuth) {
@@ -4748,6 +4783,7 @@ function PropertyDetailClassic({
     fmtBidPrice,
     isReservedActive,
     kycBidBlocked,
+    isOwnListing,
     paymentActionsLocked,
     currencyView,
     getQuickBidAmounts,
@@ -4762,7 +4798,7 @@ function PropertyDetailClassic({
     bidAmount,
     handleBidSubmit,
     auctionEndedForSidebar,
-    showBidCeilingButton: isAuctionProperty && !auctionEndedForSidebar,
+    showBidCeilingButton: isAuctionProperty && !auctionEndedForSidebar && !isOwnListing,
     onOpenBidCeiling: handleOpenBidCeiling,
     bidCeilingActive: userBidCeiling?.max_amount != null,
   }
@@ -4773,7 +4809,7 @@ function PropertyDetailClassic({
 
     if (variant === 'mobile-about' || variant === 'mobile-tab') {
       const buyNowLocked =
-        isReservedActive || !buyNowEmailOk || !shouldShowAuctionBuyNow
+        isReservedActive || !buyNowEmailOk || !shouldShowAuctionBuyNow || isOwnListing
       const buyNowPriceLabel = fmtBidPrice(displayProperty.price)
       return (
         <section
@@ -5976,6 +6012,12 @@ function PropertyDetailClassic({
                   </span>
                 </div>
 
+                {isOwnListing ? (
+                  <p className="pdx-own-listing-note" role="status">
+                    {t('propertyDetail_ownListingCannotBid')}
+                  </p>
+                ) : (
+                  <>
                 <div className="pd-v3-bid-section pd-v3-bid-section--quick">
                   <span className="pd-v3-bid-section__label">{t('propertyDetailQuickBid')}</span>
                   <div className="pd-v3-bidding pd-v3-bidding--quick-only">
@@ -6018,6 +6060,8 @@ function PropertyDetailClassic({
                     />
                   </p>
                 </div>
+                  </>
+                )}
               </>
             ) : null}
 
@@ -6195,7 +6239,8 @@ function PropertyDetailClassic({
         buyNowPrice > auctionStartingPrice &&
         !timerExpired &&
         !isBuyNowSaleCompleted &&
-        effectiveCurrentBid < buyNowPrice
+        effectiveCurrentBid < buyNowPrice &&
+        !isOwnListing
 
       const auctionCardClassName = [
         'pdx-auction-card',
@@ -6223,6 +6268,12 @@ function PropertyDetailClassic({
                 </span>
                 <span className="pdx-auction-card__step">+{fmtListingBidPrice(bidStep)}</span>
               </div>
+              {isOwnListing ? (
+                <p className="pdx-own-listing-note" role="status">
+                  {t('propertyDetail_ownListingCta')}
+                </p>
+              ) : (
+                <>
               <div className="pdx-auction-card__quick-bids">
                 <p className="pdx-auction-card__label pdx-auction-card__label--compact">
                   {t('propertyDetailQuickBid')}
@@ -6252,14 +6303,16 @@ function PropertyDetailClassic({
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
-                className="pdx-primary-btn"
-                onClick={tryOpenBidDrawer}
-                disabled={auctionEndedForSidebar || isReservedActive || disableAuctionBidFields}
-              >
-                {t('placeBid')}
-              </button>
+                <button
+                  type="button"
+                  className="pdx-primary-btn"
+                  onClick={tryOpenBidDrawer}
+                  disabled={auctionEndedForSidebar || isReservedActive || disableAuctionBidFields}
+                >
+                  {t('placeBid')}
+                </button>
+                </>
+              )}
               {showBuyNow ? (
                 <div className="pdx-auction-card__buy">
                   <p className="pdx-auction-card__label">{t('buyNowSectionTitle')}</p>
@@ -7503,12 +7556,9 @@ function PropertyDetailClassic({
 
       {/* Модальное окно с инструкциями по покупке */}
       {(() => {
+        const buyNowPriceForCheckout = Number(displayProperty.price) || 0
         const minimumSalePriceForCheckout =
-          Number(displayProperty.price) ||
-          Number(displayProperty.auction_starting_price) ||
-          Number(displayProperty.currentBid) ||
-          Number(currentBid) ||
-          0
+          Number(displayProperty.minimum_sale_price) || buyNowPriceForCheckout
         return (
       <BuyNowModal
         isOpen={isBuyNowModalOpen}
@@ -7532,7 +7582,7 @@ function PropertyDetailClassic({
           id: displayProperty.id,
           title: propertyInfo,
           name: propertyInfo,
-          price: minimumSalePriceForCheckout,
+          price: buyNowPriceForCheckout,
           minimumSalePrice: minimumSalePriceForCheckout,
           currency: displayProperty.currency,
           property_type: displayProperty.property_type,
@@ -7607,14 +7657,20 @@ function PropertyDetailClassic({
             <span className="property-detail-mobile-bottom-bar__label">{auctionStickyPriceLabel}</span>
             <span className="property-detail-mobile-bottom-bar__value">{auctionStickyPriceValue}</span>
           </div>
-          <button
-            type="button"
-            className="property-detail-mobile-bottom-bar__cta"
-            onClick={tryOpenBidDrawer}
-            disabled={auctionEndedForSidebar || isReservedActive}
-          >
-            {t('placeBid')}
-          </button>
+          {isOwnListing ? (
+            <p className="property-detail-mobile-bottom-bar__own-note" role="status">
+              {t('propertyDetail_ownListingCta')}
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="property-detail-mobile-bottom-bar__cta"
+              onClick={tryOpenBidDrawer}
+              disabled={auctionEndedForSidebar || isReservedActive}
+            >
+              {t('placeBid')}
+            </button>
+          )}
         </div>
       ) : null}
 

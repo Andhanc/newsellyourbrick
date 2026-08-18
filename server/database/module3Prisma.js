@@ -216,6 +216,12 @@ export const testDriveBookingQueries = {
       'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_scheduled_at TIMESTAMP'
     );
     await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_email_status TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_email_sent_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
       'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_token TEXT'
     );
     await prisma.$executeRawUnsafe(
@@ -405,6 +411,7 @@ export const testDriveBookingQueries = {
         UPDATE test_drive_bookings
         SET survey_token = ${tok},
             survey_whatsapp_status = 'pending',
+            survey_email_status = COALESCE(NULLIF(survey_email_status, ''), 'pending'),
             survey_scheduled_at = ${when}
         WHERE id = ${sid}
       `
@@ -435,6 +442,33 @@ export const testDriveBookingQueries = {
     return { changes: 1 };
   },
 
+  markSurveyEmailSent: async (bookingId) => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET survey_email_status = 'sent',
+            survey_email_sent_at = NOW()
+        WHERE id = ${Number(bookingId)}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  /** Если мгновенная WA-отправка не удалась — очередь подхватит в ближайшем тике. */
+  bumpSurveyBroadcastDueNow: async (bookingId) => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET survey_scheduled_at = NOW()
+        WHERE id = ${Number(bookingId)}
+          AND LOWER(COALESCE(survey_whatsapp_status, 'pending')) <> 'sent'
+      `
+    );
+    return { changes: 1 };
+  },
+
   /**
    * Если у подтверждённой/оплаченной брони ещё нет токена опроса — создаём (ссылка WA и опрос).
    */
@@ -460,6 +494,25 @@ export const testDriveBookingQueries = {
       SELECT t.id
       FROM test_drive_bookings t
       WHERE t.survey_whatsapp_status = 'pending'
+        AND t.survey_token IS NOT NULL
+        AND TRIM(t.survey_token) <> ''
+        AND t.survey_scheduled_at IS NOT NULL
+        AND t.survey_scheduled_at <= NOW()
+        AND LOWER(COALESCE(t.status, '')) NOT IN ('cancelled')
+      ORDER BY t.survey_scheduled_at ASC
+      LIMIT ${lim}
+    `;
+    return (Array.isArray(rows) ? rows : []).map((r) => Number(r.id)).filter((id) => Number.isFinite(id));
+  },
+
+  /** Очередь писем с опросом: ещё не sent и время рассылки наступило. */
+  listDueSurveyEmail: async (limit = 30) => {
+    const prisma = getPrisma();
+    const lim = Math.min(Math.max(parseInt(String(limit), 10) || 30, 1), 100);
+    const rows = await prisma.$queryRaw`
+      SELECT t.id
+      FROM test_drive_bookings t
+      WHERE LOWER(COALESCE(t.survey_email_status, 'pending')) <> 'sent'
         AND t.survey_token IS NOT NULL
         AND TRIM(t.survey_token) <> ''
         AND t.survey_scheduled_at IS NOT NULL
@@ -604,6 +657,8 @@ export const testDriveBookingQueries = {
           plain.survey_whatsapp_status = upd.survey_whatsapp_status;
           plain.survey_scheduled_at = upd.survey_scheduled_at;
           plain.survey_whatsapp_sent_at = upd.survey_whatsapp_sent_at;
+          plain.survey_email_status = upd.survey_email_status;
+          plain.survey_email_sent_at = upd.survey_email_sent_at;
         }
       }
     }

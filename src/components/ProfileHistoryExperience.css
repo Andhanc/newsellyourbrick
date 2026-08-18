@@ -52,6 +52,7 @@
 }
 
 .profile-history-panel__intro {
+  flex: 0 0 auto;
   text-align: left;
   padding: 0;
 }
@@ -116,9 +117,11 @@
 
 .profile-history-categories-rail {
   display: flex;
+  flex: 0 0 auto;
   gap: 10px;
   overflow-x: auto;
-  padding: 2px 2px 8px;
+  overflow-y: hidden;
+  padding: 8px 2px 10px;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -221,6 +224,7 @@
 
 .profile-history-search {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   min-height: 46px;

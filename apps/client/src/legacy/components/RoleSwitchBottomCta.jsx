@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  FiArrowRight,
+  FiArrowUpRight,
   FiCheck,
   FiEye,
   FiEyeOff,
   FiHome,
   FiLock,
+  FiMail,
+  FiMapPin,
+  FiPhone,
   FiShield,
   FiTrendingUp,
+  FiUser,
 } from 'react-icons/fi'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
@@ -18,8 +22,8 @@ import ForgotPasswordModal from './ForgotPasswordModal'
 import './RoleSwitch.css'
 
 const PITCH_IMAGES = {
-  buyer: publicAsset('images/role-switch/become-buyer-pitch.png'),
-  seller: publicAsset('images/role-switch/become-seller-pitch.png'),
+  buyer: publicAsset('images/role-switch/become-buyer-pitch.jpg'),
+  seller: publicAsset('images/role-switch/become-seller-pitch.jpg'),
 }
 
 function RoleSwitchSwitchingOverlay({ show, message }) {
@@ -60,13 +64,14 @@ function RoleSwitchPasswordField({
   placeholder,
   showPasswordLabel,
   hidePasswordLabel,
-  requirementsId,
 }) {
   return (
     <div className="role-switch-field">
       <label htmlFor={id}>{label}</label>
       <div className="role-switch-field__password-wrap">
-        <FiLock className="role-switch-field__password-icon" size={17} aria-hidden />
+        <span className="role-switch-field__password-icon" aria-hidden>
+          <FiLock size={18} strokeWidth={1.8} />
+        </span>
         <input
           id={id}
           className="role-switch-field__password-input"
@@ -75,7 +80,6 @@ function RoleSwitchPasswordField({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder={placeholder}
-          aria-describedby={requirementsId}
           required
         />
         <button
@@ -84,47 +88,9 @@ function RoleSwitchPasswordField({
           onClick={() => setShowPassword((visible) => !visible)}
           aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
         >
-          {showPassword ? <FiEyeOff size={19} /> : <FiEye size={19} />}
+          {showPassword ? <FiEyeOff size={18} strokeWidth={1.8} /> : <FiEye size={18} strokeWidth={1.8} />}
         </button>
       </div>
-    </div>
-  )
-}
-
-function RoleSwitchPasswordChecklist({ id, password, t, includeDifferent = false }) {
-  const rules = [
-    { label: t('roleSwitch_passwordRequirementUpper'), met: /[A-ZА-Я]/.test(password) },
-    { label: t('roleSwitch_passwordRequirementDigit'), met: /[0-9]/.test(password) },
-    { label: t('roleSwitch_passwordRequirementSpecial'), met: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password) },
-  ]
-  const metCount = rules.filter((rule) => rule.met).length
-
-  return (
-    <div id={id} className="role-switch-password-checklist">
-      <p className="role-switch-password-checklist__title">{t('roleSwitch_passwordRequirementsTitle')}</p>
-      <div className="role-switch-password-checklist__grid" role="list">
-        {rules.map((rule) => (
-          <span
-            key={rule.label}
-            className={rule.met ? 'role-switch-password-rule role-switch-password-rule--met' : 'role-switch-password-rule'}
-            role="listitem"
-          >
-            <span className="role-switch-password-rule__icon" aria-hidden>
-              {rule.met ? <FiCheck size={13} /> : null}
-            </span>
-            {rule.label}
-          </span>
-        ))}
-        {includeDifferent ? (
-          <span className="role-switch-password-rule role-switch-password-rule--note" role="listitem">
-            <FiShield className="role-switch-password-rule__shield" size={15} aria-hidden />
-            {t('roleSwitch_passwordRequirementDifferent')}
-          </span>
-        ) : null}
-      </div>
-      <span className="role-switch-sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {t('roleSwitch_passwordRequirementsProgress', { current: metCount, total: rules.length })}
-      </span>
     </div>
   )
 }
@@ -192,14 +158,13 @@ export function RoleSwitchModals({ flow }) {
         maxHeightRatio={0.72}
         closeLabel={closeLabel}
       >
-        <img
-          className="role-switch-pitch__hero"
-          src={PITCH_IMAGES[pitchVariant]}
-          alt=""
-          aria-hidden
-        />
-        <div className="role-switch-pitch__body">
-          <RoleSwitchProgress current={1} total={setupTotalSteps} label={progressLabel(1)} />
+        <div className={`role-switch-pitch role-switch-pitch--${pitchVariant}`}>
+          <img
+            className="role-switch-pitch__media"
+            src={PITCH_IMAGES[pitchVariant]}
+            alt=""
+            aria-hidden
+          />
           {targetRole === 'seller' ? (
             <span className="role-switch-pitch__eyebrow">{t('roleSwitch_pitchSellerEyebrow')}</span>
           ) : null}
@@ -210,23 +175,15 @@ export function RoleSwitchModals({ flow }) {
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerBody') : t('roleSwitch_pitchSellerBody')}
           </p>
           {targetRole === 'seller' ? (
-            <div className="role-switch-pitch__benefits" aria-label={t('roleSwitch_pitchSellerBenefitsAria')}>
-              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitOne')}</span>
-              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitTwo')}</span>
-              <span><FiCheck size={15} aria-hidden />{t('roleSwitch_pitchSellerBenefitThree')}</span>
-            </div>
-          ) : null}
-          {targetRole === 'seller' &&
-          linkedStatus?.buyer &&
-          linkedStatus.buyer.hasPassword === false ? (
-            <p className="role-switch-pitch__note">{t('roleSwitch_pitchSellerGoogleNote')}</p>
+            <ul className="role-switch-pitch__benefits" aria-label={t('roleSwitch_pitchSellerBenefitsAria')}>
+              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitOne')}</li>
+              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitTwo')}</li>
+              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitThree')}</li>
+            </ul>
           ) : null}
           <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
             {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerCta') : t('roleSwitch_pitchSellerCta')}
-            <FiArrowRight size={18} aria-hidden />
-          </button>
-          <button type="button" className="role-switch-btn role-switch-btn--ghost" onClick={resetAndClose}>
-            {t('roleSwitch_cancel')}
+            <FiArrowUpRight size={16} aria-hidden />
           </button>
         </div>
       </RoleSwitchDrawerShell>
@@ -255,6 +212,9 @@ export function RoleSwitchModals({ flow }) {
           closeLabel={closeLabel}
         >
           <div className="role-switch-setup__body">
+            <div className="role-switch-setup__icon" aria-hidden>
+              <FiLock size={24} strokeWidth={1.7} />
+            </div>
             <RoleSwitchProgress current={2} total={3} label={t('roleSwitch_stepLabel', { current: 2, total: 3 })} />
             <h2 id="role-switch-buyer-password-title" className="role-switch-setup__title">
               {t('roleSwitch_buyerPasswordTitle')}
@@ -264,11 +224,17 @@ export function RoleSwitchModals({ flow }) {
 
             <div className="role-switch-profile" aria-label={t('roleSwitch_profileAria')}>
               <div className="role-switch-profile__row">
-                <span className="role-switch-profile__label">{t('roleSwitch_profileName')}</span>
+                <span className="role-switch-profile__label">
+                  <FiUser size={15} aria-hidden />
+                  {t('roleSwitch_profileName')}
+                </span>
                 <span className="role-switch-profile__value">{profilePreview.name}</span>
               </div>
               <div className="role-switch-profile__row">
-                <span className="role-switch-profile__label">{t('roleSwitch_profileEmail')}</span>
+                <span className="role-switch-profile__label">
+                  <FiMail size={15} aria-hidden />
+                  {t('roleSwitch_profileEmail')}
+                </span>
                 <span className="role-switch-profile__value">{profilePreview.email}</span>
               </div>
             </div>
@@ -284,12 +250,6 @@ export function RoleSwitchModals({ flow }) {
                 placeholder={t('roleSwitch_passwordPlaceholder')}
                 showPasswordLabel={t('showPassword')}
                 hidePasswordLabel={t('hidePassword')}
-                requirementsId="role-switch-buyer-password-requirements"
-              />
-              <RoleSwitchPasswordChecklist
-                id="role-switch-buyer-password-requirements"
-                password={password}
-                t={t}
               />
               {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
               <button
@@ -298,6 +258,7 @@ export function RoleSwitchModals({ flow }) {
                 disabled={loading || !password}
               >
                 {loading ? t('roleSwitch_saving') : t('roleSwitch_buyerPasswordSave')}
+                {!loading ? <FiArrowUpRight size={16} aria-hidden /> : null}
               </button>
             </form>
           </div>
@@ -327,6 +288,9 @@ export function RoleSwitchModals({ flow }) {
         closeLabel={closeLabel}
       >
         <div className="role-switch-setup__body">
+          <div className="role-switch-setup__icon" aria-hidden>
+            <FiLock size={24} strokeWidth={1.7} />
+          </div>
           <RoleSwitchProgress
             current={setupTotalSteps}
             total={setupTotalSteps}
@@ -338,7 +302,7 @@ export function RoleSwitchModals({ flow }) {
           <p className="role-switch-setup__subtitle">{t('roleSwitch_setupSubtitle')}</p>
           {targetRole === 'seller' ? (
             <div className="role-switch-password-explainer">
-              <span className="role-switch-password-explainer__icon" aria-hidden><FiShield size={20} /></span>
+              <span className="role-switch-password-explainer__icon" aria-hidden><FiShield size={20} strokeWidth={1.7} /></span>
               <span>
                 <strong>{t('roleSwitch_passwordWhyTitle')}</strong>
                 <small>{t('roleSwitch_passwordWhyBody')}</small>
@@ -348,19 +312,31 @@ export function RoleSwitchModals({ flow }) {
 
           <div className="role-switch-profile" aria-label={t('roleSwitch_profileAria')}>
             <div className="role-switch-profile__row">
-              <span className="role-switch-profile__label">{t('roleSwitch_profileName')}</span>
+              <span className="role-switch-profile__label">
+                <FiUser size={15} aria-hidden />
+                {t('roleSwitch_profileName')}
+              </span>
               <span className="role-switch-profile__value">{profilePreview.name}</span>
             </div>
             <div className="role-switch-profile__row">
-              <span className="role-switch-profile__label">{t('roleSwitch_profileEmail')}</span>
+              <span className="role-switch-profile__label">
+                <FiMail size={15} aria-hidden />
+                {t('roleSwitch_profileEmail')}
+              </span>
               <span className="role-switch-profile__value">{profilePreview.email}</span>
             </div>
             <div className="role-switch-profile__row">
-              <span className="role-switch-profile__label">{t('roleSwitch_profilePhone')}</span>
+              <span className="role-switch-profile__label">
+                <FiPhone size={15} aria-hidden />
+                {t('roleSwitch_profilePhone')}
+              </span>
               <span className="role-switch-profile__value">{profilePreview.phone}</span>
             </div>
             <div className="role-switch-profile__row">
-              <span className="role-switch-profile__label">{t('roleSwitch_profileCountry')}</span>
+              <span className="role-switch-profile__label">
+                <FiMapPin size={15} aria-hidden />
+                {t('roleSwitch_profileCountry')}
+              </span>
               <span className="role-switch-profile__value">{profilePreview.country}</span>
             </div>
           </div>
@@ -376,13 +352,6 @@ export function RoleSwitchModals({ flow }) {
               placeholder={t('roleSwitch_passwordPlaceholder')}
               showPasswordLabel={t('showPassword')}
               hidePasswordLabel={t('hidePassword')}
-              requirementsId="role-switch-seller-password-requirements"
-            />
-            <RoleSwitchPasswordChecklist
-              id="role-switch-seller-password-requirements"
-              password={password}
-              t={t}
-              includeDifferent={targetRole === 'seller'}
             />
             {error ? <p className="role-switch-error" role="alert">{error}</p> : null}
             <button type="submit" className="role-switch-btn role-switch-btn--primary" disabled={loading || !password}>
@@ -391,7 +360,7 @@ export function RoleSwitchModals({ flow }) {
                 : targetRole === 'seller'
                   ? t('roleSwitch_createSellerCabinet')
                   : t('roleSwitch_saveAndOpen')}
-              {!loading ? <FiArrowRight size={18} aria-hidden /> : null}
+              {!loading ? <FiArrowUpRight size={16} aria-hidden /> : null}
             </button>
           </form>
         </div>

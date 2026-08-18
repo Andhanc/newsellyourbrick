@@ -2304,6 +2304,29 @@ html.site-footer-near .shares-floats > button.ai-button {
   .shares-page--debts-redesign .debts-page-mobile-filters {
     margin-bottom: 12px;
   }
+
+  .shares-page--debts-redesign .shares-container--debts-main {
+    padding-inline: 16px;
+  }
+
+  .shares-page--debts-redesign .shares-grid {
+    display: block;
+    width: 100%;
+  }
+
+  .shares-page--debts-redesign .hr-showcases--debts-listing,
+  .shares-page--debts-redesign .properties-grid--mobile-auction,
+  .shares-page--debts-redesign .auction-mobile-stack--desktop-cards {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .shares-page--debts-redesign .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards,
+  .shares-page--debts-redesign .auction-mobile-stack--desktop-cards {
+    column-gap: 12px !important;
+    row-gap: 14px !important;
+  }
 }
 
 /* Долги: контейнер листинга — отступ сверху даёт hero-сцена */
@@ -2319,7 +2342,7 @@ html.site-footer-near .shares-floats > button.ai-button {
   width: 100%;
   max-width: none;
   margin-inline: 0;
-  padding-inline: 0 24px;
+  padding-inline: var(--debts-page-inline-inset, 16px);
   box-sizing: border-box;
 }
 

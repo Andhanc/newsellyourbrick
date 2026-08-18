@@ -66,7 +66,9 @@ import {
   getCabinetDataPath,
   getCabinetHomePath,
   getCabinetProfilePath,
+  getHeaderAccountPath,
   isSellerCabinetRole,
+  readStoredUserRole,
 } from '../utils/cabinetRoutes'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import {
@@ -2726,34 +2728,20 @@ function MainPage() {
           className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
           onClick={() => {
             const userData = getUserData()
-            const localRole = localStorage.getItem('userRole')
-            const storedRole = userData.role || localRole
-            const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
-            const isAdmin = isAdminLoggedIn && storedRole === 'admin'
-            const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
-            const isOwner =
-              storedRole === 'seller' ||
-              storedRole === 'owner' ||
-              isOwnerFlag
+            const role = readStoredUserRole()
 
-            if (isAdmin) {
+            if (role === 'admin') {
               navigate('/admin')
               return
             }
 
-            if (isOwner) {
-              navigate(getCabinetHomePath('seller'))
+            if (userData.isLoggedIn || (userLoaded && user)) {
+              navigate(getHeaderAccountPath(role))
               return
             }
 
-            if (userLoaded && user) {
-              navigate(getCabinetProfilePath())
-            } else if (userData.isLoggedIn) {
-              navigate(getCabinetProfilePath())
-            } else {
-              setMainLoginModalAuthEntry('header_wizard')
-              setIsLoginModalOpen(true)
-            }
+            setMainLoginModalAuthEntry('header_wizard')
+            setIsLoginModalOpen(true)
           }}
           aria-label={t('profile')}
         >

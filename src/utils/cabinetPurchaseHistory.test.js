@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mapReservationPurchase } from './cabinetPurchaseHistory.js'
+import { mapReservationPurchase, resolvePurchaseStatus } from './cabinetPurchaseHistory.js'
 
 const baseRow = {
   id: 91,
@@ -33,6 +33,7 @@ test('maps a reservation purchase into structured real-property finance data', (
   assert.equal(item.paymentPercent, 10)
   assert.equal(item.currency, 'EUR')
   assert.equal(item.purchaseChannel, 'buy_now')
+  assert.equal(item.isDealCompleted, false)
 })
 
 test('derives safe remaining and clamps percentage for numeric strings', () => {
@@ -85,4 +86,33 @@ test('marks purchased debt property for the separate history category', () => {
   })
 
   assert.equal(item.isDebt, true)
+})
+
+test('treats a buy-now reserve as unsellable until admin completes the request', () => {
+  assert.equal(mapReservationPurchase(baseRow).isDealCompleted, false)
+  assert.equal(
+    mapReservationPurchase({ ...baseRow, purchase_request_status: 'processing' }).isDealCompleted,
+    false,
+  )
+  assert.equal(
+    mapReservationPurchase({ ...baseRow, purchase_request_status: 'completed' }).isDealCompleted,
+    true,
+  )
+  assert.equal(
+    mapReservationPurchase({
+      ...baseRow,
+      property_buy_now_completed_at: '2026-08-17T17:24:00.000Z',
+    }).isDealCompleted,
+    true,
+  )
+})
+
+test('purchase status: remaining payment, wait for approval, bought, cancelled', () => {
+  assert.equal(resolvePurchaseStatus({ remainingAmount: 405_000 }), 'need_more')
+  assert.equal(resolvePurchaseStatus({ remainingAmount: 0 }), 'wait_approval')
+  assert.equal(resolvePurchaseStatus({ isDealCompleted: true, remainingAmount: 0 }), 'bought')
+  assert.equal(
+    resolvePurchaseStatus({ isDealCancelled: true, remainingAmount: 100 }),
+    'cancelled',
+  )
 })

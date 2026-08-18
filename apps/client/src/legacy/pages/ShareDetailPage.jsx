@@ -388,7 +388,7 @@ const ShareDetailPage = () => {
       onPurchase: openPurchaseModal,
       formatStickyTotal: () =>
         formatPropertyPrice((shareObject.pricePerShare || 0) * buyCount, shareObject.currency || 'EUR', {
-          compact: true,
+          compact: false,
           locale: numberLocale,
         }),
     }

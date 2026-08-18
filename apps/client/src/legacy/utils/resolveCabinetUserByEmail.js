@@ -6,6 +6,23 @@ export function normalizeOAuthCabinetRole(role) {
 }
 
 /**
+ * Кабинет для Clerk-синхронизации: не подменять активную сессию продавца
+ * кабинетом покупателя с тем же email (и наоборот).
+ */
+export function resolveClerkSyncCabinetRole({
+  oauthRole = null,
+  metadataRole = null,
+  storedRole = null,
+  hasLocalSession = false,
+} = {}) {
+  if (oauthRole) return normalizeOAuthCabinetRole(oauthRole)
+  if (hasLocalSession) return normalizeOAuthCabinetRole(storedRole)
+  if (metadataRole) return normalizeOAuthCabinetRole(metadataRole)
+  if (storedRole) return normalizeOAuthCabinetRole(storedRole)
+  return 'buyer'
+}
+
+/**
  * Находит пользователя в БД для выбранного кабинета (покупатель или продавец) по email.
  * При двух кабинетах на один email возвращает нужную запись, а не первую попавшуюся.
  */

@@ -23,7 +23,9 @@ import {
   getCabinetHomePath,
   getCabinetProfilePath,
   getCabinetSubscriptionsPath,
+  getHeaderAccountPath,
   isSellerCabinetRole,
+  readStoredUserRole,
 } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
@@ -780,35 +782,20 @@ const Header = () => {
                       return
                     }
 
-                    // Всегда сначала пробуем прочитать локальные данные (роль, флаги)
                     const userData = getUserData()
-                    const localRole = localStorage.getItem('userRole')
-                    const storedRole = userData.role || localRole
-                    const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
-                    const isAdmin = isAdminLoggedIn && storedRole === 'admin'
-                    const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
-                    const isOwner =
-                      storedRole === 'seller' ||
-                      storedRole === 'owner' ||
-                      isOwnerFlag
+                    const role = readStoredUserRole()
+                    const localHasDbUser = userData.isLoggedIn && /^\d+$/.test(String(localStorage.getItem('userId') || ''))
 
-                    // Если по локальным данным видно, что это админ — ведем в админ-панель
-                    if (isAdmin) {
+                    if (role === 'admin') {
                       navigate('/admin')
                       return
                     }
 
-                    // Если по локальным данным видно, что это продавец — ведем в кабинет продавца
-                    if (isOwner) {
-                      navigate(getCabinetHomePath('seller'))
+                    if (localHasDbUser || userData.isLoggedIn) {
+                      navigate(getHeaderAccountPath(role))
                       return
                     }
 
-                    // Дальше проверяем авторизацию через Clerk и локальную авторизацию покупателя
-                    const localHasDbUser = userData.isLoggedIn && /^\d+$/.test(String(localStorage.getItem('userId') || ''))
-
-                    // Если есть Clerk-сессия, но в нашей БД нет пользователя — открываем модалку,
-                    // иначе будем снова попадать в сценарии "зарегистрируйся".
                     if (userLoaded && user && !localHasDbUser) {
                       if (oauthFlowMode === 'login') {
                         sessionStorage.setItem('login_modal_mode', 'register')
@@ -818,19 +805,6 @@ const Header = () => {
                       return
                     }
 
-                    // Переходим в профиль, если Clerk привязан к записи в нашей БД
-                    if (userLoaded && user && localHasDbUser) {
-                      navigate(getCabinetProfilePath())
-                      return
-                    }
-
-                    // Локальная сессия (email, Telegram, WhatsApp и т.д.) — как на главной (MainPage), без Clerk
-                    if (userData.isLoggedIn) {
-                      navigate(getCabinetProfilePath())
-                      return
-                    }
-
-                    // Не авторизован — открываем модалку (мастер: роль → вход/регистрация)
                     setLoginModalEntry('wizard')
                     setIsLoginModalOpen(true)
                   }}

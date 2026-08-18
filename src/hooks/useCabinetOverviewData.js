@@ -219,6 +219,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const href =
       pid != null ? getPropertyDetailPath(pid, { property: Object.keys(prop).length ? prop : { id: pid } }) : null
     const loc = pickLocationFromProperty(prop)
+    const winAmount = Number(winner.winning_bid_amount) || 0
+    const winCurrency = String(winner.currency || prop.currency || 'EUR').toUpperCase()
     events.push({
       sort,
       id: `aw-${winner.id}`,
@@ -238,9 +240,16 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       sort,
       location: loc,
       dayKey: dayKeyFromRawDate(date),
-      amountValue: Number(winner.winning_bid_amount) || 0,
-      currency: String(winner.currency || prop.currency || 'EUR').toUpperCase(),
+      amountValue: winAmount,
+      currency: winCurrency,
       isDebt: isDebtProperty(prop),
+      purchaseChannel: 'auction',
+      purchaseDateRaw: date,
+      paidAmount: winAmount,
+      totalAmount: winAmount,
+      remainingAmount: 0,
+      paymentPercent: 100,
+      isDealCompleted: true,
     })
   }
 

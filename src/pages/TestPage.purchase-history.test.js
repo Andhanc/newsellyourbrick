@@ -5,8 +5,16 @@ import { readFile } from 'node:fs/promises'
 const page = await readFile(new URL('./TestPage.jsx', import.meta.url), 'utf8')
 const endpoint = await readFile(new URL('../../server/stripeBilling.js', import.meta.url), 'utf8')
 
+test('opening a purchased object from history closes the history sheet so the drawer is not covered', () => {
+  assert.match(page, /onOpenPurchased=\{\(item\) => \{[\s\S]*setHistorySheetOpen\(false\)[\s\S]*setSelectedPurchasedProperty\(item\)/)
+  assert.match(
+    page,
+    /onClose=\{\(\) => \{[\s\S]*setSelectedPurchasedProperty\(null\)[\s\S]*setHistorySheetOpen\(true\)/,
+  )
+})
+
 test('integrates the purchased-property card and sequential drawers in the new profile', () => {
-  assert.match(page, /PurchasedPropertyHistoryCard/)
+  assert.match(page, /ProfileHistoryExperience/)
   assert.match(page, /PurchasedPropertyDrawer/)
   assert.match(page, /selectedPurchasedProperty/)
   assert.match(page, /setPurchaseDrawerView\('sell'\)/)

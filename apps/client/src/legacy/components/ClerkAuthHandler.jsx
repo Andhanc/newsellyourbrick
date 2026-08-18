@@ -9,7 +9,7 @@ import {
   clearUserDataWithoutAdmin,
 } from '../services/authService'
 import AuthAlertModal from './AuthAlertModal'
-import { getCabinetHomePath } from '../utils/cabinetRoutes'
+import { getCabinetHomePath, hasActiveCabinetSession, readStoredUserRole } from '../utils/cabinetRoutes'
 import { completePendingSellAfterSellerLogin } from '../utils/navigateToSellPurchasedProperty'
 import { invalidateUserByIdCache } from '../utils/usersApi'
 import {
@@ -17,6 +17,7 @@ import {
   hasAnyCabinetUserByEmail,
   mapDbUserToSessionUser,
   normalizeOAuthCabinetRole,
+  resolveClerkSyncCabinetRole,
 } from '../utils/resolveCabinetUserByEmail'
 
 /** После редиректа на главную состояние модалки может сброситься (Strict Mode / навигация) — поднимаем из sessionStorage. */
@@ -135,6 +136,11 @@ const ClerkAuthHandler = () => {
     
     // Если пользователь авторизован и есть данные
     if ((isSignedIn || session) && user && !hasProcessed) {
+      if (!isOAuthCompletionContext && hasActiveCabinetSession()) {
+        setHasProcessed(true)
+        return
+      }
+
       // Формируем имя пользователя
       let userName = 'Пользователь'
       if (user.fullName) {
@@ -169,11 +175,12 @@ const ClerkAuthHandler = () => {
         userPhone = user.phoneNumbers[0].phoneNumber || ''
       }
       
-      // Получаем роль из sessionStorage (сохранена при регистрации через Clerk)
-      // Или из publicMetadata Clerk, или по умолчанию 'buyer'
-      const savedRole = sessionStorage.getItem('clerk_oauth_user_role')
-      const userRoleFromMetadata = user.publicMetadata?.role
-      const userRole = savedRole || userRoleFromMetadata || 'buyer'
+      const userRole = resolveClerkSyncCabinetRole({
+        oauthRole: sessionStorage.getItem('clerk_oauth_user_role'),
+        metadataRole: user.publicMetadata?.role,
+        storedRole: readStoredUserRole(),
+        hasLocalSession: hasActiveCabinetSession(),
+      })
       
       const clerkUserData = {
         name: userName,
@@ -308,13 +315,7 @@ const ClerkAuthHandler = () => {
             const firstName = nameParts[0] || 'Пользователь'
             const lastName = nameParts.slice(1).join(' ') || ''
             
-            // Получаем роль из sessionStorage или publicMetadata
-            const savedRole = sessionStorage.getItem('clerk_oauth_user_role')
-            const userRoleFromMetadata = user.publicMetadata?.role
-            const userRole = savedRole || userRoleFromMetadata || 'buyer'
-            
-            // Очищаем сохраненную роль после использования
-            if (savedRole) {
+            if (sessionStorage.getItem('clerk_oauth_user_role')) {
               sessionStorage.removeItem('clerk_oauth_user_role')
             }
             

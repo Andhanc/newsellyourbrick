@@ -26,6 +26,29 @@ const LazyBuyerSellerLinkConfirmModal = lazy(() => import('./BuyerSellerLinkConf
 const LazyVerificationDocumentsModal = lazy(() => import('./VerificationDocumentsModal'))
 const LazyAnimatedCharacters = lazy(() => import('./AnimatedCharacters'))
 
+function GoogleMark({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.82-.07-1.64-.23-2.43H12v4.6h6.46a5.52 5.52 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.55-5.17 3.55-8.8z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.97-1.07 7.96-2.93l-3.88-3c-1.08.73-2.47 1.16-4.08 1.16-3.14 0-5.8-2.12-6.76-4.96H1.23v3.09A12 12 0 0 0 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.24 14.27A7.2 7.2 0 0 1 4.86 12c0-.79.14-1.55.38-2.27V6.64H1.23A12 12 0 0 0 0 12c0 1.94.46 3.78 1.23 5.36l4.01-3.09z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.36.61 4.61 1.8l3.45-3.45C17.96 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.23 6.64l4.01 3.09C6.2 6.87 8.86 4.75 12 4.75z"
+      />
+    </svg>
+  )
+}
+
 /** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
 const LoginModal = ({
   isOpen,
@@ -186,18 +209,25 @@ const LoginModal = ({
     if (userRole === 'seller' || userRole === 'owner') setUserRole('buyer')
   }, [userRole])
 
+  const isHeaderWizard = authEntryVariant === 'header_wizard'
+  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
+  const isWelcomeStep = isHeaderWizard && wizardPhase === 'welcome'
+  const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
+  const socialAuthMode = isWelcomeStep ? 'auto' : isLogin ? 'login' : 'register'
+
   // Сохраняем режим и роль для callback после редиректа из Telegram
   useEffect(() => {
     if (isOpen) {
-      sessionStorage.setItem('telegram_auth_mode', isLogin ? 'login' : 'register')
+      sessionStorage.setItem('telegram_auth_mode', socialAuthMode)
       sessionStorage.setItem('telegram_auth_role', userRole)
     }
-  }, [isOpen, isLogin, userRole])
+  }, [isOpen, socialAuthMode, userRole])
 
   // Подключаем скрипт Telegram Login Widget при открытой модалке и наличии бота
   useEffect(() => {
     if (!isOpen || !telegramBotUsername || !telegramWidgetRef.current) return
 
+    const welcomeStep = authEntryVariant === 'header_wizard' && wizardPhase === 'welcome'
     const container = telegramWidgetRef.current
     container.innerHTML = ''
 
@@ -205,25 +235,21 @@ const LoginModal = ({
     script.src = 'https://telegram.org/js/telegram-widget.js?22'
     script.setAttribute('data-telegram-login', telegramBotUsername)
     script.setAttribute('data-auth-url', `${window.location.origin}/auth/telegram-callback`)
-    script.setAttribute('data-size', 'large')
-    script.setAttribute('data-radius', '8')
+    script.setAttribute('data-size', welcomeStep ? 'medium' : 'large')
+    script.setAttribute('data-userpic', 'false')
+    script.setAttribute('data-radius', welcomeStep ? '20' : '8')
     script.async = true
     container.appendChild(script)
 
     return () => {
       container.innerHTML = ''
     }
-  }, [isOpen, telegramBotUsername])
+  }, [isOpen, telegramBotUsername, authEntryVariant, wizardPhase])
 
   useEffect(() => {
     setLoginModalOpen(isOpen)
     return () => setLoginModalOpen(false)
   }, [isOpen])
-
-  const isHeaderWizard = authEntryVariant === 'header_wizard'
-  const isRoleStep = isHeaderWizard && wizardPhase === 'role'
-  const isWelcomeStep = isHeaderWizard && wizardPhase === 'welcome'
-  const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
 
   useEffect(() => {
     const video = welcomeVideoRef.current
@@ -604,7 +630,7 @@ const LoginModal = ({
         setError('')
         const result = await nativeSocialAuth({
           provider: 'google',
-          mode: isLogin ? 'login' : 'register',
+          mode: socialAuthMode,
           role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
         })
         if (result?.cancelled) return
@@ -704,7 +730,7 @@ const LoginModal = ({
       const clerkRole = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
       sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
-      sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
+      sessionStorage.setItem('clerk_oauth_flow_mode', socialAuthMode)
 
       if (signInLoaded && signIn) {
         const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
@@ -731,7 +757,7 @@ const LoginModal = ({
         setError('')
         const result = await nativeSocialAuth({
           provider: 'facebook',
-          mode: isLogin ? 'login' : 'register',
+          mode: socialAuthMode,
           role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
         })
         if (result?.cancelled) return
@@ -829,9 +855,9 @@ const LoginModal = ({
       const clerkRole = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
       sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
-      sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
+      sessionStorage.setItem('clerk_oauth_flow_mode', socialAuthMode)
 
-      console.log('LoginModal: Facebook OAuth via signIn', { signInLoaded, isLogin, userRole: clerkRole })
+      console.log('LoginModal: Facebook OAuth via signIn', { signInLoaded, socialAuthMode, userRole: clerkRole })
 
       if (signInLoaded && signIn) {
         const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
@@ -1161,6 +1187,56 @@ const LoginModal = ({
               <h2 id="login-modal-welcome-title">{renderHighlightedBrand()}</h2>
             </div>
             <div className="login-modal__welcome-actions">
+              <div className="login-modal__welcome-social" role="group" aria-label={t('loginOr')}>
+                <button
+                  type="button"
+                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--facebook"
+                  onClick={handleFacebookAuth}
+                  disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
+                  aria-label={t('loginWithFacebook')}
+                >
+                  <FaFacebook size={22} />
+                </button>
+                <button
+                  type="button"
+                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--google"
+                  onClick={handleGoogleAuth}
+                  disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
+                  aria-label={t('loginWithGoogle')}
+                >
+                  <GoogleMark size={22} />
+                </button>
+                <button
+                  type="button"
+                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--whatsapp"
+                  onClick={handleWhatsAppLogin}
+                  disabled={isLoading}
+                  aria-label={t('loginWithWhatsApp')}
+                >
+                  <FaWhatsapp size={22} />
+                </button>
+                {telegramBotUsername ? (
+                  <div className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram login-modal__welcome-social-telegram">
+                    <FaTelegram size={22} aria-hidden />
+                    <div
+                      className="login-modal__telegram-widget"
+                      ref={telegramWidgetRef}
+                      aria-label={t('loginWithTelegram')}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram"
+                    onClick={handleTelegramClick}
+                    aria-label={t('loginWithTelegram')}
+                    title={telegramConfigLoaded ? t('telegramEnvHint') : t('telegramLoading')}
+                  >
+                    <FaTelegram size={22} />
+                  </button>
+                )}
+              </div>
+              {error ? <p className="login-modal__welcome-error">{error}</p> : null}
               <button
                 type="button"
                 className="login-modal__welcome-action login-modal__welcome-action--register"
@@ -1408,6 +1484,8 @@ const LoginModal = ({
           </div>
         )}
 
+        {!isHeaderWizard && (
+        <>
         <div className="login-modal__social">
           <button 
             type="button"
@@ -1519,6 +1597,8 @@ const LoginModal = ({
         <div className="login-modal__divider">
           <span>{t('loginOr')}</span>
         </div>
+        </>
+        )}
 
         <form className="login-modal__form" onSubmit={handleSubmit}>
           {!isLogin && (
@@ -1687,7 +1767,7 @@ const LoginModal = ({
             onClose={() => setShowWhatsAppModal(false)}
             onSuccess={handleWhatsAppSuccess}
             role={userRole}
-            mode={isLogin ? 'login' : 'register'}
+            mode={socialAuthMode}
           />
         </Suspense>
       ) : null}
