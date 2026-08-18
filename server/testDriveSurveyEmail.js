@@ -1,9 +1,10 @@
 import { sendCrmEmailViaEmailJS } from './emailJsCrmSend.js';
 import { userQueries } from './database/database.js';
 import { sendWhatsAppDigits } from './whatsappOutbound.js';
+import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 
 export function testDriveSurveyFrontendBase() {
-  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return resolvePublicFrontendBase(process.env);
 }
 
 export function buildTestDriveSurveyInviteEmail({ firstName, propertyTitle, surveyUrl }) {

@@ -46,6 +46,7 @@ import {
   refundHalfTestDriveBookingPayment,
   parseTestDriveBuyerCancelBody,
 } from './stripeBilling.js';
+import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
@@ -1780,7 +1781,7 @@ registerWhatsAppManagerDigitsGetter(() => {
 });
 
 function getFrontendBaseUrl() {
-  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return resolvePublicFrontendBase(process.env);
 }
 
 /** Рассылка WhatsApp с ссылкой на опрос проживания (тест-драйв). */
@@ -8308,7 +8309,7 @@ app.delete('/api/admin/administrators/:id', async (req, res) => {
  */
 
 function getFrontendPublicBase() {
-  return String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return resolvePublicFrontendBase(process.env);
 }
 
 function buildPropertyPublicLink(propertyId, slug = null) {
