@@ -6272,6 +6272,15 @@ app.post('/api/auth/mobile/logout', async (req, res) => {
   }
 });
 
+app.post('/api/auth/mobile/logout', async (req, res) => {
+  try {
+    const result = await revokeMobileAuthSession(req);
+    res.json({ success: true, data: { revoked: result.count || 0 } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error?.message || 'mobile_logout_failed' });
+  }
+});
+
 /** Сессии восстановления пароля (email → код + токен) */
 const passwordResetSessions = new Map();
 const PASSWORD_RESET_CODE_TTL_MS = 10 * 60 * 1000;
@@ -7315,6 +7324,7 @@ async function restartWhatsAppPairingRequest() {
     }
   }
   killOrphanWhatsAppChrome();
+  // Дать ОС отпустить файлы профиля Chrome
   await new Promise((r) => setTimeout(r, 800));
   await wipeWhatsAppAuthFolder();
   try {
