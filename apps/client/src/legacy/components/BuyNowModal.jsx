@@ -144,9 +144,7 @@ const BuyNowModal = ({
     ? Number(winningBidAmount) || Number(property?.currentBid) || 0
     : Number(property?.price) ||
       Number(property?.minimumSalePrice) ||
-      Number(property?.auction_starting_price) ||
-      Number(property?.auctionStartingPrice) ||
-      Number(property?.currentBid) ||
+      Number(property?.minimum_sale_price) ||
       0
   const minSalePrice = Math.round(minSalePriceRaw * 100) / 100
   const tenPercent = Math.round(minSalePrice * DEPOSIT_FRACTION * 100) / 100

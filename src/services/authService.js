@@ -1057,7 +1057,7 @@ export const sendWhatsAppVerificationCode = async (phone) => {
 
 /**
  * Проверяет код верификации и авторизует пользователя
- * mode: 'login' | 'register' — в режиме login новый пользователь НЕ создается
+ * mode: 'login' | 'register' | 'auto' — в режиме login новый пользователь НЕ создается; auto: есть аккаунт — вход, нет — создаём
  */
 export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 'register') => {
   try {
@@ -1115,14 +1115,14 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           countryFlag: countryInfo.flag,
           role: role,
           mode,
-          ...(referrerId && mode === 'register' && { referrer_id: referrerId })
+          ...(referrerId && (mode === 'register' || mode === 'auto') && { referrer_id: referrerId })
         })
       })
       
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.user) {
-          if (referrerId && mode === 'register') clearReferrerId()
+          if (referrerId && (mode === 'register' || mode === 'auto')) clearReferrerId()
           // Проверяем, заблокирован ли пользователь
           if (data.user.is_blocked === true || data.user.is_blocked === 1) {
             return {
@@ -1463,7 +1463,7 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
         hash: telegramData.hash,
         mode,
         role,
-        ...(referrerId && mode === 'register' && { referrer_id: referrerId })
+        ...(referrerId && (mode === 'register' || mode === 'auto') && { referrer_id: referrerId })
       })
     })
     const data = await response.json()
@@ -1477,7 +1477,7 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
     }
 
     const user = data.user
-    if (referrerId && mode === 'register') clearReferrerId()
+    if (referrerId && (mode === 'register' || mode === 'auto')) clearReferrerId()
     const userDataToSave = {
       id: user.id,
       name: user.name,

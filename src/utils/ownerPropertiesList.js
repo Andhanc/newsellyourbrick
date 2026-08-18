@@ -30,6 +30,29 @@ function finiteNumber(value, fallback = 0) {
   return Number.isFinite(num) ? num : fallback
 }
 
+function parseJsonObject(value) {
+  if (!value) return {}
+  if (typeof value === 'object' && !Array.isArray(value)) return value
+  if (typeof value !== 'string') return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export function resolveSourcePurchasedPropertyId(prop) {
+  const params = parseJsonObject(prop?.tz_parameters_json || prop?.tz_parameters || prop?.parameters)
+  const raw = Number(
+    prop?.sourcePurchasedPropertyId ??
+      prop?.source_purchased_property_id ??
+      params.source_purchased_property_id ??
+      params.sourcePurchasedPropertyId,
+  )
+  return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : null
+}
+
 function mapListingType(property) {
   const kind = getPropertyListingKind(property).key
   if (kind === 'shares') return 'shares'
@@ -259,6 +282,7 @@ export function mapApiPropertyToOwnerListRow(prop) {
           year: 'numeric',
         })
       : '—',
+    sourcePurchasedPropertyId: resolveSourcePurchasedPropertyId(prop),
     raw: prop,
   }
 
@@ -285,6 +309,7 @@ export async function fetchOwnerProperties(userId) {
 }
 
 const LISTING_TYPE_TAB_IDS = new Set(['auction', 'buy_now', 'shares', 'debts'])
+const PURCHASED_TAB_ID = 'purchased'
 
 export function filterOwnerProperties(
   rows,
@@ -297,10 +322,12 @@ export function filterOwnerProperties(
   const typeSet = Array.isArray(listingTypes) && listingTypes.length > 0 ? new Set(listingTypes) : null
 
   let result = rows.filter((row) => {
-    if (tab !== 'all') {
+    if (tab === PURCHASED_TAB_ID) {
+      if (!row.isPurchased) return false
+    } else if (tab !== 'all') {
       if (LISTING_TYPE_TAB_IDS.has(tab)) {
         if (row.listingType !== tab) return false
-      } else if (row.filterKey !== tab) {
+      } else if (row.isPurchased || row.filterKey !== tab) {
         return false
       }
     }
@@ -336,12 +363,21 @@ export function filterOwnerProperties(
         return byP || getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a)
       }
       case 'date_desc':
-      default:
+      default: {
+        const purchasedDelta = Number(Boolean(b.isPurchased)) - Number(Boolean(a.isPurchased))
+        if (purchasedDelta) return purchasedDelta
+        if (a.isPurchased && b.isPurchased) {
+          return (
+            (Number(b.createdAtTs) || 0) - (Number(a.createdAtTs) || 0) ||
+            String(b?.rowKey || '').localeCompare(String(a?.rowKey || ''))
+          )
+        }
         return (
           (Number(b?.id) || 0) - (Number(a?.id) || 0) ||
           getOwnerPropertyRecencyTs(b) - getOwnerPropertyRecencyTs(a) ||
           String(b?.rowKey || '').localeCompare(String(a?.rowKey || ''))
         )
+      }
     }
   })
 
@@ -351,12 +387,17 @@ export function filterOwnerProperties(
 export function countOwnerPropertiesByTab(rows) {
   const counts = {
     all: rows.length,
+    purchased: 0,
     active: 0,
     booked: 0,
     sold: 0,
     draft: 0,
   }
   for (const row of rows) {
+    if (row.isPurchased) {
+      counts.purchased += 1
+      continue
+    }
     if (counts[row.filterKey] != null) counts[row.filterKey] += 1
   }
   return counts

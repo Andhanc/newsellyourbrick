@@ -33,6 +33,7 @@ import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
+import { viewerOwnsPropertyRecord } from '../src/utils/listingOwnerGuard.js';
 import {
   getBidCeiling,
   upsertBidCeiling,
@@ -46,6 +47,8 @@ import {
   parseTestDriveBuyerCancelBody,
 } from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
+import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
+import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
 import { registerInvestorAiRoutes } from './investorAiRoutes.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
@@ -1538,7 +1541,8 @@ const waClientOptions = {
     : {})
 };
 
-const waClient = new Client(waClientOptions);
+let waClient = new Client(waClientOptions);
+let waReconnectInFlight = false;
 
 if (waPuppeteerLaunch.mode === 'executablePath') {
   console.log('[WA] Puppeteer → executablePath:', waPuppeteerLaunch.executablePath);
@@ -1552,51 +1556,16 @@ if (waPuppeteerLaunch.mode === 'executablePath') {
   );
 }
 
-waClient.on('loading_screen', (percent, message) => {
-  const p = Number(percent);
-  if (p === 0 || p >= 99 || p % 20 === 0) {
-    console.log(`[WA] Загрузка WhatsApp Web: ${p}% ${message ? String(message) : ''}`);
-  }
-});
-
-waClient.on('change_state', (state) => {
-  waConnectionState = state != null ? String(state) : null;
-  console.log('[WA] Состояние:', state);
-});
-
-waClient.on('error', (err) => {
-  waLastInitError = err?.message || String(err);
-  console.error('[WA] Ошибка клиента:', waLastInitError);
-});
-
-waClient.on('qr', (qr) => {
-  if (!isWhatsAppQrPayloadValid(qr)) {
-    console.warn('[WA] Пропускаем битый QR payload (ref пустой/undefined)');
-    return;
-  }
-  currentQRCode = qr;
-  waLastQrAt = Date.now();
-
-  console.log('\n📲 WhatsApp QR-код для сканирования (действителен ~20–40 с):');
-  console.log('═══════════════════════════════════════════════════════');
+function killOrphanWhatsAppChrome() {
+  const sessionPath = join(__dirname, '.wwebjs_auth', 'session');
+  if (process.platform !== 'darwin' && process.platform !== 'linux') return;
   try {
-    qrcode.generate(qr, { small: true });
+    execSync(`pkill -f "user-data-dir=${sessionPath}" || true`, { stdio: 'ignore' });
+    console.log('[WA] Остановлены процессы Chrome с user-data-dir сессии WA');
   } catch (e) {
-    console.log('⚠️ Не удалось нарисовать QR в терминале — откройте админку → WhatsApp');
+    console.warn('[WA] pkill orphan Chrome:', e?.message || e);
   }
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('💡 Сканируйте QR в WhatsApp: Настройки → Связанные устройства → Привязать устройство');
-  console.log('   Не вводите длинную строку 2@… вручную — это не 8-значный pairing code.');
-  console.log('   Если в телефоне «ошибка» — код уже протух: нажмите «Запросить новый QR» в админке.\n');
-});
-
-// Обработчик события authenticated - клиент успешно авторизован
-waClient.on('authenticated', () => {
-  console.log('✅ WhatsApp клиент успешно авторизован');
-  // Очищаем QR-код после авторизации
-  currentQRCode = null;
-  // Не устанавливаем waClientReady здесь, ждем события 'ready'
-});
+}
 
 // Функция для применения патча sendSeen (обход бага markedUnread)
 const applySendSeenPatch = async () => {
@@ -1664,6 +1633,104 @@ const applySendSeenPatch = async () => {
   return false;
 };
 
+function bindWhatsAppClientEvents(client) {
+  client.on('loading_screen', (percent, message) => {
+    const p = Number(percent);
+    if (p === 0 || p >= 99 || p % 20 === 0) {
+      console.log(`[WA] Загрузка WhatsApp Web: ${p}% ${message ? String(message) : ''}`);
+    }
+  });
+
+  client.on('change_state', (state) => {
+    waConnectionState = state != null ? String(state) : null;
+    console.log('[WA] Состояние:', state);
+  });
+
+  client.on('error', (err) => {
+    waLastInitError = err?.message || String(err);
+    console.error('[WA] Ошибка клиента:', waLastInitError);
+  });
+
+  client.on('qr', (qr) => {
+    if (!isWhatsAppQrPayloadValid(qr)) {
+      console.warn('[WA] Пропускаем битый QR payload (ref пустой/undefined)');
+      return;
+    }
+    currentQRCode = qr;
+    waLastQrAt = Date.now();
+
+    console.log('\n📲 WhatsApp QR-код для сканирования (действителен ~20–40 с):');
+    console.log('═══════════════════════════════════════════════════════');
+    try {
+      qrcode.generate(qr, { small: true });
+    } catch (e) {
+      console.log('⚠️ Не удалось нарисовать QR в терминале — откройте админку → WhatsApp');
+    }
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('💡 Сканируйте QR в WhatsApp: Настройки → Связанные устройства → Привязать устройство');
+    console.log('   Не вводите длинную строку 2@… вручную — это не 8-значный pairing code.');
+    console.log('   Если в телефоне «ошибка» — код уже протух: нажмите «Запросить новый QR» в админке.\n');
+  });
+
+  client.on('authenticated', () => {
+    console.log('✅ WhatsApp клиент успешно авторизован');
+    currentQRCode = null;
+  });
+
+  client.on('ready', async () => {
+    waClientReady = true;
+    currentQRCode = null;
+    console.log('✅ WhatsApp клиент готов к отправке сообщений');
+    await applySendSeenPatch();
+  });
+
+  client.on('auth_failure', (msg) => {
+    waClientReady = false;
+    waLastInitError = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    console.error('❌ Ошибка авторизации WhatsApp:', msg);
+  });
+
+  client.on('disconnected', (reason) => {
+    waClientReady = false;
+    console.warn('⚠️ WhatsApp клиент отключен. Причина:', reason);
+    console.log('🔄 Пытаемся переподключиться через 5 секунд...');
+    setTimeout(() => {
+      void recreateWhatsAppClientAndInitialize();
+    }, 5000);
+  });
+}
+
+async function recreateWhatsAppClientAndInitialize() {
+  if (waReconnectInFlight) return;
+  waReconnectInFlight = true;
+  waClientReady = false;
+  currentQRCode = null;
+  try {
+    try {
+      waClient?.removeAllListeners?.();
+    } catch {
+      /* ignore */
+    }
+    try {
+      await waClient?.destroy?.();
+    } catch (e) {
+      console.warn('[WA] destroy before reconnect:', e?.message || e);
+    }
+    killOrphanWhatsAppChrome();
+    await new Promise((r) => setTimeout(r, 800));
+    waClient = new Client(waClientOptions);
+    bindWhatsAppClientEvents(waClient);
+    await waClient.initialize();
+  } catch (error) {
+    waLastInitError = error?.message || String(error);
+    console.error('❌ Ошибка при переподключении WhatsApp:', error?.message || error);
+  } finally {
+    waReconnectInFlight = false;
+  }
+}
+
+bindWhatsAppClientEvents(waClient);
+
 /** Внутренняя отправка WhatsApp (напоминания аукциона). */
 async function trySendWhatsAppDigits(rawPhoneDigits, messageText) {
   const text = String(messageText || '').trim();
@@ -1703,6 +1770,15 @@ async function trySendWhatsAppDigits(rawPhoneDigits, messageText) {
   }
 }
 
+registerWhatsAppDigitsSender(trySendWhatsAppDigits);
+registerWhatsAppManagerDigitsGetter(() => {
+  try {
+    return waClient?.info?.wid?.user || '';
+  } catch {
+    return '';
+  }
+});
+
 function getFrontendBaseUrl() {
   return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 }
@@ -1718,18 +1794,45 @@ async function sendTestDriveSurveyWhatsAppForBooking(bookingId, options = {}) {
   const st = String(booking.status || '').toLowerCase();
   if (st === 'cancelled') return { ok: false, error: 'cancelled' };
   const sentAlready = String(booking.survey_whatsapp_status || '').toLowerCase() === 'sent';
-  if (sentAlready && !manual) return { ok: true, already: true };
 
   const user = await userQueries.getById(booking.user_id);
-  const phone = user?.phone_number || '';
-  const digits = String(phone).replace(/\D/g, '');
-  if (!digits) return { ok: false, error: 'no_phone' };
+  let propertyTitle = `Объект #${booking.property_id}`;
+  try {
+    const prop = await propertyQueries.getById(booking.property_id, booking.property_table || null);
+    if (prop?.title) propertyTitle = prop.title;
+  } catch {
+    /* title fallback */
+  }
 
-  const url = `${getFrontendBaseUrl()}/test-drive/survey/${booking.survey_token}`;
-  const hello = user?.first_name ? `Здравствуйте, ${user.first_name}! ` : '';
-  const text = `${hello}Как проходит проживание? Пройдите короткий опрос: ${url}`;
+  if (String(booking.survey_email_status || '').toLowerCase() !== 'sent') {
+    try {
+      const mail = await sendTestDriveSurveyInviteEmail({
+        userId: booking.user_id,
+        user,
+        propertyTitle,
+        surveyToken: booking.survey_token,
+      });
+      if (mail.ok) {
+        await testDriveBookingQueries.markSurveyEmailSent(bookingId);
+      } else if (mail.error === 'no_email') {
+        console.warn(
+          `[test-drive-survey-email] user_id=${booking.user_id} без email — письмо по опросу не отправлено`,
+        );
+      }
+    } catch (e) {
+      console.warn('[test-drive-survey-email]', e?.message || e);
+    }
+  }
 
-  const wa = await trySendWhatsAppDigits(digits, text);
+  if (sentAlready && !manual) return { ok: true, already: true };
+
+  const wa = await sendTestDriveSurveyInviteWhatsApp({
+    userId: booking.user_id,
+    user,
+    propertyTitle,
+    surveyToken: booking.survey_token,
+  });
+  if (!wa.ok && wa.error === 'no_phone') return { ok: false, error: 'no_phone' };
   if (!wa.ok) return { ok: false, error: wa.error || 'wa_failed' };
 
   await testDriveBookingQueries.markSurveyWhatsAppSent(bookingId);
@@ -1764,37 +1867,6 @@ async function sendTestDriveExitFeedbackWhatsAppForBooking(bookingId, options = 
   await testDriveBookingQueries.markExitFeedbackWhatsAppSent(bookingId);
   return { ok: true };
 }
-
-waClient.on('ready', async () => {
-  waClientReady = true;
-  // Очищаем QR-код после готовности клиента
-  currentQRCode = null;
-  console.log('✅ WhatsApp клиент готов к отправке сообщений');
-
-  // Применяем патч sendSeen при готовности клиента
-  await applySendSeenPatch();
-});
-
-waClient.on('auth_failure', (msg) => {
-  waClientReady = false;
-  waLastInitError = typeof msg === 'string' ? msg : JSON.stringify(msg);
-  console.error('❌ Ошибка авторизации WhatsApp:', msg);
-});
-
-waClient.on('disconnected', (reason) => {
-  waClientReady = false;
-  console.warn('⚠️ WhatsApp клиент отключен. Причина:', reason);
-  console.log('🔄 Пытаемся переподключиться через 5 секунд...');
-  
-  // Задержка перед переподключением для избежания быстрых циклов переподключения
-  setTimeout(() => {
-    try {
-      waClient.initialize();
-    } catch (error) {
-      console.error('❌ Ошибка при переподключении WhatsApp:', error.message);
-    }
-  }, 5000);
-});
 
 // Функция для проверки состояния клиента
 const checkClientState = async () => {
@@ -3737,9 +3809,10 @@ app.delete('/api/documents/:id', async (req, res) => {
 
 /**
  * POST /api/auth/whatsapp - Регистрация/Авторизация через WhatsApp
- * mode: 'login' | 'register'
+ * mode: 'login' | 'register' | 'auto'
  *  - login: только вход, без создания нового пользователя
- *  - register: создаем пользователя, если его еще нет
+ *  - register: создаем пользователя, если его еще нет; если есть — ошибка
+ *  - auto: есть аккаунт — вход, нет — создаём
  */
 app.post('/api/auth/whatsapp', async (req, res) => {
   try {
@@ -5654,7 +5727,7 @@ function buildLinkedRoleProfileFromUser(sourceUser) {
     passport_series: sourceUser.passport_series ?? null,
     user_photo: sourceUser.user_photo ?? null,
     passport_photo: sourceUser.passport_photo ?? null,
-    is_verified: 0,
+    is_verified: sourceUser.is_verified === 1 || sourceUser.is_verified === true ? 1 : 0,
     is_online: 1,
     is_blocked: 0,
   };
@@ -6014,9 +6087,9 @@ app.post('/api/auth/email/register', async (req, res) => {
       password: hashedPassword, // Сохраняем хешированный пароль
       phone_number: null, // Телефон не требуется для email регистрации
       role: linkBuyer ? 'seller' : (req.body.role || 'buyer'),
-      // ВАЖНО: is_verified отвечает за верификацию документов администратором,
-      // а не за подтверждение email. Новый пользователь всегда стартует как не верифицированный.
-      is_verified: 0,
+      // Linked seller inherits buyer KYC; a brand-new account starts unverified.
+      is_verified:
+        linkBuyer && (linkBuyer.is_verified === 1 || linkBuyer.is_verified === true) ? 1 : 0,
       is_online: 1
     };
     
@@ -6183,7 +6256,10 @@ app.post('/api/auth/email/login', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Не удалось войти. Попробуйте позже.',
+    });
   }
 });
 
@@ -6318,7 +6394,8 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
 
     const requestedRole = String(req.body?.role || 'buyer').toLowerCase();
     const role = requestedRole === 'seller' || requestedRole === 'owner' ? 'seller' : 'buyer';
-    const mode = req.body?.mode === 'register' ? 'register' : 'login';
+    const rawMode = String(req.body?.mode || 'login').toLowerCase();
+    const mode = rawMode === 'register' || rawMode === 'auto' ? rawMode : 'login';
     const candidates = await userQueries.getAllByEmail(email);
     let user = usersForCabinetRole(candidates, role)[0] || null;
 
@@ -7221,18 +7298,6 @@ async function wipeWhatsAppAuthFolder() {
   }
 }
 
-/** Зависший headless Chrome держит userDataDir → initialize падает с «browser is already running». */
-function killOrphanWhatsAppChrome() {
-  const sessionPath = join(__dirname, '.wwebjs_auth', 'session');
-  if (process.platform !== 'darwin' && process.platform !== 'linux') return;
-  try {
-    execSync(`pkill -f "user-data-dir=${sessionPath}" || true`, { stdio: 'ignore' });
-    console.log('[WA] Остановлены процессы Chrome с user-data-dir сессии WA');
-  } catch (e) {
-    console.warn('[WA] pkill orphan Chrome:', e?.message || e);
-  }
-}
-
 async function restartWhatsAppPairingRequest() {
   waClientReady = false;
   currentQRCode = null;
@@ -7250,10 +7315,11 @@ async function restartWhatsAppPairingRequest() {
     }
   }
   killOrphanWhatsAppChrome();
-  // Дать ОС отпустить файлы профиля Chrome
   await new Promise((r) => setTimeout(r, 800));
   await wipeWhatsAppAuthFolder();
   try {
+    waClient = new Client(waClientOptions);
+    bindWhatsAppClientEvents(waClient);
     await waClient.initialize();
   } catch (e) {
     const msg = e?.message || String(e);
@@ -7262,6 +7328,8 @@ async function restartWhatsAppPairingRequest() {
       killOrphanWhatsAppChrome();
       await new Promise((r) => setTimeout(r, 1200));
       await wipeWhatsAppAuthFolder();
+      waClient = new Client(waClientOptions);
+      bindWhatsAppClientEvents(waClient);
       await waClient.initialize();
       return;
     }
@@ -7291,6 +7359,22 @@ app.post('/api/whatsapp/restart-pairing', async (req, res) => {
     });
   } catch (e) {
     return res.status(500).json({ success: false, error: e?.message || String(e) });
+  }
+});
+
+/**
+ * GET /api/whatsapp/manager-chat — wa.me на номер сессии из админки (или WHATSAPP_MANAGER_NUMBER).
+ */
+app.get('/api/whatsapp/manager-chat', (req, res) => {
+  try {
+    const digits = getWhatsAppManagerDigits();
+    const url = digits ? buildWhatsAppChatUrl(digits) : '';
+    if (!url) {
+      return res.status(404).json({ ok: false, error: 'no_manager_number' });
+    }
+    return res.json({ ok: true, url });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
   }
 });
 
@@ -15211,6 +15295,14 @@ app.post('/api/bids', async (req, res) => {
       table: tableName,
       property_type: property.property_type,
     });
+
+    if (await viewerOwnsPropertyRecord(userQueries, user, property)) {
+      return res.status(403).json({
+        success: false,
+        code: 'OWN_LISTING',
+        error: 'Нельзя делать ставки на свой объект',
+      });
+    }
     
     // Проверяем, что у пользователя есть депозит (только для аукционов)
     // Для обычных объектов депозит не требуется
@@ -15629,6 +15721,14 @@ app.put('/api/bids/ceiling', async (req, res) => {
     });
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+
+    if (await viewerOwnsPropertyRecord(userQueries, user, property)) {
+      return res.status(403).json({
+        success: false,
+        code: 'OWN_LISTING',
+        error: 'Нельзя делать ставки на свой объект',
+      });
     }
 
     const basePrice =
@@ -17519,7 +17619,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       try {
         await testDriveBookingQueries.ensureTable();
         const ids = await testDriveBookingQueries.listDueSurveyWhatsApp(25);
-        for (const bid of ids) {
+        const idsEmail = await testDriveBookingQueries.listDueSurveyEmail(25);
+        const dueIds = [...new Set([...ids, ...idsEmail])];
+        for (const bid of dueIds) {
           await sendTestDriveSurveyWhatsAppForBooking(bid, { manual: false });
         }
         const idsExit = await testDriveBookingQueries.listDueExitFeedbackWhatsApp(25);
@@ -17555,6 +17657,17 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
+  const message = reason?.message || String(reason || '');
+  const waNoise =
+    message.includes('onQRChangedEvent') ||
+    message.includes('whatsapp-web.js') ||
+    message.includes('Failed to add page binding');
+  if (waNoise) {
+    waClientReady = false;
+    waLastInitError = message;
+    console.error('❌ Необработанное отклонение промиса (WhatsApp, сервер продолжает работу):', reason);
+    return;
+  }
   console.error('❌ Необработанное отклонение промиса:', reason);
   void closeDatabase().finally(() => process.exit(1));
 });

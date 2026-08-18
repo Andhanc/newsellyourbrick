@@ -1,34 +1,27 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import CompareInvestorProDrawer from '../components/CompareInvestorProDrawer'
-import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalculatorAccess'
-import axios from 'axios'
 import Header from '../components/Header'
-import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
-import { FiArrowRight, FiBarChart2, FiRefreshCw, FiLoader } from 'react-icons/fi'
-import { HiOutlineSparkles } from 'react-icons/hi'
-import PropertyListingCard from '../components/PropertyListingCard'
-import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
-import CompareDecisionSummary from '../components/compare/CompareDecisionSummary'
+import { FiArrowRight } from 'react-icons/fi'
+import FavoritePropertyCard from '../components/FavoritePropertyCard'
+import CompareInvestorResults from '../components/compare/CompareInvestorResults'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import useMobileLayout from '../hooks/useMobileLayout'
-import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
+import { getComparisonGroupKey, hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
-import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 import './Compare.css'
-import '../components/PropertyListingGrid.css'
+import '../components/AuctionPropertyCard.css'
+import '../components/DebtsPropertyCard.css'
+import '../components/SharesPropertyCard.css'
+import '../styles/hrShowcaseAuctionCards.css'
+import '../styles/hrShowcaseDebtsCards.css'
+import '../styles/discoverAuctionCards.css'
+import '../components/ui/AuctionMobileLayout.css'
 import { formatPropertyPrice } from '../utils/currency'
-import { writeInvestorScenario } from '../utils/investorScenarioContext'
-import {
-  isAuctionListing,
-  resolvePositivePropertyPrice,
-  selectComparisonItem,
-  summarizeComparisonRows,
-} from '../utils/compareDecision'
+import { isAuctionListing, resolvePositivePropertyPrice } from '../utils/compareDecision'
 import { createCompareAiRequestGuard } from '../utils/compareAiRequestGuard'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
@@ -38,20 +31,14 @@ const COMPARE_HEADER_ILLUSTRATION = '/images/favorites-compare-reference-style.p
 function ComparePickCardSkeleton() {
   return (
     <li>
-      <div className="compare-pick-card compare-pick-card--skeleton" aria-hidden="true">
-        <div className="compare-pick-card-image">
-          <div className="compare-skel-shimmer compare-skel-shimmer--media" />
-        </div>
-        <div className="compare-pick-card-body">
-          <span className="compare-skel-line compare-skel-line--type" />
-          <span className="compare-skel-line compare-skel-line--title" />
-          <span className="compare-skel-line compare-skel-line--title-narrow" />
-          <span className="compare-skel-line compare-skel-line--loc" />
-          <div className="compare-pick-meta compare-pick-meta--skeleton">
-            <span className="compare-skel-pill" />
-            <span className="compare-skel-pill" />
-            <span className="compare-skel-pill compare-skel-pill--grow" />
-          </div>
+      <div className="auction-card auction-card--skeleton" aria-hidden>
+        <div className="auction-card__media auction-card-skeleton__media" />
+        <div className="auction-card__body auction-card-skeleton__body">
+          <div className="auction-card-skeleton__line auction-card-skeleton__line--short" />
+          <div className="auction-card-skeleton__line auction-card-skeleton__line--title" />
+          <div className="auction-card-skeleton__line auction-card-skeleton__line--specs" />
+          <div className="auction-card-skeleton__price-panel" />
+          <div className="auction-card-skeleton__btn" />
         </div>
       </div>
     </li>
@@ -251,123 +238,6 @@ function serializePropertyForAi(p, t) {
   }
 }
 
-function scoreAiInfrastructure(rows) {
-  let left = 0
-  let right = 0
-  let tie = 0
-  for (const r of rows) {
-    if (r.winner === 'left') left += 1
-    else if (r.winner === 'right') right += 1
-    else if (r.winner === 'tie') tie += 1
-  }
-  return { left, right, tie }
-}
-
-/** Данные карточки аукциона → формат `initialPropertyData` калькулятора */
-function mapAuctionCardToCalculatorSource(property) {
-  const pt = String(property.property_type || property.propertyType || '').toLowerCase()
-  let propertyType = 'apartment'
-  if (pt === 'house') propertyType = 'house'
-  else if (pt === 'villa') propertyType = 'villa'
-  else if (pt === 'commercial') propertyType = 'commercial'
-  else if (pt === 'land') propertyType = 'land'
-
-  const areaRaw = property.sqft ?? property.area
-  const area = areaRaw != null && areaRaw !== '' ? String(areaRaw) : ''
-
-  const rooms = property.beds ?? property.rooms ?? property.bedrooms
-  const city = pickCityForAuctionCalculator(property)
-
-  return {
-    propertyType,
-    area,
-    rooms,
-    bedrooms: property.bedrooms,
-    city,
-    country: property.country ?? null,
-    address: property.address != null ? String(property.address) : '',
-    location: property.location != null ? String(property.location) : '',
-  }
-}
-
-async function estimateMarketPrice(initialSource, t) {
-  const mapped = mapListingToCalculatorData(initialSource)
-  const areaNum = parseInt(mapped.area, 10)
-  if (!mapped.area || !Number.isFinite(areaNum) || areaNum < 1) {
-    throw new Error(t('comparePage_errNeedArea'))
-  }
-  if (!String(mapped.city || '').trim()) {
-    throw new Error(t('comparePage_errNeedCity'))
-  }
-
-  let district = mapped.district || 'all'
-  const streetForDetect =
-    mapped.street ||
-    sanitizeCalcAddress(initialSource.address) ||
-    sanitizeCalcAddress(initialSource.location) ||
-    ''
-
-  if (streetForDetect) {
-    try {
-      const d = await axios.post('/api/properties/detect-district', {
-        address: streetForDetect,
-        city: mapped.city,
-        country: initialSource.country ?? null,
-      })
-      if (d.data?.success && d.data?.data?.district) {
-        district = d.data.data.district
-      }
-    } catch (_) {
-      /* ок — считаем с «Весь город» */
-    }
-  }
-
-  const skipRooms = mapped.propertyType === 'land' || mapped.propertyType === 'commercial'
-  const roomsPayload =
-    skipRooms ? null : mapped.rooms === 'studio' ? 'studio' : parseInt(mapped.rooms, 10)
-
-  const response = await axios.post(
-    '/api/properties/calculate-price',
-    {
-      area: areaNum,
-      rooms: roomsPayload,
-      city: mapped.city,
-      country: initialSource.country ?? null,
-      street: streetForDetect || null,
-      district: district || 'all',
-      propertyType: mapped.propertyType,
-      maxPrice: null,
-      minPrice: null,
-    },
-    { timeout: 480000 }
-  )
-
-  if (!response.data?.success) {
-    throw new Error(response.data?.error || t('comparePage_errCalc'))
-  }
-  return response.data.data
-}
-
-function sanitizeCalcAddress(value = '') {
-  const text = String(value || '').replace(/\s+/g, ' ').trim()
-  if (!text) return ''
-  if (/cerca de mi ubicaci[oó]n actual/i.test(text)) return ''
-  if (/near my current location/i.test(text)) return ''
-  return text
-}
-
-function formatCalcEur(price, dash = '—') {
-  if (price == null || price === '') return dash
-  const n = Number(price)
-  if (!Number.isFinite(n)) return dash
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
 function buildRows(left, right, t) {
   const dash = t('comparePage_dash')
   const pL = resolvePositivePropertyPrice(left)
@@ -527,12 +397,20 @@ function buildRows(left, right, t) {
   return rows
 }
 
-function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSelect }) {
+
+function ComparePickListingGrid({
+  items,
+  selectedKeys,
+  groupFilter,
+  onToggleSelect,
+  isFavorite,
+  onToggleFavorite,
+}) {
   const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
     const timerList = []
     const noTimerList = []
     for (const item of items) {
-      if (hasPropertyListingTimer(formatPropertyForListingCard(item.property))) {
+      if (hasPropertyListingTimer(item.property)) {
         timerList.push(item)
       } else {
         noTimerList.push(item)
@@ -546,7 +424,7 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
   }, [items])
 
   const gridClassName =
-    'compare-pick-grid compare-pick-grid--listing properties-grid property-listing-grid'
+    'compare-pick-grid compare-pick-grid--listing properties-grid properties-grid--auction-cards auction-mobile-stack--desktop-cards'
 
   const renderItem = (item) => {
     const g = getComparisonGroupKey(item.property, item.mockCategory)
@@ -554,7 +432,6 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
     const pos = selectedKeys.indexOf(item.key)
     const disabled =
       selectedKeys.length === 1 && groupFilter != null && g !== groupFilter && !selected
-    const property = formatPropertyForListingCard(item.property)
 
     return (
       <li
@@ -572,50 +449,51 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
             {pos === 0 ? '1' : '2'}
           </span>
         ) : null}
-        <PropertyListingCard
-          property={property}
+        <FavoritePropertyCard
+          item={item}
+          isFavorite={isFavorite}
+          onToggleFavorite={onToggleFavorite}
           onOpen={() => {
             if (!disabled) onToggleSelect(item)
           }}
-          showActions={false}
-          showFavorite={false}
-          pinFooter
-          favoriteMockCategory={item.mockCategory}
-          className={[
-            selected && 'property-card--compare-selected',
-            disabled && 'property-card--compare-disabled',
-          ]
-            .filter(Boolean)
-            .join(' ')}
+          onOpenShare={() => {
+            if (!disabled) onToggleSelect(item)
+          }}
+          formatPrice={formatPrice}
         />
       </li>
     )
   }
 
-  if (splitByTimer) {
-    return (
-      <div className="property-listing-grid-sections">
-        <ul className={gridClassName}>{withTimer.map(renderItem)}</ul>
-        <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
-        <ul className={gridClassName}>{withoutTimer.map(renderItem)}</ul>
-      </div>
-    )
-  }
+  const grids = splitByTimer ? (
+    <div className="compare-pick-sections">
+      <ul className={gridClassName}>{withTimer.map(renderItem)}</ul>
+      <div className="compare-pick-divider" role="separator" aria-hidden="true" />
+      <ul className={gridClassName}>{withoutTimer.map(renderItem)}</ul>
+    </div>
+  ) : (
+    <ul className={gridClassName}>{items.map(renderItem)}</ul>
+  )
 
-  return <ul className={gridClassName}>{items.map(renderItem)}</ul>
+  return (
+    <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
+      {grids}
+    </div>
+  )
 }
 
 const Compare = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const isMobile = useMobileLayout(767)
-  const { favoritesLoading } = usePropertyFavorites()
+  const { favoritesLoading, isFavorite, toggleFavorite } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
-  const { resolved: subscriptionResolved, allowed: hasCalculatorAccess } =
-    useSubscriptionCalculatorAccess()
 
   const listLoading = catalogLoading || favoritesLoading
-  const [compareInvestorDrawerOpen, setCompareInvestorDrawerOpen] = useState(false)
+  const handleToggleFavorite = (property, mockCategory) => {
+    const category = hasDbBackedProperty(property) ? undefined : (mockCategory || 'property')
+    return toggleFavorite(property, category)
+  }
   const [selectedKeys, setSelectedKeys] = useState(() => [])
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -624,9 +502,6 @@ const Compare = () => {
   if (aiRequestGuardRef.current == null) {
     aiRequestGuardRef.current = createCompareAiRequestGuard()
   }
-  const [calcLoading, setCalcLoading] = useState(false)
-  const [calcData, setCalcData] = useState(() => ({ left: null, right: null }))
-  const [calcError, setCalcError] = useState(() => ({ left: null, right: null }))
 
   const firstKey = selectedKeys[0] ?? null
   const firstItem = useMemo(
@@ -679,43 +554,13 @@ const Compare = () => {
     return { left: a, right: b }
   }, [favoriteAuctions, selectedKeys])
 
-  const openInvestorPanel = useCallback((side) => {
-    const selected = selectComparisonItem(pair, side)
-    if (!selected) return
-    const scenario = writeInvestorScenario({
-      source: 'compare',
-      propertyKeys: [pair.left.key, pair.right.key],
-      selectedKey: selected.key,
-    })
-    navigate('/calculator', {
-      state: {
-        calculatorFromProperty: selected.property,
-        calculatorSelectedKey: selected.key,
-        calculatorStrategy: 'rent',
-        calculatorScenarioCreatedAt: scenario?.createdAt ?? null,
-      },
-    })
-  }, [navigate, pair])
-
   const tableRows = useMemo(() => {
     if (!pair) return []
     return buildRows(pair.left.property, pair.right.property, t)
   }, [pair, t, i18n.language])
 
-  const decisionSummary = useMemo(() => summarizeComparisonRows(tableRows), [tableRows])
-
-  const aiScores = useMemo(
-    () => (aiResult?.rows?.length ? scoreAiInfrastructure(aiResult.rows) : null),
-    [aiResult]
-  )
-
   const requestAiAnalysis = useCallback(async () => {
     if (!pair || aiLoading) return
-    if (!subscriptionResolved) return
-    if (!hasCalculatorAccess) {
-      setCompareInvestorDrawerOpen(true)
-      return
-    }
 
     const { requestId, signal } = aiRequestGuardRef.current.start()
     setAiLoading(true)
@@ -734,82 +579,20 @@ const Compare = () => {
     } finally {
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
     }
-  }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved, t])
+  }, [aiLoading, pair, t])
 
   useEffect(() => {
     aiRequestGuardRef.current.cancel()
     setAiResult(null)
     setAiError(null)
     setAiLoading(false)
-    setCompareInvestorDrawerOpen(false)
   }, [pair?.left?.key, pair?.right?.key])
 
   useEffect(() => {
-    return () => aiRequestGuardRef.current.cancel()
+    return () => {
+      aiRequestGuardRef.current.cancel()
+    }
   }, [])
-
-  useEffect(() => {
-    setCalcData({ left: null, right: null })
-    setCalcError({ left: null, right: null })
-    setCalcLoading(false)
-  }, [pair?.left?.key, pair?.right?.key])
-
-  const canRunCompareCalculator = useMemo(() => {
-    if (!pair) return false
-    for (const side of ['left', 'right']) {
-      const p = pair[side].property
-      const a = Number(p.sqft ?? p.area ?? 0)
-      const cityGuess = pickCityForAuctionCalculator(p)
-      if (!Number.isFinite(a) || a < 1 || !String(cityGuess || '').trim()) return false
-    }
-    return true
-  }, [pair])
-
-  const showInvestorPanelCta = useMemo(() => {
-    if (calcLoading) return false
-    return Boolean(calcData.left || calcData.right || calcError.left || calcError.right)
-  }, [calcData.left, calcData.right, calcError.left, calcError.right, calcLoading])
-
-  const runCompareCalculator = useCallback(async () => {
-    if (!pair) return
-    setCalcLoading(true)
-    setCalcData({ left: null, right: null })
-    setCalcError({ left: null, right: null })
-
-    const leftSrc = mapAuctionCardToCalculatorSource(pair.left.property)
-    const rightSrc = mapAuctionCardToCalculatorSource(pair.right.property)
-
-    const nextErr = { left: null, right: null }
-
-    try {
-      // По очереди: два параллельных calculate-price грузят два Puppeteer — сервер часто падает (502 / ECONNRESET).
-      try {
-        const leftVal = await estimateMarketPrice(leftSrc, t)
-        setCalcData((prev) => ({ ...prev, left: leftVal }))
-      } catch (e) {
-        nextErr.left = e?.message || t('comparePage_errCalcLeft')
-        setCalcError((prev) => ({ ...prev, left: nextErr.left }))
-      }
-
-      try {
-        const rightVal = await estimateMarketPrice(rightSrc, t)
-        setCalcData((prev) => ({ ...prev, right: rightVal }))
-      } catch (e) {
-        nextErr.right = e?.message || t('comparePage_errCalcRight')
-        setCalcError((prev) => ({ ...prev, right: nextErr.right }))
-      }
-
-      if (nextErr.left && nextErr.right) {
-        showNotification(nextErr.left, 'error')
-      } else if (nextErr.left || nextErr.right) {
-        showNotification(t('comparePage_errCalcPartial'), 'warning')
-      }
-    } finally {
-      setCalcLoading(false)
-    }
-  }, [pair, t])
-
-  const dash = t('comparePage_dash')
 
   return (
     <div className="compare-page">
@@ -845,11 +628,13 @@ const Compare = () => {
             <div className="compare-hint compare-hint--skeleton" aria-hidden="true">
               <span className="compare-skel-line compare-skel-line--hint" />
             </div>
-            <ul className="compare-pick-grid compare-pick-grid--skeleton">
-              {Array.from({ length: COMPARE_PICK_SKELETON_COUNT }, (_, i) => (
-                <ComparePickCardSkeleton key={`compare-pick-skel-${i}`} />
-              ))}
-            </ul>
+            <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
+              <ul className="compare-pick-grid compare-pick-grid--skeleton properties-grid properties-grid--auction-cards auction-mobile-stack--desktop-cards">
+                {Array.from({ length: COMPARE_PICK_SKELETON_COUNT }, (_, i) => (
+                  <ComparePickCardSkeleton key={`compare-pick-skel-${i}`} />
+                ))}
+              </ul>
+            </div>
           </section>
         ) : favoriteAuctions.length === 0 ? (
           <section className="compare-empty" aria-labelledby="compare-empty-title">
@@ -906,466 +691,26 @@ const Compare = () => {
                   selectedKeys={selectedKeys}
                   groupFilter={groupFilter}
                   onToggleSelect={toggleSelect}
+                  isFavorite={isFavorite}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               )}
             </section>
 
             {pair && (
-              <section className="compare-table-section" aria-labelledby="compare-table-heading">
-                <h2 id="compare-table-heading" className="compare-table-heading">
-                  {t('comparePage_title')}
-                </h2>
-                {isMobile ? (
-                  <>
-                    <CompareMobileMetrics
-                      left={pair.left}
-                      right={pair.right}
-                      rows={tableRows}
-                      onReplace={replaceSelectedSide}
-                    />
-                    <CompareDecisionSummary
-                      pair={pair}
-                      summary={decisionSummary}
-                      onOpenCalculator={openInvestorPanel}
-                    />
-                  </>
-                ) : (
-                  <div className="compare-table-wrap">
-                    <table className="compare-table">
-                    <thead>
-                      <tr>
-                        <th scope="col" className="compare-table-param">
-                          {t('comparePage_param')}
-                        </th>
-                        <th scope="col" className="compare-table-col">
-                          <span className="compare-table-col-head">
-                            {pair.left.property.name || pair.left.property.title}
-                          </span>
-                        </th>
-                        <th scope="col" className="compare-table-col">
-                          <span className="compare-table-col-head">
-                            {pair.right.property.name || pair.right.property.title}
-                          </span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableRows.map((row) => (
-                        <tr key={row.id}>
-                          <th scope="row" className="compare-table-param">
-                            {row.label}
-                          </th>
-                          <td
-                            className={[
-                              'compare-table-cell',
-                              !row.displayOnly && row.winner === 'left' && 'compare-table-cell--win',
-                              !row.displayOnly && row.winner === 'tie' && 'compare-table-cell--tie',
-                              row.displayOnly && 'compare-table-cell--plain',
-                            ]
-                              .filter(Boolean)
-                              .join(' ')}
-                          >
-                            {row.left}
-                            {!row.displayOnly && row.winner === 'left' && (
-                              <span className="compare-win-tag">{t('comparePage_better')}</span>
-                            )}
-                          </td>
-                          <td
-                            className={[
-                              'compare-table-cell',
-                              !row.displayOnly && row.winner === 'right' && 'compare-table-cell--win',
-                              !row.displayOnly && row.winner === 'tie' && 'compare-table-cell--tie',
-                              row.displayOnly && 'compare-table-cell--plain',
-                            ]
-                              .filter(Boolean)
-                              .join(' ')}
-                          >
-                            {row.right}
-                            {!row.displayOnly && row.winner === 'right' && (
-                              <span className="compare-win-tag">{t('comparePage_better')}</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {!isMobile && showInvestorPanelCta && (
-                  <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
-                    <div className="compare-investor-cta-inner">
-                      <div className="compare-investor-cta-copy">
-                        <h2 id="compare-investor-cta-heading" className="compare-investor-cta-title">
-                          <FiBarChart2 className="compare-investor-cta-title-icon" aria-hidden />
-                          {t('comparePage_investorTitle')}
-                        </h2>
-                        <p className="compare-investor-cta-text">
-                          {t('comparePage_investorText')}
-                        </p>
-                      </div>
-                      <div className="compare-investor-cta-actions">
-                        <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('left')}>
-                          {t('comparePage_calcObject1')} <FiArrowRight size={18} aria-hidden />
-                        </button>
-                        <button type="button" className="compare-investor-cta-link" onClick={() => openInvestorPanel('right')}>
-                          {t('comparePage_calcObject2')} <FiArrowRight size={18} aria-hidden />
-                        </button>
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                <section className="compare-ai-section" aria-labelledby="compare-ai-heading">
-                  <div className="compare-ai-head">
-                    <h2 id="compare-ai-heading" className="compare-ai-title">
-                      <HiOutlineSparkles className="compare-ai-title-icon" aria-hidden />
-                      {t('comparePage_aiTitle')}
-                    </h2>
-                    <button
-                      type="button"
-                      className="compare-ai-refresh"
-                      onClick={requestAiAnalysis}
-                      disabled={aiLoading || !subscriptionResolved}
-                      aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                      title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
-                    >
-                      <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
-                      {aiResult ? t('comparePage_aiRefresh') : t('comparePage_aiGet')}
-                    </button>
-                  </div>
-                  <p className="compare-ai-disclaimer">
-                    {t('comparePage_aiDisclaimer')}
-                  </p>
-                  {!subscriptionResolved ? (
-                    <p id="compare-ai-entitlement-help" className="compare-ai-entitlement-help" role="status" aria-live="polite">
-                      {t('comparePage_aiEntitlementHelp')}
-                    </p>
-                  ) : null}
-
-                  {!aiLoading && !aiError && !aiResult && (
-                    <div className="compare-ai-idle">
-                      <strong>{t('comparePage_aiIdleStrong')}</strong>
-                      <span>{t('comparePage_aiIdleText')}</span>
-                      <button
-                        type="button"
-                        className="compare-ai-idle-action"
-                        onClick={requestAiAnalysis}
-                        disabled={!subscriptionResolved}
-                        aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                        title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
-                      >
-                        {t('comparePage_aiGet')}
-                      </button>
-                    </div>
-                  )}
-
-                  {aiLoading && (
-                    <div className="compare-ai-loading" role="status" aria-live="polite">
-                      <span className="compare-ai-loading-dot" />
-                      {t('comparePage_aiLoading')}
-                    </div>
-                  )}
-
-                  {aiError && !aiLoading && (
-                    <div className="compare-ai-error" role="alert">
-                      {aiError}
-                      <button type="button" className="compare-ai-retry" onClick={requestAiAnalysis}>
-                        {t('comparePage_aiRetry')}
-                      </button>
-                    </div>
-                  )}
-
-                  {!aiLoading && aiResult?.summary && (
-                    <div className="compare-ai-summary">
-                      <p>{aiResult.summary}</p>
-                    </div>
-                  )}
-
-                  {!aiLoading && aiResult?.rows?.length > 0 && (
-                    isMobile ? (
-                      <div className="compare-ai-mobile-list">
-                        {aiResult.rows.map((row, idx) => (
-                          <article className="compare-ai-mobile-card" key={`${row.aspect}-${idx}`}>
-                            <h3>{row.aspect}</h3>
-                            <div className="compare-ai-mobile-values">
-                              <div className={row.winner === 'left' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
-                                <span>{t('comparePage_object1')}</span>
-                                <strong>{row.left}</strong>
-                              </div>
-                              <div className={row.winner === 'right' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
-                                <span>{t('comparePage_object2')}</span>
-                                <strong>{row.right}</strong>
-                              </div>
-                            </div>
-                          </article>
-                        ))}
-                        {aiScores ? (
-                          <p className="compare-ai-mobile-score">
-                            {t('comparePage_aiMobileScore', { left: aiScores.left, right: aiScores.right })}
-                            {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}.
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="compare-table-wrap compare-ai-table-wrap">
-                        <table className="compare-table compare-ai-table">
-                        <thead>
-                          <tr>
-                            <th scope="col" className="compare-table-param">
-                              {t('comparePage_aiInfraHeading')}
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.left.property.name || pair.left.property.title}
-                              </span>
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.right.property.name || pair.right.property.title}
-                              </span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {aiResult.rows.map((row, idx) => (
-                            <tr key={`${row.aspect}-${idx}`}>
-                              <th scope="row" className="compare-table-param">
-                                {row.aspect}
-                              </th>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'left' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.left}
-                                {row.winner === 'left' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
-                              </td>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'right' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.right}
-                                {row.winner === 'right' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
-                              </td>
-                            </tr>
-                          ))}
-                          {aiScores && (
-                            <tr className="compare-table-summary-row">
-                              <th scope="row" className="compare-table-param">
-                                {t('comparePage_aiSummaryRow')}
-                              </th>
-                              <td colSpan={2} className="compare-table-summary compare-table-summary--tie">
-                                <strong>
-                                  {t('comparePage_aiSummaryText', { left: aiScores.left, right: aiScores.right })}
-                                  {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}
-                                </strong>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                        </table>
-                      </div>
-                    )
-                  )}
-
-                  {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
-                    <p className="compare-ai-note">
-                      {t('comparePage_aiNote')}
-                    </p>
-                  )}
-                </section>
-
-                <div className="compare-calculator-actions">
-                  <button
-                    type="button"
-                    className="compare-calculator-btn compare-calculator-btn--liquid compare-calculator-trigger"
-                    onClick={runCompareCalculator}
-                    disabled={calcLoading || !canRunCompareCalculator}
-                  >
-                    {calcLoading ? (
-                      <>
-                        <FiLoader size={18} className="compare-calculator-trigger-spin" aria-hidden />
-                        {t('comparePage_calcRunning')}
-                      </>
-                    ) : (
-                      t('comparePage_calcButton')
-                    )}
-                  </button>
-                  {!canRunCompareCalculator && (
-                    <p className="compare-calculator-hint">
-                      {t('comparePage_calcHint')}
-                    </p>
-                  )}
-                </div>
-
-                {(calcLoading || calcData.left || calcData.right || calcError.left || calcError.right) && (
-                  <div className="compare-calculator-results" aria-live="polite">
-                    <h3 className="compare-calculator-results-title">{t('comparePage_calcResultsTitle')}</h3>
-                    <div className="compare-table-wrap compare-calculator-results-wrap">
-                      <table className="compare-table">
-                        <thead>
-                          <tr>
-                            <th scope="col" className="compare-table-param">
-                              {t('comparePage_calcMetric')}
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.left.property.name || pair.left.property.title}
-                              </span>
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.right.property.name || pair.right.property.title}
-                              </span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <th scope="row" className="compare-table-param">
-                              {t('comparePage_calcRecommendedPrice')}
-                            </th>
-                            <td className="compare-table-cell compare-calculator-result-cell">
-                              {calcLoading && !calcData.left ? (
-                                <span className="compare-calculator-pending">
-                                  <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
-                                  {t('comparePage_calcPending')}
-                                </span>
-                              ) : calcError.left ? (
-                                <span className="compare-calculator-cell-error">{calcError.left}</span>
-                              ) : (
-                                formatCalcEur(calcData.left?.recommendedPrice, dash)
-                              )}
-                            </td>
-                            <td className="compare-table-cell compare-calculator-result-cell">
-                              {calcLoading && !calcData.right ? (
-                                <span className="compare-calculator-pending">
-                                  <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
-                                  {t('comparePage_calcPending')}
-                                </span>
-                              ) : calcError.right ? (
-                                <span className="compare-calculator-cell-error">{calcError.right}</span>
-                              ) : (
-                                formatCalcEur(calcData.right?.recommendedPrice, dash)
-                              )}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th scope="row" className="compare-table-param">
-                              {t('comparePage_calcPricePerSqm')}
-                            </th>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm, dash)}</td>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm, dash)}</td>
-                          </tr>
-                          <tr>
-                            <th scope="row" className="compare-table-param">
-                              {t('comparePage_calcSources')}
-                            </th>
-                            <td className="compare-table-cell compare-calculator-meta">
-                              {calcData.left?.searchParams?.sources?.length
-                                ? calcData.left.searchParams.sources.join(', ')
-                                : dash}
-                            </td>
-                            <td className="compare-table-cell compare-calculator-meta">
-                              {calcData.right?.searchParams?.sources?.length
-                                ? calcData.right.searchParams.sources.join(', ')
-                                : dash}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th scope="row" className="compare-table-param">
-                              {t('comparePage_calcNote')}
-                            </th>
-                            <td className="compare-table-cell compare-calculator-note">{calcData.left?.note || dash}</td>
-                            <td className="compare-table-cell compare-calculator-note">{calcData.right?.note || dash}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="compare-calculator-similar-grid">
-                      <div className="compare-calculator-similar-col">
-                        <h4 className="compare-calculator-similar-heading">{t('comparePage_similarLeft')}</h4>
-                        {calcData.left?.similarProperties?.length ? (
-                          <ul className="compare-calculator-similar-list">
-                            {calcData.left.similarProperties.slice(0, 6).map((prop, idx) => {
-                              const key = prop.link || `L-${idx}`
-                              return (
-                                <li key={key} className="compare-calculator-similar-item">
-                                  <span className="compare-calculator-similar-price">
-                                    {formatCalcEur(prop.price, dash)}
-                                    {prop.source ? (
-                                      <span className="compare-calculator-similar-source"> · {prop.source}</span>
-                                    ) : null}
-                                  </span>
-                                  <span className="compare-calculator-similar-dims">
-                                    {prop.area ? t('comparePage_areaM2', { area: prop.area }) : ''}
-                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${t('comparePage_similarRooms', { count: prop.rooms })}` : ''}
-                                  </span>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                        ) : calcData.left && !calcError.left ? (
-                          <p className="compare-calculator-similar-empty">{t('comparePage_similarEmpty')}</p>
-                        ) : (
-                          !calcLoading && <p className="compare-calculator-similar-empty">{dash}</p>
-                        )}
-                      </div>
-                      <div className="compare-calculator-similar-col">
-                        <h4 className="compare-calculator-similar-heading">{t('comparePage_similarRight')}</h4>
-                        {calcData.right?.similarProperties?.length ? (
-                          <ul className="compare-calculator-similar-list">
-                            {calcData.right.similarProperties.slice(0, 6).map((prop, idx) => {
-                              const key = prop.link || `R-${idx}`
-                              return (
-                                <li key={key} className="compare-calculator-similar-item">
-                                  <span className="compare-calculator-similar-price">
-                                    {formatCalcEur(prop.price, dash)}
-                                    {prop.source ? (
-                                      <span className="compare-calculator-similar-source"> · {prop.source}</span>
-                                    ) : null}
-                                  </span>
-                                  <span className="compare-calculator-similar-dims">
-                                    {prop.area ? t('comparePage_areaM2', { area: prop.area }) : ''}
-                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${t('comparePage_similarRooms', { count: prop.rooms })}` : ''}
-                                  </span>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                        ) : calcData.right && !calcError.right ? (
-                          <p className="compare-calculator-similar-empty">{t('comparePage_similarEmpty')}</p>
-                        ) : (
-                          !calcLoading && <p className="compare-calculator-similar-empty">{dash}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
+              <CompareInvestorResults
+                pair={pair}
+                rows={tableRows}
+                onReplace={replaceSelectedSide}
+                aiResult={aiResult}
+                aiLoading={aiLoading}
+                aiError={aiError}
+                onRunAi={requestAiAnalysis}
+              />
             )}
           </>
         )}
       </div>
-
-      <CompareInvestorProDrawer
-        isOpen={compareInvestorDrawerOpen}
-        onClose={() => setCompareInvestorDrawerOpen(false)}
-        onOpenInvestorPanel={() => navigate('/calculator')}
-      />
     </div>
   )
 }

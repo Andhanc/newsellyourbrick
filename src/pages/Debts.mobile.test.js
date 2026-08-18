@@ -14,3 +14,9 @@ test('debts empty results guide the buyer toward a recoverable next step', () =>
   assert.doesNotMatch(source, /<div className="shares-no-results">/)
   assert.match(css, /\.debts-empty-guided[^}]*grid-column:\s*1 \/ -1/)
 })
+
+test('debts listing cards sit in a centered grid with even side padding', () => {
+  assert.match(css, /\.shares-page--debts-redesign \.shares-container--debts-main[\s\S]*?padding-inline: var\(--debts-page-inline-inset/)
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.shares-container--debts-main[\s\S]*?padding-inline: 16px/)
+  assert.doesNotMatch(css, /padding-inline: 0 24px/)
+})

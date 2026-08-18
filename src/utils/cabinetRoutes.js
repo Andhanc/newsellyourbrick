@@ -3,6 +3,18 @@ import { getUserData } from '../services/authService'
 const OWNER_CABINET_HOME_PATH = '/owner-test'
 const OWNER_SUBSCRIPTIONS_PATH = '/owner-test/subscriptions'
 
+export function hasActiveCabinetSession() {
+  if (typeof localStorage === 'undefined') return false
+  try {
+    const loggedIn =
+      localStorage.getItem('isLoggedIn') === 'true' || Boolean(getUserData()?.isLoggedIn)
+    const userId = localStorage.getItem('userId') || getUserData()?.id
+    return Boolean(loggedIn && userId && /^\d+$/.test(String(userId)))
+  } catch {
+    return false
+  }
+}
+
 /** @returns {'admin' | 'seller' | 'owner' | 'buyer' | 'client'} */
 export function readStoredUserRole() {
   const userData = getUserData()
@@ -32,6 +44,11 @@ export function getCabinetHomePath(role = readStoredUserRole()) {
   if (role === 'admin') return '/admin'
   if (isSellerCabinetRole(role)) return OWNER_CABINET_HOME_PATH
   return '/profile'
+}
+
+/** Иконка аккаунта в шапке — только кабинет текущей сессии. */
+export function getHeaderAccountPath(role = readStoredUserRole()) {
+  return getCabinetHomePath(role)
 }
 
 /** Профиль / личный кабинет. */

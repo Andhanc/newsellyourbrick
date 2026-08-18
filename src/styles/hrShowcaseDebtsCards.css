@@ -110,7 +110,7 @@
 
   .hr-showcases .debts-property-card__body {
     gap: 6px;
-    padding: 8px;
+    padding: 10px 12px 12px;
   }
 
   .hr-showcases .debts-property-card__title {

@@ -1278,6 +1278,20 @@
   box-shadow: none;
 }
 
+.pdx-own-listing-note {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 7px;
+  background: #f8fafc;
+  border: 1px solid var(--pdx-border, #e2e8f0);
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  text-align: center;
+  line-height: 1.35;
+}
+
 .pdx-auction-card__buy {
   margin-top: 24px;
   padding-top: 22px;

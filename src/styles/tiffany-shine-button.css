@@ -135,7 +135,8 @@
 .otc-add-property,
 .mot-btn--primary,
 .op-btn--primary,
-.property-ai-picker__actions button {
+.property-ai-picker__actions button,
+.role-switch-btn--primary {
   border: none !important;
   border-color: transparent !important;
   color: #ffffff !important;
@@ -262,7 +263,8 @@
 .otc-add-property:hover,
 .mot-btn--primary:hover,
 .op-btn--primary:hover,
-.property-ai-picker__actions button:hover:not(:disabled) {
+.property-ai-picker__actions button:hover:not(:disabled),
+.role-switch-btn--primary:hover:not(:disabled) {
   color: #ffffff !important;
   background-image: var(--syb-tiffany-btn-sheen), var(--syb-tiffany-btn-fill-hover) !important;
   background-size: 220% 100%, 100% 100% !important;
@@ -366,7 +368,8 @@
   .mot-finance__quick-card--add,
   .otc-add-property,
   .mot-btn--primary,
-  .op-btn--primary {
+  .op-btn--primary,
+  .role-switch-btn--primary {
     animation: none !important;
     background-image: var(--syb-tiffany-btn-fill) !important;
     background-size: 100% 100% !important;

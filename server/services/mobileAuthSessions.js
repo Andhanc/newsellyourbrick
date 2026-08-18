@@ -8,18 +8,28 @@ function tokenHash(token) {
   return crypto.createHash('sha256').update(String(token || '')).digest('hex');
 }
 
+function mobileAuthSessions() {
+  const model = getPrisma()?.mobile_auth_sessions;
+  if (!model) {
+    throw new Error(
+      'Prisma client is missing mobile_auth_sessions. Run `npx prisma generate` and restart the server.',
+    );
+  }
+  return model;
+}
+
 export async function issueMobileAuthSession(userId) {
   const uid = Number(userId);
   if (!Number.isInteger(uid) || uid < 1) throw new Error('invalid_user_id');
 
-  const prisma = getPrisma();
+  const sessions = mobileAuthSessions();
   const now = new Date();
-  await prisma.mobile_auth_sessions.deleteMany({
+  await sessions.deleteMany({
     where: { user_id: uid, expires_at: { lte: now } },
   });
 
   const token = crypto.randomBytes(32).toString('base64url');
-  await prisma.mobile_auth_sessions.create({
+  await sessions.create({
     data: {
       user_id: uid,
       token_hash: tokenHash(token),
@@ -39,14 +49,14 @@ export async function authenticateMobileRequest(req) {
   const token = bearerTokenFromRequest(req);
   if (!token) return null;
 
-  const prisma = getPrisma();
-  const session = await prisma.mobile_auth_sessions.findUnique({
+  const sessions = mobileAuthSessions();
+  const session = await sessions.findUnique({
     where: { token_hash: tokenHash(token) },
     select: { id: true, user_id: true, expires_at: true },
   });
   if (!session) return null;
   if (session.expires_at.getTime() <= Date.now()) {
-    await prisma.mobile_auth_sessions.delete({ where: { id: session.id } }).catch(() => undefined);
+    await sessions.delete({ where: { id: session.id } }).catch(() => undefined);
     return null;
   }
   return { sessionId: session.id, userId: session.user_id };
@@ -55,7 +65,7 @@ export async function authenticateMobileRequest(req) {
 export async function revokeMobileAuthSession(req) {
   const token = bearerTokenFromRequest(req);
   if (!token) return { count: 0 };
-  return getPrisma().mobile_auth_sessions.deleteMany({
+  return mobileAuthSessions().deleteMany({
     where: { token_hash: tokenHash(token) },
   });
 }

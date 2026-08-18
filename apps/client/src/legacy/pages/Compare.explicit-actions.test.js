@@ -3,12 +3,12 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
+const results = await readFile(new URL('../components/compare/CompareInvestorResults.jsx', import.meta.url), 'utf8')
 
-test('AI and paid drawer are opened only from named click handlers', () => {
+test('AI comparison is opened only from a named click handler', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
-  assert.match(page, /onClick=\{requestAiAnalysis\}/)
-  assert.match(page, /setCompareInvestorDrawerOpen\(true\)/)
-  assert.doesNotMatch(page, /setTimeout\([\s\S]{0,240}setCompareInvestorDrawerOpen\(true\)/)
+  assert.match(page, /onRunAi=\{requestAiAnalysis\}/)
+  assert.match(results, /onClick=\{onRunAi\}/)
   assert.doesNotMatch(page, /useEffect\([\s\S]{0,700}askPropertyCompareAssistant/)
 })
 
@@ -17,24 +17,35 @@ test('AI responses are aborted and request-id guarded when the pair changes or t
   assert.match(page, /aiRequestGuardRef\.current\.start\(\)/)
   assert.match(page, /aiRequestGuardRef\.current\.isCurrent\(requestId\)/)
   assert.match(page, /aiRequestGuardRef\.current\.cancel\(\)/)
-  assert.match(page, /return \(\) => aiRequestGuardRef\.current\.cancel\(\)/)
+  assert.match(page, /return \(\) => \{[\s\S]*aiRequestGuardRef\.current\.cancel\(\)/)
 })
 
-test('AI pending, error, and disabled entitlement states are accessible', () => {
-  assert.match(page, /role="status"/)
-  assert.match(page, /aria-live="polite"/)
-  assert.match(page, /role="alert"/)
-  assert.match(page, /compare-ai-entitlement-help/)
-  assert.match(page, /aria-describedby=/)
+test('AI pending and error states are accessible', () => {
+  assert.match(results, /role="status"/)
+  assert.match(results, /aria-live="polite"/)
+  assert.match(results, /role="alert"/)
 })
 
-test('comparison table and mobile cards use the shared truthful price resolver', () => {
+test('property comparison uses point-by-point rows and AI inside the smart panel', () => {
+  assert.match(page, /CompareInvestorResults/)
+  assert.match(page, /function buildRows/)
+  assert.match(page, /askPropertyCompareAssistant/)
+  assert.match(page, /rows=\{tableRows\}/)
+  assert.match(results, /METRIC_GROUP_DEFS/)
+  assert.match(results, /comparePage_groupPrice/)
+  assert.match(results, /comparePage_aiGet/)
+  assert.doesNotMatch(page, /requestInvestorAiAnalysis/)
+  assert.doesNotMatch(page, /CompareInvestorProDrawer/)
+  assert.doesNotMatch(page, /<table/)
+  assert.doesNotMatch(results, /smartInvestor_dealScore/)
+  assert.doesNotMatch(results, /<table/)
+})
+
+test('comparison rows use the shared truthful price resolver', () => {
   assert.match(page, /resolvePositivePropertyPrice/)
   assert.match(page, /isAuctionListing/)
   assert.match(page, /function shouldRenderAuctionRows/)
   assert.match(page, /shouldRenderAuctionRows\(left, right\)/)
-  assert.doesNotMatch(page, /function isAuctionProperty/)
-  assert.doesNotMatch(page, /function effectivePrice/)
 })
 
 test('comfort comparison distinguishes missing source data from a known zero score', () => {
@@ -43,15 +54,10 @@ test('comfort comparison distinguishes missing source data from a known zero sco
   assert.match(page, /comfortKnownL && comfortKnownR \? compareMetric\(cL, cR, 'higher'\) : null/)
 })
 
-test('calculator navigation persists only the explicitly selected comparison object', () => {
-  assert.match(page, /selectComparisonItem\(pair, side\)/)
-  assert.match(page, /selectedKey:\s*selected\.key/)
-  assert.match(page, /calculatorFromProperty:\s*selected\.property/)
-  assert.match(page, /calculatorSelectedKey:\s*selected\.key/)
-  assert.doesNotMatch(page, /calculatorFromProperty:\s*pair\.left\.property/)
-})
-
-test('desktop investor handoff also requires an explicit left or right choice', () => {
-  assert.match(page, /onClick=\{\(\) => openInvestorPanel\('left'\)\}/)
-  assert.match(page, /onClick=\{\(\) => openInvestorPanel\('right'\)\}/)
+test('compare pick grid reuses auction favorite cards and glass timer chrome', () => {
+  assert.match(page, /FavoritePropertyCard/)
+  assert.match(page, /discover-auction-cards hr-showcases hr-showcases--auction-listing/)
+  assert.match(page, /properties-grid--auction-cards auction-mobile-stack--desktop-cards/)
+  assert.doesNotMatch(page, /PropertyListingCard/)
+  assert.doesNotMatch(page, /formatPropertyForListingCard/)
 })

@@ -199,7 +199,6 @@ export default function CompareMobilePicker({
               <button
                 type="button"
                 className="compare-picker__preview"
-                style={{ '--preview-shift': `${(index - 2) * 2}px` }}
                 onClick={onOpen}
                 key={item.key}
                 aria-label={t('comparePage_openPicker')}

@@ -197,6 +197,45 @@ export function hasMeaningfulDraftData(draft) {
   return false
 }
 
+const FILLED_FORM_KEYS = [
+  'title',
+  'price',
+  'listingMode',
+  'testDrive',
+  'auctionStartingPrice',
+  'minimumSalePrice',
+  'debtAmount',
+  'description',
+  'location',
+  'city',
+  'address',
+]
+
+export function isSparseOapForm(form) {
+  if (!form || typeof form !== 'object') return true
+  return FILLED_FORM_KEYS.every((key) => !isMeaningfulFormValue(form[key]))
+}
+
+/** User already entered listing terms — do not replace with a purchased-property prefill. */
+export function isFilledListingDraft(draft) {
+  if (!draft) return false
+  const form = draft.form || {}
+  if (
+    form.listingMode ||
+    form.price ||
+    form.auctionStartingPrice ||
+    form.minimumSalePrice ||
+    form.debtAmount
+  ) {
+    return true
+  }
+  if (form.testDrive) return true
+  if (draft.requiredDocuments?.ownership || draft.requiredDocuments?.noDebts) return true
+  if (Array.isArray(draft.additionalDocuments) && draft.additionalDocuments.length > 0) return true
+  if (typeof draft.step === 'number' && draft.step >= 4) return true
+  return false
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -705,11 +744,15 @@ export function saveOapDraftFormSync(
   if (isOapDraftSaveSuppressed()) return
 
   const existing = loadOapDraftForRestore(draftKey) || {}
+  const nextForm =
+    isSparseOapForm(form) && existing.form && !isSparseOapForm(existing.form)
+      ? existing.form
+      : form ?? existing.form
   const payload = {
     ...existing,
     savedAt: Date.now(),
     version: OAP_DRAFT_VERSION,
-    form: form ?? existing.form,
+    form: nextForm,
     step: typeof step === 'number' ? step : existing.step ?? 1,
     mobileScreen: typeof mobileScreen === 'number' ? mobileScreen : existing.mobileScreen ?? 1,
     selectedAmenities: Array.isArray(selectedAmenities)
@@ -828,21 +871,42 @@ export async function persistOapDraftMediaNow({
 
   const scopeKey = getOapDraftKey()
   const existing = loadOapDraftForRestore() || {}
+  const keepExistingPhotos = (!Array.isArray(photos) || photos.length === 0) && Array.isArray(existing.photos) && existing.photos.length > 0
+  const keepExistingVideos = (!Array.isArray(videos) || videos.length === 0) && Array.isArray(existing.videos) && existing.videos.length > 0
+  const incomingHasDocs = Boolean(requiredDocuments?.ownership || requiredDocuments?.noDebts)
+  const keepExistingDocs = !incomingHasDocs && Boolean(existing.requiredDocuments?.ownership || existing.requiredDocuments?.noDebts)
+  const photosToSave = keepExistingPhotos ? existing.photos : photos || []
+  const videosToSave = keepExistingVideos ? existing.videos : videos || []
+  const docsToSave = keepExistingDocs ? existing.requiredDocuments : requiredDocuments ?? existing.requiredDocuments
+  const additionalToSave = keepExistingDocs
+    ? existing.additionalDocuments
+    : additionalDocuments ?? existing.additionalDocuments
+  const formToSave =
+    isSparseOapForm(form) && existing.form && !isSparseOapForm(existing.form)
+      ? existing.form
+      : form ?? existing.form
+
   const [serializedPhotos, serializedVideos, docs] = await Promise.all([
-    serializePhotosForDraft(photos || [], scopeKey),
-    serializeVideosForDraft(videos || [], scopeKey),
-    serializeDocumentsForDraft(
-      requiredDocuments ?? existing.requiredDocuments,
-      additionalDocuments ?? existing.additionalDocuments,
-      scopeKey,
-    ),
+    keepExistingPhotos
+      ? Promise.resolve(existing.photos || [])
+      : serializePhotosForDraft(photosToSave, scopeKey),
+    keepExistingVideos
+      ? Promise.resolve(existing.videos || [])
+      : serializeVideosForDraft(videosToSave, scopeKey),
+    keepExistingDocs
+      ? Promise.resolve({
+          ownership: existing.requiredDocuments?.ownership || null,
+          noDebts: existing.requiredDocuments?.noDebts || null,
+          additional: existing.additionalDocuments || [],
+        })
+      : serializeDocumentsForDraft(docsToSave, additionalToSave, scopeKey),
   ])
 
   const payload = {
     ...existing,
     savedAt: Date.now(),
     version: OAP_DRAFT_VERSION,
-    form: form ?? existing.form,
+    form: formToSave,
     step: typeof step === 'number' ? step : existing.step ?? 1,
     mobileScreen: typeof mobileScreen === 'number' ? mobileScreen : existing.mobileScreen ?? 1,
     selectedAmenities: Array.isArray(selectedAmenities)

@@ -1,6 +1,6 @@
 .purchase-drawer__overlay {
   position: fixed;
-  z-index: 10060;
+  z-index: 13350;
   inset: 0;
   display: flex;
   justify-content: flex-end;
@@ -325,6 +325,22 @@
   color: #fff;
   background: #0099a9;
   box-shadow: 0 10px 24px rgba(0, 153, 169, 0.25);
+}
+
+.purchase-drawer__primary:disabled,
+.purchase-drawer__primary--locked {
+  cursor: not-allowed;
+  background: #94a3b8;
+  box-shadow: none;
+  opacity: 0.72;
+}
+
+.purchase-drawer__sell-hint {
+  margin: 2px 0 0;
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
 }
 
 .purchase-drawer__secondary {

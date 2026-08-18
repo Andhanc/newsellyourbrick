@@ -4,6 +4,14 @@ import test from 'node:test'
 
 const read = (relative) => readFile(new URL(relative, import.meta.url), 'utf8')
 
+test('buy-now Stripe reserve is calculated from the listing buy-now price', async () => {
+  const stripe = await read('../../server/stripeBilling.js')
+  const pricing = await read('../../server/reservationCheckoutPricing.js')
+  assert.match(stripe, /computeReservationSalePriceMajor\(property, purchaseVariant\)/)
+  assert.match(pricing, /firstPositiveMajor\(property\?\.price, property\?\.minimum_sale_price\)/)
+  assert.match(pricing, /computeBuyNowSalePriceMajor/)
+})
+
 test('paid Stripe reservation is the only source of a processing purchase request', async () => {
   const stripe = await read('../../server/stripeBilling.js')
   assert.match(stripe, /payment_status === 'paid'/)
@@ -48,10 +56,18 @@ test('purchase UI is a three-step mobile drawer with one PDF presentation', asyn
 })
 
 test('profile distinguishes a paid reserve from a completed sale', async () => {
-  const assets = await read('./OwnerPurchasedAssets.jsx')
+  const rows = await read('../utils/ownerPurchasedListRows.js')
+  const page = await read('../pages/OwnerPropertiesTestPage.jsx')
   const guide = await read('../pages/PurchasedObjectGuidePage.jsx')
-  assert.match(assets, /Оплачен только резерв/)
-  assert.match(assets, /ReservationDealProgress/)
+  const drawer = await read('./PurchasedPropertyDrawer.jsx')
+  const testPage = await read('../pages/TestPage.jsx')
+  assert.match(rows, /isDealCompleted/)
+  assert.match(page, /ownerPurchased_sellLockedHint/)
+  assert.match(page, /buyerCabinet_sellProperty/)
+  assert.doesNotMatch(rows, /ReservationDealProgress/)
+  assert.doesNotMatch(page, /Оплачен только резерв/)
   assert.match(guide, /Сейчас оплачен только резерв/)
   assert.match(guide, /dealCompleted \?/)
+  assert.match(drawer, /disabled=\{!canSell\}/)
+  assert.match(testPage, /selectedPurchasedProperty\?\.isDealCompleted/)
 })

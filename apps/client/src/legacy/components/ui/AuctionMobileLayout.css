@@ -425,6 +425,10 @@
   height: 36px;
 }
 
+.auction-mobile-stack--desktop-cards .auction-card__favorite--active {
+  color: #f43f5e;
+}
+
 .auction-mobile-stack--desktop-cards .auction-card__favorite svg {
   width: 16px;
   height: 16px;

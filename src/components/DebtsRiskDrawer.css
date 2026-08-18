@@ -1,0 +1,304 @@
+.debts-risk-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(6px);
+  animation: debts-risk-drawer-fade-in 0.22s ease-out;
+}
+
+.debts-risk-drawer-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: min(88vh, 640px);
+  overflow: auto;
+  padding: 20px 22px 22px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 28px 72px rgba(15, 23, 42, 0.18);
+  animation: debts-risk-drawer-modal-in 0.28s ease-out;
+}
+
+.debts-risk-drawer-modal .debts-risk-drawer__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+@keyframes debts-risk-drawer-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes debts-risk-drawer-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.debts-risk-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 24990;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(5px);
+  animation: debts-risk-drawer-fade-in 0.28s ease-out both;
+}
+
+.debts-risk-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.debts-risk-drawer:not(.debts-risk-drawer--dragging) .debts-risk-drawer__panel {
+  animation: debts-risk-drawer-panel-in 0.4s cubic-bezier(0.22, 1, 0.32, 1) both;
+}
+
+.debts-risk-drawer--dragging .debts-risk-drawer__panel {
+  animation: none !important;
+}
+
+.debts-risk-drawer__panel {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  background: #ffffff;
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.16);
+  touch-action: pan-y;
+}
+
+.debts-risk-drawer__panel--collapsed .debts-risk-drawer__scroll,
+.debts-risk-drawer__panel--collapsed .debts-risk-drawer__toolbar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes debts-risk-drawer-panel-in {
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.debts-risk-drawer__toolbar {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px 4px;
+  background: #ffffff;
+}
+
+.debts-risk-drawer__toolbar-spacer {
+  width: 34px;
+  height: 34px;
+}
+
+.debts-risk-drawer__drag-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  min-height: 28px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.debts-risk-drawer__drag-zone:active {
+  cursor: grabbing;
+}
+
+.debts-risk-drawer__handle {
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.debts-risk-drawer__handle-pill {
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.debts-risk-drawer__close {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.debts-risk-drawer__close:active {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.debts-risk-drawer__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.debts-risk-drawer__body {
+  --debts-risk-accent: #dc2626;
+  position: relative;
+  padding-bottom: 8px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.debts-risk-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.debts-risk-drawer__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--debts-risk-accent) 28%, transparent);
+}
+
+.debts-risk-drawer__heading {
+  min-width: 0;
+}
+
+.debts-risk-drawer__heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.debts-risk-drawer__heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.debts-risk-drawer__description {
+  margin: 16px 0 0;
+  color: #475569;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.debts-risk-drawer__features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.debts-risk-drawer__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #0f172a;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.debts-risk-drawer__feature-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--debts-risk-accent) 12%, #ffffff);
+  color: var(--debts-risk-accent);
+}
+
+.debts-risk-drawer__cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 22px;
+  padding: 12px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.debts-risk-drawer__cta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.debts-risk-drawer__cta svg {
+  flex-shrink: 0;
+  color: var(--debts-risk-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debts-risk-drawer:not(.debts-risk-drawer--dragging) .debts-risk-drawer__panel,
+  .debts-risk-drawer__backdrop,
+  .debts-risk-drawer-overlay,
+  .debts-risk-drawer-modal {
+    animation: none !important;
+  }
+}

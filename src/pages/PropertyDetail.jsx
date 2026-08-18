@@ -22,6 +22,7 @@ import LocationMap from '../components/LocationMap'
 import './PropertyDetail.css'
 import { formatPropertyPrice, getCurrencySymbol } from '../utils/currency'
 import { resolvePropertySourceTable, propertyBidsApiQuery } from '../utils/propertySourceTable'
+import { viewerOwnsListing } from '../utils/listingOwnerGuard'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -512,6 +513,18 @@ const PropertyDetail = () => {
     
     if (!userId) {
       setBidError('Необходимо войти в систему')
+      return
+    }
+
+    if (
+      viewerOwnsListing({
+        viewerUserId: userId,
+        viewerEmail: userData?.email,
+        listingOwnerUserId: property?.user_id,
+        listingOwnerEmail: property?.email,
+      })
+    ) {
+      setBidError('Нельзя делать ставки на свой объект')
       return
     }
     

@@ -70,6 +70,7 @@ import {
 } from '../utils/purchasedPropertyListingPrefill'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
+import { fetchWhatsAppManagerChatUrl, openWhatsAppManagerChat } from '../utils/whatsappManagerChat'
 import {
   isBundledNativeDom,
   triggerNativeProfileSavedVibration,
@@ -900,6 +901,9 @@ function TestPage() {
   )
 
   const handleSellObjectFromHistory = useCallback(async (purchasedProperty) => {
+    if (purchasedProperty?.purchaseChannel === 'buy_now' && !purchasedProperty.isDealCompleted) {
+      return
+    }
     if (purchasedProperty?.propertyId) {
       storePendingSellPurchasedProperty({
         id: purchasedProperty.propertyId,
@@ -915,7 +919,9 @@ function TestPage() {
       const pid = purchasedProperty?.propertyId
       if (pid) {
         try {
-          await applyPurchasedPropertyListingPrefill(pid)
+          await applyPurchasedPropertyListingPrefill(pid, {
+            requireBuyNowComplete: purchasedProperty?.purchaseChannel === 'buy_now',
+          })
         } catch (e) {
           console.warn('handleSellObjectFromHistory prefill:', e)
         }
@@ -1341,18 +1347,46 @@ function TestPage() {
     sendManagerMessage,
   } = useManagerLiveChat(getChatUserId, t)
 
+  const [managerWhatsAppUrl, setManagerWhatsAppUrl] = useState('')
+
+  useEffect(() => {
+    if (!cabinetVipActive) {
+      setManagerWhatsAppUrl('')
+      return undefined
+    }
+    let cancelled = false
+    fetchWhatsAppManagerChatUrl(API_BASE_URL)
+      .then((url) => {
+        if (!cancelled && url) setManagerWhatsAppUrl(url)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [cabinetVipActive])
+
   const openManagerChatModal = useCallback(async () => {
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
+    let url = managerWhatsAppUrl
+    if (!url) {
+      try {
+        url = await fetchWhatsAppManagerChatUrl(API_BASE_URL)
+        if (url) setManagerWhatsAppUrl(url)
+      } catch {
+        url = ''
+      }
+    }
+    if (url && openWhatsAppManagerChat(url)) return
     setIsManagerChatOpen(true)
     try {
       await enterLiveManagerChat()
     } catch {
       setIsManagerChatOpen(false)
     }
-  }, [enterLiveManagerChat, isLoaded, user])
+  }, [enterLiveManagerChat, isLoaded, managerWhatsAppUrl, user])
 
   const closeManagerChatModal = useCallback(() => {
     setIsManagerChatOpen(false)
@@ -3658,6 +3692,7 @@ function TestPage() {
             onClose={() => setHistorySheetOpen(false)}
             locale={locale}
             onOpenPurchased={(item) => {
+              setHistorySheetOpen(false)
               setSelectedPurchasedProperty(item)
               setPurchaseDrawerView('details')
             }}
@@ -3962,14 +3997,21 @@ function TestPage() {
         <PurchasedPropertyDrawer
           item={selectedPurchasedProperty}
           view={purchaseDrawerView}
-          onClose={() => setSelectedPurchasedProperty(null)}
+          onClose={() => {
+            setSelectedPurchasedProperty(null)
+            setHistorySheetOpen(true)
+          }}
           onBack={() => setPurchaseDrawerView('details')}
           onContactManager={() => {
             setSelectedPurchasedProperty(null)
             void openManagerChatModal()
           }}
-          onSell={() => setPurchaseDrawerView('sell')}
+          onSell={() => {
+            if (!selectedPurchasedProperty?.isDealCompleted) return
+            setPurchaseDrawerView('sell')
+          }}
           onBecomeSeller={() => {
+            if (!selectedPurchasedProperty?.isDealCompleted) return
             const purchasedProperty = selectedPurchasedProperty
             setSelectedPurchasedProperty(null)
             void handleSellObjectFromHistory(purchasedProperty)

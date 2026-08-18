@@ -26,6 +26,24 @@ function normalizeImageSrc(raw) {
   return `/${value.replace(/^\/+/, '')}`
 }
 
+export function isReservationDealCompleted(row = {}) {
+  if (String(row.purchase_request_status || '').toLowerCase() === 'completed') return true
+  const completedAt = row.property_buy_now_completed_at ?? row.buy_now_completed_at ?? null
+  return completedAt != null && String(completedAt).trim() !== ''
+}
+
+export function resolvePurchaseStatus({
+  isDealCompleted = false,
+  isDealCancelled = false,
+  remainingAmount = 0,
+} = {}) {
+  if (isDealCancelled) return 'cancelled'
+  if (isDealCompleted) return 'bought'
+  const remaining = Number(remainingAmount)
+  if (Number.isFinite(remaining) && remaining > 0) return 'need_more'
+  return 'wait_approval'
+}
+
 export function mapReservationPurchase(row = {}) {
   const billing = row.billing && typeof row.billing === 'object' ? row.billing : {}
   const stripePaid = Math.max(0, finiteMoney(row.amount_cents, 0) / 100)
@@ -63,6 +81,7 @@ export function mapReservationPurchase(row = {}) {
     purchaseDateRaw: row.paid_at || row.created_at || null,
     policyVersion: billing.policy_version || row.agreement_policy_version || null,
     purchaseChannel: 'buy_now',
+    isDealCompleted: isReservationDealCompleted(row),
     isDebt:
       String(row.property_sale_type || '').toLowerCase() === 'debt' ||
       row.property_is_debt === 1 ||

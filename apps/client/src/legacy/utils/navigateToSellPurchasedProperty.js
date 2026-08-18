@@ -2,7 +2,6 @@ import { getUserData } from '../services/authService'
 import { OWNER_VIEWS, buildOwnerTestPath } from './ownerTestNav'
 import { fetchLinkedRoles } from './roleSwitchApi'
 import {
-  applyPurchasedPropertyListingPrefill,
   buildPurchasedPropertySnapshot,
   fetchPropertySnapshot,
   promotePendingPurchasedPropertyToSellerArrival,
@@ -71,11 +70,7 @@ export async function navigateToSellPurchasedProperty({
 
   const role = readUserRole()
   if (isSellerRole(role)) {
-    try {
-      await applyPurchasedPropertyListingPrefill(pid)
-    } catch (e) {
-      console.warn('navigateToSellPurchasedProperty prefill:', e)
-    }
+    // Prefill runs on Add Property mount so a just-written draft is not wiped.
     navigate(buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY))
     return
   }

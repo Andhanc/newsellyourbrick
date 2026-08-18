@@ -72,6 +72,11 @@ export function buildOapTzPayload(form, selectedAmenities) {
     if (form.yearBuilt !== '' && form.yearBuilt != null) params.year_built = Number(form.yearBuilt)
   }
 
+  const sourcePurchasedPropertyId = Number(form.sourcePurchasedPropertyId)
+  if (Number.isFinite(sourcePurchasedPropertyId) && sourcePurchasedPropertyId > 0) {
+    params.source_purchased_property_id = Math.round(sourcePurchasedPropertyId)
+  }
+
   return { amenities, parameters: params }
 }
 

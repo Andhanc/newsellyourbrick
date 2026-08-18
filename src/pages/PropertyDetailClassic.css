@@ -5466,6 +5466,38 @@
     box-shadow: none;
   }
 
+  .property-detail-mobile-bottom-bar__own-note {
+    flex-shrink: 0;
+    min-width: 168px;
+    max-width: 200px;
+    min-height: 48px;
+    margin: 0;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .property-detail-own-listing-notice {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    color: #475569;
+    font-size: 14px;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-weight: 500;
+  }
+
   .property-detail-bidding-reserved-notice {
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid #f59e0b;

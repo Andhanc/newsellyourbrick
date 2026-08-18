@@ -7,7 +7,7 @@ import './PhoneInput.css'
 import './WhatsAppVerificationModal.css'
 import { useTranslation } from 'react-i18next'
 /**
- * mode: 'login' | 'register'
+ * mode: 'login' | 'register' | 'auto'
  * role: 'buyer' | 'seller'
  */
 const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, role = 'buyer', mode = 'login' }) => {

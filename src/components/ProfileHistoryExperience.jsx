@@ -31,7 +31,10 @@ const CATEGORY_LABEL_KEYS = {
 
 function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
   const { t } = useTranslation()
-  const canOpenDrawer = Boolean(item.purchaseChannel && onOpenPurchased)
+  const canOpenDrawer = Boolean(
+    onOpenPurchased &&
+      (item.purchaseChannel || categoryKey === 'properties' || categoryKey === 'debts'),
+  )
   const labelKey = CATEGORY_LABEL_KEYS[categoryKey]
   const meta = labelKey ? t(labelKey) : t('profileHistory_catFallback')
   const open = () => {

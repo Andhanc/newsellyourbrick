@@ -62,6 +62,7 @@ test('phone cards expose up to four portal specs and keep actions touch-safe', (
   assert.match(card, /formatAuctionCardCountdown/)
   assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__btn[\s\S]*min-height:\s*36px;/)
   assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__favorite[\s\S]*width:\s*36px;[\s\S]*height:\s*36px;/)
+  assert.match(cardCss, /\.auction-mobile-stack--desktop-cards \.auction-card__favorite--active[\s\S]*color:\s*#f43f5e/)
   assert.match(cardCss, /@media \(max-width:\s*768px\)[\s\S]*\.auction-card__btn-text-short[\s\S]*display:\s*inline/)
 })
 

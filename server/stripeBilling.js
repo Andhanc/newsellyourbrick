@@ -13,6 +13,10 @@ import {
 import { getPrisma } from './database/prismaClient.js';
 import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
 import { sendPushToUserSafely } from './services/pushNotifications.js';
+import { computeReservationSalePriceMajor } from './reservationCheckoutPricing.js';
+import { viewerOwnsPropertyRecord } from '../src/utils/listingOwnerGuard.js';
+import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
+import { sendVipClubWelcomeEmail, shouldSendVipClubWelcomeEmail } from './vipClubWelcomeEmail.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -59,14 +63,6 @@ function majorToStripeMinor(amountMajor, currency) {
     return Math.max(1, Math.round(Number(amountMajor) || 0));
   }
   return Math.max(1, Math.round((Number(amountMajor) || 0) * 100));
-}
-
-/** Минимальная цена продажи: явное поле minimum_sale_price, иначе fallback на price (старые объявления). */
-function computeMinimumSalePriceMajor(property) {
-  const minExplicit = Number(property?.minimum_sale_price) || 0;
-  if (Number.isFinite(minExplicit) && minExplicit > 0) return minExplicit;
-  const price = Number(property?.price) || 0;
-  return Number.isFinite(price) && price > 0 ? price : 0;
 }
 
 function parseTestDrivePricing(property) {
@@ -666,10 +662,12 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   }
 
   const metadataMinSaleMajor = Number.parseFloat(String(sess.metadata?.min_sale_major || ''));
+  const purchaseVariantMeta =
+    sess.metadata?.purchase_variant === 'auctionWinner' ? 'auctionWinner' : 'buyNow';
   const minSaleMajorBase =
     Number.isFinite(metadataMinSaleMajor) && metadataMinSaleMajor > 0
       ? metadataMinSaleMajor
-      : computeMinimumSalePriceMajor(property);
+      : computeReservationSalePriceMajor(property, purchaseVariantMeta);
   if (!(minSaleMajorBase > 0)) {
     return { ok: false, error: 'invalid_minimum_price' };
   }
@@ -1050,6 +1048,42 @@ async function ensureTestDriveSurveyBuyerNotification({
     is_read: 0,
     view_count: 0,
   });
+  try {
+    const mail = await sendTestDriveSurveyInviteEmail({
+      userId: uid,
+      propertyTitle: propTitle,
+      surveyToken: tok,
+    });
+    if (mail.ok) {
+      await testDriveBookingQueries.markSurveyEmailSent(bid);
+    } else if (mail.error === 'no_email') {
+      console.warn(`[Stripe] test-drive survey email skipped: user_id=${uid} без email в профиле`);
+    }
+  } catch (e) {
+    console.warn('[Stripe] test-drive survey email:', e?.message || e);
+  }
+  try {
+    const wa = await sendTestDriveSurveyInviteWhatsApp({
+      userId: uid,
+      propertyTitle: propTitle,
+      surveyToken: tok,
+    });
+    if (wa.ok) {
+      await testDriveBookingQueries.markSurveyWhatsAppSent(bid);
+    } else if (wa.error === 'no_phone') {
+      console.warn(`[Stripe] test-drive survey WhatsApp skipped: user_id=${uid} без телефона в профиле`);
+    } else {
+      console.warn(`[Stripe] test-drive survey WhatsApp: ${wa.error || 'failed'}`);
+      await testDriveBookingQueries.bumpSurveyBroadcastDueNow(bid);
+    }
+  } catch (e) {
+    console.warn('[Stripe] test-drive survey WhatsApp:', e?.message || e);
+    try {
+      await testDriveBookingQueries.bumpSurveyBroadcastDueNow(bid);
+    } catch {
+      /* ignore */
+    }
+  }
   return { created: true };
 }
 
@@ -1448,6 +1482,27 @@ function isOwnerSubscriptionPlanKey(planKey) {
   return OWNER_SUBSCRIPTION_PLAN_KEYS.has(normalizeOwnerSubscriptionPlanKey(planKey));
 }
 
+/**
+ * Buyer Pro and owner Pro share the plan key `pro`.
+ * Buyer checkout is the default; owner checkout must opt in via purpose or return path.
+ */
+export function resolveCheckoutSessionKind(plan, { checkoutPurpose, returnPath } = {}) {
+  const normalized = normalizeOwnerSubscriptionPlanKey(plan);
+  if (normalized === 'deposit') return 'deposit';
+
+  const purpose = String(checkoutPurpose || '').trim();
+  const path = String(returnPath || '');
+  const ownerHint =
+    purpose === 'owner_subscription' ||
+    path.startsWith('/owner-test') ||
+    /(^|\/)owner-test(\/|$|\?)/.test(path);
+
+  if (normalized === 'standard' || normalized === 'institutional') return 'owner';
+  if (normalized === 'pro' && ownerHint) return 'owner';
+  if (normalized === 'pro' || normalized === 'vip') return 'buyer';
+  return 'unknown';
+}
+
 function planKeyFromStripeSubscription(subscription) {
   const m = normalizeOwnerSubscriptionPlanKey(subscription?.metadata?.plan_key);
   if (m === 'vip' || m === 'pro' || isOwnerSubscriptionPlanKey(m)) return m;
@@ -1462,6 +1517,23 @@ function planKeyFromStripeSubscription(subscription) {
   return 'pro';
 }
 
+export function findStripeProductByName(products, name) {
+  const needle = String(name || '').trim().toLowerCase();
+  if (!needle) return null;
+  return (Array.isArray(products) ? products : []).find(
+    (p) => String(p?.name || '').trim().toLowerCase() === needle
+  ) || null;
+}
+
+export function pickStripeRecurringPriceId(prices, { interval = 'month', currency = 'eur' } = {}) {
+  const list = Array.isArray(prices) ? prices : [];
+  const intervalMatch = (p) => String(p?.recurring?.interval || '') === interval;
+  const currencyMatch = (p) => String(p?.currency || '').toLowerCase() === String(currency).toLowerCase();
+  const exact = list.find((p) => intervalMatch(p) && currencyMatch(p));
+  if (exact?.id) return exact.id;
+  return list.find(intervalMatch)?.id || null;
+}
+
 /** Для Checkout нужен Price ID; в .env можно указать prod_... — подставим первую активную recurring-цену. */
 async function resolveDepositLinePriceId(stripe, configured) {
   const raw = (configured || '').trim();
@@ -1473,6 +1545,25 @@ async function resolveDepositLinePriceId(stripe, configured) {
     return (recurring || list.data[0])?.id || null;
   }
   return raw;
+}
+
+/**
+ * VIP-клуб = Stripe-продукт VIP. Если STRIPE_PRICE_ID_VIP пуст, берём активный продукт с именем VIP.
+ */
+async function resolveCabinetSubscriptionPriceId(
+  stripe,
+  configured,
+  { fallbackProductName = '', interval = 'month' } = {}
+) {
+  const fromEnv = await resolveDepositLinePriceId(stripe, configured);
+  if (fromEnv) return fromEnv;
+  const fallback = String(fallbackProductName || '').trim();
+  if (!fallback || !stripe) return null;
+  const products = await stripe.products.list({ active: true, limit: 50 });
+  const product = findStripeProductByName(products.data, fallback);
+  if (!product?.id) return null;
+  const list = await stripe.prices.list({ product: product.id, active: true, limit: 20 });
+  return pickStripeRecurringPriceId(list.data, { interval, currency: 'eur' });
 }
 
 async function withdrawDepositWithLog(userId, amountEur, description) {
@@ -1698,8 +1789,9 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId, options =
   const currency = (session.currency || 'eur').toLowerCase();
   const dedupeKey = invoiceId || `cs_${session.id}`;
   const paidAt = session.status === 'complete' ? new Date().toISOString() : new Date().toISOString();
+  const customerEmail = session.customer_details?.email || session.customer_email || null;
 
-  await stripeSubscriptionQueries.insertPayment({
+  const insertRes = await stripeSubscriptionQueries.insertPayment({
     dedupe_key: dedupeKey,
     user_id: uid,
     stripe_customer_id: customerId,
@@ -1714,7 +1806,14 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId, options =
     paid_at: paidAt,
     period_start: isoFromUnix(sub.current_period_start),
     period_end: isoFromUnix(sub.current_period_end),
-    customer_email: session.customer_details?.email || session.customer_email || null,
+    customer_email: customerEmail,
+  });
+
+  await maybeNotifyVipClubPurchase({
+    userId: uid,
+    planKey,
+    isNewPayment: (insertRes?.changes || 0) > 0,
+    customerEmail,
   });
 
   return {
@@ -1770,7 +1869,8 @@ async function persistInvoicePaid(stripe, invoice) {
     });
   }
 
-  await stripeSubscriptionQueries.insertPayment({
+  const customerEmail = invoice.customer_email || null;
+  const insertRes = await stripeSubscriptionQueries.insertPayment({
     dedupe_key: invoiceId,
     user_id: userId,
     stripe_customer_id: customerId,
@@ -1787,7 +1887,7 @@ async function persistInvoicePaid(stripe, invoice) {
       : new Date().toISOString(),
     period_start: isoFromUnix(invoice.period_start),
     period_end: isoFromUnix(invoice.period_end),
-    customer_email: invoice.customer_email || null,
+    customer_email: customerEmail,
   });
 
   if (planKey === 'vip' && Number.isFinite(userId)) {
@@ -1796,6 +1896,12 @@ async function persistInvoicePaid(stripe, invoice) {
     } catch (e) {
       console.warn('[Stripe] sync vip_until (invoice):', e?.message || e);
     }
+    await maybeNotifyVipClubPurchase({
+      userId,
+      planKey,
+      isNewPayment: (insertRes?.changes || 0) > 0,
+      customerEmail,
+    });
   }
 }
 
@@ -1932,6 +2038,25 @@ function userHasActiveStripeVipPlan(state) {
   return String(state.plan_key || '').toLowerCase() === 'vip';
 }
 
+/** Письмо со ссылкой на WhatsApp менеджера — только при первой оплате VIP. */
+async function maybeNotifyVipClubPurchase({ userId, planKey, isNewPayment, customerEmail }) {
+  try {
+    const payments = await stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
+    const vipPaymentCount = payments.filter(
+      (p) => String(p.plan_key || '').toLowerCase() === 'vip'
+    ).length;
+    if (!shouldSendVipClubWelcomeEmail({ planKey, isNewPayment, vipPaymentCount })) return;
+    const mail = await sendVipClubWelcomeEmail({ userId, customerEmail });
+    if (mail.ok) {
+      console.log(`[Stripe] VIP welcome email sent → ${mail.email}`);
+    } else if (mail.error === 'no_email') {
+      console.warn(`[Stripe] VIP welcome email skipped: user_id=${userId} без email`);
+    }
+  } catch (e) {
+    console.warn('[Stripe] VIP welcome email:', e?.message || e);
+  }
+}
+
 /** VIP Club = промо vip_until или активная подписка Stripe VIP. */
 function buildVipClubPayload(userRow, subscriptionState) {
   const nowMs = Date.now();
@@ -1976,8 +2101,12 @@ export function registerStripeBillingRoutes(app) {
       const userId = req.body?.userId != null ? String(req.body.userId).slice(0, 128) : '';
       const customerEmail =
         typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
+      const checkoutKind = resolveCheckoutSessionKind(plan, {
+        checkoutPurpose: req.body?.checkout_purpose,
+        returnPath: req.body?.returnPath,
+      });
 
-      if (plan === 'deposit') {
+      if (plan === 'deposit' || checkoutKind === 'deposit') {
         if (!priceIdDeposit) {
           return res.status(503).json({
             success: false,
@@ -2023,7 +2152,7 @@ export function registerStripeBillingRoutes(app) {
         return res.json({ success: true, url: session.url });
       }
 
-      if (isOwnerSubscriptionPlanKey(plan)) {
+      if (checkoutKind === 'owner') {
         if (!userId || !/^\d+$/.test(userId)) {
           return res.status(400).json({
             success: false,
@@ -2096,7 +2225,7 @@ export function registerStripeBillingRoutes(app) {
         return res.json({ success: true, url: session.url });
       }
 
-      if (plan !== 'pro' && plan !== 'vip') {
+      if (checkoutKind !== 'buyer' || (plan !== 'pro' && plan !== 'vip')) {
         return res.status(400).json({
           success: false,
           error: 'Неизвестный план. Доступны: standard, pro, institutional, vip, deposit',
@@ -2104,13 +2233,26 @@ export function registerStripeBillingRoutes(app) {
       }
 
       const isVip = plan === 'vip';
-      const selectedPriceId = isVip
+      const configuredPriceId = isVip
         ? billingCycle === 'yearly'
           ? priceIdVipYear
           : priceIdVip
         : billingCycle === 'yearly'
           ? priceIdProYear
           : priceIdPro;
+      let selectedPriceId = configuredPriceId;
+      try {
+        selectedPriceId = await resolveCabinetSubscriptionPriceId(stripe, configuredPriceId, {
+          fallbackProductName: isVip ? 'VIP' : '',
+          interval: billingCycle === 'yearly' ? 'year' : 'month',
+        });
+      } catch (resolveErr) {
+        console.error('[Stripe] resolve VIP/Pro price:', resolveErr?.message || resolveErr);
+        return res.status(503).json({
+          success: false,
+          error: resolveErr?.message || 'Не удалось найти цену подписки в Stripe.',
+        });
+      }
 
       if (!selectedPriceId) {
         return res.status(503).json({
@@ -2118,7 +2260,7 @@ export function registerStripeBillingRoutes(app) {
           error: isVip
             ? billingCycle === 'yearly'
               ? 'Не задан STRIPE_PRICE_ID_VIP_YEAR (ID годовой цены VIP из Stripe)'
-              : 'Не задан STRIPE_PRICE_ID_VIP (ID месячной цены VIP из Stripe)'
+              : 'Не задан STRIPE_PRICE_ID_VIP (ID месячной цены VIP из Stripe). Создайте продукт VIP в Stripe или укажите price_ в .env.'
             : billingCycle === 'yearly'
               ? 'Не задан STRIPE_PRICE_ID_PRO_YEAR (ID годовой цены Pro из Stripe)'
               : 'Не задан STRIPE_PRICE_ID_PRO (ID месячной цены Pro из Stripe)',
@@ -2291,6 +2433,15 @@ export function registerStripeBillingRoutes(app) {
         return res.status(404).json({ success: false, error: 'Объявление не найдено' });
       }
 
+      const buyerRow = await userQueries.getById(userId);
+      if (await viewerOwnsPropertyRecord(userQueries, buyerRow || { id: userId }, property)) {
+        return res.status(403).json({
+          success: false,
+          code: 'OWN_LISTING',
+          error: 'Нельзя купить свой объект',
+        });
+      }
+
       const resInfo = await propertyQueries.isReserved(propertyId);
       if (resInfo.isReserved && resInfo.reservedBy != null && Number(resInfo.reservedBy) !== userId) {
         return res.status(409).json({
@@ -2301,7 +2452,7 @@ export function registerStripeBillingRoutes(app) {
 
       const purchaseVariant =
         req.body?.purchaseVariant === 'auctionWinner' ? 'auctionWinner' : 'buyNow';
-      let minSaleMajor = computeMinimumSalePriceMajor(property);
+      let minSaleMajor = computeReservationSalePriceMajor(property, purchaseVariant);
       let saleCurrencyRaw = property.currency || 'usd';
       if (purchaseVariant === 'auctionWinner') {
         const winner = await getPrisma().auction_winners.findFirst({
@@ -2346,7 +2497,6 @@ export function registerStripeBillingRoutes(app) {
         req.body?.useDeposit === 1 ||
         req.body?.useDeposit === '1';
 
-      const buyerRow = await userQueries.getById(userId);
       if (useWalletDeposit) {
         const dep = buyerRow != null ? parseFloat(buyerRow.deposit_amount) || 0 : 0;
         if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
@@ -2427,7 +2577,9 @@ export function registerStripeBillingRoutes(app) {
       const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 100);
       const productDesc = useWalletDeposit
         ? `Резерв 10%: при использовании депозита оплата в EUR, 3000 EUR с депозита, остальное картой. Объект #${propertyId}`
-        : `Резерв 10% от минимальной цены продажи. Объект #${propertyId}`;
+        : purchaseVariant === 'auctionWinner'
+          ? `Резерв 10% от выигрышной ставки. Объект #${propertyId}`
+          : `Резерв 10% от цены «Купить сейчас». Объект #${propertyId}`;
 
       const basePath = returnPath || `/property/${propertyId}`;
       const successUrl = `${frontendBase}${basePath}?reservation_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
@@ -3446,6 +3598,7 @@ export function registerStripeBillingRoutes(app) {
           let property_sale_type = null;
           let property_is_debt = null;
           let property_has_debt = null;
+          let property_buy_now_completed_at = null;
           if (pid != null) {
             try {
               const p = await propertyQueries.getById(pid, billing.property_type || null);
@@ -3461,6 +3614,7 @@ export function registerStripeBillingRoutes(app) {
                 property_sale_type = p.sale_type || null;
                 property_is_debt = p.is_debt ?? null;
                 property_has_debt = p.has_debt ?? null;
+                property_buy_now_completed_at = p.buy_now_completed_at ?? null;
               }
             } catch {
               /* ignore */
@@ -3483,6 +3637,7 @@ export function registerStripeBillingRoutes(app) {
             property_sale_type,
             property_is_debt,
             property_has_debt,
+            property_buy_now_completed_at,
           };
         })
       );
@@ -3543,6 +3698,13 @@ export function registerStripeBillingRoutes(app) {
   } else {
     console.log(
       '[Stripe] Checkout Pro отключён: укажите STRIPE_SECRET_KEY и STRIPE_PRICE_ID_PRO в .env'
+    );
+  }
+  if (stripe && priceIdVip) {
+    console.log('[Stripe] VIP-клуб: Checkout включён (STRIPE_PRICE_ID_VIP)');
+  } else if (stripe) {
+    console.log(
+      '[Stripe] VIP-клуб: STRIPE_PRICE_ID_VIP не задан — при Checkout возьмём активный продукт Stripe с именем VIP'
     );
   }
   if (stripe && priceIdDeposit) {

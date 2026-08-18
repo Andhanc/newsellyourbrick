@@ -90,14 +90,13 @@
 
 .compare-picker__preview {
   position: relative;
-  display: grid;
-  grid-template-columns: 25px 48px minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
   min-height: 72px;
   margin: 2px 0 0;
-  padding: 8px 12px 8px 9px;
+  padding: 8px 12px 8px 10px;
   overflow: hidden;
   border: 1px solid rgba(8, 65, 62, 0.08);
   border-radius: 20px;
@@ -105,12 +104,9 @@
   color: #071516;
   box-shadow: 0 13px 26px rgba(6, 63, 66, 0.13);
   text-align: left;
-  transform: translateX(var(--preview-shift));
 }
 
 .compare-picker__preview:first-child { margin-top: 0; }
-.compare-picker__preview:nth-child(even) { transform: translateX(5px); }
-.compare-picker__preview:nth-child(3n) { transform: translateX(-3px); }
 
 .compare-picker--count-1 .compare-picker__stack { justify-content: center; }
 .compare-picker--count-2 .compare-picker__stack,
@@ -121,14 +117,13 @@
 .compare-picker--count-0 .compare-picker__empty { margin-block: auto; }
 .compare-picker--count-0 .compare-picker__title { margin-bottom: 28px; }
 .compare-picker--count-1 .compare-picker__preview {
-  grid-template-columns: 30px 76px minmax(0, 1fr);
   min-height: 108px;
   padding: 12px;
 }
 .compare-picker--count-1 .compare-picker__preview img { width: 76px; height: 76px; border-radius: 19px; }
 .compare-picker--count-1 .compare-picker__preview-copy strong { font-size: 15px; }
 .compare-picker--count-1 .compare-picker__preview-copy small { font-size: 10px; }
-.compare-picker--count-1 .compare-picker__preview-price { grid-column: 3; margin-top: -20px; font-size: 14px; }
+.compare-picker--count-1 .compare-picker__preview-price { font-size: 14px; }
 .compare-picker--count-2 .compare-picker__preview + .compare-picker__preview { margin-top: 24px; }
 .compare-picker--count-3 .compare-picker__preview + .compare-picker__preview { margin-top: 18px; }
 .compare-picker--count-4 .compare-picker__preview + .compare-picker__preview { margin-top: 13px; }
@@ -144,6 +139,7 @@
 .compare-picker--count-5 .compare-picker__preview img { width: 44px; height: 44px; }
 
 .compare-picker__preview img {
+  flex: 0 0 auto;
   width: 48px;
   height: 48px;
   border-radius: 14px;
@@ -152,6 +148,7 @@
 
 .compare-picker__preview-number {
   display: grid;
+  flex: 0 0 24px;
   place-items: center;
   width: 24px;
   height: 24px;
@@ -161,12 +158,24 @@
   font: 780 10px/1 var(--buyer-font-display, sans-serif);
 }
 
-.compare-picker__preview-copy { min-width: 0; }
+.compare-picker__preview-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
 .compare-picker__preview-copy strong,
 .compare-picker__preview-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .compare-picker__preview-copy strong { font: 760 12px/1.2 var(--buyer-font-display, sans-serif); }
 .compare-picker__preview-copy small { margin-top: 4px; color: #66706e; font: 560 9px/1.2 var(--buyer-font-body, sans-serif); }
-.compare-picker__preview-price { color: #063f3c; font: 800 11px/1 var(--buyer-font-display, sans-serif); }
+.compare-picker__preview-price {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #063f3c;
+  font: 800 12px/1 var(--buyer-font-display, sans-serif);
+  white-space: nowrap;
+}
 
 .compare-picker__preview--skeleton {
   min-height: 72px;
@@ -270,6 +279,7 @@
   grid-template-columns: 92px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 13px;
+  height: var(--drum-card-height);
   min-height: var(--drum-card-height);
   padding: 12px;
   border: 2px solid rgba(255, 255, 255, 0.5);
@@ -302,18 +312,48 @@
   pointer-events: none;
   animation: compare-picker-selected-away 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.compare-picker-drum__card > img { width: 92px; height: 102px; border-radius: 18px; object-fit: cover; }
-.compare-picker-drum__copy { min-width: 0; }
+.compare-picker-drum__card > img {
+  width: 92px;
+  height: 102px;
+  border-radius: 18px;
+  object-fit: cover;
+}
+.compare-picker-drum__copy {
+  display: grid;
+  grid-template-rows: 2.3em auto auto;
+  align-content: center;
+  min-width: 0;
+}
 .compare-picker-drum__copy strong,
 .compare-picker-drum__copy small,
 .compare-picker-drum__copy b { display: block; }
-.compare-picker-drum__copy strong { font: 780 15px/1.15 var(--buyer-font-display, sans-serif); }
-.compare-picker-drum__copy small { display: -webkit-box; margin-top: 5px; overflow: hidden; color: #66706e; font: 560 10px/1.35 var(--buyer-font-body, sans-serif); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.compare-picker-drum__copy b { margin-top: 9px; color: #063f3c; font: 820 14px/1 var(--buyer-font-display, sans-serif); }
+.compare-picker-drum__copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font: 780 15px/1.15 var(--buyer-font-display, sans-serif);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.compare-picker-drum__copy small {
+  overflow: hidden;
+  margin-top: 5px;
+  color: #66706e;
+  font: 560 10px/1.35 var(--buyer-font-body, sans-serif);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.compare-picker-drum__copy b {
+  margin-top: 9px;
+  color: #063f3c;
+  font: 820 14px/1 var(--buyer-font-display, sans-serif);
+  white-space: nowrap;
+}
 
 .compare-picker-drum__select {
   display: grid;
+  flex-shrink: 0;
   place-items: center;
+  align-self: center;
   width: 32px;
   height: 32px;
   border: 1px solid rgba(8, 65, 62, 0.14);
@@ -400,9 +440,9 @@
   .compare-picker__back { width: 46px; height: 46px; }
   .compare-picker__title { margin: 16px -5px 0 5px; font-size: 3.45rem; }
   .compare-picker__objects-head { margin-bottom: 12px; font-size: 13px; }
-  .compare-picker__preview { min-height: 66px; grid-template-columns: 22px 42px minmax(0, 1fr) auto; gap: 7px; }
+  .compare-picker__preview { min-height: 66px; gap: 8px; }
   .compare-picker__preview img { width: 42px; height: 42px; }
-  .compare-picker-drum__card { grid-template-columns: 78px minmax(0, 1fr) 32px; min-height: 112px; }
+  .compare-picker-drum__card { grid-template-columns: 78px minmax(0, 1fr) 32px; height: 112px; min-height: 112px; }
   .compare-picker-drum__card > img { width: 78px; height: 88px; }
 }
 

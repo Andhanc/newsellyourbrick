@@ -1532,6 +1532,98 @@
     max(20px, env(safe-area-inset-left, 0px));
 }
 
+.login-modal__welcome-social {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.login-modal__welcome-social-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(2, 10, 12, 0.26);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.login-modal__welcome-social-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(2, 10, 12, 0.34);
+}
+
+.login-modal__welcome-social-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.login-modal__welcome-social-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.login-modal__welcome-social-btn:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.96);
+  outline-offset: 3px;
+}
+
+.login-modal__welcome-social-btn--facebook {
+  color: #1877f2;
+}
+
+.login-modal__welcome-social-btn--whatsapp {
+  color: #25d366;
+}
+
+.login-modal__welcome-social-btn--telegram {
+  color: #2aabee;
+}
+
+.login-modal__welcome-social-telegram {
+  overflow: hidden;
+}
+
+.login-modal__welcome-social-telegram > svg {
+  pointer-events: none;
+}
+
+.login-modal__welcome-social-telegram .login-modal__telegram-widget {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  min-height: 0;
+  opacity: 0.01;
+  overflow: hidden;
+}
+
+.login-modal__welcome-social-telegram .login-modal__telegram-widget iframe {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 240px;
+  height: 40px;
+  transform: translate(-50%, -50%) scale(1.7);
+  transform-origin: center center;
+}
+
+.login-modal__welcome-error {
+  margin: 0 8px 2px;
+  text-align: center;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: #fecaca;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
 .login-modal__welcome-action {
   min-height: 62px;
   padding: 14px 22px;
@@ -2079,7 +2171,8 @@
     animation: none !important;
   }
 
-  .login-modal__welcome-action {
+  .login-modal__welcome-action,
+  .login-modal__welcome-social-btn {
     transition: none;
   }
 }

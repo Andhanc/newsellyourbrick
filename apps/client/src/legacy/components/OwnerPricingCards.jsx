@@ -179,10 +179,12 @@ export default function OwnerPricingCards({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                disabled={isCurrent}
+                disabled={isCurrent || loading}
                 onClick={(event) => {
                   event.stopPropagation()
-                  if (!isCurrent) setSelectedPlanId(plan.id)
+                  if (isCurrent || loading) return
+                  setSelectedPlanId(plan.id)
+                  onSelectPlan?.(plan.id, billingCycle)
                 }}
               >
                 {isCurrent ? activeCtaLabel : t('ownerTest_planChoose')}

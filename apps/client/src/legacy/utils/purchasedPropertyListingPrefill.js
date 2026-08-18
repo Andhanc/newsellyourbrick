@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from './apiConfig'
-import { clearOapDraft, getOapDraftKey, loadOapDraft, loadOapDraftForRestore, saveOapDraftPayload } from './oapAddPropertyDraft'
+import { clearOapDraft, getOapDraftKey, isFilledListingDraft, loadOapDraft, loadOapDraftForRestore, saveOapDraftPayload } from './oapAddPropertyDraft'
 import { appendViewerUserIdToPropertyApiUrl } from './propertyDetailUrl'
 import {
   buildFormattedLocation,
@@ -116,6 +116,7 @@ export function buildOapFormFromPurchasedProperty(property) {
     auctionStartingPrice: '',
     auctionStartDate: '',
     auctionEndDate: '',
+    sourcePurchasedPropertyId: property?.id ?? property?.property_id ?? '',
   }
 }
 
@@ -238,7 +239,7 @@ export async function fetchPropertySnapshot(propertyId, lang = 'ru') {
   return json.data
 }
 
-export async function applyPurchasedPropertyListingPrefill(propertyOrId, { lang = 'ru' } = {}) {
+export async function applyPurchasedPropertyListingPrefill(propertyOrId, { lang = 'ru', requireBuyNowComplete = false } = {}) {
   const propertyId =
     typeof propertyOrId === 'object' && propertyOrId != null
       ? propertyOrId.id
@@ -247,6 +248,12 @@ export async function applyPurchasedPropertyListingPrefill(propertyOrId, { lang 
   if (!propertyId) return null
 
   const property = await fetchPropertySnapshot(propertyId, lang)
+  if (requireBuyNowComplete) {
+    const completedAt = property.buy_now_completed_at ?? property.buyNowCompletedAt
+    if (!(completedAt != null && String(completedAt).trim() !== '')) {
+      throw new Error('buy_now_deal_not_completed')
+    }
+  }
 
   const form = buildOapFormFromPurchasedProperty(property)
   const photos = buildPhotosFromProperty(property)
@@ -334,6 +341,27 @@ export function attachListingDraftMetadata(payload, { purchasedMeta = null, exis
   }
 
   return next
+}
+
+/**
+ * Add Property must not wipe a purchased draft that was just prepared
+ * (arrival drawer / sell-from-buyer already consumed `pending`).
+ */
+export function shouldClearStalePurchasedPrefillOnAddPropertyMount({
+  pending = null,
+  existingDraft = null,
+} = {}) {
+  if (pending?.id) return false
+  if (existingDraft?.[PURCHASED_LISTING_DRAFT_FLAG]) return false
+  if (existingDraft?.draftOrigin === DRAFT_ORIGIN_PURCHASED_PREFILL) return false
+  return true
+}
+
+/** Do not rebuild a purchased prefill over a draft the seller already filled in. */
+export function shouldApplyPendingPurchasedPrefill({ pending = null, existingDraft = null } = {}) {
+  if (!pending?.id) return false
+  if (isFilledListingDraft(existingDraft)) return false
+  return true
 }
 
 export function clearStalePurchasedPrefillDraft() {
