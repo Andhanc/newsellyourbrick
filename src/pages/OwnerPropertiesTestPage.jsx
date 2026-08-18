@@ -931,13 +931,6 @@ export default function OwnerPropertiesTestPage() {
     })
   }, [])
 
-  const handlePageChange = useCallback((nextPage) => {
-    setCurrentPage(nextPage)
-    requestAnimationFrame(() => {
-      scrollOwnerCabinetToTop()
-    })
-  }, [])
-
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const openMobileMenu = useCallback(() => {
