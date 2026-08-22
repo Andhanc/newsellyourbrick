@@ -26,6 +26,12 @@ import './Compare.css'
 import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
 import { writeInvestorScenario } from '../utils/investorScenarioContext'
+import {
+  clearCompareSnapshot,
+  readCompareSnapshot,
+  writeCompareSnapshot,
+} from '../utils/compareSnapshot'
+import { getStoredNumericUserId } from '../services/authService'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
 import {
   isAuctionListing,
@@ -75,6 +81,29 @@ function formatTypeLabel(groupKey, t) {
       flat: t('comparePage_typeApartmentDemo'),
       townhouse: t('comparePage_typeTownhouseDemo'),
       property: t('comparePage_typeObject'),
+    }
+    return m[sub] || sub
+  }
+  if (groupKey.startsWith('sale:')) {
+    const sub = groupKey.slice(5)
+    const m = {
+      auction: t('comparePage_saleAuction'),
+      buy_now: t('comparePage_saleBuyNow'),
+      debt: t('comparePage_saleDebt'),
+      shares: t('comparePage_saleShares'),
+    }
+    return m[sub] || sub
+  }
+  if (groupKey.startsWith('type:')) {
+    const sub = groupKey.slice(5)
+    const m = {
+      apartment: t('comparePage_typeApartment'),
+      villa: t('comparePage_typeVilla'),
+      house: t('comparePage_typeHouse'),
+      townhouse: t('comparePage_typeTownhouse'),
+      commercial: t('comparePage_typeCommercial'),
+      land: t('comparePage_typeLand'),
+      object: t('comparePage_typeObject'),
     }
     return m[sub] || sub
   }
@@ -619,27 +648,56 @@ const Compare = () => {
     useSubscriptionCalculatorAccess()
 
   const listLoading = catalogLoading || favoritesLoading
+  const compareUserId = getStoredNumericUserId()
+  const snapshotRef = useRef(undefined)
+  if (snapshotRef.current === undefined) {
+    snapshotRef.current = readCompareSnapshot({ userId: compareUserId })
+  }
+  const skipShowdownForPairRef = useRef(
+    snapshotRef.current?.showdownCompleted ? snapshotRef.current.pairKey : null,
+  )
   const [compareInvestorDrawerOpen, setCompareInvestorDrawerOpen] = useState(false)
-  const [selectedKeys, setSelectedKeys] = useState(() => [])
+  const [selectedKeys, setSelectedKeys] = useState(() => (
+    Array.isArray(snapshotRef.current?.selectedKeys) ? snapshotRef.current.selectedKeys : []
+  ))
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [aiResult, setAiResult] = useState(null)
+  const [aiResult, setAiResult] = useState(() => snapshotRef.current?.aiResult ?? null)
   const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState(null)
+  const [aiError, setAiError] = useState(() => snapshotRef.current?.aiError ?? null)
   const aiRequestGuardRef = useRef(null)
   if (aiRequestGuardRef.current == null) {
     aiRequestGuardRef.current = createCompareAiRequestGuard()
   }
   const [calcLoading, setCalcLoading] = useState(false)
-  const [calcData, setCalcData] = useState(() => ({ left: null, right: null }))
-  const [calcError, setCalcError] = useState(() => ({ left: null, right: null }))
-  const compareCalculatorStartedKeyRef = useRef(null)
+  const [calcData, setCalcData] = useState(() => (
+    snapshotRef.current?.calcData ?? { left: null, right: null }
+  ))
+  const [calcError, setCalcError] = useState(() => (
+    snapshotRef.current?.calcError ?? { left: null, right: null }
+  ))
+  const compareCalculatorStartedKeyRef = useRef(
+    snapshotRef.current?.calcData?.left
+      || snapshotRef.current?.calcData?.right
+      || snapshotRef.current?.calcError?.left
+      || snapshotRef.current?.calcError?.right
+      ? snapshotRef.current.pairKey
+      : null,
+  )
   const heroRef = useRef(null)
   const [heroVisible, setHeroVisible] = useState(true)
-  const [showdownStage, setShowdownStage] = useState('idle')
+  const [showdownStage, setShowdownStage] = useState(() => (
+    snapshotRef.current?.showdownCompleted ? 'complete' : 'idle'
+  ))
   const [showdownMinDone, setShowdownMinDone] = useState(false)
   const [showdownForceDone, setShowdownForceDone] = useState(false)
-  const [showdownAnalysisStartedKey, setShowdownAnalysisStartedKey] = useState(null)
-  const [showdownCompletedKey, setShowdownCompletedKey] = useState(null)
+  const [showdownAnalysisStartedKey, setShowdownAnalysisStartedKey] = useState(() => (
+    snapshotRef.current?.aiResult || snapshotRef.current?.aiError
+      ? snapshotRef.current.pairKey
+      : null
+  ))
+  const [showdownCompletedKey, setShowdownCompletedKey] = useState(() => (
+    snapshotRef.current?.showdownCompleted ? snapshotRef.current.pairKey : null
+  ))
 
   const firstKey = selectedKeys[0] ?? null
   const firstItem = useMemo(
@@ -650,10 +708,18 @@ const Compare = () => {
     ? getComparisonGroupKey(firstItem.property, firstItem.mockCategory)
     : null
 
+  const discardCompareSnapshot = useCallback(() => {
+    snapshotRef.current = null
+    skipShowdownForPairRef.current = null
+    compareCalculatorStartedKeyRef.current = null
+    clearCompareSnapshot({ userId: compareUserId })
+  }, [compareUserId])
+
   const toggleSelect = useCallback(
     (item) => {
       const g = getComparisonGroupKey(item.property, item.mockCategory)
       if (selectedKeys.includes(item.key)) {
+        discardCompareSnapshot()
         setSelectedKeys((prev) => prev.filter((k) => k !== item.key))
         return
       }
@@ -671,12 +737,14 @@ const Compare = () => {
         setPickerOpen(false)
         return
       }
+      discardCompareSnapshot()
       setSelectedKeys([item.key])
     },
-    [selectedKeys, groupFilter, t]
+    [discardCompareSnapshot, selectedKeys, groupFilter, t]
   )
 
   const clearSelection = () => {
+    discardCompareSnapshot()
     setSelectedKeys([])
     setPickerOpen(false)
     window.requestAnimationFrame(() => {
@@ -685,12 +753,13 @@ const Compare = () => {
   }
 
   const replaceSelectedSide = useCallback((side) => {
+    discardCompareSnapshot()
     setSelectedKeys((previous) => {
       if (previous.length !== 2) return previous
       return side === 'left' ? [previous[1]] : [previous[0]]
     })
     if (isMobile) setPickerOpen(true)
-  }, [isMobile])
+  }, [discardCompareSnapshot, isMobile])
 
   const pair = useMemo(() => {
     if (selectedKeys.length !== 2) return null
@@ -701,6 +770,36 @@ const Compare = () => {
   }, [favoriteAuctions, selectedKeys])
 
   const pairKey = pair ? `${pair.left.key}::${pair.right.key}` : null
+
+  useEffect(() => {
+    if (listLoading || selectedKeys.length !== 2) return
+    const missing = selectedKeys.some((key) => !favoriteAuctions.some((item) => item.key === key))
+    if (!missing) return
+    discardCompareSnapshot()
+    setSelectedKeys([])
+  }, [discardCompareSnapshot, favoriteAuctions, listLoading, selectedKeys])
+
+  useEffect(() => {
+    if (selectedKeys.length !== 2 || !pairKey) return
+    writeCompareSnapshot({
+      selectedKeys,
+      pairKey,
+      aiResult,
+      aiError,
+      calcData,
+      calcError,
+      showdownCompleted: showdownCompletedKey === pairKey,
+    }, { userId: compareUserId })
+  }, [
+    aiError,
+    aiResult,
+    calcData,
+    calcError,
+    compareUserId,
+    pairKey,
+    selectedKeys,
+    showdownCompletedKey,
+  ])
 
   const openInvestorPanel = useCallback((side) => {
     const selected = selectComparisonItem(pair, side)
@@ -760,22 +859,43 @@ const Compare = () => {
   }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved, t])
 
   useEffect(() => {
+    const nextPairKey = pair?.left?.key && pair?.right?.key
+      ? `${pair.left.key}::${pair.right.key}`
+      : null
+    const snap = snapshotRef.current
+    if (!nextPairKey) {
+      if (snap?.selectedKeys?.length === 2) return
+    }
+    if (nextPairKey && snap?.pairKey === nextPairKey) {
+      setAiResult(snap.aiResult ?? null)
+      setAiError(snap.aiError ?? null)
+      setAiLoading(false)
+      setCalcData(snap.calcData ?? { left: null, right: null })
+      setCalcError(snap.calcError ?? { left: null, right: null })
+      setCalcLoading(false)
+      if (snap.aiResult || snap.aiError) setShowdownAnalysisStartedKey(nextPairKey)
+      if (snap.calcData?.left || snap.calcData?.right || snap.calcError?.left || snap.calcError?.right) {
+        compareCalculatorStartedKeyRef.current = nextPairKey
+      }
+      return
+    }
+    if (snap && nextPairKey && snap.pairKey !== nextPairKey) {
+      snapshotRef.current = null
+      skipShowdownForPairRef.current = null
+    }
     aiRequestGuardRef.current.cancel()
     setAiResult(null)
     setAiError(null)
     setAiLoading(false)
     setCompareInvestorDrawerOpen(false)
+    setCalcData({ left: null, right: null })
+    setCalcError({ left: null, right: null })
+    setCalcLoading(false)
   }, [pair?.left?.key, pair?.right?.key])
 
   useEffect(() => {
     return () => aiRequestGuardRef.current.cancel()
   }, [])
-
-  useEffect(() => {
-    setCalcData({ left: null, right: null })
-    setCalcError({ left: null, right: null })
-    setCalcLoading(false)
-  }, [pair?.left?.key, pair?.right?.key])
 
   useEffect(() => {
     const hero = heroRef.current
@@ -870,8 +990,15 @@ const Compare = () => {
 
   useEffect(() => {
     if (!isMobile || !pairKey) {
+      if (!pairKey && skipShowdownForPairRef.current) return undefined
       setShowdownStage('idle')
-      setShowdownCompletedKey(null)
+      if (!skipShowdownForPairRef.current) setShowdownCompletedKey(null)
+      return undefined
+    }
+
+    if (skipShowdownForPairRef.current === pairKey) {
+      setShowdownStage('complete')
+      setShowdownCompletedKey(pairKey)
       return undefined
     }
 
@@ -1062,7 +1189,7 @@ const Compare = () => {
                 )}
                 {selectedKeys.length > 0 && (
                   <button type="button" className="compare-clear-btn" onClick={clearSelection}>
-                    {t('comparePage_clearSelection')}
+                    {t(selectedKeys.length === 2 ? 'comparePage_pickOtherPair' : 'comparePage_clearSelection')}
                   </button>
                 )}
               </div>

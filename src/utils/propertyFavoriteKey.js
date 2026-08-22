@@ -31,8 +31,67 @@ function normalizeMockCategoryForCompare(category) {
   return category
 }
 
-/** Одинаковый тип для сравнения: БД — по таблице; демо — по категории (квартира/flat — одна группа). */
+/**
+ * Канонический тип недвижимости (вилла / дом / квартира).
+ * Для сравнения пары больше не используется — см. normalizeSaleTypeForCompare.
+ */
+export function normalizePropertyTypeForCompare(property) {
+  const raw = String(property?.property_type || property?.propertyType || '')
+    .toLowerCase()
+    .trim()
+
+  if (raw === 'flat' || raw === 'apartment' || raw === 'apartments') return 'apartment'
+  if (raw === 'villa') return 'villa'
+  if (raw === 'house' || raw === 'home') return 'house'
+  if (raw === 'townhouse') return 'townhouse'
+  if (raw === 'commercial') return 'commercial'
+  if (raw === 'land') return 'land'
+
+  const table = normalizePropertyTable(property?.source_table)
+  if (table === 'properties_houses') return 'house'
+  if (table === 'properties_apartments') return 'apartment'
+  return 'object'
+}
+
+/**
+ * Тип продажи для сравнения: аукцион с аукционом, «купить сейчас» с «купить сейчас».
+ * Аукцион + buy now относится к аукциону.
+ */
+export function normalizeSaleTypeForCompare(property) {
+  if (!property) return 'buy_now'
+
+  const saleType = String(property.sale_type || property.saleType || '').toLowerCase().trim()
+  const isShare =
+    saleType === 'share' ||
+    property.is_share === 1 ||
+    property.is_share === true ||
+    property.is_shared_ownership === 1 ||
+    property.is_shared_ownership === true ||
+    property.is_shared === 1 ||
+    property.is_shared === true
+  if (isShare) return 'shares'
+
+  const isDebt =
+    saleType === 'debt' ||
+    property.is_debt === 1 ||
+    property.is_debt === true ||
+    property.has_debt === 1 ||
+    property.has_debt === true
+  if (isDebt) return 'debt'
+
+  const isAuction =
+    saleType === 'auction' ||
+    property.isAuction === true ||
+    property.is_auction === 1 ||
+    property.is_auction === true ||
+    property.is_auction === '1'
+  if (isAuction) return 'auction'
+
+  return 'buy_now'
+}
+
+/** Одинаковый формат продажи для сравнения; демо — по категории. */
 export function getComparisonGroupKey(property, mockCategory) {
   if (mockCategory) return `mock:${normalizeMockCategoryForCompare(mockCategory)}`
-  return normalizePropertyTable(property?.source_table)
+  return `sale:${normalizeSaleTypeForCompare(property)}`
 }

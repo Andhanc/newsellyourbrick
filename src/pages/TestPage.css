@@ -7765,17 +7765,25 @@ button.test-doc-row {
   }
 }
 
-/* Пока профиль <78%: блокируем клики по кабинету, кроме «Данные» и открытой панели данных */
+/* Пока профиль <78%: блокируем клики и скролл по кабинету, кроме «Данные» и открытой панели данных */
+body.profile-onboarding-gate-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+body.profile-onboarding-gate-locked .new-header :is(a, button) {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
 .test-page--onboarding-gate .test-page__inner {
   pointer-events: none;
 }
 
-.test-page--onboarding-gate .test-hero-pro__home-corner {
+.test-page--onboarding-gate .profile-folder-card--gate-data {
   pointer-events: auto;
-}
-
-.test-page--onboarding-gate .test-hero-icon-tile--gate-data {
-  pointer-events: auto;
+  position: relative;
+  z-index: 3;
 }
 
 .test-page--onboarding-gate [data-profile-sheet='data'] {

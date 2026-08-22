@@ -26,7 +26,7 @@ test('mobile comparison keeps both object identities visible', () => {
   assert.match(source, /comparePage_replaceAria/)
   assert.match(source, /compare-mobile__versus/)
   assert.match(source, /compare-mobile__clear/)
-  assert.match(source, /comparePage_clearSelection/)
+  assert.match(source, /comparePage_pickOtherPair/)
   assert.match(source, /onClick=\{onClear\}/)
 })
 

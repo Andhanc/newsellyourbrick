@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import './ProfileSpotlightOnboarding.css'
 
-const PAD = 8
-/** Совпадает с .test-hero-icon-tile (border-radius: 14px) + отступ подсветки. */
+const DEFAULT_PAD = 0
+/** Fallback, если у цели не удалось прочитать border-radius. */
 const TILE_RADIUS = 14
 
 function parseBorderRadiusPx(el) {
@@ -18,16 +18,16 @@ function parseBorderRadiusPx(el) {
   }
 }
 
-function measureTarget(el) {
+function measureTarget(el, pad = DEFAULT_PAD) {
   if (!el) return null
   const r = el.getBoundingClientRect()
   const baseR = parseBorderRadiusPx(el)
-  const w = r.width + PAD * 2
-  const h = r.height + PAD * 2
-  const rx = Math.min(baseR + PAD, w / 2 - 0.25, h / 2 - 0.25)
+  const w = r.width + pad * 2
+  const h = r.height + pad * 2
+  const rx = Math.min(baseR + pad, w / 2 - 0.25, h / 2 - 0.25)
   return {
-    top: r.top - PAD,
-    left: r.left - PAD,
+    top: r.top - pad,
+    left: r.left - pad,
     width: w,
     height: h,
     rx,
@@ -68,6 +68,8 @@ export function ProfileSpotlightOnboarding({
   active,
   targetRef,
   message,
+  /** Внешний отступ «окна» вокруг цели; 0 — ровно по краям элемента. */
+  pad = DEFAULT_PAD,
   bubbleShiftX = 0,
   bubbleShiftY = 0,
   headRotateDeg = 0,
@@ -86,12 +88,12 @@ export function ProfileSpotlightOnboarding({
     const w = window.innerWidth
     const h = window.innerHeight
     setViewport({ w, h })
-    const next = measureTarget(targetRefStable?.current)
+    const next = measureTarget(targetRefStable?.current, pad)
     if (next) {
       lastBoxRef.current = next
       setBox(next)
     }
-  }, [active, targetRefStable])
+  }, [active, targetRefStable, pad])
 
   useLayoutEffect(() => {
     if (!active) {

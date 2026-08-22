@@ -58,8 +58,16 @@ test('desktop investor handoff also requires an explicit left or right choice', 
 })
 
 test('market estimate starts automatically once for each selected pair', () => {
-  assert.match(page, /compareCalculatorStartedKeyRef = useRef\(null\)/)
+  assert.match(page, /compareCalculatorStartedKeyRef = useRef/)
   assert.match(page, /compareCalculatorStartedKeyRef\.current === pairKey/)
   assert.match(page, /compareCalculatorStartedKeyRef\.current = pairKey[\s\S]*void runCompareCalculator\(\)/)
   assert.doesNotMatch(page, /onClick=\{runCompareCalculator\}/)
+})
+
+test('completed comparison pair and AI/system results persist across navigation', () => {
+  assert.match(page, /readCompareSnapshot/)
+  assert.match(page, /writeCompareSnapshot/)
+  assert.match(page, /clearCompareSnapshot/)
+  assert.match(page, /discardCompareSnapshot/)
+  assert.match(page, /comparePage_pickOtherPair/)
 })

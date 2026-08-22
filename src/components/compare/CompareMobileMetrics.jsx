@@ -116,7 +116,7 @@ export default function CompareMobileMetrics({ left, right, rows, onReplace, onC
         <div className="compare-mobile__versus" aria-hidden="true">VS</div>
         <button type="button" className="compare-mobile__clear" onClick={onClear}>
           <FiRotateCcw aria-hidden="true" />
-          <span>{t('comparePage_clearSelection')}</span>
+          <span>{t('comparePage_pickOtherPair')}</span>
         </button>
       </div>
 

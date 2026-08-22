@@ -26,9 +26,12 @@ test('profile history and bookings open via cabinet deep-links, not legacy pages
   assert.doesNotMatch(profileSource, /to: '\/profile\/bookings'/)
 })
 
-test('profile cabinet uses tiffany banner folders layout without onboarding hints', () => {
+test('profile cabinet uses tiffany banner folders layout with data spotlight onboarding', () => {
   assert.doesNotMatch(profileSource, /test-hero-pro__mobile-eyebrow/)
-  assert.doesNotMatch(profileSource, /<ProfileSpotlightOnboarding/)
+  assert.match(profileSource, /<ProfileSpotlightOnboarding/)
+  assert.match(profileSource, /showTileDataOnboarding/)
+  assert.match(profileSource, /onboardingGateUiLocked/)
+  assert.match(profileSource, /profile-folder-card--gate-data/)
   assert.doesNotMatch(profileSource, /<OwnerCabinetOnboardingDrawer/)
   assert.doesNotMatch(profileSource, /<ServiceQuickLinksTour/)
   assert.match(profileSource, /test-page--cabinet-v2/)
@@ -44,6 +47,8 @@ test('profile cabinet uses tiffany banner folders layout without onboarding hint
   assert.match(profileCss, /\.profile-folder-card/)
   assert.match(profileCss, /scroll-snap-type:\s*x mandatory/)
   assert.match(profileCss, /\.profile-folder-card__glow\s*\{\s*display:\s*none/)
+  assert.match(profileCss, /\.profile-folder-card--gate-data/)
+  assert.match(profileCss, /body\.profile-onboarding-gate-locked/)
   assert.match(profileSource, /profile-cabinet__folders-dots/)
   assert.match(profileCss, /\.profile-cabinet__folders-dots/)
   assert.match(profileSource, /AuctionCategoryCtaCards/)
@@ -163,6 +168,9 @@ test('profile data sheet is stepped with in-panel progress and tiffany accents',
   assert.match(profileSource, /test-passport-ocr-card/)
   assert.match(profileSource, /\/images\/profile\/passport-scan-illustration\.png/)
   assert.match(profileSource, /buyerData_passportScanCta/)
+  assert.match(profileSource, /PassportUploadSourceSheet/)
+  assert.match(profileSource, /showPassportUploadSourceSheet/)
+  assert.match(profileSource, /openPassportUploadSource/)
   assert.match(profileCss, /\.test-passport-ocr-card__image/)
   assert.match(profileSource, /PROFILE_CONFETTI_COLORS/)
   assert.match(profileSource, /const TIFFANY = '#4ecdd6'/)

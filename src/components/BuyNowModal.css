@@ -493,7 +493,7 @@ html.buy-now-modal-open button.ai-button {
 
 .buy-now-modal--v2 .share-signature-pad__frame {
   width: 100%;
-  height: clamp(130px, 22vh, 180px);
+  height: clamp(180px, 30vh, 240px);
   border: 2px dashed #b9cbd0;
   border-radius: 16px;
   box-shadow: 0 8px 28px rgba(15, 23, 42, .05) inset;
@@ -643,7 +643,7 @@ html.buy-now-modal-open button.ai-button {
   }
 
   .buy-now-modal--v2 .share-signature-pad__frame {
-    height: 116px;
+    height: clamp(150px, 26vh, 200px);
   }
 
   .buy-now-modal--v2 .share-signature-pad__hint {
@@ -689,7 +689,7 @@ html.buy-now-modal-open button.ai-button {
   }
 
   .buy-now-modal--v2 .share-signature-pad__frame {
-    height: clamp(150px, 24vh, 200px);
+    height: clamp(200px, 34vh, 260px);
   }
 }
 
@@ -1598,7 +1598,7 @@ html.buy-now-modal-open button.ai-button {
   }
 
   .buy-now-modal--v2 .share-signature-pad__frame {
-    height: clamp(56px, 9.5vh, 76px);
+    height: clamp(180px, 32vh, 240px);
   }
 
   .buy-now-modal__content {

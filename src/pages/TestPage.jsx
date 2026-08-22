@@ -45,6 +45,8 @@ import {
 import { startProSubscriptionCheckout, startVipSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
+import PassportUploadSourceSheet from '../components/PassportUploadSourceSheet'
+import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import { validatePassportImageFile } from '../utils/passportPhotoValidation'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { countries as countryList } from '../components/CountrySelect'
@@ -71,6 +73,10 @@ import {
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
 import { fetchWhatsAppManagerChatUrl, openWhatsAppManagerChat } from '../utils/whatsappManagerChat'
+import {
+  PROFILE_ONBOARDING_MIN_COMPLETE_PCT,
+  writeBuyerOnboardingGateFlag,
+} from '../utils/buyerProfileOnboardingGate'
 import './TestPage.css'
 
 const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
@@ -90,9 +96,6 @@ const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
 const SUBSCRIPTION_CONFETTI_ACTIVE_MS = 5000
 
 const PROFILE_SAVE_DEBOUNCE_MS = 500
-
-/** Показывать затемнённые подсказки и блокировать разделы, пока заполнено меньше этого процента. */
-const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 78
 
 /** После перехода к полю из тоста — не крутим подсветку на тосте; при новом открытии панели «Данные» ключ сбрасывается в TestPage. */
 const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDone:'
@@ -760,6 +763,7 @@ function TestPage() {
   const [passportPhotoHints, setPassportPhotoHints] = useState([])
   const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
+  const [showPassportUploadSourceSheet, setShowPassportUploadSourceSheet] = useState(false)
   const [passportRecognitionMode, setPassportRecognitionMode] = useState('confirm')
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
@@ -1875,11 +1879,15 @@ function TestPage() {
     setExtractedPassportData(null)
     setPassportPhotoHints([])
     window.requestAnimationFrame(() => {
-      passportInputRef.current?.click()
+      setShowPassportUploadSourceSheet(true)
     })
   }, [])
 
   const profileFieldsLocked = isRecognizingPassport || isSavingExtractPatch
+  const openPassportUploadSource = useCallback(() => {
+    if (isRecognizingPassport || isSavingExtractPatch) return
+    setShowPassportUploadSourceSheet(true)
+  }, [isRecognizingPassport, isSavingExtractPatch])
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
     isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
   )
@@ -2070,7 +2078,7 @@ function TestPage() {
   const showDepositAttentionDot =
     Boolean(resolvedNumericUserId) && depositAmount != null && Number(depositAmount) <= 0
 
-  /** Пока профиль &lt; 78% — флаг для логики заполнения данных (без UI-подсказок). */
+  /** Пока профиль &lt; 78% — обязательный онбординг: только переход в «Данные». */
   const profileGateActive =
     isLoaded &&
     isSiteUserSignedIn(user, isLoaded) &&
@@ -2079,7 +2087,12 @@ function TestPage() {
     needsProfileOnboarding
 
   /** Не требуем Clerk `user`: при регистрации по email сессия часто только локальная (isLoggedIn в userData). */
-  const showTileDataOnboarding = false
+  const showTileDataOnboarding =
+    profileGateActive &&
+    !showBuyerCabinetSkeleton &&
+    !dataSheetOpen &&
+    !showProfileCompleteCelebration &&
+    !showServiceQuickLinksTour
 
   /** Чеклист в тосте — только пока гейт онбординга (&lt;78%); иначе прогресс внутри листа. */
   const showProfileCompletionWidget =
@@ -2382,7 +2395,13 @@ function TestPage() {
   const toastGuideSpotlightActive = false
 
   /** Пока профиль <78% — блокируем клики по кабинету, кроме «Данные». */
-  const onboardingGateUiLocked = false
+  const onboardingGateUiLocked =
+    profileGateActive && !showProfileCompleteCelebration && !showServiceQuickLinksTour
+
+  useEffect(() => {
+    if (!resolvedNumericUserId) return
+    writeBuyerOnboardingGateFlag(resolvedNumericUserId, onboardingGateUiLocked)
+  }, [resolvedNumericUserId, onboardingGateUiLocked])
 
   useEffect(() => {
     const bodyClass = 'profile-onboarding-gate-locked'
@@ -2395,6 +2414,19 @@ function TestPage() {
     document.body.classList.remove(bodyClass)
     return undefined
   }, [onboardingGateUiLocked])
+
+  /** При подсветке «Данные» — к началу страницы и к первой карточке в ленте. */
+  useEffect(() => {
+    if (!showTileDataOnboarding) return
+    scrollMainTo(0, 0, 'instant')
+    const t = window.setTimeout(() => {
+      const rail = foldersRailRef.current
+      if (!rail) return
+      rail.scrollTo({ left: 0, behavior: 'auto' })
+      setFoldersDotIndex(0)
+    }, 40)
+    return () => window.clearTimeout(t)
+  }, [showTileDataOnboarding])
 
   const toastGuideStrictActive =
     profileGateActive &&
@@ -2517,7 +2549,11 @@ function TestPage() {
   const profileStatProfile = `${profileCompletionStats.pct}%`
 
   return (
-    <div className="test-page test-page--cabinet-v2">
+    <div
+      className={`test-page test-page--cabinet-v2${
+        onboardingGateUiLocked ? ' test-page--onboarding-gate' : ''
+      }`}
+    >
 
       <div className="test-page__ambient" aria-hidden="true">
         <span className="test-page__blob test-page__blob--a" />
@@ -2643,7 +2679,9 @@ function TestPage() {
                       (card.to === '/deposit' && showDepositAttentionDot)
                     const className = `profile-folder-card profile-folder-card--${card.accent || 'teal'}${
                       active ? ' profile-folder-card--active' : ''
-                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}`
+                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}${
+                      isData && onboardingGateUiLocked ? ' profile-folder-card--gate-data' : ''
+                    }`
                     const attentionLabel = isData
                       ? t('buyerCabinet_cardDataAttentionAria')
                       : t('buyerCabinet_cardDepositAttentionAria')
@@ -2726,10 +2764,11 @@ function TestPage() {
                   </div>
                 </div>
                 <ul className="profile-cabinet__rows">
-                  {directionSummaries.map((item) => {
-                    const isBecomeSeller = item.action === 'becomeSeller'
+                  {directionSummaries
+                    .filter((item) => item.action !== 'becomeSeller')
+                    .map((item) => {
                     const isManagerChat = item.action === 'managerChat'
-                    const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                    const DirectionIcon = isManagerChat ? FiMessageCircle : null
                     const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
                     const inner = (
                       <>
@@ -2745,16 +2784,7 @@ function TestPage() {
                     )
                     return (
                       <li key={item.action || item.headline}>
-                        {isBecomeSeller ? (
-                          <button
-                            type="button"
-                            className={rowClass}
-                            onClick={() => void handleBecomeSellerRegister()}
-                            disabled={sellPurchasedPropertyRoleFlow.loading}
-                          >
-                            {inner}
-                          </button>
-                        ) : isManagerChat ? (
+                        {isManagerChat ? (
                           <button type="button" className={rowClass} onClick={() => void openManagerChatModal()}>
                             {inner}
                           </button>
@@ -2791,6 +2821,30 @@ function TestPage() {
                       </li>
                     )
                   })}
+                  {directionSummaries
+                    .filter((item) => item.action === 'becomeSeller')
+                    .map((item) => {
+                      const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
+                      return (
+                        <li key={item.action || item.headline}>
+                          <button
+                            type="button"
+                            className={rowClass}
+                            onClick={() => void handleBecomeSellerRegister()}
+                            disabled={sellPurchasedPropertyRoleFlow.loading}
+                          >
+                            <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
+                              <FiHome size={20} />
+                            </span>
+                            <span className="profile-cabinet-row__copy">
+                              <strong>{item.subCardTitle || item.headline}</strong>
+                              <span>{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                          </button>
+                        </li>
+                      )
+                    })}
                 </ul>
               </section>
 
@@ -2894,10 +2948,11 @@ function TestPage() {
                       </div>
                     </div>
                     <div className="test-quick-row test-quick-row--primary">
-                      {directionSummaries.map((item) => {
-                        const isBecomeSeller = item.action === 'becomeSeller'
+                      {directionSummaries
+                        .filter((item) => item.action !== 'becomeSeller')
+                        .map((item) => {
                         const isManagerChat = item.action === 'managerChat'
-                        const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                        const DirectionIcon = isManagerChat ? FiMessageCircle : null
                         if (!DirectionIcon) return null
                         const inner = (
                           <>
@@ -2911,19 +2966,6 @@ function TestPage() {
                             <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
                           </>
                         )
-                        if (isBecomeSeller) {
-                          return (
-                            <button
-                              key={item.action}
-                              type="button"
-                              className="test-quick-pill"
-                              onClick={() => void handleBecomeSellerRegister()}
-                              disabled={sellPurchasedPropertyRoleFlow.loading}
-                            >
-                              {inner}
-                            </button>
-                          )
-                        }
                         if (isManagerChat) {
                           return (
                             <button
@@ -2971,6 +3013,26 @@ function TestPage() {
                           </Link>
                         )
                       })}
+                      {directionSummaries
+                        .filter((item) => item.action === 'becomeSeller')
+                        .map((item) => (
+                          <button
+                            key={item.action}
+                            type="button"
+                            className="test-quick-pill"
+                            onClick={() => void handleBecomeSellerRegister()}
+                            disabled={sellPurchasedPropertyRoleFlow.loading}
+                          >
+                            <span className="test-quick-pill__icon">
+                              <FiHome size={17} aria-hidden />
+                            </span>
+                            <span className="test-quick-pill__body">
+                              <span className="test-quick-pill__title">{item.subCardTitle || item.headline}</span>
+                              <span className="test-quick-pill__sub">{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                          </button>
+                        ))}
                     </div>
                     <div className="test-cabinet-home-discover" aria-label={t('buyerData_profileDiscoverAria')}>
                       <Link to="/bonuses" className="test-cabinet-home-discover__bonuses-cta">
@@ -3074,6 +3136,14 @@ function TestPage() {
         onConfirm={handlePassportRecognitionConfirm}
         extractedData={extractedPassportData}
         isSaving={isSavingExtractPatch}
+      />
+
+      <PassportUploadSourceSheet
+        isOpen={showPassportUploadSourceSheet}
+        onClose={() => setShowPassportUploadSourceSheet(false)}
+        busy={isRecognizingPassport || isSavingExtractPatch}
+        onPickDevice={() => passportInputRef.current?.click()}
+        onPickFile={handlePassportRecognition}
       />
 
 
@@ -3455,7 +3525,7 @@ function TestPage() {
                             type="button"
                             className="test-passport-ocr-card"
                             disabled={profileFieldsLocked || isRecognizingPassport || isSavingExtractPatch}
-                            onClick={() => passportInputRef.current?.click()}
+                            onClick={openPassportUploadSource}
                           >
                             <img
                               className="test-passport-ocr-card__image"
@@ -4023,6 +4093,12 @@ function TestPage() {
           void refetchBookingsSheetRows()
           window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
         }}
+      />
+
+      <ProfileSpotlightOnboarding
+        active={showTileDataOnboarding}
+        targetRef={dataTileRef}
+        message={t('buyerData_spotlightFillHint')}
       />
 
     </div>
