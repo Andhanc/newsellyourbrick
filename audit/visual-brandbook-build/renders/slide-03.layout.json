@@ -1,0 +1,1304 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/brvqqw",
+    "id": "brvqqw",
+    "slide": 3,
+    "layoutId": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Montserrat"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tcjad0zy",
+      "id": "1",
+      "bbox": [
+        64,
+        44,
+        440,
+        22
+      ],
+      "geometry": "rect",
+      "text": "02 / ЛОГОТИП",
+      "textPreview": "02 / ЛОГОТИП",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Montserrat",
+        "color": "#007D8A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "02 / ЛОГОТИП"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "02 / ЛОГОТИП",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Montserrat",
+            "color": "#007D8A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "02 / ЛОГОТИП",
+              "fontSize": 14,
+              "typeface": "Montserrat",
+              "color": "#007D8A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/698bilg7",
+      "id": "2",
+      "bbox": [
+        64,
+        78,
+        950,
+        82
+      ],
+      "geometry": "rect",
+      "text": "Your — единственное слово, которое получает цвет",
+      "textPreview": "Your — единственное слово, которое получает цвет",
+      "resolvedFontSize": 36.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 48,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.76,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Your — единственное слово, которое получает цвет"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Your — единственное слово, которое получает цвет",
+          "lineSpacingPercent": 98000,
+          "resolvedTextStyle": {
+            "fontSize": 48,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.98
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Your — единственное слово, которое получает цвет",
+              "fontSize": 48,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.98
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7ahsbqhs",
+      "id": "3",
+      "bbox": [
+        86,
+        224,
+        147.68,
+        82.36
+      ],
+      "geometry": "rect",
+      "text": "Sell",
+      "textPreview": "Sell",
+      "resolvedFontSize": 65.32,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 65.32,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sell"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sell",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 65.32,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sell",
+              "fontSize": 65.32,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/knqtgbyh",
+      "id": "4",
+      "bbox": [
+        228,
+        226.84,
+        156.2,
+        76.68
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#0099A9",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/58za9gz2",
+      "id": "5",
+      "bbox": [
+        236.52,
+        224,
+        150.52,
+        82.36
+      ],
+      "geometry": "rect",
+      "text": "Your",
+      "textPreview": "Your",
+      "resolvedFontSize": 65.32,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 65.32,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Your"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Your",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 65.32,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Your",
+              "fontSize": 65.32,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/il8relgb",
+      "id": "6",
+      "bbox": [
+        394.14,
+        224,
+        181.76,
+        82.36
+      ],
+      "geometry": "rect",
+      "text": "Brick",
+      "textPreview": "Brick",
+      "resolvedFontSize": 65.32,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 65.32,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Brick"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Brick",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 65.32,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Brick",
+              "fontSize": 65.32,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jmhs76hw",
+      "id": "7",
+      "bbox": [
+        86,
+        346,
+        1100,
+        0
+      ],
+      "geometry": "line",
+      "lineColor": "#E2E8F0",
+      "lineWidth": 1
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wj69cby5",
+      "id": "8",
+      "bbox": [
+        64,
+        390,
+        558,
+        214
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#0F172A",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xkza5gzq",
+      "id": "9",
+      "bbox": [
+        114,
+        452,
+        89.44,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Sell",
+      "textPreview": "Sell",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sell"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sell",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sell",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tgfuh8ba",
+      "id": "10",
+      "bbox": [
+        200,
+        453.72,
+        94.6,
+        46.44
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#0099A9",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sf6d8nap",
+      "id": "11",
+      "bbox": [
+        205.16,
+        452,
+        91.16,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Your",
+      "textPreview": "Your",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Your"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Your",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Your",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7excfit4",
+      "id": "12",
+      "bbox": [
+        300.62,
+        452,
+        110.08,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Brick",
+      "textPreview": "Brick",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Brick"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Brick",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Brick",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6dov6dsj",
+      "id": "13",
+      "bbox": [
+        114,
+        546,
+        410,
+        30
+      ],
+      "geometry": "rect",
+      "text": "На фотографии и тёмной поверхности",
+      "textPreview": "На фотографии и тёмной поверхности",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 16,
+        "typeface": "Montserrat",
+        "color": "rgba(255, 255, 255, 0.7)",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "На фотографии и тёмной поверхности"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "На фотографии и тёмной поверхности",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "typeface": "Montserrat",
+            "color": "rgba(255, 255, 255, 0.7)",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "На фотографии и тёмной поверхности",
+              "fontSize": 16,
+              "typeface": "Montserrat",
+              "color": "rgba(255, 255, 255, 0.7)",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5cfud8by",
+      "id": "14",
+      "bbox": [
+        658,
+        390,
+        558,
+        214
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#F0FAFB",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kb6t43ad",
+      "id": "15",
+      "bbox": [
+        708,
+        452,
+        89.44,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Sell",
+      "textPreview": "Sell",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sell"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sell",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sell",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jaxcbyt8",
+      "id": "16",
+      "bbox": [
+        794,
+        453.72,
+        94.6,
+        46.44
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#0099A9",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/i94b2tsn",
+      "id": "17",
+      "bbox": [
+        799.16,
+        452,
+        91.16,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Your",
+      "textPreview": "Your",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Your"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Your",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Your",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x8vu9ob2",
+      "id": "18",
+      "bbox": [
+        894.62,
+        452,
+        110.08,
+        49.88
+      ],
+      "geometry": "rect",
+      "text": "Brick",
+      "textPreview": "Brick",
+      "resolvedFontSize": 39.56,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.56,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Brick"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Brick",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.56,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Brick",
+              "fontSize": 39.56,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wnmt03ah",
+      "id": "19",
+      "bbox": [
+        708,
+        546,
+        410,
+        30
+      ],
+      "geometry": "rect",
+      "text": "На светлом редакционном холсте",
+      "textPreview": "На светлом редакционном холсте",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 16,
+        "typeface": "Montserrat",
+        "color": "#64748B",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "На светлом редакционном холсте"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "На светлом редакционном холсте",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "typeface": "Montserrat",
+            "color": "#64748B",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "На светлом редакционном холсте",
+              "fontSize": 16,
+              "typeface": "Montserrat",
+              "color": "#64748B",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/orqdw3id",
+      "id": "20",
+      "bbox": [
+        86,
+        636,
+        1080,
+        28
+      ],
+      "geometry": "rect",
+      "text": "Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.",
+      "textPreview": "Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 16,
+        "typeface": "Montserrat",
+        "color": "#475569",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "typeface": "Montserrat",
+            "color": "#475569",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.",
+              "fontSize": 16,
+              "typeface": "Montserrat",
+              "color": "#475569",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pszup8jy",
+      "id": "21",
+      "bbox": [
+        64,
+        686,
+        540,
+        16
+      ],
+      "geometry": "rect",
+      "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+      "textPreview": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 10,
+        "typeface": "Montserrat",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 10,
+            "typeface": "Montserrat",
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+              "fontSize": 10,
+              "typeface": "Montserrat",
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2p8vut07",
+      "id": "22",
+      "bbox": [
+        1168,
+        682,
+        48,
+        20
+      ],
+      "geometry": "rect",
+      "text": "03",
+      "textPreview": "03",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "03"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "03",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "right",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "03",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "right",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

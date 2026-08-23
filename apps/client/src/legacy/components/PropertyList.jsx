@@ -45,6 +45,7 @@ import {
 import {
   isAuctionRoute,
   parseAuctionFilterPath,
+  readAuctionSearchQuery,
 } from '../utils/auctionFilterUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { getAuctionContextPropertyPath } from '../utils/listingContextUrl'
@@ -154,6 +155,8 @@ const PropertyList = ({
   // Читаем фильтры из SEO-пути (/auction/buy-now/apartments) или legacy ?filter=
   useEffect(() => {
     const parsed = parseAuctionFilterPath(location.pathname, location.search)
+
+    setSearchQuery(readAuctionSearchQuery(location.search))
 
     if (parsed.legacyRedirect && parsed.legacyRedirect !== `${location.pathname}${location.search}`) {
       navigate(parsed.legacyRedirect, { replace: true })

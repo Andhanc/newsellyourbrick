@@ -16693,4 +16693,182 @@ body:has(.hero-section) .site-ads-host {
     align-items: center;
     justify-content: center;
   }
+
+  /* Раскрытый поиск должен занимать всё свободное место в мобильной панели. */
+  .new-header .new-header__right {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  .new-header--search-open .new-header__left {
+    display: none !important;
+  }
+
+  .new-header.new-header--search-open .new-header__container.new-header__container {
+    gap: 0;
+    padding: 0 !important;
+  }
+
+  .new-header--search-open .new-header__right {
+    width: 100%;
+    height: 60px;
+    margin-left: 0 !important;
+  }
+
+  .new-header .new-header__search-wrapper {
+    position: relative;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: 100%;
+  }
+
+  .new-header .new-header__search-field {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+    min-height: 60px;
+    padding: 0 14px 0 16px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 153, 169, 0.28);
+    border-radius: 19px;
+    background: #f8fafc;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 2px 8px rgba(15, 23, 42, 0.07);
+    transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  }
+
+  .new-header .new-header__search-field:hover,
+  .new-header .new-header__search-field:focus-within {
+    border-color: rgba(0, 153, 169, 0.28);
+    background: #f8fafc;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 2px 8px rgba(15, 23, 42, 0.07);
+  }
+
+  .new-header .new-header__search-icon {
+    display: block;
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+    color: #348c95;
+  }
+
+  .new-header .new-header__search-input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0;
+    outline: 0 !important;
+    background: transparent;
+    box-shadow: none !important;
+    color: #17212b;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.3;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .new-header .new-header__search-input::placeholder {
+    overflow: hidden;
+    color: #82909f;
+    text-overflow: ellipsis;
+    opacity: 1;
+  }
+
+  .new-header .new-header__search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .new-header .new-header__search-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #536170;
+    cursor: pointer;
+  }
+
+  .new-header .new-header__search-close:active {
+    background: rgba(15, 23, 42, 0.12);
+  }
+
+  .new-header .new-header__search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    max-height: min(320px, calc(100dvh - 112px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid rgba(15, 23, 42, 0.09);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .new-header .new-header__search-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    background: transparent;
+    color: #17212b;
+    text-align: left;
+  }
+
+  .new-header .new-header__search-result:last-child {
+    border-bottom: 0;
+  }
+
+  .new-header .new-header__search-result-title {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .new-header .new-header__search-result-hint {
+    flex: 0 0 auto;
+    margin-left: 0;
+    color: #82909f;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .new-header .new-header__search-result--disabled {
+    opacity: 0.58;
+  }
+
+  .new-header .new-header__search-result--no-results {
+    justify-content: center;
+    color: #718096;
+  }
 }

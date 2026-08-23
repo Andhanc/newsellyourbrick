@@ -1,0 +1,12 @@
+All visual assets are internal project assets or screenshots captured from the local SellYourBrick site on 2026-08-23.
+
+Primary sources:
+- audit/mobile/screenshots/*.png — mobile product screenshots captured at 390x844 and 320x800.
+- public/images/sellyourbrick/about/about-hero-spain.jpg — internal brand photography.
+- public/images/sellyourbrick/about/mission-villa.jpg — internal brand photography.
+- public/images/sellyourbrick/strategies/*.jpg — internal category photography.
+- public/images/test-drive/hero-resort-mobile.png — internal product photography.
+- public/news/news-mobile-sky-v2.png — internal editorial artwork.
+- audit/mobile/BRANDBOOK.md — approved palette, typography and component guidance derived from current product audit.
+
+No external web assets or invented factual claims are used.

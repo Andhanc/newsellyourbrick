@@ -1,0 +1,668 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/t1n05q",
+    "id": "t1n05q",
+    "slide": 1,
+    "layoutId": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#0F172A",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Montserrat"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/yhwnydsn",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "alt": "Современная недвижимость в Испании",
+      "contentType": "image/jpeg",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "5d7ceaa8-1cb2-424a-8691-184caff0169a",
+        "contentType": "image/jpeg",
+        "byteLength": 685813
+      }
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cv2xwzu9",
+      "id": "2",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dwby54vu",
+      "id": "3",
+      "bbox": [
+        64,
+        64,
+        88.4,
+        49.3
+      ],
+      "geometry": "rect",
+      "text": "Sell",
+      "textPreview": "Sell",
+      "resolvedFontSize": 39.11,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.11,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sell"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sell",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.11,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sell",
+              "fontSize": 39.11,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yxkfypcf",
+      "id": "4",
+      "bbox": [
+        149,
+        65.7,
+        93.5,
+        45.9
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#0099A9",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zytg7ud0",
+      "id": "5",
+      "bbox": [
+        154.1,
+        64,
+        90.1,
+        49.3
+      ],
+      "geometry": "rect",
+      "text": "Your",
+      "textPreview": "Your",
+      "resolvedFontSize": 39.11,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.11,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Your"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Your",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.11,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Your",
+              "fontSize": 39.11,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kzmh0zul",
+      "id": "6",
+      "bbox": [
+        248.45,
+        64,
+        108.8,
+        49.3
+      ],
+      "geometry": "rect",
+      "text": "Brick",
+      "textPreview": "Brick",
+      "resolvedFontSize": 39.11,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 39.11,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Brick"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Brick",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 39.11,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Brick",
+              "fontSize": 39.11,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lkvy94v6",
+      "id": "7",
+      "bbox": [
+        64,
+        230,
+        660,
+        170
+      ],
+      "geometry": "rect",
+      "text": "ВИЗУАЛЬНЫЙ\nБРЕНДБУК",
+      "textPreview": "ВИЗУАЛЬНЫЙ | БРЕНДБУК",
+      "resolvedFontSize": 72,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 72,
+        "typeface": "Montserrat",
+        "color": "#FFFFFF",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ВИЗУАЛЬНЫЙ"
+          },
+          {
+            "index": 2,
+            "text": "БРЕНДБУК"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ВИЗУАЛЬНЫЙ",
+          "lineSpacingPercent": 90000,
+          "resolvedTextStyle": {
+            "fontSize": 72,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.9
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ВИЗУАЛЬНЫЙ",
+              "fontSize": 72,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.9
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "БРЕНДБУК",
+          "lineSpacingPercent": 90000,
+          "resolvedTextStyle": {
+            "fontSize": 72,
+            "typeface": "Montserrat",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.9
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "БРЕНДБУК",
+              "fontSize": 72,
+              "typeface": "Montserrat",
+              "color": "#FFFFFF",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.9
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ml4z29cb",
+      "id": "8",
+      "bbox": [
+        64,
+        430,
+        590,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Недвижимость. Ясные цифры. Один Tiffany-акцент.",
+      "textPreview": "Недвижимость. Ясные цифры. Один Tiffany-акцент.",
+      "resolvedFontSize": 23,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 23,
+        "typeface": "Montserrat",
+        "color": "rgba(255, 255, 255, 0.82)",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Недвижимость. Ясные цифры. Один Tiffany-акцент."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Недвижимость. Ясные цифры. Один Tiffany-акцент.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 23,
+            "typeface": "Montserrat",
+            "color": "rgba(255, 255, 255, 0.82)",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Недвижимость. Ясные цифры. Один Tiffany-акцент.",
+              "fontSize": 23,
+              "typeface": "Montserrat",
+              "color": "rgba(255, 255, 255, 0.82)",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7mdgbedw",
+      "id": "9",
+      "bbox": [
+        64,
+        520,
+        186,
+        48
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#FFFFFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zulczidc",
+      "id": "10",
+      "bbox": [
+        64,
+        520,
+        186,
+        48
+      ],
+      "geometry": "rect",
+      "text": "BRAND SYSTEM 1.0",
+      "textPreview": "BRAND SYSTEM 1.0",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 13,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "BRAND SYSTEM 1.0"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "BRAND SYSTEM 1.0",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "BRAND SYSTEM 1.0",
+              "fontSize": 13,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/e9cbqxwr",
+      "id": "11",
+      "bbox": [
+        1140,
+        650,
+        76,
+        24
+      ],
+      "geometry": "rect",
+      "text": "2026",
+      "textPreview": "2026",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Montserrat",
+        "color": "rgba(255, 255, 255, 0.7)",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2026"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2026",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Montserrat",
+            "color": "rgba(255, 255, 255, 0.7)",
+            "bold": true,
+            "alignment": "right",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2026",
+              "fontSize": 14,
+              "typeface": "Montserrat",
+              "color": "rgba(255, 255, 255, 0.7)",
+              "bold": true,
+              "alignment": "right",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

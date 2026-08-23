@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "mobile-discover:home-sale-format-cards": {
+      "targetKind": "existing-ui",
+      "projectId": "d665c192-6cd9-4e94-89a6-a3ea402e0bbb",
+      "baselineDraftId": "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1",
+      "activeDraftId": "fffa1c4b-b6d1-43b8-ab00-9851b705410e",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "d7b07424-890d-44b2-a2a6-2136cf945814",
+        "c9db1e6a-1a4b-4f2c-bc38-18e30d4fe511",
+        "b43c4cc4-ed6f-4b51-8eb6-bfd2e0ecab53",
+        "28a77f8f-ba00-43dc-8227-f20afdcb89c3",
+        "3995bdf2-6aa7-48a2-a187-91f149b418d8",
+        "cff910eb-d9ec-49e4-b0f6-92aebeffa664",
+        "5206f84c-b847-4e27-89ed-b6bdbeff1353",
+        "f0537293-95a5-49a1-acb2-407295fb77d4",
+        "38cb39b3-a706-4c55-9de6-3800fe5abcec",
+        "1779dc56-0212-4d6e-be37-ceb7d5d7d5ce",
+        "31fc1df7-d5f8-4484-9470-1140372d95d5"
+      ],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/pages/MobileDiscoverPage.jsx",
+        "src/pages/MobileDiscoverPage.css"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "dde2a6fea6177583d3ef7b0542eefe3a96be97d827b12286fd2b74a73f5a35ee",
+        "src/pages/MobileDiscoverPage.jsx": "1d8ce3c053f9445da93da668b0260a2e4a6a9a62f927ccd31caa10d6309dc6de",
+        "src/pages/MobileDiscoverPage.css": "30584f2497016bb87c83e5a336cb69d56e317c47de28ca1e34357c5c725ae328"
+      },
+      "components": [],
+      "drafts": {
+        "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1": {
+          "title": "Current UI — Baseline",
+          "visualDirection": "текущая карточка, исходная точка сравнения",
+          "currentVersion": 1
+        },
+        "9bd2713d-4bab-417d-b2a2-899e2ceb3efa": {
+          "title": "Editorial Luxe",
+          "visualDirection": "светлая редакционная карточка с премиальной типографикой",
+          "parentDraftId": "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1",
+          "currentVersion": 1
+        },
+        "fffa1c4b-b6d1-43b8-ab00-9851b705410e": {
+          "title": "Floating Glass",
+          "visualDirection": "компактная мобильная сетка 2×2 из фирменных Tiffany/teal/deep-teal карточек без описаний и белой нижней зоны; ниже сетки — центрированный типографический блок «Покупать недвижимость — легко!» с заголовком максимум в две строки и непрерывным описанием без принудительного переноса; пропорция карточек 0.9, увеличенные 3D-иллюстрации и каскадное появление сохранены",
+          "parentDraftId": "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1",
+          "currentVersion": 14
+        },
+        "b002cc50-6943-4d26-a9d3-7d6ed61d6dd2": {
+          "title": "Split Card",
+          "visualDirection": "структурная двухчастная карточка с белым контентным блоком",
+          "parentDraftId": "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1",
+          "currentVersion": 1
+        },
+        "fa67e9c8-8123-46ce-a32d-eb7e6e9846a7": {
+          "title": "Cinematic",
+          "visualDirection": "кинематографичная полноэкранная карточка с минимумом UI",
+          "parentDraftId": "54246d5f-e557-4d30-8f5e-3fbcb9aadcc1",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-08-23T13:18:00+03:00"
+    }
+  }
+}

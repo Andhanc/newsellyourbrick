@@ -116,6 +116,11 @@ export function buildAuctionPathFromLegacySearch(search = '') {
   return path
 }
 
+/** Поисковая строка каталога, переданная с главной через `?q=`. */
+export function readAuctionSearchQuery(search = '') {
+  return new URLSearchParams(String(search || '').replace(/^\?/, '')).get('q')?.trim() || ''
+}
+
 /**
  * @param {string} pathname
  * @param {string} [search]
@@ -132,7 +137,12 @@ export function parseAuctionFilterPath(pathname, search = '') {
 
   const legacyPath = buildAuctionPathFromLegacySearch(search)
   if (legacyPath) {
-    return { ...parseAuctionFilterPath(legacyPath, ''), legacyRedirect: legacyPath }
+    const remainingParams = new URLSearchParams(String(search || '').replace(/^\?/, ''))
+    remainingParams.delete('filter')
+    remainingParams.delete('category')
+    const remainingSearch = remainingParams.toString()
+    const legacyRedirect = `${legacyPath}${remainingSearch ? `?${remainingSearch}` : ''}`
+    return { ...parseAuctionFilterPath(legacyPath, ''), legacyRedirect }
   }
 
   if (!isAuctionRoute(pathname)) return empty

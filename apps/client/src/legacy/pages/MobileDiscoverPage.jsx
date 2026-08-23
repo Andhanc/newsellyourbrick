@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  FiArrowUpRight,
-  FiBookmark,
   FiGrid,
   FiPieChart,
   FiSearch,
@@ -27,43 +25,43 @@ function getSaleCards(t) {
   return [
     {
       id: 'auction',
+      number: '01',
       title: t('auction'),
-      description: t('discoverPage_saleAuctionDesc'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
       imagePosition: '36% center',
       to: '/auction?filter=auction',
       theme: 'auction',
-      Icon: MdGavel,
+      iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
     },
     {
       id: 'buy_now',
+      number: '02',
       title: t('buyNowSectionTitle'),
-      description: t('discoverPage_saleBuyNowDesc'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
       imagePosition: '42% center',
       to: '/auction?filter=buy_now',
       theme: 'buy',
-      Icon: FiShoppingBag,
+      iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
     },
     {
       id: 'debts',
+      number: '03',
       title: t('debtsTitle'),
-      description: t('discoverPage_saleDebtsDesc'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
       imagePosition: '46% center',
       to: '/debts',
       theme: 'debts',
-      Icon: MdOutlineReceiptLong,
+      iconSrc: publicAsset('images/home-sale-formats/icons/debts-3d.png'),
     },
     {
       id: 'shares',
+      number: '04',
       title: t('shares'),
-      description: t('discoverPage_saleSharesDesc'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
       imagePosition: '42% center',
       to: CO_INVESTMENT_PATH,
       theme: 'shares',
-      Icon: FiPieChart,
+      iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     },
   ]
 }
@@ -99,7 +97,6 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
-  const cardsRef = useRef(null)
   const busyRef = useRef(false)
   const screenRef = useRef('hero')
   const touchStartY = useRef(0)
@@ -109,10 +106,8 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
   const [screen, setScreen] = useState('hero') // hero | stage
   const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
   const [menuOpen, setMenuOpen] = useState(false)
-  const [saved, setSaved] = useState(() => new Set())
   const [stageEntered, setStageEntered] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
-  const [activeSaleCard, setActiveSaleCard] = useState(0)
 
   const saleCards = getSaleCards(t)
   const menuItems = getMenuItems(t)
@@ -141,46 +136,6 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
       if (layout) layout.style.overflowY = ''
     }
   }, [clearTimers])
-
-  useEffect(() => {
-    const scroller = cardsRef.current
-    if (!scroller || screen !== 'stage') return undefined
-
-    const syncActive = () => {
-      const cards = Array.from(scroller.querySelectorAll('.md-card'))
-      if (cards.length === 0) return
-      const mid = scroller.scrollLeft + scroller.clientWidth / 2
-      let best = 0
-      let bestDist = Infinity
-      cards.forEach((card, index) => {
-        const center = card.offsetLeft + card.offsetWidth / 2
-        const dist = Math.abs(center - mid)
-        if (dist < bestDist) {
-          bestDist = dist
-          best = index
-        }
-      })
-      setActiveSaleCard(best)
-    }
-
-    syncActive()
-    scroller.addEventListener('scroll', syncActive, { passive: true })
-    window.addEventListener('resize', syncActive)
-    return () => {
-      scroller.removeEventListener('scroll', syncActive)
-      window.removeEventListener('resize', syncActive)
-    }
-  }, [screen, stageEntered])
-
-  const scrollToSaleCard = useCallback((index) => {
-    const scroller = cardsRef.current
-    if (!scroller) return
-    const card = scroller.querySelectorAll('.md-card')[index]
-    if (!card) return
-    const left = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-    setActiveSaleCard(index)
-  }, [])
 
   const goTo = useCallback(
     (next) => {
@@ -322,15 +277,6 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
     }
   }, [flashPhase, goTo])
 
-  const toggleSaved = (id) => {
-    setSaved((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   const flashClass =
     flashPhase === 'cover' ? ' is-cover' : flashPhase === 'reveal' ? ' is-reveal' : ''
 
@@ -401,88 +347,51 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
             </div>
 
             <div className="md-cards-wrap">
-              <div ref={cardsRef} className="md-cards" role="list">
+              <div className="md-cards" role="list">
                 {saleCards.map((card, index) => {
-                  const isSaved = saved.has(card.id)
-                  const CardIcon = card.Icon
                   return (
                     <article
                       key={card.id}
                       className={`md-card md-card--${card.theme}`}
                       role="listitem"
-                      style={{
-                        '--md-card-i': index,
-                        '--md-card-image-position': card.imagePosition,
-                      }}
-                      aria-label={`${card.title}. ${card.description}`}
+                      style={{ '--md-card-i': index }}
+                      aria-label={card.title}
                     >
-                      <div className="md-card__frame">
-                        <img
-                          className="md-card__image"
-                          src={card.image}
-                          alt=""
-                          width={1536}
-                          height={1024}
-                          loading={index === 0 ? 'eager' : 'lazy'}
-                          decoding="async"
-                        />
-                        <div className="md-card__shade" aria-hidden="true" />
+                      <Link
+                        className="md-card__frame"
+                        to={card.to}
+                        aria-label={`${t('aboutCorp_moreDetails')}: ${card.title}`}
+                      >
+                        <div className="md-card__visual" aria-hidden="true">
+                          <span className="md-card__number">{card.number}</span>
+                          <img
+                            className="md-card__icon"
+                            src={card.iconSrc}
+                            alt=""
+                            width={512}
+                            height={512}
+                            loading={index === 0 ? 'eager' : 'lazy'}
+                            decoding="async"
+                          />
+                        </div>
                         <div className="md-card__body">
                           <div className="md-card__copy">
-                            <span className="md-card__icon" aria-hidden>
-                              <CardIcon />
-                            </span>
                             <h3 className="md-card__title">{card.title}</h3>
-                            <p className="md-card__description">{card.description}</p>
-                          </div>
-                          <div className="md-card__actions">
-                            <Link className="md-card__cta" to={card.to}>
-                              {t('aboutCorp_moreDetails')}
-                              <FiArrowUpRight aria-hidden />
-                            </Link>
-                            <button
-                              type="button"
-                              className={`md-card__save${isSaved ? ' is-on' : ''}`}
-                              aria-label={
-                                isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
-                              }
-                              aria-pressed={isSaved}
-                              onClick={() => toggleSaved(card.id)}
-                            >
-                              <FiBookmark aria-hidden />
-                            </button>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     </article>
                   )
                 })}
               </div>
 
-              <div
-                className="md-cards-dots"
-                role="tablist"
-                aria-label={t('discoverPage_saleFormatsDotsAria')}
-              >
-                {saleCards.map((card, index) => (
-                  <button
-                    key={card.id}
-                    type="button"
-                    role="tab"
-                    className={`md-cards-dot${activeSaleCard === index ? ' is-active' : ''}`}
-                    aria-label={card.title}
-                    aria-selected={activeSaleCard === index}
-                    onClick={() => scrollToSaleCard(index)}
-                  />
-                ))}
-              </div>
             </div>
 
             <div className="md-welcome__copy">
               <h2 className="md-welcome__title">{t('discoverPage_welcomeTitle')}</h2>
               <p className="md-welcome__lead">
                 {t('discoverPage_welcomeLeadLine1')}
-                <br />
+                {' '}
                 {t('discoverPage_welcomeLeadLine2')}
               </p>
             </div>

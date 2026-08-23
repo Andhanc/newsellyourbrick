@@ -1,0 +1,893 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/vpl9g1",
+    "id": "vpl9g1",
+    "slide": 10,
+    "layoutId": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#F8FAFC",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Montserrat"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "adae9a1e-2308-46fa-8a89-3afecca09c11",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "7790ed38-1159-49f7-9a43-e356cabfb10a",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x8b2x8vi",
+      "id": "1",
+      "bbox": [
+        64,
+        44,
+        440,
+        22
+      ],
+      "geometry": "rect",
+      "text": "09 / МОБИЛЬНАЯ СИСТЕМА",
+      "textPreview": "09 / МОБИЛЬНАЯ СИСТЕМА",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Montserrat",
+        "color": "#007D8A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "09 / МОБИЛЬНАЯ СИСТЕМА"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "09 / МОБИЛЬНАЯ СИСТЕМА",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Montserrat",
+            "color": "#007D8A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "09 / МОБИЛЬНАЯ СИСТЕМА",
+              "fontSize": 14,
+              "typeface": "Montserrat",
+              "color": "#007D8A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/al03mtwr",
+      "id": "2",
+      "bbox": [
+        64,
+        78,
+        950,
+        82
+      ],
+      "geometry": "rect",
+      "text": "Разделы узнаются как одна семья",
+      "textPreview": "Разделы узнаются как одна семья",
+      "resolvedFontSize": 48,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 48,
+        "typeface": "Montserrat",
+        "color": "#0F172A",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Разделы узнаются как одна семья"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Разделы узнаются как одна семья",
+          "lineSpacingPercent": 98000,
+          "resolvedTextStyle": {
+            "fontSize": 48,
+            "typeface": "Montserrat",
+            "color": "#0F172A",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.98
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Разделы узнаются как одна семья",
+              "fontSize": 48,
+              "typeface": "Montserrat",
+              "color": "#0F172A",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.98
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bm9kvydc",
+      "id": "3",
+      "bbox": [
+        74,
+        184,
+        230,
+        480
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kb2lsnet",
+      "id": "4",
+      "bbox": [
+        159.04,
+        190,
+        59.92,
+        11
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/kj25wrq1",
+      "id": "5",
+      "bbox": [
+        82,
+        192,
+        214,
+        464
+      ],
+      "geometry": "roundRect",
+      "alt": "Мобильный экран АУКЦИОН",
+      "contentType": "image/jpeg",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "roundRect",
+        "adjustmentList": [
+          {
+            "name": "adj",
+            "formula": "val 13084"
+          }
+        ]
+      },
+      "asset": {
+        "assetId": "51c9f10d-c6de-4822-9e7b-e5b2859efc03",
+        "contentType": "image/jpeg",
+        "byteLength": 51011
+      }
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/y9k3qdwn",
+      "id": "6",
+      "bbox": [
+        82,
+        670,
+        214,
+        20
+      ],
+      "geometry": "rect",
+      "text": "АУКЦИОН",
+      "textPreview": "АУКЦИОН",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#64748B",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "АУКЦИОН"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "АУКЦИОН",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#64748B",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "АУКЦИОН",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#64748B",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zatkzid8",
+      "id": "7",
+      "bbox": [
+        370,
+        184,
+        230,
+        480
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0fylgjep",
+      "id": "8",
+      "bbox": [
+        455.04,
+        190,
+        59.92,
+        11
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/wvi5sra5",
+      "id": "9",
+      "bbox": [
+        378,
+        192,
+        214,
+        464
+      ],
+      "geometry": "roundRect",
+      "alt": "Мобильный экран ДОЛИ",
+      "contentType": "image/jpeg",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "roundRect",
+        "adjustmentList": [
+          {
+            "name": "adj",
+            "formula": "val 13084"
+          }
+        ]
+      },
+      "asset": {
+        "assetId": "37744ff4-dd4c-421d-9be8-c9dc922d6b72",
+        "contentType": "image/jpeg",
+        "byteLength": 55129
+      }
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t8nm9032",
+      "id": "10",
+      "bbox": [
+        378,
+        670,
+        214,
+        20
+      ],
+      "geometry": "rect",
+      "text": "ДОЛИ",
+      "textPreview": "ДОЛИ",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#64748B",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ДОЛИ"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ДОЛИ",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#64748B",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ДОЛИ",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#64748B",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s7elgvmh",
+      "id": "11",
+      "bbox": [
+        666,
+        184,
+        230,
+        480
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/76547alw",
+      "id": "12",
+      "bbox": [
+        751.04,
+        190,
+        59.92,
+        11
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/xk3690f6",
+      "id": "13",
+      "bbox": [
+        674,
+        192,
+        214,
+        464
+      ],
+      "geometry": "roundRect",
+      "alt": "Мобильный экран ДОЛГИ",
+      "contentType": "image/jpeg",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "roundRect",
+        "adjustmentList": [
+          {
+            "name": "adj",
+            "formula": "val 13084"
+          }
+        ]
+      },
+      "asset": {
+        "assetId": "2e590633-0305-4c43-8a5e-e414159054ca",
+        "contentType": "image/jpeg",
+        "byteLength": 51137
+      }
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hc7mdk3e",
+      "id": "14",
+      "bbox": [
+        674,
+        670,
+        214,
+        20
+      ],
+      "geometry": "rect",
+      "text": "ДОЛГИ",
+      "textPreview": "ДОЛГИ",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#64748B",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ДОЛГИ"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ДОЛГИ",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#64748B",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ДОЛГИ",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#64748B",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gbylkfmt",
+      "id": "15",
+      "bbox": [
+        962,
+        184,
+        230,
+        480
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fap4bal8",
+      "id": "16",
+      "bbox": [
+        1047.04,
+        190,
+        59.92,
+        11
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#111827",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/9gjm5gfa",
+      "id": "17",
+      "bbox": [
+        970,
+        192,
+        214,
+        464
+      ],
+      "geometry": "roundRect",
+      "alt": "Мобильный экран ТЕСТ-ДРАЙВ",
+      "contentType": "image/jpeg",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "roundRect",
+        "adjustmentList": [
+          {
+            "name": "adj",
+            "formula": "val 13084"
+          }
+        ]
+      },
+      "asset": {
+        "assetId": "03be9a3c-2c3f-40d4-ac3c-83f8cb9397eb",
+        "contentType": "image/jpeg",
+        "byteLength": 56204
+      }
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p07mhk3a",
+      "id": "18",
+      "bbox": [
+        970,
+        670,
+        214,
+        20
+      ],
+      "geometry": "rect",
+      "text": "ТЕСТ-ДРАЙВ",
+      "textPreview": "ТЕСТ-ДРАЙВ",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#64748B",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ТЕСТ-ДРАЙВ"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ТЕСТ-ДРАЙВ",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#64748B",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ТЕСТ-ДРАЙВ",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#64748B",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4zy5ofmp",
+      "id": "19",
+      "bbox": [
+        64,
+        686,
+        540,
+        16
+      ],
+      "geometry": "rect",
+      "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+      "textPreview": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 10,
+        "typeface": "Montserrat",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 10,
+            "typeface": "Montserrat",
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "SELLYOURBRICK  •  VISUAL BRAND SYSTEM",
+              "fontSize": 10,
+              "typeface": "Montserrat",
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ovqx0ned",
+      "id": "20",
+      "bbox": [
+        1168,
+        682,
+        48,
+        20
+      ],
+      "geometry": "rect",
+      "text": "10",
+      "textPreview": "10",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Montserrat",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "10"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "10",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Montserrat",
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "right",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "10",
+              "fontSize": 12,
+              "typeface": "Montserrat",
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "right",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -1,0 +1,272 @@
+{"kind":"deck","id":"pr/nokb15","name":"Deck"}
+{"kind":"layout","layoutId":"7790ed38-1159-49f7-9a43-e356cabfb10a","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"adae9a1e-2308-46fa-8a89-3afecca09c11","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/t1n05q","slide":1,"title":"Sell","textShapes":7}
+{"kind":"shape","id":"sh/cv2xwzu9","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"textbox","id":"sh/dwby54vu","slide":1,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[64,64,88.4,49.3]}
+{"kind":"shape","id":"sh/yxkfypcf","slide":1,"bbox":[149,65.7,93.5,45.9]}
+{"kind":"textbox","id":"sh/zytg7ud0","slide":1,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[154.1,64,90.1,49.3]}
+{"kind":"textbox","id":"sh/kzmh0zul","slide":1,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[248.45,64,108.8,49.3]}
+{"kind":"textbox","id":"sh/lkvy94v6","slide":1,"text":"ВИЗУАЛЬНЫЙ\nБРЕНДБУК","textPreview":"ВИЗУАЛЬНЫЙ | БРЕНДБУК","textChars":19,"textLines":2,"bbox":[64,230,660,170]}
+{"kind":"textbox","id":"sh/ml4z29cb","slide":1,"text":"Недвижимость. Ясные цифры. Один Tiffany-акцент.","textPreview":"Недвижимость. Ясные цифры. Один Tiffany-акцент.","textChars":47,"textLines":1,"bbox":[64,430,590,48]}
+{"kind":"shape","id":"sh/7mdgbedw","slide":1,"bbox":[64,520,186,48]}
+{"kind":"textbox","id":"sh/zulczidc","slide":1,"text":"BRAND SYSTEM 1.0","textPreview":"BRAND SYSTEM 1.0","textChars":16,"textLines":1,"bbox":[64,520,186,48]}
+{"kind":"textbox","id":"sh/e9cbqxwr","slide":1,"text":"2026","textPreview":"2026","textChars":4,"textLines":1,"bbox":[1140,650,76,24]}
+{"kind":"image","id":"im/yhwnydsn","slide":1,"name":"","geometry":"rect","alt":"Современная недвижимость в Испании","bbox":[0,0,1280,720]}
+{"kind":"notes","id":"nt/t1n05q","slide":1,"text":"[Sources]\n- public/images/sellyourbrick/about/about-hero-spain.jpg\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/hq1bc7","slide":2,"title":"01 / ХАРАКТЕР БРЕНДА","textShapes":10}
+{"kind":"textbox","id":"sh/sz2ts3a5","slide":2,"text":"01 / ХАРАКТЕР БРЕНДА","textPreview":"01 / ХАРАКТЕР БРЕНДА","textChars":20,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/ry9czy9k","slide":2,"text":"Спокойная премиальность, которой верят","textPreview":"Спокойная премиальность, которой верят","textChars":38,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/14bu58rm","slide":2,"bbox":[684,190,532,126]}
+{"kind":"textbox","id":"sh/g32tw3a1","slide":2,"text":"РЕАЛЬНАЯ НЕДВИЖИМОСТЬ","textPreview":"РЕАЛЬНАЯ НЕДВИЖИМОСТЬ","textChars":21,"textLines":1,"bbox":[716,218,448,26]}
+{"kind":"textbox","id":"sh/f2tc3y9g","slide":2,"text":"Фотография создаёт желание и доверие.","textPreview":"Фотография создаёт желание и доверие.","textChars":37,"textLines":1,"bbox":[716,254,448,38]}
+{"kind":"shape","id":"sh/e1kbutsv","slide":2,"bbox":[684,334,532,126]}
+{"kind":"textbox","id":"sh/p8vu9sri","slide":2,"text":"ЯСНЫЕ ЦИФРЫ","textPreview":"ЯСНЫЕ ЦИФРЫ","textChars":11,"textLines":1,"bbox":[716,362,448,26]}
+{"kind":"textbox","id":"sh/o7mt0nqd","slide":2,"text":"Цена, риск и действие видны сразу.","textPreview":"Цена, риск и действие видны сразу.","textChars":34,"textLines":1,"bbox":[716,398,448,38]}
+{"kind":"shape","id":"sh/ul4fepwn","slide":2,"bbox":[684,478,532,126]}
+{"kind":"textbox","id":"sh/vmdg7ux8","slide":2,"text":"ОДИН АКЦЕНТ","textPreview":"ОДИН АКЦЕНТ","textChars":11,"textLines":1,"bbox":[716,506,448,26]}
+{"kind":"textbox","id":"sh/g7mxgzet","slide":2,"text":"Tiffany направляет, а не шумит.","textPreview":"Tiffany направляет, а не шумит.","textChars":31,"textLines":1,"bbox":[716,542,448,38]}
+{"kind":"textbox","id":"sh/h8vy94ve","slide":2,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/i9ozi9wz","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/v2lcbedo","slide":2,"name":"","geometry":"roundRect","alt":"Вилла — основной образ бренда","bbox":[64,188,590,442]}
+{"kind":"notes","id":"nt/hq1bc7","slide":2,"text":"[Sources]\n- public/images/sellyourbrick/about/mission-villa.jpg\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/brvqqw","slide":3,"title":"02 / ЛОГОТИП","textShapes":16}
+{"kind":"textbox","id":"sh/tcjad0zy","slide":3,"text":"02 / ЛОГОТИП","textPreview":"02 / ЛОГОТИП","textChars":12,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/698bilg7","slide":3,"text":"Your — единственное слово, которое получает цвет","textPreview":"Your — единственное слово, которое получает цвет","textChars":48,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"textbox","id":"sh/7ahsbqhs","slide":3,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[86,224,147.68,82.36]}
+{"kind":"shape","id":"sh/knqtgbyh","slide":3,"bbox":[228,226.84,156.2,76.68]}
+{"kind":"textbox","id":"sh/58za9gz2","slide":3,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[236.52,224,150.52,82.36]}
+{"kind":"textbox","id":"sh/il8relgb","slide":3,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[394.14,224,181.76,82.36]}
+{"kind":"shape","id":"sh/jmhs76hw","slide":3,"bbox":[86,346,1100,0]}
+{"kind":"shape","id":"sh/wj69cby5","slide":3,"bbox":[64,390,558,214]}
+{"kind":"textbox","id":"sh/xkza5gzq","slide":3,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[114,452,89.44,49.88]}
+{"kind":"shape","id":"sh/tgfuh8ba","slide":3,"bbox":[200,453.72,94.6,46.44]}
+{"kind":"textbox","id":"sh/sf6d8nap","slide":3,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[205.16,452,91.16,49.88]}
+{"kind":"textbox","id":"sh/7excfit4","slide":3,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[300.62,452,110.08,49.88]}
+{"kind":"textbox","id":"sh/6dov6dsj","slide":3,"text":"На фотографии и тёмной поверхности","textPreview":"На фотографии и тёмной поверхности","textChars":34,"textLines":1,"bbox":[114,546,410,30]}
+{"kind":"shape","id":"sh/5cfud8by","slide":3,"bbox":[658,390,558,214]}
+{"kind":"textbox","id":"sh/kb6t43ad","slide":3,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[708,452,89.44,49.88]}
+{"kind":"shape","id":"sh/jaxcbyt8","slide":3,"bbox":[794,453.72,94.6,46.44]}
+{"kind":"textbox","id":"sh/i94b2tsn","slide":3,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[799.16,452,91.16,49.88]}
+{"kind":"textbox","id":"sh/x8vu9ob2","slide":3,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[894.62,452,110.08,49.88]}
+{"kind":"textbox","id":"sh/wnmt03ah","slide":3,"text":"На светлом редакционном холсте","textPreview":"На светлом редакционном холсте","textChars":30,"textLines":1,"bbox":[708,546,410,30]}
+{"kind":"textbox","id":"sh/orqdw3id","slide":3,"text":"Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.","textPreview":"Не менять регистр: Sell Your Brick — логотип, SellYourBrick — текстовое имя продукта.","textChars":85,"textLines":1,"bbox":[86,636,1080,28]}
+{"kind":"textbox","id":"sh/pszup8jy","slide":3,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/2p8vut07","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"notes","id":"nt/brvqqw","slide":3,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/ko6vmr","slide":4,"title":"03 / ЦВЕТ","textShapes":21}
+{"kind":"textbox","id":"sh/d07alsju","slide":4,"text":"03 / ЦВЕТ","textPreview":"03 / ЦВЕТ","textChars":9,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/qxgbad03","slide":4,"text":"Tiffany узнаваем, когда его немного","textPreview":"Tiffany узнаваем, когда его немного","textChars":35,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/rypsji1o","slide":4,"bbox":[64,206,219.2,296]}
+{"kind":"textbox","id":"sh/4vet83ix","slide":4,"text":"BRAND TIFFANY","textPreview":"BRAND TIFFANY","textChars":13,"textLines":1,"bbox":[82,394,183.2,38]}
+{"kind":"textbox","id":"sh/pwnah8ji","slide":4,"text":"#0099A9","textPreview":"#0099A9","textChars":7,"textLines":1,"bbox":[82,446,183.2,30]}
+{"kind":"shape","id":"sh/i9wb6t07","slide":4,"bbox":[297.2,206,219.2,296]}
+{"kind":"textbox","id":"sh/3a5sfy1s","slide":4,"text":"ACCESSIBLE CTA","textPreview":"ACCESSIBLE CTA","textChars":14,"textLines":1,"bbox":[315.2,394,183.2,38]}
+{"kind":"textbox","id":"sh/g7e943i1","slide":4,"text":"#007D8A","textPreview":"#007D8A","textChars":7,"textLines":1,"bbox":[315.2,446,183.2,30]}
+{"kind":"shape","id":"sh/h8nad8jm","slide":4,"bbox":[530.4,206,219.2,296]}
+{"kind":"textbox","id":"sh/p4jut8zu","slide":4,"text":"PRESSED / DEEP","textPreview":"PRESSED / DEEP","textChars":14,"textLines":1,"bbox":[548.4,394,183.2,38]}
+{"kind":"textbox","id":"sh/43atkny9","slide":4,"text":"#006672","textPreview":"#006672","textChars":7,"textLines":1,"bbox":[548.4,446,183.2,30]}
+{"kind":"shape","id":"sh/321criho","slide":4,"bbox":[763.6,206,219.2,296]}
+{"kind":"textbox","id":"sh/21sbidgj","slide":4,"text":"DECORATIVE LIGHT","textPreview":"DECORATIVE LIGHT","textChars":16,"textLines":1,"bbox":[781.6,394,183.2,38]}
+{"kind":"textbox","id":"sh/h0jup8zy","slide":4,"text":"#4ECDD6","textPreview":"#4ECDD6","textChars":7,"textLines":1,"bbox":[781.6,446,183.2,30]}
+{"kind":"shape","id":"sh/gzatg3yd","slide":4,"bbox":[996.8,206,219.2,296]}
+{"kind":"textbox","id":"sh/fy1cnyhs","slide":4,"text":"SOFT SURFACE","textPreview":"SOFT SURFACE","textChars":12,"textLines":1,"bbox":[1014.8,394,183.2,38]}
+{"kind":"textbox","id":"sh/ud8bet07","slide":4,"text":"#F0FAFB","textPreview":"#F0FAFB","textChars":7,"textLines":1,"bbox":[1014.8,446,183.2,30]}
+{"kind":"textbox","id":"sh/tczulozm","slide":4,"text":"INK","textPreview":"INK","textChars":3,"textLines":1,"bbox":[70,548,110,24]}
+{"kind":"textbox","id":"sh/sbqtcji1","slide":4,"text":"#0F172A","textPreview":"#0F172A","textChars":7,"textLines":1,"bbox":[70,580,140,26]}
+{"kind":"textbox","id":"sh/krelonu9","slide":4,"text":"SURFACE","textPreview":"SURFACE","textChars":7,"textLines":1,"bbox":[300,548,110,24]}
+{"kind":"textbox","id":"sh/5sn2hsbu","slide":4,"text":"#FFFFFF","textPreview":"#FFFFFF","textChars":7,"textLines":1,"bbox":[300,580,140,26]}
+{"kind":"textbox","id":"sh/ipw3mdc3","slide":4,"text":"LINE","textPreview":"LINE","textChars":4,"textLines":1,"bbox":[530,548,110,24]}
+{"kind":"textbox","id":"sh/jq5kfito","slide":4,"text":"#E2E8F0","textPreview":"#E2E8F0","textChars":7,"textLines":1,"bbox":[530,580,140,26]}
+{"kind":"shape","id":"sh/w3ulknud","slide":4,"bbox":[788,538,428,82]}
+{"kind":"textbox","id":"sh/x432dsby","slide":4,"text":"Правило: один цветовой акцент на блок","textPreview":"Правило: один цветовой акцент на блок","textChars":37,"textLines":1,"bbox":[820,563,364,30]}
+{"kind":"textbox","id":"sh/a1c3idc7","slide":4,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/v2lkrits","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"notes","id":"nt/ko6vmr","slide":4,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/xmrcuy","slide":5,"title":"04 / ДОСТУПНОСТЬ","textShapes":17}
+{"kind":"textbox","id":"sh/4bi9w7mx","slide":5,"text":"04 / ДОСТУПНОСТЬ","textPreview":"04 / ДОСТУПНОСТЬ","textChars":16,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/ja98n25c","slide":5,"text":"Один Tiffany — разные роли","textPreview":"Один Tiffany — разные роли","textChars":26,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/i90rux4r","slide":5,"bbox":[64,204,352,330]}
+{"kind":"textbox","id":"sh/t0rqtc3e","slide":5,"text":"НЕ ТАК","textPreview":"НЕ ТАК","textChars":6,"textLines":1,"bbox":[92,236,120,22]}
+{"kind":"textbox","id":"sh/szi907mt","slide":5,"text":"Белый текст","textPreview":"Белый текст","textChars":11,"textLines":1,"bbox":[92,330,296,58]}
+{"kind":"textbox","id":"sh/re98r2l8","slide":5,"text":"1.90 : 1","textPreview":"1.90 : 1","textChars":8,"textLines":1,"bbox":[92,420,240,36]}
+{"kind":"textbox","id":"sh/6d0ryh4n","slide":5,"text":"#4ECDD6 + white","textPreview":"#4ECDD6 + white","textChars":15,"textLines":1,"bbox":[92,472,260,26]}
+{"kind":"shape","id":"sh/947qhsna","slide":5,"bbox":[452,204,352,330]}
+{"kind":"textbox","id":"sh/83yponmp","slide":5,"text":"ТАК","textPreview":"ТАК","textChars":3,"textLines":1,"bbox":[480,236,120,22]}
+{"kind":"textbox","id":"sh/etsju9kj","slide":5,"text":"Белый текст","textPreview":"Белый текст","textChars":11,"textLines":1,"bbox":[480,330,296,58]}
+{"kind":"textbox","id":"sh/fu1knel4","slide":5,"text":"4.88 : 1","textPreview":"4.88 : 1","textChars":8,"textLines":1,"bbox":[480,420,240,36]}
+{"kind":"textbox","id":"sh/0valwj2p","slide":5,"text":"#007D8A + white","textPreview":"#007D8A + white","textChars":15,"textLines":1,"bbox":[480,472,260,26]}
+{"kind":"shape","id":"sh/1gj2po3a","slide":5,"bbox":[840,204,376,330]}
+{"kind":"textbox","id":"sh/2hc3ytkf","slide":5,"text":"ЕЩЁ ЛУЧШЕ","textPreview":"ЕЩЁ ЛУЧШЕ","textChars":9,"textLines":1,"bbox":[868,236,160,22]}
+{"kind":"textbox","id":"sh/nilkrel0","slide":5,"text":"Ink-текст","textPreview":"Ink-текст","textChars":9,"textLines":1,"bbox":[868,330,310,58]}
+{"kind":"textbox","id":"sh/ojul0j2l","slide":5,"text":"9.37 : 1","textPreview":"9.37 : 1","textChars":8,"textLines":1,"bbox":[868,420,240,36]}
+{"kind":"textbox","id":"sh/pk32toj6","slide":5,"text":"#4ECDD6 + ink","textPreview":"#4ECDD6 + ink","textChars":13,"textLines":1,"bbox":[868,472,260,26]}
+{"kind":"textbox","id":"sh/alc32tkr","slide":5,"text":"Tiffany Light — декор. Tiffany Dark — интерактив. Ink — основной текст.","textPreview":"Tiffany Light — декор. Tiffany Dark — интерактив. Ink — основной текст.","textChars":71,"textLines":1,"bbox":[64,582,1050,36]}
+{"kind":"textbox","id":"sh/bmlkvy1c","slide":5,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/7q5kjyhk","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"notes","id":"nt/xmrcuy","slide":5,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/cn0c1h","slide":6,"title":"05 / ТИПОГРАФИКА","textShapes":14}
+{"kind":"textbox","id":"sh/xofulkf6","slide":6,"text":"05 / ТИПОГРАФИКА","textPreview":"05 / ТИПОГРАФИКА","textChars":16,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/aloba5gv","slide":6,"text":"Montserrat держит продукт собранным","textPreview":"Montserrat держит продукт собранным","textChars":35,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"textbox","id":"sh/vmxsjax0","slide":6,"text":"Aa","textPreview":"Aa","textChars":2,"textLines":1,"bbox":[64,190,248,148]}
+{"kind":"textbox","id":"sh/kr6tgzex","slide":6,"text":"MONTSERRAT","textPreview":"MONTSERRAT","textChars":10,"textLines":1,"bbox":[72,342,300,28]}
+{"kind":"textbox","id":"sh/5szupkfi","slide":6,"text":"Display / 800","textPreview":"Display / 800","textChars":13,"textLines":1,"bbox":[438,198,340,44]}
+{"kind":"textbox","id":"sh/ipobepwr","slide":6,"text":"Недвижимость без лишних барьеров","textPreview":"Недвижимость без лишних барьеров","textChars":32,"textLines":1,"bbox":[438,254,720,62]}
+{"kind":"shape","id":"sh/jqxcnuxc","slide":6,"bbox":[438,332,718,0]}
+{"kind":"textbox","id":"sh/0vmt4vyd","slide":6,"text":"Title / 700","textPreview":"Title / 700","textChars":11,"textLines":1,"bbox":[438,356,340,30]}
+{"kind":"textbox","id":"sh/lwvad0fy","slide":6,"text":"Условия, доступность и прогноз видны до покупки","textPreview":"Условия, доступность и прогноз видны до покупки","textChars":47,"textLines":1,"bbox":[438,400,720,46]}
+{"kind":"shape","id":"sh/lgzid0nu","slide":6,"bbox":[438,466,718,0]}
+{"kind":"textbox","id":"sh/0fq14v69","slide":6,"text":"Body / 400","textPreview":"Body / 400","textChars":10,"textLines":1,"bbox":[438,492,340,30]}
+{"kind":"textbox","id":"sh/zeh0bq5o","slide":6,"text":"Спокойный ритм, ясная формулировка и достаточно воздуха между строками.","textPreview":"Спокойный ритм, ясная формулировка и достаточно воздуха между строками.","textChars":71,"textLines":1,"bbox":[438,534,690,62]}
+{"kind":"shape","id":"sh/ed8j25o3","slide":6,"bbox":[64,424,316,176]}
+{"kind":"textbox","id":"sh/94j2hknq","slide":6,"text":"Playfair Display","textPreview":"Playfair Display","textChars":16,"textLines":1,"bbox":[90,454,260,40]}
+{"kind":"textbox","id":"sh/8ja18f65","slide":6,"text":"Только editorial: истории, журнал, манифест.","textPreview":"Только editorial: истории, журнал, манифест.","textChars":44,"textLines":1,"bbox":[90,514,250,58]}
+{"kind":"textbox","id":"sh/ni10fa50","slide":6,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/mh8j65of","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"notes","id":"nt/cn0c1h","slide":6,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/dgikp6","slide":7,"title":"06 / ВИЗУАЛЬНЫЙ ЯЗЫК","textShapes":13}
+{"kind":"textbox","id":"sh/ja9gj2l4","slide":7,"text":"06 / ВИЗУАЛЬНЫЙ ЯЗЫК","textPreview":"06 / ВИЗУАЛЬНЫЙ ЯЗЫК","textChars":20,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/kbihc7mp","slide":7,"text":"Выделяем только то, что помогает решить","textPreview":"Выделяем только то, что помогает решить","textChars":39,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/5crylc3a","slide":7,"bbox":[64,198,562,428]}
+{"kind":"textbox","id":"sh/6d0zeh4v","slide":7,"text":"ЧЕТЫРЕ","textPreview":"ЧЕТЫРЕ","textChars":6,"textLines":1,"bbox":[100,242,234,46]}
+{"kind":"shape","id":"sh/7e9gn2lg","slide":7,"bbox":[310,238,230,52]}
+{"kind":"textbox","id":"sh/sfihg7m1","slide":7,"text":"СТРАТЕГИИ","textPreview":"СТРАТЕГИИ","textChars":9,"textLines":1,"bbox":[322,238,206,52]}
+{"kind":"textbox","id":"sh/tgrypc36","slide":7,"text":"ПРОДАЖИ","textPreview":"ПРОДАЖИ","textChars":7,"textLines":1,"bbox":[100,304,300,46]}
+{"kind":"textbox","id":"sh/uhkzih4r","slide":7,"text":"01  CAPS KICKER","textPreview":"01  CAPS KICKER","textChars":15,"textLines":1,"bbox":[100,390,300,24]}
+{"kind":"textbox","id":"sh/fitgrmlc","slide":7,"text":"Одно ключевое слово получает Tiffany-плашку.","textPreview":"Одно ключевое слово получает Tiffany-плашку.","textChars":44,"textLines":1,"bbox":[100,430,450,70]}
+{"kind":"shape","id":"sh/nu5gfadw","slide":7,"bbox":[100,538,410,56]}
+{"kind":"textbox","id":"sh/mtwfm5wb","slide":7,"text":"Смотреть объекты","textPreview":"Смотреть объекты","textChars":16,"textLines":1,"bbox":[126,538,260,56]}
+{"kind":"shape","id":"sh/9wnyhkv2","slide":7,"bbox":[444,544,44,44]}
+{"kind":"textbox","id":"sh/ovexofeh","slide":7,"text":"↓","textPreview":"↓","textChars":1,"textLines":1,"bbox":[444,544,44,44]}
+{"kind":"textbox","id":"sh/1snyd0vq","slide":7,"text":"ФОТО + OVERLAY","textPreview":"ФОТО + OVERLAY","textChars":14,"textLines":1,"bbox":[676,638,244,24]}
+{"kind":"textbox","id":"sh/07exkvel","slide":7,"text":"EDITORIAL","textPreview":"EDITORIAL","textChars":9,"textLines":1,"bbox":[956,638,244,24]}
+{"kind":"textbox","id":"sh/j2pgnud4","slide":7,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/y1gzupcj","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/w7m5crih","slide":7,"name":"","geometry":"roundRect","alt":"Фото-led mobile hero","bbox":[676,198,244,428]}
+{"kind":"image","id":"im/h8v6lwj2","slide":7,"name":"","geometry":"roundRect","alt":"Editorial mobile hero","bbox":[956,198,244,428]}
+{"kind":"notes","id":"nt/dgikp6","slide":7,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md\n- audit/mobile/screenshots/08-about.png\n- audit/mobile/screenshots/09-news.png"}
+{"kind":"slide","id":"sl/evzeok","slide":8,"title":"07 / КОМПОНЕНТЫ","textShapes":19}
+{"kind":"textbox","id":"sh/u9w7ipcv","slide":8,"text":"07 / КОМПОНЕНТЫ","textPreview":"07 / КОМПОНЕНТЫ","textChars":15,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/hw7qd4bm","slide":8,"text":"Один набор компонентов на весь путь","textPreview":"Один набор компонентов на весь путь","textChars":35,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"textbox","id":"sh/wbypkzu1","slide":8,"text":"BUTTONS","textPreview":"BUTTONS","textChars":7,"textLines":1,"bbox":[64,192,200,24]}
+{"kind":"shape","id":"sh/765o7adk","slide":8,"bbox":[64,232,304,60]}
+{"kind":"textbox","id":"sh/m5w7epcz","slide":8,"text":"Смотреть объекты  →","textPreview":"Смотреть объекты  →","textChars":19,"textLines":1,"bbox":[64,232,304,60]}
+{"kind":"shape","id":"sh/98n69kva","slide":8,"bbox":[392,232,304,60]}
+{"kind":"textbox","id":"sh/87epgfu5","slide":8,"text":"Сравнить объекты","textPreview":"Сравнить объекты","textChars":16,"textLines":1,"bbox":[392,232,304,60]}
+{"kind":"shape","id":"sh/r2p8jeto","slide":8,"bbox":[720,232,304,60]}
+{"kind":"textbox","id":"sh/61g7q9c3","slide":8,"text":"Рассчитать","textPreview":"Рассчитать","textChars":10,"textLines":1,"bbox":[720,232,304,60]}
+{"kind":"textbox","id":"sh/8vit8rql","slide":8,"text":"PROPERTY CARD","textPreview":"PROPERTY CARD","textChars":13,"textLines":1,"bbox":[64,346,240,24]}
+{"kind":"shape","id":"sh/9gbahwr6","slide":8,"bbox":[64,386,548,218]}
+{"kind":"textbox","id":"sh/nu9sfm90","slide":8,"text":"АУКЦИОН ИДЁТ","textPreview":"АУКЦИОН ИДЁТ","textChars":12,"textLines":1,"bbox":[326,408,220,22]}
+{"kind":"textbox","id":"sh/0rit47q9","slide":8,"text":"Вилла на побережье","textPreview":"Вилла на побережье","textChars":18,"textLines":1,"bbox":[326,446,236,46]}
+{"kind":"textbox","id":"sh/lsradcru","slide":8,"text":"Марбелья, Испания","textPreview":"Марбелья, Испания","textChars":17,"textLines":1,"bbox":[326,505,226,26]}
+{"kind":"textbox","id":"sh/yp0b2h8j","slide":8,"text":"€248 000","textPreview":"€248 000","textChars":8,"textLines":1,"bbox":[326,552,190,30]}
+{"kind":"textbox","id":"sh/zq9sb294","slide":8,"text":"STATUS","textPreview":"STATUS","textChars":6,"textLines":1,"bbox":[672,346,200,24]}
+{"kind":"shape","id":"sh/cny907qd","slide":8,"bbox":[672,386,150,42]}
+{"kind":"textbox","id":"sh/do7a9cry","slide":8,"text":"Низкий риск","textPreview":"Низкий риск","textChars":11,"textLines":1,"bbox":[672,386,150,42]}
+{"kind":"shape","id":"sh/t8zih4fa","slide":8,"bbox":[840,386,170,42]}
+{"kind":"textbox","id":"sh/s76hozep","slide":8,"text":"Средний риск","textPreview":"Средний риск","textChars":12,"textLines":1,"bbox":[840,386,170,42]}
+{"kind":"shape","id":"sh/r6x0fuxk","slide":8,"bbox":[1028,386,154,42]}
+{"kind":"textbox","id":"sh/65ozmpwz","slide":8,"text":"Высокий риск","textPreview":"Высокий риск","textChars":12,"textLines":1,"bbox":[1028,386,154,42]}
+{"kind":"textbox","id":"sh/54fydkfe","slide":8,"text":"Форма следует задаче: status → объект → локация → цена → действие.","textPreview":"Форма следует задаче: status → объект → локация → цена → действие.","textChars":66,"textLines":1,"bbox":[672,474,500,72]}
+{"kind":"textbox","id":"sh/436hkfet","slide":8,"text":"Радиус 18 px  •  Touch 44 px  •  Border #E2E8F0  •  Одна primary CTA","textPreview":"Радиус 18 px  •  Touch 44 px  •  Border #E2E8F0  •  Одна primary CTA","textChars":68,"textLines":1,"bbox":[672,566,500,30]}
+{"kind":"textbox","id":"sh/j2xgbux8","slide":8,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/ihozipwn","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/dkzexwnu","slide":8,"name":"","geometry":"roundRect","alt":"Фотография объекта в карточке","bbox":[64,386,230,218]}
+{"kind":"notes","id":"nt/evzeok","slide":8,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md\n- public/images/sellyourbrick/strategies/strategy-auction.jpg"}
+{"kind":"slide","id":"sl/wjyjkv","slide":9,"title":"08 / ИЗОБРАЖЕНИЯ","textShapes":5}
+{"kind":"textbox","id":"sh/7mpwfuhk","slide":9,"text":"08 / ИЗОБРАЖЕНИЯ","textPreview":"08 / ИЗОБРАЖЕНИЯ","textChars":16,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/8nyd8zi5","slide":9,"text":"Фотография создаёт премиальность","textPreview":"Фотография создаёт премиальность","textChars":32,"textLines":1,"bbox":[64,78,980,82]}
+{"kind":"shape","id":"sh/hcrelozm","slide":9,"bbox":[714,472,460,110]}
+{"kind":"textbox","id":"sh/atwvyp0r","slide":9,"text":"Свет, пространство, архитектура и реальный жизненный сценарий.","textPreview":"Свет, пространство, архитектура и реальный жизненный сценарий.","textChars":62,"textLines":1,"bbox":[742,498,406,64]}
+{"kind":"textbox","id":"sh/be5c7ahc","slide":9,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/7254zuxg","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/crypo3ul","slide":9,"name":"","geometry":"roundRect","alt":"Фирменная фотография недвижимости и путешествия","bbox":[64,194,344,420]}
+{"kind":"image","id":"im/nm5obyt4","slide":9,"name":"","geometry":"roundRect","alt":"Фирменная фотография недвижимости и путешествия","bbox":[426,194,244,200]}
+{"kind":"image","id":"im/21w7itcj","slide":9,"name":"","geometry":"roundRect","alt":"Фирменная фотография недвижимости и путешествия","bbox":[426,414,244,200]}
+{"kind":"image","id":"im/po76d8bu","slide":9,"name":"","geometry":"roundRect","alt":"Фирменная фотография недвижимости и путешествия","bbox":[688,194,528,420]}
+{"kind":"notes","id":"nt/wjyjkv","slide":9,"text":"[Sources]\n- public/images/sellyourbrick/strategies/strategy-buy-now.jpg\n- public/images/sellyourbrick/strategies/strategy-debts.jpg\n- public/images/sellyourbrick/strategies/strategy-shares.jpg\n- public/images/test-drive/hero-resort-mobile.png"}
+{"kind":"slide","id":"sl/vpl9g1","slide":10,"title":"09 / МОБИЛЬНАЯ СИСТЕМА","textShapes":8}
+{"kind":"textbox","id":"sh/x8b2x8vi","slide":10,"text":"09 / МОБИЛЬНАЯ СИСТЕМА","textPreview":"09 / МОБИЛЬНАЯ СИСТЕМА","textChars":22,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/al03mtwr","slide":10,"text":"Разделы узнаются как одна семья","textPreview":"Разделы узнаются как одна семья","textChars":31,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/bm9kvydc","slide":10,"bbox":[74,184,230,480]}
+{"kind":"shape","id":"sh/kb2lsnet","slide":10,"bbox":[159.04,190,59.92,11]}
+{"kind":"textbox","id":"sh/y9k3qdwn","slide":10,"text":"АУКЦИОН","textPreview":"АУКЦИОН","textChars":7,"textLines":1,"bbox":[82,670,214,20]}
+{"kind":"shape","id":"sh/zatkzid8","slide":10,"bbox":[370,184,230,480]}
+{"kind":"shape","id":"sh/0fylgjep","slide":10,"bbox":[455.04,190,59.92,11]}
+{"kind":"textbox","id":"sh/t8nm9032","slide":10,"text":"ДОЛИ","textPreview":"ДОЛИ","textChars":4,"textLines":1,"bbox":[378,670,214,20]}
+{"kind":"shape","id":"sh/s7elgvmh","slide":10,"bbox":[666,184,230,480]}
+{"kind":"shape","id":"sh/76547alw","slide":10,"bbox":[751.04,190,59.92,11]}
+{"kind":"textbox","id":"sh/hc7mdk3e","slide":10,"text":"ДОЛГИ","textPreview":"ДОЛГИ","textChars":5,"textLines":1,"bbox":[674,670,214,20]}
+{"kind":"shape","id":"sh/gbylkfmt","slide":10,"bbox":[962,184,230,480]}
+{"kind":"shape","id":"sh/fap4bal8","slide":10,"bbox":[1047.04,190,59.92,11]}
+{"kind":"textbox","id":"sh/p07mhk3a","slide":10,"text":"ТЕСТ-ДРАЙВ","textPreview":"ТЕСТ-ДРАЙВ","textChars":10,"textLines":1,"bbox":[970,670,214,20]}
+{"kind":"textbox","id":"sh/4zy5ofmp","slide":10,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/ovqx0ned","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/kj25wrq1","slide":10,"name":"","geometry":"roundRect","alt":"Мобильный экран АУКЦИОН","bbox":[82,192,214,464]}
+{"kind":"image","id":"im/wvi5sra5","slide":10,"name":"","geometry":"roundRect","alt":"Мобильный экран ДОЛИ","bbox":[378,192,214,464]}
+{"kind":"image","id":"im/xk3690f6","slide":10,"name":"","geometry":"roundRect","alt":"Мобильный экран ДОЛГИ","bbox":[674,192,214,464]}
+{"kind":"image","id":"im/9gjm5gfa","slide":10,"name":"","geometry":"roundRect","alt":"Мобильный экран ТЕСТ-ДРАЙВ","bbox":[970,192,214,464]}
+{"kind":"notes","id":"nt/vpl9g1","slide":10,"text":"[Sources]\n- audit/mobile/screenshots/03-auction.png\n- audit/mobile/screenshots/04-shares.png\n- audit/mobile/screenshots/05-debts.png\n- audit/mobile/screenshots/06-test-drive.png"}
+{"kind":"slide","id":"sl/zroc3b","slide":11,"title":"10 / ПРОДУКТОВЫЕ ПОВЕРХНОСТИ","textShapes":10}
+{"kind":"textbox","id":"sh/vqdk7e5c","slide":11,"text":"10 / ПРОДУКТОВЫЕ ПОВЕРХНОСТИ","textPreview":"10 / ПРОДУКТОВЫЕ ПОВЕРХНОСТИ","textChars":28,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/wrm1gjmx","slide":11,"text":"Покупка, депозит и объект говорят одним языком","textPreview":"Покупка, депозит и объект говорят одним языком","textChars":46,"textLines":1,"bbox":[64,78,950,82]}
+{"kind":"shape","id":"sh/hsv29oni","slide":11,"bbox":[118,182,240,500]}
+{"kind":"shape","id":"sh/it4ji943","slide":11,"bbox":[206.64,188,62.72,11]}
+{"kind":"textbox","id":"sh/4vm1kjmt","slide":11,"text":"ПОНРАВИЛОСЬ","textPreview":"ПОНРАВИЛОСЬ","textChars":11,"textLines":1,"bbox":[370,222,112,22]}
+{"kind":"textbox","id":"sh/5wf2do3e","slide":11,"text":"выбор и сравнение","textPreview":"выбор и сравнение","textChars":17,"textLines":1,"bbox":[370,258,118,86]}
+{"kind":"shape","id":"sh/qxojmt4z","slide":11,"bbox":[500,182,240,500]}
+{"kind":"shape","id":"sh/ryxkfylk","slide":11,"bbox":[588.64,188,62.72,11]}
+{"kind":"textbox","id":"sh/idsjm143","slide":11,"text":"ДЕПОЗИТ","textPreview":"ДЕПОЗИТ","textChars":7,"textLines":1,"bbox":[752,222,112,22]}
+{"kind":"textbox","id":"sh/5gjixw3e","slide":11,"text":"ясные финансовые действия","textPreview":"ясные финансовые действия","textChars":25,"textLines":1,"bbox":[752,258,118,86]}
+{"kind":"shape","id":"sh/kfa1obm9","slide":11,"bbox":[882,182,240,500]}
+{"kind":"shape","id":"sh/vqh0rm5c","slide":11,"bbox":[970.64,188,62.72,11]}
+{"kind":"textbox","id":"sh/xcjitwni","slide":11,"text":"ОБЪЕКТ","textPreview":"ОБЪЕКТ","textChars":6,"textLines":1,"bbox":[1134,222,112,22]}
+{"kind":"textbox","id":"sh/wrqhkrmx","slide":11,"text":"ставка без потери контекста","textPreview":"ставка без потери контекста","textChars":27,"textLines":1,"bbox":[1134,258,118,86]}
+{"kind":"textbox","id":"sh/fml03qlw","slide":11,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/ulcjul4b","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/itwvyp83","slide":11,"name":"","geometry":"roundRect","alt":"Продуктовый экран ПОНРАВИЛОСЬ","bbox":[126,190,224,484]}
+{"kind":"image","id":"im/8fexcj2x","slide":11,"name":"","geometry":"roundRect","alt":"Продуктовый экран ДЕПОЗИТ","bbox":[508,190,224,484]}
+{"kind":"image","id":"im/lsnyh43m","slide":11,"name":"","geometry":"roundRect","alt":"Продуктовый экран ОБЪЕКТ","bbox":[890,190,224,484]}
+{"kind":"notes","id":"nt/zroc3b","slide":11,"text":"[Sources]\n- audit/mobile/screenshots/12-favorites.png\n- audit/mobile/screenshots/13-deposit.png\n- audit/mobile/screenshots/14-property.png"}
+{"kind":"slide","id":"sl/fgytfi","slide":12,"title":"11 / ПРАВИЛО СИСТЕМЫ","textShapes":10}
+{"kind":"textbox","id":"sh/nm5wv21o","slide":12,"text":"11 / ПРАВИЛО СИСТЕМЫ","textPreview":"11 / ПРАВИЛО СИСТЕМЫ","textChars":20,"textLines":1,"bbox":[64,44,440,22]}
+{"kind":"textbox","id":"sh/8ned47i9","slide":12,"text":"Один продукт — один характер","textPreview":"Один продукт — один характер","textChars":28,"textLines":1,"bbox":[64,78,860,82]}
+{"kind":"shape","id":"sh/9onexcju","slide":12,"bbox":[80,186,230,480]}
+{"kind":"shape","id":"sh/apwv6h0f","slide":12,"bbox":[165.04,192,59.92,11]}
+{"kind":"shape","id":"sh/wryx87i5","slide":12,"bbox":[64,174,112,40]}
+{"kind":"textbox","id":"sh/xs7e1cjq","slide":12,"text":"DO","textPreview":"DO","textChars":2,"textLines":1,"bbox":[64,174,112,40]}
+{"kind":"shape","id":"sh/idgfah0b","slide":12,"bbox":[390,186,230,480]}
+{"kind":"shape","id":"sh/jepw3m1w","slide":12,"bbox":[475.04,192,59.92,11]}
+{"kind":"shape","id":"sh/a18f6hcj","slide":12,"bbox":[374,174,142,40]}
+{"kind":"textbox","id":"sh/xozehcba","slide":12,"text":"DON'T","textPreview":"DON'T","textChars":5,"textLines":1,"bbox":[374,174,142,40]}
+{"kind":"textbox","id":"sh/cnqx87up","slide":12,"text":"DO","textPreview":"DO","textChars":2,"textLines":1,"bbox":[684,210,92,22]}
+{"kind":"textbox","id":"sh/nyhwb2t8","slide":12,"text":"Фото-led hero\nTiffany как навигация\nБелые поверхности\nОдин понятный CTA","textPreview":"Фото-led hero | Tiffany как навигация | Белые поверхности | Один понятный CTA","textChars":71,"textLines":4,"bbox":[684,252,450,166]}
+{"kind":"shape","id":"sh/2xof2xcn","slide":12,"bbox":[684,440,470,0]}
+{"kind":"textbox","id":"sh/p0zedcbe","slide":12,"text":"DON'T","textPreview":"DON'T","textChars":5,"textLines":1,"bbox":[684,472,110,22]}
+{"kind":"textbox","id":"sh/ozqx47ut","slide":12,"text":"Неон + розовый + фиолетовый\nРазные 3D-языки\nGlow на каждом элементе","textPreview":"Неон + розовый + фиолетовый | Разные 3D-языки | Glow на каждом элементе","textChars":67,"textLines":3,"bbox":[684,510,470,126]}
+{"kind":"textbox","id":"sh/7u1gnmtc","slide":12,"text":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textPreview":"SELLYOURBRICK  •  VISUAL BRAND SYSTEM","textChars":37,"textLines":1,"bbox":[64,686,540,16]}
+{"kind":"textbox","id":"sh/mtsfe1cr","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1168,682,48,20]}
+{"kind":"image","id":"im/m1k7mpsr","slide":12,"name":"","geometry":"roundRect","alt":"Правильное направление — аукцион","bbox":[88,194,214,464]}
+{"kind":"image","id":"im/4v618jyt","slide":12,"name":"","geometry":"roundRect","alt":"Неподходящее направление — neon Smart Investor","bbox":[398,194,214,464]}
+{"kind":"notes","id":"nt/fgytfi","slide":12,"text":"[Sources]\n- audit/mobile/screenshots/03-auction.png\n- audit/mobile/screenshots/10-smart-investor.png\n- audit/mobile/BRANDBOOK.md"}
+{"kind":"slide","id":"sl/e1hw0i","slide":13,"title":"Sell","textShapes":13}
+{"kind":"textbox","id":"sh/at8n2t4f","slide":13,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[64,58,81.12,45.24]}
+{"kind":"shape","id":"sh/xwjmdonq","slide":13,"bbox":[142,59.56,85.8,42.12]}
+{"kind":"textbox","id":"sh/wva543ml","slide":13,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[146.68,58,82.68,45.24]}
+{"kind":"textbox","id":"sh/ji14fy5w","slide":13,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[233.26,58,99.84,45.24]}
+{"kind":"textbox","id":"sh/yxsn6t4b","slide":13,"text":"НЕДВИЖИМОСТЬ.\nЯСНЫЕ ЦИФРЫ.\nОДИН АКЦЕНТ.","textPreview":"НЕДВИЖИМОСТЬ. | ЯСНЫЕ ЦИФРЫ. | ОДИН АКЦЕНТ.","textChars":39,"textLines":3,"bbox":[64,210,700,224]}
+{"kind":"textbox","id":"sh/lkjmh8n2","slide":13,"text":"Это и есть характер SellYourBrick.","textPreview":"Это и есть характер SellYourBrick.","textChars":34,"textLines":1,"bbox":[66,474,620,40]}
+{"kind":"shape","id":"sh/kja583mh","slide":13,"bbox":[846,112,370,496]}
+{"kind":"textbox","id":"sh/z2x43e5s","slide":13,"text":"SYSTEM CARD","textPreview":"SYSTEM CARD","textChars":11,"textLines":1,"bbox":[886,154,260,22]}
+{"kind":"textbox","id":"sh/e1o3u947","slide":13,"text":"#0099A9","textPreview":"#0099A9","textChars":7,"textLines":1,"bbox":[886,208,260,40]}
+{"kind":"textbox","id":"sh/ov6t8bqx","slide":13,"text":"Brand Tiffany","textPreview":"Brand Tiffany","textChars":13,"textLines":1,"bbox":[886,250,260,24]}
+{"kind":"shape","id":"sh/pwzu1w7i","slide":13,"bbox":[886,302,250,0]}
+{"kind":"textbox","id":"sh/2tob618r","slide":13,"text":"MONTSERRAT","textPreview":"MONTSERRAT","textChars":10,"textLines":1,"bbox":[886,334,260,34]}
+{"kind":"textbox","id":"sh/nuxcz6pc","slide":13,"text":"800 / 700 / 400","textPreview":"800 / 700 / 400","textChars":15,"textLines":1,"bbox":[886,372,260,24]}
+{"kind":"shape","id":"sh/czqtcbqt","slide":13,"bbox":[886,424,250,0]}
+{"kind":"shape","id":"sh/x0zu5g7e","slide":13,"bbox":[886,458,250,58]}
+{"kind":"textbox","id":"sh/ax8ba183","slide":13,"text":"Primary action","textPreview":"Primary action","textChars":14,"textLines":1,"bbox":[886,458,250,58]}
+{"kind":"textbox","id":"sh/byhc36p8","slide":13,"text":"18 px radius  •  44 px touch","textPreview":"18 px radius  •  44 px touch","textChars":28,"textLines":1,"bbox":[886,546,260,24]}
+{"kind":"textbox","id":"sh/s3mt07qp","slide":13,"text":"VISUAL BRAND SYSTEM 1.0","textPreview":"VISUAL BRAND SYSTEM 1.0","textChars":23,"textLines":1,"bbox":[64,654,520,20]}
+{"kind":"notes","id":"nt/e1hw0i","slide":13,"text":"[Sources]\n- audit/mobile/BRANDBOOK.md"}

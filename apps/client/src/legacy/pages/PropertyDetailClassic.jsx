@@ -1503,7 +1503,14 @@ function PropertyDetailClassic({
         >
           <span className="property-detail-mobile-deposit-gate__prompt">
             <span className="property-detail-mobile-deposit-gate__prompt-icon" aria-hidden>
-              <FiLock size={21} />
+              <img
+                className="property-detail-mobile-deposit-gate__prompt-icon-image"
+                src="/images/property-detail/deposit-lock-gate-clay-3d-clean.png"
+                alt=""
+                width="64"
+                height="64"
+                draggable="false"
+              />
             </span>
             <span className="property-detail-mobile-deposit-gate__prompt-text">
               {t('propertyDetail_depositViewPrompt')}
