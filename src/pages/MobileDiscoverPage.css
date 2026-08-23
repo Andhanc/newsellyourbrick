@@ -1385,6 +1385,24 @@
 }
 
 @media (max-width: 1023px) {
+  /* Keep shares cards the same height and photo ratio as auction cards. */
+  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card {
+    aspect-ratio: auto;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__media {
+    aspect-ratio: 4 / 3;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__body {
+    gap: 5px;
+    padding: 10px;
+  }
+
+  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__progress-note {
+    display: none;
+  }
+
   .md-catalog.invest-home-page .invest-showcase__nav-btn--side {
     display: none !important;
   }

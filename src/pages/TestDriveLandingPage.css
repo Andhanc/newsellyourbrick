@@ -351,6 +351,10 @@
   transform: scale(0.99);
 }
 
+.test-drive-hero__scroll-button {
+  display: none;
+}
+
 .test-drive-hero-ticket__secondary {
   display: inline-flex;
   align-items: center;
@@ -911,37 +915,6 @@
   box-shadow: 0 24px 46px rgba(42, 56, 68, 0.13);
 }
 
-.test-drive-card__favorite {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.82);
-  color: #ffffff;
-  filter: drop-shadow(0 7px 14px rgba(30, 39, 48, 0.22));
-  backdrop-filter: blur(12px);
-}
-
-.test-drive-card__favorite svg {
-  stroke-width: 2;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
-}
-
-.test-drive-card__favorite.is-active {
-  color: #ff806e;
-  background: #fff;
-}
-
-.test-drive-card__favorite.is-active svg {
-  fill: currentColor;
-}
-
 .test-drive-card__image-button {
   display: block;
   width: 100%;
@@ -1289,18 +1262,55 @@
 
   .test-drive-hero,
   .test-drive-hero__content {
-    min-height: min(72vh, 680px);
+    min-height: min(68svh, 640px);
   }
 
   .test-drive-hero__content {
-    padding-left: 18px;
     padding-right: 18px;
+    padding-bottom: 76px;
+    padding-left: 18px;
+  }
+
+  .test-drive-hero__copy {
+    margin-top: 44px;
   }
 
   .test-drive-hero-card.test-drive-hero-ticket {
     width: min(100%, 360px);
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .test-drive-hero__scroll-button {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    z-index: 6;
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    background: #ffffff;
+    color: #123f44;
+    box-shadow:
+      0 10px 24px rgba(15, 61, 67, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transform: translateX(-50%);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .test-drive-hero__scroll-button:active {
+    transform: translateX(-50%) translateY(2px) scale(0.96);
+  }
+
+  .test-drive-hero__scroll-button:focus-visible {
+    outline: 2px solid #111820;
+    outline-offset: 4px;
   }
 
   .test-drive-story,
@@ -1378,7 +1388,7 @@
   }
 
   .test-drive-hero {
-    min-height: 740px;
+    min-height: 660px;
     padding: 0;
     align-items: stretch;
     border-radius: 0 0 50% 50% / 0 0 4% 4%;
@@ -1394,11 +1404,11 @@
   .test-drive-hero__content {
     display: flex;
     flex-direction: column;
-    min-height: 740px;
+    min-height: 660px;
     padding:
-      calc(var(--test-drive-header-offset) + 12px)
+      calc(var(--test-drive-header-offset) + 6px)
       16px
-      28px;
+      72px;
   }
 
   .test-drive-hero__shade {
@@ -1410,7 +1420,7 @@
   .test-drive-hero__brand {
     position: absolute;
     left: 50%;
-    top: calc(env(safe-area-inset-top, 0px) + 132px);
+    top: calc(env(safe-area-inset-top, 0px) + 116px);
     z-index: 5;
     display: flex;
     align-items: center;
@@ -1454,7 +1464,7 @@
 
   .test-drive-hero__copy {
     max-width: 330px;
-    margin-top: 148px;
+    margin-top: 98px;
     text-shadow: 0 4px 22px rgba(2, 27, 31, 0.28);
   }
 
@@ -1501,7 +1511,7 @@
     display: flex;
     flex-direction: column;
     width: min(100%, 340px);
-    margin-top: auto;
+    margin-top: 12px;
     margin-right: auto;
     margin-left: auto;
     padding: 0;
@@ -1782,15 +1792,6 @@
     height: 11px;
   }
 
-  .test-drive-card__favorite {
-    top: 6px;
-    right: 6px;
-    width: 44px;
-    height: 44px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #fff;
-  }
-
   .test-drive-landing .listing-page-pagination {
     gap: 7px;
     margin-top: var(--td-block-gap);
@@ -1822,18 +1823,18 @@
   }
 
   .test-drive-hero {
-    min-height: 696px;
+    min-height: 632px;
     border-radius: 0 0 50% 50% / 0 0 3% 3%;
   }
 
   .test-drive-hero__content {
-    min-height: 696px;
+    min-height: 632px;
     padding-right: 12px;
     padding-left: 12px;
   }
 
   .test-drive-hero__copy {
-    margin-top: 148px;
+    margin-top: 92px;
   }
 
   .test-drive-hero-card.test-drive-hero-ticket {
@@ -1881,6 +1882,7 @@
   .test-drive-card,
   .test-drive-card__image-button img,
   .test-drive-hero-card__action,
+  .test-drive-hero__scroll-button,
   .test-drive-story__button,
   .test-drive-filter-panel__apply {
     transition: none;

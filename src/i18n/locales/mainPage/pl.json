@@ -4179,6 +4179,7 @@
   "testDriveLanding_story3Text": "Make your choice based on firsthand experience",
   "testDriveLanding_resultsDated": "Properties for your dates",
   "testDriveLanding_resultsDefault": "Homes you can stay in",
+  "testDriveLanding_scrollToCatalog": "Scroll to the property catalogue",
   "testDriveLanding_resultsDatedHint": "{{from}} — {{to}} · final availability is confirmed on the property",
   "testDriveLanding_activeFilters": "Active filters: {{count}}",
   "testDriveLanding_resultsHint": "Up to 16 options per page — compare how they feel before you buy",

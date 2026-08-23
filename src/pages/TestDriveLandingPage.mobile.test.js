@@ -23,6 +23,8 @@ test('mobile test-drive landing keeps the commercial buyer hierarchy', () => {
   assert.doesNotMatch(source, /test-drive-hero-ticket__kicker/)
   assert.doesNotMatch(source, /<span>Даты<\/span>/)
   assert.match(source, /test-drive-hero-ticket__perforation/)
+  assert.match(source, /className="test-drive-hero__scroll-button"/)
+  assert.match(source, /testDriveLanding_scrollToCatalog/)
   assert.match(source, /testDriveLanding_findAvailable/)
   assert.match(source, /const scrollToCatalog = \(\) =>/)
   assert.match(source, /scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/)
@@ -51,6 +53,8 @@ test('mobile test-drive landing keeps the commercial buyer hierarchy', () => {
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-hero__copy--desktop\s*\{[\s\S]*display:\s*none/)
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-hero__copy--mobile\s*\{[\s\S]*display:\s*block/)
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-hero\s*\{[\s\S]*border-radius:\s*0 0 50% 50%/)
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-hero\s*\{[\s\S]*min-height:\s*660px/)
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*\.test-drive-hero__scroll-button\s*\{[\s\S]*display:\s*inline-flex/)
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-landing \.new-header\s*\{[\s\S]*display:\s*flex/)
   assert.doesNotMatch(
     css,
@@ -59,7 +63,8 @@ test('mobile test-drive landing keeps the commercial buyer hierarchy', () => {
 })
 
 test('test-drive cards preserve touch and type readability on phones', () => {
-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.test-drive-card__favorite[\s\S]*width:\s*44px[\s\S]*height:\s*44px/)
+  assert.match(source, /className=\{`property-favorite\$\{favoriteActive \? ' active' : ''\}`\}/)
+  assert.doesNotMatch(source, /test-drive-card__favorite/)
   assert.match(css, /\.test-drive-card-grid[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
   assert.doesNotMatch(css, /@media \(max-width: 374px\)[\s\S]*grid-template-columns:\s*1fr/)
   assert.match(css, /\.test-drive-landing \.listing-page-pagination[\s\S]*\.auction-desktop-pagination__page[\s\S]*min-width:\s*44px[\s\S]*height:\s*44px/)

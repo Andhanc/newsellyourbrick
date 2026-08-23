@@ -14,6 +14,11 @@ a.shares-v2-card {
   color: inherit;
 }
 
+/* Grid cards use the same outer proportions as the auction cards. */
+.shares-v2-card--grid {
+  aspect-ratio: 2 / 3;
+}
+
 .shares-v2-card:hover {
   border-color: rgba(184, 207, 154, 0.45);
   box-shadow: var(--site-card-shadow-hover);
@@ -35,7 +40,7 @@ a.shares-v2-card {
 
 .shares-v2-card__media {
   position: relative;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #e5e7eb;
 }
@@ -120,7 +125,9 @@ a.shares-v2-card {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 14px 14px 16px;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
 }
 
 .shares-v2-card__heading {
@@ -133,22 +140,28 @@ a.shares-v2-card {
 }
 
 .shares-v2-card__title {
-  margin: 0 0 6px;
+  display: -webkit-box;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
   font-family: var(--site-font-family);
-  font-size: 0.9375rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.2;
   color: var(--site-color-text);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .shares-v2-card__location {
   display: flex;
   align-items: flex-start;
   gap: 4px;
-  margin: 0 0 14px;
+  margin: 4px 0 0;
   font-family: var(--site-font-family);
-  font-size: 0.75rem;
-  line-height: 1.45;
+  font-size: 0.72rem;
+  line-height: 1.3;
   color: var(--site-color-muted);
 }
 
@@ -165,21 +178,24 @@ a.shares-v2-card {
 .shares-v2-card__metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin: 0;
 }
 
 .shares-v2-card__metric {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
   min-width: 0;
 }
 
 .shares-v2-card__metric-label {
   font-family: var(--site-font-family);
-  font-size: 0.6875rem;
+  overflow: hidden;
+  font-size: 0.58rem;
   line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #9ca3af;
 }
 
@@ -189,17 +205,17 @@ a.shares-v2-card {
 
 .shares-v2-card__metric-value {
   font-family: var(--site-font-family);
-  font-size: 0.875rem;
+  overflow: hidden;
+  font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.25;
   color: var(--site-color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shares-v2-card__metric small {
-  color: var(--site-color-muted);
-  font-family: var(--site-font-family);
-  font-size: 0.625rem;
-  line-height: 1.25;
+  display: none;
 }
 
 .shares-v2-card__metric-suffix {
@@ -207,18 +223,24 @@ a.shares-v2-card {
   color: var(--site-color-muted);
 }
 
+.shares-v2-card__progress {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .shares-v2-card__progress-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin: 0;
 }
 
 .shares-v2-card__progress-label,
 .shares-v2-card__progress-percent {
   font-family: var(--site-font-family);
-  font-size: 0.6875rem;
+  font-size: 0.58rem;
   font-weight: 600;
   line-height: 1.2;
   color: var(--site-color-muted);
@@ -229,8 +251,8 @@ a.shares-v2-card {
 }
 
 .shares-v2-card__progress-track {
-  height: 6px;
-  margin-bottom: 14px;
+  height: 5px;
+  margin: 0;
   border-radius: 999px;
   background: rgba(226, 232, 240, 0.9);
   overflow: hidden;
@@ -253,10 +275,10 @@ a.shares-v2-card {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: -8px 0 12px;
+  margin: 0;
   color: var(--site-color-muted);
   font-family: var(--site-font-family);
-  font-size: 0.6875rem;
+  font-size: 0.58rem;
   line-height: 1.2;
 }
 
@@ -298,14 +320,14 @@ a.shares-v2-card {
   justify-content: space-between;
   flex-shrink: 0;
   width: 100%;
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 36px;
+  padding: 7px 10px;
   border: 1px solid rgba(184, 207, 154, 0.45);
   border-radius: 10px;
   background: #ffffff;
   color: var(--site-color-accent-dark, #007d8a);
   font-family: var(--site-font-family);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;

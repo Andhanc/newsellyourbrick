@@ -14,7 +14,7 @@ test('toast renders a structured, actionable and accessible message', () => {
   assert.match(source, /aria-live=\{announcement\}/)
   assert.match(source, /role=\{type === 'error' \? 'alert' : 'status'\}/)
   assert.match(source, /aria-label="Закрыть уведомление"/)
-  assert.match(source, /toast__progress/)
+  assert.doesNotMatch(source, /toast__progress/)
 })
 
 test('toast timer pauses during interaction and when the page is hidden', () => {
@@ -26,6 +26,12 @@ test('toast timer pauses during interaction and when the page is hidden', () => 
   assert.match(source, /onBlurCapture=\{handleBlur\}/)
   assert.match(source, /visibilitychange/)
   assert.match(source, /document\.hidden/)
+})
+
+test('toast enters after mount and leaves before queue removal', () => {
+  assert.match(source, /requestAnimationFrame/)
+  assert.match(source, /EXIT_MS = 360/)
+  assert.match(source, /toast--leaving/)
 })
 
 test('toast styling follows the buyer system on phones', () => {

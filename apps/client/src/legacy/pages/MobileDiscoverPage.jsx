@@ -107,6 +107,7 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
   const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
   const [menuOpen, setMenuOpen] = useState(false)
   const [stageEntered, setStageEntered] = useState(false)
+  const [isFooterNear, setIsFooterNear] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
 
   const saleCards = getSaleCards(t)
@@ -241,6 +242,32 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
     return () => el.removeEventListener('wheel', onWheel)
   }, [flashPhase, goTo])
 
+  useEffect(() => {
+    if (screen !== 'stage') {
+      setIsFooterNear(false)
+      return undefined
+    }
+
+    const stage = stageScrollRef.current
+    const footer = stage?.querySelector('.md-footer-wrap')
+    if (!stage || !footer || typeof IntersectionObserver === 'undefined') {
+      setIsFooterNear(false)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsFooterNear(Boolean(entry?.isIntersecting)),
+      {
+        root: stage,
+        rootMargin: '0px 0px -12% 0px',
+        threshold: [0, 0.01],
+      },
+    )
+
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [screen])
+
   // Touch swipe
   useEffect(() => {
     const el = shellRef.current
@@ -281,7 +308,10 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
     flashPhase === 'cover' ? ' is-cover' : flashPhase === 'reveal' ? ' is-reveal' : ''
 
   return (
-    <SiteChatDock wrapperClassName="md-discover-ai-floats">
+    <SiteChatDock
+      wrapperClassName="md-discover-ai-floats"
+      hideFab={screen === 'hero' || isFooterNear}
+    >
     <div
       ref={shellRef}
       className={`md md--${screen}${flashPhase !== 'idle' ? ' is-flashing' : ''}`}

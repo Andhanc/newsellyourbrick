@@ -32,7 +32,7 @@ test('notification center has explicit loading, empty and item states', () => {
   assert.match(source, /notificationsEmptyDesc/)
   assert.match(source, /notification-item--unread/)
   assert.match(source, /notification-item__time/)
-  assert.match(source, /notification-item__icon/)
+  assert.doesNotMatch(source, /NotificationIcon/)
 })
 
 test('notification center is a mobile bottom sheet and desktop side panel', () => {

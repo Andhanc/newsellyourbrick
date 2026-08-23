@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  FiAlertCircle,
   FiArrowRight,
-  FiBarChart2,
   FiBell,
-  FiCalendar,
   FiCheck,
-  FiCheckCircle,
-  FiClipboard,
-  FiCreditCard,
-  FiHome,
-  FiTool,
-  FiTrendingUp,
   FiX,
 } from 'react-icons/fi'
 import {
@@ -102,27 +93,6 @@ function notificationNextStep(notification, dataObj) {
   }
 }
 
-function NotificationIcon({ type, unread }) {
-  const key = String(type || '').toLowerCase()
-  let Icon = FiBell
-  if (/test_drive_survey|test_drive_request/.test(key)) Icon = FiClipboard
-  else if (/test_drive|booking|reservation|visit/.test(key)) Icon = FiCalendar
-  else if (/bid|auction|outbid/.test(key)) Icon = FiTrendingUp
-  else if (/payment|deposit|refund|withdraw|buy_now|transaction/.test(key)) Icon = FiCreditCard
-  else if (key === 'verification_success') Icon = FiCheckCircle
-  else if (key === 'verification_rejected') Icon = FiAlertCircle
-  else if (/property|listing/.test(key)) Icon = FiHome
-  else if (/analysis|data|report/.test(key)) Icon = FiBarChart2
-  else if (/system|maintenance|update/.test(key)) Icon = FiTool
-
-  return (
-    <span className={`notification-item__icon${unread ? ' notification-item__icon--unread' : ''}`} aria-hidden>
-      <Icon />
-      {unread ? <i className="notification-item__unread-dot" /> : null}
-    </span>
-  )
-}
-
 function NotificationItem({
   notification,
   t,
@@ -155,7 +125,6 @@ function NotificationItem({
         if (notification.type !== 'test_drive_request' && unread) handleNotificationView(notification.id)
       }}
     >
-      <NotificationIcon type={notification.type} unread={unread} />
       <div className="notification-item__body">
         <div className="notification-item__head">
           <h4 className="notification-item__title">

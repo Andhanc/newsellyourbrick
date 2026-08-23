@@ -119,27 +119,29 @@ function SharesPropertyCard({
           </div>
         </div>
 
-        <div className="shares-v2-card__progress-head">
-          <span className="shares-v2-card__progress-label">Доступно долей</span>
-          <strong className="shares-v2-card__progress-percent">{availableLabel}</strong>
-        </div>
-        <div
-          className={`shares-v2-card__progress-track${collectedPercent == null ? ' is-unknown' : ''}`}
-          role="progressbar"
-          aria-label="Собрано долей"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow={collectedPercent ?? undefined}
-          aria-valuetext={collectedPercent == null ? 'Данные уточняются' : `${collectedPercent}%`}
-        >
+        <div className="shares-v2-card__progress">
+          <div className="shares-v2-card__progress-head">
+            <span className="shares-v2-card__progress-label">Доступно долей</span>
+            <strong className="shares-v2-card__progress-percent">{availableLabel}</strong>
+          </div>
           <div
-            className="shares-v2-card__progress-fill"
-            style={{ width: `${collectedPercent ?? 0}%` }}
-          />
-        </div>
-        <div className="shares-v2-card__progress-note">
-          <span>Собрано</span>
-          <strong>{collectedPercent == null ? '—' : `${collectedPercent}%`}</strong>
+            className={`shares-v2-card__progress-track${collectedPercent == null ? ' is-unknown' : ''}`}
+            role="progressbar"
+            aria-label="Собрано долей"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={collectedPercent ?? undefined}
+            aria-valuetext={collectedPercent == null ? 'Данные уточняются' : `${collectedPercent}%`}
+          >
+            <div
+              className="shares-v2-card__progress-fill"
+              style={{ width: `${collectedPercent ?? 0}%` }}
+            />
+          </div>
+          <div className="shares-v2-card__progress-note">
+            <span>Собрано</span>
+            <strong>{collectedPercent == null ? '—' : `${collectedPercent}%`}</strong>
+          </div>
         </div>
 
         <button

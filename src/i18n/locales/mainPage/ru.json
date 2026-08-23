@@ -4588,6 +4588,7 @@
   "testDriveLanding_story3Text": "Принимайте решение на основе личного опыта",
   "testDriveLanding_resultsDated": "Объекты на выбранные даты",
   "testDriveLanding_resultsDefault": "Дома, в которых можно пожить",
+  "testDriveLanding_scrollToCatalog": "Прокрутить к каталогу объектов",
   "testDriveLanding_resultsDatedHint": "{{from}} — {{to}} · окончательная доступность подтверждается в объекте",
   "testDriveLanding_activeFilters": "Активных фильтров: {{count}}",
   "testDriveLanding_resultsHint": "До 16 вариантов на странице — сравните ощущения до покупки",

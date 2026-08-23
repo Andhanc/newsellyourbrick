@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiX } from 'react-icons/fi'
 import './Toast.css'
 
-const EXIT_MS = 240
+const EXIT_MS = 360
 
 function ToastIcon({ type }) {
   if (type === 'success') return <FiCheck aria-hidden />
@@ -20,10 +20,10 @@ const Toast = ({
   announcement = 'polite',
   onClose,
 }) => {
-  const [isVisible, setIsVisible] = useState(true)
-  const [isPaused, setIsPaused] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
   const timerRef = useRef(null)
   const exitTimerRef = useRef(null)
+  const enterFrameRef = useRef(null)
   const startedAtRef = useRef(0)
   const remainingRef = useRef(duration)
   const hoveredRef = useRef(false)
@@ -61,13 +61,11 @@ const Toast = ({
       remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAtRef.current))
     }
     clearTimer()
-    setIsPaused(true)
   }, [clearTimer, duration, persistent])
 
   const resumeTimer = useCallback((event) => {
     if (event?.type === 'mouseleave') hoveredRef.current = false
     if (document.hidden || hoveredRef.current || focusedRef.current || closingRef.current) return
-    setIsPaused(false)
     startTimer()
   }, [startTimer])
 
@@ -88,13 +86,19 @@ const Toast = ({
   useEffect(() => {
     closingRef.current = false
     remainingRef.current = duration
-    setIsVisible(true)
-    setIsPaused(false)
-    startTimer()
+    setIsVisible(false)
+
+    enterFrameRef.current = window.requestAnimationFrame(() => {
+      enterFrameRef.current = window.requestAnimationFrame(() => {
+        setIsVisible(true)
+        startTimer()
+      })
+    })
 
     return () => {
       clearTimer()
       if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current)
+      if (enterFrameRef.current) window.cancelAnimationFrame(enterFrameRef.current)
     }
   }, [clearTimer, duration, message, persistent, startTimer, title])
 
@@ -133,14 +137,6 @@ const Toast = ({
       <button type="button" className="toast__close" onClick={beginClose} aria-label="Закрыть уведомление">
         <FiX aria-hidden />
       </button>
-      {!persistent && duration > 0 ? (
-        <span
-          key={`${title}-${message}-${duration}`}
-          className="toast__progress"
-          style={{ '--toast-duration': `${duration}ms`, animationPlayState: isPaused ? 'paused' : 'running' }}
-          aria-hidden
-        />
-      ) : null}
     </article>
   )
 }

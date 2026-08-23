@@ -1,0 +1,503 @@
+{"kind":"deck","id":"pr/a5w5pc","name":"Deck"}
+{"kind":"layout","layoutId":"6d39ba3f-ebf9-4ec3-828d-99ea9b14544d","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"0b59a209-af24-4b8a-8740-08d0fab04b83","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/fmcsjm","slide":1,"title":"Sell","textShapes":6}
+{"kind":"shape","id":"sh/cnax0byh","slide":1,"bbox":[0,0,470,720]}
+{"kind":"shape","id":"sh/bm1g7qxw","slide":1,"bbox":[0,510,470,210]}
+{"kind":"textbox","id":"sh/alsfylgb","slide":1,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[62,54,64.5,37.84]}
+{"kind":"shape","id":"sh/pkzy5gfq","slide":1,"bbox":[124.78,55.72,72.24,34.4]}
+{"kind":"textbox","id":"sh/ojqxwby5","slide":1,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[126.5,54,70.52,37.84]}
+{"kind":"textbox","id":"sh/nihw36xk","slide":1,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[201.32,54,86,37.84]}
+{"kind":"textbox","id":"sh/2h8fu1gz","slide":1,"text":"МОБИЛЬНЫЙ\nПРОДУКТ","textPreview":"МОБИЛЬНЫЙ | ПРОДУКТ","textChars":17,"textLines":2,"bbox":[62,188,390,145]}
+{"kind":"textbox","id":"sh/1gze1wfu","slide":1,"text":"Страницы, преимущества\nи единая стилистика","textPreview":"Страницы, преимущества | и единая стилистика","textChars":42,"textLines":2,"bbox":[64,364,350,76]}
+{"kind":"textbox","id":"sh/0fqxsry9","slide":1,"text":"SMARTPHONE EDITION  •  2026","textPreview":"SMARTPHONE EDITION  •  2026","textChars":27,"textLines":1,"bbox":[64,642,350,20]}
+{"kind":"shape","id":"sh/ax8ra58r","slide":1,"bbox":[521,111,245,514]}
+{"kind":"shape","id":"sh/czqtcfqx","slide":1,"bbox":[1001,119,237,496]}
+{"kind":"shape","id":"sh/29or658v","slide":1,"bbox":[745,59,280,590]}
+{"kind":"image","id":"im/k761wb65","slide":1,"name":"","geometry":"roundRect","alt":"02-home.png","bbox":[528,118,231,500]}
+{"kind":"image","id":"im/i5oju1of","slide":1,"name":"","geometry":"roundRect","alt":"01-profile.png","bbox":[1008,126,223,482]}
+{"kind":"image","id":"im/w3m1sr69","slide":1,"name":"","geometry":"roundRect","alt":"03-auction.png","bbox":[752,66,266,576]}
+{"kind":"notes","id":"nt/fmcsjm","slide":1,"text":"[Sources]\n- http://localhost:5173/ — mobile capture\n- audit/mobile-showcase-2026-08-23/screenshots/02-home.png\n- http://localhost:5173/auction — mobile capture\n- audit/mobile-showcase-2026-08-23/screenshots/03-auction.png\n- http://localhost:5173/profile — mobile capture\n- audit/mobile-showcase-2026-08-23/screenshots/01-profile.png\n[/Sources]"}
+{"kind":"slide","id":"sl/769m84","slide":2,"title":"01 / МОБИЛЬНЫЙ ЯЗЫК","textShapes":16}
+{"kind":"textbox","id":"sh/7yx0b29k","slide":2,"text":"01 / МОБИЛЬНЫЙ ЯЗЫК","textPreview":"01 / МОБИЛЬНЫЙ ЯЗЫК","textChars":19,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"textbox","id":"sh/sz6147qp","slide":2,"text":"Недвижимость ведёт. Интерфейс помогает.","textPreview":"Недвижимость ведёт. Интерфейс помогает.","textChars":39,"textLines":1,"bbox":[64,76,1080,64]}
+{"kind":"shape","id":"sh/t0zidcra","slide":2,"bbox":[65,183,203,424]}
+{"kind":"textbox","id":"sh/jux07298","slide":2,"text":"ФОТО-LED HERO","textPreview":"ФОТО-LED HERO","textChars":13,"textLines":1,"bbox":[64,617,205,18]}
+{"kind":"shape","id":"sh/kv6107qt","slide":2,"bbox":[295,183,203,424]}
+{"kind":"textbox","id":"sh/2p8ja187","slide":2,"text":"СЦЕНАРИЙ ЖИЗНИ","textPreview":"СЦЕНАРИЙ ЖИЗНИ","textChars":14,"textLines":1,"bbox":[294,617,205,18]}
+{"kind":"shape","id":"sh/3qhkjm9c","slide":2,"bbox":[525,183,203,424]}
+{"kind":"textbox","id":"sh/6p4rup8z","slide":2,"text":"БЕЛЫЕ SURFACES","textPreview":"БЕЛЫЕ SURFACES","textChars":14,"textLines":1,"bbox":[524,617,205,18]}
+{"kind":"textbox","id":"sh/tcfa5k7q","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[820,194,48,28]}
+{"kind":"textbox","id":"sh/sr69wf65","slide":2,"text":"ФОТОГРАФИЯ","textPreview":"ФОТОГРАФИЯ","textChars":10,"textLines":1,"bbox":[880,194,300,24]}
+{"kind":"textbox","id":"sh/fexs7upg","slide":2,"text":"Дом, вилла или человек создают первый эмоциональный контакт.","textPreview":"Дом, вилла или человек создают первый эмоциональный контакт.","textChars":60,"textLines":1,"bbox":[880,228,330,66]}
+{"kind":"shape","id":"sh/edorypov","slide":2,"bbox":[820,305,360,0]}
+{"kind":"textbox","id":"sh/1gfa947m","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[820,326,48,28]}
+{"kind":"textbox","id":"sh/gf690z61","slide":2,"text":"ЯСНАЯ ИЕРАРХИЯ","textPreview":"ЯСНАЯ ИЕРАРХИЯ","textChars":14,"textLines":1,"bbox":[880,326,300,24]}
+{"kind":"textbox","id":"sh/3ihsbups","slide":2,"text":"Крупный заголовок, короткое объяснение, одно действие.","textPreview":"Крупный заголовок, короткое объяснение, одно действие.","textChars":54,"textLines":1,"bbox":[880,360,330,66]}
+{"kind":"shape","id":"sh/2h8b29o7","slide":2,"bbox":[820,437,360,0]}
+{"kind":"textbox","id":"sh/ydsvad8f","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[820,458,48,28]}
+{"kind":"textbox","id":"sh/ze1c3y90","slide":2,"text":"TIFFANY-НАВИГАЦИЯ","textPreview":"TIFFANY-НАВИГАЦИЯ","textChars":17,"textLines":1,"bbox":[880,458,300,24]}
+{"kind":"textbox","id":"sh/0fadc3ql","slide":2,"text":"Бирюзовый ведёт пользователя, но не забирает весь экран.","textPreview":"Бирюзовый ведёт пользователя, но не забирает весь экран.","textChars":56,"textLines":1,"bbox":[880,492,330,66]}
+{"kind":"textbox","id":"sh/lgju58rq","slide":2,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/q9sv6ts3","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/7a9gfy1w","slide":2,"name":"","geometry":"roundRect","alt":"03-auction.png","bbox":[72,190,189,410]}
+{"kind":"image","id":"im/sbiho3i1","slide":2,"name":"","geometry":"roundRect","alt":"06-test-drive.png","bbox":[302,190,189,410]}
+{"kind":"image","id":"im/o3yxc7a1","slide":2,"name":"","geometry":"roundRect","alt":"01-profile.png","bbox":[532,190,189,410]}
+{"kind":"notes","id":"nt/769m84","slide":2,"text":"[Sources]\n- audit/mobile-showcase-2026-08-23/screenshots/03-auction.png\n- audit/mobile-showcase-2026-08-23/screenshots/06-test-drive.png\n- audit/mobile-showcase-2026-08-23/screenshots/01-profile.png\n[/Sources]"}
+{"kind":"slide","id":"sl/au47w6","slide":3,"title":"02 / ГЛАВНАЯ","textShapes":13}
+{"kind":"textbox","id":"sh/w3qt4fel","slide":3,"text":"02 / ГЛАВНАЯ","textPreview":"02 / ГЛАВНАЯ","textChars":12,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/vihsvax0","slide":3,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/9gzat0fa","slide":3,"text":"ГЛАВНАЯ","textPreview":"ГЛАВНАЯ","textChars":7,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/8fqt0vep","slide":3,"text":"Главная делает первый контакт эмоциональным","textPreview":"Главная делает первый контакт эмоциональным","textChars":43,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/7ehsrax4","slide":3,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/md8by5wj","slide":3,"text":"Один экран сразу обещает лёгкий путь к дому мечты.","textPreview":"Один экран сразу обещает лёгкий путь к дому мечты.","textChars":50,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/lcfap0fy","slide":3,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/kb6twved","slide":3,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/6x4vup8z","slide":3,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/7yxwnu9k","slide":3,"text":"Вилла занимает весь экран","textPreview":"Вилла занимает весь экран","textChars":25,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/sz6dwzq5","slide":3,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/tkfep4ra","slide":3,"text":"Tiffany-overlay связывает фото с брендом","textPreview":"Tiffany-overlay связывает фото с брендом","textChars":40,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/it4vqp8n","slide":3,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/judwja98","slide":3,"text":"Минимум текста и один scroll-cue","textPreview":"Минимум текста и один scroll-cue","textChars":32,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/kvmdsfqt","slide":3,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/5wvelkre","slide":3,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/apkvm58r","slide":3,"text":"Узнаваемый цвет, но нет общего header-паттерна","textPreview":"Узнаваемый цвет, но нет общего header-паттерна","textChars":46,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/vqdwfa9c","slide":3,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/zypk7mls","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/3yhcn6xc","slide":3,"name":"","geometry":"roundRect","alt":"02-home.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/au47w6","slide":3,"text":"[Sources]\n- http://localhost:5173/ — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/02-home.png\n[/Sources]"}
+{"kind":"slide","id":"sl/69gl7x","slide":4,"title":"03 / АУКЦИОН","textShapes":14}
+{"kind":"textbox","id":"sh/1kruxcry","slide":4,"text":"03 / АУКЦИОН","textPreview":"03 / АУКЦИОН","textChars":12,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/exgvmhs7","slide":4,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/onidsra9","slide":4,"text":"АУКЦИОН","textPreview":"АУКЦИОН","textChars":7,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/9ore1wru","slide":4,"text":"Аукцион соединяет историю и действие","textPreview":"Аукцион соединяет историю и действие","textChars":36,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/ml0vqhs3","slide":4,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/nm9czm9o","slide":4,"text":"Пользователь видит смысл формата до первой карточки.","textPreview":"Пользователь видит смысл формата до первой карточки.","textChars":52,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/4rydgna5","slide":4,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/ps7upsrq","slide":4,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/p4z2twz6","slide":4,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/43ql0ry1","slide":4,"text":"Photo-led hero с затемнением","textPreview":"Photo-led hero с затемнением","textChars":28,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/3ixkrmhg","slide":4,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/2ho3yhgv","slide":4,"text":"Плавающий белый header","textPreview":"Плавающий белый header","textChars":22,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/d8zmxwzi","slide":4,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/c7ql4byx","slide":4,"text":"Белый CTA с Tiffany-action","textPreview":"Белый CTA с Tiffany-action","textChars":26,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/b6h4v6hc","slide":4,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/q58321gr","slide":4,"text":"Карточки продолжают тот же ритм","textPreview":"Карточки продолжают тот же ритм","textChars":31,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/lcjm1gfe","slide":4,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/0bal8by9","slide":4,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/krixkjah","slide":4,"text":"Эталонный шаблон для продуктовых разделов","textPreview":"Эталонный шаблон для продуктовых разделов","textChars":41,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/5sbetor2","slide":4,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/ip0fi9sb","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/m94b614z","slide":4,"name":"","geometry":"roundRect","alt":"03-auction.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/69gl7x","slide":4,"text":"[Sources]\n- http://localhost:5173/auction — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/03-auction.png\n[/Sources]"}
+{"kind":"slide","id":"sl/b231oo","slide":5,"title":"04 / ДОЛИ","textShapes":14}
+{"kind":"textbox","id":"sh/gbitgfet","slide":5,"text":"04 / ДОЛИ","textPreview":"04 / ДОЛИ","textChars":9,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/va9snaxo","slide":5,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/to7alkfi","slide":5,"text":"ДОЛИ","textPreview":"ДОЛИ","textChars":4,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/8nytcfex","slide":5,"text":"Доли наследуют общий продуктовый каркас","textPreview":"Доли наследуют общий продуктовый каркас","textChars":39,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/7mpsjaxc","slide":5,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/6lgba5wr","slide":5,"text":"Новый инвестиционный формат ощущается частью того же продукта.","textPreview":"Новый инвестиционный формат ощущается частью того же продукта.","textChars":62,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/dkbux4fm","slide":5,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/sj2toze1","slide":5,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/axcni90v","slide":5,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/vy54rehg","slide":5,"text":"Тот же header и hero-геометрия","textPreview":"Тот же header и hero-геометрия","textChars":30,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/wze5kji1","slide":5,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/x0nmtozm","slide":5,"text":"Tiffany label объясняет контекст","textPreview":"Tiffany label объясняет контекст","textChars":32,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/mtcnep0z","slide":5,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/nul4nuh4","slide":5,"text":"Поиск и фильтр стоят на знакомом месте","textPreview":"Поиск и фильтр стоят на знакомом месте","textChars":38,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/8vu5gzip","slide":5,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/9w3mp4za","slide":5,"text":"Карточки начинаются сразу после hero","textPreview":"Карточки начинаются сразу после hero","textChars":36,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/6pwnqt03","slide":5,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/7qpozyho","slide":5,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/3yxsvmto","slide":5,"text":"Высокая — меняются смысл и фото, не язык","textPreview":"Высокая — меняются смысл и фото, не язык","textChars":40,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/ixob21c3","slide":5,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/5kfaxwbu","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/3a9kjip8","slide":5,"name":"","geometry":"roundRect","alt":"04-shares.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/b231oo","slide":5,"text":"[Sources]\n- http://localhost:5173/co-investment — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/04-shares.png\n[/Sources]"}
+{"kind":"slide","id":"sl/su4h9s","slide":6,"title":"05 / ДОЛГИ","textShapes":14}
+{"kind":"textbox","id":"sh/m9kn25kf","slide":6,"text":"05 / ДОЛГИ","textPreview":"05 / ДОЛГИ","textChars":10,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/9cb6xkjq","slide":6,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/vetoza1w","slide":6,"text":"ДОЛГИ","textPreview":"ДОЛГИ","textChars":5,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/udkn65kb","slide":6,"text":"Долги меняют смысл, сохраняя каркас","textPreview":"Долги меняют смысл, сохраняя каркас","textChars":35,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/h0v61kj2","slide":6,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/wf258fih","slide":6,"text":"Риск становится понятным ещё до просмотра объектов.","textPreview":"Риск становится понятным ещё до просмотра объектов.","textChars":51,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/bi94nq1s","slide":6,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/ah0nulk7","slide":6,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/0jy54zex","slide":6,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/lk7mx4vi","slide":6,"text":"Тёмный фотофон для серьёзного контекста","textPreview":"Тёмный фотофон для серьёзного контекста","textChars":39,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/yhgn2pwr","slide":6,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/zip4budc","slide":6,"text":"Три белые risk-карточки","textPreview":"Три белые risk-карточки","textChars":23,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/8ni58zet","slide":6,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/9orm14ve","slide":6,"text":"Семантические красный, жёлтый, зелёный","textPreview":"Семантические красный, жёлтый, зелёный","textChars":38,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/ml0n6pwn","slide":6,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/nm94zud8","slide":6,"text":"Общий поиск и floating actions","textPreview":"Общий поиск и floating actions","textChars":30,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/orelwfep","slide":6,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/psnm5kva","slide":6,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/5cfudcjm","slide":6,"text":"Высокая — отдельная семантика встроена аккуратно","textPreview":"Высокая — отдельная семантика встроена аккуратно","textChars":48,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/kbmtk721","slide":6,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/jadcb21w","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/5cnqtc7i","slide":6,"name":"","geometry":"roundRect","alt":"05-debts.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/su4h9s","slide":6,"text":"[Sources]\n- http://localhost:5173/debts — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/05-debts.png\n[/Sources]"}
+{"kind":"slide","id":"sl/6q2y75","slide":7,"title":"06 / ТЕСТ-ДРАЙВ","textShapes":14}
+{"kind":"textbox","id":"sh/6dkvq9on","slide":7,"text":"06 / ТЕСТ-ДРАЙВ","textPreview":"06 / ТЕСТ-ДРАЙВ","textChars":15,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/t0be1one","slide":7,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/v2tw3y54","slide":7,"text":"ТЕСТ-ДРАЙВ","textPreview":"ТЕСТ-ДРАЙВ","textChars":10,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/u1kfutoj","slide":7,"text":"Тест-драйв превращает услугу в сценарий жизни","textPreview":"Тест-драйв превращает услугу в сценарий жизни","textChars":45,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/h4ve5ona","slide":7,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/g3mxw3mp","slide":7,"text":"Вместо описания функции пользователь сразу видит будущий опыт.","textPreview":"Вместо описания функции пользователь сразу видит будущий опыт.","textChars":62,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/b69wru50","slide":7,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/a50vypof","slide":7,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/gj6107ux","slide":7,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/1kfi9cvi","slide":7,"text":"Lifestyle-фото виллы и бассейна","textPreview":"Lifestyle-фото виллы и бассейна","textChars":31,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/eh4jyxcr","slide":7,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/fid072dc","slide":7,"text":"Белая карточка поверх hero","textPreview":"Белая карточка поверх hero","textChars":26,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/o76147u9","slide":7,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/p8fidcve","slide":7,"text":"Три шага в спокойных pills","textPreview":"Три шага в спокойных pills","textChars":26,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/2loj2hc3","slide":7,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/36x0bmdo","slide":7,"text":"Один Tiffany CTA","textPreview":"Один Tiffany CTA","textChars":16,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/4b2hsnup","slide":7,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/5cvi1sva","slide":7,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/lw3q9kj2","slide":7,"text":"Очень высокая — лучший баланс эмоции и действия","textPreview":"Очень высокая — лучший баланс эмоции и действия","textChars":47,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/0vupgfih","slide":7,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/zu187a1w","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/1ojudsfa","slide":7,"name":"","geometry":"roundRect","alt":"06-test-drive.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/6q2y75","slide":7,"text":"[Sources]\n- http://localhost:5173/test-drive — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/06-test-drive.png\n[/Sources]"}
+{"kind":"slide","id":"sl/a3iznj","slide":8,"title":"07 / ВЫБОР","textShapes":14}
+{"kind":"textbox","id":"sh/7adwnids","slide":8,"text":"07 / ВЫБОР","textPreview":"07 / ВЫБОР","textChars":10,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/8bmdwnux","slide":8,"bbox":[49,105,239,502]}
+{"kind":"textbox","id":"sh/ux4vyxc3","slide":8,"text":"ПОНРАВИЛОСЬ","textPreview":"ПОНРАВИЛОСЬ","textChars":11,"textLines":1,"bbox":[48,617,241,18]}
+{"kind":"shape","id":"sh/vydwrido","slide":8,"bbox":[299,105,239,502]}
+{"kind":"textbox","id":"sh/h0fetsvu","slide":8,"text":"СРАВНЕНИЕ","textPreview":"СРАВНЕНИЕ","textChars":9,"textLines":1,"bbox":[298,617,241,18]}
+{"kind":"textbox","id":"sh/21ov2xcf","slide":8,"text":"Понравилось и сравнение продолжают путь выбора","textPreview":"Понравилось и сравнение продолжают путь выбора","textChars":46,"textLines":1,"bbox":[585,82,620,108]}
+{"kind":"textbox","id":"sh/32xwv2dk","slide":8,"text":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textPreview":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textChars":18,"textLines":1,"bbox":[585,220,280,18]}
+{"kind":"textbox","id":"sh/7q5gze1c","slide":8,"text":"Сохранение и сопоставление превращены в понятный следующий шаг.","textPreview":"Сохранение и сопоставление превращены в понятный следующий шаг.","textChars":63,"textLines":1,"bbox":[585,245,600,76]}
+{"kind":"shape","id":"sh/mpwfq9kr","slide":8,"bbox":[585,340,600,0]}
+{"kind":"textbox","id":"sh/9s7y1oji","slide":8,"text":"ЧТО ОБЪЕДИНЯЕТ","textPreview":"ЧТО ОБЪЕДИНЯЕТ","textChars":14,"textLines":1,"bbox":[585,368,280,18]}
+{"kind":"shape","id":"sh/8ryxsj2x","slide":8,"bbox":[585,401,8,8]}
+{"kind":"textbox","id":"sh/z25gve1g","slide":8,"text":"Объекты сохраняют карточную модель","textPreview":"Объекты сохраняют карточную модель","textChars":34,"textLines":1,"bbox":[607,394,578,40]}
+{"kind":"shape","id":"sh/y1wfm9kv","slide":8,"bbox":[585,443,8,8]}
+{"kind":"textbox","id":"sh/lonyx4j6","slide":8,"text":"Sticky CTA удерживает действие","textPreview":"Sticky CTA удерживает действие","textChars":30,"textLines":1,"bbox":[607,436,578,40]}
+{"kind":"shape","id":"sh/knexoz21","slide":8,"bbox":[585,485,8,8]}
+{"kind":"textbox","id":"sh/jy9g7y1k","slide":8,"text":"Крупные заголовки без лишней навигации","textPreview":"Крупные заголовки без лишней навигации","textChars":38,"textLines":1,"bbox":[607,478,578,40]}
+{"kind":"shape","id":"sh/ixgzytkz","slide":8,"bbox":[585,572,600,82]}
+{"kind":"textbox","id":"sh/edkjqx47","slide":8,"text":"ЗОНА ВЫРАВНИВАНИЯ","textPreview":"ЗОНА ВЫРАВНИВАНИЯ","textChars":17,"textLines":1,"bbox":[603,586,190,18]}
+{"kind":"textbox","id":"sh/fet0z2ls","slide":8,"text":"Сравнение слишком долго остаётся полностью Tiffany","textPreview":"Сравнение слишком долго остаётся полностью Tiffany","textChars":50,"textLines":1,"bbox":[603,610,564,30]}
+{"kind":"textbox","id":"sh/gf21s7md","slide":8,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/1gbi1c3y","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/kv2horet","slide":8,"name":"","geometry":"roundRect","alt":"07-favorites.png","bbox":[56,112,225,488]}
+{"kind":"image","id":"im/x8bytcf2","slide":8,"name":"","geometry":"roundRect","alt":"08-compare.png","bbox":[306,112,225,488]}
+{"kind":"notes","id":"nt/a3iznj","slide":8,"text":"[Sources]\n- http://localhost:5173/favorites — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/07-favorites.png\n- http://localhost:5173/compare — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/08-compare.png\n[/Sources]"}
+{"kind":"slide","id":"sl/ofcp7n","slide":9,"title":"08 / ВОВЛЕЧЕНИЕ","textShapes":14}
+{"kind":"textbox","id":"sh/r2h4j650","slide":9,"text":"08 / ВОВЛЕЧЕНИЕ","textPreview":"08 / ВОВЛЕЧЕНИЕ","textChars":15,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/c3q5cb65","slide":9,"bbox":[49,105,239,502]}
+{"kind":"textbox","id":"sh/2d8n61o3","slide":9,"text":"БОНУСЫ","textPreview":"БОНУСЫ","textChars":6,"textLines":1,"bbox":[48,617,241,18]}
+{"kind":"shape","id":"sh/3eh4f65o","slide":9,"bbox":[299,105,239,502]}
+{"kind":"textbox","id":"sh/pgzmhgnu","slide":9,"text":"VIP-КЛУБ","textPreview":"VIP-КЛУБ","textChars":8,"textLines":1,"bbox":[298,617,241,18]}
+{"kind":"textbox","id":"sh/u9o32ho7","slide":9,"text":"Бонусы и VIP-клуб добавляют мотивацию","textPreview":"Бонусы и VIP-клуб добавляют мотивацию","textChars":37,"textLines":1,"bbox":[585,82,620,108]}
+{"kind":"textbox","id":"sh/fax4bm5s","slide":9,"text":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textPreview":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textChars":18,"textLines":1,"bbox":[585,220,280,18]}
+{"kind":"textbox","id":"sh/zixcr2t8","slide":9,"text":"Две разные механики усиливают повторные действия и доверие.","textPreview":"Две разные механики усиливают повторные действия и доверие.","textChars":59,"textLines":1,"bbox":[585,245,600,76]}
+{"kind":"shape","id":"sh/yhovixsn","slide":9,"bbox":[585,340,600,0]}
+{"kind":"textbox","id":"sh/l4futcby","slide":9,"text":"ЧТО ОБЪЕДИНЯЕТ","textPreview":"ЧТО ОБЪЕДИНЯЕТ","textChars":14,"textLines":1,"bbox":[585,368,280,18]}
+{"kind":"shape","id":"sh/0j6dk7ad","slide":9,"bbox":[585,401,8,8]}
+{"kind":"textbox","id":"sh/n6hcv2t4","slide":9,"text":"Бонусы — фирменный Tiffany и line-art","textPreview":"Бонусы — фирменный Tiffany и line-art","textChars":37,"textLines":1,"bbox":[607,394,578,40]}
+{"kind":"shape","id":"sh/m58vmhsj","slide":9,"bbox":[585,443,8,8]}
+{"kind":"textbox","id":"sh/98zuxcba","slide":9,"text":"VIP — белый premium-canvas и чёрный CTA","textPreview":"VIP — белый premium-canvas и чёрный CTA","textChars":39,"textLines":1,"bbox":[607,436,578,40]}
+{"kind":"shape","id":"sh/87qdo7ap","slide":9,"bbox":[585,485,8,8]}
+{"kind":"textbox","id":"sh/3adcjit0","slide":9,"text":"Оба экрана используют крупную вертикальную историю","textPreview":"Оба экрана используют крупную вертикальную историю","textChars":50,"textLines":1,"bbox":[607,478,578,40]}
+{"kind":"shape","id":"sh/294badsf","slide":9,"bbox":[585,572,600,82]}
+{"kind":"textbox","id":"sh/65cfylc3","slide":9,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[603,586,190,18]}
+{"kind":"textbox","id":"sh/76lgrqd8","slide":9,"text":"Средняя — VIP стоит вернуть один Tiffany-акцент","textPreview":"Средняя — VIP стоит вернуть один Tiffany-акцент","textChars":47,"textLines":1,"bbox":[603,610,564,30]}
+{"kind":"textbox","id":"sh/s7ux0vut","slide":9,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/t83yt0ve","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/83idwvqh","slide":9,"name":"","geometry":"roundRect","alt":"09-bonuses.png","bbox":[56,112,225,488]}
+{"kind":"image","id":"im/l07ulgr6","slide":9,"name":"","geometry":"roundRect","alt":"11-vip-club.png","bbox":[306,112,225,488]}
+{"kind":"notes","id":"nt/ofcp7n","slide":9,"text":"[Sources]\n- http://localhost:5173/bonuses — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/09-bonuses.png\n- http://localhost:5173/private-club — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/11-vip-club.png\n[/Sources]"}
+{"kind":"slide","id":"sl/82pi8g","slide":10,"title":"09 / О НАС","textShapes":14}
+{"kind":"textbox","id":"sh/mh0zu18v","slide":10,"text":"09 / О НАС","textPreview":"09 / О НАС","textChars":10,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/9kbi5w7m","slide":10,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/ze90zmpk","slide":10,"text":"О ПЛАТФОРМЕ","textPreview":"О ПЛАТФОРМЕ","textChars":11,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/yd0zqh8z","slide":10,"text":"«О нас» строит доверие через реальные цифры","textPreview":"«О нас» строит доверие через реальные цифры","textChars":43,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/lgri1w7a","slide":10,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/0fihsrq5","slide":10,"text":"Имидж быстро переходит в доказательства и факты.","textPreview":"Имидж быстро переходит в доказательства и факты.","textChars":48,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/jat0bqpo","slide":10,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/i9kz2lo3","slide":10,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/w7qdon2d","slide":10,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/hszuxsjy","slide":10,"text":"Фото здания с мягким overlay","textPreview":"Фото здания с мягким overlay","textChars":28,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/u5ovmdkn","slide":10,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/v6hcvi18","slide":10,"text":"Короткий манифест без перегруза","textPreview":"Короткий манифест без перегруза","textChars":31,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/836dk32h","slide":10,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/94fut8j2","slide":10,"text":"Tiffany-плашки для ключевых метрик","textPreview":"Tiffany-плашки для ключевых метрик","textChars":34,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/m1ovitkb","slide":10,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/72xcry1w","slide":10,"text":"Та же curved hero-геометрия","textPreview":"Та же curved hero-геометрия","textChars":27,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/kz6dg32l","slide":10,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/l0fup8jq","slide":10,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/1kn2x07i","slide":10,"text":"Высокая — брендовый storytelling без смены языка","textPreview":"Высокая — брендовый storytelling без смены языка","textChars":48,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/gje14vqx","slide":10,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/fi5kvqpc","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/1cre5cze","slide":10,"name":"","geometry":"roundRect","alt":"10-about.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/82pi8g","slide":10,"text":"[Sources]\n- http://localhost:5173/about — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/10-about.png\n[/Sources]"}
+{"kind":"slide","id":"sl/2fhnud","slide":11,"title":"10 / УМНАЯ ПАНЕЛЬ","textShapes":14}
+{"kind":"textbox","id":"sh/raxc72lc","slide":11,"text":"10 / УМНАЯ ПАНЕЛЬ","textPreview":"10 / УМНАЯ ПАНЕЛЬ","textChars":17,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/cb6t072x","slide":11,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/254budkv","slide":11,"text":"УМНЫЙ ИНВЕСТОР","textPreview":"УМНЫЙ ИНВЕСТОР","textChars":14,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/36dc3ilg","slide":11,"text":"Умная панель — сильный образ, но другой бренд-язык","textPreview":"Умная панель — сильный образ, но другой бренд-язык","textChars":50,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/47mtwn21","slide":11,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/p8vu5s3m","slide":11,"text":"Экран обещает энергию, технологичность и персональный расчёт.","textPreview":"Экран обещает энергию, технологичность и персональный расчёт.","textChars":61,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/uhkbqdkz","slide":11,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/fitczil4","slide":11,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/rmx0budg","slide":11,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/6lozipcv","slide":11,"text":"Чёрная grid-сцена","textPreview":"Чёрная grid-сцена","textChars":17,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/tofid4vm","slide":11,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/sn6hkzu1","slide":11,"text":"Неоновые розовый, оранжевый и синий","textPreview":"Неоновые розовый, оранжевый и синий","textChars":35,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/fqx0fuds","slide":11,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/epojm9c7","slide":11,"text":"Наклонённые glow-карточки","textPreview":"Наклонённые glow-карточки","textChars":25,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/1szih4vi","slide":11,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/grq1ozud","slide":11,"text":"Белый CTA без Tiffany-роли","textPreview":"Белый CTA без Tiffany-роли","textChars":26,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/vud03ad8","slide":11,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/ut4za5wn","slide":11,"text":"ГЛАВНЫЙ РАЗРЫВ","textPreview":"ГЛАВНЫЙ РАЗРЫВ","textChars":14,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/ylcbyh0n","slide":11,"text":"Сохранить драму, но вернуть палитру и форму системы","textPreview":"Сохранить драму, но вернуть палитру и форму системы","textChars":51,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/zmlc7218","slide":11,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/knet07it","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/03uhobqp","slide":11,"name":"","geometry":"roundRect","alt":"12-smart-panel.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/2fhnud","slide":11,"text":"[Sources]\n- http://localhost:5173/calculator — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/12-smart-panel.png\n[/Sources]"}
+{"kind":"slide","id":"sl/abbtx1","slide":12,"title":"11 / РОЛИ","textShapes":15}
+{"kind":"textbox","id":"sh/0fu1szup","slide":12,"text":"11 / РОЛИ","textPreview":"11 / РОЛИ","textChars":9,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/zel0jud4","slide":12,"bbox":[49,105,239,502]}
+{"kind":"textbox","id":"sh/dc3ih4vy","slide":12,"text":"ДЛЯ ПОКУПАТЕЛЯ","textPreview":"ДЛЯ ПОКУПАТЕЛЯ","textChars":14,"textLines":1,"bbox":[48,617,241,18]}
+{"kind":"shape","id":"sh/cbu1ozed","slide":12,"bbox":[299,105,239,502]}
+{"kind":"textbox","id":"sh/q9sjmpwn","slide":12,"text":"ДЛЯ ПРОДАВЦА","textPreview":"ДЛЯ ПРОДАВЦА","textChars":12,"textLines":1,"bbox":[298,617,241,18]}
+{"kind":"textbox","id":"sh/x8n2tovi","slide":12,"text":"Покупатель и продавец видят одну платформу","textPreview":"Покупатель и продавец видят одну платформу","textChars":42,"textLines":1,"bbox":[585,82,620,108]}
+{"kind":"textbox","id":"sh/w7e10jux","slide":12,"text":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textPreview":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textChars":18,"textLines":1,"bbox":[585,220,280,18]}
+{"kind":"textbox","id":"sh/idof2t4v","slide":12,"text":"Разные задачи получают разные истории, не разрушая общую систему.","textPreview":"Разные задачи получают разные истории, не разрушая общую систему.","textChars":65,"textLines":1,"bbox":[585,245,600,76]}
+{"kind":"shape","id":"sh/3exgbylg","slide":12,"bbox":[585,340,600,0]}
+{"kind":"textbox","id":"sh/4f6x43m1","slide":12,"text":"ЧТО ОБЪЕДИНЯЕТ","textPreview":"ЧТО ОБЪЕДИНЯЕТ","textChars":14,"textLines":1,"bbox":[585,368,280,18]}
+{"kind":"shape","id":"sh/5gfyd836","slide":12,"bbox":[585,401,8,8]}
+{"kind":"textbox","id":"sh/up4fyt4j","slide":12,"text":"Единый плавающий header","textPreview":"Единый плавающий header","textChars":23,"textLines":1,"bbox":[607,394,578,40]}
+{"kind":"shape","id":"sh/vqxg7el4","slide":12,"bbox":[585,443,8,8]}
+{"kind":"textbox","id":"sh/gr6x0jmp","slide":12,"text":"Крупный Montserrat-заголовок","textPreview":"Крупный Montserrat-заголовок","textChars":28,"textLines":1,"bbox":[607,436,578,40]}
+{"kind":"shape","id":"sh/hsfy9o3a","slide":12,"bbox":[585,485,8,8]}
+{"kind":"textbox","id":"sh/el8zad43","slide":12,"text":"Фото недвижимости и понятная выгода","textPreview":"Фото недвижимости и понятная выгода","textChars":35,"textLines":1,"bbox":[607,478,578,40]}
+{"kind":"shape","id":"sh/fmhgjilo","slide":12,"bbox":[585,527,8,8]}
+{"kind":"textbox","id":"sh/bq9cba10","slide":12,"text":"Чёрный CTA как сильное действие","textPreview":"Чёрный CTA как сильное действие","textChars":31,"textLines":1,"bbox":[607,520,578,40]}
+{"kind":"shape","id":"sh/ap0v25kf","slide":12,"bbox":[585,572,600,82]}
+{"kind":"textbox","id":"sh/xsbedkjq","slide":12,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[603,586,190,18]}
+{"kind":"textbox","id":"sh/cr2d4f2l","slide":12,"text":"Высокая — разные кампании, единая продуктовая рамка","textPreview":"Высокая — разные кампании, единая продуктовая рамка","textChars":51,"textLines":1,"bbox":[603,610,564,30]}
+{"kind":"textbox","id":"sh/zutwfu1w","slide":12,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/ytkv6pkb","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/7itora98","slide":12,"name":"","geometry":"roundRect","alt":"13-buyer.png","bbox":[56,112,225,488]}
+{"kind":"image","id":"im/yd0nu5sb","slide":12,"name":"","geometry":"roundRect","alt":"14-seller.png","bbox":[306,112,225,488]}
+{"kind":"notes","id":"nt/abbtx1","slide":12,"text":"[Sources]\n- http://localhost:5173/buyer — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/13-buyer.png\n- http://localhost:5173/seller — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/14-seller.png\n[/Sources]"}
+{"kind":"slide","id":"sl/kvy7lw","slide":13,"title":"12 / ОБЪЕКТ","textShapes":14}
+{"kind":"textbox","id":"sh/2twjadk7","slide":13,"text":"12 / ОБЪЕКТ","textPreview":"12 / ОБЪЕКТ","textChars":11,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/pgni58jy","slide":13,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/bip07i14","slide":13,"text":"ВИЛЛА","textPreview":"ВИЛЛА","textChars":5,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/ahgjedkj","slide":13,"text":"Карточка виллы говорит языком сделки","textPreview":"Карточка виллы говорит языком сделки","textChars":36,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/xk7i9sju","slide":13,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/cjy1gn2p","slide":13,"text":"Фотография, цена и действие считываются в правильном порядке.","textPreview":"Фотография, цена и действие считываются в правильном порядке.","textChars":61,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/zmp0bi10","slide":13,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/ylgjixkf","slide":13,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/4b6xk7qh","slide":13,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/5cfedc72","slide":13,"text":"Крупная фотография реальной недвижимости","textPreview":"Крупная фотография реальной недвижимости","textChars":40,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/i9ofix8b","slide":13,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/3axwb2pw","slide":13,"text":"Контекстная навигация вместо общего header","textPreview":"Контекстная навигация вместо общего header","textChars":42,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/sz6xo7qd","slide":13,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/d0fyhc7y","slide":13,"text":"Белые карточки и мягкая тень","textPreview":"Белые карточки и мягкая тень","textChars":28,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/qdofmx8n","slide":13,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/ryxgf2ps","slide":13,"text":"Tiffany показывает выбор валюты и CTA","textPreview":"Tiffany показывает выбор валюты и CTA","textChars":37,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/03qxsrqp","slide":13,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/14zylw7a","slide":13,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/9kve5cze","slide":13,"text":"Высокая — спокойная продуктовая поверхность","textPreview":"Высокая — спокойная продуктовая поверхность","textChars":43,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/ojmxcrit","slide":13,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/nydw3mh8","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/94julsru","slide":13,"name":"","geometry":"roundRect","alt":"20-property-villa.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/kvy7lw","slide":13,"text":"[Sources]\n- http://localhost:5173/property/villa-preview?buyer_detail_preview=1 — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/20-property-villa.png\n[/Sources]"}
+{"kind":"slide","id":"sl/31c5w8","slide":14,"title":"13 / DRAWERS","textShapes":15}
+{"kind":"textbox","id":"sh/vy5wr6dk","slide":14,"text":"13 / DRAWERS","textPreview":"13 / DRAWERS","textChars":12,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/wjex0bep","slide":14,"bbox":[49,105,239,502]}
+{"kind":"textbox","id":"sh/mtcfu1wn","slide":14,"text":"МЕНЮ","textPreview":"МЕНЮ","textChars":4,"textLines":1,"bbox":[48,617,241,18]}
+{"kind":"shape","id":"sh/nulwn6d8","slide":14,"bbox":[299,105,239,502]}
+{"kind":"textbox","id":"sh/9wnepwve","slide":14,"text":"ПОИСК","textPreview":"ПОИСК","textChars":5,"textLines":1,"bbox":[298,617,241,18]}
+{"kind":"textbox","id":"sh/6pgf6lw7","slide":14,"text":"Навигация раскрывается слоями","textPreview":"Навигация раскрывается слоями","textChars":29,"textLines":1,"bbox":[585,82,620,108]}
+{"kind":"textbox","id":"sh/7qpgzqdc","slide":14,"text":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textPreview":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textChars":18,"textLines":1,"bbox":[585,220,280,18]}
+{"kind":"textbox","id":"sh/3a1476p0","slide":14,"text":"Дополнительные действия появляются поверх контекста, не уводя со страницы.","textPreview":"Дополнительные действия появляются поверх контекста, не уводя со страницы.","textChars":74,"textLines":1,"bbox":[585,245,600,76]}
+{"kind":"shape","id":"sh/29s3e18f","slide":14,"bbox":[585,340,600,0]}
+{"kind":"textbox","id":"sh/pcjm9w76","slide":14,"text":"ЧТО ОБЪЕДИНЯЕТ","textPreview":"ЧТО ОБЪЕДИНЯЕТ","textChars":14,"textLines":1,"bbox":[585,368,280,18]}
+{"kind":"shape","id":"sh/obalgrql","slide":14,"bbox":[585,401,8,8]}
+{"kind":"textbox","id":"sh/be14b6pw","slide":14,"text":"Белые surfaces поверх размытого фона","textPreview":"Белые surfaces поверх размытого фона","textChars":36,"textLines":1,"bbox":[607,394,578,40]}
+{"kind":"shape","id":"sh/qds3i18r","slide":14,"bbox":[585,443,8,8]}
+{"kind":"textbox","id":"sh/dg3mdg72","slide":14,"text":"Крупные touch-targets","textPreview":"Крупные touch-targets","textChars":21,"textLines":1,"bbox":[607,436,578,40]}
+{"kind":"shape","id":"sh/cfulkbqh","slide":14,"bbox":[585,485,8,8]}
+{"kind":"textbox","id":"sh/zil4fqp8","slide":14,"text":"Аккордеоны в меню","textPreview":"Аккордеоны в меню","textChars":17,"textLines":1,"bbox":[607,478,578,40]}
+{"kind":"shape","id":"sh/yhc3ml8n","slide":14,"bbox":[585,527,8,8]}
+{"kind":"textbox","id":"sh/u9gfu9w7","slide":14,"text":"Поиск занимает только нужную высоту","textPreview":"Поиск занимает только нужную высоту","textChars":35,"textLines":1,"bbox":[607,520,578,40]}
+{"kind":"shape","id":"sh/vapg3eds","slide":14,"bbox":[585,572,600,82]}
+{"kind":"textbox","id":"sh/wbixwjed","slide":14,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[603,586,190,18]}
+{"kind":"textbox","id":"sh/hcry5ovi","slide":14,"text":"Высокая — единый слой, радиусы и поведение","textPreview":"Высокая — единый слой, радиусы и поведение","textChars":42,"textLines":1,"bbox":[603,610,564,30]}
+{"kind":"textbox","id":"sh/mlgfq9wv","slide":14,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/7mpwzedg","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/43udkzet","slide":14,"name":"","geometry":"roundRect","alt":"22-drawer-menu.png","bbox":[56,112,225,488]}
+{"kind":"image","id":"im/h0jepkfi","slide":14,"name":"","geometry":"roundRect","alt":"23-drawer-search.png","bbox":[306,112,225,488]}
+{"kind":"notes","id":"nt/31c5w8","slide":14,"text":"[Sources]\n- http://localhost:5173/auction — menu open — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/22-drawer-menu.png\n- http://localhost:5173/auction — search open — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/23-drawer-search.png\n[/Sources]"}
+{"kind":"slide","id":"sl/h51pa3","slide":15,"title":"14 / УВЕДОМЛЕНИЯ","textShapes":14}
+{"kind":"textbox","id":"sh/gnm1gv65","slide":15,"text":"14 / УВЕДОМЛЕНИЯ","textPreview":"14 / УВЕДОМЛЕНИЯ","textChars":16,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/vmd07qp0","slide":15,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/9kvi5g7u","slide":15,"text":"BOTTOM SHEET","textPreview":"BOTTOM SHEET","textChars":12,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/8jm1cb69","slide":15,"text":"Уведомления сохраняют спокойный тон","textPreview":"Уведомления сохраняют спокойный тон","textChars":35,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/7yd036po","slide":15,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/mx4jalo3","slide":15,"text":"Даже пустое состояние объясняет, что появится здесь дальше.","textPreview":"Даже пустое состояние объясняет, что появится здесь дальше.","textChars":59,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/dgz2hk7y","slide":15,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/sfq1of6d","slide":15,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/uhg76tcj","slide":15,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/vipozydo","slide":15,"text":"Bottom sheet с blur-контекстом","textPreview":"Bottom sheet с blur-контекстом","textChars":30,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/w3yp83u9","slide":15,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/h47618vu","slide":15,"text":"Три временные вкладки","textPreview":"Три временные вкладки","textChars":21,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/mdw72tc7","slide":15,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/7e5ovyds","slide":15,"text":"Нейтральная иллюстрация","textPreview":"Нейтральная иллюстрация","textChars":23,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/8fyp43ud","slide":15,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/9g76xovy","slide":15,"text":"Короткая человеческая формулировка","textPreview":"Короткая человеческая формулировка","textChars":34,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/6907edcb","slide":15,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/ra9o7idw","slide":15,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/321cjqpc","slide":15,"text":"Очень высокая — чистый системный компонент","textPreview":"Очень высокая — чистый системный компонент","textChars":42,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/2h8valor","slide":15,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/p4jul07i","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/bud4v6hk","slide":15,"name":"","geometry":"roundRect","alt":"21-notifications.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/h51pa3","slide":15,"text":"[Sources]\n- http://localhost:5173/auction — notifications open — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/21-notifications.png\n[/Sources]"}
+{"kind":"slide","id":"sl/wd6of9","slide":16,"title":"15 / ПРОФИЛЬ","textShapes":14}
+{"kind":"textbox","id":"sh/t8zytcbi","slide":16,"text":"15 / ПРОФИЛЬ","textPreview":"15 / ПРОФИЛЬ","textChars":12,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/6lozixs7","slide":16,"bbox":[81,69,277,584]}
+{"kind":"textbox","id":"sh/kj6hgna1","slide":16,"text":"ОБЗОР","textPreview":"ОБЗОР","textChars":5,"textLines":1,"bbox":[80,663,279,18]}
+{"kind":"textbox","id":"sh/lkfypsbm","slide":16,"text":"Профиль собирает путь пользователя в одном месте","textPreview":"Профиль собирает путь пользователя в одном месте","textChars":48,"textLines":1,"bbox":[440,78,760,108]}
+{"kind":"textbox","id":"sh/yhozexsv","slide":16,"text":"ПРЕИМУЩЕСТВО","textPreview":"ПРЕИМУЩЕСТВО","textChars":12,"textLines":1,"bbox":[440,218,280,18]}
+{"kind":"textbox","id":"sh/jixgn2tg","slide":16,"text":"Статус, разделы и ключевые направления доступны с одного экрана.","textPreview":"Статус, разделы и ключевые направления доступны с одного экрана.","textChars":64,"textLines":1,"bbox":[440,242,700,76]}
+{"kind":"shape","id":"sh/wfmxcnap","slide":16,"bbox":[440,336,700,0]}
+{"kind":"textbox","id":"sh/xgfylsba","slide":16,"text":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textPreview":"СТИЛИСТИЧЕСКИЕ ПРИЁМЫ","textChars":21,"textLines":1,"bbox":[440,365,280,18]}
+{"kind":"shape","id":"sh/dojahoz6","slide":16,"bbox":[440,399,8,8]}
+{"kind":"textbox","id":"sh/cna9ojil","slide":16,"text":"Tiffany-gradient задаёт персональный контекст","textPreview":"Tiffany-gradient задаёт персональный контекст","textChars":45,"textLines":1,"bbox":[462,392,678,42]}
+{"kind":"shape","id":"sh/rm1sfeh0","slide":16,"bbox":[440,443,8,8]}
+{"kind":"textbox","id":"sh/qlsrm90f","slide":16,"text":"Горизонтальная карусель разделов","textPreview":"Горизонтальная карусель разделов","textChars":32,"textLines":1,"bbox":[462,436,678,42]}
+{"kind":"shape","id":"sh/pkjad4zu","slide":16,"bbox":[440,487,8,8]}
+{"kind":"textbox","id":"sh/4jq9kji9","slide":16,"text":"Белые action-строки","textPreview":"Белые action-строки","textChars":19,"textLines":1,"bbox":[462,480,678,42]}
+{"kind":"shape","id":"sh/3ih8be14","slide":16,"bbox":[440,531,8,8]}
+{"kind":"textbox","id":"sh/2h8ri90j","slide":16,"text":"Контент продолжает общие направления","textPreview":"Контент продолжает общие направления","textChars":36,"textLines":1,"bbox":[462,524,678,42]}
+{"kind":"shape","id":"sh/hgzq94jy","slide":16,"bbox":[440,570,700,82]}
+{"kind":"textbox","id":"sh/gfq9gzid","slide":16,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[458,584,190,18]}
+{"kind":"textbox","id":"sh/8zu9wzq9","slide":16,"text":"Высокая — профиль ощущается частью продукта","textPreview":"Высокая — профиль ощущается частью продукта","textChars":43,"textLines":1,"bbox":[458,608,664,30]}
+{"kind":"textbox","id":"sh/t03ap4ru","slide":16,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/6xsru983","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/e5wv6hgf","slide":16,"name":"","geometry":"roundRect","alt":"01-profile.png","bbox":[88,76,263,570]}
+{"kind":"notes","id":"nt/wd6of9","slide":16,"text":"[Sources]\n- http://localhost:5173/profile — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/01-profile.png\n[/Sources]"}
+{"kind":"slide","id":"sl/3z3dp9","slide":17,"title":"16 / ПРОФИЛЬНЫЕ РАЗДЕЛЫ","textShapes":15}
+{"kind":"textbox","id":"sh/lc7m5k76","slide":17,"text":"16 / ПРОФИЛЬНЫЕ РАЗДЕЛЫ","textPreview":"16 / ПРОФИЛЬНЫЕ РАЗДЕЛЫ","textChars":23,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"textbox","id":"sh/y9w3u58v","slide":17,"text":"Один sheet-шаблон удерживает разные задачи","textPreview":"Один sheet-шаблон удерживает разные задачи","textChars":42,"textLines":1,"bbox":[64,75,1050,58]}
+{"kind":"shape","id":"sh/ja543ap0","slide":17,"bbox":[51,161,213,444]}
+{"kind":"textbox","id":"sh/xonm107a","slide":17,"text":"ДАННЫЕ","textPreview":"ДАННЫЕ","textChars":6,"textLines":1,"bbox":[50,615,215,18]}
+{"kind":"shape","id":"sh/alw3q58j","slide":17,"bbox":[267,161,213,444]}
+{"kind":"textbox","id":"sh/gji54z6t","slide":17,"text":"ИСТОРИЯ","textPreview":"ИСТОРИЯ","textChars":7,"textLines":1,"bbox":[266,615,215,18]}
+{"kind":"shape","id":"sh/h4rmd47e","slide":17,"bbox":[483,161,213,444]}
+{"kind":"textbox","id":"sh/wru1gvqh","slide":17,"text":"БРОНИ","textPreview":"БРОНИ","textChars":5,"textLines":1,"bbox":[482,615,215,18]}
+{"kind":"textbox","id":"sh/v6l0nqpw","slide":17,"text":"ОБЩИЙ ПАТТЕРН","textPreview":"ОБЩИЙ ПАТТЕРН","textChars":13,"textLines":1,"bbox":[744,176,280,18]}
+{"kind":"textbox","id":"sh/u5cje58b","slide":17,"text":"Имидж сверху.\nЗадача снизу.\nОдно действие.","textPreview":"Имидж сверху. | Задача снизу. | Одно действие.","textChars":42,"textLines":3,"bbox":[744,208,420,142]}
+{"kind":"shape","id":"sh/943il07q","slide":17,"bbox":[744,370,410,0]}
+{"kind":"shape","id":"sh/83u1cvq5","slide":17,"bbox":[744,409,8,8]}
+{"kind":"textbox","id":"sh/7210jqpk","slide":17,"text":"Одинаковая кнопка закрытия","textPreview":"Одинаковая кнопка закрытия","textChars":26,"textLines":1,"bbox":[766,402,398,41]}
+{"kind":"shape","id":"sh/m1sjal8f","slide":17,"bbox":[744,452,8,8]}
+{"kind":"textbox","id":"sh/t0n2xk7a","slide":17,"text":"Белая curved surface","textPreview":"Белая curved surface","textChars":20,"textLines":1,"bbox":[766,445,398,41]}
+{"kind":"shape","id":"sh/sze1ofqp","slide":17,"bbox":[744,495,8,8]}
+{"kind":"textbox","id":"sh/c3mlk3yl","slide":17,"text":"Tiffany CTA","textPreview":"Tiffany CTA","textChars":11,"textLines":1,"bbox":[766,488,398,41]}
+{"kind":"shape","id":"sh/d4vmtof6","slide":17,"bbox":[744,538,8,8]}
+{"kind":"textbox","id":"sh/q143itgv","slide":17,"text":"Понятные empty states","textPreview":"Понятные empty states","textChars":21,"textLines":1,"bbox":[766,531,398,41]}
+{"kind":"shape","id":"sh/r2d4ryx0","slide":17,"bbox":[744,577,430,82]}
+{"kind":"textbox","id":"sh/4zmlgjyp","slide":17,"text":"ЕДИНАЯ СИСТЕМА","textPreview":"ЕДИНАЯ СИСТЕМА","textChars":14,"textLines":1,"bbox":[762,591,190,18]}
+{"kind":"textbox","id":"sh/p0v2pofa","slide":17,"text":"Структура стабильна; art direction изображений стоит унифицировать","textPreview":"Структура стабильна; art direction изображений стоит унифицировать","textChars":66,"textLines":1,"bbox":[762,615,394,30]}
+{"kind":"textbox","id":"sh/2xk3e9gj","slide":17,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/3ydknex4","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/lgnid8ji","slide":17,"name":"","geometry":"roundRect","alt":"15-profile-data.png","bbox":[58,168,199,430]}
+{"kind":"image","id":"im/ydcz2tkr","slide":17,"name":"","geometry":"roundRect","alt":"16-profile-history.png","bbox":[274,168,199,430]}
+{"kind":"image","id":"im/2dovixgf","slide":17,"name":"","geometry":"roundRect","alt":"17-profile-bookings.png","bbox":[490,168,199,430]}
+{"kind":"notes","id":"nt/3z3dp9","slide":17,"text":"[Sources]\n- http://localhost:5173/profile?data=1\n- audit/mobile-showcase-2026-08-23/screenshots/15-profile-data.png\n- http://localhost:5173/profile?history=1\n- audit/mobile-showcase-2026-08-23/screenshots/16-profile-history.png\n- http://localhost:5173/profile?bookings=1\n- audit/mobile-showcase-2026-08-23/screenshots/17-profile-bookings.png\n[/Sources]"}
+{"kind":"slide","id":"sl/xfz2x0","slide":18,"title":"17 / ФИНАНСЫ","textShapes":15}
+{"kind":"textbox","id":"sh/8ze5gjud","slide":18,"text":"17 / ФИНАНСЫ","textPreview":"17 / ФИНАНСЫ","textChars":12,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"shape","id":"sh/ny54nets","slide":18,"bbox":[49,105,239,502]}
+{"kind":"textbox","id":"sh/x47mtobu","slide":18,"text":"ПОДПИСКИ","textPreview":"ПОДПИСКИ","textChars":8,"textLines":1,"bbox":[48,617,241,18]}
+{"kind":"shape","id":"sh/w3y5kju9","slide":18,"bbox":[299,105,239,502]}
+{"kind":"textbox","id":"sh/a1gni9cj","slide":18,"text":"ДЕПОЗИТ","textPreview":"ДЕПОЗИТ","textChars":7,"textLines":1,"bbox":[298,617,241,18]}
+{"kind":"textbox","id":"sh/d83mhkbq","slide":18,"text":"Подписки и депозит делают деньги понятными","textPreview":"Подписки и депозит делают деньги понятными","textChars":42,"textLines":1,"bbox":[585,82,620,108]}
+{"kind":"textbox","id":"sh/c7ul8zu5","slide":18,"text":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textPreview":"ОБЩЕЕ ПРЕИМУЩЕСТВО","textChars":18,"textLines":1,"bbox":[585,220,280,18]}
+{"kind":"textbox","id":"sh/qd4vypgz","slide":18,"text":"Финансовые действия остаются ясными даже на маленьком экране.","textPreview":"Финансовые действия остаются ясными даже на маленьком экране.","textChars":61,"textLines":1,"bbox":[585,245,600,76]}
+{"kind":"shape","id":"sh/redw7uxk","slide":18,"bbox":[585,340,600,0]}
+{"kind":"textbox","id":"sh/cfmx0zy5","slide":18,"text":"ЧТО ОБЪЕДИНЯЕТ","textPreview":"ЧТО ОБЪЕДИНЯЕТ","textChars":14,"textLines":1,"bbox":[585,368,280,18]}
+{"kind":"shape","id":"sh/dgfe94fq","slide":18,"bbox":[585,401,8,8]}
+{"kind":"textbox","id":"sh/ehof2pgb","slide":18,"text":"Крупные суммы и тарифы","textPreview":"Крупные суммы и тарифы","textChars":22,"textLines":1,"bbox":[607,394,578,40]}
+{"kind":"shape","id":"sh/zixwbuxg","slide":18,"bbox":[585,443,8,8]}
+{"kind":"textbox","id":"sh/036x4zy1","slide":18,"text":"Tiffany-gradient обозначает финансовую зону","textPreview":"Tiffany-gradient обозначает финансовую зону","textChars":43,"textLines":1,"bbox":[607,436,578,40]}
+{"kind":"shape","id":"sh/14fed4fm","slide":18,"bbox":[585,485,8,8]}
+{"kind":"textbox","id":"sh/m5of69g7","slide":18,"text":"Белые surfaces разделяют задачи","textPreview":"Белые surfaces разделяют задачи","textChars":31,"textLines":1,"bbox":[607,478,578,40]}
+{"kind":"shape","id":"sh/n6xwfexs","slide":18,"bbox":[585,527,8,8]}
+{"kind":"textbox","id":"sh/jahw3ed0","slide":18,"text":"Основное действие всегда заметно","textPreview":"Основное действие всегда заметно","textChars":32,"textLines":1,"bbox":[607,520,578,40]}
+{"kind":"shape","id":"sh/y98vu9cf","slide":18,"bbox":[585,572,600,82]}
+{"kind":"textbox","id":"sh/5czepovq","slide":18,"text":"СВЯЗЬ С СИСТЕМОЙ","textPreview":"СВЯЗЬ С СИСТЕМОЙ","textChars":16,"textLines":1,"bbox":[603,586,190,18]}
+{"kind":"textbox","id":"sh/kbqdwju5","slide":18,"text":"Высокая — разные функции используют общий финансовый тон","textPreview":"Высокая — разные функции используют общий финансовый тон","textChars":56,"textLines":1,"bbox":[603,610,564,30]}
+{"kind":"textbox","id":"sh/b6xczudo","slide":18,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/a5ovq9c3","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"image","id":"im/zmxc321k","slide":18,"name":"","geometry":"roundRect","alt":"18-profile-subscriptions.png","bbox":[56,112,225,488]}
+{"kind":"image","id":"im/qxob6dk3","slide":18,"name":"","geometry":"roundRect","alt":"24-profile-deposit.png","bbox":[306,112,225,488]}
+{"kind":"notes","id":"nt/xfz2x0","slide":18,"text":"[Sources]\n- http://localhost:5173/profile?subscriptions=1 — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/18-profile-subscriptions.png\n- http://localhost:5173/deposit — captured at 390×844 on 2026-08-23\n- audit/mobile-showcase-2026-08-23/screenshots/24-profile-deposit.png\n[/Sources]"}
+{"kind":"slide","id":"sl/367cen","slide":19,"title":"18 / ЕДИНСТВО СИСТЕМЫ","textShapes":19}
+{"kind":"textbox","id":"sh/y9g76p0v","slide":19,"text":"18 / ЕДИНСТВО СИСТЕМЫ","textPreview":"18 / ЕДИНСТВО СИСТЕМЫ","textChars":21,"textLines":1,"bbox":[64,40,500,20]}
+{"kind":"textbox","id":"sh/lc76h4zm","slide":19,"text":"Стилистика едина в ядре — исключения точечные","textPreview":"Стилистика едина в ядре — исключения точечные","textChars":45,"textLines":1,"bbox":[64,76,1080,52]}
+{"kind":"textbox","id":"sh/kbyp8zi1","slide":19,"text":"Критерии: header, палитра, типографика, surfaces и роль фотографии.","textPreview":"Критерии: header, палитра, типографика, surfaces и роль фотографии.","textChars":67,"textLines":1,"bbox":[64,132,860,28]}
+{"kind":"shape","id":"sh/7e9ojehc","slide":19,"bbox":[64,199,1152,0]}
+{"kind":"textbox","id":"sh/6dg7a907","slide":19,"text":"ЯДРО ПРОДУКТА","textPreview":"ЯДРО ПРОДУКТА","textChars":13,"textLines":1,"bbox":[64,223,230,24]}
+{"kind":"textbox","id":"sh/tgr6l4zi","slide":19,"text":"Аукцион · Доли · Долги · Тест-драйв · Объект","textPreview":"Аукцион · Доли · Долги · Тест-драйв · Объект","textChars":44,"textLines":1,"bbox":[300,219,650,34]}
+{"kind":"shape","id":"sh/sfipczix","slide":19,"bbox":[986,215,220,42]}
+{"kind":"textbox","id":"sh/fi9oneho","slide":19,"text":"ВЫСОКАЯ","textPreview":"ВЫСОКАЯ","textChars":7,"textLines":1,"bbox":[986,215,220,42]}
+{"kind":"shape","id":"sh/uh07e903","slide":19,"bbox":[64,293,1152,0]}
+{"kind":"textbox","id":"sh/0z2x4vmd","slide":19,"text":"ДОВЕРИЕ И РОЛИ","textPreview":"ДОВЕРИЕ И РОЛИ","textChars":14,"textLines":1,"bbox":[64,317,230,24]}
+{"kind":"textbox","id":"sh/10byx0ny","slide":19,"text":"О нас · Покупатель · Продавец · Профиль · Депозит","textPreview":"О нас · Покупатель · Продавец · Профиль · Депозит","textChars":49,"textLines":1,"bbox":[300,313,650,34]}
+{"kind":"shape","id":"sh/ex0f2l47","slide":19,"bbox":[986,309,220,42]}
+{"kind":"textbox","id":"sh/zy9gvq5s","slide":19,"text":"ВЫСОКАЯ","textPreview":"ВЫСОКАЯ","textChars":7,"textLines":1,"bbox":[986,309,220,42]}
+{"kind":"shape","id":"sh/on2h8fm9","slide":19,"bbox":[64,387,1152,0]}
+{"kind":"textbox","id":"sh/9oby10nu","slide":19,"text":"ВОВЛЕЧЕНИЕ","textPreview":"ВОВЛЕЧЕНИЕ","textChars":10,"textLines":1,"bbox":[64,411,230,24]}
+{"kind":"textbox","id":"sh/m1kz6543","slide":19,"text":"Бонусы · VIP-клуб · Главная","textPreview":"Бонусы · VIP-клуб · Главная","textChars":27,"textLines":1,"bbox":[300,407,650,34]}
+{"kind":"shape","id":"sh/nmtgza5o","slide":19,"bbox":[986,403,220,42]}
+{"kind":"textbox","id":"sh/wrmhcfml","slide":19,"text":"СРЕДНЯЯ","textPreview":"СРЕДНЯЯ","textChars":7,"textLines":1,"bbox":[986,403,220,42]}
+{"kind":"shape","id":"sh/xsvy5knq","slide":19,"bbox":[64,481,1152,0]}
+{"kind":"textbox","id":"sh/58rypkfa","slide":19,"text":"ИНСТРУМЕНТЫ","textPreview":"ИНСТРУМЕНТЫ","textChars":11,"textLines":1,"bbox":[64,505,230,24]}
+{"kind":"textbox","id":"sh/k7ixwfep","slide":19,"text":"Понравилось · Сравнение · Умная панель","textPreview":"Понравилось · Сравнение · Умная панель","textChars":38,"textLines":1,"bbox":[300,501,650,34]}
+{"kind":"shape","id":"sh/j69gnax4","slide":19,"bbox":[986,497,220,42]}
+{"kind":"textbox","id":"sh/il0fu5wj","slide":19,"text":"НЕРАВНОМЕРНАЯ","textPreview":"НЕРАВНОМЕРНАЯ","textChars":13,"textLines":1,"bbox":[986,497,220,42]}
+{"kind":"shape","id":"sh/tcrytkf6","slide":19,"bbox":[64,585,1152,0]}
+{"kind":"textbox","id":"sh/sbih0fel","slide":19,"text":"Главный вывод","textPreview":"Главный вывод","textChars":13,"textLines":1,"bbox":[64,612,220,22]}
+{"kind":"textbox","id":"sh/7a9grux0","slide":19,"text":"Пользователь узнаёт SellYourBrick по фото, крупному Montserrat, белым surfaces и Tiffany-действиям.","textPreview":"Пользователь узнаёт SellYourBrick по фото, крупному Montserrat, белым surfaces и Tiffany-действиям.","textChars":99,"textLines":1,"bbox":[300,604,900,50]}
+{"kind":"textbox","id":"sh/690fypwf","slide":19,"text":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textPreview":"SELLYOURBRICK  •  MOBILE PRODUCT SHOWCASE","textChars":41,"textLines":1,"bbox":[64,684,560,16]}
+{"kind":"textbox","id":"sh/9g7yh0f2","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1170,681,46,18]}
+{"kind":"notes","id":"nt/367cen","slide":19,"text":"[Sources]\n- Visual synthesis based on screenshots 01–24 in the current audit run\n- src/App.jsx\n- src/pages/PropertyDetailPage.jsx\n[/Sources]"}
+{"kind":"slide","id":"sl/pvhjkx","slide":20,"title":"Sell","textShapes":16}
+{"kind":"textbox","id":"sh/jytgb61k","slide":20,"text":"Sell","textPreview":"Sell","textChars":4,"textLines":1,"bbox":[64,46,61.5,36.08]}
+{"kind":"shape","id":"sh/kz2hkbi5","slide":20,"bbox":[123.86,47.64,68.88,32.8]}
+{"kind":"textbox","id":"sh/lkbydgjq","slide":20,"text":"Your","textPreview":"Your","textChars":4,"textLines":1,"bbox":[125.5,46,67.24,36.08]}
+{"kind":"textbox","id":"sh/6lkzm10b","slide":20,"text":"Brick","textPreview":"Brick","textChars":5,"textLines":1,"bbox":[196.84,46,82,36.08]}
+{"kind":"textbox","id":"sh/7mdgf61w","slide":20,"text":"СИСТЕМА УЖЕ\nУЗНАВАЕМА.","textPreview":"СИСТЕМА УЖЕ | УЗНАВАЕМА.","textChars":22,"textLines":2,"bbox":[64,158,590,150]}
+{"kind":"textbox","id":"sh/8nmhobih","slide":20,"text":"Нужно не менять характер,\nа вернуть исключения в общий язык.","textPreview":"Нужно не менять характер, | а вернуть исключения в общий язык.","textChars":60,"textLines":2,"bbox":[64,345,520,80]}
+{"kind":"shape","id":"sh/tovihgjm","slide":20,"bbox":[706,92,500,560]}
+{"kind":"textbox","id":"sh/up4zql07","slide":20,"text":"СОХРАНЯЕМ","textPreview":"СОХРАНЯЕМ","textChars":9,"textLines":1,"bbox":[754,138,280,18]}
+{"kind":"shape","id":"sh/vqd0jq1s","slide":20,"bbox":[754,183,8,8]}
+{"kind":"textbox","id":"sh/ry50budo","slide":20,"text":"Фото-led hero","textPreview":"Фото-led hero","textChars":13,"textLines":1,"bbox":[776,176,378,46]}
+{"kind":"shape","id":"sh/qxwjipc3","slide":20,"bbox":[754,231,8,8]}
+{"kind":"textbox","id":"sh/dk7id4vu","slide":20,"text":"Tiffany как навигация","textPreview":"Tiffany как навигация","textChars":21,"textLines":1,"bbox":[776,224,378,46]}
+{"kind":"shape","id":"sh/cjy1kzu9","slide":20,"bbox":[754,279,8,8]}
+{"kind":"textbox","id":"sh/3u507ads","slide":20,"text":"Белые rounded surfaces","textPreview":"Белые rounded surfaces","textChars":22,"textLines":1,"bbox":[776,272,378,46]}
+{"kind":"shape","id":"sh/2twje5c7","slide":20,"bbox":[754,327,8,8]}
+{"kind":"textbox","id":"sh/pwni9kvi","slide":20,"text":"Один главный CTA","textPreview":"Один главный CTA","textChars":16,"textLines":1,"bbox":[776,320,378,46]}
+{"kind":"shape","id":"sh/4ve1gfux","slide":20,"bbox":[754,382,400,0]}
+{"kind":"textbox","id":"sh/nqpkjetw","slide":20,"text":"ВЫРАВНИВАЕМ","textPreview":"ВЫРАВНИВАЕМ","textChars":11,"textLines":1,"bbox":[754,416,280,18]}
+{"kind":"shape","id":"sh/mpgjq9cb","slide":20,"bbox":[754,461,8,8]}
+{"kind":"textbox","id":"sh/ilk3idwj","slide":20,"text":"Умную панель","textPreview":"Умную панель","textChars":12,"textLines":1,"bbox":[776,454,378,42]}
+{"kind":"shape","id":"sh/jmt4bid4","slide":20,"bbox":[754,505,8,8]}
+{"kind":"textbox","id":"sh/kn2lknep","slide":20,"text":"Сравнение","textPreview":"Сравнение","textChars":9,"textLines":1,"bbox":[776,498,378,42]}
+{"kind":"shape","id":"sh/5obmd8va","slide":20,"bbox":[754,549,8,8]}
+{"kind":"textbox","id":"sh/69k3mdwv","slide":20,"text":"VIP-акцент","textPreview":"VIP-акцент","textChars":10,"textLines":1,"bbox":[776,542,378,42]}
+{"kind":"shape","id":"sh/7ad4fid0","slide":20,"bbox":[754,593,8,8]}
+{"kind":"textbox","id":"sh/sbmlonel","slide":20,"text":"Art direction профиля","textPreview":"Art direction профиля","textChars":21,"textLines":1,"bbox":[776,586,378,42]}
+{"kind":"textbox","id":"sh/tcvmhsv6","slide":20,"text":"MOBILE PRODUCT SHOWCASE  •  2026","textPreview":"MOBILE PRODUCT SHOWCASE  •  2026","textChars":32,"textLines":1,"bbox":[64,650,500,20]}
+{"kind":"notes","id":"nt/pvhjkx","slide":20,"text":"[Sources]\n- Final synthesis based on current-run screenshots and local product code\n[/Sources]"}

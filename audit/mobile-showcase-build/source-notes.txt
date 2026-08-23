@@ -1,0 +1,11 @@
+All screenshots were captured from the live local application in the current audit run on 2026-08-23.
+Viewport: 390 x 844 CSS pixels.
+Base URL: http://localhost:5173
+Screenshot folder: audit/mobile-showcase-2026-08-23/screenshots/
+Code sources used for routing and style interpretation:
+- src/App.jsx
+- src/utils/sectionPaths.js
+- src/pages/PropertyDetailPage.jsx
+- src/pages/TestPage.jsx
+
+No external research or third-party visual assets were used.

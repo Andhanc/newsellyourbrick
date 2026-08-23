@@ -717,6 +717,7 @@
   }
 
   .shares-page--shares-redesign .shares-v2-card {
+    aspect-ratio: auto;
     border-radius: 18px;
     box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
   }
@@ -732,10 +733,10 @@
   .shares-page--shares-redesign .shares-v2-card__favorite {
     top: 7px;
     right: 7px;
-    min-width: 44px;
-    min-height: 44px;
-    width: 44px;
-    height: 44px;
+    min-width: 36px;
+    min-height: 36px;
+    width: 36px;
+    height: 36px;
   }
 
   .shares-page--shares-redesign .shares-v2-card__badge {
@@ -752,47 +753,66 @@
   }
 
   .shares-page--shares-redesign .shares-v2-card__title {
-    min-height: 2.7em;
-    font-size: 13px;
+    min-height: 0;
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.2;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 
   .shares-page--shares-redesign .shares-v2-card__location {
-    margin-top: 3px;
-    font-size: 11px;
+    margin: 3px 0 0;
+    font-size: 0.72rem;
   }
 
   .shares-page--shares-redesign .shares-v2-card__metrics {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
   }
 
   .shares-page--shares-redesign .shares-v2-card__metric {
-    min-height: 58px;
-    gap: 3px;
-    padding: 7px;
+    min-height: 0;
+    gap: 1px;
+    padding: 0;
   }
 
   .shares-page--shares-redesign .shares-v2-card__metric-label,
   .shares-page--shares-redesign .shares-v2-card__progress-label,
   .shares-page--shares-redesign .shares-v2-card__progress-percent,
   .shares-page--shares-redesign .shares-v2-card__progress-note {
-    font-size: 11px;
+    font-size: 0.52rem;
     line-height: 1.25;
   }
 
   .shares-page--shares-redesign .shares-v2-card__metric-value {
-    font-size: 13px;
-    overflow-wrap: anywhere;
+    font-size: 0.66rem;
+    overflow-wrap: normal;
   }
 
   .shares-page--shares-redesign .shares-v2-card__metric small {
-    font-size: 10px;
+    display: none;
+  }
+
+  .shares-page--shares-redesign .shares-v2-card__progress-head,
+  .shares-page--shares-redesign .shares-v2-card__progress-track,
+  .shares-page--shares-redesign .shares-v2-card__progress-note {
+    margin: 0;
+  }
+
+  .shares-page--shares-redesign .shares-v2-card__progress-track {
+    height: 4px;
+  }
+
+  .shares-page--shares-redesign .shares-v2-card__progress-note {
+    display: none;
   }
 
   .shares-page--shares-redesign .shares-v2-card__invest-btn {
-    min-height: 44px;
-    padding: 8px 9px;
-    font-size: 11px;
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 0.68rem;
   }
 
   .shares-page--shares-redesign .buyer-status-ribbon {
