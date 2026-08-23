@@ -16,7 +16,7 @@ import CompareDecisionSummary from '../components/compare/CompareDecisionSummary
 import { CompareShowdown } from '../components/compare/CompareShowdown'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import useMobileLayout from '../hooks/useMobileLayout'
-import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
+import { filterComparePickerItems, getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -87,8 +87,9 @@ function formatTypeLabel(groupKey, t) {
   if (groupKey.startsWith('sale:')) {
     const sub = groupKey.slice(5)
     const m = {
-      auction: t('comparePage_saleAuction'),
-      buy_now: t('comparePage_saleBuyNow'),
+      standard: t('comparePage_saleStandard'),
+      auction: t('comparePage_saleStandard'),
+      buy_now: t('comparePage_saleStandard'),
       debt: t('comparePage_saleDebt'),
       shares: t('comparePage_saleShares'),
     }
@@ -707,6 +708,10 @@ const Compare = () => {
   const groupFilter = firstItem
     ? getComparisonGroupKey(firstItem.property, firstItem.mockCategory)
     : null
+  const pickerItems = useMemo(
+    () => filterComparePickerItems(favoriteAuctions, selectedKeys, groupFilter),
+    [favoriteAuctions, selectedKeys, groupFilter],
+  )
 
   const discardCompareSnapshot = useCallback(() => {
     snapshotRef.current = null
@@ -1094,7 +1099,7 @@ const Compare = () => {
       <section ref={heroRef} className="compare-hero" aria-labelledby="compare-hero-title">
         {isMobile ? (
           <CompareMobilePicker
-            items={favoriteAuctions}
+            items={pickerItems}
             selectedKeys={selectedKeys}
             groupFilter={groupFilter}
             open={pickerOpen}
@@ -1195,11 +1200,13 @@ const Compare = () => {
               </div>
               <p className="compare-hint">
                 {selectedKeys.length === 0 && t('comparePage_hint0')}
-                {selectedKeys.length === 1 && t('comparePage_hint1')}
+                {selectedKeys.length === 1 && (
+                  pickerItems.length < 2 ? t('comparePage_hint1Solo') : t('comparePage_hint1')
+                )}
                 {selectedKeys.length === 2 && t('comparePage_hint2')}
               </p>
               <ComparePickListingGrid
-                items={favoriteAuctions}
+                items={pickerItems}
                 selectedKeys={selectedKeys}
                 groupFilter={groupFilter}
                 onToggleSelect={toggleSelect}
@@ -1298,6 +1305,14 @@ const Compare = () => {
                     </tbody>
                     </table>
                   </div>
+                )}
+
+                {!isMobile && (
+                  <CompareDecisionSummary
+                    pair={pair}
+                    summary={decisionSummary}
+                    onOpenCalculator={openInvestorPanel}
+                  />
                 )}
 
                 {!isMobile && showInvestorPanelCta && (

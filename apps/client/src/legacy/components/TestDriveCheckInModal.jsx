@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiCheckCircle, FiUpload, FiX } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import BuyerCelebrationModal from './BuyerCelebrationModal'
 import './TestDriveCheckInModal.css'
@@ -103,6 +104,13 @@ function canSubmitForm(form) {
 export default function TestDriveCheckInModal({ open, bookingId, surveyToken, onClose, onSuccess }) {
   const { t } = useTranslation()
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [detail, setDetail] = useState(null)
@@ -676,7 +684,9 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
       }}
     >
       <div
+        ref={sheetDrag.panelRef}
         className={`td-checkin-modal${closingPanel}`}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="td-checkin-modal-title"

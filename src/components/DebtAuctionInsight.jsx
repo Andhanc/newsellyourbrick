@@ -11,6 +11,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react'
+import { assignSheetPanelRef, sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { getUserData } from '../services/authService'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
@@ -33,6 +34,14 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
   const titleId = useId()
   const dialogRef = useRef(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible: open,
+    isClosing: false,
+    requestClose: onClose,
+    dismissOnly: true,
+  })
+  const setDialogRef = (node) => assignSheetPanelRef(sheetDrag.panelRef, dialogRef)(node)
 
   useEffect(() => {
     if (!open) return undefined
@@ -94,13 +103,14 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
   return createPortal(
     <div className="debt-pro-modal" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section
-        ref={dialogRef}
+        ref={setDialogRef}
         className="debt-pro-modal__sheet"
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <div className="debt-pro-modal__handle" aria-hidden />
+        <div className="debt-pro-modal__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)} />
         <button type="button" className="debt-pro-modal__close" onClick={onClose} aria-label="Закрыть">
           <X size={20} />
         </button>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { FiArrowRight, FiCheck, FiX } from 'react-icons/fi'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import '../styles/drawerDismiss.css'
 import './PropertyDepositAccessDrawer.css'
@@ -8,6 +9,13 @@ import './PropertyDepositAccessDrawer.css'
 export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDeposit }) {
   const closeButtonRef = useRef(null)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose)
+  const sheetDrag = useBottomSheetDrag({
+    isOpen,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
+  })
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -38,12 +46,16 @@ export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDep
         aria-label="Закрыть окно"
       />
       <section
+        ref={sheetDrag.panelRef}
         className={`property-deposit-drawer__panel${isClosing ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing' : ''}`}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="property-deposit-drawer-title"
       >
-        <div className="property-deposit-drawer__handle" aria-hidden><span /></div>
+        <div className="property-deposit-drawer__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)}>
+          <span />
+        </div>
         <button
           ref={closeButtonRef}
           type="button"

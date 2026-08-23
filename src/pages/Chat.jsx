@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } fr
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle, FiX, FiSend } from 'react-icons/fi'
+import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle, FiX, FiSend, FiTrash2 } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { FaTelegram } from 'react-icons/fa6'
 import './Chat.css'
@@ -15,6 +15,7 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import {
   ensureLiveChatSession,
   fetchLiveChatMessagesSince,
@@ -35,15 +36,6 @@ function mergeAssistantPrefsFromText(prev, userMessage) {
     next.purpose = 'под сдачу'
   } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
     next.purpose = 'инвестиции'
-  }
-
-  if (lowerMessage.includes('испания') || lowerMessage.includes('spain') || lowerMessage.includes('españa') ||
-      lowerMessage.includes('tenerife') || lowerMessage.includes('тенерифе') || lowerMessage.includes('коста') ||
-      lowerMessage.includes('barcelona') || lowerMessage.includes('madrid')) {
-    next.location = 'Испания'
-  } else if (lowerMessage.includes('дубай') || lowerMessage.includes('dubai') || lowerMessage.includes('uae') ||
-             lowerMessage.includes('оаэ') || lowerMessage.includes('emirates')) {
-    next.location = 'Дубай'
   }
 
   const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
@@ -200,9 +192,10 @@ const Chat = () => {
         })
 
         if (mapped.length > 0) {
+          const welcomeText = t('chatWelcomeMessage')
           setMessages(prev => ({
             ...prev,
-            'tech-support': mapped
+            'tech-support': mapped.map((msg) => refreshAssistantMessageCopy(msg, welcomeText))
           }))
         }
       }
@@ -211,7 +204,7 @@ const Chat = () => {
     } finally {
       chatHistoryLoadedRef.current = true
     }
-  }, [chatUserId])
+  }, [chatUserId, t])
 
   useEffect(() => {
     let cancelled = false
@@ -249,6 +242,33 @@ const Chat = () => {
       console.error('Ошибка сохранения истории AI-чата в Chat.jsx:', e)
     }
   }, [messages, chatUserId, userPreferences])
+
+  const clearAiChatHistory = useCallback(() => {
+    if (!window.confirm(t('clearChatConfirm'))) return
+    try {
+      localStorage.removeItem(`aiChatHistory_${chatUserId}`)
+      localStorage.removeItem(`aiChatPreferences_${chatUserId}`)
+    } catch (error) {
+      console.error('Ошибка при очистке истории чата:', error)
+    }
+    setUserPreferences(defaultAssistantPreferences())
+    setInputMessage('')
+    const now = new Date()
+    setMessages((prev) => ({
+      ...prev,
+      'tech-support': [
+        {
+          id: Date.now(),
+          text: t('chatWelcomeMessage'),
+          sender: 'bot',
+          time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: now,
+          buttons: null,
+        },
+      ],
+    }))
+  }, [chatUserId, t])
 
   const scheduleManagerPoll = useCallback((token) => {
     if (managerPollRef.current) {
@@ -566,6 +586,16 @@ const Chat = () => {
         mergedPrefs,
         catalogProperties
       )
+
+      if (aiResponse?.preferences && typeof aiResponse.preferences === 'object') {
+        setUserPreferences((prev) => ({
+          ...prev,
+          ...aiResponse.preferences,
+          managerContactRequested: prev.managerContactRequested,
+          managerContactPendingChoice: prev.managerContactPendingChoice,
+          preferredContact: prev.preferredContact,
+        }))
+      }
 
       const botMessage = {
         id: Date.now() + 1,
@@ -954,13 +984,26 @@ const Chat = () => {
                     </p>
                   </div>
                 </div>
-                <button type="button" className="menu-button">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
-                  </svg>
-                </button>
+                {activeChat === 'tech-support' && techSupportMode === 'ai' ? (
+                  <button
+                    type="button"
+                    className="menu-button"
+                    onClick={clearAiChatHistory}
+                    aria-label={t('clearChat')}
+                    title={t('clearChat')}
+                    disabled={isLoadingAI}
+                  >
+                    <FiTrash2 size={18} />
+                  </button>
+                ) : (
+                  <button type="button" className="menu-button" aria-hidden="true" tabIndex={-1}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+                      <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                      <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                )}
               </div>
 
               <div className="chat-messages">
@@ -1072,15 +1115,9 @@ const Chat = () => {
                               })}
                             </div>
                           )}
-                          {message.sender === 'bot' && message.buttons && message.buttons.length > 0 && (
-                            <div
-                              className={`chat-msg-buttons${
-                                message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
-                                  ? ' chat-msg-buttons--contact'
-                                  : ''
-                              }`}
-                            >
-                              {message.buttons.map((button, btnIdx) => {
+                          {message.sender === 'bot' && visibleAssistantButtons(message.buttons).length > 0 && (
+                            <div className="chat-msg-buttons chat-msg-buttons--contact">
+                              {visibleAssistantButtons(message.buttons).map((button, btnIdx) => {
                                 if (typeof button === 'object' && button?.type === 'contact_pref') {
                                   const IconCmp =
                                     button.value === 'phone'

@@ -35,15 +35,27 @@
   outline: none;
 }
 
+.buyer-sheet--dragging .buyer-sheet__surface {
+  animation: none !important;
+  overflow: hidden;
+}
+
 .buyer-sheet__handle {
   position: sticky;
   top: 0;
   z-index: 2;
   display: flex;
   justify-content: center;
-  height: 22px;
-  padding-top: 8px;
+  min-height: 28px;
+  padding-top: 10px;
+  padding-bottom: 6px;
+  cursor: grab;
+  touch-action: none;
   background: linear-gradient(var(--buyer-warm) 70%, transparent);
+}
+
+.buyer-sheet__handle:active {
+  cursor: grabbing;
 }
 
 .buyer-sheet__handle span {

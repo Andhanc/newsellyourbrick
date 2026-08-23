@@ -8,6 +8,7 @@ import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
 import { userHasVipAccess } from '../hooks/useCabinetOverviewData'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './PrivateClubVipGate.css'
 
@@ -40,6 +41,13 @@ function formatVipUntilDate(iso, language) {
 export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClubActivated }) {
   const { t, i18n } = useTranslation()
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
+  })
   const [promoDigits, setPromoDigits] = useState(EMPTY_PROMO)
   const [submitting, setSubmitting] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -334,12 +342,18 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
         onClick={() => requestClose()}
       />
       <div
+        ref={sheetDrag.panelRef}
         className={`${shellClass}${closingShell}`}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="private-club-vip-title"
       >
-        <div className="private-club-vip__handle" aria-hidden={!isMobile} />
+        <div
+          className="private-club-vip__handle"
+          aria-hidden={!isMobile}
+          {...sheetHandleDragProps(sheetDrag)}
+        />
         <button type="button" className="private-club-vip__close" onClick={() => requestClose()} aria-label={t('close')}>
           <FiX size={20} />
         </button>

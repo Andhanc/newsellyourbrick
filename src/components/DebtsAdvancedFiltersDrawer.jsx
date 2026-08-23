@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import DebtsPageFilters from './DebtsPageFilters'
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { EMPTY_DEBTS_FILTERS } from '../utils/debtsPageFilters'
 import './DebtsAdvancedFiltersDrawer.css'
 
@@ -14,6 +15,13 @@ function DebtsAdvancedFiltersDrawer({
   purchaseCounts,
 }) {
   const { t } = useTranslation()
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible: open,
+    isClosing: false,
+    requestClose: onClose,
+    dismissOnly: true,
+  })
 
   if (!open) return null
 
@@ -34,7 +42,11 @@ function DebtsAdvancedFiltersDrawer({
         aria-label={t('close')}
         onClick={onClose}
       />
-      <div className="debts-advanced-filters-drawer__panel">
+      <div
+        ref={sheetDrag.panelRef}
+        className="debts-advanced-filters-drawer__panel"
+        style={sheetDrag.panelDragStyle}
+      >
         <div className="debts-advanced-filters-drawer__filters">
           <DebtsPageFilters
             filters={filters}

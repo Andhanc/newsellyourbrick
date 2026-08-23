@@ -19,8 +19,7 @@ import {
 } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { useTranslation } from 'react-i18next'
-import { triggerNativeFirstFavoriteNotification } from '../utils/nativeDomBridge'
+import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 
 const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
 const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
@@ -120,7 +119,6 @@ function PropertyFavoritesDrawersHost({
 }
 
 export function PropertyFavoritesProvider({ children }) {
-  const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const { pathname } = useLocation()
   const [dbKeys, setDbKeys] = useState(() => new Set())
@@ -237,6 +235,14 @@ export function PropertyFavoritesProvider({ children }) {
         return false
       }
 
+      const alreadyLiked = hasDbBackedProperty(property)
+        ? dbKeys.has(favoriteCompositeKey(property.id, property.source_table))
+        : Boolean(mockCategory && mockMap.get(`${mockCategory}-${property.id}`))
+      if (!alreadyLiked && isClosedForWishlist(property)) {
+        showNotification('Проданный объект нельзя добавить в избранное')
+        return false
+      }
+
       if (hasDbBackedProperty(property)) {
         const uid = getDbUserId()
         if (!uid) {
@@ -294,10 +300,8 @@ export function PropertyFavoritesProvider({ children }) {
           return false
         }
         dispatchFavoritesChanged()
-        if (showFirstFavoriteDrawer) {
-          setFirstFavoriteDrawerOpen(true)
-          void triggerNativeFirstFavoriteNotification(t('firstFavoriteNotification_body'))
-        } else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
+        if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
+        else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
         return !wasLiked
       }
 
@@ -313,13 +317,11 @@ export function PropertyFavoritesProvider({ children }) {
       setMockMap(nextMock)
       persistMockKey(mapKey, !wasLiked)
       dispatchFavoritesChanged()
-      if (showFirstFavoriteDrawer) {
-        setFirstFavoriteDrawerOpen(true)
-        void triggerNativeFirstFavoriteNotification(t('firstFavoriteNotification_body'))
-      } else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
+      if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
+      else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
       return !wasLiked
     },
-    [user, userLoaded, mockMap, dbKeys, t]
+    [user, userLoaded, mockMap, dbKeys]
   )
 
   const value = useMemo(

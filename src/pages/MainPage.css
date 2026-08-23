@@ -3010,6 +3010,13 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   display: inline-block;
 }
 
+.chat-widget__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .chat-widget__close {
   width: 32px;
   height: 32px;
@@ -3021,13 +3028,17 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
   flex-shrink: 0;
 }
 
-.chat-widget__close:hover {
+.chat-widget__close:hover:not(:disabled) {
   background: rgba(17, 24, 39, 0.15);
-  transform: scale(1.1);
+}
+
+.chat-widget__close:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .chat-widget__messages {

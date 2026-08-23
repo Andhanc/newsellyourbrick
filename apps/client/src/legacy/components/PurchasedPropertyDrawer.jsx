@@ -14,6 +14,7 @@ import {
   UserRoundCheck,
   X,
 } from 'lucide-react'
+import { assignSheetPanelRef, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { formatPurchaseDate, formatPurchaseMoney } from './PurchasedPropertyHistoryCard'
 import './PurchasedPropertyDrawer.css'
 
@@ -40,6 +41,14 @@ export default function PurchasedPropertyDrawer({
   const bodyRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: true,
+    visible: true,
+    isClosing: false,
+    requestClose: () => onCloseRef.current?.(),
+    dismissOnly: true,
+  })
+  const setDrawerRef = (node) => assignSheetPanelRef(sheetDrag.panelRef)(node)
 
   useEffect(() => {
     const previouslyFocused = document.activeElement
@@ -118,7 +127,9 @@ export default function PurchasedPropertyDrawer({
       }}
     >
       <aside
+        ref={setDrawerRef}
         className="purchase-drawer"
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="purchase-drawer-title"

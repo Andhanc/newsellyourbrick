@@ -162,10 +162,42 @@
 }
 
 .compare-picker__preview-copy { min-width: 0; }
-.compare-picker__preview-copy strong,
-.compare-picker__preview-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.compare-picker__preview-copy strong { font: 760 12px/1.2 var(--buyer-font-display, sans-serif); }
-.compare-picker__preview-copy small { margin-top: 4px; color: #66706e; font: 560 9px/1.2 var(--buyer-font-body, sans-serif); }
+.compare-picker__preview-copy strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 760 12px/1.2 var(--buyer-font-display, sans-serif);
+}
+
+.compare-picker__sale-tag {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 3px 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  font: 700 8px/1.15 var(--buyer-font-display, sans-serif);
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-picker__sale-tag--standard {
+  background: rgba(6, 63, 60, 0.1);
+  color: #075356;
+}
+
+.compare-picker__sale-tag--debt {
+  background: rgba(168, 95, 0, 0.12);
+  color: #8f5a00;
+}
+
+.compare-picker__sale-tag--shares {
+  background: rgba(78, 64, 168, 0.12);
+  color: #4d3da8;
+}
 .compare-picker__preview-price { color: #063f3c; font: 800 11px/1 var(--buyer-font-display, sans-serif); }
 
 .compare-picker__preview--skeleton {
@@ -305,10 +337,12 @@
 .compare-picker-drum__card > img { width: 92px; height: 102px; border-radius: 18px; object-fit: cover; }
 .compare-picker-drum__copy { min-width: 0; }
 .compare-picker-drum__copy strong,
-.compare-picker-drum__copy small,
 .compare-picker-drum__copy b { display: block; }
 .compare-picker-drum__copy strong { font: 780 15px/1.15 var(--buyer-font-display, sans-serif); }
-.compare-picker-drum__copy small { display: -webkit-box; margin-top: 5px; overflow: hidden; color: #66706e; font: 560 10px/1.35 var(--buyer-font-body, sans-serif); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.compare-picker-drum__copy .compare-picker__sale-tag {
+  margin-top: 5px;
+  font-size: 9px;
+}
 .compare-picker-drum__copy b { margin-top: 9px; color: #063f3c; font: 820 14px/1 var(--buyer-font-display, sans-serif); }
 
 .compare-picker-drum__select {

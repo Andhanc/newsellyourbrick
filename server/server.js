@@ -51,6 +51,7 @@ import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './e
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
+import { registerAssistantRoutes } from './assistant/routes.js';
 import { registerInvestorAiRoutes } from './investorAiRoutes.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
 import { registerNewsRoutes } from './newsRoutes.js';
@@ -148,7 +149,7 @@ console.log('[SERVER]    - Public Key:', emailJsPublicKey ? emailJsPublicKey.sub
 const aiProvider = getActiveAiProvider();
 const aiOk = isAiConfigured();
 console.log(
-  '[SERVER] 🤖 AI (POST /api/ai/intelligence-chat):',
+  '[SERVER] 🤖 AI (POST /api/ai/intelligence-chat, POST /api/ai/assistant-reply):',
   aiOk
     ? `✅ провайдер «${aiProvider.id}», модель ${aiProvider.defaultModel}${aiProvider.needsKey ? '' : ' (без ключа)'}`
     : `❌ провайдер «${aiProvider.id}» — нужен API-ключ или AI_PROVIDER=pollinations`,
@@ -193,6 +194,7 @@ app.use((req, res, next) => {
 });
 
 registerIntelligenceIoProxy(app);
+registerAssistantRoutes(app);
 registerInvestorAiRoutes(app);
 registerNewsRoutes(app);
 registerSeoRedirects(app);

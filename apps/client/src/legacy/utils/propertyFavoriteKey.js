@@ -90,6 +90,53 @@ export function normalizeSaleTypeForCompare(property) {
   return 'buy_now'
 }
 
+function isAuctionListing(property) {
+  if (!property) return false
+  return Boolean(
+    property.is_auction === 1 ||
+      property.is_auction === true ||
+      property.isAuction === true ||
+      String(property.sale_type || property.saleType || '').toLowerCase() === 'auction' ||
+      property.auction_end_date ||
+      property.auction_end_time ||
+      property.endTime ||
+      property.test_timer_end_date ||
+      property.auction_starting_price != null ||
+      property.auctionStartingPrice != null,
+  )
+}
+
+function hasBuyNowListing(property) {
+  if (!property) return false
+  const price = Number(property.price)
+  return Number.isFinite(price) && price > 0
+}
+
+/** Короткая подпись формата продажи для карточек сравнения. */
+export function formatCompareSaleTypeLabel(property, t) {
+  const group = normalizeSaleTypeForCompare(property)
+  if (group === 'shares') return t('comparePage_saleShares')
+  if (group === 'debt') return t('comparePage_saleDebt')
+  if (group === 'auction') {
+    return hasBuyNowListing(property)
+      ? t('comparePage_saleStandard')
+      : t('comparePage_saleAuction')
+  }
+  if (group === 'buy_now') return t('comparePage_saleBuyNow')
+  if (isAuctionListing(property) && hasBuyNowListing(property)) return t('comparePage_saleStandard')
+  if (isAuctionListing(property)) return t('comparePage_saleAuction')
+  if (hasBuyNowListing(property)) return t('comparePage_saleBuyNow')
+  return t('comparePage_saleStandard')
+}
+
+/** CSS-модификатор для бейджа типа продажи. */
+export function getCompareSaleTypeTone(property) {
+  const group = normalizeSaleTypeForCompare(property)
+  if (group === 'shares') return 'shares'
+  if (group === 'debt') return 'debt'
+  return 'standard'
+}
+
 /** Одинаковый формат продажи для сравнения; демо — по категории. */
 export function getComparisonGroupKey(property, mockCategory) {
   if (mockCategory) return `mock:${normalizeMockCategoryForCompare(mockCategory)}`

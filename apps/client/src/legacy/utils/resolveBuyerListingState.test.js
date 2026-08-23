@@ -81,3 +81,18 @@ test('unavailable is used only without a final commercial state', () => {
   assert.equal(resolveBuyerListingState({ status: 'sold', is_active: false }, NOW).state, 'sold')
   assert.equal(resolveBuyerListingState(null, NOW).state, 'unavailable')
 })
+
+test('sold and ended auctions stay out of favorites and comparison', async () => {
+  const { isClosedForWishlist } = await import('./resolveBuyerListingState.js')
+  assert.equal(isClosedForWishlist({ status: 'sold' }, NOW), true)
+  assert.equal(isClosedForWishlist({ sold_at: '2026-07-10T10:00:00Z' }, NOW), true)
+  assert.equal(
+    isClosedForWishlist({ isAuction: true, auction_end_date: '2026-07-14T11:59:59.000Z' }, NOW),
+    true,
+  )
+  assert.equal(isClosedForWishlist({ status: 'active' }, NOW), false)
+  assert.equal(
+    isClosedForWishlist({ is_auction: 1, auction_end_date: '2026-07-15T12:00:00.000Z' }, NOW),
+    false,
+  )
+})

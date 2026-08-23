@@ -71,3 +71,10 @@ test('completed comparison pair and AI/system results persist across navigation'
   assert.match(page, /discardCompareSnapshot/)
   assert.match(page, /comparePage_pickOtherPair/)
 })
+
+test('after the first pick the list keeps only the same sale type, treating auction and buy now as one', () => {
+  assert.match(page, /filterComparePickerItems\(favoriteAuctions, selectedKeys, groupFilter\)/)
+  assert.match(page, /items=\{pickerItems\}/)
+  assert.match(page, /comparePage_hint1Solo/)
+  assert.match(page, /comparePage_saleStandard/)
+})

@@ -9,6 +9,7 @@ const aiHost = await readFile(new URL('./GlobalAiChatHost.jsx', import.meta.url)
 const aiModal = await readFile(new URL('./AiChatModal.jsx', import.meta.url), 'utf8')
 const aiPanel = await readFile(new URL('./AiChatPanel.jsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('./SiteChatDock.css', import.meta.url), 'utf8')
+const hook = await readFile(new URL('../hooks/useSiteAiChatDock.js', import.meta.url), 'utf8')
 
 test('manager chat is hosted globally (modal desktop / drawer mobile)', () => {
   assert.match(managerHost, /GlobalManagerChatHost/)
@@ -17,6 +18,15 @@ test('manager chat is hosted globally (modal desktop / drawer mobile)', () => {
   assert.match(modal, /BuyerSheetShell/)
   assert.match(modal, /manager-chat-modal-root/)
   assert.match(modal, /chat-widget--sheet-drawer chat-widget--manager-drawer/)
+})
+
+test('AI chat header can clear conversation history', () => {
+  assert.match(aiPanel, /clearChatHistory/)
+  assert.match(aiPanel, /clearChat/)
+  assert.match(aiPanel, /FiTrash2/)
+  assert.match(hook, /function clearChatHistory|const clearChatHistory/)
+  assert.match(hook, /aiChatHistory_/)
+  assert.match(hook, /aiChatPreferences_/)
 })
 
 test('AI chat is hosted globally (modal desktop / drawer mobile)', () => {

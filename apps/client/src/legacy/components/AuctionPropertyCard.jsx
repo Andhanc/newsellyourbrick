@@ -346,6 +346,7 @@ export default function AuctionPropertyCard({
           </div>
         ) : null}
 
+        {state.isAuctionEndedCard ? null : (
         <button
           type="button"
           className={`auction-card__favorite${isFavorite ? ' auction-card__favorite--active' : ''}`}
@@ -355,6 +356,7 @@ export default function AuctionPropertyCard({
         >
           <Heart size={18} strokeWidth={2} fill={isFavorite ? 'currentColor' : 'none'} aria-hidden />
         </button>
+        )}
 
         {showFeatureBadges ? (
           <div className="auction-card__photo-icons" onClick={(e) => e.stopPropagation()}>

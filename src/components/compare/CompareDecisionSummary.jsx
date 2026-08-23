@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { FiArrowUpRight, FiCheckCircle } from 'react-icons/fi'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
-import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
+import { formatComparisonDecision, resolvePositivePropertyPrice } from '../../utils/compareDecision'
 import './CompareDecisionSummary.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -19,24 +19,11 @@ function propertyView(item, index, t) {
   }
 }
 
-function decisionText(summary, t) {
-  if (!summary || summary.leader === 'unknown') return t('comparePage_decisionUnknown')
-  if (summary.leader === 'tie') {
-    return t('comparePage_decisionTie')
-  }
-  const leader = summary.leader === 'left' ? t('comparePage_object1') : t('comparePage_object2')
-  return t('comparePage_decisionLead', {
-    leader: leader.toLowerCase(),
-    score: summary[summary.leader],
-    count: summary.compared,
-  })
-}
-
-function PropertyAction({ item, index, score, onSelect }) {
+function PropertyAction({ item, index, score, pct, decided, isLead, onSelect }) {
   const { t } = useTranslation()
   const view = propertyView(item, index, t)
   return (
-    <article className="compare-decision__property">
+    <article className={`compare-decision__property${isLead ? ' compare-decision__property--lead' : ''}`}>
       <div className="compare-decision__property-main">
         <img
           src={view.image}
@@ -47,10 +34,11 @@ function PropertyAction({ item, index, score, onSelect }) {
           }}
         />
         <div>
-          <span>{t('comparePage_signalsLabel', { index, score })}</span>
+          <span>{t('comparePage_signalsLabel', { index, pct: pct || 0 })}</span>
           <strong>{view.title}</strong>
-          <small>{view.price}</small>
+          <small>{t('comparePage_scorePoints', { score: score || 0, count: decided || 0 })} · {view.price}</small>
         </div>
+        <em className="compare-decision__pct" aria-hidden="true">{pct || 0}%</em>
       </div>
       <button
         type="button"
@@ -74,9 +62,38 @@ export default function CompareDecisionSummary({ pair, summary, onOpenCalculator
       <header className="compare-decision__header">
         <span className="compare-decision__eyebrow"><FiCheckCircle aria-hidden="true" /> {t('comparePage_decisionEyebrow')}</span>
         <h2 id="compare-decision-title">{t('comparePage_decisionTitle')}</h2>
-        <p className="compare-decision__result">{decisionText(summary, t)}</p>
+        <p className="compare-decision__result">{formatComparisonDecision(summary, t)}</p>
+        {summary?.decided > 0 ? (
+          <div
+            className="compare-decision__bar"
+            role="img"
+            aria-label={t('comparePage_scoreBarAria', {
+              left: summary.leftPct,
+              right: summary.rightPct,
+              count: summary.decided,
+            })}
+          >
+            {summary.leftPct > 0 ? (
+              <span
+                className="compare-decision__bar-side compare-decision__bar-side--left"
+                style={{ flexGrow: summary.leftPct, flexBasis: 0 }}
+              >
+                {summary.leftPct}%
+              </span>
+            ) : null}
+            {summary.rightPct > 0 ? (
+              <span
+                className="compare-decision__bar-side compare-decision__bar-side--right"
+                style={{ flexGrow: summary.rightPct, flexBasis: 0 }}
+              >
+                {summary.rightPct}%
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         <p className="compare-decision__meta">
-          {t('comparePage_decisionMeta', { count: summary?.compared || 0 })}
+          {t('comparePage_decisionMeta', { count: summary?.decided || 0 })}
+          {summary?.tie > 0 ? ` ${t('comparePage_decisionTiesNote', { count: summary.tie })}` : ''}
         </p>
       </header>
 
@@ -85,12 +102,18 @@ export default function CompareDecisionSummary({ pair, summary, onOpenCalculator
           item={pair.left}
           index={1}
           score={summary?.left || 0}
+          pct={summary?.leftPct || 0}
+          decided={summary?.decided || 0}
+          isLead={summary?.leader === 'left'}
           onSelect={() => onOpenCalculator('left')}
         />
         <PropertyAction
           item={pair.right}
           index={2}
           score={summary?.right || 0}
+          pct={summary?.rightPct || 0}
+          decided={summary?.decided || 0}
+          isLead={summary?.leader === 'right'}
           onSelect={() => onOpenCalculator('right')}
         />
       </div>

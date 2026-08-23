@@ -24,6 +24,7 @@ import {
   filterOwnerTestDriveRows,
   getOwnerTestDriveUserId,
 } from '../utils/ownerTestDriveList'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import { publicAsset } from '../utils/publicAsset'
 import '../components/OwnerTestDriveSection.css'
@@ -525,6 +526,13 @@ export default function OwnerTestDriveSplitView({
     setMobileDrawerTop(null)
   }, {
     duration: DRAWER_DISMISS_MS.spring,
+  })
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: mobileDrawerOpen,
+    visible: drawerVisible,
+    isClosing: drawerClosing,
+    requestClose: requestDrawerClose,
+    dismissOnly: true,
   })
 
   const showPropertyList = true
@@ -1041,12 +1049,14 @@ export default function OwnerTestDriveSplitView({
           onClick={() => requestDrawerClose()}
         />
         <aside
+          ref={sheetDrag.panelRef}
           className={`otd-property-drawer__sheet${openSheet}${closingSheet}`}
+          style={sheetDrag.panelDragStyle}
           role="dialog"
           aria-modal="true"
           aria-label={selectedProperty.title}
         >
-          <div className="otd-property-drawer__handle" aria-hidden>
+          <div className="otd-property-drawer__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)}>
             <span />
           </div>
           <header className="otd-property-drawer__head">

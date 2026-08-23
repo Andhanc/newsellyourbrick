@@ -720,6 +720,7 @@ function AuctionMobileItem({
               containerClassName="rounded-[inherit]"
             />
             <BuyerStatusRibbon listingState={listingState} />
+            {isAuctionEndedCard ? null : (
             <button
               ref={favoriteBtnRef}
               type="button"
@@ -739,6 +740,7 @@ function AuctionMobileItem({
                 />
               </svg>
             </button>
+            )}
             {viewerHasVip &&
             isPrivateClubAuctionLot(property) &&
             !isAuctionListingEnded(property) &&

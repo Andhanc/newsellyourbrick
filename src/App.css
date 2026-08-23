@@ -277,6 +277,7 @@ body.auction-mobile-lock-x .new-header-spacer {
 /* Открыто бургер-меню (Header / MainPage): убираем плавающую кнопку AI под панелью */
 html.site-nav-drawer-open .home-auction-floats > button.ai-button,
 html.site-nav-drawer-open .shares-floats > button.ai-button,
+html.site-nav-drawer-open .md-discover-ai-floats > button.ai-button,
 html.site-nav-drawer-open .ai-assistant-dock > button.ai-button,
 html.site-nav-drawer-open .property-list-header .ai-button {
   visibility: hidden !important;
@@ -300,6 +301,7 @@ html.login-modal-open button.ai-button {
 html.site-footer-near button.ai-button,
 html.site-footer-near .ai-assistant-dock > button.ai-button,
 html.site-footer-near .home-auction-floats > button.ai-button,
+html.site-footer-near .md-discover-ai-floats > button.ai-button,
 html.site-footer-near .shares-floats > button.ai-button,
 html.site-footer-near .property-list-header button.ai-button {
   opacity: 0 !important;

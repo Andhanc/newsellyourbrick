@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiBell, FiCheck, FiMail, FiX } from 'react-icons/fi'
+import { sheetHandleDragProps, useBottomSheetDrag } from '@/hooks/useBottomSheetDrag'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '@/hooks/useDrawerDismiss'
 
 const STORAGE_KEY = 'syb_newsletter_subscription'
@@ -26,6 +27,13 @@ export default function NewsSubscriptionDrawer({ isOpen, onClose }) {
   const inputRef = useRef(null)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
+  })
+  const sheetDrag = useBottomSheetDrag({
+    isOpen,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
   })
 
   useEffect(() => {
@@ -96,11 +104,13 @@ export default function NewsSubscriptionDrawer({ isOpen, onClose }) {
         aria-describedby="news-subscription-description"
       >
         <section
+          ref={sheetDrag.panelRef}
           className={`news-subscription-drawer__panel${
             isClosing ? ' news-subscription-drawer__panel--closing' : ''
           }`}
+          style={sheetDrag.panelDragStyle}
         >
-          <div className="news-subscription-drawer__handle" aria-hidden>
+          <div className="news-subscription-drawer__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)}>
             <span />
           </div>
           <button

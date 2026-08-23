@@ -11,6 +11,7 @@ import {
   pickLocalRecommendations,
   sanitizeNavigationLinks,
   stripModelReasoning,
+  visibleAssistantButtons,
 } from '../utils/siteAssistantHelpers'
 
 /** Модель в теле запроса; на сервере подменяется на модель активного провайдера (Pollinations / OpenRouter / …). */
@@ -26,6 +27,80 @@ function getChatCompletionsUrl() {
     return `${getApiBaseUrlSync()}/ai/intelligence-chat`
   }
   return `${getApiBaseUrlSync()}/ai/intelligence-chat`
+}
+
+function getAssistantReplyUrl() {
+  return `${getApiBaseUrlSync()}/ai/assistant-reply`
+}
+
+function isShareListing(item) {
+  return (
+    item?.isShare === true ||
+    item?.is_share === 1 ||
+    item?.is_share === true ||
+    item?.is_shared_ownership === 1 ||
+    item?.is_shared_ownership === true ||
+    item?.sale_type === 'share'
+  )
+}
+
+function isDebtListing(item) {
+  return (
+    item?.isDebt === true ||
+    item?.sale_type === 'debt' ||
+    item?.is_debt === 1 ||
+    item?.is_debt === true ||
+    item?.has_debt === 1 ||
+    item?.has_debt === true
+  )
+}
+
+function slimPropertiesForAssistant(properties) {
+  return (Array.isArray(properties) ? properties : []).slice(0, 120).map((p) => ({
+    id: p.id,
+    slug: p.slug || null,
+    title: String(p.title || p.name || '').slice(0, 80),
+    location: String(p.location || '').slice(0, 80),
+    country: p.country || null,
+    city: p.city || null,
+    price: p.price || p.totalPrice || 0,
+    currentBid: p.currentBid ?? null,
+    area: p.area || p.sqft || null,
+    rooms: p.rooms || p.beds || p.bedrooms || null,
+    property_type: p.property_type || p.propertyType || null,
+    sale_type: p.sale_type || null,
+    isAuction: Boolean(p.isAuction || p.is_auction),
+    isShare: isShareListing(p),
+    isDebt: isDebtListing(p),
+    is_shared_ownership: p.is_shared_ownership ?? (isShareListing(p) ? 1 : 0),
+    is_debt: p.is_debt ?? (isDebtListing(p) ? 1 : 0),
+  }))
+}
+
+async function mergeSharesIntoCatalog(properties) {
+  const list = Array.isArray(properties) ? [...properties] : []
+  if (list.some(isShareListing)) return list
+  try {
+    const response = await fetch(`${getApiBaseUrlSync()}/properties/shares?limit=100`)
+    if (!response.ok) return list
+    const payload = await response.json()
+    const shares = Array.isArray(payload?.data) ? payload.data : []
+    const seen = new Set(list.map((item) => `${item.id}:${item.source_table || item.property_type || ''}`))
+    for (const share of shares) {
+      const key = `${share.id}:${share.source_table || share.property_type || ''}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      list.push({
+        ...share,
+        is_shared_ownership: 1,
+        isShare: true,
+        sale_type: share.sale_type || 'share',
+      })
+    }
+  } catch {
+    /* каталог долей опционален */
+  }
+  return list
 }
 
 function buildIntelligenceRequestHeaders() {
@@ -166,6 +241,7 @@ function normalizeAssistantPayload(parsed, {
   userMessage = '',
   userPreferences = {},
   availableProperties = [],
+  allowLocalRecommendations = true,
 } = {}) {
   let recommendations = parsed?.recommendations
   if (recommendations && Array.isArray(recommendations)) {
@@ -201,7 +277,11 @@ function normalizeAssistantPayload(parsed, {
     /(подбер|покаж(и|ите)\s+(объект|вариант|лот)|рекоменд|что\s+есть|найд(и|ите)|какие\s+есть|варианты)/i.test(
       String(userMessage || ''),
     )
-  if (!recommendations?.length && (wantsListing || prefCount >= 2)) {
+  if (
+    allowLocalRecommendations &&
+    !recommendations?.length &&
+    (wantsListing || prefCount >= 2)
+  ) {
     const local = pickLocalRecommendations(userPreferences, availableProperties, 3)
     recommendations = local.length ? local : null
   }
@@ -249,7 +329,9 @@ function normalizeAssistantPayload(parsed, {
 
   return {
     text: cleanAssistantDisplayText(parsed?.text || fallbackText || ''),
-    buttons: Array.isArray(parsed?.buttons) ? parsed.buttons : null,
+    buttons: visibleAssistantButtons(parsed?.buttons).length
+      ? visibleAssistantButtons(parsed.buttons)
+      : null,
     needsMoreInfo: parsed?.needsMoreInfo !== false,
     recommendations,
     navigation: navigation.length ? navigation : null,
@@ -265,7 +347,7 @@ function normalizeAssistantPayload(parsed, {
  * @returns {Promise<Object>} Ответ от AI с текстом и возможными кнопками
  */
 export async function askPropertyAssistant(conversationHistory, userPreferences, availableProperties) {
-  const props = Array.isArray(availableProperties) ? availableProperties : []
+  const props = await mergeSharesIntoCatalog(Array.isArray(availableProperties) ? availableProperties : [])
   const prefs = userPreferences && typeof userPreferences === 'object' ? userPreferences : {}
   const lastUserMessage =
     [...(conversationHistory || [])].reverse().find((m) => m?.sender === 'user')?.text || ''
@@ -285,7 +367,7 @@ export async function askPropertyAssistant(conversationHistory, userPreferences,
 ${replyLangRule} Поддерживаются только языки: русский, английский, испанский. Запрещены внутренние рассуждения и ответы на других языках.
 
 **О ПЛАТФОРМЕ SELLYOURBRICK:**
-SellYourBrick — платформа покупки недвижимости через аукционы в Испании и Дубае, а также доли (shares), test-drive объектов, сравнение лотов и умную панель инвестора.
+SellYourBrick — платформа покупки недвижимости через аукционы, доли (shares), test-drive объектов, сравнение лотов и умную панель инвестора. Локации и объекты — только из текущего каталога сайта.
 Специализация: прозрачные аукционы, безопасные сделки, консультации по ВНЖ, инвестиции и аренда.
 
 **КАК РАБОТАЕТ АУКЦИОН (кратко):**
@@ -334,12 +416,12 @@ ${JSON.stringify(prefs, null, 0)}
 4. Доходность: yieldEstimate заполняй ТОЛЬКО при явном запросе («посчитай доходность», ROI, арендный доход). Если в сообщении есть бюджет, но вопрос про тип покупки/объекта/совет — yieldEstimate = null, ответь текстом и дай navigation на /calculator
 5. Цены только в евро (€)
 6. Не выдумывай объекты вне списка. Если каталог пуст — скажи об этом и дай navigation на /auction
-7. Кнопки buttons — короткие варианты ответа пользователя (не ссылки). Ссылки только в navigation и recommendations
+7. Поле buttons всегда null. Варианты пиши в text — клиент отвечает сам. Ссылки только в navigation и recommendations
 
 **ФОРМАТ ОТВЕТА (ТОЛЬКО JSON):**
 {
   "text": "Текст ответа",
-  "buttons": ["Вариант 1", "Вариант 2"] или null,
+  "buttons": null,
   "needsMoreInfo": true/false,
   "recommendations": [1, 2] или null,
   "navigation": [{"path": "/calculator", "label": "Умная панель инвестора"}] или null,
@@ -373,7 +455,45 @@ ${JSON.stringify(prefs, null, 0)}
     }
   }
 
-  // Быстрые локальные ответы (FAQ / навигация / yield) — без зависимости от LLM
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 45000)
+    const serverRes = await fetch(getAssistantReplyUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: (conversationHistory || []).slice(-16).map((msg) => ({
+          sender: msg.sender === 'user' ? 'user' : 'assistant',
+          text: msg.text,
+        })),
+        preferences: prefs,
+        properties: slimPropertiesForAssistant(props),
+      }),
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (serverRes.ok) {
+      const payload = await serverRes.json()
+      const normalized = normalizeAssistantPayload(payload, {
+        fallbackText: payload?.text || '',
+        userMessage: lastUserMessage,
+        userPreferences: payload?.preferences || prefs,
+        availableProperties: props,
+        allowLocalRecommendations: payload?.stage === 'SHOW_LISTINGS',
+      })
+      if (normalized.text && !looksLikeModelReasoningLeak(normalized.text)) {
+        return {
+          ...normalized,
+          preferences: payload?.preferences || null,
+          stage: payload?.stage || null,
+        }
+      }
+    }
+  } catch (serverBrainError) {
+    console.warn('assistant-reply fallback:', serverBrainError?.message || serverBrainError)
+  }
+
+  // Быстрые локальные ответы (FAQ / навигация / yield) — если серверный мозг недоступен
   const offlineFirst = buildOfflineAssistantReply(lastUserMessage, prefs, props)
   if (offlineFirst?.text) {
     return offlineFirst

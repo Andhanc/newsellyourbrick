@@ -5,7 +5,11 @@ import { FiArrowLeft, FiCheck, FiChevronDown, FiX } from 'react-icons/fi'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
 import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
-import { getComparisonGroupKey } from '../../utils/propertyFavoriteKey'
+import {
+  formatCompareSaleTypeLabel,
+  getCompareSaleTypeTone,
+  getComparisonGroupKey,
+} from '../../utils/propertyFavoriteKey'
 import './CompareMobilePicker.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -15,7 +19,8 @@ function propertyView(item, index, t) {
   const price = resolvePositivePropertyPrice(property)
   return {
     title: property.name || property.title || t('comparePage_objectN', { index: index + 1 }),
-    subtitle: property.city || property.country || property.address || t('comparePage_typeObject'),
+    saleTypeLabel: formatCompareSaleTypeLabel(property, t),
+    saleTypeTone: getCompareSaleTypeTone(property),
     image: getPropertyCardImage(property, FALLBACK_IMAGE),
     price: price != null && price !== ''
       ? formatPropertyPrice(price, property.currency || 'EUR', { compact: true })
@@ -208,7 +213,9 @@ export default function CompareMobilePicker({
                 <PropertyImage src={view.image} title={view.title} />
                 <span className="compare-picker__preview-copy">
                   <strong>{view.title}</strong>
-                  <small>{view.subtitle}</small>
+                  <small className={`compare-picker__sale-tag compare-picker__sale-tag--${view.saleTypeTone}`}>
+                    {view.saleTypeLabel}
+                  </small>
                 </span>
                 <b className="compare-picker__preview-price">{view.price}</b>
               </button>
@@ -277,7 +284,9 @@ export default function CompareMobilePicker({
                   <PropertyImage src={view.image} title={view.title} />
                   <span className="compare-picker-drum__copy">
                     <strong>{view.title}</strong>
-                    <small>{view.subtitle}</small>
+                    <small className={`compare-picker__sale-tag compare-picker__sale-tag--${view.saleTypeTone}`}>
+                      {view.saleTypeLabel}
+                    </small>
                     <b>{view.price}</b>
                   </span>
                   <span className="compare-picker-drum__select">

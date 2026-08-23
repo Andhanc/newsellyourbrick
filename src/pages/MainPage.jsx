@@ -25,6 +25,7 @@ import {
   FiShoppingCart,
   FiPieChart,
   FiMessageCircle,
+  FiTrash2,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import HeaderPinnedCatalogNav from '../components/HeaderPinnedCatalogNav'
@@ -76,6 +77,7 @@ import {
   isSoftLaunchHrefBlocked,
 } from '../utils/softLaunchAccess'
 import { getManagerContactButtons } from '../services/liveChatApi'
+import { refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import SiteNavDrawer from '../components/SiteNavDrawer'
 import CookieConsentDrawer, {
@@ -668,7 +670,7 @@ function MainPage() {
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
-    location: null, // 'Испания', 'Дубай'
+    location: null,
     propertyType: null, // 'квартира', 'вилла', 'апартаменты', 'дом'
     rooms: null,
     area: null,
@@ -750,15 +752,16 @@ function MainPage() {
             ...msg,
             timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
           }))
-          setChatMessages(messagesWithDates)
+          setChatMessages(
+            messagesWithDates.map((msg) => refreshAssistantMessageCopy(msg, t('chatWelcomeMessage'))),
+          )
         } else {
-          // Если нет сохраненной истории, показываем приветственное сообщение
           setChatMessages([{
             id: 1,
-            text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
+            text: t('chatWelcomeMessage'),
             sender: 'bot',
             timestamp: new Date(),
-            buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
+            buttons: null,
           }])
         }
         
@@ -1867,6 +1870,38 @@ function MainPage() {
     })
   }
 
+  const clearChatHistory = () => {
+    if (!window.confirm(t('clearChatConfirm'))) return
+    try {
+      localStorage.removeItem(`aiChatHistory_${getChatUserId}`)
+      localStorage.removeItem(`aiChatPreferences_${getChatUserId}`)
+    } catch (error) {
+      console.error('Ошибка при очистке истории чата:', error)
+    }
+    setUserPreferences({
+      purpose: null,
+      budget: null,
+      location: null,
+      propertyType: null,
+      rooms: null,
+      area: null,
+      other: null,
+      managerContactRequested: false,
+      managerContactPendingChoice: false,
+      preferredContact: null,
+    })
+    setChatInput('')
+    setChatMessages([
+      {
+        id: Date.now(),
+        text: t('chatWelcomeMessage'),
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: null,
+      },
+    ])
+  }
+
   const openManagerChatDock = useCallback(async () => {
     if (!isMainSiteUserLoggedIn()) {
       setMainLoginModalAuthEntry('header_wizard')
@@ -2069,16 +2104,6 @@ function MainPage() {
       setUserPreferences(prev => ({ ...prev, purpose: 'инвестиции' }))
     }
     
-    // Определяем локацию
-    if (lowerMessage.includes('испания') || lowerMessage.includes('spain') || lowerMessage.includes('españa') || 
-        lowerMessage.includes('tenerife') || lowerMessage.includes('тенерифе') || lowerMessage.includes('коста') ||
-        lowerMessage.includes('barcelona') || lowerMessage.includes('madrid')) {
-      setUserPreferences(prev => ({ ...prev, location: 'Испания' }))
-    } else if (lowerMessage.includes('дубай') || lowerMessage.includes('dubai') || lowerMessage.includes('uae') || 
-               lowerMessage.includes('оаэ') || lowerMessage.includes('emirates')) {
-      setUserPreferences(prev => ({ ...prev, location: 'Дубай' }))
-    }
-
     // Извлекаем бюджет из сообщения (конвертируем рубли в евро, если указаны)
     const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
     if (budgetMatch) {
@@ -3044,14 +3069,26 @@ function MainPage() {
                 <span className="chat-widget__status">{t('chatOnline')}</span>
               </div>
             </div>
-            <button
-              type="button"
-              className="chat-widget__close"
-              onClick={toggleChat}
-              aria-label={t('closeChat')}
-            >
-              <FiX size={20} />
-            </button>
+            <div className="chat-widget__header-actions">
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={clearChatHistory}
+                aria-label={t('clearChat')}
+                title={t('clearChat')}
+                disabled={isLoadingAI}
+              >
+                <FiTrash2 size={18} />
+              </button>
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={toggleChat}
+                aria-label={t('closeChat')}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
@@ -3163,15 +3200,9 @@ function MainPage() {
                     </div>
                   )}
                 </div>
-                {message.buttons && message.buttons.length > 0 && (
-                  <div
-                    className={`chat-widget__buttons${
-                      message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
-                        ? ' chat-widget__buttons--contact'
-                        : ''
-                    }`}
-                  >
-                    {message.buttons.map((button, index) => {
+                {visibleAssistantButtons(message.buttons).length > 0 && (
+                  <div className="chat-widget__buttons chat-widget__buttons--contact">
+                    {visibleAssistantButtons(message.buttons).map((button, index) => {
                       if (typeof button === 'object' && button?.type === 'contact_pref') {
                         const IconCmp =
                           button.value === 'phone'

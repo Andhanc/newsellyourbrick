@@ -16,6 +16,7 @@ import {
   FiX,
 } from 'react-icons/fi'
 import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { buildBookingTicket } from '../utils/profileCabinetPresentation'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import './ProfileBookingsExperience.css'
@@ -43,6 +44,13 @@ function formatDaysLabel(days, t) {
 
 function BookingDetailsDrawer({ ticket, moneyLocale, onClose, onCheckIn, onCancel }) {
   const { t } = useTranslation()
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: true,
+    visible: true,
+    isClosing: false,
+    requestClose: onClose,
+    dismissOnly: true,
+  })
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
@@ -77,8 +85,12 @@ function BookingDetailsDrawer({ ticket, moneyLocale, onClose, onCheckIn, onCance
   return createPortal(
     <div className="profile-booking-drawer" role="dialog" aria-modal="true" aria-labelledby="profile-booking-drawer-title">
       <button type="button" className="profile-booking-drawer__backdrop" aria-label={t('profileBookings_close')} onClick={onClose} />
-      <div className="profile-booking-drawer__panel">
-        <div className="profile-booking-drawer__handle" aria-hidden />
+      <div
+        ref={sheetDrag.panelRef}
+        className="profile-booking-drawer__panel"
+        style={sheetDrag.panelDragStyle}
+      >
+        <div className="profile-booking-drawer__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)} />
         <div className="profile-booking-drawer__head">
           <div>
             <span className="profile-booking-drawer__eyebrow">

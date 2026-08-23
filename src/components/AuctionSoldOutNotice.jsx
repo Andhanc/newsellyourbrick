@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowRight, FiX } from 'react-icons/fi'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import './AuctionSoldOutNotice.css'
@@ -45,6 +46,13 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose, { duration: DRAWER_DISMISS_MS.panel })
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
+  })
 
   useEffect(() => {
     if (!visible) return undefined
@@ -87,13 +95,19 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
           onClick={() => requestClose()}
         />
         <div
+          ref={sheetDrag.panelRef}
           className={`auction-sold-notice-drawer__panel${closingPanel}`}
+          style={sheetDrag.panelDragStyle}
           role="dialog"
           aria-modal="true"
           aria-labelledby="auction-sold-notice-title"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="auction-sold-notice-drawer__drag-zone" aria-hidden>
+          <div
+            className="auction-sold-notice-drawer__drag-zone"
+            aria-hidden
+            {...sheetHandleDragProps(sheetDrag)}
+          >
             <span className="auction-sold-notice-drawer__handle" />
           </div>
 

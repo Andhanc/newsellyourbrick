@@ -14,6 +14,7 @@ import {
   getDebtsCardPresentation,
 } from '../utils/debtsCardPresentation'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 import './DebtsPropertyCard.css'
 
 function DebtsPropertyCard({
@@ -96,6 +97,7 @@ function DebtsPropertyCard({
         <span className={`debts-property-card__risk debts-property-card__risk--${tone}`}>
           {t(riskLabelKey)}
         </span>
+        {isClosedForWishlist(property) ? null : (
         <button
           type="button"
           className={`debts-property-card__favorite${isFavorite ? ' is-active' : ''}`}
@@ -111,6 +113,7 @@ function DebtsPropertyCard({
             />
           </svg>
         </button>
+        )}
         <ImageWithSkeleton
           imgProps={imageProps}
           fallbackSrc={PROPERTY_CARD_IMAGE_FALLBACK}

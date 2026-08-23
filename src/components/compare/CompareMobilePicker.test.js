@@ -54,10 +54,19 @@ test('drum selection records first and second choices and starts comparison', ()
 test('drum footer has a high-contrast two-step selection tracker', () => {
   assert.match(component, /compare-picker-drum__footer-status/)
   assert.match(component, /compare-picker-drum__progress/)
+  assert.match(component, /comparePage_hint1Solo/)
   assert.match(css, /\.compare-picker-drum__footer[\s\S]*background: #071314/)
 })
 
 test('mobile landing replaces the old picker grid until two objects are selected', () => {
   assert.match(page, /<CompareMobilePicker/)
   assert.match(page, /isMobile && !pair \? ' compare-container--mobile-idle'/)
+})
+
+test('compare picker cards show sale type badges instead of generic object label', () => {
+  assert.match(component, /formatCompareSaleTypeLabel/)
+  assert.match(component, /compare-picker__sale-tag/)
+  assert.match(css, /\.compare-picker__sale-tag--standard/)
+  assert.match(css, /\.compare-picker__sale-tag--debt/)
+  assert.match(css, /\.compare-picker__sale-tag--shares/)
 })

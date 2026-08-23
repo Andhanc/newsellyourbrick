@@ -9,7 +9,7 @@ export const SITE_ASSISTANT_NAV = [
   { path: '/shares', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'share', 'соинвест'] },
   { path: '/calculator', label: 'Умная панель инвестора', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор'] },
   { path: '/compare', label: 'Сравнение объектов', aliases: ['сравн', 'compare'] },
-  { path: '/test-drive', label: 'Test-drive объектов', aliases: ['тест-драйв', 'test-drive', 'testdrive', 'посмотр'] },
+  { path: '/test-drive', label: 'Test-drive объектов', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
   { path: '/favorites', label: 'Избранное', aliases: ['избранн', 'favourites', 'favorites'] },
   { path: '/news', label: 'Новости', aliases: ['новост', 'news'] },
   { path: '/about', label: 'О платформе', aliases: ['о нас', 'о платформе', 'about', 'компания'] },
@@ -266,6 +266,72 @@ export function buildSiteMapPromptBlock() {
   return SITE_ASSISTANT_NAV.map((item) => `- ${item.path} — ${item.label}`).join('\n')
 }
 
+export function looksLikeLegacySpainDubaiWelcome(text = '') {
+  return /испани(?:и|я).{0,12}дуба|spain or dubai|españa o dub|spanien oder dubai|espagne ou à duba|spanien eller dubai|я помощник SellYourBrick.{0,220}(?:для какой цели|сначала напишите, какой тип|для инвестиций я подбираю)|SellYourBrick assistant.{0,180}write your goal|asistente de SellYourBrick.{0,180}escriba el objetivo/i.test(
+    String(text || ''),
+  )
+}
+
+/** Убирает устаревшие «рынки Испания/Дубай» из ответов помощника. */
+export function sanitizeAssistantCatalogCopy(text = '') {
+  return String(text || '')
+    .replace(/\s*в Испании или (?:в )?Дубае/gi, ' из текущего каталога')
+    .replace(/\s*в Испании и Дубае/gi, ' из текущего каталога')
+    .replace(/in Spain or Dubai/gi, 'from the current catalog')
+    .replace(/in Spain and Dubai/gi, 'from the current catalog')
+    .replace(/en España o (?:en )?Dubái/gi, 'del catálogo actual')
+    .replace(/en Espagne ou à Dubaï/gi, 'dans le catalogue actuel')
+    .replace(/in Spanien oder Dubai/gi, 'aus dem aktuellen Katalog')
+    .replace(/i Spanien eller Dubai/gi, 'från den aktuella katalogen')
+}
+
+export function refreshAssistantMessageCopy(message, welcomeText) {
+  if (!message || message.sender === 'user') return message
+  const text = String(message.text || '')
+  if (looksLikeLegacySpainDubaiWelcome(text) && welcomeText) {
+    return { ...message, text: welcomeText, buttons: null }
+  }
+  const navigation = /тест.?драйв|test.?drive/i.test(text)
+    ? message.navigation
+    : (message.navigation || []).filter((item) => item?.path !== '/test-drive')
+  return {
+    ...message,
+    text: sanitizeAssistantCatalogCopy(text),
+    navigation: navigation?.length ? navigation : null,
+  }
+}
+
+/** Только выбор канала связи с менеджером. Чипы-подсказки воронки не показываем. */
+export function visibleAssistantButtons(buttons) {
+  return (Array.isArray(buttons) ? buttons : []).filter(
+    (button) => typeof button === 'object' && button?.type === 'contact_pref',
+  )
+}
+
+/** Города/страны только из полей объектов, без заранее прописанных рынков. */
+export function catalogPlaceLabels(properties = []) {
+  const counts = new Map()
+  for (const item of properties || []) {
+    const raw = [item?.country, item?.city, item?.location].filter(Boolean).join(', ')
+    const parts = String(raw)
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+    for (const part of parts.slice(0, 2)) {
+      if (part.length > 40 || /^\d/.test(part) || /^(ул\.?|улица|street|str\.)/i.test(part)) continue
+      const key = part.toLowerCase()
+      const prev = counts.get(key)
+      counts.set(key, { label: prev?.label || part, count: (prev?.count || 0) + 1 })
+    }
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'ru'))
+    .filter((place, _, all) => place.count >= 2 || all[0]?.count === 1)
+    .map((place) => place.label)
+    .filter((label, index, all) => all.indexOf(label) === index)
+    .slice(0, 4)
+}
+
 /**
  * Гарантирует кнопку на Умную панель инвестора при вопросах про доход/инвестиции.
  * @param {Array<{ path: string, label: string }>} navigation
@@ -421,7 +487,7 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
   const copy = {
     ru: {
       about:
-        'SellYourBrick — платформа аукционов недвижимости в Испании и Дубае: прозрачные торги, доли (shares), test-drive объектов и умная панель инвестора. Помогаем с подбором, сделкой и вопросами по ВНЖ.',
+        'SellYourBrick — платформа аукционов недвижимости: прозрачные торги, доли (shares), test-drive объектов и умная панель инвестора. Подбираем только объекты из текущего каталога сайта.',
       auction:
         'На аукционе вы смотрите лот, делаете ставку выше текущей и следите за таймером. Если ставка в конце — время может продлиться. Побеждает лучшая ставка, дальше оформление через платформу.',
       visa:
@@ -434,18 +500,19 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
         'На SellYourBrick обычно три формата: аукцион — конкурентная цена и фиксированный таймер; «купить сейчас» — быстрее, если цена вас устраивает; доли (shares) — меньший вход в объект. Для жизни чаще смотрят готовый лот/buy-now, для инвестиций — аукцион или доли. Могу подобрать объекты или открыть калькулятор сценария.',
       investAdvice: (budget) =>
         budget
-          ? `При бюджете около ${Math.round(budget).toLocaleString('ru-RU')} € для инвестиций чаще смотрят квартиры/апарты под аренду в туристических зонах Испании или Дубая; виллы — если важнее капитал и lifestyle. Форматы сделки: аукцион (цена), buy now (скорость), shares (меньший вход). Могу подобрать лоты или открыть Умную панель инвестора для точного сценария.`
-          : 'Для инвестиций обычно смотрят квартиры/апарты под аренду или доли для меньшего входа; виллы — под капитал и lifestyle. Форматы на платформе: аукцион, buy now и shares. Уточните бюджет и локацию — подберу объекты; цифры по доходу лучше считать в Умной панели инвестора.',
+          ? `При бюджете около ${Math.round(budget).toLocaleString('ru-RU')} € для инвестиций чаще смотрят квартиры/апарты под аренду или доли из текущего каталога; виллы — если важнее капитал и lifestyle. Форматы сделки: аукцион (цена), buy now (скорость), shares (меньший вход). Могу подобрать лоты или открыть Умную панель инвестора для точного сценария.`
+          : 'Для инвестиций обычно смотрят квартиры/апарты под аренду или доли для меньшего входа; виллы — под капитал и lifestyle. Форматы на платформе: аукцион, buy now и shares. Уточните бюджет и локацию из каталога — подберу объекты; цифры по доходу лучше считать в Умной панели инвестора.',
       nav: 'Могу сразу открыть нужный раздел — выберите кнопку ниже.',
       listingOk:
         'Подобрал варианты из текущего каталога. Откройте карточку или уточните бюджет, город и тип жилья — подберу точнее.',
       listingEmpty:
         'Сейчас каталог для подбора пуст. Откройте аукционы на сайте — там актуальные лоты.',
-      listingAsk:
-        'Уточните цель, бюджет в евро и локацию (Испания или Дубай) — подберу объекты из каталога.',
+      listingAsk: (places) =>
+        `Уточните цель, бюджет в евро и локацию из каталога (${places}) — подберу объекты.`,
       yield: (y) =>
         `Ориентир по вашим цифрам: валовая доходность около ${y.yieldPercent}% годовых (~${Number(y.monthlyIncome).toLocaleString('ru-RU')} € в месяц). Это упрощённый расчёт до налогов и расходов — для точного сценария откройте Умную панель инвестора.`,
-      forceBudget: 'Принял. Какой бюджет в евро рассматриваете, и какая локация важнее — Испания или Дубай?',
+      forceBudget: (places) =>
+        `Принял. Какой бюджет в евро рассматриваете? Локации в каталоге: ${places}.`,
       forceList: 'Могу предложить несколько объектов из каталога. Если нужно иначе — напишите бюджет и город.',
       forceHello:
         'Я помощник SellYourBrick: расскажу о платформе, подберу объекты, подскажу разделы сайта и дам ориентир по доходности. С чего начнём?',
@@ -471,7 +538,7 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
     },
     en: {
       about:
-        'SellYourBrick is a property auction platform for Spain and Dubai: transparent bidding, shares, property test-drive, and a smart investor panel. We help with selection, the deal, and residency questions.',
+        'SellYourBrick is a property auction platform: transparent bidding, shares, property test-drive, and a smart investor panel. I only match listings from the current site catalog.',
       auction:
         'On an auction you view a lot, place a bid above the current one, and watch the timer. Late bids can extend time. Highest bid wins, then closing goes through the platform.',
       visa:
@@ -484,15 +551,17 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
         'On SellYourBrick there are usually three formats: auction — competitive price with a timer; buy now — faster if the price works; shares — smaller entry into a property. For living, people often prefer ready lots/buy-now; for investing — auction or shares. I can match listings or open the investor calculator.',
       investAdvice: (budget) =>
         budget
-          ? `With a budget around €${Math.round(budget).toLocaleString('en-US')}, investors often look at apartments for rent in tourist areas of Spain or Dubai; villas if capital and lifestyle matter more. Deal formats: auction (price), buy now (speed), shares (smaller entry). I can match lots or open the smart investor panel for a full scenario.`
-          : 'For investing, people often choose apartments for rent or shares for a smaller entry; villas for capital and lifestyle. Platform formats: auction, buy now, and shares. Share budget and location — I will match listings; use the smart investor panel for yield numbers.',
+          ? `With a budget around €${Math.round(budget).toLocaleString('en-US')}, investors often look at apartments for rent or shares from the current catalog; villas if capital and lifestyle matter more. Deal formats: auction (price), buy now (speed), shares (smaller entry). I can match lots or open the smart investor panel for a full scenario.`
+          : 'For investing, people often choose apartments for rent or shares for a smaller entry; villas for capital and lifestyle. Platform formats: auction, buy now, and shares. Share budget and a catalog location — I will match listings; use the smart investor panel for yield numbers.',
       nav: 'I can open the right section — pick a button below.',
       listingOk: 'Here are options from the current catalog. Open a card or refine budget, city, and property type.',
       listingEmpty: 'The catalog is empty right now. Open auctions on the site for live lots.',
-      listingAsk: 'Tell me your goal, budget in EUR, and location (Spain or Dubai) — I will match listings.',
+      listingAsk: (places) =>
+        `Tell me your goal, budget in EUR, and a location from the catalog (${places}) — I will match listings.`,
       yield: (y) =>
         `Rough estimate: about ${y.yieldPercent}% gross yield per year (~€${Number(y.monthlyIncome).toLocaleString('en-US')} / month). This ignores taxes and costs — use the smart investor panel for a full scenario.`,
-      forceBudget: 'Got it. What EUR budget are you considering, and which location matters more — Spain or Dubai?',
+      forceBudget: (places) =>
+        `Got it. What EUR budget are you considering? Locations in the catalog: ${places}.`,
       forceList: 'I can suggest listings from the catalog. Or send budget and city for a tighter match.',
       forceHello:
         'I am the SellYourBrick assistant: platform info, listings, site navigation, and a yield estimate. Where should we start?',
@@ -518,7 +587,7 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
     },
     es: {
       about:
-        'SellYourBrick es una plataforma de subastas inmobiliarias en España y Dubái: pujas transparentes, participaciones (shares), test-drive de inmuebles y un panel inteligente para inversores. Ayudamos con la selección, la operación y la residencia.',
+        'SellYourBrick es una plataforma de subastas inmobiliarias: pujas transparentes, participaciones (shares), test-drive de inmuebles y un panel inteligente para inversores. Solo uso el catálogo actual del sitio.',
       auction:
         'En la subasta ves el lote, pujas por encima de la oferta actual y sigues el temporizador. Una puja tardía puede ampliar el tiempo. Gana la puja más alta y el cierre se hace a través de la plataforma.',
       visa:
@@ -531,18 +600,18 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
         'En SellYourBrick hay tres formatos habituales: subasta — precio competitivo con temporizador; comprar ahora — más rápido si el precio te encaja; shares — entrada menor en un inmueble. Para vivir suele convenir lote listo/buy-now; para invertir — subasta o shares. Puedo buscar inmuebles o abrir el calculador del inversor.',
       investAdvice: (budget) =>
         budget
-          ? `Con un presupuesto de unos ${Math.round(budget).toLocaleString('es-ES')} €, para invertir suelen mirarse pisos/apartamentos para alquiler en zonas turísticas de España o Dubái; villas si importan más el capital y el lifestyle. Formatos: subasta (precio), comprar ahora (rapidez), shares (entrada menor). Puedo buscar lotes o abrir el panel inteligente del inversor.`
-          : 'Para invertir suelen elegirse pisos para alquiler o shares con entrada menor; villas para capital y lifestyle. Formatos: subasta, comprar ahora y shares. Indica presupuesto y ubicación: te propongo inmuebles; los números de rentabilidad mejor en el panel inteligente del inversor.',
+          ? `Con un presupuesto de unos ${Math.round(budget).toLocaleString('es-ES')} €, para invertir suelen mirarse pisos/apartamentos para alquiler o participaciones del catálogo actual; villas si importan más el capital y el lifestyle. Formatos: subasta (precio), comprar ahora (rapidez), shares (entrada menor). Puedo buscar lotes o abrir el panel inteligente del inversor.`
+          : 'Para invertir suelen elegirse pisos para alquiler o shares con entrada menor; villas para capital y lifestyle. Formatos: subasta, comprar ahora y shares. Indica presupuesto y una ubicación del catálogo: te propongo inmuebles; los números de rentabilidad mejor en el panel inteligente del inversor.',
       nav: 'Puedo abrir la sección que necesitas: elige un botón abajo.',
       listingOk:
         'Aquí tienes opciones del catálogo actual. Abre una ficha o concreta presupuesto, ciudad y tipo de vivienda.',
       listingEmpty: 'El catálogo está vacío ahora. Abre las subastas del sitio para ver lotes activos.',
-      listingAsk:
-        'Indica tu objetivo, presupuesto en euros y ubicación (España o Dubái): te propongo inmuebles del catálogo.',
+      listingAsk: (places) =>
+        `Indica tu objetivo, presupuesto en euros y una ubicación del catálogo (${places}): te propongo inmuebles.`,
       yield: (y) =>
         `Estimación orientativa: alrededor del ${y.yieldPercent}% bruto al año (~${Number(y.monthlyIncome).toLocaleString('es-ES')} € al mes). No incluye impuestos ni gastos: usa el panel inteligente del inversor para un escenario completo.`,
-      forceBudget:
-        'Entendido. ¿Qué presupuesto en euros consideras y qué ubicación te importa más: España o Dubái?',
+      forceBudget: (places) =>
+        `Entendido. ¿Qué presupuesto en euros consideras? Ubicaciones del catálogo: ${places}.`,
       forceList:
         'Puedo sugerir inmuebles del catálogo. O envía presupuesto y ciudad para afinar.',
       forceHello:
@@ -569,6 +638,15 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
     },
   }
   const t = copy[lang] || copy.ru
+  const placeLabels = catalogPlaceLabels(catalog)
+  const placesText =
+    placeLabels.length > 0
+      ? placeLabels.join(', ')
+      : lang === 'en'
+        ? 'our current catalog'
+        : lang === 'es'
+          ? 'el catálogo actual'
+          : 'текущий каталог'
 
   let replyText = ''
   let buttons = null
@@ -625,20 +703,20 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
       replyText = t.listingEmpty
       navigation = sanitizeNavigationLinks([...navigation, { path: '/auction', label: t.navAuctionShort }])
     } else {
-      replyText = t.listingAsk
+      replyText = t.listingAsk(placesText)
       needsMoreInfo = true
-      buttons = [t.btnSelf, t.btnRent, t.btnInvest, t.btnSpain, t.btnDubai]
+      buttons = [t.btnSelf, t.btnRent, t.btnInvest, ...placeLabels]
     }
   } else if (options.force) {
     if (prefs.purpose && !prefs.budget) {
-      replyText = t.forceBudget
+      replyText = t.forceBudget(placesText)
       needsMoreInfo = true
       buttons =
         lang === 'ru'
-          ? ['до 200 тыс €', '200–400 тыс €', 'от 500 тыс €', t.btnSpain, t.btnDubai]
+          ? ['до 200 тыс €', '200–400 тыс €', 'от 500 тыс €', ...placeLabels]
           : lang === 'es'
-            ? ['hasta 200 mil €', '200–400 mil €', 'desde 500 mil €', t.btnSpain, t.btnDubai]
-            : ['up to €200k', '€200–400k', 'from €500k', t.btnSpain, t.btnDubai]
+            ? ['hasta 200 mil €', '200–400 mil €', 'desde 500 mil €', ...placeLabels]
+            : ['up to €200k', '€200–400k', 'from €500k', ...placeLabels]
     } else if (recommendations?.length) {
       replyText = t.forceList
     } else {
@@ -659,7 +737,7 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
 
   return {
     text: replyText,
-    buttons,
+    buttons: null,
     needsMoreInfo,
     recommendations,
     navigation: navigation.length ? navigation : null,

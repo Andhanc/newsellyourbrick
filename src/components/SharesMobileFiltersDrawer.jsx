@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
+import { assignSheetPanelRef, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import '../styles/drawerDismiss.css'
 import './SharesMobileFiltersDrawer.css'
@@ -50,6 +51,15 @@ export default function SharesMobileFiltersDrawer({
   const handleRequestClose = useCallback(() => {
     requestClose(restoreFocus)
   }, [requestClose, restoreFocus])
+
+  const sheetDrag = useBottomSheetDrag({
+    isOpen,
+    visible,
+    isClosing,
+    requestClose: handleRequestClose,
+    dismissOnly: true,
+  })
+  const setPanelRef = (node) => assignSheetPanelRef(sheetDrag.panelRef, panelRef)(node)
 
   useEffect(() => {
     if (!visible || typeof document === 'undefined') return undefined
@@ -109,8 +119,9 @@ export default function SharesMobileFiltersDrawer({
         onClick={handleRequestClose}
       />
       <aside
-        ref={panelRef}
+        ref={setPanelRef}
         className={`shares-mobile-filters-drawer__panel${closingPanel}`}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="shares-mobile-filters-drawer-title"

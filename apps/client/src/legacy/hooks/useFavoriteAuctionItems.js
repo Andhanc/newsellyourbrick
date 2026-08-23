@@ -6,6 +6,7 @@ import { favoriteCompositeKey } from '../utils/propertyFavoriteKey'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
+import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 
 export function useFavoriteAuctionItems() {
   const { favoriteRows } = usePropertyFavorites()
@@ -129,6 +130,7 @@ export function useFavoriteAuctionItems() {
       const k = favoriteCompositeKey(row.property_id, row.property_table)
       const prop = catalogByKey.get(k)
       if (prop) {
+        if (isClosedForWishlist(prop)) continue
         out.push({
           key: k,
           property: prop,
@@ -153,7 +155,7 @@ export function useFavoriteAuctionItems() {
     if (properties && Array.isArray(properties)) {
       properties.forEach((p) => {
         const k = `property:${p.id}`
-        if (flags[`property-${p.id}`]) {
+        if (flags[`property-${p.id}`] && !isClosedForWishlist(p)) {
           out.push({
             key: k,
             property: { ...p, id: p.id },
@@ -167,7 +169,7 @@ export function useFavoriteAuctionItems() {
       if (!list) continue
       list.forEach((p) => {
         const key = `${prefix}${p.id}`
-        if (flags[key]) {
+        if (flags[key] && !isClosedForWishlist(p)) {
           out.push({
             key,
             property: { ...p },

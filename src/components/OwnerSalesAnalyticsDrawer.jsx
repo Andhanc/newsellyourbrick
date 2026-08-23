@@ -15,6 +15,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import OwnerEmptyPropertiesIllustration from './OwnerEmptyPropertiesIllustration'
 import './OwnerSalesAnalyticsDrawer.css'
 
@@ -152,6 +153,13 @@ export default function OwnerSalesAnalyticsDrawer({
   const { t } = useTranslation()
   const closeRef = useRef(null)
   const [activeTab, setActiveTab] = useState('sales')
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible: open,
+    isClosing: false,
+    requestClose: () => onClose?.(),
+    dismissOnly: true,
+  })
 
   useEffect(() => {
     if (!open || typeof document === 'undefined') return undefined
@@ -283,12 +291,16 @@ export default function OwnerSalesAnalyticsDrawer({
         }}
       />
       <section
+        ref={sheetDrag.panelRef}
         className="osa__drawer"
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="osa-title"
       >
-        <div className="osa__handle" aria-hidden><span /></div>
+        <div className="osa__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)}>
+          <span />
+        </div>
         <header className="osa__header">
           <div>
             <span className="osa__eyebrow">{t('osa_eyebrow')}</span>

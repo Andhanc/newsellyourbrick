@@ -9,6 +9,7 @@ import {
   readPurchasedPropertySellerArrival,
   storePurchasedPropertySellerArrival,
 } from '../utils/purchasedPropertyListingPrefill'
+import { assignSheetPanelRef, sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { OWNER_VIEWS } from '../utils/ownerTestNav'
 import './SellerPurchasedPropertyArrivalDrawer.css'
 
@@ -46,9 +47,21 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
   const titleId = useId()
   const drawerRef = useRef(null)
   const closeRef = useRef(null)
+  const loadingRef = useRef(false)
   const [item, setItem] = useState(() => readPurchasedPropertySellerArrival())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  loadingRef.current = loading
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: Boolean(item?.id),
+    visible: Boolean(item?.id),
+    isClosing: false,
+    requestClose: () => {
+      if (!loadingRef.current) setItem(null)
+    },
+    dismissOnly: true,
+  })
+  const setDrawerRef = (node) => assignSheetPanelRef(sheetDrag.panelRef, drawerRef)(node)
 
   useEffect(() => {
     if (!item?.id) return undefined
@@ -136,13 +149,14 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
       }}
     >
       <aside
-        ref={drawerRef}
+        ref={setDrawerRef}
         className="seller-arrival"
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <span className="seller-arrival__grabber" aria-hidden="true" />
+        <span className="seller-arrival__grabber" aria-hidden="true" {...sheetHandleDragProps(sheetDrag)} />
         <header className="seller-arrival__header">
           <span className="seller-arrival__eyebrow"><Sparkles size={14} aria-hidden /> Новый объект</span>
           <button ref={closeRef} type="button" className="seller-arrival__close" onClick={dismiss} disabled={loading} aria-label="Закрыть">

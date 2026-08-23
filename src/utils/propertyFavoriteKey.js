@@ -54,11 +54,11 @@ export function normalizePropertyTypeForCompare(property) {
 }
 
 /**
- * Тип продажи для сравнения: аукцион с аукционом, «купить сейчас» с «купить сейчас».
- * Аукцион + buy now относится к аукциону.
+ * Тип продажи для сравнения.
+ * Аукцион и «купить сейчас» — одна группа; долги и доли остаются отдельно.
  */
 export function normalizeSaleTypeForCompare(property) {
-  if (!property) return 'buy_now'
+  if (!property) return 'standard'
 
   const saleType = String(property.sale_type || property.saleType || '').toLowerCase().trim()
   const isShare =
@@ -79,19 +79,65 @@ export function normalizeSaleTypeForCompare(property) {
     property.has_debt === true
   if (isDebt) return 'debt'
 
-  const isAuction =
-    saleType === 'auction' ||
-    property.isAuction === true ||
-    property.is_auction === 1 ||
-    property.is_auction === true ||
-    property.is_auction === '1'
-  if (isAuction) return 'auction'
+  return 'standard'
+}
 
-  return 'buy_now'
+function isAuctionListing(property) {
+  if (!property) return false
+  return Boolean(
+    property.is_auction === 1 ||
+      property.is_auction === true ||
+      property.isAuction === true ||
+      String(property.sale_type || property.saleType || '').toLowerCase() === 'auction' ||
+      property.auction_end_date ||
+      property.auction_end_time ||
+      property.endTime ||
+      property.test_timer_end_date ||
+      property.auction_starting_price != null ||
+      property.auctionStartingPrice != null,
+  )
+}
+
+function hasBuyNowListing(property) {
+  if (!property) return false
+  const price = Number(property.price)
+  return Number.isFinite(price) && price > 0
+}
+
+/** Короткая подпись формата продажи для карточек сравнения. */
+export function formatCompareSaleTypeLabel(property, t) {
+  const group = normalizeSaleTypeForCompare(property)
+  if (group === 'shares') return t('comparePage_saleShares')
+  if (group === 'debt') return t('comparePage_saleDebt')
+
+  const auction = isAuctionListing(property)
+  const buyNow = hasBuyNowListing(property)
+  if (auction && buyNow) return t('comparePage_saleStandard')
+  if (auction) return t('comparePage_saleAuction')
+  if (buyNow) return t('comparePage_saleBuyNow')
+  return t('comparePage_saleStandard')
+}
+
+/** CSS-модификатор для бейджа типа продажи. */
+export function getCompareSaleTypeTone(property) {
+  const group = normalizeSaleTypeForCompare(property)
+  if (group === 'shares') return 'shares'
+  if (group === 'debt') return 'debt'
+  return 'standard'
 }
 
 /** Одинаковый формат продажи для сравнения; демо — по категории. */
 export function getComparisonGroupKey(property, mockCategory) {
   if (mockCategory) return `mock:${normalizeMockCategoryForCompare(mockCategory)}`
   return `sale:${normalizeSaleTypeForCompare(property)}`
+}
+
+/** После выбора первого объекта оставляем только его тип продажи. */
+export function filterComparePickerItems(items = [], selectedKeys = [], groupFilter = null) {
+  const list = Array.isArray(items) ? items : []
+  if (!groupFilter || !Array.isArray(selectedKeys) || selectedKeys.length !== 1) return list
+  return list.filter((item) => {
+    if (selectedKeys.includes(item?.key)) return true
+    return getComparisonGroupKey(item?.property, item?.mockCategory) === groupFilter
+  })
 }

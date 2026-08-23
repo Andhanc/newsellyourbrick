@@ -8,8 +8,32 @@ import { getManagerContactButtons } from '../services/liveChatApi'
 import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
+import { refreshAssistantMessageCopy } from '../utils/siteAssistantHelpers'
 
 const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
+
+const EMPTY_ASSISTANT_PREFERENCES = {
+  purpose: null,
+  budget: null,
+  location: null,
+  propertyType: null,
+  rooms: null,
+  area: null,
+  other: null,
+  managerContactRequested: false,
+  managerContactPendingChoice: false,
+  preferredContact: null,
+}
+
+function createAssistantWelcomeMessage(t) {
+  return {
+    id: Date.now(),
+    text: t('chatWelcomeMessage'),
+    sender: 'bot',
+    timestamp: new Date(),
+    buttons: null,
+  }
+}
 
 export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES } = {}) {
   const { t } = useTranslation()
@@ -28,18 +52,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     }
     return getCachedList() || []
   })
-  const [userPreferences, setUserPreferences] = useState({
-    purpose: null,
-    budget: null,
-    location: null,
-    propertyType: null,
-    rooms: null,
-    area: null,
-    other: null,
-    managerContactRequested: false,
-    managerContactPendingChoice: false,
-    preferredContact: null,
-  })
+  const [userPreferences, setUserPreferences] = useState(EMPTY_ASSISTANT_PREFERENCES)
 
   const slowResponseTimerRef = useRef(null)
   const chatMessagesRef = useRef(null)
@@ -153,22 +166,20 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
 
         if (savedChatHistory) {
           const parsed = JSON.parse(savedChatHistory)
+          const welcomeText = t('chatWelcomeMessage')
           setChatMessages(
-            parsed.map((msg) => ({
-              ...msg,
-              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
-            })),
+            parsed.map((msg) =>
+              refreshAssistantMessageCopy(
+                {
+                  ...msg,
+                  timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+                },
+                welcomeText,
+              ),
+            ),
           )
         } else {
-          setChatMessages([
-            {
-              id: 1,
-              text: t('chatWelcomeMessage'),
-              sender: 'bot',
-              timestamp: new Date(),
-              buttons: [t('chatPurposeSelf'), t('chatPurposeRent'), t('chatPurposeInvest')],
-            },
-          ])
+          setChatMessages([createAssistantWelcomeMessage(t)])
         }
 
         const savedPreferences = localStorage.getItem(preferencesKey)
@@ -224,6 +235,20 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     window.isChatOpen = isChatOpen
     window.dispatchEvent(new CustomEvent('aiChatStateChange', { detail: { isOpen: isChatOpen } }))
   }, [isChatOpen])
+
+  const clearChatHistory = useCallback(() => {
+    if (typeof window !== 'undefined' && !window.confirm(t('clearChatConfirm'))) return
+    try {
+      localStorage.removeItem(`aiChatHistory_${getChatUserId}`)
+      localStorage.removeItem(`aiChatPreferences_${getChatUserId}`)
+    } catch (error) {
+      console.error('Ошибка при очистке истории чата:', error)
+    }
+    setUserPreferences({ ...EMPTY_ASSISTANT_PREFERENCES })
+    setChatInput('')
+    setIsSlowAIResponse(false)
+    setChatMessages([createAssistantWelcomeMessage(t)])
+  }, [getChatUserId, t])
 
   const handleChatInputChange = (e) => {
     setChatInput(e.target.value)
@@ -347,27 +372,6 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
       lowerMessage.includes('инвест')
     ) {
       nextPreferences.purpose = 'инвестиции'
-    }
-
-    if (
-      lowerMessage.includes('испания') ||
-      lowerMessage.includes('spain') ||
-      lowerMessage.includes('españa') ||
-      lowerMessage.includes('tenerife') ||
-      lowerMessage.includes('тенерифе') ||
-      lowerMessage.includes('коста') ||
-      lowerMessage.includes('barcelona') ||
-      lowerMessage.includes('madrid')
-    ) {
-      nextPreferences.location = 'Испания'
-    } else if (
-      lowerMessage.includes('дубай') ||
-      lowerMessage.includes('dubai') ||
-      lowerMessage.includes('uae') ||
-      lowerMessage.includes('оаэ') ||
-      lowerMessage.includes('emirates')
-    ) {
-      nextPreferences.location = 'Дубай'
     }
 
     const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
@@ -497,6 +501,16 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
         propertiesForAi,
       )
 
+      if (response?.preferences && typeof response.preferences === 'object') {
+        setUserPreferences((prev) => ({
+          ...prev,
+          ...response.preferences,
+          managerContactRequested: prev.managerContactRequested,
+          managerContactPendingChoice: prev.managerContactPendingChoice,
+          preferredContact: prev.preferredContact,
+        }))
+      }
+
       setChatMessages((prev) => [
         ...prev,
         {
@@ -551,6 +565,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     handleChatInputChange,
     handleChatSubmit,
     handleButtonClick,
+    clearChatHistory,
     catalogProperties: propertiesForAi,
   }
 }

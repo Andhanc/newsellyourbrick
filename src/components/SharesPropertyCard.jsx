@@ -82,6 +82,7 @@ function SharesPropertyCard({
           onError={handleImageError}
         />
         <span className="shares-v2-card__badge">{cardShare.statusLabel}</span>
+        {investmentState.state === 'sold' || investmentState.state === 'auction-ended' ? null : (
         <button
           type="button"
           className={`shares-v2-card__favorite${isFavorite ? ' is-active' : ''}`}
@@ -91,6 +92,7 @@ function SharesPropertyCard({
         >
           <Heart size={19} fill={isFavorite ? 'currentColor' : 'none'} aria-hidden />
         </button>
+        )}
         <BuyerStatusRibbon listingState={investmentState} />
       </div>
 

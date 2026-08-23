@@ -280,6 +280,7 @@ const PropertyListingCard = ({
               </div>
             )}
           <div className="property-media-actions">
+            {isAuctionEndedCard ? null : (
             <button
               type="button"
               className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
@@ -295,6 +296,7 @@ const PropertyListingCard = ({
                 />
               </svg>
             </button>
+            )}
           </div>
           {imageTopRightAction ? (
             <button

@@ -478,6 +478,11 @@
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+.menu-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;

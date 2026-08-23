@@ -9,6 +9,7 @@ import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { showToast } from '../components/ToastContainer'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import TestDriveSuccessDrawer from '../components/TestDriveSuccessDrawer'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -65,6 +66,22 @@ export default function TestDriveBookingPage() {
   const [contactPickerOpen, setContactPickerOpen] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(null)
   const confirmingSessionRef = useRef(null)
+  const contactSheetDrag = useBottomSheetDrag({
+    isOpen: contactPickerOpen,
+    visible: contactPickerOpen,
+    isClosing: false,
+    requestClose: () => setContactPickerOpen(false),
+    dismissOnly: true,
+    applyVisual: false,
+  })
+  const paymentSheetDrag = useBottomSheetDrag({
+    isOpen: paymentOpen,
+    visible: paymentOpen,
+    isClosing: false,
+    requestClose: () => setPaymentOpen(false),
+    dismissOnly: true,
+    applyVisual: false,
+  })
 
   const currencyFmt = (amount, currency) => {
     try {
@@ -481,9 +498,14 @@ export default function TestDriveBookingPage() {
               }
               className={`test-drive-contact-sheet${isMobile ? ' test-drive-contact-sheet--drawer' : ''}`}
               onClick={(e) => e.stopPropagation()}
+              ref={contactSheetDrag.panelRef}
             >
             {isMobile ? (
-              <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
+              <div
+                className="test-drive-contact-drawer__handle-wrap"
+                aria-hidden
+                {...sheetHandleDragProps(contactSheetDrag)}
+              >
                 <span className="test-drive-contact-drawer__handle" />
               </div>
             ) : null}
@@ -563,9 +585,14 @@ export default function TestDriveBookingPage() {
               }
               className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--drawer' : ''}`}
               onClick={(e) => e.stopPropagation()}
+              ref={paymentSheetDrag.panelRef}
             >
             {isMobile ? (
-              <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
+              <div
+                className="test-drive-contact-drawer__handle-wrap"
+                aria-hidden
+                {...sheetHandleDragProps(paymentSheetDrag)}
+              >
                 <span className="test-drive-contact-drawer__handle" />
               </div>
             ) : null}

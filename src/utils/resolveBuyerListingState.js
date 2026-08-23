@@ -116,4 +116,10 @@ export function resolveBuyerListingState(property, now = new Date()) {
   return { ...STATES.available }
 }
 
+/** Sold / ended lots stay out of «Понравилось» and comparison. */
+export function isClosedForWishlist(property, now = new Date()) {
+  const state = resolveBuyerListingState(property, now).state
+  return state === 'sold' || state === 'auction-ended'
+}
+
 export { STATES as BUYER_LISTING_STATES }

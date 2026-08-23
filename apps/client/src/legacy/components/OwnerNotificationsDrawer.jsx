@@ -1,6 +1,7 @@
 import { Bell, CalendarCheck, ChevronRight, MessageSquare, ShieldCheck, TrendingUp, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useTranslation } from 'react-i18next'
 import OwnerNoBidsIllustration from './OwnerNoBidsIllustration'
 import './OwnerNotificationsDrawer.css'
@@ -49,6 +50,13 @@ export function getDefaultOwnerNotifications(t) {
 export default function OwnerNotificationsDrawer({ open, onClose, items, onDismiss }) {
   const { t } = useTranslation()
   const resolvedItems = items ?? getDefaultOwnerNotifications(t)
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: open,
+    visible: open,
+    isClosing: false,
+    requestClose: onClose,
+    dismissOnly: true,
+  })
 
   const handleItemAction = (item) => {
     if (typeof item.onAction === 'function') {
@@ -84,7 +92,14 @@ export default function OwnerNotificationsDrawer({ open, onClose, items, onDismi
         aria-label={t('ownerTest_notificationsCloseBackdrop')}
         onClick={onClose}
       />
-      <aside className="ond__panel" role="dialog" aria-modal="true" aria-label={t('ownerTest_notificationsAria')}>
+      <aside
+        ref={sheetDrag.panelRef}
+        className="ond__panel"
+        style={sheetDrag.panelDragStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('ownerTest_notificationsAria')}
+      >
         <header className="ond__head">
           <div>
             <span className="ond__eyebrow">

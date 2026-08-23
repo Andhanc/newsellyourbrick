@@ -1,8 +1,9 @@
-import { FiSend, FiPhone, FiMail, FiMessageCircle, FiArrowRight, FiX } from 'react-icons/fi'
+import { FiSend, FiPhone, FiMail, FiMessageCircle, FiArrowRight, FiX, FiTrash2 } from 'react-icons/fi'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 
 export default function AiChatPanel({
   chat,
@@ -66,16 +67,28 @@ export default function AiChatPanel({
             <span className="chat-widget__status">{t('chatOnline')}</span>
           </div>
         </div>
-        {!inDrawer ? (
+        <div className="chat-widget__header-actions">
           <button
             type="button"
             className="chat-widget__close"
-            onClick={onClose}
-            aria-label={t('closeChat')}
+            onClick={chat.clearChatHistory}
+            aria-label={t('clearChat')}
+            title={t('clearChat')}
+            disabled={chat.isLoadingAI}
           >
-            <FiX size={20} />
+            <FiTrash2 size={18} />
           </button>
-        ) : null}
+          {!inDrawer ? (
+            <button
+              type="button"
+              className="chat-widget__close"
+              onClick={onClose}
+              aria-label={t('closeChat')}
+            >
+              <FiX size={20} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="chat-widget__messages" ref={chat.chatMessagesRef} aria-live="polite">
@@ -185,15 +198,9 @@ export default function AiChatPanel({
                 </div>
               )}
             </div>
-            {message.buttons && message.buttons.length > 0 && (
-              <div
-                className={`chat-widget__buttons${
-                  message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
-                    ? ' chat-widget__buttons--contact'
-                    : ''
-                }`}
-              >
-                {message.buttons.map((button, index) => {
+            {visibleAssistantButtons(message.buttons).length > 0 && (
+              <div className="chat-widget__buttons chat-widget__buttons--contact">
+                {visibleAssistantButtons(message.buttons).map((button, index) => {
                   if (typeof button === 'object' && button?.type === 'contact_pref') {
                     const IconCmp =
                       button.value === 'phone'

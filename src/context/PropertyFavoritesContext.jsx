@@ -19,6 +19,7 @@ import {
 } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 
 const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
 const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
@@ -231,6 +232,14 @@ export function PropertyFavoritesProvider({ children }) {
       const isOldAuth = isAuthenticated()
       if (!isClerkAuth && !isOldAuth) {
         requestOpenLoginModal({ wizard: true })
+        return false
+      }
+
+      const alreadyLiked = hasDbBackedProperty(property)
+        ? dbKeys.has(favoriteCompositeKey(property.id, property.source_table))
+        : Boolean(mockCategory && mockMap.get(`${mockCategory}-${property.id}`))
+      if (!alreadyLiked && isClosedForWishlist(property)) {
+        showNotification('Проданный объект нельзя добавить в избранное')
         return false
       }
 

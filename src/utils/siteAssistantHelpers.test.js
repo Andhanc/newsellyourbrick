@@ -5,6 +5,7 @@ import {
   estimateSimpleYield,
   extractYieldInputsFromMessage,
   pickLocalRecommendations,
+  refreshAssistantMessageCopy,
   sanitizeNavigationLinks,
   ensureInvestorPanelNavigation,
 } from './siteAssistantHelpers.js'
@@ -26,6 +27,20 @@ test('detectNavigationFromMessage finds calculator and map', () => {
   const links = detectNavigationFromMessage('открой калькулятор доходности и карту')
   assert.ok(links.some((l) => l.path === '/calculator'))
   assert.ok(links.some((l) => l.path === '/map'))
+})
+
+test('ordinary request to view apartments does not create a test-drive button', () => {
+  const links = detectNavigationFromMessage('давайте посмотрим квартиры')
+  assert.ok(!links.some((link) => link.path === '/test-drive'))
+})
+
+test('removes a stale test-drive link from an ordinary catalog prompt', () => {
+  const message = refreshAssistantMessageCopy({
+    sender: 'assistant',
+    text: 'Выберите страну: Беларусь.',
+    navigation: [{ path: '/test-drive', label: 'Test-drive объектов' }],
+  })
+  assert.equal(message.navigation, null)
 })
 
 test('estimateSimpleYield computes gross yield', () => {
@@ -98,6 +113,52 @@ test('ensureInvestorPanelNavigation adds calculator for yield questions', () => 
     yieldPercent: 5,
   })
   assert.equal(nav[0].path, '/calculator')
+})
+
+test('strips Spain or Dubai from leftover assistant copy', async () => {
+  const { refreshAssistantMessageCopy, sanitizeAssistantCatalogCopy } = await import(
+    './siteAssistantHelpers.js'
+  )
+  assert.match(
+    sanitizeAssistantCatalogCopy('Помогу подобрать идеальный вариант в Испании или Дубае.'),
+    /текущего каталога/,
+  )
+  assert.doesNotMatch(
+    sanitizeAssistantCatalogCopy('Помогу подобрать идеальный вариант в Испании или Дубае.'),
+    /Испани|Дуба/,
+  )
+  const rewritten = refreshAssistantMessageCopy(
+    { sender: 'bot', text: 'Hello! Perfect property in Spain or Dubai.' },
+    'Welcome from the current catalog.',
+  )
+  assert.equal(rewritten.text, 'Welcome from the current catalog.')
+})
+
+test('visibleAssistantButtons keeps only manager contact chips', async () => {
+  const { visibleAssistantButtons } = await import('./siteAssistantHelpers.js')
+  assert.deepEqual(
+    visibleAssistantButtons(['Для себя', { type: 'contact_pref', value: 'phone', label: 'Звонок' }]).map(
+      (item) => item.value,
+    ),
+    ['phone'],
+  )
+})
+
+test('offline listing ask uses catalog cities instead of Madrid or Dubai', async () => {
+  const { buildOfflineAssistantReply } = await import('./siteAssistantHelpers.js')
+  const reply = buildOfflineAssistantReply(
+    'для себя',
+    { purpose: 'для себя' },
+    [
+      { id: 1, location: 'Беларусь, Минск', price: 120000 },
+      { id: 2, location: 'Беларусь, Минск', price: 150000 },
+    ],
+    { force: true },
+  )
+  assert.ok(reply)
+  assert.match(reply.text, /Минск/)
+  assert.doesNotMatch(reply.text, /Мадрид|Дубай/)
+  assert.equal(reply.buttons, null)
 })
 
 test('buildOfflineAssistantReply answers about the company', async () => {

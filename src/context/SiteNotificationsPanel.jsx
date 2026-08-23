@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
+  assignSheetPanelRef,
+  sheetHandleDragProps,
+  useBottomSheetDrag,
+} from '../hooks/useBottomSheetDrag'
+import {
   FiArrowRight,
   FiBell,
   FiCheck,
@@ -264,6 +269,14 @@ export default function SiteNotificationsPanel({
 }) {
   const groups = groupBuyerNotifications(notifications)
   const [activePeriod, setActivePeriod] = useState(() => pickDefaultPeriod(groups))
+  const sheetDrag = useBottomSheetDrag({
+    isOpen: visible && !isClosing,
+    visible,
+    isClosing,
+    requestClose: closePanel,
+    dismissOnly: true,
+  })
+  const setPanelRef = (node) => assignSheetPanelRef(sheetDrag.panelRef, panelRef)(node)
 
   useEffect(() => {
     if (!visible) return
@@ -284,12 +297,15 @@ export default function SiteNotificationsPanel({
       <div role="presentation" className={`notification-backdrop${closingBackdrop}`} onClick={closePanel} />
       <section
         className={`notification-panel${closingPanel}`}
-        ref={panelRef}
+        ref={setPanelRef}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="notification-panel-title"
       >
-        <div className="notification-panel__handle" aria-hidden><span /></div>
+        <div className="notification-panel__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)}>
+          <span />
+        </div>
         <header className="notification-panel__header">
           <div className="notification-panel__heading">
             <div className="notification-panel__title-row">

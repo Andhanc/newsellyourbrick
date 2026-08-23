@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react'
+import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import Confetti from './Confetti'
 import './Confetti.css'
@@ -17,6 +18,13 @@ export default function OapPublishSuccessDrawer({
   const [entered, setEntered] = useState(false)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.panel,
+  })
+  const sheetDrag = useBottomSheetDrag({
+    isOpen,
+    visible,
+    isClosing,
+    requestClose,
+    dismissOnly: true,
   })
 
   useEffect(() => {
@@ -63,11 +71,17 @@ export default function OapPublishSuccessDrawer({
         aria-labelledby="oap-publish-success-drawer-title"
       >
         <div
+          ref={sheetDrag.panelRef}
           className={`oap-publish-success-drawer__sheet${
             entered && !isClosing ? ' oap-publish-success-drawer__sheet--entering' : ''
           }${isClosing ? ' oap-publish-success-drawer__sheet--closing drawer-dismiss-from-bottom--closing' : ''}`}
+          style={sheetDrag.panelDragStyle}
         >
-          <div className="oap-publish-success-drawer__handle" aria-hidden="true">
+          <div
+            className="oap-publish-success-drawer__handle"
+            aria-hidden="true"
+            {...sheetHandleDragProps(sheetDrag)}
+          >
             <span className="oap-publish-success-drawer__handle-pill" />
           </div>
 

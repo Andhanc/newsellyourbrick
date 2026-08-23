@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  assignSheetPanelRef,
+  sheetHandleDragProps,
+  useBottomSheetDrag,
+} from '../../hooks/useBottomSheetDrag'
 import { DRAWER_DISMISS_MS, useDrawerDismiss } from '../../hooks/useDrawerDismiss'
 import './BuyerSheetShell.css'
 
@@ -49,6 +54,18 @@ export default function BuyerSheetShell({
     if (!dismissible) return
     requestClose(restoreFocus)
   }, [dismissible, requestClose, restoreFocus])
+
+  const sheetDrag = useBottomSheetDrag({
+    isOpen,
+    visible,
+    isClosing,
+    requestClose: handleRequestClose,
+    dismissOnly: true,
+  })
+  const setSurfaceRef = useCallback(
+    (node) => assignSheetPanelRef(sheetDrag.panelRef, surfaceRef)(node),
+    [sheetDrag.panelRef],
+  )
 
   const handleBackdropClick = useCallback(
     (event) => {
@@ -114,6 +131,7 @@ export default function BuyerSheetShell({
     'buyer-sheet',
     `buyer-sheet--${tone}`,
     isClosing ? 'buyer-sheet--closing' : '',
+    sheetDrag.isDragging ? 'buyer-sheet--dragging' : '',
     className,
   ]
     .filter(Boolean)
@@ -127,15 +145,22 @@ export default function BuyerSheetShell({
         onClick={handleBackdropClick}
       />
       <section
-        ref={surfaceRef}
+        ref={setSurfaceRef}
         className={`buyer-sheet__surface${isClosing ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing' : ''}`}
+        style={sheetDrag.panelDragStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy || titleId}
         aria-describedby={describedBy}
         tabIndex={-1}
       >
-        <div className="buyer-sheet__handle" aria-hidden="true"><span /></div>
+        <div
+          className="buyer-sheet__handle"
+          aria-hidden="true"
+          {...(dismissible ? sheetHandleDragProps(sheetDrag) : {})}
+        >
+          <span />
+        </div>
         {dismissible ? (
           <button
             ref={closeButtonRef}

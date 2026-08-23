@@ -4,7 +4,7 @@ import { FiLoader, FiRefreshCw } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
-import { resolvePositivePropertyPrice, summarizeComparisonRows } from '../../utils/compareDecision'
+import { formatComparisonDecision, resolvePositivePropertyPrice, summarizeComparisonRows } from '../../utils/compareDecision'
 import './CompareInvestorResults.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -139,19 +139,6 @@ function MetricGroups({ rows, leftTitle, rightTitle }) {
   )
 }
 
-function leadCopy(summary, t) {
-  if (!summary || summary.leader === 'unknown') return t('comparePage_decisionUnknown')
-  if (summary.leader === 'tie') {
-    return t('comparePage_decisionTie', { left: summary.left, right: summary.right })
-  }
-  const leader = summary.leader === 'left' ? t('comparePage_object1') : t('comparePage_object2')
-  return t('comparePage_decisionLead', {
-    leader: leader.toLowerCase(),
-    left: summary.left,
-    right: summary.right,
-  })
-}
-
 export default function CompareInvestorResults({
   pair,
   rows = [],
@@ -201,7 +188,7 @@ export default function CompareInvestorResults({
         <ObjectHeader item={pair.right} side="right" index={2} onReplace={onReplace} />
       </div>
 
-      <p className="compare-investor__lead">{leadCopy(summary, t)}</p>
+      <p className="compare-investor__lead">{formatComparisonDecision(summary, t)}</p>
 
       <MetricGroups rows={rows} leftTitle={leftView.title} rightTitle={rightView.title} />
 

@@ -38,6 +38,15 @@ test('closing animation does not prematurely release scroll or restore focus', (
   assert.match(source, /\[initialFocusRef, isOpen\]/)
 })
 
+test('buyer sheet closes by swipe or scroll down from the top', () => {
+  assert.match(source, /useBottomSheetDrag/)
+  assert.match(source, /dismissOnly:\s*true/)
+  assert.match(source, /sheetHandleDragProps/)
+  assert.match(source, /panelDragStyle/)
+  assert.match(css, /touch-action:\s*none/)
+  assert.match(css, /\.buyer-sheet--dragging/)
+})
+
 test('buyer sheet is a safe-area mobile bottom sheet with motion fallback', () => {
   assert.match(css, /\.buyer-sheet__surface[\s\S]*border-radius:\s*var\(--buyer-radius-sheet\)\s+var\(--buyer-radius-sheet\)\s+0\s+0/)
   assert.match(css, /padding-bottom:\s*calc\([^;]*env\(safe-area-inset-bottom/)
