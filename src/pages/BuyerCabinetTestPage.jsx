@@ -288,16 +288,16 @@ export default function BuyerCabinetTestPage() {
     }
     sessionStorage.setItem('clerk_logout_in_progress', 'true')
     try {
+      await logout()
+    } catch (e) {
+      console.warn('logout():', e)
+    }
+    try {
       if (user && signOut) {
         await signOut({ redirectUrl: `${window.location.origin}/` })
       }
     } catch (e) {
       console.warn('Clerk signOut:', e)
-    }
-    try {
-      await logout()
-    } catch (e) {
-      console.warn('logout():', e)
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }

@@ -1645,6 +1645,9 @@ export const logout = async () => {
   const userData = getUserData()
   const userId = userData.id
   const mobileAuthToken = getMobileAuthToken()
+  // Блокируем защищённый профиль синхронно: Clerk signOut может сразу
+  // перенаправить страницу и не дать выполниться последующему cleanup-коду.
+  clearBiometricSessionState()
   
   // Обновляем статус в БД (is_online = 0) перед выходом
   if (userId) {

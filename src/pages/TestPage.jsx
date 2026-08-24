@@ -872,16 +872,16 @@ function TestPage() {
     }
     sessionStorage.setItem('clerk_logout_in_progress', 'true')
     try {
+      await logout()
+    } catch (e) {
+      console.warn('TestPage logout:', e)
+    }
+    try {
       if (user && signOut) {
         await signOut({ redirectUrl: `${window.location.origin}/` })
       }
     } catch (e) {
       console.warn('TestPage Clerk signOut:', e)
-    }
-    try {
-      await logout()
-    } catch (e) {
-      console.warn('TestPage logout:', e)
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }

@@ -16,17 +16,17 @@ export async function performOwnerTestLogout({ t, user, signOut, confirm = true 
 
   sessionStorage.setItem('clerk_logout_in_progress', 'true')
   try {
+    await logout()
+  } catch (error) {
+    console.warn('OwnerTestProfileMenu: logout()', error)
+  }
+
+  try {
     if (user && signOut) {
       await signOut({ redirectUrl: `${window.location.origin}/` })
     }
   } catch (error) {
     console.warn('OwnerTestProfileMenu: Clerk signOut', error)
-  }
-
-  try {
-    await logout()
-  } catch (error) {
-    console.warn('OwnerTestProfileMenu: logout()', error)
   } finally {
     sessionStorage.removeItem('clerk_logout_in_progress')
   }

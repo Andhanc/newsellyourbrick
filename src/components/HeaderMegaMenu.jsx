@@ -414,17 +414,17 @@ export default function HeaderMegaMenu({
 
     sessionStorage.setItem('clerk_logout_in_progress', 'true')
     try {
+      await logout()
+    } catch (error) {
+      console.warn('HeaderMegaMenu: logout()', error)
+    }
+
+    try {
       if (clerkUser && signOut) {
         await signOut({ redirectUrl: `${window.location.origin}/` })
       }
     } catch (error) {
       console.warn('HeaderMegaMenu: Clerk signOut', error)
-    }
-
-    try {
-      await logout()
-    } catch (error) {
-      console.warn('HeaderMegaMenu: logout()', error)
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
