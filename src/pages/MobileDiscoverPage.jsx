@@ -405,7 +405,10 @@ export default function MobileDiscoverPage() {
                       key={card.id}
                       className={`md-card md-card--${card.theme}`}
                       role="listitem"
-                      style={{ '--md-card-i': index }}
+                      style={{
+                        '--md-card-i': index,
+                        '--md-card-image-position': card.imagePosition,
+                      }}
                       aria-label={card.title}
                     >
                       <Link
@@ -413,6 +416,17 @@ export default function MobileDiscoverPage() {
                         to={card.to}
                         aria-label={`${t('aboutCorp_moreDetails')}: ${card.title}`}
                       >
+                        <img
+                          className="md-card__image"
+                          src={card.image}
+                          alt=""
+                          width={1536}
+                          height={1024}
+                          loading={index === 0 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          aria-hidden="true"
+                        />
+                        <span className="md-card__shade" aria-hidden="true" />
                         <div className="md-card__visual" aria-hidden="true">
                           <span className="md-card__number">{card.number}</span>
                           <img
