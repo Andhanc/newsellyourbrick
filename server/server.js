@@ -16,6 +16,7 @@ import { execSync } from 'child_process';
 const { readFileSync } = fs;
 import crypto from 'crypto';
 import { createClerkClient, verifyToken as verifyClerkToken } from '@clerk/backend';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import qrcode from 'qrcode-terminal';
 import QRCodePNG from 'qrcode';
 import whatsappPkg from 'whatsapp-web.js';
@@ -6357,6 +6358,51 @@ function mobilePublicUser(user, fallback = {}) {
   };
 }
 
+let clerkPublicJwks = null;
+
+function clerkFrontendIssuerFromPublishableKey() {
+  const publishableKey = String(
+    process.env.CLERK_PUBLISHABLE_KEY || process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || '',
+  ).trim();
+  const encoded = publishableKey.replace(/^pk_(?:test|live)_/, '');
+  if (!encoded) throw new Error('CLERK_PUBLISHABLE_KEY is not configured');
+  const frontendApi = Buffer.from(encoded, 'base64').toString('utf8').replace(/\0/g, '').replace(/\$$/, '');
+  if (!frontendApi) throw new Error('Invalid CLERK_PUBLISHABLE_KEY');
+  return `https://${frontendApi}`;
+}
+
+async function verifyClerkSessionToken(clerkToken, secretKey) {
+  if (secretKey) {
+    const result = await verifyClerkToken(clerkToken, { secretKey });
+    if (result?.errors?.length) throw result.errors[0];
+    return result?.data || result;
+  }
+
+  const issuer = clerkFrontendIssuerFromPublishableKey();
+  if (!clerkPublicJwks) {
+    clerkPublicJwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+  }
+  const verified = await jwtVerify(clerkToken, clerkPublicJwks, { issuer });
+  return verified.payload;
+}
+
+function isLocalClerkFallbackRequest(req) {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    const hostname = new URL(String(req.get('origin') || '')).hostname.toLowerCase();
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      /^10\./.test(hostname) ||
+      /^192\.168\./.test(hostname) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * POST /api/auth/clerk/mobile
  * Проверяет Clerk session JWT на сервере, получает профиль напрямую из Clerk,
@@ -6371,7 +6417,8 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
     }
 
     const secretKey = String(process.env.CLERK_SECRET_KEY || '').trim();
-    if (!secretKey) {
+    const localJwksFallback = !secretKey && isLocalClerkFallbackRequest(req);
+    if (!secretKey && !localJwksFallback) {
       return res.status(503).json({
         success: false,
         error: 'Clerk backend не настроен: добавьте CLERK_SECRET_KEY в Railway Variables',
@@ -6379,10 +6426,36 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
       });
     }
 
-    const claims = await verifyClerkToken(clerkToken, { secretKey });
+    const claims = await verifyClerkSessionToken(clerkToken, secretKey);
     const clerkUserId = String(claims?.sub || '').trim();
     if (!clerkUserId) {
       return res.status(401).json({ success: false, error: 'Invalid Clerk session' });
+    }
+
+    // Local development can validate the Clerk JWT through public JWKS even when
+    // the Backend API secret is intentionally absent. The numeric DB user is
+    // supplied by the already-synchronised web session. Production never uses
+    // this fallback and still requires CLERK_SECRET_KEY.
+    if (!secretKey) {
+      const localUserId = Number(req.body?.userId);
+      if (!Number.isInteger(localUserId) || localUserId < 1) {
+        return res.status(422).json({
+          success: false,
+          error: 'Локальная Clerk-сессия не связана с пользователем БД. Перезайдите в профиль.',
+          code: 'LOCAL_DB_USER_REQUIRED',
+        });
+      }
+      const localUser = await userQueries.getById(localUserId);
+      if (!localUser || localUser.is_blocked === 1) {
+        return res.status(403).json({ success: false, error: 'Пользователь недоступен' });
+      }
+      const authToken = await issueMobileAuthSession(localUser.id);
+      return res.json({
+        success: true,
+        authToken,
+        user: mobilePublicUser(localUser),
+        localJwksVerified: true,
+      });
     }
 
     const clerkClient = createClerkClient({ secretKey });

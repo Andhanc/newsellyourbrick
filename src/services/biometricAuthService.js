@@ -5,7 +5,11 @@ import {
 } from '@simplewebauthn/browser'
 
 import { getApiBaseUrlSync } from '../utils/apiConfig'
-import { getMobileAuthToken, rememberMobileAuthToken } from './authService'
+import {
+  getMobileAuthToken,
+  getStoredNumericUserId,
+  rememberMobileAuthToken,
+} from './authService'
 
 const API_BASE_URL = getApiBaseUrlSync()
 
@@ -77,7 +81,11 @@ export async function ensureBiometricAuthToken({ clerkToken, role = 'buyer' } = 
       'Content-Type': 'application/json',
       Authorization: `Bearer ${clerkToken}`,
     },
-    body: JSON.stringify({ role, mode: 'login' }),
+    body: JSON.stringify({
+      role,
+      mode: 'login',
+      userId: getStoredNumericUserId(),
+    }),
   })
   const body = await readJson(response)
   if (!body.authToken) throw new Error('biometric_login_session_missing')
