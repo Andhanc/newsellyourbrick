@@ -66,6 +66,7 @@ import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 import { createCorsOriginChecker } from './middleware/corsOrigin.js';
 import { requireClerkAuth } from './middleware/clerkAuth.js';
+import { registerBiometricRoutes } from './biometric/routes.js';
 import { resolveWebDist } from './middleware/resolveWebDist.js';
 import { getCurrencySymbol } from './utils/currency.js';
 import {
@@ -1119,11 +1120,14 @@ app.use('/api', (req, res, next) => {
   if (req.path === '/config' || req.path === '/health' || req.path.startsWith('/webhooks/')) {
     return next();
   }
+  // These routes validate the app's own mobile bearer session themselves.
+  if (req.path.startsWith('/biometric/')) return next();
   return requireClerkAuth(req, res, next);
 });// Stripe webhook требует сырой body для проверки подписи
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 /** Опрос тест-драйва может содержать base64-фото; дефолтный лимит 100kb рвёт такие запросы. */
 app.use(express.json({ limit: '18mb' }));
+registerBiometricRoutes(app);
 registerPropertyAiRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
@@ -6263,15 +6267,6 @@ app.post('/api/auth/email/login', async (req, res) => {
       success: false,
       error: 'Не удалось войти. Попробуйте позже.',
     });
-  }
-});
-
-app.post('/api/auth/mobile/logout', async (req, res) => {
-  try {
-    const result = await revokeMobileAuthSession(req);
-    res.json({ success: true, data: { revoked: result.count || 0 } });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error?.message || 'mobile_logout_failed' });
   }
 });
 

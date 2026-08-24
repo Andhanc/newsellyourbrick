@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUser, useClerk } from '@clerk/clerk-react'
+import { useAuth, useUser, useClerk } from '@clerk/clerk-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { AsYouType } from 'libphonenumber-js'
 import {
@@ -49,6 +49,13 @@ import PassportUploadSourceSheet from '../components/PassportUploadSourceSheet'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import { validatePassportImageFile } from '../utils/passportPhotoValidation'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
+import BiometricSecurityDrawer from '../components/BiometricSecurityDrawer'
+import {
+  getBiometricStatus,
+  isBiometricCancel,
+  rememberBiometricEnabled,
+  registerPlatformBiometric,
+} from '../services/biometricAuthService'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import PhoneInput from '../components/PhoneInput'
@@ -678,6 +685,7 @@ function TestPage() {
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const { user, isLoaded } = useUser()
+  const { isSignedIn, getToken } = useAuth()
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
   const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
@@ -723,6 +731,10 @@ function TestPage() {
 
   const [dataSheetOpen, setDataSheetOpen] = useState(false)
   const [dataSheetStep, setDataSheetStep] = useState('contacts')
+  const [biometricOfferOpen, setBiometricOfferOpen] = useState(false)
+  const [biometricOfferBusy, setBiometricOfferBusy] = useState(false)
+  const [biometricOfferError, setBiometricOfferError] = useState('')
+  const biometricOfferCheckRef = useRef('')
   const [legalSheetOpen, setLegalSheetOpen] = useState(false)
   const [legalSheetTab, setLegalSheetTab] = useState('agreement')
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
@@ -1902,6 +1914,78 @@ function TestPage() {
     documents: isDocumentsStepComplete,
     review: isProfileFullyCompleted,
   }
+
+  const buildBiometricAuthContext = useCallback(async () => ({
+    clerkToken: isSignedIn ? await getToken() : '',
+    role: localStorage.getItem('userRole') || 'buyer',
+  }), [getToken, isSignedIn])
+
+  useEffect(() => {
+    if (!dataSheetOpen || dataSheetStep !== 'review' || !isProfileFullyCompleted) return
+    if (!resolvedNumericUserId || window.matchMedia('(min-width: 768px)').matches) return
+    const key = String(resolvedNumericUserId)
+    if (sessionStorage.getItem(`syb.biometricOfferLater:${key}`) === '1') return
+    if (biometricOfferCheckRef.current === key) return
+    biometricOfferCheckRef.current = key
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const status = await getBiometricStatus(await buildBiometricAuthContext())
+        rememberBiometricEnabled(resolvedNumericUserId, status.enabled)
+        if (!cancelled && !status.enabled) setBiometricOfferOpen(true)
+      } catch {
+        // The recommendation is still useful on LAN/legacy sessions; the CTA explains availability.
+        if (!cancelled) setBiometricOfferOpen(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [
+    buildBiometricAuthContext,
+    dataSheetOpen,
+    dataSheetStep,
+    isProfileFullyCompleted,
+    resolvedNumericUserId,
+  ])
+
+  const handleBiometricOfferLater = useCallback(() => {
+    if (resolvedNumericUserId) {
+      sessionStorage.setItem(`syb.biometricOfferLater:${resolvedNumericUserId}`, '1')
+    }
+    setBiometricOfferError('')
+    setBiometricOfferOpen(false)
+  }, [resolvedNumericUserId])
+
+  const handleBiometricOfferAdd = useCallback(async () => {
+    setBiometricOfferBusy(true)
+    setBiometricOfferError('')
+    try {
+      await registerPlatformBiometric(await buildBiometricAuthContext())
+      if (resolvedNumericUserId) {
+        rememberBiometricEnabled(resolvedNumericUserId, true)
+        sessionStorage.setItem(`syb.biometricUnlocked:${resolvedNumericUserId}`, '1')
+      }
+      setBiometricOfferOpen(false)
+      showNotification('Биометрическая защита входа включена', 'success')
+    } catch (error) {
+      if (!isBiometricCancel(error)) {
+        const code = String(error?.message || '')
+        setBiometricOfferError(
+          code === 'biometric_login_session_missing'
+            ? 'Текущая сессия создана до включения защиты. Выйдите из профиля, войдите снова и повторите добавление.'
+            : code === 'biometric_platform_unavailable' || code === 'biometric_browser_unsupported'
+            ? 'Откройте профиль на телефоне через HTTPS и проверьте, что на устройстве настроен отпечаток пальца или Face ID.'
+            : code === 'secure_context_required'
+              ? 'Для добавления биометрии нужен защищённый HTTPS-адрес.'
+              : 'Не удалось добавить защиту. Проверьте системную биометрию и попробуйте ещё раз.',
+        )
+      }
+    } finally {
+      setBiometricOfferBusy(false)
+    }
+  }, [buildBiometricAuthContext, resolvedNumericUserId])
   const shouldPulseSaveButton =
     dataSheetOpen &&
     !dbUserLoading &&
@@ -4099,6 +4183,15 @@ function TestPage() {
         active={showTileDataOnboarding}
         targetRef={dataTileRef}
         message={t('buyerData_spotlightFillHint')}
+      />
+
+      <BiometricSecurityDrawer
+        open={biometricOfferOpen}
+        mode="offer"
+        busy={biometricOfferBusy}
+        error={biometricOfferError}
+        onPrimary={handleBiometricOfferAdd}
+        onSecondary={handleBiometricOfferLater}
       />
 
     </div>

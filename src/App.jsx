@@ -9,6 +9,7 @@ import VisitorHeartbeat from './components/VisitorHeartbeat'
 import YandexMetrikaHits from './components/YandexMetrikaHits'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import PrivateClubKickModal from './components/PrivateClubKickModal'
+import BiometricLockGate from './components/BiometricLockGate'
 
 import VerificationRejectedGate from './components/VerificationRejectedGate'
 import BuyerProfileOnboardingRouteGate from './components/BuyerProfileOnboardingRouteGate'
@@ -648,6 +649,7 @@ function App() {
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
       <PrivateClubKickModal />
+      <BiometricLockGate />
       <GlobalVerificationSuccessGate />
       <VerificationRejectedGate blockedUser={isBlocked} />
       <BuyerProfileOnboardingRouteGate />

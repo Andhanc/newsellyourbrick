@@ -3414,6 +3414,46 @@
   }
 }
 
+.md-cards-dots {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .md-cards::-webkit-scrollbar {
+    display: none;
+  }
+
+  .md-cards-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 22px;
+    padding: 0.35rem 1rem 0;
+  }
+
+  .md-cards-dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: #cbd5d8;
+    cursor: pointer;
+    transition: width 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .md-cards-dot.is-active {
+    width: 22px;
+    background: #0099a9;
+  }
+
+  .md-cards-dot:focus-visible {
+    outline: 2px solid #007d8a;
+    outline-offset: 3px;
+  }
+}
+
 
 /* ——— Reference-led compact card grid ——— */
 .md-cards-wrap {
@@ -3618,5 +3658,39 @@
 
   .md-card__title {
     font-size: clamp(1.3rem, 1.35vw, 1.72rem);
+  }
+}
+
+/* Final mobile override: keep it after the compact desktop grid rules above. */
+@media (max-width: 767px) {
+  .md-cards-wrap {
+    padding: 0 0 1.2rem;
+  }
+
+  .md-cards {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(226px, 68vw, 262px);
+    grid-template-columns: none;
+    width: 100%;
+    max-width: none;
+    gap: 0.8rem;
+    margin: 0;
+    padding: 0.2rem 1rem 0.55rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-padding-inline: 1rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+  }
+
+  .md-card {
+    width: 100%;
+    aspect-ratio: 0.84;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
   }
 }

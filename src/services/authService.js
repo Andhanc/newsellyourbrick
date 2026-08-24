@@ -9,6 +9,35 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync()
+const MOBILE_AUTH_TOKEN_KEY = 'syb.mobileAuthToken'
+
+export function rememberMobileAuthToken(token) {
+  try {
+    if (token) sessionStorage.setItem(MOBILE_AUTH_TOKEN_KEY, String(token))
+    else sessionStorage.removeItem(MOBILE_AUTH_TOKEN_KEY)
+  } catch {
+    /* sessionStorage can be unavailable in embedded/privacy contexts */
+  }
+}
+
+export function getMobileAuthToken() {
+  try {
+    return sessionStorage.getItem(MOBILE_AUTH_TOKEN_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function clearBiometricSessionState() {
+  rememberMobileAuthToken(null)
+  try {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('syb.biometricUnlocked:')) sessionStorage.removeItem(key)
+    })
+  } catch {
+    /* ignore */
+  }
+}
 
 // EmailJS настройки (будут обновлены после загрузки конфигурации)
 let emailJsConfig = getEmailJsConfig()
@@ -541,6 +570,7 @@ export const clearReferrerId = () => {
  * Очищает данные пользователя из localStorage, но сохраняет админские данные
  */
 export const clearUserDataWithoutAdmin = () => {
+  clearBiometricSessionState()
   // Сохраняем админские данные перед очисткой
   const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn')
   const adminPermissions = localStorage.getItem('adminPermissions')
@@ -615,6 +645,7 @@ export const clearUserDataWithoutAdmin = () => {
  * Очищает данные пользователя из localStorage
  */
 export const clearUserData = () => {
+  clearBiometricSessionState()
   // Удаляем основной объект userData (если был сохранен)
   localStorage.removeItem('userData')
   
@@ -1144,6 +1175,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           // Удаляем код из localStorage только после успешной авторизации
           verifyCode(formattedPhone, code, true)
           saveUserData(userData, 'whatsapp')
+          rememberMobileAuthToken(data.authToken)
           return {
             success: true,
             user: userData,
@@ -1612,6 +1644,7 @@ export const logout = async () => {
   // Получаем ID пользователя перед очисткой
   const userData = getUserData()
   const userId = userData.id
+  const mobileAuthToken = getMobileAuthToken()
   
   // Обновляем статус в БД (is_online = 0) перед выходом
   if (userId) {
@@ -1631,6 +1664,20 @@ export const logout = async () => {
     } catch (error) {
       console.warn('⚠️ Ошибка при обновлении статуса в БД:', error.message)
       // Продолжаем выход даже если произошла ошибка
+    }
+  }
+
+  // Отзываем долгоживущую серверную сессию до очистки токена в sessionStorage.
+  if (mobileAuthToken) {
+    try {
+      const apiBaseUrl = await getApiBaseUrl()
+      await fetch(`${apiBaseUrl}/auth/mobile/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${mobileAuthToken}` },
+      })
+    } catch (error) {
+      console.warn('⚠️ Не удалось отозвать мобильную сессию при выходе:', error.message)
+      // Локальный выход всё равно должен завершиться.
     }
   }
   
@@ -2058,6 +2105,7 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           // Пользователь успешно сохранен в БД
           console.log('✅ Пользователь успешно зарегистрирован в БД:', data.user)
           saveUserData(data.user, 'email')
+          rememberMobileAuthToken(data.authToken)
           return {
             success: true,
             user: data.user,
@@ -2352,10 +2400,12 @@ export const loginWithEmail = async (email, password, role = null) => {
         
         console.log('💾 Сохраняем данные пользователя с ролью:', userDataWithRole.role)
         saveUserData(userDataWithRole, 'email')
+        rememberMobileAuthToken(data.authToken)
         
         return {
           success: true,
           user: userDataWithRole,
+          authToken: data.authToken || null,
           is_blocked: false
         }
       } else {

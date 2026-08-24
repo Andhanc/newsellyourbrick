@@ -81,6 +81,7 @@ export default function MobileDiscoverPage() {
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
+  const cardsRef = useRef(null)
   const busyRef = useRef(false)
   const screenRef = useRef('hero')
   const touchStartY = useRef(0)
@@ -92,6 +93,7 @@ export default function MobileDiscoverPage() {
   const [stageEntered, setStageEntered] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
+  const [activeSaleCard, setActiveSaleCard] = useState(0)
 
   const saleCards = getSaleCards(t)
 
@@ -119,6 +121,44 @@ export default function MobileDiscoverPage() {
       if (layout) layout.style.overflowY = ''
     }
   }, [clearTimers])
+
+  useEffect(() => {
+    const scroller = cardsRef.current
+    if (!scroller || screen !== 'stage') return undefined
+
+    const syncActive = () => {
+      const cards = Array.from(scroller.querySelectorAll('.md-card'))
+      const midpoint = scroller.scrollLeft + scroller.clientWidth / 2
+      let closestIndex = 0
+      let closestDistance = Infinity
+
+      cards.forEach((card, index) => {
+        const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - midpoint)
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestIndex = index
+        }
+      })
+      setActiveSaleCard(closestIndex)
+    }
+
+    syncActive()
+    scroller.addEventListener('scroll', syncActive, { passive: true })
+    window.addEventListener('resize', syncActive)
+    return () => {
+      scroller.removeEventListener('scroll', syncActive)
+      window.removeEventListener('resize', syncActive)
+    }
+  }, [screen, stageEntered])
+
+  const scrollToSaleCard = useCallback((index) => {
+    const scroller = cardsRef.current
+    const card = scroller?.querySelectorAll('.md-card')[index]
+    if (!scroller || !card) return
+    const left = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    setActiveSaleCard(index)
+  }, [])
 
   const goTo = useCallback(
     (next) => {
@@ -358,7 +398,7 @@ export default function MobileDiscoverPage() {
             </div>
 
             <div className="md-cards-wrap">
-              <div className="md-cards" role="list">
+              <div ref={cardsRef} className="md-cards" role="list">
                 {saleCards.map((card, index) => {
                   return (
                     <article
@@ -394,6 +434,24 @@ export default function MobileDiscoverPage() {
                     </article>
                   )
                 })}
+              </div>
+
+              <div
+                className="md-cards-dots"
+                role="tablist"
+                aria-label={t('discoverPage_saleFormatsDotsAria')}
+              >
+                {saleCards.map((card, index) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    role="tab"
+                    className={`md-cards-dot${activeSaleCard === index ? ' is-active' : ''}`}
+                    aria-label={card.title}
+                    aria-selected={activeSaleCard === index}
+                    onClick={() => scrollToSaleCard(index)}
+                  />
+                ))}
               </div>
 
             </div>
