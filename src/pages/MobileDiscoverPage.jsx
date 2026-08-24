@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
+  FiArrowUpRight,
+  FiBookmark,
   FiSearch,
 } from 'react-icons/fi'
 import Header from '../components/Header'
@@ -94,6 +96,7 @@ export default function MobileDiscoverPage() {
   const [isFooterNear, setIsFooterNear] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
   const [activeSaleCard, setActiveSaleCard] = useState(0)
+  const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
 
   const saleCards = getSaleCards(t)
 
@@ -158,6 +161,15 @@ export default function MobileDiscoverPage() {
     const left = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2
     scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
     setActiveSaleCard(index)
+  }, [])
+
+  const toggleSavedSaleCard = useCallback((id) => {
+    setSavedSaleCards((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }, [])
 
   const goTo = useCallback(
@@ -400,6 +412,7 @@ export default function MobileDiscoverPage() {
             <div className="md-cards-wrap">
               <div ref={cardsRef} className="md-cards" role="list">
                 {saleCards.map((card, index) => {
+                  const isSaved = savedSaleCards.has(card.id)
                   return (
                     <article
                       key={card.id}
@@ -411,11 +424,7 @@ export default function MobileDiscoverPage() {
                       }}
                       aria-label={card.title}
                     >
-                      <Link
-                        className="md-card__frame"
-                        to={card.to}
-                        aria-label={`${t('aboutCorp_moreDetails')}: ${card.title}`}
-                      >
+                      <div className="md-card__frame">
                         <img
                           className="md-card__image"
                           src={card.image}
@@ -429,22 +438,40 @@ export default function MobileDiscoverPage() {
                         <span className="md-card__shade" aria-hidden="true" />
                         <div className="md-card__visual" aria-hidden="true">
                           <span className="md-card__number">{card.number}</span>
-                          <img
-                            className="md-card__icon"
-                            src={card.iconSrc}
-                            alt=""
-                            width={512}
-                            height={512}
-                            loading={index === 0 ? 'eager' : 'lazy'}
-                            decoding="async"
-                          />
                         </div>
                         <div className="md-card__body">
                           <div className="md-card__copy">
+                            <img
+                              className="md-card__icon"
+                              src={card.iconSrc}
+                              alt=""
+                              width={512}
+                              height={512}
+                              loading={index === 0 ? 'eager' : 'lazy'}
+                              decoding="async"
+                              aria-hidden="true"
+                            />
                             <h3 className="md-card__title">{card.title}</h3>
                           </div>
+                          <div className="md-card__actions">
+                            <Link className="md-card__cta" to={card.to}>
+                              {t('aboutCorp_moreDetails')}
+                              <FiArrowUpRight aria-hidden="true" />
+                            </Link>
+                            <button
+                              type="button"
+                              className={`md-card__save${isSaved ? ' is-on' : ''}`}
+                              aria-label={
+                                isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
+                              }
+                              aria-pressed={isSaved}
+                              onClick={() => toggleSavedSaleCard(card.id)}
+                            >
+                              <FiBookmark aria-hidden="true" />
+                            </button>
+                          </div>
                         </div>
-                      </Link>
+                      </div>
                     </article>
                   )
                 })}
