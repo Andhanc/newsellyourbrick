@@ -3482,33 +3482,56 @@
   pointer-events: auto;
 }
 
-.md-card__cta {
+.md-card .md-card__cta {
   flex: 1;
-  justify-content: space-between;
-  min-height: 40px;
-  padding: 0 0.24rem 0 0.78rem;
-  border-color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.94);
-  font-size: 0.7rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0 0.8rem;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  background-image: none !important;
+  color: #111827 !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font-size: 0.78rem;
+}
+
+.md-card .md-card__cta svg {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: currentColor;
+}
+
+.md-card .md-card__cta:hover {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #111827 !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
 }
 
 .md-card__save {
-  width: 40px;
-  height: 40px;
-  flex-basis: 40px;
-  border-color: rgba(255, 255, 255, 0.42);
-  background: rgba(8, 24, 38, 0.28);
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.22);
   color: #ffffff;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .md-card__save.is-on {
-  border-color: #4ecdd6;
-  background: #4ecdd6;
-  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95);
+  color: #111827;
 }
 
 .md-stage.is-ready .md-card {

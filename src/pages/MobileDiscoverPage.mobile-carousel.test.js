@@ -24,6 +24,8 @@ test('mobile home uses the restored swipe rail and generated card icons', () => 
   assert.match(css, /scroll-snap-type: x mandatory/)
   assert.match(css, /aspect-ratio: 0\.84/)
   assert.match(css, /\.md-cards-dot\.is-active[\s\S]*background: #4ecdd6/)
+  assert.match(css, /\.md-card \.md-card__cta[\s\S]*background-color: rgba\(255, 255, 255, 0\.95\) !important/)
+  assert.match(css, /\.md-card__save[\s\S]*border-radius: 13px/)
 })
 
 test('desktop four-column layout is preserved', () => {
