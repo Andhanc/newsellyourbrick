@@ -111,7 +111,7 @@ const PropertyDetailPage = () => {
   const [notFound, setNotFound] = useState(false)
 
   const buyerDetailPreview = useMemo(() => {
-    if (!import.meta.env?.DEV) return false
+    if (!import.meta.env.DEV) return false
     return new URLSearchParams(location.search || '').get('buyer_detail_preview') === '1'
   }, [location.search])
 

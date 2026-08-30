@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
@@ -266,7 +267,7 @@ function PropertyDetailClassic({
     height: window.innerHeight
   })
   const [selectedDocument, setSelectedDocument] = useState(null) // Выбранный документ для просмотра
-  const [desktopGalleryLightboxIndex, setDesktopGalleryLightboxIndex] = useState(null)
+  const [galleryLightbox, setGalleryLightbox] = useState(null)
   const auctionDesktopTitleRef = useRef(null)
   const auctionMobileTitleRef = useRef(null)
   const [isAuctionDesktopTitleVisible, setIsAuctionDesktopTitleVisible] = useState(true)
@@ -1042,46 +1043,73 @@ function PropertyDetailClassic({
     }
   }
 
-  const openDesktopGalleryLightbox = (index) => {
-    setDesktopGalleryLightboxIndex(index)
+  const openGalleryLightbox = (index, media = galleryMedia) => {
+    const selectedMedia = media[index]
+    if (!selectedMedia?.url) return
+
+    // Если открыто фото, в полноэкранном режиме листаем только фото и считаем их.
+    const lightboxMedia =
+      selectedMedia.type === 'video'
+        ? media
+        : media.filter((item) => item.type !== 'video')
+    const lightboxIndex = Math.max(0, lightboxMedia.indexOf(selectedMedia))
+
+    setGalleryLightbox({ index: lightboxIndex, media: lightboxMedia })
     setCurrentImageIndex(index)
   }
 
-  const closeDesktopGalleryLightbox = useCallback(() => {
-    setDesktopGalleryLightboxIndex(null)
+  const closeGalleryLightbox = useCallback(() => {
+    setGalleryLightbox(null)
   }, [])
 
-  const stepDesktopGalleryLightbox = useCallback(
+  const stepGalleryLightbox = useCallback(
     (direction) => {
-      setDesktopGalleryLightboxIndex((prev) => {
-        if (prev == null || galleryMedia.length <= 1) return prev
+      setGalleryLightbox((prev) => {
+        if (!prev || prev.media.length <= 1) return prev
         const next =
           direction === 'next'
-            ? prev < galleryMedia.length - 1
-              ? prev + 1
+            ? prev.index < prev.media.length - 1
+              ? prev.index + 1
               : 0
-            : prev > 0
-              ? prev - 1
-              : galleryMedia.length - 1
+            : prev.index > 0
+              ? prev.index - 1
+              : prev.media.length - 1
         setCurrentImageIndex(next)
-        return next
+        return { ...prev, index: next }
       })
     },
-    [galleryMedia.length],
+    [],
   )
 
+  const isGalleryLightboxOpen = Boolean(galleryLightbox)
+
   useEffect(() => {
-    if (desktopGalleryLightboxIndex == null) return undefined
+    if (!isGalleryLightboxOpen) return undefined
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') closeDesktopGalleryLightbox()
-      if (event.key === 'ArrowRight') stepDesktopGalleryLightbox('next')
-      if (event.key === 'ArrowLeft') stepDesktopGalleryLightbox('prev')
+      if (event.key === 'Escape') closeGalleryLightbox()
+      if (event.key === 'ArrowRight') stepGalleryLightbox('next')
+      if (event.key === 'ArrowLeft') stepGalleryLightbox('prev')
     }
 
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [desktopGalleryLightboxIndex, closeDesktopGalleryLightbox, stepDesktopGalleryLightbox])
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isGalleryLightboxOpen, closeGalleryLightbox, stepGalleryLightbox])
+
+  useEffect(() => {
+    closeGalleryLightbox()
+  }, [displayProperty.id, closeGalleryLightbox])
+
+  const lightboxSwipeHandlers = useHorizontalSwipe({
+    enabled: Boolean(galleryLightbox && galleryLightbox.media.length > 1),
+    onSwipeLeft: () => stepGalleryLightbox('next'),
+    onSwipeRight: () => stepGalleryLightbox('prev'),
+  })
 
   useEffect(() => {
     if (auctionMobileTab !== 'gallery' || !mobileGalleryFilmstripRef.current) return
@@ -1478,9 +1506,30 @@ function PropertyDetailClassic({
 
   const wrapDepositGatedBlock = (
     block,
-    { mobileOnly = false, wrapperClassName = '' } = {},
+    { mobileOnly = false, wrapperClassName = '', gateType = 'deposit' } = {},
   ) => {
-    if (!aboutDepositContentLocked || !mobileOnly) return block
+    const isSubscriptionGate = gateType === 'subscription'
+    const isLocked = isSubscriptionGate ? docsLocked : aboutDepositContentLocked
+
+    if (!isLocked || !mobileOnly) return block
+
+    const handleGateClick = () => {
+      if (isSubscriptionGate) {
+        navigate({ pathname: '/subscriptions', hash: 'subscriptions-pricing-section' })
+        return
+      }
+      setIsPropertyDepositDrawerOpen(true)
+    }
+
+    const gateAriaLabel = isSubscriptionGate
+      ? t('subscriptionLockAria', { plan: 'VIP' })
+      : t('propertyDetail_depositViewAria')
+    const gatePrompt = isSubscriptionGate
+      ? t('subscriptionLockTitle', { plan: 'VIP' })
+      : t('propertyDetail_depositViewPrompt')
+    const gateCta = isSubscriptionGate
+      ? t('subscriptionLockCta')
+      : t('propertyDetail_depositViewCta')
 
     return (
       <div
@@ -1498,8 +1547,8 @@ function PropertyDetailClassic({
         <button
           type="button"
           className="property-detail-mobile-deposit-gate__overlay"
-          onClick={() => setIsPropertyDepositDrawerOpen(true)}
-          aria-label={t('propertyDetail_depositViewAria')}
+          onClick={handleGateClick}
+          aria-label={gateAriaLabel}
         >
           <span className="property-detail-mobile-deposit-gate__prompt">
             <span className="property-detail-mobile-deposit-gate__prompt-icon" aria-hidden>
@@ -1513,10 +1562,10 @@ function PropertyDetailClassic({
               />
             </span>
             <span className="property-detail-mobile-deposit-gate__prompt-text">
-              {t('propertyDetail_depositViewPrompt')}
+              {gatePrompt}
             </span>
             <span className="property-detail-mobile-deposit-gate__prompt-link">
-              {t('propertyDetail_depositViewCta')}
+              {gateCta}
               <FiArrowRight size={15} aria-hidden />
             </span>
           </span>
@@ -1527,11 +1576,18 @@ function PropertyDetailClassic({
 
   const wrapMobileDepositGatedBlock = (
     block,
-    { requiresDeposit = false, wrapperClassName = '' } = {},
-  ) =>
-    requiresDeposit
-      ? wrapDepositGatedBlock(block, { mobileOnly: true, wrapperClassName })
+    { requiresDeposit = false, requiresVip = false, wrapperClassName = '' } = {},
+  ) => {
+    const gateType = requiresDeposit && aboutDepositContentLocked
+      ? 'deposit'
+      : requiresVip && docsLocked
+        ? 'subscription'
+        : null
+
+    return gateType
+      ? wrapDepositGatedBlock(block, { mobileOnly: true, wrapperClassName, gateType })
       : block
+  }
 
   // Сохраняем исходное значение тестового таймера и его длительность при первой загрузке
   useEffect(() => {
@@ -4285,8 +4341,8 @@ function PropertyDetailClassic({
           <span className="property-detail-mobile-gallery__counter">
             {currentImageIndex + 1} / {galleryMedia.length}
           </span>
-          <div className="property-detail-mobile-gallery__stage">
-            {heroIsVideo ? (
+          {heroIsVideo ? (
+            <div className="property-detail-mobile-gallery__stage">
               <>
                 {heroImageSrc ? (
                   <img src={heroImageSrc} alt="" className="property-detail-mobile-gallery__hero-img" />
@@ -4297,10 +4353,20 @@ function PropertyDetailClassic({
                   <FiPlay size={28} />
                 </span>
               </>
-            ) : (
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="property-detail-mobile-gallery__stage property-detail-gallery__open-photo"
+              onClick={() => openGalleryLightbox(currentImageIndex)}
+              aria-label={t('propertyDetailGalleryOpenItem', {
+                n: currentImageIndex + 1,
+                total: galleryMedia.length,
+              })}
+            >
               <img src={heroMedia?.url} alt="" className="property-detail-mobile-gallery__hero-img" />
-            )}
-          </div>
+            </button>
+          )}
         </div>
 
         {(galleryPhotoCount > 0 || galleryVideoCount > 0) && (
@@ -4391,7 +4457,7 @@ function PropertyDetailClassic({
                 className={`property-detail-auction-desktop-gallery__item${
                   isVideo ? ' property-detail-auction-desktop-gallery__item--video' : ''
                 }`}
-                onClick={() => openDesktopGalleryLightbox(index)}
+                onClick={() => openGalleryLightbox(index)}
                 aria-label={t('propertyDetailGalleryOpenItem', {
                   n: index + 1,
                   total: galleryMedia.length,
@@ -4417,21 +4483,23 @@ function PropertyDetailClassic({
     )
   }
 
-  const renderDesktopGalleryLightbox = () => {
-    if (desktopGalleryLightboxIndex == null) return null
+  const renderGalleryLightbox = () => {
+    if (!galleryLightbox || typeof document === 'undefined') return null
 
-    const media = galleryMedia[desktopGalleryLightboxIndex]
+    const { index, media: lightboxMedia } = galleryLightbox
+    const media = lightboxMedia[index]
     if (!media) return null
 
     const isVideo = media.type === 'video'
 
-    return (
+    return createPortal(
       <div
         className="property-detail-desktop-gallery-lightbox"
         role="dialog"
         aria-modal="true"
         aria-label={t('propertyDetailGalleryLightboxLabel')}
-        onClick={closeDesktopGalleryLightbox}
+        onClick={closeGalleryLightbox}
+        {...lightboxSwipeHandlers}
       >
         <div
           className="property-detail-desktop-gallery-lightbox__panel"
@@ -4440,22 +4508,26 @@ function PropertyDetailClassic({
           <button
             type="button"
             className="property-detail-desktop-gallery-lightbox__close"
-            onClick={closeDesktopGalleryLightbox}
+            onClick={closeGalleryLightbox}
             aria-label={t('close') || 'Close'}
+            autoFocus
           >
             <FiXCircle size={28} strokeWidth={2} />
           </button>
 
-          <span className="property-detail-desktop-gallery-lightbox__counter">
-            {desktopGalleryLightboxIndex + 1} / {galleryMedia.length}
+          <span
+            className="property-detail-desktop-gallery-lightbox__counter"
+            aria-live="polite"
+          >
+            {index + 1} / {lightboxMedia.length}
           </span>
 
-          {galleryMedia.length > 1 ? (
+          {lightboxMedia.length > 1 ? (
             <>
               <button
                 type="button"
                 className="property-detail-desktop-gallery-lightbox__nav property-detail-desktop-gallery-lightbox__nav--prev"
-                onClick={() => stepDesktopGalleryLightbox('prev')}
+                onClick={() => stepGalleryLightbox('prev')}
                 aria-label={t('previous') || 'Previous'}
               >
                 <FiChevronLeft size={28} />
@@ -4463,7 +4535,7 @@ function PropertyDetailClassic({
               <button
                 type="button"
                 className="property-detail-desktop-gallery-lightbox__nav property-detail-desktop-gallery-lightbox__nav--next"
-                onClick={() => stepDesktopGalleryLightbox('next')}
+                onClick={() => stepGalleryLightbox('next')}
                 aria-label={t('next') || 'Next'}
               >
                 <FiChevronRight size={28} />
@@ -4496,7 +4568,8 @@ function PropertyDetailClassic({
             )}
           </div>
         </div>
-      </div>
+      </div>,
+      document.body,
     )
   }
 
@@ -4541,7 +4614,6 @@ function PropertyDetailClassic({
     if (!processedDocuments.length) return null
 
     return (
-      <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
       <section className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
@@ -4576,7 +4648,6 @@ function PropertyDetailClassic({
           ))}
         </ul>
       </section>
-      </SubscriptionLock>
     )
   }
 
@@ -4597,6 +4668,7 @@ function PropertyDetailClassic({
       </div>,
       {
         requiresDeposit: true,
+        requiresVip: processedDocuments.length > 0,
         wrapperClassName: 'property-detail-mobile-deposit-gate--combined',
       },
     )
@@ -5288,11 +5360,21 @@ function PropertyDetailClassic({
               />
             </div>
           ) : (
-            <img
-              src={currentMedia?.url}
-              alt={displayProperty.name}
-              className="pd-v3-gallery__image"
-            />
+            <button
+              type="button"
+              className="pd-v3-gallery__image-button property-detail-gallery__open-photo"
+              onClick={() => openGalleryLightbox(currentImageIndex)}
+              aria-label={t('propertyDetailGalleryOpenItem', {
+                n: currentImageIndex + 1,
+                total: galleryMedia.length,
+              })}
+            >
+              <img
+                src={currentMedia?.url}
+                alt={displayProperty.name}
+                className="pd-v3-gallery__image"
+              />
+            </button>
           )}
           {isReservedActive && (
             <div className="property-detail-gallery__reserved-banner" aria-hidden>
@@ -6711,6 +6793,7 @@ function PropertyDetailClassic({
             onSelect={setCurrentImageIndex}
             onPrev={goToPreviousDesktopGalleryImage}
             onNext={goToNextDesktopGalleryImage}
+            onOpen={(index) => openGalleryLightbox(index, desktopGalleryMedia)}
             getYouTubeEmbedUrl={getYouTubeEmbedUrl}
             getGoogleDriveEmbedUrl={getGoogleDriveEmbedUrl}
             reserved={isReservedActive}
@@ -6981,11 +7064,21 @@ function PropertyDetailClassic({
                       />
                     </div>
                   ) : (
-                    <img
-                      src={currentMedia.url}
-                      alt={displayProperty.name}
-                      className="property-detail-gallery__main-image"
-                    />
+                    <button
+                      type="button"
+                      className="property-detail-gallery__main-image-button property-detail-gallery__open-photo"
+                      onClick={() => openGalleryLightbox(currentImageIndex)}
+                      aria-label={t('propertyDetailGalleryOpenItem', {
+                        n: currentImageIndex + 1,
+                        total: galleryMedia.length,
+                      })}
+                    >
+                      <img
+                        src={currentMedia.url}
+                        alt={displayProperty.name}
+                        className="property-detail-gallery__main-image"
+                      />
+                    </button>
                   )
                 )}
                 {isReservedActive && (
@@ -7693,8 +7786,8 @@ function PropertyDetailClassic({
         />
       </AuctionBidDrawer>
 
-      {/* Lightbox галереи (десктоп) */}
-      {renderDesktopGalleryLightbox()}
+      {/* Полноэкранный просмотр галереи */}
+      {renderGalleryLightbox()}
 
       {/* Модальное окно для просмотра документа */}
       {selectedDocument && (

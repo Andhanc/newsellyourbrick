@@ -202,6 +202,21 @@
   box-shadow: 0 8px 20px color-mix(in srgb, var(--debts-risk-accent) 28%, transparent);
 }
 
+.debts-risk-drawer__icon--image {
+  width: 56px;
+  height: 56px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.debts-risk-drawer__icon--image img,
+.debts-risk-drawer__cta img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .debts-risk-drawer__heading {
   min-width: 0;
 }
@@ -287,6 +302,12 @@
   min-width: 0;
   font-size: 0.9375rem;
   font-weight: 700;
+}
+
+.debts-risk-drawer__cta span > img {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .debts-risk-drawer__cta svg {

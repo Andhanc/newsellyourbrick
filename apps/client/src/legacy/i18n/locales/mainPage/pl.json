@@ -5606,6 +5606,8 @@
   "smartInvestor_chooseGoalLead": "What should this investment deliver for you?",
   "smartInvestor_goalAria": "Investment goal",
   "smartInvestor_goalSelect": "Select",
+  "smartInvestor_goalUnavailable": "Niedostępne",
+  "smartInvestor_fractionalAuctionUnavailable": "Zakup udziału nie jest dostępny dla obiektu aukcyjnego z licznikiem czasu.",
   "smartInvestor_swipeHint": "Swipe the cards sideways",
   "smartInvestor_pressToGoBack": "Tap to go back",
   "smartInvestor_goalParams": "Goal parameters",

@@ -5568,6 +5568,8 @@
   "smartInvestor_chooseGoalLead": "What should this investment deliver for you?",
   "smartInvestor_goalAria": "Investment goal",
   "smartInvestor_goalSelect": "Select",
+  "smartInvestor_goalUnavailable": "Unavailable",
+  "smartInvestor_fractionalAuctionUnavailable": "Fractional ownership is not available for an auction listing with a timer.",
   "smartInvestor_swipeHint": "Swipe the cards sideways",
   "smartInvestor_pressToGoBack": "Tap to go back",
   "smartInvestor_goalParams": "Goal parameters",

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } fro
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { FiSearch } from 'react-icons/fi'
 import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
@@ -49,6 +49,7 @@ import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
 import { buildCatalogCityPath } from '../utils/catalogGeoUrl'
 import { getDebtsContextPropertyPath } from '../utils/listingContextUrl'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
+import { DEBT_RISK_ICONS } from '../utils/debtRiskIcons'
 
 const SiteChatDockLazy = lazy(() => import('../components/SiteChatDock'))
 const AuctionMobileLayoutLazy = lazyWithRetry(
@@ -158,7 +159,7 @@ const Debts = () => {
       {
         id: 'high',
         color: '#DC2626',
-        icon: ShieldQuestionMark,
+        iconSrc: DEBT_RISK_ICONS.high,
         title: t('debtsHighRisk'),
         subtitle: t('debtsHighRiskSubtitle'),
         description: t('debtsHighRiskDescription'),
@@ -173,7 +174,7 @@ const Debts = () => {
       {
         id: 'medium',
         color: '#CA8A04',
-        icon: ShieldAlert,
+        iconSrc: DEBT_RISK_ICONS.medium,
         title: t('debtsMediumRisk'),
         subtitle: t('debtsMediumRiskSubtitle'),
         description: t('debtsMediumRiskDescription'),
@@ -188,7 +189,7 @@ const Debts = () => {
       {
         id: 'low',
         color: '#16A34A',
-        icon: ShieldCheck,
+        iconSrc: DEBT_RISK_ICONS.low,
         title: t('debtsLowRisk'),
         subtitle: t('debtsLowRiskSubtitle'),
         description: t('debtsLowRiskDescription'),
@@ -577,7 +578,7 @@ const Debts = () => {
               <FlipCard
                 key={card.id}
                 color={card.color}
-                icon={card.icon}
+                iconSrc={card.iconSrc}
                 title={card.title}
                 subtitle={card.subtitle}
                 description={card.description}

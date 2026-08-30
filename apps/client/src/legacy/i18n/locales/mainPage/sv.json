@@ -5301,6 +5301,8 @@
   "smartInvestor_chooseGoalLead": "Vad ska den här investeringen ge dig?",
   "smartInvestor_goalAria": "Investeringsmål",
   "smartInvestor_goalSelect": "Välj",
+  "smartInvestor_goalUnavailable": "Inte tillgängligt",
+  "smartInvestor_fractionalAuctionUnavailable": "Andelsägande är inte tillgängligt för ett auktionsobjekt med timer.",
   "smartInvestor_swipeHint": "Svep korten i sidled",
   "smartInvestor_pressToGoBack": "Tryck för att gå tillbaka",
   "smartInvestor_goalParams": "Målparametrar",

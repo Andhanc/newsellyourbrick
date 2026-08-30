@@ -62,6 +62,16 @@ test('profile cabinet uses tiffany banner folders layout with data spotlight onb
   assert.match(profileCss, /\.test-page--cabinet-v2 \.test-page__below-hero/)
 })
 
+test('buyer profile always keeps the become-seller action in directions', () => {
+  assert.match(profileSource, /action: 'becomeSeller'/)
+  assert.match(profileSource, /handleBecomeSellerRegister/)
+  assert.doesNotMatch(profileSource, /useHasBothLinkedRoles/)
+  assert.doesNotMatch(
+    profileSource,
+    /items\.filter\(\(item\) => item\.action !== 'becomeSeller'\)/,
+  )
+})
+
 test('buyer cabinet desktop layout expands the mobile cabinet instead of a 560px column', () => {
   assert.match(profileSource, /profile-cabinet__desk/)
   assert.match(profileSource, /profile-cabinet__aside/)

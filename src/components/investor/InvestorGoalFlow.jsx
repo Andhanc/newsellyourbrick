@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -6,6 +6,7 @@ import {
   Building2,
   CalendarClock,
   Coins,
+  LockKeyhole,
   Percent,
   PieChart,
   TrendingUp,
@@ -112,10 +113,22 @@ export default function InvestorGoalFlow({
   onMarketGrowthRateChange,
   ownershipShare,
   onOwnershipShareChange,
+  fractionalUnavailable = false,
 }) {
   const { t } = useTranslation()
   const goals = useMemo(() => buildGoals(t), [t])
   const goal = goals.find((item) => item.id === selectedGoal) || goals[0]
+  const [fractionalTooltipOpen, setFractionalTooltipOpen] = useState(false)
+
+  useEffect(() => {
+    if (!fractionalUnavailable) setFractionalTooltipOpen(false)
+  }, [fractionalUnavailable])
+
+  useEffect(() => {
+    if (!fractionalTooltipOpen) return undefined
+    const timer = window.setTimeout(() => setFractionalTooltipOpen(false), 5000)
+    return () => window.clearTimeout(timer)
+  }, [fractionalTooltipOpen])
 
   useEffect(() => {
     const scrollRoot = document.querySelector('.app-layout')
@@ -149,17 +162,29 @@ export default function InvestorGoalFlow({
               role="radiogroup"
               aria-label={t('smartInvestor_goalAria')}
             >
-              {goals.map(({ id, eyebrow, title, description, chips, Icon }, index) => (
-                <motion.button
-                  key={id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selectedGoal === id}
-                  className={`investor-goal-flow__goal-card investor-goal-flow__goal-card--${id}${selectedGoal === id ? ' is-selected' : ''}`}
-                  onClick={() => onSelectGoal(id)}
-                  variants={itemMotion}
-                  whileTap={{ scale: 0.975 }}
-                >
+              {goals.map(({ id, eyebrow, title, description, chips, Icon }, index) => {
+                const isUnavailable = id === 'fractional' && fractionalUnavailable
+                const tooltipId = isUnavailable ? 'investor-fractional-unavailable-tooltip' : undefined
+                return (
+                  <motion.button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={!isUnavailable && selectedGoal === id}
+                    aria-disabled={isUnavailable || undefined}
+                    aria-describedby={fractionalTooltipOpen && isUnavailable ? tooltipId : undefined}
+                    className={`investor-goal-flow__goal-card investor-goal-flow__goal-card--${id}${selectedGoal === id && !isUnavailable ? ' is-selected' : ''}${isUnavailable ? ' is-unavailable' : ''}`}
+                    onClick={() => {
+                      if (isUnavailable) {
+                        setFractionalTooltipOpen((open) => !open)
+                        return
+                      }
+                      setFractionalTooltipOpen(false)
+                      onSelectGoal(id)
+                    }}
+                    variants={itemMotion}
+                    whileTap={isUnavailable ? undefined : { scale: 0.975 }}
+                  >
                   <span className="investor-goal-flow__goal-topline">
                     <span>{eyebrow}</span>
                     <small>0{index + 1}</small>
@@ -175,11 +200,28 @@ export default function InvestorGoalFlow({
                     {chips.map((chip) => <span key={chip}>{chip}</span>)}
                   </span>
                   <span className="investor-goal-flow__goal-action">
-                    {t('smartInvestor_goalSelect')}
-                    <ArrowRight size={18} strokeWidth={2.2} />
+                    {isUnavailable ? t('smartInvestor_goalUnavailable') : t('smartInvestor_goalSelect')}
+                    {isUnavailable
+                      ? <LockKeyhole size={17} strokeWidth={2.2} />
+                      : <ArrowRight size={18} strokeWidth={2.2} />}
                   </span>
-                </motion.button>
-              ))}
+                  <AnimatePresence>
+                    {isUnavailable && fractionalTooltipOpen && (
+                      <motion.span
+                        id={tooltipId}
+                        className="investor-goal-flow__unavailable-tooltip"
+                        role="tooltip"
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                      >
+                        {t('smartInvestor_fractionalAuctionUnavailable')}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  </motion.button>
+                )
+              })}
             </motion.div>
 
             <motion.div className="investor-goal-flow__footer" variants={itemMotion}>

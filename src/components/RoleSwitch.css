@@ -310,6 +310,17 @@
   text-align: left;
 }
 
+.role-switch-pitch--seller {
+  padding-top: 2px;
+}
+
+.role-switch-pitch--seller .role-switch-pitch__text {
+  margin-bottom: 22px;
+  color: #465b5e;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
 .role-switch-pitch__media {
   display: block;
   width: 100%;
@@ -418,6 +429,7 @@
 .role-switch-pitch__eyebrow {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   min-height: 28px;
   margin-bottom: 12px;
   padding: 0 11px;
@@ -503,16 +515,78 @@
   color: #0099a9;
 }
 
-.role-switch-pitch__note {
-  margin: -6px 0 18px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  font-family: 'Montserrat', system-ui, sans-serif;
+.role-switch-pitch__steps {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.role-switch-pitch__steps li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 19px;
+  gap: 12px;
+  align-items: center;
+  min-height: 62px;
+  padding: 11px 14px 11px 11px;
+  border: 1px solid rgba(33, 62, 65, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #2e4447;
+  box-shadow: 0 8px 24px rgba(19, 49, 52, 0.055);
   font-size: 0.86rem;
-  line-height: 1.5;
-  color: #6b6b6b;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.role-switch-pitch__step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(22, 167, 179, 0.12);
+  color: #16a7b3;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.role-switch-pitch__step-check {
+  color: #16a7b3;
+}
+
+.role-switch-pitch__note {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  margin: 20px 0 22px;
+  padding: 16px 17px;
+  border: 1px solid rgba(22, 167, 179, 0.2);
+  border-radius: 18px;
+  background: rgba(22, 167, 179, 0.08);
+  color: #354c4f;
+}
+
+.role-switch-pitch__note svg {
+  color: #16a7b3;
+}
+
+.role-switch-pitch__note p {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.role-switch-pitch--seller .role-switch-btn--primary {
+  min-height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #16a7b3, rgba(22, 167, 179, 0.82));
+  box-shadow: 0 14px 28px rgba(22, 167, 179, 0.25);
+  font-size: 0.92rem;
 }
 
 .role-switch-setup__google-note {
@@ -1146,6 +1220,10 @@
     padding: 4px 0 8px;
   }
 
+  .role-switch-pitch--seller {
+    padding-top: 0;
+  }
+
   .role-switch-pitch__media {
     height: 132px;
     margin-bottom: 16px;
@@ -1174,6 +1252,13 @@
     min-height: 38px;
     padding: 8px 10px;
     font-size: 0.76rem;
+  }
+
+  .role-switch-pitch__steps li {
+    gap: 10px;
+    min-height: 60px;
+    padding-right: 12px;
+    font-size: 0.8rem;
   }
 
   .role-switch-setup__body,

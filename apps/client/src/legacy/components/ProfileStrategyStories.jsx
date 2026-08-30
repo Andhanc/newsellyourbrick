@@ -165,7 +165,7 @@ const STORY_BLUEPRINTS = [
   },
 ]
 
-function ProfileStrategyStories({ language = 'ru' }) {
+function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSignal = 0 }) {
   const prefersReducedMotion = useReducedMotion()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -210,6 +210,10 @@ function ProfileStrategyStories({ language = 'ru' }) {
   }, [restartTimer])
 
   useEffect(() => {
+    if (openSignal > 0) openStories()
+  }, [openSignal, openStories])
+
+  useEffect(() => {
     if (!open) return undefined
     const timeout = window.setTimeout(goNext, STORY_DURATION_MS)
     return () => window.clearTimeout(timeout)
@@ -241,32 +245,34 @@ function ProfileStrategyStories({ language = 'ru' }) {
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="profile-strategy-card"
-        onClick={openStories}
-        aria-haspopup="dialog"
-      >
-        <span className="profile-strategy-card__media" aria-hidden>
-          <img
-            src={publicAsset('images/mobile-discover/ai-trade-bg.png')}
-            alt=""
-            loading="lazy"
-            decoding="async"
-          />
-        </span>
-        <span className="profile-strategy-card__wash" aria-hidden />
-        <span className="profile-strategy-card__copy">
-          <span className="profile-strategy-card__eyebrow">{copy.triggerEyebrow}</span>
-          <strong>{copy.triggerTitle}</strong>
-          <span className="profile-strategy-card__text">{copy.triggerText}</span>
-        </span>
-        <span className="profile-strategy-card__action">
-          <FiPlay size={14} fill="currentColor" aria-hidden />
-          {copy.triggerButton}
-        </span>
-      </button>
+      {showTrigger ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          className="profile-strategy-card"
+          onClick={openStories}
+          aria-haspopup="dialog"
+        >
+          <span className="profile-strategy-card__media" aria-hidden>
+            <img
+              src={publicAsset('images/mobile-discover/ai-trade-bg.png')}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+          <span className="profile-strategy-card__wash" aria-hidden />
+          <span className="profile-strategy-card__copy">
+            <span className="profile-strategy-card__eyebrow">{copy.triggerEyebrow}</span>
+            <strong>{copy.triggerTitle}</strong>
+            <span className="profile-strategy-card__text">{copy.triggerText}</span>
+          </span>
+          <span className="profile-strategy-card__action">
+            <FiPlay size={14} fill="currentColor" aria-hidden />
+            {copy.triggerButton}
+          </span>
+        </button>
+      ) : null}
 
       {typeof document !== 'undefined'
         ? createPortal(

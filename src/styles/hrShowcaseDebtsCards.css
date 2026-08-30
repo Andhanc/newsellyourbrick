@@ -84,12 +84,15 @@
   .hr-showcases .debts-property-card__risk {
     top: 7px;
     left: 7px;
-    max-width: calc(100% - 48px);
-    padding: 4px 6px;
-    font-size: 0.54rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 999px;
+  }
+
+  .hr-showcases .debts-property-card__risk img {
+    width: 27px;
+    height: 27px;
   }
 
   .hr-showcases .debts-property-card__favorite {

@@ -13,6 +13,12 @@ import {
 import './CompareMobilePicker.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
+const DRUM_HAPTIC_DURATION_MS = 8
+
+function vibrateSelectionTick() {
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
+  navigator.vibrate(DRUM_HAPTIC_DURATION_MS)
+}
 
 function propertyView(item, index, t) {
   const property = item?.property || {}
@@ -56,6 +62,10 @@ export default function CompareMobilePicker({
   const moveTimerRef = useRef(null)
   const reorderTimerRef = useRef(null)
   const reorderFrameRef = useRef(null)
+  const activeIndexRef = useRef(0)
+  const touchScrollingRef = useRef(false)
+  const touchStartYRef = useRef(null)
+  const scrollStopTimerRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [departingKey, setDepartingKey] = useState(null)
   const [movedKey, setMovedKey] = useState(null)
@@ -80,6 +90,8 @@ export default function CompareMobilePicker({
     setDepartingKey(null)
     setMovedKey(selectedKeys.length === 1 ? selectedKeys[0] : null)
     const nextActiveIndex = 0
+    activeIndexRef.current = nextActiveIndex
+    touchScrollingRef.current = false
     setActiveIndex(nextActiveIndex)
     const positionTimer = window.requestAnimationFrame(() => {
       const viewport = drumRef.current
@@ -95,10 +107,31 @@ export default function CompareMobilePicker({
       window.cancelAnimationFrame(reorderFrameRef.current)
       window.clearTimeout(moveTimerRef.current)
       window.clearTimeout(reorderTimerRef.current)
+      window.clearTimeout(scrollStopTimerRef.current)
       document.body.style.overflow = previousOverflow
       layout?.classList.remove('compare-picker-open')
     }
   }, [open])
+
+  const handleDrumTouchStart = (event) => {
+    touchScrollingRef.current = false
+    touchStartYRef.current = event.touches[0]?.clientY ?? null
+    window.clearTimeout(scrollStopTimerRef.current)
+  }
+
+  const handleDrumTouchMove = (event) => {
+    const currentY = event.touches[0]?.clientY
+    if (touchStartYRef.current == null || currentY == null) return
+    if (Math.abs(currentY - touchStartYRef.current) >= 4) touchScrollingRef.current = true
+  }
+
+  const handleDrumTouchEnd = () => {
+    touchStartYRef.current = null
+    window.clearTimeout(scrollStopTimerRef.current)
+    scrollStopTimerRef.current = window.setTimeout(() => {
+      touchScrollingRef.current = false
+    }, 180)
+  }
 
   const handleDrumScroll = (event) => {
     setDrumScrolled(event.currentTarget.scrollTop > 18)
@@ -114,7 +147,19 @@ export default function CompareMobilePicker({
         nearestIndex = Number(node.dataset.drumIndex)
       }
     })
-    setActiveIndex(nearestIndex)
+
+    if (nearestIndex !== activeIndexRef.current) {
+      activeIndexRef.current = nearestIndex
+      setActiveIndex(nearestIndex)
+      if (touchScrollingRef.current) vibrateSelectionTick()
+    }
+
+    if (touchScrollingRef.current) {
+      window.clearTimeout(scrollStopTimerRef.current)
+      scrollStopTimerRef.current = window.setTimeout(() => {
+        touchScrollingRef.current = false
+      }, 180)
+    }
   }
 
   const handleDrumSelect = (item) => {
@@ -255,7 +300,15 @@ export default function CompareMobilePicker({
             </div>
           ) : null}
 
-          <div className="compare-picker-drum__viewport" ref={drumRef} onScroll={handleDrumScroll}>
+          <div
+            className="compare-picker-drum__viewport"
+            ref={drumRef}
+            onTouchStart={handleDrumTouchStart}
+            onTouchMove={handleDrumTouchMove}
+            onTouchEnd={handleDrumTouchEnd}
+            onTouchCancel={handleDrumTouchEnd}
+            onScroll={handleDrumScroll}
+          >
             {drumItems.map((item, index) => {
               const view = propertyView(item, index, t)
               const selectedIndex = selectedKeys.indexOf(item.key)
@@ -277,7 +330,10 @@ export default function CompareMobilePicker({
                   data-drum-key={item.key}
                   disabled={disabled}
                   onClick={() => handleDrumSelect(item)}
-                  onFocus={() => setActiveIndex(index)}
+                  onFocus={() => {
+                    activeIndexRef.current = index
+                    setActiveIndex(index)
+                  }}
                   key={item.key}
                   aria-pressed={selected}
                 >

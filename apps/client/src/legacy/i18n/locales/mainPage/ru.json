@@ -5583,6 +5583,8 @@
   "smartInvestor_chooseGoalLead": "Что должна дать вам эта инвестиция?",
   "smartInvestor_goalAria": "Инвестиционная цель",
   "smartInvestor_goalSelect": "Выбрать",
+  "smartInvestor_goalUnavailable": "Недоступно",
+  "smartInvestor_fractionalAuctionUnavailable": "Для аукционного объекта с таймером доля не предполагается.",
   "smartInvestor_swipeHint": "Листайте карточки в сторону",
   "smartInvestor_pressToGoBack": "Нажмите, чтобы вернуться назад",
   "smartInvestor_goalParams": "Параметры цели",

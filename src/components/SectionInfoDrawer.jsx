@@ -35,6 +35,10 @@ const SECTION_CONFIG = {
     iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
     ...TIFFANY_THEME,
   },
+  buyNow: {
+    iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
+    ...TIFFANY_THEME,
+  },
   shares: {
     iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     ...TIFFANY_THEME,

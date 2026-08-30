@@ -23,7 +23,6 @@ import './RoleSwitch.css'
 
 const PITCH_IMAGES = {
   buyer: publicAsset('images/role-switch/become-buyer-pitch.jpg'),
-  seller: publicAsset('images/role-switch/become-seller-pitch.jpg'),
 }
 
 function RoleSwitchSwitchingOverlay({ show, message }) {
@@ -140,7 +139,6 @@ export function RoleSwitchModals({ flow }) {
 
   if (!phase) return switchingOverlay
 
-  const pitchVariant = targetRole === 'buyer' ? 'buyer' : 'seller'
   const closeLabel = t('closeModalAria')
   const sellerNeedsBuyerPassword =
     targetRole === 'seller' && linkedStatus?.buyer && linkedStatus.buyer.hasPassword === false
@@ -152,41 +150,66 @@ export function RoleSwitchModals({ flow }) {
       <>
         {switchingOverlay}
         <RoleSwitchDrawerShell
-        isOpen
-        onClose={resetAndClose}
-        ariaLabelledBy="role-switch-pitch-title"
-        maxHeightRatio={0.72}
-        closeLabel={closeLabel}
-      >
-        <div className={`role-switch-pitch role-switch-pitch--${pitchVariant}`}>
-          <img
-            className="role-switch-pitch__media"
-            src={PITCH_IMAGES[pitchVariant]}
-            alt=""
-            aria-hidden
-          />
+          isOpen
+          onClose={resetAndClose}
+          ariaLabelledBy="role-switch-pitch-title"
+          maxHeightRatio={targetRole === 'seller' ? 0.94 : 0.72}
+          closeLabel={closeLabel}
+        >
           {targetRole === 'seller' ? (
-            <span className="role-switch-pitch__eyebrow">{t('roleSwitch_pitchSellerEyebrow')}</span>
-          ) : null}
-          <h2 id="role-switch-pitch-title" className="role-switch-pitch__title">
-            {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerTitle') : t('roleSwitch_pitchSellerTitle')}
-          </h2>
-          <p className="role-switch-pitch__text">
-            {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerBody') : t('roleSwitch_pitchSellerBody')}
-          </p>
-          {targetRole === 'seller' ? (
-            <ul className="role-switch-pitch__benefits" aria-label={t('roleSwitch_pitchSellerBenefitsAria')}>
-              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitOne')}</li>
-              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitTwo')}</li>
-              <li><FiCheck size={16} aria-hidden />{t('roleSwitch_pitchSellerBenefitThree')}</li>
-            </ul>
-          ) : null}
-          <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
-            {targetRole === 'buyer' ? t('roleSwitch_pitchBuyerCta') : t('roleSwitch_pitchSellerCta')}
-            <FiArrowUpRight size={16} aria-hidden />
-          </button>
-        </div>
-      </RoleSwitchDrawerShell>
+            <div className="role-switch-pitch role-switch-pitch--seller">
+              <span className="role-switch-pitch__eyebrow">
+                <FiHome size={15} aria-hidden />
+                {t('roleSwitch_pitchSellerEyebrow')}
+              </span>
+              <h2 id="role-switch-pitch-title" className="role-switch-pitch__title">
+                {t('roleSwitch_pitchSellerTitle')}
+              </h2>
+              <p className="role-switch-pitch__text">{t('roleSwitch_pitchSellerBody')}</p>
+
+              <ol className="role-switch-pitch__steps" aria-label={t('roleSwitch_pitchSellerBenefitsAria')}>
+                {[
+                  t('roleSwitch_pitchSellerBenefitOne'),
+                  t('roleSwitch_pitchSellerBenefitTwo'),
+                  t('roleSwitch_pitchSellerBenefitThree'),
+                ].map((step, index) => (
+                  <li key={step}>
+                    <span className="role-switch-pitch__step-number" aria-hidden>{index + 1}</span>
+                    <span>{step}</span>
+                    <FiCheck className="role-switch-pitch__step-check" size={17} aria-hidden />
+                  </li>
+                ))}
+              </ol>
+
+              <div className="role-switch-pitch__note">
+                <FiShield size={21} aria-hidden />
+                <p>{t('roleSwitch_pitchSellerNote')}</p>
+              </div>
+
+              <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
+                {t('roleSwitch_pitchSellerCta')}
+                <FiArrowUpRight size={16} aria-hidden />
+              </button>
+            </div>
+          ) : (
+            <div className="role-switch-pitch role-switch-pitch--buyer">
+              <img
+                className="role-switch-pitch__media"
+                src={PITCH_IMAGES.buyer}
+                alt=""
+                aria-hidden
+              />
+              <h2 id="role-switch-pitch-title" className="role-switch-pitch__title">
+                {t('roleSwitch_pitchBuyerTitle')}
+              </h2>
+              <p className="role-switch-pitch__text">{t('roleSwitch_pitchBuyerBody')}</p>
+              <button type="button" className="role-switch-btn role-switch-btn--primary" onClick={continueFromPitch}>
+                {t('roleSwitch_pitchBuyerCta')}
+                <FiArrowUpRight size={16} aria-hidden />
+              </button>
+            </div>
+          )}
+        </RoleSwitchDrawerShell>
       </>
     )
   }

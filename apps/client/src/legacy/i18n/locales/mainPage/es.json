@@ -5301,6 +5301,8 @@
   "smartInvestor_chooseGoalLead": "¿Qué debe aportarle esta inversión?",
   "smartInvestor_goalAria": "Objetivo de inversión",
   "smartInvestor_goalSelect": "Seleccionar",
+  "smartInvestor_goalUnavailable": "No disponible",
+  "smartInvestor_fractionalAuctionUnavailable": "La propiedad fraccionada no está disponible para un inmueble en subasta con temporizador.",
   "smartInvestor_swipeHint": "Deslice las tarjetas",
   "smartInvestor_pressToGoBack": "Pulse para volver",
   "smartInvestor_goalParams": "Parámetros del objetivo",

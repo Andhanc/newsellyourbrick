@@ -5302,6 +5302,8 @@
   "smartInvestor_chooseGoalLead": "Was soll diese Investition für Sie leisten?",
   "smartInvestor_goalAria": "Investmentziel",
   "smartInvestor_goalSelect": "Auswählen",
+  "smartInvestor_goalUnavailable": "Nicht verfügbar",
+  "smartInvestor_fractionalAuctionUnavailable": "Für ein Auktionsobjekt mit Timer ist kein Anteilserwerb vorgesehen.",
   "smartInvestor_swipeHint": "Karten seitwärts wischen",
   "smartInvestor_pressToGoBack": "Tippen Sie, um zurückzugehen",
   "smartInvestor_goalParams": "Zielparameter",

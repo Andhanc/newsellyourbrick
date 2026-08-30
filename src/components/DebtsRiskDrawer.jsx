@@ -13,6 +13,7 @@ const FEATURE_ICONS = [Copy, Code2, Rocket, Zap]
 function DebtsRiskDrawerBody({ risk, onCta }) {
   if (!risk) return null
   const Icon = risk.icon
+  const iconSrc = risk.iconSrc
   const accent = risk.color
   const ctaLabel = String(risk.ctaText || '')
     .replace(/^(\p{Extended_Pictographic}\p{Emoji_Modifier}*|\p{Emoji_Presentation})(\uFE0F|\u200D\p{Extended_Pictographic})*\s+/u, '')
@@ -21,8 +22,15 @@ function DebtsRiskDrawerBody({ risk, onCta }) {
   return (
     <div className="debts-risk-drawer__body" style={{ '--debts-risk-accent': accent }}>
       <header className="debts-risk-drawer__header">
-        <span className="debts-risk-drawer__icon" style={{ background: accent }}>
-          <Icon size={22} color="#fff" strokeWidth={2} aria-hidden />
+        <span
+          className={`debts-risk-drawer__icon${iconSrc ? ' debts-risk-drawer__icon--image' : ''}`}
+          style={{ background: iconSrc ? 'transparent' : accent }}
+        >
+          {iconSrc ? (
+            <img src={iconSrc} alt="" aria-hidden />
+          ) : (
+            <Icon size={22} color="#fff" strokeWidth={2} aria-hidden />
+          )}
         </span>
         <div className="debts-risk-drawer__heading">
           <h2 id="debts-risk-drawer-title">{risk.title}</h2>
@@ -53,7 +61,7 @@ function DebtsRiskDrawerBody({ risk, onCta }) {
       {ctaLabel ? (
         <button type="button" className="debts-risk-drawer__cta" onClick={onCta}>
           <span>
-            <Icon size={18} aria-hidden />
+            {iconSrc ? <img src={iconSrc} alt="" aria-hidden /> : <Icon size={18} aria-hidden />}
             {ctaLabel}
           </span>
           <ArrowRight size={16} aria-hidden />

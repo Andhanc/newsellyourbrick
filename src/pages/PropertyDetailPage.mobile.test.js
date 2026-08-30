@@ -46,3 +46,18 @@ test('guest buyer can express purchase intent before authentication', () => {
     /if \(!isClerkAuth && !isOldAuth\) \{[\s\S]*?if \(onRequireLogin\)[\s\S]*?onRequireLogin\(\)/,
   )
 })
+
+test('mobile documents and location use one combined access gate', () => {
+  const documentsStart = classicSource.indexOf('const renderMobileAboutDocumentsContent')
+  const restrictedStart = classicSource.indexOf('const renderMobileAboutRestrictedContent')
+  const documentsBlock = classicSource.slice(documentsStart, restrictedStart)
+  const restrictedEnd = classicSource.indexOf('const renderMobileAboutPropertyContent', restrictedStart)
+  const restrictedBlock = classicSource.slice(restrictedStart, restrictedEnd)
+
+  assert.ok(documentsStart >= 0 && restrictedStart > documentsStart)
+  assert.doesNotMatch(documentsBlock, /<SubscriptionLock/)
+  assert.match(restrictedBlock, /requiresDeposit: true/)
+  assert.match(restrictedBlock, /requiresVip: processedDocuments\.length > 0/)
+  assert.match(classicSource, /requiresDeposit && aboutDepositContentLocked[\s\S]*?'deposit'/)
+  assert.match(classicSource, /requiresVip && docsLocked[\s\S]*?'subscription'/)
+})
