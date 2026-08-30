@@ -72,6 +72,7 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { resolveSellCabinetMode, OPEN_ROLE_SWITCH_FOR_SELL_EVENT } from '../utils/navigateToSellPurchasedProperty'
+import { SELLER_LISTING_CTA_QUERY, PENDING_BECOME_SELLER_CTA_KEY } from '../utils/navigateSellerListingCta'
 import {
   applyPurchasedPropertyListingPrefill,
   readPendingSellPurchasedProperty,
@@ -102,7 +103,6 @@ const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
 /** Конфетти на модалке поздравления: генерация новых частиц только эти миллисекунды. */
 const SUBSCRIPTION_CONFETTI_ACTIVE_MS = 5000
 
-const PROFILE_SAVE_DEBOUNCE_MS = 500
 
 /** После перехода к полю из тоста — не крутим подсветку на тосте; при новом открытии панели «Данные» ключ сбрасывается в TestPage. */
 const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDone:'
@@ -801,9 +801,9 @@ function TestPage() {
   const profileToastFirstMissingRef = useRef(null)
   const dataHydratedForSheetRef = useRef(false)
   const countryGeoTriedRef = useRef(false)
-  const saveTimersRef = useRef({})
   const persistFieldRef = useRef(async () => {})
   const passportInputRef = useRef(null)
+  const passportCameraInputRef = useRef(null)
   const countryFieldRef = useRef(null)
   const serviceTourTimerRef = useRef(null)
   const directionSummariesGridRef = useRef(null)
@@ -851,13 +851,6 @@ function TestPage() {
   /** Подсказка на тост: один раз за открытие панели «Данные»; сбрасывается при закрытии панели. */
   const toastHintShownThisDataOpenRef = useRef(false)
   const prevDataSheetOpenRef = useRef(false)
-
-  const clearAllProfileSaveTimers = useCallback(() => {
-    Object.keys(saveTimersRef.current).forEach((k) => {
-      clearTimeout(saveTimersRef.current[k])
-      delete saveTimersRef.current[k]
-    })
-  }, [])
 
   const handleQuickLogout = useCallback(async () => {
     if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
@@ -954,7 +947,6 @@ function TestPage() {
 
   useEffect(() => {
     return () => {
-      Object.values(saveTimersRef.current).forEach((id) => clearTimeout(id))
       if (serviceTourTimerRef.current) {
         clearTimeout(serviceTourTimerRef.current)
         serviceTourTimerRef.current = null
@@ -1210,6 +1202,65 @@ function TestPage() {
     const qs = next.toString()
     navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
   }, [searchParams, navigate])
+
+  useEffect(() => {
+    const fromQuery = searchParams.get(SELLER_LISTING_CTA_QUERY) === '1'
+    let fromStorage = false
+    try {
+      fromStorage = sessionStorage.getItem(PENDING_BECOME_SELLER_CTA_KEY) === '1'
+    } catch {
+      // ignore
+    }
+
+    if (!fromQuery && !fromStorage) return
+
+    if (fromQuery) {
+      const next = new URLSearchParams(searchParams)
+      next.delete(SELLER_LISTING_CTA_QUERY)
+      const qs = next.toString()
+      navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+    }
+
+    let mode = 'register'
+    try {
+      const stored = sessionStorage.getItem('pending_sell_role_switch_mode')
+      if (stored === 'switch' || stored === 'register') mode = stored
+      sessionStorage.removeItem('pending_sell_role_switch_mode')
+      sessionStorage.removeItem(PENDING_BECOME_SELLER_CTA_KEY)
+    } catch {
+      // ignore
+    }
+
+    let cancelled = false
+    const openBecomeSeller = async (attempt = 0) => {
+      if (cancelled) return
+
+      const userId = localStorage.getItem('userId') || getUserData()?.id
+      if (!userId && attempt < 25) {
+        window.setTimeout(() => {
+          void openBecomeSeller(attempt + 1)
+        }, 120)
+        return
+      }
+
+      const pending = readPendingSellPurchasedProperty()
+      if (pending?.id) {
+        await sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
+        return
+      }
+
+      await sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
+    }
+
+    const timer = window.setTimeout(() => {
+      void openBecomeSeller()
+    }, 0)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [searchParams, navigate, sellPurchasedPropertyRoleFlow.openSellCabinetFlow])
 
   /** Возврат с Stripe Checkout Pro: подтверждение сессии и поздравление на профиле (как после верификации). */
   useEffect(() => {
@@ -1691,14 +1742,6 @@ function TestPage() {
     persistFieldRef.current = persistField
   }, [persistField])
 
-  const scheduleProfileSave = useCallback((fieldKey, value) => {
-    clearTimeout(saveTimersRef.current[fieldKey])
-    saveTimersRef.current[fieldKey] = setTimeout(() => {
-      void persistFieldRef.current(fieldKey, value)
-      delete saveTimersRef.current[fieldKey]
-    }, PROFILE_SAVE_DEBOUNCE_MS)
-  }, [])
-
   const handleProfileChange = useCallback(
     (fieldKey) => (e) => {
       const raw = e.target.value
@@ -1710,17 +1753,12 @@ function TestPage() {
       setProfileForm((prev) => ({ ...prev, [fieldKey]: v }))
       setSavePulseDismissed(false)
       setProfileFieldSavedOk((prev) => ({ ...prev, [fieldKey]: false }))
-      if (fieldKey !== 'email') {
-        scheduleProfileSave(fieldKey, v)
-      }
     },
-    [countryIsoByName, profileForm.country, scheduleProfileSave],
+    [countryIsoByName, profileForm.country],
   )
 
   const handleProfileBlur = useCallback((fieldKey) => (e) => {
     if (fieldKey === 'email') return
-    clearTimeout(saveTimersRef.current[fieldKey])
-    delete saveTimersRef.current[fieldKey]
     void persistFieldRef.current(fieldKey, e.target.value)
   }, [])
 
@@ -1741,17 +1779,14 @@ function TestPage() {
       })
       setSavePulseDismissed(false)
       setProfileFieldSavedOk((prev) => ({ ...prev, country: false }))
-      clearTimeout(saveTimersRef.current.country)
-      delete saveTimersRef.current.country
       void persistFieldRef.current('country', countryName)
       if (nextPhone !== currentPhone) {
         setProfileFieldSavedOk((prev) => ({ ...prev, phone: false }))
-        scheduleProfileSave('phone', nextPhone)
       }
       setCountryDropdownOpen(false)
       setCountrySearchQuery('')
     },
-    [phoneCodeByCountryName, profileForm.phone, profileForm.country, scheduleProfileSave],
+    [phoneCodeByCountryName, profileForm.phone, profileForm.country],
   )
 
   const handlePassportRecognition = useCallback(
@@ -1761,7 +1796,6 @@ function TestPage() {
         showNotification(t('buyerData_waitProfileLoad'), 'error')
         return
       }
-      clearAllProfileSaveTimers()
 
       setIsRecognizingPassport(true)
       setPassportPhotoHints([])
@@ -1810,7 +1844,7 @@ function TestPage() {
         setIsRecognizingPassport(false)
       }
     },
-    [numericUserId, clearAllProfileSaveTimers],
+    [numericUserId],
   )
 
   const handlePassportRecognitionConfirm = useCallback(
@@ -1829,7 +1863,6 @@ function TestPage() {
         return
       }
 
-      clearAllProfileSaveTimers()
       setProfileForm((prev) => mergeExtractedPassportIntoProfileForm(prev, extracted))
       setIsSavingExtractPatch(true)
 
@@ -1868,7 +1901,7 @@ function TestPage() {
         setIsSavingExtractPatch(false)
       }
     },
-    [numericUserId, user, email, clearAllProfileSaveTimers, openProfileDataCelebration],
+    [numericUserId, user, email, openProfileDataCelebration, t],
   )
 
   const handlePassportRecognitionReject = useCallback(() => {
@@ -1990,7 +2023,6 @@ function TestPage() {
   /** Явное «Сохранить»: проверка всех полей, один PUT на сервер, модалка «Поздравляем». */
   const handleProfilePanelSaveClick = useCallback(async () => {
     if (profileFieldsLocked || profileSaveAllLoading) return
-    clearAllProfileSaveTimers()
     const form = completionFormMerged
     const missing = PROFILE_FIELDS_META.filter((f) => !isProfileFieldFilledFromFormOnly(f.key, form))
     if (missing.length > 0) {
@@ -2101,7 +2133,6 @@ function TestPage() {
   }, [
     profileFieldsLocked,
     profileSaveAllLoading,
-    clearAllProfileSaveTimers,
     completionFormMerged,
     t,
     numericUserId,
@@ -2215,11 +2246,6 @@ function TestPage() {
     // Только при открытии листа — не перехватываем ручной выбор шага.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- firstMissingKey читаем на open
   }, [dataSheetOpen])
-
-  useEffect(() => {
-    if (!dataSheetOpen || firstMissingKey) return
-    setDataSheetStep('review')
-  }, [dataSheetOpen, firstMissingKey])
 
   /** Каждый новый заход в «Данные» (после главной) — снова можно гайд по тосту; сбрасываем флаг перехода к полю. */
   useEffect(() => {
@@ -3220,7 +3246,8 @@ function TestPage() {
         isOpen={showPassportUploadSourceSheet}
         onClose={() => setShowPassportUploadSourceSheet(false)}
         busy={isRecognizingPassport || isSavingExtractPatch}
-        onPickDevice={() => passportInputRef.current?.click()}
+        onPickGallery={() => passportInputRef.current?.click()}
+        onPickCamera={() => passportCameraInputRef.current?.click()}
         onPickFile={handlePassportRecognition}
       />
 
@@ -3634,6 +3661,21 @@ function TestPage() {
                             ref={passportInputRef}
                             type="file"
                             accept="image/*"
+                            className="test-passport-file-input"
+                            aria-hidden
+                            tabIndex={-1}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              await handlePassportRecognition(file)
+                              e.target.value = ''
+                            }}
+                          />
+                          <input
+                            ref={passportCameraInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
                             className="test-passport-file-input"
                             aria-hidden
                             tabIndex={-1}

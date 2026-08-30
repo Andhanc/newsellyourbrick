@@ -68,6 +68,7 @@ const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
 const PrivateClub = lazyWithRetry(() => import('./pages/PrivateClub'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
+const SellerListingCtaRedirect = lazyWithRetry(() => import('./pages/SellerListingCtaRedirect'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
 const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
 const About = lazyWithRetry(() => import('./pages/About.tsx'))
@@ -1085,7 +1086,7 @@ function App() {
                 path="/owner/property/new"
                 element={
                   <LazyPage>
-                    <AddProperty />
+                    <SellerListingCtaRedirect />
                   </LazyPage>
                 }
               />

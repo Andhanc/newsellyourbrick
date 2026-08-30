@@ -167,10 +167,8 @@
   border-bottom-left-radius: 6px;
 }
 
-.site-ai-drawer .chat-widget__message--user .chat-widget__message-content {
-  background: linear-gradient(135deg, #0099a9 0%, #3bc0cb 100%);
-  border-bottom-right-radius: 6px;
-  box-shadow: 0 10px 24px rgba(0, 153, 169, 0.2);
+.ai-chat-modal-root .chat-widget__message--user .chat-widget__message-content {
+  border-bottom-right-radius: 4px;
 }
 
 .site-ai-drawer .chat-widget__buttons {

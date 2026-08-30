@@ -147,18 +147,22 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
   }
 }
 
-/* Стили для AI кнопки и чата */
+/* Стили для AI кнопки и чата — единые для главной (/), аукциона (/auction) и SiteChatDock */
 .ai-button {
+  --ai-fab-size: 56px;
+  --ai-fab-font-size: 16px;
+  --ai-fab-right: max(18px, env(safe-area-inset-right, 0px));
+  --ai-fab-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
   position: fixed;
-  right: 18px;
-  bottom: 90px;
-  width: 56px;
-  height: 56px;
+  right: var(--ai-fab-right);
+  bottom: var(--ai-fab-bottom);
+  width: var(--ai-fab-size);
+  height: var(--ai-fab-size);
   border-radius: 999px;
   border: 1px solid rgba(17, 24, 39, 0.12);
   background: rgba(17, 24, 39, 0.9);
   color: #ffffff;
-  font-size: 16px;
+  font-size: var(--ai-fab-font-size);
   font-weight: 700;
   font-family: 'Montserrat', sans-serif;
   display: inline-flex;
@@ -193,29 +197,16 @@ body.auction-mobile-lock-x .home-page--auction .new-header-spacer {
 
 @media (min-width: 480px) {
   .ai-button {
-    right: 24px;
-    bottom: 90px;
-    width: 60px;
-    height: 60px;
-    font-size: 18px;
+    --ai-fab-size: 60px;
+    --ai-fab-font-size: 18px;
+    --ai-fab-right: max(24px, env(safe-area-inset-right, 0px));
   }
 }
 
 @media (min-width: 768px) {
   .ai-button {
-    right: 32px;
-    bottom: 95px;
-  }
-}
-
-/* Страница /auction: AI чуть выше плашки депозита */
-.home-page--auction .ai-button {
-  bottom: 90px;
-}
-
-@media (min-width: 768px) {
-  .home-page--auction .ai-button {
-    bottom: 98px;
+    --ai-fab-right: max(32px, env(safe-area-inset-right, 0px));
+    --ai-fab-bottom: calc(95px + env(safe-area-inset-bottom, 0px));
   }
 }
 

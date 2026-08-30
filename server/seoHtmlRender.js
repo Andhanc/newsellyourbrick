@@ -254,7 +254,7 @@ export async function resolveSeoForPath(pathname, options = {}) {
   const path = normalizePath(pathname);
   const origin = options.origin || resolveRequestSiteOrigin();
   const apiOrigin = options.apiOrigin || origin;
-  const lang = options.lang || 'ru';
+  const lang = options.lang || 'en';
   const t = createSeoTranslator(lang);
 
   if (options.http404) {
@@ -405,7 +405,7 @@ export async function buildSeoHtmlForPath(indexPath, pathname, options = {}) {
   const html = options.html || readIndexTemplate(indexPath);
   const origin = options.origin || resolveRequestSiteOrigin();
   const apiOrigin = options.apiOrigin || origin;
-  const lang = options.lang || 'ru';
+  const lang = options.lang || 'en';
   try {
     const seo = await resolveSeoForPath(pathname, {
       origin,

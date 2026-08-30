@@ -149,8 +149,13 @@
   height: 18px;
 }
 
-.debts-listing-search__go:focus-visible,
+.debts-listing-search__input:focus,
 .debts-listing-search__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.debts-listing-search__go:focus-visible {
   outline: 2px solid #3bc0cb;
   outline-offset: 2px;
 }
