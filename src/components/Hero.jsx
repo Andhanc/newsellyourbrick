@@ -4,6 +4,7 @@ import { ArrowDown } from 'lucide-react'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
 import { publicAsset } from '../utils/publicAsset'
+import SectionInfoDrawer from './SectionInfoDrawer'
 import './Hero.css'
 
 function measureCopyHeight(element) {
@@ -166,7 +167,10 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
           <div className="hero-auction-mobile">
             <div className="hero-auction-mobile__copy">
               <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
-              <h1 className="hero-auction-mobile__title">{t('auctionSectionTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1 className="hero-auction-mobile__title">{t('auction')}</h1>
+                <SectionInfoDrawer section="auction" placement="heading" />
+              </div>
               <p className="hero-auction-mobile__lead">{t('auctionSectionSubtitle')}</p>
               <button
                 type="button"
@@ -183,7 +187,10 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
         ) : null}
         {auctionScene ? (
           <header className="hero-auction-header">
-            <h1 className="hero-auction-header__title">{t('auctionSectionTitle')}</h1>
+            <div className="section-info-heading-row">
+              <h1 className="hero-auction-header__title">{t('auction')}</h1>
+              <SectionInfoDrawer section="auction" placement="heading" />
+            </div>
             <p className="hero-auction-header__lead">{t('auctionSectionSubtitle')}</p>
           </header>
         ) : null}

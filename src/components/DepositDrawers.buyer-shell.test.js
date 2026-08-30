@@ -6,9 +6,10 @@ const success = await readFile(new URL('./DepositSuccessDrawer.jsx', import.meta
 const info = await readFile(new URL('./DepositInfoDrawer.jsx', import.meta.url), 'utf8')
 const wallet = await readFile(new URL('../pages/Wallet.jsx', import.meta.url), 'utf8')
 
-test('deposit drawers share the accessible buyer sheet shell', () => {
-  assert.match(success, /BuyerSheetShell/)
-  assert.match(success, /tone="success"/)
+test('deposit info stays a sheet while success is a centered accessible modal', () => {
+  assert.match(success, /createPortal/)
+  assert.match(success, /role="dialog"/)
+  assert.doesNotMatch(success, /BuyerSheetShell/)
   assert.match(info, /BuyerSheetShell/)
   assert.match(info, /tone="detail"/)
 })
@@ -28,4 +29,3 @@ test('wallet closes deposit information before opening the top-up choice', () =>
   assert.match(wallet, /setIsDepositInfoOpen\(false\)/)
   assert.match(wallet, /setShowTopUpPicker\(true\)/)
 })
-

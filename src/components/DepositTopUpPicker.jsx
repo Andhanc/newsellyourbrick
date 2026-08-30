@@ -7,7 +7,6 @@ import {
   Coins,
   CreditCard,
   LoaderCircle,
-  ShieldCheck,
   WalletCards,
 } from 'lucide-react'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
@@ -28,9 +27,11 @@ const DepositTopUpPicker = ({
 }) => {
   const { t } = useTranslation()
   const [view, setView] = useState('choice')
+  const [selectedMethod, setSelectedMethod] = useState('card')
 
   const handleClose = () => {
     setView('choice')
+    setSelectedMethod('card')
     onClose?.()
   }
 
@@ -40,6 +41,14 @@ const DepositTopUpPicker = ({
   }
 
   const cryptoTitle = t('depositPicker_cryptoWalletTitle', { defaultValue: 'Криптокошелёк' })
+
+  const handleContinue = () => {
+    if (selectedMethod === 'crypto') {
+      setView('crypto')
+      return
+    }
+    handleCardPayment()
+  }
 
   return (
     <BuyerSheetShell
@@ -53,10 +62,6 @@ const DepositTopUpPicker = ({
     >
       {view === 'choice' ? (
         <div className="deposit-picker__choice">
-          <span className="deposit-picker__eyebrow">
-            <ShieldCheck size={15} strokeWidth={2.2} aria-hidden />
-            {t('depositPicker_secureEyebrow', { defaultValue: 'Защищённое пополнение' })}
-          </span>
           <h2 id="deposit-picker-title" className="deposit-picker__title">
             {t('depositPicker_title', { defaultValue: 'Способ пополнения' })}
           </h2>
@@ -68,10 +73,11 @@ const DepositTopUpPicker = ({
             <button
               type="button"
               role="listitem"
-              className="deposit-picker__method deposit-picker__method--recommended"
+              className={`deposit-picker__method deposit-picker__method--recommended${selectedMethod === 'card' ? ' is-selected' : ''}`}
               disabled={stripeCheckoutLoading}
               aria-busy={stripeCheckoutLoading || undefined}
-              onClick={handleCardPayment}
+              aria-pressed={selectedMethod === 'card'}
+              onClick={() => setSelectedMethod('card')}
             >
               <span className="deposit-picker__method-icon" aria-hidden>
                 {stripeCheckoutLoading ? (
@@ -92,15 +98,16 @@ const DepositTopUpPicker = ({
                 </small>
               </span>
               <span className="deposit-picker__method-chevron" aria-hidden>
-                <ChevronRight size={18} strokeWidth={2.2} />
+                {selectedMethod === 'card' ? <Check size={18} strokeWidth={2.5} /> : <ChevronRight size={18} strokeWidth={2.2} />}
               </span>
             </button>
 
             <button
               type="button"
               role="listitem"
-              className="deposit-picker__method"
-              onClick={() => setView('crypto')}
+              className={`deposit-picker__method${selectedMethod === 'crypto' ? ' is-selected' : ''}`}
+              aria-pressed={selectedMethod === 'crypto'}
+              onClick={() => setSelectedMethod('crypto')}
             >
               <span className="deposit-picker__method-icon deposit-picker__method-icon--crypto" aria-hidden>
                 <Coins size={22} strokeWidth={2} />
@@ -114,10 +121,20 @@ const DepositTopUpPicker = ({
                 </small>
               </span>
               <span className="deposit-picker__method-chevron" aria-hidden>
-                <ChevronRight size={18} strokeWidth={2.2} />
+                {selectedMethod === 'crypto' ? <Check size={18} strokeWidth={2.5} /> : <ChevronRight size={18} strokeWidth={2.2} />}
               </span>
             </button>
           </div>
+
+          <button
+            type="button"
+            className="deposit-picker__continue"
+            onClick={handleContinue}
+            disabled={stripeCheckoutLoading}
+          >
+            {stripeCheckoutLoading ? <LoaderCircle className="deposit-picker__spinner" size={18} aria-hidden /> : null}
+            <span>{stripeCheckoutLoading ? 'Открываем оплату…' : 'Продолжить'}</span>
+          </button>
         </div>
       ) : (
         <div className="deposit-picker__crypto">

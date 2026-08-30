@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import * as faceapi from 'face-api.js'
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
+import { FiCheck, FiChevronsLeft, FiChevronsRight, FiUser, FiX } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
 import { saveVerificationPhoto, loadVerificationPhotos, clearVerificationPhotos } from '../utils/verificationStorage'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -77,21 +78,95 @@ function pointInEllipse(px, py, cx, cy, rx, ry) {
   return dx * dx + dy * dy <= 1
 }
 
-const SELFIE_DETECT_INTERVAL_MS = 220
-const SELFIE_STABLE_OK_FRAMES = 6
-const SELFIE_MIN_DETECTION_SCORE = 0.52
+const SELFIE_DETECT_INTERVAL_MS = 120
 const SELFIE_MIN_FACE_HEIGHT_IN_OVAL = 0.34
 const SELFIE_MAX_FACE_HEIGHT_IN_OVAL = 0.92
 const SELFIE_VIDEO_EDGE_MARGIN = 0.03
+const LIVENESS_CENTER_THRESHOLD = 0.11
+const LIVENESS_TURN_THRESHOLD = 0.2
+const LIVENESS_CENTER_HOLD_FRAMES = 6
+const LIVENESS_TURN_HOLD_FRAMES = 4
+const LIVENESS_RETURN_HOLD_FRAMES = 5
+const LIVENESS_TOTAL_STAGES = 4
+const FACE_LANDMARKER_WASM_URL =
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm'
+const FACE_LANDMARKER_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 /** Небольшой запас вокруг овала в сохранённом снимке */
 const SELFIE_CROP_PAD = 0.08
 const PASSPORT_CROP_PAD = 0.03
 const PASSPORT_DETECT_INTERVAL_MS = 280
 const PASSPORT_STABLE_OK_FRAMES = 3
 
+function createLivenessChallenge() {
+  return Math.random() < 0.5 ? ['left', 'right'] : ['right', 'left']
+}
+
+function livenessStageProgress(stage, challenge) {
+  if (stage === 'passed') return LIVENESS_TOTAL_STAGES
+  if (stage === 'return-center') return 3
+  if (stage === challenge[1]) return 2
+  if (stage === challenge[0]) return 1
+  return 0
+}
+
+function livenessInstruction(stage) {
+  if (stage === 'left') {
+    return {
+      title: 'Поверните голову влево',
+      detail: 'Следуйте за стрелкой',
+      direction: 'left',
+    }
+  }
+  if (stage === 'right') {
+    return {
+      title: 'Поверните голову вправо',
+      detail: 'Следуйте за стрелкой',
+      direction: 'right',
+    }
+  }
+  if (stage === 'return-center') {
+    return {
+      title: 'Посмотрите прямо',
+      detail: 'Держите лицо в центре',
+      direction: 'center',
+    }
+  }
+  if (stage === 'passed') {
+    return {
+      title: 'Готово',
+      detail: 'Не двигайтесь — делаем фото',
+      direction: 'done',
+    }
+  }
+  return {
+    title: 'Лицо в центре',
+    detail: 'Смотрите прямо в камеру',
+    direction: 'center',
+  }
+}
+
+/**
+ * Оценка горизонтального поворота по положению кончика носа относительно краёв лица.
+ * Фронтальная камера показывается зеркально, поэтому меняем знак: положительное
+ * значение означает движение вправо именно так, как его видит пользователь.
+ */
+function estimateMirroredHeadYaw(landmarks) {
+  const nose = landmarks?.[1]
+  const faceLeft = landmarks?.[234]
+  const faceRight = landmarks?.[454]
+  if (!nose || !faceLeft || !faceRight) return 0
+  const faceWidth = Math.abs(faceRight.x - faceLeft.x)
+  if (faceWidth < 0.01) return 0
+  const faceCenterX = (faceLeft.x + faceRight.x) / 2
+  return -((nose.x - faceCenterX) / (faceWidth / 2))
+}
+
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
   const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState(1)
+  const faceScanPreview = import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get('faceScanPreview') === '1'
+  const [currentStep, setCurrentStep] = useState(faceScanPreview ? 2 : 1)
   const [photos, setPhotos] = useState({
     passport: null,
     selfie: null,
@@ -102,8 +177,8 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
     selfie: null,
     selfieWithPassport: null
   })
-  const [isCameraOpen, setIsCameraOpen] = useState(false)
-  const [cameraType, setCameraType] = useState(null) // 'passport', 'selfie', 'selfieWithPassport'
+  const [isCameraOpen, setIsCameraOpen] = useState(faceScanPreview)
+  const [cameraType, setCameraType] = useState(faceScanPreview ? 'selfie' : null) // 'passport', 'selfie', 'selfieWithPassport'
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSubmittedCelebration, setShowSubmittedCelebration] = useState(false)
   const [animationClass, setAnimationClass] = useState('')
@@ -551,7 +626,9 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                   </div>
                 ) : (
                   <>
-                    <div className="verification-step__icon">📄</div>
+                    <div className="verification-step__icon" aria-hidden="true">
+                      <img src="/images/verification/passport-3d.png" alt="" />
+                    </div>
                     <div className="verification-step__title-wrapper">
                       <h2 className="verification-step__title">Шаг 1: Паспорт</h2>
                       <button 
@@ -603,7 +680,9 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                   </div>
                 ) : (
                   <>
-                    <div className="verification-step__icon">📷</div>
+                    <div className="verification-step__icon" aria-hidden="true">
+                      <img src="/images/verification/selfie-3d.png" alt="" />
+                    </div>
                     <div className="verification-step__title-wrapper">
                       <h2 className="verification-step__title">Шаг 2: Селфи</h2>
                       <button 
@@ -655,7 +734,9 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                   </div>
                 ) : (
                   <>
-                    <div className="verification-step__icon">📸</div>
+                    <div className="verification-step__icon" aria-hidden="true">
+                      <img src="/images/verification/selfie-with-passport-3d.png" alt="" />
+                    </div>
                     <div className="verification-step__title-wrapper">
                       <h2 className="verification-step__title">Шаг 3: Селфи с паспортом</h2>
                       <button 
@@ -744,6 +825,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
       {isCameraOpen && (
         <Camera 
           type={cameraType}
+          previewMode={faceScanPreview}
           onCapture={(blob) => {
             handleCameraCapture(blob, cameraType)
           }}
@@ -845,7 +927,7 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
 }
 
 // Компонент камеры
-const Camera = ({ type, onCapture, onClose }) => {
+const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   const videoRef = useRef(null)
   const previewRef = useRef(null)
   const shapeGuideRef = useRef(null)
@@ -853,7 +935,16 @@ const Camera = ({ type, onCapture, onClose }) => {
   const streamRef = useRef(null)
   const detectionCanvasRef = useRef(null)
   const clipRegionRef = useRef(null)
-  const selfieStableOkRef = useRef(0)
+  const faceLandmarkerRef = useRef(null)
+  const livenessChallengeRef = useRef(createLivenessChallenge())
+  const livenessStageRef = useRef('center')
+  const livenessHoldFramesRef = useRef(0)
+  const livenessCenterSamplesRef = useRef([])
+  const livenessCenterBaselineRef = useRef(0)
+  const smoothedYawRef = useRef(0)
+  const livenessPassedRef = useRef(false)
+  const autoCaptureTimerRef = useRef(null)
+  const capturePhotoRef = useRef(null)
   const passportStableOkRef = useRef(0)
   const passportScanBusyRef = useRef(false)
   const passportGateRef = useRef({ canShoot: false, hint: '', inFrame: false })
@@ -864,6 +955,10 @@ const Camera = ({ type, onCapture, onClose }) => {
   /** Подсказка для шага селфи */
   const [selfieFaceHint, setSelfieFaceHint] = useState('')
   const [selfieFaceOk, setSelfieFaceOk] = useState(false)
+  const [livenessChallenge, setLivenessChallenge] = useState(livenessChallengeRef.current)
+  const [livenessStage, setLivenessStage] = useState('center')
+  const [, setLivenessCompletedStages] = useState(0)
+  const [, setLivenessHoldProgress] = useState(0)
   /** Подсказка для шага паспорта */
   const [passportHint, setPassportHint] = useState('')
   const [passportOk, setPassportOk] = useState(false)
@@ -874,6 +969,8 @@ const Camera = ({ type, onCapture, onClose }) => {
   const [modelsLoading, setModelsLoading] = useState(false)
   const detectionIntervalRef = useRef(null)
   const detectionBusyRef = useRef(false)
+
+  const livenessUi = livenessInstruction(livenessStage)
 
   const useFrameBlur = type === 'selfie' || type === 'passport'
 
@@ -936,57 +1033,115 @@ const Camera = ({ type, onCapture, onClose }) => {
     clipRegionRef.current = clipRegion
   }, [clipRegion])
 
-  // Загрузка моделей face-api.js
+  const resetLivenessChallenge = useCallback((regenerate = false) => {
+    const nextChallenge = regenerate ? createLivenessChallenge() : livenessChallengeRef.current
+    livenessChallengeRef.current = nextChallenge
+    livenessStageRef.current = 'center'
+    livenessHoldFramesRef.current = 0
+    livenessCenterSamplesRef.current = []
+    livenessCenterBaselineRef.current = 0
+    smoothedYawRef.current = 0
+    livenessPassedRef.current = false
+    setLivenessChallenge(nextChallenge)
+    setLivenessStage('center')
+    setLivenessCompletedStages(0)
+    setLivenessHoldProgress(0)
+    setSelfieFaceOk(false)
+  }, [])
+
+  const moveToLivenessStage = useCallback((nextStage) => {
+    livenessStageRef.current = nextStage
+    livenessHoldFramesRef.current = 0
+    setLivenessStage(nextStage)
+    setLivenessCompletedStages(
+      livenessStageProgress(nextStage, livenessChallengeRef.current)
+    )
+    setLivenessHoldProgress(0)
+  }, [])
+
+  // Загрузка MediaPipe Face Landmarker. Кадры анализируются локально в браузере.
   useEffect(() => {
+    if (type === 'selfie' && previewMode) {
+      resetLivenessChallenge(false)
+      setModelsLoaded(false)
+      setModelsLoading(false)
+      setSelfieFaceHint('Смотрите прямо в камеру')
+      return undefined
+    }
+
+    let cancelled = false
+
     const loadModels = async () => {
       try {
         setModelsLoading(true)
-        // Используем CDN для моделей face-api.js
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'
+        setSelfieFaceHint('Загрузка сканирования лица…')
+        const vision = await FilesetResolver.forVisionTasks(FACE_LANDMARKER_WASM_URL)
+        const createLandmarker = (delegate) =>
+          FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: FACE_LANDMARKER_MODEL_URL,
+              ...(delegate ? { delegate } : {}),
+            },
+            runningMode: 'VIDEO',
+            numFaces: 2,
+            minFaceDetectionConfidence: 0.55,
+            minFacePresenceConfidence: 0.55,
+            minTrackingConfidence: 0.5,
+          })
 
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
-
-        setModelsLoaded(true)
-        setSelfieFaceHint('')
-        console.log('✅ Модели face-api.js загружены')
-      } catch (error) {
-        console.error('❌ Ошибка загрузки моделей face-api.js с CDN:', error)
+        let landmarker
         try {
-          const ALT_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/'
-          await faceapi.nets.tinyFaceDetector.loadFromUri(ALT_MODEL_URL)
-          setModelsLoaded(true)
-          setSelfieFaceHint('')
-          console.log('✅ Модели face-api.js загружены с альтернативного URL')
-        } catch (altError) {
-          console.error('❌ Ошибка загрузки моделей с альтернативного URL:', altError)
-          if (faceapi.nets.tinyFaceDetector.isLoaded) {
-            setModelsLoaded(true)
-            setSelfieFaceHint('')
-            console.log('✅ Модели face-api.js уже загружены')
-          } else {
-            setModelsLoaded(false)
-            console.warn('⚠️ Модели face-api.js не загружены')
-            setSelfieFaceHint(
-              'Не удалось загрузить проверку лица. Проверьте интернет и обновите страницу.'
-            )
-            setSelfieFaceOk(false)
-            setSelfieInOvalFrame(false)
-          }
+          landmarker = await createLandmarker('GPU')
+        } catch (gpuError) {
+          console.warn('MediaPipe GPU недоступен, используем CPU:', gpuError)
+          landmarker = await createLandmarker()
         }
+
+        if (cancelled) {
+          landmarker.close()
+          return
+        }
+
+        faceLandmarkerRef.current?.close()
+        faceLandmarkerRef.current = landmarker
+        resetLivenessChallenge(true)
+        setModelsLoaded(true)
+        setSelfieFaceHint('Расположите лицо в овале')
+        console.log('✅ MediaPipe Face Landmarker загружен')
+      } catch (error) {
+        console.error('❌ Ошибка загрузки MediaPipe Face Landmarker:', error)
+        setModelsLoaded(false)
+        setSelfieFaceHint(
+          'Не удалось загрузить сканирование лица. Проверьте интернет и попробуйте снова.'
+        )
+        setSelfieFaceOk(false)
+        setSelfieInOvalFrame(false)
       } finally {
-        setModelsLoading(false)
+        if (!cancelled) setModelsLoading(false)
       }
     }
 
     if (type === 'selfie') {
       loadModels()
     }
-  }, [type])
+
+    return () => {
+      cancelled = true
+      if (autoCaptureTimerRef.current) {
+        clearTimeout(autoCaptureTimerRef.current)
+        autoCaptureTimerRef.current = null
+      }
+      if (faceLandmarkerRef.current) {
+        faceLandmarkerRef.current.close()
+        faceLandmarkerRef.current = null
+      }
+    }
+  }, [type, previewMode, resetLivenessChallenge])
 
   useEffect(() => {
     if (type !== 'selfie') return
     if (modelsLoading) {
-      setSelfieFaceHint('Загрузка проверки лица…')
+      setSelfieFaceHint('Загрузка сканирования лица…')
       setSelfieFaceOk(false)
       setSelfieInOvalFrame(false)
     }
@@ -1043,6 +1198,8 @@ const Camera = ({ type, onCapture, onClose }) => {
   }, [type, modelsLoaded])
 
   const startCamera = async () => {
+    if (previewMode) return
+
     try {
       const constraints = {
         video: {
@@ -1086,20 +1243,13 @@ const Camera = ({ type, onCapture, onClose }) => {
 
   // Проверка лица для шага «селфи»: овал = clipRegion, координаты как при сохранении кадра; превью зеркальное
   const startFaceDetection = () => {
-    if (!videoRef.current || !modelsLoaded || type !== 'selfie') {
+    if (!videoRef.current || !faceLandmarkerRef.current || !modelsLoaded || type !== 'selfie') {
       return
     }
-
-    selfieStableOkRef.current = 0
 
     if (detectionIntervalRef.current) {
       clearInterval(detectionIntervalRef.current)
     }
-
-    const detectorOpts = new faceapi.TinyFaceDetectorOptions({
-      inputSize: 416,
-      scoreThreshold: SELFIE_MIN_DETECTION_SCORE,
-    })
 
     const tick = async () => {
       if (detectionBusyRef.current) return
@@ -1130,36 +1280,38 @@ const Camera = ({ type, onCapture, onClose }) => {
           return
         }
 
-        const detections = await faceapi.detectAllFaces(video, detectorOpts)
+        const result = faceLandmarkerRef.current?.detectForVideo(video, performance.now())
+        const faces = result?.faceLandmarks || []
         const marginX = vw * SELFIE_VIDEO_EDGE_MARGIN
         const marginY = vh * SELFIE_VIDEO_EDGE_MARGIN
 
-        const pickHint = () => {
-          if (detections.length === 0) {
+        const checkFraming = () => {
+          if (faces.length === 0) {
             return {
-              canShoot: false,
               hint: 'Лицо не видно — встаньте перед камерой при хорошем освещении',
               inOval: false,
             }
           }
-          const strong = detections.filter((x) => x.score >= SELFIE_MIN_DETECTION_SCORE)
-          if (strong.length > 1) {
+          if (faces.length > 1) {
             return {
-              canShoot: false,
               hint: 'В кадре должно быть только одно лицо',
               inOval: false,
             }
           }
-          const det = strong[0] || detections[0]
-          if (det.score < SELFIE_MIN_DETECTION_SCORE) {
-            return {
-              canShoot: false,
-              hint: 'Не похоже на лицо — улучшите свет и уберите очки / капюшон',
-              inOval: false,
-            }
-          }
 
-          const box = det.box
+          const landmarks = faces[0]
+          const xs = landmarks.map((point) => point.x * vw)
+          const ys = landmarks.map((point) => point.y * vh)
+          const minX = Math.min(...xs)
+          const maxX = Math.max(...xs)
+          const minY = Math.min(...ys)
+          const maxY = Math.max(...ys)
+          const box = {
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+          }
           const clipped =
             box.x < marginX ||
             box.y < marginY ||
@@ -1167,7 +1319,6 @@ const Camera = ({ type, onCapture, onClose }) => {
             box.y + box.height > vh - marginY
           if (clipped) {
             return {
-              canShoot: false,
               hint: 'Лицо обрезано — отодвиньте камеру или наклоните телефон',
               inOval: false,
             }
@@ -1184,7 +1335,6 @@ const Camera = ({ type, onCapture, onClose }) => {
 
           if (relH < SELFIE_MIN_FACE_HEIGHT_IN_OVAL) {
             return {
-              canShoot: false,
               hint: inOval
                 ? 'Подойдите ближе — лицо слишком мелкое в овале'
                 : 'Расположите лицо в овале и подойдите ближе',
@@ -1193,7 +1343,6 @@ const Camera = ({ type, onCapture, onClose }) => {
           }
           if (relH > SELFIE_MAX_FACE_HEIGHT_IN_OVAL) {
             return {
-              canShoot: false,
               hint: 'Отодвиньтесь — лицо не должно выходить за овал',
               inOval,
             }
@@ -1209,37 +1358,147 @@ const Camera = ({ type, onCapture, onClose }) => {
             else if (right) hint = 'Сдвиньте лицо влево'
             else if (up) hint = 'Опустите лицо ниже'
             else if (down) hint = 'Поднимите лицо выше'
-            return { canShoot: false, hint, inOval: false }
+            return { hint, inOval: false }
           }
 
-          return { canShoot: true, hint: 'Отлично, можно снимать', inOval: true }
+          return { hint: '', inOval: true, landmarks }
         }
 
-        const instant = pickHint()
-        let canShoot = instant.canShoot
-        if (canShoot) {
-          selfieStableOkRef.current += 1
-          if (selfieStableOkRef.current < SELFIE_STABLE_OK_FRAMES) {
-            canShoot = false
-            applySelfieGateUi({
-              canShoot: false,
-              hint: `Удерживайте лицо в овале… (${selfieStableOkRef.current}/${SELFIE_STABLE_OK_FRAMES})`,
-              inOval: true,
-            })
-            return
+        const framing = checkFraming()
+        if (!framing.inOval || !framing.landmarks) {
+          const currentStage = livenessStageRef.current
+          livenessHoldFramesRef.current = 0
+          livenessCenterSamplesRef.current = []
+          setLivenessHoldProgress(0)
+          if (currentStage !== 'center' && currentStage !== 'passed') {
+            resetLivenessChallenge(false)
           }
-        } else {
-          selfieStableOkRef.current = 0
+          applySelfieGateUi({
+            canShoot: false,
+            hint: framing.hint,
+            inOval: framing.inOval,
+          })
+          return
+        }
+
+        const measuredYaw = estimateMirroredHeadYaw(framing.landmarks)
+        smoothedYawRef.current =
+          smoothedYawRef.current * 0.62 + measuredYaw * 0.38
+
+        const stage = livenessStageRef.current
+        const centeredYaw = smoothedYawRef.current - livenessCenterBaselineRef.current
+        let targetReached = false
+        let requiredFrames = LIVENESS_TURN_HOLD_FRAMES
+
+        if (stage === 'center') {
+          requiredFrames = LIVENESS_CENTER_HOLD_FRAMES
+          targetReached = Math.abs(smoothedYawRef.current) <= LIVENESS_CENTER_THRESHOLD
+        } else if (stage === 'left') {
+          targetReached = centeredYaw <= -LIVENESS_TURN_THRESHOLD
+        } else if (stage === 'right') {
+          targetReached = centeredYaw >= LIVENESS_TURN_THRESHOLD
+        } else if (stage === 'return-center') {
+          requiredFrames = LIVENESS_RETURN_HOLD_FRAMES
+          targetReached = Math.abs(centeredYaw) <= LIVENESS_CENTER_THRESHOLD
+        }
+
+        if (!targetReached) {
+          livenessHoldFramesRef.current = 0
+          if (stage === 'center') livenessCenterSamplesRef.current = []
+          setLivenessHoldProgress(0)
+          applySelfieGateUi({
+            canShoot: false,
+            hint:
+              stage === 'center' || stage === 'return-center'
+                ? 'Выровняйте лицо и смотрите прямо'
+                : livenessInstruction(stage).title,
+            inOval: true,
+          })
+          return
+        }
+
+        livenessHoldFramesRef.current += 1
+        if (stage === 'center') {
+          livenessCenterSamplesRef.current.push(smoothedYawRef.current)
+        }
+        setLivenessHoldProgress(
+          Math.min(1, livenessHoldFramesRef.current / requiredFrames)
+        )
+
+        if (livenessHoldFramesRef.current < requiredFrames) {
+          applySelfieGateUi({
+            canShoot: false,
+            hint: 'Отлично — удерживайте положение ещё немного',
+            inOval: true,
+          })
+          return
+        }
+
+        if (stage === 'center') {
+          const samples = livenessCenterSamplesRef.current
+          livenessCenterBaselineRef.current =
+            samples.reduce((sum, value) => sum + value, 0) / Math.max(1, samples.length)
+          const nextStage = livenessChallengeRef.current[0]
+          moveToLivenessStage(nextStage)
+          applySelfieGateUi({
+            canShoot: false,
+            hint: livenessInstruction(nextStage).title,
+            inOval: true,
+          })
+          return
+        }
+
+        if (stage === livenessChallengeRef.current[0]) {
+          const nextStage = livenessChallengeRef.current[1]
+          moveToLivenessStage(nextStage)
+          applySelfieGateUi({
+            canShoot: false,
+            hint: livenessInstruction(nextStage).title,
+            inOval: true,
+          })
+          return
+        }
+
+        if (stage === livenessChallengeRef.current[1]) {
+          moveToLivenessStage('return-center')
+          applySelfieGateUi({
+            canShoot: false,
+            hint: 'Отлично — теперь снова смотрите прямо',
+            inOval: true,
+          })
+          return
+        }
+
+        if (stage === 'return-center') {
+          livenessPassedRef.current = true
+          livenessStageRef.current = 'passed'
+          setLivenessStage('passed')
+          setLivenessCompletedStages(LIVENESS_TOTAL_STAGES)
+          setLivenessHoldProgress(1)
+          applySelfieGateUi({
+            canShoot: true,
+            hint: 'Проверка пройдена — делаем селфи…',
+            inOval: true,
+          })
+          if (detectionIntervalRef.current) {
+            clearInterval(detectionIntervalRef.current)
+            detectionIntervalRef.current = null
+          }
+          autoCaptureTimerRef.current = window.setTimeout(() => {
+            capturePhotoRef.current?.()
+          }, 900)
+          return
         }
 
         applySelfieGateUi({
-          canShoot,
-          hint: instant.hint,
-          inOval: instant.inOval,
+          canShoot: false,
+          hint: 'Следуйте подсказкам на экране',
+          inOval: true,
         })
       } catch (error) {
         console.error('Ошибка детекции лица:', error)
-        selfieStableOkRef.current = 0
+        livenessHoldFramesRef.current = 0
+        setLivenessHoldProgress(0)
         applySelfieGateUi({
           canShoot: false,
           hint: 'Не удалось проверить кадр — попробуйте ещё раз',
@@ -1432,7 +1691,14 @@ const Camera = ({ type, onCapture, onClose }) => {
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
-    selfieStableOkRef.current = 0
+    livenessHoldFramesRef.current = 0
+    livenessCenterSamplesRef.current = []
+    smoothedYawRef.current = 0
+    livenessPassedRef.current = false
+    if (autoCaptureTimerRef.current) {
+      clearTimeout(autoCaptureTimerRef.current)
+      autoCaptureTimerRef.current = null
+    }
     passportStableOkRef.current = 0
     passportScanBusyRef.current = false
     passportGateRef.current = { canShoot: false, hint: '', inFrame: false }
@@ -1447,7 +1713,7 @@ const Camera = ({ type, onCapture, onClose }) => {
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
-    if (type === 'selfie' && !selfieFaceOk) return
+    if (type === 'selfie' && !livenessPassedRef.current) return
     if (type === 'passport' && !passportOk) return
 
     setIsCapturing(true)
@@ -1542,6 +1808,8 @@ const Camera = ({ type, onCapture, onClose }) => {
     }, 'image/jpeg', 0.95)
   }
 
+  capturePhotoRef.current = capturePhoto
+
   const switchCamera = () => {
     stopCamera()
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
@@ -1551,9 +1819,7 @@ const Camera = ({ type, onCapture, onClose }) => {
     <div className="camera-overlay">
       <div className="camera-container">
         <button className="camera-close" onClick={onClose}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+          <FiX aria-hidden="true" />
         </button>
 
         <div className="camera-preview" ref={previewRef}>
@@ -1572,33 +1838,64 @@ const Camera = ({ type, onCapture, onClose }) => {
                 <div
                   ref={shapeGuideRef}
                   className={`camera-face-guide__oval ${
-                    selfieFaceOk ? 'face-detected' : selfieInOvalFrame ? 'face-aligning' : ''
-                  }`}
-                />
-                <div
-                  className={`camera-guide-hint ${
                     selfieFaceOk
-                      ? 'camera-guide-hint--ok'
+                      ? 'face-detected is-liveness-passed'
                       : selfieInOvalFrame
-                        ? 'camera-guide-hint--progress'
+                        ? 'face-aligning is-liveness-active'
                         : ''
+                  }`}
+                >
+                  {(livenessUi.direction === 'left' || livenessUi.direction === 'right') && (
+                    <div
+                      className={`camera-liveness-arrow camera-liveness-arrow--${livenessUi.direction}`}
+                      aria-hidden="true"
+                    >
+                      {livenessUi.direction === 'left' ? <FiChevronsLeft /> : <FiChevronsRight />}
+                    </div>
+                  )}
+                  {(livenessUi.direction === 'center' || livenessUi.direction === 'done') && (
+                    <div
+                      className={`camera-liveness-center ${livenessUi.direction === 'done' ? 'is-done' : ''}`}
+                      aria-hidden="true"
+                    >
+                      {livenessUi.direction === 'done' ? <FiCheck /> : <FiUser />}
+                    </div>
+                  )}
+                  {livenessUi.direction === 'center' && (
+                    <div className="camera-liveness-align-arrows" aria-hidden="true">
+                      <FiChevronsRight />
+                      <FiChevronsLeft />
+                    </div>
+                  )}
+                </div>
+                <div
+                  className={`camera-liveness-hint ${
+                    selfieFaceOk ? 'is-passed' : selfieInOvalFrame ? 'is-active' : ''
                   }`}
                   role="status"
                   aria-live="polite"
                 >
-                  {selfieFaceHint || 'Расположите лицо в овале'}
+                  <span className="camera-liveness-hint__icon" aria-hidden="true">
+                    {livenessUi.direction === 'left' ? (
+                      <FiChevronsLeft />
+                    ) : livenessUi.direction === 'right' ? (
+                      <FiChevronsRight />
+                    ) : livenessUi.direction === 'done' ? (
+                      <FiCheck />
+                    ) : (
+                      <FiUser />
+                    )}
+                  </span>
+                  <span className="camera-liveness-hint__copy">
+                    <strong>{livenessUi.title}</strong>
+                    <small>
+                      {modelsLoading
+                        ? 'Готовим камеру…'
+                        : selfieFaceHint || livenessUi.detail}
+                    </small>
+                  </span>
                 </div>
               </div>
-              {selfieFaceOk && (
-                <div className="camera-ready-chip" role="status">
-                  <span className="camera-ready-chip__icon" aria-hidden="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  <span className="camera-ready-chip__text">Можно нажать затвор</span>
-                </div>
-              )}
             </div>
           )}
 
@@ -1646,17 +1943,23 @@ const Camera = ({ type, onCapture, onClose }) => {
         </div>
 
         <div className="camera-controls">
-          <button className="camera-switch" onClick={switchCamera}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M18 3L21 6L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M21 6H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M6 21L3 18L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
+          {type !== 'selfie' ? (
+            <button className="camera-switch" onClick={switchCamera}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 3L21 6L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 6H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M6 21L3 18L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          ) : (
+            <div className="camera-control-spacer" aria-hidden="true" />
+          )}
           <button
             type="button"
-            className="camera-capture"
+            className={`camera-capture ${type === 'selfie' ? 'camera-capture--liveness' : ''} ${
+              selfieFaceOk ? 'is-ready' : ''
+            }`}
             onClick={capturePhoto}
             disabled={
               isCapturing ||
@@ -1676,7 +1979,7 @@ const Camera = ({ type, onCapture, onClose }) => {
           >
             <div className="camera-capture__button"></div>
           </button>
-          <div style={{ width: '48px' }}></div>
+          <div className="camera-control-spacer" aria-hidden="true" />
         </div>
       </div>
     </div>
@@ -1684,4 +1987,3 @@ const Camera = ({ type, onCapture, onClose }) => {
 }
 
 export default VerificationModal
-

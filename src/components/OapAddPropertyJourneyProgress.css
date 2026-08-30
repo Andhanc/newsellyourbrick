@@ -112,6 +112,42 @@
   transform: scale(1.15);
 }
 
+.oap-journey-progress--compact .oap-journey-progress__card {
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 14px;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__ring-wrap {
+  width: 42px;
+  height: 42px;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__percent {
+  font-size: 0.64rem;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__meta {
+  gap: 2px;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__title {
+  font-size: 0.84rem;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__step {
+  font-size: 0.72rem;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__steps {
+  gap: 4px;
+}
+
+.oap-journey-progress--compact .oap-journey-progress__dot {
+  width: 5px;
+  height: 5px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .oap-journey-progress__ring-progress,
   .oap-journey-progress__dot {

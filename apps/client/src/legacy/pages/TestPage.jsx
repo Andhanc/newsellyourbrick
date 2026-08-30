@@ -53,6 +53,7 @@ import PhoneInput from '../components/PhoneInput'
 import '../components/PhoneInput.css'
 import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import ProfileStrategyStories from '../components/ProfileStrategyStories'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
@@ -2856,6 +2857,7 @@ function TestPage() {
 
               <div className="profile-cabinet__directions-cta">
                 <AuctionCategoryCtaCards variant="profilePage" />
+                <ProfileStrategyStories language={i18n.language} />
               </div>
 
               <section className="profile-cabinet__mobile-actions" aria-label={t('buyerCabinet_mobileActionsAria')}>

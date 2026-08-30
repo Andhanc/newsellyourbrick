@@ -4,12 +4,7 @@ import i18n from '../i18n/config'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
-  Home,
-  Castle,
-  Hotel,
-  Building2,
-  Store,
-  TreePine,
+  ArrowUpRight,
 } from 'lucide-react'
 import {
   FiX,
@@ -76,6 +71,7 @@ import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKy
 import OapAddPropertyJourneyStrip from '../components/OapAddPropertyJourneyStrip'
 import OapAddPropertyJourneyProgress from '../components/OapAddPropertyJourneyProgress'
 import { preloadOapWizardImages } from './oapWizardImages'
+import { OAP_PROPERTY_TYPE_IMAGES } from './oapPropertyTypeImages'
 import { OapAddPropertyMobileWelcome } from '../components/OapAddPropertyMobileScreens'
 import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
 import OapPurchasedListingBanner from '../components/OapPurchasedListingBanner'
@@ -511,37 +507,37 @@ export default function OwnerAddPropertyTestPage() {
         value: 'house',
         label: t('oap_propertyTypeHouse'),
         description: t('oap_propertyTypeHouseDesc'),
-        Icon: Home,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.house,
       },
       {
         value: 'villa',
         label: t('oap_propertyTypeVilla'),
         description: t('oap_propertyTypeVillaDesc'),
-        Icon: Castle,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.villa,
       },
       {
         value: 'apartments',
         label: t('oap_propertyTypeApartments'),
         description: t('oap_propertyTypeApartmentsDesc'),
-        Icon: Hotel,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.apartments,
       },
       {
         value: 'apartment',
         label: t('oap_propertyTypeApartment'),
         description: t('oap_propertyTypeApartmentDesc'),
-        Icon: Building2,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.apartment,
       },
       {
         value: 'commercial',
         label: t('oap_propertyTypeCommercial'),
         description: t('oap_propertyTypeCommercialDesc'),
-        Icon: Store,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.commercial,
       },
       {
         value: 'land',
         label: t('oap_propertyTypeLand'),
         description: t('oap_propertyTypeLandDesc'),
-        Icon: TreePine,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.land,
       },
     ],
     [t],
@@ -1722,11 +1718,12 @@ export default function OwnerAddPropertyTestPage() {
               >
                 <ArrowLeft size={22} strokeWidth={2} />
               </button>
+              <OapAddPropertyJourneyProgress
+                currentStep={mobileScreen}
+                totalSteps={MOBILE_JOURNEY_SCREENS}
+                compact
+              />
             </header>
-            <OapAddPropertyJourneyProgress
-              currentStep={mobileScreen}
-              totalSteps={MOBILE_JOURNEY_SCREENS}
-            />
             <div ref={journeyScrollRef} className="oap-content oap-content--journey">
               {purchasedBanner}
               <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
@@ -1748,11 +1745,12 @@ export default function OwnerAddPropertyTestPage() {
                   </button>
                   <button
                     type="button"
-                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next btn-tiffany-shine"
                     onClick={handleJourneyNext}
                     disabled={!canProceedJourney || isSubmitting}
                   >
-                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                    <span>{isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}</span>
+                    {!isSubmitting ? <ArrowUpRight size={19} strokeWidth={2.4} aria-hidden /> : null}
                   </button>
                 </div>
               </footer>
@@ -1804,11 +1802,12 @@ export default function OwnerAddPropertyTestPage() {
                   </button>
                   <button
                     type="button"
-                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next btn-tiffany-shine"
                     onClick={handleJourneyNext}
                     disabled={!canProceedJourney || isSubmitting}
                   >
-                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                    <span>{isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}</span>
+                    {!isSubmitting ? <ArrowUpRight size={19} strokeWidth={2.4} aria-hidden /> : null}
                   </button>
                 </div>
               </footer>

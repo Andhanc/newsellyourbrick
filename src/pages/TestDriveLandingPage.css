@@ -1407,7 +1407,7 @@
     min-height: 660px;
     padding:
       calc(var(--test-drive-header-offset) + 6px)
-      16px
+      18px
       72px;
   }
 
@@ -1829,8 +1829,8 @@
 
   .test-drive-hero__content {
     min-height: 632px;
-    padding-right: 12px;
-    padding-left: 12px;
+    padding-right: 18px;
+    padding-left: 18px;
   }
 
   .test-drive-hero__copy {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiX, FiCheck } from 'react-icons/fi'
-import { Sparkles } from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import './OapAddPropertyMobileScreens.css'
@@ -93,9 +93,12 @@ export function OapAddPropertyMobileWelcome({
         </label>
 
         <div className="oap-mobile-screen__field">
-          <span className="oap-mobile-screen__field-label">{t('oap_presentationDescTitle')}</span>
-          <label className="oap-mobile-screen__field-control">
+          <label className="oap-mobile-screen__field-label" htmlFor="oap-mobile-description">
+            {t('oap_presentationDescTitle')}
+          </label>
+          <div className="oap-mobile-screen__field-control">
             <textarea
+              id="oap-mobile-description"
               className="oap-mobile-screen__textarea"
               rows={5}
               placeholder={t('oap_presentationDescPlaceholder')}
@@ -103,13 +106,6 @@ export function OapAddPropertyMobileWelcome({
               maxLength={descriptionMaxLength}
               onChange={(e) => onDescriptionChange?.(e.target.value)}
             />
-            <span
-              className={`oap-mobile-screen__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-mobile-screen__counter--warn' : ''}`}
-            >
-              {descriptionLength}/{descriptionMaxLength}
-            </span>
-          </label>
-          <div className="oap-mobile-screen__generate-row">
             <button
               type="button"
               className="oap-mobile-screen__generate"
@@ -117,21 +113,30 @@ export function OapAddPropertyMobileWelcome({
               disabled={isGeneratingDescription || !(description || '').trim()}
               aria-label={t('oap_presentationGenerateAria')}
             >
-              <Sparkles size={16} strokeWidth={2} className="oap-mobile-screen__generate-icon" aria-hidden />
-              <span>
+              <Sparkles size={15} strokeWidth={2} className="oap-mobile-screen__generate-icon" aria-hidden />
+              <span className="oap-mobile-screen__generate-label-full">
                 {isGeneratingDescription
                   ? t('oap_presentationGenerating')
                   : t('oap_presentationGenerate')}
               </span>
+              <span className="oap-mobile-screen__generate-label-short" aria-hidden>AI</span>
             </button>
+            <span
+              className={`oap-mobile-screen__counter${descriptionLength > descriptionMaxLength * 0.9 ? ' oap-mobile-screen__counter--warn' : ''}`}
+            >
+              {descriptionLength}/{descriptionMaxLength}
+            </span>
+          </div>
+          <div className="oap-mobile-screen__generate-row">
             {typeof onNext === 'function' ? (
               <button
                 type="button"
-                className="oap-mobile-screen__next"
+                className="oap-mobile-screen__next btn-tiffany-shine"
                 onClick={onNext}
                 disabled={nextDisabled}
               >
-                {nextLabel || t('oap_publishNext')}
+                <span>{nextLabel || t('oap_publishNext')}</span>
+                <ArrowUpRight size={18} strokeWidth={2.4} aria-hidden />
               </button>
             ) : null}
           </div>

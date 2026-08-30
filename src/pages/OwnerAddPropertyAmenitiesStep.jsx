@@ -7,13 +7,13 @@ import { OAP_AMENITIES_IMAGES } from './oapAmenitiesImages'
 import './OwnerAddPropertyAmenitiesStep.css'
 import './oapStepSidebar.css'
 
-function AmenityCard({ item, isActive, embedded, journeyLayout, onToggle }) {
+function AmenityCard({ item, isActive, embedded, journeyLayout, wide, onToggle }) {
   const ItemIcon = getAmenityIcon(item.tzKey)
 
   return (
     <button
       type="button"
-      className={`oap-amenity-card${journeyLayout ? ' oap-amenity-card--journey' : ''}${isActive ? ' oap-amenity-card--active' : ''}`}
+      className={`oap-amenity-card${journeyLayout ? ' oap-amenity-card--journey' : ''}${wide ? ' oap-amenity-card--wide' : ''}${isActive ? ' oap-amenity-card--active' : ''}`}
       aria-pressed={isActive}
       title={item.label}
       onClick={() => onToggle(item.tzKey)}
@@ -77,6 +77,7 @@ export default function OwnerAddPropertyAmenitiesStep({
                 isActive={selectedAmenities.includes(item.tzKey)}
                 embedded={embedded}
                 journeyLayout={journeyLayout}
+                wide={item.label.length > 21}
                 onToggle={onToggleAmenity}
               />
             ))}

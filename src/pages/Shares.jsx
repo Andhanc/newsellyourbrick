@@ -10,6 +10,7 @@ import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import MobileDiscoverFaq from '../components/MobileDiscoverFaq'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
@@ -291,9 +292,12 @@ export default function Shares() {
         <div className="shares-hero-scene__inner">
           <div className="shares-hero-scene__copy">
             <span className="shares-hero-scene__eyebrow">{t('coInvestment')}</span>
-            <h1 id="shares-hero-title" className="shares-hero-scene__title">
-              {t('sharesPage_heroTitle')}
-            </h1>
+            <div className="section-info-heading-row">
+              <h1 id="shares-hero-title" className="shares-hero-scene__title">
+                {t('shares')}
+              </h1>
+              <SectionInfoDrawer section="shares" placement="heading" />
+            </div>
             <p className="shares-hero-scene__lead">{t('sharesPage_heroLead')}</p>
             <button type="button" className="shares-hero-scene__cta" onClick={scrollToCatalog}>
               <span>{t('sharesPage_heroCta')}</span>

@@ -164,14 +164,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: var(--oap-primary-soft);
+  border-radius: 0;
+  background: transparent;
   color: var(--oap-primary-dark);
 }
 
 .oap-basics-type-card--active .oap-basics-type-card__icon {
-  background: linear-gradient(135deg, #33adbb 0%, #0099a9 48%, #007d8a 100%);
-  color: #fff;
+  background: transparent;
+  transform: scale(1.06);
+}
+
+.oap-basics-type-card__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .oap-basics-type-card__body {
@@ -706,16 +715,16 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 84px;
-    padding: 10px 8px;
+    gap: 6px;
+    min-height: 116px;
+    padding: 8px;
     text-align: center;
   }
 
   .oap-basics-type-card__icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+    width: 76px;
+    height: 76px;
+    border-radius: 0;
   }
 
   .oap-basics-type-card__icon svg {
@@ -929,4 +938,3 @@
     align-items: start;
   }
 }
-

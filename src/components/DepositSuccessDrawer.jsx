@@ -1,5 +1,6 @@
-import { FiArrowRight, FiCheckCircle } from 'react-icons/fi'
-import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
+import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { FiArrowRight, FiCheck } from 'react-icons/fi'
 import './DepositSuccessDrawer.css'
 
 function continueLabel(returnPath = '') {
@@ -17,42 +18,68 @@ export default function DepositSuccessDrawer({
   confirmedAmount,
   returnPath,
 }) {
+  const actionRef = useRef(null)
+  const cardRef = useRef(null)
   const actionLabel = continueLabel(returnPath)
-  return (
-    <BuyerSheetShell
-      isOpen={isOpen}
-      onClose={onClose}
-      tone="success"
-      titleId="deposit-success-drawer-title"
-      describedBy="deposit-success-drawer-description"
-      closeLabel="Закрыть подтверждение пополнения"
-      className="deposit-success-drawer"
-      footer={(
-        <button type="button" className="deposit-success-drawer__cta" onClick={onContinue}>
-          <span>{actionLabel}</span>
-          <FiArrowRight size={20} aria-hidden />
-        </button>
-      )}
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose?.()
+    }
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKeyDown)
+    const frame = window.requestAnimationFrame(() => cardRef.current?.focus())
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      className="deposit-success-modal"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.()
+      }}
     >
-      <div className="deposit-success-drawer__panel">
-        <img
-          className="deposit-success-drawer__illustration"
-          src="/images/property-detail/deposit-success-check-3d.png"
-          alt=""
-          aria-hidden="true"
-        />
-        <span className="deposit-success-drawer__eyebrow"><FiCheckCircle aria-hidden /> Платёж подтверждён</span>
-        <h2 id="deposit-success-drawer-title" className="deposit-success-drawer__title">
+      <section
+        ref={cardRef}
+        className="deposit-success-modal__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deposit-success-modal-title"
+        aria-describedby="deposit-success-modal-description"
+        tabIndex={-1}
+      >
+        <span className="deposit-success-modal__check" aria-hidden="true">
+          <FiCheck />
+        </span>
+        <h2 id="deposit-success-modal-title" className="deposit-success-modal__title">
           Депозит пополнен
         </h2>
         {confirmedAmount ? (
-          <strong className="deposit-success-drawer__confirmed">+ {confirmedAmount}</strong>
+          <strong className="deposit-success-modal__confirmed">+ {confirmedAmount}</strong>
         ) : null}
-        <p id="deposit-success-drawer-description" className="deposit-success-drawer__lead">
-          Средства уже доступны. Теперь можно вернуться к выбранному объекту, сделать ставку или продолжить бронирование.
+        <p id="deposit-success-modal-description" className="deposit-success-modal__lead">
+          Платёж прошёл успешно. Средства уже доступны для участия в торгах.
         </p>
-      </div>
-    </BuyerSheetShell>
+        <button
+          ref={actionRef}
+          type="button"
+          className="deposit-success-modal__cta"
+          onClick={onContinue}
+        >
+          <span>{actionLabel}</span>
+          <FiArrowRight aria-hidden="true" />
+        </button>
+      </section>
+    </div>,
+    document.body,
   )
 }
 

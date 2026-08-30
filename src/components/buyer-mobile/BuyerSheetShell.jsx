@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
 import {
   assignSheetPanelRef,
   sheetHandleDragProps,
@@ -115,7 +116,7 @@ export default function BuyerSheetShell({
     const frame = window.requestAnimationFrame(() => {
       const preferred = initialFocusRef?.current
       const firstFocusable = focusableElements(surfaceRef.current)[0]
-      ;(preferred || closeButtonRef.current || firstFocusable || surfaceRef.current)?.focus?.()
+      ;(preferred || surfaceRef.current || closeButtonRef.current || firstFocusable)?.focus?.()
     })
 
     return () => {
@@ -169,7 +170,7 @@ export default function BuyerSheetShell({
             onClick={handleRequestClose}
             aria-label={closeLabel}
           >
-            <span aria-hidden="true">×</span>
+            <X size={22} strokeWidth={2} aria-hidden="true" />
           </button>
         ) : null}
         <div className="buyer-sheet__body">{children}</div>

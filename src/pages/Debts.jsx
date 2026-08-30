@@ -19,6 +19,7 @@ import DebtsRiskDrawer from '../components/DebtsRiskDrawer'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -563,9 +564,12 @@ const Debts = () => {
         <div className="debts-hero-scene__overlay" aria-hidden />
         <div className="debts-hero-scene__inner">
           <header className="debts-hero-scene__header">
-            <h1 id="debts-hero-title" className="debts-hero-scene__title">
-              {t('debtsTitle')}
-            </h1>
+            <div className="section-info-heading-row">
+              <h1 id="debts-hero-title" className="debts-hero-scene__title">
+                {t('debtsTitle')}
+              </h1>
+              <SectionInfoDrawer section="debts" placement="heading" />
+            </div>
             <p className="debts-hero-scene__lead">{t('debtsSectionSubtitle')}</p>
           </header>
           <div className="shares-flip-cards shares-flip-cards--debts">

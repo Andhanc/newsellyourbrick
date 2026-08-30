@@ -1,21 +1,125 @@
-.deposit-success-drawer.buyer-sheet { z-index: 13390; }
-.deposit-success-drawer .buyer-sheet__surface { width: min(100%, 480px); }
-.deposit-success-drawer__panel { max-width: 440px; margin: 0 auto; text-align: center; }
-.deposit-success-drawer__illustration { display: block; width: min(188px, 60vw); height: 158px; margin: -5px auto 3px; object-fit: contain; }
-.deposit-success-drawer__eyebrow { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 6px 9px; border-radius: 999px; background: var(--buyer-white); color: var(--buyer-teal-deep); font: 760 9px/1 var(--buyer-font-display); letter-spacing: .07em; text-transform: uppercase; }
-.deposit-success-drawer__title { margin: 0; color: var(--buyer-ink); font: 820 clamp(27px, 7vw, 34px)/1 var(--buyer-font-display); letter-spacing: -.045em; }
-.deposit-success-drawer__confirmed { display: block; margin-top: 10px; color: var(--buyer-teal-deep); font: 830 24px/1 var(--buyer-font-display); letter-spacing: -.03em; }
-.deposit-success-drawer__lead { max-width: 390px; margin: 12px auto 0; color: var(--buyer-text-muted); font: 500 14px/1.5 var(--buyer-font-body); }
-.deposit-success-drawer__cta { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; border: 0; border-radius: 16px; background: var(--buyer-teal-deep); color: white; cursor: pointer; box-shadow: 0 11px 27px rgba(0, 111, 123, .25); font: 760 14px/1 var(--buyer-font-display); }
+.deposit-success-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 13390;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(7, 18, 25, 0.46);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  animation: deposit-success-backdrop-in 0.2s ease-out both;
+}
+
+.deposit-success-modal__card {
+  width: min(100%, 420px);
+  padding: 42px 30px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 32px;
+  background: #fff;
+  color: #0b1220;
+  text-align: center;
+  box-shadow: 0 28px 78px rgba(7, 26, 35, 0.28);
+  animation: deposit-success-card-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.deposit-success-modal__card:focus { outline: none; }
+
+.deposit-success-modal__check {
+  width: 94px;
+  height: 94px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 30px;
+  border: 10px solid #e8fbfc;
+  border-radius: 50%;
+  background: #4ecdd6;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(78, 205, 214, 0.34);
+}
+
+.deposit-success-modal__check svg {
+  width: 42px;
+  height: 42px;
+  stroke-width: 2.6;
+}
+
+.deposit-success-modal__title {
+  margin: 0;
+  font-size: clamp(27px, 7vw, 34px);
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.deposit-success-modal__confirmed {
+  display: block;
+  margin-top: 11px;
+  color: #3bc0cb;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.deposit-success-modal__lead {
+  max-width: 330px;
+  margin: 18px auto 28px;
+  color: #7b8794;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.deposit-success-modal__cta {
+  position: relative;
+  width: 100%;
+  min-height: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #6ad6dd 0%, #4ecdd6 48%, #3bc0cb 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(78, 205, 214, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.deposit-success-modal__cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 24%, rgba(255, 255, 255, 0.28) 48%, transparent 70%);
+  pointer-events: none;
+}
+
+.deposit-success-modal__cta > * { position: relative; z-index: 1; }
+.deposit-success-modal__cta svg { width: 19px; height: 19px; }
+.deposit-success-modal__cta:hover { transform: translateY(-1px); box-shadow: 0 14px 31px rgba(78, 205, 214, 0.46); }
+.deposit-success-modal__cta:active { transform: scale(0.985); }
+.deposit-success-modal__cta:focus-visible { outline: 3px solid rgba(78, 205, 214, 0.36); outline-offset: 3px; }
+
+@keyframes deposit-success-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes deposit-success-card-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 @media (max-width: 480px) {
-  .deposit-success-drawer { padding: 0; }
-  .deposit-success-drawer .buyer-sheet__surface { border-radius: 28px 28px 0 0; }
-  .deposit-success-drawer__panel { max-width: none; text-align: left; }
-  .deposit-success-drawer__illustration { width: 168px; object-fit: contain; }
-  .deposit-success-drawer .buyer-sheet__footer { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .deposit-success-modal { padding: 18px; }
+  .deposit-success-modal__card { padding: 36px 24px 24px; border-radius: 28px; }
+  .deposit-success-modal__check { width: 84px; height: 84px; margin-bottom: 25px; }
+  .deposit-success-modal__lead { margin-bottom: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .deposit-success-drawer__cta { transition: none; }
+  .deposit-success-modal,
+  .deposit-success-modal__card { animation-duration: 1ms; }
+  .deposit-success-modal__cta { transition: none; }
 }

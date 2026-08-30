@@ -108,7 +108,7 @@ export function PrivateClubKickModalHost() {
   )
 }
 
-/** Верификация — чанки только если API подтвердил success/rejected (не грузим confetti/face-api зря). */
+/** Верификация — чанки только если API подтвердил success/rejected (не грузим confetti/MediaPipe зря). */
 export function LoggedInVerificationGatesHost({ isBlocked }) {
   const { pathname } = useLocation()
   const [successGate, setSuccessGate] = useState(false)

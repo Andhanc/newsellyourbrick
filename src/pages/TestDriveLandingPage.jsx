@@ -16,6 +16,7 @@ import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -258,13 +259,19 @@ const TestDriveLandingPage = () => {
           </div>
           <div className="test-drive-hero__content">
             <div className="test-drive-hero__copy test-drive-hero__copy--desktop">
-              <h1>{t('testDriveLanding_heroTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1>{t('testDrive')}</h1>
+                <SectionInfoDrawer section="testDrive" placement="heading" />
+              </div>
               <p className="test-drive-hero__subtitle">{t('testDriveLanding_heroSubtitle')}</p>
               <p className="test-drive-hero__lead">{t('testDriveLanding_heroLead')}</p>
             </div>
 
             <div className="test-drive-hero__copy test-drive-hero__copy--mobile">
-              <h1>{t('testDriveLanding_heroMobileTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1>{t('testDrive')}</h1>
+                <SectionInfoDrawer section="testDrive" placement="heading" />
+              </div>
               <p className="test-drive-hero__eyebrow">{t('testDriveLanding_heroMobileEyebrow')}</p>
             </div>
 

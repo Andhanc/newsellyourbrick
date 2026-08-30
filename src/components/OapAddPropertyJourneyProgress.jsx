@@ -1,10 +1,13 @@
-import { useId, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import './OapAddPropertyJourneyProgress.css'
 
-export default function OapAddPropertyJourneyProgress({ currentStep = 1, totalSteps = 7 }) {
+export default function OapAddPropertyJourneyProgress({
+  currentStep = 1,
+  totalSteps = 7,
+  compact = false,
+}) {
   const { t } = useTranslation()
-  const gradientId = useId()
 
   const safeTotal = Math.max(1, totalSteps)
   const safeStep = Math.min(Math.max(1, currentStep), safeTotal)
@@ -14,15 +17,15 @@ export default function OapAddPropertyJourneyProgress({ currentStep = 1, totalSt
     return Math.round(((safeStep - 1) / (safeTotal - 1)) * 100)
   }, [safeStep, safeTotal])
 
-  const size = 54
-  const stroke = 5
+  const size = compact ? 42 : 54
+  const stroke = compact ? 4 : 5
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const dashOffset = circumference - (percent / 100) * circumference
 
   return (
     <div
-      className="oap-journey-progress"
+      className={`oap-journey-progress${compact ? ' oap-journey-progress--compact' : ''}`}
       role="status"
       aria-live="polite"
       aria-label={t('oap_journeyProgressAria', {
@@ -39,13 +42,6 @@ export default function OapAddPropertyJourneyProgress({ currentStep = 1, totalSt
             height={size}
             viewBox={`0 0 ${size} ${size}`}
           >
-            <defs>
-              <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#33adbb" />
-                <stop offset="52%" stopColor="#0099A9" />
-                <stop offset="100%" stopColor="#007d8a" />
-              </linearGradient>
-            </defs>
             <circle
               className="oap-journey-progress__ring-track"
               cx={size / 2}
@@ -60,7 +56,7 @@ export default function OapAddPropertyJourneyProgress({ currentStep = 1, totalSt
               cy={size / 2}
               r={radius}
               fill="none"
-              stroke={`url(#${gradientId})`}
+              stroke="#73cbd4"
               strokeWidth={stroke}
               strokeLinecap="round"
               strokeDasharray={circumference}

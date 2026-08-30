@@ -563,7 +563,11 @@ export default function OwnerAddPropertyBasicsStep({
                         onClick={() => onTypeSelect(type.value)}
                       >
                         <span className="oap-basics-type-card__icon" aria-hidden>
-                          <TypeIcon size={24} strokeWidth={1.85} />
+                          {type.iconSrc ? (
+                            <img src={type.iconSrc} alt="" draggable={false} />
+                          ) : (
+                            <TypeIcon size={24} strokeWidth={1.85} />
+                          )}
                         </span>
                         <span className="oap-basics-type-card__body">
                           <span className="oap-basics-type-card__title">{type.label}</span>

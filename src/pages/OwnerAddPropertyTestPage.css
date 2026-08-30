@@ -1,9 +1,10 @@
 
 .oap {
-  --oap-primary: #0099a9;
-  --oap-primary-dark: #007d8a;
-  --oap-primary-soft: rgba(0, 153, 169, 0.12);
-  --oap-primary-ring: rgba(0, 153, 169, 0.28);
+  --oap-primary: #73cbd4;
+  --oap-primary-dark: #429ea8;
+  --oap-primary-soft: rgba(115, 203, 212, 0.14);
+  --oap-primary-ring: rgba(115, 203, 212, 0.3);
+  --oap-next-button-width: clamp(176px, 64vw, 250px);
   --oap-text: #111827;
   --oap-text-muted: #6b7280;
   --oap-text-light: #9ca3af;
@@ -2514,7 +2515,7 @@
 
 .oap-btn--primary {
   background: var(--oap-primary);
-  color: #fff;
+  color: #123d42;
 }
 
 .oap-btn--primary:disabled {

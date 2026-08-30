@@ -1,213 +1,166 @@
-.seller-verification-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
+.seller-verification-drawer.buyer-sheet { z-index: 13385; }
 
-.seller-verification-modal {
+.seller-verification-drawer .buyer-sheet__surface {
+  width: min(100%, 520px);
+  max-height: min(88dvh, 780px);
+  border-radius: 30px 30px 0 0;
   background: #fff;
-  border-radius: 20px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  font-family: 'Montserrat', system-ui, sans-serif;
 }
 
-.seller-verification-modal__close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 10;
-  color: #666;
+.seller-verification-drawer .buyer-sheet__body {
+  padding-top: 8px;
+  padding-bottom: 18px;
 }
 
-.seller-verification-modal__close:hover {
-  background: #e0e0e0;
-  transform: rotate(90deg);
+.seller-verification-drawer .buyer-sheet__close {
+  background: transparent;
+  color: #475569;
 }
 
-.seller-verification-modal__content {
-  padding: 40px;
+.seller-verification-drawer__content {
+  max-width: 468px;
+  margin: 0 auto;
 }
 
-.seller-verification-modal__header {
-  margin-bottom: 30px;
+.seller-verification-drawer__header {
+  padding: 0 36px;
   text-align: center;
 }
 
-.seller-verification-modal__title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 12px 0;
-  line-height: 1.4;
+.seller-verification-drawer__header h2 {
+  margin: 0;
+  color: #0b1220;
+  font-size: clamp(1.12rem, 4.8vw, 1.4rem);
+  font-weight: 750;
+  line-height: 1.28;
 }
 
-.seller-verification-modal__subtitle {
-  font-size: 16px;
-  color: #666;
-  margin: 0;
+.seller-verification-drawer__header p {
+  max-width: 360px;
+  margin: 10px auto 22px;
+  color: #7b8794;
+  font-size: 0.88rem;
+  font-weight: 500;
   line-height: 1.5;
 }
 
-.seller-verification-modal__info {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 30px;
-}
-
-.seller-verification-modal__info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-
-.seller-verification-modal__info-item:hover {
-  border-color: #4A90E2;
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
-}
-
-.seller-verification-modal__info-item:focus {
-  outline: none;
-}
-
-.seller-verification-modal__info-item:focus-visible {
-  border-color: #4A90E2;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.35);
-}
-
-.seller-verification-modal__icon {
-  font-size: 32px;
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 12px;
-}
-
-.seller-verification-modal__info-content {
-  flex: 1;
-}
-
-.seller-verification-modal__info-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 6px 0;
-}
-
-.seller-verification-modal__info-description {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.seller-verification-modal__btn {
-  width: 100%;
-  min-height: 56px;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 999px;
-  background: #4ecdd6;
-  background-image: linear-gradient(135deg, #6ad6dd 0%, #4ecdd6 48%, #3bc0cb 100%);
-  color: #ffffff;
-  -webkit-text-fill-color: #ffffff;
-  font-family: 'Montserrat', system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.seller-verification-drawer__info {
+  display: grid;
   gap: 10px;
-  box-shadow:
-    0 4px 16px rgba(78, 205, 214, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition:
-    transform 0.15s ease,
-    filter 0.15s ease,
-    box-shadow 0.15s ease;
 }
 
-.seller-verification-modal__btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.04);
-  box-shadow:
-    0 8px 24px rgba(78, 205, 214, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+.seller-verification-drawer__item {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid #e8edf2;
+  border-radius: 18px;
+  background: #f4f6f8;
+  color: #0b1220;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.seller-verification-modal__btn:active {
-  transform: translateY(0);
-  filter: none;
+.seller-verification-drawer__item:hover {
+  border-color: rgba(78, 205, 214, 0.65);
+  background: #f0fbfc;
 }
 
-.seller-verification-modal__btn:focus-visible {
+.seller-verification-drawer__item:focus-visible {
   outline: 2px solid #4ecdd6;
   outline-offset: 2px;
 }
 
-.seller-verification-modal__btn svg {
-  flex-shrink: 0;
+.seller-verification-drawer__icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 15px;
+  background: #e8f9fa;
 }
 
-@media (max-width: 768px) {
-  .seller-verification-modal {
-    max-width: 100%;
-    border-radius: 16px;
-  }
+.seller-verification-drawer__icon img {
+  width: 52px;
+  height: 52px;
+  display: block;
+  object-fit: contain;
+}
 
-  .seller-verification-modal__content {
-    padding: 30px 20px;
-  }
+.seller-verification-drawer__item-copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
 
-  .seller-verification-modal__title {
-    font-size: 20px;
-  }
+.seller-verification-drawer__item-copy strong {
+  font-size: 0.92rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
 
-  .seller-verification-modal__subtitle {
-    font-size: 14px;
-  }
+.seller-verification-drawer__item-copy small {
+  color: #7b8794;
+  font-size: 0.74rem;
+  font-weight: 500;
+  line-height: 1.38;
+}
 
-  .seller-verification-modal__info-item {
-    padding: 12px;
-  }
+.seller-verification-drawer__item > svg { color: #94a3b8; }
 
-  .seller-verification-modal__icon {
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
-  }
+.seller-verification-drawer__cta {
+  position: relative;
+  width: 100%;
+  min-height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #6ad6dd 0%, #4ecdd6 48%, #3bc0cb 100%);
+  color: #fff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(78, 205, 214, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seller-verification-drawer__cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 24%, rgba(255, 255, 255, 0.25) 48%, transparent 70%);
+  pointer-events: none;
+}
+
+.seller-verification-drawer__cta > * { position: relative; z-index: 1; }
+.seller-verification-drawer__cta:hover { transform: translateY(-1px); box-shadow: 0 14px 31px rgba(78, 205, 214, 0.44); }
+.seller-verification-drawer__cta:active { transform: scale(0.985); }
+.seller-verification-drawer__cta:focus-visible { outline: 3px solid rgba(78, 205, 214, 0.34); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .seller-verification-drawer .buyer-sheet__body { padding-inline: 18px; }
+  .seller-verification-drawer__header { padding-inline: 34px; }
+  .seller-verification-drawer__item { min-height: 78px; padding: 11px 13px; }
+}
+
+@media (min-width: 768px) {
+  .seller-verification-drawer .buyer-sheet__surface { border-radius: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seller-verification-drawer__item,
+  .seller-verification-drawer__cta { transition: none; }
 }
