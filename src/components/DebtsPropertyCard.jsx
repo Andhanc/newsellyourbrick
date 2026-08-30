@@ -13,6 +13,7 @@ import {
   getDebtRiskTone,
   getDebtsCardPresentation,
 } from '../utils/debtsCardPresentation'
+import { getDebtRiskIcon } from '../utils/debtRiskIcons'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 import './DebtsPropertyCard.css'
@@ -37,6 +38,7 @@ function DebtsPropertyCard({
 
   const tone = getDebtRiskTone(property.debt_severity)
   const riskLabelKey = getDebtRiskLabelKey(property.debt_severity)
+  const riskIcon = getDebtRiskIcon(tone)
   const currency = property.currency || 'EUR'
   const isReserved = property.is_reserved === true || property.is_reserved === 1
   const auctionEndTime = getEffectiveAuctionEndTime(property)
@@ -94,8 +96,12 @@ function DebtsPropertyCard({
       }}
     >
       <div className="debts-property-card__media">
-        <span className={`debts-property-card__risk debts-property-card__risk--${tone}`}>
-          {t(riskLabelKey)}
+        <span
+          className={`debts-property-card__risk debts-property-card__risk--${tone}`}
+          aria-label={t(riskLabelKey)}
+          title={t(riskLabelKey)}
+        >
+          <img src={riskIcon} alt="" aria-hidden />
         </span>
         {isClosedForWishlist(property) ? null : (
         <button

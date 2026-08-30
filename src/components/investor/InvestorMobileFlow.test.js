@@ -92,6 +92,18 @@ test('goal selection uses swipeable cards before opening a separate values scene
   assert.match(goalFlowCss, /investor-goal-flow__fields/)
 })
 
+test('timed auction listings keep the fractional goal inactive and explain why on press', () => {
+  assert.match(page, /isTimedAuctionProperty/)
+  assert.match(page, /fractionalUnavailable=\{fractionalGoalUnavailable\}/)
+  assert.match(goalFlow, /aria-disabled=\{isUnavailable \|\| undefined\}/)
+  assert.match(goalFlow, /smartInvestor_fractionalAuctionUnavailable/)
+  assert.match(goalFlow, /if \(isUnavailable\)/)
+  assert.match(goalFlow, /setTimeout\(\(\) => setFractionalTooltipOpen\(false\), 5000\)/)
+  assert.match(goalFlow, /clearTimeout\(timer\)/)
+  assert.match(goalFlowCss, /investor-goal-flow__goal-card\.is-unavailable/)
+  assert.match(goalFlowCss, /investor-goal-flow__unavailable-tooltip/)
+})
+
 test('investor starts with a real property-card composition and transitions to two radio source choices', () => {
   assert.match(page, /InvestorSourceHero/)
   assert.match(sourceHero, /buildCuratedPropertyCards/)

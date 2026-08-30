@@ -71,7 +71,6 @@ import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../u
 import { fetchUserDeposit } from '../utils/depositApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
-import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { resolveSellCabinetMode, OPEN_ROLE_SWITCH_FOR_SELL_EVENT } from '../utils/navigateToSellPurchasedProperty'
 import {
   applyPurchasedPropertyListingPrefill,
@@ -689,7 +688,6 @@ function TestPage() {
   const { isSignedIn, getToken } = useAuth()
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
-  const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const [historyLoadRequested, setHistoryLoadRequested] = useState(false)
   const {
     numericUserId,
@@ -702,21 +700,15 @@ function TestPage() {
     cabinetSubscriptionTier,
     cabinetVipActive,
   } = useCabinetOverviewData({ loadHistory: historyLoadRequested })
-  const directionSummaries = useMemo(() => {
-    const items = buildDirectionSummaries(t, { vipActive: cabinetVipActive })
-    if (hasBothLinkedRoles) {
-      return items.filter((item) => item.action !== 'becomeSeller')
-    }
-    return items
-  }, [t, cabinetVipActive, hasBothLinkedRoles])
+  const directionSummaries = useMemo(
+    () => buildDirectionSummaries(t, { vipActive: cabinetVipActive }),
+    [t, cabinetVipActive],
+  )
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
     const { primary, logout } = buildQuickLinks(t)
-    const filtered = hasBothLinkedRoles
-      ? primary.filter((link) => link.action !== 'becomeSeller')
-      : primary
-    return { quickLinksPrimary: filtered, quickLogoutLink: logout }
-  }, [t, hasBothLinkedRoles])
+    return { quickLinksPrimary: primary, quickLogoutLink: logout }
+  }, [t])
   const QuickLogoutIcon = quickLogoutLink.icon
   const locale = useMemo(() => (i18n.language === 'en' ? 'en-US' : i18n.language), [i18n.language])
   const moneyLocale = useMemo(() => {

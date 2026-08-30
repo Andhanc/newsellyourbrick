@@ -37,3 +37,18 @@
   height: 18px;
   flex-shrink: 0;
 }
+
+.flip-card-icon-image,
+.flip-card-back-icon-image,
+.flip-card-back-cta-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.flip-card-back-cta-image {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}

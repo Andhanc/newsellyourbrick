@@ -18,6 +18,7 @@ export default function FlipCard({
   isFlipped: isFlippedProp,
   onFlipChange,
   icon: CardIcon = Rocket,
+  iconSrc,
 }) {
   const [internalIsFlipped, setInternalIsFlipped] = useState(false)
   const isControlled = typeof isFlippedProp === 'boolean'
@@ -109,8 +110,15 @@ export default function FlipCard({
                 )
               })}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: accent, boxShadow: `0 8px 24px ${accent}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CardIcon style={{ width: 28, height: 28, color: 'white' }} />
+                <div
+                  className={`flip-card-icon-wrap${iconSrc ? ' flip-card-icon-wrap--image' : ''}`}
+                  style={{ width: iconSrc ? 132 : 56, height: iconSrc ? 132 : 56, borderRadius: 16, background: iconSrc ? 'transparent' : accent, boxShadow: iconSrc ? 'none' : `0 8px 24px ${accent}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {iconSrc ? (
+                    <img className="flip-card-icon-image" src={iconSrc} alt="" aria-hidden />
+                  ) : (
+                    <CardIcon style={{ width: 28, height: 28, color: 'white' }} />
+                  )}
                 </div>
               </div>
             </div>
@@ -178,8 +186,12 @@ export default function FlipCard({
 
             {/* 1. Иконка + заголовок */}
             <div className="flip-card-back-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div className="flip-card-back-icon-wrap" style={{ width: 36, height: 36, borderRadius: 10, background: accent, boxShadow: `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CardIcon style={{ width: 18, height: 18, color: 'white' }} />
+              <div className={`flip-card-back-icon-wrap${iconSrc ? ' flip-card-back-icon-wrap--image' : ''}`} style={{ width: iconSrc ? 48 : 36, height: iconSrc ? 48 : 36, borderRadius: 10, background: iconSrc ? 'transparent' : accent, boxShadow: iconSrc ? 'none' : `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {iconSrc ? (
+                  <img className="flip-card-back-icon-image" src={iconSrc} alt="" aria-hidden />
+                ) : (
+                  <CardIcon style={{ width: 18, height: 18, color: 'white' }} />
+                )}
               </div>
               <h3 className="flip-card-back-title" style={{ fontSize: 20, fontWeight: 700, color: '#18181b', lineHeight: 1.2, margin: 0 }}>{title}</h3>
             </div>
@@ -225,7 +237,11 @@ export default function FlipCard({
                 }}
               >
                 <span className="flip-card-back-cta-label">
-                  <CardIcon className="flip-card-back-cta-icon" style={{ color: accent }} aria-hidden />
+                  {iconSrc ? (
+                    <img className="flip-card-back-cta-image" src={iconSrc} alt="" aria-hidden />
+                  ) : (
+                    <CardIcon className="flip-card-back-cta-icon" style={{ color: accent }} aria-hidden />
+                  )}
                   <span style={{ fontSize: 14, fontWeight: 600, color: '#18181b' }}>{ctaLabel}</span>
                 </span>
                 <ArrowRight style={{ width: 16, height: 16, color: accent, flexShrink: 0 }} />

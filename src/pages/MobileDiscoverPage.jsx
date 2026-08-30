@@ -9,54 +9,134 @@ import {
 import Header from '../components/Header'
 import MobileDiscoverCatalog from './MobileDiscoverCatalog'
 import SiteChatDock from '../components/SiteChatDock'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
+import ProfileStrategyStories from '../components/ProfileStrategyStories'
+import StrategyRecommendationDrawer from '../components/StrategyRecommendationDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { showNotification } from '../utils/toastHelper'
 import './MobileDiscoverPage.css'
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
 
-function getSaleCards(t) {
+const SALE_DESCRIPTION_TRIGGERS = {
+  ru: {
+    auction: 'рыночной цене',
+    buy_now: 'Фиксированная цена',
+    debts: 'Выгодные объекты',
+    shares: 'низким порогом входа',
+  },
+  en: {
+    auction: 'market-driven prices',
+    buy_now: 'A fixed price',
+    debts: 'Discounted properties',
+    shares: 'low entry point',
+  },
+  pl: {
+    auction: 'cenie rynkowej',
+    buy_now: 'Stała cena',
+    debts: 'lepszej cenie',
+    shares: 'niskim progiem wejścia',
+  },
+  fr: {
+    auction: 'prix du marché',
+    buy_now: 'Un prix fixe',
+    debts: 'prix avantageux',
+    shares: 'faible ticket d’entrée',
+  },
+  sv: {
+    auction: 'rätt marknadspris',
+    buy_now: 'Fast pris',
+    debts: 'bättre pris',
+    shares: 'låg insats',
+  },
+  de: {
+    auction: 'fairen Marktpreis',
+    buy_now: 'Festpreis',
+    debts: 'Preisvorteil',
+    shares: 'kleiner Summe',
+  },
+  es: {
+    auction: 'precio de mercado',
+    buy_now: 'Precio fijo',
+    debts: 'descuento',
+    shares: 'poco capital',
+  },
+}
+
+function getDescriptionTrigger(language, cardId) {
+  const locale = String(language || 'en').toLowerCase().split('-')[0]
+  return (SALE_DESCRIPTION_TRIGGERS[locale] || SALE_DESCRIPTION_TRIGGERS.en)[cardId]
+}
+
+function renderHighlightedDescription(description, trigger) {
+  const start = description.toLocaleLowerCase().indexOf(trigger.toLocaleLowerCase())
+  if (start < 0) return description
+  const end = start + trigger.length
+
+  return (
+    <>
+      {description.slice(0, start)}
+      <span className="md-card__description-accent">{description.slice(start, end)}</span>
+      {description.slice(end)}
+    </>
+  )
+}
+
+function stripDescriptionPeriod(description) {
+  return description.replace(/[.。]+$/u, '')
+}
+
+function getSaleCards(t, language) {
   return [
     {
       id: 'auction',
-      number: '01',
       title: t('auction'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardAuctionDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'auction'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
       imagePosition: '36% center',
       to: '/auction?filter=auction',
       theme: 'auction',
+      infoSection: 'auction',
       iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
     },
     {
       id: 'buy_now',
-      number: '02',
       title: t('buyNowSectionTitle'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardBuyNowDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'buy_now'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
       imagePosition: '42% center',
       to: '/auction?filter=buy_now',
       theme: 'buy',
+      infoSection: 'buyNow',
       iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
     },
     {
       id: 'debts',
-      number: '03',
       title: t('debtsTitle'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardDebtsDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'debts'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
       imagePosition: '46% center',
       to: '/debts',
       theme: 'debts',
+      infoSection: 'debts',
       iconSrc: publicAsset('images/home-sale-formats/icons/debts-3d.png'),
     },
     {
       id: 'shares',
-      number: '04',
       title: t('shares'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardSharesDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'shares'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
       imagePosition: '42% center',
       to: CO_INVESTMENT_PATH,
       theme: 'shares',
+      infoSection: 'shares',
       iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     },
   ]
@@ -79,7 +159,7 @@ function prefersReducedMotion() {
  * Intentional up → white flash → hero.
  */
 export default function MobileDiscoverPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
@@ -97,8 +177,10 @@ export default function MobileDiscoverPage() {
   const [welcomeQuery, setWelcomeQuery] = useState('')
   const [activeSaleCard, setActiveSaleCard] = useState(0)
   const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
+  const [recommendationDrawerOpen, setRecommendationDrawerOpen] = useState(false)
+  const [storiesOpenSignal, setStoriesOpenSignal] = useState(0)
 
-  const saleCards = getSaleCards(t)
+  const saleCards = getSaleCards(t, i18n.language)
 
   screenRef.current = screen
 
@@ -163,14 +245,27 @@ export default function MobileDiscoverPage() {
     setActiveSaleCard(index)
   }, [])
 
-  const toggleSavedSaleCard = useCallback((id) => {
+  const toggleSavedSaleCard = useCallback((id, wasSaved) => {
     setSavedSaleCards((current) => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }, [])
+
+    if (wasSaved) return
+
+    const savedMessage = String(i18n.language || 'ru').toLowerCase().startsWith('ru')
+      ? 'Добавлено в рекомендации'
+      : 'Added to recommendations'
+    showNotification(savedMessage, 'success', 2200)
+    setRecommendationDrawerOpen(true)
+  }, [i18n.language])
+
+  const watchRecommendationStories = useCallback(() => {
+    setRecommendationDrawerOpen(false)
+    later(() => setStoriesOpenSignal((value) => value + 1), 100)
+  }, [later])
 
   const goTo = useCallback(
     (next) => {
@@ -436,23 +531,27 @@ export default function MobileDiscoverPage() {
                           aria-hidden="true"
                         />
                         <span className="md-card__shade" aria-hidden="true" />
-                        <div className="md-card__visual" aria-hidden="true">
-                          <span className="md-card__number">{card.number}</span>
-                        </div>
+                        <div className="md-card__visual" aria-hidden="true" />
                         <div className="md-card__body">
                           <div className="md-card__copy">
-                            <img
-                              className="md-card__icon"
-                              src={card.iconSrc}
-                              alt=""
-                              width={512}
-                              height={512}
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              decoding="async"
-                              aria-hidden="true"
-                            />
-                            <h3 className="md-card__title">{card.title}</h3>
+                            <div className="md-card__heading">
+                              <img
+                                className="md-card__icon"
+                                src={card.iconSrc}
+                                alt=""
+                                width={512}
+                                height={512}
+                                loading={index === 0 ? 'eager' : 'lazy'}
+                                decoding="async"
+                                aria-hidden="true"
+                              />
+                              <h3 className="md-card__title">{card.title}</h3>
+                              <SectionInfoDrawer section={card.infoSection} placement="card" />
+                            </div>
                           </div>
+                          <p className="md-card__description">
+                            {renderHighlightedDescription(card.description, card.descriptionTrigger)}
+                          </p>
                           <div className="md-card__actions">
                             <Link className="md-card__cta" to={card.to}>
                               {t('aboutCorp_moreDetails')}
@@ -465,7 +564,7 @@ export default function MobileDiscoverPage() {
                                 isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
                               }
                               aria-pressed={isSaved}
-                              onClick={() => toggleSavedSaleCard(card.id)}
+                              onClick={() => toggleSavedSaleCard(card.id, isSaved)}
                             >
                               <FiBookmark aria-hidden="true" />
                             </button>
@@ -575,6 +674,17 @@ export default function MobileDiscoverPage() {
         </section>
       )}
     </div>
+    <StrategyRecommendationDrawer
+      isOpen={recommendationDrawerOpen}
+      onClose={() => setRecommendationDrawerOpen(false)}
+      onWatch={watchRecommendationStories}
+      language={i18n.language}
+    />
+    <ProfileStrategyStories
+      language={i18n.language}
+      showTrigger={false}
+      openSignal={storiesOpenSignal}
+    />
     </SiteChatDock>
   )
 }

@@ -10,6 +10,7 @@ import './PropertyDetailDesktopGallery.css'
  *   onSelect: (index: number) => void
  *   onPrev: () => void
  *   onNext: () => void
+ *   onOpen?: (index: number) => void
  *   getYouTubeEmbedUrl?: (url: string) => string
  *   getGoogleDriveEmbedUrl?: (url: string) => string
  *   reserved?: boolean
@@ -25,6 +26,7 @@ export default function PropertyDetailDesktopGallery({
   onSelect,
   onPrev,
   onNext,
+  onOpen,
   getYouTubeEmbedUrl,
   getGoogleDriveEmbedUrl,
   reserved = false,
@@ -73,7 +75,17 @@ export default function PropertyDetailDesktopGallery({
             <iframe src={videoSrc} title={title} allowFullScreen />
           </div>
         ) : (
-          <img src={current?.url} alt={title} className="pdx-gallery__img" />
+          <button
+            type="button"
+            className="pdx-gallery__img-button"
+            onClick={() => onOpen?.(currentIndex)}
+            aria-label={t('propertyDetailGalleryOpenItem', {
+              n: currentIndex + 1,
+              total: media.length,
+            })}
+          >
+            <img src={current?.url} alt={title} className="pdx-gallery__img" />
+          </button>
         )}
         {reserved ? (
           <div className="pdx-gallery__reserved" aria-hidden>

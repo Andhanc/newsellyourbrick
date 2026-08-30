@@ -130,6 +130,44 @@
   box-shadow: 0 0 0 3px #080909, 0 0 0 5px #ffffff, 0 32px 68px rgba(0, 0, 0, .5);
 }
 
+.investor-goal-flow__goal-card.is-unavailable {
+  --goal-card-bg: #a5a8a6;
+  border-color: rgba(255, 255, 255, .28);
+  cursor: not-allowed;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .3);
+  filter: saturate(.18);
+}
+
+.investor-goal-flow__goal-card.is-unavailable:hover {
+  transform: none;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .3);
+}
+
+.investor-goal-flow__goal-card.is-unavailable > span:not(.investor-goal-flow__unavailable-tooltip) {
+  opacity: .55;
+}
+
+.investor-goal-flow__goal-card.is-unavailable .investor-goal-flow__goal-action {
+  background: #4c504e;
+}
+
+.investor-goal-flow__unavailable-tooltip {
+  position: absolute;
+  z-index: 5;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  padding: 15px 17px;
+  border: 1px solid rgba(8, 9, 9, .12);
+  border-radius: 18px;
+  background: #ffffff;
+  color: #151716;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .28);
+  font: 750 11px/1.45 'Montserrat', system-ui, sans-serif;
+  pointer-events: none;
+  text-align: center;
+}
+
 .investor-goal-flow__goal-topline {
   display: flex;
   align-items: center;

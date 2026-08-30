@@ -52,25 +52,23 @@
   top: 10px;
   left: 10px;
   z-index: 2;
-  padding: 5px 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 999px;
-  font-family: 'Montserrat', system-ui, sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(6px);
 }
 
-.debts-property-card__risk--high {
-  background: #ef4444;
-}
-
-.debts-property-card__risk--medium {
-  background: #f59e0b;
-}
-
-.debts-property-card__risk--low {
-  background: #0099A9;
+.debts-property-card__risk img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .debts-property-card__favorite {

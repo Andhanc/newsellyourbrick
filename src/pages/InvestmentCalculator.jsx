@@ -29,6 +29,7 @@ import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { getPropertyCardImage } from '../utils/propertyImage';
 import { buildResponsiveImageProps } from '../utils/responsiveImage';
 import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl';
+import { isTimedAuctionProperty } from '../utils/auctionReminderBounds';
 import { scrollMainTo } from '../utils/mainScroll';
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
 import { isSiteUserSignedIn } from '../utils/siteAuthGate';
@@ -416,6 +417,10 @@ const InvestmentCalculator = () => {
     () => favoriteAuctions.find((x) => x.key === selectedFavoriteKey) ?? null,
     [favoriteAuctions, selectedFavoriteKey]
   );
+  const fractionalGoalUnavailable = useMemo(
+    () => isTimedAuctionProperty(selectedFavoriteItem?.property),
+    [selectedFavoriteItem]
+  );
 
   const openCalculatedProperty = useCallback(() => {
     const property = selectedFavoriteItem?.property;
@@ -460,11 +465,15 @@ const InvestmentCalculator = () => {
       ? Boolean(selectedFavoriteKey && favoriteAuctions.some((item) => item.key === selectedFavoriteKey))
       : dataSource === 'manual' && Number(propertyPrice) > 0;
     if (!hasObject) return;
+    if (fractionalGoalUnavailable && investmentStrategy === 'fractional') {
+      setInvestmentStrategy(null);
+    }
     setGoalStage('choose');
     setWizardStep(2);
   };
 
   const selectInvestmentGoal = (goal) => {
+    if (goal === 'fractional' && fractionalGoalUnavailable) return;
     setInvestmentStrategy(goal);
     if (goal === 'resale') setRentalIncome('0');
     if (goal === 'fractional') setOwnershipShare('50');
@@ -1019,6 +1028,7 @@ const InvestmentCalculator = () => {
                 onMarketGrowthRateChange={setMarketGrowthRate}
                 ownershipShare={ownershipShare}
                 onOwnershipShareChange={setOwnershipShare}
+                fractionalUnavailable={fractionalGoalUnavailable}
               />
             </motion.section>
           )}

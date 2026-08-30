@@ -527,8 +527,8 @@
   font-size: 0.66rem;
   font-weight: 550;
   line-height: 1.32;
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
   -webkit-box-orient: vertical;
   display: block;
   overflow: visible;
@@ -1459,8 +1459,8 @@
   font-size: clamp(1.25rem, 5vw, 1.85rem);
   line-height: 1.15;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
   line-clamp: 2;
   overflow: hidden;
   color: #ffffff;
@@ -2130,7 +2130,7 @@
   font-weight: var(--md-heading-weight);
   letter-spacing: var(--md-heading-letter-spacing);
   color: var(--md-ink);
-  line-height: 1.08;
+  line-height: 0.96;
   font-family: var(--md-font);
 }
 
@@ -3400,18 +3400,6 @@
   content: none;
 }
 
-.md-card__number {
-  top: 0.75rem;
-  right: 0.72rem;
-  left: auto;
-  z-index: 4;
-  width: 30px;
-  height: 30px;
-  border-color: rgba(255, 255, 255, 0.58);
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 0.58rem;
-}
-
 .md-card__icon,
 .md-card--auction .md-card__icon {
   position: relative;
@@ -3445,7 +3433,7 @@
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
-  padding: 1.5rem 3.25rem 0.82rem 0.82rem;
+  padding: 1.5rem 0.82rem 0.82rem;
   pointer-events: none;
 }
 
@@ -3453,8 +3441,17 @@
   position: relative;
   z-index: 3;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.38rem;
+  min-width: 0;
+}
+
+.md-card__heading {
+  display: flex;
   align-items: center;
   gap: 0.42rem;
+  width: 100%;
   min-width: 0;
 }
 
@@ -3468,6 +3465,49 @@
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 0.96;
+  text-shadow: 0 2px 12px rgba(13, 31, 38, 0.22);
+}
+
+.md-card__description-accent {
+  display: inline;
+  padding: 0.02em 0.24em 0.07em;
+  border-radius: 999px;
+  background: var(--md-sky);
+  box-shadow:
+    0 6px 16px var(--md-sky-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  text-shadow: none;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.md-card__description {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 4.6rem;
+  left: 0.9rem;
+  z-index: 3;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+  font-size: clamp(1.05rem, 4.7vw, 1.3rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.16;
+  opacity: 1;
+  transform: none;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
   text-shadow: 0 2px 12px rgba(13, 31, 38, 0.22);
 }
 
@@ -3486,18 +3526,19 @@
   flex: 1;
   justify-content: center;
   gap: 0.35rem;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 0.8rem;
   border: 0 !important;
-  border-radius: 999px !important;
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 17px !important;
+  background-color: #ffffff !important;
   background-image: none !important;
-  color: #111827 !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+  color: #122226 !important;
+  box-shadow: 0 10px 22px rgba(8, 31, 35, 0.2) !important;
   animation: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .md-card .md-card__cta svg {
@@ -3512,8 +3553,8 @@
 .md-card .md-card__cta:hover {
   background-color: #ffffff !important;
   background-image: none !important;
-  color: #111827 !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
+  color: #122226 !important;
+  box-shadow: 0 13px 26px rgba(8, 31, 35, 0.28) !important;
 }
 
 .md-card__save {
@@ -3560,6 +3601,39 @@
 
 }
 
+@media (min-width: 768px) and (max-width: 1023px) {
+  .md-card__body,
+  .md-card--reverse .md-card__body {
+    padding: 0.7rem;
+  }
+
+  .md-card__copy {
+    gap: 0.36rem;
+  }
+
+  .md-card__icon,
+  .md-card--auction .md-card__icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .md-card__title,
+  .md-card__description {
+    font-size: 1rem;
+  }
+
+  .md-card__description {
+    right: 0.7rem;
+    bottom: 4.25rem;
+    left: 0.7rem;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
 @media (min-width: 1024px) {
   .md-cards {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3582,7 +3656,8 @@
     padding: 1rem;
   }
 
-  .md-card__title {
+  .md-card__title,
+  .md-card__description {
     font-size: clamp(1.25rem, 1.7vw, 1.65rem);
   }
 
@@ -3593,7 +3668,8 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .md-card__title {
+  .md-card__title,
+  .md-card__description {
     font-size: clamp(1.3rem, 1.35vw, 1.72rem);
   }
 }

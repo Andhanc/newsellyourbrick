@@ -5301,6 +5301,8 @@
   "smartInvestor_chooseGoalLead": "Que doit vous apporter cet investissement ?",
   "smartInvestor_goalAria": "Objectif d’investissement",
   "smartInvestor_goalSelect": "Sélectionner",
+  "smartInvestor_goalUnavailable": "Indisponible",
+  "smartInvestor_fractionalAuctionUnavailable": "La propriété fractionnée n’est pas disponible pour un bien aux enchères avec minuterie.",
   "smartInvestor_swipeHint": "Faites glisser les cartes",
   "smartInvestor_pressToGoBack": "Touchez pour revenir",
   "smartInvestor_goalParams": "Paramètres de l’objectif",

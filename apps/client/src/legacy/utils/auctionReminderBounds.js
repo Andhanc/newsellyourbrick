@@ -124,6 +124,22 @@ export function hasPropertyListingTimer(property) {
 }
 
 /**
+ * Аукционный объект, для которого на карточке предусмотрен таймер.
+ * Поддерживает как нормализованный `isAuction`, так и сырой API-флаг `is_auction`.
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isTimedAuctionProperty(property) {
+  if (!property) return false
+  const isAuction =
+    property.isAuction === true ||
+    property.isAuction === 1 ||
+    property.is_auction === true ||
+    property.is_auction === 1
+  if (!isAuction) return false
+  return hasPropertyListingTimer({ ...property, isAuction: true })
+}
+
+/**
  * Карточка листинга с оверлеем SOLD OUT (таймер истёк или сделка «купить сейчас» закрыта).
  * @param {Record<string, unknown> | null | undefined} property
  */

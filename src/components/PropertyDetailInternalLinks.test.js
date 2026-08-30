@@ -13,8 +13,10 @@ test('removes location and buying-guide blocks from every property object mode',
   assert.doesNotMatch(component, /buildPropertyGeoBreadcrumbItems/)
 })
 
-test('keeps useful related-property and city catalog navigation', () => {
+test('keeps related-property cards without links to unavailable catalog pages', () => {
   assert.match(component, /seoSimilarPropertiesTitle/)
-  assert.match(component, /geo\.cityCatalogPath/)
   assert.match(component, /property-internal-links__grid/)
+  assert.doesNotMatch(component, /geo\.cityCatalogPath/)
+  assert.doesNotMatch(component, /geo\.typeCatalogPath/)
+  assert.doesNotMatch(component, /<Link/)
 })
