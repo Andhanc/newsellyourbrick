@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  PROPERTY_AI_PDF_TEMPLATE_VERSION,
   renderPropertyAiReportHtml,
   renderPropertyAiReportPdf,
   resolvePropertyAiPuppeteerOptions,
@@ -26,6 +27,7 @@ const report = {
     { type: 'gallery', title: 'Реальные фотографии объекта', images: ['https://img.example/real.jpg'] },
     { type: 'details', title: 'Проверки', body: 'Текст', bullets: ['Проверка'] },
     { type: 'neighborhood', title: 'Район и инфраструктура' },
+    { type: 'conclusion', title: 'Решение начинается с проверки фактов', body: 'Итог', bullets: ['Шаг'] },
   ],
 }
 
@@ -36,26 +38,33 @@ test('renders one controlled wrapper per report page', () => {
     mediaBaseUrl: 'https://sell.example/',
   })
 
-  assert.equal((html.match(/class="report-page/g) || []).length, 7)
+  assert.equal((html.match(/class="report-page/g) || []).length, 8)
   assert.match(html, /<base href="https:\/\/sell\.example\/">/)
   assert.match(html, /https:\/\/img\.example\/real\.jpg/)
   assert.match(html, /Не является финансовой консультацией/)
 })
 
-test('uses the warm editorial presentation system with real photos', () => {
+test('uses the premium Tiffany presentation system with real photos', () => {
   const html = renderPropertyAiReportHtml({ report, property: { title: 'Объект' } })
 
-  assert.match(html, /--report-clay:#a45d3b/i)
-  assert.match(html, /--report-ink:#171717/i)
-  assert.match(html, /--report-paper:#fbfaf8/i)
+  assert.equal(PROPERTY_AI_PDF_TEMPLATE_VERSION, 'tiffany-editorial-v2')
+  assert.match(html, /--report-tiffany:#4ecdd6/i)
+  assert.match(html, /--report-tiffany-dark:#3bc0cb/i)
+  assert.match(html, /--report-tiffany-soft:#effbfc/i)
+  assert.match(html, /--report-ink:#0f172a/i)
   assert.match(html, /@page\{size:A4 landscape/i)
   assert.match(html, /width:297mm;height:210mm/i)
+  assert.match(html, /class="brand-lockup brand-lockup--cover"/)
+  assert.match(html, /PRIVATE PROPERTY REVIEW/)
+  assert.match(html, /TIFFANY EDITION/)
   assert.match(html, /class="cover-photo-frame"/)
   assert.match(html, /class="listing-gallery"/)
   assert.match(html, /class="infrastructure-grid"/)
+  assert.match(html, /class="neighborhood-checks"/)
+  assert.match(html, /class="report-page report-page--conclusion"/)
   assert.match(html, /Школа[\s\S]*320 м/)
   assert.doesNotMatch(html, /report-page--visual/)
-  assert.doesNotMatch(html, /report-page--conclusion/)
+  assert.doesNotMatch(html, /--report-clay/)
 })
 
 test('uses a clearly labelled generic illustration only when listing photos are absent', () => {

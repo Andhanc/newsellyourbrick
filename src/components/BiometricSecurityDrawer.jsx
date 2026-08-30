@@ -20,6 +20,26 @@ export default function BiometricSecurityDrawer({
     if (error) panelRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' })
   }, [error])
 
+  useEffect(() => {
+    if (!open || mode !== 'lock' || typeof document === 'undefined') return undefined
+
+    const appRoot = document.getElementById('root')
+    const previousOverflow = document.body.style.overflow
+    const hadInert = appRoot?.hasAttribute('inert') || false
+    const previousAriaHidden = appRoot?.getAttribute('aria-hidden')
+
+    document.body.style.overflow = 'hidden'
+    appRoot?.setAttribute('inert', '')
+    appRoot?.setAttribute('aria-hidden', 'true')
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      if (!hadInert) appRoot?.removeAttribute('inert')
+      if (previousAriaHidden == null) appRoot?.removeAttribute('aria-hidden')
+      else appRoot?.setAttribute('aria-hidden', previousAriaHidden)
+    }
+  }, [mode, open])
+
   if (!open || typeof document === 'undefined') return null
 
   const locked = mode === 'lock'
@@ -99,6 +119,7 @@ export default function BiometricSecurityDrawer({
             onClick={onPrimary}
             disabled={busy}
             aria-busy={busy}
+            autoFocus={locked}
           >
             {busy
               ? t('biometric_wait', { defaultValue: 'Ожидаем устройство…' })

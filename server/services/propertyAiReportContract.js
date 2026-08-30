@@ -171,9 +171,19 @@ export function normalizePropertyAiReport(input = {}, context = {}) {
       body: directAnswer,
       bullets: detailSections[0]?.bullets || [],
     },
-    ...(images.length ? [{ type: 'gallery', title: 'Реальные фотографии объекта', images: images.slice(0, 4) }] : []),
+    ...(images.length > 1 ? [{ type: 'gallery', title: 'Реальные фотографии объекта', images: images.slice(0, 4) }] : []),
     { type: 'details', title: 'Подробный анализ и проверки', body: detailsBody || summary, bullets: detailsBullets },
     { type: 'neighborhood', title: 'Район и инфраструктура', neighborhood },
+    {
+      type: 'conclusion',
+      title: 'Решение начинается с проверки фактов',
+      body: conclusion,
+      bullets: [
+        'Сопоставьте сильные стороны объекта со своим сценарием покупки.',
+        'Подтвердите документы, состояние и фактические расходы.',
+        'Осмотрите объект лично и только затем принимайте финансовое решение.',
+      ],
+    },
   ]
 
   return {

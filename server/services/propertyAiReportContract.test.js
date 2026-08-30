@@ -20,7 +20,7 @@ test('requires a meaningful custom question', () => {
   )
 })
 
-test('parses fenced JSON into a compact seven-page report', () => {
+test('parses fenced JSON into a compact eight-page report', () => {
   const content = `\`\`\`json
   {
     "directAnswer":"Объект выглядит интересно, но требует проверки документов.",
@@ -44,20 +44,34 @@ test('parses fenced JSON into a compact seven-page report', () => {
     question: 'Какие плюсы и риски?',
     property: {
       title: 'Петровский парк', area: 39, rooms: 2, price: 26878012,
-      images: ['https://img.example/home.jpg'],
+      images: ['https://img.example/home.jpg', 'https://img.example/kitchen.jpg'],
       nearbyInfrastructure: [{ category: 'schools', label: 'Образование', places: [{ name: 'Школа', distanceMeters: 320 }] }],
     },
   })
 
-  assert.equal(report.pages.length, 7)
+  assert.equal(report.pages.length, 8)
   assert.equal(report.shortAnswer, 'Объект выглядит интересно, но требует проверки документов.')
   assert.equal(report.images[0], 'https://img.example/home.jpg')
   assert.ok(report.pages.some((page) => page.type === 'answer'))
   assert.ok(report.pages.some((page) => page.type === 'gallery'))
   assert.ok(!report.pages.some((page) => page.type === 'visual'))
-  assert.ok(!report.pages.some((page) => page.type === 'conclusion'))
+  assert.ok(report.pages.some((page) => page.type === 'conclusion'))
   assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
   assert.match(report.disclaimer, /не является финансовой/i)
+})
+
+test('does not add a sparse gallery page when the listing has only one photo', () => {
+  const report = parsePropertyAiModelContent(JSON.stringify({
+    directAnswer: 'Для первичной оценки доступна только одна фотография.',
+    shortAnswer: 'Для первичной оценки доступна только одна фотография.',
+  }), {
+    category: 'risks',
+    question: 'Какие плюсы и риски?',
+    property: { title: 'Объект', images: ['/uploads/only-photo.jpg'] },
+  })
+
+  assert.equal(report.pages.length, 7)
+  assert.ok(!report.pages.some((page) => page.type === 'gallery'))
 })
 
 test('fills sparse reports with factual strengths, checks, metrics, and a direct answer', () => {
@@ -84,10 +98,10 @@ test('fills sparse reports with factual strengths, checks, metrics, and a direct
   assert.ok(report.strengths.length >= 2)
   assert.ok(report.risks.length >= 2)
   assert.ok(report.metrics.length >= 4)
-  assert.equal(report.pages.length, 7)
+  assert.equal(report.pages.length, 8)
   assert.ok(report.pages.some((page) => page.type === 'gallery'))
   assert.ok(!report.pages.some((page) => page.type === 'visual'))
-  assert.ok(!report.pages.some((page) => page.type === 'conclusion'))
+  assert.ok(report.pages.some((page) => page.type === 'conclusion'))
   assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
 })
 

@@ -147,6 +147,32 @@ test('profile history opens fullscreen with tiffany hero and list/empty states',
   assert.match(historyExperienceCss, /\.profile-history-empty__cta/)
 })
 
+test('profile history category slider mirrors the home pagination dots', async () => {
+  const historyExperienceSource = await readFile(
+    new URL('../components/ProfileHistoryExperience.jsx', import.meta.url),
+    'utf8',
+  )
+  const historyExperienceCss = await readFile(
+    new URL('../components/ProfileHistoryExperience.css', import.meta.url),
+    'utf8',
+  )
+  const legacyHistoryExperienceSource = await readFile(
+    new URL('../../apps/client/src/legacy/components/ProfileHistoryExperience.jsx', import.meta.url),
+    'utf8',
+  )
+  const legacyHistoryExperienceCss = await readFile(
+    new URL('../../apps/client/src/legacy/components/ProfileHistoryExperience.css', import.meta.url),
+    'utf8',
+  )
+
+  assert.match(historyExperienceSource, /profile-history-categories-dots/)
+  assert.match(historyExperienceSource, /scrollToCategoryDot/)
+  assert.match(historyExperienceSource, /addEventListener\('scroll', syncActiveDot/)
+  assert.match(historyExperienceCss, /\.profile-history-categories-dot\.is-active/)
+  assert.equal(historyExperienceSource, legacyHistoryExperienceSource)
+  assert.equal(historyExperienceCss, legacyHistoryExperienceCss)
+})
+
 test('profile bookings opens fullscreen with travel hero and ticket list', async () => {
   const bookingsExperienceSource = await readFile(
     new URL('../components/ProfileBookingsExperience.jsx', import.meta.url),

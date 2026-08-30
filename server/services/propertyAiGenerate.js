@@ -1,12 +1,13 @@
 import { normalizeApiKey } from '../aiChatConfig.js'
 import { appendPropertyAiMessage, updatePropertyAiReport } from '../database/propertyAiReportsPrisma.js'
-import { parsePropertyAiModelContent } from './propertyAiReportContract.js'
-import { renderPropertyAiReportPdf } from './propertyAiPdfRenderer.js'
+import { normalizePropertyAiReport, parsePropertyAiModelContent } from './propertyAiReportContract.js'
+import { PROPERTY_AI_PDF_TEMPLATE_VERSION, renderPropertyAiReportPdf } from './propertyAiPdfRenderer.js'
 import { propertyAiMediaBaseUrl, resolvePropertyAiImageUrl } from './propertyAiImages.js'
 import { enrichPropertyAiNeighborhood } from './propertyAiNeighborhood.js'
 
 export const PROPERTY_AI_MODEL = process.env.PROPERTY_AI_MODEL || 'google/gemini-3.5-flash'
-export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v5`
+export { PROPERTY_AI_PDF_TEMPLATE_VERSION }
+export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v8:${PROPERTY_AI_PDF_TEMPLATE_VERSION}`
 
 const REPORT_JSON_SCHEMA = {
   name: 'property_ai_report',
@@ -106,7 +107,7 @@ export async function requestPropertyAiModel({ category, question, property }, o
 Любые расчёты называй ориентировочными и перечисляй допущения. Риски формулируй как пункты для проверки.
 Всегда дай минимум 2 подтверждённых плюса и минимум 2 риска или пункта для проверки. Если данных мало, честно объясни, какой информации не хватает.
 Подготовь 4–8 полезных метрик, 2–4 подробных раздела и вывод со следующими шагами.
-Сделай короткий ответ для чата и содержание красивого отчёта на 6–7 страниц. Не возвращай HTML или markdown.`
+Сделай короткий ответ для чата и содержание красивого отчёта на 7–8 страниц. Не возвращай HTML или markdown.`
   const text = `Категория: ${category}\nВопрос: ${question}\nДанные объекта:\n${JSON.stringify(compactProperty(property), null, 2)}`
   const content = [{ type: 'text', text }]
   const candidateUrls = (Array.isArray(property.images) ? property.images : [])
@@ -143,6 +144,43 @@ export async function requestPropertyAiModel({ category, question, property }, o
   return answer
 }
 
+function fallbackAnswerForCategory(category) {
+  if (category === 'investment') {
+    return 'По данным объявления можно провести только предварительную инвестиционную оценку: заявленные характеристики подходят для сравнения с альтернативами, но доходность нельзя подтвердить без цены аренды, расходов и локальных рыночных данных. До решения проверьте документы, фактическое состояние, эксплуатационные затраты и реалистичный арендный сценарий.'
+  }
+  if (category === 'risks') {
+    return 'Главные плюсы объекта можно подтвердить только по указанным в объявлении характеристикам и доступным фотографиям. Основные риски сейчас связаны с данными, которых нет в объявлении: перед решением нужно проверить документы, фактическое состояние, инженерные системы, расходы и соответствие фотографий самому объекту.'
+  }
+  return 'По доступным данным объявления можно сделать предварительный разбор объекта, но окончательное решение пока преждевременно. Подтвердите у продавца документы, фактическое состояние, инженерные системы, расходы и соответствие фотографий объекту.'
+}
+
+function buildFallbackReport(input, property, modelError) {
+  const directAnswer = fallbackAnswerForCategory(input.category)
+  return normalizePropertyAiReport({
+    directAnswer,
+    shortAnswer: directAnswer,
+    title: `Разбор объекта: ${property?.title || property?.name || 'недвижимость'}`,
+    summary: 'Предварительный анализ сформирован по фактам из объявления. Неподтверждённые сведения не использовались.',
+    sections: [
+      {
+        title: 'Что можно оценить сейчас',
+        body: 'В отчёте собраны опубликованные характеристики, доступные фотографии и проверяемые ориентиры для сравнения объекта.',
+        bullets: ['Сопоставьте цену и параметры с похожими предложениями.', 'Подготовьте вопросы продавцу до личного просмотра.'],
+      },
+      {
+        title: 'Что проверить до решения',
+        body: 'Данные объявления не заменяют техническую, юридическую и финансовую проверку объекта.',
+        bullets: ['Запросите документы и сведения об ограничениях.', 'Проверьте состояние объекта, инженерные системы и регулярные расходы.'],
+      },
+    ],
+    assumptions: [
+      'Анализ основан только на данных, опубликованных в объявлении.',
+      'Автоматическая интерпретация модели была недоступна; выводы ограничены проверяемыми фактами.',
+    ],
+    conclusion: 'Используйте этот отчёт как список фактов и проверок: запросите документы, проведите осмотр и сравните объект с альтернативами перед финансовым решением.',
+  }, { ...input, property, modelError: String(modelError?.message || modelError || '') })
+}
+
 export async function runPropertyAiGeneration(input, overrides = {}) {
   const requestModel = overrides.requestModel || requestPropertyAiModel
   const renderPdf = overrides.renderPdf || renderPropertyAiReportPdf
@@ -154,10 +192,20 @@ export async function runPropertyAiGeneration(input, overrides = {}) {
 
   try {
     await updateReport(input.reportId, { status: 'analyzing', error: null })
-    const property = await loadNeighborhood(input.property)
+    let property = input.property
+    try {
+      property = await loadNeighborhood(input.property)
+    } catch (neighborhoodError) {
+      console.warn('Property AI neighborhood enrichment failed; continuing with listing data:', neighborhoodError?.message || neighborhoodError)
+    }
     const generationInput = { ...input, property }
-    const content = await requestModel(generationInput)
-    report = parsePropertyAiModelContent(content, generationInput)
+    try {
+      const content = await requestModel(generationInput)
+      report = parsePropertyAiModelContent(content, generationInput)
+    } catch (modelError) {
+      console.warn('Property AI model failed; creating a factual fallback report:', modelError?.message || modelError)
+      report = buildFallbackReport(generationInput, property, modelError)
+    }
     shortAnswer = report.shortAnswer
     await updateReport(input.reportId, { status: 'rendering', shortAnswer, report, error: null })
     const pdfData = await renderPdf({ report, property })

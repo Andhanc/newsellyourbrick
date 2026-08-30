@@ -4,11 +4,11 @@ import { readFile } from 'node:fs/promises'
 
 const css = await readFile(new URL('./PropertyAiExperience.css', import.meta.url), 'utf8')
 const pdfRenderer = await readFile(
-  new URL('../../server/services/propertyAiPdfRenderer.js', import.meta.url),
+  new URL('../../../../../server/services/propertyAiPdfRenderer.js', import.meta.url),
   'utf8',
 )
 
-test('keeps the chat Tiffany while the PDF uses the warm editorial palette', () => {
+test('keeps the chat and premium PDF aligned with the Tiffany brand', () => {
   assert.doesNotMatch(css, /#ffe000/i)
   assert.doesNotMatch(pdfRenderer, /#ffe000/i)
   assert.match(css, /--property-ai-accent:\s*#4ecdd6/i)
@@ -21,8 +21,11 @@ test('keeps the chat Tiffany while the PDF uses the warm editorial palette', () 
   assert.doesNotMatch(css, /\.property-ai-picker\s*\{[^}]*#8ae8ef/)
   assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*background:\s*var\(--property-ai-accent\)/)
   assert.doesNotMatch(css, /\.property-ai-launcher\s*\{[^}]*#4a96a6/)
-  assert.match(pdfRenderer, /--report-clay:#a45d3b/i)
-  assert.match(pdfRenderer, /--report-paper:#fbfaf8/i)
+  assert.match(pdfRenderer, /--report-tiffany:#4ecdd6/i)
+  assert.match(pdfRenderer, /--report-tiffany-dark:#3bc0cb/i)
+  assert.match(pdfRenderer, /--report-tiffany-soft:#effbfc/i)
+  assert.match(pdfRenderer, /--report-ink:#0f172a/i)
+  assert.match(pdfRenderer, /--report-paper:#ffffff/i)
 })
 
 test('uses white content on solid accent surfaces', () => {
@@ -43,6 +46,6 @@ test('uses white content on solid accent surfaces', () => {
   }
 
   assert.match(css, /\.property-ai-pdf-spinner\s*\{[^}]*border:\s*3px solid rgba\(255,\s*255,\s*255,[^}]*border-top-color:\s*#fff/s)
-  assert.match(pdfRenderer, /\.risk\{background:var\(--report-clay\);color:#fff\}/)
-  assert.match(pdfRenderer, /\.editorial>div:first-child\{[^}]*background:var\(--report-clay\);color:#fff/)
+  assert.match(pdfRenderer, /\.risk\{background:var\(--report-ink\);color:#fff\}/)
+  assert.match(pdfRenderer, /\.details-checklist\{[^}]*background:linear-gradient[^}]*color:#fff/)
 })

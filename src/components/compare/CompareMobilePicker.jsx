@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiCheck, FiChevronDown, FiX } from 'react-icons/fi'
 import { formatPropertyPrice } from '../../utils/currency'
+import { triggerSelectionHaptic } from '../../utils/haptics'
 import { getPropertyCardImage } from '../../utils/propertyImage'
 import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
 import {
@@ -13,12 +14,6 @@ import {
 import './CompareMobilePicker.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
-const DRUM_HAPTIC_DURATION_MS = 8
-
-function vibrateSelectionTick() {
-  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
-  navigator.vibrate(DRUM_HAPTIC_DURATION_MS)
-}
 
 function propertyView(item, index, t) {
   const property = item?.property || {}
@@ -64,7 +59,6 @@ export default function CompareMobilePicker({
   const reorderFrameRef = useRef(null)
   const activeIndexRef = useRef(0)
   const touchScrollingRef = useRef(false)
-  const touchStartYRef = useRef(null)
   const scrollStopTimerRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [departingKey, setDepartingKey] = useState(null)
@@ -113,20 +107,12 @@ export default function CompareMobilePicker({
     }
   }, [open])
 
-  const handleDrumTouchStart = (event) => {
-    touchScrollingRef.current = false
-    touchStartYRef.current = event.touches[0]?.clientY ?? null
+  const handleDrumTouchStart = () => {
+    touchScrollingRef.current = true
     window.clearTimeout(scrollStopTimerRef.current)
   }
 
-  const handleDrumTouchMove = (event) => {
-    const currentY = event.touches[0]?.clientY
-    if (touchStartYRef.current == null || currentY == null) return
-    if (Math.abs(currentY - touchStartYRef.current) >= 4) touchScrollingRef.current = true
-  }
-
   const handleDrumTouchEnd = () => {
-    touchStartYRef.current = null
     window.clearTimeout(scrollStopTimerRef.current)
     scrollStopTimerRef.current = window.setTimeout(() => {
       touchScrollingRef.current = false
@@ -151,7 +137,7 @@ export default function CompareMobilePicker({
     if (nearestIndex !== activeIndexRef.current) {
       activeIndexRef.current = nearestIndex
       setActiveIndex(nearestIndex)
-      if (touchScrollingRef.current) vibrateSelectionTick()
+      if (touchScrollingRef.current) triggerSelectionHaptic()
     }
 
     if (touchScrollingRef.current) {
@@ -186,6 +172,7 @@ export default function CompareMobilePicker({
       flushSync(() => {
         setMovedKey(item.key)
         setDepartingKey(null)
+        activeIndexRef.current = nextIndex
         setActiveIndex(nextIndex)
         onToggleSelect(item)
       })
@@ -304,7 +291,6 @@ export default function CompareMobilePicker({
             className="compare-picker-drum__viewport"
             ref={drumRef}
             onTouchStart={handleDrumTouchStart}
-            onTouchMove={handleDrumTouchMove}
             onTouchEnd={handleDrumTouchEnd}
             onTouchCancel={handleDrumTouchEnd}
             onScroll={handleDrumScroll}

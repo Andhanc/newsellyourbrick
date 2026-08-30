@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -120,6 +120,8 @@ export default function ProfileHistoryExperience({
   const { t } = useTranslation()
   const dashboard = useMemo(() => buildProfileHistoryDashboard(sections), [sections])
   const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategoryDot, setActiveCategoryDot] = useState(0)
+  const categoriesRailRef = useRef(null)
   const normalizedQuery = String(query || '').trim().toLowerCase()
 
   const categories = useMemo(
@@ -155,6 +157,43 @@ export default function ProfileHistoryExperience({
   }, [activeCategory, allItems])
 
   const isEmpty = !loading && allItems.length === 0 && !normalizedQuery
+  const categoryDots = useMemo(
+    () => [
+      { key: 'all', label: t('profileHistory_all') },
+      ...categories.map((category) => ({ key: category.key, label: category.chipTitle || category.title })),
+    ],
+    [categories, t],
+  )
+
+  useEffect(() => {
+    const rail = categoriesRailRef.current
+    if (!rail || categoryDots.length < 2) return undefined
+
+    const syncActiveDot = () => {
+      const maxScrollLeft = rail.scrollWidth - rail.clientWidth
+      const nextIndex = maxScrollLeft <= 1
+        ? 0
+        : Math.round((rail.scrollLeft / maxScrollLeft) * (categoryDots.length - 1))
+      setActiveCategoryDot(Math.max(0, Math.min(categoryDots.length - 1, nextIndex)))
+    }
+
+    syncActiveDot()
+    rail.addEventListener('scroll', syncActiveDot, { passive: true })
+    window.addEventListener('resize', syncActiveDot)
+    return () => {
+      rail.removeEventListener('scroll', syncActiveDot)
+      window.removeEventListener('resize', syncActiveDot)
+    }
+  }, [categoryDots.length])
+
+  const scrollToCategoryDot = useCallback((index) => {
+    const rail = categoriesRailRef.current
+    if (!rail || categoryDots.length < 2) return
+    const maxScrollLeft = Math.max(0, rail.scrollWidth - rail.clientWidth)
+    const left = (maxScrollLeft * index) / (categoryDots.length - 1)
+    rail.scrollTo({ left, behavior: 'smooth' })
+    setActiveCategoryDot(index)
+  }, [categoryDots.length])
 
   return (
     <div
@@ -193,50 +232,73 @@ export default function ProfileHistoryExperience({
           </div>
         ) : (
           <>
-            <div
-              className="profile-history-categories-rail"
-              aria-label={t('profileHistory_categoriesAria')}
-            >
-              <button
-                type="button"
-                className={`profile-history-cat-chip${
-                  activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
-                }`}
-                onClick={() => setActiveCategory('all')}
-                aria-label={t('profileHistory_allAria', { count: allItems.length })}
+            <div className="profile-history-categories-slider">
+              <div
+                ref={categoriesRailRef}
+                className="profile-history-categories-rail"
+                aria-label={t('profileHistory_categoriesAria')}
               >
-                <span className="profile-history-cat-chip__icon-wrap">
-                  <span className="profile-history-cat-chip__icon" aria-hidden>
-                    <FiLayers size={18} />
+                <button
+                  type="button"
+                  className={`profile-history-cat-chip${
+                    activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
+                  }`}
+                  onClick={() => setActiveCategory('all')}
+                  aria-label={t('profileHistory_allAria', { count: allItems.length })}
+                >
+                  <span className="profile-history-cat-chip__icon-wrap">
+                    <span className="profile-history-cat-chip__icon" aria-hidden>
+                      <FiLayers size={18} />
+                    </span>
+                    <span className="profile-history-cat-chip__count">{allItems.length}</span>
                   </span>
-                  <span className="profile-history-cat-chip__count">{allItems.length}</span>
-                </span>
-                <span className="profile-history-cat-chip__label">{t('profileHistory_all')}</span>
-              </button>
-              {categories.map((category) => {
-                const Icon = CATEGORY_ICONS[category.key]
-                return (
+                  <span className="profile-history-cat-chip__label">{t('profileHistory_all')}</span>
+                </button>
+                {categories.map((category) => {
+                  const Icon = CATEGORY_ICONS[category.key]
+                  return (
+                    <button
+                      key={category.key}
+                      type="button"
+                      className={`profile-history-cat-chip${
+                        activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
+                      }`}
+                      onClick={() => setActiveCategory(category.key)}
+                      aria-label={`${category.title}, ${category.items.length}`}
+                    >
+                      <span className="profile-history-cat-chip__icon-wrap">
+                        <span className="profile-history-cat-chip__icon" aria-hidden>
+                          <Icon size={18} />
+                        </span>
+                        <span className="profile-history-cat-chip__count">{category.items.length}</span>
+                      </span>
+                      <span className="profile-history-cat-chip__label">
+                        {category.chipTitle || category.title}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div
+                className="profile-history-categories-dots"
+                role="tablist"
+                aria-label={t('profileHistory_categoriesAria')}
+              >
+                {categoryDots.map((category, index) => (
                   <button
                     key={category.key}
                     type="button"
-                    className={`profile-history-cat-chip${
-                      activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
+                    role="tab"
+                    className={`profile-history-categories-dot${
+                      activeCategoryDot === index ? ' is-active' : ''
                     }`}
-                    onClick={() => setActiveCategory(category.key)}
-                    aria-label={`${category.title}, ${category.items.length}`}
-                  >
-                    <span className="profile-history-cat-chip__icon-wrap">
-                      <span className="profile-history-cat-chip__icon" aria-hidden>
-                        <Icon size={18} />
-                      </span>
-                      <span className="profile-history-cat-chip__count">{category.items.length}</span>
-                    </span>
-                    <span className="profile-history-cat-chip__label">
-                      {category.chipTitle || category.title}
-                    </span>
-                  </button>
-                )
-              })}
+                    aria-label={category.label}
+                    aria-selected={activeCategoryDot === index}
+                    onClick={() => scrollToCategoryDot(index)}
+                  />
+                ))}
+              </div>
             </div>
 
             <label className="profile-history-search">

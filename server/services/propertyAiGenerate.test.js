@@ -8,7 +8,7 @@ import {
 } from './propertyAiGenerate.js'
 
 test('versions generated reports so legacy cached PDFs are not reused', () => {
-  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v5$/)
+  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v8:tiffany-editorial-v2$/)
 })
 
 test('sends relative listing photos to the multimodal model as absolute URLs', async () => {
@@ -117,4 +117,56 @@ test('preserves the answer and report when PDF rendering fails', async () => {
   assert.equal(updates.at(-1).status, 'failed')
   assert.match(updates.at(-1).shortAnswer, /Ответ сохранён/)
   assert.ok(updates.at(-1).report)
+})
+
+test('creates a factual answer and PDF when the external model fails', async () => {
+  const updates = []
+  const messages = []
+  const result = await runPropertyAiGeneration({
+    reportId: 15,
+    conversationId: 8,
+    category: 'risks',
+    question: 'Какие у этого объекта главные плюсы и риски?',
+    property: { id: 21, title: 'Квартира', area: 72, rooms: 3, images: ['/flat.jpg'] },
+  }, {
+    loadNeighborhood: async (property) => property,
+    requestModel: async () => { throw new Error('OpenRouter unavailable') },
+    renderPdf: async ({ report }) => {
+      assert.match(report.directAnswer, /Главные плюсы объекта/)
+      assert.ok(report.strengths.length >= 2)
+      assert.ok(report.risks.length >= 2)
+      return Buffer.from('%PDF-fallback')
+    },
+    updateReport: async (_id, patch) => { updates.push(patch); return patch },
+    appendMessage: async (message) => { messages.push(message) },
+  })
+
+  assert.deepEqual(updates.map((item) => item.status), ['analyzing', 'rendering', 'completed'])
+  assert.equal(result.status, 'completed')
+  assert.match(result.shortAnswer, /Основные риски/)
+  assert.match(messages[0].content, /Основные риски/)
+})
+
+test('continues with listing data when neighborhood enrichment fails', async () => {
+  const updates = []
+  const result = await runPropertyAiGeneration({
+    reportId: 16,
+    conversationId: 8,
+    category: 'details',
+    question: 'Сделай подробный разбор этого объекта.',
+    property: { id: 22, title: 'Дом', area: 120 },
+  }, {
+    loadNeighborhood: async () => { throw new Error('OSM unavailable') },
+    requestModel: async ({ property }) => JSON.stringify({
+      directAnswer: `Площадь объекта ${property.area} м².`,
+      shortAnswer: 'Предварительный разбор готов.',
+    }),
+    renderPdf: async () => Buffer.from('%PDF-neighborhood-fallback'),
+    updateReport: async (_id, patch) => { updates.push(patch); return patch },
+    appendMessage: async () => {},
+  })
+
+  assert.equal(result.status, 'completed')
+  assert.equal(updates.at(-1).status, 'completed')
+  assert.match(result.report.directAnswer, /120 м²/)
 })
