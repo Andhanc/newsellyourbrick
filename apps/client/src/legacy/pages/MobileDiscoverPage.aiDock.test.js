@@ -4,21 +4,16 @@ import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./MobileDiscoverPage.jsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('./MobileDiscoverPage.css', import.meta.url), 'utf8')
+const homeCss = await readFile(new URL('./Home.css', import.meta.url), 'utf8')
 
 test('home discover page hosts the same AI plaque as auction', () => {
   assert.match(page, /SiteChatDock/)
   assert.match(page, /wrapperClassName="md-discover-ai-floats"/)
-  assert.match(page, /openAIChat/)
 })
 
-test('home AI plaque stays on screen without relying on .md custom properties', () => {
-  assert.match(css, /\.md-discover-ai-floats\s*>\s*\.ai-button/)
-  assert.match(css, /env\(safe-area-inset-bottom,\s*0px\)/)
-  assert.match(css, /z-index:\s*12000/)
-  assert.match(css, /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{[^}]*width:\s*70px/)
-  assert.match(css, /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{[^}]*height:\s*70px/)
-  assert.doesNotMatch(
-    css,
-    /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{[^}]*var\(--md-safe-bottom\)/,
-  )
+test('home AI plaque reuses shared Home.css sizing without local overrides', () => {
+  assert.match(css, /\.md-discover-ai-floats\s*\{/)
+  assert.doesNotMatch(css, /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{/)
+  assert.match(homeCss, /\.ai-button\s*\{[^}]*--ai-fab-size:\s*56px/)
+  assert.match(homeCss, /--ai-fab-bottom:\s*calc\(90px \+ env\(safe-area-inset-bottom/)
 })

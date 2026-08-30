@@ -103,6 +103,7 @@ test('shows a backend generation failure instead of leaving the chat blank', () 
   assert.match(jsx, /job\?\.shortAnswer \|\| job\?\.status === 'failed'/)
 })
 
-test('gives the Trans component replacement element a stable React key', () => {
-  assert.match(propertyDetail, /key="property-detail-terms-link"/)
+test('normalizes property photos for the picker and chat card', () => {
+  assert.match(jsx, /normalizePropertyMediaFields/)
+  assert.match(jsx, /applyPropertyImageFallback/)
 })

@@ -2766,7 +2766,7 @@
   "buyerBookings_networkError": "Ошибка сети",
   "buyerData_pageTitle": "Личные данные",
   "buyerData_profilePanelTitle": "Данные профиля",
-  "buyerData_profileAutosaveHint": "Контакты и документы для сделок. Заполните один раз — изменения сохраняются сами.",
+  "buyerData_profileAutosaveHint": "Контакты и документы для сделок. Между шагами переходите кнопками «Далее»; поле сохраняется, когда вы из него выходите.",
   "buyerData_profileDiscoverAria": "Реферальная ссылка и бонусные задания",
   "buyerData_moreBonusesCta": "Больше бонусов",
   "buyerData_moreBonusesCtaSub": "Задания, промокоды и награды за приглашения",

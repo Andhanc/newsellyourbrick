@@ -2430,7 +2430,8 @@
   position: relative;
   z-index: 1;
   background: #ffffff;
-  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  /* Без лишнего хвоста под copyright — как глобальный #site-footer на /auction */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .md-footer-wrap .footer {
@@ -2443,27 +2444,10 @@
   padding-right: 1.2rem;
 }
 
-/* ——— FAB: larger, bottom-right, expands left ——— */
+/* Главная и аукцион: SiteChatDock подключает Home.css — локальных размеров FAB нет. */
 
 .md-discover-ai-floats {
   --md-safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.md-discover-ai-floats > .ai-button {
-  right: max(0.85rem, env(safe-area-inset-right, 0px));
-  /* env() here: the button is a sibling of .md, so --md-safe-bottom would be invalid
-     and `bottom` would fall back to auto — the plaque sat below the viewport. */
-  bottom: calc(1.15rem + env(safe-area-inset-bottom, 0px) + 70px + 0.55rem);
-  width: 70px;
-  height: 70px;
-  font-size: 20px;
-  z-index: 12000;
-}
-
-@media (min-width: 1024px) {
-  .md-discover-ai-floats > .ai-button {
-    right: max(1.5rem, env(safe-area-inset-right, 0px));
-  }
 }
 
 .md-fab {
@@ -3372,7 +3356,7 @@
 
   /* ——— Footer / FAB ——— */
   .md-footer-wrap {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .md-footer-wrap .footer__container {

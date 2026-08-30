@@ -9,7 +9,9 @@ import fr from './locales/mainPage/fr.json'
 import pl from './locales/mainPage/pl.json'
 import sv from './locales/mainPage/sv.json'
 
-const SUPPORTED = ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv']
+export const DEFAULT_APP_LANGUAGE = 'en'
+
+const SUPPORTED = ['en', 'ru', 'de', 'es', 'fr', 'pl', 'sv']
 
 const LOCALE_LOADERS = {
   ru: async () => ({ default: ru }),
@@ -24,15 +26,17 @@ const LOCALE_LOADERS = {
 const bundleInflight = new Map()
 
 export function normalizeAppLanguage(lng) {
-  const code = String(lng || 'ru').split('-')[0].toLowerCase()
-  return SUPPORTED.includes(code) ? code : 'ru'
+  const code = String(lng || DEFAULT_APP_LANGUAGE).split('-')[0].toLowerCase()
+  return SUPPORTED.includes(code) ? code : DEFAULT_APP_LANGUAGE
 }
 
 function readStoredLanguage() {
   try {
-    return normalizeAppLanguage(localStorage.getItem('i18nextLng'))
+    const stored = localStorage.getItem('i18nextLng')
+    if (!stored) return DEFAULT_APP_LANGUAGE
+    return normalizeAppLanguage(stored)
   } catch {
-    return 'ru'
+    return DEFAULT_APP_LANGUAGE
   }
 }
 
@@ -98,7 +102,7 @@ function initI18nOnce() {
           escapeValue: false,
         },
         detection: {
-          order: ['localStorage', 'navigator'],
+          order: ['localStorage'],
           caches: ['localStorage'],
         },
         react: {
@@ -115,8 +119,15 @@ function initI18nOnce() {
       i18n.addResourceBundle('en', 'translation', resources.en.translation, true, true)
     }
 
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = initialLng
+    }
+
     // Preload next language as soon as it changes (avoid raw-key flash)
     i18n.on('languageChanged', (lng) => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = normalizeAppLanguage(lng)
+      }
       void loadLanguageBundle(lng)
     })
 

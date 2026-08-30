@@ -645,7 +645,8 @@
 }
 
 .seller-savings__button,
-.seller-savings-plan a {
+.seller-savings-plan a,
+.seller-savings-plan .seller-listing-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -659,26 +660,53 @@
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
+.seller-savings__button,
+.seller-savings-plan .seller-listing-cta {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .seller-savings__button {
   min-height: 42px;
   margin-top: 26px;
   padding: 0 16px;
   color: #ffffff;
   font-size: 13px;
-  box-shadow: 0 16px 32px rgba(66, 158, 168, 0.22);
+  color: #050505;
+  background: var(--seller-cyan);
+  background-image: none;
+  box-shadow: 0 12px 28px rgba(78, 205, 214, 0.22);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.seller-savings__button:hover,
+.seller-savings__button:focus-visible {
+  background: var(--seller-cyan-dark);
+  background-image: none;
+  box-shadow: 0 14px 32px rgba(78, 205, 214, 0.28);
 }
 
 .seller-savings__button:hover,
 .seller-savings__button:focus-visible,
 .seller-savings-plan a:hover,
-.seller-savings-plan a:focus-visible {
+.seller-savings-plan a:focus-visible,
+.seller-savings-plan .seller-listing-cta:hover,
+.seller-savings-plan .seller-listing-cta:focus-visible {
   transform: translateY(-2px);
 }
 
 .seller-savings__button svg,
-.seller-savings-plan a svg {
+.seller-savings-plan a svg,
+.seller-savings-plan .seller-listing-cta svg {
   width: 14px;
   height: 14px;
+  color: currentColor;
+}
+
+.seller-savings__button svg {
   color: currentColor;
 }
 
@@ -916,19 +944,22 @@
 
 .seller-savings-plan p {
   margin: 18px 0 0;
+  flex: 1 1 auto;
   color: rgba(5, 5, 5, 0.66);
   font-size: 18px;
   font-weight: 650;
   line-height: 1.5;
 }
 
-.seller-savings-plan a {
+.seller-savings-plan a,
+.seller-savings-plan .seller-listing-cta {
   width: fit-content;
   min-height: 44px;
   margin-top: auto;
   padding: 0 16px;
   color: #ffffff;
   font-size: 14px;
+  align-self: flex-start;
 }
 
 .seller-footer-cta {
@@ -1241,6 +1272,9 @@
   width: 100%;
   margin: 28px auto 0;
   padding: 12px 34px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 760;
   text-decoration: none;
@@ -1420,7 +1454,8 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-.seller-services-card a {
+.seller-services-card a,
+.seller-services-card .seller-listing-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1435,7 +1470,15 @@
   text-transform: uppercase;
 }
 
-.seller-services-card--accent a {
+.seller-services-card .seller-listing-cta {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.seller-services-card--accent a,
+.seller-services-card--accent .seller-listing-cta {
   color: var(--seller-cyan-deep) !important;
   background-color: #ffffff !important;
   background-image: none !important;
@@ -1446,18 +1489,22 @@
 }
 
 .seller-services-card--accent a:hover,
-.seller-services-card--accent a:focus-visible {
+.seller-services-card--accent a:focus-visible,
+.seller-services-card--accent .seller-listing-cta:hover,
+.seller-services-card--accent .seller-listing-cta:focus-visible {
   background-color: #f5fbfc !important;
   background-image: none !important;
 }
 
-.seller-services-card a svg {
+.seller-services-card a svg,
+.seller-services-card .seller-listing-cta svg {
   width: 14px;
   height: 14px;
   color: currentColor;
 }
 
-.seller-services-card--accent a svg {
+.seller-services-card--accent a svg,
+.seller-services-card--accent .seller-listing-cta svg {
   color: currentColor;
 }
 
@@ -1930,12 +1977,13 @@
     margin-top: 14px;
     font-size: 15px;
     line-height: 1.5;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
   }
 
-  .seller-savings-plan a {
+  .seller-savings-plan a,
+  .seller-savings-plan .seller-listing-cta {
     min-height: 42px;
-    margin-top: 20px;
+    margin-top: 22px;
     padding: 0 18px;
     font-size: 13px;
   }
@@ -2148,6 +2196,7 @@
   .seller-savings-plan,
   .seller-savings-plan:nth-child(2),
   .seller-savings-plan:nth-child(3) {
+    min-height: 0;
     padding: 24px 20px 20px;
     border-radius: 18px;
   }
@@ -2160,11 +2209,13 @@
     margin-top: 12px;
     font-size: 14px;
     line-height: 1.5;
+    flex: 0 0 auto;
   }
 
-  .seller-savings-plan a {
+  .seller-savings-plan a,
+  .seller-savings-plan .seller-listing-cta {
     min-height: 40px;
-    margin-top: 18px;
+    margin-top: 20px;
     padding: 0 16px;
     font-size: 13px;
   }

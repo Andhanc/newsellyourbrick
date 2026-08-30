@@ -65,6 +65,8 @@
 .vip-club-story-card__cta,
 .vip-club-join-panel__cta,
 .seller-services-card a,
+.seller-services-card .seller-listing-cta,
+.seller-about__button.btn-tiffany-shine,
 .md-card__cta,
 .md-news-feature__cta,
 .favorites-empty-button,
@@ -193,6 +195,7 @@
 .vip-club-story-card__cta:hover,
 .vip-club-join-panel__cta:hover,
 .seller-services-card > a:hover,
+.seller-services-card > .seller-listing-cta:hover,
 .md-card__cta:hover,
 .md-news-feature__cta:hover,
 .favorites-empty-button:hover,
@@ -303,6 +306,8 @@
 
 /* Ссылки-CTA: выглядят как кнопки */
 .seller-services-card a,
+.seller-services-card .seller-listing-cta,
+.seller-about__button.btn-tiffany-shine,
 .md-card__cta,
 .md-news-feature__cta,
 .al-page .al-primary-link,
@@ -349,6 +354,8 @@
   .vip-club-btn--primary,
   .vip-club-story-card__cta,
   .seller-services-card a,
+.seller-services-card .seller-listing-cta,
+.seller-about__button.btn-tiffany-shine,
   .md-card__cta,
   .favorites-empty-button,
   .compare-empty-button,
@@ -378,15 +385,107 @@
   }
 }
 
-/* Incoming chat bubbles — same static tiffany as «Подробнее» / primary CTA */
+/* Incoming bot bubbles — dark surface, white text; nested cards stay light */
 .chat-widget__message--bot .chat-widget__message-content,
-.chat-widget__message--manager .chat-widget__message-content,
 .site-ai-drawer .chat-widget__message--bot .chat-widget__message-content,
-.site-ai-drawer .chat-widget__message--manager .chat-widget__message-content,
 .manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
+.test-manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content {
+  background-color: #111827;
+  background-image: none;
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.28);
+}
+
+/* Manager replies — light surface (unchanged from site chat pattern) */
+.chat-widget__message--manager .chat-widget__message-content,
+.site-ai-drawer .chat-widget__message--manager .chat-widget__message-content,
 .manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content,
-.test-manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
 .test-manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content {
+  background-color: #ffffff;
+  background-image: none;
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  color: #0f172a !important;
+  border: 1px solid rgba(132, 151, 154, 0.22);
+  box-shadow:
+    0 4px 14px rgba(3, 35, 38, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Bot bubble sections on dark background */
+.chat-widget__message--bot .chat-widget__recommendations,
+.chat-widget__message--bot .chat-widget__navigation {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+.chat-widget__message--bot .chat-widget__recommendations-title,
+.chat-widget__message--bot .chat-widget__navigation-title {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* White cards with dark text inside bot replies */
+.chat-widget__message--bot .chat-widget__recommendation-item,
+.chat-widget__message--bot .chat-widget__navigation-link,
+.chat-widget__message--bot .chat-widget__yield {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+.chat-widget__message--bot .chat-widget__recommendation-item:hover,
+.chat-widget__message--bot .chat-widget__navigation-link:hover {
+  background: #f8fafc;
+  border-color: rgba(0, 153, 169, 0.42);
+  transform: translateX(4px);
+}
+
+.chat-widget__message--bot .chat-widget__recommendation-title,
+.chat-widget__message--bot .chat-widget__yield-title,
+.chat-widget__message--bot .chat-widget__yield-grid strong {
+  color: #0f172a;
+}
+
+.chat-widget__message--bot .chat-widget__recommendation-location,
+.chat-widget__message--bot .chat-widget__recommendation-details,
+.chat-widget__message--bot .chat-widget__yield-grid span,
+.chat-widget__message--bot .chat-widget__yield-note {
+  color: #64748b;
+}
+
+.chat-widget__message--bot .chat-widget__recommendation-price {
+  color: #0099a9;
+}
+
+.chat-widget__message--bot .chat-widget__recommendation-cta,
+.chat-widget__message--bot .chat-widget__navigation-link {
+  color: #0f3d42;
+}
+
+.chat-widget__message--bot .chat-widget__yield-cta {
+  background: #111827;
+  color: #ffffff;
+}
+
+.chat-widget__message--bot .chat-widget__yield-cta:hover {
+  background: #0f172a;
+}
+
+.chat-widget__message--bot .chat-widget__manager-connect-hint {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.chat-widget__message--bot .chat-widget__typing span {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+/* Outgoing user bubbles in AI assistant — tiffany fill */
+.ai-chat-modal-root .chat-widget__message--user .chat-widget__message-content,
+.site-ai-drawer.ai-chat-drawer .chat-widget__message--user .chat-widget__message-content {
   background-color: var(--syb-tiffany-btn);
   background-image: var(--syb-tiffany-btn-fill);
   background-size: 100% 100%;

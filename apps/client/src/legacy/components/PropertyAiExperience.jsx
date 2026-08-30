@@ -20,6 +20,7 @@ import {
   getPropertyAiReport,
   startPropertyAiReport,
 } from '../services/propertyAiService'
+import { applyPropertyImageFallback, normalizePropertyMediaFields } from '../utils/propertyImage'
 import './PropertyAiExperience.css'
 
 const SCENARIOS = [
@@ -40,14 +41,8 @@ const LAUNCHER_MORPH_MS = 2000
 const LAUNCHER_MORPH_EASE = 'cubic-bezier(0.45, 0.05, 0.25, 1)'
 
 function propertyImages(property) {
-  const source = property?.images || property?.photos || []
-  if (Array.isArray(source)) return source.filter(Boolean)
-  try {
-    const parsed = JSON.parse(source)
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : []
-  } catch {
-    return property?.image ? [property.image] : []
-  }
+  const { images } = normalizePropertyMediaFields(property || {})
+  return images.filter(Boolean)
 }
 
 function splitAnswerLines(value) {
@@ -61,7 +56,11 @@ function PropertyMiniCard({ property }) {
   const image = propertyImages(property)[0]
   return (
     <article className="property-ai-card">
-      {image ? <img src={image} alt="" /> : <div className="property-ai-card__placeholder">AI</div>}
+      {image ? (
+        <img src={image} alt="" onError={applyPropertyImageFallback} />
+      ) : (
+        <div className="property-ai-card__placeholder">AI</div>
+      )}
       <div>
         <strong>{property?.title || property?.name || 'Объект недвижимости'}</strong>
         <span>{[property?.area ? `${property.area} м²` : '', property?.rooms ? `${property.rooms} комн.` : '', property?.floor ? `${property.floor} этаж` : ''].filter(Boolean).join(' · ')}</span>
@@ -362,7 +361,15 @@ export default function PropertyAiExperience({
           <div className="property-ai-picker" role="dialog" aria-modal="true" aria-labelledby="property-ai-picker-title">
             <button className="property-ai-close property-ai-close--dark" type="button" onClick={() => setView('closed')} aria-label="Закрыть"><FiX /></button>
             <div className="property-ai-picker__thumbs" aria-hidden>
-              {images.map((image, index) => <img key={image} src={image} alt="" style={{ transform: `rotate(${index ? 8 : -2}deg)` }} />)}
+              {images.map((image, index) => (
+                <img
+                  key={`${image}-${index}`}
+                  src={image}
+                  alt=""
+                  style={{ transform: `rotate(${index ? 8 : -2}deg)` }}
+                  onError={applyPropertyImageFallback}
+                />
+              ))}
               {!images.length && <span>AI</span>}
             </div>
             <h2 id="property-ai-picker-title">РАССКАЖУ ПРО ЭТОТ<br />ОБЪЕКТ</h2>

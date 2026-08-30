@@ -183,7 +183,7 @@
   word-wrap: break-word;
 }
 
-.manager-chat-modal-root .chat-widget__message--user .chat-widget__message-content {
+.manager-chat-modal-root:not(.ai-chat-modal-root) .chat-widget__message--user .chat-widget__message-content {
   background: #111827;
   color: #ffffff;
   border-bottom-right-radius: 4px;
@@ -195,16 +195,15 @@
   border-bottom-left-radius: 4px;
 }
 
-.manager-chat-modal-root .chat-widget__message--bot .chat-widget__typing span,
 .manager-chat-modal-root .chat-widget__message--manager .chat-widget__typing span {
-  background: rgba(255, 255, 255, 0.88);
+  background: #9ca3af;
 }
 
 .manager-chat-modal-root .chat-widget__manager-connect-hint {
   margin: 10px 0 0;
   font-size: 13px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.92);
+  color: #64748b;
 }
 
 .manager-chat-modal-root .chat-widget__message--system {

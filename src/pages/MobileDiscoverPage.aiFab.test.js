@@ -8,7 +8,7 @@ const css = await readFile(new URL('./MobileDiscoverPage.css', import.meta.url),
 test('main page uses the shared auction AI FAB instead of the grid menu', () => {
   assert.match(page, /wrapperClassName="md-discover-ai-floats"/)
   assert.doesNotMatch(page, /md-fab|FiGrid/)
-  assert.match(css, /\.md-discover-ai-floats > \.ai-button/)
+  assert.match(css, /\.md-discover-ai-floats/)
   assert.doesNotMatch(css, /\.md-fab/)
 })
 

@@ -136,8 +136,8 @@ export function injectSeoIntoHtml(html, seo) {
   if (!seo || !html) return html;
 
   let out = html;
-  const ogLocale = seo.lang || 'ru_RU';
-  const htmlLang = String(ogLocale).split('_')[0] || 'ru';
+  const ogLocale = seo.lang || 'en_US';
+  const htmlLang = String(ogLocale).split('_')[0] || 'en';
 
   out = out.replace(/<html\s+lang="[^"]*"/i, `<html lang="${htmlLang}"`);
 

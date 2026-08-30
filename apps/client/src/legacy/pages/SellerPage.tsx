@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type SyntheticEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
 import {
   FiArrowRight,
   FiArrowUpRight,
@@ -18,6 +19,7 @@ import { useInView } from '@/components/about/hooks/useInView'
 import Header from '@/components/Header'
 import { publicAsset } from '@/utils/publicAsset'
 import { scrollMainTo } from '@/utils/mainScroll'
+import { navigateBecomeSellerCta, navigateSellerListingCta } from '@/utils/navigateSellerListingCta'
 import './SellerPage.css'
 
 const sellerAboutChartBadgeSrc = publicAsset('images/seller-page/seller-about-chart-badge.png')
@@ -49,7 +51,7 @@ function SellerLaunchStatValue({
   return <strong>{formatted}</strong>
 }
 
-function SellerSavingsSection() {
+function SellerSavingsSection({ onListingCta }: { onListingCta: () => void }) {
   const { t } = useTranslation()
   const sellerLaunchStats = useMemo(
     () => [
@@ -122,14 +124,10 @@ function SellerSavingsSection() {
               <span className="seller-savings__title-line">{t('sellerLanding_savingsTitle2')}</span>
             </h2>
             <p>{t('sellerLanding_savingsLead')}</p>
-            <Link
-              to="/owner/property/new"
-              className="seller-savings__button"
-              onClick={() => scrollMainTo(0, 0, 'instant')}
-            >
+            <button type="button" className="seller-savings__button" onClick={onListingCta}>
               {t('sellerLanding_savingsCta')}
               <FiArrowRight />
-            </Link>
+            </button>
           </div>
 
           <div className="seller-savings__card" aria-label={t('sellerLanding_savingsCardAria')}>
@@ -191,10 +189,10 @@ function SellerSavingsSection() {
             <article className="seller-savings-plan" key={plan.title}>
               <h3>{plan.title}</h3>
               <p>{plan.copy}</p>
-              <Link to="/owner/property/new" onClick={() => scrollMainTo(0, 0, 'instant')}>
+              <button type="button" className="seller-listing-cta" onClick={onListingCta}>
                 {plan.action}
                 <FiArrowRight />
-              </Link>
+              </button>
             </article>
           ))}
         </div>
@@ -269,7 +267,7 @@ function handleSellerAboutPortraitError(event: SyntheticEvent<HTMLImageElement>)
   image.src = sellerAboutPortraitFallbackSrc
 }
 
-function SellerAboutSection() {
+function SellerAboutSection({ onBecomeSellerCta }: { onBecomeSellerCta: () => void }) {
   const { t } = useTranslation()
   const sellerVisionPoints = useMemo(
     () => [t('sellerLanding_vision1'), t('sellerLanding_vision2'), t('sellerLanding_vision3')],
@@ -349,19 +347,25 @@ function SellerAboutSection() {
           </div>
         </div>
 
-        <Link
-          to="/owner/property/new"
+        <button
+          type="button"
           className="seller-about__button btn-tiffany-shine"
-          onClick={() => scrollMainTo(0, 0, 'instant')}
+          onClick={onBecomeSellerCta}
         >
           {t('sellerLanding_aboutCta')}
-        </Link>
+        </button>
       </div>
     </section>
   )
 }
 
-function SellerServicesSection() {
+function SellerServicesSection({
+  onListingCta,
+  onBecomeSellerCta,
+}: {
+  onListingCta: () => void
+  onBecomeSellerCta: () => void
+}) {
   const { t } = useTranslation()
   const sellerServiceCards = useMemo(
     () => [
@@ -370,6 +374,7 @@ function SellerServicesSection() {
         title: t('sellerLanding_service1Title'),
         copy: t('sellerLanding_service1Copy'),
         action: t('sellerLanding_service1Action'),
+        ctaKind: 'listing' as const,
       },
       {
         icon: FiLayers,
@@ -377,12 +382,14 @@ function SellerServicesSection() {
         copy: t('sellerLanding_service2Copy'),
         accent: true,
         action: t('sellerLanding_service2Action'),
+        ctaKind: 'listing' as const,
       },
       {
         icon: FiTarget,
         title: t('sellerLanding_service3Title'),
         copy: t('sellerLanding_service3Copy'),
         action: t('sellerLanding_service3Action'),
+        ctaKind: 'becomeSeller' as const,
       },
     ],
     [t],
@@ -419,10 +426,14 @@ function SellerServicesSection() {
               </span>
               <h3>{card.title}</h3>
               <p>{card.copy}</p>
-              <Link to="/owner/property/new" onClick={() => scrollMainTo(0, 0, 'instant')}>
+              <button
+                type="button"
+                className="seller-listing-cta"
+                onClick={card.ctaKind === 'becomeSeller' ? onBecomeSellerCta : onListingCta}
+              >
                 {card.action}
                 <FiArrowUpRight />
-              </Link>
+              </button>
             </article>
           )
         })}
@@ -432,6 +443,17 @@ function SellerServicesSection() {
 }
 
 export default function SellerPage() {
+  const navigate = useNavigate()
+  const { user, isLoaded: userLoaded } = useUser()
+
+  const handleListingCta = useCallback(() => {
+    void navigateSellerListingCta(navigate, { user, userLoaded })
+  }, [navigate, user, userLoaded])
+
+  const handleBecomeSellerCta = useCallback(() => {
+    void navigateBecomeSellerCta(navigate, { user, userLoaded })
+  }, [navigate, user, userLoaded])
+
   useEffect(() => {
     const layout = document.querySelector('.app-layout')
     layout?.classList.add('app-layout--seller-page')
@@ -446,10 +468,13 @@ export default function SellerPage() {
     <>
       <Header />
       <main className="seller-page">
-        <SellerSavingsSection />
+        <SellerSavingsSection onListingCta={handleListingCta} />
         <SellerToolkitSection />
-        <SellerAboutSection />
-        <SellerServicesSection />
+        <SellerAboutSection onBecomeSellerCta={handleBecomeSellerCta} />
+        <SellerServicesSection
+          onListingCta={handleListingCta}
+          onBecomeSellerCta={handleBecomeSellerCta}
+        />
       </main>
     </>
   )

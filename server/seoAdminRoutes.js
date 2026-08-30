@@ -82,7 +82,7 @@ function mergePageRow(page, override, defaultSeo) {
 
 async function resolveDefaultSeo(path, origin) {
   try {
-    return await resolveSeoForPath(path, { origin, lang: 'ru_RU' });
+    return await resolveSeoForPath(path, { origin, lang: 'en_US' });
   } catch {
     return { title: '', description: '', canonicalPath: path };
   }
