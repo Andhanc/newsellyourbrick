@@ -11,6 +11,7 @@ async function propertyAiRequest(path, { userId, body, signal } = {}) {
     },
     body: body ? JSON.stringify(body) : undefined,
     signal,
+    cache: 'no-store',
   })
   if (!response.ok) {
     const data = await response.json().catch(() => ({}))
@@ -47,7 +48,8 @@ export async function getPropertyAiHistory({ userId, propertyId, propertyTable, 
 }
 
 export async function getPropertyAiPdfBlob({ userId, reportId, download = false }) {
-  const suffix = download ? '?download=1' : ''
-  const response = await propertyAiRequest(`/reports/${reportId}/pdf${suffix}`, { userId })
+  const params = new URLSearchParams({ _: String(Date.now()) })
+  if (download) params.set('download', '1')
+  const response = await propertyAiRequest(`/reports/${reportId}/pdf?${params}`, { userId })
   return response.blob()
 }

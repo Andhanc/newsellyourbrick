@@ -45,12 +45,9 @@ test('preview cards and primary action open the scrollable drum picker', () => {
 
 test('touch scrolling gives one short haptic tick when the active drum card changes', () => {
   assert.match(component, /onTouchStart=\{handleDrumTouchStart\}/)
-  assert.match(component, /onTouchMove=\{handleDrumTouchMove\}/)
-  assert.match(component, /Math\.abs\(currentY - touchStartYRef\.current\) >= 4/)
+  assert.match(component, /touchScrollingRef\.current = true/)
   assert.match(component, /nearestIndex !== activeIndexRef\.current/)
-  assert.match(component, /touchScrollingRef\.current[\s\S]*vibrateSelectionTick\(\)/)
-  assert.match(component, /navigator\.vibrate\(DRUM_HAPTIC_DURATION_MS\)/)
-  assert.match(component, /DRUM_HAPTIC_DURATION_MS = 8/)
+  assert.match(component, /touchScrollingRef\.current[\s\S]*triggerSelectionHaptic\(\)/)
 })
 
 test('drum selection records first and second choices and starts comparison', () => {

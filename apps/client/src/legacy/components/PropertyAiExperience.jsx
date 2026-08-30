@@ -133,6 +133,9 @@ export default function PropertyAiExperience({
       const next = await getPropertyAiReport({ userId, reportId, signal: controller.signal })
       setJob(next)
       if (next.status === 'completed' || next.status === 'failed') {
+        if (next.status === 'failed') {
+          setError(next.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.')
+        }
         void loadHistory()
         return next
       }
@@ -157,6 +160,9 @@ export default function PropertyAiExperience({
       if (!['completed', 'failed'].includes(result.data.status)) {
         await pollReport(result.data.id, userId)
       } else {
+        if (result.data.status === 'failed') {
+          setError(result.data.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.')
+        }
         void loadHistory()
       }
     } catch (startError) {
@@ -322,7 +328,12 @@ export default function PropertyAiExperience({
     return () => window.clearInterval(timer)
   }, [answerLines])
 
+  const isTerminalStatus = ['completed', 'failed'].includes(job?.status)
   const statusCopy = STATUS_COPY[job?.status]
+    || (job?.status && !isTerminalStatus ? ['Готовим анализ', 'Обрабатываем данные объявления'] : null)
+  const visibleError = error || (job?.status === 'failed'
+    ? job.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.'
+    : '')
   const handleLauncherClick = () => {
     // Пока идёт морфинг — игнор; модалку открываем только на полностью развёрнутой плашке
     if (launcherMorphing) return
@@ -436,7 +447,7 @@ export default function PropertyAiExperience({
               </div>
             )}
 
-            {job?.shortAnswer && answerRevealComplete && (
+            {(job?.shortAnswer || job?.status === 'failed') && (answerRevealComplete || job?.status === 'failed') && (
               <article className={`property-ai-pdf-card${job.status !== 'completed' ? ' property-ai-pdf-card--pending' : ''}`}>
                 <div className="property-ai-pdf-card__icon">
                   {job.status === 'rendering' ? <span className="property-ai-pdf-spinner" aria-hidden /> : <FiFileText />}
@@ -444,7 +455,7 @@ export default function PropertyAiExperience({
                 <div>
                   <span>
                     {job.status === 'completed'
-                      ? 'PDF · 6–7 страниц'
+                      ? 'PDF · 7–8 страниц'
                       : job.status === 'failed'
                         ? 'PDF не создан'
                         : 'Собираем PDF-презентацию'}
@@ -473,7 +484,7 @@ export default function PropertyAiExperience({
               </article>
             )}
 
-            {error && <div className="property-ai-error"><p>{error}</p>{job?.question && <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> Попробовать снова</button>}</div>}
+            {visibleError && <div className="property-ai-error" role="alert"><p>{visibleError}</p>{job?.question && <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> Попробовать снова</button>}</div>}
           </div>
 
           <form className="property-ai-composer" onSubmit={(event) => { event.preventDefault(); submitCustom() }}>

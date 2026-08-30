@@ -18,9 +18,18 @@ test('enabled biometric protection blocks the mobile session until verification'
   assert.match(gate, /status\.enabled/)
   assert.match(gate, /isBiometricEnabledOnThisDevice/)
   assert.match(gate, /knownProtected/)
+  assert.match(gate, /shouldLockImmediately/)
+  assert.match(gate, /CLERK_DB_USER_SYNCED/)
+  assert.doesNotMatch(gate, /setTimeout/)
   assert.match(gate, /verifyPlatformBiometric/)
   assert.match(gate, /syb\.biometricUnlocked:/)
   assert.match(gate, /mode="lock"/)
+})
+
+test('locked drawer makes the app underneath non-interactive', () => {
+  assert.match(drawer, /setAttribute\('inert'/)
+  assert.match(drawer, /setAttribute\('aria-hidden', 'true'\)/)
+  assert.match(drawer, /autoFocus=\{locked\}/)
 })
 
 test('buyer logout clears the local biometric session before Clerk redirects', () => {

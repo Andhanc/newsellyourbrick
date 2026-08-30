@@ -91,8 +91,16 @@ test('renders a direct answer with structured strengths and risks', () => {
   assert.match(jsx, /job\?\.report\?\.risks/)
 })
 
-test('describes the PDF as a compact six-to-seven-page report', () => {
-  assert.match(jsx, /PDF · 6–7 страниц/)
+test('describes the PDF as a compact seven-to-eight-page report', () => {
+  assert.match(jsx, /PDF · 7–8 страниц/)
+})
+
+test('shows a backend generation failure instead of leaving the chat blank', () => {
+  assert.match(jsx, /next\.status === 'failed'/)
+  assert.match(jsx, /setError\(next\.error/)
+  assert.match(jsx, /const visibleError = error \|\|/)
+  assert.match(jsx, /role="alert"/)
+  assert.match(jsx, /job\?\.shortAnswer \|\| job\?\.status === 'failed'/)
 })
 
 test('gives the Trans component replacement element a stable React key', () => {

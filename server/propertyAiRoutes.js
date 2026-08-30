@@ -11,7 +11,7 @@ import {
   userExistsForPropertyAi,
 } from './database/propertyAiReportsPrisma.js'
 import { normalizePropertyAiRequest } from './services/propertyAiReportContract.js'
-import { PROPERTY_AI_REPORT_MODEL, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
+import { PROPERTY_AI_PDF_TEMPLATE_VERSION, PROPERTY_AI_REPORT_MODEL, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
 import { normalizePropertyAiImages } from './services/propertyAiImages.js'
 
 const ALLOWED_PROPERTY_TABLES = ['properties', 'properties_apartments', 'properties_houses']
@@ -154,8 +154,9 @@ export function registerPropertyAiRoutes(app) {
       }
       const disposition = req.query.download === '1' ? 'attachment' : 'inline'
       res.setHeader('Content-Type', 'application/pdf')
-      res.setHeader('Content-Disposition', `${disposition}; filename="property-ai-report-${report.id}.pdf"`)
-      res.setHeader('Cache-Control', 'private, max-age=3600')
+      res.setHeader('Content-Disposition', `${disposition}; filename="property-ai-report-${report.id}-tiffany-v2.pdf"`)
+      res.setHeader('X-Property-AI-Template', PROPERTY_AI_PDF_TEMPLATE_VERSION)
+      res.setHeader('Cache-Control', 'private, no-store, max-age=0')
       res.send(Buffer.from(report.pdfData))
     } catch (error) {
       console.error('[property-ai/pdf]', error)

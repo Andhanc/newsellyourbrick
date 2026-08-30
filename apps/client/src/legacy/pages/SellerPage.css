@@ -652,6 +652,7 @@
   min-height: 42px;
   margin-top: 26px;
   padding: 0 16px;
+  color: #ffffff;
   font-size: 13px;
   box-shadow: 0 16px 32px rgba(5, 5, 5, 0.18);
 }
@@ -915,6 +916,7 @@
   min-height: 44px;
   margin-top: auto;
   padding: 0 16px;
+  color: #ffffff;
   font-size: 14px;
 }
 
@@ -1423,17 +1425,19 @@
 }
 
 .seller-services-card--accent a {
-  --syb-tiffany-btn: var(--seller-cyan-deep);
-  --syb-tiffany-btn-deep: #126f79;
-  --syb-tiffany-btn-shadow: rgba(10, 86, 94, 0.34);
-  --syb-tiffany-btn-fill: var(--seller-cyan-fill-deep);
-  --syb-tiffany-btn-fill-hover: linear-gradient(
-    118deg,
-    #0f646d 0%,
-    #147e88 46%,
-    #238f9a 100%
-  );
-  color: #ffffff;
+  color: var(--seller-cyan-deep) !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  animation: none !important;
+  box-shadow:
+    0 12px 28px rgba(10, 86, 94, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.seller-services-card--accent a:hover,
+.seller-services-card--accent a:focus-visible {
+  background-color: #f5fbfc !important;
+  background-image: none !important;
 }
 
 .seller-services-card a svg {
@@ -1443,7 +1447,7 @@
 }
 
 .seller-services-card--accent a svg {
-  color: #ffffff;
+  color: currentColor;
 }
 
 .seller-demo {
