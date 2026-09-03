@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
+const styles = await readFile(new URL('./Compare.css', import.meta.url), 'utf8')
 
 test('showdown auto-starts AI only with entitlement and never opens the paid drawer automatically', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
@@ -27,6 +28,15 @@ test('AI pending, error, and disabled entitlement states are accessible', () => 
   assert.match(page, /role="alert"/)
   assert.match(page, /compare-ai-entitlement-help/)
   assert.match(page, /aria-describedby=/)
+})
+
+test('AI recommendation uses a shared scorecard and evidence-card layout at every breakpoint', () => {
+  assert.match(page, /compare-ai-scoreboard/)
+  assert.match(page, /compare-ai-score-card/)
+  assert.match(page, /compare-ai-evidence-grid/)
+  assert.match(page, /compare-ai-summary-icon/)
+  assert.match(styles, /21st\.dev-inspired spotlight/)
+  assert.match(styles, /--ai-score-share/)
 })
 
 test('comparison table and mobile cards use the shared truthful price resolver', () => {

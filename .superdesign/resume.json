@@ -63,6 +63,33 @@
         }
       },
       "updatedAt": "2026-08-23T13:18:00+03:00"
+    },
+    "wallet:mobile-deposit": {
+      "targetKind": "existing-ui",
+      "projectId": "26ac101d-536a-4351-babf-0718a8af2e16",
+      "baselineDraftId": "4318aef0-7af7-4406-a5e6-6c1a834fd9f6",
+      "activeDraftId": "4318aef0-7af7-4406-a5e6-6c1a834fd9f6",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/pages/Wallet.jsx",
+        "src/pages/Wallet.bank.css"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "dde2a6fea6177583d3ef7b0542eefe3a96be97d827b12286fd2b74a73f5a35ee",
+        "src/pages/Wallet.jsx": "874f8aa707804d5068861cfa756bb6f25083f392c15994b470ac470436801dff",
+        "src/pages/Wallet.bank.css": "73c79f28fef26b58e4b56a1d809a027a1e8d63d0134ee28cd0c3a2caaf772c29"
+      },
+      "components": [],
+      "drafts": {
+        "4318aef0-7af7-4406-a5e6-6c1a834fd9f6": {
+          "title": "Кошелёк — мобильный экран",
+          "visualDirection": "уведомления и бургер в хедере, белая плавающая кнопка к торгам, платёжные методы без отдельной карточки под CTA",
+          "currentVersion": 2
+        }
+      },
+      "updatedAt": "2026-09-01T09:40:00+03:00"
     }
   }
 }

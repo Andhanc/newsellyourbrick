@@ -6,7 +6,7 @@ import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalcula
 import axios from 'axios'
 import Header from '../components/Header'
 import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
-import { FiArrowRight, FiBarChart2, FiRefreshCw, FiLoader } from 'react-icons/fi'
+import { FiArrowRight, FiBarChart2, FiCheckCircle, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
@@ -295,6 +295,17 @@ function scoreAiInfrastructure(rows) {
     else if (r.winner === 'tie') tie += 1
   }
   return { left, right, tie }
+}
+
+function buildAiScoreView(scores) {
+  if (!scores) return null
+  const decided = scores.left + scores.right
+  return {
+    ...scores,
+    total: decided + scores.tie,
+    leftPct: decided > 0 ? Math.round((scores.left / decided) * 100) : 0,
+    rightPct: decided > 0 ? Math.round((scores.right / decided) * 100) : 0,
+  }
 }
 
 /** Данные карточки аукциона → формат `initialPropertyData` калькулятора */
@@ -835,6 +846,7 @@ const Compare = () => {
     () => (aiResult?.rows?.length ? scoreAiInfrastructure(aiResult.rows) : null),
     [aiResult]
   )
+  const aiScoreView = useMemo(() => buildAiScoreView(aiScores), [aiScores])
 
   const requestAiAnalysis = useCallback(async (options = {}) => {
     if (!pair || aiLoading) return
@@ -1341,10 +1353,14 @@ const Compare = () => {
 
                 <section className="compare-ai-section" aria-labelledby="compare-ai-heading">
                   <div className="compare-ai-head">
-                    <h2 id="compare-ai-heading" className="compare-ai-title">
-                      <HiOutlineSparkles className="compare-ai-title-icon" aria-hidden />
-                      {t('comparePage_aiTitle')}
-                    </h2>
+                    <div className="compare-ai-title-wrap">
+                      <span className="compare-ai-title-icon" aria-hidden>
+                        <HiOutlineSparkles />
+                      </span>
+                      <h2 id="compare-ai-heading" className="compare-ai-title">
+                        {t('comparePage_aiTitle')}
+                      </h2>
+                    </div>
                     <button
                       type="button"
                       className="compare-ai-refresh"
@@ -1401,106 +1417,79 @@ const Compare = () => {
 
                   {!aiLoading && aiResult?.summary && (
                     <div className="compare-ai-summary">
-                      <p>{aiResult.summary}</p>
+                      <span className="compare-ai-summary-icon" aria-hidden>
+                        <HiOutlineSparkles />
+                      </span>
+                      <div>
+                        <span className="compare-ai-summary-label">{t('comparePage_resultEyebrow')}</span>
+                        <p>{aiResult.summary}</p>
+                      </div>
                     </div>
                   )}
 
                   {!aiLoading && aiResult?.rows?.length > 0 && (
-                    isMobile ? (
-                      <div className="compare-ai-mobile-list">
+                    <div className="compare-ai-results">
+                      {aiScoreView ? (
+                        <div
+                          className="compare-ai-scoreboard"
+                          role="img"
+                          aria-label={t('comparePage_aiMobileScore', { left: aiScoreView.left, right: aiScoreView.right })}
+                        >
+                          <article
+                            className={`compare-ai-score-card${aiScoreView.left > aiScoreView.right ? ' compare-ai-score-card--lead' : ''}`}
+                            style={{ '--ai-score-share': `${aiScoreView.leftPct}%` }}
+                          >
+                            <div className="compare-ai-score-card__top">
+                              <span>{t('comparePage_object1')}</span>
+                              <strong>{aiScoreView.left}</strong>
+                            </div>
+                            <div className="compare-ai-score-track" aria-hidden><span /></div>
+                            <small>{pair.left.property.name || pair.left.property.title}</small>
+                          </article>
+                          <article
+                            className={`compare-ai-score-card${aiScoreView.right > aiScoreView.left ? ' compare-ai-score-card--lead' : ''}`}
+                            style={{ '--ai-score-share': `${aiScoreView.rightPct}%` }}
+                          >
+                            <div className="compare-ai-score-card__top">
+                              <span>{t('comparePage_object2')}</span>
+                              <strong>{aiScoreView.right}</strong>
+                            </div>
+                            <div className="compare-ai-score-track" aria-hidden><span /></div>
+                            <small>{pair.right.property.name || pair.right.property.title}</small>
+                          </article>
+                        </div>
+                      ) : null}
+
+                      <div className="compare-ai-evidence-grid">
                         {aiResult.rows.map((row, idx) => (
                           <article className="compare-ai-mobile-card" key={`${row.aspect}-${idx}`}>
-                            <h3>{row.aspect}</h3>
+                            <div className="compare-ai-card-head">
+                              <span>{String(idx + 1).padStart(2, '0')}</span>
+                              <h3>{row.aspect}</h3>
+                            </div>
                             <div className="compare-ai-mobile-values">
                               <div className={row.winner === 'left' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
                                 <span>{t('comparePage_object1')}</span>
                                 <strong>{row.left}</strong>
+                                {row.winner === 'left' ? <FiCheckCircle className="compare-ai-value-mark" aria-hidden /> : null}
                               </div>
                               <div className={row.winner === 'right' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
                                 <span>{t('comparePage_object2')}</span>
                                 <strong>{row.right}</strong>
+                                {row.winner === 'right' ? <FiCheckCircle className="compare-ai-value-mark" aria-hidden /> : null}
                               </div>
                             </div>
                           </article>
                         ))}
-                        {aiScores ? (
-                          <p className="compare-ai-mobile-score">
-                            {t('comparePage_aiMobileScore', { left: aiScores.left, right: aiScores.right })}
-                            {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}.
-                          </p>
-                        ) : null}
                       </div>
-                    ) : (
-                      <div className="compare-table-wrap compare-ai-table-wrap">
-                        <table className="compare-table compare-ai-table">
-                        <thead>
-                          <tr>
-                            <th scope="col" className="compare-table-param">
-                              {t('comparePage_aiInfraHeading')}
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.left.property.name || pair.left.property.title}
-                              </span>
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.right.property.name || pair.right.property.title}
-                              </span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {aiResult.rows.map((row, idx) => (
-                            <tr key={`${row.aspect}-${idx}`}>
-                              <th scope="row" className="compare-table-param">
-                                {row.aspect}
-                              </th>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'left' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.left}
-                                {row.winner === 'left' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
-                              </td>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'right' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.right}
-                                {row.winner === 'right' && <span className="compare-win-tag">{t('comparePage_better')}</span>}
-                              </td>
-                            </tr>
-                          ))}
-                          {aiScores && (
-                            <tr className="compare-table-summary-row">
-                              <th scope="row" className="compare-table-param">
-                                {t('comparePage_aiSummaryRow')}
-                              </th>
-                              <td colSpan={2} className="compare-table-summary compare-table-summary--tie">
-                                <strong>
-                                  {t('comparePage_aiSummaryText', { left: aiScores.left, right: aiScores.right })}
-                                  {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}
-                                </strong>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                        </table>
-                      </div>
-                    )
+
+                      {aiScores ? (
+                        <p className="compare-ai-mobile-score">
+                          {t('comparePage_aiMobileScore', { left: aiScores.left, right: aiScores.right })}
+                          {aiScores.tie > 0 ? t('comparePage_aiMobileScoreTie', { tie: aiScores.tie }) : ''}.
+                        </p>
+                      ) : null}
+                    </div>
                   )}
 
                   {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (

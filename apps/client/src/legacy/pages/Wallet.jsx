@@ -2,8 +2,8 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
-import { FiArrowLeft, FiArrowUpRight, FiArrowDownLeft, FiBell, FiChevronRight, FiCreditCard, FiEye, FiEyeOff, FiGift, FiPlus, FiSliders } from 'react-icons/fi'
-import { Gavel } from 'lucide-react'
+import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiArrowDownLeft, FiChevronRight, FiCreditCard, FiEye, FiEyeOff, FiGift, FiMenu, FiPlus, FiSliders, FiUser } from 'react-icons/fi'
+import { CreditCard, Gavel } from 'lucide-react'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
   TonConnectUIProvider,
@@ -24,6 +24,7 @@ import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
 import SellerVerificationModal from '../components/SellerVerificationModal'
+import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -54,7 +55,7 @@ import {
 import {
   fetchIsBuyerProfileCompleteForDeposit,
 } from '../utils/depositProfileGate'
-import { getCabinetDataPath } from '../utils/cabinetRoutes'
+import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import './Wallet.css'
 import './Wallet.bank.css'
 
@@ -183,6 +184,8 @@ const WalletInner = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
   const lastFocusReloadAtRef = useRef(0)
+  const walletMenuRef = useRef(null)
+  const [walletMenuOpen, setWalletMenuOpen] = useState(false)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
@@ -228,6 +231,24 @@ const WalletInner = () => {
       navigate('/', { replace: true })
     }
   }, [user, userLoaded, navigate])
+
+  useEffect(() => {
+    if (!walletMenuOpen) return undefined
+
+    const closeOnOutsidePress = (event) => {
+      if (!walletMenuRef.current?.contains(event.target)) setWalletMenuOpen(false)
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setWalletMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePress)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [walletMenuOpen])
 
   const [depositAmount, setDepositAmount] = useState(0)
   const [depositResolved, setDepositResolved] = useState(false)
@@ -766,19 +787,34 @@ const WalletInner = () => {
             <button
               type="button"
               className="wallet-bank__back"
-              onClick={handleWalletBack}
-              aria-label={t('walletPage_back')}
+              onClick={() => navigate(getCabinetProfilePath())}
+              aria-label={t('profile')}
             >
-              <FiArrowLeft aria-hidden />
+              <FiUser aria-hidden />
             </button>
-            <button
-              type="button"
-              className="wallet-bank__bell"
-              onClick={() => setIsDepositInfoOpen(true)}
-              aria-label={t('walletPage_whatIsDepositTitle')}
-            >
-              <FiBell aria-hidden />
-            </button>
+            <div className="wallet-bank__top-actions">
+              <NotificationsBell variant="wallet" />
+              <div className="wallet-bank__menu-wrap" ref={walletMenuRef}>
+                <button
+                  type="button"
+                  className={`wallet-bank__icon-button wallet-bank__menu-button${walletMenuOpen ? ' is-open' : ''}`}
+                  onClick={() => setWalletMenuOpen((open) => !open)}
+                  aria-label={t('menu')}
+                  aria-haspopup="menu"
+                  aria-expanded={walletMenuOpen}
+                >
+                  <FiMenu aria-hidden />
+                </button>
+                {walletMenuOpen && (
+                  <nav className="wallet-bank__menu-popover" role="menu" aria-label={t('menu')}>
+                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/') }}>{t('home')}</button>
+                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/auction') }}>{t('auction')}</button>
+                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/favorites') }}>{t('favorites')}</button>
+                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate(getCabinetProfilePath()) }}>{t('profile')}</button>
+                  </nav>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="wallet-bank__balance-block">
@@ -835,6 +871,37 @@ const WalletInner = () => {
         </section>
 
         <div className="wallet-bank__body">
+          <section className="wallet-bank__auction-access" aria-labelledby="wallet-start-title">
+            <div className="wallet-bank__auction-heading">
+              <span aria-hidden><Gavel size={18} /></span>
+              <h2 id="wallet-start-title">{t('walletPage_auctionAccessTitle')}</h2>
+            </div>
+            <p>{t('walletPage_auctionAccessDescription')}</p>
+            <button type="button" className="wallet-bank__auction-action" onClick={() => navigate('/auction')}>
+              <span>{t('walletPage_auctionAccessCta')}</span>
+              <FiArrowRight aria-hidden />
+            </button>
+            <div className="wallet-bank__payments" aria-labelledby="wallet-payment-methods-title">
+              <div className="wallet-bank__payments-heading">
+                <span className="wallet-bank__payments-icon" aria-hidden>
+                  <CreditCard size={18} strokeWidth={2.1} />
+                </span>
+                <span className="wallet-bank__payments-copy">
+                  <strong id="wallet-payment-methods-title">{t('walletPage_paymentMethodsTitle')}</strong>
+                  <small>{t('walletPage_paymentMethodsSubtitle')}</small>
+                </span>
+              </div>
+              <div className="wallet-bank__payment-brands" role="list" aria-label={t('walletPage_paymentMethodsAria')}>
+                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--visa" role="listitem" aria-label="Visa">VISA</span>
+                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--mastercard" role="listitem" aria-label="Mastercard">
+                  <span className="wallet-bank__mastercard-mark" aria-hidden><i /><i /></span><b>mastercard</b>
+                </span>
+                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--stablecoin" role="listitem" aria-label="USDT"><i aria-hidden>₮</i><b>USDT</b></span>
+                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--stablecoin wallet-bank__payment-brand--usdc" role="listitem" aria-label="USDC"><i aria-hidden>$</i><b>USDC</b></span>
+              </div>
+            </div>
+          </section>
+
           <button
             type="button"
             className="wallet-bank__alert"

@@ -23,22 +23,38 @@ function PropertyAction({ item, index, score, pct, decided, isLead, onSelect }) 
   const { t } = useTranslation()
   const view = propertyView(item, index, t)
   return (
-    <article className={`compare-decision__property${isLead ? ' compare-decision__property--lead' : ''}`}>
+    <article
+      className={`compare-decision__property${isLead ? ' compare-decision__property--lead' : ''}`}
+      style={{ '--decision-share': `${Math.max(0, Math.min(100, pct || 0))}%` }}
+    >
       <div className="compare-decision__property-main">
-        <img
-          src={view.image}
-          alt=""
-          aria-hidden="true"
-          onError={(event) => {
-            if (!event.currentTarget.src.endsWith(FALLBACK_IMAGE)) event.currentTarget.src = FALLBACK_IMAGE
-          }}
-        />
-        <div>
-          <span>{t('comparePage_signalsLabel', { index, pct: pct || 0 })}</span>
-          <strong>{view.title}</strong>
-          <small>{t('comparePage_scorePoints', { score: score || 0, count: decided || 0 })} · {view.price}</small>
+        <div className="compare-decision__property-media">
+          <img
+            src={view.image}
+            alt=""
+            aria-hidden="true"
+            onError={(event) => {
+              if (!event.currentTarget.src.endsWith(FALLBACK_IMAGE)) event.currentTarget.src = FALLBACK_IMAGE
+            }}
+          />
+          <span className="compare-decision__property-label">
+            {t('comparePage_signalsLabel', { index, pct: pct || 0 })}
+          </span>
+          <div className="compare-decision__score-ring" aria-hidden="true">
+            <div>
+              <strong>{pct || 0}%</strong>
+              <small>{score || 0}/{decided || 0}</small>
+            </div>
+          </div>
         </div>
-        <em className="compare-decision__pct" aria-hidden="true">{pct || 0}%</em>
+        <div className="compare-decision__property-copy">
+          <strong className="compare-decision__property-title">{view.title}</strong>
+          <span className="compare-decision__property-price">{view.price}</span>
+          <small className="compare-decision__property-points">
+            <FiCheckCircle aria-hidden="true" />
+            {t('comparePage_scorePoints', { score: score || 0, count: decided || 0 })}
+          </small>
+        </div>
       </div>
       <button
         type="button"
@@ -60,8 +76,10 @@ export default function CompareDecisionSummary({ pair, summary, onOpenCalculator
   return (
     <section className="compare-decision" aria-labelledby="compare-decision-title">
       <header className="compare-decision__header">
-        <span className="compare-decision__eyebrow"><FiCheckCircle aria-hidden="true" /> {t('comparePage_decisionEyebrow')}</span>
-        <h2 id="compare-decision-title">{t('comparePage_decisionTitle')}</h2>
+        <div className="compare-decision__heading">
+          <span className="compare-decision__eyebrow"><FiCheckCircle aria-hidden="true" /> {t('comparePage_decisionEyebrow')}</span>
+          <h2 id="compare-decision-title">{t('comparePage_decisionTitle')}</h2>
+        </div>
         <p className="compare-decision__result">{formatComparisonDecision(summary, t)}</p>
         {summary?.decided > 0 ? (
           <div

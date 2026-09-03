@@ -27,4 +27,6 @@ test('decision summary keeps both properties identifiable and both actions tappa
   assert.match(summary, /compare-decision__property/)
   assert.match(summary, /compare-decision__action/)
   assert.match(summary, /comparePage_signalsLabel/)
+  assert.match(summary, /compare-decision__score-ring/)
+  assert.match(summary, /--decision-share/)
 })

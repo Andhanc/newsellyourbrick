@@ -601,6 +601,25 @@ export function NotificationsBell({ variant = 'desktop' }) {
     )
   }
 
+  if (variant === 'wallet') {
+    return (
+      <button
+        type="button"
+        className="wallet-bank__icon-button wallet-bank__bell"
+        data-site-notifications-bell
+        aria-label={t('notifications')}
+        aria-expanded={isOpen}
+        onClick={(e) => {
+          e.stopPropagation()
+          toggle?.()
+        }}
+      >
+        <FiBell aria-hidden />
+        {unreadCount > 0 && <span className="wallet-bank__notification-dot" aria-hidden />}
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
