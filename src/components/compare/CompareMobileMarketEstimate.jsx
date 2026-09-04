@@ -65,14 +65,14 @@ export default function CompareMobileMarketEstimate({
     {
       id: 'price',
       label: t('comparePage_calcRecommendedPrice'),
-      left: formatValue(calcData.left?.recommendedPrice, dash),
-      right: formatValue(calcData.right?.recommendedPrice, dash),
+      left: formatValue(calcData.left?.recommendedPrice, dash, calcData.left?.currency),
+      right: formatValue(calcData.right?.recommendedPrice, dash, calcData.right?.currency),
     },
     {
       id: 'sqm',
       label: t('comparePage_calcPricePerSqm'),
-      left: formatValue(calcData.left?.recommendedPricePerSqm, dash),
-      right: formatValue(calcData.right?.recommendedPricePerSqm, dash),
+      left: formatValue(calcData.left?.recommendedPricePerSqm, dash, calcData.left?.currency),
+      right: formatValue(calcData.right?.recommendedPricePerSqm, dash, calcData.right?.currency),
     },
     {
       id: 'sources',

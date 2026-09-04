@@ -1,9 +1,44 @@
-import { FiSend, FiPhone, FiMail, FiMessageCircle, FiArrowRight, FiX, FiTrash2 } from 'react-icons/fi'
+import {
+  FiArrowRight,
+  FiAward,
+  FiBarChart2,
+  FiBookmark,
+  FiCompass,
+  FiCreditCard,
+  FiExternalLink,
+  FiHeart,
+  FiHome,
+  FiLayers,
+  FiMail,
+  FiMapPin,
+  FiMessageCircle,
+  FiPhone,
+  FiSend,
+  FiShield,
+  FiStar,
+  FiTrash2,
+  FiUser,
+  FiX,
+} from 'react-icons/fi'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { visibleAssistantButtons } from '../utils/siteAssistantHelpers'
+
+function navigationPresentation(path = '') {
+  if (path.startsWith('/favorites')) return { Icon: FiHeart, tone: 'rose' }
+  if (path.startsWith('/compare')) return { Icon: FiLayers, tone: 'indigo' }
+  if (path.startsWith('/calculator')) return { Icon: FiBarChart2, tone: 'blue' }
+  if (path.startsWith('/subscriptions')) return { Icon: FiAward, tone: 'amber' }
+  if (path.startsWith('/private-club')) return { Icon: FiStar, tone: 'amber' }
+  if (path.startsWith('/wallet') || path.startsWith('/deposit')) return { Icon: FiCreditCard, tone: 'blue' }
+  if (path.startsWith('/profile') || path.startsWith('/data')) return { Icon: FiUser, tone: 'indigo' }
+  if (path.startsWith('/auction') || path.startsWith('/property')) return { Icon: FiHome, tone: 'green' }
+  if (path.startsWith('/map')) return { Icon: FiMapPin, tone: 'green' }
+  if (path.startsWith('/sections')) return { Icon: FiCompass, tone: 'teal' }
+  return { Icon: FiBookmark, tone: 'teal' }
+}
 
 export default function AiChatPanel({
   chat,
@@ -98,7 +133,7 @@ export default function AiChatPanel({
             ref={idx === chat.chatMessages.length - 1 ? chat.lastMessageRef : null}
             className={`chat-widget__message ${
               message.sender === 'user' ? 'chat-widget__message--user' : 'chat-widget__message--bot'
-            }`}
+            }${message.navigation?.length || message.sources?.length ? ' chat-widget__message--rich' : ''}`}
           >
             <div className="chat-widget__message-content">
               {message.text}
@@ -140,18 +175,43 @@ export default function AiChatPanel({
                 <div className="chat-widget__navigation">
                   <div className="chat-widget__navigation-title">{t('chatNavigationTitle')}</div>
                   <div className="chat-widget__navigation-list">
-                    {message.navigation.map((nav) => (
-                      <button
-                        key={nav.path}
-                        type="button"
-                        className="chat-widget__navigation-link"
-                        onClick={() => openNavigationPath(nav.path)}
-                      >
-                        <span>{nav.label}</span>
-                        <FiArrowRight size={16} aria-hidden />
-                      </button>
-                    ))}
+                    {message.navigation.map((nav) => {
+                      const { Icon, tone } = navigationPresentation(nav.path)
+                      return (
+                        <button
+                          key={nav.path}
+                          type="button"
+                          className="chat-widget__navigation-link"
+                          data-tone={tone}
+                          onClick={() => openNavigationPath(nav.path)}
+                        >
+                          <span className="chat-widget__navigation-icon"><Icon aria-hidden /></span>
+                          <span className="chat-widget__navigation-label">{nav.label}</span>
+                          <span className="chat-widget__navigation-arrow"><FiArrowRight aria-hidden /></span>
+                        </button>
+                      )
+                    })}
                   </div>
+                </div>
+              )}
+              {message.sources && message.sources.length > 0 && (
+                <div className="assistant-legal-sources" aria-label="Official sources">
+                  {message.sources.map((source) => (
+                    <a
+                      key={`${source.id}-${source.url}`}
+                      className="assistant-legal-source"
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      <span className="assistant-legal-source__mark"><FiShield aria-hidden /></span>
+                      <span className="assistant-legal-source__copy">
+                        <strong>{source.label}</strong>
+                        <small>{source.title}</small>
+                      </span>
+                      <FiExternalLink className="assistant-legal-source__open" aria-hidden />
+                    </a>
+                  ))}
                 </div>
               )}
               {message.recommendations && message.recommendations.length > 0 && (
@@ -222,8 +282,9 @@ export default function AiChatPanel({
                         }
                         disabled={chat.isLoadingAI}
                       >
-                        <IconCmp size={18} aria-hidden />
+                        <span className="chat-widget__button-icon"><IconCmp size={18} aria-hidden /></span>
                         <span>{button.label}</span>
+                        <FiArrowRight className="chat-widget__button-arrow" aria-hidden />
                       </button>
                     )
                   }

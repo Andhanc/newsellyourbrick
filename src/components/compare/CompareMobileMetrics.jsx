@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { FiCheck, FiRefreshCw, FiRotateCcw } from 'react-icons/fi'
+import { FiRefreshCw, FiRotateCcw } from 'react-icons/fi'
+import { FaTrophy } from 'react-icons/fa'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
 import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
 import './CompareMobileMetrics.css'
 
 const FALLBACK_IMAGE = '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
+const METRIC_ICON_ROOT = '/images/compare/metric-icons'
 
 const METRIC_GROUP_DEFS = [
   { id: 'price', labelKey: 'comparePage_groupPrice', rows: ['price', 'auction_start', 'ppm'] },
@@ -67,7 +69,7 @@ function ObjectHeader({ item, side, index, label, onReplace }) {
   )
 }
 
-function MetricValue({ row, side, objectTitle }) {
+function MetricValue({ row, side, objectView }) {
   const { t } = useTranslation()
   const isWinner = !row.displayOnly && row.winner === side
   const value = row[side]
@@ -80,14 +82,25 @@ function MetricValue({ row, side, objectTitle }) {
   return (
     <div
       className={classes}
-      aria-label={`${objectTitle}: ${value}${isWinner ? t('comparePage_strongerAriaSuffix') : ''}`}
+      aria-label={`${objectView.title}: ${value}${isWinner ? t('comparePage_strongerAriaSuffix') : ''}`}
     >
+      <span className="compare-mobile__value-media" aria-hidden="true">
+        <img
+          className="compare-mobile__value-image"
+          src={objectView.image}
+          alt=""
+          onError={(event) => {
+            if (!event.currentTarget.src.endsWith(FALLBACK_IMAGE)) event.currentTarget.src = FALLBACK_IMAGE
+          }}
+        />
+        <span className="compare-mobile__value-badge">{side === 'left' ? 1 : 2}</span>
+        {isWinner ? (
+          <span className="compare-mobile__winner" title={t('comparePage_stronger')}>
+            <FaTrophy />
+          </span>
+        ) : null}
+      </span>
       <span className="compare-mobile__value-number">{value}</span>
-      {isWinner ? (
-        <span className="compare-mobile__winner" aria-hidden="true">
-          <FiCheck />
-        </span>
-      ) : null}
     </div>
   )
 }
@@ -132,10 +145,15 @@ export default function CompareMobileMetrics({ left, right, rows, onReplace, onC
               <div className="compare-mobile__group-rows">
                 {groupRows.map((row) => (
                   <article className="compare-mobile__metric" key={row.id} aria-labelledby={`compare-mobile-metric-${row.id}`}>
-                    <h4 id={`compare-mobile-metric-${row.id}`} className="compare-mobile__metric-label">{row.label}</h4>
+                    <div className="compare-mobile__metric-head">
+                      <span className="compare-mobile__metric-icon" aria-hidden="true">
+                        <img src={`${METRIC_ICON_ROOT}/${row.id}.png`} alt="" loading="lazy" />
+                      </span>
+                      <h4 id={`compare-mobile-metric-${row.id}`} className="compare-mobile__metric-label">{row.label}</h4>
+                    </div>
                     <div className="compare-mobile__values">
-                      <MetricValue row={row} side="left" objectTitle={leftView.title} />
-                      <MetricValue row={row} side="right" objectTitle={rightView.title} />
+                      <MetricValue row={row} side="left" objectView={leftView} />
+                      <MetricValue row={row} side="right" objectView={rightView} />
                     </div>
                   </article>
                 ))}

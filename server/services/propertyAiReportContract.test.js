@@ -20,7 +20,7 @@ test('requires a meaningful custom question', () => {
   )
 })
 
-test('parses fenced JSON into a compact eight-page report', () => {
+test('uses the AI-authored slide order without injecting a fixed deck', () => {
   const content = `\`\`\`json
   {
     "directAnswer":"Объект выглядит интересно, но требует проверки документов.",
@@ -36,6 +36,11 @@ test('parses fenced JSON into a compact eight-page report', () => {
     "visualPrompt":"premium isometric 3D apartment interior",
     "neighborhoodSummary":"Рядом есть базовая инфраструктура.",
     "infrastructureHighlights":["Школа — 320 м","Возможный вывод: удобно для семьи"]
+    ,"slides":[
+      {"layout":"cover","kicker":"AI-РАЗБОР","title":"Петровский парк","body":"Главное об объекте","bullets":[],"cards":[],"chart":{"type":"none","title":"","unit":"","caption":"","labels":[],"series":[]},"imageIndices":[1]},
+      {"layout":"chart","kicker":"ЧЕСТНЫЕ ЦИФРЫ","title":"Параметры комнат","body":"Сравнение площадей","bullets":[],"cards":[],"chart":{"type":"bar","title":"Площадь помещений","unit":"м²","caption":"Данные объявления","labels":["Кухня","Гостиная"],"series":[{"name":"Площадь","values":[12,21]}]},"imageIndices":[]},
+      {"layout":"conclusion","kicker":"ИТОГ","title":"Следующий шаг","body":"Проверить документы","bullets":["Запросить выписку"],"cards":[],"chart":{"type":"none","title":"","unit":"","caption":"","labels":[],"series":[]},"imageIndices":[0]}
+    ]
   }
   \`\`\``
 
@@ -49,14 +54,13 @@ test('parses fenced JSON into a compact eight-page report', () => {
     },
   })
 
-  assert.equal(report.pages.length, 8)
+  assert.equal(report.slides.length, 3)
+  assert.deepEqual(report.slides.map((slide) => slide.layout), ['cover', 'chart', 'conclusion'])
+  assert.equal(report.slides[0].imageIndices[0], 1)
+  assert.equal(report.slides[1].chart.series[0].values[1], 21)
+  assert.equal(report.pages, report.slides)
   assert.equal(report.shortAnswer, 'Объект выглядит интересно, но требует проверки документов.')
   assert.equal(report.images[0], 'https://img.example/home.jpg')
-  assert.ok(report.pages.some((page) => page.type === 'answer'))
-  assert.ok(report.pages.some((page) => page.type === 'gallery'))
-  assert.ok(!report.pages.some((page) => page.type === 'visual'))
-  assert.ok(report.pages.some((page) => page.type === 'conclusion'))
-  assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
   assert.match(report.disclaimer, /не является финансовой/i)
 })
 
@@ -70,8 +74,8 @@ test('does not add a sparse gallery page when the listing has only one photo', (
     property: { title: 'Объект', images: ['/uploads/only-photo.jpg'] },
   })
 
-  assert.equal(report.pages.length, 7)
-  assert.ok(!report.pages.some((page) => page.type === 'gallery'))
+  assert.equal(report.slides.length, 8)
+  assert.ok(!report.slides.some((slide) => slide.layout === 'gallery'))
 })
 
 test('fills sparse reports with factual strengths, checks, metrics, and a direct answer', () => {
@@ -98,11 +102,11 @@ test('fills sparse reports with factual strengths, checks, metrics, and a direct
   assert.ok(report.strengths.length >= 2)
   assert.ok(report.risks.length >= 2)
   assert.ok(report.metrics.length >= 4)
-  assert.equal(report.pages.length, 8)
-  assert.ok(report.pages.some((page) => page.type === 'gallery'))
-  assert.ok(!report.pages.some((page) => page.type === 'visual'))
-  assert.ok(report.pages.some((page) => page.type === 'conclusion'))
-  assert.ok(report.pages.some((page) => page.type === 'neighborhood'))
+  assert.equal(report.slides.length, 9)
+  assert.ok(report.slides.some((slide) => slide.layout === 'gallery'))
+  assert.ok(report.slides.some((slide) => slide.layout === 'timeline'))
+  assert.ok(report.slides.some((slide) => slide.layout === 'conclusion'))
+  assert.ok(report.slides.some((slide) => slide.layout === 'neighborhood'))
 })
 
 test('uses listing images only and removes unsafe URLs', () => {

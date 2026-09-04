@@ -1,12 +1,10 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import CompareInvestorProDrawer from '../components/CompareInvestorProDrawer'
-import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalculatorAccess'
 import axios from 'axios'
 import Header from '../components/Header'
 import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
-import { FiArrowRight, FiBarChart2, FiCheckCircle, FiRefreshCw, FiLoader } from 'react-icons/fi'
+import { FiArrowRight, FiBarChart2, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import PropertyListingCard from '../components/PropertyListingCard'
 import CompareMobileMetrics from '../components/compare/CompareMobileMetrics'
@@ -321,7 +319,14 @@ function mapAuctionCardToCalculatorSource(property) {
   const area = areaRaw != null && areaRaw !== '' ? String(areaRaw) : ''
 
   const rooms = property.beds ?? property.rooms ?? property.bedrooms
-  const city = pickCityForAuctionCalculator(property)
+  const locationParts = String(property.location || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const city = String(property.city || '').trim()
+    || (locationParts.length >= 3 ? locationParts[1] : pickCityForAuctionCalculator(property))
+  const country = String(property.country || '').trim()
+    || (locationParts.length >= 3 ? locationParts[0] : null)
 
   return {
     propertyType,
@@ -329,9 +334,31 @@ function mapAuctionCardToCalculatorSource(property) {
     rooms,
     bedrooms: property.bedrooms,
     city,
-    country: property.country ?? null,
+    country,
     address: property.address != null ? String(property.address) : '',
     location: property.location != null ? String(property.location) : '',
+    marketReferencePrice: resolvePositivePropertyPrice(property),
+    currency: property.currency || 'EUR',
+  }
+}
+
+function withListingPriceFallback(result, initialSource, areaNum, t) {
+  if (Number.isFinite(Number(result?.recommendedPrice)) && Number(result.recommendedPrice) > 0) return result
+  const referencePrice = Number(initialSource.marketReferencePrice)
+  if (!Number.isFinite(referencePrice) || referencePrice <= 0) return result
+
+  return {
+    ...(result || {}),
+    recommendedPrice: referencePrice,
+    recommendedPricePerSqm: referencePrice / areaNum,
+    currency: initialSource.currency || 'EUR',
+    similarProperties: Array.isArray(result?.similarProperties) ? result.similarProperties : [],
+    searchParams: {
+      ...(result?.searchParams || {}),
+      method: 'listing_price_fallback',
+      sources: [t('comparePage_marketFallbackSource')],
+    },
+    note: t('comparePage_marketFallbackNote'),
   }
 }
 
@@ -343,6 +370,12 @@ async function estimateMarketPrice(initialSource, t) {
   }
   if (!String(mapped.city || '').trim()) {
     throw new Error(t('comparePage_errNeedCity'))
+  }
+
+  const country = String(initialSource.country || '').trim().toLowerCase()
+  const externalMarketSupported = !country || /spain|españa|испан|portugal|португал|france|франц|italy|итал|germany|герман|united states|usa|сша|united kingdom|britain|англи/.test(country)
+  if (!externalMarketSupported) {
+    return withListingPriceFallback(null, initialSource, areaNum, t)
   }
 
   let district = mapped.district || 'all'
@@ -390,7 +423,7 @@ async function estimateMarketPrice(initialSource, t) {
   if (!response.data?.success) {
     throw new Error(response.data?.error || t('comparePage_errCalc'))
   }
-  return response.data.data
+  return withListingPriceFallback(response.data.data, initialSource, areaNum, t)
 }
 
 function sanitizeCalcAddress(value = '') {
@@ -401,16 +434,20 @@ function sanitizeCalcAddress(value = '') {
   return text
 }
 
-function formatCalcEur(price, dash = '—') {
+function formatCalcEur(price, dash = '—', currency = 'EUR') {
   if (price == null || price === '') return dash
   const n = Number(price)
   if (!Number.isFinite(n)) return dash
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  try {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: currency || 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(n)
+  } catch {
+    return `${Math.round(n).toLocaleString('es-ES')} ${currency || ''}`.trim()
+  }
 }
 
 function buildRows(left, right, t) {
@@ -656,9 +693,6 @@ const Compare = () => {
   const isMobile = useMobileLayout(767)
   const { favoritesLoading } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
-  const { resolved: subscriptionResolved, allowed: hasCalculatorAccess } =
-    useSubscriptionCalculatorAccess()
-
   const listLoading = catalogLoading || favoritesLoading
   const compareUserId = getStoredNumericUserId()
   const snapshotRef = useRef(undefined)
@@ -668,7 +702,6 @@ const Compare = () => {
   const skipShowdownForPairRef = useRef(
     snapshotRef.current?.showdownCompleted ? snapshotRef.current.pairKey : null,
   )
-  const [compareInvestorDrawerOpen, setCompareInvestorDrawerOpen] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState(() => (
     Array.isArray(snapshotRef.current?.selectedKeys) ? snapshotRef.current.selectedKeys : []
   ))
@@ -848,13 +881,8 @@ const Compare = () => {
   )
   const aiScoreView = useMemo(() => buildAiScoreView(aiScores), [aiScores])
 
-  const requestAiAnalysis = useCallback(async (options = {}) => {
+  const requestAiAnalysis = useCallback(async () => {
     if (!pair || aiLoading) return
-    if (!subscriptionResolved) return
-    if (!hasCalculatorAccess) {
-      if (options?.openEntitlement !== false) setCompareInvestorDrawerOpen(true)
-      return
-    }
 
     const { requestId, signal } = aiRequestGuardRef.current.start()
     setAiLoading(true)
@@ -873,7 +901,7 @@ const Compare = () => {
     } finally {
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
     }
-  }, [aiLoading, hasCalculatorAccess, pair, subscriptionResolved, t])
+  }, [aiLoading, pair, t])
 
   useEffect(() => {
     const nextPairKey = pair?.left?.key && pair?.right?.key
@@ -904,7 +932,6 @@ const Compare = () => {
     setAiResult(null)
     setAiError(null)
     setAiLoading(false)
-    setCompareInvestorDrawerOpen(false)
     setCalcData({ left: null, right: null })
     setCalcError({ left: null, right: null })
     setCalcLoading(false)
@@ -994,9 +1021,7 @@ const Compare = () => {
     void runCompareCalculator()
   }, [canRunCompareCalculator, pairKey, runCompareCalculator])
 
-  const aiReadyForShowdown = Boolean(
-    subscriptionResolved && (!hasCalculatorAccess || aiResult || aiError),
-  )
+  const aiReadyForShowdown = Boolean(aiResult || aiError)
   const calcReadyForShowdown = Boolean(
     !canRunCompareCalculator || (
       !calcLoading &&
@@ -1043,23 +1068,21 @@ const Compare = () => {
 
   useEffect(() => {
     if (
-      showdownStage !== 'playing' ||
+      (isMobile && showdownStage !== 'playing') ||
       !pair ||
       !pairKey ||
-      !subscriptionResolved ||
       showdownAnalysisStartedKey === pairKey
     ) return
 
     setShowdownAnalysisStartedKey(pairKey)
-    if (hasCalculatorAccess) void requestAiAnalysis({ openEntitlement: false })
+    void requestAiAnalysis()
   }, [
-    hasCalculatorAccess,
+    isMobile,
     pair,
     pairKey,
     requestAiAnalysis,
     showdownAnalysisStartedKey,
     showdownStage,
-    subscriptionResolved,
   ])
 
   useEffect(() => {
@@ -1233,99 +1256,28 @@ const Compare = () => {
                 <h2 id="compare-table-heading" className="compare-table-heading">
                   {t('comparePage_title')}
                 </h2>
+                <CompareMobileMetrics
+                  left={pair.left}
+                  right={pair.right}
+                  rows={tableRows}
+                  onReplace={replaceSelectedSide}
+                  onClear={clearSelection}
+                />
                 {isMobile ? (
-                  <>
-                    <CompareMobileMetrics
-                      left={pair.left}
-                      right={pair.right}
-                      rows={tableRows}
-                      onReplace={replaceSelectedSide}
-                      onClear={clearSelection}
-                    />
-                    <CompareMobileMarketEstimate
-                      pair={pair}
-                      calcLoading={calcLoading}
-                      calcData={calcData}
-                      calcError={calcError}
-                      dash={dash}
-                      formatValue={formatCalcEur}
-                    />
-                    <CompareDecisionSummary
-                      pair={pair}
-                      summary={decisionSummary}
-                      onOpenCalculator={openInvestorPanel}
-                    />
-                  </>
-                ) : (
-                  <div className="compare-table-wrap">
-                    <table className="compare-table">
-                    <thead>
-                      <tr>
-                        <th scope="col" className="compare-table-param">
-                          {t('comparePage_param')}
-                        </th>
-                        <th scope="col" className="compare-table-col">
-                          <span className="compare-table-col-head">
-                            {pair.left.property.name || pair.left.property.title}
-                          </span>
-                        </th>
-                        <th scope="col" className="compare-table-col">
-                          <span className="compare-table-col-head">
-                            {pair.right.property.name || pair.right.property.title}
-                          </span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableRows.map((row) => (
-                        <tr key={row.id}>
-                          <th scope="row" className="compare-table-param">
-                            {row.label}
-                          </th>
-                          <td
-                            className={[
-                              'compare-table-cell',
-                              !row.displayOnly && row.winner === 'left' && 'compare-table-cell--win',
-                              !row.displayOnly && row.winner === 'tie' && 'compare-table-cell--tie',
-                              row.displayOnly && 'compare-table-cell--plain',
-                            ]
-                              .filter(Boolean)
-                              .join(' ')}
-                          >
-                            {row.left}
-                            {!row.displayOnly && row.winner === 'left' && (
-                              <span className="compare-win-tag">{t('comparePage_better')}</span>
-                            )}
-                          </td>
-                          <td
-                            className={[
-                              'compare-table-cell',
-                              !row.displayOnly && row.winner === 'right' && 'compare-table-cell--win',
-                              !row.displayOnly && row.winner === 'tie' && 'compare-table-cell--tie',
-                              row.displayOnly && 'compare-table-cell--plain',
-                            ]
-                              .filter(Boolean)
-                              .join(' ')}
-                          >
-                            {row.right}
-                            {!row.displayOnly && row.winner === 'right' && (
-                              <span className="compare-win-tag">{t('comparePage_better')}</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {!isMobile && (
-                  <CompareDecisionSummary
+                  <CompareMobileMarketEstimate
                     pair={pair}
-                    summary={decisionSummary}
-                    onOpenCalculator={openInvestorPanel}
+                    calcLoading={calcLoading}
+                    calcData={calcData}
+                    calcError={calcError}
+                    dash={dash}
+                    formatValue={formatCalcEur}
                   />
-                )}
+                ) : null}
+                <CompareDecisionSummary
+                  pair={pair}
+                  summary={decisionSummary}
+                  onOpenCalculator={openInvestorPanel}
+                />
 
                 {!isMobile && showInvestorPanelCta && (
                   <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
@@ -1365,9 +1317,7 @@ const Compare = () => {
                       type="button"
                       className="compare-ai-refresh"
                       onClick={requestAiAnalysis}
-                      disabled={aiLoading || !subscriptionResolved}
-                      aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                      title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
+                      disabled={aiLoading}
                     >
                       <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
                       {aiResult ? t('comparePage_aiRefresh') : t('comparePage_aiGet')}
@@ -1376,11 +1326,6 @@ const Compare = () => {
                   <p className="compare-ai-disclaimer">
                     {t('comparePage_aiDisclaimer')}
                   </p>
-                  {!subscriptionResolved ? (
-                    <p id="compare-ai-entitlement-help" className="compare-ai-entitlement-help" role="status" aria-live="polite">
-                      {t('comparePage_aiEntitlementHelp')}
-                    </p>
-                  ) : null}
 
                   {!aiLoading && !aiError && !aiResult && (
                     <div className="compare-ai-idle">
@@ -1390,9 +1335,6 @@ const Compare = () => {
                         type="button"
                         className="compare-ai-idle-action"
                         onClick={requestAiAnalysis}
-                        disabled={!subscriptionResolved}
-                        aria-describedby={!subscriptionResolved ? 'compare-ai-entitlement-help' : undefined}
-                        title={!subscriptionResolved ? t('comparePage_aiWaitTitle') : undefined}
                       >
                         {t('comparePage_aiGet')}
                       </button>
@@ -1417,9 +1359,6 @@ const Compare = () => {
 
                   {!aiLoading && aiResult?.summary && (
                     <div className="compare-ai-summary">
-                      <span className="compare-ai-summary-icon" aria-hidden>
-                        <HiOutlineSparkles />
-                      </span>
                       <div>
                         <span className="compare-ai-summary-label">{t('comparePage_resultEyebrow')}</span>
                         <p>{aiResult.summary}</p>
@@ -1471,12 +1410,10 @@ const Compare = () => {
                               <div className={row.winner === 'left' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
                                 <span>{t('comparePage_object1')}</span>
                                 <strong>{row.left}</strong>
-                                {row.winner === 'left' ? <FiCheckCircle className="compare-ai-value-mark" aria-hidden /> : null}
                               </div>
                               <div className={row.winner === 'right' ? 'compare-ai-mobile-value compare-ai-mobile-value--win' : 'compare-ai-mobile-value'}>
                                 <span>{t('comparePage_object2')}</span>
                                 <strong>{row.right}</strong>
-                                {row.winner === 'right' ? <FiCheckCircle className="compare-ai-value-mark" aria-hidden /> : null}
                               </div>
                             </div>
                           </article>
@@ -1536,7 +1473,7 @@ const Compare = () => {
                               ) : calcError.left ? (
                                 <span className="compare-calculator-cell-error">{calcError.left}</span>
                               ) : (
-                                formatCalcEur(calcData.left?.recommendedPrice, dash)
+                                formatCalcEur(calcData.left?.recommendedPrice, dash, calcData.left?.currency)
                               )}
                             </td>
                             <td className="compare-table-cell compare-calculator-result-cell">
@@ -1548,7 +1485,7 @@ const Compare = () => {
                               ) : calcError.right ? (
                                 <span className="compare-calculator-cell-error">{calcError.right}</span>
                               ) : (
-                                formatCalcEur(calcData.right?.recommendedPrice, dash)
+                                formatCalcEur(calcData.right?.recommendedPrice, dash, calcData.right?.currency)
                               )}
                             </td>
                           </tr>
@@ -1556,8 +1493,8 @@ const Compare = () => {
                             <th scope="row" className="compare-table-param">
                               {t('comparePage_calcPricePerSqm')}
                             </th>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm, dash)}</td>
-                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm, dash)}</td>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm, dash, calcData.left?.currency)}</td>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm, dash, calcData.right?.currency)}</td>
                           </tr>
                           <tr>
                             <th scope="row" className="compare-table-param">
@@ -1652,11 +1589,6 @@ const Compare = () => {
         )}
       </div>
 
-      <CompareInvestorProDrawer
-        isOpen={compareInvestorDrawerOpen}
-        onClose={() => setCompareInvestorDrawerOpen(false)}
-        onOpenInvestorPanel={() => navigate('/calculator')}
-      />
     </div>
   )
 }

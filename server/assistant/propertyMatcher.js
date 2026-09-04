@@ -38,17 +38,61 @@ function propertyPrice(item) {
 }
 
 function propertyText(item) {
+  const listText = (value) => {
+    if (Array.isArray(value)) return value.join(' ')
+    if (value && typeof value === 'object') return Object.values(value).join(' ')
+    return value
+  }
   return [
     item?.title,
     item?.name,
     item?.location,
+    item?.address,
+    item?.description,
     item?.property_type,
     item?.propertyType,
+    listText(item?.features),
+    listText(item?.amenities),
+    listText(item?.comforts),
+    item?.view,
     item?.slug,
   ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
+}
+
+const PREFERENCE_SIGNALS = [
+  { request: /(море|пляж|набережн|sea|beach|ocean|mar|playa|meer|strand)/i, listing: /(море|пляж|набережн|sea|beach|ocean|mar|playa|meer|strand)/i },
+  { request: /(бассейн|pool|piscina|schwimmbad|piscine)/i, listing: /(бассейн|pool|piscina|schwimmbad|piscine)/i },
+  { request: /(центр|central|downtown|centro|zentrum|centre)/i, listing: /(центр|central|downtown|centro|zentrum|centre)/i },
+  { request: /(террас|балкон|terrace|balcony|terraza|balkon|terrasse)/i, listing: /(террас|балкон|terrace|balcony|terraza|balkon|terrasse)/i },
+  { request: /(вид|панорам|view|vista|aussicht|vue)/i, listing: /(вид|панорам|view|vista|aussicht|vue)/i },
+  { request: /(новострой|новый дом|new build|new construction|obra nueva|neubau)/i, listing: /(новострой|новый дом|new build|new construction|obra nueva|neubau)/i },
+  { request: /(паркинг|гараж|parking|garage|aparcamiento)/i, listing: /(паркинг|гараж|parking|garage|aparcamiento)/i },
+  { request: /(мебел|furnished|möbliert|amueblado|meublé)/i, listing: /(мебел|furnished|möbliert|amueblado|meublé)/i },
+  { request: /(гольф|golf)/i, listing: /(гольф|golf)/i },
+]
+
+function preferenceScore(item, dialog) {
+  const request = String(dialog?.lastUser || dialog?.rawText || '').toLowerCase()
+  if (!request) return 0
+  const listing = propertyText(item)
+  return PREFERENCE_SIGNALS.reduce((score, signal) => {
+    if (!signal.request.test(request)) return score
+    return score + (signal.listing.test(listing) ? 3 : -0.5)
+  }, 0)
+}
+
+function normalizeTextList(value, limit = 12) {
+  const source = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object'
+      ? Object.entries(value).filter(([, enabled]) => enabled).map(([name]) => name)
+      : typeof value === 'string'
+        ? value.split(/[,;\n]/)
+        : []
+  return source.map((item) => String(item).trim()).filter(Boolean).slice(0, limit)
 }
 
 function itemMatchesLocation(item, dialog) {
@@ -135,6 +179,7 @@ export function slimProperty(item) {
     slug: item.slug || null,
     title: String(item.title || item.name || `Объект ${item.id}`).slice(0, 80),
     location: String(item.location || '').slice(0, 80),
+    address: String(item.address || '').slice(0, 160) || null,
     country: item.country || null,
     city: item.city || null,
     price:
@@ -151,7 +196,13 @@ export function slimProperty(item) {
       : null,
     area: item.area || item.sqft || null,
     rooms: item.rooms || item.beds || item.bedrooms || null,
+    bathrooms: item.bathrooms || item.baths || null,
     property_type: item.property_type || item.propertyType || null,
+    description: String(item.description || '').slice(0, 700) || null,
+    features: normalizeTextList(item.features || item.comforts),
+    amenities: normalizeTextList(item.amenities),
+    view: String(item.view || '').slice(0, 120) || null,
+    yield: item.yield ?? item.rental_yield ?? item.roi ?? null,
     sale_type: item.sale_type || null,
     isAuction: Boolean(item.isAuction || item.is_auction),
     isShare: isShareListing(item),
@@ -184,6 +235,7 @@ export function searchCatalog(properties, dialog, limit = 5) {
       score += investmentVehicleScore(item, dialog?.preferInvestmentVehicles)
       score += roomsScore(item, dialog?.rooms)
       score += priceScore(price, band)
+      score += preferenceScore(item, dialog)
       if (item.isAuction) score += 0.5
       return { item, score, price }
     })
@@ -240,7 +292,17 @@ export function formatCatalogForPrompt(match, lang = 'ru') {
   const lines = match.items.map((item) => {
     const price = item.currentBid || item.price || 0
     const kind = item.isShare ? 'shares' : item.isDebt ? 'debt' : item.isAuction ? 'auction' : 'buy now'
-    return `- id=${item.id} | ${item.title} | ${item.location} | €${Number(price).toLocaleString('en-US')} | ${kind}`
+    const details = [
+      item.area ? `${item.area} m²` : '',
+      item.rooms ? `${item.rooms} rooms` : '',
+      item.bathrooms ? `${item.bathrooms} baths` : '',
+      item.features?.length ? `features: ${item.features.join(', ')}` : '',
+      item.amenities?.length ? `amenities: ${item.amenities.join(', ')}` : '',
+      item.view ? `view: ${item.view}` : '',
+      item.yield ? `yield: ${item.yield}` : '',
+      item.description ? `description: ${item.description.slice(0, 320)}` : '',
+    ].filter(Boolean).join(' | ')
+    return `- id=${item.id} | ${item.title} | ${item.location} | €${Number(price).toLocaleString('en-US')} | ${kind}${details ? ` | ${details}` : ''}`
   })
   return `**ПОДБОРКА ИЗ КАТАЛОГА (используй только эти id в recommendations):**\n${lines.join('\n')}`
 }

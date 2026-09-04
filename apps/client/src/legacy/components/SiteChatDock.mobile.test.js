@@ -35,3 +35,14 @@ test('SiteChatDock is FAB-only and dispatches openAIChat', () => {
   assert.doesNotMatch(dock, /BuyerSheetShell/)
   assert.doesNotMatch(dock, /chat-widget--sheet-drawer/)
 })
+
+test('assistant message hints use icon cards with distinct tones', () => {
+  assert.match(aiPanel, /navigationPresentation/)
+  assert.match(aiPanel, /chat-widget__navigation-icon/)
+  assert.match(aiPanel, /chat-widget__message--rich/)
+  assert.match(css, /chat-widget__navigation-link\[data-tone='rose'\]/)
+  assert.match(css, /chat-widget__button-icon/)
+  assert.match(aiPanel, /assistant-legal-source/)
+  assert.match(aiPanel, /rel="noreferrer noopener"/)
+  assert.match(css, /\.assistant-legal-source__mark/)
+})

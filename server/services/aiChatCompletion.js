@@ -9,8 +9,8 @@ import {
  * @param {object} body — { model, messages, temperature, max_tokens, ... }
  */
 export async function postChatCompletions(body, init = {}) {
-  const provider = getActiveAiProvider()
-  if (!isAiConfigured()) {
+  const provider = init.provider || getActiveAiProvider()
+  if (provider.needsKey && !provider.apiKey) {
     throw new Error(
       `Ключ AI не задан для провайдера «${provider.id}». Укажите ключ в .env или используйте AI_PROVIDER=pollinations (без ключа).`,
     )

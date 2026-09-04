@@ -5,11 +5,12 @@ import { readFile } from 'node:fs/promises'
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
 const results = await readFile(new URL('../components/compare/CompareInvestorResults.jsx', import.meta.url), 'utf8')
 
-test('AI comparison is opened only from a named click handler', () => {
+test('AI comparison starts automatically for a selected pair and remains refreshable', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
   assert.match(page, /onRunAi=\{requestAiAnalysis\}/)
   assert.match(results, /onClick=\{onRunAi\}/)
-  assert.doesNotMatch(page, /useEffect\([\s\S]{0,700}askPropertyCompareAssistant/)
+  assert.match(page, /autoAiPairKeyRef/)
+  assert.match(page, /void requestAiAnalysis\(\)/)
 })
 
 test('AI responses are aborted and request-id guarded when the pair changes or the page unmounts', () => {

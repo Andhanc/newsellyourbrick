@@ -5,13 +5,12 @@ import { readFile } from 'node:fs/promises'
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
 const styles = await readFile(new URL('./Compare.css', import.meta.url), 'utf8')
 
-test('showdown auto-starts AI only with entitlement and never opens the paid drawer automatically', () => {
+test('comparison auto-starts AI for every selected pair without a subscription gate', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
   assert.match(page, /onClick=\{requestAiAnalysis\}/)
-  assert.match(page, /if \(hasCalculatorAccess\) void requestAiAnalysis\(\{ openEntitlement: false \}\)/)
-  assert.match(page, /options\?\.openEntitlement !== false/)
-  assert.match(page, /setCompareInvestorDrawerOpen\(true\)/)
-  assert.doesNotMatch(page, /setTimeout\([\s\S]{0,240}setCompareInvestorDrawerOpen\(true\)/)
+  assert.match(page, /setShowdownAnalysisStartedKey\(pairKey\)[\s\S]*void requestAiAnalysis\(\)/)
+  assert.doesNotMatch(page, /hasCalculatorAccess/)
+  assert.doesNotMatch(page, /CompareInvestorProDrawer/)
 })
 
 test('AI responses are aborted and request-id guarded when the pair changes or the page unmounts', () => {
@@ -22,20 +21,20 @@ test('AI responses are aborted and request-id guarded when the pair changes or t
   assert.match(page, /return \(\) => aiRequestGuardRef\.current\.cancel\(\)/)
 })
 
-test('AI pending, error, and disabled entitlement states are accessible', () => {
+test('AI pending and error states are accessible', () => {
   assert.match(page, /role="status"/)
   assert.match(page, /aria-live="polite"/)
   assert.match(page, /role="alert"/)
-  assert.match(page, /compare-ai-entitlement-help/)
-  assert.match(page, /aria-describedby=/)
+  assert.doesNotMatch(page, /compare-ai-entitlement-help/)
 })
 
 test('AI recommendation uses a shared scorecard and evidence-card layout at every breakpoint', () => {
   assert.match(page, /compare-ai-scoreboard/)
   assert.match(page, /compare-ai-score-card/)
   assert.match(page, /compare-ai-evidence-grid/)
-  assert.match(page, /compare-ai-summary-icon/)
-  assert.match(styles, /21st\.dev-inspired spotlight/)
+  assert.doesNotMatch(page, /compare-ai-summary-icon/)
+  assert.doesNotMatch(page, /FiCheckCircle/)
+  assert.match(styles, /same light comparison-card system/)
   assert.match(styles, /--ai-score-share/)
 })
 
@@ -72,6 +71,15 @@ test('market estimate starts automatically once for each selected pair', () => {
   assert.match(page, /compareCalculatorStartedKeyRef\.current === pairKey/)
   assert.match(page, /compareCalculatorStartedKeyRef\.current = pairKey[\s\S]*void runCompareCalculator\(\)/)
   assert.doesNotMatch(page, /onClick=\{runCompareCalculator\}/)
+})
+
+test('market estimate infers city and country and shows a truthful listing-price fallback', () => {
+  assert.match(page, /locationParts\.length >= 3 \? locationParts\[1\]/)
+  assert.match(page, /locationParts\.length >= 3 \? locationParts\[0\]/)
+  assert.match(page, /withListingPriceFallback/)
+  assert.match(page, /comparePage_marketFallbackSource/)
+  assert.match(page, /comparePage_marketFallbackNote/)
+  assert.match(page, /method: 'listing_price_fallback'/)
 })
 
 test('completed comparison pair and AI/system results persist across navigation', () => {

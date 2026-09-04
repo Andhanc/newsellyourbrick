@@ -4,6 +4,10 @@ import { useUser } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated, getStoredNumericUserId } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
+import {
+  invalidateAssistantUserContext,
+  loadAssistantUserContext,
+} from '../services/assistantUserContext'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -89,6 +93,47 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     }
     return catalogProperties
   }, [recommendationProperties, catalogProperties])
+
+  const assistantUserIdentity = useMemo(() => {
+    const stored = getUserData()
+    const storedName = String(stored?.name || '').trim()
+    const [storedFirstName = '', ...storedLastNameParts] = storedName.split(/\s+/)
+    return {
+      firstName: user?.firstName || stored?.firstName || stored?.first_name || storedFirstName,
+      lastName: user?.lastName || stored?.lastName || stored?.last_name || storedLastNameParts.join(' '),
+      displayName: user?.fullName || storedName,
+      country: stored?.country,
+      city: stored?.city,
+      role: stored?.role,
+      verified: stored?.is_verified === true || stored?.is_verified === 1,
+    }
+  }, [user, userLoaded])
+
+  const assistantDbUserId = useMemo(() => {
+    const storedId = getUserData()?.id || dbUserId
+    return /^\d+$/.test(String(storedId || '')) ? String(storedId) : null
+  }, [dbUserId, user, userLoaded])
+
+  useEffect(() => {
+    if (!isChatOpen || !isLoggedIn || !assistantDbUserId) return
+    void loadAssistantUserContext({
+      userId: assistantDbUserId,
+      identity: assistantUserIdentity,
+      catalog: propertiesForAi,
+    })
+  }, [isChatOpen, isLoggedIn, assistantDbUserId, assistantUserIdentity, propertiesForAi])
+
+  useEffect(() => {
+    const invalidate = () => invalidateAssistantUserContext(assistantDbUserId)
+    window.addEventListener('propertyFavoritesChanged', invalidate)
+    window.addEventListener('subscription-billing-updated', invalidate)
+    window.addEventListener('owner-properties-update', invalidate)
+    return () => {
+      window.removeEventListener('propertyFavoritesChanged', invalidate)
+      window.removeEventListener('subscription-billing-updated', invalidate)
+      window.removeEventListener('owner-properties-update', invalidate)
+    }
+  }, [assistantDbUserId])
 
   const getChatUserId = useMemo(() => {
     if (isLoggedIn) {
@@ -495,10 +540,18 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
+      const userContext = isLoggedIn && assistantDbUserId
+        ? await loadAssistantUserContext({
+            userId: assistantDbUserId,
+            identity: assistantUserIdentity,
+            catalog: propertiesForAi,
+          })
+        : { authenticated: false }
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         nextPreferences,
         propertiesForAi,
+        { userContext },
       )
 
       if (response?.preferences && typeof response.preferences === 'object') {
@@ -521,6 +574,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
           buttons: response.buttons,
           recommendations: response.recommendations,
           navigation: response.navigation,
+          sources: response.sources,
           yieldEstimate: response.yieldEstimate,
         },
       ])

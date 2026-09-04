@@ -6,7 +6,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const KNOWLEDGE_PATH =
   process.env.SYB_KNOWLEDGE_PATH || path.join(__dirname, 'consultant-knowledge.json')
 
-const EXCLUDED_RETRIEVAL_KEYS = new Set(['_admin_meta', 'brand', 'disclaimer'])
+const EXCLUDED_RETRIEVAL_KEYS = new Set([
+  '_admin_meta',
+  'brand',
+  'disclaimer',
+  'access_rules',
+  'site_map',
+])
 
 const STOP_WORDS = new Set([
   'для',
@@ -86,7 +92,7 @@ function getScenarioPriorities(scenario, query) {
   } else if (scenario === 'shares') {
     add('shares', 34)
     add('investor_tools', 12)
-  } else if (scenario === 'visa_docs') {
+  } else if (scenario === 'visa_docs' || scenario === 'spain_property_sale_legal') {
     add('visa_residency', 32)
     add('purchase_documents', 28)
     add('mortgage', 16)
@@ -110,6 +116,19 @@ function getScenarioPriorities(scenario, query) {
   if (/купить\s+сейчас|buy\s*now/i.test(text)) add('buy_now', 26)
   if (/о\s+платформ|что\s+такое\s+sellyourbrick|о\s+вас/i.test(text)) add('platform_overview', 30)
   if (/контакт|менеджер|manager|whatsapp/i.test(text)) add('contacts', 28)
+  if (/бонус|промокод|реферал|приглас.*друг|bonus|promo\s*code|referral/i.test(text)) add('bonuses', 40)
+  if (/кошел|депозит|пополн|вывест|вывод|баланс|wallet|deposit|withdraw|top.?up/i.test(text)) add('wallet_deposit', 38)
+  if (/подписк|тариф|\bpro\b|\bvip\b|subscription|pricing|plan/i.test(text)) add('subscriptions', 36)
+  if (/избран|понрав|сохран.*объект|favorite|favourite|liked/i.test(text)) add('favorites_compare', 34)
+  if (/сравн|compare/i.test(text)) add('favorites_compare', 34)
+  if (/презентац|property\s*ai|отч[её]т|pdf|presentation|report/i.test(text)) add('property_ai', 36)
+  if (/личн.*кабинет|профил|истори.*став|бронирован|booking|profile|account/i.test(text)) add('buyer_cabinet', 32)
+  if (/продав|размест|опубликов|добав.*объект|seller|list.*property|publish/i.test(text)) add('seller_cabinet', 34)
+  if (/поиск|фильтр|карта|каталог|search|filter|map/i.test(text)) add('discovery_tools', 30)
+  if (/купить\s+сейчас|резерв|брон|buy\s*now|reserve/i.test(text)) add('buy_now', 32)
+  if (/приложен|скачать|app\b|android|ios/i.test(text)) add('content_and_app', 28)
+  if (/новост|стать|news|article/i.test(text)) add('content_and_app', 28)
+  if (/лотере|розыгрыш|билет|lottery|ticket/i.test(text)) add('lottery', 30)
   return priorities
 }
 
@@ -135,6 +154,8 @@ export function selectRelevantKnowledge(kb, options = {}) {
   const selected = {
     brand: kb.brand,
     disclaimer: kb.disclaimer,
+    access_rules: kb.access_rules,
+    site_map: kb.site_map,
   }
   for (const entry of ranked) {
     selected[entry.key] = entry.value

@@ -8,7 +8,7 @@ import {
 } from './propertyAiGenerate.js'
 
 test('versions generated reports so legacy cached PDFs are not reused', () => {
-  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v8:tiffany-editorial-v2$/)
+  assert.match(PROPERTY_AI_REPORT_MODEL, /property-ai-v9:tiffany-canva-ai-v3$/)
 })
 
 test('sends relative listing photos to the multimodal model as absolute URLs', async () => {
@@ -36,6 +36,9 @@ test('sends relative listing photos to the multimodal model as absolute URLs', a
   assert.equal(userContent[1].image_url.url, 'https://sell.example/uploads/real.jpg')
   assert.ok(requestBody.response_format.json_schema.schema.required.includes('directAnswer'))
   assert.ok(requestBody.response_format.json_schema.schema.required.includes('neighborhoodSummary'))
+  assert.ok(requestBody.response_format.json_schema.schema.required.includes('slides'))
+  assert.equal(requestBody.response_format.json_schema.schema.properties.slides.minItems, 7)
+  assert.ok(requestBody.messages[0].content.includes('Полностью спроектируй презентацию сам'))
   assert.equal(requestBody.response_format.json_schema.schema.properties.strengths.minItems, 2)
   assert.equal(requestBody.response_format.json_schema.schema.properties.risks.minItems, 2)
 })

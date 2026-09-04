@@ -108,3 +108,37 @@ test('does not invent a city that is missing from the catalog', () => {
   const match = searchCatalog(catalog, dialog, 5)
   assert.ok(!match.items.some((item) => /ibiza|ибиц/i.test(item.location)))
 })
+
+test('semantic preferences from the latest request improve ranking', () => {
+  const featureCatalog = [
+    {
+      id: 51,
+      title: 'City apartment',
+      location: 'Spain, Barcelona',
+      price: 400000,
+      rooms: 2,
+      property_type: 'apartment',
+      description: 'Quiet residential street near offices.',
+    },
+    {
+      id: 52,
+      title: 'Coastal apartment',
+      location: 'Spain, Barcelona',
+      price: 405000,
+      rooms: 2,
+      property_type: 'apartment',
+      description: 'Sea view and a large terrace.',
+      amenities: ['swimming pool', 'parking'],
+    },
+  ]
+  const dialog = analyzeConversation(
+    [{ sender: 'user', text: 'для себя, Испания, Барселона, квартира до 410000, нужен вид на море и бассейн' }],
+    'ru',
+    {},
+    { catalog: featureCatalog },
+  )
+  const match = searchCatalog(featureCatalog, dialog, 2)
+  assert.equal(match.ids[0], 52)
+  assert.match(match.items[0].description, /Sea view/i)
+  assert.deepEqual(match.items[0].amenities, ['swimming pool', 'parking'])
+})

@@ -491,11 +491,11 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
       auction:
         'На аукционе вы смотрите лот, делаете ставку выше текущей и следите за таймером. Если ставка в конце — время может продлиться. Побеждает лучшая ставка, дальше оформление через платформу.',
       visa:
-        'По ВНЖ ориентиры такие: Испания — инвестиционный ВНЖ (часто от €500,000), Дубай — резидентская виза инвестора в недвижимость (порог зависит от объекта). Точные условия лучше уточнить у менеджера и юриста.',
+        'Покупка недвижимости в Испании больше не даёт права на новую Golden Visa: режим отменён с 3 апреля 2025 года. Для заявлений, поданных раньше, действует переходный режим. По уже выданному ВНЖ нужно проверить дату и основание разрешения.',
       docs:
-        'Обычно нужны паспорт, подтверждение средств, страховка; для Испании — NIE и нотариат, для Дубая — регистрация в DLD. Полный список зависит от страны и типа сделки.',
+        'Для продажи недвижимости в Испании обычно проверяют личность и NIE продавца, escritura, актуальную Nota Simple, кадастровые данные, IBI, энергетический сертификат и долги перед comunidad. Точный список зависит от объекта, региона и статуса продавца.',
       mortgage:
-        'Ипотека в Испании для нерезидентов обычно возможна: банк смотрит доход, кредитную историю и объект. Часто нужны паспорт, NIE, справки о доходах, выписки со счетов и оценка недвижимости; первый взнос нередко 30–40%. Точные условия зависят от банка — могу связать с менеджером или открыть Умную панель инвестора для сценария с кредитом.',
+        'Ипотека в Испании не имеет одной актуальной ставки или универсального первого взноса. Нужно проверить свежий индекс Banco de España и предложение конкретного банка: TIN, TAE, срок, LTV, условия скидки и дату действия. Без live-проверки я не буду называть процент.',
       buyType:
         'На SellYourBrick обычно три формата: аукцион — конкурентная цена и фиксированный таймер; «купить сейчас» — быстрее, если цена вас устраивает; доли (shares) — меньший вход в объект. Для жизни чаще смотрят готовый лот/buy-now, для инвестиций — аукцион или доли. Могу подобрать объекты или открыть калькулятор сценария.',
       investAdvice: (budget) =>
@@ -542,11 +542,11 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
       auction:
         'On an auction you view a lot, place a bid above the current one, and watch the timer. Late bids can extend time. Highest bid wins, then closing goes through the platform.',
       visa:
-        'Residency guide: Spain often from €500,000 (investor residence); Dubai property investor residence depends on the asset. Confirm details with a manager and lawyer.',
+        'Buying Spanish property no longer qualifies for a new Golden Visa: the route ended on 3 April 2025. Earlier applications follow transitional rules. An existing permit must be checked against its date and legal basis.',
       docs:
-        'Usually passport, proof of funds, insurance; Spain also needs NIE and notary steps; Dubai needs DLD registration. Exact checklist depends on country and deal type.',
+        'For a Spanish property sale, the usual checks include the seller’s identity and NIE, title deed, current Nota Simple, cadastral data, IBI, energy certificate and community debts. The exact list depends on the asset, region and seller status.',
       mortgage:
-        'Mortgages in Spain for non-residents are often possible: banks review income, credit history, and the property. Typical papers: passport, NIE, income proof, bank statements, valuation; down payment is often 30–40%. Exact terms vary by bank — I can connect you with a manager or open the smart investor panel for a loan scenario.',
+        'There is no single current Spanish mortgage rate or universal deposit. A current answer must check Banco de España and the selected bank’s TIN, TAE, term, LTV, discounts and offer date. I will not quote a percentage without a live check.',
       buyType:
         'On SellYourBrick there are usually three formats: auction — competitive price with a timer; buy now — faster if the price works; shares — smaller entry into a property. For living, people often prefer ready lots/buy-now; for investing — auction or shares. I can match listings or open the investor calculator.',
       investAdvice: (budget) =>
@@ -591,11 +591,11 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
       auction:
         'En la subasta ves el lote, pujas por encima de la oferta actual y sigues el temporizador. Una puja tardía puede ampliar el tiempo. Gana la puja más alta y el cierre se hace a través de la plataforma.',
       visa:
-        'Residencia: en España suele partir de 500.000 € (residencia por inversión); en Dubái la visa de inversor inmobiliario depende del activo. Confirma los detalles con un manager y un abogado.',
+        'Comprar un inmueble en España ya no permite solicitar una nueva Golden Visa: la vía terminó el 3 de abril de 2025. Las solicitudes anteriores siguen el régimen transitorio. Un permiso existente debe revisarse según su fecha y fundamento.',
       docs:
-        'Suelen hacer falta pasaporte, prueba de fondos y seguro; en España también NIE y notaría; en Dubái, registro en DLD. La lista exacta depende del país y del tipo de operación.',
+        'Para vender un inmueble en España suelen revisarse la identidad y el NIE del vendedor, escritura, Nota Simple actual, Catastro, IBI, certificado energético y deudas con la comunidad. La lista exacta depende del inmueble, región y situación del vendedor.',
       mortgage:
-        'La hipoteca en España para no residentes suele ser posible: el banco revisa ingresos, historial crediticio y el inmueble. Documentos típicos: pasaporte, NIE, justificación de ingresos, extractos bancarios y tasación; la entrada suele ser del 30–40%. Las condiciones exactas dependen del banco: puedo conectarte con un manager o abrir el panel inteligente del inversor para un escenario con crédito.',
+        'No existe un único tipo hipotecario vigente ni una entrada universal en España. Hay que comprobar Banco de España y la oferta del banco elegido: TIN, TAE, plazo, LTV, bonificaciones y fecha de vigencia. No indicaré un porcentaje sin verificación en directo.',
       buyType:
         'En SellYourBrick hay tres formatos habituales: subasta — precio competitivo con temporizador; comprar ahora — más rápido si el precio te encaja; shares — entrada menor en un inmueble. Para vivir suele convenir lote listo/buy-now; para invertir — subasta o shares. Puedo buscar inmuebles o abrir el calculador del inversor.',
       investAdvice: (budget) =>
@@ -689,7 +689,7 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
     buttons = [t.btnManager, t.btnPick]
   } else if (docsIntent) {
     replyText = t.docs
-    buttons = [t.btnSpain, t.btnDubai, t.btnManager]
+    buttons = [t.btnSpain, t.btnManager]
   } else if (yieldEstimate) {
     replyText = t.yield(yieldEstimate)
   } else if (navigation.length && /(где|открой|открыть|перейди|перейти|покажи|навигац|раздел|страниц|калькулятор|карта|доли|open|show|go\s+to|abre|abrir|muéstrame|muestrame|mapa|calculadora)/i.test(lower)) {

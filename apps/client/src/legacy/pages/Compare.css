@@ -5,6 +5,9 @@
   --compare-ink: #0f172a;
   --compare-muted: #64748b;
   --compare-font: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --compare-card-heading-font: var(--buyer-font-display, 'Montserrat', system-ui, sans-serif);
+  --compare-card-heading-weight: 800;
+  --compare-card-heading-tracking: -0.03em;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1806,4 +1809,27 @@
   .compare-page .compare-empty-button:hover {
     background: #007d8a;
   }
+}
+
+/* One display treatment for every heading inside comparison cards. */
+.compare-page .compare-mobile__group-head h3,
+.compare-page .compare-mobile__metric-label,
+.compare-page .compare-market__header h2,
+.compare-page .compare-market__row h3,
+.compare-page .compare-market__notes h3,
+.compare-page .compare-market__similar-col h4,
+.compare-page .compare-decision__title,
+.compare-page .compare-ai-title,
+.compare-page .compare-ai-mobile-card h3,
+.compare-page .compare-investor__intro h2,
+.compare-page .compare-investor-group__head h3,
+.compare-page .compare-investor-point h4,
+.compare-page .compare-investor-cta-title,
+.compare-page .compare-calculator-results-title,
+.compare-page .compare-calculator-similar-heading,
+.compare-page .compare-empty-title {
+  font-family: var(--compare-card-heading-font);
+  font-style: normal;
+  font-weight: var(--compare-card-heading-weight);
+  letter-spacing: var(--compare-card-heading-tracking);
 }

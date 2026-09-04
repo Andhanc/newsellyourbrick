@@ -25,6 +25,8 @@ test('mobile market estimate keeps calculator states and data visible', () => {
   assert.match(component, /comparePage_calcSources/)
   assert.match(component, /comparePage_calcNote/)
   assert.match(component, /similarProperties/)
+  assert.match(component, /calcData\.left\?\.currency/)
+  assert.match(component, /calcData\.right\?\.currency/)
   assert.match(component, /aria-live="polite"/)
 })
 

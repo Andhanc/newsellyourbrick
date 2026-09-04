@@ -7,7 +7,27 @@ import { enrichPropertyAiNeighborhood } from './propertyAiNeighborhood.js'
 
 export const PROPERTY_AI_MODEL = process.env.PROPERTY_AI_MODEL || 'google/gemini-3.5-flash'
 export { PROPERTY_AI_PDF_TEMPLATE_VERSION }
-export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v8:${PROPERTY_AI_PDF_TEMPLATE_VERSION}`
+export const PROPERTY_AI_REPORT_MODEL = `${PROPERTY_AI_MODEL}:property-ai-v9:${PROPERTY_AI_PDF_TEMPLATE_VERSION}`
+
+const SLIDE_LAYOUTS = [
+  'cover',
+  'photo_statement',
+  'split',
+  'cards',
+  'stats',
+  'chart',
+  'comparison',
+  'gallery',
+  'timeline',
+  'neighborhood',
+  'conclusion',
+]
+
+const SLIDE_ICONS = [
+  'home', 'key', 'area', 'rooms', 'location', 'price', 'check', 'alert', 'shield',
+  'trend', 'school', 'transport', 'store', 'medical', 'tree', 'document', 'clock',
+  'building', 'camera', 'spark',
+]
 
 const REPORT_JSON_SCHEMA = {
   name: 'property_ai_report',
@@ -15,7 +35,7 @@ const REPORT_JSON_SCHEMA = {
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['directAnswer', 'shortAnswer', 'title', 'summary', 'strengths', 'risks', 'metrics', 'sections', 'conclusion', 'assumptions', 'neighborhoodSummary', 'infrastructureHighlights'],
+    required: ['directAnswer', 'shortAnswer', 'title', 'summary', 'strengths', 'risks', 'metrics', 'sections', 'conclusion', 'assumptions', 'neighborhoodSummary', 'infrastructureHighlights', 'slides'],
     properties: {
       directAnswer: { type: 'string' },
       shortAnswer: { type: 'string' },
@@ -41,6 +61,58 @@ const REPORT_JSON_SCHEMA = {
       assumptions: { type: 'array', items: { type: 'string' } },
       neighborhoodSummary: { type: 'string' },
       infrastructureHighlights: { type: 'array', minItems: 2, maxItems: 10, items: { type: 'string' } },
+      slides: {
+        type: 'array', minItems: 7, maxItems: 10,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['layout', 'kicker', 'title', 'body', 'bullets', 'cards', 'chart', 'imageIndices'],
+          properties: {
+            layout: { type: 'string', enum: SLIDE_LAYOUTS },
+            kicker: { type: 'string' },
+            title: { type: 'string' },
+            body: { type: 'string' },
+            bullets: { type: 'array', maxItems: 6, items: { type: 'string' } },
+            cards: {
+              type: 'array', maxItems: 4,
+              items: {
+                type: 'object', additionalProperties: false,
+                required: ['title', 'value', 'body', 'icon', 'tone'],
+                properties: {
+                  title: { type: 'string' },
+                  value: { type: 'string' },
+                  body: { type: 'string' },
+                  icon: { type: 'string', enum: SLIDE_ICONS },
+                  tone: { type: 'string', enum: ['tiffany', 'cream', 'white', 'ink'] },
+                },
+              },
+            },
+            chart: {
+              type: 'object', additionalProperties: false,
+              required: ['type', 'title', 'unit', 'caption', 'labels', 'series'],
+              properties: {
+                type: { type: 'string', enum: ['none', 'bar', 'line', 'donut'] },
+                title: { type: 'string' },
+                unit: { type: 'string' },
+                caption: { type: 'string' },
+                labels: { type: 'array', maxItems: 6, items: { type: 'string' } },
+                series: {
+                  type: 'array', maxItems: 3,
+                  items: {
+                    type: 'object', additionalProperties: false,
+                    required: ['name', 'values'],
+                    properties: {
+                      name: { type: 'string' },
+                      values: { type: 'array', maxItems: 6, items: { type: 'number' } },
+                    },
+                  },
+                },
+              },
+            },
+            imageIndices: { type: 'array', maxItems: 6, items: { type: 'integer', minimum: 0, maximum: 5 } },
+          },
+        },
+      },
     },
   },
 }
@@ -99,7 +171,7 @@ export async function requestPropertyAiModel({ category, question, property }, o
   const mediaBaseUrl = overrides.mediaBaseUrl || propertyAiMediaBaseUrl()
   const pickImages = overrides.pickImages || pickReachablePropertyAiImages
 
-  const system = `Ты — осторожный аналитик недвижимости SellYourBrick. Отвечай на русском языке.
+  const system = `Ты — осторожный аналитик недвижимости и арт-директор презентаций SellYourBrick. Отвечай на русском языке.
 Сначала прямо ответь на заданный вопрос в поле directAnswer: 2–4 содержательных предложения.
 Используй только факты из объявления и видимых фотографий. Не придумывай район, состояние, доходность, аренду, документы или юридические обстоятельства.
 Для района используй только nearbyInfrastructure: это проверенные точки OpenStreetMap с приблизительным расстоянием по прямой. Подробно объясняй пользу инфраструктуры для повседневной жизни, семьи и ликвидности.
@@ -107,7 +179,12 @@ export async function requestPropertyAiModel({ category, question, property }, o
 Любые расчёты называй ориентировочными и перечисляй допущения. Риски формулируй как пункты для проверки.
 Всегда дай минимум 2 подтверждённых плюса и минимум 2 риска или пункта для проверки. Если данных мало, честно объясни, какой информации не хватает.
 Подготовь 4–8 полезных метрик, 2–4 подробных раздела и вывод со следующими шагами.
-Сделай короткий ответ для чата и содержание красивого отчёта на 7–8 страниц. Не возвращай HTML или markdown.`
+
+Полностью спроектируй презентацию сам в массиве slides. Пользователь не задаёт структуру, количество или параметры слайдов: ты выбираешь их как арт-директор исходя из вопроса, данных и фотографий объекта. Создай 7–10 слайдов и реши, какие факты заслуживают отдельного слайда, какой layout нужен, где использовать фотографию, карточки, иконки или график. Не повторяй одну и ту же структуру: используй минимум четыре разных layout.
+
+Визуальный язык: светлый тёплый бежевый фон, крупные фирменные тифани-блоки SellYourBrick, тонкая типографика, большие фотографии объекта с мягкими скруглениями, чистые карточки, контурные иконки и ясная инфографика. Первый слайд должен быть cover, последний — conclusion. При наличии двух и более фотографий обязательно используй gallery и ещё минимум два фото-ориентированных слайда. Используй cards или stats для ключевых фактов, timeline для последовательности проверок, comparison для взвешенного решения. Добавь chart, только если в объявлении есть честные числовые данные для него; никогда не выдумывай рынок или динамику. Если данных для графика нет, выбери другой layout. Для chart.caption укажи происхождение данных или формулу расчёта. imageIndices — индексы фотографий в исходном порядке, начиная с 0. Пустые неиспользуемые поля возвращай пустыми строками, массивами и chart.type = "none".
+
+Сделай короткий ответ для чата и содержание цельной, визуально разнообразной презентации. Не возвращай HTML или markdown.`
   const text = `Категория: ${category}\nВопрос: ${question}\nДанные объекта:\n${JSON.stringify(compactProperty(property), null, 2)}`
   const content = [{ type: 'text', text }]
   const candidateUrls = (Array.isArray(property.images) ? property.images : [])
@@ -129,11 +206,11 @@ export async function requestPropertyAiModel({ category, question, property }, o
     body: JSON.stringify({
       model: PROPERTY_AI_MODEL,
       messages: [{ role: 'system', content: system }, { role: 'user', content }],
-      temperature: 0.25,
-      max_tokens: 5000,
+      temperature: 0.4,
+      max_tokens: 7500,
       response_format: { type: 'json_schema', json_schema: REPORT_JSON_SCHEMA },
     }),
-    signal: AbortSignal.timeout(32_000),
+    signal: AbortSignal.timeout(45_000),
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {

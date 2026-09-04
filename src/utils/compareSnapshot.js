@@ -1,5 +1,5 @@
 const STORAGE_KEY_PREFIX = 'syb.compare.snapshot:'
-const SNAPSHOT_VERSION = 1
+const SNAPSHOT_VERSION = 2
 const SNAPSHOT_TTL_MS = 60 * 60 * 1_000
 const MAX_KEY_LENGTH = 160
 const SAFE_KEY = /^[a-zA-Z0-9_.:-]+$/

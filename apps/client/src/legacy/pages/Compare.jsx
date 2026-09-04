@@ -499,6 +499,7 @@ const Compare = () => {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
   const aiRequestGuardRef = useRef(null)
+  const autoAiPairKeyRef = useRef(null)
   if (aiRequestGuardRef.current == null) {
     aiRequestGuardRef.current = createCompareAiRequestGuard()
   }
@@ -553,6 +554,7 @@ const Compare = () => {
     if (!a || !b) return null
     return { left: a, right: b }
   }, [favoriteAuctions, selectedKeys])
+  const pairKey = pair ? `${pair.left.key}::${pair.right.key}` : null
 
   const tableRows = useMemo(() => {
     if (!pair) return []
@@ -583,10 +585,17 @@ const Compare = () => {
 
   useEffect(() => {
     aiRequestGuardRef.current.cancel()
+    autoAiPairKeyRef.current = null
     setAiResult(null)
     setAiError(null)
     setAiLoading(false)
   }, [pair?.left?.key, pair?.right?.key])
+
+  useEffect(() => {
+    if (!pair || !pairKey || aiLoading || autoAiPairKeyRef.current === pairKey) return
+    autoAiPairKeyRef.current = pairKey
+    void requestAiAnalysis()
+  }, [aiLoading, pair, pairKey, requestAiAnalysis])
 
   useEffect(() => {
     return () => {

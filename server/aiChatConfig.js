@@ -15,6 +15,13 @@ export function normalizeApiKey(raw) {
 }
 
 const PROVIDERS = {
+  openai: {
+    id: 'openai',
+    url: 'https://api.openai.com/v1/chat/completions',
+    defaultModel: 'gpt-5.6-terra',
+    keyEnv: ['OPENAI_API_KEY'],
+    needsKey: true,
+  },
   pollinations: {
     id: 'pollinations',
     url: 'https://text.pollinations.ai/openai',
@@ -58,10 +65,26 @@ function readKeyForProvider(provider) {
   return ''
 }
 
+function materializeProvider(provider, modelOverride) {
+  let apiKey = readKeyForProvider(provider)
+  if (provider.id === 'pollinations' && process.env.POLLINATIONS_USE_LEGACY_KEY !== 'true') {
+    apiKey = ''
+  }
+  return {
+    id: provider.id,
+    url: provider.url,
+    apiKey,
+    defaultModel: modelOverride || provider.defaultModel,
+    extraHeaders: provider.extraHeaders,
+    needsKey: provider.needsKey,
+  }
+}
+
 function resolveProviderId() {
   const forced = String(process.env.AI_PROVIDER || '').trim().toLowerCase()
   if (forced && PROVIDERS[forced]) return forced
 
+  if (readKeyForProvider(PROVIDERS.openai)) return 'openai'
   if (readKeyForProvider(PROVIDERS.openrouter)) return 'openrouter'
   if (readKeyForProvider(PROVIDERS.groq)) return 'groq'
   if (readKeyForProvider(PROVIDERS.intelligence)) return 'intelligence'
@@ -72,19 +95,19 @@ function resolveProviderId() {
 export function getActiveAiProvider() {
   const id = resolveProviderId()
   const provider = PROVIDERS[id]
-  let apiKey = readKeyForProvider(provider)
-  // Legacy text.pollinations.ai — только анонимные запросы; с Bearer часто 400.
-  if (provider.id === 'pollinations' && process.env.POLLINATIONS_USE_LEGACY_KEY !== 'true') {
-    apiKey = ''
-  }
-  return {
-    id: provider.id,
-    url: provider.url,
-    apiKey,
-    defaultModel: process.env.AI_CHAT_MODEL || provider.defaultModel,
-    extraHeaders: provider.extraHeaders,
-    needsKey: provider.needsKey,
-  }
+  return materializeProvider(provider, process.env.AI_CHAT_MODEL)
+}
+
+/** Умный помощник использует GPT-5.6 Terra напрямую или через OpenRouter. */
+export function getAssistantAiProvider() {
+  const directOpenAi = materializeProvider(PROVIDERS.openai, PROVIDERS.openai.defaultModel)
+  if (directOpenAi.apiKey) return directOpenAi
+
+  return materializeProvider(PROVIDERS.openrouter, 'openai/gpt-5.6-terra')
+}
+
+export function isAssistantAiConfigured() {
+  return Boolean(getAssistantAiProvider().apiKey)
 }
 
 export function isAiConfigured() {
@@ -98,10 +121,9 @@ export function normalizeChatPayload(body, provider) {
   const payload = { ...body }
   const requested = String(payload.model || '').trim()
   const legacyModels = /^deepseek-ai\//i.test(requested) || requested.includes('DeepSeek')
-  if (!requested || legacyModels || provider.id !== 'intelligence') {
-    if (!requested || legacyModels) {
-      payload.model = provider.defaultModel
-    }
+  const openAiOnlyModel = /^gpt-5\.6-(?:sol|terra|luna)$/i.test(requested)
+  if (!requested || legacyModels || (openAiOnlyModel && provider.id !== 'openai')) {
+    payload.model = provider.defaultModel
   }
 
   if (provider.id === 'pollinations') {

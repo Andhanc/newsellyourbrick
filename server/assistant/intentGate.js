@@ -1,5 +1,6 @@
 import { wantsEscalation } from './botCoreRules.js'
 import { detectDealFormat, detectLocationPreference, detectPropertyTypePreference } from './dialogContext.js'
+import { isSpainPropertyLegalQuery } from './spainLegalKnowledge.js'
 
 export const SCENARIOS = {
   PROPERTY_SEARCH: 'property_search',
@@ -7,6 +8,7 @@ export const SCENARIOS = {
   AUCTION_HELP: 'auction_help',
   SHARES: 'shares',
   VISA_DOCS: 'visa_docs',
+  SPAIN_LEGAL: 'spain_property_sale_legal',
   MANAGER_HANDOFF: 'manager_handoff',
   SUPPORT_OTHER: 'support_other',
   GENERAL: 'general',
@@ -57,12 +59,8 @@ export function classifyScenario(text) {
     return { scenario: SCENARIOS.SUPPORT_OTHER, confidence: 0.95, strongSignal: true }
   }
 
-  if (
-    /внж|виза|golden\s*visa|резиденц|вид\s+на\s+житель|ипотек|документ[а-яё]*\s+для\s+покуп|mortgage|hipoteca|\bnie\b|residenc/i.test(
-      lower,
-    )
-  ) {
-    return { scenario: SCENARIOS.VISA_DOCS, confidence: 0.9, strongSignal: true }
+  if (isSpainPropertyLegalQuery(lower)) {
+    return { scenario: SCENARIOS.SPAIN_LEGAL, confidence: 0.95, strongSignal: true }
   }
 
   if (/доли|shares?|соинвест|фракцион|долев/i.test(lower)) {
@@ -74,7 +72,7 @@ export function classifyScenario(text) {
   }
 
   if (
-    /о\s+платформ|о\s+вас|что\s+такое\s+sellyourbrick|как\s+работ.*(сайт|платформ)|тест.?драйв|test.?drive|калькулятор|панель\s+инвест|сравнен|карта\s+объект/i.test(
+    /о\s+платформ|о\s+вас|что\s+такое\s+sellyourbrick|как\s+работ.*(сайт|платформ)|тест.?драйв|test.?drive|калькулятор|панель\s+инвест|сравн|compare|карта\s+объект|бонус|промокод|реферал|кошел|депозит|подписк|тариф|избран|профил|личн.*кабинет|истори.*став|презентац|property\s*ai|размест.*объект|кабинет\s+продав|скачать.*прилож|лотере|bonus|promo\s*code|wallet|deposit|subscription|favorite|profile|seller\s+cabinet/i.test(
       lower,
     )
   ) {
@@ -88,7 +86,7 @@ export function classifyScenario(text) {
     type.hasType ||
     location.hasLocation ||
     format.hasFormat ||
-    /(?:недвижимост|объект|подборк|вариант|купить|квартир|вилл|дом\b|property|listing|apartment|villa)/i.test(
+    /(?:инвест|investment|недвижимост|объект|подборк|вариант|купить|квартир|вилл|дом\b|property|listing|apartment|villa)/i.test(
       lower,
     )
 
@@ -117,7 +115,19 @@ export function evaluateIntentGate(conversationHistory, language = 'ru', previou
     [...(conversationHistory || [])].reverse().find((message) => message?.sender === 'user')?.text ||
     ''
   const classification = classifyScenario(lastUser)
-  const previous = previousTopic && typeof previousTopic === 'object' ? previousTopic : null
+  let previous = previousTopic && typeof previousTopic === 'object' ? previousTopic : null
+  if (!previous && !classification.strongSignal) {
+    const earlierUsers = (conversationHistory || [])
+      .filter((message) => message?.sender === 'user')
+      .slice(0, -1)
+      .reverse()
+    for (const message of earlierUsers) {
+      const candidate = classifyScenario(message.text)
+      if (!candidate.strongSignal || candidate.smallTalk) continue
+      previous = candidate
+      break
+    }
+  }
 
   let scenario = classification.scenario
   if (!classification.strongSignal && previous?.scenario) {
@@ -147,9 +157,11 @@ export function formatIntentGateForPrompt(gate) {
     return `**ACTIVE SCENARIO: SUPPORT**
 Ответь по кабинету/сайту. Не запускай воронку подбора и не проси бюджет, пока клиент сам не вернётся к объектам.`
   }
-  if (gate.scenario === SCENARIOS.VISA_DOCS) {
-    return `**ACTIVE SCENARIO: VISA / DOCUMENTS / MORTGAGE**
-Отвечай только из базы знаний (visa_residency, purchase_documents, mortgage). Это ориентиры. После ответа можно мягко вернуться к подбору.`
+  if (gate.scenario === SCENARIOS.SPAIN_LEGAL || gate.scenario === SCENARIOS.VISA_DOCS) {
+    return `**ACTIVE SCENARIO: SPAIN PROPERTY-SALE LEGAL**
+Отвечай только по юридическим вопросам продажи/покупки недвижимости в Испании и только из блока SPAIN LEGAL VERIFIED CONTEXT.
+Не используй старые знания модели для меняющихся процентов, налоговых ставок, сроков, визовых правил и банковских предложений.
+Если источника или обязательной локации не хватает, прямо скажи это и запроси автономное сообщество/муниципалитет либо предложи испанского профильного специалиста.`
   }
   if (gate.scenario === SCENARIOS.SHARES) {
     return `**ACTIVE SCENARIO: SHARES**

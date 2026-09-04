@@ -69,6 +69,12 @@ const Footer = () => {
     return () => document.removeEventListener('keydown', onKey)
   }, [storeComingSoonOpen, closeStoreComingSoon])
 
+  useEffect(() => {
+    const openLanguageDrawer = () => setIsLanguageDrawerOpen(true)
+    window.addEventListener('openSiteLanguageDrawer', openLanguageDrawer)
+    return () => window.removeEventListener('openSiteLanguageDrawer', openLanguageDrawer)
+  }, [])
+
   const goWallet = () => {
     scrollToTop()
     if (!isSiteUserSignedIn(user, userLoaded)) {

@@ -12,6 +12,18 @@ const cleanList = (value, maxItems = 8, maxLength = 240) =>
     .filter(Boolean)
     .slice(0, maxItems)
 
+const SLIDE_LAYOUTS = new Set([
+  'cover', 'photo_statement', 'split', 'cards', 'stats', 'chart', 'comparison',
+  'gallery', 'timeline', 'neighborhood', 'conclusion',
+])
+const SLIDE_ICONS = new Set([
+  'home', 'key', 'area', 'rooms', 'location', 'price', 'check', 'alert', 'shield',
+  'trend', 'school', 'transport', 'store', 'medical', 'tree', 'document', 'clock',
+  'building', 'camera', 'spark',
+])
+const SLIDE_TONES = new Set(['tiffany', 'cream', 'white', 'ink'])
+const CHART_TYPES = new Set(['none', 'bar', 'line', 'donut'])
+
 function safeListingImage(value) {
   const image = limitText(value, 2000)
   if (/^\/[^/]/.test(image)) return image
@@ -57,6 +69,118 @@ function normalizeSections(sections) {
     }))
     .filter((section) => section.title || section.body || section.bullets.length)
     .slice(0, 4)
+}
+
+function normalizeSlideCards(cards) {
+  return (Array.isArray(cards) ? cards : [])
+    .map((card) => ({
+      title: limitText(card?.title, 80),
+      value: limitText(card?.value, 80),
+      body: limitText(card?.body, 240),
+      icon: SLIDE_ICONS.has(card?.icon) ? card.icon : 'spark',
+      tone: SLIDE_TONES.has(card?.tone) ? card.tone : 'cream',
+    }))
+    .filter((card) => card.title || card.value || card.body)
+    .slice(0, 4)
+}
+
+function normalizeSlideChart(chart) {
+  const type = CHART_TYPES.has(chart?.type) ? chart.type : 'none'
+  const labels = cleanList(chart?.labels, 6, 34)
+  const series = (Array.isArray(chart?.series) ? chart.series : [])
+    .map((item) => ({
+      name: limitText(item?.name, 48),
+      values: (Array.isArray(item?.values) ? item.values : [])
+        .map(Number)
+        .filter(Number.isFinite)
+        .slice(0, labels.length || 6),
+    }))
+    .filter((item) => item.values.length)
+    .slice(0, 3)
+  const usableType = type !== 'none' && labels.length && series.length ? type : 'none'
+  return {
+    type: usableType,
+    title: limitText(chart?.title, 100),
+    unit: limitText(chart?.unit, 24),
+    caption: limitText(chart?.caption, 220),
+    labels,
+    series,
+  }
+}
+
+function normalizeAiSlides(slides, images) {
+  return (Array.isArray(slides) ? slides : [])
+    .map((slide) => {
+      const chart = normalizeSlideChart(slide?.chart)
+      const cards = normalizeSlideCards(slide?.cards)
+      const requestedLayout = SLIDE_LAYOUTS.has(slide?.layout) ? slide.layout : 'split'
+      const layout = requestedLayout === 'chart' && chart.type === 'none'
+        ? 'split'
+        : ['cards', 'stats', 'timeline', 'comparison'].includes(requestedLayout) && !cards.length
+          ? 'split'
+          : requestedLayout
+      return {
+        layout,
+        kicker: limitText(slide?.kicker, 80),
+        title: limitText(slide?.title, 140),
+        body: limitText(slide?.body, 1000),
+        bullets: cleanList(slide?.bullets, 6, 220),
+        cards,
+        chart,
+        imageIndices: (Array.isArray(slide?.imageIndices) ? slide.imageIndices : [])
+          .map(Number)
+          .filter((index) => Number.isInteger(index) && index >= 0 && index < images.length)
+          .slice(0, 6),
+      }
+    })
+    .filter((slide) => slide.title || slide.body || slide.cards.length || slide.chart.type !== 'none')
+    .slice(0, 10)
+}
+
+function metricCards(metrics) {
+  const iconByLabel = (label) => {
+    const normalized = String(label || '').toLowerCase()
+    if (/цен|стоим/.test(normalized)) return 'price'
+    if (/площад/.test(normalized)) return 'area'
+    if (/комнат|спаль/.test(normalized)) return 'rooms'
+    if (/локац|адрес|район/.test(normalized)) return 'location'
+    if (/фото/.test(normalized)) return 'camera'
+    if (/год/.test(normalized)) return 'building'
+    return 'home'
+  }
+  return metrics.slice(0, 4).map((metric, index) => ({
+    title: metric.label,
+    value: metric.value,
+    body: metric.note,
+    icon: iconByLabel(metric.label),
+    tone: index === 0 ? 'tiffany' : index === 3 ? 'ink' : 'cream',
+  }))
+}
+
+function fallbackSlides({ title, summary, directAnswer, strengths, risks, metrics, detailsBody, detailsBullets, conclusion, images, neighborhood }) {
+  const emptyChart = { type: 'none', title: '', unit: '', caption: '', labels: [], series: [] }
+  const base = (slide) => ({ kicker: '', body: '', bullets: [], cards: [], chart: emptyChart, imageIndices: [], ...slide })
+  return [
+    base({ layout: 'cover', kicker: 'ПЕРСОНАЛЬНЫЙ AI-РАЗБОР', title, body: summary, imageIndices: images.length ? [0] : [] }),
+    base({ layout: 'stats', kicker: 'ОБЪЕКТ В ЦИФРАХ', title: 'Главное — одним взглядом', cards: metricCards(metrics), imageIndices: images[1] ? [1] : [] }),
+    base({
+      layout: 'comparison', kicker: 'ВЗВЕШЕННОЕ РЕШЕНИЕ', title: 'Плюсы и вопросы для проверки',
+      cards: [
+        { title: 'Сильные стороны', value: '', body: strengths.slice(0, 4).join('\n'), icon: 'check', tone: 'cream' },
+        { title: 'Нужно проверить', value: '', body: risks.slice(0, 4).join('\n'), icon: 'shield', tone: 'ink' },
+      ],
+    }),
+    base({ layout: 'photo_statement', kicker: 'ОТВЕТ НА ВАШ ВОПРОС', title: 'Что важно сейчас', body: directAnswer, imageIndices: images.length ? [Math.min(2, images.length - 1)] : [] }),
+    ...(images.length > 1 ? [base({ layout: 'gallery', kicker: 'ФОТОГРАФИИ ИЗ ОБЪЯВЛЕНИЯ', title: 'Пространство объекта', imageIndices: images.map((_, index) => index).slice(0, 4) })] : []),
+    base({ layout: 'split', kicker: 'ПОДРОБНЫЙ АНАЛИЗ', title: 'Факты, контекст и допущения', body: detailsBody || summary, bullets: detailsBullets, imageIndices: images.length ? [Math.min(3, images.length - 1)] : [] }),
+    base({ layout: 'neighborhood', kicker: 'РАЙОН И ИНФРАСТРУКТУРА', title: 'Что находится рядом', body: neighborhood.summary, bullets: neighborhood.highlights }),
+    base({ layout: 'timeline', kicker: 'ПЛАН ПРОВЕРКИ', title: 'Три шага перед решением', cards: [
+      { title: 'Документы', value: '01', body: 'Подтвердить права, ограничения и комплект документов.', icon: 'document', tone: 'white' },
+      { title: 'Осмотр', value: '02', body: 'Проверить состояние объекта и инженерных систем.', icon: 'home', tone: 'cream' },
+      { title: 'Сравнение', value: '03', body: 'Сопоставить стоимость и расходы с альтернативами.', icon: 'trend', tone: 'tiffany' },
+    ] }),
+    base({ layout: 'conclusion', kicker: 'ИТОГ · СЛЕДУЮЩИЙ ШАГ', title: 'Решение начинается с проверки фактов', body: conclusion, bullets: detailsBullets.slice(0, 3), imageIndices: images.length ? [0] : [] }),
+  ].slice(0, 10)
 }
 
 function propertyFactStrengths(property, images) {
@@ -160,31 +284,13 @@ export function normalizePropertyAiReport(input = {}, context = {}) {
   const detailSections = (sections.length ? sections : [{ title: 'Подробный анализ', body: summary, bullets: assumptions }]).slice(0, 2)
   const detailsBody = limitText(detailSections.map((section) => [section.title, section.body].filter(Boolean).join(': ')).filter(Boolean).join('\n\n'), 1800)
   const detailsBullets = cleanList(detailSections.flatMap((section) => section.bullets || []).concat(assumptions), 6, 220)
-
-  const pages = [
-    { type: 'cover', title, body: summary },
-    { type: 'snapshot', title: 'Паспорт объекта', metrics },
-    { type: 'balance', title: 'Плюсы и риски', strengths, risks },
-    {
-      type: 'answer',
-      title: limitText(context.question, 120) || 'Ответ на вопрос',
-      body: directAnswer,
-      bullets: detailSections[0]?.bullets || [],
-    },
-    ...(images.length > 1 ? [{ type: 'gallery', title: 'Реальные фотографии объекта', images: images.slice(0, 4) }] : []),
-    { type: 'details', title: 'Подробный анализ и проверки', body: detailsBody || summary, bullets: detailsBullets },
-    { type: 'neighborhood', title: 'Район и инфраструктура', neighborhood },
-    {
-      type: 'conclusion',
-      title: 'Решение начинается с проверки фактов',
-      body: conclusion,
-      bullets: [
-        'Сопоставьте сильные стороны объекта со своим сценарием покупки.',
-        'Подтвердите документы, состояние и фактические расходы.',
-        'Осмотрите объект лично и только затем принимайте финансовое решение.',
-      ],
-    },
-  ]
+  const aiSlides = normalizeAiSlides(input.slides, images)
+  const slides = aiSlides.length >= 2
+    ? aiSlides
+    : fallbackSlides({
+        title, summary, directAnswer, strengths, risks, metrics, detailsBody, detailsBullets,
+        conclusion, images, neighborhood,
+      })
 
   return {
     category: context.category || 'details',
@@ -201,7 +307,9 @@ export function normalizePropertyAiReport(input = {}, context = {}) {
     conclusion,
     neighborhood,
     images,
-    pages: pages.slice(0, 10),
+    slides,
+    // Alias for already stored reports and older clients. New presentations are driven by AI slides.
+    pages: slides,
     disclaimer: 'Материал сформирован AI на основе данных объявления, носит информационный характер и не является финансовой, юридической или оценочной консультацией.',
   }
 }

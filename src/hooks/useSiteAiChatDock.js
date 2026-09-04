@@ -4,11 +4,22 @@ import { useUser } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated, getStoredNumericUserId } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
+import {
+  invalidateAssistantUserContext,
+  loadAssistantUserContext,
+} from '../services/assistantUserContext'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { refreshAssistantMessageCopy } from '../utils/siteAssistantHelpers'
+import {
+  createAssistantCacheEnvelope,
+  detectAssistantInputLanguage,
+  normalizeAssistantLanguage,
+  prepareAssistantFiles,
+  readAssistantCache,
+} from '../utils/assistantExperience'
 
 const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
 
@@ -25,18 +36,8 @@ const EMPTY_ASSISTANT_PREFERENCES = {
   preferredContact: null,
 }
 
-function createAssistantWelcomeMessage(t) {
-  return {
-    id: Date.now(),
-    text: t('chatWelcomeMessage'),
-    sender: 'bot',
-    timestamp: new Date(),
-    buttons: null,
-  }
-}
-
 export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES } = {}) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const dbUserId = getStoredNumericUserId()
 
@@ -46,6 +47,8 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [isSlowAIResponse, setIsSlowAIResponse] = useState(false)
+  const [pendingAttachments, setPendingAttachments] = useState([])
+  const [attachmentError, setAttachmentError] = useState('')
   const [catalogProperties, setCatalogProperties] = useState(() => {
     if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {
       return recommendationProperties
@@ -89,6 +92,54 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     }
     return catalogProperties
   }, [recommendationProperties, catalogProperties])
+
+  const assistantUserIdentity = useMemo(() => {
+    const stored = getUserData()
+    const storedName = String(stored?.name || '').trim()
+    const [storedFirstName = '', ...storedLastNameParts] = storedName.split(/\s+/)
+    return {
+      firstName: user?.firstName || stored?.firstName || stored?.first_name || storedFirstName,
+      lastName:
+        user?.lastName || stored?.lastName || stored?.last_name || storedLastNameParts.join(' '),
+      displayName: user?.fullName || storedName,
+      country: stored?.country,
+      city: stored?.city,
+      role: stored?.role,
+      verified: stored?.is_verified === true || stored?.is_verified === 1,
+    }
+  }, [user, userLoaded])
+
+  const assistantDbUserId = useMemo(() => {
+    const storedId = getUserData()?.id || dbUserId
+    return /^\d+$/.test(String(storedId || '')) ? String(storedId) : null
+  }, [dbUserId, user, userLoaded])
+
+  useEffect(() => {
+    if (!isChatOpen || !isLoggedIn || !assistantDbUserId) return
+    void loadAssistantUserContext({
+      userId: assistantDbUserId,
+      identity: assistantUserIdentity,
+      catalog: propertiesForAi,
+    })
+  }, [
+    isChatOpen,
+    isLoggedIn,
+    assistantDbUserId,
+    assistantUserIdentity,
+    propertiesForAi,
+  ])
+
+  useEffect(() => {
+    const invalidate = () => invalidateAssistantUserContext(assistantDbUserId)
+    window.addEventListener('propertyFavoritesChanged', invalidate)
+    window.addEventListener('subscription-billing-updated', invalidate)
+    window.addEventListener('owner-properties-update', invalidate)
+    return () => {
+      window.removeEventListener('propertyFavoritesChanged', invalidate)
+      window.removeEventListener('subscription-billing-updated', invalidate)
+      window.removeEventListener('owner-properties-update', invalidate)
+    }
+  }, [assistantDbUserId])
 
   const getChatUserId = useMemo(() => {
     if (isLoggedIn) {
@@ -165,10 +216,11 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
         const savedChatHistory = localStorage.getItem(historyKey)
 
         if (savedChatHistory) {
-          const parsed = JSON.parse(savedChatHistory)
+          const parsed = readAssistantCache(savedChatHistory)
           const welcomeText = t('chatWelcomeMessage')
+          const migratedMessages = parsed.some((msg) => msg?.sender === 'user') ? parsed : []
           setChatMessages(
-            parsed.map((msg) =>
+            migratedMessages.map((msg) =>
               refreshAssistantMessageCopy(
                 {
                   ...msg,
@@ -178,9 +230,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
               ),
             ),
           )
-        } else {
-          setChatMessages([createAssistantWelcomeMessage(t)])
-        }
+        } else setChatMessages([])
 
         const savedPreferences = localStorage.getItem(preferencesKey)
         if (savedPreferences) {
@@ -201,7 +251,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
         const historyKey = `aiChatHistory_${getChatUserId}`
-        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+        localStorage.setItem(historyKey, JSON.stringify(createAssistantCacheEnvelope(chatMessages)))
         const userData = getUserData()
         syncAssistantLead(getChatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
@@ -246,12 +296,28 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     }
     setUserPreferences({ ...EMPTY_ASSISTANT_PREFERENCES })
     setChatInput('')
+    setPendingAttachments([])
+    setAttachmentError('')
     setIsSlowAIResponse(false)
-    setChatMessages([createAssistantWelcomeMessage(t)])
+    setChatMessages([])
   }, [getChatUserId, t])
 
   const handleChatInputChange = (e) => {
     setChatInput(e.target.value)
+  }
+
+  const handleFilesSelected = async (fileList) => {
+    setAttachmentError('')
+    try {
+      setPendingAttachments(await prepareAssistantFiles(fileList, pendingAttachments))
+    } catch (error) {
+      setAttachmentError(String(error?.message || 'FILE_READ_FAILED'))
+    }
+  }
+
+  const removePendingAttachment = (attachmentId) => {
+    setPendingAttachments((current) => current.filter((item) => item.id !== attachmentId))
+    setAttachmentError('')
   }
 
   const handleButtonClick = async (buttonText, meta = null) => {
@@ -266,6 +332,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     if (e) e.preventDefault()
 
     const { contactPref } = options || {}
+    const requestAttachments = pendingAttachments
     let userMessage = buttonText || chatInput.trim()
     if (contactPref) {
       const labelMap = {
@@ -277,10 +344,13 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
       }
       userMessage = labelMap[contactPref] || contactPref
     }
+    if (!userMessage && requestAttachments.length) userMessage = t('assistantAttachmentOnlyPrompt')
     if (!userMessage) return
 
     if (!buttonText && !contactPref) {
       setChatInput('')
+      setPendingAttachments([])
+      setAttachmentError('')
     }
 
     const userMessageObj = {
@@ -288,6 +358,7 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
       text: userMessage,
       sender: 'user',
       timestamp: new Date(),
+      attachments: requestAttachments.map(({ name, mimeType, size }) => ({ name, mimeType, size })),
     }
 
     setChatMessages((prev) => [...prev, userMessageObj])
@@ -495,10 +566,24 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
+      const userContext = isLoggedIn && assistantDbUserId
+        ? await loadAssistantUserContext({
+            userId: assistantDbUserId,
+            identity: assistantUserIdentity,
+            catalog: propertiesForAi,
+          })
+        : { authenticated: false }
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         nextPreferences,
         propertiesForAi,
+        {
+          selectedLanguage: normalizeAssistantLanguage(i18n.resolvedLanguage || i18n.language),
+          detectedLanguage: detectAssistantInputLanguage(userMessage),
+          attachments: requestAttachments,
+          assistantSessionId: getChatUserId,
+          userContext,
+        },
       )
 
       if (response?.preferences && typeof response.preferences === 'object') {
@@ -521,6 +606,9 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
           buttons: response.buttons,
           recommendations: response.recommendations,
           navigation: response.navigation,
+          actions: response.actions,
+          languageSuggestion: response.languageSuggestion,
+          sources: response.sources,
           yieldEstimate: response.yieldEstimate,
         },
       ])
@@ -556,15 +644,20 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     closeChatDock,
     closeManagerChatDock,
     openManagerChatDock,
+    userDisplayName: user?.firstName || user?.fullName || '',
     chatMessages,
     chatInput,
     isLoadingAI,
     isSlowAIResponse,
+    pendingAttachments,
+    attachmentError,
     chatMessagesRef,
     lastMessageRef,
     handleChatInputChange,
     handleChatSubmit,
     handleButtonClick,
+    handleFilesSelected,
+    removePendingAttachment,
     clearChatHistory,
     catalogProperties: propertiesForAi,
   }

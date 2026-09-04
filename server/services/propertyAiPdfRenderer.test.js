@@ -19,15 +19,16 @@ const report = {
     groups: [{ label: 'Образование', places: [{ name: 'Школа', distanceMeters: 320 }] }],
   },
   disclaimer: 'Не является финансовой консультацией.',
-  pages: [
-    { type: 'cover', title: 'Разбор', body: 'Главное' },
-    { type: 'snapshot', title: 'Цифры', metrics: [{ label: 'Площадь', value: '39 м²' }] },
-    { type: 'balance', title: 'Баланс', strengths: ['Свет'], risks: ['Документы'] },
-    { type: 'answer', title: 'Ответ', body: 'Текст', bullets: ['Факт'] },
-    { type: 'gallery', title: 'Реальные фотографии объекта', images: ['https://img.example/real.jpg'] },
-    { type: 'details', title: 'Проверки', body: 'Текст', bullets: ['Проверка'] },
-    { type: 'neighborhood', title: 'Район и инфраструктура' },
-    { type: 'conclusion', title: 'Решение начинается с проверки фактов', body: 'Итог', bullets: ['Шаг'] },
+  slides: [
+    { layout: 'cover', kicker: 'AI-РАЗБОР', title: 'Разбор', body: 'Главное', imageIndices: [0] },
+    { layout: 'stats', kicker: 'ЦИФРЫ', title: 'Паспорт объекта', cards: [{ title: 'Площадь', value: '39 м²', body: 'По объявлению', icon: 'area', tone: 'tiffany' }], imageIndices: [0] },
+    { layout: 'comparison', kicker: 'БАЛАНС', title: 'Плюсы и риски', cards: [{ title: 'Сильные стороны', body: 'Свет', icon: 'check', tone: 'cream' }, { title: 'Проверить', body: 'Документы', icon: 'shield', tone: 'ink' }] },
+    { layout: 'photo_statement', kicker: 'ОТВЕТ', title: 'Ответ', body: 'Текст', imageIndices: [0] },
+    { layout: 'gallery', kicker: 'ФОТО', title: 'Реальные фотографии объекта', imageIndices: [0] },
+    { layout: 'split', kicker: 'АНАЛИЗ', title: 'Проверки', body: 'Текст', bullets: ['Проверка'], imageIndices: [0] },
+    { layout: 'chart', kicker: 'ДАННЫЕ', title: 'Сравнение площадей', body: 'Только заявленные параметры', chart: { type: 'bar', title: 'Площади', unit: 'м²', caption: 'Данные объявления', labels: ['Кухня', 'Гостиная'], series: [{ name: 'Площадь', values: [12, 21] }] } },
+    { layout: 'neighborhood', kicker: 'РАЙОН', title: 'Район и инфраструктура', cards: [] },
+    { layout: 'conclusion', kicker: 'ИТОГ', title: 'Решение начинается с проверки фактов', body: 'Итог', bullets: ['Шаг'], imageIndices: [0] },
   ],
 }
 
@@ -38,7 +39,7 @@ test('renders one controlled wrapper per report page', () => {
     mediaBaseUrl: 'https://sell.example/',
   })
 
-  assert.equal((html.match(/class="report-page/g) || []).length, 8)
+  assert.equal((html.match(/class="report-page/g) || []).length, 9)
   assert.match(html, /<base href="https:\/\/sell\.example\/">/)
   assert.match(html, /https:\/\/img\.example\/real\.jpg/)
   assert.match(html, /Не является финансовой консультацией/)
@@ -47,29 +48,29 @@ test('renders one controlled wrapper per report page', () => {
 test('uses the premium Tiffany presentation system with real photos', () => {
   const html = renderPropertyAiReportHtml({ report, property: { title: 'Объект' } })
 
-  assert.equal(PROPERTY_AI_PDF_TEMPLATE_VERSION, 'tiffany-editorial-v2')
+  assert.equal(PROPERTY_AI_PDF_TEMPLATE_VERSION, 'tiffany-canva-ai-v3')
   assert.match(html, /--report-tiffany:#4ecdd6/i)
-  assert.match(html, /--report-tiffany-dark:#3bc0cb/i)
-  assert.match(html, /--report-tiffany-soft:#effbfc/i)
-  assert.match(html, /--report-ink:#0f172a/i)
+  assert.match(html, /--report-paper:#f5f0e8/i)
+  assert.match(html, /--report-tiffany-soft:#e9f8f7/i)
+  assert.match(html, /--report-ink:#12343b/i)
   assert.match(html, /@page\{size:A4 landscape/i)
   assert.match(html, /width:297mm;height:210mm/i)
-  assert.match(html, /class="brand-lockup brand-lockup--cover"/)
-  assert.match(html, /PRIVATE PROPERTY REVIEW/)
-  assert.match(html, /TIFFANY EDITION/)
-  assert.match(html, /class="cover-photo-frame"/)
-  assert.match(html, /class="listing-gallery"/)
-  assert.match(html, /class="infrastructure-grid"/)
-  assert.match(html, /class="neighborhood-checks"/)
+  assert.match(html, /class="cover-title-card"/)
+  assert.match(html, /class="card-grid card-grid--stats/)
+  assert.match(html, /class="line-icon"/)
+  assert.match(html, /class="gallery-grid"/)
+  assert.match(html, /class="chart-shell"/)
+  assert.match(html, /class="chart-svg"/)
+  assert.match(html, /class="card-grid card-grid--neighborhood/)
   assert.match(html, /class="report-page report-page--conclusion"/)
-  assert.match(html, /Школа[\s\S]*320 м/)
-  assert.doesNotMatch(html, /report-page--visual/)
+  assert.match(html, /Школа/)
+  assert.match(html, /320 м/)
   assert.doesNotMatch(html, /--report-clay/)
 })
 
 test('uses a clearly labelled generic illustration only when listing photos are absent', () => {
   const html = renderPropertyAiReportHtml({
-    report: { ...report, images: [], pages: report.pages.filter((page) => page.type !== 'gallery') },
+    report: { ...report, images: [], slides: report.slides.filter((slide) => slide.layout !== 'gallery') },
     property: { title: 'Объект без фотографий' },
   })
 
@@ -77,12 +78,13 @@ test('uses a clearly labelled generic illustration only when listing photos are 
   assert.match(html, /ИЛЛЮСТРАЦИЯ · НЕ ФОТО ОБЪЕКТА/)
 })
 
-test('uses dedicated compact layouts for long analysis and infrastructure content', () => {
+test('uses dedicated layouts for AI-authored analysis, chart, and infrastructure slides', () => {
   const html = renderPropertyAiReportHtml({ report, property: { title: 'Объект' } })
 
-  assert.match(html, /class="details-layout"/)
-  assert.match(html, /class="infrastructure-grid"/)
-  assert.match(html, /\.details-layout\{[^}]*grid-template-columns/s)
+  assert.match(html, /class="split-layout"/)
+  assert.match(html, /class="chart-layout"/)
+  assert.match(html, /class="card-grid card-grid--neighborhood/)
+  assert.match(html, /\.split-layout\{[^}]*grid-template-columns/s)
 })
 
 test('waits for every image to load or fail before printing', async () => {

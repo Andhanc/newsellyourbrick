@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   FiArrowRight,
-  FiCheck,
-  FiCreditCard,
   FiCrosshair,
   FiEdit3,
   FiGlobe,
@@ -18,7 +17,10 @@ import {
 import BuyerMapScene from '@/components/BuyerMapScene'
 import Header from '@/components/Header'
 import { useViewerVipAccess } from '@/hooks/useViewerVipAccess'
+import { getUserData } from '@/services/authService'
 import { publicAsset } from '@/utils/publicAsset'
+import { startProSubscriptionCheckout, startVipSubscriptionCheckout } from '@/utils/subscriptionCheckout'
+import { showNotification } from '@/utils/toastHelper'
 import './BuyerPage.css'
 import './SellerPage.css'
 
@@ -28,20 +30,37 @@ function scrollTo(id) {
 
 export default function BuyerPage() {
   const { t, i18n } = useTranslation()
-  const { numericUserId, ownedPlanName } = useViewerVipAccess()
-  // Marketing default for guests; logged-in users sync to their real tier below.
-  const [selectedPlan, setSelectedPlan] = useState('Pro')
-  const [userPickedPlan, setUserPickedPlan] = useState(false)
+  const navigate = useNavigate()
+  const { numericUserId } = useViewerVipAccess()
+  const [checkoutPlan, setCheckoutPlan] = useState('')
   const [modalTitle, setModalTitle] = useState('')
 
-  useEffect(() => {
-    if (!numericUserId || userPickedPlan) return
-    setSelectedPlan(ownedPlanName)
-  }, [numericUserId, ownedPlanName, userPickedPlan])
+  const openPlanCheckout = async (plan) => {
+    if (checkoutPlan) return
 
-  const pickPlan = (name) => {
-    setUserPickedPlan(true)
-    setSelectedPlan(name)
+    const planKey = plan.name.toLowerCase()
+    if (planKey === 'starter') {
+      navigate('/subscriptions?plan=starter#subscriptions-pricing-section')
+      return
+    }
+
+    setCheckoutPlan(plan.name)
+    try {
+      const userData = getUserData()
+      const checkout = planKey === 'vip' ? startVipSubscriptionCheckout : startProSubscriptionCheckout
+      const result = await checkout({
+        userId: numericUserId ?? userData?.id ?? localStorage.getItem('userId'),
+        customerEmail: userData?.email,
+        billingCycle: 'monthly',
+      })
+      if (!result.ok) {
+        showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
+      }
+    } catch (error) {
+      showNotification(error?.message || t('buyerCabinet_checkoutError'), 'error')
+    } finally {
+      setCheckoutPlan('')
+    }
   }
 
   const platformStats = useMemo(
@@ -149,11 +168,13 @@ export default function BuyerPage() {
           t('buyerLanding_planStarterFeat0'),
           t('buyerLanding_planStarterFeat1'),
           t('buyerLanding_planStarterFeat2'),
+          t('buyerLanding_planStarterFeat3'),
         ],
         featuresShort: [
           t('buyerLanding_planStarterFeat0Short'),
           t('buyerLanding_planStarterFeat1Short'),
           t('buyerLanding_planStarterFeat2Short'),
+          t('buyerLanding_planStarterFeat3Short'),
         ],
       },
       {
@@ -171,11 +192,17 @@ export default function BuyerPage() {
           t('buyerLanding_planProFeat0'),
           t('buyerLanding_planProFeat1'),
           t('buyerLanding_planProFeat2'),
+          t('buyerLanding_planProFeat3'),
+          t('buyerLanding_planProFeat4'),
+          t('buyerLanding_planProFeat5'),
         ],
         featuresShort: [
           t('buyerLanding_planProFeat0Short'),
           t('buyerLanding_planProFeat1Short'),
           t('buyerLanding_planProFeat2Short'),
+          t('buyerLanding_planProFeat3Short'),
+          t('buyerLanding_planProFeat4Short'),
+          t('buyerLanding_planProFeat5Short'),
         ],
       },
       {
@@ -193,21 +220,97 @@ export default function BuyerPage() {
           t('buyerLanding_planVipFeat1'),
           t('buyerLanding_planVipFeat2'),
           t('buyerLanding_planVipFeat3'),
+          t('buyerLanding_planVipFeat4'),
+          t('buyerLanding_planVipFeat5'),
+          t('buyerLanding_planVipFeat6'),
         ],
         featuresShort: [
           t('buyerLanding_planVipFeat0Short'),
           t('buyerLanding_planVipFeat1Short'),
           t('buyerLanding_planVipFeat2Short'),
           t('buyerLanding_planVipFeat3Short'),
+          t('buyerLanding_planVipFeat4Short'),
+          t('buyerLanding_planVipFeat5Short'),
+          t('buyerLanding_planVipFeat6Short'),
         ],
       },
     ],
     [t, i18n.language],
   )
 
-  const selectedPlanData = useMemo(
-    () => plans.find((plan) => plan.name === selectedPlan) ?? plans[1],
-    [plans, selectedPlan],
+  const renderPlan = (plan) => (
+    <article
+      className={`buyer-plan buyer-plan--${plan.height} buyer-plan--tier-${plan.name.toLowerCase()}${checkoutPlan === plan.name ? ' is-checkout' : ''}`}
+      key={plan.name}
+      role="link"
+      tabIndex={0}
+      aria-label={t('buyerLanding_subscribeAria', { name: plan.name })}
+      aria-busy={checkoutPlan === plan.name}
+      onClick={() => void openPlanCheckout(plan)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          void openPlanCheckout(plan)
+        }
+      }}
+    >
+      <div className="buyer-plan__hero">
+        <div className="buyer-plan__topline">
+          <span className={plan.badge ? 'buyer-plan__badge' : 'buyer-plan__eyebrow'}>
+            {plan.badge ?? plan.eyebrow}
+          </span>
+          <span className="buyer-plan__discount">{plan.discount}</span>
+        </div>
+
+        <div className="buyer-plan__heading">
+          <h3>{plan.name}</h3>
+          <p>
+            <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
+            <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
+          </p>
+        </div>
+
+        <div className="buyer-plan__price">
+          <div className="buyer-plan__price-values">
+            <del className="buyer-plan__price-was">{plan.oldPrice}</del>
+            <div className="buyer-plan__price-current">
+              <strong>{plan.price}</strong>
+              <span>{t('buyerLanding_perMonth')}</span>
+            </div>
+          </div>
+          <span className="buyer-plan__price-saving">
+            <span>{plan.saving}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="buyer-plan__body">
+        <span className="buyer-plan__features-title">{t('buyerLanding_featuresTitle')}</span>
+        <ul aria-label={t('buyerLanding_featuresAria', { name: plan.name })}>
+          {plan.features.map((feature, index) => (
+            <li key={feature}>
+              <span className="buyer-plan__feature-index" aria-hidden>{index + 1}</span>
+              <span className="buyer-plan__feature buyer-plan__feature--full">{feature}</span>
+              <span className="buyer-plan__feature buyer-plan__feature--short">
+                {plan.featuresShort[index] ?? feature}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <span className="buyer-plan__button" aria-hidden>
+          {checkoutPlan === plan.name ? (
+            '…'
+          ) : (
+            <>
+              {t('buyerLanding_modalCheckoutTitle', { name: plan.name })}
+              <span className="buyer-plan__button-price">· {plan.price}</span>
+              <FiArrowRight aria-hidden />
+            </>
+          )}
+        </span>
+        <span className="buyer-plan__checkout-note">{t('buyerLanding_checkoutNote')}</span>
+      </div>
+    </article>
   )
 
   return (
@@ -347,106 +450,8 @@ export default function BuyerPage() {
           </div>
 
           <div className="buyer-plan-grid" aria-label={t('buyerLanding_plansAria')}>
-            {plans.map((plan) => (
-              <article
-                className={`buyer-plan buyer-plan--${plan.height}${selectedPlan === plan.name ? ' is-selected' : ''}`}
-                key={plan.name}
-                role="button"
-                tabIndex={0}
-                aria-pressed={selectedPlan === plan.name}
-                onClick={() => pickPlan(plan.name)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    pickPlan(plan.name)
-                  }
-                }}
-              >
-                <div className="buyer-plan__topline">
-                  <span className={plan.badge ? 'buyer-plan__badge' : 'buyer-plan__eyebrow'}>
-                    {plan.badge ?? plan.eyebrow}
-                  </span>
-                  <span className="buyer-plan__discount">{plan.discount}</span>
-                </div>
-
-                <div className="buyer-plan__heading">
-                  <h3>{plan.name}</h3>
-                  <p>
-                    <span className="buyer-plan__subtitle buyer-plan__subtitle--full">{plan.subtitle}</span>
-                    <span className="buyer-plan__subtitle buyer-plan__subtitle--short">{plan.subtitleShort}</span>
-                  </p>
-                </div>
-
-                <div className="buyer-plan__price">
-                  <div className="buyer-plan__price-values">
-                    <del className="buyer-plan__price-was">{plan.oldPrice}</del>
-                    <div className="buyer-plan__price-current">
-                      <strong>{plan.price}</strong>
-                      <span>{t('buyerLanding_perMonth')}</span>
-                    </div>
-                  </div>
-                  <span className="buyer-plan__price-saving">{plan.saving}</span>
-                </div>
-
-                <span className="buyer-plan__features-title">{t('buyerLanding_featuresTitle')}</span>
-                <ul aria-label={t('buyerLanding_featuresAria', { name: plan.name })}>
-                  {plan.features.map((feature, index) => (
-                    <li key={feature}>
-                      <FiCheck aria-hidden />
-                      <span className="buyer-plan__feature buyer-plan__feature--full">{feature}</span>
-                      <span className="buyer-plan__feature buyer-plan__feature--short">
-                        {plan.featuresShort[index] ?? feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  className={selectedPlan === plan.name ? 'buyer-plan__button is-selected' : 'buyer-plan__button'}
-                  onClick={() => pickPlan(plan.name)}
-                  aria-pressed={selectedPlan === plan.name}
-                >
-                  {selectedPlan === plan.name ? (
-                    <>
-                      <FiCheck aria-hidden />
-                      {t('buyerLanding_planSelected')}
-                    </>
-                  ) : (
-                    <>
-                      {t('buyerLanding_selectPlan')}
-                      <FiArrowRight aria-hidden />
-                    </>
-                  )}
-                </button>
-              </article>
-            ))}
-
-            <div className="buyer-subscribe-panel">
-              <div className="buyer-subscribe-panel__copy">
-                <span>{t('buyerLanding_selectedLabel')}</span>
-                <strong>{selectedPlanData.name}</strong>
-                <p>
-                  <span className="buyer-subscribe-panel__desc buyer-subscribe-panel__desc--full">
-                    {selectedPlanData.subtitle}
-                  </span>
-                  <span className="buyer-subscribe-panel__desc buyer-subscribe-panel__desc--short">
-                    {selectedPlanData.subtitleShort}
-                  </span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalTitle(t('buyerLanding_modalCheckoutTitle', { name: selectedPlanData.name }))}
-                aria-label={t('buyerLanding_subscribeAria', { name: selectedPlanData.name })}
-              >
-                <FiCreditCard aria-hidden />
-                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--full">
-                  {t('buyerLanding_subscribeCta')}
-                </span>
-                <span className="buyer-subscribe-panel__cta buyer-subscribe-panel__cta--short">
-                  {t('buyerLanding_subscribeCtaShort')}
-                </span>
-              </button>
+            <div className="buyer-plan-carousel">
+              {plans.map(renderPlan)}
             </div>
           </div>
         </div>
