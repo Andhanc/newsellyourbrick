@@ -22,8 +22,6 @@ import {
   FiChevronUp,
   FiCheck,
   FiLogOut,
-  FiSend,
-  FiX,
   FiGift,
   FiAward,
   FiColumns,
@@ -51,7 +49,6 @@ import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import PhoneInput from '../components/PhoneInput'
 import '../components/PhoneInput.css'
-import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
 import { BUYER_CABINET_WELCOME_PRESET } from '../components/buyerCabinetWelcomeImages'
@@ -66,7 +63,7 @@ import { RoleSwitchBottomCta, RoleSwitchModals } from '../components/RoleSwitchB
 import PurchasedPropertyDrawer from '../components/PurchasedPropertyDrawer'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { fetchUserDeposit } from '../utils/depositApi'
-import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
+import ManagerChatModal, { useManagerChatUserId } from '../components/ManagerChatModal'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { resolveSellCabinetMode, OPEN_ROLE_SWITCH_FOR_SELL_EVENT } from '../utils/navigateToSellPurchasedProperty'
@@ -747,7 +744,6 @@ function TestPage() {
   const [subscriptionSheetOpen, setSubscriptionSheetOpen] = useState(false)
   const [bookingsSheetOpen, setBookingsSheetOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
-  const [managerChatInput, setManagerChatInput] = useState('')
   const [subscriptionSheetLoading, setSubscriptionSheetLoading] = useState(false)
   const [subscriptionSheetState, setSubscriptionSheetState] = useState(null)
   const [subscriptionUpgradeLoading, setSubscriptionUpgradeLoading] = useState(false)
@@ -1394,7 +1390,6 @@ function TestPage() {
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
         setIsManagerChatOpen(false)
-        setManagerChatInput('')
       }
     }
     window.addEventListener('keydown', onKey)
@@ -1408,30 +1403,7 @@ function TestPage() {
   ])
 
   const userData = useMemo(() => getUserData(), [])
-  const isLoggedIn = isSiteUserSignedIn(user, isLoaded)
-  const getChatUserId = useMemo(() => {
-    if (isLoggedIn) {
-      const freshUserData = getUserData()
-      const storedUserId = freshUserData?.id || localStorage.getItem('userId')
-      if (storedUserId) return `user_${storedUserId}`
-    }
-    let sessionId = localStorage.getItem('chatSessionId')
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem('chatSessionId', sessionId)
-    }
-    return sessionId
-  }, [isLoggedIn, user, isLoaded])
-
-  const {
-    liveChatToken,
-    managerConnecting,
-    managerMessagesRef,
-    managerThreadUi,
-    enterLiveManagerChat,
-    pauseManagerPolling,
-    sendManagerMessage,
-  } = useManagerLiveChat(getChatUserId, t)
+  const managerChatUserId = useManagerChatUserId(user, isLoaded)
 
   const openVipPersonalManager = useCallback(() => {
     setShowVipManagerSpotlight(false)
@@ -1442,28 +1414,17 @@ function TestPage() {
     openVipPersonalManagerWhatsApp()
   }, [isLoaded, user])
 
-  const openPlatformManagerChat = useCallback(async () => {
+  const openPlatformManagerChat = useCallback(() => {
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
     setIsManagerChatOpen(true)
-    try {
-      await enterLiveManagerChat()
-    } catch {
-      setIsManagerChatOpen(false)
-    }
-  }, [enterLiveManagerChat, isLoaded, user])
+  }, [isLoaded, user])
 
   const closeManagerChatModal = useCallback(() => {
     setIsManagerChatOpen(false)
-    setManagerChatInput('')
-    pauseManagerPolling()
-  }, [pauseManagerPolling])
-
-  useEffect(() => {
-    if (!isManagerChatOpen) pauseManagerPolling()
-  }, [isManagerChatOpen, pauseManagerPolling])
+  }, [])
 
   const fullName =
     user?.fullName ||
@@ -2825,11 +2786,6 @@ function TestPage() {
                 ) : null}
               </section>
 
-              <ProfileVipClubPromo
-                className="profile-cabinet__vip-promo"
-                titleId="profile-cabinet-vip-promo-title"
-              />
-
               <div className="profile-cabinet__desk">
               <section className="profile-cabinet__list" aria-label={t('buyerCabinet_directionsListAria')}>
                 <div className="profile-cabinet__section-head">
@@ -2999,8 +2955,6 @@ function TestPage() {
                 />
               ) : (
                 <>
-              <ProfileVipClubPromo className="test-page__vip-promo" />
-
               <div className="test-bento">
                 <div className="test-bento__main">
                   <section className="test-panel test-panel--compact" aria-labelledby="test-quick-title">
@@ -4000,89 +3954,11 @@ function TestPage() {
       ) : null}
 
 
-      {isManagerChatOpen ? (
-        <div className="test-manager-chat-modal-root" role="dialog" aria-modal="true" aria-label={t('chatManagerTitle')}>
-          <div className="chat-widget chat-widget--manager-dock">
-            <div className="chat-widget__header">
-              <div className="chat-widget__header-info">
-                <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
-                <div className="chat-widget__header-text">
-                  <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
-                  <span className="chat-widget__status">{t('chatManagerOnline')}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="chat-widget__close"
-                onClick={closeManagerChatModal}
-                aria-label={t('closeChat')}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-
-            <div className="chat-widget__messages" ref={managerMessagesRef}>
-              {managerConnecting ? (
-                <div className="chat-widget__message chat-widget__message--bot">
-                  <div className="chat-widget__message-content">
-                    <div className="chat-widget__typing" aria-hidden>
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                    <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
-                  </div>
-                </div>
-              ) : (
-                managerThreadUi.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`chat-widget__message ${
-                      message.sender === 'user'
-                        ? 'chat-widget__message--user'
-                        : message.sender === 'manager'
-                          ? 'chat-widget__message--manager'
-                          : 'chat-widget__message--system'
-                    }`}
-                  >
-                    <div className="chat-widget__message-content">{message.text}</div>
-                    <div className="chat-widget__message-time">{message.time}</div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <form
-              className="chat-widget__input-form"
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!managerChatInput.trim() || managerConnecting || !liveChatToken) return
-                const text = managerChatInput.trim()
-                setManagerChatInput('')
-                void sendManagerMessage(text)
-              }}
-            >
-              <input
-                type="text"
-                className="chat-widget__input"
-                placeholder={t('chatPlaceholder')}
-                value={managerChatInput}
-                onChange={(e) => setManagerChatInput(e.target.value)}
-                autoComplete="off"
-                disabled={managerConnecting || !liveChatToken}
-              />
-              <button
-                type="submit"
-                className="chat-widget__send"
-                aria-label={t('sendMessage')}
-                disabled={managerConnecting || !liveChatToken}
-              >
-                <FiSend size={18} />
-              </button>
-            </form>
-          </div>
-        </div>
-      ) : null}
+      <ManagerChatModal
+        open={isManagerChatOpen}
+        onClose={closeManagerChatModal}
+        chatUserId={managerChatUserId}
+      />
 
       {selectedPurchasedProperty ? (
         <PurchasedPropertyDrawer

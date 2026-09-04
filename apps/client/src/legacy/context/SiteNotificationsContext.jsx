@@ -124,7 +124,11 @@ export function SiteNotificationsProvider({ children }) {
   const propertyMetaLoadedKeysRef = useRef(new Set())
 
   const unreadCount = useMemo(
-    () => notifications.filter((n) => n.view_count === 0).length,
+    () =>
+      notifications.filter((n) => {
+        const views = Number(n?.view_count)
+        return !Number.isFinite(views) || views <= 0
+      }).length,
     [notifications],
   )
 
@@ -456,6 +460,17 @@ export function SiteNotificationsProvider({ children }) {
   const handleNotificationView = useCallback(
     async (notificationId) => {
       try {
+        setNotifications((previous) =>
+          previous.map((notification) =>
+            notification.id === notificationId
+              ? {
+                  ...notification,
+                  is_read: 1,
+                  view_count: Math.max(1, Number(notification.view_count) || 0),
+                }
+              : notification,
+          ),
+        )
         const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' })
         ensureSuccessfulNotificationResponse(response)
         const dbUserId = localStorage.getItem('userId')
@@ -476,8 +491,12 @@ export function SiteNotificationsProvider({ children }) {
 
   const markAllNotificationsRead = useCallback(async () => {
     const unreadIds = notifications
-      .filter((notification) => notification.view_count === 0)
+      .filter((notification) => {
+        const views = Number(notification?.view_count)
+        return !Number.isFinite(views) || views <= 0
+      })
       .map((notification) => notification.id)
+      .filter((id) => id != null)
     if (unreadIds.length === 0) return
 
     try {
@@ -490,10 +509,19 @@ export function SiteNotificationsProvider({ children }) {
       setNotifications((previous) =>
         previous.map((notification) =>
           unreadIds.includes(notification.id)
-            ? { ...notification, view_count: Math.max(1, Number(notification.view_count) || 0) }
+            ? {
+                ...notification,
+                is_read: 1,
+                view_count: Math.max(1, Number(notification.view_count) || 0),
+              }
             : notification,
         ),
       )
+      const dbUserId = localStorage.getItem('userId')
+      if (dbUserId && /^\d+$/.test(dbUserId)) {
+        const { invalidateUserNotificationsCache } = await import('../utils/notificationsApi')
+        invalidateUserNotificationsCache(dbUserId)
+      }
     } catch (error) {
       console.error('SiteNotifications: mark all read', error)
       showToast({
@@ -541,6 +569,25 @@ export function SiteNotificationsProvider({ children }) {
     }
     return undefined
   }, [isOpen])
+
+  /** После просмотра панели — сбрасываем непрочитанные, чтобы погасла лампочка на колокольчике. */
+  const panelWasVisibleRef = useRef(false)
+  useEffect(() => {
+    if (isClosing) {
+      void markAllNotificationsRead()
+    }
+  }, [isClosing, markAllNotificationsRead])
+
+  useEffect(() => {
+    if (visible) {
+      panelWasVisibleRef.current = true
+      return undefined
+    }
+    if (!panelWasVisibleRef.current) return undefined
+    panelWasVisibleRef.current = false
+    void markAllNotificationsRead()
+    return undefined
+  }, [visible, markAllNotificationsRead])
 
   const ctxValue = useMemo(
     () => ({
@@ -599,7 +646,11 @@ export function NotificationsBell({ variant = 'desktop' }) {
         type="button"
         className="header__action-btn"
         data-site-notifications-bell
-        aria-label={t('notifications')}
+        aria-label={
+          unreadCount > 0
+            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+            : t('notifications')
+        }
         aria-expanded={isOpen}
         onClick={(e) => {
           e.stopPropagation()
@@ -607,7 +658,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
         }}
       >
         <FiBell size={18} />
-        {unreadCount > 0 && <span className="header__action-indicator" />}
+        {unreadCount > 0 && <span className="header__action-indicator" aria-hidden />}
       </button>
     )
   }
@@ -618,7 +669,11 @@ export function NotificationsBell({ variant = 'desktop' }) {
         type="button"
         className="wallet-bank__icon-button wallet-bank__bell"
         data-site-notifications-bell
-        aria-label={t('notifications')}
+        aria-label={
+          unreadCount > 0
+            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+            : t('notifications')
+        }
         aria-expanded={isOpen}
         onClick={(e) => {
           e.stopPropagation()
@@ -636,7 +691,11 @@ export function NotificationsBell({ variant = 'desktop' }) {
       type="button"
       className="new-header__notification-btn"
       data-site-notifications-bell
-      aria-label={t('notifications')}
+      aria-label={
+        unreadCount > 0
+          ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+          : t('notifications')
+      }
       aria-expanded={isOpen}
       onClick={(e) => {
         e.stopPropagation()
@@ -644,7 +703,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
       }}
     >
       <FiBell size={20} />
-      {unreadCount > 0 && <span className="new-header__notification-indicator" />}
+      {unreadCount > 0 && <span className="new-header__notification-indicator" aria-hidden />}
     </button>
   )
 }

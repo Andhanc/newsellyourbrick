@@ -177,12 +177,9 @@
   border-bottom-left-radius: 6px;
 }
 
+.site-ai-drawer .chat-widget__message--user .chat-widget__message-content,
 .ai-chat-modal-root .chat-widget__message--user .chat-widget__message-content {
   border-bottom-right-radius: 4px;
-}
-
-.site-ai-drawer.ai-chat-drawer .chat-widget__message--user .chat-widget__message-content {
-  border-bottom-right-radius: 6px;
 }
 
 .site-ai-drawer .chat-widget__buttons {

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiEye, FiEyeOff, FiMaximize, FiMenu, FiPlus } from 'react-icons/fi'
-import { CreditCard, Gavel } from 'lucide-react'
+import { Gavel } from 'lucide-react'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
   TonConnectUIProvider,
@@ -959,25 +959,6 @@ const WalletInner = () => {
               <span>{t('walletPage_auctionAccessCta')}</span>
               <FiArrowRight aria-hidden />
             </button>
-            <div className="wallet-bank__payments" aria-labelledby="wallet-payment-methods-title">
-              <div className="wallet-bank__payments-heading">
-                <span className="wallet-bank__payments-icon" aria-hidden>
-                  <CreditCard size={18} strokeWidth={2.1} />
-                </span>
-                <span className="wallet-bank__payments-copy">
-                  <strong id="wallet-payment-methods-title">{t('walletPage_paymentMethodsTitle')}</strong>
-                  <small>{t('walletPage_paymentMethodsSubtitle')}</small>
-                </span>
-              </div>
-              <div className="wallet-bank__payment-brands" role="list" aria-label={t('walletPage_paymentMethodsAria')}>
-                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--visa" role="listitem" aria-label="Visa">VISA</span>
-                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--mastercard" role="listitem" aria-label="Mastercard">
-                  <span className="wallet-bank__mastercard-mark" aria-hidden><i /><i /></span><b>mastercard</b>
-                </span>
-                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--stablecoin" role="listitem" aria-label="USDT"><i aria-hidden>₮</i><b>USDT</b></span>
-                <span className="wallet-bank__payment-brand wallet-bank__payment-brand--stablecoin wallet-bank__payment-brand--usdc" role="listitem" aria-label="USDC"><i aria-hidden>$</i><b>USDC</b></span>
-              </div>
-            </div>
           </section>
 
           <section className="wallet-bank__tx wallet-bank__quick" aria-labelledby="wallet-tx-title">

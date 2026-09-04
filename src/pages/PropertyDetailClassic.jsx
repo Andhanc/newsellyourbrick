@@ -2540,8 +2540,13 @@ function PropertyDetailClassic({
       return
     }
 
-    // Проверяем резервацию перед открытием модального окна
+    // Уже забронировано — ведём в гайд покупки, а не оставляем на «мёртвой» карточке
     if (isReservedActive) {
+      const pid = displayProperty?.id || property?.id
+      if (pid) {
+        navigate(`/profile/purchased/${pid}`)
+        return
+      }
       showNotification(t('objectReservedNotification'))
       return
     }
@@ -3987,11 +3992,17 @@ function PropertyDetailClassic({
           paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
         }`}
         onClick={handleBookNow}
-        disabled={isReservedActive || !buyNowEmailOk}
-        title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+        disabled={!isReservedActive && !buyNowEmailOk}
+        title={
+          isReservedActive
+            ? t('purchaseSuccess_goToObject')
+            : !buyNowEmailOk
+              ? t('buyNowEmailRequired')
+              : undefined
+        }
       >
         {isReservedActive
-          ? t('objectReserved')
+          ? t('purchaseSuccess_goToObject')
           : t('propertyDetailBuyNowFor', { price: fmtBidPrice(displayProperty.price) })}
       </button>
     )
@@ -4890,7 +4901,8 @@ function PropertyDetailClassic({
 
     if (variant === 'mobile-about' || variant === 'mobile-tab') {
       const buyNowLocked =
-        isReservedActive || !buyNowEmailOk || !shouldShowAuctionBuyNow || isOwnListing
+        isOwnListing ||
+        (!isReservedActive && (!buyNowEmailOk || !shouldShowAuctionBuyNow))
       const buyNowPriceLabel = fmtBidPrice(displayProperty.price)
       return (
         <section
@@ -4910,15 +4922,17 @@ function PropertyDetailClassic({
             onClick={handleBookNow}
             disabled={buyNowLocked}
             title={
-              !buyNowEmailOk
-                ? t('buyNowEmailRequired')
-                : !shouldShowAuctionBuyNow
-                  ? t('propertyDetailTabBuyNow')
-                  : undefined
+              isReservedActive
+                ? t('purchaseSuccess_goToObject')
+                : !buyNowEmailOk
+                  ? t('buyNowEmailRequired')
+                  : !shouldShowAuctionBuyNow
+                    ? t('propertyDetailTabBuyNow')
+                    : undefined
             }
           >
             {isReservedActive
-              ? t('objectReserved')
+              ? t('purchaseSuccess_goToObject')
               : t('propertyDetailBuy')}
           </button>
         </section>
@@ -4937,14 +4951,10 @@ function PropertyDetailClassic({
             paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
           }`}
           onClick={handleBookNow}
-          disabled={isReservedActive}
-          title={isReservedActive ? t('objectReserved') : undefined}
-          style={{
-            opacity: isReservedActive ? 0.5 : 1,
-            cursor: isReservedActive ? 'not-allowed' : 'pointer',
-          }}
+          disabled={isOwnListing}
+          title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}
         >
-          {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+          {isReservedActive ? t('purchaseSuccess_goToObject') : t('buyNowSectionTitle')}
         </button>
       </>
     )
@@ -6412,9 +6422,9 @@ function PropertyDetailClassic({
                     type="button"
                     className="pdx-secondary-btn"
                     onClick={handleBookNow}
-                    disabled={isReservedActive || !buyNowEmailOk}
+                    disabled={!isReservedActive && !buyNowEmailOk}
                   >
-                    {t('buyNowSectionTitle')}
+                    {isReservedActive ? t('purchaseSuccess_goToObject') : t('buyNowSectionTitle')}
                   </button>
                 </div>
               ) : null}
@@ -6480,9 +6490,9 @@ function PropertyDetailClassic({
                 type="button"
                 className="pdx-primary-btn"
                 onClick={handleBookNow}
-                disabled={isReservedActive || !buyNowEmailOk}
+                disabled={!isReservedActive && !buyNowEmailOk}
               >
-                {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+                {isReservedActive ? t('purchaseSuccess_goToObject') : t('buyNowSectionTitle')}
               </button>
             </>
           ) : null}
@@ -7537,15 +7547,10 @@ function PropertyDetailClassic({
                       paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
                     }`}
                     onClick={handleBookNow}
-                    disabled={isReservedActive}
-                    title={isReservedActive ? t('objectReserved') : undefined}
-                    style={{
-                      opacity: isReservedActive ? 0.5 : 1,
-                      cursor: isReservedActive ? 'not-allowed' : 'pointer',
-                    }}
+                    title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}
                   >
                     {isReservedActive
-                      ? t('objectReserved')
+                      ? t('purchaseSuccess_goToObject')
                       : t('buyNowSectionTitle')}
                   </button>
                 </>

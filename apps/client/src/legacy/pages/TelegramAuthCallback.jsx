@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { verifyTelegramAuth } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import AuthAlertModal from '../components/AuthAlertModal'
@@ -11,6 +12,7 @@ import { getCabinetHomePath } from '../utils/cabinetRoutes'
  * отправляет на бэкенд, сохраняет сессию и редиректит в профиль или кабинет владельца.
  */
 export default function TelegramAuthCallback() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'error'
   const [errorVariant, setErrorVariant] = useState('error')
@@ -58,7 +60,12 @@ export default function TelegramAuthCallback() {
       .then((result) => {
         if (result.success) {
           setStatus('success')
-          showNotification(`Добро пожаловать, ${result.user?.name || 'Пользователь'}!`)
+          const name = result.user?.name || t('authToast_userFallback')
+          showNotification(
+            mode === 'register'
+              ? t('authToast_registrationComplete', { name })
+              : t('authToast_welcome', { name }),
+          )
           const redirectPath = (result.user?.role === 'seller' || result.user?.role === 'owner')
             ? getCabinetHomePath(result.user.role)
             : '/profile'
@@ -92,7 +99,7 @@ export default function TelegramAuthCallback() {
         setErrorTitle('Не удалось войти через Telegram')
         setErrorMessage(err.message || 'Попробуйте ещё раз или войдите через email, WhatsApp или Google.')
       })
-  }, [navigate])
+  }, [navigate, t])
 
   const handleAlertClose = () => {
     navigate('/', { replace: true })

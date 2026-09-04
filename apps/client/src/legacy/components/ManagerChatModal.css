@@ -61,7 +61,8 @@
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: #111827;
+  background: linear-gradient(135deg, #4ecdd6 0%, #22b7c3 54%, #0099a9 100%);
+  border: 1px solid rgba(255, 255, 255, 0.76);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -70,6 +71,9 @@
   font-weight: 700;
   font-family: 'Montserrat', sans-serif;
   flex-shrink: 0;
+  box-shadow:
+    0 10px 24px rgba(0, 153, 169, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .manager-chat-modal-root .chat-widget__avatar--ai {
@@ -184,10 +188,14 @@
 }
 
 .manager-chat-modal-root:not(.ai-chat-modal-root) .chat-widget__message--user .chat-widget__message-content {
-  background: #111827;
+  background-color: #4ecdd6;
+  background-image: linear-gradient(135deg, #4ecdd6 0%, #22b7c3 54%, #0099a9 100%);
   color: #ffffff;
+  border: none;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 2px 8px -4px rgba(17, 24, 39, 0.3);
+  box-shadow:
+    0 6px 16px rgba(0, 153, 169, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
@@ -254,7 +262,8 @@
 }
 
 .manager-chat-modal-root .chat-widget__input:focus {
-  border-color: #111827;
+  border-color: #4ecdd6;
+  box-shadow: 0 0 0 4px rgba(78, 205, 214, 0.14);
 }
 
 .manager-chat-modal-root .chat-widget__input:disabled {
@@ -270,9 +279,9 @@
 .manager-chat-modal-root .chat-widget__send {
   width: 44px;
   height: 44px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 999px;
-  background: #111827;
+  background: linear-gradient(135deg, #4ecdd6 0%, #22b7c3 48%, #0099a9 100%);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -280,10 +289,13 @@
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  box-shadow:
+    0 10px 22px rgba(0, 153, 169, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .manager-chat-modal-root .chat-widget__send:hover:not(:disabled) {
-  background: #0f172a;
+  background: linear-gradient(135deg, #5dd8e0 0%, #0099a9 100%);
   transform: scale(1.05);
 }
 

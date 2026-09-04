@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import BuyerCelebrationModal from './BuyerCelebrationModal'
@@ -18,6 +19,7 @@ const readNumericDbUserId = () => {
 }
 
 export default function GlobalVerificationSuccessGate() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [verificationNotification, setVerificationNotification] = useState(null)
@@ -148,18 +150,15 @@ export default function GlobalVerificationSuccessGate() {
     }
   }, [handleSseApproved, loadVerificationNotification])
 
-  const title =
-    verificationNotification?.title || 'Поздравляем!'
-  const text =
-    verificationNotification?.message ||
-    'Ваши документы одобрены. Теперь вы можете полноценно пользоваться сервисом.'
+  const title = t('verificationApprovedCelebrationTitle')
+  const text = t('verificationApprovedCelebrationText')
 
   return (
     <BuyerCelebrationModal
       open={isOpen}
       title={title}
       text={text}
-      ctaLabel="Перейти в профиль"
+      ctaLabel={t('verificationApprovedCelebrationCta')}
       onCta={handleCta}
       titleId="verification-approved-celebration-title"
     />

@@ -219,6 +219,44 @@
   border: 2px solid #ffffff;
 }
 
+/* Лампочка внимания на колокольчике: все брейкпоинты (в т.ч. мобильный pill-хедер) */
+.new-header__notification-btn {
+  position: relative;
+}
+
+.new-header__notification-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
+  pointer-events: none;
+  z-index: 2;
+  animation: new-header-notification-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes new-header-notification-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-header__notification-indicator {
+    animation: none;
+  }
+}
+
 /* Мобильная версия: убираем старый хедер и поиск над картинкой */
 @media (max-width: 768px) {
   .hero-section .header {
@@ -5443,14 +5481,8 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
   }
 
   .new-header__notification-indicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #f97316;
-    border: 2px solid #ffffff;
+    top: 10px;
+    right: 10px;
   }
 
   /* Скрываем старый хедер на десктопе */
@@ -5678,6 +5710,13 @@ html.site-footer-near .ai-assistant-dock > button.ai-button {
 
   .new-header__notification-btn {
     margin-right: 0;
+  }
+
+  .new-header__notification-indicator {
+    top: 6px;
+    right: 7px;
+    width: 9px;
+    height: 9px;
   }
 
   /* Профиль на мобилке: как на десктопе (аватар/фото в круге) */

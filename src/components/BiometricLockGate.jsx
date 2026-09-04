@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth, useClerk } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 
 import {
   CLERK_DB_USER_SYNCED,
@@ -13,25 +14,8 @@ import {
   rememberBiometricEnabled,
   verifyPlatformBiometric,
 } from '../services/biometricAuthService'
+import { getBiometricErrorMessage } from '../utils/biometricMessages'
 import BiometricSecurityDrawer from './BiometricSecurityDrawer'
-
-function errorText(error) {
-  const code = String(error?.message || '')
-  if (code === 'biometric_platform_unavailable') {
-    return 'На этом устройстве системная биометрия недоступна.'
-  }
-  if (code === 'biometric_browser_unsupported') {
-    return 'Этот браузер не поддерживает системную биометрию.'
-  }
-  if (code === 'biometric_login_session_missing') {
-    return 'Сессия устарела. Выйдите из профиля и войдите снова.'
-  }
-  if (code === 'secure_context_required') {
-    return 'Для биометрии откройте защищённую HTTPS-версию сайта.'
-  }
-  if (isBiometricCancel(error)) return ''
-  return 'Не удалось подтвердить вход. Попробуйте ещё раз.'
-}
 
 function isLoggedInLocally() {
   try {
@@ -65,6 +49,7 @@ function shouldLockImmediately(userId) {
 }
 
 export default function BiometricLockGate() {
+  const { t } = useTranslation()
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const { signOut } = useClerk()
   const [userId, setUserId] = useState(() => getStoredNumericUserId())
@@ -126,7 +111,7 @@ export default function BiometricLockGate() {
       } catch (nextError) {
         // Once this device is protected, an outage or expired token must not bypass the lock.
         if (!cancelled && knownProtected) {
-          setError(errorText(nextError))
+          setError(getBiometricErrorMessage(t, nextError, 'lock'))
           setOpen(true)
         }
       }
@@ -134,7 +119,7 @@ export default function BiometricLockGate() {
     return () => {
       cancelled = true
     }
-  }, [authContext, isLoaded, isSignedIn, unlockedKey, userId])
+  }, [authContext, isLoaded, isSignedIn, t, unlockedKey, userId])
 
   const handleUnlock = async () => {
     setBusy(true)
@@ -144,7 +129,7 @@ export default function BiometricLockGate() {
       if (unlockedKey) sessionStorage.setItem(unlockedKey, '1')
       setOpen(false)
     } catch (nextError) {
-      setError(errorText(nextError))
+      setError(getBiometricErrorMessage(t, nextError, 'lock'))
     } finally {
       setBusy(false)
     }

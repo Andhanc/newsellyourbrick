@@ -388,8 +388,7 @@
 /* Incoming bot bubbles — dark surface, white text; nested cards stay light */
 .chat-widget__message--bot .chat-widget__message-content,
 .site-ai-drawer .chat-widget__message--bot .chat-widget__message-content,
-.manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content,
-.test-manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content {
+.manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content {
   background-color: #111827;
   background-image: none;
   background-size: auto;
@@ -403,8 +402,7 @@
 /* Manager replies — light surface (unchanged from site chat pattern) */
 .chat-widget__message--manager .chat-widget__message-content,
 .site-ai-drawer .chat-widget__message--manager .chat-widget__message-content,
-.manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content,
-.test-manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content {
+.manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content {
   background-color: #ffffff;
   background-image: none;
   background-size: auto;
@@ -483,9 +481,11 @@
   background: rgba(255, 255, 255, 0.72);
 }
 
-/* Outgoing user bubbles in AI assistant — tiffany fill */
+/* Outgoing user bubbles — tiffany fill (AI + manager chat) */
 .ai-chat-modal-root .chat-widget__message--user .chat-widget__message-content,
-.site-ai-drawer.ai-chat-drawer .chat-widget__message--user .chat-widget__message-content {
+.manager-chat-modal-root .chat-widget__message--user .chat-widget__message-content,
+.site-ai-drawer.ai-chat-drawer .chat-widget__message--user .chat-widget__message-content,
+.site-ai-drawer.manager-chat-drawer .chat-widget__message--user .chat-widget__message-content {
   background-color: var(--syb-tiffany-btn);
   background-image: var(--syb-tiffany-btn-fill);
   background-size: 100% 100%;

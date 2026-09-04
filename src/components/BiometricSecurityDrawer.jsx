@@ -44,22 +44,18 @@ export default function BiometricSecurityDrawer({
 
   const locked = mode === 'lock'
   const title = locked
-    ? t('biometric_lockTitle', { defaultValue: 'Подтвердите, что это вы' })
-    : t('biometric_offerTitle', { defaultValue: 'Защитите вход в профиль' })
+    ? t('biometric_lockTitle')
+    : t('biometric_offerTitle')
   const description = locked
-    ? t('biometric_lockDescription', {
-        defaultValue: 'Используйте отпечаток пальца, Face ID или код устройства, чтобы открыть профиль.',
-      })
-    : t('biometric_offerDescription', {
-        defaultValue: 'Добавьте системную биометрию устройства — следующий вход будет быстрее и безопаснее.',
-      })
+    ? t('biometric_lockDescription')
+    : t('biometric_offerDescription')
 
   return createPortal(
     <div className={`biometric-drawer${locked ? ' biometric-drawer--lock' : ''}`}>
       <button
         type="button"
         className="biometric-drawer__backdrop"
-        aria-label={locked ? undefined : t('close', { defaultValue: 'Закрыть' })}
+        aria-label={locked ? undefined : t('close')}
         tabIndex={locked ? -1 : 0}
         onClick={locked ? undefined : onSecondary}
       />
@@ -76,7 +72,7 @@ export default function BiometricSecurityDrawer({
             type="button"
             className="biometric-drawer__close"
             onClick={onSecondary}
-            aria-label={t('close', { defaultValue: 'Закрыть' })}
+            aria-label={t('close')}
           >
             <FiX aria-hidden />
           </button>
@@ -100,7 +96,7 @@ export default function BiometricSecurityDrawer({
 
         <div className="biometric-drawer__copy">
           <span className="biometric-drawer__eyebrow">
-            {t('biometric_eyebrow', { defaultValue: 'Дополнительная защита' })}
+            {t('biometric_eyebrow')}
           </span>
           <h2 id="biometric-drawer-title">{title}</h2>
           <p id="biometric-drawer-description">{description}</p>
@@ -122,10 +118,10 @@ export default function BiometricSecurityDrawer({
             autoFocus={locked}
           >
             {busy
-              ? t('biometric_wait', { defaultValue: 'Ожидаем устройство…' })
+              ? t('biometric_wait')
               : locked
-                ? t('biometric_unlock', { defaultValue: 'Подтвердить вход' })
-                : t('biometric_add', { defaultValue: 'Добавить' })}
+                ? t('biometric_unlock')
+                : t('biometric_add')}
           </button>
           <button
             type="button"
@@ -134,15 +130,13 @@ export default function BiometricSecurityDrawer({
             disabled={busy}
           >
             {locked
-              ? t('biometric_logout', { defaultValue: 'Выйти из профиля' })
-              : t('biometric_later', { defaultValue: 'Позже' })}
+              ? t('biometric_logout')
+              : t('biometric_later')}
           </button>
         </div>
 
         <p className="biometric-drawer__privacy">
-          {t('biometric_privacy', {
-            defaultValue: 'Отпечаток остаётся на устройстве — SellYourBrick его не получает.',
-          })}
+          {t('biometric_privacy')}
         </p>
       </section>
     </div>,

@@ -23,17 +23,12 @@ test('deposit page matches the supplied blue banking reference', () => {
   assert.match(css, /\.wallet-bank__body[\s\S]*border-radius:\s*30px 30px 0 0/)
 })
 
-test('mobile deposit shows supported payment rails and a floating auction action', () => {
-  assert.match(wallet, /walletPage_paymentMethodsTitle/)
-  assert.match(wallet, /Visa/)
-  assert.match(wallet, /Mastercard/)
-  assert.match(wallet, /USDT/)
-  assert.match(wallet, /USDC/)
-  assert.match(css, /@media \(max-width: 639px\)[\s\S]*\.wallet-bank__payments/)
+test('mobile deposit hides payment rails and keeps a floating auction action', () => {
+  assert.doesNotMatch(wallet, /walletPage_paymentMethodsTitle/)
+  assert.doesNotMatch(wallet, /wallet-bank__payments/)
+  assert.doesNotMatch(wallet, /wallet-bank__payment-brand--visa/)
   assert.match(css, /\.wallet-bank__auction-action[\s\S]*0 24px 42px/)
   assert.match(css, /\.wallet-bank__auction-action[\s\S]*background:\s*#fff/)
-  assert.match(css, /\.wallet-bank__payments[\s\S]*background:\s*transparent/)
-  assert.ok(wallet.indexOf('wallet-bank__auction-action') < wallet.indexOf('wallet-bank__payments'))
   assert.doesNotMatch(css, /@keyframes wallet-bank__auction-action/)
 })
 

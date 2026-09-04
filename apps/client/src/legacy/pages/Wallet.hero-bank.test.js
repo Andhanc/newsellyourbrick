@@ -23,18 +23,13 @@ test('deposit page matches banking reference shell with tiffany hero', () => {
   assert.match(css, /border-radius:\s*999px/)
 })
 
-test('mobile deposit lists payment rails and elevates the auction action', () => {
-  assert.match(wallet, /walletPage_paymentMethodsTitle/)
-  assert.match(wallet, /Visa/)
-  assert.match(wallet, /Mastercard/)
-  assert.match(wallet, /USDT/)
-  assert.match(wallet, /USDC/)
+test('mobile deposit hides payment rails and keeps the auction action', () => {
+  assert.doesNotMatch(wallet, /walletPage_paymentMethodsTitle/)
+  assert.doesNotMatch(wallet, /wallet-bank__payments/)
+  assert.doesNotMatch(wallet, /wallet-bank__payment-brand--visa/)
   assert.match(wallet, /wallet-bank__auction-action/)
-  assert.match(css, /@media \(max-width: 639px\)[\s\S]*\.wallet-bank__payments/)
   assert.match(css, /\.wallet-bank__auction-action[\s\S]*0 24px 42px/)
   assert.match(css, /\.wallet-bank__auction-action[\s\S]*background:\s*#fff/)
-  assert.match(css, /\.wallet-bank__payments[\s\S]*background:\s*transparent/)
-  assert.ok(wallet.indexOf('wallet-bank__auction-action') < wallet.indexOf('wallet-bank__payments'))
 })
 
 test('legacy wallet header actions use stable destinations', () => {

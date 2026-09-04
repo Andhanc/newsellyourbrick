@@ -31,12 +31,21 @@ function readCheckoutParams(searchParams) {
   }
 }
 
+function stripCheckoutParams(searchParams) {
+  const next = new URLSearchParams(searchParams)
+  next.delete('reservation_checkout')
+  next.delete('share_checkout')
+  next.delete('session_id')
+  return next
+}
+
 export default function PurchaseCheckoutSuccessBridge() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, isLoaded: userLoaded } = useUser()
   const { openPurchaseSuccess } = usePurchaseSuccess()
   const { t, i18n } = useTranslation()
   const inFlightRef = useRef(null)
+  const openedSessionRef = useRef(null)
 
   useEffect(() => {
     const params = readCheckoutParams(searchParams)
@@ -47,11 +56,7 @@ export default function PurchaseCheckoutSuccessBridge() {
     const { sessionId, kind } = checkout
 
     if (wasPurchaseCheckoutSessionHandled(sessionId)) {
-      const next = new URLSearchParams(searchParams)
-      next.delete('reservation_checkout')
-      next.delete('share_checkout')
-      next.delete('session_id')
-      setSearchParams(next, { replace: true })
+      setSearchParams(stripCheckoutParams(searchParams), { replace: true })
       clearPendingPurchaseCheckoutSession()
       return undefined
     }
@@ -92,24 +97,24 @@ export default function PurchaseCheckoutSuccessBridge() {
           lang: i18n.language || 'ru',
         })
 
-        if (cancelled) return
-
-        const next = new URLSearchParams(searchParams)
-        next.delete('reservation_checkout')
-        next.delete('share_checkout')
-        next.delete('session_id')
-        setSearchParams(next, { replace: true })
-        clearPendingPurchaseCheckoutSession()
+        // Always clear checkout query after confirm attempt — Provider stays mounted
+        // even if this effect was cleaned up (React Strict Mode).
+        if (!cancelled) {
+          setSearchParams(stripCheckoutParams(searchParams), { replace: true })
+          clearPendingPurchaseCheckoutSession()
+        }
 
         if (!result.ok) {
-          showNotification(
-            result.error || t('purchaseSuccess_confirmError', 'Не удалось подтвердить покупку'),
-            'error',
-          )
+          if (!cancelled) {
+            showNotification(
+              result.error || t('purchaseSuccess_confirmError', 'Не удалось подтвердить покупку'),
+              'error',
+            )
+          }
           return
         }
 
-        if (result.already) {
+        if (result.already && !cancelled) {
           showNotification(
             kind === 'share'
               ? t('shareDetailPurchaseSuccess', 'Покупка долей подтверждена')
@@ -117,7 +122,17 @@ export default function PurchaseCheckoutSuccessBridge() {
           )
         }
 
-        openPurchaseSuccess({ ...result.snapshot, purchaseKind: kind })
+        // Open success UI even if effect was cancelled: otherwise reserved state updates
+        // via PURCHASE_SUCCESS_CONFIRMED_EVENT while the sheet never appears, and the
+        // user stays on a non-interactive reserved listing under a leftover overlay race.
+        if (openedSessionRef.current !== sessionId) {
+          openedSessionRef.current = sessionId
+          openPurchaseSuccess({ ...result.snapshot, purchaseKind: kind })
+        }
+
+        if (cancelled) {
+          clearPendingPurchaseCheckoutSession()
+        }
       } catch (e) {
         if (!cancelled) {
           showNotification(

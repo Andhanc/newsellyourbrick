@@ -1,5 +1,11 @@
 .purchase-success-modal.buyer-sheet {
   z-index: 13490;
+  pointer-events: auto;
+}
+
+.purchase-success-modal .buyer-sheet__backdrop,
+.purchase-success-modal .buyer-sheet__surface {
+  pointer-events: auto;
 }
 
 .purchase-success-modal .buyer-sheet__surface {

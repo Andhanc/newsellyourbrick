@@ -61,9 +61,9 @@ test('profile cabinet uses tiffany banner folders layout without onboarding hint
 test('buyer cabinet desktop layout expands the mobile cabinet instead of a 560px column', () => {
   assert.match(profileSource, /profile-cabinet__desk/)
   assert.match(profileSource, /profile-cabinet__aside/)
-  assert.match(profileSource, /profile-cabinet__vip-promo/)
+  assert.doesNotMatch(profileSource, /ProfileVipClubPromo/)
+  assert.doesNotMatch(profileSource, /profile-cabinet__vip-promo/)
   assert.match(profileSource, /buyerCabinet_docsTitle/)
-  assert.match(profileSource, /profile-cabinet__invite-row/)
   assert.match(profileCss, /\.profile-cabinet__desk/)
   assert.match(profileCss, /\.profile-cabinet__aside/)
   assert.match(profileCss, /@media \(min-width: 960px\)/)
@@ -72,7 +72,6 @@ test('buyer cabinet desktop layout expands the mobile cabinet instead of a 560px
     profileCss,
     /@media \(min-width: 720px\)[\s\S]{0,400}\.test-page--cabinet-v2 \.test-page__below-hero\s*\{\s*display:\s*flex/,
   )
-  assert.match(profileCss, /\.profile-cabinet__vip-promo[\s\S]{0,220}display:\s*none/)
   assert.match(profileCss, /\.profile-cabinet__folders-rail[\s\S]{0,280}scroll-snap-type:\s*x mandatory/)
 })
 
@@ -208,5 +207,7 @@ test('buyer notification drawer animates calmly and states the next step', () =>
   assert.match(notificationsCss, /\.notification-panel__group-items \.notification-item:nth-child\(2\)/)
   assert.match(notificationsCss, /\.notification-item__next-step/)
   assert.match(notificationsCss, /@media \(prefers-reduced-motion:\s*reduce\)/)
-  assert.match(notificationsContextSource, /aria-label=\{t\('notifications'\)\}/)
+  assert.match(notificationsContextSource, /aria-label=\{/)
+  assert.match(notificationsContextSource, /t\('notifications'\)/)
+  assert.match(notificationsContextSource, /new-header__notification-indicator/)
 })

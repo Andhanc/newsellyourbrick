@@ -863,7 +863,11 @@ const LoginModal = ({
     } else {
       // Для входа или продавца - обычный флоу
       onClose()
-      showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}!`)
+      showNotification(
+        t('authToast_welcome', {
+          name: user.name || t('authToast_userFallback'),
+        }),
+      )
       
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
@@ -940,7 +944,11 @@ const LoginModal = ({
     // Для email-регистрации после подтверждения кода сразу активируем сессию
     // и отправляем пользователя в кабинет (как в сценарии продавца).
     onClose()
-    showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
+    showNotification(
+      t('authToast_registrationComplete', {
+        name: user.name || t('authToast_userFallback'),
+      }),
+    )
 
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
@@ -956,7 +964,7 @@ const LoginModal = ({
     // Документы загружены, закрываем модальное окно и обновляем страницу
     setShowVerificationDocumentsModal(false)
     onClose()
-    showNotification('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
+    showNotification(t('authToast_documentsSubmitted'))
     // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
     window.location.href = '/profile'
   }

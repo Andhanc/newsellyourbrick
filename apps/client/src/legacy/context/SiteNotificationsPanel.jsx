@@ -121,7 +121,7 @@ function NotificationItem({
   const route = safeNotificationRoute(
     dataObj?.action_path ?? dataObj?.route ?? dataObj?.url ?? notification?.action_path,
   )
-  const unread = notification.view_count === 0
+  const unread = Number(notification.view_count) <= 0 || !Number.isFinite(Number(notification.view_count))
   const nextStep = notificationNextStep(notification, dataObj, t)
   const type = String(notification?.type || '').toLowerCase()
   const isOutbid = type === 'bid_outbid' || type === 'outbid'

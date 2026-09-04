@@ -9,15 +9,29 @@ export function PurchaseSuccessProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false)
   const [property, setProperty] = useState(null)
 
-  const openPurchaseSuccess = useCallback((snapshot) => {
-    if (!snapshot?.id) return
-    setProperty(snapshot)
-    setIsOpen(true)
-  }, [])
-
   const closePurchaseSuccess = useCallback(() => {
     setIsOpen(false)
+    // Safety: sheets can leave body scroll locked if dismiss races with route change.
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = ''
+    }
   }, [])
+
+  const openPurchaseSuccess = useCallback(
+    (snapshot) => {
+      if (!snapshot?.id) return
+      setProperty(snapshot)
+      setIsOpen(true)
+      // Leave the reserved listing page — its CTAs are disabled and overlays may block
+      // interaction. Land on the purchased guide under the success sheet.
+      if (snapshot.purchaseKind === 'share') {
+        navigate('/profile', { replace: true })
+        return
+      }
+      navigate(`/profile/purchased/${snapshot.id}`, { replace: true })
+    },
+    [navigate],
+  )
 
   useEffect(() => {
     if (!import.meta.env.DEV || typeof window === 'undefined') return
@@ -34,13 +48,14 @@ export function PurchaseSuccessProvider({ children }) {
 
   const goToPurchasedGuide = useCallback(() => {
     const pid = property?.id
-    setIsOpen(false)
-    if (property?.purchaseKind === 'share') {
+    const kind = property?.purchaseKind
+    closePurchaseSuccess()
+    if (kind === 'share') {
       navigate('/profile')
       return
     }
     if (pid) navigate(`/profile/purchased/${pid}`)
-  }, [navigate, property?.id, property?.purchaseKind])
+  }, [closePurchaseSuccess, navigate, property?.id, property?.purchaseKind])
 
   const value = useMemo(
     () => ({

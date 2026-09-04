@@ -440,17 +440,17 @@ export default function MobileDiscoverCatalog() {
   }
 
   /*
-   * Flip cards (auction → buy now → shares → debts): one gesture covers previous.
-   * After debts parks, free scroll continues on the same debts photo (app block).
+   * Format stack scroll:
+   * - Default (native): finger follows freely, then snaps to the nearest park
+   *   so auction / buy-now / shares never rest half-covered.
+   * - Optional hard pager: data-native-format-scroll="false" — one gesture = one card.
    */
   useEffect(() => {
     const catalog = rootRef.current
     const stage = catalog?.closest('.md-stage')
     if (!catalog || !stage) return undefined
 
-    // Native continuous scrolling is the default. The old gesture pager can only
-    // be enabled explicitly for experiments via data-native-format-scroll="false".
-    if (stage.dataset.nativeFormatScroll !== 'false') return undefined
+    const hardPager = stage.dataset.nativeFormatScroll === 'false'
 
     const elTop = (node) => {
       if (!node) return 0
@@ -464,13 +464,22 @@ export default function MobileDiscoverCatalog() {
       Array.from(catalog.querySelectorAll('[data-md-format-card]'))
     const getFreeTail = () => catalog.querySelector('[data-md-free-tail]')
 
+    const cardStepHeight = (card) => {
+      // Debts marker sits inside the sticky pin — use the pin height for parks.
+      const pin = card?.closest?.('.md-debts-pin')
+      if (pin) return pin.offsetHeight || stage.clientHeight
+      const section = card?.closest?.('.md-format-card')
+      if (section) return section.offsetHeight || stage.clientHeight
+      return card?.offsetHeight || stage.clientHeight
+    }
+
     const cardTop = (index) => {
       const origin = getOrigin()
       const cards = getFlipCards()
       if (!origin || !cards.length) return 0
       let y = elTop(origin)
       for (let i = 0; i < index; i += 1) {
-        y += cards[i]?.offsetHeight || stage.clientHeight
+        y += cardStepHeight(cards[i])
       }
       return y
     }
@@ -520,10 +529,20 @@ export default function MobileDiscoverCatalog() {
       )
     }
 
+    const scrollBehavior = () => {
+      if (
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        return 'auto'
+      }
+      return 'smooth'
+    }
+
     const jumpToY = (top) => {
       jumpingRef.current = true
       wheelAcc.current = 0
-      stage.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      stage.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() })
       window.setTimeout(() => {
         jumpingRef.current = false
         wheelAcc.current = 0
@@ -536,7 +555,7 @@ export default function MobileDiscoverCatalog() {
       jumpToY(cardTop(index))
     }
 
-    /** If user nudges off a park point, snap back to nearest card */
+    /** Snap to nearest format park — used by native settle and hard pager. */
     const settleFlip = () => {
       if (jumpingRef.current || !inFlipZone()) return
       const cards = getFlipCards()
@@ -547,6 +566,16 @@ export default function MobileDiscoverCatalog() {
     }
 
     let settleTimer = 0
+    let touching = false
+
+    const scheduleSettle = (delay = 120) => {
+      window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(() => {
+        if (touching || jumpingRef.current) return
+        if (document.documentElement.classList.contains('login-modal-open')) return
+        settleFlip()
+      }, delay)
+    }
 
     const isPropertyCarouselTarget = (target) =>
       Boolean(
@@ -555,6 +584,36 @@ export default function MobileDiscoverCatalog() {
         ),
       )
 
+    // ——— Native mode: free finger scroll, snap when gesture / momentum ends ———
+    if (!hardPager) {
+      const onNativeTouchStart = () => {
+        touching = true
+        window.clearTimeout(settleTimer)
+      }
+      const onNativeTouchEnd = () => {
+        touching = false
+        scheduleSettle(90)
+      }
+      const onNativeScroll = () => {
+        if (document.documentElement.classList.contains('login-modal-open')) return
+        if (touching || jumpingRef.current || !inFlipZone()) return
+        scheduleSettle(140)
+      }
+
+      stage.addEventListener('touchstart', onNativeTouchStart, { passive: true })
+      stage.addEventListener('touchend', onNativeTouchEnd, { passive: true })
+      stage.addEventListener('touchcancel', onNativeTouchEnd, { passive: true })
+      stage.addEventListener('scroll', onNativeScroll, { passive: true })
+      return () => {
+        window.clearTimeout(settleTimer)
+        stage.removeEventListener('touchstart', onNativeTouchStart)
+        stage.removeEventListener('touchend', onNativeTouchEnd)
+        stage.removeEventListener('touchcancel', onNativeTouchEnd)
+        stage.removeEventListener('scroll', onNativeScroll)
+      }
+    }
+
+    // ——— Experimental hard pager (one gesture = one card) ———
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
       if (jumpingRef.current) {
