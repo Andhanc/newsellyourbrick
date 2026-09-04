@@ -11,6 +11,7 @@ import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import PrivateClubKickModal from './components/PrivateClubKickModal'
 
 import VerificationRejectedGate from './components/VerificationRejectedGate'
+import DepositVerificationGate from './components/DepositVerificationGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
 import { fetchUserById } from './utils/usersApi'
@@ -651,6 +652,7 @@ function App() {
       <PrivateClubKickModal />
       <GlobalVerificationSuccessGate />
       <VerificationRejectedGate blockedUser={isBlocked} />
+      <DepositVerificationGate blockedUser={isBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />
       <ClerkAuthHandler />

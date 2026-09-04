@@ -653,10 +653,6 @@ export const notificationQueries = {
     const notification = await prisma.notifications.findUnique({ where: { id: Number(notificationId) } });
     if (!notification) return { changes: 0 };
     const newViewCount = (notification.view_count || 0) + 1;
-    if (notification.type === 'verification_success' && newViewCount >= 1) {
-      await prisma.notifications.deleteMany({ where: { id: Number(notificationId) } });
-      return { changes: 1 };
-    }
     if (newViewCount >= 2) {
       await prisma.notifications.deleteMany({ where: { id: Number(notificationId) } });
       return { changes: 1 };

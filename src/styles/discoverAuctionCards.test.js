@@ -124,6 +124,15 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
   )
   assert.match(
     css,
+    /\.discover-auction-cards\.properties-grid--auction-cards\s+\.auction-card__media-top/,
+    'map/same-element grids must match compound selector for glass timer bar',
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards\.auction-mobile-stack--desktop-cards\s+\.auction-card__media-top/,
+  )
+  assert.match(
+    css,
     /\.properties-grid--auction-cards[\s\S]*\.auction-card__countdown-pill[\s\S]*padding:\s*0\s*!important[\s\S]*font-size:\s*0\.62rem\s*!important/,
   )
   assert.match(

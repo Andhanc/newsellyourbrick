@@ -385,6 +385,14 @@
   background: linear-gradient(180deg, #ffffff 0%, #f4fbfc 100%);
 }
 
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__illustration {
+  object-fit: contain;
+  object-position: center;
+  padding: 10px 28px 0;
+  box-sizing: border-box;
+  mix-blend-mode: multiply;
+}
+
 .owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__hero::after {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 100%);
 }
@@ -398,6 +406,11 @@
 .owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__title {
   color: #0f172a;
   font-family: var(--buyer-onboarding-font);
+  font-size: clamp(1.42rem, 6vw, 1.82rem);
+}
+
+.owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__title-line--compact {
+  white-space: nowrap;
 }
 
 .owner-onboarding-drawer__panel--buyer .owner-onboarding-drawer__pill {

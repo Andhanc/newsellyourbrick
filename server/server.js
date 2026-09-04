@@ -49,6 +49,8 @@ import {
 } from './stripeBilling.js';
 import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
+import { sendVerificationApprovedExternalNotifications } from './verificationApprovedNotify.js';
+import { sendVerificationRejectedExternalNotifications } from './verificationRejectedNotify.js';
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
@@ -500,7 +502,7 @@ function broadcastUserCabinetEvent(userId, payload) {
 }
 
 /**
- * In-app + email: предыдущего лидера перебили.
+ * In-app + push + WhatsApp: предыдущего лидера перебили (без email — квота EmailJS).
  * Toast «Вернуться к торгам» поднимается через notifications_refresh → SiteNotificationsContext.
  */
 async function notifyUserBidOutbid({
@@ -523,10 +525,11 @@ async function notifyUserBidOutbid({
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(Number.isFinite(amount) ? amount : 0);
-  const message =
-    `Ваша ставка на объект "${propertyTitle}" была перебита. ` +
-    `Новая максимальная ставка: ${formattedNewBid}. ` +
-    `Вы можете сделать новую ставку, чтобы вернуться в игру!`;
+  // In-app: коротко — название объекта уже в карточке уведомления.
+  const message = `Новая максимальная ставка: ${formattedNewBid}.`;
+  const pushBody =
+    `Ваша ставка на объект «${propertyTitle}» была перебита. ` +
+    `Новая максимальная ставка: ${formattedNewBid}.`;
 
   await notificationQueries.create({
     user_id: uid,
@@ -541,6 +544,7 @@ async function notifyUserBidOutbid({
         previousBidAmount != null && Number.isFinite(Number(previousBidAmount))
           ? Number(previousBidAmount)
           : null,
+      currency: String(currency).trim() || 'EUR',
     }),
     is_read: 0,
     view_count: 0,
@@ -550,7 +554,7 @@ async function notifyUserBidOutbid({
     uid,
     {
       title: 'Вашу ставку перебили',
-      body: message,
+      body: pushBody,
       data: { type: 'bid_outbid', propertyId: pid, path: `/property/${pid}` },
       channelId: 'auctions',
     },
@@ -567,19 +571,9 @@ async function notifyUserBidOutbid({
   }
 
   const link = buildPropertyPublicLink(pid, property?.slug || property?.url_slug || null);
-  const fullText = `${message}\n\nВернуться к торгам: ${link}`;
+  const fullText = `${pushBody}\n\nВернуться к торгам: ${link}`;
 
-  try {
-    const email = user?.email && String(user.email).trim();
-    if (!email) {
-      console.log(`[bid_outbid] Нет email у user_id=${uid}, письмо пропущено`);
-    } else {
-      await sendCrmEmailViaEmailJS(email, 'Вашу ставку перебили — Sellyourbrick', fullText);
-    }
-  } catch (emailErr) {
-    console.warn('[bid_outbid] Email не отправлен:', emailErr?.message || emailErr);
-  }
-
+  // Email на каждую перебитую ставку быстро исчерпывает квоту EmailJS — только in-app, push и WhatsApp.
   try {
     const phone = user?.phone_number || user?.phone || '';
     if (!String(phone).replace(/\D/g, '')) {
@@ -813,8 +807,8 @@ async function notifyOwnerPropertyEngagement(prisma, propertyRow, propertyTableO
   }
 }
 
-/** In-app уведомление покупателю: верификация одобрена — можно делать ставки на аукционе */
-async function notifyBuyerVerificationApproved(userId) {
+/** In-app + email + WhatsApp: верификация одобрена — можно делать ставки на аукционе */
+async function notifyBuyerVerificationApproved(userId, userRecord = null) {
   try {
     const uid = parseInt(String(userId), 10);
     if (!uid) return;
@@ -828,13 +822,22 @@ async function notifyBuyerVerificationApproved(userId) {
       view_count: 0,
     });
     console.log('✅ Уведомление verification_success для пользователя', uid);
+
+    const user = userRecord || (await userQueries.getById(uid));
+    const external = await sendVerificationApprovedExternalNotifications(user);
+    if (!external.email && !external.whatsapp) {
+      console.error(
+        `❌ verification_success external channels failed for user ${uid}:`,
+        JSON.stringify(external),
+      );
+    }
   } catch (e) {
     console.warn('⚠️ notifyBuyerVerificationApproved:', e.message);
   }
 }
 
-/** In-app уведомление: верификация отклонена — нужно загрузить документы снова */
-async function notifyBuyerVerificationRejected(userId, rejectionReason) {
+/** In-app + email + WhatsApp: верификация отклонена — нужно загрузить документы снова */
+async function notifyBuyerVerificationRejected(userId, rejectionReason, userRecord = null) {
   try {
     const uid = parseInt(String(userId), 10);
     if (!uid) return;
@@ -852,6 +855,9 @@ async function notifyBuyerVerificationRejected(userId, rejectionReason) {
       view_count: 0,
     });
     console.log('✅ Уведомление verification_rejected для пользователя', uid);
+
+    const user = userRecord || (await userQueries.getById(uid));
+    await sendVerificationRejectedExternalNotifications(user, reason);
   } catch (e) {
     console.warn('⚠️ notifyBuyerVerificationRejected:', e.message);
   }
@@ -1370,13 +1376,41 @@ let currentQRCode = null; // Сохраняем текущий QR-код для 
 let waLastQrAt = null;
 let waLastInitError = null;
 let waConnectionState = null;
+let waLoadingPercent = null;
+let waLoadingMessage = null;
+/** Когда начали ждать QR после initialize / restart (для watchdog). */
+let waQrWaitStartedAt = null;
+/** Автосброс сессии при зависании без QR — один раз за цикл ожидания. */
+let waQrAutoRecoverInFlight = false;
+let waQrAutoRecoverCount = 0;
 /**
- * WhatsApp обновляет QR примерно каждые 20 с; после ~40–60 с код уже недействителен.
- * Старый PNG в админке → телефон показывает «ошибка» при скане. По умолчанию 45 с.
+ * WhatsApp крутит QR ~20–60 с. Держим в памяти дольше, чтобы админка успела отрисовать
+ * после долгой генерации (cold start / Railway). Переопределение: WA_QR_MAX_AGE_MS (мс).
  */
 const WA_QR_MAX_AGE_MS = Math.max(
-  15000,
-  Number.parseInt(String(process.env.WA_QR_MAX_AGE_MS || '45000'), 10) || 45000
+  30000,
+  Number.parseInt(String(process.env.WA_QR_MAX_AGE_MS || '120000'), 10) || 120000
+);
+/**
+ * Если событие qr не пришло за это время — wipe .wwebjs_auth и повторный initialize.
+ * Переопределение: WA_QR_STUCK_MS (мс). Отключить: WA_QR_AUTO_RECOVER=0
+ */
+const WA_QR_STUCK_MS = Math.max(
+  60000,
+  Number.parseInt(String(process.env.WA_QR_STUCK_MS || '150000'), 10) || 150000
+);
+const WA_QR_AUTO_RECOVER = process.env.WA_QR_AUTO_RECOVER !== '0';
+const WA_QR_AUTO_RECOVER_MAX = Math.max(
+  1,
+  Number.parseInt(String(process.env.WA_QR_AUTO_RECOVER_MAX || '2'), 10) || 2
+);
+
+/** Папка LocalAuth (можно вынести: WA_AUTH_DATA_PATH=/tmp/syb-wa-auth). */
+const WA_AUTH_DATA_PATH = String(process.env.WA_AUTH_DATA_PATH || '').trim() || join(__dirname, '.wwebjs_auth');
+console.log(
+  `[WA] QR: хранение ${Math.round(WA_QR_MAX_AGE_MS / 1000)} с, автосброс без QR через ${Math.round(WA_QR_STUCK_MS / 1000)} с` +
+    (WA_QR_AUTO_RECOVER ? '' : ' (выкл)'),
+  `| auth: ${WA_AUTH_DATA_PATH}`
 );
 
 function isWhatsAppQrPayloadValid(qr) {
@@ -1505,8 +1539,13 @@ const waPuppeteerLaunch = resolvePuppeteerLaunchOptions();
 
 const waClientOptions = {
   authStrategy: new LocalAuth({
-    dataPath: join(__dirname, '.wwebjs_auth')
+    dataPath: WA_AUTH_DATA_PATH,
+    rmMaxRetries: 5,
   }),
+  // Не обрываем auth по таймауту — QR на слабых VPS может идти 1–2 минуты.
+  authTimeoutMs: 0,
+  // Сколько раз wwebjs обновит QR, пока не отсканируют (0 = без лимита в новых версиях; 10 — запас).
+  qrMaxRetries: Number.parseInt(String(process.env.WA_QR_MAX_RETRIES || '12'), 10) || 12,
   // Старый UA из wwebjs (Chrome/101) + свежий Chrome 151 → WhatsApp часто отклоняет связку после скана.
   userAgent:
     process.env.WA_USER_AGENT ||
@@ -1525,12 +1564,17 @@ const waClientOptions = {
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-background-networking',
+      '--mute-audio',
     ],
     // Увеличиваем таймаут для протокольных операций (по умолчанию 180000мс)
     // Это решает ошибку "Runtime.evaluate timed out" и "Runtime.callFunctionOn timed out"
     // На Railway может потребоваться больше времени из-за ограниченных ресурсов
-    protocolTimeout: 600000, // 10 минут (для Railway и медленных соединений)
+    protocolTimeout: Number.parseInt(String(process.env.WA_PROTOCOL_TIMEOUT_MS || '600000'), 10) || 600000,
+    // Таймаут навигации к web.whatsapp.com
+    timeout: Number.parseInt(String(process.env.WA_PUPPETEER_TIMEOUT_MS || '180000'), 10) || 180000,
     // Дополнительные настройки для стабильности
     defaultViewport: {
       width: 1280,
@@ -1565,7 +1609,7 @@ if (waPuppeteerLaunch.mode === 'executablePath') {
 }
 
 function killOrphanWhatsAppChrome() {
-  const sessionPath = join(__dirname, '.wwebjs_auth', 'session');
+  const sessionPath = join(WA_AUTH_DATA_PATH, 'session');
   if (process.platform !== 'darwin' && process.platform !== 'linux') return;
   try {
     execSync(`pkill -f "user-data-dir=${sessionPath}" || true`, { stdio: 'ignore' });
@@ -1644,6 +1688,8 @@ const applySendSeenPatch = async () => {
 function bindWhatsAppClientEvents(client) {
   client.on('loading_screen', (percent, message) => {
     const p = Number(percent);
+    waLoadingPercent = Number.isFinite(p) ? p : null;
+    waLoadingMessage = message != null ? String(message) : null;
     if (p === 0 || p >= 99 || p % 20 === 0) {
       console.log(`[WA] Загрузка WhatsApp Web: ${p}% ${message ? String(message) : ''}`);
     }
@@ -1666,8 +1712,11 @@ function bindWhatsAppClientEvents(client) {
     }
     currentQRCode = qr;
     waLastQrAt = Date.now();
+    waQrWaitStartedAt = null;
+    waLoadingPercent = 100;
+    waQrAutoRecoverCount = 0;
 
-    console.log('\n📲 WhatsApp QR-код для сканирования (действителен ~20–40 с):');
+    console.log('\n📲 WhatsApp QR-код для сканирования (в админке держим до ~2 мин):');
     console.log('═══════════════════════════════════════════════════════');
     try {
       qrcode.generate(qr, { small: true });
@@ -1683,11 +1732,15 @@ function bindWhatsAppClientEvents(client) {
   client.on('authenticated', () => {
     console.log('✅ WhatsApp клиент успешно авторизован');
     currentQRCode = null;
+    waQrWaitStartedAt = null;
   });
 
   client.on('ready', async () => {
     waClientReady = true;
     currentQRCode = null;
+    waQrWaitStartedAt = null;
+    waLoadingPercent = 100;
+    waQrAutoRecoverCount = 0;
     console.log('✅ WhatsApp клиент готов к отправке сообщений');
     await applySendSeenPatch();
   });
@@ -1713,6 +1766,7 @@ async function recreateWhatsAppClientAndInitialize() {
   waReconnectInFlight = true;
   waClientReady = false;
   currentQRCode = null;
+  waQrWaitStartedAt = Date.now();
   try {
     try {
       waClient?.removeAllListeners?.();
@@ -1725,7 +1779,7 @@ async function recreateWhatsAppClientAndInitialize() {
       console.warn('[WA] destroy before reconnect:', e?.message || e);
     }
     killOrphanWhatsAppChrome();
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 1200));
     waClient = new Client(waClientOptions);
     bindWhatsAppClientEvents(waClient);
     await waClient.initialize();
@@ -1911,21 +1965,33 @@ const checkClientState = async () => {
 
 // Функция для инициализации WhatsApp с повторными попытками
 let waInitAttempts = 0;
-const MAX_WA_INIT_ATTEMPTS = 3;
-const WA_INIT_RETRY_DELAY = 30000; // 30 секунд между попытками
+const MAX_WA_INIT_ATTEMPTS = Math.max(
+  3,
+  Number.parseInt(String(process.env.WA_MAX_INIT_ATTEMPTS || '5'), 10) || 5
+);
+const WA_INIT_RETRY_DELAY = Math.max(
+  15000,
+  Number.parseInt(String(process.env.WA_INIT_RETRY_DELAY_MS || '45000'), 10) || 45000
+);
 
 function buildWaDiag() {
-  const authPath = join(__dirname, '.wwebjs_auth');
+  const authPath = WA_AUTH_DATA_PATH;
   const fresh = getFreshWhatsAppQr();
   const ageMs = waLastQrAt ? Date.now() - waLastQrAt : null;
+  const waitMs = waQrWaitStartedAt ? Date.now() - waQrWaitStartedAt : null;
   return {
     lastQrAt: waLastQrAt,
     qrAgeMs: ageMs,
     qrMaxAgeMs: WA_QR_MAX_AGE_MS,
     qrFresh: Boolean(fresh),
+    qrWaitMs: waitMs,
+    qrStuckMs: WA_QR_STUCK_MS,
+    loadingPercent: waLoadingPercent,
+    loadingMessage: waLoadingMessage,
     lastError: waLastInitError,
     connectionState: waConnectionState,
     initAttempts: waInitAttempts,
+    autoRecoverCount: waQrAutoRecoverCount,
     sessionFolderExists: fs.existsSync(authPath),
     remoteWebCache: waDisableRemoteWebVersion ? 'off' : 'remote',
     remoteCacheUrl: waDisableRemoteWebVersion ? null : waRemoteVersionPath || waDefaultRemoteCacheUrl,
@@ -1938,6 +2004,7 @@ function buildWaDiag() {
 
 const initializeWhatsApp = () => {
   waInitAttempts++;
+  waQrWaitStartedAt = Date.now();
   console.log(`🔄 Попытка инициализации WhatsApp (${waInitAttempts}/${MAX_WA_INIT_ATTEMPTS})...`);
   
   try {
@@ -2003,6 +2070,32 @@ const initializeWhatsApp = () => {
 
 // Инициализируем WhatsApp клиент с обработкой ошибок
 initializeWhatsApp();
+
+/** Watchdog: битая/зависшая сессия без QR — автосброс .wwebjs_auth и повторный pairing. */
+setInterval(() => {
+  if (!WA_QR_AUTO_RECOVER) return;
+  if (waClientReady || getFreshWhatsAppQr()) return;
+  if (!waQrWaitStartedAt || waQrAutoRecoverInFlight || waReconnectInFlight) return;
+  const waited = Date.now() - waQrWaitStartedAt;
+  if (waited < WA_QR_STUCK_MS) return;
+  if (waQrAutoRecoverCount >= WA_QR_AUTO_RECOVER_MAX) return;
+
+  waQrAutoRecoverInFlight = true;
+  waQrAutoRecoverCount += 1;
+  console.warn(
+    `[WA] QR не пришёл за ${Math.round(waited / 1000)} с (лимит ${Math.round(WA_QR_STUCK_MS / 1000)} с). ` +
+      `Автосброс сессии #${waQrAutoRecoverCount}/${WA_QR_AUTO_RECOVER_MAX}…`
+  );
+  void restartWhatsAppPairingRequest()
+    .catch((e) => {
+      waLastInitError = e?.message || String(e);
+      console.error('[WA] Автосброс pairing failed:', waLastInitError);
+    })
+    .finally(() => {
+      waQrAutoRecoverInFlight = false;
+      waQrWaitStartedAt = Date.now();
+    });
+}, 10000);
 
 /**
  * Удаляет пароль из объекта пользователя (для безопасности)
@@ -2349,6 +2442,9 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
     console.log(
       `[auction-reminder] Сохранено напоминание: user_id=${userId} → email=${profileEmail || '—'} phone=${profilePhone ? 'есть' : '—'} | scheduled_at=${saved?.scheduled_at || new Date(schedMs).toISOString()} | объект #${propertyId} (${propertyTable}) «${title}» | каналы: ${ch}`
     );
+    setImmediate(() => {
+      tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
+    });
     res.json({ success: true, data: saved });
   } catch (error) {
     console.error('POST auction-reminders:', error);
@@ -2453,6 +2549,16 @@ app.get('/api/users/:id/verification-status', async (req, res) => {
       rejectedDocuments.length > 0 &&
       !(user.is_verified === 1 || user.is_verified === true);
     const pendingDocuments = documents.filter(doc => doc.verification_status === 'pending');
+    const depositAmount = Number(user.deposit_amount) || 0;
+    const isVerifiedUser = user.is_verified === 1 || user.is_verified === true;
+    const isBuyerRoleForDepositGate = roleNormForGate === 'buyer' || roleNormForGate === 'client';
+    const needsDepositVerification =
+      isBuyerRoleForDepositGate &&
+      !skipRejectionGate &&
+      depositAmount > 0 &&
+      !isVerifiedUser &&
+      pendingDocuments.length === 0 &&
+      !needsReverificationAfterRejection;
     
     // Создаем объект для проверки готовности
     const userForCheck = {
@@ -2488,7 +2594,9 @@ app.get('/api/users/:id/verification-status', async (req, res) => {
         filledFields,
         totalFields,
         missingFields: readiness.missingFields,
-        isVerified: user.is_verified === 1 || user.is_verified === true,
+        isVerified: isVerifiedUser,
+        depositAmount,
+        needsDepositVerification,
         cardBound: user.card_bound === 1 || user.card_bound === true, // Добавляем статус привязки карты
         ownerCabinetProfileComplete: cabinet.ownerCabinetProfileComplete,
         ownerCabinetHasPassword: cabinet.ownerCabinetHasPassword,
@@ -2748,24 +2856,11 @@ app.put('/api/users/:id/approve', async (req, res) => {
     await userQueries.update(id, { is_verified: 1 });
 
     try {
-      await notifyBuyerVerificationApproved(id);
+      await notifyBuyerVerificationApproved(id, user);
       const createdNotif = await notificationQueries.getByUserId(id);
       console.log('📋 Всего уведомлений у пользователя:', createdNotif ? createdNotif.length : 0);
     } catch (notifError) {
       console.error('❌ Не удалось создать уведомление в БД:', notifError);
-    }
-
-    // Отправляем уведомление через WhatsApp (если доступно)
-    if (user.phone_number && waClientReady) {
-      try {
-        const chatId = `${user.phone_number}@c.us`;
-        await waClient.sendMessage(
-          chatId,
-          '🎉 Верификация пройдена! Документы одобрены. Теперь вы можете делать ставки на аукционах.'
-        );
-      } catch (notifError) {
-        console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
-      }
     }
 
     const updatedUser = await userQueries.getById(id);
@@ -2818,22 +2913,9 @@ app.put('/api/users/:id/reject', async (req, res) => {
 
     await userQueries.update(id, { is_verified: 0 });
     try {
-      await notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку');
+      await notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку', user);
     } catch (notifErr) {
       console.warn('⚠️ verification_rejected notification:', notifErr.message);
-    }
-
-    // Отправляем уведомление пользователю
-    if (user.phone_number && waClientReady) {
-      try {
-        const chatId = `${user.phone_number}@c.us`;
-        const message = rejection_reason 
-          ? `❌ Ваши документы были отклонены по причине: ${rejection_reason}. Пожалуйста, загрузите их снова.`
-          : '❌ Ваши документы были отклонены. Пожалуйста, загрузите их снова.';
-        await waClient.sendMessage(chatId, message);
-      } catch (notifError) {
-        console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
-      }
     }
 
     const updatedUser = await userQueries.getById(id);
@@ -3690,7 +3772,7 @@ app.put('/api/documents/:id/approve', async (req, res) => {
     if (allApproved) {
       await userQueries.update(document.user_id, { is_verified: 1 });
       try {
-        await notifyBuyerVerificationApproved(document.user_id);
+        await notifyBuyerVerificationApproved(document.user_id, user);
       } catch (e) {
         console.warn('⚠️ Уведомление о верификации:', e.message);
       }
@@ -3700,20 +3782,7 @@ app.put('/api/documents/:id/approve', async (req, res) => {
         console.warn('[SSE] user cabinet broadcast:', e.message);
       }
     }
-    
-    // Отправляем уведомление пользователю
-    try {
-      if (allApproved && user.phone_number && waClientReady) {
-        const digits = String(user.phone_number).replace(/\D/g, '');
-        const chatId = `${digits}@c.us`;
-        const message =
-          '✅ Верификация пройдена!\n\nВсе документы одобрены. Теперь вы можете делать ставки на аукционах.';
-        await waClient.sendMessage(chatId, message);
-      }
-    } catch (notifError) {
-      console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
-    }
-    
+
     const updatedDocument = await documentQueries.getById(req.params.id);
     res.json({ success: true, data: updatedDocument, message: 'Документ одобрен' });
   } catch (error) {
@@ -3754,7 +3823,7 @@ app.put('/api/documents/:id/reject', async (req, res) => {
       console.warn('⚠️ is_verified при отклонении документа:', uvErr.message);
     }
     try {
-      await notifyBuyerVerificationRejected(document.user_id, rejectionReason);
+      await notifyBuyerVerificationRejected(document.user_id, rejectionReason, user);
     } catch (notifErr) {
       console.warn('⚠️ verification_rejected (документ):', notifErr.message);
     }
@@ -3767,20 +3836,7 @@ app.put('/api/documents/:id/reject', async (req, res) => {
     } catch (cabErr) {
       console.warn('[SSE] user cabinet (document reject):', cabErr.message);
     }
-    
-    // Отправляем уведомление пользователю
-    try {
-      if (user.phone_number && waClientReady) {
-        const digits = String(user.phone_number).replace(/\D/g, '');
-        const chatId = `${digits}@c.us`;
-        const message = `❌ Ваши документы были отклонены.\n\nПожалуйста, загрузите документы заново, убедившись, что они четкие и соответствуют требованиям.`;
-        
-        await waClient.sendMessage(chatId, message);
-      }
-    } catch (notifError) {
-      console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
-    }
-    
+
     const updatedDocument = await documentQueries.getById(req.params.id);
     res.json({ success: true, data: updatedDocument, message: 'Документ отклонен' });
   } catch (error) {
@@ -7367,24 +7423,36 @@ function assertWhatsAppPairingReset(req) {
 }
 
 async function wipeWhatsAppAuthFolder() {
-  const authPath = join(__dirname, '.wwebjs_auth');
+  const authPath = WA_AUTH_DATA_PATH;
   try {
     if (fs.existsSync(authPath)) {
       fs.rmSync(authPath, { recursive: true, force: true });
       console.log('[WA] Удалена папка сессии:', authPath);
     }
   } catch (e) {
-    console.warn('[WA] Не удалось удалить .wwebjs_auth:', e?.message || e);
+    console.warn('[WA] Не удалось удалить сессию WA:', e?.message || e);
   }
 }
 
-async function restartWhatsAppPairingRequest() {
+async function restartWhatsAppPairingRequest({ resetAutoRecoverCount = false } = {}) {
   waClientReady = false;
   currentQRCode = null;
   waLastQrAt = null;
   waLastInitError = null;
+  waLoadingPercent = 0;
+  waLoadingMessage = 'restart pairing';
+  waConnectionState = null;
+  waQrWaitStartedAt = Date.now();
+  if (resetAutoRecoverCount) {
+    waQrAutoRecoverCount = 0;
+  }
   console.log('[WA] Сброс pairing: logout/destroy + очистка .wwebjs_auth + initialize…');
   try {
+    try {
+      waClient?.removeAllListeners?.();
+    } catch {
+      /* ignore */
+    }
     await waClient.logout();
   } catch (e) {
     console.warn('[WA] logout:', e?.message || e);
@@ -7395,8 +7463,8 @@ async function restartWhatsAppPairingRequest() {
     }
   }
   killOrphanWhatsAppChrome();
-  // Дать ОС отпустить файлы профиля Chrome
-  await new Promise((r) => setTimeout(r, 800));
+  // Дать ОС отпустить файлы профиля Chrome (LocalAuth + Chromium lock)
+  await new Promise((r) => setTimeout(r, 1500));
   await wipeWhatsAppAuthFolder();
   try {
     waClient = new Client(waClientOptions);
@@ -7407,7 +7475,7 @@ async function restartWhatsAppPairingRequest() {
     if (/already running/i.test(msg)) {
       console.warn('[WA] initialize: browser already running — повторный pkill + wipe');
       killOrphanWhatsAppChrome();
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 2000));
       await wipeWhatsAppAuthFolder();
       waClient = new Client(waClientOptions);
       bindWhatsAppClientEvents(waClient);
@@ -7432,11 +7500,11 @@ app.post('/api/whatsapp/restart-pairing', async (req, res) => {
           'Сброс сессии отклонён. Для production задайте WA_PAIRING_RESET_SECRET и заголовок X-WA-Pairing-Reset. Локально: только с localhost в development.',
       });
     }
-    await restartWhatsAppPairingRequest();
+    await restartWhatsAppPairingRequest({ resetAutoRecoverCount: true });
     return res.json({
       success: true,
       message:
-        'Сессия сброшена, запущена повторная инициализация. Через несколько секунд обновите страницу или нажмите «Проверить статус».',
+        'Сессия сброшена, запущена повторная инициализация. QR обычно появляется за 30–90 с — обновите статус или подождите автообновление.',
     });
   } catch (e) {
     return res.status(500).json({ success: false, error: e?.message || String(e) });
@@ -7548,8 +7616,8 @@ app.get('/api/whatsapp/status', async (req, res) => {
       ready: false,
       state: 'NOT_READY',
       message: freshQr
-        ? 'Отсканируйте свежий QR в течение ~30 секунд (Настройки → Связанные устройства).'
-        : 'WhatsApp клиент не готов. Нажмите «Запросить новый QR», дождитесь картинки и сразу отсканируйте её.',
+        ? `Отсканируйте свежий QR (в админке код держим до ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} с). WhatsApp → Связанные устройства.`
+        : 'WhatsApp клиент не готов. Дождитесь QR (обычно 30–90 с) или нажмите «Запросить новый QR» и сразу отсканируйте.',
       info: clientInfo
     });
   } catch (error) {
@@ -7591,9 +7659,11 @@ app.get('/api/whatsapp/qr', async (req, res) => {
       return res.status(404).json({
         success: false,
         error:
-          'QR-код недоступен или уже протух (обычно живёт ~20–40 с). Нажмите «Запросить новый QR» и отсканируйте сразу, как появится картинка.',
+          `QR-код недоступен или уже протух (лимит хранения ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} с). Нажмите «Запросить новый QR» и отсканируйте сразу, как появится картинка.`,
         qrMaxAgeMs: WA_QR_MAX_AGE_MS,
         lastQrAt: waLastQrAt,
+        qrWaitMs: waQrWaitStartedAt ? Date.now() - waQrWaitStartedAt : null,
+        loadingPercent: waLoadingPercent,
       });
     }
 
@@ -8439,33 +8509,31 @@ async function processOneAuctionReminderRow(row) {
   const wantEmail = Number(row.notify_email) === 1;
   const wantWa = Number(row.notify_whatsapp) === 1;
 
-  let emailOk = !wantEmail;
-  let waOk = !wantWa;
-
+  let emailHandled = !wantEmail;
   if (wantEmail) {
     const em = user.email && String(user.email).trim();
     if (!em) {
-      emailOk = false;
       if (!auctionReminderNoEmailLogged.has(`r-${row.id}`)) {
         auctionReminderNoEmailLogged.add(`r-${row.id}`);
         console.warn(
           `[auction-reminder] Пользователь user_id=${row.user_id} без email в БД — письмо по расписанию (reminder id=${row.id}) не отправлено. Укажите email в профиле.`
         );
       }
+      emailHandled = true;
     } else {
       try {
         await sendCrmEmailViaEmailJS(em, subject, body);
-        emailOk = true;
       } catch (e) {
         console.error('[auction-reminder] EmailJS:', e.message);
       }
+      // Одна попытка на напоминание — не повторять каждый tick (иначе исчерпывается квота EmailJS).
+      emailHandled = true;
     }
   }
 
   if (wantWa) {
     const phone = user.phone_number && String(user.phone_number).trim();
     if (!phone) {
-      waOk = false;
       if (!auctionReminderNoEmailLogged.has(`wa-r-${row.id}`)) {
         auctionReminderNoEmailLogged.add(`wa-r-${row.id}`);
         console.warn(
@@ -8474,24 +8542,11 @@ async function processOneAuctionReminderRow(row) {
       }
     } else {
       const wa = await trySendWhatsAppDigits(user.phone_number, `${subject}\n\n${body}`);
-      waOk = wa.ok;
       if (!wa.ok) console.warn('[auction-reminder] WhatsApp:', wa.error);
     }
   }
 
-  const em = user.email && String(user.email).trim();
-  const phone = user.phone_number && String(user.phone_number).trim();
-  let markSent = false;
-  if (wantEmail && wantWa) {
-    if (em && emailOk && phone && waOk) markSent = true;
-    else if (em && emailOk && !phone) markSent = true;
-    else if (!em && phone && waOk) markSent = true;
-  } else if (wantEmail) {
-    markSent = Boolean(em && emailOk);
-  } else if (wantWa) {
-    markSent = Boolean(phone && waOk);
-  }
-  if (markSent) {
+  if (emailHandled) {
     await auctionReminderQueries.markReminderSent(row.id);
   }
 }
@@ -8514,6 +8569,7 @@ async function processOneAuctionStartedRow(row) {
         `[auction-reminder] Пользователь user_id=${row.user_id} без email — письмо «аукцион начался» (reminder id=${row.id}) не отправлено.`
       );
     }
+    await auctionReminderQueries.markStartedSent(row.id);
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
@@ -8522,10 +8578,10 @@ async function processOneAuctionStartedRow(row) {
   const body = `Здравствуйте!\n\nАукцион по объекту «${title}» уже начался.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
-    await auctionReminderQueries.markStartedSent(row.id);
   } catch (e) {
     console.error('[auction-reminder] start email:', e.message);
   }
+  await auctionReminderQueries.markStartedSent(row.id);
 }
 
 /** Письмо при переходе объекта на круговой тест-таймер (после линейного преаукциона). */
@@ -8556,6 +8612,7 @@ async function processOneCircularPhaseStartedRow(row) {
         `[auction-reminder] Пользователь user_id=${row.user_id} без email — письмо о круговом таймере (reminder id=${row.id}) не отправлено.`
       );
     }
+    await auctionReminderQueries.markCircularStartedNotified(row.id);
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
@@ -8564,10 +8621,10 @@ async function processOneCircularPhaseStartedRow(row) {
   const body = `Здравствуйте!\n\nПо объекту «${title}» начался этап с круговым таймером аукциона.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
-    await auctionReminderQueries.markCircularStartedNotified(row.id);
   } catch (e) {
     console.error('[auction-reminder] circular phase email:', e.message);
   }
+  await auctionReminderQueries.markCircularStartedNotified(row.id);
 }
 
 let auctionReminderTickRunning = false;
@@ -17692,9 +17749,22 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     );
   }
 
+  /** Редкий safety-net для напоминаний аукциона (не каждую минуту — иначе дубли писем и квота EmailJS). */
+  const auctionReminderTickMs = Math.max(
+    5 * 60 * 1000,
+    parseInt(process.env.AUCTION_REMINDER_TICK_MS || String(30 * 60 * 1000), 10) || 30 * 60 * 1000,
+  );
+  const testDriveSurveyTickMs = Math.max(
+    10 * 60 * 1000,
+    parseInt(process.env.TEST_DRIVE_SURVEY_TICK_MS || String(30 * 60 * 1000), 10) || 30 * 60 * 1000,
+  );
+  console.log(
+    `[auction-reminder] Фоновая проверка каждые ${Math.round(auctionReminderTickMs / 60000)} мин (AUCTION_REMINDER_TICK_MS).`,
+  );
+
   setInterval(() => {
     tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
-  }, 60 * 1000);
+  }, auctionReminderTickMs);
   setInterval(() => {
     (async () => {
       try {
@@ -17713,7 +17783,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         console.warn('[test-drive-survey-wa]', e?.message || e);
       }
     })();
-  }, 5 * 60 * 1000);
+  }, testDriveSurveyTickMs);
   setTimeout(() => {
     tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
   }, 15 * 1000);

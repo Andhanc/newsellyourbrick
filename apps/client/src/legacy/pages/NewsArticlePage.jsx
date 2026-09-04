@@ -40,6 +40,11 @@ export default function NewsArticlePage() {
   const tocPanelRef = useRef(null)
   const tocNavRef = useRef(null)
   const scrollSpyRafRef = useRef(0)
+  const tocUserScrollLockRef = useRef(false)
+  const tocUserScrollUnlockTimerRef = useRef(0)
+  const scrollSpyLockRef = useRef(false)
+  const scrollSpyUnlockTimerRef = useRef(0)
+  const pendingClickSectionRef = useRef(null)
 
   useNewsArticleTocFixed(
     layoutRef,
@@ -81,18 +86,22 @@ export default function NewsArticlePage() {
   usePageSeoOverride(articleSeo)
 
   const sectionIds = article?.sections?.map((s) => s.id).filter(Boolean) ?? []
+  const sectionIdsRef = useRef(sectionIds)
+  sectionIdsRef.current = sectionIds
 
   useEffect(() => {
     if (!sectionIds.length) return undefined
 
     const updateActive = () => {
-      const next = pickActiveIdByMainScroll(sectionIds, {
+      if (scrollSpyLockRef.current) return
+      const next = pickActiveIdByMainScroll(sectionIdsRef.current, {
         offset: getNewsArticleScrollOffsetPx(stickyHeadRef.current),
       })
       setActiveSection((prev) => (prev === next ? prev : next))
     }
 
     const schedule = () => {
+      if (scrollSpyLockRef.current) return
       if (scrollSpyRafRef.current) return
       scrollSpyRafRef.current = window.requestAnimationFrame(() => {
         scrollSpyRafRef.current = 0
@@ -117,12 +126,34 @@ export default function NewsArticlePage() {
   }, [sectionIds.join('|')])
 
   useEffect(() => {
-    if (!activeSection || !tocNavRef.current) return
+    if (!activeSection || !tocNavRef.current || tocUserScrollLockRef.current) return
     const link = tocNavRef.current.querySelector(
       `[data-toc-section="${activeSection}"]`,
     )
-    link?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    link?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' })
   }, [activeSection])
+
+  const lockTocAutoScroll = useCallback(() => {
+    tocUserScrollLockRef.current = true
+    window.clearTimeout(tocUserScrollUnlockTimerRef.current)
+    tocUserScrollUnlockTimerRef.current = window.setTimeout(() => {
+      tocUserScrollLockRef.current = false
+    }, 450)
+  }, [])
+
+  const unlockScrollSpy = useCallback(() => {
+    const clicked = pendingClickSectionRef.current
+    pendingClickSectionRef.current = null
+    if (clicked) setActiveSection(clicked)
+    scrollSpyLockRef.current = false
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(tocUserScrollUnlockTimerRef.current)
+      window.clearTimeout(scrollSpyUnlockTimerRef.current)
+    }
+  }, [])
 
   const handleShare = useCallback(async () => {
     const url = window.location.href
@@ -144,14 +175,32 @@ export default function NewsArticlePage() {
 
   const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id)
-    if (el) {
-      scrollMainElementIntoView(el, {
-        offset: getNewsArticleScrollOffsetPx(stickyHeadRef.current),
-        behavior: 'smooth',
-      })
-      setActiveSection(id)
+    if (!el) return
+
+    pendingClickSectionRef.current = id
+    scrollSpyLockRef.current = true
+    window.clearTimeout(scrollSpyUnlockTimerRef.current)
+    setActiveSection(id)
+
+    const scrollRoot = getMainScrollEl()
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      scrollRoot?.removeEventListener('scrollend', finish)
+      window.clearTimeout(scrollSpyUnlockTimerRef.current)
+      unlockScrollSpy()
     }
-  }, [])
+    scrollRoot?.addEventListener('scrollend', finish, { once: true })
+
+    scrollMainElementIntoView(el, {
+      offset: getNewsArticleScrollOffsetPx(stickyHeadRef.current),
+      behavior: 'smooth',
+    })
+
+    // Держим lock дольше, чем типичный smooth-scroll, чтобы spy не откатил подсветку.
+    scrollSpyUnlockTimerRef.current = window.setTimeout(finish, 1200)
+  }, [unlockScrollSpy])
 
   const goToNewsList = useCallback(() => {
     navigate('/news')
@@ -228,7 +277,12 @@ export default function NewsArticlePage() {
                     {t('newsPage_articleTocTitle')}
                   </h2>
                   <nav ref={tocNavRef} className="news-article-page__toc-nav">
-                    <ul className="news-article-page__toc-list">
+                    <ul
+                      className="news-article-page__toc-list"
+                      onScroll={lockTocAutoScroll}
+                      onTouchStart={lockTocAutoScroll}
+                      onPointerDown={lockTocAutoScroll}
+                    >
                       {(article.sections || []).map((section, index) => (
                         <li
                           key={section.id}

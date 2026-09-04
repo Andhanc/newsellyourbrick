@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useReducedMotion } from 'framer-motion'
 import { FaGem } from 'react-icons/fa'
 import Confetti from 'react-confetti'
 import './PrivateClubVipCelebrationModal.css'
-
-/** Тот же контакт, что в Footer (поддержка). */
-const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
 
 const CONFETTI_COLORS = [
   '#0099A9',
@@ -26,7 +22,10 @@ const CONFETTI_COLORS = [
 /** Новые частицы только первые 5 с; затем recycle выключается и салют затухает. */
 const CONFETTI_ACTIVE_MS = 5000
 
-export default function PrivateClubVipCelebrationModal({ open, onClose }) {
+/** После VIP — в профиль с подсветкой персонального менеджера. */
+export const VIP_MANAGER_SPOTLIGHT_QUERY = 'vip_manager_spotlight'
+
+export default function PrivateClubVipCelebrationModal({ open, onClose, onGoToProfile }) {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion() ?? false
   const [dims, setDims] = useState(() =>
@@ -78,6 +77,16 @@ export default function PrivateClubVipCelebrationModal({ open, onClose }) {
 
   const showConfetti = !reduceMotion && dims.width > 0 && dims.height > 0
 
+  const handleProfileClick = () => {
+    if (typeof onGoToProfile === 'function') onGoToProfile()
+    else {
+      onClose?.()
+      if (typeof window !== 'undefined') {
+        window.location.assign(`/profile?${VIP_MANAGER_SPOTLIGHT_QUERY}=1`)
+      }
+    }
+  }
+
   return createPortal(
     <div className="private-club-vip-celebration" role="dialog" aria-modal="true" aria-labelledby="private-club-vip-celebration-title">
       <button type="button" className="private-club-vip-celebration__backdrop" aria-label={t('closeAria')} onClick={onClose} />
@@ -119,18 +128,13 @@ export default function PrivateClubVipCelebrationModal({ open, onClose }) {
         </h2>
         <p className="private-club-vip-celebration__text">{t('privateClubVipCelebrationBody')}</p>
         <div className="private-club-vip-celebration__actions">
-          <Link to="/profile" className="private-club-vip-celebration__btn private-club-vip-celebration__btn--primary" onClick={onClose}>
-            {t('privateClubVipCelebrationCtaProfile')}
-          </Link>
-          <a
-            href={WHATSAPP_SUPPORT_HREF}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="private-club-vip-celebration__btn private-club-vip-celebration__btn--secondary"
-            onClick={onClose}
+          <button
+            type="button"
+            className="private-club-vip-celebration__btn private-club-vip-celebration__btn--primary"
+            onClick={handleProfileClick}
           >
-            {t('privateClubVipCelebrationCtaWhatsApp')}
-          </a>
+            {t('privateClubVipCelebrationCtaProfile')}
+          </button>
         </div>
       </div>
     </div>,

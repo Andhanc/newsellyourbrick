@@ -48,10 +48,19 @@
 
 .discover-auction-cards .auction-card__location,
 .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__location,
-.discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__location {
+.discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__location,
+.discover-auction-cards .shares-v2-card__location,
+.discover-auction-cards .invest-showcase .shares-v2-card__location {
   min-height: 0;
   color: #94a3b8;
   font-size: 0.72rem !important;
+}
+
+.discover-auction-cards .shares-v2-card__location span,
+.discover-auction-cards .invest-showcase .shares-v2-card__location span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .discover-auction-cards .auction-card__title,
@@ -124,11 +133,12 @@
   max-width: 100%;
 }
 
-/* Pricing — portal layout (label above value, optional buy-now green) */
-.discover-auction-cards .auction-card__pricing {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* Pricing — в discover цена на фото (media-top); футер скрыт, чтобы карточки одной высоты */
+.discover-auction-cards .auction-card__pricing,
+.discover-auction-cards .invest-showcase .auction-card__pricing,
+.discover-auction-cards .auction-card--timer-pricing .auction-card__pricing,
+.discover-auction-cards .invest-showcase .auction-card--timer-pricing .auction-card__pricing {
+  display: none !important;
 }
 
 .discover-auction-cards .auction-card__price-row--split {
@@ -317,11 +327,14 @@
   bottom: 10px !important;
   left: 50% !important;
   width: 95% !important;
-  transform: translateX(-50%);
+  height: auto !important;
+  min-height: 0 !important;
+  transform: translateX(-50%) !important;
   display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 0 !important;
+  gap: 6px !important;
   box-sizing: border-box;
   padding: 7px 10px;
   overflow: hidden;
@@ -336,9 +349,25 @@
   -webkit-backdrop-filter: blur(14px) saturate(1.15);
 }
 
+.discover-auction-cards .auction-card__media-top:not(:has(.auction-card__countdown-pill)),
+.discover-auction-cards .invest-showcase .auction-card__media-top:not(:has(.auction-card__countdown-pill)) {
+  justify-content: flex-end !important;
+}
+
+.discover-auction-cards .auction-card__media-top:not(:has(.auction-card__countdown-pill)) .auction-card__timer-prices,
+.discover-auction-cards
+  .invest-showcase
+  .auction-card__media-top:not(:has(.auction-card__countdown-pill))
+  .auction-card__timer-prices {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+  max-width: 100%;
+}
+
 .discover-auction-cards .auction-card__countdown-pill,
 .discover-auction-cards .invest-showcase .auction-card__countdown-pill {
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
   width: auto !important;
   max-width: none !important;
   min-width: 0;
@@ -348,22 +377,27 @@
   padding: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
-  font-size: 0.86rem !important;
+  font-size: 0.78rem !important;
   font-weight: 800 !important;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.02em;
   box-shadow: none !important;
+  overflow: visible !important;
 }
 
 .discover-auction-cards .auction-card__countdown-pill svg,
 .discover-auction-cards .invest-showcase .auction-card__countdown-pill svg {
-  width: 14px !important;
-  height: 14px !important;
+  width: 13px !important;
+  height: 13px !important;
+  flex-shrink: 0;
 }
 
 .discover-auction-cards .auction-card__countdown-pill span,
 .discover-auction-cards .invest-showcase .auction-card__countdown-pill span {
+  flex-shrink: 0;
   overflow: visible !important;
   text-overflow: clip !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Urgency colors must win over discover chrome (!important layout rules above). */
@@ -400,22 +434,26 @@
 .discover-auction-cards .auction-card__timer-prices,
 .discover-auction-cards .invest-showcase .auction-card__timer-prices {
   display: flex !important;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   align-items: center;
   width: auto;
-  margin-left: 9px;
-  padding-left: 9px;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: 6px;
+  padding-left: 8px;
   border-left: 1px solid rgba(15, 71, 86, 0.16);
+  overflow: hidden;
 }
 
 .discover-auction-cards .auction-card__timer-price,
 .discover-auction-cards .invest-showcase .auction-card__timer-price {
   display: flex;
   min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   padding: 0;
 }
 
@@ -531,28 +569,33 @@
     box-shadow: 0 10px 26px rgba(20, 42, 45, 0.1) !important;
   }
 
-  /* Timer: hide «До конца», show full countdown pill on the right */
-  .discover-auction-cards .auction-card__until-pill,
-  .discover-auction-cards .invest-showcase .auction-card__until-pill {
-    display: none !important;
-  }
-
+  /* Timer bar: always a compact bottom glass strip — never stretch top+bottom */
   .discover-auction-cards .auction-card__media-top,
   .discover-auction-cards .invest-showcase .auction-card__media-top {
-    top: 8px !important;
-    left: 8px !important;
-    right: 8px !important;
-    justify-content: flex-end !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    width: 95% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    transform: translateX(-50%) !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 5px 8px !important;
   }
 
   .discover-auction-cards .auction-card__countdown-pill,
   .discover-auction-cards .invest-showcase .auction-card__countdown-pill {
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 24px !important;
-    max-width: 100% !important;
+    max-width: none !important;
     padding: 0 8px !important;
     font-size: 0.62rem !important;
     gap: 5px !important;
+    overflow: visible !important;
   }
 
   .discover-auction-cards .auction-card__countdown-pill svg,
@@ -564,14 +607,18 @@
 
   .discover-auction-cards .auction-card__countdown-pill span,
   .discover-auction-cards .invest-showcase .auction-card__countdown-pill span {
+    flex-shrink: 0;
     overflow: visible !important;
     text-overflow: clip !important;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .discover-auction-cards .auction-card__favorite,
   .discover-auction-cards .invest-showcase .auction-card__favorite {
+    top: 8px !important;
     right: 8px !important;
-    bottom: 8px !important;
+    bottom: auto !important;
     width: 36px !important;
     height: 36px !important;
   }
@@ -637,16 +684,19 @@
     bottom: 10px !important;
     left: 50% !important;
     width: 95% !important;
-    transform: translateX(-50%);
+    height: auto !important;
+    min-height: 0 !important;
+    transform: translateX(-50%) !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 0 !important;
+    gap: 6px !important;
     box-sizing: border-box;
-    padding: 7px 10px;
+    padding: 5px 8px !important;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 13px;
+    border-radius: 11px;
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(231, 249, 251, 0.62));
     box-shadow:
@@ -677,7 +727,7 @@
       .discover-auction-cards--buy-now
     )
     .auction-card__countdown-pill {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     width: auto !important;
     max-width: none !important;
     min-width: 0;
@@ -691,6 +741,7 @@
     font-weight: 800 !important;
     letter-spacing: 0.035em;
     box-shadow: none !important;
+    overflow: visible !important;
   }
 
   .discover-auction-cards
@@ -807,12 +858,15 @@
     )
     .auction-card__timer-prices {
     display: flex !important;
-    flex: 0 0 auto;
+    flex: 1 1 0;
     align-items: center;
     width: auto;
+    min-width: 0;
+    max-width: 100%;
     margin-left: 9px;
     padding-left: 9px;
     border-left: 1px solid rgba(15, 71, 86, 0.16);
+    overflow: hidden;
   }
 
   .discover-auction-cards
@@ -826,10 +880,11 @@
     .auction-card__timer-price {
     display: flex;
     min-width: 0;
+    flex: 1 1 auto;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
     padding: 0;
   }
 
@@ -1044,6 +1099,9 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__media,
+  /* Same-element grids (e.g. map page) — compound, not only descendant */
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__media,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__media,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__media,
@@ -1059,6 +1117,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__media-top,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__media-top,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__media-top,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__media-top,
@@ -1069,11 +1129,15 @@
     right: auto !important;
     bottom: 8px !important;
     left: 50% !important;
-    width: 96% !important;
-    transform: translateX(-50%);
+    width: 94% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: translateX(-50%) !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
-    padding: 5px 8px !important;
-    border-radius: 11px !important;
+    align-items: center !important;
+    padding: 4px 7px !important;
+    border-radius: 10px !important;
   }
 
   .discover-auction-cards:is(
@@ -1082,13 +1146,15 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__countdown-pill,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__countdown-pill,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__countdown-pill,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__countdown-pill,
   .discover-auction-cards
     .auction-mobile-stack--desktop-cards
     .auction-card__countdown-pill {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     min-width: 0;
     min-height: 22px !important;
     max-width: none !important;
@@ -1109,6 +1175,8 @@
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__countdown-pill
     svg,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__countdown-pill svg,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__countdown-pill svg,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__countdown-pill
@@ -1127,6 +1195,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-prices,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-prices,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-prices,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-prices,
@@ -1143,6 +1213,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-price-label,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-price-label,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-price-label,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-price-label,
@@ -1158,6 +1230,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-price-value,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-price-value,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-price-value,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-price-value,

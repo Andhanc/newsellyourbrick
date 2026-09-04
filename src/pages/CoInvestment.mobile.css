@@ -482,32 +482,23 @@
   background: transparent;
 }
 
-.shares-page--shares-redesign .listing-page-pagination {
-  margin-top: 28px;
-}
-
-.shares-page--shares-redesign .listing-page-pagination .auction-desktop-pagination__page.is-active,
-.shares-page--shares-redesign .listing-page-pagination .auction-desktop-pagination__page[aria-current='page'] {
-  background: var(--shares-sky);
-  border-color: var(--shares-sky);
-  color: #ffffff;
-}
-
 .shares-page--shares-redesign .shares-v2-card {
   border-radius: 20px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
 }
 
+.shares-page--shares-redesign .shares-v2-card__btn--primary,
 .shares-page--shares-redesign .shares-v2-card__invest-btn {
   background: var(--shares-sky);
   box-shadow: 0 8px 18px var(--shares-sky-shadow);
 }
 
+.shares-page--shares-redesign .shares-v2-card__btn--primary:hover:not(.is-disabled),
 .shares-page--shares-redesign .shares-v2-card__invest-btn:hover:not(:disabled) {
   background: var(--shares-sky-deep);
 }
 
-.shares-page--shares-redesign .shares-v2-card__progress-fill {
+.shares-page--shares-redesign .shares-v2-card__shares-dock-track span {
   background: linear-gradient(90deg, var(--shares-sky-deep) 0%, var(--shares-sky) 100%);
 }
 
@@ -720,7 +711,9 @@
   .shares-page--shares-redesign .shares-v2-card {
     aspect-ratio: auto;
     border-radius: 18px;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 10px 26px rgba(15, 23, 42, 0.08);
   }
 
   .shares-page--shares-redesign .shares-v2-card:hover {
@@ -728,92 +721,57 @@
   }
 
   .shares-page--shares-redesign .shares-v2-card__media {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 5 / 4;
   }
 
   .shares-page--shares-redesign .shares-v2-card__favorite {
-    top: 7px;
-    right: 7px;
+    top: 8px;
+    right: 8px;
     min-width: 36px;
     min-height: 36px;
     width: 36px;
     height: 36px;
   }
 
-  .shares-page--shares-redesign .shares-v2-card__badge {
-    bottom: 7px;
-    left: 7px;
-    max-width: calc(100% - 14px);
-    padding: 5px 7px;
-    font-size: 10px;
+  .shares-page--shares-redesign .shares-v2-card__shares-dock {
+    bottom: 8px;
+    padding: 6px 8px;
   }
 
   .shares-page--shares-redesign .shares-v2-card__body {
-    gap: 8px;
-    padding: 10px;
+    gap: 10px;
+    padding: 12px 12px 14px;
   }
 
   .shares-page--shares-redesign .shares-v2-card__title {
     min-height: 0;
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     line-height: 1.2;
     -webkit-line-clamp: 1;
     line-clamp: 1;
   }
 
   .shares-page--shares-redesign .shares-v2-card__location {
-    margin: 3px 0 0;
-    font-size: 0.72rem;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    margin: 0;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__metric {
     min-height: 0;
-    gap: 1px;
-    padding: 0;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__metric-label,
-  .shares-page--shares-redesign .shares-v2-card__progress-label,
-  .shares-page--shares-redesign .shares-v2-card__progress-percent,
-  .shares-page--shares-redesign .shares-v2-card__progress-note {
-    font-size: 0.52rem;
-    line-height: 1.25;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__metric-value {
-    font-size: 0.66rem;
-    overflow-wrap: normal;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__metric small {
-    display: none;
-  }
-
-  .shares-page--shares-redesign .shares-v2-card__progress-head,
-  .shares-page--shares-redesign .shares-v2-card__progress-track,
-  .shares-page--shares-redesign .shares-v2-card__progress-note {
     margin: 0;
+    font-size: 0.72rem;
+    color: #94a3b8;
   }
 
-  .shares-page--shares-redesign .shares-v2-card__progress-track {
-    height: 4px;
+  .shares-page--shares-redesign .shares-v2-card__spec-value {
+    font-size: 0.64rem;
   }
 
-  .shares-page--shares-redesign .shares-v2-card__progress-note {
-    display: none;
+  .shares-page--shares-redesign .shares-v2-card__spec-label {
+    font-size: 0.46rem;
   }
 
+  .shares-page--shares-redesign .shares-v2-card__btn--primary,
   .shares-page--shares-redesign .shares-v2-card__invest-btn {
-    min-height: 36px;
-    padding: 7px 9px;
-    font-size: 0.68rem;
+    min-height: 42px;
+    padding: 9px 12px;
+    font-size: 0.78rem;
   }
 
   .shares-page--shares-redesign .buyer-status-ribbon {
@@ -824,15 +782,6 @@
 
   .shares-page--shares-redesign .buyer-status-ribbon__text {
     font-size: 10px;
-  }
-
-  .shares-page--shares-redesign .listing-page-pagination {
-    margin-top: 24px;
-  }
-
-  .shares-page--shares-redesign .listing-page-pagination .auction-desktop-pagination__page {
-    min-width: 44px;
-    height: 44px;
   }
 
   .shares-page--shares-redesign .shares-invest-filters--drawer .shares-invest-filter-block__title {

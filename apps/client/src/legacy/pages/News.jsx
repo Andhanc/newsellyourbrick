@@ -357,8 +357,16 @@ function NewsMobileHero({ articles, onExplore, onSubscribe }) {
     <section className="news-mobile-feature" aria-labelledby="news-mobile-title">
       <div className="news-mobile-feature__veil" aria-hidden />
       <div className="news-mobile-feature__content">
-        <p className="news-mobile-feature__eyebrow">{t('newsPage_mobileEyebrow')}</p>
-        <h1 id="news-mobile-title">{t('newsPage_mobileTitle')}</h1>
+        <div className="news-mobile-feature__brand" aria-label="SellYourBrick">
+          <span className="news-mobile-feature__brand-text">
+            <span className="news-mobile-feature__brand-word">Sell</span>
+            <span className="news-mobile-feature__brand-word news-mobile-feature__brand-word--accent">
+              Your
+            </span>
+            <span className="news-mobile-feature__brand-word">Brick</span>
+          </span>
+        </div>
+        <h1 id="news-mobile-title">{t('newsPage_mobileFeedTitle')}</h1>
 
         <div className="news-mobile-feature__cards" aria-label={t('newsPage_mobileCardsAria')}>
           {renderCard(left, 'left', t('newsPage_mobileCardLabelEditor'))}
@@ -530,9 +538,13 @@ const News = () => {
         <div className="news-page__container">
           <header className="news-masthead">
             <div className="news-masthead__copy">
-              <p className="news-masthead__eyebrow">
-                <span aria-hidden /> {t('newsPage_mastheadEyebrow')}
-              </p>
+              <div className="news-masthead__brand" aria-label="SellYourBrick">
+                <span className="news-masthead__brand-word">Sell</span>
+                <span className="news-masthead__brand-word news-masthead__brand-word--accent">
+                  Your
+                </span>
+                <span className="news-masthead__brand-word">Brick</span>
+              </div>
               <h1 className="news-masthead__title">{t('newsPage_mastheadTitle')}</h1>
               <p className="news-masthead__lead">{t('newsPage_mastheadLead')}</p>
             </div>

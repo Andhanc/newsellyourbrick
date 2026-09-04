@@ -18,6 +18,11 @@ import {
   Sparkles,
   ChevronRight,
   Settings2,
+  MessageCircle,
+  Building2,
+  Wallet,
+  ArrowRight,
+  Home,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
@@ -42,11 +47,18 @@ import {
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
-import { RoleSwitchButton } from '../components/RoleSwitchBottomCta'
+import { useOwnerWelcomeUi } from '../components/OwnerCabinetWelcomeHost'
+import AuctionCategoryCtaCards, {
+  preloadProfilePageCtaImages,
+} from '../components/AuctionCategoryCtaCards'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
+import { RoleSwitchButton, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
+import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
 import OwnerProfilePageSkeleton from '../components/OwnerProfilePageSkeleton'
 import CountrySelect from '../components/CountrySelect'
 import PhoneInput from '../components/PhoneInput'
+import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import {
   buildCountryIsoByName,
   buildPhoneCodeByCountryName,
@@ -64,6 +76,8 @@ import { getCurrencySymbol } from '../utils/currency'
 import { showNotification } from '../utils/toastHelper'
 import './OwnerProfileTestPage.css'
 import './OwnerProfileTestPage.mobile.css'
+import '../styles/profileFolderCards.css'
+import '../styles/profileDataExperience.css'
 import '../components/PhoneInput.css'
 
 /**
@@ -82,6 +96,8 @@ const EMPTY_OWNER_SALES = {
   buy_now: [],
   test_drive: [],
 }
+
+preloadProfilePageCtaImages()
 
 function formatDateSafe(value, locale, notSpecifiedLabel) {
   if (!value) return notSpecifiedLabel
@@ -265,10 +281,12 @@ function ProfileAvatar({ large = false }) {
 
 export default function OwnerProfileTestPage() {
   const { t, i18n } = useTranslation()
+  const welcomeUi = useOwnerWelcomeUi()
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
   const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
+  const buyerRoleFlow = useRoleSwitchFlow('buyer')
   const { isEmbedded, goTo, tab: embeddedTab, highlight } = useOwnerTestEmbeddedNav()
   const navItems = useOwnerTestNavItems({
     activeId: 'settings',
@@ -309,10 +327,30 @@ export default function OwnerProfileTestPage() {
   const [statsError, setStatsError] = useState('')
   const [exportingExcel, setExportingExcel] = useState(false)
   const [saveReleased, setSaveReleased] = useState(false)
+  const [foldersDotIndex, setFoldersDotIndex] = useState(0)
+  const [mobileSheetId, setMobileSheetId] = useState(null)
+  const [isMobileLayout, setIsMobileLayout] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  )
   const profileFormRef = useRef(null)
   const saveReleaseRef = useRef(null)
+  const foldersRailRef = useRef(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const mq = window.matchMedia('(max-width: 900px)')
+    const sync = () => setIsMobileLayout(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
+    preloadProfilePageCtaImages()
+  }, [])
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
 
   const openSellerAnalytics = useCallback(() => {
     if (isEmbedded && goTo) {
@@ -449,8 +487,20 @@ export default function OwnerProfileTestPage() {
     }
   }, [t])
 
+  const closeMobileSheet = useCallback(() => {
+    if (welcomeUi.gateLocked && mobileSheetId === 'personal') {
+      welcomeUi.warnGateLocked?.()
+      return
+    }
+    setMobileSheetId(null)
+  }, [mobileSheetId, welcomeUi])
+
   const selectProfileTab = useCallback(
     (tabId) => {
+      if (welcomeUi.gateLocked && tabId !== 'personal') {
+        welcomeUi.warnGateLocked?.()
+        return
+      }
       setActiveTab(tabId)
       if (isEmbedded && goTo) {
         goTo(OWNER_VIEWS.PROFILE, tabId === 'personal' ? {} : { tab: tabId })
@@ -459,9 +509,36 @@ export default function OwnerProfileTestPage() {
       } else {
         setSearchParams({ tab: tabId })
       }
+      if (isMobileLayout) setMobileSheetId(tabId)
     },
-    [isEmbedded, goTo, setSearchParams]
+    [isEmbedded, goTo, setSearchParams, welcomeUi, isMobileLayout]
   )
+
+
+  useEffect(() => {
+    if (!isMobileLayout) {
+      setMobileSheetId(null)
+      return undefined
+    }
+    if (welcomeUi.spotlightPhase === 'folder') {
+      setMobileSheetId(null)
+      return undefined
+    }
+    if (welcomeUi.spotlightPhase === 'form' || welcomeUi.gateLocked) {
+      setMobileSheetId('personal')
+      if (welcomeUi.spotlightPhase === 'form') {
+        const timer = window.setTimeout(() => {
+          welcomeUi.personalDataSectionRef.current?.scrollIntoView?.({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest',
+          })
+        }, 280)
+        return () => window.clearTimeout(timer)
+      }
+    }
+    return undefined
+  }, [isMobileLayout, welcomeUi.spotlightPhase, welcomeUi.gateLocked, welcomeUi.personalDataSectionRef])
 
   const focusProfileField = useCallback(
     (fieldKey) => {
@@ -514,16 +591,20 @@ export default function OwnerProfileTestPage() {
     if (isEmbedded) {
       if (isOwnerProfileTabId(embeddedTab)) {
         setActiveTab(embeddedTab)
+        if (isMobileLayout && embeddedTab !== 'personal') {
+          setMobileSheetId(embeddedTab)
+        }
       }
       return
     }
     const tab = searchParams.get('tab')
     if (isOwnerProfileTabId(tab)) {
       setActiveTab(tab)
+      if (isMobileLayout) setMobileSheetId(tab)
       return
     }
     if (!tab) setActiveTab('personal')
-  }, [isEmbedded, embeddedTab, searchParams])
+  }, [isEmbedded, embeddedTab, searchParams, isMobileLayout])
 
   useEffect(() => {
     if (isEmbedded) return undefined
@@ -825,6 +906,85 @@ export default function OwnerProfileTestPage() {
     }
   }, [excelProperties, formatDateForExport, ownerSalesData, statsTotals, t])
 
+  const profileCompletion = useMemo(() => getOwnerProfileCompletion(profile), [profile])
+  const mobileProfileSections = useMemo(
+    () =>
+      profileTabs.map((tab) => {
+        if (tab.id === 'statistics') {
+          return {
+            ...tab,
+            meta: statsLoading
+              ? t('ownerTest_metricLoading')
+              : t('ownerTest_profileStatProperties', { count: statsTotals.totalProperties }),
+            iconSrc: '/images/profile/shortcuts/history.png',
+            accent: 'ocean',
+          }
+        }
+        if (tab.id === 'settings') {
+          return {
+            ...tab,
+            meta: t('ownerSettingsTitle'),
+            iconSrc: '/images/profile/shortcuts/subscriptions.png',
+            accent: 'rose',
+          }
+        }
+        return {
+          ...tab,
+          meta: `${profileCompletion.filled} / ${profileCompletion.total}`,
+          iconSrc: '/images/profile/shortcuts/data.png',
+          accent: 'teal',
+        }
+      }),
+    [
+      profileTabs,
+      statsLoading,
+      statsTotals.totalProperties,
+      t,
+      profileCompletion.filled,
+      profileCompletion.total,
+    ],
+  )
+
+  const syncFoldersDotIndex = useCallback(() => {
+    const rail = foldersRailRef.current
+    if (!rail) return
+    const cards = rail.querySelectorAll('.profile-folder-card')
+    if (!cards.length) return
+    const railLeft = rail.getBoundingClientRect().left
+    let bestIndex = 0
+    let bestDistance = Number.POSITIVE_INFINITY
+    cards.forEach((card, index) => {
+      const distance = Math.abs(card.getBoundingClientRect().left - railLeft)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        bestIndex = index
+      }
+    })
+    setFoldersDotIndex((prev) => (prev === bestIndex ? prev : bestIndex))
+  }, [])
+
+  const handleFoldersRailScroll = useCallback(() => {
+    syncFoldersDotIndex()
+  }, [syncFoldersDotIndex])
+
+  const scrollFoldersToIndex = useCallback((index) => {
+    const rail = foldersRailRef.current
+    if (!rail) return
+    const card = rail.querySelectorAll('.profile-folder-card')[index]
+    if (!card) return
+    rail.scrollTo({ left: card.offsetLeft - 2, behavior: 'smooth' })
+    setFoldersDotIndex(index)
+  }, [])
+
+  useEffect(() => {
+    syncFoldersDotIndex()
+  }, [syncFoldersDotIndex, mobileProfileSections.length, activeTab])
+
+  useEffect(() => {
+    const index = mobileProfileSections.findIndex((tab) => tab.id === activeTab)
+    if (index >= 0) scrollFoldersToIndex(index)
+  }, [activeTab]) // eslint-disable-line react-hooks/exhaustive-deps -- only when tab changes
+
   if (loading || !profile) {
     const skeleton = <OwnerProfilePageSkeleton />
     if (isEmbedded) return skeleton
@@ -847,31 +1007,6 @@ export default function OwnerProfileTestPage() {
       icon: Phone,
     },
   ]
-
-  const profileCompletion = getOwnerProfileCompletion(profile)
-  const mobileProfileSections = profileTabs.map((tab) => {
-    if (tab.id === 'statistics') {
-      return {
-        ...tab,
-        icon: TrendingUp,
-        meta: statsLoading
-          ? t('ownerTest_metricLoading')
-          : t('ownerTest_profileStatProperties', { count: statsTotals.totalProperties }),
-      }
-    }
-    if (tab.id === 'settings') {
-      return {
-        ...tab,
-        icon: Settings2,
-        meta: t('ownerSettingsTitle'),
-      }
-    }
-    return {
-      ...tab,
-      icon: UserRound,
-      meta: `${profileCompletion.filled} / ${profileCompletion.total}`,
-    }
-  })
 
   const mainColumn = (
       <div className="opr-body">
@@ -931,25 +1066,58 @@ export default function OwnerProfileTestPage() {
                 </div>
               </header>
 
-              <section className="opr-mobile-cabinet__sections" aria-label={t('ownerTest_ariaProfileSections')}>
-                <h3>{t('buyerCabinet_sectionsLabel')}</h3>
-                <div className="opr-mobile-cabinet__rail" role="tablist">
+              <section
+                className="opr-mobile-cabinet__sections profile-cabinet__folders"
+                aria-label={t('ownerTest_ariaProfileSections')}
+              >
+                <div className="profile-cabinet__section-head">
+                  <div className="profile-cabinet__section-copy">
+                    <h3 className="profile-cabinet__section-title">{t('buyerCabinet_sectionsLabel')}</h3>
+                  </div>
+                </div>
+                <div
+                  ref={foldersRailRef}
+                  className="opr-mobile-cabinet__rail profile-cabinet__folders-rail"
+                  onScroll={handleFoldersRailScroll}
+                >
                   {mobileProfileSections.map((tab) => {
-                    const Icon = tab.icon
-                    const selected = activeTab === tab.id
+                    const selected = isMobileLayout
+                      ? mobileSheetId === tab.id
+                      : activeTab === tab.id
+                    const showAttention =
+                      tab.id === 'personal' &&
+                      (welcomeUi.gateLocked || profileCompletion.pct < 100)
+                    const className = `profile-folder-card profile-folder-card--${tab.accent || 'teal'}${
+                      selected ? ' profile-folder-card--active' : ''
+                    }${showAttention ? ' profile-folder-card--attention' : ''}${
+                      tab.id === 'personal' && welcomeUi.gateLocked
+                        ? ' profile-folder-card--gate-data'
+                        : ''
+                    }`
                     return (
                       <button
                         key={`mobile-${tab.id}`}
                         type="button"
                         role="tab"
                         aria-selected={selected}
-                        className={`opr-mobile-folder${selected ? ' opr-mobile-folder--active' : ''}`}
+                        aria-pressed={selected || undefined}
+                        ref={tab.id === 'personal' ? welcomeUi.personalFolderRef : undefined}
+                        className={className}
                         onClick={() => selectProfileTab(tab.id)}
                       >
-                        <span className="opr-mobile-folder__icon" aria-hidden>
-                          <Icon size={23} strokeWidth={2} />
+                        <span className="profile-folder-card__glow" aria-hidden />
+                        {showAttention ? (
+                          <span
+                            className="profile-folder-card__attention-dot"
+                            title={t('ownerWelcome_spotlightFolderHint')}
+                            aria-label={t('ownerWelcome_spotlightFolderHint')}
+                            role="status"
+                          />
+                        ) : null}
+                        <span className="profile-folder-card__icon" aria-hidden>
+                          <img src={tab.iconSrc} alt="" loading="lazy" decoding="async" draggable={false} />
                         </span>
-                        <span className="opr-mobile-folder__copy">
+                        <span className="profile-folder-card__copy">
                           <strong>{tab.label}</strong>
                           <span>{tab.meta}</span>
                         </span>
@@ -957,15 +1125,150 @@ export default function OwnerProfileTestPage() {
                     )
                   })}
                 </div>
-                <div className="opr-mobile-cabinet__dots" aria-hidden>
-                  {mobileProfileSections.map((tab) => (
-                    <span
-                      key={`mobile-dot-${tab.id}`}
-                      className={activeTab === tab.id ? 'opr-mobile-cabinet__dot--active' : ''}
-                    />
-                  ))}
-                </div>
+                {mobileProfileSections.length > 1 ? (
+                  <div
+                    className="opr-mobile-cabinet__dots profile-cabinet__folders-dots"
+                    role="tablist"
+                    aria-label={t('buyerCabinet_sectionsLabel')}
+                  >
+                    {mobileProfileSections.map((tab, index) => (
+                      <button
+                        key={`mobile-dot-${tab.id}`}
+                        type="button"
+                        role="tab"
+                        aria-selected={foldersDotIndex === index}
+                        aria-label={tab.label}
+                        className={`profile-cabinet__folders-dot${
+                          foldersDotIndex === index ? ' profile-cabinet__folders-dot--active' : ''
+                        }`}
+                        onClick={() => {
+                          scrollFoldersToIndex(index)
+                          selectProfileTab(tab.id)
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </section>
+
+              {(!isMobileLayout || !mobileSheetId) ? (
+              <>
+              <section
+                className="opr-profile-directions-list profile-cabinet__list"
+                aria-label={t('buyerCabinet_directionsListAria')}
+              >
+                <div className="profile-cabinet__section-head">
+                  <div className="profile-cabinet__section-copy">
+                    <h3 className="profile-cabinet__section-title">{t('buyerCabinet_directionsTitle')}</h3>
+                    <p className="profile-cabinet__section-sub">{t('ownerCabinet_directionsSubtitle')}</p>
+                  </div>
+                </div>
+                <ul className="profile-cabinet__rows">
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row profile-cabinet-row--manager"
+                      onClick={() => {
+                        if (welcomeUi.gateLocked) {
+                          welcomeUi.warnGateLocked?.()
+                          return
+                        }
+                        openOwnerManagerChat()
+                      }}
+                    >
+                      <span className="profile-cabinet-row__icon profile-cabinet-row__icon--manager" aria-hidden>
+                        <MessageCircle size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('buyerCabinet_directionPersonalManagerTitle')}</strong>
+                        <span>{t('ownerCabinet_dirManagerSubtitle')}</span>
+                      </span>
+                      <ArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row profile-cabinet-row--properties"
+                      onClick={() => {
+                        if (welcomeUi.gateLocked) {
+                          welcomeUi.warnGateLocked?.()
+                          return
+                        }
+                        if (isEmbedded && goTo) goTo(OWNER_VIEWS.PROPERTIES)
+                        else window.location.assign(OWNER_TEST_STANDALONE_HREF_MAP.properties)
+                      }}
+                    >
+                      <span className="profile-cabinet-row__icon profile-cabinet-row__icon--properties" aria-hidden>
+                        <Building2 size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('ownerTest_navMyProperties')}</strong>
+                        <span>{t('ownerCabinet_dirPropertiesSubtitle')}</span>
+                      </span>
+                      <ArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row profile-cabinet-row--wallet"
+                      onClick={() => {
+                        if (welcomeUi.gateLocked) {
+                          welcomeUi.warnGateLocked?.()
+                          return
+                        }
+                        if (isEmbedded && goTo) goTo(OWNER_VIEWS.WALLET)
+                        else window.location.assign(OWNER_TEST_STANDALONE_HREF_MAP.wallet)
+                      }}
+                    >
+                      <span className="profile-cabinet-row__icon profile-cabinet-row__icon--wallet" aria-hidden>
+                        <Wallet size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('ownerTest_navWallet')}</strong>
+                        <span>{t('ownerCabinet_dirWalletSubtitle')}</span>
+                      </span>
+                      <ArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row profile-cabinet-row--seller"
+                      onClick={() => {
+                        if (welcomeUi.gateLocked) {
+                          welcomeUi.warnGateLocked?.()
+                          return
+                        }
+                        void buyerRoleFlow.openFlow()
+                      }}
+                      disabled={buyerRoleFlow.loading}
+                    >
+                      <span className="profile-cabinet-row__icon profile-cabinet-row__icon--seller" aria-hidden>
+                        <Home size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>
+                          {hasBothLinkedRoles
+                            ? t('roleSwitch_buyerCabinet')
+                            : t('propertyDetail_becomeBuyer')}
+                        </strong>
+                        <span>{t('ownerCabinet_dirBecomeBuyerSubtitle')}</span>
+                      </span>
+                      <ArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                    </button>
+                  </li>
+                </ul>
+              </section>
+
+              {isMobileLayout ? (
+                <div className="opr-profile-directions-cta opr-profile-directions-cta--mobile">
+                  <AuctionCategoryCtaCards variant="profilePage" />
+                </div>
+              ) : null}
+              </>
+            ) : null}
             </div>
 
             <div className="opr-profile-tabs" role="tablist" aria-label={t('ownerTest_ariaProfileSections')}>
@@ -975,6 +1278,7 @@ export default function OwnerProfileTestPage() {
                   type="button"
                   role="tab"
                   aria-selected={activeTab === tab.id}
+                  ref={tab.id === 'personal' ? welcomeUi.personalTabRef : undefined}
                   className={`opr-profile-tabs__item${activeTab === tab.id ? ' opr-profile-tabs__item--active' : ''}`}
                   onClick={() => selectProfileTab(tab.id)}
                 >
@@ -983,7 +1287,7 @@ export default function OwnerProfileTestPage() {
               ))}
             </div>
 
-            {activeTab === 'personal' && (
+            {!isMobileLayout && activeTab === 'personal' && (
               <section className="opr-profile-overview" aria-label={t('ownerTest_ariaProfileOverview')}>
                 <div className="opr-profile-overview__identity">
                   <ProfileAvatar large />
@@ -1052,17 +1356,24 @@ export default function OwnerProfileTestPage() {
               </section>
             )}
 
-            <div
-              className={[
-                'opr-panel',
-                activeTab !== 'personal' && 'opr-panel--hidden',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="opr-profile-layout">
+
+            
+
+            {!isMobileLayout ? (
+              <div
+                className={[
+                  'opr-panel',
+                  activeTab !== 'personal' && 'opr-panel--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+<div className="opr-profile-layout">
                 <form className="opr-profile-form" ref={profileFormRef} onSubmit={handleSaveProfile}>
-                  <section className="opr-form-section">
+                  <section
+                    className="opr-form-section"
+                    ref={welcomeUi.personalDataSectionRef}
+                  >
                     <div className="opr-form-section__head">
                       <span className="opr-form-section__icon" aria-hidden>
                         <UserRound size={18} strokeWidth={2.3} />
@@ -1201,17 +1512,19 @@ export default function OwnerProfileTestPage() {
                   </div>
                 </form>
               </div>
-            </div>
+              </div>
+            ) : null}
 
-            <div
-              className={[
-                'opr-panel',
-                activeTab !== 'statistics' && 'opr-panel--hidden',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <section className="opr-stats" aria-label={t('ownerTest_ariaStatistics')}>
+            {!isMobileLayout ? (
+              <div
+                className={[
+                  'opr-panel',
+                  activeTab !== 'statistics' && 'opr-panel--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+<section className="opr-stats" aria-label={t('ownerTest_ariaStatistics')}>
                 <div className="opr-stats__head">
                   <div>
                     <h2 className="opr-stats__title">{t('ownerTest_profileTabStatistics')}</h2>
@@ -1305,17 +1618,19 @@ export default function OwnerProfileTestPage() {
                   </div>
                 </div>
               </section>
-            </div>
+              </div>
+            ) : null}
 
-            <div
-              className={[
-                'opr-panel',
-                activeTab !== 'settings' && 'opr-panel--hidden',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <section className="opr-app-settings" aria-label={t('ownerTest_ariaAppSettings')}>
+            {!isMobileLayout ? (
+              <div
+                className={[
+                  'opr-panel',
+                  activeTab !== 'settings' && 'opr-panel--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+<section className="opr-app-settings" aria-label={t('ownerTest_ariaAppSettings')}>
                 <div className="opr-app-settings__card">
                   <h2 className="opr-app-settings__title">{t('ownerSettingsTitle')}</h2>
                   <div className="opr-app-settings__selects">
@@ -1367,7 +1682,396 @@ export default function OwnerProfileTestPage() {
               <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save opr-profile-form__save--settings">
                 {t('ownerTest_profileSaveChanges')}
               </button>
-            </div>
+              </div>
+            ) : null}
+
+            {isMobileLayout ? (
+              <BuyerSheetShell
+                isOpen={mobileSheetId === 'personal'}
+                onClose={closeMobileSheet}
+                titleId="owner-profile-sheet-personal"
+                closeLabel={t('ownerTest_ariaClose')}
+                className="profile-cabinet-sheet profile-cabinet-sheet--data opr-owner-sheet"
+                dismissible={!(welcomeUi.gateLocked && mobileSheetId === 'personal')}
+              >
+                <div className="profile-data-experience profile-data-experience--fullscreen opr-owner-experience">
+                  <div className="profile-data-hero">
+                    <img
+                      className="profile-data-hero__image"
+                      src="/images/owner-profile/hero-personal.png"
+                      alt=""
+                      decoding="async"
+                    />
+                  </div>
+                  <div className="profile-data-panel">
+                    <div className="profile-data-panel__intro">
+                      <h2 id="owner-profile-sheet-personal" className="profile-data-panel__title">
+                        {t('ownerTest_profileTabPersonal')}
+                      </h2>
+                      <p className="profile-data-panel__lead">{t('ownerCabinet_sheetPersonalLead')}</p>
+                    </div>
+<div className="opr-profile-layout">
+                <form className="opr-profile-form" ref={profileFormRef} onSubmit={handleSaveProfile}>
+                  <section
+                    className="opr-form-section"
+                    ref={welcomeUi.personalDataSectionRef}
+                  >
+                    <div className="opr-form-section__head">
+                      <span className="opr-form-section__icon" aria-hidden>
+                        <UserRound size={18} strokeWidth={2.3} />
+                      </span>
+                      <div>
+                        <h3 className="opr-form-section__title">{t('ownerTest_profileTabPersonal')}</h3>
+                        <p className="opr-form-section__subtitle">{t('profileFieldsModalSubtitle')}</p>
+                      </div>
+                    </div>
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('firstName')}</span>
+                        <input
+                          id="owner-profile-field-firstName"
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.firstName}
+                          onChange={(e) => updateProfile('firstName', e.target.value)}
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('lastName')}</span>
+                        <input
+                          id="owner-profile-field-lastName"
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.lastName}
+                          onChange={(e) => updateProfile('lastName', e.target.value)}
+                        />
+                      </label>
+                      <div className="opr-field opr-field--country" id="owner-profile-field-country">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('country')}</span>
+                        <CountrySelect
+                          value={profile.country}
+                          onChange={handleCountryChange}
+                          placeholder={t('ownerProfilePlaceholderCountry')}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="opr-form-row">
+                      <div className="opr-field opr-field--phone" id="owner-profile-field-phone">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('phone')}</span>
+                        <PhoneInput
+                          variant="split"
+                          autoDetectCountry
+                          value={profile.phone}
+                          onChange={handlePhoneChange}
+                          placeholder={
+                            profile.country
+                              ? t('ownerTest_profilePhonePlaceholder')
+                              : t('ownerTest_profilePhoneSelectCountry')
+                          }
+                        />
+                      </div>
+                      <label className="opr-field">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('email')}</span>
+                        <input
+                          id="owner-profile-field-email"
+                          type="email"
+                          className="opr-field__input"
+                          value={profile.email}
+                          onChange={(e) => updateProfile('email', e.target.value)}
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('address')}</span>
+                        <input
+                          id="owner-profile-field-address"
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.address}
+                          onChange={(e) => updateProfile('address', e.target.value)}
+                          autoComplete="street-address"
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="opr-form-section">
+                    <div className="opr-form-section__head">
+                      <span className="opr-form-section__icon" aria-hidden>
+                        <FileText size={18} strokeWidth={2.3} />
+                      </span>
+                      <div>
+                        <h3 className="opr-form-section__title">{t('oap_documentsVerificationTitle')}</h3>
+                        <p className="opr-form-section__subtitle">{t('oap_documentsVerificationSubtitle')}</p>
+                      </div>
+                    </div>
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('passportNumber')}</span>
+                        <input
+                          id="owner-profile-field-passportNumber"
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.passportNumber}
+                          onChange={(e) => updateProfile('passportNumber', e.target.value)}
+                          autoComplete="off"
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">
+                          {getOwnerProfileFieldLabel('identificationNumber', profile.country)}
+                        </span>
+                        <input
+                          id="owner-profile-field-identificationNumber"
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.identificationNumber}
+                          onChange={handleIdentificationChange}
+                          autoComplete="off"
+                          placeholder={
+                            isSpainCountry(profile.country)
+                              ? '12345678Z / X1234567L'
+                              : undefined
+                          }
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <div className="opr-profile-form__save-slot" ref={saveReleaseRef}>
+                    <button
+                      type="submit"
+                      className={[
+                        'opr-btn opr-btn--primary opr-profile-form__save',
+                        saveReleased && 'opr-profile-form__save--released',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      disabled={saving}
+                    >
+                      {saving ? t('ownerProfileSaving') : t('ownerTest_profileSaveChanges')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+                  </div>
+                </div>
+              </BuyerSheetShell>
+            ) : null}
+
+            {isMobileLayout ? (
+              <BuyerSheetShell
+                isOpen={mobileSheetId === 'statistics'}
+                onClose={closeMobileSheet}
+                titleId="owner-profile-sheet-statistics"
+                closeLabel={t('ownerTest_ariaClose')}
+                className="profile-cabinet-sheet profile-cabinet-sheet--data opr-owner-sheet"
+                dismissible={true}
+              >
+                <div className="profile-data-experience profile-data-experience--fullscreen opr-owner-experience">
+                  <div className="profile-data-hero">
+                    <img
+                      className="profile-data-hero__image"
+                      src="/images/owner-profile/hero-statistics.png"
+                      alt=""
+                      decoding="async"
+                    />
+                  </div>
+                  <div className="profile-data-panel">
+                    <div className="profile-data-panel__intro">
+                      <h2 id="owner-profile-sheet-statistics" className="profile-data-panel__title">
+                        {t('ownerTest_profileTabStatistics')}
+                      </h2>
+                      <p className="profile-data-panel__lead">{t('ownerCabinet_sheetStatisticsLead')}</p>
+                    </div>
+<section className="opr-stats" aria-label={t('ownerTest_ariaStatistics')}>
+                <div className="opr-stats__head">
+                  <div>
+                    <h2 className="opr-stats__title">{t('ownerTest_profileTabStatistics')}</h2>
+                    <p className="opr-stats__subtitle">{t('ownerTest_ariaPropertySummary')}</p>
+                  </div>
+                  <div className="opr-stats__actions">
+                    <div className="opr-stats-period" role="group" aria-label={t('ownerTest_ariaPeriod')}>
+                      {statsPeriodDefs.map((period) => (
+                        <button
+                          key={period.id}
+                          type="button"
+                          className={`opr-stats-period__btn${statsPeriod === period.id ? ' opr-stats-period__btn--active' : ''}`}
+                          onClick={() => setStatsPeriod(period.id)}
+                        >
+                          {period.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="opr-stats-export"
+                      onClick={handleExportToExcel}
+                      disabled={exportingExcel || statsLoading}
+                    >
+                      <Download size={18} strokeWidth={2.2} aria-hidden />
+                      <span>{exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_profileExportExcel')}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="opr-stats-grid">
+                  {statsMetrics.map((metric) => {
+                    const Icon = metric.icon
+                    return (
+                      <article key={metric.label} className="opr-stat-card">
+                        <span className={`opr-stat-card__icon opr-stat-card__icon--${metric.tone}`}>
+                          <Icon size={18} strokeWidth={2} aria-hidden />
+                        </span>
+                        <span className="opr-stat-card__label">{metric.label}</span>
+                        <span className="opr-stat-card__value">{metric.value}</span>
+                        <span className="opr-stat-card__delta">
+                          <TrendingUp size={14} strokeWidth={2.2} aria-hidden />
+                          {metric.delta}
+                        </span>
+                      </article>
+                    )
+                  })}
+                </div>
+
+                <div className="opr-stats-table-wrap">
+                  <h3 className="opr-stats-table__title">{t('ownerTest_propertiesTabAll')}</h3>
+                  {statsError ? <p className="opr-stats__message">{statsError}</p> : null}
+                  <div className="opr-stats-table-scroll">
+                    <table className="opr-stats-table">
+                    <thead>
+                      <tr>
+                        <th>{t('oap_wizardStepObject')}</th>
+                        <th>{t('ownerTest_profileStatViews')}</th>
+                        <th>{t('ownerTest_profileStatTestDrives')}</th>
+                        <th>{t('bidHistoryCurrentMaxBid')}</th>
+                        <th>{t('ownerTest_profileStatSales')}</th>
+                        <th>{t('ownerTest_profileStatRevenue')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statsLoading ? (
+                        <tr>
+                          <td colSpan={6}>{t('ownerTest_metricLoading')}…</td>
+                        </tr>
+                      ) : sortedStatsRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={6}>{t('ownerTest_propertiesNoItems')}</td>
+                        </tr>
+                      ) : (
+                        sortedStatsRows.map((row) => (
+                          <tr key={row.analyticsKey}>
+                            <td>
+                              <span className="opr-stats-table__object">{row.title}</span>
+                              <span className="opr-stats-table__location">{row.location}</span>
+                            </td>
+                            <td>{formatNumber(row.viewsValue, intlLocale)}</td>
+                            <td>{formatNumber(row.testDriveValue, intlLocale)}</td>
+                            <td>{row.currentBidValue > 0 ? formatMoney(row.currentBidValue, intlLocale, row.currentBidCurrency) : '—'}</td>
+                            <td>{formatNumber(row.salesValue, intlLocale)}</td>
+                            <td>{formatMoney(row.revenueValue, intlLocale, row.revenueCurrency)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+              </section>
+                  </div>
+                </div>
+              </BuyerSheetShell>
+            ) : null}
+
+            {isMobileLayout ? (
+              <BuyerSheetShell
+                isOpen={mobileSheetId === 'settings'}
+                onClose={closeMobileSheet}
+                titleId="owner-profile-sheet-settings"
+                closeLabel={t('ownerTest_ariaClose')}
+                className="profile-cabinet-sheet profile-cabinet-sheet--data opr-owner-sheet"
+                dismissible={true}
+              >
+                <div className="profile-data-experience profile-data-experience--fullscreen opr-owner-experience">
+                  <div className="profile-data-hero">
+                    <img
+                      className="profile-data-hero__image"
+                      src="/images/owner-profile/hero-settings.png"
+                      alt=""
+                      decoding="async"
+                    />
+                  </div>
+                  <div className="profile-data-panel">
+                    <div className="profile-data-panel__intro">
+                      <h2 id="owner-profile-sheet-settings" className="profile-data-panel__title">
+                        {t('ownerTest_profileTabSettings')}
+                      </h2>
+                      <p className="profile-data-panel__lead">{t('ownerCabinet_sheetSettingsLead')}</p>
+                    </div>
+<section className="opr-app-settings" aria-label={t('ownerTest_ariaAppSettings')}>
+                <div className="opr-app-settings__card">
+                  <h2 className="opr-app-settings__title">{t('ownerSettingsTitle')}</h2>
+                  <div className="opr-app-settings__selects">
+                    <label className="opr-field">
+                      <span className="opr-field__label">{t('ownerSettingsChangeLanguage')}</span>
+                      <select
+                        className="opr-field__input opr-field__select"
+                        value={appPreferences.language}
+                        onChange={(e) =>
+                          setAppPreferences((prev) => ({ ...prev, language: e.target.value }))
+                        }
+                      >
+                        <option value="ru">{t('ownerSettingsLanguageRu')}</option>
+                        <option value="en">{t('ownerSettingsLanguageEn')}</option>
+                      </select>
+                    </label>
+                    <label className="opr-field">
+                      <span className="opr-field__label">{t('catalogFilterCurrency')}</span>
+                      <select
+                        className="opr-field__input opr-field__select"
+                        value={appPreferences.currency}
+                        onChange={(e) =>
+                          setAppPreferences((prev) => ({ ...prev, currency: e.target.value }))
+                        }
+                      >
+                        <option value="usd">USD ($)</option>
+                        <option value="eur">EUR (€)</option>
+                        <option value="aed">AED (د.إ)</option>
+                      </select>
+                    </label>
+                    <label className="opr-field">
+                      <span className="opr-field__label">{t('ownerTest_ariaPeriod')}</span>
+                      <select
+                        className="opr-field__input opr-field__select"
+                        value={appPreferences.timezone}
+                        onChange={(e) =>
+                          setAppPreferences((prev) => ({ ...prev, timezone: e.target.value }))
+                        }
+                      >
+                        <option value="minsk">Europe/Minsk (UTC+3)</option>
+                        <option value="moscow">Europe/Moscow (UTC+3)</option>
+                        <option value="dubai">Asia/Dubai (UTC+4)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+              </section>
+              <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save opr-profile-form__save--settings">
+                {t('ownerTest_profileSaveChanges')}
+              </button>
+                  </div>
+                </div>
+              </BuyerSheetShell>
+            ) : null}
+
+            <RoleSwitchModals flow={buyerRoleFlow} />
+
+            {!isMobileLayout ? (
+              <div className="opr-profile-directions-cta opr-profile-directions-cta--desktop">
+                <AuctionCategoryCtaCards variant="profilePage" />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

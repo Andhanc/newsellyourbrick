@@ -328,9 +328,15 @@ export default defineConfig(({ mode }) => {
                 clientPort: vitePort, // Для HMR в development
                 overlay: false, // Отключаем overlay для избежания ошибок esbuild на Railway
               },
-      // JSON новостей и счётчики просмотров — не триггерить full reload при открытии статьи
+      // JSON новостей, счётчики и сессия WhatsApp Web — не триггерить full reload
       watch: {
-        ignored: ['**/server/data/**'],
+        ignored: [
+          '**/server/data/**',
+          '**/server/.wwebjs_auth/**',
+          '**/server/.wwebjs_cache/**',
+          '**/.wwebjs_auth/**',
+          '**/.wwebjs_cache/**',
+        ],
       },
       proxy: devProxy,
     },

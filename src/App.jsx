@@ -12,6 +12,7 @@ import PrivateClubKickModal from './components/PrivateClubKickModal'
 import BiometricLockGate from './components/BiometricLockGate'
 
 import VerificationRejectedGate from './components/VerificationRejectedGate'
+import DepositVerificationGate from './components/DepositVerificationGate'
 import BuyerProfileOnboardingRouteGate from './components/BuyerProfileOnboardingRouteGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
@@ -653,6 +654,7 @@ function App() {
       <BiometricLockGate />
       <GlobalVerificationSuccessGate />
       <VerificationRejectedGate blockedUser={isBlocked} />
+      <DepositVerificationGate blockedUser={isBlocked} />
       <BuyerProfileOnboardingRouteGate />
       <AdminSessionCleaner />
       <ClerkAuthSync />

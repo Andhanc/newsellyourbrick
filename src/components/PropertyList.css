@@ -3099,7 +3099,7 @@ a.property-card {
     width: 100%;
   }
 
-  .auction-desktop-layout--filters-hidden .auction-desktop-pagination {
+  .auction-desktop-layout--filters-hidden .listing-page-pagination {
     width: 100%;
     max-width: none;
     margin-inline: auto;
@@ -3182,66 +3182,6 @@ a.property-card {
   .property-list--auction-desktop .load-more-button:hover {
     background: #007d8a;
     border-color: #007d8a;
-  }
-
-  .auction-desktop-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 32px;
-    padding-bottom: 8px;
-  }
-
-  .auction-desktop-pagination__pages {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-    max-width: min(100%, 640px);
-  }
-
-  .auction-desktop-pagination__page,
-  .auction-desktop-pagination__arrow {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    height: 40px;
-    padding: 0 10px;
-    border: 1.5px solid rgba(15, 23, 42, 0.1);
-    border-radius: 12px;
-    background: #ffffff;
-    color: #334155;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-      border-color 0.2s ease,
-      background 0.2s ease,
-      color 0.2s ease,
-      box-shadow 0.2s ease;
-  }
-
-  .auction-desktop-pagination__page:hover:not(.auction-desktop-pagination__page--active),
-  .auction-desktop-pagination__arrow:hover:not(:disabled) {
-    border-color: rgba(0, 153, 169, 0.4);
-    color: #00605a;
-    background: rgba(0, 153, 169, 0.06);
-  }
-
-  .auction-desktop-pagination__page--active {
-    border-color: #0099A9;
-    background: #0099A9;
-    color: #ffffff;
-    box-shadow: 0 6px 18px rgba(0, 153, 169, 0.28);
-    cursor: default;
-  }
-
-  .auction-desktop-pagination__arrow:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 }
 

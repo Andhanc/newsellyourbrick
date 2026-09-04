@@ -34,6 +34,7 @@ import {
   Zap,
   Bot,
   Car,
+  Columns2,
 } from 'lucide-react'
 import { SiteBrandIcon } from './SiteBrandLogo'
 import './SiteBrandLogo.css'
@@ -68,6 +69,7 @@ const LINK_ICONS = {
   calculator: BarChart3,
   chat: MessageSquare,
   favorites: Heart,
+  buyerCabinet_compare: Columns2,
   mapLink: Map,
   profile: User,
   listProperty: PlusCircle,
@@ -107,6 +109,7 @@ const SERVICES_COLUMN = {
     { labelKey: 'calculator', path: '/calculator', requiresAuth: true },
     { labelKey: 'chat', path: '/chat?manager=1', requiresAuth: true },
     { labelKey: 'favorites', path: '/favorites' },
+    { labelKey: 'buyerCabinet_compare', path: '/compare', requiresAuth: true },
     { labelKey: 'mapLink', path: '/map', requiresAuth: true },
   ],
 }
@@ -150,6 +153,7 @@ function buildRoleColumn(role) {
       { labelKey: 'ownerTest_tabBookings', path: getCabinetBookingsPath(role), requiresAuth: true },
       { labelKey: 'buyerCabinet_tileDepositTitle', path: getCabinetWalletPath(role), requiresAuth: true },
       { labelKey: 'history', path: getCabinetHistoryPath(role), requiresAuth: true },
+      { labelKey: 'privateClubPageTitle', path: '/private-club' },
       { labelKey: 'bonuses', path: '/bonuses', requiresAuth: true },
     ],
   }

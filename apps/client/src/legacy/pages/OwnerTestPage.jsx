@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { OwnerTestNavigationProvider, useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import OwnerTestCabinetChrome from '../components/OwnerTestCabinetChrome'
+import OwnerCabinetWelcomeHost from '../components/OwnerCabinetWelcomeHost'
 import { OWNER_VIEWS, VIEW_PAGE_ACTIVE } from '../utils/ownerTestNav'
 import MainOwnerTestPage from './MainOwnerTestPage'
 import OwnerPropertiesTestPage from './OwnerPropertiesTestPage'
@@ -47,20 +48,20 @@ function OwnerTestPageContent() {
 
   if (view === OWNER_VIEWS.ADD_PROPERTY) {
     return (
-      <>
+      <OwnerCabinetWelcomeHost>
         <OwnerTestViewRouter />
         <SellerPurchasedPropertyArrivalDrawer />
-      </>
+      </OwnerCabinetWelcomeHost>
     )
   }
 
   return (
-    <>
+    <OwnerCabinetWelcomeHost>
       <OwnerTestCabinetChrome>
         <OwnerTestViewRouter />
       </OwnerTestCabinetChrome>
       <SellerPurchasedPropertyArrivalDrawer />
-    </>
+    </OwnerCabinetWelcomeHost>
   )
 }
 

@@ -19,7 +19,7 @@ test('integrates the purchased-property card and sequential drawers in the new p
   assert.match(page, /selectedPurchasedProperty/)
   assert.match(page, /setPurchaseDrawerView\('sell'\)/)
   assert.match(page, /setPurchaseDrawerView\('details'\)/)
-  assert.match(page, /openManagerChatModal/)
+  assert.match(page, /openPlatformManagerChat/)
   assert.match(page, /handleSellObjectFromHistory/)
   assert.match(page, /openSellCabinetFlow/)
   assert.match(page, /OPEN_ROLE_SWITCH_FOR_SELL_EVENT/)

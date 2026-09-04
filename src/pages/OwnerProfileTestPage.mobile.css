@@ -641,9 +641,29 @@
 
   .opr-field__input,
   .opr-field__textarea {
-    min-height: 46px;
-    border-radius: 13px;
-    background: #fbfdfd;
+    min-height: 56px;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: 16px;
+    background: #f2f4f6;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    box-shadow: none;
+  }
+
+  .opr-field__input:hover,
+  .opr-field__textarea:hover {
+    background: #ebeef1;
+  }
+
+  .opr-field__input:focus,
+  .opr-field__textarea:focus {
+    outline: none;
+    background: #eefbfc;
+    border: 0;
+    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
   }
 
   .opr-status-card {
@@ -1195,12 +1215,8 @@
     overflow: hidden;
   }
 
-  .opr-mobile-cabinet__sections > h3 {
+  .opr-mobile-cabinet__sections .profile-cabinet__section-head {
     margin: 0 2px 10px;
-    color: #151c22;
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
   }
 
   .opr-mobile-cabinet__rail {
@@ -1219,68 +1235,6 @@
     display: none;
   }
 
-  .opr-mobile-folder {
-    flex: 0 0 auto;
-    width: min(210px, 78vw);
-    min-height: 92px;
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
-    scroll-snap-align: start;
-    border: 1px solid rgba(78, 205, 214, 0.34);
-    border-radius: 18px;
-    background: #ffffff;
-    color: inherit;
-    text-align: left;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
-  }
-
-  .opr-mobile-folder--active {
-    border-color: rgba(59, 192, 203, 0.58);
-    box-shadow:
-      0 0 0 2px rgba(78, 205, 214, 0.18),
-      0 8px 18px rgba(15, 23, 42, 0.07);
-  }
-
-  .opr-mobile-folder__icon {
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    border: 1px solid rgba(78, 205, 214, 0.28);
-    border-radius: 14px;
-    background: rgba(78, 205, 214, 0.14);
-    color: #2a9aa3;
-  }
-
-  .opr-mobile-folder__copy {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-  }
-
-  .opr-mobile-folder__copy strong {
-    overflow: hidden;
-    color: #151c22;
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .opr-mobile-folder__copy span {
-    display: -webkit-box;
-    overflow: hidden;
-    color: #5b6b72;
-    font-size: 12px;
-    line-height: 1.3;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
   .opr-mobile-cabinet__dots {
     display: flex;
     align-items: center;
@@ -1290,27 +1244,44 @@
     margin-top: 2px;
   }
 
-  .opr-mobile-cabinet__dots span {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.16);
-    transition: width 0.2s ease, background 0.2s ease;
+  .opr-profile-directions-cta {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 4px;
+    padding: 0 0 4px;
   }
 
-  .opr-mobile-cabinet__dots .opr-mobile-cabinet__dot--active {
-    width: 18px;
-    background: #4ecdd6;
+  .opr-profile-directions-list {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 2px;
   }
 
-  .opr-body .opr-profile-tabs,
-  .opr-body .opr-profile-overview {
+  .opr-profile-directions-list .profile-cabinet__section-head {
+    margin: 0 2px 10px;
+  }
+
+  .opr-profile-directions-cta--mobile {
+    display: block;
+  }
+
+  .opr-profile-directions-cta--desktop {
     display: none !important;
   }
 
-  .opr-body .opr-panel:not(.opr-panel--hidden) {
-    display: block;
+  .opr-profile-directions-cta .auction-cta-cards--profile {
+    padding-top: 2px;
   }
+
+  .opr-body .opr-profile-tabs,
+  .opr-body .opr-profile-overview,
+  .opr-body .opr-panel {
+    display: none !important;
+  }
+
+  /* Sheets replace inline panels on mobile — keep panel content only in BuyerSheetShell. */
 
   .opr-body .opr-form-section,
   .opr-body .opr-app-settings__card,
@@ -1344,17 +1315,21 @@
 
   .opr-body .opr-field--phone .phone-input-wrapper {
     gap: 0;
-    min-height: 46px;
-    border: 1px solid #e7edf3;
-    border-radius: 13px;
-    background: #fbfdfd;
-    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+    min-height: 56px;
+    border: 0;
+    border-radius: 16px;
+    background: #f2f4f6;
+    box-shadow: none;
+  }
+
+  .opr-body .opr-field--phone .phone-input-wrapper:hover {
+    background: #ebeef1;
   }
 
   .opr-body .opr-field--phone .phone-input-wrapper:focus-within {
-    border-color: #0099a9;
-    background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+    border: 0;
+    background: #eefbfc;
+    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
   }
 
   .opr-body .opr-field--phone .phone-input-country-selector {
@@ -1364,7 +1339,7 @@
     min-height: 44px;
     padding: 0 8px 0 12px;
     border: 0;
-    border-right: 1px solid #e7edf3;
+    border-right: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 0;
     background: transparent;
     box-shadow: none;
@@ -1394,20 +1369,25 @@
   }
 
   .opr-body .opr-field--country .country-select__trigger {
-    min-height: 46px;
-    padding: 0 14px;
-    border: 1px solid #e7edf3;
-    border-radius: 13px;
-    background: #fbfdfd;
-    box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+    min-height: 56px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 16px;
+    background: #f2f4f6;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
   .opr-body .opr-field--country .country-select__trigger:hover,
   .opr-body .opr-field--country .country-select__trigger--open {
-    border: 1px solid #0099a9;
-    background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+    border: 0;
+    background: #ebeef1;
+    box-shadow: none;
+  }
+
+  .opr-body .opr-field--country .country-select__trigger--open {
+    background: #eefbfc;
+    box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
   }
 
   .opr-body .opr-field--country .country-select__input,
@@ -1454,7 +1434,7 @@
     height: 60px;
   }
 
-  .opr-mobile-folder {
+  .opr-mobile-cabinet .profile-folder-card {
     width: min(196px, 82vw);
     min-height: 88px;
   }

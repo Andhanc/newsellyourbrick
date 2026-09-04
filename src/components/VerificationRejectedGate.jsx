@@ -2,119 +2,139 @@ import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED, getUserData } from '../services/authService'
+import { getApiBaseUrlSync } from '../utils/apiConfig'
+import {
+  fetchVerificationStatus,
+  invalidateVerificationStatusCache,
+} from '../utils/verificationStatusApi'
 import './VerificationRejectedGate.css'
 
 const SellerVerificationModalLazy = lazy(() => import('./SellerVerificationModal'))
 
 /**
  * Блокирующее окно после отклонения верификации админом.
- * Закрывается только после успешной повторной отправки трёх фото (VerificationModal + clear-rejected на бэке).
+ * Сначала — сообщение на сайте с причиной; по кнопке — повторная верификация.
  */
 export default function VerificationRejectedGate({ blockedUser = false }) {
   const { t } = useTranslation()
   const location = useLocation()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
-  const [open, setOpen] = useState(false)
+  const [gateActive, setGateActive] = useState(false)
   const [reason, setReason] = useState('')
   const [userId, setUserId] = useState(null)
   const [phase, setPhase] = useState('banner')
 
-  const tryFetch = useCallback(async () => {
-    if (blockedUser) {
-      setOpen(false)
-      return
-    }
-    if (location.pathname.startsWith('/admin')) {
-      setOpen(false)
-      return
-    }
-    if (localStorage.getItem('isAdminLoggedIn') === 'true' && localStorage.getItem('userRole') === 'admin') {
-      setOpen(false)
-      return
-    }
-    if (!authLoaded) return
-
-    const legacy = getUserData()
-    const legacyIn = Boolean(legacy?.isLoggedIn)
-    const raw = localStorage.getItem('userId')
-    const uid = raw && /^\d+$/.test(String(raw).trim()) ? parseInt(String(raw).trim(), 10) : null
-
-    if (!uid) {
-      setOpen(false)
-      setUserId(null)
-      setReason('')
-      return
-    }
-
-    if (!isSignedIn && !legacyIn) {
-      setOpen(false)
-      setUserId(null)
-      setReason('')
-      return
-    }
-
-    setUserId(uid)
-
-    try {
-      const base = await getApiBaseUrl()
-      const normalized = String(base).replace(/\/$/, '')
-      const r = await fetch(`${normalized}/users/${uid}/verification-status`)
-      if (!r.ok) return
-      const j = await r.json()
-      if (j.success && j.data?.needsReverificationAfterRejection) {
-        setReason(j.data.rejectionReasonSummary || '')
-        setOpen(true)
+  const refreshGate = useCallback(
+    async ({ force = false } = {}) => {
+      if (blockedUser) {
+        setGateActive(false)
+        setUserId(null)
+        setReason('')
         setPhase('banner')
-      } else {
-        setOpen(false)
-        setPhase('banner')
+        return false
       }
-    } catch {
-      /* сеть */
-    }
-  }, [authLoaded, blockedUser, isSignedIn, location.pathname])
+      if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/marketer')) {
+        setGateActive(false)
+        setUserId(null)
+        setReason('')
+        setPhase('banner')
+        return false
+      }
+      if (
+        localStorage.getItem('isAdminLoggedIn') === 'true'
+        && localStorage.getItem('userRole') === 'admin'
+      ) {
+        setGateActive(false)
+        setUserId(null)
+        setReason('')
+        setPhase('banner')
+        return false
+      }
+      if (!authLoaded) return false
+
+      const legacy = getUserData()
+      const legacyIn = Boolean(legacy?.isLoggedIn)
+      const raw = localStorage.getItem('userId')
+      const uid = raw && /^\d+$/.test(String(raw).trim()) ? parseInt(String(raw).trim(), 10) : null
+
+      if (!uid || (!isSignedIn && !legacyIn)) {
+        setGateActive(false)
+        setUserId(null)
+        setReason('')
+        setPhase('banner')
+        return false
+      }
+
+      setUserId(uid)
+
+      try {
+        const apiBase = getApiBaseUrlSync()
+        const status = await fetchVerificationStatus(apiBase, uid, {
+          force,
+          ttlMs: force ? 0 : 10000,
+        })
+        if (status?.needsReverificationAfterRejection) {
+          setReason(status.rejectionReasonSummary || '')
+          setGateActive(true)
+          setPhase('banner')
+          return true
+        }
+        setGateActive(false)
+        setReason('')
+        setPhase('banner')
+        return false
+      } catch {
+        return false
+      }
+    },
+    [authLoaded, blockedUser, isSignedIn, location.pathname],
+  )
 
   useEffect(() => {
-    void tryFetch()
-  }, [tryFetch])
+    void refreshGate()
+  }, [refreshGate])
 
   useEffect(() => {
-    const onUpd = () => void tryFetch()
-    window.addEventListener('verification-status-update', onUpd)
-    window.addEventListener('focus', onUpd)
-    window.addEventListener(CLERK_DB_USER_SYNCED, onUpd)
+    const onRefresh = () => void refreshGate({ force: true })
+    window.addEventListener('verification-status-update', onRefresh)
+    window.addEventListener('focus', onRefresh)
+    window.addEventListener(CLERK_DB_USER_SYNCED, onRefresh)
     return () => {
-      window.removeEventListener('verification-status-update', onUpd)
-      window.removeEventListener('focus', onUpd)
-      window.removeEventListener(CLERK_DB_USER_SYNCED, onUpd)
+      window.removeEventListener('verification-status-update', onRefresh)
+      window.removeEventListener('focus', onRefresh)
+      window.removeEventListener(CLERK_DB_USER_SYNCED, onRefresh)
     }
-  }, [tryFetch])
+  }, [refreshGate])
 
-  if (!open) return null
+  if (!gateActive || !userId) return null
 
-  if (phase === 'verifying' && userId) {
+  if (phase === 'verifying') {
+    const subtitle = reason
+      ? t('verificationRejectedGateVerificationSubtitleWithReason', { reason })
+      : t('verificationRejectedGateVerificationSubtitle')
+
     return (
-      <div className="verification-rejected-gate-flow">
-        <Suspense fallback={null}>
-          <SellerVerificationModalLazy
-            isOpen
-            required
-            onClose={() => {
-              setPhase('banner')
-              void tryFetch()
-            }}
-            userId={userId}
-            title={t('verificationRejectedGateVerificationTitle')}
-            subtitle={t('verificationRejectedGateVerificationSubtitle')}
-            onComplete={async () => {
-              await tryFetch()
-              return true
-            }}
-          />
-        </Suspense>
-      </div>
+      <Suspense fallback={null}>
+        <SellerVerificationModalLazy
+          isOpen
+          required
+          onClose={() => {
+            setPhase('banner')
+            void refreshGate({ force: true })
+          }}
+          userId={userId}
+          title={t('verificationRejectedGateVerificationTitle')}
+          subtitle={subtitle}
+          onComplete={async () => {
+            const apiBase = getApiBaseUrlSync()
+            invalidateVerificationStatusCache(apiBase, userId)
+            window.dispatchEvent(new Event('verification-status-update'))
+            await refreshGate({ force: true })
+            return true
+          }}
+        />
+      </Suspense>
     )
   }
 
@@ -138,7 +158,11 @@ export default function VerificationRejectedGate({ blockedUser = false }) {
             {t('verificationRejectedGateNoReason')}
           </p>
         )}
-        <button type="button" className="verification-rejected-gate__cta" onClick={() => setPhase('verifying')}>
+        <button
+          type="button"
+          className="verification-rejected-gate__cta"
+          onClick={() => setPhase('verifying')}
+        >
           {t('verificationRejectedGateCta')}
         </button>
       </div>

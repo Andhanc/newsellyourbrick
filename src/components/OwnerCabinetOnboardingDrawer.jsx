@@ -5,12 +5,16 @@ import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { OWNER_ONBOARDING_IMAGES, preloadOwnerOnboardingImages } from './ownerOnboardingImages'
 import './OwnerCabinetOnboardingDrawer.css'
 
-const STEP_COUNT = 4
+const DEFAULT_STEP_COUNT = 4
 
 export default function OwnerCabinetOnboardingDrawer({
   isOpen,
   onComplete,
   translationPrefix = 'ownerTest',
+  images = OWNER_ONBOARDING_IMAGES,
+  stepCount = DEFAULT_STEP_COUNT,
+  finishLabelKey,
+  buyerStyled = translationPrefix === 'buyerTest' || translationPrefix === 'buyerWelcome' || translationPrefix === 'ownerWelcome',
 }) {
   const { t } = useTranslation()
   const [step, setStep] = useState(0)
@@ -36,9 +40,18 @@ export default function OwnerCabinetOnboardingDrawer({
 
   useEffect(() => {
     if (!visible) return undefined
-    preloadOwnerOnboardingImages()
+    if (images === OWNER_ONBOARDING_IMAGES) {
+      preloadOwnerOnboardingImages()
+    } else {
+      images.forEach((src, index) => {
+        const img = new Image()
+        img.decoding = 'async'
+        if (index === 0) img.fetchPriority = 'high'
+        img.src = src
+      })
+    }
     return undefined
-  }, [visible])
+  }, [visible, images])
 
   useEffect(() => {
     if (!visible) return undefined
@@ -60,14 +73,15 @@ export default function OwnerCabinetOnboardingDrawer({
 
   if (!visible || typeof document === 'undefined') return null
 
-  const isLastStep = step === STEP_COUNT - 1
+  const isLastStep = step === stepCount - 1
+  const finishKey = finishLabelKey || `${translationPrefix}_onboardingStart`
 
   const handlePrimary = () => {
     if (isLastStep) {
       requestClose()
       return
     }
-    setStep((current) => Math.min(current + 1, STEP_COUNT - 1))
+    setStep((current) => Math.min(current + 1, stepCount - 1))
   }
 
   const titleBefore = t(`${translationPrefix}_onboardingStep${step + 1}TitleBefore`, { defaultValue: '' })
@@ -83,7 +97,7 @@ export default function OwnerCabinetOnboardingDrawer({
       />
       <div
         className={`owner-onboarding-drawer${
-          translationPrefix === 'buyerTest' ? ' owner-onboarding-drawer--buyer' : ''
+          buyerStyled ? ' owner-onboarding-drawer--buyer' : ''
         }`}
         role="dialog"
         aria-modal="true"
@@ -91,7 +105,7 @@ export default function OwnerCabinetOnboardingDrawer({
       >
         <div
           className={`owner-onboarding-drawer__panel${
-            translationPrefix === 'buyerTest' ? ' owner-onboarding-drawer__panel--buyer' : ''
+            buyerStyled ? ' owner-onboarding-drawer__panel--buyer' : ''
           }${entered && !isClosing ? ' owner-onboarding-drawer__panel--entering' : ''}${
             isClosing ? ' owner-onboarding-drawer__panel--closing drawer-dismiss-from-bottom--closing' : ''
           }`}
@@ -101,7 +115,7 @@ export default function OwnerCabinetOnboardingDrawer({
           </div>
 
           <div className="owner-onboarding-drawer__hero">
-            {OWNER_ONBOARDING_IMAGES.map((src, index) => (
+            {images.map((src, index) => (
               <img
                 key={src}
                 className={`owner-onboarding-drawer__illustration${
@@ -120,7 +134,7 @@ export default function OwnerCabinetOnboardingDrawer({
           <div className="owner-onboarding-drawer__content">
             <div className="owner-onboarding-drawer__copy">
               <p className="owner-onboarding-drawer__step-label">
-                {t(`${translationPrefix}_onboardingStepCounter`, { current: step + 1, total: STEP_COUNT })}
+                {t(`${translationPrefix}_onboardingStepCounter`, { current: step + 1, total: stepCount })}
               </p>
 
               <h2 id="owner-onboarding-drawer-title" className="owner-onboarding-drawer__title">
@@ -155,12 +169,12 @@ export default function OwnerCabinetOnboardingDrawer({
                 role="tablist"
                 aria-label={t(`${translationPrefix}_onboardingStepsAria`)}
               >
-                {Array.from({ length: STEP_COUNT }, (_, index) => (
+                {Array.from({ length: stepCount }, (_, index) => (
                   <span
                     key={index}
                     role="tab"
                     aria-selected={index === step}
-                    aria-label={t(`${translationPrefix}_onboardingStepDot`, { step: index + 1, total: STEP_COUNT })}
+                    aria-label={t(`${translationPrefix}_onboardingStepDot`, { step: index + 1, total: stepCount })}
                     className={`owner-onboarding-drawer__dot${
                       index === step ? ' owner-onboarding-drawer__dot--active' : ''
                     }`}
@@ -169,9 +183,7 @@ export default function OwnerCabinetOnboardingDrawer({
               </div>
 
               <button type="button" className="owner-onboarding-drawer__cta" onClick={handlePrimary}>
-                {isLastStep
-                  ? t(`${translationPrefix}_onboardingStart`)
-                  : t(`${translationPrefix}_onboardingNext`)}
+                {isLastStep ? t(finishKey) : t(`${translationPrefix}_onboardingNext`)}
               </button>
             </div>
           </div>

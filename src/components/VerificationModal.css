@@ -16,6 +16,12 @@
   padding: 0;
 }
 
+/* Поверх blocking-gate (99990) и seller drawer (100001) */
+.verification-modal-overlay--gate {
+  z-index: 100002;
+  pointer-events: auto;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -654,7 +660,7 @@
   right: 0;
   bottom: 0;
   background: #000;
-  z-index: 11000;
+  z-index: 100003;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1803,7 +1809,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 11000;
+  z-index: 100004;
   padding: 20px;
   animation: fadeIn 0.3s ease;
 }

@@ -23,8 +23,8 @@ import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
-import SellerVerificationModal from '../components/SellerVerificationModal'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
+import { writeDepositVerificationGateFlag } from '../utils/depositVerificationGate'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -267,7 +267,6 @@ const WalletInner = () => {
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
   const [showTopUpPicker, setShowTopUpPicker] = useState(false)
   const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false)
-  const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
   const [showDepositSuccessDrawer, setShowDepositSuccessDrawer] = useState(false)
   const [confirmedDepositAmount, setConfirmedDepositAmount] = useState(null)
   const [tonConnectUI] = useTonConnectUI()
@@ -597,7 +596,8 @@ const WalletInner = () => {
               showNotification(
                 t('walletPage_paymentCredited', { amount: formatAmount(result.data.amountEur) }),
               )
-              setShowVerificationAfterTopUp(true)
+              writeDepositVerificationGateFlag(dbUserId, true)
+              window.dispatchEvent(new Event('verification-status-update'))
             }
           } else if (result.data?.already) {
             showNotification(t('walletPage_paymentAlreadyRecorded'))
@@ -1105,20 +1105,6 @@ const WalletInner = () => {
           confirmedAmount={confirmedDepositAmount}
           returnPath={isSafeWalletFromPath(location.state?.from) ? location.state.from : getWalletEntryFrom() || '/auction'}
         />
-        {dbUserId && (
-          <SellerVerificationModal
-            isOpen={showVerificationAfterTopUp}
-            onClose={() => setShowVerificationAfterTopUp(false)}
-            userId={dbUserId}
-            required
-            title={t('walletPage_verificationTitle')}
-            subtitle={t('walletPage_verificationSubtitle')}
-            onComplete={async () => {
-              setShowVerificationAfterTopUp(false)
-              return true
-            }}
-          />
-        )}
         {wonProperty && (
           <BuyNowModal
             isOpen={isBuyNowModalOpen}

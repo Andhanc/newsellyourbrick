@@ -29,11 +29,14 @@
 
 .compare-picker__title {
   max-width: none;
-  margin: 22px -6px 0 6px;
+  margin: 22px 6px 0;
   color: #ffffff;
-  font: 850 clamp(3.35rem, 15.5vw, 4.6rem)/0.88 var(--buyer-font-display, 'Montserrat', sans-serif);
-  letter-spacing: -0.065em;
-  text-shadow: 0 7px 22px rgba(4, 56, 62, 0.13);
+  font-family: var(--site-font-family, 'Montserrat', system-ui, sans-serif);
+  font-size: clamp(2.05rem, 9.2vw, 2.65rem);
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  text-shadow: 0 4px 16px rgba(4, 56, 62, 0.12);
   text-wrap: balance;
 }
 
@@ -135,7 +138,7 @@
 .compare-picker--count-5 .compare-picker__preview + .compare-picker__preview { margin-top: 9px; }
 
 .compare-picker--count-4 .compare-picker__title,
-.compare-picker--count-5 .compare-picker__title { margin-top: 16px; font-size: clamp(2.25rem, 10.2vw, 2.9rem); }
+.compare-picker--count-5 .compare-picker__title { margin-top: 16px; font-size: clamp(1.85rem, 8.2vw, 2.25rem); }
 .compare-picker--count-4 .compare-picker__stack,
 .compare-picker--count-5 .compare-picker__stack { padding-block: 24px 14px; }
 .compare-picker--count-4 .compare-picker__objects-head,
@@ -432,7 +435,7 @@
 @media (max-width: 360px) {
   .compare-picker { padding-inline: 13px; }
   .compare-picker__back { width: 46px; height: 46px; }
-  .compare-picker__title { margin: 16px -5px 0 5px; font-size: 3.45rem; }
+  .compare-picker__title { margin: 16px 5px 0; font-size: 1.95rem; }
   .compare-picker__objects-head { margin-bottom: 12px; font-size: 13px; }
   .compare-picker__preview { min-height: 66px; grid-template-columns: 22px 42px minmax(0, 1fr) auto; gap: 7px; }
   .compare-picker__preview img { width: 42px; height: 42px; }

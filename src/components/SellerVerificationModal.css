@@ -1,4 +1,4 @@
-.seller-verification-drawer.buyer-sheet { z-index: 13385; }
+.seller-verification-drawer.buyer-sheet { z-index: 100001; }
 
 .seller-verification-drawer .buyer-sheet__surface {
   width: min(100%, 520px);

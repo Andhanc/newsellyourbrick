@@ -73,6 +73,8 @@ export function ProfileSpotlightOnboarding({
   bubbleShiftX = 0,
   bubbleShiftY = 0,
   headRotateDeg = 0,
+  /** Максимальная ширина подсказки (по умолчанию компактная). */
+  bubbleMaxWidth = 216,
 }) {
   const reduceMotion = useReducedMotion()
   const [box, setBox] = useState(null)
@@ -153,9 +155,9 @@ export function ProfileSpotlightOnboarding({
   const { w: vw, h: vh } = viewport
   const r = box || lastBoxRef.current
 
-  const bubbleW = Math.min(216, Math.max(180, vw - 40))
+  const bubbleW = Math.min(bubbleMaxWidth, Math.max(180, vw - 40))
   /** Примерная высота компактного баббла (padding + 1–2 строки текста). */
-  const bubbleApproxH = 44
+  const bubbleApproxH = message && String(message).length > 42 ? 58 : 44
   let bubbleLeft = 16
   let bubbleTop = 24
   let stemPath = ''

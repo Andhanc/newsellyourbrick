@@ -19,6 +19,8 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { getUserData } from '../services/authService'
 import { showToast } from '../components/ToastContainer'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
+import { formatBuyerNotificationMessage } from '../utils/formatBuyerNotificationMessage'
+import { getBuyerNotificationTitle } from '../utils/localizeBuyerNotification'
 
 const SiteNotificationsPanelLazy = lazy(() => import('./SiteNotificationsPanel'))
 
@@ -188,7 +190,9 @@ export function SiteNotificationsProvider({ children }) {
               n.view_count === 0 &&
               (n.type === 'bid_outbid' ||
                 n.type === 'test_drive_result' ||
-                n.type === 'test_drive_survey'),
+                n.type === 'test_drive_survey' ||
+                n.type === 'verification_success' ||
+                n.type === 'verification_rejected'),
           )
           const newBidOutbidNotifications = newLiveNotifications.filter(
             (n) => n.type === 'bid_outbid',
@@ -200,20 +204,28 @@ export function SiteNotificationsProvider({ children }) {
             newBidOutbidNotifications.forEach((notif) => {
               const payload = parseNotificationData(notif.data)
               const propertyId = payload?.property_id
-              const message =
+              const message = formatBuyerNotificationMessage({
+                notification: notif,
+                data: payload,
+                propertyName: payload?.property_title || '',
+                hasPropertyCard: propertyId != null,
+                locale: i18n.language,
+                t,
+              }) ||
                 notif.message ||
                 t('toastBidOutbidFallback', 'Your bid has been outbid!')
               showToast({
                 type: 'warning',
-                title: notif.title || t('toastBidOutbidTitle', 'Вашу ставку перебили'),
+                title: getBuyerNotificationTitle(notif, t),
                 message,
                 duration: 6500,
                 dedupeKey: `bid_outbid:${propertyId ?? notif.id}`,
                 action: {
                   label:
                     propertyId != null
-                      ? t('toastBidOutbidCta', 'Вернуться к торгам')
+                      ? t('notificationsOutbidCta', 'К торгам')
                       : t('toastOpenNotifications', 'Открыть уведомления'),
+                  variant: 'link',
                   onClick: () => {
                     if (propertyId != null) {
                       navigate(getPropertyDetailPath(propertyId, { classic: false }))
@@ -298,7 +310,7 @@ export function SiteNotificationsProvider({ children }) {
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
       stopListeners?.()
     }
-  }, [API_BASE_URL, navigate, t])
+  }, [API_BASE_URL, navigate, t, i18n.language])
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -555,7 +567,6 @@ export function SiteNotificationsProvider({ children }) {
             notifications={notifications}
             notificationsLoading={notificationsLoading}
             unreadCount={unreadCount}
-            markAllNotificationsRead={markAllNotificationsRead}
             getNotificationPropertyMeta={getNotificationPropertyMeta}
             respondTestDriveRequest={respondTestDriveRequest}
             handleNotificationView={handleNotificationView}

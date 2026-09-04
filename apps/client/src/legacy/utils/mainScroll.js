@@ -95,11 +95,13 @@ export function pickActiveIdByMainScroll(ids, { offset = 120 } = {}) {
   if (atBottom) return ids[ids.length - 1]
 
   const probe = scrollRoot.scrollTop + offset
+  // Небольшой запас: после smooth-scroll позиция часто на 1–4px выше целевой линии.
+  const slack = 8
   let active = ids[0]
   for (const id of ids) {
     const el = document.getElementById(id)
     if (!el) continue
-    if (getElementTopInMainScroll(el, scrollRoot) <= probe) active = id
+    if (getElementTopInMainScroll(el, scrollRoot) <= probe + slack) active = id
   }
   return active
 }

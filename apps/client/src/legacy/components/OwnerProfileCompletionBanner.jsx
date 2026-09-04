@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from 'react'
+import { forwardRef, useCallback, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, ChevronUp, CircleAlert } from 'lucide-react'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
@@ -59,16 +59,21 @@ function ProgressRing({ pct, size }) {
  * @param {() => void} [onNavigate] — закрыть мобильное меню
  * @param {(fieldKey: string) => void} [onMissingFieldClick] — клик по незаполненному полю
  */
-export default function OwnerProfileCompletionBanner({
-  variant = 'sidebar',
-  className = '',
-  onNavigate,
-  onMissingFieldClick,
-}) {
+const OwnerProfileCompletionBanner = forwardRef(function OwnerProfileCompletionBanner(
+  {
+    variant = 'sidebar',
+    className = '',
+    onNavigate,
+    onMissingFieldClick,
+    forceExpanded = false,
+  },
+  ref,
+) {
   const { t } = useTranslation()
   const profileCtx = useOwnerTestProfileOptional()
   const nav = useOwnerTestNavOptional()
   const [expanded, setExpanded] = useState(false)
+  const isExpanded = forceExpanded || expanded
 
   const profile = profileCtx?.profile
   const loading = profileCtx?.loading ?? false
@@ -77,7 +82,7 @@ export default function OwnerProfileCompletionBanner({
   const ringSize = RING_SIZES[variant] || RING_SIZES.sidebar
   const title = t('ownerTest_profileCompleteTitle')
   const meta = t('ownerTest_profileCompleteMeta', { filled, total })
-  const toggleLabel = expanded
+  const toggleLabel = isExpanded
     ? t('ownerTest_profileCompleteCollapse')
     : t('ownerTest_profileCompleteExpand')
 
@@ -96,7 +101,7 @@ export default function OwnerProfileCompletionBanner({
         nav.goTo(OWNER_VIEWS.PROFILE, { highlight: fieldKey })
       }
     },
-    [nav, onNavigate, onMissingFieldClick]
+    [nav, onNavigate, onMissingFieldClick],
   )
 
   if (loading || !profile || pct >= 100) return null
@@ -105,19 +110,19 @@ export default function OwnerProfileCompletionBanner({
   const classNames = [
     'owner-pc',
     `owner-pc--${variant}`,
-    expanded ? 'owner-pc--expanded' : '',
+    isExpanded ? 'owner-pc--expanded' : '',
     className,
   ]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <div className={classNames}>
+    <div className={classNames} ref={ref}>
       <button
         type="button"
         className="owner-pc__header"
         onClick={handleToggle}
-        aria-expanded={expanded}
+        aria-expanded={isExpanded}
         aria-label={`${title}, ${pct}%${missingRows.length > 0 ? `, ${t('ownerTest_profileCompleteRemaining', { count: missingRows.length })}` : ''}, ${toggleLabel}`}
       >
         <ProgressRing pct={pct} size={ringSize} />
@@ -131,7 +136,7 @@ export default function OwnerProfileCompletionBanner({
               <CircleAlert size={15} strokeWidth={2.25} />
             </span>
           ) : null}
-          {expanded ? (
+          {isExpanded ? (
             <ChevronUp size={15} className="owner-pc__chev" aria-hidden />
           ) : (
             <ChevronDown size={15} className="owner-pc__chev" aria-hidden />
@@ -139,7 +144,7 @@ export default function OwnerProfileCompletionBanner({
         </span>
       </button>
 
-      {expanded ? (
+      {isExpanded ? (
         <ul className="owner-pc__list">
           {rows.map((row) => (
             <li key={row.key}>
@@ -168,4 +173,6 @@ export default function OwnerProfileCompletionBanner({
       ) : null}
     </div>
   )
-}
+})
+
+export default OwnerProfileCompletionBanner

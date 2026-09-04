@@ -41,14 +41,14 @@ test('sold presentation dims photo and uses inactive ruled sold CTA', () => {
   assert.match(cardCss, /\.auction-card--sold-presentation \.auction-card__image/)
   assert.match(cardCss, /brightness\(0\.72\)/)
   assert.match(cardCss, /\.auction-card__sold-cta/)
-  assert.match(cardCss, /\.auction-card__sold-cta-rule/)
   assert.match(layoutCss, /\.auction-mobile-sold-cta/)
+  assert.match(layoutCss, /\.auction-mobile-sold-cta__rule/)
 })
 
 test('phone catalogue keeps exactly two photo-first cards per row from 320 to 767', () => {
   assert.match(layoutCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
   assert.match(layoutCss, /@media \(max-width:\s*767px\)[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
-  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__media\s*\{[\s\S]*aspect-ratio:\s*3 \/ 2;/)
+  assert.match(cardCss, /@media \(max-width:\s*767px\)[\s\S]*\.auction-card__media\s*\{[\s\S]*aspect-ratio:\s*5 \/ 4;/)
   assert.match(layoutCss, /align-items:\s*start/)
 })
 
@@ -78,6 +78,6 @@ test('auction cards use valid sibling interactions and accessible canonical link
 test('all final-state commercial affordances consume resolver blocking flags', () => {
   assert.match(card, /const showPrivateClubBand\s*=[\s\S]{0,220}!state\.blocksBid[\s\S]{0,100}!state\.blocksPurchase/)
   assert.match(card, /const showFeatureBadges\s*=[\s\S]{0,220}!state\.blocksBid[\s\S]{0,100}!state\.blocksPurchase/)
-  assert.match(card, /state\.hasBuyNowPrice && !state\.blocksPurchase/)
+  assert.match(card, /const showOverlayPricing\s*=[\s\S]{0,320}!state\.blocksPurchase/)
   assert.match(card, /!showPrivateClubBand && !state\.blocksBid/)
 })

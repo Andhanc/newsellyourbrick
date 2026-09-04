@@ -201,6 +201,11 @@
   padding-top: 6px;
 }
 
+/* На карте цена уже в оверлее таймера / кнопках — единая высота карточек */
+.map-page-property-grid .auction-card--map .auction-card__pricing {
+  display: none !important;
+}
+
 .map-page-property-grid .auction-card--map .auction-card__location {
   align-items: flex-start;
   font-size: 0.68rem;

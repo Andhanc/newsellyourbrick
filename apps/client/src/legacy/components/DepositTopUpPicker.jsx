@@ -61,10 +61,10 @@ const DepositTopUpPicker = ({
             {t('depositPicker_title', { defaultValue: 'Способ пополнения' })}
           </h2>
           <p id="deposit-picker-description" className="deposit-picker__subtitle">
-            Выберите удобный способ. Перед оплатой вы увидите сумму и итоговые условия.
+            {t('depositPicker_subtitle')}
           </p>
 
-          <div className="deposit-picker__methods" role="list" aria-label="Способы пополнения">
+          <div className="deposit-picker__methods" role="list" aria-label={t('depositPicker_methodsAriaLabel')}>
             <button
               type="button"
               role="listitem"

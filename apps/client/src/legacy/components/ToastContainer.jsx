@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import Toast from './Toast'
+import i18n from '../i18n/config'
 import {
   enqueueToast,
   isStructuredToastEvent,
@@ -11,12 +12,21 @@ import './ToastContainer.css'
 let toastId = 0
 let toastListeners = []
 
+function translateToast(key, fallback) {
+  try {
+    return i18n.t(key, { defaultValue: fallback })
+  } catch {
+    return fallback
+  }
+}
+
 export const showToast = (messageOrEvent, type = 'success', duration = 3000) => {
   const id = toastId++
+  const options = { translate: translateToast }
   const event =
     isStructuredToastEvent(messageOrEvent)
-      ? normalizeToastEvent(messageOrEvent)
-      : normalizeToastEvent(messageOrEvent, type, duration)
+      ? normalizeToastEvent(messageOrEvent, 'info', 5000, options)
+      : normalizeToastEvent(messageOrEvent, type, duration, options)
   toastListeners.forEach(listener => listener({ ...event, id }))
   return id
 }

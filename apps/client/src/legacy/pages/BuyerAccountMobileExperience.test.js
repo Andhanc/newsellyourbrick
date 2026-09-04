@@ -28,9 +28,10 @@ test('profile history and bookings open via cabinet deep-links, not legacy pages
 
 test('profile cabinet uses tiffany banner folders layout without onboarding hints', () => {
   assert.doesNotMatch(profileSource, /test-hero-pro__mobile-eyebrow/)
-  assert.doesNotMatch(profileSource, /<ProfileSpotlightOnboarding/)
   assert.doesNotMatch(profileSource, /<OwnerCabinetOnboardingDrawer/)
   assert.doesNotMatch(profileSource, /<ServiceQuickLinksTour/)
+  assert.match(profileSource, /ProfileSpotlightOnboarding/)
+  assert.match(profileSource, /buyerCabinet_vipManagerSpotlightHint/)
   assert.match(profileSource, /test-page--cabinet-v2/)
   assert.match(profileSource, /profile-cabinet__banner/)
   assert.match(profileSource, /profile-cabinet__identity/)

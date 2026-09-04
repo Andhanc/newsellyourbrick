@@ -1947,13 +1947,15 @@ function PropertyDetailClassic({
               showToast({
                 type: 'warning',
                 title: t('toastBidOutbidTitle', 'Вашу ставку перебили'),
-                message: t('propertyDetail_outbidToast', {
+                message: t('notificationsOutbidNewMaxBid', {
                   amount: maxBid.toLocaleString(i18n.language || 'en'),
+                  defaultValue: 'Новая максимальная ставка: {{amount}}',
                 }),
                 duration: 6500,
                 dedupeKey: `bid_outbid:${displayProperty.id}`,
                 action: {
-                  label: t('toastBidOutbidCta', 'Вернуться к торгам'),
+                  label: t('notificationsOutbidCta', 'К торгам'),
+                  variant: 'link',
                   onClick: () => {
                     const bidForm =
                       document.querySelector('.property-detail-sidebar__bid-form') ||

@@ -380,29 +380,6 @@ export default function AuctionReminderModal({ property, open, onClose }) {
                   </p>
                 ) : step === 1 ? (
                   <>
-                    {delivery.loaded && (
-                      <div className="auction-reminder-modal__delivery">
-                        {delivery.hasEmail ? (
-                          <p className="auction-reminder-modal__delivery-line auction-reminder-modal__delivery-line--ok">
-                            {t('auctionReminderDeliveryEmail', { email: maskEmail(delivery.email) })}
-                          </p>
-                        ) : (
-                          <p className="auction-reminder-modal__delivery-line auction-reminder-modal__warn">
-                            {t('auctionReminderDeliveryNoEmail')}
-                          </p>
-                        )}
-                        {delivery.hasPhone ? (
-                          <p className="auction-reminder-modal__delivery-line auction-reminder-modal__delivery-line--ok">
-                            {t('auctionReminderDeliveryPhone')}
-                          </p>
-                        ) : (
-                          <p className="auction-reminder-modal__delivery-line auction-reminder-modal__warn--muted">
-                            {t('auctionReminderDeliveryNoPhone')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
                     <div className="auction-reminder-modal__channels">
                       <button
                         type="button"

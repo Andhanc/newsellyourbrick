@@ -1391,16 +1391,12 @@
   }
 
   .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__media {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 5 / 4;
   }
 
   .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__body {
     gap: 5px;
     padding: 10px;
-  }
-
-  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__progress-note {
-    display: none;
   }
 
   .md-catalog.invest-home-page .invest-showcase__nav-btn--side {
@@ -1597,14 +1593,16 @@
 }
 
 .md-catalog.invest-home-page .invest-showcase--auction .auction-card__location,
-.md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location {
+.md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location,
+.md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__location {
   min-height: 0 !important;
   font-size: 0.62rem !important;
   color: #94a3b8 !important;
 }
 
 .md-catalog.invest-home-page .invest-showcase--auction .auction-card__location svg,
-.md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location svg {
+.md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location svg,
+.md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__location svg {
   width: 12px;
   height: 12px;
   flex-shrink: 0;
@@ -2984,7 +2982,8 @@
   }
 
   .md-catalog.invest-home-page .invest-showcase--auction .auction-card__location,
-  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location {
+  .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__location,
+  .md-catalog.invest-home-page .invest-showcase--shares .shares-v2-card__location {
     font-size: 0.72rem !important;
     color: #64748b !important;
   }

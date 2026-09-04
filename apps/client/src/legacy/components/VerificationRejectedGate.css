@@ -84,10 +84,11 @@
   transform: translateY(0);
 }
 
-/* Поверх всего приложения, пока открыт поток SellerVerificationModal */
+/* Поверх всего приложения, пока открыт поток SellerVerificationModal.
+   pointer-events: none — дровер рендерится через portal в body и должен получать клики. */
 .verification-rejected-gate-flow {
   position: fixed;
   inset: 0;
   z-index: 99990;
-  pointer-events: auto;
+  pointer-events: none;
 }

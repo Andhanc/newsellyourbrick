@@ -1,14 +1,16 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { Camera, ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import './SellerVerificationModal.css'
 
 const VerificationModalLazy = lazy(() => import('./VerificationModal'))
 
 const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required, title, subtitle }) => {
+  const { t } = useTranslation()
   const [showVerification, setShowVerification] = useState(false)
-  const displayTitle = title ?? 'Для публикации объявлений необходимо пройти процедуру верификации'
-  const displaySubtitle = subtitle ?? 'Пожалуйста следуйте инструкциям ниже'
+  const displayTitle = title ?? t('verificationModal_sellerDefaultTitle')
+  const displaySubtitle = subtitle ?? t('verificationModal_sellerDefaultSubtitle')
 
   useEffect(() => {
     if (isOpen) {
@@ -41,7 +43,7 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
           required={required}
           onClose={() => {
             setShowVerification(false)
-            onClose()
+            if (!required) onClose()
           }}
           userId={userId}
           onComplete={async () => {
@@ -59,7 +61,7 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
       tone="choice"
       titleId="seller-verification-drawer-title"
       describedBy="seller-verification-drawer-description"
-      closeLabel="Закрыть верификацию"
+      closeLabel={t('verificationModal_closeLabel')}
       dismissible={!required}
       className="seller-verification-drawer"
       footer={(
@@ -69,7 +71,7 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
           onClick={handleStartVerification}
         >
           <Camera size={20} aria-hidden />
-          <span>Начать верификацию</span>
+          <span>{t('verificationModal_startCta')}</span>
         </button>
       )}
     >
@@ -85,10 +87,8 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
                 <img src="/images/verification/passport-3d.png" alt="" />
               </span>
               <span className="seller-verification-drawer__item-copy">
-                <strong>Фото паспорта</strong>
-                <small>
-                  Загрузите фото или скан паспорта (разворот с фото)
-                </small>
+                <strong>{t('verificationModal_passportTitle')}</strong>
+                <small>{t('verificationModal_passportDesc')}</small>
               </span>
               <ChevronRight size={19} aria-hidden />
           </button>
@@ -98,8 +98,8 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
                 <img src="/images/verification/selfie-3d.png" alt="" />
               </span>
               <span className="seller-verification-drawer__item-copy">
-                <strong>Ваше селфи</strong>
-                <small>Загрузите ваше селфи</small>
+                <strong>{t('verificationModal_selfieTitle')}</strong>
+                <small>{t('verificationModal_selfieDesc')}</small>
               </span>
               <ChevronRight size={19} aria-hidden />
           </button>
@@ -109,8 +109,8 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
                 <img src="/images/verification/selfie-with-passport-3d.png" alt="" />
               </span>
               <span className="seller-verification-drawer__item-copy">
-                <strong>Селфи с паспортом</strong>
-                <small>Держите паспорт рядом с лицом</small>
+                <strong>{t('verificationModal_selfieWithPassportTitle')}</strong>
+                <small>{t('verificationModal_selfieWithPassportDesc')}</small>
               </span>
               <ChevronRight size={19} aria-hidden />
           </button>

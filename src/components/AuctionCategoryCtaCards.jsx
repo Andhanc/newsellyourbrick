@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiBriefcase } from 'react-icons/fi'
 import { FaChartPie, FaFileInvoiceDollar, FaGavel } from 'react-icons/fa'
@@ -94,6 +95,31 @@ function resolveCtaCards(variant) {
   return AUCTION_CTA_CARDS.filter((card) => card.id !== 'auction')
 }
 
+const profileCtaPreloadHrefs = PROFILE_PAGE_CTA_CARD_IDS.map(
+  (id) => AUCTION_CTA_CARDS.find((card) => card.id === id)?.image,
+).filter(Boolean)
+
+const profileCtaPreloadStarted = new Set()
+
+/** Start CTA image fetch while cabinet skeleton/profile API is still loading. */
+export function preloadProfilePageCtaImages() {
+  if (typeof window === 'undefined') return
+  profileCtaPreloadHrefs.forEach((href) => {
+    if (profileCtaPreloadStarted.has(href)) return
+    profileCtaPreloadStarted.add(href)
+    const img = new Image()
+    img.decoding = 'async'
+    img.src = href
+    if (typeof document !== 'undefined' && !document.querySelector(`link[rel="preload"][as="image"][href="${href}"]`)) {
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'image'
+      link.href = href
+      document.head.appendChild(link)
+    }
+  })
+}
+
 function AuctionCategoryCtaCards({ variant = 'default' }) {
   const { t } = useTranslation()
   const titleKeys = CTA_SECTION_TITLES[variant] || CTA_SECTION_TITLES.default
@@ -101,6 +127,12 @@ function AuctionCategoryCtaCards({ variant = 'default' }) {
   const sectionClassName =
     variant === 'profilePage' ? 'auction-cta-cards auction-cta-cards--profile' : 'auction-cta-cards'
   const headingId = variant === 'profilePage' ? 'profile-cta-heading' : 'auction-cta-heading'
+
+  useEffect(() => {
+    if (variant !== 'profilePage') return undefined
+    preloadProfilePageCtaImages()
+    return undefined
+  }, [variant])
 
   return (
     <section className={sectionClassName} aria-labelledby={headingId}>
@@ -121,7 +153,13 @@ function AuctionCategoryCtaCards({ variant = 'default' }) {
         >
           {cards.map(({ id, titleKey, textKey, to, icon: Icon, image, accent }) => (
             <Link key={id} to={to} className={`auction-cta-cards__card auction-cta-cards__card--${accent}`}>
-              <img src={image} alt="" />
+              <img
+                src={image}
+                alt=""
+                loading={variant === 'profilePage' ? 'eager' : 'lazy'}
+                decoding={variant === 'profilePage' ? 'sync' : 'async'}
+                fetchPriority={variant === 'profilePage' ? 'high' : undefined}
+              />
               <span className="auction-cta-cards__card-overlay" aria-hidden />
               <span className={`auction-cta-cards__icon auction-cta-cards__icon--${accent}`}>
                 <Icon size={27} aria-hidden />

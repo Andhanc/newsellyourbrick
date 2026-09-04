@@ -103,6 +103,10 @@
   background: #0099A9;
 }
 
+.share-purchase-panel__legend-item--pending .share-purchase-panel__legend-dot {
+  background: #14b8a6;
+}
+
 .share-purchase-panel__legend-item--others .share-purchase-panel__legend-dot {
   background: #5b6ee1;
 }

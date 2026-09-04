@@ -66,10 +66,10 @@ const DepositTopUpPicker = ({
             {t('depositPicker_title', { defaultValue: 'Способ пополнения' })}
           </h2>
           <p id="deposit-picker-description" className="deposit-picker__subtitle">
-            Выберите удобный способ. Перед оплатой вы увидите сумму и итоговые условия.
+            {t('depositPicker_subtitle')}
           </p>
 
-          <div className="deposit-picker__methods" role="list" aria-label="Способы пополнения">
+          <div className="deposit-picker__methods" role="list" aria-label={t('depositPicker_methodsAriaLabel')}>
             <button
               type="button"
               role="listitem"
@@ -133,7 +133,11 @@ const DepositTopUpPicker = ({
             disabled={stripeCheckoutLoading}
           >
             {stripeCheckoutLoading ? <LoaderCircle className="deposit-picker__spinner" size={18} aria-hidden /> : null}
-            <span>{stripeCheckoutLoading ? 'Открываем оплату…' : 'Продолжить'}</span>
+            <span>
+              {stripeCheckoutLoading
+                ? t('depositPicker_openingCheckout')
+                : t('depositPicker_continue')}
+            </span>
           </button>
         </div>
       ) : (

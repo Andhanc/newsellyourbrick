@@ -24,8 +24,8 @@ import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessModal from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
 import WalletAuctionQrModal from '../components/WalletAuctionQrModal'
-import SellerVerificationModal from '../components/SellerVerificationModal'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
+import { writeDepositVerificationGateFlag } from '../utils/depositVerificationGate'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -49,6 +49,7 @@ import {
   clearWalletEntryFrom,
   setWalletEntryFrom,
 } from '../utils/walletNavigation'
+import { localizeWalletTransactionDescription } from '../utils/walletTransactionDescription'
 import {
   fetchIsBuyerProfileCompleteForDeposit,
 } from '../utils/depositProfileGate'
@@ -299,9 +300,6 @@ const WalletInner = () => {
     isDesignPreview && searchParams.get('walletSheet') === 'topup',
   )
   const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false)
-  const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(
-    isDesignPreview && searchParams.get('walletSheet') === 'verification',
-  )
   const [showDepositSuccessModal, setShowDepositSuccessModal] = useState(
     isDesignPreview && searchParams.get('walletSheet') === 'success',
   )
@@ -643,7 +641,8 @@ const WalletInner = () => {
               showNotification(
                 t('walletPage_paymentCredited', { amount: formatAmount(result.data.amountEur) }),
               )
-              setShowVerificationAfterTopUp(true)
+              writeDepositVerificationGateFlag(dbUserId, true)
+              window.dispatchEvent(new Event('verification-status-update'))
             }
           } else if (result.data?.already) {
             showNotification(t('walletPage_paymentAlreadyRecorded'))
@@ -995,7 +994,7 @@ const WalletInner = () => {
                 className={activityFilter === 'all' ? 'is-active' : ''}
                 onClick={() => setActivityFilter('all')}
               >
-                Все операции
+                {t('walletPage_allOperations')}
               </button>
               <button
                 type="button"
@@ -1012,7 +1011,7 @@ const WalletInner = () => {
                 !wonProperty && userBids.length === 0 ? (
                   <button type="button" className="wallet-bank__tx-empty wallet-bank__tx-empty--action" onClick={() => navigate('/auction')}>
                     <span>{t('walletPage_noActiveBids')}</span>
-                    <strong>К торгам <FiArrowRight aria-hidden /></strong>
+                    <strong>{t('walletPage_goToTrading')} <FiArrowRight aria-hidden /></strong>
                   </button>
                 ) : (
                   <>
@@ -1068,7 +1067,7 @@ const WalletInner = () => {
                     </div>
                     <div className="wallet-bank__tx-info">
                       <div className="wallet-bank__tx-name">
-                        {transaction.description || transaction.type}
+                        {localizeWalletTransactionDescription(transaction.description, t) || transaction.type}
                       </div>
                       <div className="wallet-bank__tx-time">
                         {new Date(transaction.created_at).toLocaleString(i18n.language)}
@@ -1125,20 +1124,6 @@ const WalletInner = () => {
           confirmedAmount={confirmedDepositAmount}
           returnPath={isSafeWalletFromPath(location.state?.from) ? location.state.from : getWalletEntryFrom() || '/auction'}
         />
-        {dbUserId && (
-          <SellerVerificationModal
-            isOpen={showVerificationAfterTopUp}
-            onClose={() => setShowVerificationAfterTopUp(false)}
-            userId={dbUserId}
-            required
-            title={t('walletPage_verificationTitle')}
-            subtitle={t('walletPage_verificationSubtitle')}
-            onComplete={async () => {
-              setShowVerificationAfterTopUp(false)
-              return true
-            }}
-          />
-        )}
         {wonProperty && (
           <BuyNowModal
             isOpen={isBuyNowModalOpen}

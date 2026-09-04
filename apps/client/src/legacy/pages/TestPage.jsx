@@ -52,7 +52,13 @@ import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import PhoneInput from '../components/PhoneInput'
 import '../components/PhoneInput.css'
 import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
-import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
+import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
+import { BUYER_CABINET_WELCOME_PRESET } from '../components/buyerCabinetWelcomeImages'
+import PrivateClubWhatsAppCommunityModal from '../components/PrivateClubWhatsAppCommunityModal'
+import AuctionCategoryCtaCards, {
+  preloadProfilePageCtaImages,
+} from '../components/AuctionCategoryCtaCards'
 import ProfileStrategyStories from '../components/ProfileStrategyStories'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
@@ -72,16 +78,24 @@ import {
 } from '../utils/purchasedPropertyListingPrefill'
 import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
-import { fetchWhatsAppManagerChatUrl, openWhatsAppManagerChat } from '../utils/whatsappManagerChat'
+import { openVipPersonalManagerWhatsApp } from '../utils/whatsappManagerChat'
 import {
   isBundledNativeDom,
   triggerNativeProfileSavedVibration,
 } from '../utils/nativeDomBridge'
+import {
+  BUYER_CABINET_WELCOME_PREVIEW_EVENT,
+  clearBuyerCabinetWelcomeComplete,
+  hasCompletedBuyerCabinetWelcome,
+  markBuyerCabinetWelcomeComplete,
+} from '../utils/buyerCabinetWelcome'
 import './TestPage.css'
 
 const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
 const ProfileHistoryExperience = lazy(() => import('../components/ProfileHistoryExperience'))
 const ProfileBookingsExperience = lazy(() => import('../components/ProfileBookingsExperience'))
+
+preloadProfilePageCtaImages()
 
 const TIFFANY = '#4ecdd6'
 const TIFFANY_DARK = '#3bc0cb'
@@ -89,11 +103,13 @@ const PROFILE_CONFETTI_COLORS = [TIFFANY, TIFFANY_DARK, '#6ad6dd', '#dff6f8', '#
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
-/** Поддержка в WhatsApp (как в Footer). */
-const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
-
 /** Конфетти на модалке поздравления: генерация новых частиц только эти миллисекунды. */
 const SUBSCRIPTION_CONFETTI_ACTIVE_MS = 5000
+
+/** Query: после покупки VIP подсветить блок «Персональный менеджер». */
+const VIP_MANAGER_SPOTLIGHT_QUERY = 'vip_manager_spotlight'
+/** Query: принудительно открыть welcome-drawer покупателя. */
+const BUYER_WELCOME_PREVIEW_QUERY = 'buyer_welcome'
 
 /** Показывать затемнённые подсказки и блокировать разделы, пока заполнено меньше этого процента. */
 const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 78
@@ -598,7 +614,7 @@ function buildDirectionSummaries(t, { vipActive = false } = {}) {
   if (vipActive) {
     items.push({
       variant: 'manager',
-      action: 'managerChat',
+      action: 'vipPersonalManager',
       areaLabel: t('buyerCabinet_directionAreaVipClub'),
       headline: t('buyerCabinet_directionPersonalManagerTitle'),
       subCardTitle: t('buyerCabinet_directionPersonalManagerTitle'),
@@ -651,7 +667,7 @@ function buildMainCards(t) {
     {
       title: t('buyerCabinet_cardChatTitle'),
       description: t('buyerCabinet_cardChatSubtitle'),
-      action: 'managerChat',
+      action: 'platformChat',
       iconSrc: '/images/profile/shortcuts/chat.png',
       accent: 'jade',
     },
@@ -780,7 +796,7 @@ function TestPage() {
   const [subscriptionConfettiRecycle, setSubscriptionConfettiRecycle] = useState(true)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
-  const [sellerOnboardingOpen, setSellerOnboardingOpen] = useState(false)
+  const [buyerWelcomeOpen, setBuyerWelcomeOpen] = useState(false)
   const [selectedPurchasedProperty, setSelectedPurchasedProperty] = useState(null)
   const [purchaseDrawerView, setPurchaseDrawerView] = useState('details')
   const [windowSize, setWindowSize] = useState(() =>
@@ -789,6 +805,9 @@ function TestPage() {
 
   const dbUserRowRef = useRef(dbUserRow)
   const dataTileRef = useRef(null)
+  const managerRowRef = useRef(null)
+  const [showVipManagerSpotlight, setShowVipManagerSpotlight] = useState(false)
+  const [whatsappCommunityOpen, setWhatsappCommunityOpen] = useState(false)
   const foldersRailRef = useRef(null)
   const [foldersDotIndex, setFoldersDotIndex] = useState(0)
   const profileCompletionToastRef = useRef(null)
@@ -935,6 +954,10 @@ function TestPage() {
     window.addEventListener(OPEN_ROLE_SWITCH_FOR_SELL_EVENT, onOpenRoleSwitchForSell)
     return () => window.removeEventListener(OPEN_ROLE_SWITCH_FOR_SELL_EVENT, onOpenRoleSwitchForSell)
   }, [sellPurchasedPropertyRoleFlow.openSellCabinetFlow])
+
+  useEffect(() => {
+    preloadProfilePageCtaImages()
+  }, [])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -1272,6 +1295,25 @@ function TestPage() {
     const celebrationFlag = searchParams.get('subscription_celebration') === '1'
     const checkout = searchParams.get('subscription_checkout')
     const sessionId = searchParams.get('session_id')
+    const wantsManagerSpotlight = searchParams.get(VIP_MANAGER_SPOTLIGHT_QUERY) === '1'
+
+    if (wantsManagerSpotlight) {
+      setShowVipManagerSpotlight(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete(VIP_MANAGER_SPOTLIGHT_QUERY)
+      const qs = next.toString()
+      navigate(qs ? `/profile?${qs}` : '/profile', { replace: true })
+      return
+    }
+
+    if (searchParams.get(BUYER_WELCOME_PREVIEW_QUERY) === '1') {
+      setBuyerWelcomeOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete(BUYER_WELCOME_PREVIEW_QUERY)
+      const qs = next.toString()
+      navigate(qs ? `/profile?${qs}` : '/profile', { replace: true })
+      return
+    }
 
     if (celebrationFlag) {
       void refetchSubscriptionBillingState()
@@ -1391,46 +1433,27 @@ function TestPage() {
     sendManagerMessage,
   } = useManagerLiveChat(getChatUserId, t)
 
-  const [managerWhatsAppUrl, setManagerWhatsAppUrl] = useState('')
-
-  useEffect(() => {
-    if (!cabinetVipActive) {
-      setManagerWhatsAppUrl('')
-      return undefined
-    }
-    let cancelled = false
-    fetchWhatsAppManagerChatUrl(API_BASE_URL)
-      .then((url) => {
-        if (!cancelled && url) setManagerWhatsAppUrl(url)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [cabinetVipActive])
-
-  const openManagerChatModal = useCallback(async () => {
+  const openVipPersonalManager = useCallback(() => {
+    setShowVipManagerSpotlight(false)
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
-    let url = managerWhatsAppUrl
-    if (!url) {
-      try {
-        url = await fetchWhatsAppManagerChatUrl(API_BASE_URL)
-        if (url) setManagerWhatsAppUrl(url)
-      } catch {
-        url = ''
-      }
+    openVipPersonalManagerWhatsApp()
+  }, [isLoaded, user])
+
+  const openPlatformManagerChat = useCallback(async () => {
+    if (!isSiteUserSignedIn(user, isLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
     }
-    if (url && openWhatsAppManagerChat(url)) return
     setIsManagerChatOpen(true)
     try {
       await enterLiveManagerChat()
     } catch {
       setIsManagerChatOpen(false)
     }
-  }, [enterLiveManagerChat, isLoaded, managerWhatsAppUrl, user])
+  }, [enterLiveManagerChat, isLoaded, user])
 
   const closeManagerChatModal = useCallback(() => {
     setIsManagerChatOpen(false)
@@ -2123,6 +2146,16 @@ function TestPage() {
     needsProfileOnboarding
 
   /** Не требуем Clerk `user`: при регистрации по email сессия часто только локальная (isLoggedIn в userData). */
+  const buyerWelcomeEligible =
+    profileGateActive &&
+    !showBuyerCabinetSkeleton &&
+    !dataSheetOpen &&
+    !showProfileCompleteCelebration &&
+    !showServiceQuickLinksTour &&
+    !showVipManagerSpotlight
+
+  const buyerWelcomeCompleted = hasCompletedBuyerCabinetWelcome(resolvedNumericUserId)
+
   const showTileDataOnboarding = false
 
   /** Чеклист в тосте — только пока гейт онбординга (&lt;78%); иначе прогресс внутри листа. */
@@ -2282,20 +2315,19 @@ function TestPage() {
   )
 
   const handleSubscriptionCheckoutCelebrationGo = useCallback(() => {
+    const wasVipClub = vipClubCheckoutCelebration
     setSubscriptionCheckoutCelebration(false)
     setVipClubCheckoutCelebration(false)
-    scrollMainTo(0, 0, 'smooth')
-  }, [])
-
-  const handleVipClubCheckoutCelebrationWhatsApp = useCallback(() => {
-    try {
-      window.open(WHATSAPP_SUPPORT_HREF, '_blank', 'noopener,noreferrer')
-    } catch {
-      /* ignore */
+    if (wasVipClub) {
+      setWhatsappCommunityOpen(true)
+      return
     }
-    setSubscriptionCheckoutCelebration(false)
-    setVipClubCheckoutCelebration(false)
     scrollMainTo(0, 0, 'smooth')
+  }, [vipClubCheckoutCelebration])
+
+  const handleWhatsappCommunityClose = useCallback(() => {
+    setWhatsappCommunityOpen(false)
+    setShowVipManagerSpotlight(true)
   }, [])
 
   const handleProfileCompleteCelebrationGo = useCallback(() => {
@@ -2435,6 +2467,48 @@ function TestPage() {
     return undefined
   }, [onboardingGateUiLocked])
 
+  useEffect(() => {
+    if (!buyerWelcomeEligible || !resolvedNumericUserId) return undefined
+    if (buyerWelcomeCompleted || buyerWelcomeOpen) return undefined
+
+    const timer = window.setTimeout(() => setBuyerWelcomeOpen(true), 480)
+    return () => window.clearTimeout(timer)
+  }, [buyerWelcomeEligible, buyerWelcomeCompleted, buyerWelcomeOpen, resolvedNumericUserId])
+
+  const completeBuyerWelcome = useCallback(() => {
+    markBuyerCabinetWelcomeComplete(resolvedNumericUserId)
+    setBuyerWelcomeOpen(false)
+  }, [resolvedNumericUserId])
+
+  useEffect(() => {
+    const openPreview = () => setBuyerWelcomeOpen(true)
+    window.addEventListener(BUYER_CABINET_WELCOME_PREVIEW_EVENT, openPreview)
+    window.__previewBuyerCabinetWelcome = openPreview
+    window.__resetBuyerCabinetWelcome = (userId) => {
+      clearBuyerCabinetWelcomeComplete(userId ?? resolvedNumericUserId ?? getStoredNumericUserId())
+    }
+    return () => {
+      window.removeEventListener(BUYER_CABINET_WELCOME_PREVIEW_EVENT, openPreview)
+      delete window.__previewBuyerCabinetWelcome
+      delete window.__resetBuyerCabinetWelcome
+    }
+  }, [resolvedNumericUserId])
+
+  /** Подсветка персонального менеджера после VIP — прокрутить к блоку. */
+  useEffect(() => {
+    if (!showVipManagerSpotlight) return
+    const t = window.setTimeout(() => {
+      const el = managerRowRef.current
+      if (!el) return
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+      } catch {
+        /* ignore */
+      }
+    }, 80)
+    return () => window.clearTimeout(t)
+  }, [showVipManagerSpotlight, cabinetVipActive])
+
   const toastGuideStrictActive =
     profileGateActive &&
     dataSheetOpen &&
@@ -2543,12 +2617,12 @@ function TestPage() {
         setBookingsSheetOpen((open) => !open)
         return
       }
-      if (card.action === 'managerChat') {
+      if (card.action === 'platformChat') {
         closeOthers()
-        void openManagerChatModal()
+        void openPlatformManagerChat()
       }
     },
-    [openManagerChatModal],
+    [openPlatformManagerChat],
   )
 
   const profileStatHistory = historyLoading ? '—' : String(historyCount ?? 0)
@@ -2663,7 +2737,7 @@ function TestPage() {
                     const isSubscriptions = card.sheet === 'subscriptions'
                     const isBookings = card.sheet === 'bookings'
                     const isData = card.sheet === 'data'
-                    const isManagerChat = card.action === 'managerChat'
+                    const isManagerChat = card.action === 'platformChat'
                     const isLinkOnly = Boolean(card.to) && !card.sheet && !card.action && !isHistory
                     const active =
                       (isData && dataSheetOpen) ||
@@ -2767,7 +2841,7 @@ function TestPage() {
                 <ul className="profile-cabinet__rows">
                   {directionSummaries.map((item) => {
                     const isBecomeSeller = item.action === 'becomeSeller'
-                    const isManagerChat = item.action === 'managerChat'
+                    const isManagerChat = item.action === 'vipPersonalManager'
                     const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
                     const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
                     const inner = (
@@ -2794,7 +2868,12 @@ function TestPage() {
                             {inner}
                           </button>
                         ) : isManagerChat ? (
-                          <button type="button" className={rowClass} onClick={() => void openManagerChatModal()}>
+                          <button
+                            type="button"
+                            className={rowClass}
+                            ref={managerRowRef}
+                            onClick={() => openVipPersonalManager()}
+                          >
                             {inner}
                           </button>
                         ) : (
@@ -2936,7 +3015,7 @@ function TestPage() {
                     <div className="test-quick-row test-quick-row--primary">
                       {directionSummaries.map((item) => {
                         const isBecomeSeller = item.action === 'becomeSeller'
-                        const isManagerChat = item.action === 'managerChat'
+                        const isManagerChat = item.action === 'vipPersonalManager'
                         const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
                         if (!DirectionIcon) return null
                         const inner = (
@@ -2970,7 +3049,7 @@ function TestPage() {
                               key={item.action}
                               type="button"
                               className="test-quick-pill test-quick-pill--manager"
-                              onClick={() => void openManagerChatModal()}
+                              onClick={() => openVipPersonalManager()}
                             >
                               {inner}
                             </button>
@@ -3902,13 +3981,6 @@ function TestPage() {
                     >
                       {t('privateClubVipCelebrationCtaProfile')}
                     </button>
-                    <button
-                      type="button"
-                      className="test-profile-complete-modal__btn test-profile-complete-modal__btn--whatsapp"
-                      onClick={handleVipClubCheckoutCelebrationWhatsApp}
-                    >
-                      {t('privateClubVipCelebrationCtaWhatsApp')}
-                    </button>
                   </div>
                 </>
               ) : (
@@ -4023,7 +4095,7 @@ function TestPage() {
           onBack={() => setPurchaseDrawerView('details')}
           onContactManager={() => {
             setSelectedPurchasedProperty(null)
-            void openManagerChatModal()
+            void openPlatformManagerChat()
           }}
           onSell={() => {
             if (!selectedPurchasedProperty?.isDealCompleted) return
@@ -4063,6 +4135,27 @@ function TestPage() {
           void refetchBookingsSheetRows()
           window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
         }}
+      />
+
+      <PrivateClubWhatsAppCommunityModal
+        open={whatsappCommunityOpen}
+        onClose={handleWhatsappCommunityClose}
+      />
+
+      <OwnerCabinetOnboardingDrawer
+        isOpen={buyerWelcomeOpen}
+        onComplete={completeBuyerWelcome}
+        translationPrefix={BUYER_CABINET_WELCOME_PRESET.translationPrefix}
+        stepCount={BUYER_CABINET_WELCOME_PRESET.stepCount}
+        images={BUYER_CABINET_WELCOME_PRESET.images}
+        finishLabelKey={BUYER_CABINET_WELCOME_PRESET.finishLabelKey}
+      />
+
+      <ProfileSpotlightOnboarding
+        active={showVipManagerSpotlight && Boolean(cabinetVipActive) && !whatsappCommunityOpen && !buyerWelcomeOpen}
+        targetRef={managerRowRef}
+        message={t('buyerCabinet_vipManagerSpotlightHint')}
+        bubbleMaxWidth={260}
       />
 
     </div>

@@ -284,6 +284,24 @@
   background: #151515;
 }
 
+.vip-club-btn--member {
+  background: linear-gradient(135deg, #4ecdd6 0%, #0099a9 55%, #2aa8b4 100%);
+  color: #fff;
+  box-shadow:
+    0 14px 32px rgba(0, 153, 169, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+}
+
+.vip-club-btn--member:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #5ad5dd 0%, #00a8b9 55%, #2eb3bf 100%);
+  color: #fff;
+  box-shadow:
+    0 16px 36px rgba(0, 153, 169, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
 .vip-club-btn--soft {
   background: #fff;
   color: #050505;
@@ -760,6 +778,23 @@
   background: #f3f6f8;
 }
 
+.vip-club-join-panel__cta--member {
+  background: linear-gradient(135deg, #4ecdd6 0%, #0099a9 55%, #2aa8b4 100%);
+  color: #fff;
+  box-shadow:
+    0 14px 32px rgba(0, 153, 169, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+}
+
+.vip-club-join-panel__cta--member:hover {
+  background: linear-gradient(135deg, #5ad5dd 0%, #00a8b9 55%, #2eb3bf 100%);
+  color: #fff;
+  box-shadow:
+    0 16px 36px rgba(0, 153, 169, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
 .vip-club-whatsapp {
   padding: var(--vip-block-gap) 0 0;
 }
@@ -910,6 +945,32 @@
   color: #fff;
   font-size: 14px;
   font-weight: 850;
+}
+
+.vip-club-chat-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4ecdd6 0%, #0099a9 55%, #2aa8b4 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 850;
+  text-decoration: none;
+  box-shadow:
+    0 12px 28px rgba(0, 153, 169, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.vip-club-chat-card__cta:hover {
+  filter: brightness(1.04);
+}
+
+.vip-club-chat-card--unlocked h3 svg {
+  color: #0099a9;
 }
 
 .vip-club-info-cards {

@@ -392,11 +392,16 @@
   font-size: 16px;
   font-weight: 550;
   cursor: pointer;
-  box-shadow: 0 7px 22px rgba(17, 24, 39, 0.055);
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.11), 0 1px 3px rgba(17, 24, 39, 0.07);
 }
 
 .wallet-bank__alert-action svg { width: 21px; height: 21px; }
-.wallet-bank__alert-action:hover { border-color: #d8e2f7; background: #f8fbff; }
+.wallet-bank__alert-action:hover {
+  border-color: #d8e2f7;
+  background: #f8fbff;
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.14), 0 2px 6px rgba(17, 24, 39, 0.08);
+}
 
 .wallet-bank__tx { padding-top: 34px; }
 .wallet-bank__tx-head { display: flex; align-items: center; justify-content: space-between; }

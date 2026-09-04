@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiCheck } from 'react-icons/fi'
 import './DepositSuccessDrawer.css'
 
-function continueLabel(returnPath = '') {
-  if (returnPath.startsWith('/property/')) return 'Вернуться к объекту'
-  if (returnPath.startsWith('/compare')) return 'Вернуться к сравнению'
-  if (returnPath.startsWith('/calculator')) return 'Вернуться к расчёту'
-  if (returnPath.startsWith('/favorites')) return 'Вернуться к избранному'
-  return 'Продолжить выбор'
+function continueLabel(returnPath = '', t) {
+  if (returnPath.startsWith('/property/')) return t('depositSuccessDrawer_continueProperty')
+  if (returnPath.startsWith('/compare')) return t('depositSuccessDrawer_continueCompare')
+  if (returnPath.startsWith('/calculator')) return t('depositSuccessDrawer_continueCalculator')
+  if (returnPath.startsWith('/favorites')) return t('depositSuccessDrawer_continueFavorites')
+  return t('depositSuccessDrawer_continueBrowse')
 }
 
 export default function DepositSuccessDrawer({
@@ -18,9 +19,10 @@ export default function DepositSuccessDrawer({
   confirmedAmount,
   returnPath,
 }) {
+  const { t } = useTranslation()
   const actionRef = useRef(null)
   const cardRef = useRef(null)
-  const actionLabel = continueLabel(returnPath)
+  const actionLabel = continueLabel(returnPath, t)
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -60,13 +62,13 @@ export default function DepositSuccessDrawer({
           <FiCheck />
         </span>
         <h2 id="deposit-success-modal-title" className="deposit-success-modal__title">
-          Депозит пополнен
+          {t('depositSuccessDrawer_title')}
         </h2>
         {confirmedAmount ? (
           <strong className="deposit-success-modal__confirmed">+ {confirmedAmount}</strong>
         ) : null}
         <p id="deposit-success-modal-description" className="deposit-success-modal__lead">
-          Платёж прошёл успешно. Средства уже доступны для участия в торгах.
+          {t('depositSuccessDrawer_lead')}
         </p>
         <button
           ref={actionRef}

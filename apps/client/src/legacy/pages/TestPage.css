@@ -302,7 +302,11 @@
   display: contents;
 }
 
-.profile-cabinet__vip-promo,
+.profile-cabinet__vip-promo {
+  display: block;
+  width: 100%;
+}
+
 .profile-cabinet__aside,
 .profile-cabinet__invite-row,
 .profile-cabinet__role-switch {
@@ -1061,11 +1065,6 @@ button.profile-cabinet-row:disabled {
 
   .profile-cabinet__section-title {
     font-size: 1.2rem;
-  }
-
-  .profile-cabinet__vip-promo {
-    display: block;
-    width: 100%;
   }
 
   .profile-cabinet__desk {

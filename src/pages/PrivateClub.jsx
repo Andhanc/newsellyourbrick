@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import {
@@ -13,10 +14,16 @@ import {
 import Header from '../components/Header'
 import PrivateClubVipGate from '../components/PrivateClubVipGate'
 import PrivateClubVipCelebrationModal from '../components/PrivateClubVipCelebrationModal'
+import PrivateClubWhatsAppCommunityModal from '../components/PrivateClubWhatsAppCommunityModal'
 import { getUserData } from '../services/authService'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { ensureMainScrollReady, scrollMainTo } from '../utils/mainScroll'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
+import {
+  openVipClubWhatsAppCommunity,
+  VIP_CLUB_WHATSAPP_COMMUNITY_URL,
+} from '../utils/whatsappManagerChat'
 import './PrivateClub.css'
 
 const HERO_IMAGE = '/images/vip-club/vip-hero-monex-transparent.png?v=2'
@@ -31,15 +38,22 @@ const chatAvatars = [
 
 export default function PrivateClub() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user, isLoaded: clerkLoaded } = useUser()
+  const { cabinetVipActive, numericUserId: vipNumericUserId } = useViewerVipAccess()
   const [vipGateOpen, setVipGateOpen] = useState(false)
   const [vipCelebrationOpen, setVipCelebrationOpen] = useState(false)
+  const [whatsappCommunityOpen, setWhatsappCommunityOpen] = useState(false)
+  const [pendingProfileAfterCommunity, setPendingProfileAfterCommunity] = useState(false)
   const [storyIndex, setStoryIndex] = useState(0)
   const storyCardRefs = useRef([])
   const [numericUserId, setNumericUserId] = useState(() => {
     const raw = getUserData()?.id ?? localStorage.getItem('userId')
     return raw && /^\d+$/.test(String(raw)) ? parseInt(String(raw), 10) : null
   })
+
+  const resolvedUserId = numericUserId ?? vipNumericUserId
+  const isVipMember = Boolean(cabinetVipActive)
 
   const benefits = [
     {
@@ -123,6 +137,31 @@ export default function PrivateClub() {
     setVipGateOpen(true)
   }
 
+  const openWhatsappCommunityChat = () => {
+    if (!isVipMember) return
+    openVipClubWhatsAppCommunity()
+  }
+
+  const handleCelebrationDismiss = () => {
+    setVipCelebrationOpen(false)
+    setPendingProfileAfterCommunity(false)
+    setWhatsappCommunityOpen(true)
+  }
+
+  const handleCelebrationGoProfile = () => {
+    setVipCelebrationOpen(false)
+    setPendingProfileAfterCommunity(true)
+    setWhatsappCommunityOpen(true)
+  }
+
+  const handleWhatsappCommunityClose = () => {
+    setWhatsappCommunityOpen(false)
+    if (pendingProfileAfterCommunity) {
+      setPendingProfileAfterCommunity(false)
+      navigate('/profile?vip_manager_spotlight=1')
+    }
+  }
+
   const scrollStory = (direction) => {
     const next = (storyIndex + direction + storyCards.length) % storyCards.length
     setStoryIndex(next)
@@ -136,13 +175,22 @@ export default function PrivateClub() {
       <PrivateClubVipGate
         open={vipGateOpen}
         onClose={() => setVipGateOpen(false)}
-        userId={numericUserId}
+        userId={resolvedUserId}
         onPrivateClubActivated={() => {
           setVipGateOpen(false)
           setVipCelebrationOpen(true)
         }}
       />
-      <PrivateClubVipCelebrationModal open={vipCelebrationOpen} onClose={() => setVipCelebrationOpen(false)} />
+      <PrivateClubVipCelebrationModal
+        open={vipCelebrationOpen}
+        onClose={handleCelebrationDismiss}
+        onGoToProfile={handleCelebrationGoProfile}
+      />
+      <PrivateClubWhatsAppCommunityModal
+        open={whatsappCommunityOpen}
+        onClose={handleWhatsappCommunityClose}
+        avatars={chatAvatars}
+      />
 
       <main>
         <div className="vip-club-fold">
@@ -171,9 +219,20 @@ export default function PrivateClub() {
                 </div>
               </div>
               <div className="vip-club-hero__actions">
-                <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
-                  {t('privateClubLanding_joinCta')}
-                </button>
+                {isVipMember ? (
+                  <Link
+                    to="/profile"
+                    className="vip-club-btn vip-club-btn--member"
+                    aria-label={t('privateClubLanding_alreadyMemberCta')}
+                  >
+                    <RiVipDiamondLine aria-hidden />
+                    {t('privateClubLanding_alreadyMemberCta')}
+                  </Link>
+                ) : (
+                  <button type="button" className="vip-club-btn vip-club-btn--dark" onClick={openJoinGate}>
+                    {t('privateClubLanding_joinCta')}
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -215,7 +274,7 @@ export default function PrivateClub() {
                   <h2 id="vip-club-whatsapp-title">{t('privateClubLanding_whatsappTitle')}</h2>
                   <p>{t('privateClubLanding_whatsappLead')}</p>
                 </div>
-                <div className="vip-club-chat-card">
+                <div className={`vip-club-chat-card${isVipMember ? ' vip-club-chat-card--unlocked' : ''}`}>
                   <h3>
                     {t('privateClubLanding_chatTitle')} <RiLockLine aria-hidden />
                   </h3>
@@ -226,9 +285,24 @@ export default function PrivateClub() {
                     ))}
                     <span>+127</span>
                   </div>
-                  <button type="button" disabled>
-                    {t('privateClubLanding_chatGo')}
-                  </button>
+                  {isVipMember ? (
+                    <a
+                      href={VIP_CLUB_WHATSAPP_COMMUNITY_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="vip-club-chat-card__cta"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        openWhatsappCommunityChat()
+                      }}
+                    >
+                      {t('privateClubLanding_chatGo')}
+                    </a>
+                  ) : (
+                    <button type="button" disabled>
+                      {t('privateClubLanding_chatGo')}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -323,10 +397,17 @@ export default function PrivateClub() {
                 <strong>{t('privateClubLanding_joinBrand')}</strong>
                 <p>{t('privateClubLanding_joinLead')}</p>
               </div>
-              <button type="button" className="vip-club-join-panel__cta" onClick={openJoinGate}>
-                <RiVipDiamondLine aria-hidden />
-                {t('privateClubLanding_joinCta')}
-              </button>
+              {isVipMember ? (
+                <Link to="/profile" className="vip-club-join-panel__cta vip-club-join-panel__cta--member">
+                  <RiVipDiamondLine aria-hidden />
+                  {t('privateClubLanding_alreadyMemberCta')}
+                </Link>
+              ) : (
+                <button type="button" className="vip-club-join-panel__cta" onClick={openJoinGate}>
+                  <RiVipDiamondLine aria-hidden />
+                  {t('privateClubLanding_joinCta')}
+                </button>
+              )}
             </div>
           </div>
         </section>

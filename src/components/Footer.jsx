@@ -135,6 +135,7 @@ const Footer = () => {
         { to: '/wallet', label: t('footerAssets'), requiresAuth: true },
         { to: cabinetBookingsPath, label: t('buyerCabinet_myBookings'), requiresAuth: true },
         { to: cabinetHistoryPath, label: t('history'), requiresAuth: true },
+        { to: '/private-club', label: t('privateClubPageTitle') },
       ],
     },
     {

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiX } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
+import { FiAlertCircle, FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiX } from 'react-icons/fi'
 import './Toast.css'
 
 const EXIT_MS = 360
 
 function ToastIcon({ type }) {
   if (type === 'success') return <FiCheck aria-hidden />
-  if (type === 'error' || type === 'warning') return <FiAlertTriangle aria-hidden />
+  if (type === 'error') return <FiAlertCircle aria-hidden />
+  if (type === 'warning') return <FiAlertTriangle aria-hidden />
   return <FiInfo aria-hidden />
 }
 
@@ -20,6 +22,7 @@ const Toast = ({
   announcement = 'polite',
   onClose,
 }) => {
+  const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(false)
   const timerRef = useRef(null)
   const exitTimerRef = useRef(null)
@@ -123,18 +126,27 @@ const Toast = ({
       onBlurCapture={handleBlur}
     >
       <span className="toast__accent" aria-hidden />
-      <div className="toast__icon"><ToastIcon type={type} /></div>
+      <div className="toast__icon" data-type={type}><ToastIcon type={type} /></div>
       <div className="toast__content">
         <strong className="toast__title">{title}</strong>
         {message ? <div className="toast__message">{message}</div> : null}
         {action?.label ? (
-          <button type="button" className="toast__action" onClick={handleAction}>
+          <button
+            type="button"
+            className={`toast__action${action.variant === 'link' ? ' toast__action--link' : ''}`}
+            onClick={handleAction}
+          >
             <span>{action.label}</span>
             <FiArrowRight aria-hidden />
           </button>
         ) : null}
       </div>
-      <button type="button" className="toast__close" onClick={beginClose} aria-label="Закрыть уведомление">
+      <button
+        type="button"
+        className="toast__close"
+        onClick={beginClose}
+        aria-label={t('toastCloseAria', 'Close notification')}
+      >
         <FiX aria-hidden />
       </button>
     </article>

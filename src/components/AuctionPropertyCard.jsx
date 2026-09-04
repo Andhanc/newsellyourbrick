@@ -168,6 +168,7 @@ function formatLandAreaValue(raw) {
 }
 
 export default function AuctionPropertyCard({
+  className,
   property,
   isFavorite,
   onFavoriteToggle,
@@ -176,6 +177,7 @@ export default function AuctionPropertyCard({
   viewerHasVip = false,
   formatPrice,
   hideBuyNowAction = false,
+  mapNavigateCta = false,
 }) {
   const { t } = useTranslation()
   const state = useAuctionCardState(property)
@@ -245,6 +247,7 @@ export default function AuctionPropertyCard({
     showPrivateClubBand && 'auction-card--vip',
     state.showCircularTimer && 'auction-card--live',
     state.showGreenTimer && 'auction-card--timer-pricing',
+    className,
   ]
     .filter(Boolean)
     .join(' ')
@@ -520,6 +523,7 @@ export default function AuctionPropertyCard({
         </div>
 
         <div className="auction-card__footer">
+          {!mapNavigateCta ? (
           <div
             className={`auction-card__pricing${
               state.showSoldPresentation ? ' auction-card__pricing--sold' : ''
@@ -566,6 +570,7 @@ export default function AuctionPropertyCard({
               ) : null}
             </div>
           </div>
+          ) : null}
 
           {!showPrivateClubBand && !state.blocksBid ? (
             <div

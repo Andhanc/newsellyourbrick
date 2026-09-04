@@ -18,7 +18,7 @@ import AuctionListingSaleToggle from './AuctionListingSaleToggle'
 import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
 import AuctionPropertyCard from './AuctionPropertyCard'
-import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ListingPagePagination from './ListingPagePagination'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
@@ -1439,45 +1439,7 @@ const PropertyList = ({
             </div>
             )}
 
-            {isAuctionDesktop && filteredProperties.length > 0 ? (
-              <nav className="auction-desktop-pagination" aria-label={t('auctionPaginationLabel')}>
-                <button
-                  type="button"
-                  className="auction-desktop-pagination__arrow"
-                  disabled={safeAuctionPage <= 1}
-                  onClick={() => goToAuctionPage(safeAuctionPage - 1)}
-                  aria-label={t('auctionPaginationPrev')}
-                >
-                  <ChevronLeft size={18} aria-hidden />
-                </button>
-                <div className="auction-desktop-pagination__pages">
-                  {Array.from({ length: auctionTotalPages }, (_, index) => index + 1).map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      className={`auction-desktop-pagination__page${
-                        page === safeAuctionPage ? ' auction-desktop-pagination__page--active' : ''
-                      }`}
-                      onClick={() => goToAuctionPage(page)}
-                      aria-current={page === safeAuctionPage ? 'page' : undefined}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="auction-desktop-pagination__arrow"
-                  disabled={safeAuctionPage >= auctionTotalPages}
-                  onClick={() => goToAuctionPage(safeAuctionPage + 1)}
-                  aria-label={t('auctionPaginationNext')}
-                >
-                  <ChevronRight size={18} aria-hidden />
-                </button>
-              </nav>
-            ) : null}
-
-            {isAuctionMobileFilters && filteredProperties.length > 0 ? (
+            {isAuctionPage && filteredProperties.length > 0 ? (
               <ListingPagePagination
                 currentPage={safeAuctionPage}
                 totalPages={auctionTotalPages}

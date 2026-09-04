@@ -1,9 +1,18 @@
 const TOAST_TYPES = new Set(['success', 'error', 'warning', 'info'])
-const DEFAULT_TITLES = Object.freeze({
-  success: 'Готово',
-  error: 'Нужно исправить',
-  warning: 'Обратите внимание',
-  info: 'Подсказка',
+
+export const TOAST_TITLE_I18N_KEYS = Object.freeze({
+  success: 'toastTitleSuccess',
+  error: 'toastTitleError',
+  warning: 'toastTitleWarning',
+  info: 'toastTitleInfo',
+})
+
+/** English fallbacks; live UI resolves via i18n in ToastContainer. */
+export const DEFAULT_TITLES = Object.freeze({
+  success: 'Done',
+  error: 'Needs attention',
+  warning: 'Please note',
+  info: 'Tip',
 })
 
 function validDuration(value, fallback = 5000) {
@@ -28,12 +37,37 @@ export function isStructuredToastEvent(value) {
   )
 }
 
-export function normalizeToastEvent(messageOrEvent, legacyType = 'info', legacyDuration = 5000) {
+export function resolveToastTitle(type, explicitTitle, translate) {
+  if (typeof explicitTitle === 'string' && explicitTitle.trim()) {
+    return explicitTitle.trim()
+  }
+  const safeType = TOAST_TYPES.has(type) ? type : 'info'
+  const key = TOAST_TITLE_I18N_KEYS[safeType]
+  const fallback = DEFAULT_TITLES[safeType]
+  if (typeof translate === 'function') {
+    try {
+      const translated = translate(key, fallback)
+      if (typeof translated === 'string' && translated.trim() && translated !== key) {
+        return translated.trim()
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return fallback
+}
+
+export function normalizeToastEvent(
+  messageOrEvent,
+  legacyType = 'info',
+  legacyDuration = 5000,
+  { translate } = {},
+) {
   if (!isStructuredToastEvent(messageOrEvent)) {
     const type = TOAST_TYPES.has(legacyType) ? legacyType : 'info'
     return {
       type,
-      title: DEFAULT_TITLES[type],
+      title: resolveToastTitle(type, null, translate),
       message: messageOrEvent ?? '',
       action: null,
       duration: validDuration(legacyDuration),
@@ -52,10 +86,7 @@ export function normalizeToastEvent(messageOrEvent, legacyType = 'info', legacyD
 
   return {
     type,
-    title:
-      typeof messageOrEvent.title === 'string' && messageOrEvent.title.trim()
-        ? messageOrEvent.title.trim()
-        : DEFAULT_TITLES[type],
+    title: resolveToastTitle(type, messageOrEvent.title, translate),
     message: String(messageOrEvent.message ?? ''),
     action: validAction(messageOrEvent.action) ? messageOrEvent.action : null,
     duration: persistent ? 0 : validDuration(messageOrEvent.duration),

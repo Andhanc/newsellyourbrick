@@ -51,10 +51,12 @@ test('uses compact balanced hero copy instead of a forced text staircase', () =>
 test('places one centered hero action below the image', () => {
   assert.doesNotMatch(page, /Узнать больше/)
   assert.doesNotMatch(page, /scrollToSection/)
-  assert.match(
-    page,
-    /className="vip-club-hero__stage"[\s\S]*?<div className="vip-club-hero__actions">[\s\S]*?t\('privateClubLanding_joinCta'\)/,
-  )
+  assert.match(page, /className="vip-club-hero__stage"/)
+  assert.match(page, /vip-club-hero__actions/)
+  assert.match(page, /privateClubLanding_joinCta/)
+  assert.match(page, /privateClubLanding_alreadyMemberCta/)
+  assert.match(page, /useViewerVipAccess/)
+  assert.match(page, /vip-club-btn--member/)
   assert.match(
     mobile,
     /\.vip-club-hero__actions\s*\{[\s\S]*?justify-content:\s*center[\s\S]*?max-width:\s*260px/,

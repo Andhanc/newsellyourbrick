@@ -39,11 +39,18 @@ test('discover theme matches portal auction cards: pricing stack and tiffany CTA
   assert.match(css, /\.discover-auction-cards \.auction-card__btn--outline/)
   assert.match(css, /#0099A9/)
   assert.match(css, /#16a34a/)
-  assert.match(css, /\.auction-card__btn-text-full[\s\S]*display:\s*inline\s*!important/)
-  assert.match(css, /\.auction-card__btn-text-short[\s\S]*display:\s*none\s*!important/)
-  assert.match(css, /aspect-ratio:\s*3\s*\/\s*2\s*!important/)
+  assert.match(css, /\.discover-auction-cards \.auction-card__btn-text\s*\{[\s\S]*display:\s*inline/)
+  assert.match(css, /aspect-ratio:\s*4\s*\/\s*3\s*!important/)
   assert.match(css, /\.auction-card__until-pill[\s\S]*display:\s*none\s*!important/)
-  assert.match(css, /\.auction-card__countdown-pill[\s\S]*max-width:\s*100%\s*!important/)
+  assert.match(css, /\.auction-card__countdown-pill[\s\S]*max-width:\s*none\s*!important/)
+  assert.match(
+    css,
+    /\.discover-auction-cards \.auction-card__media-top[\s\S]*bottom:\s*10px\s*!important[\s\S]*height:\s*auto\s*!important/,
+  )
+  assert.doesNotMatch(
+    css,
+    /@media \(max-width:\s*767px\)[\s\S]*\.discover-auction-cards \.auction-card__media-top[\s\S]*\{\s*top:\s*8px\s*!important;\s*left:\s*8px\s*!important;\s*right:\s*8px\s*!important/,
+  )
 })
 
 test('stretches the single auction bid action across the full listing card', () => {
@@ -58,7 +65,7 @@ test('keeps two columns when bid and buy-now actions are both present', () => {
   )
 })
 
-test('main-page buy-now card swaps timer and favorite, widens timer, and stacks actions', () => {
+test('main-page buy-now card swaps timer and favorite, widens timer, and keeps dual CTAs in one row', () => {
   assert.match(
     css,
     /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__favorite[\s\S]*top:\s*8px\s*!important[\s\S]*bottom:\s*auto\s*!important/,
@@ -69,10 +76,12 @@ test('main-page buy-now card swaps timer and favorite, widens timer, and stacks 
   )
   assert.match(
     css,
-    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/,
+    /\.md-format-card\[data-md-format='buy_now'\][\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
   )
   assert.ok(
-    card.includes('`${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`'),
+    card.includes('`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`') ||
+      card.includes('`${days}д ${pad(hours)}:${pad(minutes)}`') ||
+      card.includes('`${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`'),
   )
   assert.match(card, /auction-card__timer-prices/)
   assert.match(card, /auction-card--timer-pricing/)
@@ -125,6 +134,15 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
   )
   assert.match(
     css,
+    /\.discover-auction-cards\.properties-grid--auction-cards\s+\.auction-card__media-top/,
+    'map/same-element grids must match compound selector for glass timer bar',
+  )
+  assert.match(
+    css,
+    /\.discover-auction-cards\.auction-mobile-stack--desktop-cards\s+\.auction-card__media-top/,
+  )
+  assert.match(
+    css,
     /\.properties-grid--auction-cards[\s\S]*\.auction-card__countdown-pill[\s\S]*padding:\s*0\s*!important[\s\S]*font-size:\s*0\.62rem\s*!important/,
   )
   assert.match(
@@ -135,13 +153,11 @@ test('auction listing reuses the same glass timer chrome as the main-page cards'
     css,
     /\.properties-grid--auction-cards[\s\S]*\.auction-card__actions[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/,
   )
+  assert.match(card, /auction-card__btn-text/)
+  assert.match(card, /visibleActionCount === 1[\s\S]*placeBid/)
   assert.match(
     css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media[\s\S]*aspect-ratio:\s*4\s*\/\s*3\s*!important/,
-  )
-  assert.match(
-    css,
-    /\.properties-grid--auction-cards[\s\S]*\.auction-card__btn-text-short[\s\S]*display:\s*inline\s*!important/,
+    /\.properties-grid--auction-cards[\s\S]*\.auction-card__media[\s\S]*aspect-ratio:\s*5\s*\/\s*4\s*!important/,
   )
 })
 
@@ -157,10 +173,10 @@ test('main-page auction card mirrors the compact layout and keeps only a tiffany
     card,
     /hideBuyNowAction[\s\S]*\? 'auction-card__btn--primary'[\s\S]*: 'auction-card__btn--outline'/,
   )
-  assert.match(card, /state\.showGreenTimer && 'auction-card--timer-pricing'/)
+  assert.match(card, /showOverlayPricing && 'auction-card--timer-pricing'/)
 })
 
-test('phone cards keep row CTAs and the homepage tiffany shine', () => {
+test('phone listing cards put short CTAs in one row and use the homepage tiffany shine', () => {
   assert.match(
     mobileLayoutCss,
     /\.auction-mobile-layout[\s\S]*--auction-tiffany:\s*#4ecdd6/,

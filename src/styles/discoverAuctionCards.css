@@ -48,10 +48,19 @@
 
 .discover-auction-cards .auction-card__location,
 .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__location,
-.discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__location {
+.discover-auction-cards .auction-mobile-stack--desktop-cards .auction-card__location,
+.discover-auction-cards .shares-v2-card__location,
+.discover-auction-cards .invest-showcase .shares-v2-card__location {
   min-height: 0;
   color: #94a3b8;
   font-size: 0.72rem !important;
+}
+
+.discover-auction-cards .shares-v2-card__location span,
+.discover-auction-cards .invest-showcase .shares-v2-card__location span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .discover-auction-cards .auction-card__title,
@@ -1044,6 +1053,9 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__media,
+  /* Same-element grids (e.g. map page) — compound, not only descendant */
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__media,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__media,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__media,
@@ -1059,6 +1071,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__media-top,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__media-top,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__media-top,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__media-top,
@@ -1074,6 +1088,8 @@
     justify-content: space-between !important;
     padding: 5px 8px !important;
     border-radius: 11px !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   .discover-auction-cards:is(
@@ -1082,6 +1098,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__countdown-pill,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__countdown-pill,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__countdown-pill,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__countdown-pill,
@@ -1109,6 +1127,8 @@
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__countdown-pill
     svg,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__countdown-pill svg,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__countdown-pill svg,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__countdown-pill
@@ -1127,6 +1147,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-prices,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-prices,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-prices,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-prices,
@@ -1143,6 +1165,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-price-label,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-price-label,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-price-label,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-price-label,
@@ -1158,6 +1182,8 @@
       .discover-auction-cards--buy-now
     ):is(.properties-grid--auction-cards, .auction-mobile-stack--desktop-cards)
     .auction-card__timer-price-value,
+  .discover-auction-cards.properties-grid--auction-cards .auction-card__timer-price-value,
+  .discover-auction-cards.auction-mobile-stack--desktop-cards .auction-card__timer-price-value,
   .discover-auction-cards
     .properties-grid--auction-cards
     .auction-card__timer-price-value,

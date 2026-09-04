@@ -18,7 +18,7 @@ test('normalizes a legacy message into a structured event', () => {
     normalizeToastEvent('Ставка принята', 'success', 4200),
     {
       type: 'success',
-      title: 'Готово',
+      title: 'Done',
       message: 'Ставка принята',
       action: null,
       duration: 4200,
@@ -27,6 +27,13 @@ test('normalizes a legacy message into a structured event', () => {
       announcement: 'polite',
     },
   )
+})
+
+test('localizes default titles through the translate helper', () => {
+  const event = normalizeToastEvent('Gebot gesendet', 'success', 3000, {
+    translate: (key, fallback) => (key === 'toastTitleSuccess' ? 'Erledigt' : fallback),
+  })
+  assert.equal(event.title, 'Erledigt')
 })
 
 test('normalizes structured errors as assertive and persistent events as timeless', () => {

@@ -178,7 +178,8 @@
 }
 
 .test-drive-hero__copy {
-  max-width: 420px;
+  width: 100%;
+  max-width: 430px;
   margin-top: 64px;
   text-shadow: 0 4px 22px rgba(2, 27, 31, 0.28);
 }
@@ -1463,7 +1464,8 @@
   }
 
   .test-drive-hero__copy {
-    max-width: 330px;
+    width: 100%;
+    max-width: none;
     margin-top: 98px;
     text-shadow: 0 4px 22px rgba(2, 27, 31, 0.28);
   }

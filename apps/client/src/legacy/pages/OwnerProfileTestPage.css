@@ -865,6 +865,41 @@
   padding: 12px 22px;
 }
 
+/* Primary save CTA — works inside portal sheets (outside .opr-body). */
+.opr-btn.opr-btn--primary.opr-profile-form__save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 220px;
+  padding: 0 28px;
+  border: 1px solid #007d8a;
+  border-radius: 14px;
+  background: #0099a9;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.opr-btn.opr-btn--primary.opr-profile-form__save:hover,
+.opr-btn.opr-btn--primary.opr-profile-form__save:focus-visible {
+  background: #007d8a;
+  border-color: #006672;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.opr-btn.opr-btn--primary.opr-profile-form__save:disabled {
+  opacity: 0.82;
+  cursor: wait;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .opr-app-settings {
   display: flex;
   flex-direction: column;
@@ -1498,20 +1533,31 @@
 }
 
 .opr-body .opr-field--country .country-select__trigger {
-  min-height: 48px;
-  padding: 12px 14px;
-  border: 1px solid #e7edf3;
-  border-radius: 14px;
-  background: #fbfdfd;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  min-height: 58px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
 .opr-body .opr-field--country .country-select__trigger:hover,
 .opr-body .opr-field--country .country-select__trigger--open {
-  border-color: #0099a9;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+  border: 0;
+  background: #ebeef1;
+  box-shadow: none;
+}
+
+.opr-body .opr-field--country .country-select__trigger--open,
+.opr-body .opr-field--country .country-select__trigger:focus {
+  outline: none;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
 }
 
 .opr-body .opr-field--country .country-select__input {
@@ -1537,18 +1583,22 @@
   gap: 0;
   width: 100%;
   min-width: 0;
-  min-height: 48px;
-  border: 1px solid #e7edf3;
-  border-radius: 14px;
-  background: #fbfdfd;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  min-height: 58px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
+.opr-body .opr-field--phone .phone-input-wrapper:hover {
+  background: #ebeef1;
+}
+
 .opr-body .opr-field--phone .phone-input-wrapper:focus-within {
-  border-color: #0099a9;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+  border: 0;
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
 }
 
 .opr-body .opr-field--phone .phone-input-country-selector {
@@ -1559,7 +1609,7 @@
   min-height: 46px;
   padding: 0 10px 0 12px;
   border: 0;
-  border-right: 1px solid #e7edf3;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 0;
   background: transparent;
   color: var(--opr-text, #111827);
@@ -1743,6 +1793,48 @@
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.07);
 }
 
+.opr-profile-directions-cta {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+/* Mobile CTA lives inside .opr-mobile-cabinet; desktop keeps bottom placement. */
+.opr-profile-directions-cta--mobile {
+  display: none;
+}
+
+.opr-profile-directions-cta--desktop {
+  display: block;
+}
+
+@media (min-width: 901px) {
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title-desktop {
+    display: block;
+  }
+
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title-mobile {
+    display: none;
+  }
+
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title {
+    text-align: left;
+    font-size: 1.35rem;
+    margin-bottom: 16px;
+  }
+
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__grid,
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__grid--trio {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__card {
+    min-height: 168px;
+  }
+}
+
 .opr-body .opr-form-section__head {
   display: flex;
   align-items: flex-start;
@@ -1785,25 +1877,43 @@
 }
 
 .opr-body .opr-field__label {
-  color: #596273;
-  font-size: 12px;
-  font-weight: 800;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .opr-body .opr-field__input,
 .opr-body .opr-field__textarea {
-  min-height: 48px;
-  border-color: #e7edf3;
-  border-radius: 14px;
-  background: #fbfdfd;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  min-height: 58px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  box-shadow: none;
+}
+
+.opr-body .opr-field__input:hover,
+.opr-body .opr-field__textarea:hover {
+  background: #ebeef1;
 }
 
 .opr-body .opr-field__input:focus,
 .opr-body .opr-field__textarea:focus {
-  background: #ffffff;
-  border-color: #0099a9;
-  box-shadow: 0 0 0 4px rgba(0, 153, 169, 0.12);
+  outline: none;
+  background: #eefbfc;
+  border: 0;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
+}
+
+.opr-body .opr-field__input::placeholder,
+.opr-body .opr-field__textarea::placeholder {
+  color: #9ca3af;
+  font-weight: 600;
 }
 
 .opr-body .opr-status-card {
@@ -1824,12 +1934,15 @@
 .opr-body .opr-status-card__action,
 .opr-body .opr-btn--primary {
   background: #0099a9;
-  box-shadow: 0 12px 24px rgba(0, 153, 169, 0.24);
+  border: 1px solid #007d8a;
+  box-shadow: none;
 }
 
 .opr-body .opr-status-card__action:hover,
 .opr-body .opr-btn--primary:hover {
-  box-shadow: 0 15px 30px rgba(0, 153, 169, 0.3);
+  background: #007d8a;
+  border-color: #006672;
+  box-shadow: none;
 }
 
 .opr-body .opr-profile-form__save-slot {
@@ -1854,15 +1967,14 @@
   padding: 0 28px;
   min-height: 48px;
   border-radius: 14px;
+  border: 1px solid #007d8a;
+  background: #0099a9;
   color: #ffffff;
   font-weight: 800;
   text-decoration: none;
-  border: 0;
   transform: none;
-  box-shadow:
-    0 12px 28px rgba(0, 153, 169, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.24) inset;
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
+  box-shadow: none;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .opr-body .opr-profile-form__save-slot > .opr-profile-form__save--released {
@@ -1884,13 +1996,12 @@
   min-width: 240px;
   margin-top: 18px;
   padding: 0 28px;
-  border: 0;
+  border: 1px solid #007d8a;
   border-radius: 999px;
+  background: #0099a9;
   color: #ffffff;
   font-weight: 800;
-  box-shadow:
-    0 16px 32px rgba(0, 153, 169, 0.26),
-    0 0 0 1px rgba(255, 255, 255, 0.24) inset;
+  box-shadow: none;
 }
 
 .opr-body .opr-profile-form__save:hover,

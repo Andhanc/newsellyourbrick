@@ -78,20 +78,21 @@ const WhatsApp = () => {
     };
   }, []);
 
-  // Когда статус меняется — управляем обновлением QR
+  // Пока ждём QR — опрос чаще (2 с), чтобы поймать событие сразу после генерации
   useEffect(() => {
     if (qrRefreshRef.current) clearInterval(qrRefreshRef.current);
 
     if (!whatsappStatus.ready) {
       void checkWhatsAppStatus();
+      const pollMs = whatsappStatus.hasQr ? 4000 : 2000;
       qrRefreshRef.current = setInterval(() => {
         setQrTimestamp(Date.now());
         void checkWhatsAppStatus();
-      }, 5000);
+      }, pollMs);
     } else {
       setQrImageLoading(false);
     }
-  }, [whatsappStatus.ready]);
+  }, [whatsappStatus.ready, whatsappStatus.hasQr]);
 
   /** Первый раз, когда API сообщил hasQr — показать лоадер поверх до img.onLoad (не дублировать при каждом poll). */
   useEffect(() => {
@@ -457,6 +458,27 @@ const WhatsApp = () => {
                       {whatsappStatus.waDiag.pairingCodeLength ?? 0}
                     </div>
                     <div style={{ marginTop: '4px' }}>
+                      Загрузка WA Web:{' '}
+                      {typeof whatsappStatus.waDiag.loadingPercent === 'number'
+                        ? `${whatsappStatus.waDiag.loadingPercent}%`
+                        : '—'}
+                      {whatsappStatus.waDiag.loadingMessage
+                        ? ` (${whatsappStatus.waDiag.loadingMessage})`
+                        : ''}
+                      {typeof whatsappStatus.waDiag.qrWaitMs === 'number'
+                        ? ` · ждём QR ~${Math.round(whatsappStatus.waDiag.qrWaitMs / 1000)} с`
+                        : ''}
+                      {typeof whatsappStatus.waDiag.qrStuckMs === 'number'
+                        ? ` (автосброс с ~${Math.round(whatsappStatus.waDiag.qrStuckMs / 1000)} с)`
+                        : ''}
+                    </div>
+                    {typeof whatsappStatus.waDiag.autoRecoverCount === 'number' &&
+                    whatsappStatus.waDiag.autoRecoverCount > 0 ? (
+                      <div style={{ marginTop: '4px', color: '#b45309' }}>
+                        Автосбросов сессии без QR: {whatsappStatus.waDiag.autoRecoverCount}
+                      </div>
+                    ) : null}
+                    <div style={{ marginTop: '4px' }}>
                       Puppeteer:{' '}
                       {whatsappStatus.waDiag.chromeExecutable
                         ? whatsappStatus.waDiag.chromeExecutable
@@ -485,10 +507,9 @@ const WhatsApp = () => {
                       </div>
                     ) : (
                       <div style={{ marginTop: '6px', color: '#92400e' }}>
-                        Событие QR ещё не приходило на сервер — смотрите лог процесса{' '}
-                        <code style={{ fontSize: '0.85em' }}>npm run server</code>. Если долго пусто: удалите{' '}
-                        <code style={{ fontSize: '0.85em' }}>server/.wwebjs_auth</code>, перезапустите API; при
-                        конфликте с другим процессом задайте{' '}
+                        Событие QR ещё не приходило — обычно 30–90 с после старта Chrome. Сервер сам сбросит
+                        битую сессию, если QR не появится. Лог:{' '}
+                        <code style={{ fontSize: '0.85em' }}>npm run server</code>. При конфликте процессов:{' '}
                         <code style={{ fontSize: '0.85em' }}>WHATSAPP_SKIP_BOT_STATUS=1</code>.
                       </div>
                     )}
@@ -523,11 +544,19 @@ const WhatsApp = () => {
                 {!whatsappStatus.hasQr ? (
                   <div className="whatsapp-qr-loading" role="status" aria-live="polite">
                     <div className="whatsapp-qr-spinner" aria-hidden />
-                    <p className="whatsapp-qr-loading-text">Генерируем QR-код…</p>
+                    <p className="whatsapp-qr-loading-text">
+                      Генерируем QR-код…
+                      {typeof whatsappStatus.waDiag?.loadingPercent === 'number'
+                        ? ` ${whatsappStatus.waDiag.loadingPercent}%`
+                        : ''}
+                    </p>
                     <span className="whatsapp-qr-loading-hint">
-                      Дождитесь появления картинки и отсканируйте её одним сеансом.
+                      Обычно 30–90 секунд (холодный старт Chrome). Страница обновляет статус каждые 2 с.
+                      {typeof whatsappStatus.waDiag?.qrWaitMs === 'number'
+                        ? ` Уже ждём ~${Math.round(whatsappStatus.waDiag.qrWaitMs / 1000)} с.`
+                        : ''}
                       {whatsappStatus.canRestartPairing && !whatsappStatus.hasQr
-                        ? ' Если так висит дольше минуты — нажмите «Запросить новый QR» (или удалите папку сессии на сервере и перезапустите API).'
+                        ? ' Если дольше ~2 минут — «Запросить новый QR».'
                         : ''}
                     </span>
                   </div>
@@ -554,15 +583,18 @@ const WhatsApp = () => {
               </div>
               {whatsappStatus.waDiag?.lastQrAt && whatsappStatus.hasQr ? (
                 <p className="whatsapp-qr-hint" style={{ color: '#007d8a' }}>
-                  QR свежий — сканируйте сейчас (не через минуту).
+                  QR готов — сканируйте сейчас.
                   {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
-                    ? ` Возраст кода: ~${Math.max(0, Math.round(whatsappStatus.waDiag.qrAgeMs / 1000))} с.`
+                    ? ` Возраст: ~${Math.max(0, Math.round(whatsappStatus.waDiag.qrAgeMs / 1000))} с`
                     : ''}
+                  {typeof whatsappStatus.waDiag.qrMaxAgeMs === 'number'
+                    ? ` (храним до ~${Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000)} с).`
+                    : '.'}
                 </p>
               ) : null}
               <p className="whatsapp-qr-hint">
-                Кнопка «Обновить QR» только перезагружает картинку. Если WhatsApp пишет ошибку —
-                код уже истёк: жмите «Запросить новый QR» и сканируйте сразу.
+                «Обновить QR» только перезагружает картинку. Если телефон пишет ошибку — код истёк:
+                «Запросить новый QR» и сканируйте сразу.
               </p>
             </div>
           </div>

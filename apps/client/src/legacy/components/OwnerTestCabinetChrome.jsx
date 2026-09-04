@@ -10,6 +10,7 @@ import OwnerSupportButton from './OwnerSupportButton'
 import SiteChatDock from './SiteChatDock'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { useOwnerWelcomeUi } from './OwnerCabinetWelcomeHost'
 import { openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import {
   isNavItemActive,
@@ -36,6 +37,7 @@ export default function OwnerTestCabinetChrome({ children }) {
   const { user } = useUser()
   const { signOut } = useClerk()
   const { view, goTo } = useOwnerTestNav()
+  const { gateLocked, warnGateLocked } = useOwnerWelcomeUi()
   const navItems = useOwnerTestNavItems()
   const [menuOpen, setMenuOpen] = useState(false)
   const [managerChatOpen, setManagerChatOpen] = useState(false)
@@ -77,10 +79,17 @@ export default function OwnerTestCabinetChrome({ children }) {
   const handleNavClick = useCallback(
     (navId) => {
       const target = NAV_ID_TO_VIEW[navId]
-      if (target) goTo(target)
+      if (!target) return
+      if (gateLocked && target !== OWNER_VIEWS.PROFILE) {
+        warnGateLocked()
+        goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
+        closeMenu()
+        return
+      }
+      goTo(target)
       closeMenu()
     },
-    [goTo, closeMenu]
+    [goTo, closeMenu, gateLocked, warnGateLocked]
   )
 
   const renderNavItem = useCallback(
@@ -139,9 +148,15 @@ export default function OwnerTestCabinetChrome({ children }) {
   )
 
   const handleAddProperty = useCallback(() => {
+    if (gateLocked) {
+      warnGateLocked()
+      goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
+      closeMenu()
+      return
+    }
     goTo(OWNER_VIEWS.ADD_PROPERTY)
     closeMenu()
-  }, [goTo, closeMenu])
+  }, [goTo, closeMenu, gateLocked, warnGateLocked])
 
   const renderAddPropertyCta = (className = '') => (
     <button
@@ -270,7 +285,17 @@ export default function OwnerTestCabinetChrome({ children }) {
                   : t('ownerTest_purchasedDraftHint')}
               </small>
             </span>
-            <button type="button" onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}>
+            <button
+              type="button"
+              onClick={() => {
+                if (gateLocked) {
+                  warnGateLocked()
+                  goTo(OWNER_VIEWS.PROFILE, { tab: 'personal' })
+                  return
+                }
+                goTo(OWNER_VIEWS.ADD_PROPERTY)
+              }}
+            >
               <span>{t('ownerTest_purchasedDraftGo')}</span>
               <ArrowRight size={17} aria-hidden />
             </button>

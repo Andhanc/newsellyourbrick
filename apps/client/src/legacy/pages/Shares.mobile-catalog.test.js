@@ -4,6 +4,10 @@ import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./Shares.jsx', import.meta.url), 'utf8')
 const mobileCss = await readFile(new URL('./CoInvestment.mobile.css', import.meta.url), 'utf8').catch(() => '')
+const sharedPaginationCss = await readFile(
+  new URL('../components/ListingPagePagination.css', import.meta.url),
+  'utf8',
+)
 const card = await readFile(new URL('../components/SharesPropertyCard.jsx', import.meta.url), 'utf8')
 
 test('uses only real API shares and a pure 16-item catalogue page', () => {
@@ -23,7 +27,7 @@ test('uses persistent favourites and the shared guided catalogue states', () => 
   assert.match(page, /share\.source_table \? undefined : 'property'/)
   assert.match(page, /BuyerEmptyState/)
   assert.match(page, /shares-empty-illustration\.png/)
-  assert.match(page, /Смотреть другие объекты/)
+  assert.match(page, /sharesPage_seeOtherObjects/)
   assert.match(page, /SharesPropertyCardSkeleton/)
   assert.match(page, /ListingPagePagination/)
   assert.doesNotMatch(page, /useState\(\(\) => new Set/)
@@ -42,23 +46,25 @@ test('renders photo-hero shares redesign aligned with debts and auction', () => 
   assert.match(page, /AuctionCategoryCtaCards/)
   assert.match(page, /MobileDiscoverFaq/)
   assert.match(mobileCss, /@media \(max-width: 768px\)[\s\S]*?\.shares-page--shares-redesign \.shares-invest-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
-  assert.match(mobileCss, /@media \(max-width: 768px\)[\s\S]*?\.shares-page--shares-redesign \.shares-v2-card__metrics\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/)
+  assert.match(mobileCss, /@media \(max-width: 768px\)[\s\S]*?\.shares-page--shares-redesign \.shares-v2-card__media\s*\{[\s\S]*?aspect-ratio:\s*5\s*\/\s*4/)
   assert.match(mobileCss, /--shares-sky:\s*#4ecdd6/)
   assert.match(mobileCss, /\.shares-page--shares-redesign \.shares-v2-card__favorite\s*\{[\s\S]*?min-width:\s*44px[\s\S]*?min-height:\s*44px/)
   assert.match(mobileCss, /@media \(prefers-reduced-motion: reduce\)/)
   assert.match(mobileCss, /#shares-invest-results\s*\{[\s\S]*?scroll-margin-top:/)
   assert.match(mobileCss, /\.shares-page--shares-redesign \.debts-listing-search__go[\s\S]*?width:\s*46px[\s\S]*?height:\s*46px/)
-  assert.match(mobileCss, /\.shares-page--shares-redesign \.listing-page-pagination \.auction-desktop-pagination__page[\s\S]*?min-width:\s*44px[\s\S]*?height:\s*44px/)
+  assert.match(sharedPaginationCss, /@media \(max-width:\s*768px\)[\s\S]*min-width:\s*44px;[\s\S]*height:\s*44px;/)
+  assert.match(sharedPaginationCss, /#4ecdd6/i)
 })
 
-test('cards label forecasts, expose availability, and use shared final-state ribbons', () => {
+test('cards expose availability, are fully clickable, and use shared final-state ribbons', () => {
   assert.match(card, /BuyerStatusRibbon/)
   assert.match(card, /resolveShareMarketplaceState/)
-  assert.match(card, /Прогноз доходности/)
-  assert.match(card, /Доступно долей/)
-  assert.match(card, /formatForecastYield/)
-  assert.match(card, /\{forecast\.note\}/)
-  assert.match(card, /disabled=\{investmentState\.blocksInvestment\}/)
+  assert.match(card, /getCoInvestmentDetailPath/)
+  assert.match(card, /handleCardOpen/)
+  assert.match(card, /sharesCardCollected/)
+  assert.doesNotMatch(card, /formatForecastYield/)
+  assert.doesNotMatch(card, /Прогноз доходности/)
+  assert.match(card, /aria-disabled=\{investmentState\.blocksInvestment/)
   assert.doesNotMatch(card, /shares-v2-card__sold-overlay/)
 })
 

@@ -1,5 +1,7 @@
 const STORAGE_PREFIX = 'ownerTestCabinetOnboardingDone:'
 
+export const OWNER_CABINET_WELCOME_PREVIEW_EVENT = 'owner-cabinet-welcome-preview'
+
 export function getOwnerCabinetOnboardingStorageKey(userId) {
   const id = String(userId || '').trim()
   if (!/^\d+$/.test(id)) return null
@@ -23,5 +25,15 @@ export function markOwnerCabinetOnboardingComplete(userId) {
     localStorage.setItem(key, '1')
   } catch {
     /* ignore quota errors */
+  }
+}
+
+export function clearOwnerCabinetOnboardingComplete(userId) {
+  const key = getOwnerCabinetOnboardingStorageKey(userId)
+  if (!key) return
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    /* ignore */
   }
 }

@@ -527,6 +527,10 @@
   margin-top: 18px;
 }
 
+.test-drive-hero__copy > .section-info-heading-row {
+  margin-top: 0;
+}
+
 .section-info-heading-row > .hero-auction-mobile__title,
 .section-info-heading-row > .shares-hero-scene__title {
   margin-top: 0;

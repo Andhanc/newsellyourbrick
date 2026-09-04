@@ -15,20 +15,26 @@ const css = await readOrEmpty(new URL('./SiteNotificationsPanel.css', import.met
 const context = await readFile(new URL('./SiteNotificationsContext.jsx', import.meta.url), 'utf8')
 const legacyMainCss = await readFile(new URL('../pages/MainPage.css', import.meta.url), 'utf8')
 
-test('notification center is an accessible grouped inbox', () => {
+test('notification center is an accessible classic inbox', () => {
   assert.match(source, /role="dialog"/)
   assert.match(source, /aria-modal="true"/)
   assert.match(source, /aria-labelledby="notification-panel-title"/)
-  assert.match(source, /groupBuyerNotifications/)
+  assert.match(source, /sortBuyerNotifications/)
   assert.match(source, /notification-panel__group/)
+  assert.match(source, /notification-item__dot/)
+  assert.doesNotMatch(source, /notification-panel__tabs/)
+  assert.doesNotMatch(source, /activePeriod|BUYER_NOTIFICATION_PERIOD_GROUPS/)
   assert.match(source, /notification-panel__unread/)
-  assert.match(source, /markAllNotificationsRead/)
+  assert.match(source, /notification-item__dismiss/)
+  assert.doesNotMatch(source, /notification-panel__close/)
+  assert.doesNotMatch(source, /notification-panel__mark-all/)
+  assert.doesNotMatch(source, /notification-item__mark-read/)
 })
 
 test('notification center has explicit loading, empty and item states', () => {
   assert.match(source, /notification-panel__skeleton/)
   assert.match(source, /notification-panel__empty/)
-  assert.match(source, /Важные шаги по сделке появятся здесь/)
+  assert.match(source, /notificationsEmptyDesc/)
   assert.match(source, /notification-item--unread/)
   assert.match(source, /notification-item__time/)
   assert.doesNotMatch(source, /NotificationIcon/)
@@ -47,8 +53,18 @@ test('notification center is a mobile bottom sheet and desktop side panel', () =
 test('live outbid and booking updates use structured actionable toasts', () => {
   assert.match(context, /dedupeKey:/)
   assert.match(context, /action:\s*\{/)
-  assert.match(context, /title:/)
+  assert.match(context, /toastNewNotification/)
+  assert.match(context, /toastOpenNotification/)
   assert.match(context, /markAllNotificationsRead/)
+})
+
+test('outbid notification avoids repeating property title in message body', () => {
+  assert.match(source, /formatBuyerNotificationMessage/)
+  assert.match(source, /notification-item__message--fact/)
+  assert.match(source, /notification-item__property--compact/)
+  assert.match(source, /getBuyerNotificationTitle/)
+  assert.match(source, /localizeNotificationLocation/)
+  assert.match(source, /notificationsOutbidCta/)
 })
 
 test('read state is only committed after every server update succeeds', () => {

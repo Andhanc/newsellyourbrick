@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import {
   assignSheetPanelRef,
   sheetHandleDragProps,
@@ -12,10 +12,16 @@ import {
   FiX,
 } from 'react-icons/fi'
 import {
-  BUYER_NOTIFICATION_PERIOD_GROUPS,
-  groupBuyerNotifications,
+  sortBuyerNotifications,
   safeNotificationRoute,
 } from '../utils/groupBuyerNotifications'
+import {
+  formatBuyerNotificationMessage,
+} from '../utils/formatBuyerNotificationMessage'
+import {
+  getBuyerNotificationTitle,
+  localizeNotificationLocation,
+} from '../utils/localizeBuyerNotification'
 import { getNotificationItemClass } from '../utils/notificationItemClass'
 import './SiteNotificationsPanel.css'
 
@@ -67,7 +73,7 @@ function notificationRelativeTime(notification, t) {
   }).format(new Date(created))
 }
 
-function notificationNextStep(notification, dataObj) {
+function notificationNextStep(notification, dataObj, t) {
   const explicit = dataObj?.next_step ?? dataObj?.nextStep
   if (typeof explicit === 'string' && explicit.trim()) return explicit.trim()
 
@@ -89,7 +95,7 @@ function notificationNextStep(notification, dataObj) {
       return 'Сделка завершена. Теперь объект можно выставить на продажу.'
     case 'outbid':
     case 'bid_outbid':
-      return 'Откройте объект и решите, повышать ли ставку до завершения торгов.'
+      return null
     case 'payment_succeeded':
     case 'deposit_paid':
       return 'Средства зачислены. Проверьте, какой шаг сделки теперь доступен.'
@@ -108,6 +114,7 @@ function NotificationItem({
   handleNotificationView,
   goToPropertyListing,
 }) {
+  const { i18n } = useTranslation()
   const propertyMeta = getNotificationPropertyMeta(notification)
   const dataObj = parseNotificationData(notification?.data)
   const propertyThumbSrc = getNotificationThumbSrc(propertyMeta.image)
@@ -115,7 +122,24 @@ function NotificationItem({
     dataObj?.action_path ?? dataObj?.route ?? dataObj?.url ?? notification?.action_path,
   )
   const unread = notification.view_count === 0
-  const nextStep = notificationNextStep(notification, dataObj)
+  const nextStep = notificationNextStep(notification, dataObj, t)
+  const type = String(notification?.type || '').toLowerCase()
+  const isOutbid = type === 'bid_outbid' || type === 'outbid'
+  const hasPropertyCard = propertyMeta.id != null
+  const displayTitle = getBuyerNotificationTitle(notification, t)
+  const displayLocation = localizeNotificationLocation(
+    propertyMeta.location,
+    t,
+    i18n?.language,
+  )
+  const displayMessage = formatBuyerNotificationMessage({
+    notification,
+    data: dataObj,
+    propertyName: propertyMeta.name,
+    hasPropertyCard,
+    locale: i18n?.language,
+    t,
+  })
 
   const openRoute = (target) => {
     closePanel()
@@ -125,23 +149,47 @@ function NotificationItem({
 
   return (
     <article
-      className={`notification-item ${getNotificationItemClass(notification)}${unread ? ' notification-item--unread' : ''}`}
+      className={`notification-item ${getNotificationItemClass(notification)}${unread ? ' notification-item--unread' : ''}${
+        isOutbid ? ' notification-item--outbid' : ''
+      }`}
       onClick={() => {
         if (notification.type !== 'test_drive_request' && unread) handleNotificationView(notification.id)
       }}
     >
+      {unread ? (
+        <button
+          type="button"
+          className="notification-item__dismiss"
+          aria-label={t('notificationsMarkRead', 'Отметить прочитанным')}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleNotificationView(notification.id)
+          }}
+        >
+          <FiX aria-hidden />
+        </button>
+      ) : null}
+      <span className={`notification-item__dot${unread ? ' is-unread' : ''}`} aria-hidden />
       <div className="notification-item__body">
         <div className="notification-item__head">
           <h4 className="notification-item__title">
             {unread ? <span className="visually-hidden">Новое уведомление. </span> : null}
-            {notification.title || t('notifications')}
+            {displayTitle}
           </h4>
           <time className="notification-item__time">{notificationRelativeTime(notification, t)}</time>
         </div>
-        {notification.message ? <p className="notification-item__message">{notification.message}</p> : null}
+        {displayMessage ? (
+          <p
+            className={`notification-item__message${
+              isOutbid && hasPropertyCard ? ' notification-item__message--fact' : ''
+            }`}
+          >
+            {displayMessage}
+          </p>
+        ) : null}
         {nextStep ? (
           <div className="notification-item__next-step">
-            <span className="notification-item__next-label">Следующий шаг</span>
+            <span className="notification-item__next-label">{t('notificationsNextStep', 'Что сделать')}</span>
             <p className="notification-item__next-copy">{nextStep}</p>
           </div>
         ) : null}
@@ -189,35 +237,67 @@ function NotificationItem({
               {t('goTo')}<FiArrowRight aria-hidden />
             </button>
           </div>
-        ) : propertyMeta.id != null ? (
-          <div className="notification-item__property">
-            <div className="notification-item__image">
-              <img
-                src={propertyThumbSrc}
-                alt={propertyMeta.name || 'Property'}
-                loading="lazy"
-                decoding="async"
-                onError={(event) => {
-                  event.currentTarget.onerror = null
-                  event.currentTarget.src = LIST_FALLBACK_IMG
-                }}
-              />
+        ) : hasPropertyCard ? (
+          isOutbid ? (
+            <button
+              type="button"
+              className="notification-item__property notification-item__property--compact"
+              onClick={(event) => {
+                event.stopPropagation()
+                goToPropertyListing(notification.id, propertyMeta.id)
+              }}
+            >
+              <span className="notification-item__image">
+                <img
+                  src={propertyThumbSrc}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null
+                    event.currentTarget.src = LIST_FALLBACK_IMG
+                  }}
+                />
+              </span>
+              <span className="notification-item__property-location">
+                {displayLocation || propertyMeta.name}
+              </span>
+              <FiArrowRight className="notification-item__property-chevron" aria-hidden />
+              <span className="visually-hidden">{t('notificationsOutbidCta', 'К торгам')}</span>
+            </button>
+          ) : (
+            <div className="notification-item__property">
+              <div className="notification-item__image">
+                <img
+                  src={propertyThumbSrc}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null
+                    event.currentTarget.src = LIST_FALLBACK_IMG
+                  }}
+                />
+              </div>
+              <div className="notification-item__info">
+                <p className="notification-item__property-name">{propertyMeta.name}</p>
+                {displayLocation ? (
+                  <p className="notification-item__property-location">{displayLocation}</p>
+                ) : null}
+                <button
+                  type="button"
+                  className="notification-item__button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    goToPropertyListing(notification.id, propertyMeta.id)
+                  }}
+                >
+                  {t('goTo')}
+                  <FiArrowRight aria-hidden />
+                </button>
+              </div>
             </div>
-            <div className="notification-item__info">
-              <p className="notification-item__property-name">{propertyMeta.name}</p>
-              {propertyMeta.location ? <p className="notification-item__property-location">{propertyMeta.location}</p> : null}
-              <button
-                type="button"
-                className="notification-item__button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  goToPropertyListing(notification.id, propertyMeta.id)
-                }}
-              >
-                {t('goTo')}<FiArrowRight aria-hidden />
-              </button>
-            </div>
-          </div>
+          )
         ) : notification.type === 'buy_now_approved' ? (
           <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="notification-item__button" onClick={() => openRoute('/profile?history=1')}>
@@ -230,25 +310,10 @@ function NotificationItem({
               {dataObj?.action_label || t('goTo')}<FiArrowRight aria-hidden />
             </button>
           </div>
-        ) : unread ? (
-          <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              className="notification-item__mark-read"
-              onClick={() => handleNotificationView(notification.id)}
-            >
-              Отметить прочитанным
-            </button>
-          </div>
         ) : null}
       </div>
     </article>
   )
-}
-
-function pickDefaultPeriod(groups) {
-  const withItems = groups.find((group) => group.items.length > 0)
-  return withItems?.key || 'today'
 }
 
 export default function SiteNotificationsPanel({
@@ -261,14 +326,12 @@ export default function SiteNotificationsPanel({
   notifications,
   notificationsLoading,
   unreadCount,
-  markAllNotificationsRead,
   getNotificationPropertyMeta,
   respondTestDriveRequest,
   handleNotificationView,
   goToPropertyListing,
 }) {
-  const groups = groupBuyerNotifications(notifications)
-  const [activePeriod, setActivePeriod] = useState(() => pickDefaultPeriod(groups))
+  const sortedNotifications = sortBuyerNotifications(notifications)
   const sheetDrag = useBottomSheetDrag({
     isOpen: visible && !isClosing,
     visible,
@@ -278,17 +341,8 @@ export default function SiteNotificationsPanel({
   })
   const setPanelRef = (node) => assignSheetPanelRef(sheetDrag.panelRef, panelRef)(node)
 
-  useEffect(() => {
-    if (!visible) return
-    setActivePeriod(pickDefaultPeriod(groupBuyerNotifications(notifications)))
-    // Reset period only when the drawer opens, not on every list refresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional open-only reset
-  }, [visible])
-
   if (!visible || typeof document === 'undefined') return null
 
-  const activeGroup = groups.find((group) => group.key === activePeriod) || groups[0]
-  const activeItems = activeGroup?.items || []
   const closingPanel = isClosing ? ' notification-panel--closing' : ''
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
 
@@ -316,65 +370,24 @@ export default function SiteNotificationsPanel({
                 </span>
               ) : null}
             </div>
-            {unreadCount > 0 ? (
-              <button type="button" className="notification-panel__mark-all" onClick={markAllNotificationsRead}>
-                <FiCheck aria-hidden />{t('notificationsMarkAllRead', 'Отметить всё прочитанным')}
-              </button>
-            ) : null}
           </div>
-          <button type="button" className="notification-panel__close" onClick={closePanel} aria-label={t('closeNotifications')}>
-            <FiX aria-hidden />
-          </button>
         </header>
 
-        <div className="notification-panel__tabs" role="tablist" aria-label={t('notifications')}>
-          {BUYER_NOTIFICATION_PERIOD_GROUPS.map((period) => {
-            const group = groups.find((entry) => entry.key === period.key)
-            const count = group?.items.length || 0
-            const selected = activePeriod === period.key
-            return (
-              <button
-                key={period.key}
-                type="button"
-                role="tab"
-                id={`notification-tab-${period.key}`}
-                aria-selected={selected}
-                aria-controls="notification-panel-tabpanel"
-                className={`notification-panel__tab${selected ? ' notification-panel__tab--active' : ''}`}
-                onClick={() => setActivePeriod(period.key)}
-              >
-                <span>{t(period.labelKey, period.label)}</span>
-                {count > 0 ? <em>{count}</em> : null}
-              </button>
-            )
-          })}
-        </div>
-
-        <div
-          className="notification-panel__list"
-          id="notification-panel-tabpanel"
-          role="tabpanel"
-          aria-labelledby={`notification-tab-${activePeriod}`}
-        >
+        <div className="notification-panel__list">
           {notificationsLoading ? (
             <div className="notification-panel__skeleton" role="status" aria-label={t('loading')}>
               <span /><span /><span />
             </div>
-          ) : notifications.length === 0 ? (
+          ) : sortedNotifications.length === 0 ? (
             <div className="notification-panel__empty">
               <span className="notification-panel__empty-icon"><FiBell aria-hidden /></span>
-              <h3>{t('notificationsEmptyTitle', 'Здесь пока спокойно')}</h3>
-              <p>{t('notificationsEmptyDesc', 'Важные шаги по сделке появятся здесь — ставки, бронирования, оплаты и документы.')}</p>
-            </div>
-          ) : activeItems.length === 0 ? (
-            <div className="notification-panel__empty notification-panel__empty--compact">
-              <h3>{t('notificationsPeriodEmptyTitle', 'Нет событий за этот период')}</h3>
-              <p>{t('notificationsPeriodEmptyDesc', 'Переключите вкладку — возможно, есть уведомления раньше.')}</p>
+              <h3>{t('notificationsEmptyTitle', 'Пока нет уведомлений')}</h3>
+              <p>{t('notificationsEmptyDesc', 'Здесь появятся ставки, бронирования, оплаты и важные шаги по сделке.')}</p>
             </div>
           ) : (
-            <section className="notification-panel__group" aria-labelledby={`notification-tab-${activePeriod}`}>
+            <section className="notification-panel__group" aria-label={t('notifications')}>
               <div className="notification-panel__group-items">
-                {activeItems.map((notification) => (
+                {sortedNotifications.map((notification) => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}

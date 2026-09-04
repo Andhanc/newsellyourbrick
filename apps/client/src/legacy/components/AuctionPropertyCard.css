@@ -1302,10 +1302,15 @@
 
   .properties-grid--auction-cards .auction-card__media-top,
   .auction-mobile-stack--desktop-cards .auction-card__media-top {
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    justify-content: flex-end;
+    top: auto;
+    right: auto;
+    bottom: 8px;
+    left: 50%;
+    width: 94%;
+    height: auto;
+    transform: translateX(-50%);
+    justify-content: space-between;
+    align-items: center;
   }
 
   .properties-grid--auction-cards .auction-card__countdown-pill,

@@ -69,7 +69,10 @@ export default function MapPagePropertyGrid({
               onOpen={openProperty}
               formatPrice={formatPrice}
               mapNavigateCta
-              className={cn(isSelected && 'map-page-grid-card--selected')}
+              className={cn(
+                'auction-card--map',
+                isSelected && 'map-page-grid-card--selected',
+              )}
             />
           )
         })}

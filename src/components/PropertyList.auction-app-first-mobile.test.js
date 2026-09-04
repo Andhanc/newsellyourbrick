@@ -15,23 +15,18 @@ test('mobile auction paginates sixteen real listings instead of expanding the wh
   assert.doesNotMatch(source, /!isAuctionDesktop && filteredProperties\.length > visibleCount/)
 })
 
-test('auction pagination is semantic, touch-safe, and available on phones', () => {
+test('auction pagination uses the shared catalog control on phones and desktop', () => {
   assert.match(source, /import ListingPagePagination from '\.\/ListingPagePagination'/)
-  assert.match(source, /isAuctionMobileFilters && filteredProperties\.length > 0[\s\S]*<ListingPagePagination/)
-  assert.match(sharedPagination, /aria-current=\{page === currentPage \? 'page'/)
+  assert.match(source, /isAuctionPage && filteredProperties\.length > 0[\s\S]*<ListingPagePagination/)
+  assert.doesNotMatch(source, /Array\.from\(\{ length: auctionTotalPages \}/)
+  assert.match(sharedPagination, /aria-current=\{item\.value === currentPage \? 'page'/)
   assert.match(sharedPaginationCss, /@media \(max-width:\s*768px\)[\s\S]*min-width:\s*44px;[\s\S]*height:\s*44px;/)
-})
-
-test('desktop auction preserves its established pagination classes and layout contract', () => {
-  assert.match(source, /isAuctionDesktop && filteredProperties\.length > 0/)
-  assert.match(source, /className="auction-desktop-pagination"/)
-  assert.match(source, /className="auction-desktop-pagination__arrow"/)
-  assert.match(source, /auction-desktop-pagination__page--active/)
-  assert.match(css, /\.auction-desktop-pagination\s*\{/)
+  assert.match(sharedPaginationCss, /#4ecdd6/i)
+  assert.match(css, /\.auction-desktop-layout--filters-hidden \.listing-page-pagination/)
 })
 
 test('mobile auction introduces a route-specific catalogue header without fake ratings', () => {
-  assert.match(source, /className="auction-mobile-catalog-head"/)
+  assert.match(source, /property-list--auction-mobile-page/)
   assert.match(source, /filteredProperties\.length/)
-  assert.doesNotMatch(source, /rating|reviews|discount/i)
+  assert.doesNotMatch(source, /auction-mobile-catalog-head__rating|fakeReviews|fakeDiscount/)
 })

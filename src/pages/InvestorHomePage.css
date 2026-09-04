@@ -1505,7 +1505,8 @@
   padding: 11px 12px 12px;
 }
 
-.invest-home-page .invest-showcase .auction-card__location {
+.invest-home-page .invest-showcase .auction-card__location,
+.invest-home-page .invest-showcase .shares-v2-card__location {
   font-size: 0.75rem;
 }
 
@@ -1587,19 +1588,24 @@
   line-height: 1.3;
 }
 
-.invest-home-page .invest-showcase .shares-v2-card__location,
 .invest-home-page .invest-showcase .debts-property-card__location {
+  align-items: flex-start;
   margin-bottom: 0;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
-.invest-home-page .invest-showcase .shares-v2-card__metrics {
-  gap: 8px;
-  margin-bottom: 0;
+.invest-home-page .invest-showcase .shares-v2-card__specs {
+  gap: 4px 6px;
+  margin-top: 2px;
 }
 
-.invest-home-page .invest-showcase .shares-v2-card__metric-value {
-  font-size: 0.8125rem;
+.invest-home-page .invest-showcase .shares-v2-card__spec-value {
+  font-size: 0.64rem;
+}
+
+.invest-home-page .invest-showcase .shares-v2-card__spec-label {
+  font-size: 0.46rem;
 }
 
 .invest-home-page .invest-showcase .debts-property-card__pricing {
@@ -1611,19 +1617,12 @@
 }
 
 .invest-home-page .invest-showcase .debts-property-card__btn,
+.invest-home-page .invest-showcase .shares-v2-card__btn--primary,
 .invest-home-page .invest-showcase .shares-v2-card__invest-btn {
   min-height: 34px;
   padding: 7px 10px;
   font-size: 0.75rem;
   border-radius: 10px;
-}
-
-.invest-home-page .invest-showcase .shares-v2-card__progress-head {
-  margin-bottom: 0;
-}
-
-.invest-home-page .invest-showcase .shares-v2-card__amounts {
-  font-size: 0.75rem;
 }
 
 .invest-showcase__footer {

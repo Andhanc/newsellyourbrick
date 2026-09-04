@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const page = await readFile(new URL('./TestPage.jsx', import.meta.url), 'utf8')
-const endpoint = await readFile(new URL('../../server/stripeBilling.js', import.meta.url), 'utf8')
+const endpoint = await readFile(new URL('../../../../../server/stripeBilling.js', import.meta.url), 'utf8')
 
 test('opening a purchased object from history closes the history sheet so the drawer is not covered', () => {
   assert.match(page, /onOpenPurchased=\{\(item\) => \{[\s\S]*setHistorySheetOpen\(false\)[\s\S]*setSelectedPurchasedProperty\(item\)/)
@@ -19,7 +19,7 @@ test('integrates the purchased-property card and sequential drawers in the new p
   assert.match(page, /selectedPurchasedProperty/)
   assert.match(page, /setPurchaseDrawerView\('sell'\)/)
   assert.match(page, /setPurchaseDrawerView\('details'\)/)
-  assert.match(page, /openManagerChatModal/)
+  assert.match(page, /openPlatformManagerChat/)
   assert.match(page, /handleSellObjectFromHistory/)
   assert.match(page, /openSellCabinetFlow/)
   assert.match(page, /OPEN_ROLE_SWITCH_FOR_SELL_EVENT/)

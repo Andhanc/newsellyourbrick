@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import { FiCheck, FiChevronsLeft, FiChevronsRight, FiUser, FiX } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
@@ -110,39 +112,81 @@ function livenessStageProgress(stage, challenge) {
   return 0
 }
 
-function livenessInstruction(stage) {
+function livenessInstruction(stage, t) {
   if (stage === 'left') {
     return {
-      title: 'Поверните голову влево',
-      detail: 'Следуйте за стрелкой',
+      title: t('verificationCamera_livenessTurnLeft'),
+      detail: t('verificationCamera_livenessFollowArrow'),
       direction: 'left',
     }
   }
   if (stage === 'right') {
     return {
-      title: 'Поверните голову вправо',
-      detail: 'Следуйте за стрелкой',
+      title: t('verificationCamera_livenessTurnRight'),
+      detail: t('verificationCamera_livenessFollowArrow'),
       direction: 'right',
     }
   }
   if (stage === 'return-center') {
     return {
-      title: 'Посмотрите прямо',
-      detail: 'Держите лицо в центре',
+      title: t('verificationCamera_livenessLookStraight'),
+      detail: t('verificationCamera_livenessKeepFaceCenter'),
       direction: 'center',
     }
   }
   if (stage === 'passed') {
     return {
-      title: 'Готово',
-      detail: 'Не двигайтесь — делаем фото',
+      title: t('verificationCamera_livenessDone'),
+      detail: t('verificationCamera_livenessHoldStill'),
       direction: 'done',
     }
   }
   return {
-    title: 'Лицо в центре',
-    detail: 'Смотрите прямо в камеру',
+    title: t('verificationCamera_livenessFaceCenter'),
+    detail: t('verificationCamera_livenessLookAtCamera'),
     direction: 'center',
+  }
+}
+
+function buildHintData(t) {
+  return {
+    1: {
+      title: t('verificationModal_hint1Title'),
+      description: t('verificationModal_hint1Description'),
+      requirements: [
+        t('verificationModal_hint1Req1'),
+        t('verificationModal_hint1Req2'),
+        t('verificationModal_hint1Req3'),
+        t('verificationModal_hint1Req4'),
+        t('verificationModal_hint1Req5'),
+      ],
+      exampleText: t('verificationModal_hint1Example'),
+    },
+    2: {
+      title: t('verificationModal_hint2Title'),
+      description: t('verificationModal_hint2Description'),
+      requirements: [
+        t('verificationModal_hint2Req1'),
+        t('verificationModal_hint2Req2'),
+        t('verificationModal_hint2Req3'),
+        t('verificationModal_hint2Req4'),
+        t('verificationModal_hint2Req5'),
+      ],
+      exampleText: t('verificationModal_hint2Example'),
+    },
+    3: {
+      title: t('verificationModal_hint3Title'),
+      description: t('verificationModal_hint3Description'),
+      requirements: [
+        t('verificationModal_hint3Req1'),
+        t('verificationModal_hint3Req2'),
+        t('verificationModal_hint3Req3'),
+        t('verificationModal_hint3Req4'),
+        t('verificationModal_hint3Req5'),
+        t('verificationModal_hint3Req6'),
+      ],
+      exampleText: t('verificationModal_hint3Example'),
+    },
   }
 }
 
@@ -163,6 +207,7 @@ function estimateMirroredHeadYaw(landmarks) {
 }
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const faceScanPreview = import.meta.env.DEV &&
     new URLSearchParams(window.location.search).get('faceScanPreview') === '1'
@@ -312,13 +357,13 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
 
     // Проверяем, что это изображение
     if (!file.type.startsWith('image/')) {
-      showNotification('Пожалуйста, выберите изображение')
+      showNotification(t('verificationModal_notifySelectImage'))
       return
     }
 
     // Проверяем размер файла (максимум 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      showNotification('Размер файла не должен превышать 10MB')
+      showNotification(t('verificationModal_notifyFileSize'))
       return
     }
 
@@ -335,15 +380,15 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
 
   const handleNext = () => {
     if (currentStep === 1 && !photos.passport) {
-      showNotification('Пожалуйста, загрузите или сфотографируйте паспорт')
+      showNotification(t('verificationModal_notifyUploadPassport'))
       return
     }
     if (currentStep === 2 && !photos.selfie) {
-      showNotification('Пожалуйста, сделайте селфи')
+      showNotification(t('verificationModal_notifyUploadSelfie'))
       return
     }
     if (currentStep === 3 && !photos.selfieWithPassport) {
-      showNotification('Пожалуйста, сделайте селфи с паспортом')
+      showNotification(t('verificationModal_notifyUploadSelfieWithPassport'))
       return
     }
     if (currentStep < 3) {
@@ -359,7 +404,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
 
   const handleSubmit = async () => {
     if (!photos.passport || !photos.selfie || !photos.selfieWithPassport) {
-      showNotification('Пожалуйста, загрузите все три фотографии')
+      showNotification(t('verificationModal_notifyUploadAll'))
       return
     }
 
@@ -448,11 +493,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
         setShowSubmittedCelebration(true)
       } else {
         const errors = results.filter(r => !r.success).map(r => r.error).join(', ')
-        showNotification(`Ошибка при загрузке: ${errors}`)
+        showNotification(t('verificationModal_notifyUploadError', { errors }))
       }
     } catch (error) {
       console.error('Ошибка отправки:', error)
-      showNotification('Произошла ошибка при отправке фотографий. Попробуйте еще раз.')
+      showNotification(t('verificationModal_notifySubmitError'))
     } finally {
       setIsSubmitting(false)
     }
@@ -474,14 +519,14 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
   const uploadPhoto = async (file, documentType) => {
     // Проверяем, что userId существует и является валидным числом
     if (!userId) {
-      return { success: false, error: 'ID пользователя не найден' }
+      return { success: false, error: t('verificationModal_errorUserIdMissing') }
     }
 
     // Преобразуем userId в число и проверяем валидность
     const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
     if (isNaN(numericUserId) || numericUserId <= 0) {
       console.error('❌ Неверный формат userId:', userId)
-      return { success: false, error: 'Неверный формат ID пользователя. Ожидается положительное число' }
+      return { success: false, error: t('verificationModal_errorUserIdInvalid') }
     }
 
     const formData = new FormData()
@@ -500,7 +545,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
         return { success: true, data: data.data }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        return { success: false, error: errorData.error || 'Ошибка загрузки' }
+        return { success: false, error: errorData.error || t('verificationModal_errorUploadFailed') }
       }
     } catch (error) {
       return { success: false, error: error.message }
@@ -521,53 +566,14 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
     setHintModalOpen(false)
   }
 
-  // Данные для подсказок по шагам
-  const hintData = {
-    1: {
-      title: 'Шаг 1: Паспорт',
-      description: 'Для верификации необходимо загрузить фотографию паспорта. Убедитесь, что:',
-      requirements: [
-        'Паспорт полностью виден в кадре',
-        'Все данные четко читаемы (серия, номер, ФИО, дата рождения)',
-        'Фото сделано при хорошем освещении',
-        'Паспорт открыт на странице с фотографией и основными данными',
-        'Нет бликов и теней, которые закрывают информацию'
-      ],
-      exampleText: 'Пример правильного фото паспорта:'
-    },
-    2: {
-      title: 'Шаг 2: Селфи',
-      description: 'Сделайте селфи для подтверждения вашей личности. Важно:',
-      requirements: [
-        'Ваше лицо полностью видно и занимает большую часть кадра',
-        'Хорошее освещение лица (без теней)',
-        'Вы смотрите прямо в камеру',
-        'Нет солнцезащитных очков, масок или других предметов, закрывающих лицо',
-        'Фон нейтральный, не отвлекает внимание'
-      ],
-      exampleText: 'Пример правильного селфи:'
-    },
-    3: {
-      title: 'Шаг 3: Селфи с паспортом',
-      description: 'Сделайте селфи, держа паспорт рядом с лицом. Это необходимо для подтверждения, что паспорт принадлежит вам. Убедитесь, что:',
-      requirements: [
-        'И ваше лицо, и паспорт четко видны в одном кадре',
-        'Паспорт открыт на странице с фотографией',
-        'Вы держите паспорт рядом с лицом (не закрывая его)',
-        'Данные в паспорте читаемы',
-        'Хорошее освещение для лица и паспорта',
-        'Вы смотрите прямо в камеру'
-      ],
-      exampleText: 'Пример правильного селфи с паспортом:'
-    }
-  }
+  const hintData = buildHintData(t)
 
   if (!isOpen) return null
 
-  return (
+  const modalTree = (
     <>
       <div
-        className="verification-modal-overlay"
+        className="verification-modal-overlay verification-modal-overlay--gate"
         onClick={required || showSubmittedCelebration ? undefined : onClose}
       >
         <div 
@@ -594,7 +600,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                     {currentStep > step ? '✓' : step}
                   </div>
                   <div className="verification-progress__label">
-                    {step === 1 ? 'Паспорт' : step === 2 ? 'Селфи' : 'Паспорт + селфи'}
+                    {step === 1
+                      ? t('verificationModal_stepPassport')
+                      : step === 2
+                        ? t('verificationModal_stepSelfie')
+                        : t('verificationModal_stepPassportSelfie')}
                   </div>
                   {step < 3 && (
                     <div 
@@ -613,7 +623,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
               <div className="verification-step">
                 {previews.passport ? (
                   <div className="verification-step__preview verification-step__preview--image-only">
-                    <img src={previews.passport} alt="Паспорт" />
+                    <img src={previews.passport} alt={t('verificationModal_altPassport')} />
                     <button 
                       className="verification-step__change"
                       onClick={() => {
@@ -621,7 +631,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         setPreviews(prev => ({ ...prev, passport: null }))
                       }}
                     >
-                      Изменить фото
+                      {t('verificationModal_changePhoto')}
                     </button>
                   </div>
                 ) : (
@@ -630,11 +640,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       <img src="/images/verification/passport-3d.png" alt="" />
                     </div>
                     <div className="verification-step__title-wrapper">
-                      <h2 className="verification-step__title">Шаг 1: Паспорт</h2>
+                      <h2 className="verification-step__title">{t('verificationModal_step1Title')}</h2>
                       <button 
                         className="verification-step__hint-btn"
                         onClick={() => openHintModal(1)}
-                        aria-label="Подсказка"
+                        aria-label={t('verificationModal_hintAriaLabel')}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
@@ -644,7 +654,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       </button>
                     </div>
                     <p className="verification-step__description">
-                      Сфотографируйте ваш паспорт. Убедитесь, что все данные четко видны.
+                      {t('verificationModal_step1Desc')}
                     </p>
                     <div className="verification-step__actions">
                       <button 
@@ -655,7 +665,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                           <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
                         </svg>
-                        Сфотографировать
+                        {t('verificationModal_takePhoto')}
                       </button>
                     </div>
                   </>
@@ -667,7 +677,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
               <div className="verification-step">
                 {previews.selfie ? (
                   <div className="verification-step__preview verification-step__preview--image-only">
-                    <img src={previews.selfie} alt="Селфи" />
+                    <img src={previews.selfie} alt={t('verificationModal_altSelfie')} />
                     <button 
                       className="verification-step__change"
                       onClick={() => {
@@ -675,7 +685,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         setPreviews(prev => ({ ...prev, selfie: null }))
                       }}
                     >
-                      Изменить фото
+                      {t('verificationModal_changePhoto')}
                     </button>
                   </div>
                 ) : (
@@ -684,11 +694,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       <img src="/images/verification/selfie-3d.png" alt="" />
                     </div>
                     <div className="verification-step__title-wrapper">
-                      <h2 className="verification-step__title">Шаг 2: Селфи</h2>
+                      <h2 className="verification-step__title">{t('verificationModal_step2Title')}</h2>
                       <button 
                         className="verification-step__hint-btn"
                         onClick={() => openHintModal(2)}
-                        aria-label="Подсказка"
+                        aria-label={t('verificationModal_hintAriaLabel')}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
@@ -698,7 +708,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       </button>
                     </div>
                     <p className="verification-step__description">
-                      Сделайте селфи. Убедитесь, что ваше лицо четко видно и хорошо освещено.
+                      {t('verificationModal_step2Desc')}
                     </p>
                     <div className="verification-step__actions">
                       <button 
@@ -709,7 +719,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                           <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
                         </svg>
-                        Сделать селфи
+                        {t('verificationModal_takeSelfie')}
                       </button>
                     </div>
                   </>
@@ -721,7 +731,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
               <div className="verification-step">
                 {previews.selfieWithPassport ? (
                   <div className="verification-step__preview verification-step__preview--image-only">
-                    <img src={previews.selfieWithPassport} alt="Селфи с паспортом" />
+                    <img src={previews.selfieWithPassport} alt={t('verificationModal_altSelfieWithPassport')} />
                     <button 
                       className="verification-step__change"
                       onClick={() => {
@@ -729,7 +739,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         setPreviews(prev => ({ ...prev, selfieWithPassport: null }))
                       }}
                     >
-                      Изменить фото
+                      {t('verificationModal_changePhoto')}
                     </button>
                   </div>
                 ) : (
@@ -738,11 +748,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       <img src="/images/verification/selfie-with-passport-3d.png" alt="" />
                     </div>
                     <div className="verification-step__title-wrapper">
-                      <h2 className="verification-step__title">Шаг 3: Селфи с паспортом</h2>
+                      <h2 className="verification-step__title">{t('verificationModal_step3Title')}</h2>
                       <button 
                         className="verification-step__hint-btn"
                         onClick={() => openHintModal(3)}
-                        aria-label="Подсказка"
+                        aria-label={t('verificationModal_hintAriaLabel')}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
@@ -752,7 +762,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                       </button>
                     </div>
                     <p className="verification-step__description">
-                      Сделайте селфи с паспортом рядом с лицом. Убедитесь, что и ваше лицо, и паспорт четко видны.
+                      {t('verificationModal_step3Desc')}
                     </p>
                     <div className="verification-step__actions">
                       <button 
@@ -763,7 +773,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                           <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
                         </svg>
-                        Сделать селфи с паспортом
+                        {t('verificationModal_takeSelfieWithPassport')}
                       </button>
                     </div>
                   </>
@@ -779,7 +789,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                 className="verification-modal__btn verification-modal__btn--secondary"
                 onClick={handleBack}
               >
-                Назад
+                {t('verificationModal_back')}
               </button>
             )}
             {currentStep < 3 ? (
@@ -788,7 +798,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                 onClick={handleNext}
                 disabled={!photos[['passport', 'selfie', 'selfieWithPassport'][currentStep - 1]]}
               >
-                Дальше
+                {t('verificationModal_next')}
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -806,11 +816,11 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         <animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/>
                       </circle>
                     </svg>
-                    Отправка...
+                    {t('verificationModal_submitting')}
                   </>
                 ) : (
                   <>
-                    Отправить
+                    {t('verificationModal_submit')}
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M17.5 2.5L8.75 11.25M17.5 2.5L12.5 17.5L8.75 11.25M17.5 2.5L2.5 7.5L8.75 11.25" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -847,18 +857,22 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
 
       <BuyerCelebrationModal
         open={showSubmittedCelebration}
-        title="Поздравляем!"
-        text="Документы отправлены на модерацию. Мы проверим их и сообщим о результате."
-        ctaLabel="К депозиту"
+        title={t('verificationModal_celebrationTitle')}
+        text={t('verificationModal_celebrationText')}
+        ctaLabel={t('verificationModal_celebrationCta')}
         onCta={handleSubmittedCelebrationGo}
         titleId="verification-submitted-celebration-title"
       />
     </>
   )
+
+  if (typeof document === 'undefined') return null
+  return createPortal(modalTree, document.body)
 }
 
 // Компонент модального окна с подсказкой
 const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
+  const { t } = useTranslation()
   if (!isOpen || !data) return null
 
   // Примеры фото
@@ -886,7 +900,7 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
           <p className="verification-hint-modal__description">{data.description}</p>
 
           <div className="verification-hint-modal__requirements">
-            <h3 className="verification-hint-modal__requirements-title">Требования:</h3>
+            <h3 className="verification-hint-modal__requirements-title">{t('verificationModal_hintRequirementsTitle')}</h3>
             <ul className="verification-hint-modal__requirements-list">
               {data.requirements.map((req, index) => (
                 <li key={index} className="verification-hint-modal__requirements-item">
@@ -904,7 +918,7 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
             <div className="verification-hint-modal__example-image">
               <img 
                 src={exampleImages[step]} 
-                alt="Пример фото"
+                alt={t('verificationModal_hintExampleAlt')}
                 onError={(e) => {
                   e.target.style.display = 'none'
                   e.target.nextSibling.style.display = 'block'
@@ -915,7 +929,7 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
                   <rect width="200" height="150" fill="#f5f5f5"/>
                   <path d="M80 60H120V90H80V60Z" fill="#ddd"/>
                   <path d="M70 100H130M70 110H130" stroke="#ddd" strokeWidth="2"/>
-                  <text x="100" y="130" textAnchor="middle" fill="#999" fontSize="14">Пример фото</text>
+                  <text x="100" y="130" textAnchor="middle" fill="#999" fontSize="14">{t('verificationModal_hintExamplePlaceholder')}</text>
                 </svg>
               </div>
             </div>
@@ -928,6 +942,7 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
 
 // Компонент камеры
 const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
+  const { t } = useTranslation()
   const videoRef = useRef(null)
   const previewRef = useRef(null)
   const shapeGuideRef = useRef(null)
@@ -970,7 +985,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   const detectionIntervalRef = useRef(null)
   const detectionBusyRef = useRef(false)
 
-  const livenessUi = livenessInstruction(livenessStage)
+  const livenessUi = livenessInstruction(livenessStage, t)
 
   const useFrameBlur = type === 'selfie' || type === 'passport'
 
@@ -1065,7 +1080,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       resetLivenessChallenge(false)
       setModelsLoaded(false)
       setModelsLoading(false)
-      setSelfieFaceHint('Смотрите прямо в камеру')
+      setSelfieFaceHint(t('verificationCamera_lookStraight'))
       return undefined
     }
 
@@ -1074,7 +1089,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
     const loadModels = async () => {
       try {
         setModelsLoading(true)
-        setSelfieFaceHint('Загрузка сканирования лица…')
+        setSelfieFaceHint(t('verificationCamera_loadingFaceScan'))
         const vision = await FilesetResolver.forVisionTasks(FACE_LANDMARKER_WASM_URL)
         const createLandmarker = (delegate) =>
           FaceLandmarker.createFromOptions(vision, {
@@ -1106,14 +1121,12 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         faceLandmarkerRef.current = landmarker
         resetLivenessChallenge(true)
         setModelsLoaded(true)
-        setSelfieFaceHint('Расположите лицо в овале')
+        setSelfieFaceHint(t('verificationCamera_positionFaceInOval'))
         console.log('✅ MediaPipe Face Landmarker загружен')
       } catch (error) {
         console.error('❌ Ошибка загрузки MediaPipe Face Landmarker:', error)
         setModelsLoaded(false)
-        setSelfieFaceHint(
-          'Не удалось загрузить сканирование лица. Проверьте интернет и попробуйте снова.'
-        )
+        setSelfieFaceHint(t('verificationCamera_faceScanLoadFailed'))
         setSelfieFaceOk(false)
         setSelfieInOvalFrame(false)
       } finally {
@@ -1141,7 +1154,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   useEffect(() => {
     if (type !== 'selfie') return
     if (modelsLoading) {
-      setSelfieFaceHint('Загрузка сканирования лица…')
+      setSelfieFaceHint(t('verificationCamera_loadingFaceScan'))
       setSelfieFaceOk(false)
       setSelfieInOvalFrame(false)
     }
@@ -1149,7 +1162,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
 
   useEffect(() => {
     if (type !== 'passport') return
-    setPassportHint('Наведите разворот паспорта в рамку')
+    setPassportHint(t('verificationCamera_alignPassportInFrame'))
     setPassportOk(false)
     setPassportInFrame(false)
   }, [type])
@@ -1216,7 +1229,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       }
     } catch (error) {
       console.error('Ошибка доступа к камере:', error)
-      showNotification('Не удалось получить доступ к камере. Проверьте разрешения.')
+      showNotification(t('verificationCamera_cameraAccessFailed'))
       onClose()
     }
   }
@@ -1261,7 +1274,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       if (!preview || !region || region.kind !== 'ellipse') {
         applySelfieGateUi({
           canShoot: false,
-          hint: 'Подождите, готовим рамку…',
+          hint: t('verificationCamera_preparingFrame'),
           inOval: false,
         })
         return
@@ -1276,7 +1289,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       try {
         const ellipse = previewEllipseToVideo(region, vw, vh, pr.width, pr.height)
         if (!ellipse) {
-          applySelfieGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inOval: false })
+          applySelfieGateUi({ canShoot: false, hint: t('verificationCamera_preparingFrame'), inOval: false })
           return
         }
 
@@ -1288,13 +1301,13 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         const checkFraming = () => {
           if (faces.length === 0) {
             return {
-              hint: 'Лицо не видно — встаньте перед камерой при хорошем освещении',
+              hint: t('verificationCamera_faceNotVisible'),
               inOval: false,
             }
           }
           if (faces.length > 1) {
             return {
-              hint: 'В кадре должно быть только одно лицо',
+              hint: t('verificationCamera_multipleFaces'),
               inOval: false,
             }
           }
@@ -1319,7 +1332,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             box.y + box.height > vh - marginY
           if (clipped) {
             return {
-              hint: 'Лицо обрезано — отодвиньте камеру или наклоните телефон',
+              hint: t('verificationCamera_faceClipped'),
               inOval: false,
             }
           }
@@ -1336,14 +1349,14 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           if (relH < SELFIE_MIN_FACE_HEIGHT_IN_OVAL) {
             return {
               hint: inOval
-                ? 'Подойдите ближе — лицо слишком мелкое в овале'
-                : 'Расположите лицо в овале и подойдите ближе',
+                ? t('verificationCamera_faceTooSmallInOval')
+                : t('verificationCamera_faceTooSmallOutOval'),
               inOval,
             }
           }
           if (relH > SELFIE_MAX_FACE_HEIGHT_IN_OVAL) {
             return {
-              hint: 'Отодвиньтесь — лицо не должно выходить за овал',
+              hint: t('verificationCamera_faceTooLarge'),
               inOval,
             }
           }
@@ -1353,11 +1366,11 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             const right = cx > ellipse.cx + ellipse.rx * 0.12
             const up = cy < ellipse.cy - ellipse.ry * 0.1
             const down = cy > ellipse.cy + ellipse.ry * 0.1
-            let hint = 'Выровняйте лицо по овалу'
-            if (left) hint = 'Сдвиньте лицо вправо'
-            else if (right) hint = 'Сдвиньте лицо влево'
-            else if (up) hint = 'Опустите лицо ниже'
-            else if (down) hint = 'Поднимите лицо выше'
+            let hint = t('verificationCamera_alignFaceInOval')
+            if (left) hint = t('verificationCamera_moveFaceRight')
+            else if (right) hint = t('verificationCamera_moveFaceLeft')
+            else if (up) hint = t('verificationCamera_moveFaceDown')
+            else if (down) hint = t('verificationCamera_moveFaceUp')
             return { hint, inOval: false }
           }
 
@@ -1410,8 +1423,8 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             canShoot: false,
             hint:
               stage === 'center' || stage === 'return-center'
-                ? 'Выровняйте лицо и смотрите прямо'
-                : livenessInstruction(stage).title,
+                ? t('verificationCamera_alignAndLookStraight')
+                : livenessInstruction(stage, t).title,
             inOval: true,
           })
           return
@@ -1428,7 +1441,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         if (livenessHoldFramesRef.current < requiredFrames) {
           applySelfieGateUi({
             canShoot: false,
-            hint: 'Отлично — удерживайте положение ещё немного',
+            hint: t('verificationCamera_holdPosition'),
             inOval: true,
           })
           return
@@ -1442,7 +1455,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           moveToLivenessStage(nextStage)
           applySelfieGateUi({
             canShoot: false,
-            hint: livenessInstruction(nextStage).title,
+            hint: livenessInstruction(nextStage, t).title,
             inOval: true,
           })
           return
@@ -1453,7 +1466,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           moveToLivenessStage(nextStage)
           applySelfieGateUi({
             canShoot: false,
-            hint: livenessInstruction(nextStage).title,
+            hint: livenessInstruction(nextStage, t).title,
             inOval: true,
           })
           return
@@ -1463,7 +1476,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           moveToLivenessStage('return-center')
           applySelfieGateUi({
             canShoot: false,
-            hint: 'Отлично — теперь снова смотрите прямо',
+            hint: t('verificationCamera_livenessReturnCenter'),
             inOval: true,
           })
           return
@@ -1477,7 +1490,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           setLivenessHoldProgress(1)
           applySelfieGateUi({
             canShoot: true,
-            hint: 'Проверка пройдена — делаем селфи…',
+            hint: t('verificationCamera_livenessPassed'),
             inOval: true,
           })
           if (detectionIntervalRef.current) {
@@ -1492,7 +1505,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
 
         applySelfieGateUi({
           canShoot: false,
-          hint: 'Следуйте подсказкам на экране',
+          hint: t('verificationCamera_followHints'),
           inOval: true,
         })
       } catch (error) {
@@ -1501,7 +1514,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         setLivenessHoldProgress(0)
         applySelfieGateUi({
           canShoot: false,
-          hint: 'Не удалось проверить кадр — попробуйте ещё раз',
+          hint: t('verificationCamera_detectionFailed'),
           inOval: false,
         })
       } finally {
@@ -1528,7 +1541,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       const preview = previewRef.current
       const region = clipRegionRef.current
       if (!video || video.readyState !== 4 || !preview || !region || region.kind !== 'rect') {
-        applyPassportGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inFrame: false })
+        applyPassportGateUi({ canShoot: false, hint: t('verificationCamera_preparingFrame'), inFrame: false })
         return
       }
 
@@ -1548,7 +1561,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         region.h
       )
       if (!mapped) {
-        applyPassportGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inFrame: false })
+        applyPassportGateUi({ canShoot: false, hint: t('verificationCamera_preparingFrame'), inFrame: false })
         return
       }
       const sx = Math.max(0, Math.floor(mapped.sx))
@@ -1557,7 +1570,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       const sh = Math.min(vh - sy, Math.floor(mapped.sh))
       if (sw < 80 || sh < 80) {
         passportStableOkRef.current = 0
-        applyPassportGateUi({ canShoot: false, hint: 'Подведите паспорт к рамке', inFrame: false })
+        applyPassportGateUi({ canShoot: false, hint: t('verificationCamera_passportTooFar'), inFrame: false })
         return
       }
 
@@ -1569,7 +1582,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         if (!ctx) {
           applyPassportGateUi({
             canShoot: false,
-            hint: 'Не удалось проверить кадр — попробуйте ещё раз',
+            hint: t('verificationCamera_detectionFailed'),
             inFrame: false,
           })
           return
@@ -1620,20 +1633,20 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         const severeIssues = []
         const softIssues = []
 
-        if (brightness < 24) severeIssues.push('Слишком темно — добавьте свет и уберите тени')
-        else if (brightness < 40) softIssues.push('Немного темно, добавьте света для лучшего распознавания')
+        if (brightness < 24) severeIssues.push(t('verificationCamera_passportTooDark'))
+        else if (brightness < 40) softIssues.push(t('verificationCamera_passportSlightlyDark'))
 
-        if (brightness > 245) severeIssues.push('Сильная пересветка — уберите блики и вспышку')
-        else if (brightness > 230) softIssues.push('Есть пересвет, слегка наклоните паспорт от источника света')
+        if (brightness > 245) severeIssues.push(t('verificationCamera_passportOverexposed'))
+        else if (brightness > 230) softIssues.push(t('verificationCamera_passportSlightOverexposure'))
 
-        if (edgeScore < 3) severeIssues.push('Фото размыто — удерживайте телефон ровно')
-        else if (edgeScore < 8) softIssues.push('Почти хорошо: наведите фокус и держите телефон неподвижно')
+        if (edgeScore < 3) severeIssues.push(t('verificationCamera_passportBlurry'))
+        else if (edgeScore < 8) softIssues.push(t('verificationCamera_passportAlmostFocus'))
 
-        if (contrast < 10) severeIssues.push('Подведите паспорт ближе — текст должен быть крупнее')
-        else if (contrast < 16) softIssues.push('Подвиньте паспорт ближе к рамке для более четкого текста')
+        if (contrast < 10) severeIssues.push(t('verificationCamera_passportTooFar'))
+        else if (contrast < 16) softIssues.push(t('verificationCamera_passportMoveCloser'))
 
-        if (darkRatio < 0.008) softIssues.push('Не хватает темных символов, центрируйте разворот')
-        if (brightRatio < 0.015) softIssues.push('Мало светлых областей, добавьте света')
+        if (darkRatio < 0.008) softIssues.push(t('verificationCamera_passportMissingDarkSymbols'))
+        if (brightRatio < 0.015) softIssues.push(t('verificationCamera_passportMissingLightAreas'))
 
         if (severeIssues.length > 0) {
           passportStableOkRef.current = 0
@@ -1651,7 +1664,10 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             canShoot: false,
             hint:
               softIssues[0] ||
-              `Отлично, зафиксируйте кадр… (${passportStableOkRef.current}/${PASSPORT_STABLE_OK_FRAMES})`,
+              t('verificationCamera_passportHoldSteady', {
+                current: passportStableOkRef.current,
+                total: PASSPORT_STABLE_OK_FRAMES,
+              }),
             inFrame: true,
           })
           return
@@ -1659,7 +1675,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
 
         applyPassportGateUi({
           canShoot: true,
-          hint: softIssues[0] || 'Паспорт в фокусе, можно снимать',
+          hint: softIssues[0] || t('verificationCamera_passportInFocus'),
           inFrame: true,
         })
       } catch (error) {
@@ -1667,7 +1683,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         passportStableOkRef.current = 0
         applyPassportGateUi({
           canShoot: false,
-          hint: 'Не удалось подтвердить документ — попробуйте снова',
+          hint: t('verificationCamera_passportVerifyFailed'),
           inFrame: false,
         })
       } finally {
@@ -1890,7 +1906,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
                     <strong>{livenessUi.title}</strong>
                     <small>
                       {modelsLoading
-                        ? 'Готовим камеру…'
+                        ? t('verificationCamera_preparingCamera')
                         : selfieFaceHint || livenessUi.detail}
                     </small>
                   </span>
@@ -1925,7 +1941,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
                   role="status"
                   aria-live="polite"
                 >
-                  {passportHint || 'Расположите паспорт в рамке'}
+                  {passportHint || t('verificationCamera_passportDefaultHint')}
                 </div>
               </div>
               {passportOk && (
@@ -1935,7 +1951,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
                       <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </span>
-                  <span className="camera-ready-chip__text">Можно нажать затвор</span>
+                  <span className="camera-ready-chip__text">{t('verificationCamera_shutterReady')}</span>
                 </div>
               )}
             </div>
@@ -1969,11 +1985,11 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             }
             title={
               type === 'selfie' && !modelsLoaded
-                ? 'Сначала загрузится проверка лица'
+                ? t('verificationCamera_waitFaceCheck')
                 : type === 'selfie' && !selfieFaceOk
-                  ? 'Дождитесь зелёной рамки и подсказки «можно снимать»'
+                  ? t('verificationCamera_waitGreenFrame')
                   : type === 'passport' && !passportOk
-                    ? 'Дождитесь проверки паспорта и подсказки «можно снимать»'
+                    ? t('verificationCamera_waitPassportCheck')
                   : undefined
             }
           >

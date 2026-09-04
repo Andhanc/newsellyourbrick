@@ -1,8 +1,11 @@
 import { FiCheckCircle, FiRefreshCw, FiShield } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import './DepositInfoDrawer.css'
 
 export default function DepositInfoDrawer({ isOpen, onClose, onTopUp }) {
+  const { t } = useTranslation()
+
   return (
     <BuyerSheetShell
       isOpen={isOpen}
@@ -10,12 +13,16 @@ export default function DepositInfoDrawer({ isOpen, onClose, onTopUp }) {
       tone="detail"
       titleId="deposit-info-drawer-title"
       describedBy="deposit-info-drawer-description"
-      closeLabel="Закрыть информацию о депозите"
+      closeLabel={t('depositInfoDrawer_closeAria')}
       className="deposit-info-drawer"
       footer={(
         <div className="deposit-info-drawer__actions">
-          <button type="button" className="deposit-info-drawer__cta" onClick={onTopUp}>Пополнить депозит</button>
-          <button type="button" className="deposit-info-drawer__secondary" onClick={onClose}>Понятно</button>
+          <button type="button" className="deposit-info-drawer__cta" onClick={onTopUp}>
+            {t('depositInfoDrawer_topUpCta')}
+          </button>
+          <button type="button" className="deposit-info-drawer__secondary" onClick={onClose}>
+            {t('depositInfoDrawer_gotIt')}
+          </button>
         </div>
       )}
     >
@@ -23,15 +30,15 @@ export default function DepositInfoDrawer({ isOpen, onClose, onTopUp }) {
         <div className="deposit-info-drawer__visual">
           <img src="/images/property-detail/deposit-wallet-3d.png" alt="" aria-hidden />
         </div>
-        <span className="deposit-info-drawer__eyebrow">SellYourBrick Deposit</span>
-        <h2 id="deposit-info-drawer-title">Что такое депозит</h2>
+        <span className="deposit-info-drawer__eyebrow">{t('depositInfoDrawer_eyebrow')}</span>
+        <h2 id="deposit-info-drawer-title">{t('depositInfoDrawer_title')}</h2>
         <p id="deposit-info-drawer-description" className="deposit-info-drawer__lead">
-          Это доступный баланс для действий, где площадке нужно подтвердить серьёзность намерений покупателя.
+          {t('depositInfoDrawer_lead')}
         </p>
         <div className="deposit-info-drawer__benefits">
-          <div><FiShield aria-hidden /><span>До подтверждения вы видите сумму и назначение платежа.</span></div>
-          <div><FiRefreshCw aria-hidden /><span>Доступную, не зарезервированную часть можно запросить к возврату.</span></div>
-          <div><FiCheckCircle aria-hidden /><span>После пополнения сайт подскажет, какое действие стало доступно.</span></div>
+          <div><FiShield aria-hidden /><span>{t('depositInfoDrawer_benefit1')}</span></div>
+          <div><FiRefreshCw aria-hidden /><span>{t('depositInfoDrawer_benefit2')}</span></div>
+          <div><FiCheckCircle aria-hidden /><span>{t('depositInfoDrawer_benefit3')}</span></div>
         </div>
       </div>
     </BuyerSheetShell>
