@@ -64,7 +64,8 @@ test('uses the same summer image series on the adaptive phone homepage', () => {
   }
   assert.doesNotMatch(mobileDiscoverPage, /images\/mobile-discover\/card-(auction|buy-now|shares|debts)/)
   assert.match(mobileDiscoverPage, /md-card__copy/)
-  assert.match(mobileDiscoverPage, /const CardIcon = card\.Icon/)
+  assert.match(mobileDiscoverPage, /src=\{card\.image\}/)
+  assert.match(mobileDiscoverPage, /src=\{card\.iconSrc\}/)
 })
 
 test('matches the selected reference with functional rail controls and split cards', () => {
