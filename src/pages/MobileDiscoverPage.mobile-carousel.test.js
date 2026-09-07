@@ -31,6 +31,7 @@ test('mobile home uses the restored swipe rail and generated card icons', () => 
   assert.match(jsx, /stripDescriptionPeriod/)
   assert.match(css, /\.md-card__description-accent[\s\S]*background: var\(--md-sky\)/)
   assert.match(css, /\.md-card__description-accent[\s\S]*color: #ffffff/)
+  assert.match(css, /\.md-card__description\s*\{[\s\S]*height: 3\.48em/)
   assert.match(css, /\.md-card \.md-card__cta[\s\S]*background-color: #ffffff !important/)
   assert.match(css, /\.md-card \.md-card__cta[\s\S]*color: #122226 !important/)
   assert.match(css, /\.md-card__save[\s\S]*border-radius: 13px/)
