@@ -22,8 +22,8 @@ import { scrollMainTo } from '@/utils/mainScroll'
 import { navigateBecomeSellerCta, navigateSellerListingCta } from '@/utils/navigateSellerListingCta'
 import './SellerPage.css'
 
-const sellerAboutChartBadgeSrc = publicAsset('images/seller-page/seller-about-chart-badge.png')
-const sellerAboutPortraitSrc = publicAsset('images/seller-page/seller-about-portrait.png')
+const sellerAboutChartBadgeSrc = publicAsset('images/seller-page/seller-about-chart-badge-v2.svg')
+const sellerAboutPortraitSrc = publicAsset('images/seller-page/seller-about-portrait-v3.png')
 
 function SellerLaunchStatValue({
   target,
@@ -306,7 +306,7 @@ function SellerAboutSection({ onBecomeSellerCta }: { onBecomeSellerCta: () => vo
           src={sellerAboutChartBadgeSrc}
           alt=""
           width={118}
-          height={118}
+          height={79}
           loading="eager"
           decoding="async"
           aria-hidden="true"
