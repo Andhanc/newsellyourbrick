@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
-const YANDEX_METRIKA_ID = 111370545
+const YANDEX_METRIKA_ID = 112434723
 
 /**
  * SPA: первый просмотр уже учитывает init в index.html;
