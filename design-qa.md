@@ -33,6 +33,113 @@ final result: passed
 
 ---
 
+# Карточка объекта — «Купить сейчас» по мобильному референсу
+
+## Evidence
+
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-575305c9-75a3-4800-9f2a-02275d2001fd.png` — 424 × 752 px.
+- Browser-rendered implementation, price and CTA: `/var/tmp/newsellyourbrick-buy-now-top.png` — 424 × 752 px.
+- Browser-rendered implementation, services and cards: `/var/tmp/newsellyourbrick-buy-now-guides.png` — 424 × 752 px.
+- Combined full-view comparison: `/var/tmp/newsellyourbrick-buy-now-comparison-top.png` — 848 × 752 px.
+- Combined focused comparison: `/var/tmp/newsellyourbrick-buy-now-comparison-guides.png` — 848 × 752 px.
+- CSS viewport: 424 × 752 px; device scale factor 1; source and implementation compared at identical pixel dimensions.
+- State: Russian locale, auction property 110, mobile `Купить сейчас` tab selected.
+
+## Full-view comparison
+
+- The reference composition is adapted into a large rounded light-gray two-row price surface, followed by a prominent full-width Tiffany action.
+- The existing property header and auction tabs remain intact; the purchase action stays visible above the fold despite that product-owned context.
+- The reference's circular member row becomes four equal service shortcuts, and its settings tiles become a horizontally scrolling set of three purchase guides.
+
+## Focused comparison
+
+- Price panel: two stacked rows, circular white icon holders, quiet labels, large dark numeric hierarchy, subtle divider, and oversized corner radius follow the source rhythm.
+- Service row: four circular controls with short centered labels match the source's member-row density. Library icons replace reference avatars intentionally because the requested targets are product services.
+- Guide cards: the first Tiffany-tinted instruction card and two neutral gray cards preserve the source's large-radius horizontal carousel with a visible next-card affordance.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing Montserrat is retained; price, 10% badge, CTA, service labels, card titles, and instructions have distinct optical weights without truncation at 424 px.
+- Spacing and layout rhythm: 20 px page insets, 28 px price-panel radius, 58 px service circles, 24 px card radii, and partial next-card visibility reproduce the reference's mobile rhythm.
+- Colors and visual tokens: white page, soft neutral gray surfaces, dark ink, and restrained Tiffany accents replace the reference blue with the product's established brand color.
+- Image quality and asset fidelity: the requested service controls use installed React Icons; no raster placeholders, custom SVGs, CSS drawings, gradients, or generated assets were introduced.
+- Copy and content: fixed price, immediate 10% amount, remaining 90%, three-step instruction, payment timing, manager support, and all four requested service destinations are present.
+
+## Primary interactions and console
+
+- Four service buttons render and map to calculator, comparison, favorites, and property AI routes.
+- Browser click verification confirmed that `Сравнение` navigates to `/compare`; source tests cover all four route handlers and the existing reservation handler.
+- The auction bid bar and floating AI launcher stay hidden on this transactional tab, so neither overlaps the primary purchase action.
+- Browser console errors: none.
+
+## Findings
+
+No actionable P0, P1, or P2 differences remain. The property header above the reference-inspired block and the use of service icons instead of avatars are intentional product adaptations.
+
+## Comparison history
+
+- The first source-guided implementation pass matched the required surface hierarchy, service row, horizontal cards, and mobile density without actionable P0/P1/P2 findings.
+
+## Follow-up polish
+
+- P3: long translated service labels may wrap to two lines, which is acceptable and keeps all four shortcuts visible without horizontal scrolling.
+
+## Final result
+
+final result: passed
+
+---
+
+# Карточка объекта — мобильная карта
+
+## Evidence
+
+- External composition reference: `/Users/vtichonenko/newsellyourbrick/.superdesign/pinterest-map-cards-reference.png` — карта с листающимися карточками поверх нижней части.
+- Source visual truth: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-design-v3.png` — адаптированный к продукту edge-to-edge макет с выразительными category cards.
+- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-rich-cards-390x844.png` — 390 × 844 px.
+- Combined comparison input: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-qa-comparison.png` — макет и реализация в одном изображении.
+- CSS viewport: 390 × 844 px; device scale factor 1; русский язык; разблокированная публичная карточка объекта с координатами.
+
+## Full-view and focused comparison
+
+- Карта стала edge-to-edge: в viewport 390 px её фактическая ширина также равна 390 px, боковых полей нет.
+- Реальная карта имеет высоту 585 px и остаётся главным визуальным слоем.
+- Все пять фильтров сохранены как крупные карточки 257.4 × 139.4 px поверх нижней части карты. Каждая получила собственный категорийный цвет, верхнюю акцентную грань, крупную иконку, стрелку действия и подпись «Показать на карте». Следующая карточка видна частично и подсказывает горизонтальный свайп; включён обязательный scroll snap.
+- Отдельный focused pass не потребовался: заголовок, карта, controls и фильтры читаются в одном нативном viewport-capture.
+
+## Required fidelity surfaces
+
+- Fonts and typography: сохранён Montserrat, адрес остаётся главным текстовым акцентом, eyebrow — компактным служебным уровнем.
+- Spacing and layout rhythm: карта почти на высоту экрана и занимает всю ширину; карточки плавают на 16 px выше нижнего края карты с 18 px стартовым отступом.
+- Colors and visual tokens: карточки используют существующие синие, фиолетовые, розовые, зелёные и янтарные семантические цвета категорий на очень светлых поверхностях; карта и основной интерфейс сохраняют Tiffany/deep-teal токены.
+- Image quality and asset fidelity: используется живая карта MapLibre и существующие библиотечные иконки; растровые заглушки и самодельные SVG не добавлялись.
+- Copy and content: адрес, «Расположение», школы, транспорт, медицина, зоны отдыха, магазины и доступные действия карты сохранены.
+
+## Findings
+
+- Actionable P0/P1/P2 различий в исправленном мобильном направлении не осталось.
+
+## Comparison history
+
+1. Первый вариант — P1: карта была уменьшена до 356–430 px, а фильтры превращены в стеклянный overlay, из-за чего их вес и видимость снизились.
+2. Второй вариант — P1: компактные кнопки под высокой картой были недостаточно заметны и часть категорий скрывалась без явной подсказки.
+3. Исправление по Pinterest-референсу — карта растянута edge-to-edge, фильтры превращены в крупные листающиеся карточки поверх карты, добавлен scroll snap и видимый фрагмент следующей карточки.
+4. Третий вариант — P2: белые карточки были слишком пустыми и слабо различались между собой.
+5. Исправление — добавлены категорийный цвет, верхняя грань, иконка 44 px, action-arrow, локализованная подпись действия и контрастное активное состояние.
+6. Post-fix evidence — браузерный рендер 390 px показывает карту 390 × 585 px и пять визуально различимых карточек 257.4 × 139.4 px в доступной горизонтальной карусели.
+
+## Verification
+
+- Компонент успешно отрендерился в мобильном браузере с живыми тайлами и маркером.
+- В DOM присутствуют все пять POI-кнопок, а также разворот, увеличение и уменьшение карты.
+- Новых browser console errors не обнаружено; остаются только существующие development warnings Clerk/React Router.
+
+## Final result
+
+final result: passed
+
+---
+
 # Compare result podium — single action follow-up QA
 
 ## Evidence
@@ -454,3 +561,38 @@ final result: passed
 ## Final result
 
 final result: passed
+
+## 2026-09-09 — Light auction bid drawer
+
+- Replaced the dark price card, glossy quick bids and dark ceiling action with white/mint surfaces and a single tiffany submit action. Reused all localized labels and existing bid/deposit/KYC handlers.
+- Removed the conflicting sheet height caps and internal scrolling. Dragging dismisses the whole sheet instead of shrinking/clipping its contents.
+- Aligns the real mobile countdown above the sheet using the page's `.app-layout` scroll container; restores the original scroll position on close. The backdrop has no blur and only an 8% white tint.
+- Added keyboard viewport adaptation, focus containment, Escape dismissal, an accessible bid input label, and upward-opening currency options.
+- Browser checks before the final scroll-container correction: 390×844 panel height 396.6px, action bottom 828px; 360×640 panel height 358.6px, action bottom 630px. In both, body scrollHeight equals clientHeight. Quick +€1,000 sets €160,200 without submitting a bid.
+- Small-screen checking exposed that scrolling `window` left part of the timer behind the panel. Corrected alignment to `.app-layout`; a subsequent browser connection timeout prevented visually rechecking that final alignment. Software keyboard / KYC / winner states were not exercised in the browser.
+- The sample Costamar listing's localhost:3000 upload image failed to load (naturalWidth 0), so photo composition could only be checked by its visible image region.
+- Validation: 17 focused tests pass; drawer/form/page web/legacy parity and `git diff --check` pass; `npm run build` passes (existing bundle-size warning).
+- Broader existing test failures: guest buyer purchase-intent disabled-state expectation in PropertyDetailPage.mobile.test.js; profile history and bookings markup expectations in BuyerAccountMobileExperience.test.js; favorites copy expectation in BuyerDiscovery.mobile.test.js. Those product areas were not changed by this drawer update.
+
+### Follow-up — homepage Tiffany and stronger action hierarchy
+
+- Replaced the muted mint palette with homepage `--md-sky` (#4ecdd6), and used the existing `--syb-tiffany-btn-fill` / hover / shadow tokens for submission.
+- Detached the white sheet from the page with 8px outer space, a Tiffany top edge, a stronger shadow and a light neutral scrim without blur. Current price is neutral; the editable bid amount and submit button carry the primary visual emphasis.
+- Opening an empty bid form suggests the minimum valid amount. Existing input is preserved, clearing remains possible, and only explicit submission sends a bid; all existing gates and validation remain.
+- Browser verified at 360×640: countdown bottom 261.9px, panel top 274.4px (12.5px clear gap); action bottom 621px. Drawer body clientHeight = scrollHeight = 280px, no scroll. Also visually checked at 390×844.
+- Verified minimum €160,200 on opening, clearing via keyboard disables submit, and +€1,000 restores €160,200 from empty. No bid was submitted. Viewport override reset after checking.
+- 12 focused drawer/property tests, web/legacy parity, `npm run build`, and `git diff --check` pass. Sample listing image upload remains unavailable on the local server.
+
+### Follow-up — full-width sheet and emphasized quick bids
+
+- Mobile sheet now spans edge to edge, sits flush with the bottom edge and retains bottom safe-area padding. Its shadow, neutral scrim and Tiffany top contour remain.
+- Quick increments use a stronger #4ecdd6 fill, defined border, bolder type and subtle hover/press feedback, with reduced-motion handling. Heights and bidding handlers are unchanged.
+- Browser verified at 390px: panel left 0, right 390; body clientHeight and scrollHeight both 312px. Existing user-entered amount preserved; no bid sent.
+- Drawer tests (4/4), web/legacy CSS parity and diff whitespace checks pass.
+
+### Follow-up — shared gradient, quiet input and intermittent perimeter highlight
+
+- Quick-bid buttons now use the same global Tiffany fill/hover tokens as submit, with white text. Browser computed text color confirmed rgb(255, 255, 255).
+- Input uses a neutral 1px border without the persistent ready-state halo. A masked, non-interactive conic highlight traverses the rounded perimeter during a short portion of each 10-second CSS animation cycle; it is disabled during input focus, for disabled fields and with reduced motion.
+- Increased input-to-action spacing from 10px to 20px. Browser checks: body clientHeight = scrollHeight (322px at 390×844, 290px at 360×640). At 360×640 the timer ends at 259.9px, panel starts at 272.4px and buttons end at 629px.
+- Drawer tests (4/4), web/legacy parity and whitespace checks pass. No bid submitted; viewport override reset.

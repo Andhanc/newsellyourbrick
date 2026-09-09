@@ -29,6 +29,13 @@ import {
   FiDownload,
   FiBox,
   FiTruck,
+  FiTag,
+  FiCreditCard,
+  FiTrendingUp,
+  FiBarChart2,
+  FiMessageCircle,
+  FiBookOpen,
+  FiUserCheck,
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid, FaTelegramPlane, FaFacebookF, FaTwitter, FaWhatsapp } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -55,6 +62,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
+import './PropertyDetailClassic.mobileMap.css'
 import PropertyDetailDesktopPage from '../components/property-detail/PropertyDetailDesktopPage'
 import PropertyDetailDesktopGallery from '../components/property-detail/PropertyDetailDesktopGallery'
 import PropertyDetailDesktopTestDriveBanner from '../components/property-detail/PropertyDetailDesktopTestDriveBanner'
@@ -120,6 +128,7 @@ import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { viewerOwnsListing } from '../utils/listingOwnerGuard'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
+import { triggerAuctionBidHaptic } from '../utils/haptics'
 import useAuctionDesktopBidPanelDock from '../hooks/useAuctionDesktopBidPanelDock'
 import {
   formatBidInputDisplayFromStored,
@@ -1501,8 +1510,14 @@ function PropertyDetailClassic({
       openDepositRequiredModal()
       return
     }
+    if (!paymentActionsLocked) {
+      const base = currentBid ?? displayProperty.currentBid ?? displayProperty.auction_starting_price ?? 0
+      const minimum = Number(base) + getAuctionMinBidStep(Number(base))
+      // Offer the smallest valid amount; sending still requires the explicit submit action.
+      setBidAmount((existing) => existing || String(minimum))
+    }
     setIsBidDrawerOpen(true)
-  }, [isOwnListing, requiresAuctionDeposit, openDepositRequiredModal, t])
+  }, [isOwnListing, requiresAuctionDeposit, openDepositRequiredModal, t, paymentActionsLocked, currentBid, displayProperty])
 
   const wrapDepositGatedBlock = (
     block,
@@ -1944,6 +1959,7 @@ function PropertyDetailClassic({
                 maxBid,
                 prevMaxBid
               })
+              triggerAuctionBidHaptic('outbid')
               showToast({
                 type: 'warning',
                 title: t('toastBidOutbidTitle', 'Вашу ставку перебили'),
@@ -2917,6 +2933,7 @@ function PropertyDetailClassic({
           setTimerExpired(false)
         }
 
+        triggerAuctionBidHaptic('placed')
         showToast(
           t('propertyDetail_bidSuccess', {
             amount: appliedBid.toLocaleString(i18n.language || 'en'),
@@ -4504,6 +4521,7 @@ function PropertyDetailClassic({
     if (!media) return null
 
     const isVideo = media.type === 'video'
+    const showAuctionBidBar = isAuctionProperty && !isVideo
 
     return createPortal(
       <div
@@ -4515,7 +4533,11 @@ function PropertyDetailClassic({
         {...lightboxSwipeHandlers}
       >
         <div
-          className="property-detail-desktop-gallery-lightbox__panel"
+          className={`property-detail-desktop-gallery-lightbox__panel${
+            showAuctionBidBar
+              ? ' property-detail-desktop-gallery-lightbox__panel--with-bid-bar'
+              : ''
+          }`}
           onClick={(event) => event.stopPropagation()}
         >
           <button
@@ -4580,6 +4602,36 @@ function PropertyDetailClassic({
               />
             )}
           </div>
+
+          {showAuctionBidBar ? (
+            <div className="property-detail-mobile-bottom-bar property-detail-mobile-bottom-bar--lightbox">
+              <div className="property-detail-mobile-bottom-bar__price">
+                <span className="property-detail-mobile-bottom-bar__label">
+                  {auctionStickyPriceLabel}
+                </span>
+                <span className="property-detail-mobile-bottom-bar__value">
+                  {auctionStickyPriceValue}
+                </span>
+              </div>
+              {isOwnListing ? (
+                <p className="property-detail-mobile-bottom-bar__own-note" role="status">
+                  {t('propertyDetail_ownListingCta')}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="property-detail-mobile-bottom-bar__cta"
+                  onClick={() => {
+                    closeGalleryLightbox()
+                    tryOpenBidDrawer()
+                  }}
+                  disabled={auctionEndedForSidebar || isReservedActive}
+                >
+                  {t('placeBid')}
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>,
       document.body,
@@ -4670,9 +4722,19 @@ function PropertyDetailClassic({
         {renderMobileAboutDocumentsContent()}
         <section className="property-detail-map-mobile property-detail-map-mobile--auction-sheet property-detail-mobile-restricted-content__map">
           <div className="property-detail-sidebar__map">
-            <h2 className="property-detail-sidebar__map-title">
-              {displayProperty.location || t('location')}
-            </h2>
+            <header className="property-detail-mobile-map-card__header">
+              <span className="property-detail-mobile-map-card__icon" aria-hidden>
+                <FiMapPin size={21} strokeWidth={2.2} />
+              </span>
+              <div className="property-detail-mobile-map-card__heading">
+                <span className="property-detail-mobile-map-card__eyebrow">
+                  {t('propertyDetailLocationTitle')}
+                </span>
+                <h2 className="property-detail-sidebar__map-title">
+                  {displayProperty.location || t('location')}
+                </h2>
+              </div>
+            </header>
             <div className="property-detail-sidebar__map-stack">
               {renderPropertyLocationMap()}
             </div>
@@ -4904,37 +4966,161 @@ function PropertyDetailClassic({
         isOwnListing ||
         (!isReservedActive && (!buyNowEmailOk || !shouldShowAuctionBuyNow))
       const buyNowPriceLabel = fmtBidPrice(displayProperty.price)
+      const buyNowReserveAmount = auctionBuyNowPrice * 0.1
+      const buyNowReservePriceLabel = fmtBidPrice(buyNowReserveAmount)
       return (
         <section
           className="property-detail-mobile-buy-now"
           aria-label={t('propertyDetailTabBuyNow')}
         >
-          <p className="property-detail-mobile-buy-now__eyebrow">
-            {t('propertyDetailBuyNowFixedPrice')}
-          </p>
-          <p className="property-detail-mobile-buy-now__value">{buyNowPriceLabel}</p>
-          <p className="property-detail-mobile-buy-now__hint">{t('propertyDetailBuyNowHint')}</p>
-          <button
-            type="button"
-            className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
-              paymentActionsLocked ? ' property-detail-mobile-buy-now__btn--currency-preview' : ''
-            }`}
-            onClick={handleBookNow}
-            disabled={buyNowLocked}
-            title={
-              isReservedActive
-                ? t('purchaseSuccess_goToObject')
-                : !buyNowEmailOk
-                  ? t('buyNowEmailRequired')
-                  : !shouldShowAuctionBuyNow
-                    ? t('propertyDetailTabBuyNow')
-                    : undefined
-            }
+          <div className="property-detail-mobile-buy-now__hero">
+            <div className="property-detail-mobile-buy-now__price-panel">
+              <div className="property-detail-mobile-buy-now__price-row">
+                <span className="property-detail-mobile-buy-now__price-icon" aria-hidden>
+                  <FiTag size={20} strokeWidth={2.25} />
+                </span>
+                <div className="property-detail-mobile-buy-now__price-copy">
+                  <span className="property-detail-mobile-buy-now__price-label">
+                    {t('propertyDetailBuyNowFixedPrice')}
+                  </span>
+                  <strong className="property-detail-mobile-buy-now__value">
+                    {buyNowPriceLabel}
+                  </strong>
+                </div>
+              </div>
+              <div className="property-detail-mobile-buy-now__price-row property-detail-mobile-buy-now__price-row--reserve">
+                <span className="property-detail-mobile-buy-now__price-icon" aria-hidden>
+                  <FiCreditCard size={20} strokeWidth={2.25} />
+                </span>
+                <div className="property-detail-mobile-buy-now__price-copy">
+                  <span className="property-detail-mobile-buy-now__price-label">
+                    {t('propertyDetailBuyNowTodayLabel')}
+                  </span>
+                  <strong className="property-detail-mobile-buy-now__reserve-value">
+                    {buyNowReservePriceLabel}
+                  </strong>
+                </div>
+                <strong className="property-detail-mobile-buy-now__reserve-badge">10%</strong>
+              </div>
+            </div>
+
+            <p className="property-detail-mobile-buy-now__intro">
+              {t('propertyDetailBuyNowDefinition')}
+            </p>
+
+            <button
+              type="button"
+              className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
+                paymentActionsLocked ? ' property-detail-mobile-buy-now__btn--currency-preview' : ''
+              }`}
+              onClick={handleBookNow}
+              disabled={buyNowLocked}
+              title={
+                isReservedActive
+                  ? t('purchaseSuccess_goToObject')
+                  : !buyNowEmailOk
+                    ? t('buyNowEmailRequired')
+                    : !shouldShowAuctionBuyNow
+                      ? t('propertyDetailTabBuyNow')
+                      : undefined
+              }
+            >
+              <span>
+                {isReservedActive
+                  ? t('purchaseSuccess_goToObject')
+                  : t('propertyDetailBuyNowReserveForCta', { price: buyNowReservePriceLabel })}
+              </span>
+              {!isReservedActive ? <FiArrowRight size={18} strokeWidth={2.5} aria-hidden /> : null}
+            </button>
+          </div>
+
+          <nav
+            className="property-detail-mobile-buy-now__services"
+            aria-label={t('propertyDetailBuyNowServicesAria')}
           >
-            {isReservedActive
-              ? t('purchaseSuccess_goToObject')
-              : t('propertyDetailBuy')}
-          </button>
+            <button type="button" onClick={() => openInvestorPanelForProperty()}>
+              <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
+                <FiTrendingUp size={22} strokeWidth={2.15} />
+              </span>
+              <span>{t('propertyDetailBuyNowServiceYield')}</span>
+            </button>
+            <button type="button" onClick={() => navigate('/compare')}>
+              <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
+                <FiBarChart2 size={22} strokeWidth={2.15} />
+              </span>
+              <span>{t('propertyDetailBuyNowServiceCompare')}</span>
+            </button>
+            <button type="button" onClick={() => navigate('/favorites')}>
+              <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
+                <FiHeart size={22} strokeWidth={2.15} />
+              </span>
+              <span>{t('propertyDetailBuyNowServiceFavorites')}</span>
+            </button>
+            <button type="button" onClick={() => navigate('/chat?assistant=1')}>
+              <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
+                <FiMessageCircle size={22} strokeWidth={2.15} />
+              </span>
+              <span>{t('propertyDetailBuyNowServiceAi')}</span>
+            </button>
+          </nav>
+
+          <div className="property-detail-mobile-buy-now__guides">
+            <h3>{t('propertyDetailBuyNowCardsTitle')}</h3>
+            <div className="property-detail-mobile-buy-now__guide-track">
+              <article className="property-detail-mobile-buy-now__guide-card property-detail-mobile-buy-now__guide-card--steps">
+                <div className="property-detail-mobile-buy-now__guide-art" aria-hidden="true">
+                  <span className="property-detail-mobile-buy-now__guide-number">01</span>
+                  <img src="/images/property-detail/buy-now-guide-3d.webp" alt="" loading="lazy" decoding="async" />
+                </div>
+                <h4 className="property-detail-mobile-buy-now__guide-heading">
+                  <FiBookOpen size={22} strokeWidth={2} aria-hidden="true" />
+                  <span>{t('propertyDetailBuyNowInstructionTitle')}</span>
+                </h4>
+                <ol>
+                  <li>{t('propertyDetailBuyNowInstructionStep1')}</li>
+                  <li>{t('propertyDetailBuyNowInstructionStep2')}</li>
+                  <li>{t('propertyDetailBuyNowInstructionStep3')}</li>
+                </ol>
+              </article>
+              <article className="property-detail-mobile-buy-now__guide-card property-detail-mobile-buy-now__guide-card--payment">
+                <div className="property-detail-mobile-buy-now__guide-art property-detail-mobile-buy-now__guide-art--payment" aria-hidden="true">
+                  <span className="property-detail-mobile-buy-now__guide-number">02</span>
+                  <img src="/images/property-detail/buy-now-payment-3d.webp" alt="" loading="lazy" decoding="async" />
+                </div>
+                <h4>{t('propertyDetailBuyNowPaymentCardTitle')}</h4>
+                <div className="property-detail-mobile-buy-now__payment-stages">
+                  <div>
+                    <strong>{t('propertyDetailBuyNowPayNowLabel')}</strong>
+                    <p>{t('propertyDetailBuyNowPayNowHint')}</p>
+                  </div>
+                  <div>
+                    <strong>{t('propertyDetailBuyNowPayLaterLabel')}</strong>
+                    <p>{t('propertyDetailBuyNowPayLaterHint')}</p>
+                  </div>
+                </div>
+              </article>
+              <article className="property-detail-mobile-buy-now__guide-card property-detail-mobile-buy-now__guide-card--manager">
+                <div className="property-detail-mobile-buy-now__guide-art" aria-hidden="true">
+                  <span className="property-detail-mobile-buy-now__guide-number">03</span>
+                  <div className="property-detail-mobile-buy-now__manager-card-art">
+                    <FiUser size={40} strokeWidth={1.6} />
+                    <span className="property-detail-mobile-buy-now__manager-card-lines"><i /><i /></span>
+                    <span className="property-detail-mobile-buy-now__manager-card-check"><FiCheck size={18} strokeWidth={2.5} /></span>
+                  </div>
+                </div>
+                <h4 className="property-detail-mobile-buy-now__guide-heading">
+                  <FiUserCheck size={22} strokeWidth={2} aria-hidden="true" />
+                  <span>{t('propertyDetailBuyNowManagerCardTitle')}</span>
+                </h4>
+                <p>{t('propertyDetailBuyNowSupportNote')}</p>
+                <ul className="property-detail-mobile-buy-now__manager-points">
+                  {['propertyDetailBuyNowManagerQuestions', 'propertyDetailBuyNowManagerDocuments', 'propertyDetailBuyNowManagerNextSteps'].map((key) => (
+                    <li key={key}><FiCheck size={14} aria-hidden="true" /><span>{t(key)}</span></li>
+                  ))}
+                </ul>
+              </article>
+            </div>
+          </div>
         </section>
       )
     }
@@ -7381,9 +7567,19 @@ function PropertyDetailClassic({
               ? wrapMobileDepositGatedBlock(
                 <div className="property-detail-map-mobile">
                   <div className="property-detail-sidebar__map">
-                    <h2 className="property-detail-sidebar__map-title">
-                      {displayProperty.location || t('location')}
-                    </h2>
+                    <header className="property-detail-mobile-map-card__header">
+                      <span className="property-detail-mobile-map-card__icon" aria-hidden>
+                        <FiMapPin size={21} strokeWidth={2.2} />
+                      </span>
+                      <div className="property-detail-mobile-map-card__heading">
+                        <span className="property-detail-mobile-map-card__eyebrow">
+                          {t('propertyDetailLocationTitle')}
+                        </span>
+                        <h2 className="property-detail-sidebar__map-title">
+                          {displayProperty.location || t('location')}
+                        </h2>
+                      </div>
+                    </header>
                     <div className="property-detail-sidebar__map-stack">
                       {renderPropertyLocationMap()}
                     </div>
@@ -7426,6 +7622,31 @@ function PropertyDetailClassic({
               {/* Название */}
               {isAuctionLayout ? (
                 <div className="property-detail-mobile-sheet__head">
+                  {isAuctionProperty && auctionEndTime ? (
+                    <div className="property-detail-mobile-head__timer">
+                      {isReservedActive ? (
+                        <div className="property-detail-mobile-about-timer__reserved">
+                          <FiLock size={18} aria-hidden />
+                          <span>{t('propertyDetailBidsPaused')}</span>
+                        </div>
+                      ) : auctionEndedForSidebar ? (
+                        <p className="property-detail-mobile-about-timer__ended" role="status">
+                          {t('propertyDetailAuctionCompleted')}
+                        </p>
+                      ) : (
+                        renderAuctionTimerVisual()
+                      )}
+                    </div>
+                  ) : null}
+                  <h1
+                    ref={auctionMobileTitleRef}
+                    className="property-detail-sidebar__title property-detail-mobile-sheet__title"
+                  >
+                    {propertyInfo}
+                  </h1>
+                  {displayProperty.location ? (
+                    <p className="property-detail-mobile-sheet__address">{displayProperty.location}</p>
+                  ) : null}
                   <div className="property-detail-mobile-sheet__badge-row">
                     {isDebtProperty ? (
                       <PropertyDebtRiskBanner
@@ -7445,15 +7666,6 @@ function PropertyDetailClassic({
                       </>
                     )}
                   </div>
-                  <h1
-                    ref={auctionMobileTitleRef}
-                    className="property-detail-sidebar__title property-detail-mobile-sheet__title"
-                  >
-                    {propertyInfo}
-                  </h1>
-                  {displayProperty.location ? (
-                    <p className="property-detail-mobile-sheet__address">{displayProperty.location}</p>
-                  ) : null}
                   {renderAuctionContentTabs()}
                   {isShareListing ? (
                     <div className="property-detail-mobile-share-chart">
@@ -7475,22 +7687,6 @@ function PropertyDetailClassic({
                     auctionMobileTab === 'about' ? ' is-active' : ''
                   }`}
                 >
-                  {isAuctionProperty && auctionEndTime && (
-                    <div className="property-detail-mobile-about-timer">
-                      {isReservedActive ? (
-                        <div className="property-detail-mobile-about-timer__reserved">
-                          <FiLock size={18} aria-hidden />
-                          <span>{t('propertyDetailBidsPaused')}</span>
-                        </div>
-                      ) : auctionEndedForSidebar ? (
-                        <p className="property-detail-mobile-about-timer__ended" role="status">
-                          {t('propertyDetailAuctionCompleted')}
-                        </p>
-                      ) : (
-                        renderAuctionTimerVisual()
-                      )}
-                    </div>
-                  )}
                   {isAuctionProperty && auctionEndTime && !isReservedActive && !auctionEndedForSidebar && (
                     renderMobileAboutBidSummary()
                   )}
@@ -7754,7 +7950,7 @@ function PropertyDetailClassic({
 
       {isShareListing ? (
         <ShareMobilePurchaseBar config={shareListingConfig} />
-      ) : isAuctionProperty ? (
+      ) : isAuctionProperty && auctionMobileTab !== 'buy_now' ? (
         <div
           className={`property-detail-mobile-bottom-bar${
             isMobileBidBarNearFooter ? ' property-detail-mobile-bottom-bar--footer-near' : ''
@@ -7785,11 +7981,13 @@ function PropertyDetailClassic({
         isOpen={isBidDrawerOpen && isAuctionProperty}
         onClose={() => setIsBidDrawerOpen(false)}
         title={t('placeBid')}
+        contextAnchorSelector=".property-detail-mobile-head__timer"
       >
         <PropertyDetailAuctionBiddingForm
           {...auctionBiddingFormProps}
           showCurrencySelector
           alwaysShowCurrentBid
+          layout="panel"
         />
       </AuctionBidDrawer>
 

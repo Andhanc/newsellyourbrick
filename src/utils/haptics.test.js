@@ -1,6 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { SELECTION_HAPTIC_DURATION_MS, triggerSelectionHaptic } from './haptics.js'
+import {
+  AUCTION_BID_HAPTIC_PATTERNS,
+  SELECTION_HAPTIC_DURATION_MS,
+  triggerAuctionBidHaptic,
+  triggerSelectionHaptic,
+} from './haptics.js'
 
 test('selection haptic uses an audible-on-hardware Android vibration pulse', () => {
   const calls = []
@@ -62,4 +67,25 @@ test('selection haptic falls back to a native WebKit switch control', () => {
   assert.equal(input.type, 'checkbox')
   assert.equal(inputAttributes.has('switch'), true)
   assert.equal(body.appended, null)
+})
+
+test('auction bid confirmation and outbid warning use distinct vibration patterns', () => {
+  const calls = []
+  const navigatorObject = {
+    vibrate(pattern) {
+      calls.push(pattern)
+      return true
+    },
+  }
+
+  assert.equal(triggerAuctionBidHaptic('placed', { navigatorObject }), true)
+  assert.equal(triggerAuctionBidHaptic('outbid', { navigatorObject }), true)
+  assert.deepEqual(calls, [
+    [...AUCTION_BID_HAPTIC_PATTERNS.placed],
+    [...AUCTION_BID_HAPTIC_PATTERNS.outbid],
+  ])
+  assert.ok(
+    AUCTION_BID_HAPTIC_PATTERNS.outbid.reduce((sum, value) => sum + value, 0) >
+      AUCTION_BID_HAPTIC_PATTERNS.placed.reduce((sum, value) => sum + value, 0),
+  )
 })

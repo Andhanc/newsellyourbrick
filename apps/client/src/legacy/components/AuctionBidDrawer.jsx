@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
@@ -6,11 +6,29 @@ import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import './AuctionBidDrawer.css'
 
-export default function AuctionBidDrawer({ isOpen, onClose, title, children }) {
+export default function AuctionBidDrawer({ isOpen, onClose, title, children, contextAnchorSelector }) {
   const { t } = useTranslation()
+  const [keyboardViewport, setKeyboardViewport] = useState(null)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
   })
+
+  useLayoutEffect(() => {
+    if (!visible || !window.visualViewport) return
+    const viewport = window.visualViewport
+    const updateViewport = () => {
+      setKeyboardViewport(window.innerHeight - viewport.height > 120
+        ? { height: viewport.height, top: viewport.offsetTop }
+        : null)
+    }
+    updateViewport()
+    viewport.addEventListener('resize', updateViewport)
+    viewport.addEventListener('scroll', updateViewport)
+    return () => {
+      viewport.removeEventListener('resize', updateViewport)
+      viewport.removeEventListener('scroll', updateViewport)
+    }
+  }, [visible])
 
   const {
     panelRef,
@@ -29,8 +47,42 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children }) {
     isClosing,
     requestClose,
     panelClosingClass: 'auction-bid-drawer__panel--closing',
-    maxViewportHeightRatio: 0.62,
+    dismissOnly: true,
   })
+
+  // Keep the real listing photo and countdown in view, even when opened far down the page.
+  useLayoutEffect(() => {
+    if (!visible || !contextAnchorSelector || !window.matchMedia('(max-width: 960px)').matches) return
+    const anchor = document.querySelector(contextAnchorSelector)
+    const panel = panelRef.current
+    if (!anchor || !panel || !anchor.getClientRects().length) return
+    const scrollRoot = anchor.closest('.app-layout')
+    const scrollTarget = scrollRoot || window
+    const originalScrollY = scrollRoot?.scrollTop ?? window.scrollY
+    const originalOverflow = scrollRoot?.style.overflowY
+    if (scrollRoot) scrollRoot.style.overflowY = 'hidden'
+    const alignContext = () => {
+      const timerBottom = anchor.getBoundingClientRect().bottom + (scrollRoot?.scrollTop ?? window.scrollY)
+      const viewport = window.visualViewport
+      const viewportBottom = viewport && window.innerHeight - viewport.height > 120
+        ? viewport.height + viewport.offsetTop
+        : window.innerHeight
+      const bottomInset = parseFloat(window.getComputedStyle(panel).marginBottom) || 0
+      const visibleBottom = viewportBottom - panel.offsetHeight - bottomInset - 12
+      scrollTarget.scrollTo({ top: Math.max(0, timerBottom - visibleBottom), behavior: 'instant' })
+    }
+    alignContext()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(alignContext) : null
+    observer?.observe(panel)
+    observer?.observe(anchor)
+    window.addEventListener('resize', alignContext)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', alignContext)
+      if (scrollRoot) scrollRoot.style.overflowY = originalOverflow
+      scrollTarget.scrollTo({ top: originalScrollY, behavior: 'instant' })
+    }
+  }, [visible, contextAnchorSelector, panelRef])
 
   useEffect(() => {
     if (!visible) return
@@ -40,6 +92,38 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children }) {
       document.body.style.overflow = prev
     }
   }, [visible])
+
+  useEffect(() => {
+    if (!visible) return
+    const previousFocus = document.activeElement
+    const panel = panelRef.current
+    panel?.querySelector('.auction-bid-drawer__close')?.focus({ preventScroll: true })
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        // Let the currency picker close before dismissing its parent sheet.
+        if (panel.querySelector('[aria-expanded="true"]')) return
+        event.preventDefault()
+        requestClose()
+      }
+      if (event.key !== 'Tab') return
+      const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]')]
+        .filter((element) => element.getClientRects().length)
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+        event.preventDefault()
+        last?.focus({ preventScroll: true })
+      } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+        event.preventDefault()
+        first?.focus({ preventScroll: true })
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+    }
+  }, [visible, panelRef, requestClose])
 
   if (!visible || typeof document === 'undefined') return null
 
@@ -56,7 +140,8 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children }) {
         onClick={() => requestClose()}
       />
       <div
-        className={`auction-bid-drawer${isDragging ? ' auction-bid-drawer--dragging' : ''}`}
+        className={`auction-bid-drawer${isDragging ? ' auction-bid-drawer--dragging' : ''}${keyboardViewport ? ' auction-bid-drawer--keyboard' : ''}`}
+        style={keyboardViewport ? { ...keyboardViewport, bottom: 'auto' } : undefined}
         role="dialog"
         aria-modal="true"
         aria-labelledby="auction-bid-drawer-title"

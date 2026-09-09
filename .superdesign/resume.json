@@ -90,6 +90,81 @@
         }
       },
       "updatedAt": "2026-09-01T09:40:00+03:00"
+    },
+    "property-detail:mobile-location-map": {
+      "targetKind": "existing-ui",
+      "projectId": "46cd0de4-590b-4ff5-b991-49940be44f75",
+      "baselineDraftId": "efe03b5a-cffc-41dd-ac79-adfef863ffac",
+      "activeDraftId": "78d8d0d9-f0a1-4c6e-866c-32231f99b04f",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "b701924d-daf9-495f-96e1-1925ef7b3ec8"
+      ],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/styles/buyer-mobile-tokens.css",
+        "src/pages/PropertyDetailPage.jsx",
+        "src/pages/PropertyDetailClassic.jsx:5880:5910",
+        "src/pages/PropertyDetailClassic.jsx:4695:4730",
+        "src/pages/PropertyDetailClassic.jsx:7408:7445",
+        "src/pages/PropertyDetailClassic.css:1080:1110",
+        "src/pages/PropertyDetailClassic.css:2620:2685",
+        "src/pages/PropertyDetailClassic.css:2780:2810",
+        "src/pages/PropertyDetailClassic.css:4225:4320",
+        "src/pages/PropertyDetailClassic.css:7420:7480",
+        "src/pages/PropertyDetailClassic.mobileMap.css",
+        "src/components/PropertyDetailLocationMap.jsx",
+        "src/components/PropertyDetailLocationMap.css",
+        "src/components/LocationMap.jsx",
+        "src/components/LocationMap.css",
+        "src/utils/mapNearbyPlaces.js",
+        "src/utils/mapStyles.js",
+        "src/index.css",
+        "src/App.css"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "dde2a6fea6177583d3ef7b0542eefe3a96be97d827b12286fd2b74a73f5a35ee",
+        "src/styles/buyer-mobile-tokens.css": "d4892fc95f34d2fa5c089d76134910f80cf2f3b307e6c250ebff1fd1137de876",
+        "src/pages/PropertyDetailPage.jsx": "14efb3f256752e5e65ff2735df8ff0bc2cb785f9d8805b11aee73c3eb08a1b6a",
+        "src/pages/PropertyDetailClassic.jsx": "77cfe8f852c45096899ee6d409d85cb2c102bd75b85a4b9fd2e774dc44f91e9c",
+        "src/pages/PropertyDetailClassic.css": "0343d3b8f2de37217bd2343807ddea6ed6abf07d5ab7943125a0b6edcd424c4a",
+        "src/pages/PropertyDetailClassic.mobileMap.css": "0f6fd97656155e1c8f23b91566bdf88170841bf401d8f8dc82aedb77ce4dd172",
+        "src/components/PropertyDetailLocationMap.jsx": "d507cd4e2808f171140174c4a43b38a0d4477c3463d7cf488ee1aa48a4027dec",
+        "src/components/PropertyDetailLocationMap.css": "c5e2cc4a6c3ed3d1355ac3605746e412be98ed7b897249443654838b2ce9656e",
+        "src/components/LocationMap.jsx": "7e96fb68de7e25078ad4d8c275abb860ff9b9f989a9fbcd00f94b239791f9350",
+        "src/components/LocationMap.css": "fef745dd3361505debdc999ceb9b6ff3371cd87d6c3f3d30ba41fc04b91e040b",
+        "src/utils/mapNearbyPlaces.js": "fa92df9392d42c6668eb3dba22b5c4d116694c5e675b22eb25b7ee3346d70ba2",
+        "src/utils/mapStyles.js": "42c7e194f03182ee65df48a715927122e3f2b7b500baa6b0b926fe17c6d2dd27",
+        "src/index.css": "b193fe852ec32ad9119fb7586c923bd3ac5f63c2795ab001095ad3e1c80a74b5",
+        "src/App.css": "a81b23c48b3e23c681fc5585ca9e287ac3fcea91c3bbe1df70a4223eca2a584f"
+      },
+      "components": [],
+      "drafts": {
+        "efe03b5a-cffc-41dd-ac79-adfef863ffac": {
+          "title": "Мобильная карта объекта",
+          "visualDirection": "текущее состояние мобильной карты объекта",
+          "currentVersion": 1
+        },
+        "36c44ea7-fc54-4aeb-9dbd-1032f65e87ea": {
+          "title": "Карточка расположения объекта",
+          "visualDirection": "единая мобильная location-card с заголовком, крупной картой и стеклянной лентой POI поверх карты",
+          "parentDraftId": "efe03b5a-cffc-41dd-ac79-adfef863ffac",
+          "currentVersion": 1
+        },
+        "e03dacc8-3026-4fda-91fb-bc4cf35fe34a": {
+          "title": "Редакционная карта объекта",
+          "visualDirection": "редакционная композиция с крупным заголовком и отдельной нижней панелью POI",
+          "parentDraftId": "efe03b5a-cffc-41dd-ac79-adfef863ffac",
+          "currentVersion": 1
+        },
+        "78d8d0d9-f0a1-4c6e-866c-32231f99b04f": {
+          "title": "Mobile property map — corrected",
+          "visualDirection": "Pinterest-подобная мобильная композиция: edge-to-edge карта, крупные POI-карточки со своим цветом, акцентной верхней гранью, большой иконкой, подписью действия и стрелкой; горизонтальный scroll snap",
+          "parentDraftId": "efe03b5a-cffc-41dd-ac79-adfef863ffac",
+          "currentVersion": 3
+        }
+      },
+      "updatedAt": "2026-09-08T02:25:00+03:00"
     }
   }
 }

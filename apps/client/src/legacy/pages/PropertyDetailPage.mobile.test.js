@@ -46,3 +46,36 @@ test('guest buyer can express purchase intent before authentication', () => {
     /if \(!isClerkAuth && !isOldAuth\) \{[\s\S]*?if \(onRequireLogin\)[\s\S]*?onRequireLogin\(\)/,
   )
 })
+
+test('mobile auction puts the timer first and moves badges below the address', () => {
+  const headStart = classicSource.indexOf('<div className="property-detail-mobile-sheet__head">')
+  const headEnd = classicSource.indexOf('{renderAuctionContentTabs()}', headStart)
+  const head = classicSource.slice(headStart, headEnd)
+
+  assert.ok(headStart >= 0 && headEnd > headStart)
+  const timerIndex = head.indexOf('property-detail-mobile-head__timer')
+  const titleIndex = head.indexOf('property-detail-mobile-sheet__title')
+  const addressIndex = head.indexOf('property-detail-mobile-sheet__address')
+  const badgesIndex = head.indexOf('property-detail-mobile-sheet__badge-row')
+
+  assert.ok(timerIndex < titleIndex)
+  assert.ok(titleIndex < addressIndex)
+  assert.ok(addressIndex < badgesIndex)
+  assert.match(head, /renderAuctionTimerVisual\(\)/)
+})
+
+test('full-screen auction photos retain the mobile bid menu', () => {
+  const lightboxStart = classicSource.indexOf('const renderGalleryLightbox')
+  const lightboxEnd = classicSource.indexOf('const renderMobileBidsTab', lightboxStart)
+  const lightbox = classicSource.slice(lightboxStart, lightboxEnd)
+
+  assert.match(lightbox, /showAuctionBidBar = isAuctionProperty && !isVideo/)
+  assert.match(lightbox, /property-detail-mobile-bottom-bar--lightbox/)
+  assert.match(lightbox, /closeGalleryLightbox\(\)[\s\S]*tryOpenBidDrawer\(\)/)
+  assert.match(classicCss, /property-detail-desktop-gallery-lightbox__panel--with-bid-bar/)
+})
+
+test('successful and outbid auction events use distinct haptic feedback', () => {
+  assert.match(classicSource, /triggerAuctionBidHaptic\('placed'\)/)
+  assert.match(classicSource, /triggerAuctionBidHaptic\('outbid'\)/)
+})

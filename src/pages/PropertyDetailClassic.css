@@ -3728,7 +3728,7 @@
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 14px;
+    margin: 2px 0 14px;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge {
@@ -3763,7 +3763,7 @@
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-sheet__address {
-    margin: 0 0 18px;
+    margin: 0 0 8px;
     font-size: 14px;
     line-height: 1.45;
     color: #64748b;
@@ -3823,14 +3823,15 @@
     display: block;
   }
 
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-about-timer {
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-about-timer,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-head__timer {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin: 4px 0 12px;
-    padding: 4px 0 4px;
+    margin: -8px 0 12px;
+    padding: 0;
     box-sizing: border-box;
   }
 
@@ -3847,65 +3848,199 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 0;
     margin-top: 4px;
-    padding: 22px 18px 18px;
-    border: 1px solid rgba(0, 153, 169, 0.16);
-    border-radius: 16px;
-    background:
-      linear-gradient(165deg, #f0fafb 0%, #ffffff 42%, #ffffff 100%);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+    padding: 18px 16px 16px;
+    border: 1px solid rgba(20, 184, 196, 0.2);
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
   }
 
   .property-detail-mobile-tab-panel--buy-now .property-detail-mobile-buy-now {
     margin-top: 4px;
   }
 
+  .property-detail-mobile-buy-now__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .property-detail-mobile-buy-now__icon {
+    display: inline-flex;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(20, 184, 196, 0.18);
+    border-radius: 14px;
+    color: #078f9b;
+    background: #eafafb;
+  }
+
+  .property-detail-mobile-buy-now__price {
+    min-width: 0;
+  }
+
   .property-detail-mobile-buy-now__eyebrow {
-    margin: 0;
+    margin: 0 0 4px;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
-    color: #0099a9;
+    color: #078f9b;
     line-height: 1.2;
   }
 
   .property-detail-mobile-buy-now__value {
     margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 32px;
+    font-size: clamp(28px, 8vw, 34px);
     font-weight: 800;
     color: #0f172a;
     line-height: 1.05;
     letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
   }
 
-  .property-detail-mobile-buy-now__hint {
-    margin: 0 0 6px;
-    max-width: 28em;
+  .property-detail-mobile-buy-now__intro {
+    margin: 16px 0 0;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 13px;
+    font-weight: 550;
+    color: #475569;
+    line-height: 1.55;
+  }
+
+  .property-detail-mobile-buy-now__payment-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid #e7eef1;
+    border-radius: 18px;
+    background: #f7fafb;
+  }
+
+  .property-detail-mobile-buy-now__payment-title {
+    margin: 0 0 2px;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 750;
+    color: #0f172a;
+    line-height: 1.35;
+  }
+
+  .property-detail-mobile-buy-now__step {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: start;
+    padding: 12px;
+    border: 1px solid #e5edef;
+    border-radius: 14px;
+    background: #ffffff;
+  }
+
+  .property-detail-mobile-buy-now__step--now {
+    border-color: rgba(20, 184, 196, 0.24);
+    background: #f0fbfb;
+  }
+
+  .property-detail-mobile-buy-now__step-number {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #078f9b;
+    background: #e4f7f8;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .property-detail-mobile-buy-now__step--now .property-detail-mobile-buy-now__step-number {
+    color: #ffffff;
+    background: #14b8c4;
+  }
+
+  .property-detail-mobile-buy-now__step-copy {
+    min-width: 0;
+  }
+
+  .property-detail-mobile-buy-now__step-label,
+  .property-detail-mobile-buy-now__step-hint {
+    margin: 0;
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  .property-detail-mobile-buy-now__step-label {
+    font-size: 12.5px;
+    font-weight: 750;
+    color: #172033;
+    line-height: 1.35;
+  }
+
+  .property-detail-mobile-buy-now__step-hint {
+    margin-top: 3px;
+    font-size: 11.5px;
     font-weight: 500;
-    color: #64748b;
+    color: #718096;
+    line-height: 1.4;
+  }
+
+  .property-detail-mobile-buy-now__step-amount {
+    grid-column: 2;
+    margin-top: 7px;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .property-detail-mobile-buy-now__support-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 14px 2px 0;
+    color: #3f5f66;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 11.5px;
+    font-weight: 550;
     line-height: 1.45;
+  }
+
+  .property-detail-mobile-buy-now__support-note svg {
+    flex: 0 0 auto;
+    margin-top: 1px;
+    color: #0aa2ae;
   }
 
   .property-detail-mobile-buy-now__btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 9px;
     width: 100%;
-    min-height: 48px;
-    margin-top: 4px;
-    padding: 13px 20px;
+    min-height: 54px;
+    margin-top: 16px;
+    padding: 14px;
     border: 0;
     border-radius: 999px;
     color: #ffffff !important;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: clamp(12px, 3.7vw, 14px);
+    font-weight: 750;
     letter-spacing: 0.01em;
     white-space: nowrap;
     cursor: pointer;
@@ -3931,6 +4066,689 @@
     cursor: not-allowed;
     box-shadow: none;
     filter: none;
+  }
+
+  /* Buy now: compact, full-width payment story with the primary action above the fold. */
+  .property-detail-mobile-buy-now {
+    width: auto;
+    margin: 0 -20px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .property-detail-mobile-tab-panel--buy-now .property-detail-mobile-buy-now {
+    margin-top: -4px;
+  }
+
+  .property-detail-mobile-buy-now__hero {
+    padding: 20px 20px 22px;
+    color: #0f172a;
+    background: #ffffff;
+  }
+
+  .property-detail-mobile-buy-now__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 9px;
+    color: #0796a3;
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+
+  .property-detail-mobile-buy-now__value {
+    color: #0f172a;
+    font-size: clamp(36px, 10.5vw, 46px);
+    line-height: 1;
+    letter-spacing: -0.055em;
+  }
+
+  .property-detail-mobile-buy-now__intro {
+    max-width: 31em;
+    margin: 10px 0 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .property-detail-mobile-buy-now__immediate {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+    margin: 0;
+    padding: 0 0 16px;
+    border: 0;
+  }
+
+  .property-detail-mobile-buy-now__immediate-percent,
+  .property-detail-mobile-buy-now__balance-percent {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: clamp(31px, 9vw, 40px);
+    font-weight: 850;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    color: #13b5c0;
+  }
+
+  .property-detail-mobile-buy-now__immediate-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 10px;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .property-detail-mobile-buy-now__immediate-label,
+  .property-detail-mobile-buy-now__immediate-hint,
+  .property-detail-mobile-buy-now__immediate-amount,
+  .property-detail-mobile-buy-now__balance-label,
+  .property-detail-mobile-buy-now__balance-hint,
+  .property-detail-mobile-buy-now__balance-amount {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  .property-detail-mobile-buy-now__immediate-label {
+    color: #172033;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .property-detail-mobile-buy-now__immediate-amount {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: #0f172a;
+    font-size: clamp(18px, 5.5vw, 22px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .property-detail-mobile-buy-now__immediate-hint {
+    color: #7b8797;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  .property-detail-mobile-buy-now__btn {
+    min-height: 50px;
+    margin-top: 16px;
+    padding-block: 12px;
+    box-shadow: 0 12px 30px rgba(20, 184, 196, 0.3);
+  }
+
+  .property-detail-mobile-buy-now__next {
+    padding: 20px 20px 6px;
+    border-top: 1px solid #e4eef0;
+    background: #ffffff;
+  }
+
+  .property-detail-mobile-buy-now__payment-title {
+    margin: 0 0 16px;
+    color: #172033;
+    font-size: 11.5px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .property-detail-mobile-buy-now__balance {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    padding-top: 16px;
+    border-top: 1px solid #e7eef1;
+  }
+
+  .property-detail-mobile-buy-now__balance-copy {
+    min-width: 0;
+  }
+
+  .property-detail-mobile-buy-now__balance-label {
+    display: block;
+    color: #172033;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.35;
+  }
+
+  .property-detail-mobile-buy-now__balance-hint {
+    display: block;
+    margin-top: 4px;
+    color: #718096;
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .property-detail-mobile-buy-now__balance-amount {
+    display: block;
+    margin-top: 8px;
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .property-detail-mobile-buy-now__support-note {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid #e7eef1;
+  }
+
+  .property-detail-mobile-buy-now__hero {
+    padding: 18px 20px 0;
+  }
+
+  .property-detail-mobile-buy-now__price-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 6px;
+    border: 1px solid rgba(0, 153, 169, 0.18);
+    border-radius: 26px;
+    background: linear-gradient(150deg, #33adbb 0%, #0099a9 52%, #007d8a 100%);
+    box-shadow: 0 10px 24px rgba(0, 125, 138, 0.14);
+  }
+
+  .property-detail-mobile-buy-now__price-panel::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    width: 210px;
+    height: 210px;
+    right: -55px;
+    top: -110px;
+    border: 1px solid rgba(223, 246, 248, 0.14);
+    border-radius: 50%;
+    box-shadow: 0 0 0 24px rgba(223, 246, 248, 0.045), 0 0 0 48px rgba(223, 246, 248, 0.035);
+    pointer-events: none;
+  }
+
+  .property-detail-mobile-buy-now__price-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 38px;
+    gap: 10px;
+    align-items: center;
+    min-height: 100px;
+    padding: 16px;
+  }
+
+  .property-detail-mobile-buy-now__price-row > .property-detail-mobile-buy-now__price-icon {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .property-detail-mobile-buy-now__price-copy {
+    min-width: 0;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .property-detail-mobile-buy-now__price-row--reserve {
+    grid-template-columns: minmax(0, 1fr) 56px;
+    min-height: 86px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    background: linear-gradient(115deg, #fff 0%, #dff6f8 100%);
+  }
+
+  .property-detail-mobile-buy-now__price-row--reserve > .property-detail-mobile-buy-now__price-icon {
+    display: none;
+  }
+
+  .property-detail-mobile-buy-now__price-icon {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(223, 246, 248, 0.4);
+    border-radius: 13px;
+    color: #ffffff;
+    background: rgba(223, 246, 248, 0.14);
+    transform: rotate(-8deg);
+  }
+
+  .property-detail-mobile-buy-now__price-label,
+  .property-detail-mobile-buy-now__reserve-value,
+  .property-detail-mobile-buy-now__reserve-badge {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  .property-detail-mobile-buy-now__price-label {
+    display: block;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 1.3;
+  }
+
+  .property-detail-mobile-buy-now__price-row--reserve .property-detail-mobile-buy-now__price-label {
+    color: #526c77;
+  }
+
+  .property-detail-mobile-buy-now__value {
+    display: block;
+    margin-top: 7px;
+    color: #ffffff;
+    font-size: clamp(24px, 6.4vw, 28px);
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+  }
+
+  .property-detail-mobile-buy-now__reserve-value {
+    display: block;
+    margin-top: 4px;
+    color: #0b3440;
+    font-size: 21px;
+    font-weight: 750;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .property-detail-mobile-buy-now__reserve-badge {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    color: #007d8a;
+    background: linear-gradient(#f1fbfc, #f1fbfc) padding-box,
+      conic-gradient(from -90deg, #0099a9 0% 10%, #ccecef 10% 100%) border-box;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .property-detail-mobile-buy-now__intro {
+    margin: 13px 4px 0;
+    color: #667085;
+    font-size: 11.5px;
+    font-weight: 520;
+    line-height: 1.45;
+  }
+
+  .property-detail-mobile-buy-now__btn {
+    min-height: 52px;
+    margin-top: 14px;
+    background: var(--syb-tiffany-btn-fill) !important;
+    box-shadow: 0 10px 22px rgba(20, 184, 196, 0.22);
+  }
+
+  .property-detail-mobile-buy-now__services {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
+    gap: 6px;
+    padding: 22px 14px 18px;
+  }
+
+  .property-detail-mobile-buy-now__services button {
+    display: flex;
+    min-width: 0;
+    padding: 0 2px;
+    border: 0;
+    align-items: center;
+    flex-direction: column;
+    gap: 8px;
+    color: #303846;
+    background: transparent;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: clamp(8.5px, 2.3vw, 9.5px);
+    font-weight: 650;
+    line-height: 1.25;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .property-detail-mobile-buy-now__services button:last-child > span:last-child {
+    white-space: nowrap;
+  }
+
+  .property-detail-mobile-buy-now__service-icon {
+    display: inline-flex;
+    width: 58px;
+    height: 58px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e4e7;
+    border-radius: 50%;
+    color: #111827;
+    background: #f3f4f5;
+    transition: transform 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  }
+
+  .property-detail-mobile-buy-now__services button:hover .property-detail-mobile-buy-now__service-icon,
+  .property-detail-mobile-buy-now__services button:focus-visible .property-detail-mobile-buy-now__service-icon {
+    border-color: rgba(20, 184, 196, 0.48);
+    color: #078f9b;
+    transform: translateY(-2px);
+  }
+
+  .property-detail-mobile-buy-now__services button:focus-visible {
+    outline: 2px solid rgba(20, 184, 196, 0.45);
+    outline-offset: 4px;
+    border-radius: 12px;
+  }
+
+  .property-detail-mobile-buy-now__guides {
+    padding: 8px 0 10px 20px;
+  }
+
+  .property-detail-mobile-buy-now__guides > h3 {
+    margin: 0 20px 13px 0;
+    color: #69717d;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .property-detail-mobile-buy-now__guide-track {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 2px 20px 14px 0;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .property-detail-mobile-buy-now__guide-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .property-detail-mobile-buy-now__guide-card {
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    overflow: hidden;
+    flex: 0 0 clamp(244px, 70vw, 280px);
+    min-height: 340px;
+    padding: 20px;
+    border: 1px solid rgba(0, 153, 169, 0.1);
+    border-radius: 26px;
+    color: #0b3440;
+    background: #4ecdd6;
+    box-shadow: 0 7px 18px rgba(0, 125, 138, 0.09);
+    scroll-snap-align: start;
+  }
+
+  .property-detail-mobile-buy-now__guide-card::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    width: 220px;
+    height: 220px;
+    right: -92px;
+    top: -80px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    box-shadow: 0 0 0 25px rgba(255, 255, 255, 0.08), 0 0 0 50px rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+  }
+
+  .property-detail-mobile-buy-now__guide-card--steps {
+    background: linear-gradient(150deg, #7fe3ea 0%, #4ecdd6 50%, #2aa8b4 100%);
+  }
+
+  .property-detail-mobile-buy-now__guide-card--payment {
+    color: #fff;
+    background: linear-gradient(150deg, #2eb4bf 0%, #007d8a 54%, #004a52 100%);
+  }
+
+  .property-detail-mobile-buy-now__guide-card--manager {
+    background: linear-gradient(150deg, #f1fbfc 0%, #dff6f8 54%, #bdeaf0 100%);
+  }
+
+  .property-detail-mobile-buy-now__guide-art {
+    position: relative;
+    height: 108px;
+    margin: 0 0 18px;
+  }
+
+  .property-detail-mobile-buy-now__guide-number {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: rgba(0, 84, 98, 0.4);
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 52px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.08em;
+  }
+
+  .property-detail-mobile-buy-now__guide-art img {
+    position: absolute;
+    width: 132px;
+    height: 132px;
+    right: -3px;
+    top: -10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    object-fit: contain;
+    background: transparent;
+    box-shadow: none;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    transform: rotate(5deg);
+  }
+
+  .property-detail-mobile-buy-now__guide-card--steps .property-detail-mobile-buy-now__guide-art img {
+    -webkit-mask-image: url('/images/property-detail/buy-now-guide-mask.svg');
+    mask-image: url('/images/property-detail/buy-now-guide-mask.svg');
+  }
+
+  .property-detail-mobile-buy-now__guide-card--payment .property-detail-mobile-buy-now__guide-art img {
+    -webkit-mask-image: url('/images/property-detail/buy-now-payment-mask.svg');
+    mask-image: url('/images/property-detail/buy-now-payment-mask.svg');
+    transform: rotate(-5deg);
+  }
+
+  .property-detail-mobile-buy-now__guide-card--payment .property-detail-mobile-buy-now__guide-number {
+    color: rgba(223, 246, 248, 0.5);
+  }
+
+  .property-detail-mobile-buy-now__guide-card h4,
+  .property-detail-mobile-buy-now__guide-card p,
+  .property-detail-mobile-buy-now__guide-card ol {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  .property-detail-mobile-buy-now__guide-card h4 {
+    margin: 0 0 13px;
+    color: inherit;
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+  }
+
+  .property-detail-mobile-buy-now__guide-card p {
+    margin: 0;
+    color: #3d626f;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .property-detail-mobile-buy-now__guide-card ol {
+    margin: 0;
+    padding-left: 18px;
+    list-style: decimal;
+    color: #124854;
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 1.45;
+  }
+
+  .property-detail-mobile-buy-now__guide-card li {
+    padding-left: 3px;
+  }
+
+  .property-detail-mobile-buy-now__guide-card li + li {
+    margin-top: 8px;
+  }
+
+  .property-detail-mobile-buy-now__guide-card li::marker {
+    color: #005462;
+    font-weight: 800;
+  }
+
+  .property-detail-mobile-buy-now__guide-card--payment p {
+    color: #dff6f8;
+  }
+
+  .property-detail-mobile-buy-now__guide-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .property-detail-mobile-buy-now__guide-heading > svg {
+    flex: 0 0 22px;
+    color: #005462;
+  }
+
+  .property-detail-mobile-buy-now__guide-heading > span {
+    min-width: 0;
+  }
+
+  .property-detail-mobile-buy-now__guide-card--steps,
+  .property-detail-mobile-buy-now__guide-card--steps ol,
+  .property-detail-mobile-buy-now__guide-card--steps li::marker,
+  .property-detail-mobile-buy-now__guide-card--steps .property-detail-mobile-buy-now__guide-heading > svg,
+  .property-detail-mobile-buy-now__guide-card--steps .property-detail-mobile-buy-now__guide-number {
+    color: #ffffff;
+  }
+
+  .property-detail-mobile-buy-now__payment-stages {
+    display: grid;
+    gap: 12px;
+  }
+
+  .property-detail-mobile-buy-now__payment-stages > div + div {
+    padding-top: 12px;
+    border-top: 1px solid rgba(223, 246, 248, 0.28);
+  }
+
+  .property-detail-mobile-buy-now__payment-stages strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #fff;
+  }
+
+  .property-detail-mobile-buy-now__payment-stages p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .property-detail-mobile-buy-now__manager-points {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px solid rgba(0, 153, 169, 0.18);
+    list-style: none;
+    color: #124854;
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 1.35;
+  }
+
+  .property-detail-mobile-buy-now__manager-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0;
+  }
+
+  .property-detail-mobile-buy-now__manager-points li + li {
+    margin: 0;
+  }
+
+  .property-detail-mobile-buy-now__manager-points svg {
+    flex: 0 0 14px;
+    margin-top: 1px;
+    color: #007d8a;
+  }
+
+  .property-detail-mobile-buy-now__manager-card-art {
+    position: absolute;
+    right: 0;
+    top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 112px;
+    height: 82px;
+    border: 1px solid #fff;
+    border-radius: 20px;
+    color: #0099a9;
+    background: linear-gradient(145deg, #fff, #eaf9fb);
+    box-shadow: 0 5px 0 #a7dfe5, 0 12px 18px rgba(0, 84, 98, 0.13);
+    transform: rotate(-7deg);
+  }
+
+  .property-detail-mobile-buy-now__manager-card-lines {
+    display: grid;
+    gap: 7px;
+    width: 28px;
+  }
+
+  .property-detail-mobile-buy-now__manager-card-lines i {
+    display: block;
+    height: 5px;
+    border-radius: 8px;
+    background: #91dce4;
+  }
+
+  .property-detail-mobile-buy-now__manager-card-lines i:last-child {
+    width: 70%;
+  }
+
+  .property-detail-mobile-buy-now__manager-card-check {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    right: -6px;
+    bottom: -8px;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #edfafd;
+    border-radius: 50%;
+    color: #fff;
+    background: #0099a9;
+  }
+
+  .property-detail-page-new--auction-mobile-v2.property-detail-mobile-tab-buy_now
+    .property-ai-launcher {
+    display: none;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-description {
@@ -4617,7 +5435,8 @@
     }
   }
 
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-about-timer .property-timer--detail {
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-about-timer .property-timer--detail,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-head__timer .property-timer--detail {
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
@@ -8280,6 +9099,26 @@
 }
 
 @media (max-width: 960px) {
+  .property-detail-desktop-gallery-lightbox__panel--with-bid-bar
+    .property-detail-desktop-gallery-lightbox__stage {
+    box-sizing: border-box;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .property-detail-desktop-gallery-lightbox__panel--with-bid-bar
+    .property-detail-desktop-gallery-lightbox__img {
+    max-height: calc(100dvh - 116px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .property-detail-mobile-bottom-bar--lightbox {
+    --pd-tiffany: #4ecdd6;
+    --pd-tiffany-deep: #3bc0cb;
+    --pd-tiffany-glow: rgba(78, 205, 214, 0.32);
+    position: absolute;
+    z-index: 6;
+    pointer-events: auto;
+  }
+
   .property-detail-desktop-gallery-lightbox__img {
     max-width: 100vw;
     max-height: 100dvh;

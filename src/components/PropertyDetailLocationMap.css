@@ -107,6 +107,11 @@
   text-align: center;
 }
 
+.property-detail-location-map__filter-meta,
+.property-detail-location-map__filter-action {
+  display: none;
+}
+
 .property-detail-location-map__filter-spinner {
   animation: property-detail-location-map-spin 0.8s linear infinite;
 }

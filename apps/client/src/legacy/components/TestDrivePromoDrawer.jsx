@@ -1,7 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiX } from 'react-icons/fi'
-import { Calendar } from 'lucide-react'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import TestDrivePromoIllustration from './TestDrivePromoIllustration'
@@ -84,10 +83,8 @@ export default function TestDrivePromoDrawer({ isOpen, onClose, onGoToSection })
           </button>
 
           <div className="test-drive-promo-drawer__body">
-            <TestDrivePromoIllustration className="test-drive-promo-drawer__illustration" />
-
-            <div className="test-drive-promo-drawer__badge" aria-hidden="true">
-              <Calendar size={14} strokeWidth={2.25} />
+            <div className="test-drive-promo-drawer__hero" aria-hidden="true">
+              <TestDrivePromoIllustration className="test-drive-promo-drawer__illustration" />
             </div>
 
             <h2 id="test-drive-promo-drawer-title" className="test-drive-promo-drawer__title">
@@ -101,7 +98,9 @@ export default function TestDrivePromoDrawer({ isOpen, onClose, onGoToSection })
               onClick={handleGoToSection}
             >
               <span>{t('testDrivePromoDrawerCta')}</span>
-              <FiArrowRight size={20} aria-hidden />
+              <span className="test-drive-promo-drawer__cta-icon" aria-hidden="true">
+                <FiArrowRight size={19} />
+              </span>
             </button>
           </div>
         </div>

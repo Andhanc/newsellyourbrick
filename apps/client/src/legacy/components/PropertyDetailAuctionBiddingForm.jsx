@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FiLock, FiPlus, FiX } from 'react-icons/fi'
-import { ShieldCheck, Trophy } from 'lucide-react'
+import { Gavel, ShieldCheck, Trophy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import PropertyCurrencySelector, {
@@ -87,13 +87,20 @@ export default function PropertyDetailAuctionBiddingForm({
       currentBid !== null ? currentBid : displayProperty.currentBid || startingPrice
     const step = getAuctionMinBidStep(effectiveCurrentBid)
     const minBid = effectiveCurrentBid + step
-    return (
-      <p className={className}>
-        {t('propertyDetailMinBidHint', {
-          min: fmtBidPrice(minBid),
-        })}
-      </p>
-    )
+    const hint = t('propertyDetailMinBidHint', {
+      min: fmtBidPrice(minBid),
+    })
+
+    if (isPanelLayout) {
+      return (
+        <div className={className} role="note">
+          <ShieldCheck size={16} strokeWidth={2.25} aria-hidden />
+          <span>{hint}</span>
+        </div>
+      )
+    }
+
+    return <p className={className}>{hint}</p>
   }
 
   const renderInputCurrency = () => {
@@ -149,14 +156,38 @@ export default function PropertyDetailAuctionBiddingForm({
       )}
 
       {!hideCurrentBid && !isQuickButtonsOnly && (
-        <div className="property-detail-sidebar__current-bid">
-          <span className="current-bid-label">
-            {isAuctionProperty
-              ? t('propertyDetailCurrentMaxBid')
-              : t('propertyDetailObjectPrice')}
-          </span>
+        <div
+          className={`property-detail-sidebar__current-bid${
+            isPanelLayout ? ' property-detail-sidebar__current-bid--auction-stage' : ''
+          }`}
+        >
+          {isPanelLayout ? (
+            <div className="current-bid-meta">
+              <span className="current-bid-label">
+                {isAuctionProperty
+                  ? t('propertyDetailCurrentMaxBid')
+                  : t('propertyDetailObjectPrice')}
+              </span>
+              {isAuctionProperty ? (
+                <span className="current-bid-live">
+                  <span className="current-bid-live__dot" aria-hidden />
+                  {t('propertyDetailAuctionLive')}
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <span className="current-bid-label">
+              {isAuctionProperty
+                ? t('propertyDetailCurrentMaxBid')
+                : t('propertyDetailObjectPrice')}
+            </span>
+          )}
+          {isPanelLayout && isAuctionProperty ? (
+            <Gavel className="current-bid-watermark" size={82} strokeWidth={1.35} aria-hidden />
+          ) : null}
           <div
             className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}
+            aria-live="polite"
           >
             <span className="current-bid-value">
               {fmtBidPrice(
@@ -403,7 +434,7 @@ export default function PropertyDetailAuctionBiddingForm({
               <div
                 className={`bidding-section__panel-box${
                   isUserLeader ? ' bidding-section__panel-box--winner' : ''
-                }`}
+                }${bidAmount && !isUserLeader ? ' bidding-section__panel-box--ready' : ''}`}
               >
                 {!isUserLeader ? (
                   <p className="bidding-section__panel-label">{t('propertyDetailYourBidLabel')}</p>
@@ -452,6 +483,7 @@ export default function PropertyDetailAuctionBiddingForm({
                       readOnly={paymentActionsLocked}
                       className="bidding-section__input"
                       placeholder={t('propertyDetailEnterBidAmount')}
+                      aria-label={t('propertyDetailYourBidLabel')}
                       value={bidAmountInputValue}
                       onChange={handleBidAmountChange}
                       disabled={isSubmittingBid || disableAuctionBidFields}
@@ -483,6 +515,9 @@ export default function PropertyDetailAuctionBiddingForm({
                           disableAuctionBidFields || paymentActionsLocked ? 'not-allowed' : 'pointer',
                       }}
                     >
+                      {!isSubmittingBid ? (
+                        <Gavel size={18} strokeWidth={2.25} aria-hidden />
+                      ) : null}
                       {renderPanelSubmitLabel()}
                     </button>
                     {showBidCeilingButton && onOpenBidCeiling ? (

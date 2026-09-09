@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import maplibregl from 'maplibre-gl'
 import { useTranslation } from 'react-i18next'
 import {
+  ArrowUpRight,
   Bus,
   GraduationCap,
   HeartPulse,
@@ -11,6 +12,7 @@ import {
   Trees,
 } from 'lucide-react'
 import LocationMap from './LocationMap'
+import { fitPropertyNearbyPlaces } from '../utils/fitPropertyNearbyPlaces'
 import {
   fetchNearbyPlaces,
   getMapPoiCategory,
@@ -50,6 +52,7 @@ export default function PropertyDetailLocationMap({
 }) {
   const { t } = useTranslation()
   const mapRef = useRef(null)
+  const filtersRef = useRef(null)
   const poiMarkersRef = useRef(new Map())
   const poiRootsRef = useRef(new Map())
   const poiCacheRef = useRef(new Map())
@@ -67,7 +70,7 @@ export default function PropertyDetailLocationMap({
     if (Number.isNaN(lat) || Number.isNaN(lng)) return null
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
     return { lat, lng }
-  }, [center])
+  }, [center?.[0], center?.[1]])
 
   const handleMapReady = useCallback((map) => {
     mapRef.current = map
@@ -183,7 +186,10 @@ export default function PropertyDetailLocationMap({
     const cacheKey = buildCacheKey(coords.lat, coords.lng, activeCategory)
     if (!poiCacheRef.current.has(cacheKey)) return
 
-    addCategoryMarkers(activeCategory, poiCacheRef.current.get(cacheKey))
+    const places = poiCacheRef.current.get(cacheKey)
+    if (addCategoryMarkers(activeCategory, places)) {
+      fitPropertyNearbyPlaces(mapRef.current, coords, places, filtersRef.current)
+    }
   }, [activeCategory, addCategoryMarkers, coords, mapReady, removeCategoryMarkers])
 
   useEffect(() => {
@@ -220,7 +226,6 @@ export default function PropertyDetailLocationMap({
     const cacheKey = buildCacheKey(coords.lat, coords.lng, categoryId)
     if (poiCacheRef.current.has(cacheKey)) {
       setErrorCategory(null)
-      applyActiveCategoryMarkers()
       return
     }
 
@@ -230,7 +235,6 @@ export default function PropertyDetailLocationMap({
       if (requestId !== requestIdRef.current) return
       poiCacheRef.current.set(cacheKey, places)
       setErrorCategory(null)
-      applyActiveCategoryMarkers()
     } catch {
       if (requestId !== requestIdRef.current) return
       setErrorCategory(categoryId)
@@ -258,7 +262,7 @@ export default function PropertyDetailLocationMap({
 
   const filtersNode =
     interactive && coords ? (
-      <div className="property-detail-location-map__filters" role="group" aria-label={t('propertyDetailMapFilters')}>
+      <div ref={filtersRef} className="property-detail-location-map__filters" role="group" aria-label={t('propertyDetailMapFilters')}>
         {MAP_POI_CATEGORIES.map((category) => {
           const Icon = CATEGORY_ICONS[category.id]
           const isActive = activeCategory === category.id
@@ -290,6 +294,12 @@ export default function PropertyDetailLocationMap({
               </span>
               <span className="property-detail-location-map__filter-label">
                 {t(category.labelKey)}
+              </span>
+              <span className="property-detail-location-map__filter-meta">
+                {isLoading ? t('propertyDetailMapSearching') : t('mapPage_showOnMap')}
+              </span>
+              <span className="property-detail-location-map__filter-action" aria-hidden>
+                <ArrowUpRight size={17} strokeWidth={2.2} />
               </span>
             </button>
           )
