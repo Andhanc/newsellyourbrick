@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { isDefaultMapCoordinates, parsePropertyCoordinates } from '../utils/parsePropertyCoordinates'
+import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
 
 export function usePropertyMapCoordinates(property) {
   const baseCoordinates = useMemo(() => parsePropertyCoordinates(property), [property?.coordinates])
@@ -23,18 +24,13 @@ export function usePropertyMapCoordinates(property) {
       if (address && !mapCoordinates) {
         setIsGeocoding(true)
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=ru&addressdetails=1`,
-          )
-          if (response.ok) {
-            const data = await response.json()
-            if (data?.length > 0) {
-              const lat = parseFloat(data[0].lat)
-              const lon = parseFloat(data[0].lon)
-              if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
-                setMapCoordinates([lat, lon])
-                return
-              }
+          const hit = await fetchNominatimFirst(address)
+          if (hit) {
+            const lat = parseFloat(hit.lat)
+            const lon = parseFloat(hit.lon)
+            if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+              setMapCoordinates([lat, lon])
+              return
             }
           }
           setMapCoordinates(baseCoordinates)

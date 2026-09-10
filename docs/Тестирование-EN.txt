@@ -1,0 +1,152 @@
+SellYourBrick Testing
+
+Short scenario for 10 people: 6 buyers and 4 sellers. Goal — complete 3 deals on the site.
+Required deals: B1 buys LOT-A from S1 via Buy Now; B2 buys debt LOT-B from S2 via Buy Now; B5 buys a share of LOT-C from S3.
+Extra: B4 plays auction LOT-D (bids only); B6 books test-drive LOT-E; B3 opens VIP and LOT-F.
+Rules: use only the test card; never tap pay twice; only assigned people may buy LOT-A/B/C.
+IMPORTANT: auctions have not ended yet, so a buyer cannot win a listing through auction. In auction mode you can only play (bids, deposit, KYC, notifications). Real purchases must go only through Buy Now or share purchase.
+1. Test card for all payments
+
+Use this Stripe Test card for any payment on the site:
+1. Card number: 4242 4242 4242 4242
+2. Expiry: any future date, e.g. 12/34
+3. CVC: any 3 digits, e.g. 123
+4. Name on card: anything, e.g. Test User
+5. Country / ZIP: anything, e.g. Spain / 28001
+Use this card for: subscriptions, listing publication, deposit, Buy Now reserve, shares, test-drive.
+2. Notification checks: email and WhatsApp
+
+After every important action, check 3 places:
+1. In-app notifications in the cabinet.
+2. Email inbox of the account.
+3. WhatsApp message if a phone number is linked / WhatsApp notifications are enabled.
+Must check notifications for:
+1. Registration / email confirmation.
+2. Payment of subscription, deposit, reserve, share purchase, test-drive.
+3. New auction bid / outbid.
+4. Test-drive request to seller; approve / reject to buyer.
+5. Buy Now deal completion for buyer and seller.
+If email or WhatsApp did not arrive — screenshot the cabinet and tell the coordinator. Do not fail the deal only for that if the site status is correct.
+3. Coordinator tasks
+
+1. Assign roles, emails, language, test card, and lot names.
+2. Approve seller listings in admin.
+3. Confirm buyer KYC.
+4. After LOT-A and LOT-B reserve payment — complete the purchase request in admin.
+5. If needed, enable VIP access / mark LOT-F as a private lot.
+6. Confirm WhatsApp test notifications are enabled on the staging environment.
+Important: a paid reserve is not the final sale yet. The coordinator sets the final status.
+4. Shared buyer start
+
+1. Open the site → choose your language → refresh.
+2. On the home page review 4 strategies: Auction, Buy Now, Debts, Shares.
+3. Register as a buyer and confirm email → check the email.
+4. Fill in the profile and save. If there is a phone/WhatsApp field — enter the test number.
+5. Open Subscriptions and continue with your plan below.
+5. Buyers — step-by-step paths
+
+B1 — Starter: compared and bought LOT-A
+1. Stay on free Starter.
+2. Go to Trading → Buy Now.
+3. Find LOT-A and 2 similar listings → add to favorites.
+4. Open Favorites → Compare → choose LOT-A.
+5. Tap Buy Now → open PDF → consent → signature.
+6. Check 10% reserve → cancel payment once → confirm it is not purchased.
+7. Pay with card 4242… → find the reserve in history → send the ID to the coordinator.
+8. Check email and WhatsApp about the reserve / purchase.
+9. Wait for coordinator completion → check site, email, WhatsApp again → reconcile with S1.
+Done: LOT-A bought from S1 via Buy Now; notifications checked.
+B2 — Pro: calculated in Smart Panel and bought debt LOT-B
+1. Buy Pro with card 4242…: cancel once, then pay → confirm activation.
+2. Check email/WhatsApp about subscription activation.
+3. Go to Trading → Debts → find LOT-B → open risk info → add to favorites.
+4. Open Smart Panel → calculate a regular listing and LOT-B → choose LOT-B.
+5. Buy Now → PDF → consent → signature → pay reserve with card 4242…
+6. Check email/WhatsApp about reserve → send ID to coordinator → wait for completion → reconcile with S2.
+7. Extra: in Smart Panel on LOT-D check the lock on the share strategy.
+Done: debt LOT-B bought from S2 via Buy Now; notifications checked.
+B3 — VIP: opened Private Club and LOT-F
+1. Without VIP try club, manager, and LOT-F — should be blocked.
+2. Buy VIP with card 4242… or enter a promo code (wrong first, then correct).
+3. Check email/WhatsApp about VIP activation.
+4. Open VIP Club → LOT-F → documents → location → personal manager.
+5. Log out → confirm guest cannot open LOT-F → log in again.
+6. If coordinator allows, buy LOT-F via Buy Now with card 4242… and check notifications.
+Done: VIP unlocks private content; notifications checked.
+B4 — Starter: deposit, KYC, play auction LOT-D
+1. Open LOT-D → place bid without deposit — should block.
+2. Wallet → top up deposit to 3000 EUR or more with card 4242…
+3. Check email/WhatsApp about deposit top-up.
+4. Complete KYC → wait for coordinator confirmation.
+5. Bid below step — error; then place a valid bid.
+6. Ask another participant to outbid → check site, email, and WhatsApp notifications.
+7. Place one more bid.
+Note: until the auction timer ends you cannot win and buy via auction. Do not wait for a win — buy listings only via Buy Now in other scenarios. Here it is enough to check bids and notifications.
+Done: at least two competing bids; auction purchase is not required in this test.
+B5 — Pro: bought a share of LOT-C
+1. Buy Pro with card 4242…: cancel → pay again → check activation and email/WhatsApp.
+2. Trading → Shares → open LOT-C → note price and remaining shares.
+3. Calculate in Smart Panel.
+4. Buy share → top up deposit with card 4242… if needed → choose quantity.
+5. Cancel payment once — shares must not appear.
+6. Pay with card 4242… → check portfolio, remaining shares, email/WhatsApp.
+7. Refresh twice → must not duplicate → reconcile with S3.
+Done: LOT-C share bought once; notifications checked.
+B6 — Starter: AI and test-drive LOT-E
+1. AI chat: goal → country/city → type → budget → “show listings with test-drive”.
+2. Open LOT-E. If AI missed it — find it manually.
+3. Book without deposit → top up deposit > 0 with card 4242…
+4. Choose dates → pay with card 4242… → status Pending → send booking ID to S1.
+5. Check email/WhatsApp about booking creation.
+6. After S1 approval check site, email, WhatsApp: dates, amount, status.
+7. Create a second booking → ask S1 to reject → check reason on site, email, WhatsApp.
+Done: test-drive completed; confirm/reject notifications checked.
+6. Shared seller start
+
+1. Tap Become a seller → open seller cabinet.
+2. If a buyer cabinet exists — switch roles both ways.
+3. Fill in seller profile and save. Enter WhatsApp phone if the field exists.
+4. Open sections: listings, sales, test-drive, wallet, subscriptions.
+5. Choose your plan and continue with your path below.
+7. Sellers — step-by-step paths
+
+S1 — Basic: listed LOT-A and LOT-E
+1. Stay on Basic → Add listing.
+2. Fill LOT-A: address from suggestions, description, 5+ photos.
+3. Choose Auction + Sell Now → prices → documents.
+4. Save draft → publish with card 4242… (cancel → retry) → moderation.
+5. After approval check the public card → tell B1.
+6. Create LOT-E with test-drive → pay publication with card 4242… → moderation → tell B6.
+7. In Test-drive: approve B6’s first request; reject the second with a reason.
+8. Check email/WhatsApp about test-drive requests.
+9. After B1 payment check reserve, email/WhatsApp → after coordinator completion reconcile the sale.
+Done: LOT-A sold to B1 via Buy Now; B6 requests handled.
+S2 — Standard: listed debt LOT-B
+1. Buy Standard with card 4242…: cancel → pay → check activation and email/WhatsApp.
+2. Add LOT-B as debt + Sell Now.
+3. First without documents — errors; then upload the debt document pack.
+4. Publish with card 4242… → moderation → find LOT-B in Debts.
+5. Open analytics / promotion.
+6. After B2 purchase check site, email, WhatsApp → reconcile Sales → Debts.
+Done: LOT-B sold as debt via Buy Now; notifications checked.
+S3 — Pro: listed shares LOT-C
+1. Buy Pro with card 4242…: cancel → pay → check manager and email/WhatsApp.
+2. Add LOT-C as Shares; check errors for empty / 0 / fractional share count.
+3. Publish with card 4242… → note remaining shares.
+4. After B5 purchase: remaining decreased; sale not duplicated; check email/WhatsApp.
+5. Analytics + Excel → reconcile with B5.
+Done: B5 shares reflected once; notifications checked.
+S4 — VIP/Institutional: auction LOT-D and VIP lot LOT-F
+1. Activate top plan: pay with card 4242… or request a manager.
+2. Check email/WhatsApp about plan activation / manager reply.
+3. Create LOT-D as Auction → pay publication with card 4242… → moderation.
+4. Track B4 bids: site, email, WhatsApp. Buyer win is not expected in this test.
+5. Create LOT-F → after moderation request VIP placement.
+6. As guest LOT-F is closed; B3 should see it.
+7. If B3 buys via Buy Now — reconcile reserve/sale and notifications.
+Done: auction bids work; VIP lot is VIP-only; auction purchase is not required.
+8. Deal order and success
+
+Purchase order: first shares B5↔S3, then debt B2↔S2 via Buy Now, then regular listing B1↔S1 via Buy Now. Auction is bidding practice only.
+If payment hangs: do not tap again, take a screenshot, send listing/payment ID to the coordinator.
+Test succeeds if: LOT-A…F are published; regular listing, debt, and share are bought via Buy Now/shares; buyer and seller amounts match; auction has bids (win not required); test-drive confirm+reject works; VIP unlocks private lot; no double charges; key events produced cabinet, email, and WhatsApp notifications.

@@ -1,0 +1,63 @@
+/* Скрываем нижний брендинг Яндекса (логотип / «Условия») на всех наших картах.
+   Классы версионируются (ymaps-2-1-79-…), поэтому матчим по подстроке. */
+.location-map [class*="copyrights-pane"],
+.location-map [class*="map-copyrights-promo"],
+.location-map [class*="-copyright"],
+.location-map [class*="gototech"],
+.location-map a[href*="yandex."],
+.map-page-map-wrap [class*="copyrights-pane"],
+.map-page-map-wrap [class*="map-copyrights-promo"],
+.map-page-map-wrap [class*="-copyright"],
+.map-page-map-wrap [class*="gototech"],
+.map-page-map-wrap a[href*="yandex."],
+.property-location-map [class*="copyrights-pane"],
+.property-location-map [class*="map-copyrights-promo"],
+.property-location-map [class*="-copyright"],
+.property-location-map [class*="gototech"],
+.property-location-map a[href*="yandex."],
+.oap-loc-step__map [class*="copyrights-pane"],
+.oap-loc-step__map [class*="map-copyrights-promo"],
+.oap-loc-step__map [class*="-copyright"],
+.oap-loc-step__map [class*="gototech"],
+.oap-loc-step__map a[href*="yandex."],
+.sp-map-wrap [class*="copyrights-pane"],
+.sp-map-wrap [class*="map-copyrights-promo"],
+.sp-map-wrap [class*="-copyright"],
+.sp-map-wrap [class*="gototech"],
+.sp-map-wrap a[href*="yandex."],
+.moderation-property-detail__map-section [class*="copyrights-pane"],
+.moderation-property-detail__map-section [class*="map-copyrights-promo"],
+.moderation-property-detail__map-section [class*="-copyright"],
+.moderation-property-detail__map-section [class*="gototech"],
+.moderation-property-detail__map-section a[href*="yandex."] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/*
+  Pinch/scroll zoom: родители часто ставят touch-action: pan-y и крадут жест.
+  На всех обёртках Яндекс-карт отдаём жесты самой карте.
+*/
+.location-map-container,
+.location-map,
+.location-map ymaps,
+.map-page-map-wrap,
+.map-page-map,
+.map-page-map-wrap ymaps,
+.property-detail-location-map,
+.property-detail-location-map__map,
+.property-location-map,
+.oap-loc-step__map,
+.oap-loc-step__map-col,
+.sp-map-wrap,
+.detail-map-container,
+.moderation-property-detail__map-section,
+.property-detail-auction-desktop-map__map-wrap,
+.property-detail-auction-desktop-map__interactive,
+.pd-v3-map__interactive,
+.pd-v3-map__canvas,
+.property-detail-sidebar__map-container,
+.property-detail-sidebar__map {
+  touch-action: none;
+}

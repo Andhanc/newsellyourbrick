@@ -1,0 +1,50 @@
+SellYourBrick — General Concept
+
+SellYourBrick is an online marketplace for buying and selling real estate. There are two cabinets: buyer and seller. Users can switch roles.
+1. Sale types
+
+- Auction — bidding, timer, competition. Winning is possible only after the auction ends.
+- Buy Now — fixed price, fast deal without waiting for the auction end.
+- Debts — discounted / debt assets; can also be bought via Buy Now or auction.
+- Shares — buy a part of a property (co-investment), lower entry amount.
+- Test-drive — short stay in the property before deciding to buy.
+- VIP / Private Club — private lots, documents, personal manager.
+2. What buyers do
+
+- Search, compare, calculate in the Smart Panel.
+- Top up deposit, complete KYC.
+- Place bids, Buy Now, buy shares, book test-drive.
+- Subscribe to Starter / Pro / VIP.
+- Talk to the smart assistant and (with VIP) to a personal manager.
+3. What sellers do
+
+- Publish listings in the chosen sale format.
+- Choose Basic / Standard / Pro / VIP-Institutional.
+- Track analytics, test-drive requests, sales.
+- Receive buyer interest and deal statuses.
+4. Smart assistant
+
+The smart assistant (AI chat) answers questions about the platform:
+- how to buy / sell;
+- difference between auction, Buy Now, debts, and shares;
+- how to pick a listing by budget and city;
+- what to tap next.
+Open Menu → Services → AI assistant / Chat and ask in your own words.
+5. How to pay (test environment)
+
+For all test payments use the Stripe Test card:
+1. Card: 4242 4242 4242 4242
+2. Expiry: any future date, e.g. 12/34
+3. CVC: any 3 digits, e.g. 123
+4. Name / country / ZIP: anything, e.g. Test User / Spain / 28001
+Use it for: subscriptions, listing publication (~29 EUR), deposit, 10% Buy Now reserve, shares, test-drive.
+After Buy Now / winning an auction a manager may send bank details for the next payment. On the test stand example details are:
+- Account: BY36ALFA30122345678901234567
+- Purpose: initial deal payment (shown in the email)
+In production, bank details come from platform settings. For this test, card 4242 and correct site statuses are enough.
+6. Notifications
+
+After key actions check: in-app cabinet notifications, email, WhatsApp (if a phone is linked).
+7. Important note for the current test
+
+Right now auctions have not finished by timer, so a buyer cannot win a listing through auction. In auction mode you can only play: place bids, check deposit, KYC, notifications. Real purchases in this test must go only through Buy Now (regular listing or debt) or through share purchase.

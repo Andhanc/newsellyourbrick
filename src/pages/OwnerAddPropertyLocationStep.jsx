@@ -15,6 +15,7 @@ import {
   searchHouses,
   buildFormattedLocation,
   parseLocationComposite,
+  ensureGeocodedHit,
 } from '../utils/oapLocationGeocode'
 
 function SuggestList({ items, onSelect, renderLabel }) {
@@ -49,7 +50,8 @@ export default function OwnerAddPropertyLocationStep({
   wide = false,
   journeyMapAside = false,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const geoLang = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
   const [citySearch, setCitySearch] = useState(form.city || '')
   const [addressSearch, setAddressSearch] = useState(form.address || '')
   const [citySuggestions, setCitySuggestions] = useState([])
@@ -114,20 +116,21 @@ export default function OwnerAddPropertyLocationStep({
   }, [form.address, addressSearch])
 
   const applyHouseSelection = useCallback(
-    (suggestion, { closeSuggestions = true } = {}) => {
-      const lat = parseFloat(suggestion.lat)
-      const lng = parseFloat(suggestion.lon)
+    async (suggestion, { closeSuggestions = true } = {}) => {
+      const resolved = await ensureGeocodedHit(suggestion, { lang: geoLang })
+      const lat = parseFloat(resolved?.lat)
+      const lng = parseFloat(resolved?.lon)
       if (Number.isNaN(lat) || Number.isNaN(lng)) return
       const coords = [lat, lng]
-      const addressParts = suggestion.address || {}
+      const addressParts = resolved.address || {}
       const country = addressParts.country || form.country || ''
       const city =
         addressParts.city || addressParts.town || addressParts.village || form.city || ''
       const houseNumber = String(addressParts.house_number || form.apartment || '').trim()
       const streetShort =
-        formatShortAddress(suggestion) || addressSearch.split(',')[0].trim()
+        formatShortAddress(resolved, geoLang) || addressSearch.split(',')[0].trim()
       const formattedLocation =
-        formatShortAddressWithHouse(suggestion) ||
+        formatShortAddressWithHouse(resolved, geoLang) ||
         buildFormattedLocation({ country, city, street: streetShort, apartment: houseNumber })
 
       setAddressSearch(streetShort)
@@ -146,7 +149,7 @@ export default function OwnerAddPropertyLocationStep({
         apartment: houseNumber,
       })
     },
-    [addressSearch, form.apartment, form.city, form.country, onFormPatch]
+    [addressSearch, form.apartment, form.city, form.country, geoLang, onFormPatch]
   )
 
   const handleCountryChange = useCallback(
@@ -156,7 +159,7 @@ export default function OwnerAddPropertyLocationStep({
         setMapZoom(4)
         return
       }
-      const item = await fetchNominatimFirst(countryName)
+      const item = await fetchNominatimFirst(countryName, { lang: geoLang })
       if (!item) return
       const lat = parseFloat(item.lat)
       const lng = parseFloat(item.lon)
@@ -164,33 +167,39 @@ export default function OwnerAddPropertyLocationStep({
       onFormPatch({ coordinates: [lat, lng] })
       setMapZoom(6)
     },
-    [onFormPatch]
+    [geoLang, onFormPatch]
   )
 
   const handleCitySelect = useCallback(
-    (city) => {
-      const fullAddress = city.display_name
+    async (city) => {
+      const resolved = await ensureGeocodedHit(city, { lang: geoLang })
+      const fullAddress = resolved.display_name
       setCitySearch(fullAddress)
-      const cityName = fullAddress.split(',')[0].trim()
-      const lat = parseFloat(city.lat)
-      const lng = parseFloat(city.lon)
+      const cityName =
+        resolved.address?.city ||
+        resolved.address?.town ||
+        resolved.title ||
+        fullAddress.split(',')[0].trim()
+      const lat = parseFloat(resolved.lat)
+      const lng = parseFloat(resolved.lon)
       const coords = !Number.isNaN(lat) && !Number.isNaN(lng) ? [lat, lng] : form.coordinates
       onFormPatch({ city: cityName, coordinates: coords })
       if (coords) setMapZoom(11)
       setShowCitySuggestions(false)
       setIsCitySearching(false)
-      setCitySuggestions([city])
+      setCitySuggestions([resolved])
     },
-    [form.coordinates, onFormPatch]
+    [form.coordinates, geoLang, onFormPatch]
   )
 
   const handleAddressSelect = useCallback(
-    (suggestion) => {
-      const shortAddress = formatShortAddress(suggestion)
-      const lat = parseFloat(suggestion.lat)
-      const lng = parseFloat(suggestion.lon)
+    async (suggestion) => {
+      const resolved = await ensureGeocodedHit(suggestion, { lang: geoLang })
+      const shortAddress = formatShortAddress(resolved, geoLang)
+      const lat = parseFloat(resolved.lat)
+      const lng = parseFloat(resolved.lon)
       const coords = !Number.isNaN(lat) && !Number.isNaN(lng) ? [lat, lng] : null
-      const addressParts = suggestion.address || {}
+      const addressParts = resolved.address || {}
       const country = addressParts.country || form.country || ''
       const city = addressParts.city || addressParts.town || addressParts.village || form.city || ''
       const formattedAddress =
@@ -201,7 +210,7 @@ export default function OwnerAddPropertyLocationStep({
       setAddressSearch(shortAddress)
       setShowAddressSuggestions(false)
       setIsAddressSearching(false)
-      setAddressSuggestions([suggestion])
+      setAddressSuggestions([resolved])
       if (coords) setMapZoom(15)
 
       onFormPatch({
@@ -213,7 +222,7 @@ export default function OwnerAddPropertyLocationStep({
         apartment: '',
       })
     },
-    [form.coordinates, form.city, form.country, onFormPatch]
+    [form.coordinates, form.city, form.country, geoLang, onFormPatch]
   )
 
   const handleMarkerDragEnd = useCallback(
@@ -222,7 +231,7 @@ export default function OwnerAddPropertyLocationStep({
       onFormPatch({ coordinates: coords })
       setMapZoom(16)
       try {
-        const reverse = await fetchReverseGeocodeFields(lat, lng)
+        const reverse = await fetchReverseGeocodeFields(lat, lng, { lang: geoLang })
         if (!reverse) return
         onFormPatch({
           country: reverse.country || form.country,
@@ -238,7 +247,7 @@ export default function OwnerAddPropertyLocationStep({
         // ignore reverse geocode errors in test flow
       }
     },
-    [form, onFormPatch]
+    [form, geoLang, onFormPatch]
   )
 
   const runCitySearch = (value, country) => {
@@ -252,7 +261,7 @@ export default function OwnerAddPropertyLocationStep({
     setIsCitySearching(true)
     cityTimeoutRef.current = setTimeout(async () => {
       try {
-        const cities = await searchCities(value, country)
+        const cities = await searchCities(value, country, { lang: geoLang })
         setCitySuggestions(cities)
         setShowCitySuggestions(cities.length > 0)
       } catch {
@@ -278,6 +287,7 @@ export default function OwnerAddPropertyLocationStep({
         const addresses = await searchStreets(value, {
           city: form.city,
           country: form.country,
+          lang: geoLang,
         })
         setAddressSuggestions(addresses)
         setShowAddressSuggestions(addresses.length > 0)
@@ -303,6 +313,7 @@ export default function OwnerAddPropertyLocationStep({
           street: addressSearch,
           city: form.city,
           country: form.country,
+          lang: geoLang,
         })
         setHouseSuggestions(houses)
         setShowHouseSuggestions(houses.length > 0)
@@ -329,7 +340,7 @@ export default function OwnerAddPropertyLocationStep({
     return null
   }
 
-  const uniqueAddressSuggestions = getUniqueAddressSuggestions(addressSuggestions)
+  const uniqueAddressSuggestions = getUniqueAddressSuggestions(addressSuggestions, geoLang)
 
   const [mapAsideTarget, setMapAsideTarget] = useState(null)
 
@@ -430,7 +441,12 @@ export default function OwnerAddPropertyLocationStep({
                 <SuggestList
                   items={citySuggestions}
                   onSelect={handleCitySelect}
-                  renderLabel={(city) => city.display_name}
+                  renderLabel={(city) =>
+                    city.title ||
+                    city.address?.city ||
+                    city.address?.town ||
+                    city.display_name
+                  }
                 />
               )}
             </div>
@@ -527,7 +543,7 @@ export default function OwnerAddPropertyLocationStep({
                   onSelect={(suggestion) =>
                     applyHouseSelection(suggestion, { closeSuggestions: true })
                   }
-                  renderLabel={(suggestion) => formatShortAddressWithHouse(suggestion)}
+                  renderLabel={(suggestion) => formatShortAddressWithHouse(suggestion, geoLang)}
                 />
               )}
             </div>

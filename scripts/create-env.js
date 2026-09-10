@@ -23,6 +23,7 @@ REACT_APP_EMAILJS_PUBLIC_KEY=${process.env.REACT_APP_EMAILJS_PUBLIC_KEY || proce
 VITE_EMAILJS_PUBLIC_KEY=${process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.REACT_APP_EMAILJS_PUBLIC_KEY || ''}
 REACT_APP_API_BASE_URL=${process.env.REACT_APP_API_BASE_URL || process.env.VITE_API_BASE_URL || '/api'}
 VITE_API_BASE_URL=${process.env.VITE_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || '/api'}
+VITE_YANDEX_MAPS_API_KEY=${process.env.VITE_YANDEX_MAPS_API_KEY || ''}
 `;
 
 const envPath = join(__dirname, '..', '.env.production');

@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
     REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL || env.REACT_APP_API_BASE_URL || env.VITE_API_BASE_URL,
     VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || env.REACT_APP_API_BASE_URL,
     VITE_INTELLIGENCE_IO_API_KEY: process.env.VITE_INTELLIGENCE_IO_API_KEY || env.VITE_INTELLIGENCE_IO_API_KEY || '',
+    VITE_YANDEX_MAPS_API_KEY: process.env.VITE_YANDEX_MAPS_API_KEY || env.VITE_YANDEX_MAPS_API_KEY || '',
   }
   
   // Логируем для диагностики (только в production, чтобы не засорять логи в dev)
@@ -356,6 +357,7 @@ export default defineConfig(({ mode }) => {
       'process.env.REACT_APP_EMAILJS_PUBLIC_KEY': JSON.stringify(railwayEnv.REACT_APP_EMAILJS_PUBLIC_KEY || railwayEnv.VITE_EMAILJS_PUBLIC_KEY || ''),
       'process.env.REACT_APP_API_BASE_URL': JSON.stringify(railwayEnv.REACT_APP_API_BASE_URL || railwayEnv.VITE_API_BASE_URL || '/api'),
       'import.meta.env.VITE_INTELLIGENCE_IO_API_KEY': JSON.stringify(railwayEnv.VITE_INTELLIGENCE_IO_API_KEY || ''),
+      'import.meta.env.VITE_YANDEX_MAPS_API_KEY': JSON.stringify(railwayEnv.VITE_YANDEX_MAPS_API_KEY || ''),
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
       'process.env.NODE_ENV': JSON.stringify(actualMode === 'production' ? 'production' : 'development'),
     },

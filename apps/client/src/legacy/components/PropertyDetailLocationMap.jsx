@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import maplibregl from 'maplibre-gl'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowUpRight,
@@ -113,7 +112,7 @@ export default function PropertyDetailLocationMap({
 
   const addCategoryMarkers = useCallback((categoryId, places) => {
     const map = mapRef.current
-    if (!map) return false
+    if (!map?.addHtmlMarker) return false
 
     const category = getMapPoiCategory(categoryId)
     if (!category) return false
@@ -144,26 +143,19 @@ export default function PropertyDetailLocationMap({
       root.render(<PoiMarkerIcon categoryId={categoryId} color={category.color} />)
       roots.push(root)
 
-      const popup = new maplibregl.Popup({
-        offset: 14,
-        closeButton: false,
-        className: 'location-map-poi-popup',
-      })
-      const popupContent = document.createElement('div')
+      const popupContent = document.createElement('span')
+      popupContent.className = 'location-map-poi-marker__name'
       popupContent.textContent = place.name
-      popup.setDOMContent(popupContent)
+      element.appendChild(popupContent)
 
-      const markerInstance = new maplibregl.Marker({
+      const markerInstance = map.addHtmlMarker({
         element,
-        anchor: 'center',
+        coordinates: [place.lng, place.lat],
       })
-        .setLngLat([place.lng, place.lat])
-        .setPopup(popup)
-        .addTo(map)
 
       element.addEventListener('click', (event) => {
         event.stopPropagation()
-        markerInstance.togglePopup()
+        element.classList.toggle('is-open')
       })
 
       markers.push(markerInstance)

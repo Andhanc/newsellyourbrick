@@ -56,6 +56,7 @@ import DepositRequiredModal from '../components/DepositRequiredModal'
 import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
 import AuctionEndedSimilarPromo from '../components/AuctionEndedSimilarPromo'
 import PropertyDetailLocationMap from '../components/PropertyDetailLocationMap'
+import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -526,23 +527,14 @@ function PropertyDetailClassic({
       if (address && !isGeocoding && !mapCoordinates) {
         setIsGeocoding(true)
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=ru&addressdetails=1`
-          )
-          if (response.ok) {
-            const data = await response.json()
-            if (data && data.length > 0) {
-              const lat = parseFloat(data[0].lat)
-              const lon = parseFloat(data[0].lon)
-              if (!isNaN(lat) && !isNaN(lon)) {
-                setMapCoordinates([lat, lon])
-                console.log('✅ Адрес геокодирован:', address, '->', [lat, lon])
-              } else {
-                // Если геокодирование не удалось, используем дефолтные координаты
-                setMapCoordinates(coordinates)
-              }
+          const hit = await fetchNominatimFirst(address)
+          if (hit) {
+            const lat = parseFloat(hit.lat)
+            const lon = parseFloat(hit.lon)
+            if (!isNaN(lat) && !isNaN(lon)) {
+              setMapCoordinates([lat, lon])
+              console.log('✅ Адрес геокодирован:', address, '->', [lat, lon])
             } else {
-              // Если результатов нет, используем дефолтные координаты
               setMapCoordinates(coordinates)
             }
           } else {

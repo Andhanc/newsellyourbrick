@@ -1,54 +1,45 @@
 import i18n from '../i18n/config'
+import {
+  ensureGeocodedHit,
+  extractCountryIso,
+  fetchAddressSuggestions,
+  fetchGeocodeHits,
+  fetchNominatimFirst,
+  fetchReverseGeocodeFields,
+  resolveGeoLang,
+} from './yandexGeocodeClient'
+import { isCyrillicLocale, textLooksCyrillic } from './yandexMapsLang'
 
-const NOMINATIM_HEADERS = { 'User-Agent': 'PropertyListingApp/1.0' }
+export { ensureGeocodedHit, extractCountryIso, fetchNominatimFirst, fetchReverseGeocodeFields }
 
-export async function fetchNominatimFirst(query) {
-  if (!query || !String(query).trim()) return null
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(query).trim())}&limit=1&accept-language=ru&addressdetails=1`,
-      { headers: NOMINATIM_HEADERS }
-    )
-    if (!response.ok) return null
-    const data = await response.json()
-    return data[0] || null
-  } catch {
-    return null
-  }
+const STREET_PREFIXES = [
+  'улица', 'ул.', 'ул ',
+  'street', 'st.', 'st ',
+  'calle', 'c/', 'c. ',
+  'strasse', 'straße', 'str.',
+  'rue ', 'avenue', 'av.', 'ave.',
+  'ulica', 'ul.',
+  'väg', 'gatan',
+]
+
+function hasStreetPrefix(road) {
+  const roadLower = String(road || '').toLowerCase().trim()
+  return STREET_PREFIXES.some((prefix) => roadLower.startsWith(prefix))
 }
 
-export async function fetchReverseGeocodeFields(lat, lng) {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=ru&addressdetails=1`
-  const response = await fetch(url, { headers: NOMINATIM_HEADERS })
-  if (!response.ok) return null
-  const data = await response.json()
-  const a = data.address || {}
-  const country = a.country || ''
-  const city = a.city || a.town || a.village || a.municipality || a.county || a.state || ''
-  const road = a.road || a.street || ''
-  const hn = a.house_number || ''
-  const streetLine = [road, hn].filter(Boolean).join(', ')
-  const display = typeof data.display_name === 'string' ? data.display_name : ''
-  const shortAddr =
-    streetLine ||
-    display
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 2)
-      .join(', ')
-  const location =
-    country && city && shortAddr ? `${country}, ${city}, ${shortAddr}` : display || shortAddr
-  return {
-    country,
-    city,
-    address: shortAddr,
-    apartment: hn,
-    location,
-  }
+function localizeStreetLabel(road, lang) {
+  const value = String(road || '').trim()
+  if (!value || hasStreetPrefix(value)) return value
+  const code = resolveGeoLang(lang)
+  if (code === 'ru') return `улица ${value}`
+  if (code === 'es') return `Calle ${value}`
+  if (code === 'de') return value
+  if (code === 'fr') return `Rue ${value}`
+  if (code === 'pl') return `ul. ${value}`
+  return value
 }
 
-export function formatShortAddress(suggestion) {
+export function formatShortAddress(suggestion, lang) {
   const address = suggestion.address || {}
   const road = address.road || address.street || ''
   const suburb = address.suburb || ''
@@ -58,33 +49,33 @@ export function formatShortAddress(suggestion) {
   const districtName = suburb || cityDistrict || district || neighbourhood || ''
 
   if (road) {
-    const roadLower = road.toLowerCase().trim()
-    const hasStreetPrefix =
-      roadLower.startsWith('улица') || roadLower.startsWith('ул.') || roadLower.startsWith('ул ')
-    let shortAddress = hasStreetPrefix ? road : `улица ${road}`
+    let shortAddress = localizeStreetLabel(road, lang)
     if (districtName) shortAddress += `, ${districtName}`
     return shortAddress
   }
 
-  const displayName = suggestion.display_name || ''
+  const displayName = suggestion.display_name || suggestion.title || ''
   const parts = displayName.split(',').map((p) => p.trim())
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i].toLowerCase()
     if (
       part.includes('улица') ||
       part.includes('ул.') ||
-      part.includes('ул ') ||
       part.includes('street') ||
+      part.includes('calle') ||
+      part.includes('strasse') ||
+      part.includes('straße') ||
       part.includes('проспект') ||
-      part.includes('пр.')
+      part.includes('avenue') ||
+      part.includes('rue')
     ) {
       return parts[i]
     }
   }
-  return ''
+  return suggestion.title || parts[0] || ''
 }
 
-export function formatShortAddressWithHouse(suggestion) {
+export function formatShortAddressWithHouse(suggestion, lang) {
   const address = suggestion.address || {}
   const country = address.country || ''
   const city = address.city || address.town || address.village || ''
@@ -93,22 +84,17 @@ export function formatShortAddressWithHouse(suggestion) {
   const parts = []
   if (country) parts.push(country)
   if (city) parts.push(city)
-  if (road) {
-    const roadLower = road.toLowerCase().trim()
-    const hasStreetPrefix =
-      roadLower.startsWith('улица') || roadLower.startsWith('ул.') || roadLower.startsWith('ул ')
-    parts.push(hasStreetPrefix ? road : `улица ${road}`)
-  }
+  if (road) parts.push(localizeStreetLabel(road, lang))
   if (houseNumber) parts.push(houseNumber)
   if (parts.length > 0) return parts.join(', ')
-  return suggestion.display_name || ''
+  return suggestion.display_name || suggestion.title || ''
 }
 
-export function getUniqueAddressSuggestions(suggestions) {
+export function getUniqueAddressSuggestions(suggestions, lang) {
   const seenLabels = new Set()
   const unique = []
   suggestions.forEach((suggestion) => {
-    const label = formatShortAddress(suggestion)
+    const label = formatShortAddress(suggestion, lang)
     if (!label || seenLabels.has(label)) return
     seenLabels.add(label)
     unique.push({ suggestion, label })
@@ -116,54 +102,46 @@ export function getUniqueAddressSuggestions(suggestions) {
   return unique
 }
 
-export async function searchCities(query, country = '') {
-  if (!query || query.length < 2) return []
-  let searchQuery = query.trim()
-  if (country) searchQuery = `${query.trim()}, ${country}`
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=20&accept-language=ru&addressdetails=1`,
-    { headers: NOMINATIM_HEADERS }
-  )
-  if (!response.ok) return []
-  const data = await response.json()
-  if (!data?.length) return []
-
-  let cities = data.filter((item) => {
-    const type = item.type || ''
-    const classType = item.class || ''
-    const importance = item.importance || 0
-    const isCity =
-      type === 'city' ||
-      type === 'town' ||
-      type === 'administrative' ||
-      classType === 'place' ||
-      type === 'village' ||
-      type === 'hamlet' ||
-      type === 'locality' ||
-      type === 'suburb'
-    return isCity && importance > 0.05
-  })
-  if (cities.length === 0) cities = data
-
-  if (country && cities.length > 0) {
-    const filtered = cities.filter((item) => {
-      const itemCountry = item.address?.country || ''
-      const displayName = item.display_name || ''
-      return (
-        itemCountry.toLowerCase().includes(country.toLowerCase()) ||
-        country.toLowerCase().includes(itemCountry.toLowerCase()) ||
-        displayName.toLowerCase().includes(country.toLowerCase())
-      )
-    })
-    if (filtered.length > 0) cities = filtered
-  }
-
-  cities.sort((a, b) => (b.importance || 0) - (a.importance || 0))
-  return cities.slice(0, 10)
+function hitsMatchUiLang(hits, lang) {
+  if (!Array.isArray(hits) || !hits.length) return false
+  if (isCyrillicLocale(lang)) return true
+  const sample = hits
+    .slice(0, 3)
+    .map((hit) => hit.display_name || hit.title || '')
+    .join(' ')
+  return !textLooksCyrillic(sample)
 }
 
-export async function searchStreets(query, { city = '', country = '' } = {}) {
+export async function searchCities(query, country = '', { lang } = {}) {
   if (!query || query.length < 2) return []
+  const resolvedLang = resolveGeoLang(lang)
+  const countryIso = extractCountryIso(country)
+  const searchQuery = country ? `${query.trim()}, ${country}` : query.trim()
+  try {
+    const suggested = await fetchAddressSuggestions(searchQuery, {
+      types: 'locality,province',
+      lang: resolvedLang,
+      countries: countryIso,
+    })
+    if (suggested.length && hitsMatchUiLang(suggested, resolvedLang)) {
+      return suggested.slice(0, 10)
+    }
+    const geocoded = await fetchGeocodeHits(searchQuery, { limit: 7, lang: resolvedLang })
+    if (geocoded.length && hitsMatchUiLang(geocoded, resolvedLang)) {
+      return geocoded.slice(0, 10)
+    }
+    // Если Яндекс всё равно отдал русский при ES/EN UI — оставляем geocode/suggest как есть,
+    // сервер уже должен был сделать Nominatim fallback.
+    return (suggested.length ? suggested : geocoded).slice(0, 10)
+  } catch {
+    return []
+  }
+}
+
+export async function searchStreets(query, { city = '', country = '', lang } = {}) {
+  if (!query || query.length < 2) return []
+  const resolvedLang = resolveGeoLang(lang)
+  const countryIso = extractCountryIso(country)
   let searchQuery = query.trim()
   if (city) {
     const cityName = city.split(',')[0].trim()
@@ -173,57 +151,53 @@ export async function searchStreets(query, { city = '', country = '' } = {}) {
     searchQuery = `${query.trim()}, ${country}`
   }
 
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10&accept-language=ru&addressdetails=1`,
-    { headers: NOMINATIM_HEADERS }
-  )
-  if (!response.ok) return []
-  const data = await response.json()
-
-  let addresses = data
-  if (city) {
-    const cityName = city.split(',')[0].trim().toLowerCase()
-    addresses = data.filter((item) => {
-      const address = item.address || {}
-      const displayName = item.display_name || ''
-      const itemCity = (address.city || address.town || address.village || '').toLowerCase()
-      return itemCity === cityName || displayName.toLowerCase().includes(cityName)
+  try {
+    const suggested = await fetchAddressSuggestions(searchQuery, {
+      types: 'street,house,district',
+      lang: resolvedLang,
+      countries: countryIso,
     })
-    if (addresses.length === 0 && data.length > 0) addresses = data
+    if (suggested.length && hitsMatchUiLang(suggested, resolvedLang)) {
+      return suggested.slice(0, 10)
+    }
+    const geocoded = await fetchGeocodeHits(searchQuery, { limit: 7, lang: resolvedLang })
+    if (geocoded.length && hitsMatchUiLang(geocoded, resolvedLang)) {
+      return geocoded.slice(0, 10)
+    }
+    return (suggested.length ? suggested : geocoded).slice(0, 10)
+  } catch {
+    return []
   }
-
-  addresses.sort((a, b) => (b.importance || 0) - (a.importance || 0))
-  return addresses.slice(0, 10)
 }
 
-export async function searchHouses(houseValue, { street = '', city = '', country = '' } = {}) {
+export async function searchHouses(houseValue, { street = '', city = '', country = '', lang } = {}) {
   if (!houseValue || !street || !city) return []
+  const resolvedLang = resolveGeoLang(lang)
   const streetPart = street.split(',')[0].trim()
   const searchQuery = `${streetPart} ${houseValue}, ${city}, ${country}`.trim()
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10&accept-language=ru&addressdetails=1`,
-    { headers: NOMINATIM_HEADERS }
-  )
-  if (!response.ok) return []
-  const data = await response.json()
-  const houseRegex = new RegExp(`\\b${houseValue}\\b`, 'i')
-  return data.filter((item) => {
-    const address = item.address || {}
-    const houseNumber = address.house_number || ''
-    const displayName = item.display_name || ''
-    if (houseNumber && houseNumber.toString().toLowerCase().includes(houseValue.toLowerCase())) {
-      return true
-    }
-    if (houseRegex.test(displayName)) {
-      const streetPartLower = streetPart.toLowerCase()
-      const displayLower = displayName.toLowerCase()
-      return (
-        displayLower.startsWith(houseValue.toLowerCase()) ||
-        (displayLower.includes(streetPartLower) && displayLower.includes(houseValue.toLowerCase()))
-      )
-    }
-    return false
-  })
+  try {
+    const data = await fetchGeocodeHits(searchQuery, { limit: 10, lang: resolvedLang })
+    const houseRegex = new RegExp(`\\b${houseValue}\\b`, 'i')
+    return data.filter((item) => {
+      const address = item.address || {}
+      const houseNumber = address.house_number || ''
+      const displayName = item.display_name || ''
+      if (houseNumber && houseNumber.toString().toLowerCase().includes(houseValue.toLowerCase())) {
+        return true
+      }
+      if (houseRegex.test(displayName)) {
+        const streetPartLower = streetPart.toLowerCase()
+        const displayLower = displayName.toLowerCase()
+        return (
+          displayLower.startsWith(houseValue.toLowerCase()) ||
+          (displayLower.includes(streetPartLower) && displayLower.includes(houseValue.toLowerCase()))
+        )
+      }
+      return false
+    })
+  } catch {
+    return []
+  }
 }
 
 export function buildFormattedLocation({ country, city, street, apartment }) {

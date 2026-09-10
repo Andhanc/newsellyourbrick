@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { showNotification } from '../utils/toastHelper'
-import maplibregl from 'maplibre-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
 import { FiMapPin, FiX, FiMap, FiSearch, FiMinimize2 } from 'react-icons/fi'
 import { MapPinned } from 'lucide-react'
@@ -14,7 +12,11 @@ import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import { STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import { createYandexMap, createYandexMarker, SimpleLngLatBounds } from '../utils/yandexMapEngine'
+import '../utils/yandexMapChrome.css'
+import { toYandexMapsLang } from '../utils/yandexMapsLang'
+import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -359,11 +361,7 @@ async function geocodeAddress(address) {
     }
   } catch (_) {}
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=ru&addressdetails=1`
-    const res = await fetch(url, { headers: { Accept: 'application/json' } })
-    if (!res.ok) return null
-    const data = await res.json()
-    const hit = pickBestGeocodeHit(Array.isArray(data) ? data : [])
+    const hit = await fetchNominatimFirst(query)
     const lat = hit?.lat != null ? parseFloat(hit.lat) : NaN
     const lng = hit?.lon != null ? parseFloat(hit.lon) : NaN
     if (Number.isNaN(lat) || Number.isNaN(lng)) return null
@@ -375,7 +373,8 @@ async function geocodeAddress(address) {
 
 
 const MapPage = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const mapsLang = toYandexMapsLang(i18n.language)
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite: toggleFavoriteGlobal } = usePropertyFavorites()
@@ -426,6 +425,51 @@ const MapPage = () => {
     })
   }
 
+  /** Жесты листа только на глобальных блоках (карта / chrome дроера), не на скролле карточек. */
+  const sheetGestureStartYRef = useRef(null)
+  const SHEET_GESTURE_PX = 28
+
+  const expandResultsSheet = useCallback(() => {
+    if (!isMobile) return
+    setResultsSheetState((current) => (current === 'expanded' ? current : 'expanded'))
+  }, [isMobile])
+
+  const collapseResultsSheet = useCallback(() => {
+    if (!isMobile) return
+    setResultsSheetState((current) => (current === 'half' || current === 'peek' ? current : 'half'))
+  }, [isMobile])
+
+  const handleGlobalSheetTouchStart = (event) => {
+    if (!isMobile) return
+    if (event.touches.length !== 1) {
+      sheetGestureStartYRef.current = null
+      return
+    }
+    sheetGestureStartYRef.current = event.touches[0].clientY
+  }
+
+  const handleGlobalSheetTouchMove = (event) => {
+    if (!isMobile) return
+    if (event.touches.length !== 1) return
+    const startY = sheetGestureStartYRef.current
+    if (startY == null) return
+    const deltaY = event.touches[0].clientY - startY
+    // Свайп/скролл вниз → 80%, свайп вверх → назад к half
+    if (deltaY > SHEET_GESTURE_PX) {
+      expandResultsSheet()
+      sheetGestureStartYRef.current = event.touches[0].clientY
+    } else if (deltaY < -SHEET_GESTURE_PX) {
+      collapseResultsSheet()
+      sheetGestureStartYRef.current = event.touches[0].clientY
+    }
+  }
+
+  const handleGlobalSheetWheel = (event) => {
+    if (!isMobile) return
+    if (event.deltaY > 10) expandResultsSheet()
+    else if (event.deltaY < -10) collapseResultsSheet()
+  }
+
   // ─── Загрузка объектов ───────────────────────────────────────────────────
   const loadProperties = useCallback(async () => {
     try {
@@ -471,7 +515,7 @@ const MapPage = () => {
     if (!propertiesList.length || geocodeInFlightRef.current) return
     const missing = propertiesList
       .filter((p) => !p.coordinates && (p.location || '').trim().length >= 6)
-      .slice(0, 50)
+      .slice(0, 12)
     if (missing.length === 0) return
     geocodeInFlightRef.current = true
     let cancelled = false
@@ -480,7 +524,7 @@ const MapPage = () => {
         if (cancelled) break
         const coords = await geocodeAddress(p.location)
         if (coords && !cancelled) setPropertiesList((prev) => prev.map((x) => x.id === p.id ? { ...x, coordinates: coords } : x))
-        await sleep(250)
+        await sleep(400)
       }
     })().catch(() => {}).finally(() => { geocodeInFlightRef.current = false })
     return () => { cancelled = true }
@@ -534,34 +578,31 @@ const MapPage = () => {
   useEffect(() => {
     if (!mapContainerReady) return
     const container = mapRef.current
-    if (!container || mapInstanceRef.current) return
+    if (!container) return
     let cancelled = false
     const rafIds = []
     const startMap = () => {
       if (cancelled || !container.isConnected || mapInstanceRef.current) return
-      try {
-        const map = new maplibregl.Map({
-          container,
-          style: SATELLITE_MAP_STYLE,
-          center: [27.5666, 53.9138],
-          zoom: 11,
-          minZoom: 2,
-          maxZoom: SATELLITE_MAP_MAX_ZOOM,
-          // 2D: HTML-маркеры без искажений и без «уплывания» относительно тайлов
-          pitch: 0,
-          bearing: -12,
-          attributionControl: false
-        })
-        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-        mapInstanceRef.current = map
-        map.on('load', () => {
+      createYandexMap(container, {
+        center: [27.5666, 53.9138],
+        zoom: 11,
+        minZoom: 2,
+        maxZoom: STREET_MAP_MAX_ZOOM,
+        lang: mapsLang,
+      })
+        .then((map) => {
+          if (cancelled) {
+            map.remove()
+            return
+          }
+          mapInstanceRef.current = map
           map.resize()
           setTimeout(() => map.resize(), 400)
           setMapReady(true)
         })
-      } catch (e) {
-        console.error('Ошибка инициализации карты:', e)
-      }
+        .catch((e) => {
+          console.error('Ошибка инициализации карты:', e)
+        })
     }
     rafIds.push(
       requestAnimationFrame(() => {
@@ -571,12 +612,13 @@ const MapPage = () => {
     return () => {
       cancelled = true
       rafIds.forEach((id) => cancelAnimationFrame(id))
+      setMapReady(false)
       if (mapInstanceRef.current) {
         try { mapInstanceRef.current.remove() } catch (_) {}
         mapInstanceRef.current = null
       }
     }
-  }, [mapContainerReady])
+  }, [mapContainerReady, mapsLang])
 
   // ─── Обновление маркеров — кластеры при отдалении, карточки при приближении ─
   const updateMapMarkers = useCallback(
@@ -589,7 +631,7 @@ const MapPage = () => {
 
       const pointItems = buildMapPointItems(sortedProperties, getPropertyCoordinates)
       const markerItems = resolveMapMarkerItems(map, pointItems)
-      const bounds = new maplibregl.LngLatBounds()
+      const bounds = new SimpleLngLatBounds()
       let hasPoints = false
 
       let miniCardIndex = 0
@@ -606,7 +648,7 @@ const MapPage = () => {
             () => {
               const targetZoom = Math.min(
                 Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
-                SATELLITE_MAP_MAX_ZOOM,
+                STREET_MAP_MAX_ZOOM,
               )
               map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
               if (item.count === 1 && item.properties?.[0]) {
@@ -620,12 +662,10 @@ const MapPage = () => {
           scheduleMapPinMiniReveal(el, miniCardIndex)
           miniCardIndex += 1
 
-          const marker = new maplibregl.Marker({
+          const marker = createYandexMarker(map, {
             element: el,
-            anchor: 'center',
+            lngLat,
           })
-            .setLngLat(lngLat)
-            .addTo(map)
 
           markersRef.current.push(marker)
           return
@@ -641,7 +681,7 @@ const MapPage = () => {
           if (isMobile) setResultsSheetState('half')
           map.flyTo({
             center: lngLat,
-            zoom: Math.min(Math.max(map.getZoom(), MAP_PIN_MINI_ZOOM + 0.5), SATELLITE_MAP_MAX_ZOOM),
+            zoom: Math.min(Math.max(map.getZoom(), MAP_PIN_MINI_ZOOM + 0.5), STREET_MAP_MAX_ZOOM),
             duration: 700,
           })
           setMapOpenHintProperty(property)
@@ -659,12 +699,10 @@ const MapPage = () => {
         scheduleMapPinMiniReveal(el, miniCardIndex)
         miniCardIndex += 1
 
-        const marker = new maplibregl.Marker({
+        const marker = createYandexMarker(map, {
           element: el,
-          anchor: 'bottom',
+          lngLat,
         })
-          .setLngLat(lngLat)
-          .addTo(map)
 
         markersRef.current.push(marker)
       })
@@ -672,7 +710,7 @@ const MapPage = () => {
       if (fitBounds && !selectedProperty && hasPoints) {
         map.fitBounds(bounds, {
           padding: { top: 80, right: 80, bottom: 80, left: 80 },
-          maxZoom: Math.min(MAP_PIN_MINI_ZOOM - 1, SATELLITE_MAP_MAX_ZOOM),
+          maxZoom: Math.min(MAP_PIN_MINI_ZOOM - 1, STREET_MAP_MAX_ZOOM),
           duration: 700,
         })
       }
@@ -783,7 +821,7 @@ const MapPage = () => {
     // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
     mapInstanceRef.current?.flyTo({
       center: [coords[1], coords[0]],
-      zoom: Math.min(MAP_PIN_MINI_ZOOM + 0.5, SATELLITE_MAP_MAX_ZOOM),
+      zoom: Math.min(MAP_PIN_MINI_ZOOM + 0.5, STREET_MAP_MAX_ZOOM),
       duration: 700
     })
     setSelectedProperty(property)
@@ -807,6 +845,12 @@ const MapPage = () => {
 
         <div className="map-page-main">
           <aside className={`map-page-list map-page-list--${resultsSheetState}`}>
+            <div
+              className="map-results-sheet__chrome"
+              onTouchStart={handleGlobalSheetTouchStart}
+              onTouchMove={handleGlobalSheetTouchMove}
+              onWheel={handleGlobalSheetWheel}
+            >
             <button
               type="button"
               className="map-results-sheet__handle"
@@ -839,7 +883,6 @@ const MapPage = () => {
                     placeholder={t('mapSearchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => isMobile && setResultsSheetState('expanded')}
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -902,6 +945,7 @@ const MapPage = () => {
                 </>
               )}
             </p>
+            </div>
 
             <div id="map-results-scroll" className="map-list-scroll" aria-busy={loading}>
               {loading ? (
@@ -977,6 +1021,22 @@ const MapPage = () => {
                 ? <FiMinimize2 size={18} aria-hidden />
                 : <HiOutlineArrowsExpand size={18} aria-hidden />}
             </button>
+            <div className="map-page-zoom" role="group" aria-label="Масштаб карты">
+              <button
+                type="button"
+                onClick={() => mapInstanceRef.current?.zoomIn({ duration: 200 })}
+                aria-label="Увеличить"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => mapInstanceRef.current?.zoomOut({ duration: 200 })}
+                aria-label="Уменьшить"
+              >
+                −
+              </button>
+            </div>
             {mapOpenHintProperty && (
               <div
                 className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}

@@ -318,6 +318,9 @@ export default function MobileDiscoverPage() {
 
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
+      // The format-stack pager already consumed this wheel — never re-drive
+      // stage scroll by hand, that is what parked drawers half-open.
+      if (event.defaultPrevented) return
       if (busyRef.current || flashPhase !== 'idle') {
         event.preventDefault()
         return

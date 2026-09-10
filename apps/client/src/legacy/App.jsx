@@ -169,6 +169,7 @@ function AppChromeFooter() {
     shouldShowSoftLaunchUnavailable(pathname) ||
     pathname === '/lottery' ||
     pathname === '/app' ||
+    pathname === '/map' ||
     pathname.startsWith('/test-drive/survey/') ||
     pathname.startsWith('/test-drive/feedback/')
   ) {

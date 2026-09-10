@@ -890,6 +890,14 @@
   background: transparent;
 }
 
+/*
+ * Only while the stack is parked: paging is JS-owned there, so the browser must
+ * not drag a card to a mid-park offset. Reaching the first card stays native.
+ */
+.md-stage[data-format-lock='on'] .md-format-card {
+  touch-action: pan-x;
+}
+
 .md-format-card__body {
   position: relative;
   z-index: 1;

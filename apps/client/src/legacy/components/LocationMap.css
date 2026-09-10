@@ -2,6 +2,7 @@
   position: relative;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 .location-map {
@@ -10,6 +11,7 @@
   border-radius: 12px;
   min-height: 500px;
   overflow: hidden;
+  touch-action: none;
 }
 
 .location-map-container--fullscreen {
@@ -40,6 +42,86 @@
 
 .location-map-container .maplibregl-ctrl-top-right {
   top: 40px;
+}
+
+.location-map-zoom {
+  position: absolute;
+  top: 46px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  width: 30px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.location-map-zoom button {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  background: transparent;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.location-map-zoom button:last-child {
+  border-bottom: none;
+}
+
+/* Кастомный тег ymaps по умолчанию inline — без block карта часто белая. */
+.location-map ymaps {
+  display: block;
+}
+
+/* Корневой контейнер API — растягиваем на родителя. */
+.location-map > ymaps {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.location-map-yandex-pin {
+  width: 28px;
+  height: 36px;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+
+.location-map-yandex-pin__dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.28);
+  border: 2px solid #ffffff;
+}
+
+.location-map-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #f8fafc;
+  color: #475569;
+  font-family: Montserrat, system-ui, sans-serif;
+  font-size: 14px;
+  text-align: center;
+  z-index: 2;
+}
+
+.yandex-html-marker-root {
+  position: relative;
 }
 
 /* Единый столбец: раскрыть + zoom */

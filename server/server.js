@@ -66,6 +66,14 @@ import { sendSeoSpaHtml } from './seoHtmlRender.js';
 import { registerCatalogRoutes } from './catalogRoutes.js';
 import { registerPropertyAiRoutes } from './propertyAiRoutes.js';
 import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
+import {
+  fieldsFromHit,
+  geocodeQuery,
+  isYandexGeocoderConfigured,
+  isYandexSuggestConfigured,
+  reverseGeocode,
+  suggestQuery,
+} from './services/yandexGeocodeService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 import { createCorsOriginChecker } from './middleware/corsOrigin.js';
 import { requireClerkAuth } from './middleware/clerkAuth.js';
@@ -126,6 +134,9 @@ console.log('[SERVER]    - REACT_APP_EMAILJS_TEMPLATE_ID:', process.env.REACT_AP
 console.log('[SERVER]    - VITE_EMAILJS_TEMPLATE_ID:', process.env.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - REACT_APP_EMAILJS_PUBLIC_KEY:', process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - VITE_EMAILJS_PUBLIC_KEY:', process.env.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER] 🗺️ Yandex Maps:');
+console.log('[SERVER]    - YANDEX_GEOCODER_API_KEY:', isYandexGeocoderConfigured() ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - YANDEX_SUGGEST_API_KEY:', isYandexSuggestConfigured() ? '✅ установлен' : '❌ не установлен');
 console.log(
   '[SERVER]    - EMAILJS_CRM_TEMPLATE_ID / VITE_EMAILJS_CRM_TEMPLATE_ID:',
   process.env.EMAILJS_CRM_TEMPLATE_ID || process.env.VITE_EMAILJS_CRM_TEMPLATE_ID
@@ -988,6 +999,70 @@ function resolveVisitorCountryCode(req) {
   }
   return null;
 }
+
+app.get('/api/geo/geocode', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const uri = String(req.query.uri || '').trim();
+  const lang = String(req.query.lang || 'en').trim();
+  const limit = Number.parseInt(String(req.query.limit || '7'), 10);
+
+  if (!q && !uri) {
+    return res.status(400).json({ success: false, error: 'Query is required' });
+  }
+
+  try {
+    const hits = await geocodeQuery({ q, uri, lang, limit });
+    return res.json({ success: true, data: hits });
+  } catch (error) {
+    console.error('[geo/geocode]', error?.message || error);
+    return res.status(error.status || 502).json({ success: false, error: 'Geocode failed' });
+  }
+});
+
+app.get('/api/geo/reverse', async (req, res) => {
+  const lat = Number.parseFloat(req.query.lat);
+  const lng = Number.parseFloat(req.query.lng);
+  const lang = String(req.query.lang || 'en').trim();
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return res.status(400).json({ success: false, error: 'Invalid coordinates' });
+  }
+
+  try {
+    const hits = await reverseGeocode({ lat, lng, lang });
+    const hit = hits[0] || null;
+    return res.json({
+      success: true,
+      data: {
+        hit,
+        fields: hit ? fieldsFromHit(hit) : null,
+      },
+    });
+  } catch (error) {
+    console.error('[geo/reverse]', error?.message || error);
+    return res.status(error.status || 502).json({ success: false, error: 'Reverse geocode failed' });
+  }
+});
+
+app.get('/api/geo/suggest', async (req, res) => {
+  const text = String(req.query.text || '').trim();
+  const lang = String(req.query.lang || 'en').trim();
+  const types = String(req.query.types || '').trim();
+  const ll = String(req.query.ll || '').trim();
+  const countries = String(req.query.countries || '').trim();
+
+  if (text.length < 2) {
+    return res.json({ success: true, data: [] });
+  }
+
+  try {
+    const hits = await suggestQuery({ text, lang, types, ll, countries });
+    return res.json({ success: true, data: hits });
+  } catch (error) {
+    console.error('[geo/suggest]', error?.message || error);
+    return res.status(error.status || 502).json({ success: false, error: 'Suggest failed' });
+  }
+});
 
 app.get('/api/geo/country', (req, res) => {
   let country = resolveVisitorCountryCode(req);

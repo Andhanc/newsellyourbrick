@@ -1,9 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
-import maplibregl from 'maplibre-gl'
 import { FiMaximize2, FiMinimize2 } from 'react-icons/fi'
-import 'maplibre-gl/dist/maplibre-gl.css'
+import { useTranslation } from 'react-i18next'
 import './LocationMap.css'
-import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM, STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import '../utils/yandexMapChrome.css'
+import { STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import { createYandexMap } from '../utils/yandexMapEngine'
+import { toYandexMapsLang } from '../utils/yandexMapsLang'
+
+function createPinElement(color) {
+  const el = document.createElement('div')
+  el.className = 'location-map-yandex-pin'
+  el.innerHTML = `<span class="location-map-yandex-pin__dot" style="background:${color || '#0099A9'}"></span>`
+  return el
+}
 
 const LocationMap = ({
   center,
@@ -14,7 +23,7 @@ const LocationMap = ({
   onMapReady,
   allowFullscreen = true,
   controlsLayout = 'default',
-  mapStyle = SATELLITE_MAP_STYLE,
+  mapStyle: _mapStyle,
   markerColor = '#0099A9',
   maxZoom = null,
 }) => {
@@ -29,13 +38,17 @@ const LocationMap = ({
   const markerDraggableRef = useRef(markerDraggable)
   const markerColorRef = useRef(markerColor)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [mapFailed, setMapFailed] = useState(false)
+  const [mapReady, setMapReady] = useState(false)
+  const { i18n } = useTranslation()
+  const mapsLang = toYandexMapsLang(i18n.language)
 
   onMarkerDragEndRef.current = onMarkerDragEnd
   onMapReadyRef.current = onMapReady
   markerDraggableRef.current = markerDraggable
   markerColorRef.current = markerColor
 
-  const resolvedMaxZoom = maxZoom ?? (mapStyle === SATELLITE_MAP_STYLE ? SATELLITE_MAP_MAX_ZOOM : STREET_MAP_MAX_ZOOM)
+  const resolvedMaxZoom = maxZoom ?? STREET_MAP_MAX_ZOOM
 
   const scheduleMapResize = () => {
     requestAnimationFrame(() => {
@@ -89,9 +102,12 @@ const LocationMap = ({
     }
   }, [])
 
-  // Инициализация карты (без маркера — маркер в отдельном эффекте)
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return
+    const container = mapContainerRef.current
+    if (!container) return undefined
+
+    let cancelled = false
+    let mapInstance = null
 
     let initialCenter = [20, 55]
     let initialZoom = 3
@@ -99,53 +115,57 @@ const LocationMap = ({
     if (Array.isArray(center) && center.length === 2) {
       const lat = parseFloat(center[0])
       const lng = parseFloat(center[1])
-      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      if (!Number.isNaN(lat) && !Number.isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
         const isDefaultView = Math.abs(lat - 55) < 1 && Math.abs(lng - 20) < 1
         initialCenter = [lng, lat]
         initialZoom = isDefaultView ? 3 : (zoom || 15)
       }
     }
 
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: mapStyle,
+    createYandexMap(container, {
       center: initialCenter,
       zoom: Math.min(initialZoom, resolvedMaxZoom),
       minZoom: 2,
       maxZoom: resolvedMaxZoom,
-      attributionControl: false,
+      lang: mapsLang,
     })
-
-    if (controlsLayout !== 'column') {
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-    }
-    mapRef.current = map
-
-    const notifyMapReady = () => {
-      onMapReadyRef.current?.(map)
-      scheduleMapResize()
-      window.setTimeout(scheduleMapResize, 120)
-    }
-
-    map.on('load', scheduleMapResize)
-
-    if (map.loaded()) {
-      notifyMapReady()
-    } else {
-      map.once('load', notifyMapReady)
-    }
+      .then((map) => {
+        if (cancelled) {
+          map.remove()
+          return
+        }
+        mapInstance = map
+        mapRef.current = map
+        setMapFailed(false)
+        setMapReady(true)
+        onMapReadyRef.current?.(map)
+        scheduleMapResize()
+        window.setTimeout(scheduleMapResize, 120)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('Yandex map init failed', error)
+        setMapFailed(true)
+      })
 
     return () => {
-      map.off('load', scheduleMapResize)
+      cancelled = true
+      setMapReady(false)
       onMapReadyRef.current?.(null)
       if (markerRef.current) {
-        markerRef.current.remove()
+        try { markerRef.current.remove() } catch { /* ignore */ }
         markerRef.current = null
       }
-      map.remove()
+      const live = mapInstance || mapRef.current
+      if (live) {
+        try { live.remove() } catch { /* ignore */ }
+      }
+      mapInstance = null
       mapRef.current = null
+      lastCenterRef.current = null
+      lastZoomAppliedRef.current = null
     }
-  }, [allowFullscreen, controlsLayout, mapStyle, resolvedMaxZoom])
+  }, [allowFullscreen, controlsLayout, resolvedMaxZoom, mapsLang])
 
   useEffect(() => {
     if (!allowFullscreen || typeof document === 'undefined') return undefined
@@ -161,15 +181,7 @@ const LocationMap = ({
     const handleFullscreenChange = () => {
       const fullscreenElement = getFullscreenElement()
       setIsFullscreen(fullscreenElement === containerRef.current)
-      if (mapRef.current) {
-        setTimeout(() => {
-          try {
-            mapRef.current?.resize()
-          } catch {
-            // ignore
-          }
-        }, 30)
-      }
+      window.setTimeout(scheduleMapResize, 30)
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -215,64 +227,32 @@ const LocationMap = ({
   }
 
   useEffect(() => {
-    if (!mapRef.current) return
-
-    if (!Array.isArray(center) || center.length !== 2) {
-      return
-    }
+    if (!mapReady || !mapRef.current) return
+    if (!Array.isArray(center) || center.length !== 2) return
 
     const lat = parseFloat(center[0])
     const lng = parseFloat(center[1])
-
-    if (isNaN(lat) || isNaN(lng)) return
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return
 
-    const lngLat = [lng, lat]
     const centerKey = `${lat.toFixed(4)}-${lng.toFixed(4)}`
-    if (lastCenterRef.current === centerKey) {
-      return
-    }
+    if (lastCenterRef.current === centerKey) return
     lastCenterRef.current = centerKey
-
-    const applyCenter = () => {
-      try {
-        mapRef.current.setCenter(lngLat)
-      } catch {
-        // ignore
-      }
-    }
-
-    if (!mapRef.current.loaded()) {
-      mapRef.current.once('load', applyCenter)
-      return
-    }
-    applyCenter()
-  }, [center])
+    mapRef.current.setCenter([lng, lat])
+  }, [center, mapReady])
 
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapReady || !mapRef.current) return
     if (zoom === undefined || zoom === null) {
       lastZoomAppliedRef.current = null
       return
     }
 
-    const applyZoom = () => {
-      try {
-        const z = Math.min(Number(zoom), resolvedMaxZoom)
-        if (lastZoomAppliedRef.current === z) return
-        lastZoomAppliedRef.current = z
-        mapRef.current.setZoom(z)
-      } catch {
-        // ignore
-      }
-    }
-
-    if (!mapRef.current.loaded()) {
-      mapRef.current.once('load', applyZoom)
-      return
-    }
-    applyZoom()
-  }, [zoom, resolvedMaxZoom])
+    const z = Math.min(Number(zoom), resolvedMaxZoom)
+    if (lastZoomAppliedRef.current === z) return
+    lastZoomAppliedRef.current = z
+    mapRef.current.setZoom(z)
+  }, [zoom, resolvedMaxZoom, mapReady])
 
   const placeMarker = (lngLat) => {
     const map = mapRef.current
@@ -294,33 +274,23 @@ const LocationMap = ({
       markerRef.current = null
     }
 
-    const draggable = !!markerDraggableRef.current
-
     try {
-      const m = new maplibregl.Marker({
-        color: markerColorRef.current || '#0099A9',
-        pitchAlignment: 'map',
-        rotationAlignment: 'viewport',
-        subpixelPositioning: true,
-        draggable,
+      const addMarker = map.addDotMarker || map.addHtmlMarker
+      markerRef.current = addMarker.call(map, {
+        ...(map.addDotMarker
+          ? { color: markerColorRef.current }
+          : { element: createPinElement(markerColorRef.current) }),
+        coordinates: [lng, lat],
+        draggable: !!markerDraggableRef.current,
+        onDragEnd: (coords) => onMarkerDragEndRef.current?.(coords),
       })
-        .setLngLat(lngLat)
-        .addTo(map)
-      markerRef.current = m
-      if (draggable && typeof m.on === 'function') {
-        m.on('dragend', () => {
-          const ll = m.getLngLat()
-          onMarkerDragEndRef.current?.({ lat: ll.lat, lng: ll.lng })
-        })
-      }
     } catch {
       // ignore
     }
   }
 
-  // Маркер: создаём/обновляем после загрузки карты
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapReady || !mapRef.current) return
 
     if (!Array.isArray(marker) || marker.length !== 2) {
       if (markerRef.current) {
@@ -332,40 +302,24 @@ const LocationMap = ({
 
     const lat = parseFloat(marker[0])
     const lng = parseFloat(marker[1])
-
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       return
     }
 
-    const lngLat = [lng, lat]
-
-    const run = () => placeMarker(lngLat)
-
-    if (!mapRef.current.loaded()) {
-      mapRef.current.once('load', run)
-      return
-    }
-    run()
-  }, [marker, markerDraggable, markerColor])
+    placeMarker([lng, lat])
+  }, [marker, markerDraggable, markerColor, mapReady])
 
   const handleZoomIn = () => {
-    try {
-      mapRef.current?.zoomIn({ duration: 200 })
-    } catch {
-      // ignore
-    }
+    mapRef.current?.zoomIn({ duration: 200 })
   }
 
   const handleZoomOut = () => {
-    try {
-      mapRef.current?.zoomOut({ duration: 200 })
-    } catch {
-      // ignore
-    }
+    mapRef.current?.zoomOut({ duration: 200 })
   }
 
   const useColumnControls = controlsLayout === 'column'
   const hideControls = controlsLayout === 'none'
+  const useDefaultZoom = !hideControls && !useColumnControls
 
   return (
     <div
@@ -421,7 +375,18 @@ const LocationMap = ({
           </button>
         )
       ))}
+      {useDefaultZoom ? (
+        <div className="location-map-zoom">
+          <button type="button" onClick={handleZoomIn} aria-label="Увеличить">+</button>
+          <button type="button" onClick={handleZoomOut} aria-label="Уменьшить">−</button>
+        </div>
+      ) : null}
       <div ref={mapContainerRef} className="location-map" />
+      {mapFailed ? (
+        <div className="location-map-fallback" role="status">
+          Не удалось загрузить Яндекс Карту
+        </div>
+      ) : null}
     </div>
   )
 }

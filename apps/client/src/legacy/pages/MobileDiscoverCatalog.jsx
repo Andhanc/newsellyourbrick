@@ -22,9 +22,26 @@ const BUY_NOW_PHOTO = publicAsset(
 const DEBTS_PHOTO = publicAsset(
   'images/home-sale-formats/summer-2026/sale-format-shares-summer.webp',
 )
-const CARD_GESTURE = 140
-const TOUCH_GESTURE = 72
-const JUMP_LOCK_MS = 680
+const CARD_GESTURE = 100
+/** Finger travel that flips a card mid-gesture, and the shorter flick fallback. */
+const TOUCH_GESTURE = 30
+const FLICK_GESTURE = 18
+/** Duration of the pager's own scroll animation. */
+const PAGER_MS = 230
+/*
+ * Reaching the first card (auction) is plain native scroll — paging starts only
+ * once it is parked. Leaving upwards releases back onto the welcome block.
+ */
+const EXIT_RELEASE = 0.92
+/*
+ * Telling a trackpad's inertia tail from a fresh flick: the tail only decays,
+ * so a quiet gap, a rising delta or a spent-out delta all end it.
+ */
+const WHEEL_FLICK_GAP = 140
+const WHEEL_RISE = 6
+const WHEEL_TAIL = 4
+/** How long measured park offsets stay valid. */
+const GEOM_TTL_MS = 200
 const ANDROID_URL = 'https://play.google.com/store/apps'
 const IOS_URL = 'https://apps.apple.com/'
 
@@ -441,16 +458,17 @@ export default function MobileDiscoverCatalog() {
 
   /*
    * Format stack scroll:
-   * - Default (native): finger follows freely, then snaps to the nearest park
-   *   so auction / buy-now / shares never rest half-covered.
-   * - Optional hard pager: data-native-format-scroll="false" — one gesture = one card.
+   * - Default (hard pager): one small vertical swipe = one card. Native drag
+   *   between parks is blocked so auction / buy-now / shares never rest half-covered.
+   * - Optional native settle: data-native-format-scroll="true" — free finger,
+   *   then snap to nearest park after the gesture ends.
    */
   useEffect(() => {
     const catalog = rootRef.current
     const stage = catalog?.closest('.md-stage')
     if (!catalog || !stage) return undefined
 
-    const hardPager = stage.dataset.nativeFormatScroll === 'false'
+    const hardPager = stage.dataset.nativeFormatScroll !== 'true'
 
     const elTop = (node) => {
       if (!node) return 0
@@ -473,24 +491,54 @@ export default function MobileDiscoverCatalog() {
       return card?.offsetHeight || stage.clientHeight
     }
 
-    const cardTop = (index) => {
+    /*
+     * Park offsets are layout, not scroll state, so they are measured once and
+     * reused — the scroll handler must never trigger a stack of layout reads.
+     */
+    let measuredAt = 0
+    let parks = []
+    let tailTop = Number.POSITIVE_INFINITY
+
+    const measure = () => {
+      const now = performance.now()
+      if (parks.length && now - measuredAt < GEOM_TTL_MS) return
+      measuredAt = now
+
       const origin = getOrigin()
       const cards = getFlipCards()
-      if (!origin || !cards.length) return 0
-      let y = elTop(origin)
-      for (let i = 0; i < index; i += 1) {
-        y += cardStepHeight(cards[i])
+      const tail = getFreeTail()
+      tailTop = tail ? elTop(tail) : Number.POSITIVE_INFINITY
+
+      if (!origin || !cards.length) {
+        parks = []
+        return
       }
-      return y
+      let y = elTop(origin)
+      parks = cards.map((card) => {
+        const at = y
+        y += cardStepHeight(card)
+        return at
+      })
+    }
+
+    const invalidateGeom = () => {
+      measuredAt = 0
+    }
+    window.addEventListener('resize', invalidateGeom)
+    window.addEventListener('orientationchange', invalidateGeom)
+
+    const cardTop = (index) => {
+      measure()
+      return parks[index] ?? 0
     }
 
     const nearestFlipIndex = () => {
-      const cards = getFlipCards()
-      if (!cards.length) return -1
+      measure()
+      if (!parks.length) return -1
       let best = 0
       let bestDist = Infinity
-      cards.forEach((_, index) => {
-        const dist = Math.abs(stage.scrollTop - cardTop(index))
+      parks.forEach((park, index) => {
+        const dist = Math.abs(stage.scrollTop - park)
         if (dist < bestDist) {
           bestDist = dist
           best = index
@@ -500,67 +548,96 @@ export default function MobileDiscoverCatalog() {
     }
 
     const freeTailTop = () => {
-      const tail = getFreeTail()
-      return tail ? elTop(tail) : Number.POSITIVE_INFINITY
+      measure()
+      return tailTop
     }
 
     const lastCardTop = () => {
-      const cards = getFlipCards()
-      if (!cards.length) return 0
-      return cardTop(cards.length - 1)
+      measure()
+      return parks.length ? parks[parks.length - 1] : 0
     }
 
     const inFreeTail = () => stage.scrollTop >= freeTailTop() - 8
 
     /** Past debts park into app (same photo) — free native scroll */
     const inDebtsContinue = () => {
-      const cards = getFlipCards()
-      if (!cards.length) return false
+      measure()
+      if (!parks.length) return false
       return stage.scrollTop > lastCardTop() + 36 && !inFreeTail()
     }
 
     const inFlipZone = () => {
-      const cards = getFlipCards()
-      if (!cards.length) return false
+      measure()
+      if (!parks.length) return false
       return (
-        stage.scrollTop >= cardTop(0) - 12 &&
+        stage.scrollTop >= parks[0] - 12 &&
         !inFreeTail() &&
         !inDebtsContinue()
       )
     }
 
-    const scrollBehavior = () => {
-      if (
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      ) {
-        return 'auto'
-      }
-      return 'smooth'
+    const entryReleaseY = () =>
+      Math.max(0, cardTop(0) - stage.clientHeight * EXIT_RELEASE)
+
+    const reduceMotion = () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    let animFrame = 0
+
+    const stopAnim = () => {
+      if (!animFrame) return
+      window.cancelAnimationFrame(animFrame)
+      animFrame = 0
     }
 
+    /*
+     * Own rAF animation instead of scrollTo({behavior:'smooth'}): smooth scroll
+     * is deferred by the browser until touchend, which is what left drawers
+     * hanging half-open while the finger was still down.
+     */
     const jumpToY = (top) => {
-      jumpingRef.current = true
+      const limit = Math.max(0, stage.scrollHeight - stage.clientHeight)
+      const target = Math.min(Math.max(0, top), limit)
+      stopAnim()
       wheelAcc.current = 0
-      stage.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() })
-      window.setTimeout(() => {
+
+      if (reduceMotion() || Math.abs(stage.scrollTop - target) < 2) {
+        stage.scrollTop = target
         jumpingRef.current = false
-        wheelAcc.current = 0
-      }, JUMP_LOCK_MS)
+        return
+      }
+
+      const from = stage.scrollTop
+      const distance = target - from
+      const startedAt = performance.now()
+      jumpingRef.current = true
+
+      const step = (now) => {
+        const progress = Math.min(1, (now - startedAt) / PAGER_MS)
+        stage.scrollTop = from + distance * (1 - (1 - progress) ** 3)
+        if (progress < 1) {
+          animFrame = window.requestAnimationFrame(step)
+          return
+        }
+        animFrame = 0
+        stage.scrollTop = target
+        jumpingRef.current = false
+      }
+      animFrame = window.requestAnimationFrame(step)
     }
 
     const jumpToFlip = (index) => {
-      const cards = getFlipCards()
-      if (index < 0 || index >= cards.length) return
-      jumpToY(cardTop(index))
+      measure()
+      if (index < 0 || index >= parks.length) return
+      jumpToY(parks[index])
     }
 
     /** Snap to nearest format park — used by native settle and hard pager. */
     const settleFlip = () => {
       if (jumpingRef.current || !inFlipZone()) return
-      const cards = getFlipCards()
-      if (!cards.length) return
       const current = nearestFlipIndex()
+      if (current < 0) return
       const target = cardTop(current)
       if (Math.abs(stage.scrollTop - target) > 10) jumpToY(target)
     }
@@ -606,6 +683,9 @@ export default function MobileDiscoverCatalog() {
       stage.addEventListener('scroll', onNativeScroll, { passive: true })
       return () => {
         window.clearTimeout(settleTimer)
+        stopAnim()
+        window.removeEventListener('resize', invalidateGeom)
+        window.removeEventListener('orientationchange', invalidateGeom)
         stage.removeEventListener('touchstart', onNativeTouchStart)
         stage.removeEventListener('touchend', onNativeTouchEnd)
         stage.removeEventListener('touchcancel', onNativeTouchEnd)
@@ -613,24 +693,117 @@ export default function MobileDiscoverCatalog() {
       }
     }
 
-    // ——— Experimental hard pager (one gesture = one card) ———
+    // ——— Hard pager (one small vertical swipe = one card) ———
+    const commitFlipByDelta = (dy) => {
+      measure()
+      if (!parks.length) return false
+      const last = parks.length - 1
+
+      if (inFreeTail()) {
+        if (dy < 0 && stage.scrollTop <= freeTailTop() + 32) {
+          jumpToFlip(last)
+          return true
+        }
+        return false
+      }
+
+      if (inDebtsContinue()) {
+        if (dy < 0 && stage.scrollTop <= lastCardTop() + 64) {
+          jumpToFlip(last)
+          return true
+        }
+        return false
+      }
+
+      // Above the stack the auction sheet rises with plain native scroll.
+      if (!inFlipZone()) return false
+
+      const current = nearestFlipIndex()
+      if (dy > 0) {
+        if (current >= last) {
+          jumpToY(lastCardTop() + Math.min(220, stage.clientHeight * 0.32))
+        } else {
+          jumpToFlip(current + 1)
+        }
+        return true
+      }
+      if (current <= 0) {
+        jumpToY(entryReleaseY())
+        return true
+      }
+      jumpToFlip(current - 1)
+      return true
+    }
+
+    /** True when the pager — not native scroll — must own this vertical move. */
+    const pagerOwnsMove = (dy) => {
+      if (inFlipZone()) return true
+      if (inFreeTail()) return dy < 0 && stage.scrollTop <= freeTailTop() + 32
+      if (inDebtsContinue()) return dy < 0 && stage.scrollTop <= lastCardTop() + 64
+      return false
+    }
+
+    /*
+     * The page shell also listens for wheel and drives `.md-stage` scroll by
+     * hand, so a prevented wheel must stop propagating — otherwise the stack
+     * still creeps to a mid-park offset.
+     */
+    const takeOverWheel = (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    /*
+     * Trackpads keep firing wheel events for about a second after the fingers
+     * lift, so one flick must not be counted twice. Waiting for silence would
+     * swallow the next flick, so the decaying tail is detected instead.
+     */
+    let lastWheelAt = 0
+    let lastWheelDelta = 0
+    let flickSpent = false
+
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
+
+      const now = performance.now()
+      const mag = Math.abs(event.deltaY)
+      const lastMag = Math.abs(lastWheelDelta)
+      const reversed =
+        event.deltaY !== 0 &&
+        lastWheelDelta !== 0 &&
+        Math.sign(event.deltaY) !== Math.sign(lastWheelDelta)
+      const tailOver =
+        now - lastWheelAt >= WHEEL_FLICK_GAP ||
+        reversed ||
+        mag > lastMag + WHEEL_RISE ||
+        mag <= WHEEL_TAIL
+      lastWheelAt = now
+      lastWheelDelta = event.deltaY
+      if (tailOver) flickSpent = false
+      const sameFlick = !tailOver
+
       if (jumpingRef.current) {
-        event.preventDefault()
+        takeOverWheel(event)
         return
       }
 
-      const cards = getFlipCards()
-      if (!cards.length) return
-      const last = cards.length - 1
+      measure()
+      if (!parks.length) return
+      const last = parks.length - 1
+
+      if (flickSpent && sameFlick) {
+        wheelAcc.current = 0
+        if (inFlipZone()) takeOverWheel(event)
+        return
+      }
 
       if (inFreeTail()) {
         if (event.deltaY < 0 && stage.scrollTop <= freeTailTop() + 24) {
-          event.preventDefault()
+          takeOverWheel(event)
           wheelAcc.current += event.deltaY
           if (Math.abs(wheelAcc.current) >= CARD_GESTURE) {
             wheelAcc.current = 0
+            flickSpent = true
             jumpToFlip(last)
           }
           return
@@ -641,10 +814,11 @@ export default function MobileDiscoverCatalog() {
 
       if (inDebtsContinue()) {
         if (event.deltaY < 0 && stage.scrollTop <= lastCardTop() + 56) {
-          event.preventDefault()
+          takeOverWheel(event)
           wheelAcc.current += event.deltaY
           if (Math.abs(wheelAcc.current) >= CARD_GESTURE) {
             wheelAcc.current = 0
+            flickSpent = true
             jumpToFlip(last)
           }
           return
@@ -653,14 +827,9 @@ export default function MobileDiscoverCatalog() {
         return
       }
 
+      // Above the stack: the auction sheet rises with plain native scroll.
       if (!inFlipZone()) {
-        if (
-          event.deltaY > 0 &&
-          stage.scrollTop + stage.clientHeight >= cardTop(0) - 28
-        ) {
-          event.preventDefault()
-          jumpToFlip(0)
-        }
+        wheelAcc.current = 0
         return
       }
 
@@ -673,13 +842,14 @@ export default function MobileDiscoverCatalog() {
       }
 
       // Hard lock in flip zone — no native scroll between cards
-      event.preventDefault()
+      takeOverWheel(event)
       wheelAcc.current += event.deltaY
       if (Math.abs(wheelAcc.current) < CARD_GESTURE) return
 
       const current = nearestFlipIndex()
       const goingDown = wheelAcc.current > 0
       wheelAcc.current = 0
+      flickSpent = true
 
       if (goingDown) {
         if (current >= last) {
@@ -692,107 +862,142 @@ export default function MobileDiscoverCatalog() {
       }
 
       if (current <= 0) {
-        jumpToY(Math.max(0, cardTop(0) - stage.clientHeight * 0.42))
+        jumpToY(entryReleaseY())
         return
       }
       jumpToFlip(current - 1)
     }
 
-    let touchY = 0
-    let touchX = 0
+    let startX = 0
+    let startY = 0
+    let committed = false
+    let owned = false
+    let axisLock = /** @type {null | 'x' | 'y'} */ (null)
+
     const onTouchStart = (event) => {
-      touchY = event.touches[0]?.clientY ?? 0
-      touchX = event.touches[0]?.clientX ?? 0
-    }
-    const onTouchEnd = (event) => {
-      if (document.documentElement.classList.contains('login-modal-open')) return
-      if (jumpingRef.current) return
-      const endY = event.changedTouches[0]?.clientY ?? touchY
-      const endX = event.changedTouches[0]?.clientX ?? touchX
-      const dy = touchY - endY
-      const dx = Math.abs(endX - touchX)
-      if (Math.abs(dy) < TOUCH_GESTURE || dx > Math.abs(dy) * 0.8) {
-        if (inFlipZone()) settleFlip()
-        return
-      }
+      const touch = event.touches[0]
+      if (!touch) return
+      startX = touch.clientX
+      startY = touch.clientY
+      committed = false
+      owned = false
+      axisLock = null
 
-      const cards = getFlipCards()
-      if (!cards.length) return
-      const last = cards.length - 1
-
-      if (inFreeTail()) {
-        if (dy < 0 && stage.scrollTop <= freeTailTop() + 32) {
-          jumpToFlip(last)
-        }
-        return
-      }
-
-      if (inDebtsContinue()) {
-        if (dy < 0 && stage.scrollTop <= lastCardTop() + 64) {
-          jumpToFlip(last)
-        }
-        return
-      }
-
-      if (!inFlipZone()) {
-        if (dy > 0 && stage.scrollTop + stage.clientHeight >= cardTop(0) - 36) {
-          jumpToFlip(0)
-        }
-        return
-      }
-
-      const current = nearestFlipIndex()
-      if (dy > 0) {
-        if (current >= last) {
-          jumpToY(lastCardTop() + Math.min(220, stage.clientHeight * 0.32))
-        } else {
-          jumpToFlip(current + 1)
-        }
-      } else if (current <= 0) {
-        jumpToY(Math.max(0, cardTop(0) - stage.clientHeight * 0.42))
-      } else {
-        jumpToFlip(current - 1)
+      // A gesture must never start from a half-open drawer.
+      if (!jumpingRef.current && inFlipZone()) {
+        const park = cardTop(Math.max(0, nearestFlipIndex()))
+        if (Math.abs(stage.scrollTop - park) > 2) stage.scrollTop = park
       }
     }
 
     const onTouchMove = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
-      if (jumpingRef.current) {
-        event.preventDefault()
-        return
-      }
-      // Block native vertical drag between format parks — but never kill
-      // horizontal swipes on property / sale-format carousels.
-      if (!inFlipZone()) return
-      if (isPropertyCarouselTarget(event.target)) return
+
       const touch = event.touches[0]
-      if (touch) {
-        const dx = Math.abs(touch.clientX - touchX)
-        const dy = Math.abs(touch.clientY - touchY)
-        if (dx > dy && dx > 8) return
+      if (!touch) return
+      const totalX = Math.abs(touch.clientX - startX)
+      const totalY = Math.abs(touch.clientY - startY)
+      if (!axisLock && (totalX > 8 || totalY > 8)) {
+        axisLock = totalX > totalY ? 'x' : 'y'
       }
+      // Horizontal card pans stay fully native; an undecided gesture counts as
+      // vertical so the very first move is already blocked from dragging.
+      if (axisLock === 'x') return
+      if (!axisLock && totalX > totalY) return
+
+      const dy = startY - touch.clientY
+      if (!pagerOwnsMove(dy)) return
+
+      // Native vertical drag is dead here: the drawer moves in one animated
+      // step instead of following the finger.
       event.preventDefault()
+      owned = true
+
+      // Exactly one card per gesture — the finger must lift before the next.
+      if (committed || jumpingRef.current) return
+      if (Math.abs(dy) < TOUCH_GESTURE) return
+      if (commitFlipByDelta(dy)) committed = true
     }
+
+    const onTouchEnd = (event) => {
+      if (document.documentElement.classList.contains('login-modal-open')) return
+      const endY = event.changedTouches[0]?.clientY ?? startY
+      const endX = event.changedTouches[0]?.clientX ?? startX
+      const dy = startY - endY
+      const wasHorizontal = axisLock === 'x'
+      axisLock = null
+
+      if (committed || jumpingRef.current || wasHorizontal) return
+      // Native scroll is still settling — the scroll handler finishes it,
+      // so we never animate against live momentum.
+      if (!owned) return
+
+      // Short flick still counts, so the drawer never waits for a longer swipe.
+      if (Math.abs(dy) >= FLICK_GESTURE && Math.abs(endX - startX) <= Math.abs(dy)) {
+        if (commitFlipByDelta(dy)) {
+          committed = true
+          return
+        }
+      }
+      settleFlip()
+    }
+
+    /*
+     * The cards only refuse native vertical drag while the stack is parked —
+     * above it the welcome block scrolls without any pager binding.
+     */
+    const syncLock = () => {
+      const lock = inFlipZone() ? 'on' : 'off'
+      if (stage.dataset.formatLock !== lock) stage.dataset.formatLock = lock
+    }
+
+    let prevTop = stage.scrollTop
 
     const onScroll = () => {
       if (document.documentElement.classList.contains('login-modal-open')) return
-      if (jumpingRef.current || !inFlipZone()) return
+      const top = stage.scrollTop
+      const firstPark = cardTop(0)
+      const crossedIn = prevTop < firstPark - 4 && top >= firstPark - 4
+      prevTop = top
+      if (jumpingRef.current) return
+
+      // Native momentum stops at the auction park instead of shooting through
+      // it into the next card.
+      if (crossedIn) {
+        stage.scrollTop = firstPark
+        prevTop = firstPark
+        syncLock()
+        return
+      }
+
+      syncLock()
+      if (!inFlipZone()) return
       window.clearTimeout(settleTimer)
       settleTimer = window.setTimeout(settleFlip, 90)
     }
 
+    syncLock()
+
+    const moveOpts = { passive: false, capture: true }
+    const passiveOpts = { passive: true, capture: true }
+
     stage.addEventListener('wheel', onWheel, { passive: false })
     stage.addEventListener('scroll', onScroll, { passive: true })
-    stage.addEventListener('touchstart', onTouchStart, { passive: true })
-    stage.addEventListener('touchmove', onTouchMove, { passive: false })
-    stage.addEventListener('touchend', onTouchEnd, { passive: true })
+    stage.addEventListener('touchstart', onTouchStart, passiveOpts)
+    stage.addEventListener('touchmove', onTouchMove, moveOpts)
+    stage.addEventListener('touchend', onTouchEnd, passiveOpts)
+    stage.addEventListener('touchcancel', onTouchEnd, passiveOpts)
     return () => {
       window.clearTimeout(settleTimer)
+      stopAnim()
+      window.removeEventListener('resize', invalidateGeom)
+      window.removeEventListener('orientationchange', invalidateGeom)
       stage.removeEventListener('wheel', onWheel)
       stage.removeEventListener('scroll', onScroll)
-      stage.removeEventListener('touchstart', onTouchStart)
-      stage.removeEventListener('touchmove', onTouchMove)
-      stage.removeEventListener('touchend', onTouchEnd)
+      stage.removeEventListener('touchstart', onTouchStart, passiveOpts)
+      stage.removeEventListener('touchmove', onTouchMove, moveOpts)
+      stage.removeEventListener('touchend', onTouchEnd, passiveOpts)
+      stage.removeEventListener('touchcancel', onTouchEnd, passiveOpts)
     }
   }, [loading])
 

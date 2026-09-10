@@ -318,35 +318,6 @@ function resolveLocationFieldsFromProperty(property) {
   }
 }
 
-async function fetchReverseGeocodeFields(lat, lng) {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=ru&addressdetails=1`
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'PropertyListingApp/1.0' },
-  })
-  if (!response.ok) return null
-  const data = await response.json()
-  const a = data.address || {}
-  const country = a.country || ''
-  const city = a.city || a.town || a.village || a.municipality || a.county || a.state || ''
-  const road = a.road || a.street || ''
-  const hn = a.house_number || ''
-  const streetLine = [road, hn].filter(Boolean).join(', ')
-  const display = typeof data.display_name === 'string' ? data.display_name : ''
-  const shortAddr =
-    streetLine ||
-    display.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 2).join(', ')
-  const location = country && city && shortAddr ? `${country}, ${city}, ${shortAddr}` : display || shortAddr
-  return {
-    country,
-    city,
-    address: shortAddr,
-    apartment: hn,
-    location,
-    citySearch: city,
-    addressSearch: shortAddr,
-  }
-}
-
 /** Single-page поток включён (используется в эффектах до объявления переменной внутри компонента) */
 const USE_ADD_PROPERTY_SINGLE_PAGE = true
 
@@ -745,6 +716,14 @@ function getValidCoordsForPreview(coords) {
 import { MdBed, MdOutlineBathtub, MdLightbulb } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import LocationMap from '../components/LocationMap'
+import {
+  ensureGeocodedHit,
+  fetchNominatimFirst,
+  fetchReverseGeocodeFields,
+  searchCities,
+  searchHouses,
+  searchStreets,
+} from '../utils/oapLocationGeocode'
 import AuctionPeriodPicker from '../components/AuctionPeriodPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
@@ -987,7 +966,8 @@ const AddProperty = ({
   onAdminBack = null,
   onAdminComplete = null
 } = {}) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const geoLang = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -2415,25 +2395,10 @@ const AddProperty = ({
     
     try {
       console.log('🌍 Геокодируем адрес для редактирования:', address)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=ru&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'PropertyListingApp/1.0'
-          }
-        }
-      )
-      
-      if (!response.ok) {
-        console.warn('⚠️ Ошибка геокодирования:', response.status)
-        return
-      }
-      
-      const data = await response.json()
-      
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat)
-        const lon = parseFloat(data[0].lon)
+      const hit = await fetchNominatimFirst(address)
+      if (hit) {
+        const lat = parseFloat(hit.lat)
+        const lon = parseFloat(hit.lon)
         
         if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
           const coords = [lat, lon]
@@ -3459,23 +3424,7 @@ const AddProperty = ({
     setCurrentStep('location')
   }
 
-  /** Первый результат Nominatim (для карты по стране/городу) */
-  const fetchNominatimFirst = async (query) => {
-    if (!query || !String(query).trim()) return null
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(query).trim())}&limit=1&accept-language=ru&addressdetails=1`,
-        { headers: { 'User-Agent': 'PropertyListingApp/1.0' } }
-      )
-      if (!response.ok) return null
-      const data = await response.json()
-      return data[0] || null
-    } catch {
-      return null
-    }
-  }
-
-  // Поиск адреса через Nominatim API с учетом города
+  // Поиск адреса через Яндекс с учетом города
   // options.autoSelect = true — автоматически выбираем лучший результат и двигаем карту
   const searchAddress = async (query, { autoSelect = false } = {}) => {
     if (!query || query.length < 2) {
@@ -3487,64 +3436,11 @@ const AddProperty = ({
 
     setIsAddressSearching(true)
     try {
-      let searchQuery = query.trim()
-      
-      // Если указан город, добавляем его в запрос
-      if (formData.city) {
-        const cityName = formData.city.split(',')[0].trim() // Берем только название города
-        searchQuery = `${query.trim()}, ${cityName}`
-        
-        // Если также указана страна, добавляем и её
-        if (formData.country) {
-          searchQuery = `${query.trim()}, ${cityName}, ${formData.country}`
-        }
-      } else if (formData.country) {
-        // Если указана только страна
-        searchQuery = `${query.trim()}, ${formData.country}`
-      }
-      
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10&accept-language=ru&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'PropertyListingApp/1.0'
-          }
-        }
-      )
-      
-      if (!response.ok) {
-        console.error('Ошибка API:', response.status)
-        return
-      }
-      
-      const data = await response.json()
-      
-      // Фильтруем результаты по городу, если город указан
-      let addresses = data
-      if (formData.city) {
-        const cityName = formData.city.split(',')[0].trim().toLowerCase()
-        addresses = data.filter(item => {
-          const address = item.address || {}
-          const displayName = item.display_name || ''
-          
-          // Проверяем город в адресе или в display_name
-          const itemCity = (address.city || address.town || address.village || '').toLowerCase()
-          const itemCityInName = displayName.toLowerCase().includes(cityName)
-          
-          return itemCity === cityName || itemCityInName
-        })
-        
-        // Если после фильтрации нет результатов, показываем все
-        if (addresses.length === 0 && data.length > 0) {
-          addresses = data
-        }
-      }
-      
-      // Сортируем по важности
-      addresses.sort((a, b) => (b.importance || 0) - (a.importance || 0))
-      
-      // Ограничиваем до 10 результатов
-      addresses = addresses.slice(0, 10)
+      const addresses = await searchStreets(query, {
+        city: formData.city,
+        country: formData.country,
+        lang: geoLang,
+      })
       
       setAddressSuggestions(addresses)
       setShowSuggestions(addresses.length > 0)
@@ -3623,83 +3519,7 @@ const AddProperty = ({
 
     setIsCitySearching(true)
     try {
-      let searchQuery = query.trim()
-      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=20&accept-language=ru&addressdetails=1`
-      
-      // Если выбрана страна, добавляем её в запрос
-      if (country) {
-        searchQuery = `${query.trim()}, ${country}`
-        url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=20&accept-language=ru&addressdetails=1`
-      }
-      
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'PropertyListingApp/1.0'
-        }
-      })
-      
-      if (!response.ok) {
-        console.error('Ошибка API:', response.status)
-        return
-      }
-      
-      const data = await response.json()
-      
-      if (!data || data.length === 0) {
-        setCitySuggestions([])
-        setShowCitySuggestions(false)
-        return
-      }
-      
-      // Более мягкая фильтрация - принимаем все результаты, которые похожи на города
-      let cities = data.filter(item => {
-        const type = item.type || ''
-        const classType = item.class || ''
-        const importance = item.importance || 0
-        
-        // Проверяем, что это город или населенный пункт (более широкий список)
-        const isCity = type === 'city' || 
-                      type === 'town' || 
-                      type === 'administrative' ||
-                      classType === 'place' ||
-                      type === 'village' ||
-                      type === 'hamlet' ||
-                      type === 'locality' ||
-                      type === 'suburb'
-        
-        // Очень мягкий порог важности
-        return isCity && importance > 0.05
-      })
-      
-      // Если после фильтрации нет результатов, используем все данные
-      if (cities.length === 0) {
-        cities = data
-      }
-      
-      // Если выбрана страна, дополнительно фильтруем по стране в адресе (более мягкая проверка)
-      if (country && cities.length > 0) {
-        const filteredByCountry = cities.filter(item => {
-          const address = item.address || {}
-          const itemCountry = address.country || ''
-          const displayName = item.display_name || ''
-          
-          // Проверяем страну в адресе или в display_name
-          return itemCountry.toLowerCase().includes(country.toLowerCase()) || 
-                 country.toLowerCase().includes(itemCountry.toLowerCase()) ||
-                 displayName.toLowerCase().includes(country.toLowerCase())
-        })
-        
-        // Если есть результаты с фильтрацией по стране, используем их, иначе используем все
-        if (filteredByCountry.length > 0) {
-          cities = filteredByCountry
-        }
-      }
-      
-      // Сортируем по важности (более важные города первыми)
-      cities.sort((a, b) => (b.importance || 0) - (a.importance || 0))
-      
-      // Ограничиваем до 10 результатов
-      cities = cities.slice(0, 10)
+      const cities = await searchCities(query, country, { lang: geoLang })
       
       setCitySuggestions(cities)
       setShowCitySuggestions(cities.length > 0)
@@ -3749,24 +3569,22 @@ const AddProperty = ({
   }, [citySearch, formData.country, currentStep, addressSearch])
 
   // Обработчик выбора города
-  const handleCitySelect = (city) => {
-    // Заполняем поле полным адресом из подсказки
-    const fullAddress = city.display_name
+  const handleCitySelect = async (city) => {
+    const resolved = await ensureGeocodedHit(city)
+    const fullAddress = resolved.display_name || city.display_name
     setCitySearch(fullAddress)
-    // Сохраняем только название города в formData.city
     const cityName = fullAddress.split(',')[0].trim()
     setFormData(prev => ({ ...prev, city: cityName }))
-    const lat = parseFloat(city.lat)
-    const lng = parseFloat(city.lon)
+    const lat = parseFloat(resolved.lat)
+    const lng = parseFloat(resolved.lon)
     if (!isNaN(lat) && !isNaN(lng)) {
       setMapCenter([lat, lng])
       setSelectedCoordinates([lat, lng])
       setLocationMapZoom(11)
     }
     setShowCitySuggestions(false)
-    setIsCitySearching(false) // Сбрасываем состояние загрузки
-    // Устанавливаем подсказки, чтобы показать галочку
-    setCitySuggestions([city])
+    setIsCitySearching(false)
+    setCitySuggestions([resolved])
   }
 
   // Синхронизация полей поиска адреса с formData (в т.ч. после загрузки редактирования)
@@ -3871,25 +3689,27 @@ const AddProperty = ({
   }
 
   // Обработчик выбора адреса из предложений
-  const handleAddressSelect = (suggestion) => {
-    const shortAddress = formatShortAddress(suggestion)
-    const lat = parseFloat(suggestion.lat)
-    const lng = parseFloat(suggestion.lon)
-    const coords = [lat, lng]
+  const handleAddressSelect = async (suggestion) => {
+    const resolved = await ensureGeocodedHit(suggestion)
+    const shortAddress = formatShortAddress(resolved)
+    const lat = parseFloat(resolved.lat)
+    const lng = parseFloat(resolved.lon)
+    const coords = Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null
     
     // В поле ввода и в formData.address записываем короткий адрес (улица + район)
     setAddressSearch(shortAddress)
-    // Сохраняем координаты для отображения на карте
-    setSelectedCoordinates(coords)
-    setMapCenter(coords)
-    setLocationMapZoom(15)
+    if (coords) {
+      setSelectedCoordinates(coords)
+      setMapCenter(coords)
+      setLocationMapZoom(15)
+    }
     setShowSuggestions(false)
     setIsAddressSearching(false) // Сбрасываем состояние загрузки
     // Устанавливаем подсказки, чтобы показать галочку (храним исходный объект)
-    setAddressSuggestions([suggestion])
+    setAddressSuggestions([resolved])
     
     // Извлекаем страну и город из адреса
-    const addressParts = suggestion.address || {}
+    const addressParts = resolved.address || {}
     const country = addressParts.country || ''
     const city = addressParts.city || addressParts.town || addressParts.village || ''
     
@@ -3947,54 +3767,11 @@ const AddProperty = ({
     }
 
     try {
-      const streetPart = addressSearch.split(',')[0].trim()
-      const searchQuery = `${streetPart} ${houseValue}, ${formData.city}, ${formData.country}`.trim()
-
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10&accept-language=ru&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'PropertyListingApp/1.0'
-          }
-        }
-      )
-
-      if (!response.ok) {
-        console.error('Ошибка поиска дома:', response.status)
-        setHouseSuggestions([])
-        setShowHouseSuggestions(false)
-        return
-      }
-
-      const data = await response.json()
-      
-      // Фильтруем результаты: оставляем только те, где есть конкретный номер дома
-      const filteredHouses = data.filter(item => {
-        const address = item.address || {}
-        const houseNumber = address.house_number || ''
-        const displayName = item.display_name || ''
-        
-        // Проверяем наличие номера дома в address.house_number
-        if (houseNumber && houseNumber.toString().toLowerCase().includes(houseValue.toLowerCase())) {
-          return true
-        }
-        
-        // Проверяем наличие номера дома в начале display_name (формат: "66 к1, улица..." или "улица ... 66")
-        const houseRegex = new RegExp(`\\b${houseValue}\\b`, 'i')
-        if (houseRegex.test(displayName)) {
-          // Убеждаемся, что это не просто индекс или часть другого адреса
-          // Проверяем, что номер дома находится в начале или после названия улицы
-          const streetPart = addressSearch.split(',')[0].trim().toLowerCase()
-          const displayLower = displayName.toLowerCase()
-          
-          // Если номер дома в начале адреса (например "66 к1, улица...") или после названия улицы
-          if (displayLower.startsWith(houseValue.toLowerCase()) || 
-              (displayLower.includes(streetPart) && displayLower.includes(houseValue.toLowerCase()))) {
-            return true
-          }
-        }
-        
-        return false
+      const filteredHouses = await searchHouses(houseValue, {
+        street: addressSearch,
+        city: formData.city,
+        country: formData.country,
+        lang: geoLang,
       })
       
       setHouseSuggestions(filteredHouses)
@@ -4191,22 +3968,23 @@ const AddProperty = ({
     return parts.join(', ')
   }
 
-  const applyHouseSelection = (suggestion, options = {}) => {
+  const applyHouseSelection = async (suggestion, options = {}) => {
     const { closeSuggestions = true } = options
-    const lat = parseFloat(suggestion.lat)
-    const lng = parseFloat(suggestion.lon)
+    const resolved = await ensureGeocodedHit(suggestion)
+    const lat = parseFloat(resolved?.lat)
+    const lng = parseFloat(resolved?.lon)
     if (isNaN(lat) || isNaN(lng)) return
     const coords = [lat, lng]
 
-    const addressParts = suggestion.address || {}
+    const addressParts = resolved.address || {}
     const country = addressParts.country || formData.country || ''
     const city = addressParts.city || addressParts.town || addressParts.village || formData.city || ''
     const houseNumber = String(addressParts.house_number || formData.apartment || '').trim()
 
     const streetShort =
-      formatShortAddress(suggestion) || addressSearch.split(',')[0].trim()
+      formatShortAddress(resolved) || addressSearch.split(',')[0].trim()
     const formattedLocation =
-      formatShortAddressWithHouse(suggestion) ||
+      formatShortAddressWithHouse(resolved) ||
       [country, city, streetShort, houseNumber].filter(Boolean).join(', ')
 
     setAddressSearch(streetShort)

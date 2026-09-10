@@ -112,6 +112,7 @@ const SERVICES_COLUMN = {
     { labelKey: 'favorites', path: '/favorites' },
     { labelKey: 'buyerCabinet_compare', path: '/compare', requiresAuth: true },
     { labelKey: 'mapLink', path: '/map', requiresAuth: true },
+    { labelKey: 'privateClubPageTitle', path: '/private-club' },
   ],
 }
 
@@ -125,7 +126,6 @@ const FOR_YOU_COLUMN = {
     { labelKey: 'headerMegaForBuyerPage', path: '/buyer' },
     { labelKey: 'news', path: '/news' },
     { labelKey: 'appDownloadPage', path: '/app' },
-    { labelKey: 'privateClubPageTitle', path: '/private-club' },
   ],
 }
 
@@ -154,7 +154,6 @@ function buildRoleColumn(role) {
       { labelKey: 'ownerTest_tabBookings', path: getCabinetBookingsPath(role), requiresAuth: true },
       { labelKey: 'buyerCabinet_tileDepositTitle', path: getCabinetWalletPath(role), requiresAuth: true },
       { labelKey: 'history', path: getCabinetHistoryPath(role), requiresAuth: true },
-      { labelKey: 'privateClubPageTitle', path: '/private-club' },
       { labelKey: 'bonuses', path: '/bonuses', requiresAuth: true },
     ],
   }
