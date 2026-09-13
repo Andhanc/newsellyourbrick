@@ -34,6 +34,7 @@ import {
   isSoftLaunchHrefBlocked,
 } from '../utils/softLaunchAccess'
 import HeaderPinnedCatalogNav from './HeaderPinnedCatalogNav'
+import './HeaderMobileLayout.css'
 
 const LoginModalLazy = lazy(() => import('./LoginModal'))
 const SiteNavDrawerLazy = lazy(() => import('./SiteNavDrawer'))
@@ -560,7 +561,7 @@ const Header = () => {
       <header
         className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''} ${
           isSearchOpen ? 'new-header--search-open' : ''
-        }`}
+        } ${isLoggedIn ? 'new-header--authenticated' : ''}`}
       >
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
           <div className="new-header__left">

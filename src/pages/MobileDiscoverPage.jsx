@@ -110,7 +110,7 @@ function getSaleCards(t, language) {
       descriptionTrigger: getDescriptionTrigger(language, 'buy_now'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
       imagePosition: '42% center',
-      to: '/auction?filter=buy_now',
+      to: '/auction/buy-now',
       theme: 'buy',
       infoSection: 'buyNow',
       iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),

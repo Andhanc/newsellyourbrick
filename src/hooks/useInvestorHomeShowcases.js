@@ -99,7 +99,7 @@ function normalizeProperty(prop, options = {}) {
   }
 }
 
-export function useInvestorHomeShowcases() {
+export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {}) {
   const { i18n } = useTranslation()
   const [homeProperties, setHomeProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -202,11 +202,11 @@ export function useInvestorHomeShowcases() {
         if (!property?.isAuction) return false
         if (isShareProperty(property)) return false
         if (isDebtProperty(property)) return false
-        return !hasBuyNowOption(property)
+        return includeBuyNowAuctions || !hasBuyNowOption(property)
       })
       .filter((property) => !isAuctionListingEnded(property))
       .slice(0, INVESTOR_SHOWCASE_LIMIT)
-  }, [homeProperties])
+  }, [homeProperties, includeBuyNowAuctions])
 
   const buyNowSection = useMemo(() => {
     return homeProperties

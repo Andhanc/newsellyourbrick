@@ -9189,10 +9189,16 @@ app.post('/api/properties', upload.fields([
       auction_starting_price,
       minimum_sale_price,
       is_share = 0,
-      total_shares
+      total_shares,
+      buy_now_enabled = 0
     } = req.body;
     
     const isShare = (is_share === '1' || is_share === 1 || is_share === true);
+    const normalizedBuyNowEnabled =
+      isShare &&
+      (buy_now_enabled === '1' || buy_now_enabled === 1 || buy_now_enabled === true || buy_now_enabled === 'true')
+        ? 1
+        : 0;
     
     // Проверяем, что property_type валиден для новых таблиц
     if (!property_type || !['apartment', 'commercial', 'house', 'villa'].includes(property_type)) {
@@ -9477,6 +9483,7 @@ app.post('/api/properties', upload.fields([
       is_shared_ownership: isShare ? 1 : 0,
       total_shares: isShare && total_shares ? parseInt(total_shares, 10) : null,
       shares_sold: isShare ? 0 : null,
+      buy_now_enabled: normalizedBuyNowEnabled,
       sale_type: isDebt ? 'debt' : (isShare ? 'share' : 'auction'),
       is_debt: isDebt ? 1 : 0,
       has_debt: isDebt ? 1 : 0,

@@ -496,6 +496,7 @@ export const apartmentQueries = {
       is_shared_ownership: propertyData.is_shared_ownership ? 1 : 0,
       total_shares: propertyData.total_shares ?? null,
       shares_sold: propertyData.shares_sold != null ? propertyData.shares_sold : 0,
+      buy_now_enabled: propertyData.buy_now_enabled ? 1 : 0,
       moderation_status: propertyData.moderation_status || 'pending',
       sale_type: propertyData.sale_type ?? null,
       is_debt: propertyData.is_debt ? 1 : 0,
@@ -720,6 +721,7 @@ export const houseQueries = {
       is_shared_ownership: propertyData.is_shared_ownership ? 1 : 0,
       total_shares: propertyData.total_shares ?? null,
       shares_sold: propertyData.shares_sold != null ? propertyData.shares_sold : 0,
+      buy_now_enabled: propertyData.buy_now_enabled ? 1 : 0,
       moderation_status: propertyData.moderation_status || 'pending',
       sale_type: propertyData.sale_type ?? null,
       is_debt: propertyData.is_debt ? 1 : 0,
@@ -1321,8 +1323,8 @@ export const propertyQueries = {
     return all;
   },
 
-  reserve: async (id, userId, purchaseRequestId) => {
-        const property = await propertyQueries.getById(id);
+  reserve: async (id, userId, purchaseRequestId, propertyType = null) => {
+        const property = await propertyQueries.getById(id, propertyType);
     if (!property) {
       throw new Error(`Объект с ID ${id} не найден`);
     }
@@ -1401,8 +1403,8 @@ export const propertyQueries = {
     throw new Error('Неизвестный тип объекта');
   },
 
-  isReserved: async (id) => {
-        const property = await propertyQueries.getById(id);
+  isReserved: async (id, propertyType = null) => {
+        const property = await propertyQueries.getById(id, propertyType);
     if (!property) {
       return { isReserved: false };
     }

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import SharePurchaseModal from '../components/SharePurchaseModal'
+import BuyNowModal from '../components/BuyNowModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import PropertyDetailClassicSkeleton from './PropertyDetailClassicSkeleton'
@@ -17,6 +18,7 @@ import { formatPropertyPrice } from '../utils/currency'
 import { getCoInvestmentDetailPath, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
 import { getPropertySlugFromRecord, isNumericPropertyRouteParam } from '../utils/propertySlug'
+import { getShareBuyNowAvailability } from '../utils/shareBuyNow'
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
@@ -110,6 +112,7 @@ const ShareDetailPage = () => {
   const [buyCount, setBuyCount] = useState(1)
   const [loadingShare, setLoadingShare] = useState(() => isShareDbRouteId(id))
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
+  const [buyNowModalOpen, setBuyNowModalOpen] = useState(false)
   const [userId, setUserId] = useState(() => getStoredNumericUserId())
   const [userDeposit, setUserDeposit] = useState(0)
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
@@ -341,6 +344,11 @@ const ShareDetailPage = () => {
   const myShares = isDbShare ? mySharesOwned : shareObject?.myShares || 0
   const availableToBuy = Math.max(0, totalShares - sharesSold)
   const isSoldOut = sharesSold >= totalShares
+  const shareBuyNowState = getShareBuyNowAvailability({
+    ...shareObject,
+    total_shares: totalShares,
+    shares_sold: Math.max(sharesSold, myShares),
+  })
 
   const openPurchaseModal = useCallback(async () => {
     const isClerkAuth = user && userLoaded
@@ -371,6 +379,20 @@ const ShareDetailPage = () => {
     setPurchaseModalOpen(true)
   }, [user, userLoaded, isDbShare, availableToBuy, userId, t])
 
+  const openBuyNowModal = useCallback(() => {
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    if (!isClerkAuth && !isOldAuth) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    if (!shareBuyNowState.available) {
+      showNotification(t('shareDetailBuyNowLocked'), 'warning')
+      return
+    }
+    setBuyNowModalOpen(true)
+  }, [shareBuyNowState.available, t, user, userLoaded])
+
   const shareListingConfig = useMemo(() => {
     if (!shareObject) return null
     const numberLocale = i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US'
@@ -386,6 +408,11 @@ const ShareDetailPage = () => {
       isSoldOut,
       isDbShare: Boolean(isDbShare),
       onPurchase: openPurchaseModal,
+      buyNowEnabled: shareBuyNowState.enabled,
+      buyNowAvailable: shareBuyNowState.available,
+      buyNowLockedReason: shareBuyNowState.reason,
+      fullPrice: shareObject.totalPrice ?? shareObject.price ?? 0,
+      onBuyNow: openBuyNowModal,
       formatStickyTotal: () =>
         formatPropertyPrice((shareObject.pricePerShare || 0) * buyCount, shareObject.currency || 'EUR', {
           compact: false,
@@ -402,6 +429,10 @@ const ShareDetailPage = () => {
     isSoldOut,
     isDbShare,
     openPurchaseModal,
+    openBuyNowModal,
+    shareBuyNowState.available,
+    shareBuyNowState.enabled,
+    shareBuyNowState.reason,
     i18n.language,
   ])
 
@@ -431,6 +462,19 @@ const ShareDetailPage = () => {
         userEmail={userEmail}
         userDeposit={userDeposit}
         returnPath={id ? getCoInvestmentDetailPath(shareObject || { id }) : undefined}
+      />
+
+      <BuyNowModal
+        isOpen={buyNowModalOpen}
+        onClose={() => setBuyNowModalOpen(false)}
+        stripeReturnPath={getCoInvestmentDetailPath(shareObject)}
+        property={{
+          ...classicProperty,
+          price: shareObject.totalPrice ?? shareObject.price ?? classicProperty.price,
+          total_shares: totalShares,
+          shares_sold: sharesSold,
+          buy_now_enabled: shareObject.buy_now_enabled,
+        }}
       />
 
       <DepositRequiredModal

@@ -45,7 +45,8 @@ export default function OwnerAddPropertyPricingStep({
   const { t } = useTranslation()
   const isAuctionMode = AUCTION_MODES.has(listingMode)
   const showBuyNow = BUY_NOW_MODES.has(listingMode)
-  const isShares = listingMode === 'shares'
+  const isShares = listingMode === 'shares' || listingMode === 'shares_buy_now'
+  const isSharesBuyNow = listingMode === 'shares_buy_now'
   const isDebt = listingMode === 'debt'
   const isDebtAuction = listingMode === 'debt_auction'
   const currencyCode = currency || 'EUR'
@@ -199,6 +200,12 @@ export default function OwnerAddPropertyPricingStep({
               </strong>
             </p>
           )}
+          {isSharesBuyNow ? (
+            <p className="oap-pricing-step__share-buy-now-note">
+              <Zap size={16} strokeWidth={2.2} aria-hidden />
+              <span>{t('oap_pricingSharesBuyNowHint')}</span>
+            </p>
+          ) : null}
         </>
       )}
 

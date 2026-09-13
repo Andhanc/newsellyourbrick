@@ -180,6 +180,26 @@
   color: #6b7280;
 }
 
+.oap-pricing-step__share-buy-now-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(116, 83, 255, 0.2);
+  border-radius: 14px;
+  color: #42347a;
+  background: linear-gradient(135deg, rgba(116, 83, 255, 0.09), rgba(71, 215, 203, 0.1));
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.oap-pricing-step__share-buy-now-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #7453ff;
+}
+
 .oap-pricing-step__per-share strong {
   color: #111827;
   font-weight: 700;

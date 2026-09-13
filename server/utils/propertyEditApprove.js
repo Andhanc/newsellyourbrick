@@ -18,6 +18,7 @@ const BOOLEAN_FIELDS = new Set([
   'security',
   'furniture',
   'test_drive',
+  'buy_now_enabled',
 ]);
 
 const NUMERIC_FIELDS = new Set([
@@ -305,6 +306,7 @@ export function buildEditApprovalUpdateData({ original, pending, privateClubOnly
     is_shared_ownership: originalNorm.is_shared_ownership ?? 0,
     total_shares: originalNorm.total_shares ?? null,
     shares_sold: originalNorm.shares_sold ?? 0,
+    buy_now_enabled: originalNorm.buy_now_enabled ?? 0,
   };
 
   const apartmentOnlyUpdateData = {

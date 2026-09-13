@@ -4,6 +4,7 @@ export const PINNED_CATALOG_NAV_KEY = 'pinnedCatalogNavSection'
 
 export const CATALOG_NAV_SECTIONS = [
   { id: 'home', path: '/', labelKey: 'home' },
+  { id: 'buyNow', path: '/auction/buy-now', labelKey: 'buyNowSectionTitle' },
   { id: 'auction', path: '/auction', labelKey: 'auction' },
   { id: 'shares', path: CO_INVESTMENT_PATH, labelKey: 'footerShares' },
   { id: 'debts', path: '/debts', labelKey: 'auctionPageCtaDebtsTitle' },
@@ -45,7 +46,10 @@ export function isCatalogSectionActive(pathname, section) {
     return path === '/'
   }
   if (section.id === 'auction') {
-    return path === '/auction' || path.startsWith('/auction/')
+    return (
+      (path === '/auction' || path.startsWith('/auction/')) &&
+      !path.startsWith('/auction/buy-now')
+    )
   }
   if (section.id === 'shares') {
     return path === section.path || path.startsWith(`${section.path}/`) || path.startsWith('/shares')

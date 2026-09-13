@@ -26,7 +26,7 @@ const SHOWCASE_KIND_CONFIG = {
     subtitleKey: 'buyNowSectionSubtitle',
     allKey: 'buyNowSectionCta',
     emptyKey: 'sybLandingBuyNowEmpty',
-    allHref: '/auction?filter=buy_now',
+    allHref: '/auction/buy-now',
     badgeKey: 'buyNowSectionTitle',
   },
   shares: {

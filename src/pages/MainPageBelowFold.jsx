@@ -72,10 +72,10 @@ export default function MainPageBelowFold() {
           sectionId="objects-buy-now"
           sectionClassName="apartments-section apartments-section--buy-now-showcase"
           title={t('buyNowSectionTitle')}
-          titleTo="/auction?filter=buy_now"
+          titleTo="/auction/buy-now"
           subtitle={t('buyNowSectionSubtitle')}
           ctaLabel={t('buyNowSectionCta')}
-          onCtaClick={() => navigate('/auction?filter=buy_now')}
+          onCtaClick={() => navigate('/auction/buy-now')}
           scrollerRef={buyNowShowcaseScrollerRef}
           onScroll={scrollBuyNowShowcase}
           loading={homePropertiesLoading}

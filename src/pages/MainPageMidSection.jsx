@@ -26,7 +26,7 @@ export default function MainPageMidSection() {
         title: t('buyNowSectionTitle'),
         text: t('buyNowSectionSubtitle'),
         image: '/images/sellyourbrick/about/about-category-buynow.jpg',
-        to: '/auction?filter=buy_now',
+        to: '/auction/buy-now',
         metric: '02',
       },
       {

@@ -9,6 +9,8 @@ const EXACT_ALLOWED = new Set([
   '/',
   '/main',
   '/mobile-discover',
+  '/mobile-showcase',
+  '/search-results',
   '/jeton',
   '/home-redesign',
   '/oauth-bridge',

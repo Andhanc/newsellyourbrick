@@ -9,7 +9,7 @@ const columns = [
     title: 'Объекты',
     links: [
       { label: 'Аукцион', to: '/auction?filter=auction' },
-      { label: 'Купить сейчас', to: '/auction?filter=buy_now' },
+      { label: 'Купить сейчас', to: '/auction/buy-now' },
       { label: 'Доли', to: CO_INVESTMENT_PATH },
       { label: 'Долги', to: '/debts' },
       { label: 'Карта объектов', to: '/map' },

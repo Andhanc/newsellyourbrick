@@ -226,7 +226,7 @@ function validatePricingStep(form) {
   const errors = {}
   const mode = form.listingMode
 
-  if (mode === 'shares') {
+  if (mode === 'shares' || mode === 'shares_buy_now') {
     const price = parseMoneyDigits(form.price)
     if (price === null || price <= 0) {
       errors.price = i18n.t('oap_err_price')
@@ -566,6 +566,12 @@ export default function OwnerAddPropertyTestPage() {
         label: t('oap_listingModeShares'),
         description: t('oap_listingModeSharesDesc'),
         tone: 'blue',
+      },
+      {
+        id: 'shares_buy_now',
+        label: t('oap_listingModeSharesBuyNow'),
+        description: t('oap_listingModeSharesBuyNowDesc'),
+        tone: 'violet',
       },
       {
         id: 'debt',

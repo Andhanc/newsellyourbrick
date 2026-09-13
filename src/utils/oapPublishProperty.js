@@ -183,7 +183,8 @@ export async function publishOapProperty({
   const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
   const listingMode = form.listingMode || 'auction'
   const isDebtProperty = listingMode === 'debt' || listingMode === 'debt_auction'
-  const isShare = listingMode === 'shares'
+  const isShare = listingMode === 'shares' || listingMode === 'shares_buy_now'
+  const shareBuyNowEnabled = listingMode === 'shares_buy_now'
   const isDebt = isDebtProperty
   const isAuctionMode =
     listingMode === 'auction' || listingMode === 'auction_buy_now' || listingMode === 'debt_auction'
@@ -277,6 +278,7 @@ export async function publishOapProperty({
   formDataToSend.append('listing_mode', listingMode)
   formDataToSend.append('is_share', isShare ? '1' : '0')
   formDataToSend.append('is_debt', isDebt ? '1' : '0')
+  formDataToSend.append('buy_now_enabled', shareBuyNowEnabled ? '1' : '0')
 
   if (isShare) {
     formDataToSend.append('is_auction', '0')

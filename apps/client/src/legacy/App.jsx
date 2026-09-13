@@ -33,6 +33,7 @@ import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import GlobalManagerChatHost from './components/GlobalManagerChatHost'
 import GlobalAiChatHost from './components/GlobalAiChatHost'
 import MobileDiscoverPage from './pages/MobileDiscoverPage'
+const MobileShowcasePage = lazyWithRetry(() => import('./pages/MobileShowcasePage'))
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import { PurchaseSuccessProvider } from './context/PurchaseSuccessContext'
@@ -111,6 +112,7 @@ const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserMod
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
 const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
 const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
+const LazyBuyNow = lazyWithRetry(() => import('./pages/BuyNow'))
 const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const CatalogCityPage = lazyWithRetry(() => import('./pages/CatalogCityPage'))
 const PageFallback = () => (
@@ -169,6 +171,7 @@ function AppChromeFooter() {
     shouldShowSoftLaunchUnavailable(pathname) ||
     pathname === '/lottery' ||
     pathname === '/app' ||
+    pathname === '/mobile-showcase' ||
     pathname === '/map' ||
     pathname.startsWith('/test-drive/survey/') ||
     pathname.startsWith('/test-drive/feedback/')
@@ -672,7 +675,16 @@ function App() {
             <SoftLaunchGate>
             <Routes>
               <Route path="/" element={<MobileDiscoverPage />} />
+              <Route path="/mobile-showcase" element={<LazyPage><MobileShowcasePage /></LazyPage>} />
               <Route path="/auction" element={<Home />} />
+              <Route
+                path="/auction/buy-now"
+                element={
+                  <LazyPage>
+                    <LazyBuyNow />
+                  </LazyPage>
+                }
+              />
               <Route path="/auction/property/:slugOrId" element={<PropertyDetailPage />} />
               <Route path="/auction/:segment1/:segment2?" element={<Home />} />
               <Route path="/main" element={<Navigate to="/auction" replace />} />

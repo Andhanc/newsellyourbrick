@@ -206,6 +206,100 @@
   text-align: center;
 }
 
+.share-purchase-panel__buy-now {
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid rgba(0, 153, 169, 0.22);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(225, 252, 249, 0.9), rgba(244, 251, 255, 0.96));
+}
+
+.share-purchase-panel__buy-now--locked {
+  border-color: #e2e8f0;
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+}
+
+.share-purchase-panel__buy-now-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-purchase-panel__buy-now-icon {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #00b8a9, #0099a9);
+  box-shadow: 0 7px 16px rgba(0, 153, 169, 0.2);
+}
+
+.share-purchase-panel__buy-now--locked .share-purchase-panel__buy-now-icon {
+  color: #64748b;
+  background: #e2e8f0;
+  box-shadow: none;
+}
+
+.share-purchase-panel__buy-now-head div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.share-purchase-panel__buy-now-head strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.share-purchase-panel__buy-now-head span:last-child {
+  color: #0099a9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.share-purchase-panel__buy-now > p {
+  margin: 11px 0 13px;
+  color: #526273;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.share-purchase-panel__buy-now-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.share-purchase-panel__buy-now-footer > strong {
+  color: #0f172a;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.share-purchase-panel__buy-now-footer button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  background: #0099a9;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.share-purchase-panel__buy-now-footer button:disabled {
+  color: #64748b;
+  background: #dbe4ea;
+  cursor: not-allowed;
+}
+
 .share-purchase-panel--sold-out {
   align-items: center;
   text-align: center;

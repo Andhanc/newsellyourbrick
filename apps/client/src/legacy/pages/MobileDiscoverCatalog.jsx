@@ -111,7 +111,7 @@ function getShowcaseSections(t) {
       title: t('buyNowSectionTitle'),
       subtitle: t('discoverPage_showcaseBuyNowSubtitle'),
       ctaLabel: t('goTo'),
-      to: '/auction?filter=buy_now',
+      to: '/auction/buy-now',
       itemsKey: 'buyNowSection',
     },
     {

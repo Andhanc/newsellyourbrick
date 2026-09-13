@@ -14,7 +14,7 @@ const COMPANY_LINKS = [
 
 const PROPERTY_LINKS = [
   { label: 'Auctions', to: '/auction' },
-  { label: 'Buy Now', to: '/auction?filter=buy_now' },
+  { label: 'Buy Now', to: '/auction/buy-now' },
   { label: 'Shares', to: '/shares' },
   { label: 'Debts', to: '/debts' },
 ];

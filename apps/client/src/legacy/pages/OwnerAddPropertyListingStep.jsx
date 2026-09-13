@@ -17,6 +17,10 @@ const LISTING_MODE_META = {
     Icon: PieChart,
     tone: 'blue',
   },
+  shares_buy_now: {
+    Icon: Zap,
+    tone: 'violet',
+  },
   debt: {
     Icon: Shield,
     tone: 'amber',

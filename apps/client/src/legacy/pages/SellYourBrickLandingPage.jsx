@@ -47,7 +47,7 @@ const DIRECTION_CARDS = [
     key: 'buy_now',
     titleKey: 'buyNowSectionTitle',
     countKey: 'sybLandingCountBuyNow',
-    href: '/auction?filter=buy_now',
+    href: '/auction/buy-now',
     image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg',
     offset: 1,
     accent: '#f59e0b',

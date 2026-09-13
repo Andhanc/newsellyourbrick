@@ -83,6 +83,33 @@ a.shares-v2-card {
     linear-gradient(180deg, transparent 55%, rgba(15, 23, 42, 0.18) 100%);
 }
 
+.shares-v2-card__buy-now-badge {
+  position: absolute;
+  z-index: 3;
+  top: 13px;
+  left: 13px;
+  max-width: calc(100% - 72px);
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 153, 169, 0.9);
+  box-shadow: 0 7px 18px rgba(0, 38, 46, 0.18);
+  backdrop-filter: blur(10px);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.shares-v2-card__buy-now-badge--locked {
+  color: #475569;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(241, 245, 249, 0.92);
+}
+
 .shares-v2-card__shares-dock {
   position: absolute;
   right: auto;

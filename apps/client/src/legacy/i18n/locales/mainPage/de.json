@@ -121,6 +121,32 @@
   "showcaseCarouselPrev": "Vorherige anzeigen",
   "showcaseCarouselNext": "Nächste anzeigen",
   "buyNowSectionTitle": "Jetzt kaufen",
+  "buyNowPageEyebrow": "Festpreis",
+  "buyNowPageTitle": "Jetzt kaufen",
+  "buyNowPageSubtitle": "Alle Immobilien für einen schnellen Kauf, einschließlich kompletter Objekte und 100 % der Anteile, solange noch kein Anteil verkauft wurde.",
+  "buyNowPageCta": "Objekte ansehen",
+  "buyNowPageCatalogEyebrow": "Aktuelle Angebote",
+  "buyNowPageCatalogTitle": "Immobilien zum Festpreis",
+  "buyNowPageCount": "{{count}} Objekte gefunden",
+  "buyNowPageSearchPlaceholder": "Stadt oder Objektname",
+  "buyNowPageFiltersAria": "Filter für den Sofortkauf-Katalog",
+  "buyNowPageLoading": "Angebote werden geladen…",
+  "buyNowPageErrorTitle": "Objekte konnten nicht geladen werden",
+  "buyNowPageErrorDescription": "Prüfen Sie die Verbindung und versuchen Sie es erneut.",
+  "buyNowPageRetry": "Erneut versuchen",
+  "buyNowPageEmptyTitle": "Noch keine passenden Objekte",
+  "buyNowPageEmptyDescription": "Setzen Sie die Filter zurück oder schauen Sie später wieder vorbei.",
+  "buyNowPageReset": "Filter zurücksetzen",
+  "oap_listingModeSharesBuyNow": "Anteile + Jetzt kaufen",
+  "oap_listingModeSharesBuyNowDesc": "Anteile verkaufen und den Kauf von 100 % bis zum ersten Anteilsverkauf erlauben",
+  "oap_pricingSharesBuyNowHint": "Das gesamte Objekt kann nur gekauft werden, solange noch kein Anteil verkauft wurde.",
+  "shareDetailBuyNowTitle": "Jetzt kaufen",
+  "shareDetailBuyNow100Percent": "100 % der Anteile",
+  "shareDetailBuyNowDescription": "Kaufen Sie das gesamte Objekt zum Festpreis, solange die Anteile noch nicht verteilt sind.",
+  "shareDetailBuyNowLocked": "Der Kauf des gesamten Objekts ist nicht mehr möglich, da bereits mindestens ein Anteil gekauft wurde.",
+  "shareDetailBuyNowCompleted": "Das gesamte Objekt wurde bereits gekauft.",
+  "shareDetailBuyNowUnavailable": "Nicht verfügbar",
+  "shareDetailBuyNowShort": "100 % kaufen",
   "buyNowSectionSubtitle": "Festpreis — Abschluss ohne Warten auf das Auktionsende",
   "buyNowSectionCta": "Alle „Jetzt kaufen“-Angebote",
   "buyNowShowcasePriceLabel": "Preis",
@@ -6272,5 +6298,59 @@
   "authToast_documentsSubmitted": "Dokumente zur Verifizierung gesendet. Sie erhalten eine Benachrichtigung nach der Prüfung.",
   "verificationApprovedCelebrationTitle": "Glückwunsch!",
   "verificationApprovedCelebrationText": "Ihre Dokumente wurden genehmigt. Sie können den Service jetzt voll nutzen.",
-  "verificationApprovedCelebrationCta": "Zum Profil"
+  "verificationApprovedCelebrationCta": "Zum Profil",
+  "mobileShowcase": {
+    "appTitle": "Ihr nächstes Zuhause. Immer dabei.",
+    "headline": "Immobilien. Nach Ihren Regeln.",
+    "intro": "5 Wege zum Start",
+    "menu": "Menü",
+    "profile": "Profil",
+    "navigation": "Navigation",
+    "strategies": "Kaufstrategien",
+    "quickActions": "Schnellzugriff",
+    "explore": "Entdecken",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "possibilities": "Mehr Möglichkeiten",
+    "all": "Alle",
+    "tryHome": "Erst wohnen. Dann entscheiden.",
+    "shareHome": "Große Pläne. Ihr Anteil.",
+    "howItWorks": "So geht’s",
+    "findHome": "Finden Sie Ihr nächstes Zuhause",
+    "signoff": "Ihr nächster Schritt",
+    "auction": {
+      "title": "Auktion",
+      "eyebrow": "Ihr Gebot",
+      "description": "Ein Zuhause zu Ihrem Preis"
+    },
+    "buy-now": {
+      "title": "Sofort kaufen",
+      "eyebrow": "Ohne Warten",
+      "description": "Ihr Zuhause. Ihr Preis. Jetzt."
+    },
+    "shares": {
+      "title": "Anteile",
+      "eyebrow": "Klein anfangen",
+      "description": "Ein Anteil. Viele Möglichkeiten."
+    },
+    "debts": {
+      "title": "Forderungen",
+      "eyebrow": "Ein anderer Ansatz",
+      "description": "Ein neuer Blick auf Immobilien"
+    },
+    "test-drive": {
+      "title": "Probewohnen",
+      "eyebrow": "Erst ausprobieren",
+      "description": "Fühlen Sie sich wie zu Hause"
+    },
+    "map": {
+      "title": "Karte"
+    },
+    "deposit": {
+      "title": "Einzahlung"
+    },
+    "favorites": {
+      "title": "Favoriten"
+    }
+  }
 }

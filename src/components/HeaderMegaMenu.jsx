@@ -95,7 +95,7 @@ const TRADES_COLUMN = {
     { labelKey: 'auction', path: '/auction' },
     { labelKey: 'coInvestment', path: CO_INVESTMENT_PATH },
     { labelKey: 'debtsTitle', path: '/debts' },
-    { labelKey: 'headerMegaBuyNow', path: '/auction?filter=buy_now' },
+    { labelKey: 'headerMegaBuyNow', path: '/auction/buy-now' },
   ],
 }
 

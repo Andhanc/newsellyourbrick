@@ -120,6 +120,32 @@
   "showcaseCarouselPrev": "Föregående",
   "showcaseCarouselNext": "Nästa",
   "buyNowSectionTitle": "Köp nu",
+  "buyNowPageEyebrow": "Fast pris",
+  "buyNowPageTitle": "Köp nu",
+  "buyNowPageSubtitle": "Alla objekt som kan köpas snabbt, inklusive hela fastigheter och 100 % av andelarna så länge ingen andel har sålts.",
+  "buyNowPageCta": "Visa objekt",
+  "buyNowPageCatalogEyebrow": "Aktuella erbjudanden",
+  "buyNowPageCatalogTitle": "Fastigheter med fast pris",
+  "buyNowPageCount": "{{count}} objekt hittades",
+  "buyNowPageSearchPlaceholder": "Stad eller objektnamn",
+  "buyNowPageFiltersAria": "Filter för Köp nu-katalogen",
+  "buyNowPageLoading": "Laddar erbjudanden…",
+  "buyNowPageErrorTitle": "Det gick inte att ladda objekten",
+  "buyNowPageErrorDescription": "Kontrollera anslutningen och försök igen.",
+  "buyNowPageRetry": "Försök igen",
+  "buyNowPageEmptyTitle": "Inga matchande objekt ännu",
+  "buyNowPageEmptyDescription": "Återställ filtren eller kom tillbaka senare.",
+  "buyNowPageReset": "Återställ filter",
+  "oap_listingModeSharesBuyNow": "Andelar + Köp nu",
+  "oap_listingModeSharesBuyNowDesc": "Sälj andelar och låt en köpare köpa 100 % före den första andelsförsäljningen",
+  "oap_pricingSharesBuyNowHint": "Köparen kan köpa hela fastigheten endast så länge ingen andel har sålts.",
+  "shareDetailBuyNowTitle": "Köp nu",
+  "shareDetailBuyNow100Percent": "100 % av andelarna",
+  "shareDetailBuyNowDescription": "Köp hela fastigheten till fast pris medan andelarna ännu inte har fördelats.",
+  "shareDetailBuyNowLocked": "Köp av hela fastigheten är inte längre möjligt eftersom minst en andel redan har köpts.",
+  "shareDetailBuyNowCompleted": "Hela fastigheten har redan köpts.",
+  "shareDetailBuyNowUnavailable": "Ej tillgängligt",
+  "shareDetailBuyNowShort": "Köp 100 %",
   "buyNowSectionSubtitle": "Fast pris — affär utan att vänta på auktionsslut",
   "buyNowSectionCta": "Alla «Köp nu»-objekt",
   "buyNowShowcasePriceLabel": "Pris",
@@ -6271,5 +6297,59 @@
   "authToast_documentsSubmitted": "Dokument skickade för verifiering. Du får en avisering efter granskningen.",
   "verificationApprovedCelebrationTitle": "Grattis!",
   "verificationApprovedCelebrationText": "Dina dokument har godkänts. Du kan nu använda tjänsten fullt ut.",
-  "verificationApprovedCelebrationCta": "Gå till profilen"
+  "verificationApprovedCelebrationCta": "Gå till profilen",
+  "mobileShowcase": {
+    "appTitle": "Ditt nästa hem. Alltid nära.",
+    "headline": "Fastigheter. På dina villkor.",
+    "intro": "5 sätt att börja",
+    "menu": "Meny",
+    "profile": "Profil",
+    "navigation": "Navigering",
+    "strategies": "Köpstrategier",
+    "quickActions": "Genvägar",
+    "explore": "Utforska",
+    "previous": "Föregående",
+    "next": "Nästa",
+    "possibilities": "Fler möjligheter",
+    "all": "Alla",
+    "tryHome": "Bo först. Bestäm sedan.",
+    "shareHome": "Stora planer. Din egen andel.",
+    "howItWorks": "Så fungerar det",
+    "findHome": "Hitta ditt nästa hem",
+    "signoff": "Ditt nästa steg",
+    "auction": {
+      "title": "Auktion",
+      "eyebrow": "Ditt bud",
+      "description": "Ett hem till ditt pris"
+    },
+    "buy-now": {
+      "title": "Köp nu",
+      "eyebrow": "Utan väntan",
+      "description": "Ditt hem. Ditt pris. Nu."
+    },
+    "shares": {
+      "title": "Andelar",
+      "eyebrow": "Börja smått",
+      "description": "En del av ett hem. Fler möjligheter."
+    },
+    "debts": {
+      "title": "Fordringar",
+      "eyebrow": "En annan väg",
+      "description": "Ett nytt perspektiv på fastigheter"
+    },
+    "test-drive": {
+      "title": "Provbo",
+      "eyebrow": "Prova först",
+      "description": "Känn dig som hemma"
+    },
+    "map": {
+      "title": "Karta"
+    },
+    "deposit": {
+      "title": "Insättning"
+    },
+    "favorites": {
+      "title": "Favoriter"
+    }
+  }
 }

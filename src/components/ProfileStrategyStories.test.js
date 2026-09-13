@@ -16,7 +16,7 @@ test('profile strategy stories expose all seven steps and destination routes', (
   assert.equal(storyIds.length, 7)
   assert.match(source, /STORY_DURATION_MS = 6500/)
   assert.match(source, /\/auction\?filter=auction/)
-  assert.match(source, /\/auction\?filter=buy_now/)
+  assert.match(source, /\/auction\/buy-now/)
   assert.match(source, /\/co-investment/)
   assert.match(source, /\/debts/)
   assert.match(source, /\/test-drive/)

@@ -1,8 +1,14 @@
+import { getShareBuyNowAvailability, isShareListing } from './shareBuyNow'
+
 /**
  * Проверка, что у объекта реально есть опция «Купить сейчас»
  */
 export function hasBuyNowOption(property) {
   if (!property) return false
+
+  if (isShareListing(property)) {
+    return getShareBuyNowAvailability(property).available && Number(property.price) > 0
+  }
 
   const isAuction =
     property.isAuction === true ||

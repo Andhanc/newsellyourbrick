@@ -25,7 +25,7 @@ const SHOWCASE_SECTIONS = [
     title: 'Купить сейчас',
     subtitle: 'Готовые объекты по фиксированной цене без торгов',
     ctaLabel: 'Перейти',
-    to: '/auction?filter=buy_now',
+    to: '/auction/buy-now',
     itemsKey: 'buyNowSection',
   },
   {

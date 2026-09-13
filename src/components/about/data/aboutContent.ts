@@ -132,7 +132,7 @@ export const LUXURY_COLLECTIONS: CollectionItem[] = [
     title: 'Modern Apartments',
     subtitle: 'Architect-designed residences in the world’s most desirable districts.',
     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80&auto=format&fit=crop',
-    href: '/auction?filter=buy_now',
+    href: '/auction/buy-now',
   },
   {
     id: 'c3',

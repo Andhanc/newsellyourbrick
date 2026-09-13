@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FiPlus } from 'react-icons/fi'
+import { FiLock, FiPlus, FiZap } from 'react-icons/fi'
 import { formatPropertyPrice } from '../utils/currency'
 import { resolveShareDistributionChart } from '../utils/shareDetailChartSegments'
 import './ShareDetailPurchasePanel.css'
@@ -16,6 +16,11 @@ export default function ShareDetailPurchasePanel({
   isSoldOut = false,
   isDbShare = false,
   onPurchase,
+  buyNowEnabled = false,
+  buyNowAvailable = false,
+  buyNowLockedReason = null,
+  fullPrice = 0,
+  onBuyNow,
   variant = 'desktop',
   mode = 'full',
 }) {
@@ -145,6 +150,40 @@ export default function ShareDetailPurchasePanel({
         </button>
         {!isDbShare ? (
           <p className="share-purchase-panel__demo-hint">{t('shareDetailDemoHint')}</p>
+        ) : null}
+
+        {buyNowEnabled ? (
+          <section
+            className={`share-purchase-panel__buy-now${
+              buyNowAvailable ? '' : ' share-purchase-panel__buy-now--locked'
+            }`}
+            aria-label={t('shareDetailBuyNowTitle')}
+          >
+            <div className="share-purchase-panel__buy-now-head">
+              <span className="share-purchase-panel__buy-now-icon" aria-hidden>
+                {buyNowAvailable ? <FiZap size={18} /> : <FiLock size={18} />}
+              </span>
+              <div>
+                <strong>{t('shareDetailBuyNowTitle')}</strong>
+                <span>{t('shareDetailBuyNow100Percent')}</span>
+              </div>
+            </div>
+            <p>
+              {buyNowAvailable
+                ? t('shareDetailBuyNowDescription')
+                : t(
+                    buyNowLockedReason === 'completed'
+                      ? 'shareDetailBuyNowCompleted'
+                      : 'shareDetailBuyNowLocked',
+                  )}
+            </p>
+            <div className="share-purchase-panel__buy-now-footer">
+              <strong>{formatPrice(fullPrice)}</strong>
+              <button type="button" onClick={onBuyNow} disabled={!buyNowAvailable}>
+                {buyNowAvailable ? t('buyNowSectionTitle') : t('shareDetailBuyNowUnavailable')}
+              </button>
+            </div>
+          </section>
         ) : null}
       </div> : null}
     </div>

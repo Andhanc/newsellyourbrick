@@ -12,6 +12,7 @@ import {
   resolveShareMarketplaceState,
 } from '../utils/sharesMarketplacePresentation'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import { getShareBuyNowAvailability } from '../utils/shareBuyNow'
 import './SharesPropertyCard.css'
 
 const CARD_IMAGE_FALLBACK = publicAsset('images/co-investment/co-investment-card-fallback.png')
@@ -27,6 +28,7 @@ function SharesPropertyCard({
   const { t, i18n } = useTranslation()
   const cardShare = normalizeMarketplaceShare(share)
   const investmentState = resolveShareMarketplaceState(cardShare)
+  const buyNowState = getShareBuyNowAvailability(cardShare)
   const detailHref = href || getCoInvestmentDetailPath(cardShare)
   const totalShares = Number.isFinite(cardShare.totalShares) ? cardShare.totalShares : null
   const soldShares = Number.isFinite(cardShare.sharesSold) ? cardShare.sharesSold : null
@@ -179,6 +181,16 @@ function SharesPropertyCard({
           onError={handleImageError}
         />
         <div className="shares-v2-card__media-gradient" aria-hidden />
+
+        {buyNowState.enabled && !showSoldPresentation ? (
+          <span
+            className={`shares-v2-card__buy-now-badge${
+              buyNowState.available ? '' : ' shares-v2-card__buy-now-badge--locked'
+            }`}
+          >
+            {buyNowState.available ? t('shareDetailBuyNowShort') : t('shareDetailBuyNowUnavailable')}
+          </span>
+        ) : null}
 
         {!showSoldPresentation ? (
           <div

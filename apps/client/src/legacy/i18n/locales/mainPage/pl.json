@@ -208,6 +208,32 @@
   "showcaseCarouselPrev": "Show previous",
   "showcaseCarouselNext": "Show next",
   "buyNowSectionTitle": "Buy now",
+  "buyNowPageEyebrow": "Stała cena",
+  "buyNowPageTitle": "Kup teraz",
+  "buyNowPageSubtitle": "Wszystkie nieruchomości dostępne do szybkiego zakupu, w tym całe obiekty i 100% udziałów, dopóki nie sprzedano żadnego udziału.",
+  "buyNowPageCta": "Zobacz nieruchomości",
+  "buyNowPageCatalogEyebrow": "Aktualne oferty",
+  "buyNowPageCatalogTitle": "Nieruchomości ze stałą ceną",
+  "buyNowPageCount": "Znaleziono: {{count}}",
+  "buyNowPageSearchPlaceholder": "Miasto lub nazwa nieruchomości",
+  "buyNowPageFiltersAria": "Filtry katalogu Kup teraz",
+  "buyNowPageLoading": "Ładowanie ofert…",
+  "buyNowPageErrorTitle": "Nie udało się załadować nieruchomości",
+  "buyNowPageErrorDescription": "Sprawdź połączenie i spróbuj ponownie.",
+  "buyNowPageRetry": "Spróbuj ponownie",
+  "buyNowPageEmptyTitle": "Brak pasujących nieruchomości",
+  "buyNowPageEmptyDescription": "Zresetuj filtry lub wróć później.",
+  "buyNowPageReset": "Resetuj filtry",
+  "oap_listingModeSharesBuyNow": "Udziały + Kup teraz",
+  "oap_listingModeSharesBuyNowDesc": "Sprzedawaj udziały i pozwól kupić 100% przed sprzedażą pierwszego udziału",
+  "oap_pricingSharesBuyNowHint": "Kupujący może nabyć całą nieruchomość tylko dopóki nie sprzedano żadnego udziału.",
+  "shareDetailBuyNowTitle": "Kup teraz",
+  "shareDetailBuyNow100Percent": "100% udziałów",
+  "shareDetailBuyNowDescription": "Kup całą nieruchomość po stałej cenie, dopóki udziały nie zostały przydzielone.",
+  "shareDetailBuyNowLocked": "Zakup całej nieruchomości jest niedostępny, ponieważ kupiono już co najmniej jeden udział.",
+  "shareDetailBuyNowCompleted": "Cała nieruchomość została już kupiona.",
+  "shareDetailBuyNowUnavailable": "Niedostępne",
+  "shareDetailBuyNowShort": "Kup 100%",
   "buyNowSectionSubtitle": "Fixed price — close the deal without waiting for the auction to end",
   "buyNowSectionCta": "View all Buy now listings",
   "buyNowShowcasePriceLabel": "Price",
@@ -6272,5 +6298,59 @@
   "authToast_documentsSubmitted": "Dokumenty wysłane do weryfikacji. Otrzymasz powiadomienie po sprawdzeniu.",
   "verificationApprovedCelebrationTitle": "Gratulacje!",
   "verificationApprovedCelebrationText": "Twoje dokumenty zostały zatwierdzone. Możesz już w pełni korzystać z serwisu.",
-  "verificationApprovedCelebrationCta": "Przejdź do profilu"
+  "verificationApprovedCelebrationCta": "Przejdź do profilu",
+  "mobileShowcase": {
+    "appTitle": "Twój kolejny dom. Zawsze pod ręką.",
+    "headline": "Nieruchomości. Na Twoich zasadach.",
+    "intro": "5 sposobów na start",
+    "menu": "Menu",
+    "profile": "Profil",
+    "navigation": "Nawigacja",
+    "strategies": "Strategie zakupu",
+    "quickActions": "Szybki dostęp",
+    "explore": "Odkryj",
+    "previous": "Wstecz",
+    "next": "Dalej",
+    "possibilities": "Więcej możliwości",
+    "all": "Wszystko",
+    "tryHome": "Zamieszkaj. Potem zdecyduj.",
+    "shareHome": "Wielkie plany. Twój udział.",
+    "howItWorks": "Jak to działa",
+    "findHome": "Znajdź swój kolejny dom",
+    "signoff": "Twój następny krok",
+    "auction": {
+      "title": "Aukcja",
+      "eyebrow": "Twoja oferta",
+      "description": "Dom w Twojej cenie"
+    },
+    "buy-now": {
+      "title": "Kup teraz",
+      "eyebrow": "Bez czekania",
+      "description": "Twój dom. Twoja cena. Teraz."
+    },
+    "shares": {
+      "title": "Udziały",
+      "eyebrow": "Zacznij od małego",
+      "description": "Część domu. Wiele możliwości."
+    },
+    "debts": {
+      "title": "Wierzytelności",
+      "eyebrow": "Inne podejście",
+      "description": "Nowe spojrzenie na nieruchomości"
+    },
+    "test-drive": {
+      "title": "Pobyt próbny",
+      "eyebrow": "Najpierw wypróbuj",
+      "description": "Poczuj się jak w domu"
+    },
+    "map": {
+      "title": "Mapa"
+    },
+    "deposit": {
+      "title": "Depozyt"
+    },
+    "favorites": {
+      "title": "Ulubione"
+    }
+  }
 }

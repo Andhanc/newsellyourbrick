@@ -53,6 +53,8 @@ const ALLOWED = [
   '/auth/telegram-callback',
   '/main',
   '/mobile-discover',
+  '/mobile-showcase',
+  '/search-results',
   '/owner-test',
   '/owner-test/properties',
   '/owner-test/property-analytics/42',
@@ -78,7 +80,6 @@ const ALLOWED = [
 const BLOCKED = [
   '/sections',
   '/sellyourbrick',
-  '/search-results',
   '/search-results/spain/madrid',
   '/test',
   '/profile/purchased/99',

@@ -120,6 +120,32 @@
   "showcaseCarouselPrev": "Précédentes",
   "showcaseCarouselNext": "Suivantes",
   "buyNowSectionTitle": "Acheter maintenant",
+  "buyNowPageEyebrow": "Prix fixe",
+  "buyNowPageTitle": "Acheter maintenant",
+  "buyNowPageSubtitle": "Tous les biens disponibles à l’achat rapide, y compris les biens entiers et 100 % des parts tant qu’aucune part n’a été vendue.",
+  "buyNowPageCta": "Voir les biens",
+  "buyNowPageCatalogEyebrow": "Offres actuelles",
+  "buyNowPageCatalogTitle": "Biens à prix fixe",
+  "buyNowPageCount": "{{count}} biens trouvés",
+  "buyNowPageSearchPlaceholder": "Ville ou nom du bien",
+  "buyNowPageFiltersAria": "Filtres du catalogue Acheter maintenant",
+  "buyNowPageLoading": "Chargement des offres…",
+  "buyNowPageErrorTitle": "Impossible de charger les biens",
+  "buyNowPageErrorDescription": "Vérifiez votre connexion et réessayez.",
+  "buyNowPageRetry": "Réessayer",
+  "buyNowPageEmptyTitle": "Aucun bien correspondant pour le moment",
+  "buyNowPageEmptyDescription": "Réinitialisez les filtres ou revenez plus tard.",
+  "buyNowPageReset": "Réinitialiser les filtres",
+  "oap_listingModeSharesBuyNow": "Parts + Acheter maintenant",
+  "oap_listingModeSharesBuyNowDesc": "Vendez des parts tout en permettant l’achat de 100 % avant la première vente",
+  "oap_pricingSharesBuyNowHint": "L’acheteur peut acquérir le bien entier uniquement tant qu’aucune part n’a été vendue.",
+  "shareDetailBuyNowTitle": "Acheter maintenant",
+  "shareDetailBuyNow100Percent": "100 % des parts",
+  "shareDetailBuyNowDescription": "Achetez le bien entier à prix fixe tant que ses parts ne sont pas encore attribuées.",
+  "shareDetailBuyNowLocked": "L’achat du bien entier n’est plus disponible car au moins une part a déjà été achetée.",
+  "shareDetailBuyNowCompleted": "Le bien entier a déjà été acheté.",
+  "shareDetailBuyNowUnavailable": "Indisponible",
+  "shareDetailBuyNowShort": "Acheter 100 %",
   "buyNowSectionSubtitle": "Prix fixe — conclure sans attendre la fin des enchères",
   "buyNowSectionCta": "Toutes les offres « Acheter maintenant »",
   "buyNowShowcasePriceLabel": "Prix",
@@ -6271,5 +6297,59 @@
   "authToast_documentsSubmitted": "Documents envoyés pour vérification. Vous serez notifié après l’examen.",
   "verificationApprovedCelebrationTitle": "Félicitations !",
   "verificationApprovedCelebrationText": "Vos documents ont été approuvés. Vous pouvez désormais utiliser pleinement le service.",
-  "verificationApprovedCelebrationCta": "Aller au profil"
+  "verificationApprovedCelebrationCta": "Aller au profil",
+  "mobileShowcase": {
+    "appTitle": "Votre prochain chez-vous. Toujours avec vous.",
+    "headline": "L’immobilier. À votre façon.",
+    "intro": "5 façons de commencer",
+    "menu": "Menu",
+    "profile": "Profil",
+    "navigation": "Navigation",
+    "strategies": "Stratégies d’achat",
+    "quickActions": "Accès rapide",
+    "explore": "Découvrir",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "possibilities": "Plus de possibilités",
+    "all": "Tout",
+    "tryHome": "Habitez. Puis décidez.",
+    "shareHome": "De grands projets. Votre part.",
+    "howItWorks": "Comment ça marche",
+    "findHome": "Trouvez votre prochain chez-vous",
+    "signoff": "Votre prochaine étape",
+    "auction": {
+      "title": "Enchères",
+      "eyebrow": "Votre offre",
+      "description": "Un chez-vous à votre prix"
+    },
+    "buy-now": {
+      "title": "Achat immédiat",
+      "eyebrow": "Sans attendre",
+      "description": "Votre logement. Votre prix. Maintenant."
+    },
+    "shares": {
+      "title": "Parts",
+      "eyebrow": "Commencez petit",
+      "description": "Une part. De grandes possibilités."
+    },
+    "debts": {
+      "title": "Créances",
+      "eyebrow": "Une autre approche",
+      "description": "Un nouveau regard sur l’immobilier"
+    },
+    "test-drive": {
+      "title": "Séjour d’essai",
+      "eyebrow": "Essayez d’abord",
+      "description": "Sentez-vous chez vous"
+    },
+    "map": {
+      "title": "Carte"
+    },
+    "deposit": {
+      "title": "Dépôt"
+    },
+    "favorites": {
+      "title": "Favoris"
+    }
+  }
 }

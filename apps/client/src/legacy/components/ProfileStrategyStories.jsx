@@ -149,7 +149,7 @@ const STORY_BLUEPRINTS = [
     id: 'buy-now',
     tone: 'buy-now',
     image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
-    to: '/auction?filter=buy_now',
+    to: '/auction/buy-now',
   },
   {
     id: 'test-drive',

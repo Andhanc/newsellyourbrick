@@ -257,6 +257,32 @@
   "showcaseCarouselPrev": "Показать предыдущие",
   "showcaseCarouselNext": "Показать следующие",
   "buyNowSectionTitle": "Купить сейчас",
+  "buyNowPageEyebrow": "Фиксированная цена",
+  "buyNowPageTitle": "Купить сейчас",
+  "buyNowPageSubtitle": "Все объекты с возможностью быстрой покупки: целая недвижимость и 100% долей, пока ни одна доля не продана.",
+  "buyNowPageCta": "Смотреть объекты",
+  "buyNowPageCatalogEyebrow": "Актуальные предложения",
+  "buyNowPageCatalogTitle": "Объекты с фиксированной ценой",
+  "buyNowPageCount": "Найдено объектов: {{count}}",
+  "buyNowPageSearchPlaceholder": "Город или название объекта",
+  "buyNowPageFiltersAria": "Фильтры каталога Купить сейчас",
+  "buyNowPageLoading": "Загружаем предложения…",
+  "buyNowPageErrorTitle": "Не удалось загрузить объекты",
+  "buyNowPageErrorDescription": "Проверьте соединение и попробуйте ещё раз.",
+  "buyNowPageRetry": "Повторить",
+  "buyNowPageEmptyTitle": "Подходящих объектов пока нет",
+  "buyNowPageEmptyDescription": "Сбросьте фильтры или загляните позже — каталог обновляется после публикации новых предложений.",
+  "buyNowPageReset": "Сбросить фильтры",
+  "oap_listingModeSharesBuyNow": "Доли + Купить сейчас",
+  "oap_listingModeSharesBuyNowDesc": "Продавайте доли и оставьте возможность купить 100% объекта до первой проданной доли",
+  "oap_pricingSharesBuyNowHint": "Покупатель сможет купить объект целиком по общей стоимости, только пока не продана ни одна доля.",
+  "shareDetailBuyNowTitle": "Купить сейчас",
+  "shareDetailBuyNow100Percent": "100% долей",
+  "shareDetailBuyNowDescription": "Купите весь объект целиком по фиксированной цене, пока доли ещё не распределены.",
+  "shareDetailBuyNowLocked": "Покупка всего объекта отключена: хотя бы одна доля уже приобретена.",
+  "shareDetailBuyNowCompleted": "Объект уже куплен целиком.",
+  "shareDetailBuyNowUnavailable": "Недоступно",
+  "shareDetailBuyNowShort": "Купить 100%",
   "buyNowSectionSubtitle": "Объекты для быстрых решений: понятная цена, короткий путь к резерву и оформление без ожидания финала торгов.",
   "buyNowSectionCta": "Все лоты «Купить сейчас»",
   "buyNowShowcasePriceLabel": "Цена",
@@ -6329,5 +6355,59 @@
   "authToast_documentsSubmitted": "Документы отправлены на верификацию. Вы получите уведомление после проверки.",
   "verificationApprovedCelebrationTitle": "Поздравляем!",
   "verificationApprovedCelebrationText": "Ваши документы одобрены. Теперь вы можете полноценно пользоваться сервисом.",
-  "verificationApprovedCelebrationCta": "Перейти в профиль"
+  "verificationApprovedCelebrationCta": "Перейти в профиль",
+  "mobileShowcase": {
+    "appTitle": "Ваш следующий дом. Всегда под рукой.",
+    "headline": "Недвижимость. По вашим правилам.",
+    "intro": "5 способов начать",
+    "menu": "Меню",
+    "profile": "Профиль",
+    "navigation": "Навигация",
+    "strategies": "Стратегии покупки",
+    "quickActions": "Быстрые действия",
+    "explore": "Подробнее",
+    "previous": "Назад",
+    "next": "Далее",
+    "possibilities": "Больше возможностей",
+    "all": "Все",
+    "tryHome": "Поживите. Потом решайте.",
+    "shareHome": "Большие планы. Своя доля.",
+    "howItWorks": "Как это работает",
+    "findHome": "Найдите свой следующий дом",
+    "signoff": "Ваш следующий шаг",
+    "auction": {
+      "title": "Аукцион",
+      "eyebrow": "Ваша ставка",
+      "description": "Дом по вашей цене"
+    },
+    "buy-now": {
+      "title": "Купить сейчас",
+      "eyebrow": "Без ожидания",
+      "description": "Ваш дом. Ваша цена. Сейчас."
+    },
+    "shares": {
+      "title": "Доли",
+      "eyebrow": "Начните с малого",
+      "description": "Часть дома. Большие возможности."
+    },
+    "debts": {
+      "title": "Долги",
+      "eyebrow": "Другой подход",
+      "description": "Новый взгляд на недвижимость"
+    },
+    "test-drive": {
+      "title": "Тест-драйв",
+      "eyebrow": "Сначала попробуйте",
+      "description": "Почувствуйте себя дома"
+    },
+    "map": {
+      "title": "Карта"
+    },
+    "deposit": {
+      "title": "Депозит"
+    },
+    "favorites": {
+      "title": "Понравилось"
+    }
+  }
 }

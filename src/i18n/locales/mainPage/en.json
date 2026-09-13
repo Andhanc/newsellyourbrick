@@ -257,6 +257,32 @@
   "showcaseCarouselPrev": "Show previous",
   "showcaseCarouselNext": "Show next",
   "buyNowSectionTitle": "Buy now",
+  "buyNowPageEyebrow": "Fixed price",
+  "buyNowPageTitle": "Buy now",
+  "buyNowPageSubtitle": "Every property available for a fast purchase, including whole homes and 100% of shares while no share has been sold.",
+  "buyNowPageCta": "View properties",
+  "buyNowPageCatalogEyebrow": "Available now",
+  "buyNowPageCatalogTitle": "Fixed-price properties",
+  "buyNowPageCount": "{{count}} properties found",
+  "buyNowPageSearchPlaceholder": "City or property name",
+  "buyNowPageFiltersAria": "Buy now catalogue filters",
+  "buyNowPageLoading": "Loading offers…",
+  "buyNowPageErrorTitle": "Could not load properties",
+  "buyNowPageErrorDescription": "Check your connection and try again.",
+  "buyNowPageRetry": "Try again",
+  "buyNowPageEmptyTitle": "No matching properties yet",
+  "buyNowPageEmptyDescription": "Reset the filters or check back later as new offers are published.",
+  "buyNowPageReset": "Reset filters",
+  "oap_listingModeSharesBuyNow": "Shares + Buy now",
+  "oap_listingModeSharesBuyNowDesc": "Sell shares while allowing a buyer to purchase 100% before the first share is sold",
+  "oap_pricingSharesBuyNowHint": "A buyer can purchase the whole property at its total price only while no share has been sold.",
+  "shareDetailBuyNowTitle": "Buy now",
+  "shareDetailBuyNow100Percent": "100% of shares",
+  "shareDetailBuyNowDescription": "Buy the entire property at a fixed price while its shares are still unallocated.",
+  "shareDetailBuyNowLocked": "Whole-property purchase is unavailable because at least one share has already been purchased.",
+  "shareDetailBuyNowCompleted": "The whole property has already been purchased.",
+  "shareDetailBuyNowUnavailable": "Unavailable",
+  "shareDetailBuyNowShort": "Buy 100%",
   "buyNowSectionSubtitle": "Fixed price — close the deal without waiting for the auction to end",
   "buyNowSectionCta": "View all Buy now listings",
   "buyNowShowcasePriceLabel": "Price",
@@ -6332,5 +6358,59 @@
   "authToast_documentsSubmitted": "Documents submitted for verification. You will be notified after review.",
   "verificationApprovedCelebrationTitle": "Congratulations!",
   "verificationApprovedCelebrationText": "Your documents were approved. You can now use the service fully.",
-  "verificationApprovedCelebrationCta": "Go to profile"
+  "verificationApprovedCelebrationCta": "Go to profile",
+  "mobileShowcase": {
+    "appTitle": "Your next home. Always with you.",
+    "headline": "Property. On your terms.",
+    "intro": "5 ways to begin",
+    "menu": "Menu",
+    "profile": "Profile",
+    "navigation": "Navigation",
+    "strategies": "Buying strategies",
+    "quickActions": "Quick actions",
+    "explore": "Explore",
+    "previous": "Previous",
+    "next": "Next",
+    "possibilities": "More possibilities",
+    "all": "All",
+    "tryHome": "Stay first. Decide later.",
+    "shareHome": "Big plans. Your own share.",
+    "howItWorks": "How it works",
+    "findHome": "Find your next home",
+    "signoff": "Your next step",
+    "auction": {
+      "title": "Auction",
+      "eyebrow": "Your bid",
+      "description": "A home at your price"
+    },
+    "buy-now": {
+      "title": "Buy now",
+      "eyebrow": "Skip the wait",
+      "description": "Your home. Your price. Now."
+    },
+    "shares": {
+      "title": "Shares",
+      "eyebrow": "Start small",
+      "description": "Part of a home. More possibilities."
+    },
+    "debts": {
+      "title": "Debts",
+      "eyebrow": "Another approach",
+      "description": "A new perspective on property"
+    },
+    "test-drive": {
+      "title": "Test drive",
+      "eyebrow": "Try it first",
+      "description": "See how home feels"
+    },
+    "map": {
+      "title": "Map"
+    },
+    "deposit": {
+      "title": "Deposit"
+    },
+    "favorites": {
+      "title": "Favorites"
+    }
+  }
 }

@@ -41,7 +41,7 @@ function getSaleCards(t) {
       title: t('buyNowSectionTitle'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
       imagePosition: '42% center',
-      to: '/auction?filter=buy_now',
+      to: '/auction/buy-now',
       theme: 'buy',
       iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
     },
@@ -71,7 +71,7 @@ function getSaleCards(t) {
 function getMenuItems(t) {
   return [
     { id: 'auction', label: t('auction'), to: '/auction?filter=auction', Icon: MdGavel },
-    { id: 'buy', label: t('buy'), to: '/auction?filter=buy_now', Icon: FiShoppingBag },
+    { id: 'buy', label: t('buy'), to: '/auction/buy-now', Icon: FiShoppingBag },
     { id: 'shares', label: t('shares'), to: CO_INVESTMENT_PATH, Icon: FiPieChart },
     { id: 'debts', label: t('debtsTitle'), to: '/debts', Icon: MdOutlineReceiptLong },
     { id: 'ai', label: 'AI', action: 'ai', Icon: HiOutlineSparkles },

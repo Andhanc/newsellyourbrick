@@ -19,6 +19,7 @@ import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } fro
 import { sendVipClubWelcomeEmail, shouldSendVipClubWelcomeEmail } from './vipClubWelcomeEmail.js';
 import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 import { fireOpsAlert, notifyReservationPaid } from './telegramOpsNotify.js';
+import { getShareBuyNowCheckoutBlock } from './shareBuyNowRules.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -634,9 +635,19 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
   }
 
-  const property = await propertyQueries.getById(propertyId);
+  const propertyTypeMeta =
+    sess.metadata?.property_type != null ? String(sess.metadata.property_type).trim() : null;
+  const property = await propertyQueries.getById(propertyId, propertyTypeMeta);
   if (!property) {
     return { ok: false, error: 'property_not_found' };
+  }
+
+  const shareBuyNowBlock = getShareBuyNowCheckoutBlock(
+    property,
+    sess.metadata?.purchase_variant === 'auctionWinner' ? 'auctionWinner' : 'buyNow',
+  );
+  if (shareBuyNowBlock) {
+    return { ok: false, error: shareBuyNowBlock.code };
   }
 
   const useWallet = sess.metadata?.use_wallet_deposit === '1';
@@ -828,7 +839,12 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       console.warn('[Stripe] reservation consume intent:', consumeErr?.message || consumeErr);
     }
 
-    await propertyQueries.reserve(propertyId, userId, createdRequestId);
+    await propertyQueries.reserve(
+      propertyId,
+      userId,
+      createdRequestId,
+      property.property_type || propertyTypeMeta,
+    );
 
     if (sess.metadata?.purchase_variant === 'auctionWinner') {
       const prisma = getPrisma();
@@ -2386,6 +2402,15 @@ export function registerStripeBillingRoutes(app) {
         return res.status(404).json({ success: false, error: 'Объявление не найдено' });
       }
 
+      const shareBuyNowBlock = getShareBuyNowCheckoutBlock(property, 'buyNow');
+      if (shareBuyNowBlock) {
+        return res.status(shareBuyNowBlock.status).json({
+          success: false,
+          code: shareBuyNowBlock.code,
+          error: shareBuyNowBlock.error,
+        });
+      }
+
       const propertyTypeNorm =
         property.property_type != null
           ? String(property.property_type).trim().slice(0, 32)
@@ -2454,7 +2479,10 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const resInfo = await propertyQueries.isReserved(propertyId);
+      const resInfo = await propertyQueries.isReserved(
+        propertyId,
+        property.property_type || propertyType || null,
+      );
       if (resInfo.isReserved && resInfo.reservedBy != null && Number(resInfo.reservedBy) !== userId) {
         return res.status(409).json({
           success: false,
@@ -2464,6 +2492,14 @@ export function registerStripeBillingRoutes(app) {
 
       const purchaseVariant =
         req.body?.purchaseVariant === 'auctionWinner' ? 'auctionWinner' : 'buyNow';
+      const shareBuyNowBlock = getShareBuyNowCheckoutBlock(property, purchaseVariant);
+      if (shareBuyNowBlock) {
+        return res.status(shareBuyNowBlock.status).json({
+          success: false,
+          code: shareBuyNowBlock.code,
+          error: shareBuyNowBlock.error,
+        });
+      }
       let minSaleMajor = computeReservationSalePriceMajor(property, purchaseVariant);
       let saleCurrencyRaw = property.currency || 'usd';
       if (purchaseVariant === 'auctionWinner') {

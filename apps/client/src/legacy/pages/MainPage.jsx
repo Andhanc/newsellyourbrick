@@ -150,7 +150,7 @@ const premiumModes = [
     text: 'Формат для понятных активов с фиксированной ценой: покупатель не ждет финала торгов, продавец быстрее получает решение.',
     caption: 'Для тех, кто уже готов к сделке и хочет убрать лишние шаги.',
     actionText: 'Показать объекты',
-    to: '/auction?filter=buy_now',
+    to: '/auction/buy-now',
     anchorId: 'strategy-buy-now',
     objectsId: 'objects-buy-now',
     image: '/images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp',
@@ -2305,7 +2305,7 @@ function MainPage() {
       title: t('buyNowSectionTitle'),
       text: t('buyNowSectionSubtitle'),
       image: '/images/sellyourbrick/about/about-category-buynow.jpg',
-      to: '/auction?filter=buy_now',
+      to: '/auction/buy-now',
       metric: '02',
     },
     {
@@ -2444,7 +2444,7 @@ function MainPage() {
       const query = String(formData.get('query') || '').trim()
       const routeByDealType = {
         auction: '/auction?filter=auction',
-        buy_now: '/auction?filter=buy_now',
+        buy_now: '/auction/buy-now',
         shares: '/shares',
         debts: '/debts',
       }

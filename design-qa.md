@@ -1,598 +1,242 @@
-# Compare cards — unified heading typography QA
+# Design QA — full-bleed mobile top navigation
 
 ## Evidence
 
-- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-8b802acf-88d1-4543-8ec3-405184a4f763.png` — 778 × 684 px, with `Оценка рынка` selected as the heading type reference.
-- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-card-heading-font-cropped.jpg` — 390 × 720 px, focused comparison cards.
-- Full browser capture: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-card-heading-font.jpg` — 1280 × 720 px, rendered with a 390 × 844 responsive viewport override.
-- Combined comparison input: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-card-heading-design-qa.jpg` — 1400 × 900 px.
-- State: Russian locale; `Комфорт`, `Удобства`, `Оценка рынка`, and `Итог` visible in one implementation capture.
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-4edbdf6e-afca-422d-a4bc-cf7f1cf09f0e.png` — 576 × 1280 px.
+- Transparency follow-up reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-d0398542-d882-4b12-b54c-b1de140705a7.png` — 722 × 270 px.
+- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-393x852.png` — 393 × 852 px.
+- Browser-rendered transparency fix: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-transparent-corners-393x852.png` — 393 × 852 px.
+- Expanded search state: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-search-393x852.png` — 393 × 852 px.
+- Initial floating-card implementation: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-before-393x852.png` — 393 × 852 px.
+- Combined focused comparison input: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-comparison.png` — 806 × 104 px; source on the left, implementation on the right.
+- Route: `http://127.0.0.1:4174/`.
+- Viewport: 393 × 852 CSS px at `deviceScaleFactor: 1`.
+- Density normalization: the 576 px source was resized to 393 px wide; both top-navigation regions were then cropped to 393 × 104 px and placed in one comparison image.
+- State: unauthenticated mobile discovery page; normal header, expanded search, and open/closed navigation drawer were tested.
 
-## Full-view and focused comparison
+## Full-view comparison evidence
 
-- All comparison-card headings now inherit one heading system based on the existing `Оценка рынка` treatment: Montserrat display family, weight 800, normal style, and `-0.03em` tracking.
-- Heading sizes and line heights remain contextual, preserving the hierarchy between section titles, metric titles, and nested card titles.
-- Browser-computed styles confirm the same `Montserrat, system-ui, sans-serif` family and weight `800` for `Комфорт`, `Удобства`, `Оценка рынка`, and `Итог`.
-- The shared rule also covers AI, investor, market-detail, calculator, and empty-state card headings on the comparison screen.
+- The source is a different product, so app-specific copy, logo, status-bar content, and actions were intentionally excluded from fidelity requirements.
+- The requested composition is preserved: a white navigation surface touches the viewport top and both side edges, has square top corners, rounded lower corners, and a restrained downward shadow.
+- Existing SellYourBrick controls, 44 px touch targets, page content, horizontal strategy carousel, and fixed behavior remain unchanged.
 
-## Required fidelity surfaces
+## Focused region comparison evidence
 
-- Fonts and typography: unified display family, optical weight, style, and tracking match the selected market-estimate heading; no synthetic alternative family remains in card headings.
-- Spacing and layout rhythm: unchanged; the type update does not alter card dimensions, padding, or responsive flow.
-- Colors and visual tokens: unchanged; existing Tiffany, white, and ink colors are preserved.
-- Image quality and asset fidelity: unchanged; the supplied comfort icon and property imagery remain real assets.
-- Copy and content: unchanged across all supported locales.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain for the requested typography alignment.
-
-## Final result
-
-final result: passed
-
----
-
-# Карточка объекта — «Купить сейчас» по мобильному референсу
-
-## Evidence
-
-- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-575305c9-75a3-4800-9f2a-02275d2001fd.png` — 424 × 752 px.
-- Browser-rendered implementation, price and CTA: `/var/tmp/newsellyourbrick-buy-now-top.png` — 424 × 752 px.
-- Browser-rendered implementation, services and cards: `/var/tmp/newsellyourbrick-buy-now-guides.png` — 424 × 752 px.
-- Combined full-view comparison: `/var/tmp/newsellyourbrick-buy-now-comparison-top.png` — 848 × 752 px.
-- Combined focused comparison: `/var/tmp/newsellyourbrick-buy-now-comparison-guides.png` — 848 × 752 px.
-- CSS viewport: 424 × 752 px; device scale factor 1; source and implementation compared at identical pixel dimensions.
-- State: Russian locale, auction property 110, mobile `Купить сейчас` tab selected.
-
-## Full-view comparison
-
-- The reference composition is adapted into a large rounded light-gray two-row price surface, followed by a prominent full-width Tiffany action.
-- The existing property header and auction tabs remain intact; the purchase action stays visible above the fold despite that product-owned context.
-- The reference's circular member row becomes four equal service shortcuts, and its settings tiles become a horizontally scrolling set of three purchase guides.
-
-## Focused comparison
-
-- Price panel: two stacked rows, circular white icon holders, quiet labels, large dark numeric hierarchy, subtle divider, and oversized corner radius follow the source rhythm.
-- Service row: four circular controls with short centered labels match the source's member-row density. Library icons replace reference avatars intentionally because the requested targets are product services.
-- Guide cards: the first Tiffany-tinted instruction card and two neutral gray cards preserve the source's large-radius horizontal carousel with a visible next-card affordance.
+- The combined source/implementation image confirms the same full-bleed silhouette and bottom-only rounding after width normalization.
+- The implementation uses a 28 px lower radius, no border, and no horizontal outer margin. The source's taller top region includes operating-system status chrome, which is intentionally not duplicated in web content.
+- Expanded search remains inside the same full-width white sheet, and the navigation drawer still opens and closes from the burger control.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: existing Montserrat is retained; price, 10% badge, CTA, service labels, card titles, and instructions have distinct optical weights without truncation at 424 px.
-- Spacing and layout rhythm: 20 px page insets, 28 px price-panel radius, 58 px service circles, 24 px card radii, and partial next-card visibility reproduce the reference's mobile rhythm.
-- Colors and visual tokens: white page, soft neutral gray surfaces, dark ink, and restrained Tiffany accents replace the reference blue with the product's established brand color.
-- Image quality and asset fidelity: the requested service controls use installed React Icons; no raster placeholders, custom SVGs, CSS drawings, gradients, or generated assets were introduced.
-- Copy and content: fixed price, immediate 10% amount, remaining 90%, three-step instruction, payment timing, manager support, and all four requested service destinations are present.
-
-## Primary interactions and console
-
-- Four service buttons render and map to calculator, comparison, favorites, and property AI routes.
-- Browser click verification confirmed that `Сравнение` navigates to `/compare`; source tests cover all four route handlers and the existing reservation handler.
-- The auction bid bar and floating AI launcher stay hidden on this transactional tab, so neither overlaps the primary purchase action.
-- Browser console errors: none.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain. The property header above the reference-inspired block and the use of service icons instead of avatars are intentional product adaptations.
+- Fonts and typography: existing product typography and control weights are preserved; the reference application's branding and address text are not copied.
+- Spacing and layout rhythm: the header measures 393 × 72 CSS px, spans the entire viewport, uses 12 px horizontal safe padding, and keeps all interactive controls at 44 × 44 px.
+- Colors and visual tokens: the established white surface, dark ink, pastel catalogue control, and subtle neutral shadow remain in use.
+- Image quality and asset fidelity: no imagery, logos, or icons were replaced. Existing icon-library components and the product's avatar behavior are retained.
+- Copy and content: no user-facing strings changed; all existing locale behavior remains intact.
 
 ## Comparison history
 
-- The first source-guided implementation pass matched the required surface hierarchy, service row, horizontal cards, and mobile density without actionable P0/P1/P2 findings.
-
-## Follow-up polish
-
-- P3: long translated service labels may wrap to two lines, which is acceptable and keeps all four shortcuts visible without horizontal scrolling.
-
-## Final result
-
-final result: passed
-
----
-
-# Карточка объекта — мобильная карта
-
-## Evidence
-
-- External composition reference: `/Users/vtichonenko/newsellyourbrick/.superdesign/pinterest-map-cards-reference.png` — карта с листающимися карточками поверх нижней части.
-- Source visual truth: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-design-v3.png` — адаптированный к продукту edge-to-edge макет с выразительными category cards.
-- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-rich-cards-390x844.png` — 390 × 844 px.
-- Combined comparison input: `/Users/vtichonenko/newsellyourbrick/.superdesign/mobile-map-qa-comparison.png` — макет и реализация в одном изображении.
-- CSS viewport: 390 × 844 px; device scale factor 1; русский язык; разблокированная публичная карточка объекта с координатами.
-
-## Full-view and focused comparison
-
-- Карта стала edge-to-edge: в viewport 390 px её фактическая ширина также равна 390 px, боковых полей нет.
-- Реальная карта имеет высоту 585 px и остаётся главным визуальным слоем.
-- Все пять фильтров сохранены как крупные карточки 257.4 × 139.4 px поверх нижней части карты. Каждая получила собственный категорийный цвет, верхнюю акцентную грань, крупную иконку, стрелку действия и подпись «Показать на карте». Следующая карточка видна частично и подсказывает горизонтальный свайп; включён обязательный scroll snap.
-- Отдельный focused pass не потребовался: заголовок, карта, controls и фильтры читаются в одном нативном viewport-capture.
-
-## Required fidelity surfaces
-
-- Fonts and typography: сохранён Montserrat, адрес остаётся главным текстовым акцентом, eyebrow — компактным служебным уровнем.
-- Spacing and layout rhythm: карта почти на высоту экрана и занимает всю ширину; карточки плавают на 16 px выше нижнего края карты с 18 px стартовым отступом.
-- Colors and visual tokens: карточки используют существующие синие, фиолетовые, розовые, зелёные и янтарные семантические цвета категорий на очень светлых поверхностях; карта и основной интерфейс сохраняют Tiffany/deep-teal токены.
-- Image quality and asset fidelity: используется живая карта MapLibre и существующие библиотечные иконки; растровые заглушки и самодельные SVG не добавлялись.
-- Copy and content: адрес, «Расположение», школы, транспорт, медицина, зоны отдыха, магазины и доступные действия карты сохранены.
+1. Initial P1 — the mobile header rendered as a floating rounded rectangle with side and top gaps, contradicting the selected full-bleed reference. Fix: removed mobile outer gutters, made the white surface edge-to-edge, removed its border, squared the top corners, and retained only 28 px lower rounding. Post-fix evidence: `/Users/vtichonenko/newsellyourbrick/.codex-artifacts/mobile-header-comparison.png` and measured bounds `left: 0`, `right: 393`, `width: 393`.
+2. Follow-up P2 — the fixed outer wrapper still had an opaque white background, so it filled the cutouts outside the rounded lower corners. Fix: made the wrapper transparent and shadowless, moved safe-area spacing into the white inner panel, and retained the panel shadow. Live computed styles now report outer `background-color: rgba(0, 0, 0, 0)`, `box-shadow: none`, and inner `border-radius: 0 0 28px 28px`.
+3. Post-fix interaction check — expanded search, menu open/close, and persistent header controls were exercised at 393 × 852. No new browser console errors were reported.
 
 ## Findings
 
-- Actionable P0/P1/P2 различий в исправленном мобильном направлении не осталось.
-
-## Comparison history
-
-1. Первый вариант — P1: карта была уменьшена до 356–430 px, а фильтры превращены в стеклянный overlay, из-за чего их вес и видимость снизились.
-2. Второй вариант — P1: компактные кнопки под высокой картой были недостаточно заметны и часть категорий скрывалась без явной подсказки.
-3. Исправление по Pinterest-референсу — карта растянута edge-to-edge, фильтры превращены в крупные листающиеся карточки поверх карты, добавлен scroll snap и видимый фрагмент следующей карточки.
-4. Третий вариант — P2: белые карточки были слишком пустыми и слабо различались между собой.
-5. Исправление — добавлены категорийный цвет, верхняя грань, иконка 44 px, action-arrow, локализованная подпись действия и контрастное активное состояние.
-6. Post-fix evidence — браузерный рендер 390 px показывает карту 390 × 585 px и пять визуально различимых карточек 257.4 × 139.4 px в доступной горизонтальной карусели.
-
-## Verification
-
-- Компонент успешно отрендерился в мобильном браузере с живыми тайлами и маркером.
-- В DOM присутствуют все пять POI-кнопок, а также разворот, увеличение и уменьшение карты.
-- Новых browser console errors не обнаружено; остаются только существующие development warnings Clerk/React Router.
-
-## Final result
-
-final result: passed
-
----
-
-# Compare result podium — single action follow-up QA
-
-## Evidence
-
-- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-79c2c1db-41b3-4f1c-ba4f-cdfd52e79e25.png` — 624 × 732 px, podium state supplied with the follow-up request.
-- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-single-action-cropped.jpg` — 260 × 578 px, focused mobile result block.
-- Full browser capture: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-single-action.jpg` — 1280 × 720 px, component rendered in the in-app browser with the 390 × 844 responsive viewport override.
-- Combined comparison input: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-single-action-design-qa.jpg` — 1400 × 900 px, source and implementation visible in the same browser-rendered frame.
-- State: Russian locale, two populated properties, 67% / 33% result, first object leading, one calculator action visible.
-
-## Comparison
-
-- The result container is now pure white, as requested, while the surrounding comparison surface and both podium columns retain the Tiffany family.
-- Two per-column calculator actions are replaced by one full-width black button below the shared podium baseline.
-- The single action targets the rank-one property; when the comparison is tied, the stable first property is used.
-- Circular property imagery, winner crown, rank markers, percentage hierarchy, column-height contrast, and the rise animation remain intact.
-- The explicit black CTA and white result surface are intentional follow-up overrides to the earlier Tiffany-only palette direction.
-
-## Primary interaction and accessibility
-
-- Browser inspection found exactly one enabled button with the accessible label `Открыть расчёт: Я`; the click completed successfully.
-- The button keeps a high-contrast white label and receives a Tiffany focus ring for keyboard navigation.
-- `prefers-reduced-motion` still disables the entrance animation while preserving the final podium state.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain for the requested follow-up.
-
-## Final result
-
-final result: passed
-
----
-
-# Compare result podium — design QA
-
-## Evidence
-
-- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-26a4e053-f75d-4bef-8a39-8a62bace68aa.png` — 1012 × 658 px, podium composition and vertical hierarchy.
-- Previous product state: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-160cc079-d1ca-4e34-821e-2b9f8d0dd258.png` — 766 × 526 px, two result cards being replaced.
-- Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-implementation.jpg` — 390 × 844 px.
-- Animation evidence: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-animation-start.jpg` — 390 × 844 px, captured while the columns are rising and before their content reveals.
-- Combined comparison input: `/Users/vtichonenko/newsellyourbrick/artifacts/compare-design-qa/compare-podium-design-qa.jpg` — 1400 × 900 px, source and implementation visible in the same browser-rendered frame.
-- CSS viewport: 390 × 844 px; device scale factor 1. The source remains at its native aspect ratio in the combined input; the implementation is a native mobile capture.
-- State: Russian locale, two populated properties, 67% / 33% result, first object leading, both calculator actions visible.
-
-## Full-view comparison
-
-The old two-card result has been replaced by the requested podium silhouette. The lower-scoring property stands on the shorter left column and the winner rises on the taller right column. Property images use the reference's circular portrait treatment, while the existing product labels, prices, and calculator actions remain intact. The three-place reference is intentionally adapted to the product's two-object comparison model.
-
-## Focused-region comparison
-
-- The winner receives the taller Tiffany column and a library crown badge; the second property uses a softer Tiffany tint without gold, silver, or bronze.
-- Percentages are the strongest typography inside the columns, with rank markers secondary and calculator buttons anchored to the base.
-- The 280 ms capture shows both columns between the collapsed and final states; the final capture shows the delayed percentage/action reveal after the rise.
-
-## Required fidelity surfaces
-
-- Fonts and typography: existing Montserrat display/body tokens remain in use; labels, one-line property names, prices, large tabular percentages, and CTA copy stay readable at 390 px.
-- Spacing and layout rhythm: two equal-width tracks, bottom alignment, 42 px height contrast between ranks, circular 66–72 px imagery, and shared podium baseline preserve the reference hierarchy without horizontal overflow.
-- Colors and visual tokens: the entire result uses Tiffany `#4fd5ca`, deep teal `#073f3b`, softer Tiffany variants, and white only; medal-metal colors and decorative gradients are absent.
-- Image quality and asset fidelity: live property imagery is retained and cropped into real circular image elements; the crown comes from the installed Lucide library rather than a custom SVG or text glyph.
-- Copy and content: `Итог`, both object identities, prices, 67% / 33%, and both `Рассчитать доходность` actions are preserved.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain. The two-column adaptation is an intentional product constraint because comparison always contains exactly two properties.
-
-## Comparison history
-
-1. First rendered pass already matched the requested hierarchy and palette without actionable P0/P1/P2 drift.
-2. The intermediate animation capture confirmed that each column grows from the shared baseline before percentage and CTA content appears.
-3. The final side-by-side comparison confirmed the circular imagery, second/first ordering, height contrast, and large percentages.
-
-## Primary interactions and console
-
-- Both calculator buttons are enabled and clickable in the browser-rendered component; focused component tests confirm that the selected left/right side is passed to the existing calculator handoff.
-- The final component render produced no new browser console errors. Existing app-wide development warnings are unrelated to this block.
-- `prefers-reduced-motion` disables the entrance animation while preserving the final podium state.
-
-## Follow-up polish
-
-- P3: final perceived image quality depends on the resolution and crop of each listing's uploaded photo.
-
-## Final result
-
-final result: passed
-
----
-
-# Compare redesign — design QA
-
-## Evidence
-
-- Source visual truth:
-  - `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-75105e6b-a86d-491a-a90f-1843d0d4e660.png` — 554 × 1178 px, previous long result block selected for simplification.
-  - `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-b5465aa6-57c3-4beb-91f1-c9af3bc8dfb1.png` — 670 × 376 px, topic/list-card reference.
-  - `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-f056e5e9-ab2a-4a20-a6a1-635bfbb9c09d.png` — 314 × 418 px, overlapping-card composition reference.
-- Browser-rendered implementation captures:
-  - `artifacts/compare-design-qa/metrics-card-redesign-final.png` — 430 × 932 px, large side-by-side property previews with values beneath.
-  - `artifacts/compare-design-qa/metric-trophy-redesign-final.png` — 430 × 932 px, winner treatment and trophy overlay.
-  - `artifacts/compare-design-qa/decision-no-arrows-final.png` — 430 × 932 px, compact result cards with no decorative or CTA arrows.
-  - `artifacts/compare-design-qa/ai-light-card-system-final.png` — 430 × 932 px, completed AI analysis in the same light card system.
-  - `artifacts/compare-design-qa/mobile-metric-thumbnails-row-final.png` — 430 × 932 px, two larger property thumbnails in one row with values beneath.
-  - `artifacts/compare-design-qa/mobile-metric-trophy-overlay-final.png` — 430 × 932 px, trophy attached to the winning thumbnail.
-  - `artifacts/compare-design-qa/mobile-market-values-final.png` — 430 × 932 px, visible market/listing-price fallback values.
-  - `artifacts/compare-design-qa/mobile-compact-decision-final.png` — 430 × 932 px, compact result cards.
-  - `artifacts/compare-design-qa/mobile-ai-autoload-final.png` — 430 × 932 px, completed automatically loaded AI analysis.
-  - `artifacts/compare-design-qa/mobile-thumbnails-trophy-final.png` — 430 × 932 px, object thumbnails and trophy winner markers.
-  - `artifacts/compare-design-qa/mobile-price-topic-final.png` — 430 × 932 px.
-  - `artifacts/compare-design-qa/mobile-topic-cards.png` — 430 × 932 px.
-  - `artifacts/compare-design-qa/mobile-decision-cards-final-full.png` — 430 × 932 px.
-  - `artifacts/compare-design-qa/mobile-decision-cards-final.png` — 430 × 932 px.
-  - `artifacts/compare-design-qa/mobile-ai-section.png` — 430 × 932 px.
-- Combined comparison inputs:
-  - `artifacts/compare-design-qa/combined-metrics-redesign-before-after.png` — equal-size 430 × 932 before/after panels for the metric cards.
-  - `artifacts/compare-design-qa/combined-decision-redesign-before-after.png` — equal-size 430 × 932 before/after panels for the result cards.
-  - `artifacts/compare-design-qa/combined-ai-redesign-before-after.png` — equal-size 430 × 932 before/after panels for the AI section.
-  - `artifacts/compare-design-qa/combined-metric-layout-before-after.png` — previous vertical values and revised one-row thumbnails.
-  - `artifacts/compare-design-qa/combined-summary-before-after.png` — the supplied long result state and revised compact result cards.
-  - `artifacts/compare-design-qa/combined-thumbnails-trophy-before-after.png` — previous numbered state and the revised thumbnail/trophy state in one input.
-  - `artifacts/compare-design-qa/combined-topic-reference-vs-implementation.png`.
-  - `artifacts/compare-design-qa/combined-decision-reference-vs-implementation.png`.
-- CSS viewport: 430 × 932 px; device scale factor 1. Source images were aspect-fit into 430 × 932 panels for the combined comparison, without stretching. The implementation captures are native 1× viewport captures.
-- State: signed-in local buyer, two auction/buy-now favorites selected, comparison populated, 67% / 33% result, market values present, and completed AI analysis visible.
-
-## Full-view comparison
-
-The implementation now uses one consistent light card language from the comparison rows through the AI analysis. Each parameter has a compact icon/title header followed by two large image columns and values underneath. The result section uses two equal cards, compact percentage pills, and arrow-free yield CTAs on a calm Tiffany surface.
-
-## Focused-region comparison
-
-- Topic card: checked the complete `Цена` card and the first rows of `Информация об объекте`. Both previews fill their two-column slots at 72 px high, values sit below them, and the trophy is attached to the winning image without clipping.
-- Decision cards: checked both card images, percentage pills, prices, and `Рассчитать доходность` actions. Both cards are equal-height and fully visible; CTA arrows and the misleading decorative background arrow are absent.
-- Market and AI: verified visible currency-correct fallback figures for unsupported locations and a completed automatically loaded AI response with summary, score cards, and nine light evidence cards. No generated metric icon is used in the AI evidence list.
-
-## Required fidelity surfaces
-
-- Fonts and typography: existing SellYourBrick display/body fonts and optical hierarchy are preserved; long Russian labels wrap without clipping.
-- Spacing and layout rhythm: 8–16 px card rhythm, 14–28 px radii, side-by-side compact result cards, and two-column image/value tiles fit the 430 px viewport without horizontal overflow.
-- Colors and visual tokens: purple was removed from the new composition; Tiffany, deep teal, white, and muted gray use existing buyer tokens.
-- Image quality and asset fidelity: the 13 generated 3D metric icons remain real transparent PNG assets; listing images use stable crops in larger 2:1 preview slots. The result surface is now intentionally clean and contains no decorative arrow asset.
-- Copy and content: all available comparison fields remain present; each value is tied to a recognizable numbered object preview, winners use an overlaid trophy, the result heading remains `Итог`, and both actions say `Рассчитать доходность` without arrow glyphs.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain.
-
-## Comparison history
-
-1. First decision-card pass — P2: the second card's hover layer obscured the first card CTA in the neutral reference composition.
-2. Fix — made the first/reference-leading card the default upper layer while retaining deliberate hover promotion for the card under the pointer.
-3. Post-fix evidence — `mobile-decision-cards-final.png` and `mobile-decision-cards-final-full.png` show both calculator CTAs and both percentage badges without clipping.
-4. User review — P2: repeated `1` / `2` dots made the two objects harder to distinguish, and the checkmark did not communicate a winner strongly enough.
-5. Fix — replaced those row markers with 30 px listing thumbnails and changed the winner badge to a white trophy on Tiffany.
-6. Post-fix evidence — `combined-thumbnails-trophy-before-after.png` confirms the object identities are visually distinct, all six visible thumbnails load at their intended 30 × 30 px size, trophy badges remain unclipped, and numbered row markers are absent.
-7. User review — P2: thumbnails were still too small and vertically stacked; the result block was overly tall and text-heavy; AI stayed behind a subscription action and unsupported locations returned empty market values.
-8. Fix — enlarged metric thumbnails to 48 px, placed them in a two-column row with values underneath, moved the trophy onto the winning thumbnail, reduced the result to two equal cards, enabled automatic AI analysis for every selected pair, inferred city/country correctly, and added a clearly labelled listing-price fallback when external comparables are unavailable.
-9. Post-fix evidence — `combined-metric-layout-before-after.png`, `combined-summary-before-after.png`, `mobile-market-values-final.png`, and `mobile-ai-autoload-final.png` show the requested compact layout and both completed analysis states.
-10. User review — P2: the AI analysis used a visually unrelated dark surface, metric previews and values still felt weak, and arrows suggested navigation without a clear destination.
-11. Fix — rebuilt each metric row around a compact header and two large 72 px image/value tiles, added numbered image badges, kept the trophy on the winner image, removed metric chevrons, CTA arrows, and the decorative result-background arrow, and restyled AI summary/score/evidence states with the same light white/mint cards.
-12. Post-fix evidence — `combined-metrics-redesign-before-after.png`, `combined-decision-redesign-before-after.png`, and `combined-ai-redesign-before-after.png` show the unified card system at the same 430 × 932 viewport. No actionable P0/P1/P2 mismatch remains.
-
-## Interaction and console checks
-
-- Tested selecting the first and second objects, replacing/clearing affordances in the rendered DOM, both calculator CTAs, AI automatic loading, and manual refresh availability.
-- AI now starts automatically for the selected pair and remains refreshable; the rendered response contained a summary, a 6–3 score, and nine evidence topics.
-- Unsupported Belarus/Åland market locations now show currency-correct listing-price baselines immediately, with an explicit note that they are not independent market valuations.
-- The final mobile DOM exposes no metric-card chevrons or result-card CTA arrows, and the rendered page has no horizontal overflow. No new component runtime errors were observed on the final clean render.
-
-## Follow-up polish
-
-- P3: property images are user-provided and vary in crop/quality; production listings with higher-resolution imagery will improve the result-card presentation.
-
-## Final result
-
-final result: passed
-
----
-
-# Design QA — кнопки и подсказки умного помощника
-
-## Source visual truth
-
-- Исходный мобильный референс: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-981d4508-35f1-4c78-8ce6-7305a553b70c.png`.
-- Сохранённое нормализованное сравнение референса и стартового состояния: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-reference-comparison.png` — 800 × 884 px.
-- Целевой язык: белые округлые карточки, мягкая глубина, спокойный холодный фон, цветные библиотечные иконки и крупные зоны нажатия.
-
-## Implementation evidence
-
-- Мобильное сообщение с навигацией и сервисным CTA: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-message-actions-mobile.png` — 390 × 844 px.
-- Десктопное состояние: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-message-actions-desktop.png` — 1280 × 720 px.
-- Совмещённый full-view input: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-actions-reference-comparison.png` — 1210 × 884 px.
-- CSS viewport: 390 × 844 px и 1280 × 720 px; DPR 1; русский язык; drawer/modal открыт после содержательного ответа.
-
-## Full-view comparison
-
-- Новые действия продолжают визуальный язык стартовых карточек: белые поверхности, радиус 17 px, мягкая тень и цветная пиктограмма слева.
-- Внутри длинного ответа кнопки образуют отдельный легко сканируемый блок, не спорят с текстом и не ломают нижний composer.
-- Цвета различают назначение: избранное — розовый, сравнение — индиго, сервисы — зелёный; стрелка остаётся отдельной доступной зоной-направлением.
-
-## Focused-region comparison
-
-- Проверены две навигационные кнопки и одна сервисная карточка в нижней половине сообщения. Иконки, подписи и стрелки выровнены по сетке 40 px / flexible / 30 px.
-- Длинное описание сервисного действия переносится на две строки без обрезания.
-- На десктопе rich-message имеет `clientWidth = scrollWidth = 367 px`; горизонтального overflow нет.
-
-## Required fidelity surfaces
-
-- Fonts and typography: сохранён Montserrat продукта; основные подписи имеют явный вес, вторичные описания остаются компактными и читаемыми.
-- Spacing and layout rhythm: 9–11 px внутренний ритм, 58–68 px минимальная высота CTA, 17 px радиус и одинаковое выравнивание всех действий.
-- Colors and visual tokens: холодный бело-Tiffany базовый стиль сохранён; дополнительные rose/indigo/blue/amber/green используются только как смысловые акценты.
-- Image quality and asset fidelity: растровые ассеты не нужны; все пиктограммы взяты из существующего `react-icons/fi`, самодельных SVG и CSS-иконок нет.
-- Copy and content: текст ответа, названия маршрутов и локализованные описания действий не менялись.
-
-## Findings
-
-- Actionable P0/P1/P2 различий не осталось.
-
-## Comparison history
-
-1. Первый проход — P2: навигация выглядела как однотонные плоские полосы, а короткий bot bubble сжимал полезные действия.
-2. Исправление — добавлены семантические иконки, отдельные стрелки, смысловые цветовые тона, rich-message width и согласованные hover/focus/active states.
-3. Post-fix evidence — мобильный и десктопный captures показывают полные подписи, стабильную сетку и отсутствие horizontal overflow.
-
-## Primary interactions and console
-
-- Проверено открытие помощника, отправка запроса, появление двух navigation CTA и contextual service CTA.
-- Нажатие «Все сервисы сайта» переводит на `/sections` и закрывает drawer; возврат и повторное открытие сохраняют историю.
-- Новых browser console errors нет; видны только существующие предупреждения React Router, Clerk development mode и Yandex Metrika.
-
-## Follow-up polish
-
-- P3: на очень длинных ответах текстовая часть естественно занимает большую часть viewport; это зависит от длины ответа модели, а не от кнопок.
-
-## Final result
-
-final result: passed
-
----
-
-# Design QA — блок подписок покупателя
-
-## Source visual truth
-
-- Референс тарифных карточек: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-a14453b6-6b7f-4b85-873a-81de9716dc1c.png` — 690 × 841 px.
-- Исходное состояние продукта: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-8c04efd8-33f5-4f7c-bac4-564166a9b031.png` — 617 × 1157 px.
-
-## Implementation evidence
-
-- Мобильный заголовок и две верхние карточки: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-top.png` — 390 × 844 px.
-- Мобильная VIP-карточка после исправления: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-vip-final.png` — 390 × 844 px.
-- Десктопная VIP-карточка: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-desktop.png` — 1280 × 720 px.
-- Совмещённое сравнение: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-comparison.png` — 1470 × 844 px.
-- Итерация после отзыва о сжатых карточках: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-roomy-pair.png`, `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-roomy-pro.png` и `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-roomy-vip.png` — 390 × 844 px.
-- Просторный десктопный вариант: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-desktop-roomy.png` и `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-desktop-roomy-vip.png` — 1280 × 720 px.
-- Финальное сравнение референса и мобильной реализации: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-roomy-comparison.png` — 796 × 844 px.
-- Состояние Pro с проектным фиолетовым свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-pro-full.png` — 390 × 844 px.
-- Состояние VIP с Tiffany-свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-mobile-vip-tiffany-glow.png` — 390 × 844 px.
-- Совмещённая проверка референса, Pro и VIP: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-slider-glow-comparison.png` — 1202 × 844 px.
-- Финальный мобильный Pro с градиентным верхом, чёрным body и внешним свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-pro-split-glow-full.png` — 390 × 844 px.
-- Финальный мобильный VIP в том же состоянии: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-vip-split-glow-full.png` — 390 × 844 px.
-- Финальный горизонтальный VIP на десктопе: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-vip-split-desktop.png` — 1280 × 720 px.
-- Финальное совмещённое сравнение: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-split-glow-comparison.png` — 1202 × 844 px.
-- Последняя проверка в in-app browser: 390 × 844 px и 1280 × 720 px; вычисленный фон hero у всех трёх карточек одинаков — `linear-gradient(145deg, rgb(45, 45, 45), rgb(8, 8, 8))`. У Starter `--plan-glow: transparent`, у Pro — `rgba(124, 58, 237, 0.72)`, у VIP — `rgba(78, 205, 214, 0.72)`.
-- Белые карточки с увеличенным свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-white-pro-glow.png` и `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-white-vip-glow.png` — 390 × 844 px.
-- Совмещённое сравнение исходной белой карточки, Pro и VIP: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-white-glow-comparison.png` — 1202 × 844 px.
-- Фокусное сравнение верхней плашки с новым цветным вариантом: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-pill-comparison.png` — 796 × 150 px.
-- Конверсионный Pro с обновлённой ценой, CTA и свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-conversion-pro.png` — 390 × 844 px.
-- Конверсионный VIP с Tiffany-градиентом и свечением: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-conversion-vip.png` — 390 × 844 px.
-- Совмещённый full-view референса, Pro и VIP: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-conversion-comparison.png` — 1202 × 844 px.
-- Фокусное сравнение ценового блока: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-conversion-price-comparison.png` — 796 × 210 px.
-- Финальный мобильный intro после выравнивания влево: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-intro-left-mobile.png` — 393 × 852 px.
-- Совмещённый focused input нового референса и реализации: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-intro-left-comparison.png` — 1290 × 599 px.
-- Финальная облегчённая композиция intro: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-intro-refined-393.png` — 393 × 852 px и `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-intro-refined-320.png` — 320 × 800 px.
-- Совмещённый focused input состояния из последнего отзыва и облегчённой реализации: `/Users/vtichonenko/newsellyourbrick/.codex/qa/buyer-subscriptions-intro-refined-comparison.png` — 1310 × 582 px.
-- CSS viewport: 390 × 844 px и 1280 × 720 px; DPR 1; русский язык; Pro выбран по умолчанию.
-- Дополнительная адаптивная проверка выполнена при 393 × 852 px и 320 × 800 px, DPR 1; состояние — верх блока подписок и начало горизонтальной ленты тарифов.
-
-## Full-view comparison
-
-- Сохранена композиция референса: тёмный фон и высокие белые карточки. Цвет тарифа перенесён в компактные верхние плашки и нижнее свечение: Pro использует проектный фиолетовый, VIP — Tiffany.
-- На телефоне Starter, Pro и VIP находятся в одной scroll-snap ленте; на десктопе VIP сохраняет горизонтальную композицию под Starter и Pro.
-- Продуктовые цены, возможности и локализация сохранены; нижний промежуточный выбор удалён в пользу прямого перехода к оформлению.
-
-## Focused-region comparison
-
-- Проверены градиентные pills, диагонально перечёркнутые старые цены, аккуратно обведённая выгода, нумерованные преимущества, усиленный CTA и trust-note. Все поверхности карточек белые; Pro использует violet-градиенты и glow, VIP — Tiffany.
-- На мобильном проверены все три позиции ленты: 4 пункта Starter, 6 пунктов Pro и 7 пунктов VIP. Pro явно содержит просмотр документов.
-- В десктопной VIP-карточке заголовок, цена и возможности разложены в три читаемые колонки.
-
-## Required fidelity surfaces
-
-- Fonts and typography: сохранён Inter проекта; крупные названия тарифов и плотная жирная типографика повторяют иерархию референса, длинные русские строки не обрезаются.
-- Spacing and layout rhythm: мобильные Starter и Pro имеют ширину 335 px при viewport 390 px, внутренние отступы 22 px и видимый край следующей карточки; Pro намеренно выше Starter. VIP занимает всю ширину и визуально отделён нижним интервалом.
-- Colors and visual tokens: card, hero и body у всех тарифов имеют фон `#ffffff`; основной текст `#111111`, вторичный `#747474`, CTA и нумерация нейтрально-чёрные. Pro pills используют градиент `#a56fff → #6d28d9`, VIP — `#8aebef → #2abac5`; ценовые блоки получают едва заметный tier-tint. Pro/VIP underglow раскрывается от opacity `0` до `0.84`.
-- Image quality and asset fidelity: новых растровых ассетов не требуется; фоновое изображение продукта сохранено с затемнением, стандартные UI-иконки остаются библиотечными.
-- Copy and content: тексты, цены, скидки, преимущества и названия тарифов локализованы; CTA формулирует действие и показывает стоимость (`Оформить Pro · €149`), а подпись сообщает о немедленном открытии доступа.
-
-## Findings
-
-- Actionable P0/P1/P2 различий не осталось.
-
-## Comparison history
-
-1. Первый мобильный проход — P1: у VIP оставалась десктопная трёхколоночная сетка, поэтому правая часть карточки визуально обрезалась.
-2. Исправление — мобильному VIP задана специфичная двухколоночная сетка с полноширинными списком преимуществ и CTA.
-3. Повторный проход — карточка занимает 374 px внутри viewport 390 px, `scrollWidth - clientWidth = 0`; весь контент и кнопка доступны вертикальной прокруткой.
-4. Отзыв пользователя — P1: две верхние карточки в фиксированных мобильных колонках выглядели сплюснутыми.
-5. Исправление — верхняя пара переведена в scroll-snap ленту с карточками шириной `86vw`, увеличены внутренние отступы, типографика, ценовой блок и CTA; VIP сохранён отдельной горизонтальной карточкой ниже.
-6. Повторная проверка — Starter и Pro имеют ширину 335.4 px, горизонтальная лента прокручивается от `scrollLeft 0` до `313`, VIP остаётся шириной 374 px без горизонтального overflow.
-7. Следующая итерация — по запросу пользователя VIP добавлен третьим мобильным слайдом, а красный Pro заменён на проектный фиолетовый.
-8. Добавлены выбранные состояния: Pro получает фон `#f5f0ff` и фиолетовое свечение, VIP — фон `#e9fbfc` и Tiffany-свечение. Входная анимация длится 620 ms и отключается при `prefers-reduced-motion`.
-9. После исправления лента имеет три карточки шириной 335.4 px и полный диапазон прокрутки 664 px; выбранные Pro и VIP помещаются без горизонтального обрезания, все пункты читаемы.
-10. Отзыв пользователя — P1: цвет заполнял всю карточку, а внешнее свечение под ней визуально не читалось.
-11. Исправление — карточка разделена на `buyer-plan__hero` с градиентом и `buyer-plan__body` с фоном `#080808`; цветные кнопки и маркеры из body убраны. Под выбранной карточкой добавлены два цветных shadow-слоя и отдельный blur-слой высотой 42 px со смещением `bottom: -18px`.
-12. Повторная проверка — Pro и VIP показывают чёрный body `rgb(8, 8, 8)`, градиент остаётся только в hero; внешние violet/Tiffany-свечения явно видимы под нижней границей на мобильном и десктопном снимках.
-13. Отзыв пользователя — P1: цветные hero-блоки Pro и VIP всё ещё отличались от Starter; требовались три одинаковые тёмные карточки, где цвет находится только в свечении снизу.
-14. Исправление — hero-переменные Pro и VIP унифицированы со Starter, все accent-переменные внутри карточек сделаны белыми, Starter получил прозрачное свечение. Для Pro и VIP добавлен постоянный мягкий underglow, который усиливается при выборе.
-15. Повторная проверка — computed styles подтвердили полностью одинаковые hero/background у трёх тарифов, отсутствие свечения Starter, violet `rgba(124, 58, 237, 0.72)` у Pro и Tiffany `rgba(78, 205, 214, 0.72)` у VIP; выбранное состояние переключается без изменения цвета поверхностей.
-16. Отзыв пользователя — P1: карточки должны вернуться к белым поверхностям; цвет тарифа должен находиться в верхних плашках, а свечение — стать крупнее и появляться анимированно.
-17. Исправление — card/hero/body переведены на `#ffffff`, обе верхние плашки связаны с tier-токеном, underglow увеличен до 68 px, расширен до 90% ширины и получил отдельную 760 ms reveal-анимацию с мягким overshoot.
-18. Повторная проверка — совмещённый full-view показывает белые Pro/VIP рядом с исходной белой Starter-карточкой; focused crop подтверждает сохранённую форму плашки и новый цвет. В браузере computed styles подтвердили белые поверхности, корректные pill-токены и `buyer-plan-underglow-in` длительностью `0.76s`; обрезания контента нет.
-19. Отзыв пользователя — P1: старая цена должна быть перечёркнута по диагонали, выгода — обведена как ручкой, а промежуточный выбор тарифа необходимо убрать; первая двойная icon-обводка выглядела криво, также требовалось вернуть градиенты и явное свечение.
-20. Исправление — цена получила диагональный tier-штрих; двойная icon-обводка заменена одной тонкой органичной линией вокруг выгоды. Плашки и ценовые панели получили violet/Tiffany-градиенты, underglow увеличен до 78 px с blur 36 px. CTA теперь содержит название и цену, добавлена короткая trust-note, selected-панель удалена, вся карточка ведёт в существующий checkout.
-21. Повторная проверка — full-view comparison показывает читаемые Pro/VIP, аккуратную обводку без перекрытия текста, заметные градиенты и внешние свечения. Computed styles подтвердили diagonal transform `rotate(-8deg)`, violet/Tiffany gradients, glow opacity `0.84` и отсутствие `buyer-subscribe-panel`; Starter-переход проверен до `/subscriptions?plan=starter#subscriptions-pricing-section`. Stripe Checkout Pro/VIP во время QA не запускался, чтобы не создавать реальную платёжную сессию.
-22. Отзыв пользователя — мобильный intro выглядел удачно по композиции, но заголовок, описание и промо-плашку требовалось выровнять по левому краю.
-23. Исправление и post-fix evidence — на breakpoint до 820 px grid-контент растянут по ширине и получает `text-align: left`; промо-плашка использует `justify-content: flex-start`, а иконка не сжимается. Совмещённый файл `buyer-subscriptions-intro-left-comparison.png` показывает исходный центрированный референс рядом с финальным левым вариантом. На 393 px и 320 px computed styles подтверждают левое выравнивание; `scroll-margin-top: 96px` не даёт фиксированной мобильной шапке перекрыть заголовок при переходе к секции.
-24. Повторный отзыв пользователя — P2: после простого выравнивания заголовок оставался слишком крупным и тяжёлым, строки были несбалансированы, описание занимало слишком много места, а промо-плашка выглядела как массивная рамка на всю ширину.
-25. Исправление — мобильный заголовок уменьшен до `clamp(28px, 7vw, 35px)`, получил плотный `line-height: 1.06`, аккуратный tracking и `text-wrap: balance`; описание стало легче по цвету и ритму. Боковые поля на телефоне увеличены до 16 px. Плашка стала компактнее: убраны тень и фиксированная высота, ослаблена граница, уменьшены типографика и вертикальные интервалы.
-26. Post-fix evidence — на 393 px заголовок занимает две сбалансированные строки при размере 28 px; на 320 px остаётся читаемым в трёх строках внутри 288 px контентной ширины. В обоих состояниях заголовок, описание и плашка выровнены влево, карточка Starter начинается в том же визуальном ритме, горизонтальная лента не обрезает активную карточку. Совмещённый файл `buyer-subscriptions-intro-refined-comparison.png` подтверждает более спокойную иерархию без потери контента.
-
-## Primary interactions and console
-
-- Промежуточное состояние выбора удалено: `aria-pressed` и нижняя панель выбранного тарифа не рендерятся.
-- Проверено анимированное появление Pro/VIP glow (`buyer-plan-underglow-in`, 0.9 s с последовательной задержкой); reduced-motion получает статичное финальное состояние.
-- Starter сразу открывает штатный экран подписок; Pro/VIP вызывают существующие `startProSubscriptionCheckout` / `startVipSubscriptionCheckout`, ведущие в Stripe Checkout.
-- На мобильных проверены `text-align: left` у заголовка и описания, `justify-content: flex-start` у промо-плашки и `scroll-margin-top: 96px` у секции; структура тарифов и checkout-обработчики не менялись.
-- Финальный проход проверен на 393 × 852 и 320 × 800: заголовок занимает соответственно две и три строки, текст не обрезается; 11 px горизонтального overflow относится только к намеренно выглядывающей следующей карточке scroll-snap карусели.
-- Новых ошибок от блока подписок нет. В консоли остаётся ранее существовавшее предупреждение `BuyerMapScene` о передаче `key` через spread.
-
-## Follow-up polish
-
-- Дополнительных P3 для обновлённого intro нет.
-
-## Final result
-
-final result: passed
-
----
-
-# Design QA — дравьер умного помощника
-
-## Source visual truth
-
-- Мобильный референс: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-981d4508-35f1-4c78-8ce6-7305a553b70c.png`.
-- Ключевая композиция: светлый голубой фон, крупный центрированный заголовок, сетка 2 × 2 белых карточек и закреплённый снизу composer.
-
-## Implementation evidence
-
-- Старт: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-start-mobile.png`.
-- После первого сообщения: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-chat-mobile.png`.
-- Сравнение: `/Users/vtichonenko/newsellyourbrick/.codex/qa/assistant-reference-comparison.png`.
-- Viewport: 390 × 844 CSS px, DPR 1, русский язык, drawer открыт. Референс приведён к той же области через aspect-fit без искажения.
-
-## Full-view comparison
-
-- Сохранена композиция референса: приветствие, крупный заголовок, четыре равные карточки и нижнее поле ввода.
-- Измеренная высота drawer — 675.2 px при viewport 844 px, то есть 80% экрана.
-- Сетка 2 × 2 и composer не обрезаются; горизонтального overflow нет.
-
-## Focused region comparison
-
-- Совмещённый файл показывает референс и реализацию рядом в одинаковой нормализованной области.
-- Сохранены холодная светлая палитра, белые карточки, мягкие тени, цветные пиктограммы и крупный жирный заголовок.
-- Продуктовый header добавляет статус помощника и доступную кнопку закрытия, не нарушая основную композицию.
-
-## Required fidelity surfaces
-
-- Fonts and typography: Montserrat проекта; двухстрочный заголовок остаётся визуальным центром.
-- Spacing and layout rhythm: равные колонки и стабильные интервалы; все карточки помещаются на 390 px.
-- Colors and visual tokens: фон `#eef9fa`, белые поверхности и Tiffany-акценты соответствуют референсу и сайту.
-- Image quality and asset fidelity: новые растровые UI-ассеты не добавлялись; используются библиотечные иконки.
-- Copy and content: помощь с сайтом, подбор недвижимости, юридические вопросы и инвестиционная стратегия.
-
-## Primary interactions and console
-
-- Нажатие стартовой карточки добавляет первое сообщение и сразу скрывает все четыре карточки.
-- Проверены наличие file input, loading-состояние и фиксированная высота drawer.
-- После локального исправления входящий текст отображается тёмным на белом фоне.
-- Ошибки browser console: отсутствуют.
-
-## Findings
-
-- Actionable P0/P1/P2 различий в согласованном объёме не осталось.
-
-## Open questions
-
-- Нет.
+- No actionable P0, P1, or P2 differences remain for the requested mobile-header silhouette.
+- P3: the reference has a larger apparent total height because it includes Android status chrome; the implementation correctly leaves device/browser chrome to the runtime.
 
 ## Implementation checklist
 
-- [x] Drawer 80dvh.
-- [x] Четыре стартовые карточки с исчезновением после первого сообщения.
-- [x] Собственный вопрос и загрузка файлов.
-- [x] Мобильная геометрия без overflow.
-- [x] Переход в чат и проверка console.
-
-## Comparison history
-
-- На первом прогоне глобальный стиль делал текст входящих сообщений белым на белой карточке.
-- Локально зафиксированы цвет входящего текста и typing-индикатор.
-- Повторный прогон подтвердил читаемый текст и отсутствие ошибок.
-
-## Follow-up polish
-
-- Не требуется.
-
-## Final result
+- [x] Full-width mobile top surface with no side gutters.
+- [x] Square top corners and 28 px lower corners.
+- [x] Preserve safe-area padding and 44 px touch targets.
+- [x] Preserve expanded search and navigation drawer behavior.
+- [x] Keep web and legacy CSS in parity.
+- [x] Check browser console, targeted tests, production build, and `git diff --check`.
 
 final result: passed
 
-## 2026-09-09 — Light auction bid drawer
+---
 
-- Replaced the dark price card, glossy quick bids and dark ceiling action with white/mint surfaces and a single tiffany submit action. Reused all localized labels and existing bid/deposit/KYC handlers.
-- Removed the conflicting sheet height caps and internal scrolling. Dragging dismisses the whole sheet instead of shrinking/clipping its contents.
-- Aligns the real mobile countdown above the sheet using the page's `.app-layout` scroll container; restores the original scroll position on close. The backdrop has no blur and only an 8% white tint.
-- Added keyboard viewport adaptation, focus containment, Escape dismissal, an accessible bid input label, and upward-opening currency options.
-- Browser checks before the final scroll-container correction: 390×844 panel height 396.6px, action bottom 828px; 360×640 panel height 358.6px, action bottom 630px. In both, body scrollHeight equals clientHeight. Quick +€1,000 sets €160,200 without submitting a bid.
-- Small-screen checking exposed that scrolling `window` left part of the timer behind the panel. Corrected alignment to `.app-layout`; a subsequent browser connection timeout prevented visually rechecking that final alignment. Software keyboard / KYC / winner states were not exercised in the browser.
-- The sample Costamar listing's localhost:3000 upload image failed to load (naturalWidth 0), so photo composition could only be checked by its visible image region.
-- Validation: 17 focused tests pass; drawer/form/page web/legacy parity and `git diff --check` pass; `npm run build` passes (existing bundle-size warning).
-- Broader existing test failures: guest buyer purchase-intent disabled-state expectation in PropertyDetailPage.mobile.test.js; profile history and bookings markup expectations in BuyerAccountMobileExperience.test.js; favorites copy expectation in BuyerDiscovery.mobile.test.js. Those product areas were not changed by this drawer update.
+# Design QA — mobile showcase header and auction cards (2026-09-13)
 
-### Follow-up — homepage Tiffany and stronger action hierarchy
+Source visual truth: `artifacts/mobile-showcase/header-reference.png` and `artifacts/mobile-showcase/auction-cards-reference.png`.
+Implementation screenshots: `artifacts/mobile-showcase/header-implementation.png` and `artifacts/mobile-showcase/auction-cards-detail-v3.png`.
+Combined evidence: `artifacts/mobile-showcase/header-comparison.png` and `artifacts/mobile-showcase/cards-comparison-v2.png`.
+Viewport: 396×837 CSS px at DPR 1. The header reference is an 800×198 crop and was normalized to 400 px wide; the card reference is a 562×458 focused crop. State: Russian locale, authenticated mobile navigation, live auction and Buy Now properties.
 
-- Replaced the muted mint palette with homepage `--md-sky` (#4ecdd6), and used the existing `--syb-tiffany-btn-fill` / hover / shadow tokens for submission.
-- Detached the white sheet from the page with 8px outer space, a Tiffany top edge, a stronger shadow and a light neutral scrim without blur. Current price is neutral; the editable bid amount and submit button carry the primary visual emphasis.
-- Opening an empty bid form suggests the minimum valid amount. Existing input is preserved, clearing remains possible, and only explicit submission sends a bid; all existing gates and validation remain.
-- Browser verified at 360×640: countdown bottom 261.9px, panel top 274.4px (12.5px clear gap); action bottom 621px. Drawer body clientHeight = scrollHeight = 280px, no scroll. Also visually checked at 390×844.
-- Verified minimum €160,200 on opening, clearing via keyboard disables submit, and +€1,000 restores €160,200 from empty. No bid was submitted. Viewport override reset after checking.
-- 12 focused drawer/property tests, web/legacy parity, `npm run build`, and `git diff --check` pass. Sample listing image upload remains unavailable on the local server.
+## Findings
 
-### Follow-up — full-width sheet and emphasized quick bids
+- No actionable P0, P1, or P2 differences remain in the requested scope.
+- The page background now shows through around the white navigation sheet; its controls, radius, shadow and touch targets are preserved.
+- Auction and Buy Now cards now use the established `discover-auction-cards` treatment shown in the reference: favorite control above the photo, glass timer/price strip on the photo, compact metadata, and outlined/filled actions.
+- The cards are intentionally narrower than the supplied card crop because the previous accepted request asked to reduce their size. The proportions and visual treatment match at the 396 px viewport.
 
-- Mobile sheet now spans edge to edge, sits flush with the bottom edge and retains bottom safe-area padding. Its shadow, neutral scrim and Tiffany top contour remain.
-- Quick increments use a stronger #4ecdd6 fill, defined border, bolder type and subtle hover/press feedback, with reduced-motion handling. Heights and bidding handlers are unchanged.
-- Browser verified at 390px: panel left 0, right 390; body clientHeight and scrollHeight both 312px. Existing user-entered amount preserved; no bid sent.
-- Drawer tests (4/4), web/legacy CSS parity and diff whitespace checks pass.
+## Required fidelity surfaces
 
-### Follow-up — shared gradient, quiet input and intermittent perimeter highlight
+- Fonts and typography: Montserrat, heavy section titles, compact timer figures, price labels and card text match the existing approved card system.
+- Spacing and layout rhythm: the navigation sheet ends directly over Tiffany; cards maintain the smaller 225.7 px rail width with a 12 px gap and no horizontal page overflow.
+- Colors and visual tokens: the exposed header background uses the page Tiffany `#0099a9`; card accents use the existing Tiffany/red urgency tokens.
+- Image quality and asset fidelity: live property photographs are preserved without replacement or generated substitutes. Image crops and rounded corners match the source treatment.
+- Copy and content: existing localized card strings and live values are retained; no reference-only placeholder content was added.
 
-- Quick-bid buttons now use the same global Tiffany fill/hover tokens as submit, with white text. Browser computed text color confirmed rgb(255, 255, 255).
-- Input uses a neutral 1px border without the persistent ready-state halo. A masked, non-interactive conic highlight traverses the rounded perimeter during a short portion of each 10-second CSS animation cycle; it is disabled during input focus, for disabled fields and with reduced motion.
-- Increased input-to-action spacing from 10px to 20px. Browser checks: body clientHeight = scrollHeight (322px at 390×844, 290px at 360×640). At 360×640 the timer ends at 259.9px, panel starts at 272.4px and buttons end at 629px.
-- Drawer tests (4/4), web/legacy parity and whitespace checks pass. No bid submitted; viewport override reset.
+## Comparison history
+
+1. Initial P1: the page omitted the `discover-auction-cards` root class, so cards rendered with separate top timer pills. Fix: applied the existing approved card skin to the showcase listings.
+2. Initial P1 after enabling the skin: a competing inset rule stretched the glass timer strip vertically over the photo. Fix: scoped the media strip inset and auto height to this page. Post-fix combined evidence shows a compact bottom strip matching the reference.
+3. Initial P2: the navigation wrapper painted a white band behind the navigation sheet. Fix: made the page-level wrapper transparent. Post-fix header comparison shows Tiffany directly below and around the rounded white sheet.
+
+## Interaction and implementation checks
+
+- The page reached `document.readyState=complete` with three live auction and three live Buy Now cards.
+- The measured document has zero horizontal overflow at 396 px.
+- Existing card links, favorite controls, bid controls and Buy Now controls remain the shared production components.
+- Web and legacy copies remain in parity.
+
+final result: passed
+
+---
+
+# Design QA — mobile showcase top navigation refinement (2026-09-13)
+
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-2a681d62-827c-42dd-acb8-c2d3dd25721f.png`.
+- Implementation screenshot: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09bc9-7c41-7470-95b2-113f4e14608b/mobile-showcase-nav-390.png`.
+- Side-by-side comparison: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09bc9-7c41-7470-95b2-113f4e14608b/mobile-showcase-nav-comparison.png`.
+- Viewport and density: 390 × 844 CSS px at DPR 1. The 576 px source was normalized to 390 px width; device chrome in the source was excluded from fidelity judgments.
+- State: Russian locale, first carousel position, public route.
+
+## Findings and comparison history
+
+- The page-specific burger and profile controls were removed. The shared site `Header` now supplies the complete fixed top navigation used by the auction catalogue.
+- Card descriptions, carousel dots and arrow controls were removed. The campaign rail remains horizontally swipeable.
+- An intermediate bottom navigation interpretation was removed after clarification. The final implementation uses only the requested shared top navigation.
+- The header spacer reserves the fixed navigation height so the centered Sell Your Brick wordmark and campaign rail remain fully visible at the top of the scroll container.
+- No actionable P0, P1 or P2 findings remain.
+
+## Required fidelity surfaces
+
+- Typography: campaign titles and eyebrow text retain the existing Montserrat hierarchy; removed descriptions leave cleaner image areas.
+- Spacing and layout: the shared white header sits above the centered wordmark; the carousel flows into the rounded content sheet with an 18 px Tiffany gutter.
+- Colors: Tiffany hero and white content sheet remain unchanged; the navigation reuses the product's white shell and Tiffany account state.
+- Image quality: all generated banner and shortcut assets remain uncropped and sharp; this refinement adds no placeholder art.
+- Copy and content: card descriptions and pagination labels are absent as requested; accessible labels remain on all navigation destinations.
+
+## Interaction and verification
+
+- Browser accessibility tree confirms the custom header controls, descriptions, dots, arrows and the intermediate bottom navigation are absent.
+- The shared top navigation exposes its standard menu, catalogue selector, search, profile and notifications actions.
+- Existing strategy rail still uses touch scrolling and scroll snap.
+- Mobile screenshot review found no horizontal overflow or navigation overlap with the visible primary content.
+- Web and legacy JSX/CSS parity passed. `npm run build`, `git diff --check`, and 17 relevant regression tests passed.
+
+final result: passed
+
+---
+
+# Design QA — mobile Buy Now header and filters
+
+## Evidence
+
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-527244f6-ef9e-4575-94fa-bf75f82384a0.png`
+- Rendered implementation: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09af5-92a3-77b0-9d9e-588e4200a8b2/buy-now-header-after.png`
+- Focused before/after comparison: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09af5-92a3-77b0-9d9e-588e4200a8b2/buy-now-header-comparison.png`
+- Filter drawer state: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09af5-92a3-77b0-9d9e-588e4200a8b2/buy-now-filter-drawer-after.png`
+- Route: `http://localhost:5173/auction/buy-now`
+- Viewports checked: 360 × 823, 385 × 823, and 430 × 823 CSS px.
+- Source pixels: 714 × 212. Implementation pixels: 385 × 823 at `deviceScaleFactor: 1`.
+- Density normalization: the focused comparison renders both header regions at 393 × 118 CSS px at DPR 1. The source is scaled from its 714 × 212 capture; the implementation is cropped from the top of the 385 × 823 render.
+- State: Russian locale, authenticated mobile header. The saved screenshot uses a deterministic mocked authenticated user; the real authenticated Chrome session was also checked at 385 px and confirmed the avatar and notification bell are present.
+
+## Full-view comparison evidence
+
+- The previous header allowed the catalogue pill to overflow left and cover the menu control.
+- The rendered implementation gives the menu a dedicated 44 px track and constrains the remaining controls to the white shell.
+- At 360, 385, and 430 px the document width equals the viewport width, every header action remains inside the container, and every primary touch target remains 44 × 44 px.
+- The hero, Tiffany accent, typography, search row, and reused listing cards remain unchanged.
+- The filter action now opens the same right-side `SharesMobileFiltersDrawer` used by the auction, shares, and debts catalogues.
+
+## Focused region comparison evidence
+
+- The combined header image was reviewed because the overlap and control density are too small to judge reliably in the full-page render.
+- Before: the catalogue pill begins inside the menu's horizontal area, making the left control appear missing.
+- After: menu, catalogue pill, search, avatar, and notification bell have distinct non-overlapping regions; the catalogue label remains readable at the supplied 385 px state.
+- The drawer screenshot confirms the shared white panel, Tiffany active state and apply button, radio rows, close action, reset action, backdrop, and bottom safe-area treatment.
+
+## Required fidelity surfaces
+
+- Fonts and typography: Montserrat hierarchy is preserved; the catalogue label uses a responsive 12–14 px weight with ellipsis as a last-resort fallback for long translations.
+- Spacing and layout rhythm: 44 px actions, 4 px container separation, 8 px side padding, and the existing 20 px shell radius retain the trading-page rhythm without overlap.
+- Colors and visual tokens: the existing pastel catalogue gradient, white shell, dark ink, and Tiffany filter states are preserved.
+- Image quality and asset fidelity: no imagery or icons were replaced. The live account avatar remains image-based; existing SVG icon components are reused.
+- Copy and content: existing localized keys are reused; no new hard-coded user-facing strings were introduced.
+
+## Comparison history
+
+1. Initial P1 — the catalogue control overflowed into the burger/menu hit area. Fix: added an authenticated mobile layout with a fixed 44 px menu track, a shrinking catalogue track, and three fixed 44 px action tracks. Post-fix evidence: focused comparison plus measured bounds at 360/385/430 px show no overlap or horizontal overflow.
+2. Initial P2 — the Buy Now filter button toggled a horizontal inline chip row, unlike the other trading pages. Fix: replaced the mobile toggle behavior with the shared right-side filters drawer, radio options, apply/reset actions, and an active-filter badge. Post-fix evidence: drawer screenshot and browser interaction test confirm open, select, apply, badge, reset, Escape/focus behavior from the shared component.
+
+## Findings
+
+- No actionable P0, P1, or P2 visual differences remain for the requested mobile scope.
+- P3: very long translated catalogue names intentionally truncate below the available width instead of pushing persistent controls off-screen.
+
+## Implementation checklist
+
+- [x] Keep the menu action visible in authenticated mobile headers.
+- [x] Preserve search, avatar, and notification actions at 44 px.
+- [x] Prevent horizontal overflow at 360–430 px.
+- [x] Reuse the established trading-page filter drawer.
+- [x] Verify selection, apply, active badge, reset, focus handling, and responsive bounds.
+- [x] Keep web and legacy files in parity.
+
+## Console and interaction notes
+
+- Primary interactions tested: open filter drawer, choose Villa, apply, observe active badge, reopen, reset, and apply.
+- Console check found no new errors tied to this change. The local environment still reports pre-existing missing Yandex Maps API key messages and React Router/Clerk development warnings.
+
+final result: passed
+
+---
+
+# Design QA — new mobile showcase (2026-09-13)
+
+Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-2a681d62-827c-42dd-acb8-c2d3dd25721f.png`.
+Brand reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-f9aa3024-e930-474b-9764-a62311918745.png`.
+Route: `http://localhost:5173/mobile-showcase`.
+Evidence directory: `/Users/vtichonenko/.codex/visualizations/2026/09/13/01a09bc9-7c41-7470-95b2-113f4e14608b/`.
+Implementation evidence: `mobile-showcase-390.png`, `mobile-showcase-576.png`, `mobile-showcase-desktop.png`.
+Combined full-view evidence: `mobile-showcase-comparison.png` (1152×1280).
+Focused quick-action comparison: `mobile-showcase-detail-comparison.png` (1152×225).
+
+Viewports: 360×800, 390×844, 576×1280, 1280×900 CSS px, screenshots at DPR 1. Source is 576×1280 pixels; equal-width 576px implementation used in the full comparison. Native Android status/navigation bars belong only to the source and were excluded from fidelity judgments. State: Russian, public route, first carousel card; fifth-card state checked separately.
+
+## Findings and comparison history
+
+- Fixed initial runtime failure by using the repository's `lazyWithRetry` route loader. No new console errors appeared after the fix; earlier error entries remained in the browser's accumulated log.
+- Fixed P2 carousel density: initial 54vw cards showed fewer than two full items; final 36vw cards show two full cards and most of the third, like the reference. Rechecked in the combined full-view image.
+- Fixed P2 shortcut wrapping: the Russian favorites label now fits a single line at 360 and 390px.
+- Fixed P2 logo background: generated alpha wordmark removes the visible rectangular background. Inspected at mobile and desktop sizes.
+- Fixed P2 caption contrast over light architecture with dark caption backing; inspected the final 390px capture.
+- Fixed unused Tiffany area below short content by allowing the white content panel to fill the viewport.
+- No actionable P0/P1/P2 findings remain. This is an intentional property-brand adaptation, not a literal food-ad clone.
+
+## Required fidelity surfaces
+
+- Typography: existing Montserrat family, heavy uppercase campaign titles, compact uppercase shortcut headings, small supporting captions. The supplied wordmark is recreated as a raster asset; localized campaign copy remains selectable HTML. No clipped Russian shortcut label remains.
+- Layout: horizontal portrait campaign rail; rounded white lower panel; three equal quick-action tiles; two editorial cards. The Android system chrome and food-specific sections are intentionally omitted. Mobile widths and a wide desktop viewport inspected; no document overflow at 390px.
+- Colors: site Tiffany token #0099a9 replaces navy; white lower panel and alternating dark/light quick-action tiles preserve the reference's visual hierarchy.
+- Imagery: five individually generated real-estate campaigns and three individually generated 3D quick-action artworks, plus the generated wordmark. All images load. Nine optimized WebP assets total about 624 KB. Focused comparison confirms clear silhouettes and clean image placement.
+- Content: all requested strategies, map, deposit and favorites are included. Seven locale namespaces (ru/en/de/es/fr/pl/sv) are complete and identical to legacy copies. Other locales checked structurally, not visually.
+
+## Interaction and implementation checks
+
+- First-to-fifth carousel navigation updates the selected indicator; Next is disabled on the fifth card.
+- Menu opens, exposes eight destination links, and closes with Escape while restoring summary focus.
+- Clicking the auction banner opens the existing auction catalogue; browser back returns to the new page.
+- Shortcut hrefs verified as /map, /deposit and /favorites. Their existing downstream account/payment flows were not exercised.
+- Web/legacy JSX, CSS and soft-launch access gate parity passed; locale namespace parity passed for all seven languages.
+- Build passed; existing large-chunk warnings remain. `git diff --check` passed.
+- 56 of 57 existing regression tests passed. Unrelated failure: `src/pages/PropertyDetailPage.mobile.test.js`, “guest buyer can express purchase intent before authentication”, expects `disabled={isReservedActive}` in existing property-detail markup. That component was not edited in this task.
+- Existing homepage carousel, shared stories, buyer/role flows, gallery, debt risk assets and investment behavior remain unchanged by this new route.
+
+final result: passed
