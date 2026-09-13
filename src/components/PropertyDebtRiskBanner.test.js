@@ -11,6 +11,8 @@ test('renders one interactive risk card using the property debt severity', () =>
   assert.match(component, /risk\.label/)
   assert.match(component, /risk\.description/)
   assert.match(component, /DebtProModal/)
+  assert.match(component, /canAccess\('documents'\)/)
+  assert.match(component, /onOpenDocuments/)
   assert.match(component, /Нажмите/)
 })
 

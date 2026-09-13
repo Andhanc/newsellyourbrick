@@ -146,7 +146,7 @@ a.shares-v2-card {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
 }
 
 .shares-v2-card__shares-dock-label {

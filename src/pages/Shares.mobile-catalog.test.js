@@ -68,6 +68,7 @@ test('share cards follow auction card dimensions on the homepage and catalogue',
   assert.match(card, /shares-v2-card__specs/)
   assert.match(card, /sharesCardCollected/)
   assert.match(card, /collectedPercent/)
+  assert.doesNotMatch(card, /shares-v2-card__shares-dock-label/)
   assert.match(homeCss, /invest-showcase--shares \.shares-v2-card__media\s*\{[\s\S]*?aspect-ratio:\s*5\s*\/\s*4/)
 })
 

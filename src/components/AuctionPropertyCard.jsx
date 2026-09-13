@@ -173,6 +173,7 @@ export default function AuctionPropertyCard({
   isFavorite,
   onFavoriteToggle,
   onOpen,
+  onFocusOnMap,
   onTooltip,
   viewerHasVip = false,
   formatPrice,
@@ -296,21 +297,45 @@ export default function AuctionPropertyCard({
 
   const handleCanonicalOpen = (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1) return
+    if (mapNavigateCta && onFocusOnMap) {
+      event.preventDefault()
+      event.stopPropagation()
+      onFocusOnMap(property)
+      return
+    }
     if (!onOpen) return
     event.preventDefault()
     onOpen(property)
   }
 
   const openLabel = `${t('buyerCabinet_openProperty')}: ${propertyTitle}`
+  const focusOnMapLabel = mapNavigateCta && onFocusOnMap
+    ? `${t('mapPage_showOnMap')}: ${propertyTitle}`
+    : openLabel
 
   return (
-    <article className={cardClassName}>
+    <article
+      className={cardClassName}
+      onClick={
+        mapNavigateCta && onFocusOnMap
+          ? (event) => {
+              if (event.defaultPrevented) return
+              if (event.target?.closest?.(
+                'a, button, input, textarea, select, [role="button"]',
+              )) {
+                return
+              }
+              onFocusOnMap(property)
+            }
+          : undefined
+      }
+    >
       <div className="auction-card__media">
         <a
           href={detailHref}
           className="auction-card__media-link"
           onClick={handleCanonicalOpen}
-          aria-label={openLabel}
+          aria-label={focusOnMapLabel}
         >
           <ImageWithSkeleton
             imgProps={propertyImageProps}
@@ -484,7 +509,7 @@ export default function AuctionPropertyCard({
               href={detailHref}
               className="auction-card__title-link"
               onClick={handleCanonicalOpen}
-              aria-label={openLabel}
+              aria-label={focusOnMapLabel}
             >
               {propertyTitle}
             </a>
@@ -523,12 +548,8 @@ export default function AuctionPropertyCard({
         </div>
 
         <div className="auction-card__footer">
-          {!mapNavigateCta ? (
-          <div
-            className={`auction-card__pricing${
-              state.showSoldPresentation ? ' auction-card__pricing--sold' : ''
-            }`}
-          >
+          {!mapNavigateCta && !state.showSoldPresentation ? (
+          <div className="auction-card__pricing">
             <div
               className={`auction-card__price-row${
                 showBuyNowPriceRow ? ' auction-card__price-row--split' : ''
@@ -537,18 +558,14 @@ export default function AuctionPropertyCard({
               <div className="auction-card__price-main">
                 <span className="auction-card__price-label">
                   <span className="auction-card__price-label-full">
-                    {state.showSoldPresentation
-                      ? t('auctionSoldFor')
-                      : state.hasTimer
-                        ? t('currentBid').replace(/:$/, '')
-                        : t('propertyDetailPrice').replace(/:$/, '')}
+                    {state.hasTimer
+                      ? t('currentBid').replace(/:$/, '')
+                      : t('propertyDetailPrice').replace(/:$/, '')}
                   </span>
                   <span className="auction-card__price-label-short">
-                    {state.showSoldPresentation
-                      ? t('auctionSoldFor')
-                      : state.hasTimer
-                        ? t('auctionCardBidShort')
-                        : t('propertyDetailPrice').replace(/:$/, '')}
+                    {state.hasTimer
+                      ? t('auctionCardBidShort')
+                      : t('propertyDetailPrice').replace(/:$/, '')}
                   </span>
                 </span>
                 <span className="auction-card__price-value">

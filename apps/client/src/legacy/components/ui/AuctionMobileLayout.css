@@ -2114,7 +2114,7 @@
   }
 
   .auction-mobile-layout .discover-auction-cards .auction-card__sold-cta-open {
-    max-width: 10.5ch;
+    max-width: none;
     font-size: 0.6rem;
   }
 

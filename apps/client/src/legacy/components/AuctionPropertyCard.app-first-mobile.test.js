@@ -19,7 +19,8 @@ test('closed listings share a premium sold presentation with check ribbon', asyn
   assert.match(card, /showSoldPresentation/)
   assert.match(card, /auction-card--sold-presentation/)
   assert.match(card, /auction-card__sold-cta/)
-  assert.match(card, /auctionSoldFor/)
+  assert.doesNotMatch(card, /auctionSoldFor/)
+  assert.match(card, /!mapNavigateCta && !state\.showSoldPresentation/)
   assert.match(card, /auctionSoldBadge/)
   assert.doesNotMatch(card, /BuyerStatusRibbon/)
   assert.match(ribbon, /auctionFinalStateSold/)
@@ -78,6 +79,6 @@ test('auction cards use valid sibling interactions and accessible canonical link
 test('all final-state commercial affordances consume resolver blocking flags', () => {
   assert.match(card, /const showPrivateClubBand\s*=[\s\S]{0,220}!state\.blocksBid[\s\S]{0,100}!state\.blocksPurchase/)
   assert.match(card, /const showFeatureBadges\s*=[\s\S]{0,220}!state\.blocksBid[\s\S]{0,100}!state\.blocksPurchase/)
-  assert.match(card, /const showOverlayPricing\s*=[\s\S]{0,320}!state\.blocksPurchase/)
+  assert.match(card, /state\.hasBuyNowPrice &&\s*!state\.blocksPurchase/)
   assert.match(card, /!showPrivateClubBand && !state\.blocksBid/)
 })

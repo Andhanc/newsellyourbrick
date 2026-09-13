@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Check,
-  FileSearch,
+  FileText,
   Gavel,
   LockKeyhole,
   ShieldAlert,
@@ -12,8 +12,9 @@ import {
   X,
 } from 'lucide-react'
 import { assignSheetPanelRef, sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import { getUserData } from '../services/authService'
-import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import {
   buildDebtCategories,
@@ -22,14 +23,15 @@ import {
 } from '../utils/debtPropertyDetail'
 import './DebtAuctionInsight.css'
 
-const PRO_BENEFITS = [
-  'Полный состав обязательств',
-  'Проверка арестов и ограничений',
-  'Структура и сумма долга',
-  'Рекомендации перед участием в торгах',
+const DOC_BENEFITS = [
+  'Кредитный договор и ипотечные документы',
+  'Выписки и документы о сумме долга',
+  'Реестровые записи и обременения',
+  'Дополнительные материалы по объекту',
 ]
 
-export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction }) {
+/** Модалка: VIP открывает документы долгового объекта (не «отчёт»). */
+export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, risk, isAuction }) {
   const navigate = useNavigate()
   const titleId = useId()
   const dialogRef = useRef(null)
@@ -83,16 +85,22 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
     }
     setCheckoutLoading(true)
     try {
-      const result = await startProSubscriptionCheckout({
+      const result = await startVipSubscriptionCheckout({
         userId,
         customerEmail: userData?.email,
         billingCycle: 'monthly',
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось открыть оплату PRO', 'error')
+        if (result.error === 'already_subscribed_vip') {
+          showNotification('VIP уже активен — открываем документы', 'info')
+          onClose()
+          onOpenDocuments?.()
+          return
+        }
+        showNotification(result.error || 'Не удалось открыть оплату VIP', 'error')
       }
     } catch (error) {
-      showNotification(error?.message || 'Не удалось открыть оплату PRO', 'error')
+      showNotification(error?.message || 'Не удалось открыть оплату VIP', 'error')
     } finally {
       setCheckoutLoading(false)
     }
@@ -115,17 +123,17 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
           <X size={20} />
         </button>
 
-        <div className="debt-pro-modal__eyebrow"><Sparkles size={15} /> SYB PRO</div>
-        <h2 id={titleId}>Полный анализ долга</h2>
+        <div className="debt-pro-modal__eyebrow"><Sparkles size={15} /> SYB VIP</div>
+        <h2 id={titleId}>Документы по долговому объекту</h2>
         <p className="debt-pro-modal__lead">
           {isAuction
-            ? 'Проверьте финансовые и юридические риски до того, как повышать ставку.'
-            : 'Проверьте финансовые и юридические риски до покупки объекта.'}
+            ? 'Откройте пакет документов объекта, чтобы проверить обязательства до ставки.'
+            : 'Откройте пакет документов объекта, чтобы проверить обязательства до покупки.'}
         </p>
 
         <div className={`debt-pro-report debt-pro-report--${risk.tone}`} aria-hidden>
           <div className="debt-pro-report__top">
-            <span><FileSearch size={18} /> Отчёт по объекту</span>
+            <span><FileText size={18} /> Документы объекта</span>
             <span className="debt-pro-report__risk">{risk.shortLabel}</span>
           </div>
           <div className="debt-pro-report__lines">
@@ -135,14 +143,14 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
         </div>
 
         <ul className="debt-pro-modal__benefits">
-          {PRO_BENEFITS.map((benefit) => (
+          {DOC_BENEFITS.map((benefit) => (
             <li key={benefit}><Check size={17} /> <span>{benefit}</span></li>
           ))}
         </ul>
 
         <div className="debt-pro-modal__offer">
-          <div><strong>PRO</strong><span>для уверенных инвестиций</span></div>
-          <div className="debt-pro-modal__price"><strong>€149</strong><span>/ месяц</span></div>
+          <div><strong>VIP</strong><span>доступ к документам объекта</span></div>
+          <div className="debt-pro-modal__price"><strong>€499</strong><span>/ месяц</span></div>
         </div>
 
         <button
@@ -151,7 +159,7 @@ export function DebtProModal({ open, onClose, onRequireLogin, risk, isAuction })
           onClick={startCheckout}
           disabled={checkoutLoading}
         >
-          {checkoutLoading ? 'Открываем оплату…' : 'Купить PRO'}
+          {checkoutLoading ? 'Открываем оплату…' : 'Купить VIP'}
           {!checkoutLoading && <ArrowRight size={18} />}
         </button>
         <button
@@ -176,19 +184,41 @@ export default function DebtAuctionInsight({
   formatPrice,
   currentBid,
   onRequireLogin,
+  onOpenDocuments,
   isAuction = false,
   compact = false,
 }) {
-  const [proOpen, setProOpen] = useState(false)
+  const [paywallOpen, setPaywallOpen] = useState(false)
+  const { canAccess, resolved } = useViewerVipAccess()
+  const docsUnlocked = resolved && canAccess('documents')
   const risk = useMemo(() => getDebtRiskPresentation(property?.debt_severity), [property?.debt_severity])
   const categories = useMemo(() => buildDebtCategories(property), [property])
   const debtAmount = normalizeDebtAmount(property?.debt_amount)
   const bidAmount = Number(currentBid) > 0 ? Number(currentBid) : null
   const formatAmount = (value) => value != null ? formatPrice(value) : 'Уточняется'
 
+  const handleDetailsClick = () => {
+    if (!resolved) return
+    if (docsUnlocked) {
+      onOpenDocuments?.()
+      return
+    }
+    const userData = getUserData()
+    const userId = userData?.id ?? window.localStorage.getItem('userId')
+    if (!userId) {
+      onRequireLogin?.()
+      return
+    }
+    setPaywallOpen(true)
+  }
+
   return (
     <>
-      <section className={`debt-insight debt-insight--${risk.tone}${compact ? ' debt-insight--compact' : ''}`}>
+      <section
+        className={`debt-insight debt-insight--${risk.tone}${compact ? ' debt-insight--compact' : ''}${
+          docsUnlocked ? ' debt-insight--unlocked' : ''
+        }`}
+      >
         <div className="debt-insight__head">
           <div>
             <span className="debt-insight__eyebrow">
@@ -206,8 +236,11 @@ export default function DebtAuctionInsight({
 
         <div className="debt-insight__known">
           <div className="debt-insight__known-title">
-            <div><span>Что известно о долге</span><small>{risk.description}</small></div>
-            <LockKeyhole size={19} />
+            <div>
+              <span>Что известно о долге</span>
+              <small>{risk.description}</small>
+            </div>
+            {docsUnlocked ? <FileText size={19} /> : <LockKeyhole size={19} />}
           </div>
           <div className="debt-insight__chips">
             {categories.length ? categories.slice(0, 3).map((item) => (
@@ -215,12 +248,19 @@ export default function DebtAuctionInsight({
             )) : <span>Состав обязательств уточняется</span>}
             {categories.length > 3 && <span className="debt-insight__more">+{categories.length - 3}</span>}
           </div>
-          <div className="debt-insight__locked-preview" aria-hidden>
-            <span /><span /><span />
-            <div><LockKeyhole size={15} /> Подробности доступны в PRO</div>
-          </div>
-          <button type="button" className="debt-insight__cta" onClick={() => setProOpen(true)}>
-            Узнать о долге подробнее <ArrowRight size={17} />
+          {docsUnlocked ? (
+            <p className="debt-insight__unlocked-note">
+              Документы этого объекта доступны по вашей подписке VIP.
+            </p>
+          ) : (
+            <div className="debt-insight__locked-preview" aria-hidden>
+              <span /><span /><span />
+              <div><LockKeyhole size={15} /> Документы доступны с VIP</div>
+            </div>
+          )}
+          <button type="button" className="debt-insight__cta" onClick={handleDetailsClick} disabled={!resolved}>
+            {docsUnlocked ? 'Открыть документы' : 'Открыть документы объекта'}
+            <ArrowRight size={17} />
           </button>
         </div>
         <p className="debt-insight__disclaimer">
@@ -231,9 +271,10 @@ export default function DebtAuctionInsight({
       </section>
 
       <DebtProModal
-        open={proOpen}
-        onClose={() => setProOpen(false)}
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
         onRequireLogin={onRequireLogin}
+        onOpenDocuments={onOpenDocuments}
         risk={risk}
         isAuction={isAuction}
       />

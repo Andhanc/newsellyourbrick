@@ -6,6 +6,8 @@ import {
   ShieldQuestionMark,
   Zap,
 } from 'lucide-react'
+import { getUserData } from '../services/authService'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import { getDebtRiskPresentation } from '../utils/debtPropertyDetail'
 import { DebtProModal } from './DebtAuctionInsight'
 import './PropertyDebtRiskBanner.css'
@@ -17,21 +19,43 @@ const ICONS = {
   unknown: ShieldAlert,
 }
 
-export default function PropertyDebtRiskBanner({ property, onRequireLogin }) {
-  const [proOpen, setProOpen] = useState(false)
+export default function PropertyDebtRiskBanner({ property, onRequireLogin, onOpenDocuments }) {
+  const [paywallOpen, setPaywallOpen] = useState(false)
+  const { canAccess, resolved } = useViewerVipAccess()
+  const docsUnlocked = resolved && canAccess('documents')
   const risk = useMemo(
     () => getDebtRiskPresentation(property?.debt_severity),
     [property?.debt_severity],
   )
   const RiskIcon = ICONS[risk.tone]
 
+  const handleOpen = () => {
+    if (!resolved) return
+    if (docsUnlocked) {
+      onOpenDocuments?.()
+      return
+    }
+    const userData = getUserData()
+    const userId = userData?.id ?? window.localStorage.getItem('userId')
+    if (!userId) {
+      onRequireLogin?.()
+      return
+    }
+    setPaywallOpen(true)
+  }
+
   return (
     <>
       <button
         type="button"
         className={`debt-risk-banner debt-risk-banner--${risk.tone}`}
-        onClick={() => setProOpen(true)}
-        aria-label={`${risk.label}. Узнать о долге подробнее`}
+        onClick={handleOpen}
+        disabled={!resolved}
+        aria-label={
+          docsUnlocked
+            ? `${risk.label}. Открыть документы объекта`
+            : `${risk.label}. Открыть документы объекта`
+        }
       >
         <span className="debt-risk-banner__icon" aria-hidden>
           <RiskIcon size={28} strokeWidth={2.15} />
@@ -47,9 +71,10 @@ export default function PropertyDebtRiskBanner({ property, onRequireLogin }) {
       </button>
 
       <DebtProModal
-        open={proOpen}
-        onClose={() => setProOpen(false)}
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
         onRequireLogin={onRequireLogin}
+        onOpenDocuments={onOpenDocuments}
         risk={risk}
         isAuction
       />

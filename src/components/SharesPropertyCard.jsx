@@ -199,7 +199,6 @@ function SharesPropertyCard({
           >
             <div className="shares-v2-card__shares-dock-row">
               <div className="shares-v2-card__shares-dock-copy">
-                <span className="shares-v2-card__shares-dock-label">{t('sharesCardCollected')}</span>
                 <p className="shares-v2-card__shares-dock-count">
                   {soldShares != null && totalShares != null ? (
                     <>

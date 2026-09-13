@@ -39,6 +39,7 @@ export default function MapPagePropertyGrid({
   formatPrice,
   isFavorite,
   onFavoriteToggle,
+  onFocusOnMap,
   selectedProperty = null,
   user,
   userLoaded,
@@ -67,6 +68,7 @@ export default function MapPagePropertyGrid({
               isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
               onFavoriteToggle={(prop, e) => onFavoriteToggle(e, prop)}
               onOpen={openProperty}
+              onFocusOnMap={onFocusOnMap}
               formatPrice={formatPrice}
               mapNavigateCta
               className={cn(

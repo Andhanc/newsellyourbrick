@@ -844,14 +844,10 @@ function AuctionMobileItem({
                 </span>
               </div>
             </>
-          ) : (
+          ) : isAuctionEndedCard ? null : (
             <div className="auction-mobile-price-row">
               <span className="auction-mobile-price-row__label">
-                {isAuctionEndedCard
-                  ? t('auctionSoldFor')
-                  : hasTimer
-                    ? t('currentBid')
-                    : t('auctionAskingPrice')}
+                {hasTimer ? t('currentBid') : t('auctionAskingPrice')}
               </span>
               <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue, property.currency)}</span>
             </div>

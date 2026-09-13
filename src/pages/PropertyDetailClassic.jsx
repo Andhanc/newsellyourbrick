@@ -1199,6 +1199,24 @@ function PropertyDetailClassic({
   const isShareListing = shareListingConfig != null
   const isAuctionLayout = isAuctionProperty || isShareListing || isDebtProperty
 
+  const openDebtPropertyDocuments = useCallback(() => {
+    if (!processedDocuments.length) {
+      showNotification('Документы по объекту пока не загружены', 'info')
+      return
+    }
+    if (isAuctionLayout) {
+      setAuctionMobileTab('about')
+    }
+    window.requestAnimationFrame(() => {
+      const el =
+        document.getElementById('property-detail-documents') ||
+        document.querySelector('.property-detail-mobile-documents') ||
+        document.querySelector('.property-detail-auction-desktop-card--documents') ||
+        document.querySelector('.property-detail-sidebar__documents')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [processedDocuments.length, isAuctionLayout])
+
   useEffect(() => {
     const titleEl = auctionDesktopTitleRef.current
     if (!titleEl || !isAuctionLayout) return undefined
@@ -4675,7 +4693,7 @@ function PropertyDetailClassic({
     if (!processedDocuments.length) return null
 
     return (
-      <section className="property-detail-mobile-documents">
+      <section id="property-detail-documents" className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
         </h3>
@@ -5221,6 +5239,7 @@ function PropertyDetailClassic({
           currentBid={debtAuctionBidValue}
           formatPrice={fmtPrice}
           onRequireLogin={onRequireLogin}
+          onOpenDocuments={openDebtPropertyDocuments}
           isAuction={isAuctionProperty}
         />
       </div>
@@ -5993,7 +6012,10 @@ function PropertyDetailClassic({
     if (!processedDocuments.length) return null
 
     const gatedAuctionDocs = wrapDepositGatedBlock(
-      <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--documents">
+      <section
+        id="property-detail-documents"
+        className="property-detail-auction-desktop-card property-detail-auction-desktop-card--documents"
+      >
         <header className="property-detail-auction-desktop-documents__head">
           <span className="property-detail-auction-desktop-documents__eyebrow">
             <FiFileText size={16} strokeWidth={2.25} aria-hidden />
@@ -7673,6 +7695,7 @@ function PropertyDetailClassic({
                       <PropertyDebtRiskBanner
                         property={displayProperty}
                         onRequireLogin={onRequireLogin}
+                        onOpenDocuments={openDebtPropertyDocuments}
                       />
                     ) : (
                       <>

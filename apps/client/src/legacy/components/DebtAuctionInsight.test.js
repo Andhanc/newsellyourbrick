@@ -5,16 +5,20 @@ import { readFile } from 'node:fs/promises'
 const component = await readFile(new URL('./DebtAuctionInsight.jsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('./DebtAuctionInsight.css', import.meta.url), 'utf8')
 
-test('offers a debt summary and an accessible PRO dialog', () => {
+test('offers a debt summary and VIP documents dialog', () => {
   assert.match(component, /Финансовая картина/)
   assert.match(component, /isAuction \? 'Долговой аукцион' : 'Объект с долгом'/)
   assert.match(component, /isAuction \? 'Текущая ставка' : 'Стоимость объекта'/)
   assert.match(component, /Что известно о долге/)
-  assert.match(component, /Узнать о долге подробнее/)
+  assert.match(component, /Открыть документы/)
+  assert.match(component, /canAccess\('documents'\)/)
+  assert.match(component, /onOpenDocuments/)
   assert.match(component, /role="dialog"/)
   assert.match(component, /aria-modal="true"/)
-  assert.match(component, /Полный анализ долга/)
-  assert.match(component, /startProSubscriptionCheckout/)
+  assert.match(component, /Документы по долговому объекту/)
+  assert.match(component, /startVipSubscriptionCheckout/)
+  assert.doesNotMatch(component, /startProSubscriptionCheckout/)
+  assert.doesNotMatch(component, /Полный анализ долга/)
   assert.match(component, /\/subscriptions#subscriptions-pricing-section/)
 })
 

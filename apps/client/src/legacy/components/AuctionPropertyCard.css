@@ -178,12 +178,10 @@
 }
 
 .auction-card__sold-cta-open {
-  overflow: hidden;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.68rem;
   font-weight: 650;
   line-height: 1.1;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

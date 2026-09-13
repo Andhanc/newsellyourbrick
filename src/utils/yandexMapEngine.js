@@ -98,6 +98,8 @@ export async function createYandexMap(container, {
   zoom = 11,
   minZoom = 2,
   maxZoom = STREET_MAP_MAX_ZOOM,
+  /** 'yandex#map' | 'yandex#satellite' | 'yandex#hybrid' */
+  type = 'yandex#map',
   lang,
 } = {}) {
   if (!container) {
@@ -127,6 +129,7 @@ export async function createYandexMap(container, {
     {
       center: toLatLng(currentCenter),
       zoom: currentZoom,
+      type,
       controls: [],
       // Явно: pinch пальцами + колесо мыши (на desktop default иногда без multiTouch/scrollZoom)
       behaviors: ['drag', 'multiTouch', 'scrollZoom', 'dblClickZoom'],
@@ -213,13 +216,72 @@ export async function createYandexMap(container, {
       currentZoom = z
       ymap.setZoom(z, { duration })
     },
-    flyTo({ center: nextCenter, zoom: nextZoom, duration = 500 } = {}) {
+    flyTo({
+      center: nextCenter,
+      zoom: nextZoom,
+      duration = 500,
+      padding = null,
+    } = {}) {
       if (destroyed) return
       if (nextCenter) currentCenter = nextCenter
       if (nextZoom != null) {
         currentZoom = Math.min(Math.max(Number(nextZoom), minZoom), maxZoom)
       }
+
+      const padTop = Math.max(0, Number(padding?.top) || 0)
+      const padRight = Math.max(0, Number(padding?.right) || 0)
+      const padBottom = Math.max(0, Number(padding?.bottom) || 0)
+      const padLeft = Math.max(0, Number(padding?.left) || 0)
+      const hasPadding = padTop || padRight || padBottom || padLeft
+
+      if (!hasPadding) {
+        ymap.setCenter(toLatLng(currentCenter), currentZoom, { duration })
+        return
+      }
+
+      // Сдвигаем центр так, чтобы точка оказалась в центре видимой области
+      // (между padding top/bottom/left/right), а не за bottom sheet.
+      try {
+        const size = ymap.container.getSize?.() || [0, 0]
+        const width = size[0] || container.clientWidth || 0
+        const height = size[1] || container.clientHeight || 0
+        const projection = ymap.options.get('projection')
+        const targetGlobal = projection.toGlobalPixels(
+          toLatLng(currentCenter),
+          currentZoom,
+        )
+        const offsetX = (padLeft - padRight) / 2
+        const offsetY = (padBottom - padTop) / 2
+        // Если карта ещё не измерилась — обычный setCenter
+        if (!width || !height || !Array.isArray(targetGlobal)) {
+          ymap.setCenter(toLatLng(currentCenter), currentZoom, { duration })
+          return
+        }
+        const centerGlobal = [targetGlobal[0] + offsetX, targetGlobal[1] + offsetY]
+        if (typeof ymap.setGlobalPixelCenter === 'function') {
+          ymap.setGlobalPixelCenter(centerGlobal, currentZoom, { duration })
+          // Синхронизируем adapter center с фактическим центром карты
+          try {
+            const geo = projection.fromGlobalPixels(centerGlobal, currentZoom)
+            if (Array.isArray(geo) && geo.length >= 2) {
+              currentCenter = fromLatLng(geo)
+            }
+          } catch {
+            // keep target as logical center for callers
+          }
+          return
+        }
+      } catch {
+        // fall through
+      }
       ymap.setCenter(toLatLng(currentCenter), currentZoom, { duration })
+      if (padBottom || padTop) {
+        try {
+          ymap.panBy([0, Math.round((padBottom - padTop) / 2)], { duration: 0 })
+        } catch {
+          // ignore
+        }
+      }
     },
     fitBounds(bounds, { duration = 700, maxZoom: fitMaxZoom } = {}) {
       if (destroyed || !bounds?.isValid?.()) return

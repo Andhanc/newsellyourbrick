@@ -163,6 +163,19 @@
   backdrop-filter: blur(3px);
 }
 
+.debt-insight__unlocked-note {
+  margin: 14px 0 0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.debt-insight__cta:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .debt-insight__cta,
 .debt-pro-modal__buy,
 .debt-pro-modal__plans,

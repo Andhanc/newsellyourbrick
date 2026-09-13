@@ -12,7 +12,7 @@ import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import { SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 import { createYandexMap, createYandexMarker, SimpleLngLatBounds } from '../utils/yandexMapEngine'
 import '../utils/yandexMapChrome.css'
 import { toYandexMapsLang } from '../utils/yandexMapsLang'
@@ -41,10 +41,24 @@ import { isSoldPropertyListing } from '../utils/auctionReminderBounds'
 
 const MAP_LIST_SKELETON_COUNT = 6
 const MAP_PIN_MINI_ZOOM = 15
+/** Ближе к максимуму спутника — чтобы объект был крупно в кадре. */
+const MAP_FOCUS_ZOOM = Math.min(SATELLITE_MAP_MAX_ZOOM, 17)
 const MAP_PIN_CLUSTER_RADIUS_PX = 84
 const MAP_PIN_MINI_APPEAR_DELAY_MS = 280
 const MAP_PIN_MINI_STAGGER_MS = 40
 const MAP_PIN_THUMB_FALLBACK = PROPERTY_CARD_IMAGE_FALLBACK
+const MAP_SHEET_HALF_MAX_PX = 500
+const MAP_SHEET_HALF_VH = 0.54
+const MAP_SHEET_PEEK_PX = 176
+const MAP_HINT_PIN_GAP_PX = 36
+const MAP_HINT_EDGE_PAD_PX = 10
+
+function getMapSheetHeightPx(sheetState, mapExpanded) {
+  if (mapExpanded || typeof window === 'undefined') return 0
+  if (sheetState === 'peek') return MAP_SHEET_PEEK_PX
+  if (sheetState === 'expanded') return window.innerHeight
+  return Math.min(window.innerHeight * MAP_SHEET_HALF_VH, MAP_SHEET_HALF_MAX_PX)
+}
 
 const GEOCODE_RESULT_PRIORITY = [
   'building',
@@ -394,6 +408,7 @@ const MapPage = () => {
   const [mapExpanded, setMapExpanded] = useState(false)
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
+  const [mapOpenHintAnchor, setMapOpenHintAnchor] = useState(null)
   const [mapFabPhase, setMapFabPhase] = useState('hidden') // hidden | visible | leaving
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= 768,
@@ -425,9 +440,20 @@ const MapPage = () => {
     })
   }
 
-  /** Жесты листа только на глобальных блоках (карта / chrome дроера), не на скролле карточек. */
+  /**
+   * Nested scroll блока «N объектов»:
+   * 1) пока sheet не на весь экран — жест двигает sheet (half/peek → expanded);
+   * 2) на полном раскрытии — скролл списка карточек;
+   * 3) у верха списка обратный жест снова сворачивает sheet к half.
+   * scrollDelta > 0 = «в контент» (wheel вниз / палец вверх).
+   */
+  const resultsSheetRef = useRef(null)
+  const listScrollRef = useRef(null)
   const sheetGestureStartYRef = useRef(null)
+  const resultsSheetStateRef = useRef(resultsSheetState)
+  resultsSheetStateRef.current = resultsSheetState
   const SHEET_GESTURE_PX = 28
+  const SHEET_WHEEL_PX = 10
 
   const expandResultsSheet = useCallback(() => {
     if (!isMobile) return
@@ -436,39 +462,104 @@ const MapPage = () => {
 
   const collapseResultsSheet = useCallback(() => {
     if (!isMobile) return
+    const el = listScrollRef.current
+    if (el) el.scrollTop = 0
     setResultsSheetState((current) => (current === 'half' || current === 'peek' ? current : 'half'))
   }, [isMobile])
 
-  const handleGlobalSheetTouchStart = (event) => {
-    if (!isMobile) return
-    if (event.touches.length !== 1) {
-      sheetGestureStartYRef.current = null
-      return
-    }
-    sheetGestureStartYRef.current = event.touches[0].clientY
-  }
+  const isResultsListAtTop = useCallback(() => {
+    const el = listScrollRef.current
+    return !el || el.scrollTop <= 1
+  }, [])
 
-  const handleGlobalSheetTouchMove = (event) => {
-    if (!isMobile) return
-    if (event.touches.length !== 1) return
-    const startY = sheetGestureStartYRef.current
-    if (startY == null) return
-    const deltaY = event.touches[0].clientY - startY
-    // Свайп/скролл вниз → 80%, свайп вверх → назад к half
-    if (deltaY > SHEET_GESTURE_PX) {
-      expandResultsSheet()
-      sheetGestureStartYRef.current = event.touches[0].clientY
-    } else if (deltaY < -SHEET_GESTURE_PX) {
-      collapseResultsSheet()
+  const applyNestedSheetScroll = useCallback(
+    (scrollDelta, threshold = SHEET_GESTURE_PX) => {
+      if (!isMobile) return false
+      const state = resultsSheetStateRef.current
+      if (scrollDelta > threshold) {
+        if (state !== 'expanded') {
+          expandResultsSheet()
+          return true
+        }
+        return false
+      }
+      if (scrollDelta < -threshold) {
+        if (state === 'expanded' && isResultsListAtTop()) {
+          collapseResultsSheet()
+          return true
+        }
+        // Пока sheet не раскрыт — глотаем обратный жест, чтобы список не уезжал.
+        if (state !== 'expanded') return true
+      }
+      return false
+    },
+    [isMobile, expandResultsSheet, collapseResultsSheet, isResultsListAtTop],
+  )
+
+  useEffect(() => {
+    if (!isMobile) return undefined
+    const root = resultsSheetRef.current
+    if (!root) return undefined
+
+    const onTouchStart = (event) => {
+      if (event.touches.length !== 1) {
+        sheetGestureStartYRef.current = null
+        return
+      }
+      const target = event.target
+      if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
+        sheetGestureStartYRef.current = null
+        return
+      }
       sheetGestureStartYRef.current = event.touches[0].clientY
     }
-  }
 
-  const handleGlobalSheetWheel = (event) => {
-    if (!isMobile) return
-    if (event.deltaY > 10) expandResultsSheet()
-    else if (event.deltaY < -10) collapseResultsSheet()
-  }
+    const onTouchMove = (event) => {
+      if (event.touches.length !== 1) return
+      const startY = sheetGestureStartYRef.current
+      if (startY == null) return
+      const currentY = event.touches[0].clientY
+      const scrollDelta = startY - currentY
+      const state = resultsSheetStateRef.current
+
+      if (state !== 'expanded') {
+        if (applyNestedSheetScroll(scrollDelta)) {
+          event.preventDefault()
+          sheetGestureStartYRef.current = currentY
+        }
+        return
+      }
+
+      if (scrollDelta < -SHEET_GESTURE_PX && isResultsListAtTop()) {
+        event.preventDefault()
+        collapseResultsSheet()
+        sheetGestureStartYRef.current = currentY
+      }
+    }
+
+    const onWheel = (event) => {
+      const state = resultsSheetStateRef.current
+      if (state !== 'expanded') {
+        if (applyNestedSheetScroll(event.deltaY, SHEET_WHEEL_PX)) {
+          event.preventDefault()
+        }
+        return
+      }
+      if (event.deltaY < -SHEET_WHEEL_PX && isResultsListAtTop()) {
+        event.preventDefault()
+        collapseResultsSheet()
+      }
+    }
+
+    root.addEventListener('touchstart', onTouchStart, { passive: true })
+    root.addEventListener('touchmove', onTouchMove, { passive: false })
+    root.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      root.removeEventListener('touchstart', onTouchStart)
+      root.removeEventListener('touchmove', onTouchMove)
+      root.removeEventListener('wheel', onWheel)
+    }
+  }, [isMobile, applyNestedSheetScroll, collapseResultsSheet, isResultsListAtTop])
 
   // ─── Загрузка объектов ───────────────────────────────────────────────────
   const loadProperties = useCallback(async () => {
@@ -587,7 +678,8 @@ const MapPage = () => {
         center: [27.5666, 53.9138],
         zoom: 11,
         minZoom: 2,
-        maxZoom: STREET_MAP_MAX_ZOOM,
+        maxZoom: SATELLITE_MAP_MAX_ZOOM,
+        type: 'yandex#satellite',
         lang: mapsLang,
       })
         .then((map) => {
@@ -648,7 +740,7 @@ const MapPage = () => {
             () => {
               const targetZoom = Math.min(
                 Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
-                STREET_MAP_MAX_ZOOM,
+                SATELLITE_MAP_MAX_ZOOM,
               )
               map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
               if (item.count === 1 && item.properties?.[0]) {
@@ -679,12 +771,25 @@ const MapPage = () => {
         const focusProperty = () => {
           setSelectedProperty(property)
           if (isMobile) setResultsSheetState('half')
-          map.flyTo({
-            center: lngLat,
-            zoom: Math.min(Math.max(map.getZoom(), MAP_PIN_MINI_ZOOM + 0.5), STREET_MAP_MAX_ZOOM),
-            duration: 700,
-          })
           setMapOpenHintProperty(property)
+          const runFly = () => {
+            map.resize()
+            const sheetPad = isMobile
+              ? getMapSheetHeightPx('half', mapExpanded)
+              : 0
+            map.flyTo({
+              center: lngLat,
+              zoom: MAP_FOCUS_ZOOM,
+              duration: 700,
+              padding: {
+                top: isMobile ? 72 : 80,
+                right: 24,
+                bottom: sheetPad + 12,
+                left: 24,
+              },
+            })
+          }
+          window.setTimeout(runFly, isMobile ? 40 : 0)
         }
 
         const el = buildMapPinPointElement({
@@ -710,12 +815,12 @@ const MapPage = () => {
       if (fitBounds && !selectedProperty && hasPoints) {
         map.fitBounds(bounds, {
           padding: { top: 80, right: 80, bottom: 80, left: 80 },
-          maxZoom: Math.min(MAP_PIN_MINI_ZOOM - 1, STREET_MAP_MAX_ZOOM),
+          maxZoom: Math.min(MAP_PIN_MINI_ZOOM - 1, SATELLITE_MAP_MAX_ZOOM),
           duration: 700,
         })
       }
     },
-    [sortedProperties, selectedProperty, mapReady, isMobile, t],
+    [sortedProperties, selectedProperty, mapReady, isMobile, mapExpanded, t],
   )
 
   useEffect(() => {
@@ -812,21 +917,91 @@ const MapPage = () => {
     await toggleFavoriteGlobal(property, mockCat)
   }
 
+  const syncMapOpenHintAnchor = useCallback(() => {
+    const map = mapInstanceRef.current
+    const property = mapOpenHintProperty
+    if (!map || !property) {
+      setMapOpenHintAnchor(null)
+      return
+    }
+    const coords = getPropertyCoordinates(property)
+    if (!coords) {
+      setMapOpenHintAnchor(null)
+      return
+    }
+    const point = map.project([coords[1], coords[0]])
+    const wrap = mapWrapRef.current
+    const wrapW = wrap?.clientWidth || window.innerWidth
+    const wrapH = wrap?.clientHeight || window.innerHeight
+    const sheetH = isMobile ? getMapSheetHeightPx(resultsSheetStateRef.current, mapExpanded) : 0
+    const visibleBottom = Math.max(120, wrapH - sheetH - MAP_HINT_EDGE_PAD_PX)
+    const x = Math.min(
+      Math.max(point.x, MAP_HINT_EDGE_PAD_PX + 110),
+      wrapW - MAP_HINT_EDGE_PAD_PX - 110,
+    )
+    const y = Math.min(
+      Math.max(point.y - MAP_HINT_PIN_GAP_PX, MAP_HINT_EDGE_PAD_PX + 64),
+      visibleBottom,
+    )
+    setMapOpenHintAnchor({ x, y })
+  }, [mapOpenHintProperty, isMobile, mapExpanded])
+
+  useEffect(() => {
+    if (!mapOpenHintProperty || !mapReady) {
+      setMapOpenHintAnchor(null)
+      return undefined
+    }
+    const map = mapInstanceRef.current
+    if (!map) return undefined
+
+    const sync = () => syncMapOpenHintAnchor()
+    sync()
+    const t1 = window.setTimeout(sync, 80)
+    const t2 = window.setTimeout(sync, 380)
+    const t3 = window.setTimeout(sync, 760)
+    map.on('moveend', sync)
+    map.on('zoomend', sync)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      window.clearTimeout(t3)
+      map.off('moveend', sync)
+      map.off('zoomend', sync)
+    }
+  }, [mapOpenHintProperty, mapReady, syncMapOpenHintAnchor, resultsSheetState, mapExpanded])
+
   const focusOnProperty = useCallback((property) => {
     const coords = getPropertyCoordinates(property)
     if (!coords) {
       showNotification(t('mapPage_noCoordsNotify'))
       return
     }
-    // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
-    mapInstanceRef.current?.flyTo({
-      center: [coords[1], coords[0]],
-      zoom: Math.min(MAP_PIN_MINI_ZOOM + 0.5, STREET_MAP_MAX_ZOOM),
-      duration: 700
-    })
+    if (isMobile) setResultsSheetState('half')
     setSelectedProperty(property)
     setMapOpenHintProperty(property)
-    if (isMobile) setResultsSheetState('half')
+
+    const runFly = () => {
+      const map = mapInstanceRef.current
+      if (!map) return
+      map.resize()
+      const sheetPad = isMobile ? getMapSheetHeightPx('half', mapExpanded) : 0
+      map.flyTo({
+        center: [coords[1], coords[0]],
+        zoom: MAP_FOCUS_ZOOM,
+        duration: 700,
+        padding: {
+          top: isMobile ? 72 : 80,
+          right: 24,
+          bottom: sheetPad + 12,
+          left: 24,
+        },
+      })
+    }
+
+    // Даём sheet начать сворачиваться, затем центрируем с учётом padding.
+    window.setTimeout(runFly, isMobile ? 40 : 0)
+    window.setTimeout(() => mapInstanceRef.current?.resize(), 360)
+
     const wrap = mapWrapRef.current
     if (wrap && !mapExpanded) {
       requestAnimationFrame(() => {
@@ -844,13 +1019,11 @@ const MapPage = () => {
         </header>
 
         <div className="map-page-main">
-          <aside className={`map-page-list map-page-list--${resultsSheetState}`}>
-            <div
-              className="map-results-sheet__chrome"
-              onTouchStart={handleGlobalSheetTouchStart}
-              onTouchMove={handleGlobalSheetTouchMove}
-              onWheel={handleGlobalSheetWheel}
-            >
+          <aside
+            ref={resultsSheetRef}
+            className={`map-page-list map-page-list--${resultsSheetState}`}
+          >
+            <div className="map-results-sheet__chrome">
             <button
               type="button"
               className="map-results-sheet__handle"
@@ -947,7 +1120,12 @@ const MapPage = () => {
             </p>
             </div>
 
-            <div id="map-results-scroll" className="map-list-scroll" aria-busy={loading}>
+            <div
+              id="map-results-scroll"
+              ref={listScrollRef}
+              className="map-list-scroll"
+              aria-busy={loading}
+            >
               {loading ? (
                 <MapPagePropertyGridSkeletons count={MAP_LIST_SKELETON_COUNT} />
               ) : sortedProperties.length === 0 ? (
@@ -979,6 +1157,7 @@ const MapPage = () => {
                   formatPrice={formatPrice}
                   isFavorite={(property) => isFavorite(property, null)}
                   onFavoriteToggle={toggleFavorite}
+                  onFocusOnMap={focusOnProperty}
                   selectedProperty={selectedProperty}
                   user={user}
                   userLoaded={userLoaded}
@@ -1039,42 +1218,48 @@ const MapPage = () => {
             </div>
             {mapOpenHintProperty && (
               <div
-                className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
+                className={[
+                  'map-open-hint',
+                  mapExpanded ? 'map-open-hint--fullscreen' : '',
+                  mapOpenHintAnchor ? 'map-open-hint--anchored' : 'map-open-hint--pending',
+                ].filter(Boolean).join(' ')}
                 role="status"
+                style={
+                  mapOpenHintAnchor
+                    ? {
+                        left: `${mapOpenHintAnchor.x}px`,
+                        top: `${mapOpenHintAnchor.y}px`,
+                      }
+                    : undefined
+                }
               >
-                <button
-                  type="button"
-                  className="map-open-hint__dismiss"
-                  onClick={() => setMapOpenHintProperty(null)}
-                  aria-label={t('mapPage_dismissHintAria')}
-                >
-                  <FiX size={18} />
-                </button>
-                <div className="map-open-hint__thumb">
-                  <img
-                    {...buildResponsiveImageProps(
-                      (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
-                        '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg',
-                      {
-                        widths: [96, 160, 240],
-                        sizes: '48px',
-                        quality: 70,
-                        fit: 'crop',
-                      },
-                    )}
-                    alt=""
-                    onError={applyPropertyImageFallback}
-                  />
-                </div>
-                <div className="map-open-hint__main">
-                  <p className="map-open-hint__label">{t('mapPage_hintLabel')}</p>
-                  <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
-                  <p className="map-open-hint__price">
-                    {formatPrice(
-                      mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
-                      mapOpenHintProperty.currency,
-                    )}
-                  </p>
+                <div className="map-open-hint__row">
+                  <div className="map-open-hint__thumb">
+                    <img
+                      {...buildResponsiveImageProps(
+                        (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
+                          '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg',
+                        {
+                          widths: [68, 96, 136],
+                          sizes: '34px',
+                          quality: 70,
+                          fit: 'crop',
+                        },
+                      )}
+                      alt=""
+                      onError={applyPropertyImageFallback}
+                    />
+                  </div>
+                  <div className="map-open-hint__main">
+                    <p className="map-open-hint__label">{t('mapPage_hintLabel')}</p>
+                    <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
+                    <p className="map-open-hint__price">
+                      {formatPrice(
+                        mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
+                        mapOpenHintProperty.currency,
+                      )}
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"

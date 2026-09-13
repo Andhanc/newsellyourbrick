@@ -47,11 +47,18 @@ test('map is a mobile canvas with a stateful results sheet and guided filters dr
   assert.match(map, /map-results-sheet__chrome/)
   assert.match(map, /expandResultsSheet/)
   assert.match(map, /collapseResultsSheet/)
-  assert.match(map, /handleGlobalSheetTouchMove/)
+  assert.match(map, /applyNestedSheetScroll/)
+  assert.match(map, /isResultsListAtTop/)
+  assert.match(map, /listScrollRef/)
+  assert.match(map, /onFocusOnMap=\{focusOnProperty\}/)
   assert.doesNotMatch(map, /onScroll=\{handleResultsListScroll\}/)
   assert.match(mapCss, /@media \(max-width:\s*768px\)[\s\S]*\.map-page-root[\s\S]*height:\s*100dvh/)
   assert.match(mapCss, /\.map-page-list--peek/)
-  assert.match(mapCss, /\.map-page-list--expanded[\s\S]*height:\s*80dvh/)
+  assert.match(mapCss, /\.map-page-list--expanded[\s\S]*height:\s*100dvh/)
+  assert.match(
+    mapCss,
+    /\.map-page-list--expanded \.map-list-scroll[\s\S]*overflow-y:\s*auto/,
+  )
   assert.match(
     mapCss,
     /@media \(max-width:\s*768px\)[\s\S]*\.map-page-property-grid \.auction-card__actions[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)\s*!important/,
