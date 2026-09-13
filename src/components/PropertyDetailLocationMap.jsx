@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { useTranslation } from 'react-i18next'
+import { MdDirectionsWalk } from 'react-icons/md'
 import {
   ArrowUpRight,
   Bus,
@@ -11,6 +12,7 @@ import {
   Trees,
 } from 'lucide-react'
 import LocationMap from './LocationMap'
+import PropertyStreetViewDrawer from './PropertyStreetViewDrawer'
 import { fitPropertyNearbyPlaces } from '../utils/fitPropertyNearbyPlaces'
 import {
   fetchNearbyPlaces,
@@ -61,6 +63,7 @@ export default function PropertyDetailLocationMap({
   const [activeCategory, setActiveCategory] = useState(null)
   const [loadingCategory, setLoadingCategory] = useState(null)
   const [errorCategory, setErrorCategory] = useState(null)
+  const [streetViewOpen, setStreetViewOpen] = useState(false)
 
   const coords = useMemo(() => {
     if (!Array.isArray(center) || center.length !== 2) return null
@@ -249,8 +252,29 @@ export default function PropertyDetailLocationMap({
         mapStyle={mapStyle}
         markerColor={markerColor}
       />
+      {interactive && coords ? (
+        <button
+          type="button"
+          className="property-detail-location-map__street-view-trigger"
+          onClick={() => setStreetViewOpen(true)}
+          aria-label={t('propertyStreetViewOpen')}
+          title={t('propertyStreetViewOpen')}
+          aria-haspopup="dialog"
+          aria-expanded={streetViewOpen}
+        >
+          <MdDirectionsWalk size={27} aria-hidden="true" />
+        </button>
+      ) : null}
     </div>
   )
+
+  const streetViewDrawer = interactive && coords ? (
+    <PropertyStreetViewDrawer
+      isOpen={streetViewOpen}
+      onClose={() => setStreetViewOpen(false)}
+      center={[coords.lat, coords.lng]}
+    />
+  ) : null
 
   const filtersNode =
     interactive && coords ? (
@@ -319,6 +343,7 @@ export default function PropertyDetailLocationMap({
       >
         {framedMap}
         {filtersNode}
+        {streetViewDrawer}
       </div>
     )
   }
@@ -327,6 +352,7 @@ export default function PropertyDetailLocationMap({
     <div className={`property-detail-location-map${className ? ` ${className}` : ''}`}>
       {mapNode}
       {filtersNode}
+      {streetViewDrawer}
     </div>
   )
 }

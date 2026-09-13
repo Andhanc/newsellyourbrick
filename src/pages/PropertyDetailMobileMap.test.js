@@ -36,12 +36,24 @@ test('mobile property map card stays mirrored and smartphone-scoped', async () =
     assert.match(source, /t\('propertyDetailLocationTitle'\)/)
   }
 
-  const [webMapSource, legacyMapSource] = await Promise.all([
+  const [webMapSource, legacyMapSource, webMapCss, legacyMapCss] = await Promise.all([
     read('src/components/PropertyDetailLocationMap.jsx'),
     read('apps/client/src/legacy/components/PropertyDetailLocationMap.jsx'),
+    read('src/components/PropertyDetailLocationMap.css'),
+    read('apps/client/src/legacy/components/PropertyDetailLocationMap.css'),
   ])
   assert.equal(legacyMapSource, webMapSource)
+  assert.equal(legacyMapCss, webMapCss)
   assert.match(webMapSource, /property-detail-location-map__filter-meta/)
   assert.match(webMapSource, /t\('mapPage_showOnMap'\)/)
   assert.match(webMapSource, /<ArrowUpRight size=\{17\}/)
+  assert.match(webMapSource, /property-detail-location-map__street-view-trigger/)
+  assert.match(webMapSource, /import \{ MdDirectionsWalk \} from 'react-icons\/md'/)
+  assert.match(webMapSource, /<MdDirectionsWalk size=\{27\}/)
+  assert.doesNotMatch(webMapSource, /PersonStanding/)
+  assert.match(webMapSource, /<PropertyStreetViewDrawer/)
+  assert.match(webMapSource, /t\('propertyStreetViewOpen'\)/)
+  assert.match(webMapCss, /\.property-detail-location-map__street-view-trigger \{[\s\S]*?top: 134px;[\s\S]*?right: 12px;/)
+  assert.match(webMapCss, /background: rgba\(255, 255, 255, 0\.97\);/)
+  assert.match(webMapCss, /@media \(max-width: 760px\) \{[\s\S]*?\.property-detail-location-map__street-view-trigger \{[\s\S]*?top: 152px;/)
 })

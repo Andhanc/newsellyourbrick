@@ -49,7 +49,15 @@ test('no results leave the camera unchanged and cached results can be framed aga
 })
 
 test('nearby map behavior and styling remain identical in web and legacy', async () => {
-  for (const file of ['utils/fitPropertyNearbyPlaces.js', 'components/PropertyDetailLocationMap.jsx', 'components/PropertyDetailLocationMap.css', 'pages/PropertyDetailClassic.mobileMap.css']) {
+  for (const file of [
+    'utils/fitPropertyNearbyPlaces.js',
+    'components/PropertyDetailLocationMap.jsx',
+    'components/PropertyDetailLocationMap.css',
+    'components/PropertyStreetViewDrawer.jsx',
+    'components/PropertyStreetViewDrawer.css',
+    'utils/googleStreetView.js',
+    'pages/PropertyDetailClassic.mobileMap.css',
+  ]) {
     const [web, legacy] = await Promise.all([
       readFile(new URL(`../${file}`, import.meta.url), 'utf8'),
       readFile(new URL(`../../apps/client/src/legacy/${file}`, import.meta.url), 'utf8'),
