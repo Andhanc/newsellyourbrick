@@ -4068,6 +4068,23 @@
     filter: none;
   }
 
+  .property-detail-mobile-buy-now--share-locked .property-detail-mobile-buy-now__price-panel {
+    filter: saturate(0.42);
+    opacity: 0.78;
+  }
+
+  .property-detail-mobile-buy-now--share-locked .property-detail-mobile-buy-now__intro {
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .property-detail-mobile-buy-now--share-locked .property-detail-mobile-buy-now__btn:disabled {
+    opacity: 1;
+    color: #64748b !important;
+    background: #e5edf0;
+    border: 1px solid #d4e0e4;
+  }
+
   /* Buy now: compact, full-width payment story with the primary action above the fold. */
   .property-detail-mobile-buy-now {
     width: auto;

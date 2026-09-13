@@ -79,9 +79,8 @@ export default function MobileShowcasePage() {
           </Link>)}
         </nav>
         <form className="ms-search" role="search" onSubmit={search}>
-          <FiSearch aria-hidden="true" />
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('discoverPage_searchPlaceholder')} aria-label={t('search')} />
-          <button type="submit" aria-label={t('search')}><FiArrowRight aria-hidden="true" /></button>
+          <button type="submit" aria-label={t('search')}><FiSearch aria-hidden="true" /></button>
         </form>
         <div className="ms-listings invest-home-page discover-auction-cards">
           {listings.map((section) => showcases.loading || section.items.length > 0 ? (

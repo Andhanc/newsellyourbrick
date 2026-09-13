@@ -95,22 +95,6 @@
   gap: 8px;
 }
 
-.share-mobile-purchase-bar__actions.has-buy-now {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.share-mobile-purchase-bar__cta--buy-now {
-  background: linear-gradient(135deg, #7453ff, #4e34c7);
-  box-shadow: 0 8px 20px rgba(116, 83, 255, 0.2);
-}
-
-.share-mobile-purchase-bar__cta--buy-now:disabled {
-  color: #64748b;
-  background: #dbe4ea;
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
 .share-mobile-purchase-bar--sold-out {
   min-height: 88px;
   justify-content: center;

@@ -58,6 +58,45 @@ final result: passed
 
 ---
 
+# Design QA — Buy Now tab in mobile share detail (2026-09-13)
+
+Source visual truth: the existing mobile auction Buy Now subpage at `http://localhost:5173/auction/property/villa-ya-324` (browser capture reviewed in this run). Implementation: `http://localhost:5173/co-investment/house-test-327`, Buy Now tab selected (Codex in-app browser capture reviewed inline; the browser provider did not expose a persistent screenshot path). Viewport: 390 × 844 CSS px at DPR 1. Source and implementation were rendered at the same CSS target; the earlier source capture included a desktop shell, so fidelity judgments were limited to the shared Buy Now content pattern rather than outer property-header proportions. State: Russian locale, public share listing with Buy Now enabled and zero sold shares.
+
+## Full-view and focused comparison evidence
+
+- The implementation exposes the same tab-level information architecture as the auction detail: `Описание / Купить сейчас / Галерея`, with Buy Now rendered as a separate panel rather than inside the share purchase controls.
+- The focused Buy Now region reuses the auction composition: Tiffany fixed-price card, 10% payment-today row, explanatory copy, pill CTA, service shortcuts, and the three pre-purchase guide cards.
+- The share distribution chart and sticky share quantity bar are absent while the Buy Now tab is active, preventing two competing purchase flows on the same screen.
+- A separate focused crop was not needed because price, deposit, explanatory copy, CTA, and all three tab labels were legible in the 390 px browser capture.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing Montserrat hierarchy, weights, line heights, and price numerals are inherited directly from the auction Buy Now component classes; no new font treatment was introduced.
+- Spacing and layout rhythm: the implementation uses the same edge-to-edge mobile tab panel, 20 px content padding, rounded Tiffany price card, and vertical spacing as the auction pattern.
+- Colors and visual tokens: established Tiffany gradients, dark ink, white surfaces, and muted explanatory text are reused. The locked share state uses a deliberately desaturated price card and neutral disabled CTA.
+- Image quality and asset fidelity: the same existing 3D guide assets and icon-library components are reused; no placeholder or substitute imagery was added.
+- Copy and content: existing localized share Buy Now and auction payment strings are reused. The unavailable state preserves the specific explanation that a whole-property purchase is blocked after any share is sold.
+
+## Findings and comparison history
+
+- Initial P1: Buy Now for shares appeared as a secondary action in the fixed share-purchase bar and had no dedicated content tab. Fix: added a conditional Buy Now tab and routed it to the existing auction Buy Now panel structure.
+- Initial P2: the share ownership chart and fixed quantity bar remained conceptually adjacent to whole-property purchase. Fix: hide both while the Buy Now tab is active and remove the duplicate Buy Now CTA from the share bar.
+- Post-fix browser evidence shows the three-tab structure and standalone Buy Now screen at 390 × 844. The tab interaction works, the primary CTA is present, there is no duplicate sticky share action, and the console contains no new errors.
+- No actionable P0, P1, or P2 findings remain. The locked visual state is covered by component/unit assertions because the local data set has no Buy Now share listing with sold shares.
+
+## Implementation checklist
+
+- [x] Show the tab only when Buy Now is configured for the share listing.
+- [x] Keep the tab visible but disable the action after the first share purchase.
+- [x] Reuse the auction Buy Now payment and guide layout.
+- [x] Remove competing share-purchase controls from the selected tab.
+- [x] Keep web and legacy JSX/component CSS in parity.
+- [x] Run targeted tests, browser interaction, console check, production build, and `git diff --check`.
+
+final result: passed
+
+---
+
 # Design QA — mobile showcase header and auction cards (2026-09-13)
 
 Source visual truth: `artifacts/mobile-showcase/header-reference.png` and `artifacts/mobile-showcase/auction-cards-reference.png`.
@@ -238,5 +277,39 @@ Viewports: 360×800, 390×844, 576×1280, 1280×900 CSS px, screenshots at DPR 1
 - Build passed; existing large-chunk warnings remain. `git diff --check` passed.
 - 56 of 57 existing regression tests passed. Unrelated failure: `src/pages/PropertyDetailPage.mobile.test.js`, “guest buyer can express purchase intent before authentication”, expects `disabled={isReservedActive}` in existing property-detail markup. That component was not edited in this task.
 - Existing homepage carousel, shared stories, buyer/role flows, gallery, debt risk assets and investment behavior remain unchanged by this new route.
+
+final result: passed
+
+---
+
+# Design QA — mobile showcase Tiffany refinement (2026-09-13)
+
+Source visual truth: `artifacts/mobile-showcase/tiffany-reference.png`, `artifacts/mobile-showcase/search-reference.png`, `artifacts/mobile-showcase/app-promo-reference.png`, and the previously supplied property-card reference.
+Implementation screenshots: `artifacts/mobile-showcase/tiffany-search-cards-mobile.png`, `artifacts/mobile-showcase/smaller-cards-mobile.png`, and `artifacts/mobile-showcase/app-gradient-mobile.png`.
+Combined comparison evidence: `artifacts/mobile-showcase/tiffany-comparison.png` (792×370), `artifacts/mobile-showcase/search-comparison.png` (736×80), and `artifacts/mobile-showcase/app-promo-comparison.png` (736×286).
+Viewport: 396×837 CSS px at DPR 1. State: Russian locale, authenticated header, live property data.
+
+## Findings
+
+- No actionable P0, P1, or P2 differences remain in the requested scope.
+- The hero now uses the supplied light Tiffany range (`#62d3da` to `#4ecdd6`) and visually matches the color reference.
+- The search uses the reference's oversized white pill, muted placeholder, circular Tiffany action and search icon. The page keeps the search on white because the current section structure has no property-photo backdrop.
+- Property cards are reduced from 225.7 px to 205.9 px at the inspected viewport; timer, price, metadata and actions remain readable.
+- The app promo keeps the compact accepted composition while adding a visibly stronger deep-Tiffany-to-aqua gradient, highlight and elevation.
+
+## Required fidelity surfaces
+
+- Fonts and typography: Montserrat hierarchy and weights are unchanged; the larger search placeholder and app headline remain balanced at mobile width.
+- Spacing and layout rhythm: the search is 70 px tall with a 54 px circular action; card rail width is 52vw with a 12 px gap; no page-level horizontal overflow exists.
+- Colors and visual tokens: the hero uses the sampled light Tiffany palette; controls inherit `#4ecdd6`; the app promo uses deeper brand tones for contrast.
+- Image quality and asset fidelity: existing campaign and live property images remain unchanged and sharp; no substitute assets were introduced.
+- Copy and content: existing localized strings and live listing values remain unchanged.
+
+## Interaction and implementation checks
+
+- Search remains a native form and submits through the existing `/search-results` flow.
+- Shared property card navigation, favorite, bid and Buy Now actions remain intact.
+- Web and legacy JSX/CSS copies are identical.
+- Browser measurements confirm a 396×837 viewport and zero horizontal page overflow.
 
 final result: passed

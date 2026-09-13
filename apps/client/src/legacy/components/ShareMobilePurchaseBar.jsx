@@ -10,9 +10,6 @@ export default function ShareMobilePurchaseBar({ config }) {
     isSoldOut = false,
     onPurchase,
     formatStickyTotal,
-    buyNowEnabled = false,
-    buyNowAvailable = false,
-    onBuyNow,
   } = config || {}
 
   if (isSoldOut || availableToBuy <= 0) {
@@ -56,22 +53,12 @@ export default function ShareMobilePurchaseBar({ config }) {
         </div>
       </div>
 
-      <div className={`share-mobile-purchase-bar__actions${buyNowEnabled ? ' has-buy-now' : ''}`}>
+      <div className="share-mobile-purchase-bar__actions">
         <button type="button" className="share-mobile-purchase-bar__cta" onClick={onPurchase}>
           {buyCount > 1
             ? t('shareDetailBuyShares', { count: buyCount })
             : t('shareDetailBuyShare')}
         </button>
-        {buyNowEnabled ? (
-          <button
-            type="button"
-            className="share-mobile-purchase-bar__cta share-mobile-purchase-bar__cta--buy-now"
-            onClick={onBuyNow}
-            disabled={!buyNowAvailable}
-          >
-            {buyNowAvailable ? t('shareDetailBuyNowShort') : t('shareDetailBuyNowUnavailable')}
-          </button>
-        ) : null}
       </div>
     </div>
   )

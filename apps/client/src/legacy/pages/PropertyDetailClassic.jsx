@@ -2297,6 +2297,10 @@ function PropertyDetailClassic({
     hasAuctionBuyNowListingForm(displayProperty) &&
     !timerExpired &&
     !isBuyNowSaleCompleted
+  const showShareBuyNowTab = Boolean(
+    isShareListing && shareListingConfig?.buyNowEnabled,
+  )
+  const showMobileBuyNowTab = showAuctionBuyNowTab || showShareBuyNowTab
   const shouldShowAuctionBuyNow =
     showAuctionBuyNowTab &&
     auctionBuyNowPrice > 0 &&
@@ -2304,8 +2308,8 @@ function PropertyDetailClassic({
 
   useEffect(() => {
     if (auctionMobileTab !== 'buy_now') return
-    if (!showAuctionBuyNowTab) setAuctionMobileTab('about')
-  }, [auctionMobileTab, showAuctionBuyNowTab])
+    if (!showMobileBuyNowTab) setAuctionMobileTab('about')
+  }, [auctionMobileTab, showMobileBuyNowTab])
 
   const displayEndedAuctionPlayerId =
     currentLeader?.userIdNumber ??
@@ -4950,19 +4954,32 @@ function PropertyDetailClassic({
   }
 
   const renderAuctionBuyNowBlock = ({ variant = 'sidebar' } = {}) => {
-    if (!showAuctionBuyNowTab && variant !== 'sidebar') return null
+    const isShareBuyNowTab = variant === 'mobile-tab' && showShareBuyNowTab
+    if (!showAuctionBuyNowTab && !isShareBuyNowTab && variant !== 'sidebar') return null
     if (variant === 'sidebar' && !shouldShowAuctionBuyNow) return null
 
     if (variant === 'mobile-about' || variant === 'mobile-tab') {
-      const buyNowLocked =
-        isOwnListing ||
-        (!isReservedActive && (!buyNowEmailOk || !shouldShowAuctionBuyNow))
-      const buyNowPriceLabel = fmtBidPrice(displayProperty.price)
-      const buyNowReserveAmount = auctionBuyNowPrice * 0.1
+      const shareBuyNowAvailable = Boolean(shareListingConfig?.buyNowAvailable)
+      const shareLockedCopy = t(
+        shareListingConfig?.buyNowLockedReason === 'completed'
+          ? 'shareDetailBuyNowCompleted'
+          : 'shareDetailBuyNowLocked',
+      )
+      const buyNowLocked = isShareBuyNowTab
+        ? !shareBuyNowAvailable
+        : isOwnListing ||
+          (!isReservedActive && (!buyNowEmailOk || !shouldShowAuctionBuyNow))
+      const fullBuyNowPrice = isShareBuyNowTab
+        ? Number(shareListingConfig?.fullPrice) || 0
+        : auctionBuyNowPrice
+      const buyNowPriceLabel = fmtBidPrice(fullBuyNowPrice)
+      const buyNowReserveAmount = fullBuyNowPrice * 0.1
       const buyNowReservePriceLabel = fmtBidPrice(buyNowReserveAmount)
       return (
         <section
-          className="property-detail-mobile-buy-now"
+          className={`property-detail-mobile-buy-now${
+            isShareBuyNowTab ? ' property-detail-mobile-buy-now--share' : ''
+          }${isShareBuyNowTab && buyNowLocked ? ' property-detail-mobile-buy-now--share-locked' : ''}`}
           aria-label={t('propertyDetailTabBuyNow')}
         >
           <div className="property-detail-mobile-buy-now__hero">
@@ -4997,7 +5014,11 @@ function PropertyDetailClassic({
             </div>
 
             <p className="property-detail-mobile-buy-now__intro">
-              {t('propertyDetailBuyNowDefinition')}
+              {isShareBuyNowTab
+                ? buyNowLocked
+                  ? shareLockedCopy
+                  : t('shareDetailBuyNowDescription')
+                : t('propertyDetailBuyNowDefinition')}
             </p>
 
             <button
@@ -5005,10 +5026,12 @@ function PropertyDetailClassic({
               className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
                 paymentActionsLocked ? ' property-detail-mobile-buy-now__btn--currency-preview' : ''
               }`}
-              onClick={handleBookNow}
+              onClick={isShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
               disabled={buyNowLocked}
               title={
-                isReservedActive
+                isShareBuyNowTab && buyNowLocked
+                  ? shareLockedCopy
+                  : isReservedActive
                   ? t('purchaseSuccess_goToObject')
                   : !buyNowEmailOk
                     ? t('buyNowEmailRequired')
@@ -5018,11 +5041,17 @@ function PropertyDetailClassic({
               }
             >
               <span>
-                {isReservedActive
+                {isShareBuyNowTab && buyNowLocked
+                  ? t('shareDetailBuyNowUnavailable')
+                  : isReservedActive
                   ? t('purchaseSuccess_goToObject')
                   : t('propertyDetailBuyNowReserveForCta', { price: buyNowReservePriceLabel })}
               </span>
-              {!isReservedActive ? <FiArrowRight size={18} strokeWidth={2.5} aria-hidden /> : null}
+              {isShareBuyNowTab && buyNowLocked ? (
+                <FiLock size={18} strokeWidth={2.4} aria-hidden />
+              ) : !isReservedActive ? (
+                <FiArrowRight size={18} strokeWidth={2.5} aria-hidden />
+              ) : null}
             </button>
           </div>
 
@@ -5221,7 +5250,7 @@ function PropertyDetailClassic({
         {t('propertyDetailTabAbout')}
       </button>
     )
-    const buyNowTab = showAuctionBuyNowTab ? (
+    const buyNowTab = showMobileBuyNowTab ? (
       <button
         key="buy_now"
         type="button"
@@ -5261,7 +5290,7 @@ function PropertyDetailClassic({
     return (
       <div className={tabsClass} role="tablist">
         {isShareListing
-          ? [aboutTab, galleryTab]
+          ? [aboutTab, buyNowTab, galleryTab].filter(Boolean)
           : [aboutTab, buyNowTab, galleryTab, actionTab].filter(Boolean)}
       </div>
     )
@@ -7659,7 +7688,7 @@ function PropertyDetailClassic({
                     )}
                   </div>
                   {renderAuctionContentTabs()}
-                  {isShareListing ? (
+                  {isShareListing && auctionMobileTab !== 'buy_now' ? (
                     <div className="property-detail-mobile-share-chart">
                       <ShareDetailPurchasePanel
                         {...shareListingConfig}
@@ -7687,7 +7716,7 @@ function PropertyDetailClassic({
                 </div>
               )}
 
-              {isAuctionLayout && showAuctionBuyNowTab ? (
+              {isAuctionLayout && showMobileBuyNowTab ? (
                 <div
                   className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--buy-now${
                     auctionMobileTab === 'buy_now' ? ' is-active' : ''
@@ -7941,7 +7970,9 @@ function PropertyDetailClassic({
       />
 
       {isShareListing ? (
-        <ShareMobilePurchaseBar config={shareListingConfig} />
+        auctionMobileTab !== 'buy_now' ? (
+          <ShareMobilePurchaseBar config={shareListingConfig} />
+        ) : null
       ) : isAuctionProperty && auctionMobileTab !== 'buy_now' ? (
         <div
           className={`property-detail-mobile-bottom-bar${

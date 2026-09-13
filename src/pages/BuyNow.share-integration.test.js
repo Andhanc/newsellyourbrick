@@ -59,6 +59,11 @@ test('new buy-now share surfaces stay identical in web and legacy bundles', () =
       '../../apps/client/src/legacy/components/ShareMobilePurchaseBar.jsx',
     ],
     [
+      '../components/ShareMobilePurchaseBar.css',
+      '../../apps/client/src/legacy/components/ShareMobilePurchaseBar.css',
+    ],
+    ['./PropertyDetailClassic.jsx', '../../apps/client/src/legacy/pages/PropertyDetailClassic.jsx'],
+    [
       '../components/SharesPropertyCard.jsx',
       '../../apps/client/src/legacy/components/SharesPropertyCard.jsx',
     ],
