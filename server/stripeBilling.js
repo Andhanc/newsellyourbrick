@@ -18,6 +18,7 @@ import { viewerOwnsPropertyRecord } from '../src/utils/listingOwnerGuard.js';
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { sendVipClubWelcomeEmail, shouldSendVipClubWelcomeEmail } from './vipClubWelcomeEmail.js';
 import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
+import { fireOpsAlert, notifyReservationPaid } from './telegramOpsNotify.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -910,6 +911,16 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     } catch (notificationError) {
       console.warn('[Stripe] reservation paid notification:', notificationError?.message || notificationError);
     }
+
+    fireOpsAlert(() =>
+      notifyReservationPaid({
+        purchaseRequestId: createdRequestId,
+        propertyId,
+        propertyTitle: property?.title,
+        buyerId: userId,
+        sellerId,
+      }),
+    );
 
     return { ok: true };
   } catch (e) {

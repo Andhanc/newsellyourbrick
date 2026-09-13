@@ -51,6 +51,16 @@ import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { sendVerificationApprovedExternalNotifications } from './verificationApprovedNotify.js';
 import { sendVerificationRejectedExternalNotifications } from './verificationRejectedNotify.js';
+import {
+  fireOpsAlert,
+  notifyKycPending,
+  notifyPropertyPending,
+  notifyPurchaseRequest,
+  notifyBid,
+  notifyAuctionWon,
+  startOpsBotCommands,
+  getOpsStatus,
+} from './telegramOpsNotify.js';
 import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
 import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
@@ -3775,6 +3785,17 @@ app.post('/api/documents', upload.single('document_photo'), async (req, res) => 
     if (newDocument.verification_status !== 'pending') {
       console.warn('⚠️ ВНИМАНИЕ: Документ создан со статусом', newDocument.verification_status, 'вместо pending!');
     }
+
+    fireOpsAlert(() =>
+      notifyKycPending({
+        userId: user.id,
+        user,
+        name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email,
+        role: user.role || 'buyer',
+        documentType: newDocument.document_type,
+        documentId: newDocument.id,
+      }),
+    );
     
     res.status(201).json({ success: true, data: newDocument });
   } catch (error) {
@@ -4665,6 +4686,19 @@ app.post('/api/purchase-requests', async (req, res) => {
       price: propertyPrice,
       currency: propertyCurrency
     });
+
+    fireOpsAlert(() =>
+      notifyPurchaseRequest({
+        requestId: newRequest.id,
+        propertyId: newRequest.property_id || propertyId,
+        propertyTitle: newRequest.property_title || propertyTitle,
+        amount: newRequest.property_price ?? propertyPrice,
+        currency: newRequest.property_currency || propertyCurrency || 'USD',
+        buyerName: newRequest.buyer_name || buyerName,
+        buyerPhone: newRequest.buyer_phone || buyerPhone,
+        status: newRequest.status || 'pending',
+      }),
+    );
 
     // Отправляем WhatsApp сообщение покупателю (асинхронно, не блокируя основной ответ)
     if (buyerPhone && waClientReady && waClient) {
@@ -9726,6 +9760,16 @@ app.post('/api/properties', upload.fields([
     } catch (cabErr) {
       console.warn('[SSE] user cabinet (property submit pending):', cabErr?.message || cabErr);
     }
+
+    fireOpsAlert(() =>
+      notifyPropertyPending({
+        propertyId: property.id,
+        title: property.title,
+        propertyType: property.property_type,
+        is_auction: property.is_auction,
+        user_id: property.user_id,
+      }),
+    );
     
     console.log('📤 Отправка ответа клиенту:', {
       success: responseData.success,
@@ -15726,6 +15770,22 @@ app.post('/api/bids', async (req, res) => {
         }
 
         try {
+          const bidderName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email || null;
+          await notifyBid({
+            bidId,
+            propertyId: propertyIdNum,
+            title: property.title,
+            amount: bidAmountNum,
+            currency: property.currency || 'EUR',
+            userId: userIdNum,
+            userName: bidderName,
+            user,
+          });
+        } catch (tgBidErr) {
+          console.warn('telegram ops bid:', tgBidErr?.message || tgBidErr);
+        }
+
+        try {
           const updatedAt = new Date().toISOString();
           if (tableName === 'properties_apartments') {
             await prisma.properties_apartments.update({
@@ -16548,6 +16608,7 @@ async function insertAuctionWinnerRow(prisma, row) {
     },
   });
 
+  let propertyTitle = 'объект';
   try {
     const propertyTableSafe = ['properties', 'properties_apartments', 'properties_houses'].includes(property_table)
       ? property_table
@@ -16558,7 +16619,7 @@ async function insertAuctionWinnerRow(prisma, row) {
         : propertyTableSafe === 'properties_houses'
           ? await prisma.properties_houses.findUnique({ where: { id: property_id }, select: { id: true, title: true } })
           : await prisma.properties.findUnique({ where: { id: property_id }, select: { id: true, title: true } });
-    const propertyTitle = propertyRow?.title || 'объект';
+    propertyTitle = propertyRow?.title || 'объект';
 
     await notificationQueries.create({
       user_id,
@@ -16625,6 +16686,17 @@ async function insertAuctionWinnerRow(prisma, row) {
   } catch (auctionNotifError) {
     console.error('❌ Ошибка создания high-priority уведомлений по аукциону:', auctionNotifError);
   }
+
+  fireOpsAlert(() =>
+    notifyAuctionWon({
+      propertyId: property_id,
+      title: propertyTitle,
+      amount: winning_bid_amount,
+      currency,
+      userId: user_id,
+      depositDueDate: depositDueDate.toISOString(),
+    }),
+  );
 
   return { createdWinner, depositAmount, depositDueDate };
 }
@@ -17807,6 +17879,22 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }
   
   console.log('✅ Событийная система отслеживания объектов без ставок активирована');
+
+  try {
+    const ops = getOpsStatus();
+    if (ops.tokenPresent && ops.enabled) {
+      startOpsBotCommands();
+      console.log(
+        `📱 Telegram ops: ${ops.configured ? `чаты ${ops.chatIds.join(', ')}` : 'задайте TELEGRAM_CHAT_ID или /whoami'}`,
+      );
+    } else if (!ops.tokenPresent) {
+      console.log('📱 Telegram ops: выкл (нет TELEGRAM_BOT_TOKEN)');
+    } else {
+      console.log('📱 Telegram ops: выкл (TELEGRAM_OPS_ENABLED=0)');
+    }
+  } catch (opsBootErr) {
+    console.warn('telegram ops boot:', opsBootErr?.message || opsBootErr);
+  }
 
   const ejPrivBoot = String(
     process.env.EMAILJS_PRIVATE_KEY ||
