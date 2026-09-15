@@ -15,6 +15,13 @@ function createPinElement(color) {
   return el
 }
 
+function pinchDistance(touches) {
+  return Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY,
+  )
+}
+
 const LocationMap = ({
   center,
   zoom = 10,
@@ -214,6 +221,64 @@ const LocationMap = ({
     if (!mapReady) return
     mapRef.current?.setPageScrollInteraction?.(pageScrollInteraction && !isFullscreen)
   }, [pageScrollInteraction, isFullscreen, mapReady])
+
+  useEffect(() => {
+    if (!pageScrollInteraction || isFullscreen || !mapReady) return undefined
+    const root = containerRef.current
+    const map = mapRef.current
+    if (!root || !map) return undefined
+
+    let pinch = null
+    let moving = false
+
+    const onPinchMove = (event) => {
+      if (!pinch || event.touches.length < 2) return
+      if (event.cancelable) event.preventDefault()
+      const ratio = pinchDistance(event.touches) / pinch.startDistance
+      if (!Number.isFinite(ratio) || ratio <= 0) return
+      const nextZoom = Math.min(Math.max(pinch.startZoom + Math.log2(ratio), 2), resolvedMaxZoom)
+      map.setZoom(nextZoom)
+    }
+
+    const stopPinchMove = () => {
+      if (!moving) return
+      root.removeEventListener('touchmove', onPinchMove)
+      moving = false
+    }
+
+    const onTouchStart = (event) => {
+      if (event.touches.length < 2) {
+        pinch = null
+        stopPinchMove()
+        return
+      }
+      pinch = {
+        startDistance: pinchDistance(event.touches),
+        startZoom: map.getZoom(),
+      }
+      if (!moving) {
+        root.addEventListener('touchmove', onPinchMove, { passive: false })
+        moving = true
+      }
+    }
+
+    const onTouchEnd = (event) => {
+      if (event.touches.length >= 2) return
+      pinch = null
+      stopPinchMove()
+    }
+
+    root.addEventListener('touchstart', onTouchStart, { passive: true })
+    root.addEventListener('touchend', onTouchEnd, { passive: true })
+    root.addEventListener('touchcancel', onTouchEnd, { passive: true })
+
+    return () => {
+      stopPinchMove()
+      root.removeEventListener('touchstart', onTouchStart)
+      root.removeEventListener('touchend', onTouchEnd)
+      root.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [pageScrollInteraction, isFullscreen, mapReady, resolvedMaxZoom])
 
   const toggleFullscreen = () => {
     if (!allowFullscreen || typeof document === 'undefined') return

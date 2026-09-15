@@ -36,28 +36,20 @@
 }
 
 /*
-  Pinch/scroll zoom: родители часто ставят touch-action: pan-y и крадут жест.
-  На всех обёртках Яндекс-карт отдаём жесты самой карте.
+  Pinch/scroll zoom: на полноценных картах (каталог, добавление объекта)
+  отдаём жесты самой карте. Секцию объекта не трогаем — там страница скроллится.
 */
-.location-map-container,
-.location-map,
-.location-map ymaps,
+.location-map-container:not(.location-map-container--page-scroll),
+.location-map-container:not(.location-map-container--page-scroll) .location-map,
+.location-map-container:not(.location-map-container--page-scroll) .location-map ymaps,
 .map-page-map-wrap,
 .map-page-map,
 .map-page-map-wrap ymaps,
-.property-detail-location-map,
-.property-detail-location-map__map,
 .property-location-map,
 .oap-loc-step__map,
 .oap-loc-step__map-col,
 .sp-map-wrap,
 .detail-map-container,
-.moderation-property-detail__map-section,
-.property-detail-auction-desktop-map__map-wrap,
-.property-detail-auction-desktop-map__interactive,
-.pd-v3-map__interactive,
-.pd-v3-map__canvas,
-.property-detail-sidebar__map-container,
-.property-detail-sidebar__map {
+.moderation-property-detail__map-section {
   touch-action: none;
 }

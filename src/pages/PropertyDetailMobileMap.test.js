@@ -21,6 +21,8 @@ test('mobile property map card stays mirrored and smartphone-scoped', async () =
   assert.match(webCss, /height: clamp\(540px, 150vw, 640px\);/)
   assert.match(webCss, /position: absolute;/)
   assert.match(webCss, /scroll-snap-type: x mandatory;/)
+  assert.match(webCss, /touch-action: pan-x pan-y/)
+  assert.match(webCss, /\.property-detail-mobile-map-card__header \{[\s\S]*?touch-action: pan-y/)
   assert.match(webCss, /flex: 0 0 clamp\(208px, 58vw, 232px\);/)
   assert.match(webCss, /min-height: 132px;/)
   assert.doesNotMatch(webCss, /border-top: 4px|var\(--filter-color\)/)

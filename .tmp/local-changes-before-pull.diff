@@ -1,0 +1,1232 @@
+diff --git a/.env.example b/.env.example
+index 1c02797e..e78eb9ac 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,5 +1,19 @@
+ # Скопируйте в .env и заполните. Файл .env не коммитьте.
+ 
++# --- Telegram Login Widget (вход на сайте) ---
++# TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjkL-MnopqRStuVwxyz
++# VITE_TELEGRAM_BOT_USERNAME=SellYourBrickBot
++
++# --- Telegram ops-алерты (группа поддержки: KYC, модерация, Buy Now, ставки) ---
++# Тот же TELEGRAM_BOT_TOKEN можно переиспользовать. Chat id группы: добавьте бота → /whoami
++# TELEGRAM_CHAT_ID=-100xxxxxxxxxx
++# или несколько:
++# TELEGRAM_ALERT_CHAT_IDS=123456789,-100xxxxxxxxxx
++# TELEGRAM_OPS_ENABLED=1
++# TELEGRAM_OPS_BID_MIN_AMOUNT=0
++# TELEGRAM_OPS_NOTIFY_ALL_BIDS=1
++# Подробнее: docs/TELEGRAM_OPS_ALERTS.md
++
+ # --- AI: чат, генерация описаний, новости (POST /api/ai/intelligence-chat) ---
+ # По умолчанию без ключа — Pollinations (бесплатно для тестов, ~1 запрос / 15 с):
+ AI_PROVIDER=pollinations
+diff --git a/.gitignore b/.gitignore
+index 4781149d..6f03d77d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -57,6 +57,7 @@ Thumbs.db
+ 
+ # Uploads
+ server/uploads/
++server/data/telegram-known-chats.json
+ 
+ # Рasters — игнорируем везде, кроме public/ и явных исключений (деплой на Railway)
+ *.jpg
+diff --git a/server/server.js b/server/server.js
+index 88c5f2f8..30fc21f2 100644
+--- a/server/server.js
++++ b/server/server.js
+@@ -51,6 +51,16 @@ import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
+ import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
+ import { sendVerificationApprovedExternalNotifications } from './verificationApprovedNotify.js';
+ import { sendVerificationRejectedExternalNotifications } from './verificationRejectedNotify.js';
++import {
++  fireOpsAlert,
++  notifyKycPending,
++  notifyPropertyPending,
++  notifyPurchaseRequest,
++  notifyBid,
++  notifyAuctionWon,
++  startOpsBotCommands,
++  getOpsStatus,
++} from './telegramOpsNotify.js';
+ import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
+ import { registerWhatsAppDigitsSender, registerWhatsAppManagerDigitsGetter, getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
+ import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
+@@ -3775,6 +3785,17 @@ app.post('/api/documents', upload.single('document_photo'), async (req, res) =>
+     if (newDocument.verification_status !== 'pending') {
+       console.warn('⚠️ ВНИМАНИЕ: Документ создан со статусом', newDocument.verification_status, 'вместо pending!');
+     }
++
++    fireOpsAlert(() =>
++      notifyKycPending({
++        userId: user.id,
++        user,
++        name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email,
++        role: user.role || 'buyer',
++        documentType: newDocument.document_type,
++        documentId: newDocument.id,
++      }),
++    );
+     
+     res.status(201).json({ success: true, data: newDocument });
+   } catch (error) {
+@@ -4666,6 +4687,19 @@ app.post('/api/purchase-requests', async (req, res) => {
+       currency: propertyCurrency
+     });
+ 
++    fireOpsAlert(() =>
++      notifyPurchaseRequest({
++        requestId: newRequest.id,
++        propertyId: newRequest.property_id || propertyId,
++        propertyTitle: newRequest.property_title || propertyTitle,
++        amount: newRequest.property_price ?? propertyPrice,
++        currency: newRequest.property_currency || propertyCurrency || 'USD',
++        buyerName: newRequest.buyer_name || buyerName,
++        buyerPhone: newRequest.buyer_phone || buyerPhone,
++        status: newRequest.status || 'pending',
++      }),
++    );
++
+     // Отправляем WhatsApp сообщение покупателю (асинхронно, не блокируя основной ответ)
+     if (buyerPhone && waClientReady && waClient) {
+       // Форматируем номер телефона (убираем все кроме цифр)
+@@ -9726,6 +9760,16 @@ app.post('/api/properties', upload.fields([
+     } catch (cabErr) {
+       console.warn('[SSE] user cabinet (property submit pending):', cabErr?.message || cabErr);
+     }
++
++    fireOpsAlert(() =>
++      notifyPropertyPending({
++        propertyId: property.id,
++        title: property.title,
++        propertyType: property.property_type,
++        is_auction: property.is_auction,
++        user_id: property.user_id,
++      }),
++    );
+     
+     console.log('📤 Отправка ответа клиенту:', {
+       success: responseData.success,
+@@ -15725,6 +15769,22 @@ app.post('/api/bids', async (req, res) => {
+           console.warn('Уведомление о перебитой ставке (фон):', notifError?.message || notifError);
+         }
+ 
++        try {
++          const bidderName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email || null;
++          await notifyBid({
++            bidId,
++            propertyId: propertyIdNum,
++            title: property.title,
++            amount: bidAmountNum,
++            currency: property.currency || 'EUR',
++            userId: userIdNum,
++            userName: bidderName,
++            user,
++          });
++        } catch (tgBidErr) {
++          console.warn('telegram ops bid:', tgBidErr?.message || tgBidErr);
++        }
++
+         try {
+           const updatedAt = new Date().toISOString();
+           if (tableName === 'properties_apartments') {
+@@ -16548,6 +16608,7 @@ async function insertAuctionWinnerRow(prisma, row) {
+     },
+   });
+ 
++  let propertyTitle = 'объект';
+   try {
+     const propertyTableSafe = ['properties', 'properties_apartments', 'properties_houses'].includes(property_table)
+       ? property_table
+@@ -16558,7 +16619,7 @@ async function insertAuctionWinnerRow(prisma, row) {
+         : propertyTableSafe === 'properties_houses'
+           ? await prisma.properties_houses.findUnique({ where: { id: property_id }, select: { id: true, title: true } })
+           : await prisma.properties.findUnique({ where: { id: property_id }, select: { id: true, title: true } });
+-    const propertyTitle = propertyRow?.title || 'объект';
++    propertyTitle = propertyRow?.title || 'объект';
+ 
+     await notificationQueries.create({
+       user_id,
+@@ -16626,6 +16687,17 @@ async function insertAuctionWinnerRow(prisma, row) {
+     console.error('❌ Ошибка создания high-priority уведомлений по аукциону:', auctionNotifError);
+   }
+ 
++  fireOpsAlert(() =>
++    notifyAuctionWon({
++      propertyId: property_id,
++      title: propertyTitle,
++      amount: winning_bid_amount,
++      currency,
++      userId: user_id,
++      depositDueDate: depositDueDate.toISOString(),
++    }),
++  );
++
+   return { createdWinner, depositAmount, depositDueDate };
+ }
+ 
+@@ -17808,6 +17880,22 @@ const server = app.listen(PORT, '0.0.0.0', () => {
+   
+   console.log('✅ Событийная система отслеживания объектов без ставок активирована');
+ 
++  try {
++    const ops = getOpsStatus();
++    if (ops.tokenPresent && ops.enabled) {
++      startOpsBotCommands();
++      console.log(
++        `📱 Telegram ops: ${ops.configured ? `чаты ${ops.chatIds.join(', ')}` : 'задайте TELEGRAM_CHAT_ID или /whoami'}`,
++      );
++    } else if (!ops.tokenPresent) {
++      console.log('📱 Telegram ops: выкл (нет TELEGRAM_BOT_TOKEN)');
++    } else {
++      console.log('📱 Telegram ops: выкл (TELEGRAM_OPS_ENABLED=0)');
++    }
++  } catch (opsBootErr) {
++    console.warn('telegram ops boot:', opsBootErr?.message || opsBootErr);
++  }
++
+   const ejPrivBoot = String(
+     process.env.EMAILJS_PRIVATE_KEY ||
+       process.env.EMAILJS_ACCESS_TOKEN ||
+diff --git a/server/stripeBilling.js b/server/stripeBilling.js
+index 8874ab2a..bba8cb20 100644
+--- a/server/stripeBilling.js
++++ b/server/stripeBilling.js
+@@ -18,6 +18,7 @@ import { viewerOwnsPropertyRecord } from '../src/utils/listingOwnerGuard.js';
+ import { sendTestDriveSurveyInviteEmail, sendTestDriveSurveyInviteWhatsApp } from './testDriveSurveyEmail.js';
+ import { sendVipClubWelcomeEmail, shouldSendVipClubWelcomeEmail } from './vipClubWelcomeEmail.js';
+ import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
++import { fireOpsAlert, notifyReservationPaid } from './telegramOpsNotify.js';
+ 
+ /**
+  * Stripe Checkout + webhook + синхронизация подписки Pro.
+@@ -911,6 +912,16 @@ export async function processPropertyReservationPaidSession(stripe, session) {
+       console.warn('[Stripe] reservation paid notification:', notificationError?.message || notificationError);
+     }
+ 
++    fireOpsAlert(() =>
++      notifyReservationPaid({
++        purchaseRequestId: createdRequestId,
++        propertyId,
++        propertyTitle: property?.title,
++        buyerId: userId,
++        sellerId,
++      }),
++    );
++
+     return { ok: true };
+   } catch (e) {
+     console.error('[Stripe] processPropertyReservationPaidSession:', e?.message || e);
+
+=== UNTRACKED FILES ===
+--- a/docs/TELEGRAM_OPS_ALERTS.md
++++ b/docs/TELEGRAM_OPS_ALERTS.md
+--- /dev/null	2026-09-13 16:36:12
++++ docs/TELEGRAM_OPS_ALERTS.md	2026-09-11 17:48:18
+@@ -0,0 +1,326 @@
++# Telegram ops-бот: уведомления для команды SellYourBrick
++
++Инструкция по внедрению бота мониторинга в духе House Tenerife (`telegram-notify.js`): бот **не чатится с клиентами**, а шлёт в Telegram-группу/личку короткие алерты о действиях на платформе, которые требуют внимания админа или координатора.
++
++Связанный документ: [TELEGRAM_LOGIN_SETUP.md](./TELEGRAM_LOGIN_SETUP.md) — там уже настроен **вход через Telegram**. Ops-алерты — отдельная роль того же (или другого) бота.
++
++---
++
++## 1. Что это за бот
++
++| | Вход (уже есть) | Ops-алерты (нужно сделать) |
++|--|-----------------|----------------------------|
++| Назначение | Login Widget на сайте | Push в чат команды |
++| Кто получает | Пользователь сайта | Админы / поддержка / координаторы |
++| API | проверка `hash` при `/api/auth/telegram` | `sendMessage` в `TELEGRAM_CHAT_ID` |
++| Env | `TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_BOT_USERNAME` | + `TELEGRAM_CHAT_ID` / `TELEGRAM_ALERT_CHAT_IDS` |
++
++**Модель House Tenerife:** один модуль `sendAlert(html)` + вызовы из бизнес-логики в момент события. Без зеркалирования всего диалога, без ответов клиентам из Telegram.
++
++**В SellYourBrick сейчас:**
++- Telegram Login — есть
++- In-app / SSE / EmailJS / WhatsApp / Expo push — пользователям и частично админке
++- **Ops-Telegram для «нужно одобрить / новая ставка / buy now» — нет**
++
++Именно эту дыру закрывает модуль из этой инструкции.
++
++---
++
++## 2. Референс: как устроен бот в House Tenerife
++
++Источник: `/Users/andrei/project/housetenerife/telegram-notify.js`.
++
++### Ядро
++
++1. `TELEGRAM_BOT_TOKEN` — без него модуль выключен.
++2. `sendAlert(text)` → `POST https://api.telegram.org/bot{TOKEN}/sendMessage` во все chat id из:
++   - `TELEGRAM_ALERT_CHAT_IDS` или `TELEGRAM_CHAT_ID`
++   - плюс чаты, сохранённые после `/start` / `/whoami` (`data/telegram-known-chats.json`)
++3. HTML (`parse_mode: HTML`), при ошибке 400 — повтор без разметки.
++4. Команды опциональны: `/whoami`, `/status`, `/help` (webhook на проде или long-poll локально).
++
++### Паттерн уведомления
++
++```text
++📨 <заголовок события>
++
++поле: значение
++поле: значение
++💬 «короткий preview»
++```
++
++Для SellYourBrick копируем **паттерн доставки**, а не WhatsApp-специфику (QR, disconnect). События у нас — модерация, ставки, покупки, чаты.
++
++---
++
++## 3. Что уведомлять в SellYourBrick (приоритеты)
++
++### P0 — обязательно (админ должен среагировать)
++
++| Событие | Когда | Куда в коде вешать |
++|---------|--------|--------------------|
++| KYC / документы на проверку | Пользователь загрузил документы → pending | `POST /api/documents` — `server/server.js` ~3723 |
++| Пользователь ждёт approve | Документы сданы / статус pending review | там же или после агрегации «пакет готов» |
++| Объект на модерацию | Создан/изменён объект со статусом `pending` | `POST /api/properties` ~9133; `PUT /api/properties/:id` ~9953; delete-request ~9845 |
++| Заявка Buy Now / purchase | Создан purchase-request | `POST /api/purchase-requests` ~4583 |
++| Резерв оплачен (Stripe) | Нужна финализация сделки в админке | `processPropertyReservationPaidSession` — `server/stripeBilling.js` ~557 |
++| Сообщение в live-chat менеджеру | Новая сессия / новое сообщение посетителя | `POST /api/live-chat/sessions` ~5278, `.../messages` ~5351 |
++| Бонус на проверку | Новая submission | `POST /api/bonus-submissions` ~5499 |
++
++### P1 — важно (оперативка / деньги)
++
++| Событие | Куда |
++|---------|------|
++| Ставка на аукционе | `POST /api/bids` ~15411 (лучше фильтр: первая ставка по лоту / сумма ≥ N) |
++| Победа в аукционе | рядом с `insertAuctionWinnerRow` ~16522 |
++| Смена статуса заявки | `PUT /api/purchase-requests/:id/status` ~4812 (`processing` / `completed` / `rejected`) |
++| Test-drive заявка | `POST /api/properties/:id/test-drive/request` ~11940 |
++| Assistant → менеджер | `manager_handoff` в `server/assistant/` |
++
++### P2 — по желанию (шумный канал)
++
++- Каждая ставка (без фильтра) — обычно слишком часто
++- Approve/reject пользователя или объекта **админом** — уже видно в админке; алерт полезен, если несколько координаторов и нужно «закрыть петлю» («одобрено»)
++- Депозит Stripe, покупка долей, VIP — финансовые события для бухгалтерии/CRM
++
++**Правило:** ops-Telegram шлёт про **входящие задачи** («нужно сделать»). Не дублировать всё, что уже уходит покупателю в Email/WhatsApp (KYC approve пользователю уже шлётся через `verificationApprovedNotify.js`).
++
++---
++
++## 4. Шаблоны сообщений (RU)
++
++Используйте HTML и `escapeHtml` для всех пользовательских строк.
++
++### KYC на проверке
++
++```text
++🛡 <b>KYC на проверке</b>
++Пользователь #<id> · <имя>
++Роль: buyer/seller
++Документ: passport / …
++Админка → Модерация
++```
++
++### Объект на модерации
++
++```text
++🏠 <b>Объект на модерации</b>
++#<propertyId> «<title>»
++Тип: apartment/house · Аукцион: да/нет
++Продавец: #<userId>
++Админка → Модерация → Объекты
++```
++
++### Запрос «Купить сейчас»
++
++```text
++🛒 <b>Запрос на покупку</b> #<requestId>
++«<propertyTitle>»
++Цена: <amount> <currency>
++Покупатель: <name> · <phone>
++Статус: pending
++Админка → Запросы на покупку
++```
++
++### Резерв оплачен (критично)
++
++```text
++💳 <b>Резерв оплачен — нужна финализация</b>
++Заявка #<purchaseRequestId> · объект #<propertyId>
++Покупатель #<buyerId> · продавец #<sellerId>
++Админка → Запросы на покупку → завершить сделку
++```
++
++### Ставка
++
++```text
++🔨 <b>Ставка</b>
++Лот #<propertyId> «<title>»
++Сумма: <amount> <currency>
++Участник: #<userId>
++```
++
++### Победа в аукционе
++
++```text
++🏆 <b>Победа в аукционе</b>
++Лот #<propertyId> «<title>»
++Ставка: <amount> · победитель #<userId>
++Депозит до: <dueDate>
++```
++
++### Live-chat / handoff
++
++```text
++💬 <b>Чат с менеджером</b>
++Сессия #<sessionId> · user #<userId>
++«<preview до 200 символов>»
++Админка → Чаты
++```
++
++### Test-drive
++
++```text
++🔑 <b>Test-drive заявка</b> #<bookingId>
++«<title>» · <start>–<end>
++Покупатель #<buyerId> → владелец #<ownerId>
++```
++
++---
++
++## 5. План внедрения (код)
++
++### Шаг A. Env
++
++В `.env` / `.env.example` добавить (токен можно **переиспользовать** от Login Widget):
++
++```env
++# Уже есть для логина:
++TELEGRAM_BOT_TOKEN=...
++VITE_TELEGRAM_BOT_USERNAME=SellYourBrickBot
++
++# Новое — ops-алерты:
++TELEGRAM_CHAT_ID=-100xxxxxxxxxx
++# или несколько чатов:
++# TELEGRAM_ALERT_CHAT_IDS=123456789,-100xxxxxxxxxx
++
++# Опционально:
++# TELEGRAM_OPS_ENABLED=1
++# TELEGRAM_OPS_BID_MIN_AMOUNT=5000   # не слать мелкие ставки
++# TELEGRAM_OPS_NOTIFY_ALL_BIDS=0
++```
++
++**Важно:** `TELEGRAM_BOT_TOKEN` один на бота. Login Widget и ops-алерты могут жить на одном боте: виджет — для пользователей на сайте, `sendMessage` — в закрытую группу поддержки.
++
++### Шаг B. Модуль `server/telegramOpsNotify.js`
++
++Минимальный API (по мотивам House Tenerife):
++
++```js
++// Псевдокод API модуля
++isConfigured()          // есть TOKEN + хотя бы один chat id
++sendOpsAlert(htmlText)  // sendMessage во все TELEGRAM_* chat ids
++notifyKycPending(data)
++notifyPropertyPending(data)
++notifyPurchaseRequest(data)
++notifyReservationPaid(data)
++notifyBid(data)                 // с фильтрами
++notifyAuctionWon(data)
++notifyLiveChat(data)
++notifyBonusPending(data)
++
++escapeHtml(str)
++```
++
++Требования к реализации:
++- не падать, если Telegram недоступен (только `console.warn`)
++- таймаут HTTP ~10–15 с
++- дедуп по ключу события на 30–120 с (чтобы webhook Stripe + confirm не прислали два одинаковых «резерв оплачен»)
++- без блокировки ответа API клиенту: `void notifyX(...).catch(...)` или `setImmediate`
++
++Референс доставки: `housetenerife/telegram-notify.js` → функции `sendAlert`, `postTelegramMessage`, `escapeHtml`, `getEnvAlertChatIds`.
++
++### Шаг C. Хук в роуты (после успешной записи в БД)
++
++Пример для purchase-request:
++
++```js
++// после успешного создания заявки в POST /api/purchase-requests
++const { notifyPurchaseRequest } = require('./telegramOpsNotify');
++void notifyPurchaseRequest({
++  requestId,
++  propertyId,
++  propertyTitle,
++  amount,
++  currency,
++  buyerName,
++  buyerPhone,
++}).catch((err) => console.warn('telegram ops:', err.message));
++```
++
++Аналогично для остальных P0/P1 точек из таблицы выше.
++
++### Шаг D. Узнать chat id группы
++
++1. Создайте группу (например «SellYourBrick поддержка»).
++2. Добавьте бота в группу (сделайте админом, если супергруппа требует).
++3. Напишите боту в группе любое сообщение (или `/start` в личке).
++4. Откройте:  
++   `https://api.telegram.org/bot<TOKEN>/getUpdates`  
++   — найдите `"chat":{"id":-100...}`.
++5. Либо добавьте в модуль команду `/whoami`, как в House Tenerife, и сохраняйте id в `data/telegram-known-chats.json`.
++
++Пропишите id в `TELEGRAM_CHAT_ID` и перезапустите `npm run server`.
++
++### Шаг E. Проверка
++
++1. Загрузите тестовый документ KYC → в группе алерт «KYC на проверке».
++2. Создайте объект со статусом pending → «Объект на модерации».
++3. Создайте purchase-request → «Запрос на покупку».
++4. (Staging) Оплатите резерв Stripe test → «Резерв оплачен».
++5. Убедитесь, что ответ API клиенту не замедлился (алерт асинхронный).
++
++---
++
++## 6. Что НЕ делать
++
++- Не слать QR/сессию WhatsApp — это специфика House Tenerife, не SellYourBrick.
++- Не использовать ops-чат как CRM для клиентов (ответы клиентам — админка / WhatsApp / Email).
++- Не слать каждую ставку без лимита — зашумите группу.
++- Не логировать полный `TELEGRAM_BOT_TOKEN` в консоль/Sentry.
++- Не путать Login Widget domain (`/setdomain`) с ops: для `sendMessage` в группу домен сайта не нужен.
++
++---
++
++## 7. Опциональные команды бота
++
++Полезный минимум (можно скопировать идею из House Tenerife):
++
++| Команда | Действие |
++|---------|----------|
++| `/start` `/help` | Кратко: «это ops-бот SellYourBrick» |
++| `/whoami` | Показать `chat.id`, зарегистрировать чат для алертов |
++| `/status` | DB ping / server uptime / «ops alerts: on» |
++| `/pending` | (позже) счётчики: KYC pending, objects pending, open purchase-requests |
++
++Доставка команд: long-polling локально или webhook на публичном HTTPS (Railway и т.п.). Алерты **не зависят** от polling — они push при событиях.
++
++---
++
++## 8. Связь с админкой
++
++Алерты дополняют, не заменяют:
++
++| Экран админки | События Telegram |
++|---------------|------------------|
++| Модерация (`Moderation.jsx`) | KYC pending, property pending |
++| Запросы на покупку (`PurchaseRequests.jsx`) | purchase-request, reservation paid, status change |
++| Чаты (`AdminChat.jsx` / live-chat) | новые сессии и сообщения |
++| Бонусы (`BonusesSubmissions.jsx`) | bonus pending |
++
++В тексте алерта желательно писать путь («Админка → …»), позже — deep-link на `/admin?...`, если появится стабильный URL.
++
++---
++
++## 9. Чеклист готовности
++
++- [ ] `TELEGRAM_BOT_TOKEN` валиден (`getMe`)
++- [ ] Бот добавлен в группу поддержки
++- [ ] `TELEGRAM_CHAT_ID` / `TELEGRAM_ALERT_CHAT_IDS` заданы
++- [ ] Файл `server/telegramOpsNotify.js` подключён
++- [ ] Хуки на P0 события стоят **после** успешного commit в БД
++- [ ] Дедуп на Stripe reservation
++- [ ] Фильтр ставок (не все подряд)
++- [ ] Тест на staging пройден по 3–4 сценариям
++- [ ] В `.env.example` задокументированы новые переменные (без секретов)
++
++---
++
++## 10. Краткий итог
++
++**Бот** = канал оперативных уведомлений для команды SellYourBrick.  
++**Паттерн** = как в House Tenerife: тонкий `sendAlert` + вызовы из серверных роутов.  
++**События** = модерация пользователей/объектов, Buy Now, оплаченный резерв, ставки (с фильтром), чат с менеджером, бонусы.  
++**Не путать** с Telegram Login: один токен может обслуживать обе роли, но это разные функции.
++
++После внедрения этого модуля группа вроде «SellYourBrick поддержка» начнёт получать алерты в том же духе, что сейчас у House Tenerife для WhatsApp-сообщений — только под бизнес-события маркетплейса.
+--- a/server/telegramOpsNotify.js
++++ b/server/telegramOpsNotify.js
+--- /dev/null	2026-09-13 16:36:12
++++ server/telegramOpsNotify.js	2026-09-13 16:34:49
+@@ -0,0 +1,571 @@
++/**
++ * Ops-алерты в Telegram для команды SellYourBrick.
++ * Бот не отвечает клиентам — только push в TELEGRAM_CHAT_ID / TELEGRAM_ALERT_CHAT_IDS.
++ * @see docs/TELEGRAM_OPS_ALERTS.md
++ */
++import axios from 'axios';
++import fs from 'fs';
++import path from 'path';
++import { fileURLToPath } from 'url';
++
++const __dirname = path.dirname(fileURLToPath(import.meta.url));
++
++const HTTP_TIMEOUT_MS = 15000;
++
++/** Env читаем в рантайме: ESM-import идёт до dotenv.config() в server.js. */
++function getToken() {
++  return String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
++}
++
++function isOpsEnabled() {
++  const raw = String(process.env.TELEGRAM_OPS_ENABLED || '').trim().toLowerCase();
++  if (raw === '0' || raw === 'false' || raw === 'off') return false;
++  return true;
++}
++
++function getKnownChatsPath() {
++  return (
++    process.env.TELEGRAM_KNOWN_CHATS_PATH ||
++    path.join(__dirname, 'data', 'telegram-known-chats.json')
++  );
++}
++
++function getDedupMs() {
++  return Math.max(5000, parseInt(process.env.TELEGRAM_OPS_DEDUP_MS, 10) || 60000);
++}
++
++function getBidMinAmount() {
++  const n = parseFloat(process.env.TELEGRAM_OPS_BID_MIN_AMOUNT || '0');
++  return Number.isFinite(n) && n > 0 ? n : 0;
++}
++
++function getNotifyAllBids() {
++  const raw = String(process.env.TELEGRAM_OPS_NOTIFY_ALL_BIDS || '1').trim().toLowerCase();
++  return raw !== '0' && raw !== 'false' && raw !== 'off';
++}
++
++const runtimeAlertChatIds = new Set();
++const recentAlertKeys = new Map();
++
++let telegramApiOk = false;
++let authFailureLogged = false;
++let botUsername = '';
++let updatesStarted = false;
++let pollOffset = 0;
++let pollRunning = false;
++
++function getEnvAlertChatIds() {
++  return (process.env.TELEGRAM_ALERT_CHAT_IDS || process.env.TELEGRAM_CHAT_ID || '')
++    .split(',')
++    .map((s) => s.trim())
++    .filter(Boolean);
++}
++
++export function escapeHtml(value) {
++  return String(value ?? '')
++    .replace(/&/g, '&amp;')
++    .replace(/</g, '&lt;')
++    .replace(/>/g, '&gt;');
++}
++
++function formatMoney(amount, currency) {
++  const n = Number(amount);
++  const cur = String(currency || 'EUR').toUpperCase();
++  if (!Number.isFinite(n)) return `— ${cur}`;
++  return `${n.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${cur}`;
++}
++
++function displayName(userOrName) {
++  if (!userOrName) return '—';
++  if (typeof userOrName === 'string') return userOrName.trim() || '—';
++  const parts = [userOrName.first_name, userOrName.last_name, userOrName.name]
++    .map((p) => (p != null ? String(p).trim() : ''))
++    .filter(Boolean);
++  if (parts.length) return parts.slice(0, 2).join(' ');
++  if (userOrName.email) return String(userOrName.email);
++  if (userOrName.phone_number) return String(userOrName.phone_number);
++  return '—';
++}
++
++function ensureDataDir() {
++  const dir = path.dirname(getKnownChatsPath());
++  if (!fs.existsSync(dir)) {
++    fs.mkdirSync(dir, { recursive: true });
++  }
++}
++
++function loadKnownAlertChatEntries() {
++  ensureDataDir();
++  const chatsPath = getKnownChatsPath();
++  if (!fs.existsSync(chatsPath)) return [];
++  try {
++    const raw = JSON.parse(fs.readFileSync(chatsPath, 'utf8'));
++    return Array.isArray(raw.chats) ? raw.chats : [];
++  } catch {
++    return [];
++  }
++}
++
++function loadKnownAlertChats() {
++  return loadKnownAlertChatEntries()
++    .map((c) => String(c.id))
++    .filter(Boolean);
++}
++
++function saveKnownAlertChats(entries) {
++  ensureDataDir();
++  fs.writeFileSync(
++    getKnownChatsPath(),
++    JSON.stringify({ chats: entries, updatedAt: new Date().toISOString() }, null, 2),
++    'utf8',
++  );
++}
++
++export function registerAlertChat(chatId, meta = {}) {
++  const id = String(chatId || '').trim();
++  if (!id) return;
++  runtimeAlertChatIds.add(id);
++  const entries = loadKnownAlertChatEntries();
++  if (entries.some((e) => String(e.id) === id)) return;
++  entries.push({
++    id,
++    type: meta.type || 'unknown',
++    title: meta.title || '',
++    registeredAt: new Date().toISOString(),
++  });
++  saveKnownAlertChats(entries);
++  console.log(`📱 Telegram ops: chat ${id} зарегистрирован для алертов`);
++}
++
++function getEffectiveAlertChatIds() {
++  return [
++    ...new Set([...getEnvAlertChatIds(), ...loadKnownAlertChats(), ...runtimeAlertChatIds]),
++  ].filter(Boolean);
++}
++
++export function isConfigured() {
++  if (!getToken() || !isOpsEnabled()) return false;
++  return getEffectiveAlertChatIds().length > 0 || getEnvAlertChatIds().length > 0;
++}
++
++function shouldDedup(key) {
++  if (!key) return false;
++  const now = Date.now();
++  const dedupMs = getDedupMs();
++  const prev = recentAlertKeys.get(key);
++  if (prev && now - prev < dedupMs) return true;
++  recentAlertKeys.set(key, now);
++  if (recentAlertKeys.size > 2000) {
++    const cutoff = now - dedupMs;
++    for (const [k, at] of recentAlertKeys) {
++      if (at < cutoff) recentAlertKeys.delete(k);
++    }
++  }
++  return false;
++}
++
++function disableTelegramApi(reason) {
++  telegramApiOk = false;
++  if (!authFailureLogged) {
++    authFailureLogged = true;
++    console.error(`❌ Telegram ops отключён: ${reason}`);
++  }
++}
++
++async function validateTelegramToken() {
++  const TOKEN = getToken();
++  if (!TOKEN || !isOpsEnabled()) return false;
++  try {
++    const { data } = await axios.get(`https://api.telegram.org/bot${TOKEN}/getMe`, {
++      timeout: HTTP_TIMEOUT_MS,
++      validateStatus: () => true,
++    });
++    if (data.ok && data.result) {
++      telegramApiOk = true;
++      authFailureLogged = false;
++      botUsername = data.result.username ? `@${data.result.username}` : 'bot';
++      for (const chatId of getEnvAlertChatIds()) {
++        runtimeAlertChatIds.add(chatId);
++      }
++      for (const chatId of loadKnownAlertChats()) {
++        runtimeAlertChatIds.add(chatId);
++      }
++      const ids = getEffectiveAlertChatIds();
++      console.log(
++        `📱 Telegram ops OK: ${botUsername} → ${ids.length ? ids.join(', ') : '(ожидание /whoami)'}`,
++      );
++      return true;
++    }
++    if (data.error_code === 401) {
++      disableTelegramApi('неверный TELEGRAM_BOT_TOKEN (401)');
++      return false;
++    }
++    disableTelegramApi(data.description || 'getMe failed');
++    return false;
++  } catch (err) {
++    console.warn('telegram ops getMe:', err.message);
++    return false;
++  }
++}
++
++async function ensureTelegramApi() {
++  if (!getToken() || !isOpsEnabled()) return false;
++  if (telegramApiOk) return true;
++  return validateTelegramToken();
++}
++
++async function postTelegramMessage(chatId, text, options = {}) {
++  const TOKEN = getToken();
++  const payload = {
++    chat_id: chatId,
++    text,
++    disable_web_page_preview: true,
++  };
++  if (options.parseMode !== false) {
++    payload.parse_mode = options.parseMode || 'HTML';
++  }
++  try {
++    await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, payload, {
++      timeout: HTTP_TIMEOUT_MS,
++    });
++  } catch (err) {
++    if (options.parseMode !== false && err.response?.status === 400) {
++      await axios.post(
++        `https://api.telegram.org/bot${TOKEN}/sendMessage`,
++        { chat_id: chatId, text, disable_web_page_preview: true },
++        { timeout: HTTP_TIMEOUT_MS },
++      );
++      return;
++    }
++    throw err;
++  }
++}
++
++/**
++ * Отправить HTML-алерт во все настроенные чаты.
++ * @param {string} htmlText
++ * @param {{ dedupKey?: string }} [options]
++ */
++export async function sendOpsAlert(htmlText, options = {}) {
++  if (!getToken() || !isOpsEnabled()) return false;
++  if (options.dedupKey && shouldDedup(options.dedupKey)) return false;
++  if (!(await ensureTelegramApi())) return false;
++
++  let chatIds = getEffectiveAlertChatIds();
++  if (!chatIds.length) {
++    console.warn('telegram ops: нет TELEGRAM_CHAT_ID — напишите боту /whoami в группе');
++    return false;
++  }
++
++  let sent = 0;
++  for (const chatId of chatIds) {
++    try {
++      await postTelegramMessage(chatId, htmlText);
++      sent += 1;
++      runtimeAlertChatIds.add(chatId);
++    } catch (err) {
++      const detail = err.response?.data?.description || err.message;
++      console.warn(`telegram ops → ${chatId}: ${detail}`);
++      if (err.response?.status === 401) {
++        disableTelegramApi('sendMessage 401');
++        break;
++      }
++    }
++  }
++  return sent > 0;
++}
++
++/** Fire-and-forget обёртка: не блокирует API-ответ. */
++export function fireOpsAlert(promiseOrFn) {
++  setImmediate(() => {
++    void Promise.resolve()
++      .then(() => (typeof promiseOrFn === 'function' ? promiseOrFn() : promiseOrFn))
++      .catch((err) => console.warn('telegram ops:', err?.message || err));
++  });
++}
++
++export function buildKycPendingMessage(data = {}) {
++  const userId = data.userId ?? data.user_id ?? '—';
++  const name = escapeHtml(displayName(data.user || data.name || data.userName));
++  const role = escapeHtml(data.role || data.user?.role || 'buyer');
++  const docType = escapeHtml(data.documentType || data.document_type || '—');
++  const docId = data.documentId ?? data.document_id;
++  return [
++    '🛡 <b>KYC на проверке</b>',
++    `Пользователь #${escapeHtml(userId)} · ${name}`,
++    `Роль: ${role}`,
++    `Документ: ${docType}${docId != null ? ` (#${escapeHtml(docId)})` : ''}`,
++    'Админка → Модерация',
++  ].join('\n');
++}
++
++export function buildPropertyPendingMessage(data = {}) {
++  const propertyId = data.propertyId ?? data.id ?? '—';
++  const title = escapeHtml(data.title || data.propertyTitle || 'без названия');
++  const type = escapeHtml(data.propertyType || data.property_type || '—');
++  const isAuction =
++    data.isAuction === 1 ||
++    data.isAuction === true ||
++    data.is_auction === 1 ||
++    data.is_auction === true;
++  const userId = data.userId ?? data.user_id ?? '—';
++  return [
++    '🏠 <b>Объект на модерации</b>',
++    `#${escapeHtml(propertyId)} «${title}»`,
++    `Тип: ${type} · Аукцион: ${isAuction ? 'да' : 'нет'}`,
++    `Продавец: #${escapeHtml(userId)}`,
++    'Админка → Модерация → Объекты',
++  ].join('\n');
++}
++
++export function buildPurchaseRequestMessage(data = {}) {
++  const requestId = data.requestId ?? data.id ?? '—';
++  const title = escapeHtml(data.propertyTitle || data.title || '—');
++  const amount = formatMoney(data.amount ?? data.propertyPrice, data.currency || data.propertyCurrency);
++  const buyer = escapeHtml(data.buyerName || displayName(data.buyer) || '—');
++  const phone = escapeHtml(data.buyerPhone || data.phone || '—');
++  const status = escapeHtml(data.status || 'pending');
++  return [
++    `🛒 <b>Запрос на покупку</b> #${escapeHtml(requestId)}`,
++    `«${title}»`,
++    `Цена: ${escapeHtml(amount)}`,
++    `Покупатель: ${buyer} · ${phone}`,
++    `Статус: ${status}`,
++    'Админка → Запросы на покупку',
++  ].join('\n');
++}
++
++export function buildReservationPaidMessage(data = {}) {
++  const requestId = data.purchaseRequestId ?? data.requestId ?? '—';
++  const propertyId = data.propertyId ?? '—';
++  const buyerId = data.buyerId ?? '—';
++  const sellerId = data.sellerId ?? '—';
++  const title = data.propertyTitle ? ` «${escapeHtml(data.propertyTitle)}»` : '';
++  return [
++    '💳 <b>Резерв оплачен — нужна финализация</b>',
++    `Заявка #${escapeHtml(requestId)} · объект #${escapeHtml(propertyId)}${title}`,
++    `Покупатель #${escapeHtml(buyerId)} · продавец #${escapeHtml(sellerId)}`,
++    'Админка → Запросы на покупку → завершить сделку',
++  ].join('\n');
++}
++
++export function buildBidMessage(data = {}) {
++  const propertyId = data.propertyId ?? data.property_id ?? '—';
++  const title = escapeHtml(data.title || data.propertyTitle || '—');
++  const amount = formatMoney(data.amount ?? data.bid_amount, data.currency || 'EUR');
++  const userId = data.userId ?? data.user_id ?? '—';
++  const name = data.userName || data.bidderName || displayName(data.user);
++  const who =
++    name && name !== '—'
++      ? `#${escapeHtml(userId)} · ${escapeHtml(name)}`
++      : `#${escapeHtml(userId)}`;
++  return [
++    '🔨 <b>Ставка</b>',
++    `Лот #${escapeHtml(propertyId)} «${title}»`,
++    `Сумма: ${escapeHtml(amount)}`,
++    `Участник: ${who}`,
++  ].join('\n');
++}
++
++export function buildAuctionWonMessage(data = {}) {
++  const propertyId = data.propertyId ?? '—';
++  const title = escapeHtml(data.title || data.propertyTitle || '—');
++  const amount = formatMoney(data.amount ?? data.winning_bid_amount, data.currency || 'EUR');
++  const userId = data.userId ?? data.user_id ?? '—';
++  const due = data.depositDueDate
++    ? escapeHtml(
++        typeof data.depositDueDate === 'string'
++          ? data.depositDueDate
++          : new Date(data.depositDueDate).toISOString(),
++      )
++    : '—';
++  return [
++    '🏆 <b>Победа в аукционе</b>',
++    `Лот #${escapeHtml(propertyId)} «${title}»`,
++    `Ставка: ${escapeHtml(amount)} · победитель #${escapeHtml(userId)}`,
++    `Депозит до: ${due}`,
++  ].join('\n');
++}
++
++export async function notifyKycPending(data) {
++  return sendOpsAlert(buildKycPendingMessage(data), {
++    dedupKey: `kyc:${data?.documentId ?? data?.document_id ?? ''}:${data?.userId ?? data?.user_id ?? ''}`,
++  });
++}
++
++export async function notifyPropertyPending(data) {
++  return sendOpsAlert(buildPropertyPendingMessage(data), {
++    dedupKey: `property-pending:${data?.propertyId ?? data?.id ?? ''}`,
++  });
++}
++
++export async function notifyPurchaseRequest(data) {
++  return sendOpsAlert(buildPurchaseRequestMessage(data), {
++    dedupKey: `purchase:${data?.requestId ?? data?.id ?? ''}`,
++  });
++}
++
++export async function notifyReservationPaid(data) {
++  return sendOpsAlert(buildReservationPaidMessage(data), {
++    dedupKey: `reservation-paid:${data?.purchaseRequestId ?? data?.requestId ?? ''}:${data?.propertyId ?? ''}`,
++  });
++}
++
++export async function notifyBid(data) {
++  if (!getNotifyAllBids()) return false;
++  const amount = Number(data?.amount ?? data?.bid_amount);
++  const bidMin = getBidMinAmount();
++  if (bidMin > 0 && Number.isFinite(amount) && amount < bidMin) {
++    return false;
++  }
++  return sendOpsAlert(buildBidMessage(data), {
++    dedupKey: `bid:${data?.bidId ?? data?.bid_id ?? ''}:${data?.propertyId ?? ''}:${amount}`,
++  });
++}
++
++export async function notifyAuctionWon(data) {
++  return sendOpsAlert(buildAuctionWonMessage(data), {
++    dedupKey: `auction-won:${data?.propertyId ?? ''}:${data?.userId ?? ''}`,
++  });
++}
++
++async function replyToChat(chatId, text) {
++  try {
++    await postTelegramMessage(chatId, text);
++  } catch (err) {
++    console.warn('telegram ops reply:', err.message);
++  }
++}
++
++async function handleBotCommand(msg) {
++  const text = String(msg.text || '').trim();
++  if (!text.startsWith('/')) return;
++  const [cmdRaw] = text.split(/\s+/);
++  const cmd = cmdRaw.split('@')[0].toLowerCase();
++  const chat = msg.chat || {};
++  const chatId = String(chat.id);
++
++  if (cmd === '/start' || cmd === '/help') {
++    await replyToChat(
++      chatId,
++      [
++        'SellYourBrick ops-бот',
++        '',
++        'Шлёт в этот чат алерты: KYC, объекты на модерации, Buy Now, ставки.',
++        '',
++        'Команды:',
++        '/whoami — показать chat id и зарегистрировать чат',
++        '/status — статус ops-алертов',
++      ].join('\n'),
++    );
++    registerAlertChat(chatId, {
++      type: chat.type,
++      title: chat.title || chat.first_name || '',
++    });
++    return;
++  }
++
++  if (cmd === '/whoami') {
++    registerAlertChat(chatId, {
++      type: chat.type,
++      title: chat.title || chat.first_name || '',
++    });
++    await replyToChat(
++      chatId,
++      [
++        `chat.id = <code>${escapeHtml(chatId)}</code>`,
++        `type = ${escapeHtml(chat.type || '—')}`,
++        '',
++        'Чат зарегистрирован для алертов.',
++        'Можно также прописать в .env:',
++        `TELEGRAM_CHAT_ID=${escapeHtml(chatId)}`,
++      ].join('\n'),
++    );
++    return;
++  }
++
++  if (cmd === '/status') {
++    const ids = getEffectiveAlertChatIds();
++    const uptimeSec = Math.floor(process.uptime());
++    const TOKEN = getToken();
++    await replyToChat(
++      chatId,
++      [
++        '<b>Ops status</b>',
++        `alerts: ${isOpsEnabled() && TOKEN ? 'on' : 'off'}`,
++        `bot: ${escapeHtml(botUsername || '—')}`,
++        `chats: ${ids.length ? escapeHtml(ids.join(', ')) : 'none'}`,
++        `uptime: ${uptimeSec}s`,
++        `bid min: ${getBidMinAmount() || 0}`,
++        `notify all bids: ${getNotifyAllBids() ? 'yes' : 'no'}`,
++      ].join('\n'),
++    );
++  }
++}
++
++/**
++ * Long-poll команд (/whoami, /status). Алерты от него не зависят.
++ */
++export function startOpsBotCommands() {
++  const TOKEN = getToken();
++  if (!TOKEN || !isOpsEnabled() || updatesStarted) return;
++  updatesStarted = true;
++
++  const poll = async () => {
++    if (pollRunning) return;
++    pollRunning = true;
++    try {
++      if (!(await ensureTelegramApi())) return;
++      const token = getToken();
++      const { data } = await axios.get(`https://api.telegram.org/bot${token}/getUpdates`, {
++        params: {
++          offset: pollOffset,
++          timeout: 25,
++          allowed_updates: ['message', 'my_chat_member'],
++        },
++        timeout: 35000,
++        validateStatus: () => true,
++      });
++      if (!data.ok) {
++        if (data.error_code === 401) disableTelegramApi('getUpdates 401');
++        return;
++      }
++      for (const update of data.result || []) {
++        pollOffset = Math.max(pollOffset, (update.update_id || 0) + 1);
++        const chat = update.message?.chat || update.my_chat_member?.chat;
++        if (chat?.id) {
++          registerAlertChat(chat.id, {
++            type: chat.type,
++            title: chat.title || chat.first_name || '',
++          });
++        }
++        if (update.message?.text) {
++          await handleBotCommand(update.message);
++        }
++      }
++    } catch (err) {
++      console.warn('telegram ops poll:', err.message);
++    } finally {
++      pollRunning = false;
++    }
++  };
++
++  void poll();
++  setInterval(() => {
++    void poll();
++  }, 3000);
++  console.log('📱 Telegram ops: long-poll команд запущен (/whoami, /status)');
++}
++
++export function getOpsStatus() {
++  return {
++    tokenPresent: Boolean(getToken()),
++    enabled: isOpsEnabled(),
++    configured: isConfigured(),
++    apiOk: telegramApiOk,
++    botUsername,
++    chatIds: getEffectiveAlertChatIds(),
++    bidMinAmount: getBidMinAmount(),
++    notifyAllBids: getNotifyAllBids(),
++  };
++}
+--- a/server/telegramOpsNotify.test.js
++++ b/server/telegramOpsNotify.test.js
+--- /dev/null	2026-09-13 16:36:12
++++ server/telegramOpsNotify.test.js	2026-09-11 17:52:56
+@@ -0,0 +1,96 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {
++  escapeHtml,
++  buildKycPendingMessage,
++  buildPropertyPendingMessage,
++  buildPurchaseRequestMessage,
++  buildBidMessage,
++  buildAuctionWonMessage,
++  buildReservationPaidMessage,
++} from './telegramOpsNotify.js';
++
++test('escapeHtml escapes markup', () => {
++  assert.equal(escapeHtml('<b>&x</b>'), '&lt;b&gt;&amp;x&lt;/b&gt;');
++});
++
++test('buildKycPendingMessage includes user and doc', () => {
++  const text = buildKycPendingMessage({
++    userId: 42,
++    name: 'Иван <Test>',
++    role: 'buyer',
++    documentType: 'passport',
++    documentId: 7,
++  });
++  assert.match(text, /KYC на проверке/);
++  assert.match(text, /#42/);
++  assert.match(text, /Иван &lt;Test&gt;/);
++  assert.match(text, /passport/);
++  assert.match(text, /#7/);
++});
++
++test('buildPropertyPendingMessage includes auction flag', () => {
++  const text = buildPropertyPendingMessage({
++    propertyId: 10,
++    title: 'Villa',
++    propertyType: 'house',
++    is_auction: 1,
++    user_id: 3,
++  });
++  assert.match(text, /Объект на модерации/);
++  assert.match(text, /#10/);
++  assert.match(text, /Аукцион: да/);
++  assert.match(text, /#3/);
++});
++
++test('buildPurchaseRequestMessage includes price and buyer', () => {
++  const text = buildPurchaseRequestMessage({
++    requestId: 99,
++    propertyTitle: 'Apt',
++    amount: 150000,
++    currency: 'EUR',
++    buyerName: 'Anna',
++    buyerPhone: '+34111',
++  });
++  assert.match(text, /Запрос на покупку/);
++  assert.match(text, /#99/);
++  assert.match(text, /150/);
++  assert.match(text, /Anna/);
++});
++
++test('buildBidMessage includes bidder and amount', () => {
++  const text = buildBidMessage({
++    propertyId: 5,
++    title: 'Lot',
++    amount: 12000,
++    currency: 'EUR',
++    userId: 8,
++    userName: 'Bob',
++  });
++  assert.match(text, /Ставка/);
++  assert.match(text, /#5/);
++  assert.match(text, /12/);
++  assert.match(text, /#8/);
++  assert.match(text, /Bob/);
++});
++
++test('buildAuctionWonMessage and reservation paid', () => {
++  const won = buildAuctionWonMessage({
++    propertyId: 1,
++    title: 'X',
++    amount: 1000,
++    userId: 2,
++    depositDueDate: '2030-01-01T00:00:00.000Z',
++  });
++  assert.match(won, /Победа в аукционе/);
++  assert.match(won, /#2/);
++
++  const paid = buildReservationPaidMessage({
++    purchaseRequestId: 11,
++    propertyId: 22,
++    buyerId: 33,
++    sellerId: 44,
++  });
++  assert.match(paid, /Резерв оплачен/);
++  assert.match(paid, /#11/);
++});

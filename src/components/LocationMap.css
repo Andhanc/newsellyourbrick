@@ -18,6 +18,16 @@
   background: #000;
 }
 
+.location-map-container--page-scroll:not(.location-map-container--fullscreen) {
+  touch-action: pan-y !important;
+}
+
+.location-map-container--page-scroll:not(.location-map-container--fullscreen) .location-map,
+.location-map-container--page-scroll:not(.location-map-container--fullscreen) .location-map * {
+  pointer-events: none !important;
+  touch-action: pan-y !important;
+}
+
 .location-map-fullscreen-btn {
   position: absolute;
   top: 10px;
