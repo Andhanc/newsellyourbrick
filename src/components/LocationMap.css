@@ -18,18 +18,6 @@
   background: #000;
 }
 
-.location-map-container--page-scroll:not(.location-map-container--fullscreen):not(.location-map-container--pinch-active),
-.location-map-container--page-scroll:not(.location-map-container--fullscreen):not(.location-map-container--pinch-active) .location-map,
-.location-map-container--page-scroll:not(.location-map-container--fullscreen):not(.location-map-container--pinch-active) .location-map * {
-  touch-action: pan-y !important;
-}
-
-.location-map-container--page-scroll.location-map-container--pinch-active,
-.location-map-container--page-scroll.location-map-container--pinch-active .location-map,
-.location-map-container--page-scroll.location-map-container--pinch-active .location-map * {
-  touch-action: none !important;
-}
-
 .location-map-fullscreen-btn {
   position: absolute;
   top: 10px;

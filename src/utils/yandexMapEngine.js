@@ -46,10 +46,34 @@ function pinchDistance(touches) {
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
 }
 
+function getScrollParent(node) {
+  let current = node?.parentElement
+  while (current && current !== document.body && current !== document.documentElement) {
+    const style = window.getComputedStyle(current)
+    const overflowY = style.overflowY
+    const canScroll =
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      current.scrollHeight - current.clientHeight > 1
+    if (canScroll) return current
+    current = current.parentElement
+  }
+  return document.scrollingElement || document.documentElement
+}
+
+function scrollElementBy(el, dy) {
+  if (!el || !dy) return
+  if (el === document.scrollingElement || el === document.documentElement || el === document.body) {
+    window.scrollBy(0, dy)
+    return
+  }
+  el.scrollTop += dy
+}
+
 function bindPageScrollPinchZoom(container, ymap, { minZoom, maxZoom, getDestroyed }) {
-  let startDistance = 0
-  let startZoom = 0
+  const SCROLL_THRESHOLD = 6
   const parent = container.parentElement
+  let gesture = null
+  let inertiaRaf = 0
 
   const setPinchActive = (active) => {
     try {
@@ -59,55 +83,138 @@ function bindPageScrollPinchZoom(container, ymap, { minZoom, maxZoom, getDestroy
     }
   }
 
-  const onTouchStart = (event) => {
-    if (getDestroyed() || event.touches.length !== 2) {
-      startDistance = 0
-      setPinchActive(false)
-      applyMapTouchAction(container, 'pan-y')
-      return
+  const cancelInertia = () => {
+    if (!inertiaRaf) return
+    cancelAnimationFrame(inertiaRaf)
+    inertiaRaf = 0
+  }
+
+  const startInertia = (scroller, velocity) => {
+    cancelInertia()
+    let next = velocity
+    const step = () => {
+      next *= 0.95
+      if (Math.abs(next) < 0.4) {
+        inertiaRaf = 0
+        return
+      }
+      scrollElementBy(scroller, next)
+      inertiaRaf = requestAnimationFrame(step)
     }
+    inertiaRaf = requestAnimationFrame(step)
+  }
+
+  const beginPinch = (touches) => {
     setPinchActive(true)
-    applyMapTouchAction(container, 'none')
-    startDistance = pinchDistance(event.touches)
+    let startZoom = 0
     try {
       startZoom = ymap.getZoom()
     } catch {
       startZoom = 0
     }
+    gesture = {
+      type: 'pinch',
+      startDistance: pinchDistance(touches),
+      startZoom,
+    }
+  }
+
+  const onTouchStart = (event) => {
+    if (getDestroyed()) return
+    cancelInertia()
+    if (event.touches.length >= 2) {
+      beginPinch(event.touches)
+      return
+    }
+    if (event.touches.length !== 1) {
+      gesture = null
+      setPinchActive(false)
+      return
+    }
+    setPinchActive(false)
+    gesture = {
+      type: 'maybe-scroll',
+      x: event.touches[0].clientX,
+      y: event.touches[0].clientY,
+      time: event.timeStamp,
+      velocity: 0,
+      scroller: getScrollParent(container),
+    }
   }
 
   const onTouchMove = (event) => {
-    if (getDestroyed() || event.touches.length !== 2 || startDistance <= 0) return
-    event.preventDefault()
-    const ratio = pinchDistance(event.touches) / startDistance
-    if (!Number.isFinite(ratio) || ratio <= 0) return
-    const nextZoom = Math.min(Math.max(startZoom + Math.log2(ratio), minZoom), maxZoom)
-    try {
-      ymap.setZoom(nextZoom, { duration: 0 })
-    } catch {
-      // ignore
+    if (getDestroyed() || !gesture) return
+
+    if (event.touches.length >= 2) {
+      if (gesture.type !== 'pinch') beginPinch(event.touches)
+      if (event.cancelable) event.preventDefault()
+      event.stopPropagation()
+      if (gesture.startDistance <= 0) return
+      const ratio = pinchDistance(event.touches) / gesture.startDistance
+      if (!Number.isFinite(ratio) || ratio <= 0) return
+      const nextZoom = Math.min(Math.max(gesture.startZoom + Math.log2(ratio), minZoom), maxZoom)
+      try {
+        ymap.setZoom(nextZoom, { duration: 0 })
+      } catch {
+        // ignore
+      }
+      return
     }
+
+    if (event.touches.length !== 1 || gesture.type === 'pinch') return
+
+    const y = event.touches[0].clientY
+    const dy = gesture.y - y
+    const dx = event.touches[0].clientX - gesture.x
+    if (gesture.type === 'maybe-scroll') {
+      if (Math.abs(dy) < SCROLL_THRESHOLD && Math.abs(dx) < SCROLL_THRESHOLD) return
+      gesture.type = 'scroll'
+    }
+
+    if (event.cancelable) event.preventDefault()
+    event.stopPropagation()
+    const elapsed = Math.max(8, event.timeStamp - gesture.time)
+    gesture.velocity = dy / elapsed * 16
+    gesture.y = y
+    gesture.time = event.timeStamp
+    scrollElementBy(gesture.scroller, dy)
   }
 
   const onTouchEnd = (event) => {
     if (event.touches.length >= 2) return
-    startDistance = 0
+    if (event.touches.length === 1 && gesture?.type === 'pinch') {
+      setPinchActive(false)
+      gesture = {
+        type: 'maybe-scroll',
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+        time: event.timeStamp,
+        velocity: 0,
+        scroller: getScrollParent(container),
+      }
+      return
+    }
+    if (gesture?.type === 'scroll' && Math.abs(gesture.velocity) > 0.5) {
+      startInertia(gesture.scroller, gesture.velocity)
+    }
+    gesture = null
     setPinchActive(false)
-    applyMapTouchAction(container, 'pan-y')
   }
 
-  container.addEventListener('touchstart', onTouchStart, { passive: true, capture: true })
-  container.addEventListener('touchmove', onTouchMove, { passive: false, capture: true })
-  container.addEventListener('touchend', onTouchEnd, { passive: true, capture: true })
-  container.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true })
+  const target = parent || container
+  target.addEventListener('touchstart', onTouchStart, { passive: true, capture: true })
+  target.addEventListener('touchmove', onTouchMove, { passive: false, capture: true })
+  target.addEventListener('touchend', onTouchEnd, { passive: true, capture: true })
+  target.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true })
 
   return () => {
-    startDistance = 0
+    cancelInertia()
+    gesture = null
     setPinchActive(false)
-    container.removeEventListener('touchstart', onTouchStart, true)
-    container.removeEventListener('touchmove', onTouchMove, true)
-    container.removeEventListener('touchend', onTouchEnd, true)
-    container.removeEventListener('touchcancel', onTouchEnd, true)
+    target.removeEventListener('touchstart', onTouchStart, true)
+    target.removeEventListener('touchmove', onTouchMove, true)
+    target.removeEventListener('touchend', onTouchEnd, true)
+    target.removeEventListener('touchcancel', onTouchEnd, true)
   }
 }
 
@@ -258,7 +365,7 @@ export async function createYandexMap(container, {
     }
     if (pageScrollLocked) {
       applyYandexBehaviors(ymap, PAGE_SCROLL_MAP_BEHAVIORS)
-      applyMapTouchAction(container, 'pan-y')
+      applyMapTouchAction(container, 'none')
       pinchCleanup = bindPageScrollPinchZoom(container, ymap, {
         minZoom,
         maxZoom,

@@ -20,6 +20,8 @@ test('map engine exposes roadmap/satellite types and runtime setType', async () 
   assert.match(web, /PAGE_SCROLL_MAP_BEHAVIORS = \['dblClickZoom'\]/)
   assert.match(web, /setPageScrollInteraction\(locked\)/)
   assert.match(web, /bindPageScrollPinchZoom/)
+  assert.match(web, /scrollElementBy/)
+  assert.match(web, /window\.scrollBy\(0, dy\)/)
 })
 
 test('map page stays satellite by default and offers a type switcher', async () => {
@@ -71,7 +73,5 @@ test('property map shows the switcher, add-property keeps the roadmap default wi
     readRepo('apps/client/src/legacy/components/LocationMap.css'),
   ])
   assert.equal(legacyLocationCss, locationCss)
-  assert.match(locationCss, /location-map-container--page-scroll/)
-  assert.match(locationCss, /touch-action: pan-y !important/)
-  assert.match(locationCss, /location-map-container--pinch-active/)
+  assert.match(locationMap, /location-map-container--page-scroll/)
 })
