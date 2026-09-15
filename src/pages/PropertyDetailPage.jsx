@@ -41,7 +41,7 @@ function normalizePropertyDetailType(prop) {
   return prop.property_type || prop.propertyType || 'apartment'
 }
 
-function buildBuyerDetailPreview() {
+function buildBuyerDetailPreview({ auctionBuyNow = false } = {}) {
   const base = properties.find((item) => item.id === 11) || properties[0] || {}
 
   return {
@@ -55,7 +55,7 @@ function buildBuyerDetailPreview() {
     country: 'Испания',
     city: 'Марбелья',
     price: 1240000,
-    currentBid: 1240000,
+    currentBid: auctionBuyNow ? 1100000 : 1240000,
     currency: 'EUR',
     area: 238,
     sqft: 238,
@@ -81,12 +81,13 @@ function buildBuyerDetailPreview() {
     furniture: true,
     test_drive: true,
     testDrive: true,
-    is_auction: false,
-    isAuction: false,
-    endTime: null,
-    auction_end_date: null,
+    is_auction: auctionBuyNow,
+    isAuction: auctionBuyNow,
+    auction_starting_price: auctionBuyNow ? 1000000 : null,
+    endTime: auctionBuyNow ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
+    auction_end_date: auctionBuyNow ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
     test_timer_end_date: null,
-    sale_type: 'buy_now',
+    sale_type: auctionBuyNow ? 'auction' : 'buy_now',
     seller: 'SellYourBrick Verified',
     moderation_status: 'approved',
     is_reserved: false,
@@ -111,8 +112,9 @@ const PropertyDetailPage = () => {
   const [notFound, setNotFound] = useState(false)
 
   const buyerDetailPreview = useMemo(() => {
-    if (!import.meta.env.DEV) return false
-    return new URLSearchParams(location.search || '').get('buyer_detail_preview') === '1'
+    if (!import.meta.env.DEV) return ''
+    const preview = new URLSearchParams(location.search || '').get('buyer_detail_preview')
+    return preview === '1' || preview === 'buy-now' ? preview : ''
   }, [location.search])
 
   const routeId = routeParam ?? ''
@@ -183,7 +185,7 @@ const PropertyDetailPage = () => {
 
     const loadProperty = async () => {
       if (buyerDetailPreview) {
-        setProperty(buildBuyerDetailPreview())
+        setProperty(buildBuyerDetailPreview({ auctionBuyNow: buyerDetailPreview === 'buy-now' }))
         setError(null)
         setIsLoading(false)
         return

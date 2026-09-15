@@ -14,6 +14,8 @@ const mainStyles = await readFile(new URL('./PropertyDetailClassic.css', import.
 const localeCodes = ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv']
 const newLocaleKeys = [
   'propertyDetailBuyNowDefinition',
+  'propertyDetailBuyNowPromoTitle',
+  'propertyDetailBuyNowPromoSubtitle',
   'propertyDetailBuyNowPaymentTitle',
   'propertyDetailBuyNowPayNowLabel',
   'propertyDetailBuyNowPayNowHint',
@@ -42,17 +44,21 @@ const newLocaleKeys = [
 ]
 
 test('mobile Buy now explains the fixed-price payment split', () => {
-  assert.match(mainPage, /const buyNowReserveAmount = auctionBuyNowPrice \* 0\.1/)
-  assert.match(mainPage, /property-detail-mobile-buy-now__price-panel/)
+  assert.match(mainPage, /const buyNowReserveAmount = fullBuyNowPrice \* 0\.1/)
+  assert.match(mainPage, /property-detail-mobile-buy-now__brand/)
+  assert.match(mainPage, /property-detail-mobile-buy-now__total/)
+  assert.match(mainPage, /property-detail-mobile-buy-now__property-card/)
   assert.match(mainPage, /property-detail-mobile-buy-now__services/)
   assert.match(mainPage, /property-detail-mobile-buy-now__guide-card--steps/)
-  assert.match(mainPage, /propertyDetailBuyNowTodayLabel/)
+  assert.match(mainPage, /buyNowModalFullPriceHint/)
   assert.match(mainPage, /propertyDetailBuyNowReserveForCta/)
   assert.match(mainPage, /onClick=\{handleBookNow\}/)
   assert.match(mainPage, /openInvestorPanelForProperty\(\)/)
   assert.match(mainPage, /navigate\('\/compare'\)/)
   assert.match(mainPage, /navigate\('\/favorites'\)/)
   assert.match(mainPage, /navigate\('\/chat\?assistant=1'\)/)
+  assert.match(mainPage, /navigate\('\/bonuses'\)/)
+  assert.match(mainPage, /buy-now-actions\/yield\.png/)
   assert.match(mainPage, /isAuctionProperty && auctionMobileTab !== 'buy_now'/)
   assert.match(
     mainStyles,

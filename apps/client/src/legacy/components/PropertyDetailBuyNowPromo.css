@@ -1,0 +1,144 @@
+.property-detail-buy-now-promo {
+  --buy-now-promo-ink: #18171b;
+  --buy-now-promo-accent: #0099a9;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 40%);
+  align-items: center;
+  min-height: 194px;
+  padding: 24px 28px;
+  overflow: hidden;
+  border: 1px solid rgba(114, 88, 63, 0.08);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(135deg, #d8f7f3 0%, #b9ece8 52%, #99dfe2 100%);
+  box-shadow: 0 16px 36px rgba(0, 131, 145, 0.12);
+  color: var(--buy-now-promo-ink);
+  font-family: var(--site-font-family, 'Montserrat', system-ui, sans-serif);
+  box-sizing: border-box;
+}
+
+.property-detail-buy-now-promo__copy {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  max-width: 480px;
+}
+
+.property-detail-buy-now-promo__title {
+  margin: 0;
+  color: var(--buy-now-promo-ink);
+  max-width: 13ch;
+  font-size: clamp(1.48rem, 2.6vw, 2.08rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.property-detail-buy-now-promo__lead {
+  max-width: 32ch;
+  margin: 8px 0 0;
+  color: rgba(24, 23, 27, 0.66);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.property-detail-buy-now-promo__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 210px;
+  min-height: 50px;
+  margin-top: 18px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--buy-now-promo-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0, 153, 169, 0.24);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.property-detail-buy-now-promo__cta:hover,
+.property-detail-buy-now-promo__cta:focus-visible {
+  transform: translateY(-2px);
+  background: #007f8d;
+  box-shadow: 0 13px 25px rgba(0, 153, 169, 0.3);
+}
+
+.property-detail-buy-now-promo__cta:focus-visible {
+  outline: 2px solid var(--buy-now-promo-accent);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.property-detail-buy-now-promo__art {
+  position: absolute;
+  z-index: 1;
+  right: -2.5%;
+  bottom: -5%;
+  display: block;
+  width: min(49%, 435px);
+  max-height: 108%;
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
+  user-select: none;
+}
+
+.property-detail-buy-now-promo--desktop {
+  margin-top: 24px;
+}
+
+@media (max-width: 760px) {
+  .property-detail-buy-now-promo {
+    grid-template-columns: minmax(0, 68%) minmax(0, 32%);
+    min-height: 168px;
+    padding: 15px 16px;
+    border-radius: 22px;
+  }
+
+  .property-detail-buy-now-promo__title {
+    max-width: none;
+    font-size: clamp(1.08rem, 5.2vw, 1.3rem);
+  }
+
+  .property-detail-buy-now-promo__lead {
+    display: block;
+    max-width: 27ch;
+    font-size: 0.61rem;
+    line-height: 1.3;
+  }
+
+  .property-detail-buy-now-promo__cta {
+    min-width: 168px;
+    min-height: 44px;
+    margin-top: 12px;
+    padding: 0 18px;
+    border-radius: 13px;
+    font-size: 0.82rem;
+  }
+
+  .property-detail-buy-now-promo__art {
+    right: -23%;
+    bottom: -2%;
+    width: 64%;
+    max-height: 96%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-detail-buy-now-promo__cta {
+    transition: none;
+  }
+}

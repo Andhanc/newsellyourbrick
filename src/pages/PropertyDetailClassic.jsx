@@ -29,11 +29,6 @@ import {
   FiDownload,
   FiBox,
   FiTruck,
-  FiTag,
-  FiCreditCard,
-  FiTrendingUp,
-  FiBarChart2,
-  FiMessageCircle,
   FiBookOpen,
   FiUserCheck,
 } from 'react-icons/fi'
@@ -62,13 +57,12 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
+import '../components/PropertyDetailBuyNowHub.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
 import './PropertyDetailClassic.mobileMap.css'
 import PropertyDetailDesktopPage from '../components/property-detail/PropertyDetailDesktopPage'
 import PropertyDetailDesktopGallery from '../components/property-detail/PropertyDetailDesktopGallery'
-import PropertyDetailDesktopTestDriveBanner from '../components/property-detail/PropertyDetailDesktopTestDriveBanner'
 import PropertyDetailDesktopRelatedSection from '../components/property-detail/PropertyDetailDesktopRelatedSection'
-import '../components/property-detail/PropertyDetailDesktopTestDriveBanner.css'
 import '../components/property-detail/PropertyDetailDesktopRelatedSection.css'
 import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
@@ -83,6 +77,7 @@ import TestDriveSection from '../components/TestDriveSection'
 import PropertyDetailTestDrivePromo, {
   PROPERTY_TEST_DRIVE_PROMO_IMAGE,
 } from '../components/PropertyDetailTestDrivePromo'
+import PropertyDetailBuyNowPromo from '../components/PropertyDetailBuyNowPromo'
 import PageBackButton from '../components/PageBackButton'
 import PropertyGeoLinks from '../components/PropertyGeoLinks'
 import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
@@ -4679,7 +4674,9 @@ function PropertyDetailClassic({
       <div className="property-detail-mobile-test-drive">
         <PropertyDetailTestDrivePromo
           propertyId={displayProperty.id}
+          propertySlug={displayProperty.slug}
           propertyTable={propertyTable}
+          propertyType={displayProperty.property_type || displayProperty.propertyType}
           hasTestDrive
           i18nLang={currentLang}
           imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
@@ -4779,6 +4776,12 @@ function PropertyDetailClassic({
         ) : null}
         {renderPropertyMainDetailsBlock({ layout: 'mobile-about' })}
         {renderPropertyAdditionalDetailsBlock({ layout: 'mobile-about' })}
+        {showMobileBuyNowTab ? (
+          <PropertyDetailBuyNowPromo
+            className="property-detail-buy-now-promo--mobile-about"
+            onOpen={() => setAuctionMobileTab('buy_now')}
+          />
+        ) : null}
         {renderPropertyAmenitiesBlock({ layout: 'mobile-about' })}
         <PropertyDetailYieldPromo onClick={openInvestorPanelForProperty} />
         {renderMobileAboutAdditionalAmenitiesBlock()}
@@ -5001,76 +5004,71 @@ function PropertyDetailClassic({
           aria-label={t('propertyDetailTabBuyNow')}
         >
           <div className="property-detail-mobile-buy-now__hero">
-            <div className="property-detail-mobile-buy-now__price-panel">
-              <div className="property-detail-mobile-buy-now__price-row">
-                <span className="property-detail-mobile-buy-now__price-icon" aria-hidden>
-                  <FiTag size={20} strokeWidth={2.25} />
-                </span>
-                <div className="property-detail-mobile-buy-now__price-copy">
-                  <span className="property-detail-mobile-buy-now__price-label">
-                    {t('propertyDetailBuyNowFixedPrice')}
-                  </span>
-                  <strong className="property-detail-mobile-buy-now__value">
-                    {buyNowPriceLabel}
-                  </strong>
-                </div>
-              </div>
-              <div className="property-detail-mobile-buy-now__price-row property-detail-mobile-buy-now__price-row--reserve">
-                <span className="property-detail-mobile-buy-now__price-icon" aria-hidden>
-                  <FiCreditCard size={20} strokeWidth={2.25} />
-                </span>
-                <div className="property-detail-mobile-buy-now__price-copy">
-                  <span className="property-detail-mobile-buy-now__price-label">
-                    {t('propertyDetailBuyNowTodayLabel')}
-                  </span>
-                  <strong className="property-detail-mobile-buy-now__reserve-value">
-                    {buyNowReservePriceLabel}
-                  </strong>
-                </div>
-                <strong className="property-detail-mobile-buy-now__reserve-badge">10%</strong>
-              </div>
+            <header className="property-detail-mobile-buy-now__brand">
+              <h2>{t('buyNowSectionTitle')}</h2>
+              <p>{t('propertyDetailBuyNowPromoSubtitle')}</p>
+            </header>
+
+            <div className="property-detail-mobile-buy-now__total" aria-label={t('buyNowModalFullPriceHint')}>
+              <span>{t('buyNowModalFullPriceHint')}</span>
+              <strong>{buyNowPriceLabel}</strong>
             </div>
 
-            <p className="property-detail-mobile-buy-now__intro">
-              {isShareBuyNowTab
-                ? buyNowLocked
-                  ? shareLockedCopy
-                  : t('shareDetailBuyNowDescription')
-                : t('propertyDetailBuyNowDefinition')}
-            </p>
+            <article className="property-detail-mobile-buy-now__property-card">
+              <div className="property-detail-mobile-buy-now__property-heading">
+                <div>
+                  <h3>{propertyInfo}</h3>
+                  <p>
+                    {isShareBuyNowTab
+                      ? buyNowLocked
+                        ? shareLockedCopy
+                        : t('shareDetailBuyNowDescription')
+                      : displayProperty.description || t('propertyDetailBuyNowDefinition')}
+                  </p>
+                </div>
+                <span className="property-detail-mobile-buy-now__available" aria-hidden>
+                  <FiCheck size={16} strokeWidth={3} />
+                </span>
+              </div>
 
-            <button
-              type="button"
-              className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
-                paymentActionsLocked ? ' property-detail-mobile-buy-now__btn--currency-preview' : ''
-              }`}
-              onClick={isShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
-              disabled={buyNowLocked}
-              title={
-                isShareBuyNowTab && buyNowLocked
-                  ? shareLockedCopy
-                  : isReservedActive
-                  ? t('purchaseSuccess_goToObject')
-                  : !buyNowEmailOk
-                    ? t('buyNowEmailRequired')
-                    : !shouldShowAuctionBuyNow
-                      ? t('propertyDetailTabBuyNow')
-                      : undefined
-              }
-            >
-              <span>
-                {isShareBuyNowTab && buyNowLocked
-                  ? t('shareDetailBuyNowUnavailable')
-                  : isReservedActive
-                  ? t('purchaseSuccess_goToObject')
-                  : t('propertyDetailBuyNowReserveForCta', { price: buyNowReservePriceLabel })}
-              </span>
-              {isShareBuyNowTab && buyNowLocked ? (
-                <FiLock size={18} strokeWidth={2.4} aria-hidden />
-              ) : !isReservedActive ? (
-                <FiArrowRight size={18} strokeWidth={2.5} aria-hidden />
-              ) : null}
-            </button>
+              <div className="property-detail-mobile-buy-now__card-price">
+                <span>{t('buyNowModalFullPriceHint')}</span>
+                <strong>{buyNowPriceLabel}</strong>
+              </div>
+
+              <button
+                type="button"
+                className={`property-detail-mobile-buy-now__btn btn-tiffany-shine${
+                  paymentActionsLocked ? ' property-detail-mobile-buy-now__btn--currency-preview' : ''
+                }`}
+                onClick={isShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
+                disabled={buyNowLocked}
+                title={
+                  isShareBuyNowTab && buyNowLocked
+                    ? shareLockedCopy
+                    : isReservedActive
+                    ? t('purchaseSuccess_goToObject')
+                    : !buyNowEmailOk
+                      ? t('buyNowEmailRequired')
+                      : !shouldShowAuctionBuyNow
+                        ? t('propertyDetailTabBuyNow')
+                        : undefined
+                }
+              >
+                <span>
+                  {isShareBuyNowTab && buyNowLocked
+                    ? t('shareDetailBuyNowUnavailable')
+                    : isReservedActive
+                    ? t('purchaseSuccess_goToObject')
+                    : t('propertyDetailBuyNowReserveForCta', { price: buyNowReservePriceLabel })}
+                </span>
+                {isShareBuyNowTab && buyNowLocked ? (
+                  <FiLock size={18} strokeWidth={2.4} aria-hidden />
+                ) : !isReservedActive ? (
+                  <FiArrowRight size={18} strokeWidth={2.5} aria-hidden />
+                ) : null}
+              </button>
+            </article>
           </div>
 
           <nav
@@ -5079,29 +5077,44 @@ function PropertyDetailClassic({
           >
             <button type="button" onClick={() => openInvestorPanelForProperty()}>
               <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
-                <FiTrendingUp size={22} strokeWidth={2.15} />
+                <img src="/images/property-detail/buy-now-actions/yield.png" alt="" />
               </span>
               <span>{t('propertyDetailBuyNowServiceYield')}</span>
             </button>
             <button type="button" onClick={() => navigate('/compare')}>
               <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
-                <FiBarChart2 size={22} strokeWidth={2.15} />
+                <img src="/images/property-detail/buy-now-actions/compare.png" alt="" />
               </span>
               <span>{t('propertyDetailBuyNowServiceCompare')}</span>
             </button>
             <button type="button" onClick={() => navigate('/favorites')}>
               <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
-                <FiHeart size={22} strokeWidth={2.15} />
+                <img src="/images/property-detail/buy-now-actions/favorite.png" alt="" />
               </span>
               <span>{t('propertyDetailBuyNowServiceFavorites')}</span>
             </button>
             <button type="button" onClick={() => navigate('/chat?assistant=1')}>
               <span className="property-detail-mobile-buy-now__service-icon" aria-hidden>
-                <FiMessageCircle size={22} strokeWidth={2.15} />
+                <img src="/images/property-detail/buy-now-actions/ai.png" alt="" />
               </span>
               <span>{t('propertyDetailBuyNowServiceAi')}</span>
             </button>
           </nav>
+
+          <button
+            type="button"
+            className="property-detail-mobile-buy-now__bonuses"
+            onClick={() => navigate('/bonuses')}
+          >
+            <span className="property-detail-mobile-buy-now__bonuses-art" aria-hidden>
+              <img src="/images/bonuses/bonuses-hero-gift-transparent.png" alt="" />
+            </span>
+            <span className="property-detail-mobile-buy-now__bonuses-copy">
+              <small>{t('buyerData_moreBonusesCtaSub')}</small>
+              <strong>{t('buyerData_moreBonusesCta')}</strong>
+            </span>
+            <FiChevronRight size={22} strokeWidth={2.4} aria-hidden />
+          </button>
 
           <div className="property-detail-mobile-buy-now__guides">
             <h3>{t('propertyDetailBuyNowCardsTitle')}</h3>
@@ -5142,9 +5155,7 @@ function PropertyDetailClassic({
                 <div className="property-detail-mobile-buy-now__guide-art" aria-hidden="true">
                   <span className="property-detail-mobile-buy-now__guide-number">03</span>
                   <div className="property-detail-mobile-buy-now__manager-card-art">
-                    <FiUser size={40} strokeWidth={1.6} />
-                    <span className="property-detail-mobile-buy-now__manager-card-lines"><i /><i /></span>
-                    <span className="property-detail-mobile-buy-now__manager-card-check"><FiCheck size={18} strokeWidth={2.5} /></span>
+                    <img src="/images/profile/shortcuts/chat.png" alt="" loading="lazy" decoding="async" />
                   </div>
                 </div>
                 <h4 className="property-detail-mobile-buy-now__guide-heading">
@@ -5960,7 +5971,9 @@ function PropertyDetailClassic({
       <PropertyDetailTestDrivePromo
         className="property-detail-auction-desktop-test-drive"
         propertyId={displayProperty.id}
+        propertySlug={displayProperty.slug}
         propertyTable={propertyTable}
+        propertyType={displayProperty.property_type || displayProperty.propertyType}
         hasTestDrive
         i18nLang={currentLang}
         imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
@@ -7077,6 +7090,13 @@ function PropertyDetailClassic({
           </section>
         ) : null}
 
+        {showMobileBuyNowTab ? (
+          <PropertyDetailBuyNowPromo
+            className="property-detail-buy-now-promo--desktop"
+            onOpen={showShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
+          />
+        ) : null}
+
         {additionalAmenitiesText ? (
           <section className="pdx-additional-amenities">
             <h2 className="pdx-additional-amenities__title">{t('addPropertyAmenitiesOtherLabel')}</h2>
@@ -7087,16 +7107,18 @@ function PropertyDetailClassic({
         ) : null}
 
         {showsTestDriveSection ? (
-          <PropertyDetailDesktopTestDriveBanner
+          <PropertyDetailTestDrivePromo
             ref={testDriveBannerRef}
+            className="property-detail-desktop-test-drive-promo"
             propertyId={displayProperty.id}
+            propertySlug={displayProperty.slug}
             propertyTable={
               property.source_table || displayProperty.source_table || 'properties_apartments'
             }
             propertyType={displayProperty.property_type || displayProperty.propertyType}
-            imageUrl={
-              displayProperty.images?.[0] || displayProperty.image || displayProperty.main_image || ''
-            }
+            hasTestDrive
+            i18nLang={currentLang}
+            imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
             paused={isReservedActive}
           />
         ) : null}

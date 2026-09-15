@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { Check, Circle } from 'lucide-react'
+import { FiCalendar } from 'react-icons/fi'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -140,6 +141,11 @@ export default function TestDriveSection({
           navigate(`${pathname}/test-drive?table=${table}`)
         }}
       >
+        {isPromoLayout ? (
+          <span className="property-detail-test-drive__cta-icon" aria-hidden>
+            <FiCalendar size={22} strokeWidth={2.15} />
+          </span>
+        ) : null}
         {loading
           ? ru
             ? 'Проверка…'
