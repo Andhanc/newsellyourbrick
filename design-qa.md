@@ -42,8 +42,11 @@ final result: passed
 
 - Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-3bcc26cb-5585-4da6-b920-5df004a623f1.png` — 538 × 926 px; Yandex Plus mobile composition.
 - Source color reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-c5ca43e5-2e63-436f-938f-e4e3055c8d8a.png` — 698 × 402 px; Tiffany field.
+- Follow-up source: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-571b4789-14ed-4a54-a28a-5dfc3ad0c14c.png` — shortcut and bonuses region before the circular-icon polish.
 - Browser-rendered implementation: `/Users/vtichonenko/newsellyourbrick/design-qa-buy-now-top.png` and `/Users/vtichonenko/newsellyourbrick/design-qa-buy-now-actions.png` — 393 × 852 px each.
+- Follow-up implementation: `/Users/vtichonenko/newsellyourbrick/design-qa-buy-now-circles.png` — 393 × 852 px; circular shortcuts, raised gift, and reduced guide heading.
 - Same-input comparisons: `/Users/vtichonenko/newsellyourbrick/design-qa-comparison-full.png` — 786 × 852 px; `/Users/vtichonenko/newsellyourbrick/design-qa-comparison-focus.png` — 786 × 657 px.
+- Follow-up focused comparison: `/Users/vtichonenko/newsellyourbrick/design-qa-buy-now-circles-comparison.png` — 806 × 306 px; supplied follow-up on the left and final implementation on the right.
 - Route: `http://localhost:4173/property/900001?buyer_detail_preview=buy-now`.
 - Viewport: 393 × 852 CSS px at DPR 1; additional narrow-width check at 320 × 800 CSS px.
 - Density normalization: the 538 px source was resized to 393 px wide for the full comparison; the focused service/loyalty/title region was cropped from both captures and aligned at 393 px width.
@@ -74,6 +77,8 @@ final result: passed
 1. Initial P1 — the first generated shortcuts were too cartoon-like for the existing product. Fix: regenerated all four as restrained glossy white/Tiffany/chrome product icons using the profile and homepage assets as direct style references. Post-fix evidence: `design-qa-buy-now-actions.png` and `design-qa-comparison-focus.png`.
 2. Initial P2 — «Больше возможностей с опциями» was generic and could occupy too much vertical space. Fix: replaced it with «Как проходит покупка» (and localized equivalents) and applied a strict two-line clamp. Post-fix evidence: 393 px and 320 px browser checks.
 3. Initial P2 — «AI недвижимость» could wrap in the four-column grid. Fix: added a responsive 7–9 px label size and `white-space: nowrap`; it remains a single line at 320 px.
+4. Follow-up P2 — the four icon holders still read as rounded squares and the artworks were undersized. Fix: changed them to true circles (`border-radius: 50%`), increased the responsive holders to 62–74 px, and allowed each artwork to occupy 90% of the circle. Browser measurements confirm four 73.48 px circles at 393 px and four 62 px circles at 320 px.
+5. Follow-up P2 — the gift sat too low in its crop. Fix: raised the artwork by 5 px while preserving the circular mask. The focused comparison shows the bow and box clearly. The guide heading was reduced from a 27–36 px range to 24–32 px and remains clamped to at most two lines (29.87 px/two lines at 393 px; 24.32 px/one line at 320 px).
 
 ## Interaction and console evidence
 
@@ -82,6 +87,7 @@ final result: passed
 - The bonuses row remains a real navigation control to `/bonuses`; reservation and existing shortcut handlers were preserved.
 - Console review found the known local missing `VITE_YANDEX_MAPS_API_KEY` map error and the existing `inert` warning; this hub introduced no new console errors.
 - Targeted tests passed (5/5), production build passed, and `git diff --check` passed.
+- Follow-up responsive measurements confirm zero horizontal overflow inside the hub and service grid at 320 px; the existing outer application shell retains an unrelated 11 px overflow outside the hub.
 
 ## Findings
 

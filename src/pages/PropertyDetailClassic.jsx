@@ -219,6 +219,7 @@ function PropertyDetailClassic({
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isBuyNowPreview = searchParams.get('buyer_detail_preview') === 'buy-now'
   const userData = getUserData()
   const [property, setProperty] = useState(initialProperty)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -292,7 +293,9 @@ function PropertyDetailClassic({
   const lastTestTimerEndRef = useRef(null)
   const testDriveBannerRef = useRef(null)
   const investorPromoRef = useRef(null)
-  const [auctionMobileTab, setAuctionMobileTab] = useState('about')
+  const [auctionMobileTab, setAuctionMobileTab] = useState(() => (
+    isBuyNowPreview ? 'buy_now' : 'about'
+  ))
   const [mobileBidsBoardIn, setMobileBidsBoardIn] = useState(false)
 
   useEffect(() => {
@@ -1352,7 +1355,8 @@ function PropertyDetailClassic({
 
   const auctionEndTime = getEffectiveAuctionEndTime(displayProperty)
   const testDrivePromoBlocked = propertyBlocksTestDrivePromo(displayProperty, { timerExpired })
-  const shouldShowTestDrivePromo = showsTestDriveSection && !testDrivePromoBlocked
+  const shouldShowTestDrivePromo =
+    showsTestDriveSection && !testDrivePromoBlocked && !isBuyNowPreview
 
   useEffect(() => {
     if (!shouldShowTestDrivePromo) {
