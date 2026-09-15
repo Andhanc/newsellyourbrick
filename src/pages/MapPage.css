@@ -1054,6 +1054,34 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
+.map-type-btn {
+  position: absolute;
+  top: calc(var(--map-zoom-top) + (var(--map-controls-btn-size) * 2) + var(--map-controls-stack-gap));
+  right: var(--map-controls-inset-right);
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--map-controls-btn-size);
+  height: var(--map-controls-btn-size);
+  padding: 0;
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  color: #222;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.14);
+}
+
+.map-type-btn:hover {
+  background: #f7f7f7;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.map-type-btn[aria-pressed='true'] {
+  color: #006f7b;
+}
+
 .map-page-map-toolbar {
   display: none;
 }

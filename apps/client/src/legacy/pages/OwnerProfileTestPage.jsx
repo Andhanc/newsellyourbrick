@@ -1180,7 +1180,7 @@ export default function OwnerProfileTestPage() {
                         <MessageCircle size={20} />
                       </span>
                       <span className="profile-cabinet-row__copy">
-                        <strong>{t('buyerCabinet_directionPersonalManagerTitle')}</strong>
+                        <strong>{t('buyerCabinet_cardChatTitle')}</strong>
                         <span>{t('ownerCabinet_dirManagerSubtitle')}</span>
                       </span>
                       <ArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />

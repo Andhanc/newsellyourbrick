@@ -1,10 +1,114 @@
 import { loadYandexMaps } from './yandexMapsLoader'
 import { STREET_MAP_MAX_ZOOM } from './mapStyles'
 
+export const YANDEX_MAP_TYPE_ROADMAP = 'yandex#map'
+export const YANDEX_MAP_TYPE_SATELLITE = 'yandex#satellite'
+
+export function isYandexSatelliteType(type) {
+  return type === YANDEX_MAP_TYPE_SATELLITE
+}
+
+export function toggleYandexMapType(type) {
+  return isYandexSatelliteType(type) ? YANDEX_MAP_TYPE_ROADMAP : YANDEX_MAP_TYPE_SATELLITE
+}
+
 const containerAdapters = new WeakMap()
+
+const YANDEX_MAP_BEHAVIORS = ['drag', 'multiTouch', 'scrollZoom', 'dblClickZoom']
+const FULL_MAP_BEHAVIORS = ['drag', 'multiTouch', 'scrollZoom', 'dblClickZoom']
+const PAGE_SCROLL_MAP_BEHAVIORS = ['dblClickZoom']
 
 function toLatLng([lng, lat]) {
   return [lat, lng]
+}
+
+function applyYandexBehaviors(ymap, names) {
+  try {
+    ymap.behaviors.disable(YANDEX_MAP_BEHAVIORS)
+    if (names.length) ymap.behaviors.enable(names)
+  } catch {
+    // ignore if behavior module unavailable
+  }
+}
+
+function applyMapTouchAction(container, value) {
+  try {
+    container.style.touchAction = value
+    if (container.parentElement) container.parentElement.style.touchAction = value
+  } catch {
+    // ignore
+  }
+}
+
+function pinchDistance(touches) {
+  const a = touches[0]
+  const b = touches[1]
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+}
+
+function bindPageScrollPinchZoom(container, ymap, { minZoom, maxZoom, getDestroyed }) {
+  let startDistance = 0
+  let startZoom = 0
+  const parent = container.parentElement
+
+  const setPinchActive = (active) => {
+    try {
+      parent?.classList.toggle('location-map-container--pinch-active', active)
+    } catch {
+      // ignore
+    }
+  }
+
+  const onTouchStart = (event) => {
+    if (getDestroyed() || event.touches.length !== 2) {
+      startDistance = 0
+      setPinchActive(false)
+      applyMapTouchAction(container, 'pan-y')
+      return
+    }
+    setPinchActive(true)
+    applyMapTouchAction(container, 'none')
+    startDistance = pinchDistance(event.touches)
+    try {
+      startZoom = ymap.getZoom()
+    } catch {
+      startZoom = 0
+    }
+  }
+
+  const onTouchMove = (event) => {
+    if (getDestroyed() || event.touches.length !== 2 || startDistance <= 0) return
+    event.preventDefault()
+    const ratio = pinchDistance(event.touches) / startDistance
+    if (!Number.isFinite(ratio) || ratio <= 0) return
+    const nextZoom = Math.min(Math.max(startZoom + Math.log2(ratio), minZoom), maxZoom)
+    try {
+      ymap.setZoom(nextZoom, { duration: 0 })
+    } catch {
+      // ignore
+    }
+  }
+
+  const onTouchEnd = (event) => {
+    if (event.touches.length >= 2) return
+    startDistance = 0
+    setPinchActive(false)
+    applyMapTouchAction(container, 'pan-y')
+  }
+
+  container.addEventListener('touchstart', onTouchStart, { passive: true, capture: true })
+  container.addEventListener('touchmove', onTouchMove, { passive: false, capture: true })
+  container.addEventListener('touchend', onTouchEnd, { passive: true, capture: true })
+  container.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true })
+
+  return () => {
+    startDistance = 0
+    setPinchActive(false)
+    container.removeEventListener('touchstart', onTouchStart, true)
+    container.removeEventListener('touchmove', onTouchMove, true)
+    container.removeEventListener('touchend', onTouchEnd, true)
+    container.removeEventListener('touchcancel', onTouchEnd, true)
+  }
 }
 
 function fromLatLng([lat, lng]) {
@@ -99,8 +203,9 @@ export async function createYandexMap(container, {
   minZoom = 2,
   maxZoom = STREET_MAP_MAX_ZOOM,
   /** 'yandex#map' | 'yandex#satellite' | 'yandex#hybrid' */
-  type = 'yandex#map',
+  type = YANDEX_MAP_TYPE_ROADMAP,
   lang,
+  pageScrollInteraction = false,
 } = {}) {
   if (!container) {
     throw new Error('Yandex map container is missing')
@@ -123,6 +228,9 @@ export async function createYandexMap(container, {
   let currentZoom = Number(zoom) || 11
   let lastSettledZoom = currentZoom
   let destroyed = false
+  let pinchCleanup = null
+  let pageScrollLocked = Boolean(pageScrollInteraction)
+  const initialBehaviors = pageScrollLocked ? PAGE_SCROLL_MAP_BEHAVIORS : FULL_MAP_BEHAVIORS
 
   const ymap = new ymaps.Map(
     container,
@@ -131,8 +239,8 @@ export async function createYandexMap(container, {
       zoom: currentZoom,
       type,
       controls: [],
-      // Явно: pinch пальцами + колесо мыши (на desktop default иногда без multiTouch/scrollZoom)
-      behaviors: ['drag', 'multiTouch', 'scrollZoom', 'dblClickZoom'],
+      // full: drag + pinch + колесо. pageScroll: страница скроллится, карта не едет.
+      behaviors: initialBehaviors,
     },
     {
       minZoom,
@@ -142,18 +250,27 @@ export async function createYandexMap(container, {
     },
   )
 
-  try {
-    ymap.behaviors.enable(['drag', 'multiTouch', 'scrollZoom', 'dblClickZoom'])
-  } catch {
-    // ignore if behavior module unavailable
+  const applyInteractionMode = (locked) => {
+    pageScrollLocked = Boolean(locked)
+    if (pinchCleanup) {
+      pinchCleanup()
+      pinchCleanup = null
+    }
+    if (pageScrollLocked) {
+      applyYandexBehaviors(ymap, PAGE_SCROLL_MAP_BEHAVIORS)
+      applyMapTouchAction(container, 'pan-y')
+      pinchCleanup = bindPageScrollPinchZoom(container, ymap, {
+        minZoom,
+        maxZoom,
+        getDestroyed: () => destroyed,
+      })
+      return
+    }
+    applyYandexBehaviors(ymap, FULL_MAP_BEHAVIORS)
+    applyMapTouchAction(container, 'none')
   }
 
-  try {
-    container.style.touchAction = 'none'
-    if (container.parentElement) container.parentElement.style.touchAction = 'none'
-  } catch {
-    // ignore
-  }
+  applyInteractionMode(pageScrollLocked)
 
   const emit = (eventName) => {
     if (destroyed) return
@@ -192,6 +309,26 @@ export async function createYandexMap(container, {
     },
     getCenter() {
       return currentCenter
+    },
+    getType() {
+      if (destroyed) return type
+      try {
+        return ymap.getType?.() || type
+      } catch {
+        return type
+      }
+    },
+    setType(nextType) {
+      if (destroyed || !nextType) return
+      try {
+        ymap.setType(nextType)
+      } catch {
+        // ignore if type module unavailable
+      }
+    },
+    setPageScrollInteraction(locked) {
+      if (destroyed) return
+      applyInteractionMode(locked)
     },
     setCenter(lngLat) {
       if (destroyed) return
@@ -414,6 +551,10 @@ export async function createYandexMap(container, {
     remove() {
       if (destroyed) return
       destroyed = true
+      if (pinchCleanup) {
+        pinchCleanup()
+        pinchCleanup = null
+      }
       if (containerAdapters.get(container) === adapter) {
         containerAdapters.delete(container)
       }

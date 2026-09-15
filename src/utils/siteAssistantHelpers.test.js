@@ -29,6 +29,15 @@ test('detectNavigationFromMessage finds calculator and map', () => {
   assert.ok(links.some((l) => l.path === '/map'))
 })
 
+test('support request opens in-app support, not VIP WhatsApp', () => {
+  const links = detectNavigationFromMessage('открой поддержку')
+  assert.ok(links.some((l) => l.path === '/chat?manager=1'))
+  assert.equal(
+    sanitizeNavigationLinks([{ path: '/chat?manager=1', label: 'Поддержка' }])[0]?.path,
+    '/chat?manager=1',
+  )
+})
+
 test('ordinary request to view apartments does not create a test-drive button', () => {
   const links = detectNavigationFromMessage('давайте посмотрим квартиры')
   assert.ok(!links.some((link) => link.path === '/test-drive'))

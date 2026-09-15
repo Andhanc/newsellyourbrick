@@ -3,7 +3,7 @@ export function openOwnerAiChat() {
   window.dispatchEvent(new CustomEvent('openAIChat'))
 }
 
-/** Открыть чат с менеджером в кабинете продавца. */
+/** Открыть поддержку в кабинете продавца. */
 export function openOwnerManagerChat() {
   window.dispatchEvent(new CustomEvent('openManagerChat'))
 }

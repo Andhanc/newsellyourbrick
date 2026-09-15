@@ -17,6 +17,7 @@ export const SITE_ASSISTANT_NAV = [
   { path: '/debts', label: 'Долги / Distressed', aliases: ['долг', 'debt', 'distressed'] },
   { path: '/private-club', label: 'Private Club', aliases: ['private club', 'vip', 'клуб'] },
   { path: '/chat', label: 'Чат с помощником', aliases: ['чат', 'chat', 'помощник'] },
+  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'support', 'техподдержк'] },
   { path: '/profile', label: 'Личный кабинет', aliases: ['кабинет', 'профиль', 'profile'] },
 ]
 

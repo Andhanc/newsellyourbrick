@@ -333,7 +333,7 @@ const Header = () => {
     { path: '/auction', keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'], titleKey: 'auction', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/calculator', keywords: ['калькулятор', 'calculator', 'доходность', 'рендита', 'profitability', 'доход', 'инвестиции'], titleKey: 'calculator', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
-    { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/chat?manager=1', keywords: ['поддержка', 'support', 'чат', 'chat', 'сообщения', 'messages', 'переписка', 'техподдержка'], titleKey: 'chat', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: cabinetProfilePath, keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
     { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     {
@@ -470,7 +470,7 @@ const Header = () => {
   }
 
   const openLoginOrNavigate = (path, closeMenu = false) => {
-    // Manager chat: modal/drawer via GlobalManagerChatHost (not soft-launch navigate).
+    // Support live-chat: modal/drawer via GlobalManagerChatHost (not soft-launch navigate).
     if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
       if (!isSiteUserSignedIn(user, userLoaded)) {
         setLoginModalEntry('wizard')

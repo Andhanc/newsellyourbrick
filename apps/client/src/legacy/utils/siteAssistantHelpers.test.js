@@ -28,6 +28,15 @@ test('detectNavigationFromMessage finds calculator and map', () => {
   assert.ok(links.some((l) => l.path === '/map'))
 })
 
+test('support request opens in-app support, not VIP WhatsApp', () => {
+  const links = detectNavigationFromMessage('открой поддержку')
+  assert.ok(links.some((l) => l.path === '/chat?manager=1'))
+  assert.equal(
+    sanitizeNavigationLinks([{ path: '/chat?manager=1', label: 'Поддержка' }])[0]?.path,
+    '/chat?manager=1',
+  )
+})
+
 test('estimateSimpleYield computes gross yield', () => {
   const y = estimateSimpleYield({ price: 200000, annualRent: 10000 })
   assert.equal(y.yieldPercent, 5)

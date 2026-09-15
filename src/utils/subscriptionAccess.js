@@ -9,7 +9,7 @@ export const BUYER_FEATURE_MIN_TIER = {
   calculator: 'pro',
   analytics: 'pro',
   yieldCalc: 'pro',
-  personalManager: 'vip',
+  personalManager: 'vip', // VIP chats/groups live in WhatsApp, not in-app support
   documents: 'vip',
   privateClubLots: 'vip',
   auctionPriority: 'vip',

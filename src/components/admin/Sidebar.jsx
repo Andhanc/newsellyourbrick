@@ -25,7 +25,7 @@ const Sidebar = ({
     { id: 'users', icon: FaUsers, label: 'Пользователи', permission: 'can_access_users' },
     { id: 'private_club', icon: FaGem, label: 'Закрытый клуб', permission: 'can_access_users' },
     { id: 'moderation', icon: FaShieldAlt, label: 'Модерация', permission: 'can_access_moderation' },
-    { id: 'chat', icon: FaComment, label: 'Чат', permission: 'can_access_chat' },
+    { id: 'chat', icon: FaComment, label: 'Поддержка', permission: 'can_access_chat' },
     { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
     { id: 'addition', icon: FaPlusSquare, label: 'Добавление', permission: 'can_access_objects' },
     { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },

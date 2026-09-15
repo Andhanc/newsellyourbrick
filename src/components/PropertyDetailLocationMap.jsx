@@ -251,6 +251,8 @@ export default function PropertyDetailLocationMap({
         allowFullscreen={allowFullscreen}
         mapStyle={mapStyle}
         markerColor={markerColor}
+        showMapTypeSwitcher
+        pageScrollInteraction
       />
       {interactive && coords ? (
         <button

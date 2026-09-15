@@ -20,6 +20,12 @@ test('manager chat is hosted globally (modal desktop / drawer mobile)', () => {
   assert.match(modal, /chat-widget--sheet-drawer chat-widget--manager-drawer/)
 })
 
+test('in-app support is available without a VIP subscription', () => {
+  assert.doesNotMatch(managerHost, /canAccess\('personalManager'\)/)
+  assert.doesNotMatch(managerHost, /subscriptionLockManagerToast/)
+  assert.doesNotMatch(managerHost, /useViewerVipAccess/)
+})
+
 test('AI chat header can clear conversation history', () => {
   assert.match(aiPanel, /clearChatHistory/)
   assert.match(aiPanel, /clearChat/)

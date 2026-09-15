@@ -21,6 +21,8 @@ test('VIP personal manager opens fixed WhatsApp number', () => {
 test('platform chat card does not reuse VIP WhatsApp action', () => {
   assert.match(page, /buyerCabinet_cardChatTitle[\s\S]{0,180}action: 'platformChat'/)
   assert.match(page, /action: 'vipPersonalManager'/)
+  assert.match(page, /openVipPersonalManagerWhatsApp/)
+  assert.match(page, /openPlatformManagerChat/)
 })
 
 test('VIP WhatsApp community modal uses shared community URL and opens after purchase', () => {

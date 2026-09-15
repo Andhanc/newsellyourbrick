@@ -1145,8 +1145,8 @@ function MainPage() {
     },
     {
       path: '/chat?manager=1',
-      keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'],
-      title: 'Чат',
+      keywords: ['поддержка', 'support', 'чат', 'chat', 'сообщения', 'messages', 'переписка', 'техподдержка'],
+      title: 'Поддержка',
       requiresAuth: true,
       allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },

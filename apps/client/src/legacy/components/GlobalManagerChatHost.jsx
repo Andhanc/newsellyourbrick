@@ -1,37 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import ManagerChatModal, { useManagerChatUserId } from './ManagerChatModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
-import { showNotification } from '../utils/toastHelper'
 
 /**
- * App-wide host for manager live-chat (Header «Чат», owner nav, deep links).
+ * App-wide host for in-app support (Header «Поддержка», owner nav, deep links).
+ * Available to every signed-in user. VIP chats/groups stay in WhatsApp.
  * Desktop → modal, mobile → buyer drawer (via ManagerChatModal).
  */
 export default function GlobalManagerChatHost() {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
   const { user, isLoaded } = useUser()
   const [open, setOpen] = useState(false)
   const chatUserId = useManagerChatUserId(user, isLoaded)
-  const { canAccess, resolved } = useViewerVipAccess()
 
   const openChat = useCallback(() => {
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
-    if (resolved && !canAccess('personalManager')) {
-      showNotification(t('subscriptionLockManagerToast'), 'info')
-      navigate({ pathname: '/subscriptions', hash: 'subscriptions-pricing-section' })
-      return
-    }
     setOpen(true)
-  }, [user, isLoaded, resolved, canAccess, navigate, t])
+  }, [user, isLoaded])
 
   const closeChat = useCallback(() => {
     setOpen(false)

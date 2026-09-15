@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import './LocationMap.css'
 import '../utils/yandexMapChrome.css'
 import { STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
-import { createYandexMap } from '../utils/yandexMapEngine'
+import { createYandexMap, YANDEX_MAP_TYPE_ROADMAP } from '../utils/yandexMapEngine'
 import { toYandexMapsLang } from '../utils/yandexMapsLang'
+import MapTypeSwitcherButton from './MapTypeSwitcherButton'
 
 function createPinElement(color) {
   const el = document.createElement('div')
@@ -26,6 +27,9 @@ const LocationMap = ({
   mapStyle: _mapStyle,
   markerColor = '#0099A9',
   maxZoom = null,
+  mapType = YANDEX_MAP_TYPE_ROADMAP,
+  showMapTypeSwitcher = false,
+  pageScrollInteraction = false,
 }) => {
   const containerRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -40,13 +44,20 @@ const LocationMap = ({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [mapFailed, setMapFailed] = useState(false)
   const [mapReady, setMapReady] = useState(false)
+  const [activeMapType, setActiveMapType] = useState(mapType)
   const { i18n } = useTranslation()
   const mapsLang = toYandexMapsLang(i18n.language)
+  const mapTypeRef = useRef(activeMapType)
 
   onMarkerDragEndRef.current = onMarkerDragEnd
   onMapReadyRef.current = onMapReady
   markerDraggableRef.current = markerDraggable
   markerColorRef.current = markerColor
+  mapTypeRef.current = activeMapType
+
+  useEffect(() => {
+    setActiveMapType(mapType)
+  }, [mapType])
 
   const resolvedMaxZoom = maxZoom ?? STREET_MAP_MAX_ZOOM
 
@@ -127,7 +138,9 @@ const LocationMap = ({
       zoom: Math.min(initialZoom, resolvedMaxZoom),
       minZoom: 2,
       maxZoom: resolvedMaxZoom,
+      type: mapTypeRef.current,
       lang: mapsLang,
+      pageScrollInteraction,
     })
       .then((map) => {
         if (cancelled) {
@@ -165,7 +178,7 @@ const LocationMap = ({
       lastCenterRef.current = null
       lastZoomAppliedRef.current = null
     }
-  }, [allowFullscreen, controlsLayout, resolvedMaxZoom, mapsLang])
+  }, [allowFullscreen, controlsLayout, resolvedMaxZoom, mapsLang, pageScrollInteraction])
 
   useEffect(() => {
     if (!allowFullscreen || typeof document === 'undefined') return undefined
@@ -196,6 +209,11 @@ const LocationMap = ({
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
     }
   }, [allowFullscreen])
+
+  useEffect(() => {
+    if (!mapReady) return
+    mapRef.current?.setPageScrollInteraction?.(pageScrollInteraction && !isFullscreen)
+  }, [pageScrollInteraction, isFullscreen, mapReady])
 
   const toggleFullscreen = () => {
     if (!allowFullscreen || typeof document === 'undefined') return
@@ -317,6 +335,11 @@ const LocationMap = ({
     mapRef.current?.zoomOut({ duration: 200 })
   }
 
+  const handleMapTypeChange = (nextType) => {
+    setActiveMapType(nextType)
+    mapRef.current?.setType?.(nextType)
+  }
+
   const useColumnControls = controlsLayout === 'column'
   const hideControls = controlsLayout === 'none'
   const useDefaultZoom = !hideControls && !useColumnControls
@@ -328,7 +351,7 @@ const LocationMap = ({
         isFullscreen ? ' location-map-container--fullscreen' : ''
       }${useColumnControls ? ' location-map-container--column-controls' : ''}${
         hideControls ? ' location-map-container--no-controls' : ''
-      }`}
+      }${pageScrollInteraction ? ' location-map-container--page-scroll' : ''}`}
     >
       {!hideControls && (useColumnControls ? (
         <div className="location-map-controls-column">
@@ -361,6 +384,14 @@ const LocationMap = ({
           >
             −
           </button>
+          {showMapTypeSwitcher ? (
+            <MapTypeSwitcherButton
+              mapType={activeMapType}
+              onChange={handleMapTypeChange}
+              className="location-map-controls-column__btn location-map-controls-column__btn--type"
+              iconSize={16}
+            />
+          ) : null}
         </div>
       ) : (
         allowFullscreen && (
@@ -380,6 +411,14 @@ const LocationMap = ({
           <button type="button" onClick={handleZoomIn} aria-label="Увеличить">+</button>
           <button type="button" onClick={handleZoomOut} aria-label="Уменьшить">−</button>
         </div>
+      ) : null}
+      {showMapTypeSwitcher && !useColumnControls && !hideControls ? (
+        <MapTypeSwitcherButton
+          mapType={activeMapType}
+          onChange={handleMapTypeChange}
+          className="location-map-type-btn"
+          iconSize={15}
+        />
       ) : null}
       <div ref={mapContainerRef} className="location-map" />
       {mapFailed ? (

@@ -37,7 +37,7 @@ const columns = [
   {
     title: 'Поддержка',
     links: [
-      { label: 'Чат с менеджером', to: '/chat?manager=1' },
+      { label: 'Написать в поддержку', to: '/chat?manager=1' },
       { label: 'Техподдержка 24/7', to: '/chat?manager=1' },
       { label: 'Стать продавцом', to: '/add-property' },
     ],

@@ -47,7 +47,7 @@ const SITE_NAV = [
   { path: '/deposit', label: 'Пополнить депозит' },
   { path: '/sections', label: 'Все сервисы' },
   { path: '/chat', label: 'Чат с помощником' },
-  { path: '/chat?manager=1', label: 'Чат с менеджером' },
+  { path: '/chat?manager=1', label: 'Поддержка' },
   { path: '/profile', label: 'Личный кабинет' },
   { path: '/profile?history=1', label: 'История операций' },
   { path: '/profile?bookings=1', label: 'Мои бронирования' },

@@ -1,4 +1,8 @@
-/** Персональный менеджер VIP-клуба (WhatsApp, Испания). */
+/**
+ * VIP chats and groups live in WhatsApp.
+ * In-app live chat (`openManagerChat`) is support for every signed-in user.
+ * Персональный менеджер VIP-клуба (WhatsApp, Испания).
+ */
 export const VIP_PERSONAL_MANAGER_WHATSAPP_DIGITS = '34631252060'
 export const VIP_PERSONAL_MANAGER_WHATSAPP_URL = `https://wa.me/${VIP_PERSONAL_MANAGER_WHATSAPP_DIGITS}`
 

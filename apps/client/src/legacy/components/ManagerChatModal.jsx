@@ -120,7 +120,7 @@ function ManagerChatPanel({
 }
 
 /**
- * Live-чат с менеджером: модалка на десктопе, drawer на мобилке.
+ * Поддержка (live-chat с админкой): модалка на десктопе, drawer на мобилке.
  */
 export default function ManagerChatModal({ open, onClose, chatUserId }) {
   const { t } = useTranslation()

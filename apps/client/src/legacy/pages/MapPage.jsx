@@ -15,7 +15,12 @@ import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
-import { createYandexMap, createYandexMarker, SimpleLngLatBounds } from '../utils/yandexMapEngine'
+import {
+  createYandexMap,
+  createYandexMarker,
+  SimpleLngLatBounds,
+  YANDEX_MAP_TYPE_SATELLITE,
+} from '../utils/yandexMapEngine'
 import '../utils/yandexMapChrome.css'
 import { toYandexMapsLang } from '../utils/yandexMapsLang'
 import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
@@ -40,6 +45,7 @@ import {
   countActiveMapFilters,
 } from '../utils/mapPageFilters'
 import { isSoldPropertyListing } from '../utils/auctionReminderBounds'
+import MapTypeSwitcherButton from '../components/MapTypeSwitcherButton'
 
 const MAP_LIST_SKELETON_COUNT = 6
 const MAP_PIN_MINI_ZOOM = 15
@@ -404,6 +410,9 @@ const MapPage = () => {
   const markersRef = useRef([])
   const [mapContainerReady, setMapContainerReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
+  const [mapType, setMapType] = useState(YANDEX_MAP_TYPE_SATELLITE)
+  const mapTypeRef = useRef(mapType)
+  mapTypeRef.current = mapType
   const geocodeInFlightRef = useRef(false)
   const [mapExpanded, setMapExpanded] = useState(false)
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
@@ -679,7 +688,7 @@ const MapPage = () => {
         zoom: 11,
         minZoom: 2,
         maxZoom: SATELLITE_MAP_MAX_ZOOM,
-        type: 'yandex#satellite',
+        type: mapTypeRef.current,
         lang: mapsLang,
       })
         .then((map) => {
@@ -1167,6 +1176,15 @@ const MapPage = () => {
                 −
               </button>
             </div>
+            <MapTypeSwitcherButton
+              mapType={mapType}
+              onChange={(nextType) => {
+                setMapType(nextType)
+                mapInstanceRef.current?.setType?.(nextType)
+              }}
+              className="map-type-btn"
+              iconSize={18}
+            />
             {mapOpenHintProperty && (
               <div
                 className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
