@@ -58,6 +58,61 @@ final result: passed
 
 ---
 
+# Design QA — full-width map selection panel refinement (2026-09-15)
+
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-6cd68cf7-546b-4e79-9963-b7f97af1b2ff.png`
+- Source pixels: `396 × 146` at source density.
+- Browser-rendered implementation screenshot: `/tmp/newsellyourbrick-map-popup-final.jpg`
+- Implementation pixels and CSS viewport: `571 × 837`, DPR `1`.
+- Same-input focused comparison: `/tmp/newsellyourbrick-map-popup-comparison.jpg`, `1158 × 196`; source normalized to `170px` height and implementation cropped to the top `180px` without density scaling.
+- State: `/map`, Russian locale, selected object “я”, top panel open; Street View opened and closed during interaction verification.
+
+**Full-view comparison evidence**
+
+- The selected-object panel begins at viewport coordinate `top: 0`, spans the full map width, and ends with a soft rounded lower edge and shadow.
+- Its primary “Открыть объект” action reproduces the reference language: Tiffany gradient, moving diagonal sheen, white type, bright outer contour, pill silhouette, and a translucent icon tile.
+- The secondary “Погулять по улицам” action intentionally uses the user-requested white surface while retaining the same pill proportions, Tiffany outline, icon tile, typography, and elevation.
+- Map controls move below the panel while it is open, so the full-width placement does not cover navigation or zoom controls.
+
+**Focused region comparison evidence**
+
+- The combined comparison shows the supplied button reference and the rendered top panel in one image. The primary action matches the reference's rounded geometry, bright Tiffany range, white foreground, highlight, and inset icon treatment. The white secondary action is an intentional product hierarchy choice requested after the initial pass.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: Montserrat is retained; both action labels use a compact `750` weight and remain legible in one line at the inspected width.
+- Spacing and layout rhythm: the panel is edge-to-edge at the top, uses a `72px` thumbnail, a `44px` close target, balanced `14px` internal spacing, and two equal action columns.
+- Colors and visual tokens: primary action reuses the shared `btn-tiffany-shine` tokens (`#1f9aa6` through `#4ecdd6`); the secondary uses white with `#4ecdd6` border and Tiffany foreground.
+- Image quality and asset fidelity: the real responsive property thumbnail remains sharp and cropped with the existing shared fallback; no synthetic replacement asset was introduced.
+- Copy and content: property label, title, price, “Погулять по улицам”, and “Открыть объект” remain localized application text.
+
+**Findings**
+
+- No actionable P0, P1, or P2 differences remain in the requested scope.
+
+**Interaction and console evidence**
+
+- “Погулять по улицам” opens the shared interactive Google Street View panorama and Escape returns to the selected-object panel.
+- The close control and “Открыть объект” remain available with touch-safe hit areas.
+- Browser console review found only existing environment warnings and the known missing local `VITE_YANDEX_MAPS_API_KEY`; no new error was introduced by this refinement.
+
+**Comparison history**
+
+- Initial refinement used `12px` side insets and made both actions Tiffany-filled.
+- User feedback requested an edge-to-edge top panel and one white action. The panel was moved to `top/left/right: 0`, the Street View action became the white Tiffany-outlined secondary, controls were moved below the open panel, and the revised browser capture was compared again.
+
+**Implementation checklist**
+
+- [x] Fix the panel to the very top at full map width.
+- [x] Keep Street View white with Tiffany outline.
+- [x] Keep the object action in the shared Tiffany shine style.
+- [x] Preserve panorama and property navigation behavior.
+- [x] Preserve web/legacy parity and responsive touch targets.
+
+final result: passed
+
+---
+
 # Design QA — Buy Now tab in mobile share detail (2026-09-13)
 
 Source visual truth: the existing mobile auction Buy Now subpage at `http://localhost:5173/auction/property/villa-ya-324` (browser capture reviewed in this run). Implementation: `http://localhost:5173/co-investment/house-test-327`, Buy Now tab selected (Codex in-app browser capture reviewed inline; the browser provider did not expose a persistent screenshot path). Viewport: 390 × 844 CSS px at DPR 1. Source and implementation were rendered at the same CSS target; the earlier source capture included a desktop shell, so fidelity judgments were limited to the shared Buy Now content pattern rather than outer property-header proportions. State: Russian locale, public share listing with Buy Now enabled and zero sold shares.

@@ -52,8 +52,6 @@ const MAP_PIN_THUMB_FALLBACK = PROPERTY_CARD_IMAGE_FALLBACK
 const MAP_SHEET_HALF_MAX_PX = 500
 const MAP_SHEET_HALF_VH = 0.54
 const MAP_SHEET_PEEK_PX = 176
-const MAP_HINT_PIN_GAP_PX = 36
-const MAP_HINT_EDGE_PAD_PX = 10
 
 function getMapSheetHeightPx(sheetState, mapExpanded) {
   if (mapExpanded || typeof window === 'undefined') return 0
@@ -410,7 +408,6 @@ const MapPage = () => {
   const [mapExpanded, setMapExpanded] = useState(false)
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
-  const [mapOpenHintAnchor, setMapOpenHintAnchor] = useState(null)
   const [streetViewProperty, setStreetViewProperty] = useState(null)
   const [mapFabPhase, setMapFabPhase] = useState('hidden') // hidden | visible | leaving
   const [isMobile, setIsMobile] = useState(
@@ -920,60 +917,6 @@ const MapPage = () => {
     await toggleFavoriteGlobal(property, mockCat)
   }
 
-  const syncMapOpenHintAnchor = useCallback(() => {
-    const map = mapInstanceRef.current
-    const property = mapOpenHintProperty
-    if (!map || !property) {
-      setMapOpenHintAnchor(null)
-      return
-    }
-    const coords = getPropertyCoordinates(property)
-    if (!coords) {
-      setMapOpenHintAnchor(null)
-      return
-    }
-    const point = map.project([coords[1], coords[0]])
-    const wrap = mapWrapRef.current
-    const wrapW = wrap?.clientWidth || window.innerWidth
-    const wrapH = wrap?.clientHeight || window.innerHeight
-    const sheetH = isMobile ? getMapSheetHeightPx(resultsSheetStateRef.current, mapExpanded) : 0
-    const visibleBottom = Math.max(120, wrapH - sheetH - MAP_HINT_EDGE_PAD_PX)
-    const hintHalfWidth = Math.min(240, Math.max(0, (wrapW - 24) / 2))
-    const x = Math.min(
-      Math.max(point.x, MAP_HINT_EDGE_PAD_PX + hintHalfWidth),
-      wrapW - MAP_HINT_EDGE_PAD_PX - hintHalfWidth,
-    )
-    const y = Math.min(
-      Math.max(point.y - MAP_HINT_PIN_GAP_PX, MAP_HINT_EDGE_PAD_PX + 64),
-      visibleBottom,
-    )
-    setMapOpenHintAnchor({ x, y })
-  }, [mapOpenHintProperty, isMobile, mapExpanded])
-
-  useEffect(() => {
-    if (!mapOpenHintProperty || !mapReady) {
-      setMapOpenHintAnchor(null)
-      return undefined
-    }
-    const map = mapInstanceRef.current
-    if (!map) return undefined
-
-    const sync = () => syncMapOpenHintAnchor()
-    sync()
-    const t1 = window.setTimeout(sync, 80)
-    const t2 = window.setTimeout(sync, 380)
-    const t3 = window.setTimeout(sync, 760)
-    map.on('moveend', sync)
-    map.on('zoomend', sync)
-    return () => {
-      window.clearTimeout(t1)
-      window.clearTimeout(t2)
-      window.clearTimeout(t3)
-      map.off('moveend', sync)
-      map.off('zoomend', sync)
-    }
-  }, [mapOpenHintProperty, mapReady, syncMapOpenHintAnchor, resultsSheetState, mapExpanded])
-
   const focusOnProperty = useCallback((property) => {
     const coords = getPropertyCoordinates(property)
     if (!coords) {
@@ -1172,7 +1115,11 @@ const MapPage = () => {
 
           <div
             ref={mapWrapRef}
-            className={`map-page-map-wrap ${mapExpanded ? 'map-page-map-wrap--fullscreen' : ''}`}
+            className={[
+              'map-page-map-wrap',
+              mapExpanded ? 'map-page-map-wrap--fullscreen' : '',
+              mapOpenHintProperty ? 'map-page-map-wrap--hint-open' : '',
+            ].filter(Boolean).join(' ')}
           >
             {mapContainerReady && (
               <div
@@ -1222,21 +1169,9 @@ const MapPage = () => {
             </div>
             {mapOpenHintProperty && (
               <div
-                className={[
-                  'map-open-hint',
-                  mapExpanded ? 'map-open-hint--fullscreen' : '',
-                  mapOpenHintAnchor ? 'map-open-hint--anchored' : 'map-open-hint--pending',
-                ].filter(Boolean).join(' ')}
+                className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
                 role="dialog"
                 aria-labelledby="map-open-hint-title"
-                style={
-                  mapOpenHintAnchor
-                    ? {
-                        left: `${mapOpenHintAnchor.x}px`,
-                        top: `${mapOpenHintAnchor.y}px`,
-                      }
-                    : undefined
-                }
               >
                 <div className="map-open-hint__thumb">
                   <img
@@ -1282,12 +1217,14 @@ const MapPage = () => {
                     aria-haspopup="dialog"
                     aria-expanded={Boolean(streetViewProperty)}
                   >
-                    <MdDirectionsWalk size={21} aria-hidden />
+                    <span className="map-open-hint__action-icon" aria-hidden>
+                      <MdDirectionsWalk size={21} />
+                    </span>
                     <span>{t('mapPage_streetView')}</span>
                   </button>
                   <button
                     type="button"
-                    className="map-open-hint__action map-open-hint__action--property"
+                    className="map-open-hint__action map-open-hint__action--property btn-tiffany-shine"
                     onClick={() => {
                       if (!ensureCanOpenProperty(user && userLoaded)) return
                       navigate(getPropertyDetailPath(mapOpenHintProperty.id, {
@@ -1295,8 +1232,10 @@ const MapPage = () => {
                       }), { state: { property: mapOpenHintProperty } })
                     }}
                   >
+                    <span className="map-open-hint__action-icon" aria-hidden>
+                      <FiArrowUpRight size={18} />
+                    </span>
                     <span>{t('mapPage_openProperty')}</span>
-                    <FiArrowUpRight size={18} aria-hidden />
                   </button>
                 </div>
               </div>

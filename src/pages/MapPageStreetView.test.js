@@ -20,8 +20,13 @@ test('map property hint reuses the property Street View drawer and keeps web/leg
   assert.match(webPage, /<PropertyStreetViewDrawer[\s\S]*isOpen=\{Boolean\(streetViewProperty\)\}[\s\S]*center=\{getPropertyCoordinates\(streetViewProperty\)\}/)
   assert.match(webPage, /<MdDirectionsWalk size=\{21\}/)
   assert.match(webPage, /t\('mapPage_streetView'\)/)
+  assert.doesNotMatch(webPage, /mapOpenHintAnchor/)
+  assert.match(webPage, /map-open-hint__action map-open-hint__action--street-view"/)
+  assert.match(webPage, /map-open-hint__action map-open-hint__action--property btn-tiffany-shine/)
   assert.match(webCss, /\.map-open-hint__actions\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/)
-  assert.match(webCss, /\.map-open-hint__action--street-view\s*\{[\s\S]*background:\s*#edf7f6/)
+  assert.match(webCss, /\.map-open-hint\s*\{[\s\S]*top:\s*0;[\s\S]*left:\s*0;[\s\S]*right:\s*0;[\s\S]*width:\s*auto/)
+  assert.match(webCss, /\.map-open-hint__action\.btn-tiffany-shine\s*\{[\s\S]*border:\s*2px solid rgba\(174, 244, 249, 0\.62\)/)
+  assert.match(webCss, /\.map-open-hint__action--street-view\s*\{[\s\S]*border:\s*2px solid #4ecdd6;[\s\S]*background:\s*rgba\(255, 255, 255, 0\.96\)/)
 })
 test('map Street View action is translated in every supported locale and mirror', async () => {
   for (const locale of locales) {
