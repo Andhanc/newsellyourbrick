@@ -313,3 +313,64 @@ Viewport: 396×837 CSS px at DPR 1. State: Russian locale, authenticated header,
 - Browser measurements confirm a 396×837 viewport and zero horizontal page overflow.
 
 final result: passed
+
+---
+
+# Design QA — map property hint and Street View action (2026-09-15)
+
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-a85f85ff-6764-4f37-b16c-91fc9da2fdd6.png`
+- Source pixels: `600 × 280`
+- Implementation screenshot: Codex in-app browser inline capture, `Map popup QA`, captured at `600 × 280`; the temporary isolated QA entry was removed after verification.
+- Responsive evidence: Codex in-app browser inline capture at `390 × 320`; measured popup frame `366 × 158.84 CSS px` at `x: 12`, `y: 66`.
+- CSS viewport: `600 × 280` for the direct comparison and `390 × 320` for the mobile check.
+- Device scale factor: `1`; source and implementation were compared at equal pixel density without resampling.
+- State: selected-property hint open; Street View action also tested in its open/loading state and closed with Escape.
+
+**Full-view comparison evidence**
+
+- The source was treated as the existing-state baseline because the requested outcome was a visual redesign, not a literal clone.
+- The revised hint preserves the white floating-card composition, property thumbnail, title, price, and primary navigation from the baseline.
+- Intentional improvements are a clearer three-column information row, a larger thumbnail, a dedicated close control, stronger title/price hierarchy, softer Tiffany framing, and a balanced two-action row.
+- At `600 × 280`, both actions remain on one row and the full popup remains inside the viewport. At `390 × 320`, the long title stays within two lines and both actions remain touch-safe without horizontal overflow.
+
+**Focused region comparison evidence**
+
+- A separate crop was not needed: at the matched `600 × 280` viewport, the popup itself occupies the principal visible region and its typography, icons, image crop, button labels, spacing, radii, and shadows are directly readable.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: Montserrat hierarchy is consistent with the product; label, title, and price use distinct weights and line heights; long titles clamp to two lines; action copy remains readable at the mobile breakpoint.
+- Spacing and layout rhythm: `12–14px` outer insets, `64–72px` thumbnail, `10–14px` internal gaps, `22–24px` card radius, and `48px` actions form a consistent mobile rhythm.
+- Colors and tokens: white translucent surface, deep Tiffany primary action, pale Tiffany Street View action, dark ink title, and teal price align with the existing buyer experience and retain sufficient contrast.
+- Image quality and asset fidelity: the property thumbnail remains a real listing image, uses responsive sources sized for the larger slot, keeps `object-fit: cover`, and retains the shared fallback behavior.
+- Copy and content: property title and formatted price are unchanged; the new Russian action is “Погулять по улицам” and all seven supported locales have synchronized translations.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual differences remain.
+
+**Interaction evidence**
+
+- “Погулять по улицам” opens the shared `PropertyStreetViewDrawer` in a fullscreen dialog.
+- The loading state is announced, the close control receives focus, Escape closes the dialog, and focus returns to the trigger.
+- “Открыть объект” retains the existing access gate and property-detail navigation.
+- Console review found only the known local-environment error for a missing `VITE_YANDEX_MAPS_API_KEY` on the real map route; the isolated popup and Street View interaction introduced no new console errors.
+
+**Comparison history**
+
+- Initial browser capture used the default wide viewport and was rejected because clipping did not match the `600 × 280` source.
+- The browser viewport was normalized to `600 × 280`, then checked again at `390 × 320`. No P0/P1/P2 fixes were required after the normalized comparison.
+
+**Implementation checklist**
+
+- [x] Preserve property-detail navigation and access gating.
+- [x] Add pedestrian Street View action using the shared panorama drawer.
+- [x] Keep controls at least `44px` and provide visible focus states.
+- [x] Synchronize web and legacy implementations.
+- [x] Add and verify all supported locale strings.
+
+**Follow-up polish**
+
+- None required for this scope.
+
+final result: passed

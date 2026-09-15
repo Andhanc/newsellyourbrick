@@ -4705,6 +4705,7 @@
   "mapPage_dismissHintAria": "Ocultar sugerencia",
   "mapPage_hintLabel": "Objeto en el mapa",
   "mapPage_openProperty": "Abrir objeto",
+  "mapPage_streetView": "Pasear por las calles",
   "mapPage_showCount": "Mostrar · {{count}}",
   "mapPage_filtersSheetTitle": "Ajuste la selección",
   "mapPage_filtersSheetDesc": "Mostraremos solo objetos reales que coincidan con los parámetros elegidos.",

@@ -2,9 +2,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { showNotification } from '../utils/toastHelper'
 import { useNavigate } from 'react-router-dom'
-import { FiMapPin, FiX, FiMap, FiSearch, FiMinimize2 } from 'react-icons/fi'
+import { FiArrowUpRight, FiMapPin, FiX, FiMap, FiSearch, FiMinimize2 } from 'react-icons/fi'
+import { MdDirectionsWalk } from 'react-icons/md'
 import { MapPinned } from 'lucide-react'
 import PageBackButton from '../components/PageBackButton'
+import PropertyStreetViewDrawer from '../components/PropertyStreetViewDrawer'
 import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
 import MapPageFilters from '../components/MapPageFilters'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
@@ -409,6 +411,7 @@ const MapPage = () => {
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
   const [mapOpenHintAnchor, setMapOpenHintAnchor] = useState(null)
+  const [streetViewProperty, setStreetViewProperty] = useState(null)
   const [mapFabPhase, setMapFabPhase] = useState('hidden') // hidden | visible | leaving
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= 768,
@@ -935,9 +938,10 @@ const MapPage = () => {
     const wrapH = wrap?.clientHeight || window.innerHeight
     const sheetH = isMobile ? getMapSheetHeightPx(resultsSheetStateRef.current, mapExpanded) : 0
     const visibleBottom = Math.max(120, wrapH - sheetH - MAP_HINT_EDGE_PAD_PX)
+    const hintHalfWidth = Math.min(240, Math.max(0, (wrapW - 24) / 2))
     const x = Math.min(
-      Math.max(point.x, MAP_HINT_EDGE_PAD_PX + 110),
-      wrapW - MAP_HINT_EDGE_PAD_PX - 110,
+      Math.max(point.x, MAP_HINT_EDGE_PAD_PX + hintHalfWidth),
+      wrapW - MAP_HINT_EDGE_PAD_PX - hintHalfWidth,
     )
     const y = Math.min(
       Math.max(point.y - MAP_HINT_PIN_GAP_PX, MAP_HINT_EDGE_PAD_PX + 64),
@@ -1223,7 +1227,8 @@ const MapPage = () => {
                   mapExpanded ? 'map-open-hint--fullscreen' : '',
                   mapOpenHintAnchor ? 'map-open-hint--anchored' : 'map-open-hint--pending',
                 ].filter(Boolean).join(' ')}
-                role="status"
+                role="dialog"
+                aria-labelledby="map-open-hint-title"
                 style={
                   mapOpenHintAnchor
                     ? {
@@ -1233,46 +1238,67 @@ const MapPage = () => {
                     : undefined
                 }
               >
-                <div className="map-open-hint__row">
-                  <div className="map-open-hint__thumb">
-                    <img
-                      {...buildResponsiveImageProps(
-                        (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
-                          '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg',
-                        {
-                          widths: [68, 96, 136],
-                          sizes: '34px',
-                          quality: 70,
-                          fit: 'crop',
-                        },
-                      )}
-                      alt=""
-                      onError={applyPropertyImageFallback}
-                    />
-                  </div>
-                  <div className="map-open-hint__main">
-                    <p className="map-open-hint__label">{t('mapPage_hintLabel')}</p>
-                    <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
-                    <p className="map-open-hint__price">
-                      {formatPrice(
-                        mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
-                        mapOpenHintProperty.currency,
-                      )}
-                    </p>
-                  </div>
+                <div className="map-open-hint__thumb">
+                  <img
+                    {...buildResponsiveImageProps(
+                      (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
+                        '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg',
+                      {
+                        widths: [128, 192, 256],
+                        sizes: '(max-width: 520px) 64px, 72px',
+                        quality: 76,
+                        fit: 'crop',
+                      },
+                    )}
+                    alt=""
+                    onError={applyPropertyImageFallback}
+                  />
+                </div>
+                <div className="map-open-hint__main">
+                  <p className="map-open-hint__label">{t('mapPage_hintLabel')}</p>
+                  <p id="map-open-hint-title" className="map-open-hint__title">
+                    {mapOpenHintProperty.title}
+                  </p>
+                  <p className="map-open-hint__price">
+                    {formatPrice(
+                      mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
+                      mapOpenHintProperty.currency,
+                    )}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  className="map-open-hint__cta"
-                  onClick={() => {
-                    if (!ensureCanOpenProperty(user && userLoaded)) return
-                    navigate(getPropertyDetailPath(mapOpenHintProperty.id, {
-                      property: mapOpenHintProperty,
-                    }), { state: { property: mapOpenHintProperty } })
-                  }}
+                  className="map-open-hint__dismiss"
+                  onClick={() => setMapOpenHintProperty(null)}
+                  aria-label={t('mapPage_dismissHintAria')}
                 >
-                  {t('mapPage_openProperty')}
+                  <FiX size={18} aria-hidden />
                 </button>
+                <div className="map-open-hint__actions">
+                  <button
+                    type="button"
+                    className="map-open-hint__action map-open-hint__action--street-view"
+                    onClick={() => setStreetViewProperty(mapOpenHintProperty)}
+                    aria-haspopup="dialog"
+                    aria-expanded={Boolean(streetViewProperty)}
+                  >
+                    <MdDirectionsWalk size={21} aria-hidden />
+                    <span>{t('mapPage_streetView')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="map-open-hint__action map-open-hint__action--property"
+                    onClick={() => {
+                      if (!ensureCanOpenProperty(user && userLoaded)) return
+                      navigate(getPropertyDetailPath(mapOpenHintProperty.id, {
+                        property: mapOpenHintProperty,
+                      }), { state: { property: mapOpenHintProperty } })
+                    }}
+                  >
+                    <span>{t('mapPage_openProperty')}</span>
+                    <FiArrowUpRight size={18} aria-hidden />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1327,6 +1353,12 @@ const MapPage = () => {
           />
         </BuyerSheetShell>
       ) : null}
+
+      <PropertyStreetViewDrawer
+        isOpen={Boolean(streetViewProperty)}
+        onClose={() => setStreetViewProperty(null)}
+        center={getPropertyCoordinates(streetViewProperty)}
+      />
 
       <button
         type="button"

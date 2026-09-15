@@ -4706,6 +4706,7 @@
   "mapPage_dismissHintAria": "Hinweis schließen",
   "mapPage_hintLabel": "Objekt auf der Karte",
   "mapPage_openProperty": "Objekt öffnen",
+  "mapPage_streetView": "Straßen erkunden",
   "mapPage_showCount": "Zeigen · {{count}}",
   "mapPage_filtersSheetTitle": "Auswahl anpassen",
   "mapPage_filtersSheetDesc": "Wir zeigen nur echte Objekte, die zu Ihren gewählten Parametern passen.",

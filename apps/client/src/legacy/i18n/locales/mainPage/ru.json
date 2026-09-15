@@ -5293,6 +5293,7 @@
   "mapPage_dismissHintAria": "Скрыть подсказку",
   "mapPage_hintLabel": "Объект на карте",
   "mapPage_openProperty": "Открыть объект",
+  "mapPage_streetView": "Погулять по улицам",
   "mapPage_showCount": "Показать · {{count}}",
   "mapPage_filtersSheetTitle": "Настройте подборку",
   "mapPage_filtersSheetDesc": "Покажем только реальные объекты, которые подходят выбранным параметрам.",

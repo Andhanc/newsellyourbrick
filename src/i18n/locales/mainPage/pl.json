@@ -4790,6 +4790,7 @@
   "mapPage_dismissHintAria": "Dismiss hint",
   "mapPage_hintLabel": "Property on map",
   "mapPage_openProperty": "Open property",
+  "mapPage_streetView": "Przejdź się ulicami",
   "mapPage_showCount": "Show · {{count}}",
   "mapPage_filtersSheetTitle": "Refine your selection",
   "mapPage_filtersSheetDesc": "We’ll show only real listings that match your chosen filters.",

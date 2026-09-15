@@ -4705,6 +4705,7 @@
   "mapPage_dismissHintAria": "Dölj tips",
   "mapPage_hintLabel": "Objekt på kartan",
   "mapPage_openProperty": "Öppna objekt",
+  "mapPage_streetView": "Promenera på gatorna",
   "mapPage_showCount": "Visa · {{count}}",
   "mapPage_filtersSheetTitle": "Anpassa urvalet",
   "mapPage_filtersSheetDesc": "Vi visar bara verkliga objekt som matchar valda parametrar.",

@@ -4705,6 +4705,7 @@
   "mapPage_dismissHintAria": "Masquer l’indication",
   "mapPage_hintLabel": "Objet sur la carte",
   "mapPage_openProperty": "Ouvrir l’objet",
+  "mapPage_streetView": "Se promener dans les rues",
   "mapPage_showCount": "Afficher · {{count}}",
   "mapPage_filtersSheetTitle": "Affinez la sélection",
   "mapPage_filtersSheetDesc": "Nous n’afficherons que de vrais objets correspondant aux paramètres choisis.",
