@@ -78,6 +78,7 @@ import PropertyDetailTestDrivePromo, {
   PROPERTY_TEST_DRIVE_PROMO_IMAGE,
 } from '../components/PropertyDetailTestDrivePromo'
 import PropertyDetailBuyNowPromo from '../components/PropertyDetailBuyNowPromo'
+import { publicAsset } from '../utils/publicAsset'
 import PageBackButton from '../components/PageBackButton'
 import PropertyGeoLinks from '../components/PropertyGeoLinks'
 import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
@@ -2322,6 +2323,11 @@ function PropertyDetailClassic({
     showAuctionBuyNowTab &&
     auctionBuyNowPrice > 0 &&
     auctionEffectiveCurrentBid < auctionBuyNowPrice
+  const buyNowPromoPrice = showShareBuyNowTab
+    ? Number(shareListingConfig?.fullPrice) || 0
+    : auctionBuyNowPrice
+  const buyNowPromoPriceLabel =
+    buyNowPromoPrice > 0 ? fmtBidPrice(buyNowPromoPrice) : ''
 
   useEffect(() => {
     if (auctionMobileTab !== 'buy_now') return
@@ -4778,14 +4784,15 @@ function PropertyDetailClassic({
             <p className="property-detail-mobile-description__text">{descriptionText}</p>
           </section>
         ) : null}
-        {renderPropertyMainDetailsBlock({ layout: 'mobile-about' })}
-        {renderPropertyAdditionalDetailsBlock({ layout: 'mobile-about' })}
         {showMobileBuyNowTab ? (
           <PropertyDetailBuyNowPromo
             className="property-detail-buy-now-promo--mobile-about"
+            priceLabel={buyNowPromoPriceLabel}
             onOpen={() => setAuctionMobileTab('buy_now')}
           />
         ) : null}
+        {renderPropertyMainDetailsBlock({ layout: 'mobile-about' })}
+        {renderPropertyAdditionalDetailsBlock({ layout: 'mobile-about' })}
         {renderPropertyAmenitiesBlock({ layout: 'mobile-about' })}
         <PropertyDetailYieldPromo onClick={openInvestorPanelForProperty} />
         {renderMobileAboutAdditionalAmenitiesBlock()}
@@ -7088,17 +7095,18 @@ function PropertyDetailClassic({
           </section>
         ) : null}
 
+        {showMobileBuyNowTab ? (
+          <PropertyDetailBuyNowPromo
+            className="property-detail-buy-now-promo--desktop"
+            priceLabel={buyNowPromoPriceLabel}
+            onOpen={showShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
+          />
+        ) : null}
+
         {pageStats.length ? (
           <section className="pdx-stats-section" aria-label={t('propertyDetail_statsAria')}>
             <div className="pdx-page__stats">{pageStats}</div>
           </section>
-        ) : null}
-
-        {showMobileBuyNowTab ? (
-          <PropertyDetailBuyNowPromo
-            className="property-detail-buy-now-promo--desktop"
-            onOpen={showShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
-          />
         ) : null}
 
         {additionalAmenitiesText ? (
@@ -7730,7 +7738,17 @@ function PropertyDetailClassic({
                         </span>
                         {isAuctionProperty && auctionEndTime && !auctionEndedForSidebar && (
                           <span className="property-detail-mobile-badge property-detail-mobile-badge--live">
-                            {t('propertyDetailAuctionLive') || 'Live auction'}
+                            <img
+                              className="property-detail-mobile-badge__art"
+                              src={publicAsset('images/property-detail/auction-live-badge-3d.png')}
+                              alt=""
+                              width="12"
+                              height="12"
+                              decoding="async"
+                            />
+                            <span className="property-detail-mobile-badge__label">
+                              {t('propertyDetailAuctionLive') || 'Live auction'}
+                            </span>
                           </span>
                         )}
                       </>

@@ -44,6 +44,8 @@ test('map page stays satellite by default and offers a type switcher', async () 
   assert.equal(legacyBtn, webBtn)
   assert.match(webBtn, /mapTypeShowMap/)
   assert.match(webBtn, /mapTypeShowSatellite/)
+  assert.match(webBtn, /onOverlayOpen/)
+  assert.match(webBtn, /opensOverlay/)
 })
 
 test('property map shows the switcher, add-property keeps the roadmap default without it', async () => {
@@ -60,6 +62,8 @@ test('property map shows the switcher, add-property keeps the roadmap default wi
   assert.match(locationMap, /mapType = YANDEX_MAP_TYPE_ROADMAP/)
   assert.match(locationMap, /showMapTypeSwitcher = false/)
   assert.match(propertyMap, /showMapTypeSwitcher/)
+  assert.match(propertyMap, /onSatelliteOpen/)
+  assert.match(propertyMap, /mode="satellite"/)
   assert.match(locationMap, /pageScrollInteraction = false/)
   assert.match(locationMap, /pageScrollInteraction && !isFullscreen/)
   assert.match(propertyMap, /pageScrollInteraction/)

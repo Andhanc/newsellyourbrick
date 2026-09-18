@@ -7,8 +7,15 @@ export const PROPERTY_BUY_NOW_PROMO_IMAGE = publicAsset(
   'images/property-detail/buy-now-action-3d.webp',
 )
 
-export default function PropertyDetailBuyNowPromo({ onOpen, className = '' }) {
+export default function PropertyDetailBuyNowPromo({
+  onOpen,
+  className = '',
+  priceLabel = '',
+}) {
   const { t } = useTranslation()
+  const ctaLabel = priceLabel
+    ? t('propertyDetailBuyNowPay', { price: priceLabel })
+    : t('buyNowSectionTitle')
 
   return (
     <section
@@ -28,7 +35,7 @@ export default function PropertyDetailBuyNowPromo({ onOpen, className = '' }) {
           className="property-detail-buy-now-promo__cta"
           onClick={onOpen}
         >
-          <span>{t('buyNowSectionTitle')}</span>
+          <span>{ctaLabel}</span>
           <FiArrowRight size={20} strokeWidth={2.4} aria-hidden />
         </button>
       </div>

@@ -37,6 +37,8 @@ const LocationMap = ({
   mapType = YANDEX_MAP_TYPE_ROADMAP,
   showMapTypeSwitcher = false,
   pageScrollInteraction = false,
+  satelliteOpen = false,
+  onSatelliteOpen,
 }) => {
   const containerRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -453,6 +455,8 @@ const LocationMap = ({
             <MapTypeSwitcherButton
               mapType={activeMapType}
               onChange={handleMapTypeChange}
+              overlayOpen={satelliteOpen}
+              onOverlayOpen={onSatelliteOpen}
               className="location-map-controls-column__btn location-map-controls-column__btn--type"
               iconSize={16}
             />
@@ -481,6 +485,8 @@ const LocationMap = ({
         <MapTypeSwitcherButton
           mapType={activeMapType}
           onChange={handleMapTypeChange}
+          overlayOpen={satelliteOpen}
+          onOverlayOpen={onSatelliteOpen}
           className="location-map-type-btn"
           iconSize={15}
         />

@@ -23,6 +23,8 @@ test('map property hint reuses the property Street View drawer and keeps web/leg
   assert.doesNotMatch(webPage, /mapOpenHintAnchor/)
   assert.match(webPage, /map-open-hint__action map-open-hint__action--street-view"/)
   assert.match(webPage, /map-open-hint__action map-open-hint__action--property btn-tiffany-shine/)
+  assert.match(webPage, /function getMapHintPriceAmount\(property\)[\s\S]*property\?\.currentBid[\s\S]*property\?\.price/)
+  assert.match(webPage, /getMapHintPriceAmount\(mapOpenHintProperty\)/)
   assert.match(webCss, /\.map-open-hint__actions\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/)
   assert.match(webCss, /\.map-open-hint\s*\{[\s\S]*top:\s*0;[\s\S]*left:\s*0;[\s\S]*right:\s*0;[\s\S]*width:\s*auto/)
   assert.doesNotMatch(webCss, /\.map-open-hint__action\.btn-tiffany-shine\s*\{[\s\S]*border:/)

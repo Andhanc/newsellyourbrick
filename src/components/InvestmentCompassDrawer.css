@@ -1,0 +1,208 @@
+.investment-compass-drawer .buyer-sheet__surface {
+  overflow: hidden auto;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(85, 214, 224, 0.18), transparent 38%),
+    linear-gradient(180deg, #f0fbfc 0%, #fff 52%);
+}
+
+.investment-compass-drawer .buyer-sheet__body {
+  padding-top: 7px;
+  padding-bottom: 18px;
+}
+
+.investment-compass-drawer__hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 196px;
+  max-width: 480px;
+  margin: 0 auto 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 25px;
+  background:
+    linear-gradient(145deg, rgba(16, 166, 178, 0.98), rgba(86, 214, 222, 0.94)),
+    #36c1cb;
+  box-shadow:
+    0 18px 42px rgba(28, 159, 169, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  isolation: isolate;
+}
+
+.investment-compass-drawer__glow {
+  position: absolute;
+  inset: -55% 15% 10%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.26);
+  filter: blur(26px);
+}
+
+.investment-compass-drawer__orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 168px;
+  height: 168px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.investment-compass-drawer__orbit--inner {
+  width: 122px;
+  height: 122px;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.investment-compass-drawer__icon {
+  position: relative;
+  z-index: 2;
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 18px rgba(5, 67, 72, 0.22));
+  animation: investment-compass-float 4.4s ease-in-out infinite;
+}
+
+.investment-compass-drawer__copy {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.investment-compass-drawer__eyebrow {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(62, 194, 204, 0.12);
+  color: #1ba3ad;
+  font: 750 10px/1 var(--buyer-font-body);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.investment-compass-drawer__copy h2 {
+  margin: 0;
+  color: #0a2528;
+  font: 800 clamp(21px, 5.5vw, 30px)/1.06 var(--buyer-font-display);
+  letter-spacing: -0.052em;
+}
+
+.investment-compass-drawer__copy p {
+  max-width: 440px;
+  margin: 12px 0 0;
+  color: #587073;
+  font: 520 14px/1.5 var(--buyer-font-body);
+}
+
+.investment-compass-drawer__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  color: #7a8d8f;
+  font: 650 11px/1.2 var(--buyer-font-body);
+}
+
+.investment-compass-drawer__meta i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #45c5cf;
+}
+
+.investment-compass-drawer__cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(108deg, #13a9b5 0%, #55d5de 55%, #2cb9c4 100%);
+  box-shadow: 0 13px 28px rgba(32, 175, 185, 0.23);
+  color: #fff;
+  cursor: pointer;
+  font: 800 17px/1 var(--buyer-font-display);
+}
+
+.investment-compass-drawer__cta::before {
+  position: absolute;
+  inset: 0 auto 0 -45%;
+  width: 36%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  content: '';
+  transform: skewX(-18deg);
+  animation: investment-compass-sheen 3.2s ease-in-out infinite;
+}
+
+.investment-compass-drawer__cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.investment-compass-drawer__cta-icon {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.investment-compass-drawer__cta-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.investment-compass-drawer__cta:active {
+  transform: scale(0.985);
+}
+
+.investment-compass-drawer__cta:focus-visible {
+  outline: 3px solid rgba(31, 177, 188, 0.3);
+  outline-offset: 3px;
+}
+
+@keyframes investment-compass-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
+@keyframes investment-compass-sheen {
+  0%, 38% { left: -45%; }
+  68%, 100% { left: 115%; }
+}
+
+@media (max-width: 359px) {
+  .investment-compass-drawer__copy h2 {
+    font-size: 19px;
+  }
+}
+
+@media (min-width: 768px) {
+  .investment-compass-drawer .buyer-sheet__surface {
+    max-width: 560px;
+  }
+
+  .investment-compass-drawer__hero {
+    height: 214px;
+  }
+
+  .investment-compass-drawer__icon {
+    width: 148px;
+    height: 148px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .investment-compass-drawer__icon,
+  .investment-compass-drawer__cta::before {
+    animation: none !important;
+  }
+}

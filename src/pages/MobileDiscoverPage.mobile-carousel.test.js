@@ -35,6 +35,26 @@ test('mobile home uses the restored swipe rail and generated card icons', () => 
   assert.match(css, /\.md-card \.md-card__cta[\s\S]*background-color: #ffffff !important/)
   assert.match(css, /\.md-card \.md-card__cta[\s\S]*color: #122226 !important/)
   assert.match(css, /\.md-card__save[\s\S]*border-radius: 13px/)
+  assert.match(jsx, /InvestmentCompassDrawer/)
+  assert.match(jsx, /className="md-cards-dots"[\s\S]*className="md-stage__compass"/)
+  assert.match(jsx, /className="md-stage__compass-art"/)
+  assert.match(jsx, /className="md-stage__compass-close"/)
+  assert.match(jsx, /compassBannerDismissed/)
+  assert.match(jsx, /COMPASS_BANNER_SRC/)
+  assert.match(css, /\.md-stage__compass[\s\S]*background: var\(--md-sky\)/)
+  assert.match(jsx, /shouldAutoOpenCompass/)
+})
+
+test('welcome photo keeps showcase shortcuts under the search field', () => {
+  assert.match(jsx, /className="md-welcome__shortcuts"/)
+  assert.match(jsx, /WELCOME_SHORTCUTS/)
+  assert.match(jsx, /mobile-showcase\/\$\{id\}\.webp/)
+  assert.match(jsx, /to=\{item\.path\}/)
+  assert.match(jsx, /mobileShowcase\.\$\{item\.id\}\.title/)
+  assert.match(css, /\.md-welcome__brand[\s\S]*top: 22%/)
+  assert.match(css, /\.md-welcome__actions[\s\S]*top: calc\(22% \+ 4\.9rem\)/)
+  assert.match(css, /\.md-welcome__shortcuts[\s\S]*grid-template-columns: repeat\(3/)
+  assert.match(css, /\.md-welcome__shortcut--deposit[\s\S]*color: #142b2b/)
 })
 
 test('desktop four-column layout is preserved', () => {

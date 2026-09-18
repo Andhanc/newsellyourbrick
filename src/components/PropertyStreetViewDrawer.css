@@ -56,9 +56,9 @@
   background: #ffffff;
 }
 
+.property-street-view-drawer__close:focus,
 .property-street-view-drawer__close:focus-visible {
-  outline: 3px solid #20bac4;
-  outline-offset: 3px;
+  outline: none;
 }
 
 .property-street-view-drawer__loading,

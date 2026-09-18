@@ -333,6 +333,105 @@
   color: var(--md-ink-soft);
 }
 
+.md-stage__compass {
+  position: relative;
+  width: min(100%, 430px);
+  min-height: 88px;
+  margin: 0.85rem auto 0;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 24px;
+  background: var(--md-sky);
+  box-shadow: 0 12px 28px var(--md-sky-shadow);
+  color: #fff;
+}
+
+.md-stage__compass::before {
+  position: absolute;
+  inset: -20% 40% auto -18%;
+  height: 90%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  filter: blur(18px);
+  content: '';
+  pointer-events: none;
+}
+
+.md-stage__compass-hit {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  align-items: center;
+  width: 100%;
+  min-height: 88px;
+  padding: 16px 40px 16px 18px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.md-stage__compass-copy {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.md-stage__compass-copy strong {
+  font-size: clamp(1.08rem, 4.4vw, 1.32rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+
+.md-stage__compass-copy span {
+  font-size: 0.86rem;
+  font-weight: 520;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.md-stage__compass-art {
+  position: absolute;
+  right: 10px;
+  bottom: -4%;
+  z-index: 1;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgba(12, 90, 100, 0.2));
+  pointer-events: none;
+}
+
+.md-stage__compass-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  cursor: pointer;
+}
+
+.md-stage__compass-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.md-stage__compass-hit:focus-visible,
+.md-stage__compass-close:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 2px;
+}
+
 .md-cards-wrap {
   position: relative;
   padding: 0 1rem 1.25rem;
@@ -712,7 +811,7 @@
 .md-welcome__brand {
   position: absolute;
   left: 50%;
-  top: 30%;
+  top: 22%;
   z-index: 2;
   transform: translateX(-50%);
   display: flex;
@@ -754,12 +853,12 @@
   position: absolute;
   left: 1.35rem;
   right: 1.35rem;
-  top: calc(30% + 5.25rem);
+  top: calc(22% + 4.9rem);
   bottom: auto;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .md-welcome__search {
@@ -836,6 +935,68 @@
 .md-welcome__search-go:focus-visible {
   outline: 2px solid var(--md-sky-deep);
   outline-offset: 2px;
+}
+
+.md-welcome__shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.md-welcome__shortcut {
+  position: relative;
+  display: block;
+  aspect-ratio: 0.92;
+  border-radius: 19px;
+  overflow: hidden;
+  background: #092f31;
+  color: #ffffff !important;
+  isolation: isolate;
+  text-decoration: none;
+  box-shadow: 0 12px 28px rgba(8, 28, 42, 0.24);
+}
+
+.md-welcome__shortcut > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.md-welcome__shortcut h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 12px 10px;
+  font-size: clamp(10px, 3.1vw, 15px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.45px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.md-welcome__shortcut--deposit {
+  color: #142b2b !important;
+}
+
+.md-welcome__shortcut--favorites h3 {
+  font-size: clamp(9px, 2.6vw, 13px);
+  letter-spacing: -0.5px;
+}
+
+.md-welcome__shortcut-arrow {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  font-size: 16px;
+}
+
+.md-welcome__shortcut:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
 }
 
 /* ——— Catalog: home showcase cards (same as main page) ——— */
@@ -1697,7 +1858,9 @@
 
 .md-catalog.invest-home-page .invest-showcase--auction .auction-card__pricing,
 .md-catalog.invest-home-page .invest-showcase--buy-now .auction-card__pricing {
-  display: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
 }
 
 .md-catalog.invest-home-page .invest-showcase--auction .auction-card__price-row--split,
@@ -2663,6 +2826,33 @@
     font-size: 1.05rem;
   }
 
+  .md-stage__compass {
+    width: min(100%, 1040px);
+    min-height: 104px;
+    margin: 1.15rem auto 0;
+    border-radius: 28px;
+  }
+
+  .md-stage__compass-hit {
+    min-height: 104px;
+    padding: 20px 48px 20px 28px;
+  }
+
+  .md-stage__compass-copy strong {
+    font-size: 1.45rem;
+  }
+
+  .md-stage__compass-copy span {
+    font-size: 1.02rem;
+  }
+
+  .md-stage__compass-art {
+    right: 22px;
+    bottom: -6%;
+    width: 124px;
+    height: 124px;
+  }
+
   .md-cards {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2726,7 +2916,7 @@
   }
 
   .md-welcome__brand {
-    top: 28%;
+    top: 20%;
     width: min(36rem, 70vw);
   }
 
@@ -2739,7 +2929,32 @@
     right: auto;
     width: min(40rem, 88%);
     transform: translateX(-50%);
-    top: calc(28% + 5.75rem);
+    top: calc(20% + 5.4rem);
+    gap: 1rem;
+  }
+
+  .md-welcome__shortcuts {
+    gap: 12px;
+  }
+
+  .md-welcome__shortcut {
+    aspect-ratio: 1.18;
+    border-radius: 22px;
+  }
+
+  .md-welcome__shortcut h3 {
+    padding: 16px 14px;
+    font-size: clamp(14px, 1.4vw, 18px);
+  }
+
+  .md-welcome__shortcut--favorites h3 {
+    font-size: clamp(12px, 1.2vw, 16px);
+  }
+
+  .md-welcome__shortcut-arrow {
+    right: 12px;
+    bottom: 12px;
+    font-size: 20px;
   }
 
   .md-welcome__search {

@@ -1,11 +1,12 @@
 import { getPropertySlugFromRecord } from './propertySlug'
 import {
+  COMPASS_PATH,
   CO_INVESTMENT_LEGACY_PATH,
   CO_INVESTMENT_PATH,
   TEST_DRIVE_PATH,
 } from './sectionPaths'
 
-export { CO_INVESTMENT_LEGACY_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH }
+export { COMPASS_PATH, CO_INVESTMENT_LEGACY_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH }
 
 const SHARE_LISTING_TYPES = new Set(['apartment', 'house', 'villa', 'commercial'])
 

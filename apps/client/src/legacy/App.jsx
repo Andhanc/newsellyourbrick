@@ -56,6 +56,7 @@ import { isAuctionRoute } from './utils/auctionFilterUrl'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const TestDriveLandingPage = lazyWithRetry(() => import('./pages/TestDriveLandingPage'))
+const InvestmentCompassPage = lazyWithRetry(() => import('./pages/InvestmentCompassPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
 const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheckInRoute'))
 const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyPage'))
@@ -174,7 +175,8 @@ function AppChromeFooter() {
     pathname === '/mobile-showcase' ||
     pathname === '/map' ||
     pathname.startsWith('/test-drive/survey/') ||
-    pathname.startsWith('/test-drive/feedback/')
+    pathname.startsWith('/test-drive/feedback/') ||
+    pathname === '/compass'
   ) {
     return null
   }
@@ -709,6 +711,14 @@ function App() {
                 element={
                   <LazyPage>
                     <TestDriveExitFeedbackPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/compass"
+                element={
+                  <LazyPage>
+                    <InvestmentCompassPage />
                   </LazyPage>
                 }
               />

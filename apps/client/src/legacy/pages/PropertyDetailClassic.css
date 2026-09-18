@@ -3736,9 +3736,105 @@
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge--live {
+    --auction-live-fill: var(
+      --syb-tiffany-btn-fill,
+      linear-gradient(118deg, #1f9aa6 0%, #2eb4bf 38%, #4ecdd6 62%, #2aa8b4 100%)
+    );
+    position: relative;
+    isolation: isolate;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
     margin-left: auto;
-    background: #fef3c7;
-    color: #b45309;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 6px 10px 6px 6px !important;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 8px !important;
+    background-color: var(--syb-tiffany-btn, #3bc0cb);
+    background-image: var(--auction-live-fill) !important;
+    box-shadow:
+      0 4px 10px var(--syb-tiffany-btn-shadow, rgba(59, 192, 203, 0.28)),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge--live::before {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      108deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(255, 255, 255, 0.18) 48%,
+      rgba(255, 255, 255, 0.58) 51%,
+      rgba(255, 255, 255, 0.16) 54%,
+      transparent 62%,
+      transparent 100%
+    );
+    background-size: 220% 100%;
+    background-position: 140% 0;
+    content: '';
+    pointer-events: none;
+    animation: property-detail-auction-live-sheen 3.4s ease-in-out infinite;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge--live::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge__art,
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge__label {
+    position: relative;
+    z-index: 2;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge__art {
+    flex: 0 0 12px !important;
+    display: block !important;
+    width: 12px !important;
+    height: 12px !important;
+    max-width: 12px !important;
+    max-height: 12px !important;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(8, 72, 80, 0.2));
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge__label {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge__cta {
+    display: none !important;
+  }
+
+  @keyframes property-detail-auction-live-sheen {
+    0%,
+    18% {
+      background-position: 140% 0;
+    }
+    58% {
+      background-position: -140% 0;
+    }
+    100% {
+      background-position: -140% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-badge--live::before {
+      animation: none;
+    }
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-sheet__title {

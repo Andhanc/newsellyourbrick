@@ -163,6 +163,22 @@ function getMapMarkerPriceStr(property, formatPrice) {
   return formatPrice(amount, property?.currency || 'USD')
 }
 
+function getMapHintPriceAmount(property) {
+  const bidCandidates = [
+    property?.currentBid,
+    property?.current_bid,
+    property?.auction_current_bid,
+  ]
+
+  for (const value of bidCandidates) {
+    const amount = Number(value)
+    if (Number.isFinite(amount) && amount > 0) return amount
+  }
+
+  const purchasePrice = Number(property?.price)
+  return Number.isFinite(purchasePrice) && purchasePrice > 0 ? purchasePrice : 0
+}
+
 function createMapPinThumbImg() {
   const img = document.createElement('img')
   img.className = 'map-pin-mini__img'
@@ -1214,7 +1230,7 @@ const MapPage = () => {
                   </p>
                   <p className="map-open-hint__price">
                     {formatPrice(
-                      mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
+                      getMapHintPriceAmount(mapOpenHintProperty),
                       mapOpenHintProperty.currency,
                     )}
                   </p>

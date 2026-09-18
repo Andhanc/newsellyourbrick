@@ -2,23 +2,38 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Loader2, MapPin, X } from 'lucide-react'
-import { buildGoogleStreetViewEmbedUrl } from '../utils/googleStreetView'
+import {
+  buildGoogleSatelliteEmbedUrl,
+  buildGoogleStreetViewEmbedUrl,
+} from '../utils/googleStreetView'
 import './PropertyStreetViewDrawer.css'
 
-export default function PropertyStreetViewDrawer({ isOpen, onClose, center }) {
+export default function PropertyStreetViewDrawer({
+  isOpen,
+  onClose,
+  center,
+  mode = 'streetview',
+}) {
   const { t, i18n } = useTranslation()
   const [isLoaded, setIsLoaded] = useState(false)
   const closeButtonRef = useRef(null)
   const previouslyFocusedRef = useRef(null)
   const apiKey = String(import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY || '').trim()
+  const isSatellite = mode === 'satellite'
 
   const embedUrl = useMemo(
-    () => buildGoogleStreetViewEmbedUrl({
-      center,
-      apiKey,
-      language: i18n.language,
-    }),
-    [apiKey, center?.[0], center?.[1], i18n.language],
+    () => (isSatellite
+      ? buildGoogleSatelliteEmbedUrl({
+        center,
+        apiKey,
+        language: i18n.language,
+      })
+      : buildGoogleStreetViewEmbedUrl({
+        center,
+        apiKey,
+        language: i18n.language,
+      })),
+    [apiKey, center?.[0], center?.[1], i18n.language, isSatellite],
   )
 
   useEffect(() => {
@@ -54,7 +69,7 @@ export default function PropertyStreetViewDrawer({ isOpen, onClose, center }) {
       className="property-street-view-drawer"
       role="dialog"
       aria-modal="true"
-      aria-label={t('propertyStreetViewTitle')}
+      aria-label={t(isSatellite ? 'propertySatelliteMapTitle' : 'propertyStreetViewTitle')}
       aria-busy={embedUrl && !isLoaded ? 'true' : 'false'}
     >
       {embedUrl ? (
@@ -62,7 +77,7 @@ export default function PropertyStreetViewDrawer({ isOpen, onClose, center }) {
           key={embedUrl}
           className={`property-street-view-drawer__frame${isLoaded ? ' is-loaded' : ''}`}
           src={embedUrl}
-          title={t('propertyStreetViewFrameTitle')}
+          title={t(isSatellite ? 'propertySatelliteMapFrameTitle' : 'propertyStreetViewFrameTitle')}
           referrerPolicy="strict-origin-when-cross-origin"
           allow="fullscreen; accelerometer; gyroscope"
           tabIndex={0}
@@ -73,15 +88,15 @@ export default function PropertyStreetViewDrawer({ isOpen, onClose, center }) {
           <span className="property-street-view-drawer__unavailable-icon" aria-hidden="true">
             <MapPin size={30} strokeWidth={1.9} />
           </span>
-          <h2>{t('propertyStreetViewUnavailableTitle')}</h2>
-          <p>{t('propertyStreetViewUnavailableDescription')}</p>
+          <h2>{t(isSatellite ? 'propertySatelliteMapUnavailableTitle' : 'propertyStreetViewUnavailableTitle')}</h2>
+          <p>{t(isSatellite ? 'propertySatelliteMapUnavailableDescription' : 'propertyStreetViewUnavailableDescription')}</p>
         </div>
       )}
 
       {embedUrl && !isLoaded ? (
         <div className="property-street-view-drawer__loading" role="status">
           <Loader2 size={28} className="property-street-view-drawer__spinner" aria-hidden="true" />
-          <span>{t('propertyStreetViewLoading')}</span>
+          <span>{t(isSatellite ? 'propertySatelliteMapLoading' : 'propertyStreetViewLoading')}</span>
         </div>
       ) : null}
 

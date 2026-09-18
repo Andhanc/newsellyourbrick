@@ -43,6 +43,7 @@ const EXACT_ALLOWED = new Set([
   '/calculator',
   '/lottery',
   '/chat',
+  '/compass',
 ])
 
 /** UI features blocked during soft-launch (entry points + deep links). */

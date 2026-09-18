@@ -1,0 +1,392 @@
+.compass-page {
+  --compass-ink: #0a2528;
+  --compass-soft: #587073;
+  --compass-muted: #7a8d8f;
+  --compass-line: #e2e8e9;
+  --compass-tiffany: #4ecdd6;
+  --compass-tiffany-deep: #13a9b5;
+  --compass-surface: #ffffff;
+  --compass-muted-surface: #f7faf9;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--compass-muted-surface);
+  color: var(--compass-ink);
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.compass-page__top {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 18px 10px;
+}
+
+.compass-page__back {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--compass-line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--compass-ink);
+  cursor: pointer;
+}
+
+.compass-page__back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.compass-page__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.compass-page__brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.compass-page__brand h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.28em;
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.compass-page__brand i {
+  display: inline-flex;
+  padding: 0.08em 0.34em 0.12em;
+  border-radius: 999px;
+  background: var(--compass-tiffany);
+  color: #fff;
+  font-style: normal;
+}
+
+.compass-page__progress,
+.compass-page__progress-spacer {
+  min-width: 64px;
+  margin: 0;
+  color: var(--compass-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.compass-page__track {
+  max-width: 720px;
+  height: 3px;
+  margin: 0 auto;
+  background: rgba(78, 205, 214, 0.16);
+}
+
+.compass-page__track span {
+  display: block;
+  height: 100%;
+  background: var(--compass-tiffany);
+  transition: width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.compass-page__main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 18px calc(32px + env(safe-area-inset-bottom, 0px));
+}
+
+.compass-quiz h2,
+.compass-result h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 5.4vw, 2.05rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+}
+
+.compass-quiz__options {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.compass-quiz__option {
+  display: flex;
+  align-items: center;
+  min-height: 62px;
+  padding: 14px 16px;
+  border: 1px solid var(--compass-line);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--compass-ink);
+  cursor: pointer;
+  text-align: left;
+  font: 650 0.98rem/1.35 'Montserrat', system-ui, sans-serif;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.compass-quiz__option.is-on,
+.compass-quiz__option:hover {
+  border-color: rgba(78, 205, 214, 0.55);
+  background: #f0fbfc;
+}
+
+.compass-quiz__option:focus-visible {
+  outline: 3px solid rgba(31, 177, 188, 0.3);
+  outline-offset: 2px;
+}
+
+.compass-result {
+  display: grid;
+  justify-items: stretch;
+}
+
+.compass-result__hero {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto 18px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.9), transparent 58%),
+    linear-gradient(160deg, #e7f8fa, #ffffff);
+  border: 1px solid rgba(78, 205, 214, 0.18);
+}
+
+.compass-result__hero img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 14px rgba(5, 67, 72, 0.16));
+}
+
+.compass-result__eyebrow {
+  margin: 0 0 8px;
+  color: #1ba3ad;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.compass-result__profile {
+  margin: 10px 0 0;
+  color: var(--compass-soft);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.compass-result__strategy {
+  margin: 14px 0 0;
+}
+
+.compass-result__strategy span {
+  display: inline-flex;
+  padding: 0.18em 0.7em 0.22em;
+  border-radius: 999px;
+  background: var(--compass-tiffany);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.compass-result__lead {
+  margin: 16px 0 0;
+  max-width: 42rem;
+  color: var(--compass-soft);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.compass-result__howto {
+  margin-top: 28px;
+  padding: 20px 18px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid var(--compass-line);
+}
+
+.compass-result__howto h3 {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1ba3ad;
+}
+
+.compass-result__howto ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.compass-result__howto li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+  color: var(--compass-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  counter-increment: compass-step;
+}
+
+.compass-result__howto ol {
+  counter-reset: compass-step;
+}
+
+.compass-result__howto li::before {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e7f8fa;
+  color: #1ba3ad;
+  content: counter(compass-step);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.compass-result__note {
+  margin: 16px 0 0;
+  color: var(--compass-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.compass-result__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.compass-result__cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 58px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(108deg, #13a9b5 0%, #55d5de 55%, #2cb9c4 100%);
+  box-shadow: 0 13px 28px rgba(32, 175, 185, 0.23);
+  color: #fff;
+  cursor: pointer;
+  font: 800 17px/1 'Montserrat', system-ui, sans-serif;
+}
+
+.compass-result__cta-icon {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.compass-result__retake {
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--compass-soft);
+  cursor: pointer;
+  font: 700 0.92rem/1 'Montserrat', system-ui, sans-serif;
+}
+
+.compass-confetti,
+.winner-celebration-confetti.compass-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 10006;
+  pointer-events: none;
+}
+
+.compass-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(78, 205, 214, 0.28), transparent 42%),
+    #f7faf9;
+}
+
+.compass-intro__glow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(78, 205, 214, 0.22);
+  filter: blur(18px);
+}
+
+.compass-intro__orbit {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border: 1px solid rgba(78, 205, 214, 0.28);
+  border-radius: 50%;
+  animation: compass-intro-orbit 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.compass-intro__icon {
+  position: relative;
+  z-index: 1;
+  width: min(46vw, 220px);
+  height: min(46vw, 220px);
+  object-fit: contain;
+  filter: drop-shadow(0 18px 20px rgba(5, 67, 72, 0.18));
+  animation: compass-intro-spin 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.compass-intro__label {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--compass-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+@keyframes compass-intro-spin {
+  0% { transform: scale(0.42) rotate(-48deg); opacity: 0; }
+  58% { transform: scale(1.08) rotate(12deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes compass-intro-orbit {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compass-intro__icon,
+  .compass-intro__orbit,
+  .compass-page__track span {
+    animation: none !important;
+    transition: none !important;
+  }
+}

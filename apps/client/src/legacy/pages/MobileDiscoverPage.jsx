@@ -4,77 +4,159 @@ import { useTranslation } from 'react-i18next'
 import {
   FiArrowUpRight,
   FiBookmark,
-  FiGrid,
-  FiPieChart,
   FiSearch,
-  FiShoppingBag,
   FiX,
 } from 'react-icons/fi'
-import { HiOutlineSparkles } from 'react-icons/hi2'
-import { MdGavel, MdOutlineReceiptLong } from 'react-icons/md'
 import Header from '../components/Header'
 import MobileDiscoverCatalog from './MobileDiscoverCatalog'
 import SiteChatDock from '../components/SiteChatDock'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
+import ProfileStrategyStories from '../components/ProfileStrategyStories'
+import StrategyRecommendationDrawer from '../components/StrategyRecommendationDrawer'
+import InvestmentCompassDrawer from '../components/InvestmentCompassDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
-import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { COMPASS_PATH, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import {
+  COMPASS_BANNER_SRC,
+  getStrategyTitleKey,
+  hasCompassPrompted,
+  hasCompassResult,
+  markCompassIntroPending,
+  markCompassPrompted,
+  readCompassState,
+  shouldAutoOpenCompass,
+} from '../utils/investmentCompass'
+import { showNotification } from '../utils/toastHelper'
 import './MobileDiscoverPage.css'
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
+const WELCOME_SHORTCUTS = [
+  { id: 'map', path: '/map' },
+  { id: 'deposit', path: '/deposit' },
+  { id: 'favorites', path: '/favorites' },
+]
+const welcomeShortcutAsset = (id) => publicAsset(`images/mobile-showcase/${id}.webp`)
 
-function getSaleCards(t) {
+const SALE_DESCRIPTION_TRIGGERS = {
+  ru: {
+    auction: 'рыночной цене',
+    buy_now: 'Фиксированная цена',
+    debts: 'Выгодные объекты',
+    shares: 'низким порогом входа',
+  },
+  en: {
+    auction: 'market-driven prices',
+    buy_now: 'A fixed price',
+    debts: 'Discounted properties',
+    shares: 'low entry point',
+  },
+  pl: {
+    auction: 'cenie rynkowej',
+    buy_now: 'Stała cena',
+    debts: 'lepszej cenie',
+    shares: 'niskim progiem wejścia',
+  },
+  fr: {
+    auction: 'prix du marché',
+    buy_now: 'Un prix fixe',
+    debts: 'prix avantageux',
+    shares: 'faible ticket d’entrée',
+  },
+  sv: {
+    auction: 'rätt marknadspris',
+    buy_now: 'Fast pris',
+    debts: 'bättre pris',
+    shares: 'låg insats',
+  },
+  de: {
+    auction: 'fairen Marktpreis',
+    buy_now: 'Festpreis',
+    debts: 'Preisvorteil',
+    shares: 'kleiner Summe',
+  },
+  es: {
+    auction: 'precio de mercado',
+    buy_now: 'Precio fijo',
+    debts: 'descuento',
+    shares: 'poco capital',
+  },
+}
+
+function getDescriptionTrigger(language, cardId) {
+  const locale = String(language || 'en').toLowerCase().split('-')[0]
+  return (SALE_DESCRIPTION_TRIGGERS[locale] || SALE_DESCRIPTION_TRIGGERS.en)[cardId]
+}
+
+function renderHighlightedDescription(description, trigger) {
+  const start = description.toLocaleLowerCase().indexOf(trigger.toLocaleLowerCase())
+  if (start < 0) return description
+  const end = start + trigger.length
+
+  return (
+    <>
+      {description.slice(0, start)}
+      <span className="md-card__description-accent">{description.slice(start, end)}</span>
+      {description.slice(end)}
+    </>
+  )
+}
+
+function stripDescriptionPeriod(description) {
+  return description.replace(/[.。]+$/u, '')
+}
+
+function getSaleCards(t, language) {
   return [
     {
       id: 'auction',
-      number: '01',
       title: t('auction'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardAuctionDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'auction'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
       imagePosition: '36% center',
       to: '/auction?filter=auction',
       theme: 'auction',
+      infoSection: 'auction',
       iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
     },
     {
       id: 'buy_now',
-      number: '02',
       title: t('buyNowSectionTitle'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardBuyNowDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'buy_now'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
       imagePosition: '42% center',
       to: '/auction/buy-now',
       theme: 'buy',
+      infoSection: 'buyNow',
       iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
     },
     {
       id: 'debts',
-      number: '03',
       title: t('debtsTitle'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardDebtsDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'debts'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
       imagePosition: '46% center',
       to: '/debts',
       theme: 'debts',
+      infoSection: 'debts',
       iconSrc: publicAsset('images/home-sale-formats/icons/debts-3d.png'),
     },
     {
       id: 'shares',
-      number: '04',
       title: t('shares'),
+      description: stripDescriptionPeriod(t('discoverPage_saleCardSharesDesc')),
+      descriptionTrigger: getDescriptionTrigger(language, 'shares'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
       imagePosition: '42% center',
       to: CO_INVESTMENT_PATH,
       theme: 'shares',
+      infoSection: 'shares',
       iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     },
-  ]
-}
-
-function getMenuItems(t) {
-  return [
-    { id: 'auction', label: t('auction'), to: '/auction?filter=auction', Icon: MdGavel },
-    { id: 'buy', label: t('buy'), to: '/auction/buy-now', Icon: FiShoppingBag },
-    { id: 'shares', label: t('shares'), to: CO_INVESTMENT_PATH, Icon: FiPieChart },
-    { id: 'debts', label: t('debtsTitle'), to: '/debts', Icon: MdOutlineReceiptLong },
-    { id: 'ai', label: 'AI', action: 'ai', Icon: HiOutlineSparkles },
   ]
 }
 
@@ -94,8 +176,8 @@ function prefersReducedMotion() {
  * Intentional down → white flash → stage.
  * Intentional up → white flash → hero.
  */
-export default function MobileDiscoverPage({ hideFooter = false }) {
-  const { t } = useTranslation()
+export default function MobileDiscoverPage() {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
@@ -108,17 +190,28 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
 
   const [screen, setScreen] = useState('hero') // hero | stage
   const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
-  const [menuOpen, setMenuOpen] = useState(false)
   const [stageEntered, setStageEntered] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
   const [activeSaleCard, setActiveSaleCard] = useState(0)
   const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
+  const [recommendationDrawerOpen, setRecommendationDrawerOpen] = useState(false)
+  const [storiesOpenSignal, setStoriesOpenSignal] = useState(0)
+  const [compassDrawerOpen, setCompassDrawerOpen] = useState(false)
+  const [compassBannerDismissed, setCompassBannerDismissed] = useState(false)
+  const compassResultStrategy = readCompassState().result?.strategy || ''
+  const activeSaleCardRef = useRef(0)
+  const compassStartCardRef = useRef(null)
+  const compassBlockedRef = useRef(false)
 
-  const saleCards = getSaleCards(t)
-  const menuItems = getMenuItems(t)
+  const saleCards = getSaleCards(t, i18n.language)
 
   screenRef.current = screen
+  activeSaleCardRef.current = activeSaleCard
+  if (screen === 'stage' && compassStartCardRef.current == null) {
+    compassStartCardRef.current = activeSaleCard
+  }
+  if (recommendationDrawerOpen) compassBlockedRef.current = true
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -181,21 +274,77 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
     setActiveSaleCard(index)
   }, [])
 
-  const toggleSavedSaleCard = useCallback((id) => {
+  const toggleSavedSaleCard = useCallback((id, wasSaved) => {
     setSavedSaleCards((current) => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
+
+    if (wasSaved) return
+
+    const savedMessage = String(i18n.language || 'ru').toLowerCase().startsWith('ru')
+      ? 'Добавлено в рекомендации'
+      : 'Added to recommendations'
+    showNotification(savedMessage, 'success', 2200)
+    setRecommendationDrawerOpen(true)
+  }, [i18n.language])
+
+  const watchRecommendationStories = useCallback(() => {
+    setRecommendationDrawerOpen(false)
+    later(() => setStoriesOpenSignal((value) => value + 1), 100)
+  }, [later])
+
+  const openCompassDrawer = useCallback(() => {
+    setCompassDrawerOpen(true)
   }, [])
+
+  const closeCompassDrawer = useCallback(() => {
+    setCompassDrawerOpen(false)
+    markCompassPrompted()
+  }, [])
+
+  const startCompass = useCallback(() => {
+    markCompassPrompted()
+    markCompassIntroPending()
+    setCompassDrawerOpen(false)
+    navigate(COMPASS_PATH)
+  }, [navigate])
+
+  useEffect(() => {
+    if (screen !== 'stage' || !stageEntered || recommendationDrawerOpen || compassDrawerOpen) {
+      return undefined
+    }
+    if (hasCompassPrompted() || hasCompassResult()) return undefined
+
+    const startedAt = Date.now()
+    const id = window.setInterval(() => {
+      if (
+        shouldAutoOpenCompass({
+          stageReady: true,
+          hasBrowsedCards:
+            compassStartCardRef.current != null &&
+            activeSaleCardRef.current !== compassStartCardRef.current,
+          blocked: compassBlockedRef.current,
+          elapsedMs: Date.now() - startedAt,
+          prompted: false,
+          hasResult: false,
+        })
+      ) {
+        setCompassDrawerOpen(true)
+        window.clearInterval(id)
+      }
+    }, 400)
+
+    return () => window.clearInterval(id)
+  }, [compassDrawerOpen, recommendationDrawerOpen, screen, stageEntered])
 
   const goTo = useCallback(
     (next) => {
       if (busyRef.current) return
       if (screenRef.current === next) return
       busyRef.current = true
-      setMenuOpen(false)
 
       const finish = () => {
         busyRef.current = false
@@ -242,6 +391,9 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
 
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
+      // The format-stack pager already consumed this wheel — never re-drive
+      // stage scroll by hand, that is what parked drawers half-open.
+      if (event.defaultPrevented) return
       if (busyRef.current || flashPhase !== 'idle') {
         event.preventDefault()
         return
@@ -455,23 +607,27 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
                           aria-hidden="true"
                         />
                         <span className="md-card__shade" aria-hidden="true" />
-                        <div className="md-card__visual" aria-hidden="true">
-                          <span className="md-card__number">{card.number}</span>
-                        </div>
+                        <div className="md-card__visual" aria-hidden="true" />
                         <div className="md-card__body">
                           <div className="md-card__copy">
-                            <img
-                              className="md-card__icon"
-                              src={card.iconSrc}
-                              alt=""
-                              width={512}
-                              height={512}
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              decoding="async"
-                              aria-hidden="true"
-                            />
-                            <h3 className="md-card__title">{card.title}</h3>
+                            <div className="md-card__heading">
+                              <img
+                                className="md-card__icon"
+                                src={card.iconSrc}
+                                alt=""
+                                width={512}
+                                height={512}
+                                loading={index === 0 ? 'eager' : 'lazy'}
+                                decoding="async"
+                                aria-hidden="true"
+                              />
+                              <h3 className="md-card__title">{card.title}</h3>
+                              <SectionInfoDrawer section={card.infoSection} placement="card" />
+                            </div>
                           </div>
+                          <p className="md-card__description">
+                            {renderHighlightedDescription(card.description, card.descriptionTrigger)}
+                          </p>
                           <div className="md-card__actions">
                             <Link className="md-card__cta" to={card.to}>
                               {t('aboutCorp_moreDetails')}
@@ -484,7 +640,7 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
                                 isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
                               }
                               aria-pressed={isSaved}
-                              onClick={() => toggleSavedSaleCard(card.id)}
+                              onClick={() => toggleSavedSaleCard(card.id, isSaved)}
                             >
                               <FiBookmark aria-hidden="true" />
                             </button>
@@ -513,6 +669,49 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
                   />
                 ))}
               </div>
+
+              {!compassBannerDismissed ? (
+                <div className="md-stage__compass">
+                  <button
+                    type="button"
+                    className="md-stage__compass-hit"
+                    onClick={compassResultStrategy ? () => navigate(COMPASS_PATH) : openCompassDrawer}
+                    aria-label={
+                      compassResultStrategy
+                        ? t('compass_stageResult', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                        : t('compass_stageCta')
+                    }
+                  >
+                    <span className="md-stage__compass-copy">
+                      <strong>
+                        {compassResultStrategy ? t('compass_stageResultTitle') : t('compass_stageCtaTitle')}
+                      </strong>
+                      <span>
+                        {compassResultStrategy
+                          ? t('compass_stageResultLead', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                          : t('compass_stageCtaLead')}
+                      </span>
+                    </span>
+                    <img
+                      className="md-stage__compass-art"
+                      src={publicAsset(COMPASS_BANNER_SRC)}
+                      alt=""
+                      width="768"
+                      height="768"
+                      decoding="async"
+                      aria-hidden="true"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className="md-stage__compass-close"
+                    onClick={() => setCompassBannerDismissed(true)}
+                    aria-label={t('compass_stageDismiss')}
+                  >
+                    <FiX aria-hidden="true" />
+                  </button>
+                </div>
+              ) : null}
 
             </div>
 
@@ -574,6 +773,25 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
                     <FiSearch aria-hidden />
                   </button>
                 </form>
+                <nav className="md-welcome__shortcuts" aria-label={t('mobileShowcase.quickActions')}>
+                  {WELCOME_SHORTCUTS.map((item) => (
+                    <Link
+                      key={item.id}
+                      className={`md-welcome__shortcut md-welcome__shortcut--${item.id}`}
+                      to={item.path}
+                    >
+                      <img
+                        src={welcomeShortcutAsset(item.id)}
+                        width="360"
+                        height="360"
+                        alt=""
+                        decoding="async"
+                      />
+                      <h3>{t(`mobileShowcase.${item.id}.title`)}</h3>
+                      <FiArrowUpRight className="md-welcome__shortcut-arrow" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </nav>
               </div>
 
               <svg
@@ -588,76 +806,28 @@ export default function MobileDiscoverPage({ hideFooter = false }) {
               </div>
             </section>
 
-            <MobileDiscoverCatalog hideFooter={hideFooter} />
+            <MobileDiscoverCatalog />
           </div>
 
-          <div className={`md-fab${menuOpen ? ' is-open' : ''}`}>
-            {menuOpen && (
-              <button
-                type="button"
-                className="md-fab__away"
-                aria-label={t('closeMenu')}
-                onClick={() => setMenuOpen(false)}
-              />
-            )}
-
-            <nav
-              className="md-fab__rail"
-              aria-label={t('discoverPage_fabMenuAria')}
-              aria-hidden={!menuOpen}
-              inert={!menuOpen ? true : undefined}
-            >
-              {menuItems.map((item, index) => {
-                const Icon = item.Icon
-                if (item.action === 'ai') {
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="md-fab__item"
-                      style={{ '--md-fab-i': index }}
-                      onClick={() => {
-                        setMenuOpen(false)
-                        window.dispatchEvent(new CustomEvent('openAIChat'))
-                      }}
-                    >
-                      <span className="md-fab__item-icon" aria-hidden>
-                        <Icon />
-                      </span>
-                      <span className="md-fab__item-label">{item.label}</span>
-                    </button>
-                  )
-                }
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.to}
-                    className="md-fab__item"
-                    style={{ '--md-fab-i': index }}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <span className="md-fab__item-icon" aria-hidden>
-                      <Icon />
-                    </span>
-                    <span className="md-fab__item-label">{item.label}</span>
-                  </Link>
-                )
-              })}
-            </nav>
-
-            <button
-              type="button"
-              className="md-fab__toggle"
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? t('closeMenu') : t('discoverPage_openMenu')}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              {menuOpen ? <FiX aria-hidden /> : <FiGrid aria-hidden />}
-            </button>
-          </div>
         </section>
       )}
     </div>
+    <InvestmentCompassDrawer
+      isOpen={compassDrawerOpen}
+      onClose={closeCompassDrawer}
+      onStart={startCompass}
+    />
+    <StrategyRecommendationDrawer
+      isOpen={recommendationDrawerOpen}
+      onClose={() => setRecommendationDrawerOpen(false)}
+      onWatch={watchRecommendationStories}
+      language={i18n.language}
+    />
+    <ProfileStrategyStories
+      language={i18n.language}
+      showTrigger={false}
+      openSignal={storiesOpenSignal}
+    />
     </SiteChatDock>
   )
 }

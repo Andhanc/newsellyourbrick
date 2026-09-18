@@ -64,6 +64,17 @@ export default function PropertyDetailLocationMap({
   const [loadingCategory, setLoadingCategory] = useState(null)
   const [errorCategory, setErrorCategory] = useState(null)
   const [streetViewOpen, setStreetViewOpen] = useState(false)
+  const [satelliteOpen, setSatelliteOpen] = useState(false)
+
+  const openStreetView = () => {
+    setSatelliteOpen(false)
+    setStreetViewOpen(true)
+  }
+
+  const openSatellite = () => {
+    setStreetViewOpen(false)
+    setSatelliteOpen(true)
+  }
 
   const coords = useMemo(() => {
     if (!Array.isArray(center) || center.length !== 2) return null
@@ -253,12 +264,14 @@ export default function PropertyDetailLocationMap({
         markerColor={markerColor}
         showMapTypeSwitcher
         pageScrollInteraction
+        satelliteOpen={satelliteOpen}
+        onSatelliteOpen={openSatellite}
       />
       {interactive && coords ? (
         <button
           type="button"
           className="property-detail-location-map__street-view-trigger"
-          onClick={() => setStreetViewOpen(true)}
+          onClick={openStreetView}
           aria-label={t('propertyStreetViewOpen')}
           title={t('propertyStreetViewOpen')}
           aria-haspopup="dialog"
@@ -277,6 +290,15 @@ export default function PropertyDetailLocationMap({
       center={[coords.lat, coords.lng]}
     />
   ) : null
+
+  const satelliteDrawer = (
+    <PropertyStreetViewDrawer
+      isOpen={satelliteOpen}
+      onClose={() => setSatelliteOpen(false)}
+      center={coords ? [coords.lat, coords.lng] : center}
+      mode="satellite"
+    />
+  )
 
   const filtersNode =
     interactive && coords ? (
@@ -346,6 +368,7 @@ export default function PropertyDetailLocationMap({
         {framedMap}
         {filtersNode}
         {streetViewDrawer}
+        {satelliteDrawer}
       </div>
     )
   }
@@ -355,6 +378,7 @@ export default function PropertyDetailLocationMap({
       {mapNode}
       {filtersNode}
       {streetViewDrawer}
+      {satelliteDrawer}
     </div>
   )
 }

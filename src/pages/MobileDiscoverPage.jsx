@@ -5,6 +5,7 @@ import {
   FiArrowUpRight,
   FiBookmark,
   FiSearch,
+  FiX,
 } from 'react-icons/fi'
 import Header from '../components/Header'
 import MobileDiscoverCatalog from './MobileDiscoverCatalog'
@@ -12,14 +13,31 @@ import SiteChatDock from '../components/SiteChatDock'
 import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import ProfileStrategyStories from '../components/ProfileStrategyStories'
 import StrategyRecommendationDrawer from '../components/StrategyRecommendationDrawer'
+import InvestmentCompassDrawer from '../components/InvestmentCompassDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
-import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { COMPASS_PATH, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import {
+  COMPASS_BANNER_SRC,
+  getStrategyTitleKey,
+  hasCompassPrompted,
+  hasCompassResult,
+  markCompassIntroPending,
+  markCompassPrompted,
+  readCompassState,
+  shouldAutoOpenCompass,
+} from '../utils/investmentCompass'
 import { showNotification } from '../utils/toastHelper'
 import './MobileDiscoverPage.css'
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
+const WELCOME_SHORTCUTS = [
+  { id: 'map', path: '/map' },
+  { id: 'deposit', path: '/deposit' },
+  { id: 'favorites', path: '/favorites' },
+]
+const welcomeShortcutAsset = (id) => publicAsset(`images/mobile-showcase/${id}.webp`)
 
 const SALE_DESCRIPTION_TRIGGERS = {
   ru: {
@@ -179,10 +197,21 @@ export default function MobileDiscoverPage() {
   const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
   const [recommendationDrawerOpen, setRecommendationDrawerOpen] = useState(false)
   const [storiesOpenSignal, setStoriesOpenSignal] = useState(0)
+  const [compassDrawerOpen, setCompassDrawerOpen] = useState(false)
+  const [compassBannerDismissed, setCompassBannerDismissed] = useState(false)
+  const compassResultStrategy = readCompassState().result?.strategy || ''
+  const activeSaleCardRef = useRef(0)
+  const compassStartCardRef = useRef(null)
+  const compassBlockedRef = useRef(false)
 
   const saleCards = getSaleCards(t, i18n.language)
 
   screenRef.current = screen
+  activeSaleCardRef.current = activeSaleCard
+  if (screen === 'stage' && compassStartCardRef.current == null) {
+    compassStartCardRef.current = activeSaleCard
+  }
+  if (recommendationDrawerOpen) compassBlockedRef.current = true
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -266,6 +295,50 @@ export default function MobileDiscoverPage() {
     setRecommendationDrawerOpen(false)
     later(() => setStoriesOpenSignal((value) => value + 1), 100)
   }, [later])
+
+  const openCompassDrawer = useCallback(() => {
+    setCompassDrawerOpen(true)
+  }, [])
+
+  const closeCompassDrawer = useCallback(() => {
+    setCompassDrawerOpen(false)
+    markCompassPrompted()
+  }, [])
+
+  const startCompass = useCallback(() => {
+    markCompassPrompted()
+    markCompassIntroPending()
+    setCompassDrawerOpen(false)
+    navigate(COMPASS_PATH)
+  }, [navigate])
+
+  useEffect(() => {
+    if (screen !== 'stage' || !stageEntered || recommendationDrawerOpen || compassDrawerOpen) {
+      return undefined
+    }
+    if (hasCompassPrompted() || hasCompassResult()) return undefined
+
+    const startedAt = Date.now()
+    const id = window.setInterval(() => {
+      if (
+        shouldAutoOpenCompass({
+          stageReady: true,
+          hasBrowsedCards:
+            compassStartCardRef.current != null &&
+            activeSaleCardRef.current !== compassStartCardRef.current,
+          blocked: compassBlockedRef.current,
+          elapsedMs: Date.now() - startedAt,
+          prompted: false,
+          hasResult: false,
+        })
+      ) {
+        setCompassDrawerOpen(true)
+        window.clearInterval(id)
+      }
+    }, 400)
+
+    return () => window.clearInterval(id)
+  }, [compassDrawerOpen, recommendationDrawerOpen, screen, stageEntered])
 
   const goTo = useCallback(
     (next) => {
@@ -597,6 +670,49 @@ export default function MobileDiscoverPage() {
                 ))}
               </div>
 
+              {!compassBannerDismissed ? (
+                <div className="md-stage__compass">
+                  <button
+                    type="button"
+                    className="md-stage__compass-hit"
+                    onClick={compassResultStrategy ? () => navigate(COMPASS_PATH) : openCompassDrawer}
+                    aria-label={
+                      compassResultStrategy
+                        ? t('compass_stageResult', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                        : t('compass_stageCta')
+                    }
+                  >
+                    <span className="md-stage__compass-copy">
+                      <strong>
+                        {compassResultStrategy ? t('compass_stageResultTitle') : t('compass_stageCtaTitle')}
+                      </strong>
+                      <span>
+                        {compassResultStrategy
+                          ? t('compass_stageResultLead', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                          : t('compass_stageCtaLead')}
+                      </span>
+                    </span>
+                    <img
+                      className="md-stage__compass-art"
+                      src={publicAsset(COMPASS_BANNER_SRC)}
+                      alt=""
+                      width="768"
+                      height="768"
+                      decoding="async"
+                      aria-hidden="true"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className="md-stage__compass-close"
+                    onClick={() => setCompassBannerDismissed(true)}
+                    aria-label={t('compass_stageDismiss')}
+                  >
+                    <FiX aria-hidden="true" />
+                  </button>
+                </div>
+              ) : null}
+
             </div>
 
             <div className="md-welcome__copy">
@@ -657,6 +773,25 @@ export default function MobileDiscoverPage() {
                     <FiSearch aria-hidden />
                   </button>
                 </form>
+                <nav className="md-welcome__shortcuts" aria-label={t('mobileShowcase.quickActions')}>
+                  {WELCOME_SHORTCUTS.map((item) => (
+                    <Link
+                      key={item.id}
+                      className={`md-welcome__shortcut md-welcome__shortcut--${item.id}`}
+                      to={item.path}
+                    >
+                      <img
+                        src={welcomeShortcutAsset(item.id)}
+                        width="360"
+                        height="360"
+                        alt=""
+                        decoding="async"
+                      />
+                      <h3>{t(`mobileShowcase.${item.id}.title`)}</h3>
+                      <FiArrowUpRight className="md-welcome__shortcut-arrow" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </nav>
               </div>
 
               <svg
@@ -677,6 +812,11 @@ export default function MobileDiscoverPage() {
         </section>
       )}
     </div>
+    <InvestmentCompassDrawer
+      isOpen={compassDrawerOpen}
+      onClose={closeCompassDrawer}
+      onStart={startCompass}
+    />
     <StrategyRecommendationDrawer
       isOpen={recommendationDrawerOpen}
       onClose={() => setRecommendationDrawerOpen(false)}

@@ -49,6 +49,7 @@ const ALLOWED = [
   '/calculator',
   '/lottery',
   '/chat',
+  '/compass',
   '/oauth-bridge',
   '/auth/telegram-callback',
   '/main',
