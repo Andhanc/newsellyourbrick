@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
@@ -118,10 +119,10 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
           : ''
 
       const [approvedRes, auctionsRes, debtsRes, sharesRes] = await Promise.all([
-        fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetch(`${apiBase}/properties/debts`),
-        fetch(`${apiBase}/properties/shares`),
+        fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
+        fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
+        fetchDedupe(`${apiBase}/properties/debts`),
+        fetchDedupe(`${apiBase}/properties/shares`),
       ])
 
       const readList = async (res) => {

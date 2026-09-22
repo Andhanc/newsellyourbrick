@@ -5,8 +5,9 @@ import {
   getStoredNumericUserId,
 } from '../services/authService'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
-import { effectiveDisplayTier, userHasVipAccess } from './useCabinetOverviewData'
+import { effectiveDisplayTier, userHasVipAccess } from '../utils/subscriptionTier'
 import { canAccessBuyerFeature } from '../utils/subscriptionAccess'
+import { fetchDedupe } from '../utils/fetchDedupe'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -56,7 +57,7 @@ export function useViewerVipAccess() {
         return
       }
       try {
-        const res = await fetch(`${API_BASE_URL}/users/${uid}/subscription-billing`)
+        const res = await fetchDedupe(`${API_BASE_URL}/users/${uid}/subscription-billing`)
         const json = res.ok ? await res.json().catch(() => null) : null
         if (cancelled) return
         const data = json?.success && json?.data ? json.data : null

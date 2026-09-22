@@ -13,11 +13,13 @@ export const SITE_AD_TYPE_LABELS = {
 
 /** @returns {'home'|'auction'|'shares'|'test-drive'|'debts'|null} */
 export function pathnameToAdPage(pathname) {
-  if (pathname === '/') return 'home'
-  if (pathname === '/main' || pathname.startsWith('/auction')) return 'auction'
-  if (pathname.startsWith('/co-investment') || pathname.startsWith('/shares')) return 'shares'
-  if (pathname === '/test-drive') return 'test-drive'
-  if (pathname === '/debts') return 'debts'
+  const path = String(pathname || '').split('?')[0]
+  if (path.includes('/property/')) return null
+  if (path === '/') return 'home'
+  if (path === '/main' || path === '/auction' || path.startsWith('/auction/')) return 'auction'
+  if (path === '/co-investment' || path === '/shares') return 'shares'
+  if (path === '/test-drive') return 'test-drive'
+  if (path === '/debts') return 'debts'
   return null
 }
 

@@ -73,7 +73,7 @@ export default function BuyNow() {
     setLoading(!hasCachedList())
     setLoadError('')
 
-    fetchAuctionList()
+    fetchAuctionList(undefined, { includeTestTimers: false, catalogs: 'buyNow' })
       .then((list) => {
         if (!cancelled) setProperties(Array.isArray(list) ? list : [])
       })

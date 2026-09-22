@@ -2,7 +2,12 @@ import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 're
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag, FiArrowUpRight } from 'react-icons/fi'
-import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
+import {
+  FacebookIcon,
+  GoogleIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from './icons/ContactChannelIcons'
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
@@ -12,11 +17,6 @@ import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
-import {
-  isBundledNativeDom,
-  navigateNativeDom,
-  switchNativeSession,
-} from '../utils/nativeDomBridge'
 import './LoginModal.css'
 
 const LazyWhatsAppVerificationModal = lazy(() => import('./WhatsAppVerificationModal'))
@@ -54,7 +54,6 @@ const LoginModal = ({
   isOpen,
   onClose,
   authEntryVariant = 'header_wizard',
-  nativeNavigate = null,
   nativeEmailLogin = null,
   nativeEmailRegister = null,
   nativeSocialAuth = null,
@@ -105,30 +104,6 @@ const LoginModal = ({
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env?.VITE_TELEGRAM_BOT_USERNAME)
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
-
-  const navigateAfterAuth = async (path, session = null) => {
-    if (isBundledNativeDom() && session?.user) {
-      const switched = await switchNativeSession({
-        user: session.user,
-        authToken: session.authToken || null,
-        path,
-      })
-      if (!switched?.success) {
-        throw new Error(switched?.error || 'Не удалось сохранить сессию в приложении')
-      }
-      return
-    }
-    if (nativeNavigate) {
-      await nativeNavigate(path)
-      return
-    }
-    if (isBundledNativeDom()) {
-      const forwarded = await navigateNativeDom(path)
-      if (!forwarded) navigate(path, { replace: true })
-      return
-    }
-    window.location.assign(path)
-  }
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
@@ -333,12 +308,7 @@ const LoginModal = ({
           }
           saveUserData(result.user, 'email')
           setIsLoading(false)
-          const cabinetPath = getCabinetHomePath(result.user.role || userRole)
-          if (nativeNavigate) {
-            await nativeNavigate(cabinetPath)
-          } else {
-            navigate(cabinetPath)
-          }
+          navigate(getCabinetHomePath(result.user.role || userRole))
         } catch (nativeAuthError) {
           setError(nativeAuthError?.message || 'Произошла ошибка при входе. Попробуйте позже.')
           setIsLoading(false)
@@ -450,12 +420,8 @@ const LoginModal = ({
             
             console.log('✅ Вход успешен, редирект на:', redirectPath, 'для роли:', userRole);
             
-            // В Expo DOM абсолютный browser redirect превращается в file:///profile.
-            // Всегда передаём внутренний путь нативному Expo Router.
-            await navigateAfterAuth(redirectPath, {
-              user: result.user,
-              authToken: result.authToken || null,
-            });
+            // Обновляем страницу для применения изменений
+            window.location.href = redirectPath;
           }
         } else {
           // Проверяем, заблокирован ли пользователь
@@ -639,12 +605,7 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
-        if (nativeNavigate) {
-          await nativeNavigate(cabinetPath)
-        } else {
-          navigate(cabinetPath)
-        }
+        navigate(getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message || 'Не удалось войти через Google')
       } finally {
@@ -766,12 +727,7 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        const cabinetPath = getCabinetHomePath(result.user.role || userRole)
-        if (nativeNavigate) {
-          await nativeNavigate(cabinetPath)
-        } else {
-          navigate(cabinetPath)
-        }
+        navigate(getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message || 'Не удалось войти через Facebook')
       } finally {
@@ -911,7 +867,7 @@ const LoginModal = ({
       setShowVerificationDocumentsModal(true)
     } else {
       // Для входа или продавца - обычный флоу
-      if (!nativeNavigate) onClose()
+      onClose()
       showNotification(
         t('authToast_welcome', {
           name: user.name || t('authToast_userFallback'),
@@ -921,22 +877,9 @@ const LoginModal = ({
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
-        const cabinetPath = getCabinetHomePath('seller')
-        if (isBundledNativeDom() && !nativeAuthSuccess) {
-          await navigateAfterAuth(cabinetPath, { user, authToken })
-        } else if (nativeNavigate) {
-          await nativeNavigate(cabinetPath)
-        } else {
-          navigate(cabinetPath)
-        }
+        navigate(getCabinetHomePath('seller'))
       } else {
-        if (isBundledNativeDom() && !nativeAuthSuccess) {
-          await navigateAfterAuth('/profile', { user, authToken })
-        } else if (nativeNavigate) {
-          await nativeNavigate('/profile')
-        } else {
-          navigate('/profile')
-        }
+        navigate('/profile')
       }
     }
   }
@@ -1005,7 +948,7 @@ const LoginModal = ({
 
     // Для email-регистрации после подтверждения кода сразу активируем сессию
     // и отправляем пользователя в кабинет (как в сценарии продавца).
-    if (!nativeNavigate) onClose()
+    onClose()
     showNotification(
       t('authToast_registrationComplete', {
         name: user.name || t('authToast_userFallback'),
@@ -1015,37 +958,20 @@ const LoginModal = ({
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
-      const cabinetPath = getCabinetHomePath('seller')
-      if (isBundledNativeDom() && !nativeAuthSuccess) {
-        await navigateAfterAuth(cabinetPath, { user, authToken })
-      } else if (nativeNavigate) {
-        await nativeNavigate(cabinetPath)
-      } else {
-        navigate(cabinetPath)
-      }
+      navigate(getCabinetHomePath('seller'))
     } else {
-      if (isBundledNativeDom() && !nativeAuthSuccess) {
-        await navigateAfterAuth('/profile', { user, authToken })
-      } else if (nativeNavigate) {
-        await nativeNavigate('/profile')
-      } else {
-        navigate('/profile')
-      }
+      navigate('/profile')
     }
     setSellerRegistrationBuyerId(null)
   }
   
-  const handleVerificationDocumentsComplete = async () => {
+  const handleVerificationDocumentsComplete = () => {
     // Документы загружены, закрываем модальное окно и обновляем страницу
     setShowVerificationDocumentsModal(false)
-    if (!nativeNavigate) onClose()
+    onClose()
     showNotification(t('authToast_documentsSubmitted'))
-    if (nativeNavigate) {
-      await nativeNavigate('/profile')
-    } else {
-      // На сайте полное обновление синхронизирует локальную email-сессию со всем интерфейсом.
-      await navigateAfterAuth('/profile')
-    }
+    // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
+    window.location.href = '/profile'
   }
 
   /** Переключение «войти» / «зарегистрироваться» с очисткой формы */
@@ -1203,7 +1129,7 @@ const LoginModal = ({
                   disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
                   aria-label={t('loginWithFacebook')}
                 >
-                  <FaFacebook size={22} />
+                  <FacebookIcon size={22} />
                 </button>
                 <button
                   type="button"
@@ -1221,11 +1147,11 @@ const LoginModal = ({
                   disabled={isLoading}
                   aria-label={t('loginWithWhatsApp')}
                 >
-                  <FaWhatsapp size={22} />
+                  <WhatsAppIcon size={22} />
                 </button>
                 {telegramBotUsername ? (
                   <div className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram login-modal__welcome-social-telegram">
-                    <FaTelegram size={22} aria-hidden />
+                    <TelegramIcon size={22} />
                     <div
                       className="login-modal__telegram-widget"
                       ref={telegramWidgetRef}
@@ -1240,7 +1166,7 @@ const LoginModal = ({
                     aria-label={t('loginWithTelegram')}
                     title={telegramConfigLoaded ? t('telegramEnvHint') : t('telegramLoading')}
                   >
-                    <FaTelegram size={22} />
+                    <TelegramIcon size={22} />
                   </button>
                 )}
               </div>
@@ -1510,7 +1436,7 @@ const LoginModal = ({
               cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
-            <FaFacebook size={20} />
+            <FacebookIcon size={20} />
             {isLoading ? (
               <span aria-hidden="true">{t('socialConnecting')}</span>
             ) : (
@@ -1536,7 +1462,7 @@ const LoginModal = ({
               cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
-            <FaGoogle size={20} />
+            <GoogleIcon size={20} />
             <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
               {isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
             </span>
@@ -1556,7 +1482,7 @@ const LoginModal = ({
               cursor: isLoading ? 'not-allowed' : 'pointer' 
             }}
           >
-            <FaWhatsapp size={20} />
+            <WhatsAppIcon size={20} />
             <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
               {isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
             </span>
@@ -1591,7 +1517,7 @@ const LoginModal = ({
               title={t('telegramEnvHint')}
               aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
             >
-              <FaTelegram size={20} />
+              <TelegramIcon size={20} />
               <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
                 {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
               </span>
@@ -1637,6 +1563,7 @@ const LoginModal = ({
               type="text"
               id="email"
               name="email"
+              data-testid="login-email"
               value={formData.email}
               onChange={handleInputChange}
               onFocus={() => setIsEmailFocused(true)}
@@ -1659,6 +1586,7 @@ const LoginModal = ({
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
+                data-testid="login-password"
                 value={formData.password}
                 onChange={handleInputChange}
                 onFocus={() => setIsPasswordFocused(true)}
@@ -1725,6 +1653,7 @@ const LoginModal = ({
 
           <button
             type="submit"
+            data-testid="login-submit"
             className={`login-modal__submit${isLogin ? ' login-modal__submit--liquid-glass' : ''}`}
             disabled={isLoading}
           >

@@ -14,6 +14,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { getCoInvestmentContextPropertyPath } from '../utils/listingContextUrl'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { publicAsset } from '../utils/publicAsset'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
 import {
   SHARES_MARKETPLACE_PAGE_SIZE,
@@ -112,7 +113,7 @@ export default function Shares() {
         const records = []
         let offset = 0
         while (true) {
-          const response = await fetch(
+          const response = await fetchDedupe(
             `${API_BASE}/properties/shares?limit=${API_PAGE_SIZE}&offset=${offset}`,
           )
           const payload = await response.json().catch(() => null)

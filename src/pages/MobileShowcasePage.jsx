@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiArrowUpRight, FiSearch } from 'react-icons/fi'
-import { FaApple, FaGooglePlay } from 'react-icons/fa'
+import { AppleIcon, GooglePlayIcon } from '../components/icons/ContactChannelIcons'
 import Header from '../components/Header'
 import InvestorPropertyShowcaseSection from '../components/InvestorPropertyShowcaseSection'
 import { useInvestorHomeShowcases } from '../hooks/useInvestorHomeShowcases'
@@ -127,7 +127,7 @@ export default function MobileShowcasePage() {
             <Link className="ms-app-promo__details" to="/app">{label('explore')}<FiArrowUpRight /></Link>
           </div>
             <div className="ms-app-promo__stores">
-              {[{ name: 'App Store', Icon: FaApple }, { name: 'Google Play', Icon: FaGooglePlay }].map(({ name, Icon }) => (
+              {[{ name: 'App Store', Icon: AppleIcon }, { name: 'Google Play', Icon: GooglePlayIcon }].map(({ name, Icon }) => (
                 <button type="button" key={name} onClick={() => showNotification(t('footerComingSoon'))}>
                   <Icon aria-hidden="true" /><span>{name}</span>
                 </button>

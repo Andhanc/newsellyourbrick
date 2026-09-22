@@ -8,6 +8,7 @@ import {
   buildBidMessage,
   buildAuctionWonMessage,
   buildReservationPaidMessage,
+  buildLiveChatMessage,
 } from './telegramOpsNotify.js';
 
 test('escapeHtml escapes markup', () => {
@@ -93,4 +94,38 @@ test('buildAuctionWonMessage and reservation paid', () => {
   });
   assert.match(paid, /Резерв оплачен/);
   assert.match(paid, /#11/);
+});
+
+test('buildLiveChatMessage includes from, when and message', () => {
+  const text = buildLiveChatMessage({
+    sessionId: 12,
+    userId: 53,
+    text: 'Нужна помощь с <аукционом>',
+    createdAt: '2026-09-18T00:15:00+03:00',
+    clientFirstName: 'Иван',
+    clientLastName: 'Петров',
+    clientEmail: 'ivan@example.com',
+    clientPhone: '+34111',
+  });
+  assert.match(text, /Новое сообщение в поддержку/);
+  assert.match(text, /От: Иван Петров \(#53\)/);
+  assert.match(text, /Email: ivan@example.com/);
+  assert.match(text, /Телефон: \+34111/);
+  assert.match(text, /Когда: 18 сентября 2026 г\. в 00:15/);
+  assert.match(text, /Сообщение: Нужна помощь с &lt;аукционом&gt;/);
+  assert.doesNotMatch(text, /Сессия #/);
+});
+
+test('buildLiveChatMessage truncates long preview and labels guest', () => {
+  const long = 'a'.repeat(900);
+  const text = buildLiveChatMessage({
+    sessionId: 1,
+    text: long,
+    createdAt: '2026-09-18T00:15:00+03:00',
+  });
+  assert.match(text, /От: гость/);
+  assert.match(text, /Когда:/);
+  assert.match(text, /Сообщение:/);
+  assert.ok(text.includes('…'));
+  assert.ok(!text.includes('a'.repeat(810)));
 });

@@ -16,7 +16,7 @@ import { getPropertyCardImage, normalizePropertyMediaFields } from '../utils/pro
 import { buildDisplayProperty } from '../utils/buildDisplayProperty'
 import { formatPropertyPrice } from '../utils/currency'
 import { getCoInvestmentDetailPath, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
-import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../constants/cabinetEvents'
 import { getPropertySlugFromRecord, isNumericPropertyRouteParam } from '../utils/propertySlug'
 import { getShareBuyNowAvailability } from '../utils/shareBuyNow'
 import { usePageSeoOverride } from '../context/PageSeoContext'
@@ -33,6 +33,15 @@ function isShareDbRouteId(routeId) {
   if (/^(apartment|commercial|house|villa)-.+/i.test(routeId)) return true
   if (/^\d+$/.test(routeId)) return true
   return false
+}
+
+function shareRoutePropertyId(routeId) {
+  const s = String(routeId || '')
+  if (/^\d+$/.test(s)) return s
+  const typed = s.match(/^(apartment|commercial|house|villa)-(\d+)$/i)
+  if (typed) return typed[2]
+  const tail = s.match(/-(\d+)$/)
+  return tail ? tail[1] : s
 }
 
 const DEMO_SHARE_OBJECTS = [
@@ -208,6 +217,12 @@ const ShareDetailPage = () => {
 
   const loadPropertyFromApi = useCallback(() => {
     if (!id || !isShareDbRouteId(id)) return Promise.resolve()
+    const prefetched = location.state?.sharePrefetch
+    if (prefetched && String(prefetched.id) === String(shareRoutePropertyId(id))) {
+      setShareObject(prefetched)
+      setLoadingShare(false)
+      return Promise.resolve()
+    }
     setLoadingShare(true)
     const legacyMatch = id.match(/^(apartment|commercial|house|villa)-(\d+)$/i)
     const apiKey = legacyMatch ? legacyMatch[2] : id
@@ -229,7 +244,7 @@ const ShareDetailPage = () => {
           (p.property_type === 'house' || p.property_type === 'villa'
             ? 'properties_houses'
             : 'properties_apartments')
-        setShareObject({
+        const mapped = {
           id: p.id,
           shareId: `${p.property_type}-${p.id}`,
           title: p.title,
@@ -250,10 +265,14 @@ const ShareDetailPage = () => {
           currency: p.currency || 'EUR',
           slug: p.slug,
           ...p,
-        })
+        }
+        setShareObject(mapped)
         const slug = getPropertySlugFromRecord(p)
         if (slug && id && (isNumericPropertyRouteParam(id) || legacyMatch)) {
-          navigate(getCoInvestmentDetailPath({ ...p, slug }), { replace: true, state: location.state })
+          navigate(getCoInvestmentDetailPath({ ...p, slug }), {
+            replace: true,
+            state: { ...location.state, sharePrefetch: mapped },
+          })
         }
       })
       .catch(() => setShareObject(null))
@@ -261,8 +280,10 @@ const ShareDetailPage = () => {
   }, [id, navigate, location.state])
 
   useLayoutEffect(() => {
-    setLoadingShare(isShareDbRouteId(id))
-  }, [id])
+    const prefetched = location.state?.sharePrefetch
+    const same = prefetched && String(prefetched.id) === String(shareRoutePropertyId(id))
+    setLoadingShare(isShareDbRouteId(id) && !same)
+  }, [id, location.state])
 
   useEffect(() => {
     loadPropertyFromApi()

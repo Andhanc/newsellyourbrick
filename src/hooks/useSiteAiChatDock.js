@@ -36,12 +36,15 @@ const EMPTY_ASSISTANT_PREFERENCES = {
   preferredContact: null,
 }
 
-export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES } = {}) {
+export function useSiteAiChatDock({
+  recommendationProperties = EMPTY_RECOMMENDATION_PROPERTIES,
+  initialOpen = false,
+} = {}) {
   const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const dbUserId = getStoredNumericUserId()
 
-  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(() => Boolean(initialOpen))
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -72,18 +75,39 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
   }, [recommendationProperties])
 
   useEffect(() => {
+    if (!isChatOpen) return undefined
     if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) return undefined
-    let cancelled = false
     const cached = getCachedList()
     if (cached?.length) setCatalogProperties(cached)
-    fetchAuctionList(dbUserId ?? undefined)
-      .then((list) => {
-        if (!cancelled && Array.isArray(list) && list.length) setCatalogProperties(list)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
+    return undefined
+  }, [isChatOpen, recommendationProperties])
+
+  const catalogPropertiesRef = useRef(catalogProperties)
+  catalogPropertiesRef.current = catalogProperties
+
+  const ensureCatalogForAi = useCallback(async () => {
+    if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {
+      return recommendationProperties
     }
+    const cached = getCachedList()
+    if (cached?.length) {
+      setCatalogProperties(cached)
+      return cached
+    }
+    if (catalogPropertiesRef.current.length) return catalogPropertiesRef.current
+    try {
+      const list = await fetchAuctionList(dbUserId ?? undefined, {
+        catalogs: 'all',
+        includeTestTimers: false,
+      })
+      if (Array.isArray(list) && list.length) {
+        setCatalogProperties(list)
+        return list
+      }
+    } catch {
+      /* keep empty catalog */
+    }
+    return catalogPropertiesRef.current
   }, [recommendationProperties, dbUserId])
 
   const propertiesForAi = useMemo(() => {
@@ -113,21 +137,6 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     const storedId = getUserData()?.id || dbUserId
     return /^\d+$/.test(String(storedId || '')) ? String(storedId) : null
   }, [dbUserId, user, userLoaded])
-
-  useEffect(() => {
-    if (!isChatOpen || !isLoggedIn || !assistantDbUserId) return
-    void loadAssistantUserContext({
-      userId: assistantDbUserId,
-      identity: assistantUserIdentity,
-      catalog: propertiesForAi,
-    })
-  }, [
-    isChatOpen,
-    isLoggedIn,
-    assistantDbUserId,
-    assistantUserIdentity,
-    propertiesForAi,
-  ])
 
   useEffect(() => {
     const invalidate = () => invalidateAssistantUserContext(assistantDbUserId)
@@ -252,13 +261,17 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
       try {
         const historyKey = `aiChatHistory_${getChatUserId}`
         localStorage.setItem(historyKey, JSON.stringify(createAssistantCacheEnvelope(chatMessages)))
-        const userData = getUserData()
-        syncAssistantLead(getChatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
         console.error('Ошибка при сохранении истории чата:', error)
       }
     }
-  }, [chatMessages, userPreferences, getChatUserId])
+  }, [chatMessages, getChatUserId])
+
+  useEffect(() => {
+    if (!isChatOpen || !chatHistoryLoadedRef.current || chatMessages.length === 0) return
+    const userData = getUserData()
+    syncAssistantLead(getChatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
+  }, [isChatOpen, chatMessages, userPreferences, getChatUserId])
 
   useEffect(() => {
     if (chatHistoryLoadedRef.current) {
@@ -566,17 +579,18 @@ export function useSiteAiChatDock({ recommendationProperties = EMPTY_RECOMMENDAT
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
+      const catalog = await ensureCatalogForAi()
       const userContext = isLoggedIn && assistantDbUserId
         ? await loadAssistantUserContext({
             userId: assistantDbUserId,
             identity: assistantUserIdentity,
-            catalog: propertiesForAi,
+            catalog,
           })
         : { authenticated: false }
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         nextPreferences,
-        propertiesForAi,
+        catalog,
         {
           selectedLanguage: normalizeAssistantLanguage(i18n.resolvedLanguage || i18n.language),
           detectedLanguage: detectAssistantInputLanguage(userMessage),

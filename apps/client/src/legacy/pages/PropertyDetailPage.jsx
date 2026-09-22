@@ -1,13 +1,10 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Building2 } from 'lucide-react'
 import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
-import LoginModal from '../components/LoginModal'
-import Header from '../components/Header'
-import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
@@ -30,9 +27,14 @@ import {
 } from '../utils/propertySlug'
 import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../utils/propertySourceTable'
 import { usePageSeoOverride } from '../context/PageSeoContext'
-import NotFoundPage from '../components/NotFoundPage'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
 import './PropertyDetailPage.css'
+
+const LoginModal = lazyWithRetry(() => import('../components/LoginModal'))
+const Header = lazyWithRetry(() => import('../components/Header'))
+const BuyerEmptyState = lazyWithRetry(() => import('../components/buyer-mobile/BuyerEmptyState'))
+const NotFoundPage = lazyWithRetry(() => import('../components/NotFoundPage'))
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -41,7 +43,7 @@ function normalizePropertyDetailType(prop) {
   return prop.property_type || prop.propertyType || 'apartment'
 }
 
-function buildBuyerDetailPreview() {
+function buildBuyerDetailPreview({ auctionBuyNow = false } = {}) {
   const base = properties.find((item) => item.id === 11) || properties[0] || {}
 
   return {
@@ -55,7 +57,7 @@ function buildBuyerDetailPreview() {
     country: 'Испания',
     city: 'Марбелья',
     price: 1240000,
-    currentBid: 1240000,
+    currentBid: auctionBuyNow ? 1100000 : 1240000,
     currency: 'EUR',
     area: 238,
     sqft: 238,
@@ -81,12 +83,13 @@ function buildBuyerDetailPreview() {
     furniture: true,
     test_drive: true,
     testDrive: true,
-    is_auction: false,
-    isAuction: false,
-    endTime: null,
-    auction_end_date: null,
+    is_auction: auctionBuyNow,
+    isAuction: auctionBuyNow,
+    auction_starting_price: auctionBuyNow ? 1000000 : null,
+    endTime: auctionBuyNow ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
+    auction_end_date: auctionBuyNow ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
     test_timer_end_date: null,
-    sale_type: 'buy_now',
+    sale_type: auctionBuyNow ? 'auction' : 'buy_now',
     seller: 'SellYourBrick Verified',
     moderation_status: 'approved',
     is_reserved: false,
@@ -111,8 +114,9 @@ const PropertyDetailPage = () => {
   const [notFound, setNotFound] = useState(false)
 
   const buyerDetailPreview = useMemo(() => {
-    if (!import.meta.env?.DEV) return false
-    return new URLSearchParams(location.search || '').get('buyer_detail_preview') === '1'
+    if (!import.meta.env.DEV) return ''
+    const preview = new URLSearchParams(location.search || '').get('buyer_detail_preview')
+    return preview === '1' || preview === 'buy-now' ? preview : ''
   }, [location.search])
 
   const routeId = routeParam ?? ''
@@ -183,7 +187,7 @@ const PropertyDetailPage = () => {
 
     const loadProperty = async () => {
       if (buyerDetailPreview) {
-        setProperty(buildBuyerDetailPreview())
+        setProperty(buildBuyerDetailPreview({ auctionBuyNow: buyerDetailPreview === 'buy-now' }))
         setError(null)
         setIsLoading(false)
         return
@@ -493,7 +497,11 @@ const PropertyDetailPage = () => {
   }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
 
   if (notFound) {
-    return <NotFoundPage />
+    return (
+      <Suspense fallback={<PropertyDetailClassicSkeleton />}>
+        <NotFoundPage />
+      </Suspense>
+    )
   }
 
   if (isLoading && !property && !error) {
@@ -503,8 +511,11 @@ const PropertyDetailPage = () => {
   if (error && !property) {
     return (
       <div className="property-detail-recovery">
-        <Header />
+        <Suspense fallback={null}>
+          <Header />
+        </Suspense>
         <main className="property-detail-recovery__main">
+          <Suspense fallback={null}>
           <BuyerEmptyState
             icon={Building2}
             eyebrow="Продолжим выбор"
@@ -515,6 +526,7 @@ const PropertyDetailPage = () => {
             secondaryLabel="Все направления"
             onSecondary={() => navigate('/sections')}
           />
+          </Suspense>
         </main>
       </div>
     )
@@ -570,10 +582,14 @@ const PropertyDetailPage = () => {
         onRequireLogin={() => setIsLoginModalOpen(true)}
         requireAuthOnLoad={false}
       />
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleLoginModalClose}
-      />
+      {isLoginModalOpen ? (
+        <Suspense fallback={null}>
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={handleLoginModalClose}
+          />
+        </Suspense>
+      ) : null}
     </>
   )
 }

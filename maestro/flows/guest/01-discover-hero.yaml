@@ -1,0 +1,29 @@
+url: ${APP_URL}
+name: guest-discover-hero
+tags:
+  - guest
+  - smoke
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- waitForAnimationToEnd
+- assertVisible: "Find Your Dream"
+- assertVisible: "Home Easily"
+- tapOn:
+    id: "Go to next screen"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "Sale formats"
+    timeout: 30000
+- assertVisible: "Four  Strategies"
+- assertVisible:
+    id: "Auction"
+- assertVisible:
+    id: "Buy now"
+- assertVisible:
+    id: "Debts"
+- assertVisible:
+    id: "Shares"
+- takeScreenshot: guest_discover_stage

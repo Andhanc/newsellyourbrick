@@ -4,6 +4,7 @@ import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { Check, Circle } from 'lucide-react'
 import { FiCalendar } from 'react-icons/fi'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
+import { fetchTestDriveEligibility } from '../utils/testDriveEligibilityApi'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
@@ -27,31 +28,21 @@ export default function TestDriveSection({
     can_request: false,
   })
 
-  const fetchEligibility = useCallback(async () => {
+  const fetchEligibility = useCallback(async ({ force = false } = {}) => {
     try {
       const { getApiBaseUrl } = await import('../utils/apiConfig')
       API_BASE_URL = await getApiBaseUrl()
       const uid = localStorage.getItem('userId')
-      if (!uid || !/^\d+$/.test(uid)) {
-        setEligibility({ has_deposit: false, can_request: false })
-        setLoading(false)
-        return
-      }
-      const q = new URLSearchParams({
-        user_id: uid,
-        property_table: propertyTable || 'properties_apartments',
+      const data = await fetchTestDriveEligibility(API_BASE_URL, {
+        propertyKey: propertySlug || propertyId,
+        userId: uid,
+        propertyTable,
+        force,
       })
-      const apiKey = propertySlug || propertyId
-      const res = await fetch(
-        `${API_BASE_URL}/properties/${encodeURIComponent(apiKey)}/test-drive/eligibility?${q.toString()}`
-      )
-      const json = await res.json()
-      if (json.success && json.data) {
-        setEligibility({
-          has_deposit: !!json.data.has_deposit,
-          can_request: !!json.data.can_request,
-        })
-      }
+      setEligibility({
+        has_deposit: Boolean(data?.has_deposit),
+        can_request: Boolean(data?.can_request),
+      })
     } catch (e) {
       console.warn('test-drive eligibility', e)
     } finally {
@@ -60,23 +51,18 @@ export default function TestDriveSection({
   }, [propertyId, propertySlug, propertyTable])
 
   useEffect(() => {
-    fetchEligibility()
+    void fetchEligibility()
   }, [fetchEligibility])
 
   useEffect(() => {
     const onRefresh = (ev) => {
       if (String(ev.detail?.propertyId) === String(propertyId)) {
-        fetchEligibility()
+        void fetchEligibility({ force: true })
       }
     }
     window.addEventListener('syb-testdrive-refresh', onRefresh)
     return () => window.removeEventListener('syb-testdrive-refresh', onRefresh)
   }, [propertyId, fetchEligibility])
-
-  useEffect(() => {
-    const t = setInterval(() => fetchEligibility(), 5000)
-    return () => clearInterval(t)
-  }, [fetchEligibility])
 
   if (!hasTestDrive) return null
 

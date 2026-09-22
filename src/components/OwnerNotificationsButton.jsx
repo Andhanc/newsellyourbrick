@@ -124,15 +124,12 @@ export default function OwnerNotificationsButton({
   }, [items])
 
   useEffect(() => {
+    if (items || !open) return undefined
     loadBidNotifications()
-  }, [loadBidNotifications])
-
-  useEffect(() => {
-    if (items) return undefined
     const onUserSynced = () => loadBidNotifications()
     window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
     return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
-  }, [items, loadBidNotifications])
+  }, [items, open, loadBidNotifications])
 
   const fetchedItems = useMemo(() => {
     const propertyByKey = new Map(

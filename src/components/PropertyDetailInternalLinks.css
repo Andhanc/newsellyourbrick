@@ -6,6 +6,12 @@
   gap: 1.75rem;
 }
 
+.property-internal-links--sentinel {
+  margin: 0;
+  padding: 0;
+  min-height: 1px;
+}
+
 .property-internal-links__block {
   padding: 1.25rem 1.35rem;
   border-radius: 16px;

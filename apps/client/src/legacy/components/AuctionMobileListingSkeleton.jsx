@@ -1,11 +1,14 @@
+import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { List, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../constants/auctionMobileViewStorage'
-import { DebtsPropertyCardSkeleton } from './DebtsPropertyCard'
 import './AuctionPropertyCard.css'
-import './DebtsPropertyCard.css'
 import './ui/AuctionMobileLayout.css'
+
+const DebtsPropertyCardSkeleton = lazy(() =>
+  import('./DebtsPropertyCard').then((mod) => ({ default: mod.DebtsPropertyCardSkeleton })),
+)
 
 /**
  * Скелетон списка мобильного аукциона: повторяет разметку list vs card (`auction-mobile-stack` / `--grid`),
@@ -53,7 +56,9 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list', debtsCards = f
         {Array.from({ length: itemCount }, (_, i) =>
           isCard ? (
             debtsCards ? (
-              <DebtsPropertyCardSkeleton key={`am-sk-${i}`} />
+              <Suspense fallback={<AuctionDesktopCardSkeletonItem />} key={`am-sk-${i}`}>
+                <DebtsPropertyCardSkeleton />
+              </Suspense>
             ) : (
               <AuctionDesktopCardSkeletonItem key={`am-sk-${i}`} />
             )

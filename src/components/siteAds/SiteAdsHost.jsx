@@ -36,16 +36,19 @@ export default function SiteAdsHost({ initialAds = null }) {
     }
   }, [initialAds])
 
+  const isHiddenRoute = pathname === '/' || HIDDEN_PATH_PREFIXES.some((p) => pathname.startsWith(p))
+  const adsEnabled = Boolean(pageKey) && !isHiddenRoute
+
   useEffect(() => {
+    if (!adsEnabled) return undefined
     void loadAds()
-  }, [loadAds, pathname])
+    return undefined
+  }, [adsEnabled, loadAds])
 
   useEffect(() => {
     setModalDismissed(false)
     setDismissedBlockIds([])
   }, [pathname, pageKey])
-
-  const isHiddenRoute = pathname === '/' || HIDDEN_PATH_PREFIXES.some((p) => pathname.startsWith(p))
 
   const pageAds = useMemo(() => {
     if (!pageKey) return []

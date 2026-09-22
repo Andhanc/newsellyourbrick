@@ -1,9 +1,8 @@
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiArrowDownLeft, FiChevronRight, FiCreditCard, FiEye, FiEyeOff, FiGift, FiMenu, FiPlus, FiSliders, FiUser } from 'react-icons/fi'
-import { Gavel } from 'lucide-react'
+import { ArrowDown, ArrowUp, Gavel } from 'lucide-react'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
   TonConnectUIProvider,
@@ -1029,7 +1028,7 @@ const WalletInner = () => {
                 transactions.map((transaction, index) => (
                   <div key={transaction.id || index} className="wallet-bank__tx-item">
                     <div className="wallet-bank__tx-avatar" aria-hidden>
-                      {transaction.amount > 0 ? <FaArrowDown /> : <FaArrowUp />}
+                      {transaction.amount > 0 ? <ArrowDown /> : <ArrowUp />}
                     </div>
                     <div className="wallet-bank__tx-info">
                       <div className="wallet-bank__tx-name">

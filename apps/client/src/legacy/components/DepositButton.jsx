@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { useState } from 'react'
-import { FaWallet, FaExternalLinkAlt } from 'react-icons/fa'
+import { ExternalLink, Wallet } from 'lucide-react'
 import './DepositButton.css'
 
 const DepositButton = ({ amount = 0 }) => {
@@ -49,14 +49,14 @@ const DepositButton = ({ amount = 0 }) => {
       <div className="deposit-button__content-wrapper">
         <div className="deposit-button__icon-wrapper">
           <div className="deposit-button__icon-bg"></div>
-          <FaWallet className="deposit-button__icon" />
+          <Wallet className="deposit-button__icon" aria-hidden />
         </div>
         <div className="deposit-button__content">
           <div className="deposit-button__label">{t('depositButton_label')}</div>
           <div className="deposit-button__amount">{formatAmount(amount)}</div>
         </div>
         <div className="deposit-button__arrow">
-          <FaExternalLinkAlt />
+          <ExternalLink aria-hidden />
         </div>
       </div>
       <div className="deposit-button__particles">

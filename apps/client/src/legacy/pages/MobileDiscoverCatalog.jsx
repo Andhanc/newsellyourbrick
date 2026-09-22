@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FaApple, FaGooglePlay } from 'react-icons/fa'
 import { FiArrowRight, FiArrowUpRight } from 'react-icons/fi'
 import Footer from '../components/Footer'
 import MobileDiscoverFaq from '../components/MobileDiscoverFaq'
 import InvestorPropertyShowcaseSection from '../components/InvestorPropertyShowcaseSection'
-import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { usePropertyFavorites, PROPERTY_FAVORITES_NEEDED } from '../context/PropertyFavoritesContext'
 import { useInvestorHomeShowcases } from '../hooks/useInvestorHomeShowcases'
 import { fetchPublishedArticles } from '../services/newsApi'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { publicAsset } from '../utils/publicAsset'
+import { AppleIcon, GooglePlayIcon } from '../components/icons/ContactChannelIcons'
 import './InvestorHomePage.css'
 import '../styles/discoverAuctionCards.css'
 
@@ -228,7 +228,7 @@ function AppDownloadSection() {
             rel="noopener noreferrer"
           >
             <span className="md-app-download__btn-icon" aria-hidden>
-              <FaApple />
+              <AppleIcon />
             </span>
             <span className="md-app-download__btn-copy">
               <span className="md-app-download__btn-eyebrow">{t('discoverPage_downloadOn')}</span>
@@ -243,7 +243,7 @@ function AppDownloadSection() {
             rel="noopener noreferrer"
           >
             <span className="md-app-download__btn-icon" aria-hidden>
-              <FaGooglePlay />
+              <GooglePlayIcon />
             </span>
             <span className="md-app-download__btn-copy">
               <span className="md-app-download__btn-eyebrow">{t('discoverPage_availableOn')}</span>
@@ -387,6 +387,10 @@ export default function MobileDiscoverCatalog() {
     debtsSection,
     sharesSection,
   } = useInvestorHomeShowcases()
+
+  useEffect(() => {
+    window.dispatchEvent(new Event(PROPERTY_FAVORITES_NEEDED))
+  }, [])
 
   const itemsByKey = {
     auctionSection,

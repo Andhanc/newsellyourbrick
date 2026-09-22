@@ -1,26 +1,19 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
-import ru from './locales/mainPage/ru.json'
-import en from './locales/mainPage/en.json'
-import de from './locales/mainPage/de.json'
-import es from './locales/mainPage/es.json'
-import fr from './locales/mainPage/fr.json'
-import pl from './locales/mainPage/pl.json'
-import sv from './locales/mainPage/sv.json'
 
 export const DEFAULT_APP_LANGUAGE = 'en'
 
 const SUPPORTED = ['en', 'ru', 'de', 'es', 'fr', 'pl', 'sv']
 
 const LOCALE_LOADERS = {
-  ru: async () => ({ default: ru }),
-  en: async () => ({ default: en }),
-  de: async () => ({ default: de }),
-  es: async () => ({ default: es }),
-  fr: async () => ({ default: fr }),
-  pl: async () => ({ default: pl }),
-  sv: async () => ({ default: sv }),
+  ru: () => import('./locales/mainPage/ru.json'),
+  en: () => import('./locales/mainPage/en.json'),
+  de: () => import('./locales/mainPage/de.json'),
+  es: () => import('./locales/mainPage/es.json'),
+  fr: () => import('./locales/mainPage/fr.json'),
+  pl: () => import('./locales/mainPage/pl.json'),
+  sv: () => import('./locales/mainPage/sv.json'),
 }
 
 const bundleInflight = new Map()
@@ -102,6 +95,7 @@ function initI18nOnce() {
           escapeValue: false,
         },
         detection: {
+          // Only honor an explicit user choice; first visit stays on DEFAULT_APP_LANGUAGE.
           order: ['localStorage'],
           caches: ['localStorage'],
         },

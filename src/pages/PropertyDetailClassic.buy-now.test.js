@@ -44,6 +44,10 @@ const newLocaleKeys = [
 ]
 
 test('mobile Buy now explains the fixed-price payment split', () => {
+  assert.match(mainPage, /isShareListing \|\| !isAuctionProperty/)
+  assert.match(mainPage, /fetchUserDeposit/)
+  assert.match(mainPage, /fetchVerificationStatus/)
+  assert.match(mainPage, /флаг в таймере берём со ставки/)
   assert.match(mainPage, /const buyNowReserveAmount = fullBuyNowPrice \* 0\.1/)
   assert.match(mainPage, /property-detail-mobile-buy-now__brand/)
   assert.match(mainPage, /property-detail-mobile-buy-now__total/)

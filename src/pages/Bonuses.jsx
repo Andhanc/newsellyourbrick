@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FiCheck, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus, FiArrowUpRight, FiChevronDown } from 'react-icons/fi'
-import { FaInstagram, FaTiktok } from 'react-icons/fa'
+import { InstagramIcon, TikTokIcon } from '../components/icons/ContactChannelIcons'
 import Header from '../components/Header'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { getUserData } from '../services/authService'
@@ -16,18 +16,18 @@ import './Bonuses.css'
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
 const BUYER_TASKS = [
-  { id: 1, titleKey: 'bonus1Title', icon: FaInstagram, promoCode: 'BONUS-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus1Step1', 'bonus1Step2', 'bonus1Step3', 'bonus1Step4'], linkPlaceholderKey: 'bonus1Placeholder', linkHintKey: 'bonus1Hint' },
-  { id: 2, titleKey: 'bonus2Title', icon: FaTiktok, promoCode: 'BONUS-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus2Step1', 'bonus2Step2', 'bonus2Step3', 'bonus2Step4'], linkPlaceholderKey: 'bonus2Placeholder', linkHintKey: 'bonus2Hint' },
-  { id: 3, titleKey: 'bonus3Title', icon: FaInstagram, promoCode: 'BONUS-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus3Step1', 'bonus3Step2', 'bonus3Step3', 'bonus3Step4'], linkPlaceholderKey: 'bonus3Placeholder', linkHintKey: 'bonus3Hint' },
-  { id: 4, titleKey: 'bonus4Title', icon: FaInstagram, promoCode: 'BONUS-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus4Step1', 'bonus4Step2', 'bonus4Step3', 'bonus4Step4'], linkPlaceholderKey: 'bonus4Placeholder', linkHintKey: 'bonus4Hint' },
+  { id: 1, titleKey: 'bonus1Title', icon: InstagramIcon, promoCode: 'BONUS-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus1Step1', 'bonus1Step2', 'bonus1Step3', 'bonus1Step4'], linkPlaceholderKey: 'bonus1Placeholder', linkHintKey: 'bonus1Hint' },
+  { id: 2, titleKey: 'bonus2Title', icon: TikTokIcon, promoCode: 'BONUS-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus2Step1', 'bonus2Step2', 'bonus2Step3', 'bonus2Step4'], linkPlaceholderKey: 'bonus2Placeholder', linkHintKey: 'bonus2Hint' },
+  { id: 3, titleKey: 'bonus3Title', icon: InstagramIcon, promoCode: 'BONUS-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus3Step1', 'bonus3Step2', 'bonus3Step3', 'bonus3Step4'], linkPlaceholderKey: 'bonus3Placeholder', linkHintKey: 'bonus3Hint' },
+  { id: 4, titleKey: 'bonus4Title', icon: InstagramIcon, promoCode: 'BONUS-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus4Step1', 'bonus4Step2', 'bonus4Step3', 'bonus4Step4'], linkPlaceholderKey: 'bonus4Placeholder', linkHintKey: 'bonus4Hint' },
   { id: 9, titleKey: 'bonus9Title', icon: FiUserPlus, promoCode: 'BONUS-REFER-10', promoUsageLimit: 1, referral: true, stepKeys: ['bonus9Step1', 'bonus9Step2', 'bonus9Step3', 'bonus9Step4'], linkPlaceholderKey: '', linkHintKey: '' },
 ]
 
 const SELLER_TASKS = [
-  { id: 5, titleKey: 'bonus5Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus5Step1', 'bonus5Step2', 'bonus5Step3', 'bonus5Step4'], linkPlaceholderKey: 'bonus5Placeholder', linkHintKey: 'bonus5Hint' },
-  { id: 6, titleKey: 'bonus6Title', icon: FaTiktok, promoCode: 'BONUS-SELLER-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus6Step1', 'bonus6Step2', 'bonus6Step3', 'bonus6Step4'], linkPlaceholderKey: 'bonus6Placeholder', linkHintKey: 'bonus6Hint' },
-  { id: 7, titleKey: 'bonus7Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus7Step1', 'bonus7Step2', 'bonus7Step3', 'bonus7Step4'], linkPlaceholderKey: 'bonus7Placeholder', linkHintKey: 'bonus7Hint' },
-  { id: 8, titleKey: 'bonus8Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus8Step1', 'bonus8Step2', 'bonus8Step3', 'bonus8Step4'], linkPlaceholderKey: 'bonus8Placeholder', linkHintKey: 'bonus8Hint' },
+  { id: 5, titleKey: 'bonus5Title', icon: InstagramIcon, promoCode: 'BONUS-SELLER-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus5Step1', 'bonus5Step2', 'bonus5Step3', 'bonus5Step4'], linkPlaceholderKey: 'bonus5Placeholder', linkHintKey: 'bonus5Hint' },
+  { id: 6, titleKey: 'bonus6Title', icon: TikTokIcon, promoCode: 'BONUS-SELLER-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus6Step1', 'bonus6Step2', 'bonus6Step3', 'bonus6Step4'], linkPlaceholderKey: 'bonus6Placeholder', linkHintKey: 'bonus6Hint' },
+  { id: 7, titleKey: 'bonus7Title', icon: InstagramIcon, promoCode: 'BONUS-SELLER-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus7Step1', 'bonus7Step2', 'bonus7Step3', 'bonus7Step4'], linkPlaceholderKey: 'bonus7Placeholder', linkHintKey: 'bonus7Hint' },
+  { id: 8, titleKey: 'bonus8Title', icon: InstagramIcon, promoCode: 'BONUS-SELLER-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus8Step1', 'bonus8Step2', 'bonus8Step3', 'bonus8Step4'], linkPlaceholderKey: 'bonus8Placeholder', linkHintKey: 'bonus8Hint' },
 ]
 
 const ALL_TASKS = [...BUYER_TASKS, ...SELLER_TASKS]

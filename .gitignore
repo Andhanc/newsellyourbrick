@@ -116,3 +116,7 @@ apps/client/dist-android/
 apps/client/android-build.log
 apps/client/.env.production
 *.apk
+
+# Maestro local run artifacts (keep LATEST.md tracked optionally)
+maestro/reports/*-run-*/
+maestro/reports/*.xml

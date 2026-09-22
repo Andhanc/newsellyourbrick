@@ -1,0 +1,8 @@
+# Shared subflow: enter discover stage from hero splash
+---
+- tapOn:
+    id: "Go to next screen"
+- extendedWaitUntil:
+    visible:
+      id: "Sale formats"
+    timeout: 20000

@@ -1,25 +1,23 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useSiteAiChatDock } from '../hooks/useSiteAiChatDock'
-import AiChatModal from './AiChatModal'
+import { lazy, Suspense, useEffect, useState } from 'react'
+
+const GlobalAiChatSession = lazy(() => import('./GlobalAiChatSession'))
 
 const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
 
 /**
  * App-wide AI chat host (Header «Умный помощник», FAB AI, owner cabinet).
- * Desktop → modal, mobile → drawer — same shell as manager chat.
+ * The assistant session chunk stays off the page until openAIChat fires.
  */
 export default function GlobalAiChatHost() {
-  const [recommendationProperties, setRecommendationProperties] = useState(EMPTY_RECOMMENDATION_PROPERTIES)
+  const [sessionArmed, setSessionArmed] = useState(false)
+  const [recommendationProperties, setRecommendationProperties] = useState(
+    EMPTY_RECOMMENDATION_PROPERTIES,
+  )
   const [resolveRecommendationProperty, setResolveRecommendationProperty] = useState(null)
   const [onRecommendationClick, setOnRecommendationClick] = useState(null)
 
-  const chat = useSiteAiChatDock({ recommendationProperties })
-
-  const closeChat = useCallback(() => {
-    chat.closeChatDock()
-  }, [chat])
-
   useEffect(() => {
+    const onOpen = () => setSessionArmed(true)
     const onConfigure = (event) => {
       const detail = event.detail || {}
       if (Array.isArray(detail.recommendationProperties)) {
@@ -32,18 +30,24 @@ export default function GlobalAiChatHost() {
         setOnRecommendationClick(() => detail.onRecommendationClick)
       }
     }
+    window.addEventListener('openAIChat', onOpen)
     window.addEventListener('configureAIChatHost', onConfigure)
-    return () => window.removeEventListener('configureAIChatHost', onConfigure)
+    return () => {
+      window.removeEventListener('openAIChat', onOpen)
+      window.removeEventListener('configureAIChatHost', onConfigure)
+    }
   }, [])
 
+  if (!sessionArmed) return null
+
   return (
-    <AiChatModal
-      open={chat.isChatOpen}
-      onClose={closeChat}
-      chat={chat}
-      recommendationProperties={recommendationProperties}
-      resolveRecommendationProperty={resolveRecommendationProperty}
-      onRecommendationClick={onRecommendationClick}
-    />
+    <Suspense fallback={null}>
+      <GlobalAiChatSession
+        initialOpen
+        recommendationProperties={recommendationProperties}
+        resolveRecommendationProperty={resolveRecommendationProperty}
+        onRecommendationClick={onRecommendationClick}
+      />
+    </Suspense>
   )
 }

@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises'
 const source = await readFile(new URL('./PropertyDetailClassic.jsx', import.meta.url), 'utf8')
 
 test('integrates the debt insight into desktop and mobile auction layouts', () => {
-  assert.match(source, /import DebtAuctionInsight from '..\/components\/DebtAuctionInsight'/)
-  assert.match(source, /import PropertyDebtRiskBanner from '..\/components\/PropertyDebtRiskBanner'/)
+  assert.match(source, /const DebtAuctionInsight = lazyWithRetry\(\(\) => import\('\.\.\/components\/DebtAuctionInsight'\)\)/)
+  assert.match(source, /const PropertyDebtRiskBanner = lazyWithRetry\(\(\) => import\('\.\.\/components\/PropertyDebtRiskBanner'\)\)/)
   assert.match(source, /renderDesktopAuctionDebtRisk[\s\S]*?<DebtAuctionInsight/)
   assert.match(source, /onRequireLogin=\{onRequireLogin\}/)
   assert.match(source, /onOpenDocuments=\{openDebtPropertyDocuments\}/)

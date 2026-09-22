@@ -1,30 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import Header from '../components/admin/Header';
-import Statistics from '../components/admin/Statistics';
-import Operations from '../components/admin/Operations';
-import Promotions from '../components/admin/Promotions';
-import UsersModal from '../components/admin/UsersModal';
-import UsersList from '../components/admin/UsersList';
-import Moderation from '../components/admin/Moderation';
-import ObjectsList from '../components/admin/ObjectsList';
-import AdminChat from '../components/admin/AdminChat';
-import WhatsApp from '../components/admin/WhatsApp';
-import SmartAssistant from '../components/admin/SmartAssistant';
-import Clients from '../components/admin/Clients';
-import PurchaseRequests from '../components/admin/PurchaseRequests';
-import BonusesSubmissions from '../components/admin/BonusesSubmissions';
-import AccessManagement from '../components/admin/AccessManagement';
-import Testing from '../components/admin/Testing';
-import StorageMirror from '../components/admin/StorageMirror';
-import DebtReasons from '../components/admin/DebtReasons';
-import DebtDocuments from '../components/admin/DebtDocuments';
-import AdminAddition from '../components/admin/AdminAddition';
-import AdminTestDrive from '../components/admin/AdminTestDrive';
-import AdminAuctions from '../components/admin/AdminAuctions';
-import AdminPrivateClub from '../components/admin/AdminPrivateClub';
-import SeoPanel from '../components/admin/SeoPanel';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import {
@@ -32,9 +10,9 @@ import {
   applyAdminSidebarBadgePatch,
   buildSectionViewBadgePatch,
   markAdminSectionViewed,
-  requestAdminSidebarBadgesRefresh,
 } from '../utils/adminSidebarBadges';
 import {
+  ADMIN_SIDEBAR_BADGE_IDS,
   createEmptyAdminSidebarBadges,
   fetchAdminSidebarBadges,
 } from '../utils/fetchAdminSidebarBadges';
@@ -43,9 +21,37 @@ import { showNotification } from '../utils/toastHelper';
 import '../styles/admin/global.css';
 import './AdminPanelPage.css';
 
+const Statistics = lazyWithRetry(() => import('../components/admin/Statistics'));
+const UsersModal = lazyWithRetry(() => import('../components/admin/UsersModal'));
+const UsersList = lazyWithRetry(() => import('../components/admin/UsersList'));
+const Moderation = lazyWithRetry(() => import('../components/admin/Moderation'));
+const ObjectsList = lazyWithRetry(() => import('../components/admin/ObjectsList'));
+const AdminChat = lazyWithRetry(() => import('../components/admin/AdminChat'));
+const WhatsApp = lazyWithRetry(() => import('../components/admin/WhatsApp'));
+const SmartAssistant = lazyWithRetry(() => import('../components/admin/SmartAssistant'));
+const Clients = lazyWithRetry(() => import('../components/admin/Clients'));
+const PurchaseRequests = lazyWithRetry(() => import('../components/admin/PurchaseRequests'));
+const BonusesSubmissions = lazyWithRetry(() => import('../components/admin/BonusesSubmissions'));
+const AccessManagement = lazyWithRetry(() => import('../components/admin/AccessManagement'));
+const Testing = lazyWithRetry(() => import('../components/admin/Testing'));
+const StorageMirror = lazyWithRetry(() => import('../components/admin/StorageMirror'));
+const DebtReasons = lazyWithRetry(() => import('../components/admin/DebtReasons'));
+const DebtDocuments = lazyWithRetry(() => import('../components/admin/DebtDocuments'));
+const AdminAddition = lazyWithRetry(() => import('../components/admin/AdminAddition'));
+const AdminTestDrive = lazyWithRetry(() => import('../components/admin/AdminTestDrive'));
+const AdminAuctions = lazyWithRetry(() => import('../components/admin/AdminAuctions'));
+const AdminPrivateClub = lazyWithRetry(() => import('../components/admin/AdminPrivateClub'));
+const SeoPanel = lazyWithRetry(() => import('../components/admin/SeoPanel'));
+
+function readAdminSectionFromHash() {
+  if (typeof window === 'undefined') return 'statistics';
+  const id = String(window.location.hash || '').replace(/^#/, '');
+  return ADMIN_SIDEBAR_BADGE_IDS.includes(id) ? id : 'statistics';
+}
+
 const AdminPanelPage = () => {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('statistics');
+  const [activeSection, setActiveSection] = useState(readAdminSectionFromHash);
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState(null);
   const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
@@ -179,11 +185,22 @@ const AdminPanelPage = () => {
         setSidebarBadges((prev) => applyAdminSidebarBadgePatch(prev, viewPatch));
       }
       setActiveSection(section);
-      requestAdminSidebarBadgesRefresh();
+      if (typeof window !== 'undefined' && window.location.hash !== `#${section}`) {
+        window.history.replaceState(null, '', `#${section}`);
+      }
     } else {
       showNotification('У вас нет прав доступа к этому разделу');
     }
   };
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const next = readAdminSectionFromHash();
+      setActiveSection((prev) => (prev === next ? prev : next));
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   useEffect(() => {
     // При смене раздела начинаем новую вкладку с самого верха.
@@ -226,7 +243,7 @@ const AdminPanelPage = () => {
     void refreshSidebarBadges();
     const id = setInterval(() => void refreshSidebarBadges(), 90000);
     return () => clearInterval(id);
-  }, [activeSection, refreshSidebarBadges]);
+  }, [refreshSidebarBadges]);
 
   useEffect(() => {
     return subscribeBonusSubmissionsChanged(() => {
@@ -327,18 +344,22 @@ const AdminPanelPage = () => {
         onCrmMenuClose={closeClientsAdminMenu}
         sectionBadges={sidebarBadges}
       />
-      <div ref={mainContentRef} className="main-content">
+      <div ref={mainContentRef} className="main-content" data-admin-section={activeSection}>
         <Header 
           title={sectionTitles[activeSection] || 'Статистика'} 
           onLogout={handleLogout}
           onBack={handleBack}
         />
-        {renderContent()}
+        <Suspense fallback={<div className="admin-section-fallback" aria-busy="true" />}>
+          {renderContent()}
+        </Suspense>
       </div>
-      <UsersModal
-        isOpen={showUsersModal}
-        onClose={() => setShowUsersModal(false)}
-      />
+      <Suspense fallback={null}>
+        <UsersModal
+          isOpen={showUsersModal}
+          onClose={() => setShowUsersModal(false)}
+        />
+      </Suspense>
     </div>
   );
 };

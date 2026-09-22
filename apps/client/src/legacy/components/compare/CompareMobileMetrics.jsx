@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { FiRefreshCw, FiRotateCcw } from 'react-icons/fi'
-import { FaTrophy } from 'react-icons/fa'
+import { Trophy } from 'lucide-react'
 import { formatPropertyPrice } from '../../utils/currency'
 import { getPropertyCardImage } from '../../utils/propertyImage'
 import { resolvePositivePropertyPrice } from '../../utils/compareDecision'
@@ -96,7 +96,7 @@ function MetricValue({ row, side, objectView }) {
         <span className="compare-mobile__value-badge">{side === 'left' ? 1 : 2}</span>
         {isWinner ? (
           <span className="compare-mobile__winner" title={t('comparePage_stronger')}>
-            <FaTrophy />
+            <Trophy aria-hidden />
           </span>
         ) : null}
       </span>

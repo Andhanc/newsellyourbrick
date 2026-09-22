@@ -1,6 +1,6 @@
-import { countries as countryList } from '../components/CountrySelect'
+import { countries as countryList } from '../data/countries'
 
-const LOCALES = ['ru', 'en', 'de', 'es', 'fr', 'sv', 'pl']
+const LOCALES = ['ru', 'en', 'de', 'es', 'fr', 'sv']
 
 /** Флаг из двухбуквенного кода ISO 3166-1 alpha-2 (региональные индикаторы Unicode) */
 export function flagEmojiFromAlpha2(code) {

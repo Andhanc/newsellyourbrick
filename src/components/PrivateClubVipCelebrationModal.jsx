@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useReducedMotion } from 'framer-motion'
-import { FaGem } from 'react-icons/fa'
+import { Gem } from 'lucide-react'
 import Confetti from 'react-confetti'
 import './PrivateClubVipCelebrationModal.css'
 
@@ -121,7 +121,7 @@ export default function PrivateClubVipCelebrationModal({ open, onClose, onGoToPr
           <span>🎊</span>
         </div>
         <div className="private-club-vip-celebration__icon-wrap" aria-hidden>
-          <FaGem size={34} color="#0099A9" />
+          <Gem size={34} color="#0099A9" />
         </div>
         <h2 id="private-club-vip-celebration-title" className="private-club-vip-celebration__title">
           {t('privateClubVipCelebrationTitle')}

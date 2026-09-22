@@ -1,5 +1,28 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel, FaGem, FaSearch } from 'react-icons/fa';
+import {
+  BarChart3,
+  Users,
+  Gem,
+  Shield,
+  MessageCircle,
+  Bot,
+  PlusSquare,
+  Building2,
+  Gavel,
+  Car,
+  FileText,
+  File,
+  Contact,
+  ShoppingCart,
+  Gift,
+  Search,
+  FlaskConical,
+  Key,
+  Warehouse,
+  X,
+  LogOut,
+} from 'lucide-react';
+import { WhatsAppIcon } from '../icons/ContactChannelIcons';
 import './Sidebar.css';
 
 function sidebarBadgeToneClass() {
@@ -21,26 +44,26 @@ const Sidebar = ({
   const isSuperAdmin = permissions.is_super_admin || false;
 
   const allMenuItems = [
-    { id: 'statistics', icon: FaChartBar, label: 'Статистика', permission: 'can_access_statistics' },
-    { id: 'users', icon: FaUsers, label: 'Пользователи', permission: 'can_access_users' },
-    { id: 'private_club', icon: FaGem, label: 'Закрытый клуб', permission: 'can_access_users' },
-    { id: 'moderation', icon: FaShieldAlt, label: 'Модерация', permission: 'can_access_moderation' },
-    { id: 'chat', icon: FaComment, label: 'Поддержка', permission: 'can_access_chat' },
-    { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
-    { id: 'addition', icon: FaPlusSquare, label: 'Добавление', permission: 'can_access_objects' },
-    { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },
-    { id: 'auctions', icon: FaGavel, label: 'Аукционы', permission: 'can_access_objects' },
-    { id: 'test_drive', icon: FaCar, label: 'Тест-драйв', permission: 'can_access_objects' },
-    { id: 'debt_reasons', icon: FaFileInvoiceDollar, label: 'Причина долга', permission: 'can_access_objects' },
-    { id: 'debt_documents', icon: FaFileAlt, label: 'Необходимые документы', permission: 'can_access_objects' },
-    { id: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp', permission: 'can_access_whatsapp' },
-    { id: 'clients', icon: FaAddressBook, label: 'Клиенты / CRM', permission: 'can_access_clients' },
-    { id: 'purchase_requests', icon: FaShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
-    { id: 'bonuses', icon: FaGift, label: 'Бонусные задания', permission: 'can_access_moderation' },
-    { id: 'seo', icon: FaSearch, label: 'SEO', permission: 'can_access_seo' },
-    { id: 'testing', icon: FaFlask, label: 'Тестирование', permission: 'can_access_objects' },
-    { id: 'access_management', icon: FaKey, label: 'Доступы', permission: 'can_access_access_management' },
-    { id: 'storage', icon: FaWarehouse, label: 'Хранилище', permission: 'can_access_objects' }
+    { id: 'statistics', icon: BarChart3, label: 'Статистика', permission: 'can_access_statistics' },
+    { id: 'users', icon: Users, label: 'Пользователи', permission: 'can_access_users' },
+    { id: 'private_club', icon: Gem, label: 'Закрытый клуб', permission: 'can_access_users' },
+    { id: 'moderation', icon: Shield, label: 'Модерация', permission: 'can_access_moderation' },
+    { id: 'chat', icon: MessageCircle, label: 'Поддержка', permission: 'can_access_chat' },
+    { id: 'smart_assistant', icon: Bot, label: 'Умный помощник', permission: 'can_access_chat' },
+    { id: 'addition', icon: PlusSquare, label: 'Добавление', permission: 'can_access_objects' },
+    { id: 'objects', icon: Building2, label: 'Объекты', permission: 'can_access_objects' },
+    { id: 'auctions', icon: Gavel, label: 'Аукционы', permission: 'can_access_objects' },
+    { id: 'test_drive', icon: Car, label: 'Тест-драйв', permission: 'can_access_objects' },
+    { id: 'debt_reasons', icon: FileText, label: 'Причина долга', permission: 'can_access_objects' },
+    { id: 'debt_documents', icon: File, label: 'Необходимые документы', permission: 'can_access_objects' },
+    { id: 'whatsapp', icon: WhatsAppIcon, label: 'WhatsApp', permission: 'can_access_whatsapp' },
+    { id: 'clients', icon: Contact, label: 'Клиенты / CRM', permission: 'can_access_clients' },
+    { id: 'purchase_requests', icon: ShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
+    { id: 'bonuses', icon: Gift, label: 'Бонусные задания', permission: 'can_access_moderation' },
+    { id: 'seo', icon: Search, label: 'SEO', permission: 'can_access_seo' },
+    { id: 'testing', icon: FlaskConical, label: 'Тестирование', permission: 'can_access_objects' },
+    { id: 'access_management', icon: Key, label: 'Доступы', permission: 'can_access_access_management' },
+    { id: 'storage', icon: Warehouse, label: 'Хранилище', permission: 'can_access_objects' }
   ];
 
   // Фильтруем пункты меню в зависимости от прав доступа
@@ -91,7 +114,7 @@ const Sidebar = ({
           aria-label="Закрыть меню"
           onClick={handleCloseSidebar}
         >
-          <FaTimes size={18} />
+          <X size={18} />
         </button>
       </div>
       <div className="sidebar-menu">
@@ -103,6 +126,7 @@ const Sidebar = ({
           return (
             <div
               key={item.id}
+              data-section={item.id}
               className={['menu-item', activeSection === item.id ? 'active' : ''].filter(Boolean).join(' ')}
               onClick={() => {
                 onSectionChange(item.id);
@@ -133,7 +157,7 @@ const Sidebar = ({
             onLogout();
           }}
         >
-          <FaSignOutAlt size={20} />
+          <LogOut size={20} />
           <span className="menu-item__label">Выйти</span>
         </div>
       </div>

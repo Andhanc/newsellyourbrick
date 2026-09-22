@@ -442,12 +442,15 @@ html.site-footer-near .home-auction-floats > button.ai-button,
   }
 }
 
-.chat-widget__message--bot {
+.chat-widget__message--bot,
+.chat-widget__message--manager {
   align-self: flex-start;
+  width: fit-content;
 }
 
 .chat-widget__message--user {
   align-self: flex-end;
+  width: fit-content;
 }
 
 .chat-widget__message-content {

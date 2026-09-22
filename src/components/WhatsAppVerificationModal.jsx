@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { FiX, FiCheck, FiInfo, FiAlertCircle } from 'react-icons/fi'
-import { FaWhatsapp } from 'react-icons/fa'
+import { WhatsAppIcon } from './icons/ContactChannelIcons'
 import { sendWhatsAppVerificationCode, verifyWhatsAppCode, validatePhoneNumber } from '../services/authService'
 import PhoneInput from './PhoneInput'
 import './PhoneInput.css'
@@ -233,7 +233,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
 
         <div className="whatsapp-verification-modal__header">
           <div className="whatsapp-verification-modal__icon">
-            <FaWhatsapp size={32} />
+            <WhatsAppIcon size={32} />
           </div>
           <h2 className="whatsapp-verification-modal__title">
             {step === 'phone'

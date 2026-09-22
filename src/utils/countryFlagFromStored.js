@@ -1,4 +1,4 @@
-import { countries as countryList } from '../components/CountrySelect'
+import { countries as countryList } from '../data/countries'
 
 const LOCALES = ['ru', 'en', 'de', 'es', 'fr', 'sv']
 

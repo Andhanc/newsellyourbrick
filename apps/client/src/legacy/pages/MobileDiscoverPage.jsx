@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -7,13 +7,8 @@ import {
   FiSearch,
   FiX,
 } from 'react-icons/fi'
-import Header from '../components/Header'
-import MobileDiscoverCatalog from './MobileDiscoverCatalog'
 import SiteChatDock from '../components/SiteChatDock'
 import SectionInfoDrawer from '../components/SectionInfoDrawer'
-import ProfileStrategyStories from '../components/ProfileStrategyStories'
-import StrategyRecommendationDrawer from '../components/StrategyRecommendationDrawer'
-import InvestmentCompassDrawer from '../components/InvestmentCompassDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { COMPASS_PATH, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
@@ -29,6 +24,12 @@ import {
 } from '../utils/investmentCompass'
 import { showNotification } from '../utils/toastHelper'
 import './MobileDiscoverPage.css'
+
+const Header = lazy(() => import('../components/Header'))
+const MobileDiscoverCatalog = lazy(() => import('./MobileDiscoverCatalog'))
+const StrategyRecommendationDrawer = lazy(() => import('../components/StrategyRecommendationDrawer'))
+const ProfileStrategyStories = lazy(() => import('../components/ProfileStrategyStories'))
+const InvestmentCompassDrawer = lazy(() => import('../components/InvestmentCompassDrawer'))
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
@@ -182,6 +183,7 @@ export default function MobileDiscoverPage() {
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
   const cardsRef = useRef(null)
+  const catalogSentinelRef = useRef(null)
   const busyRef = useRef(false)
   const screenRef = useRef('hero')
   const touchStartY = useRef(0)
@@ -192,6 +194,7 @@ export default function MobileDiscoverPage() {
   const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
   const [stageEntered, setStageEntered] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
+  const [catalogReady, setCatalogReady] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
   const [activeSaleCard, setActiveSaleCard] = useState(0)
   const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
@@ -472,6 +475,34 @@ export default function MobileDiscoverPage() {
     return () => observer.disconnect()
   }, [screen])
 
+  useEffect(() => {
+    if (screen !== 'stage') {
+      setCatalogReady(false)
+      return undefined
+    }
+
+    const stage = stageScrollRef.current
+    const sentinel = catalogSentinelRef.current
+    if (!stage || !sentinel || typeof IntersectionObserver === 'undefined') {
+      setCatalogReady(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setCatalogReady(true)
+      },
+      {
+        root: stage,
+        rootMargin: '160px 0px',
+        threshold: 0,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [screen, stageEntered])
+
   // Touch swipe
   useEffect(() => {
     const el = shellRef.current
@@ -565,7 +596,9 @@ export default function MobileDiscoverPage() {
           aria-label={t('discoverPage_saleFormatsAria')}
         >
           <div className={`md-site-nav${stageEntered ? ' is-in' : ''}`}>
-            <Header />
+            <Suspense fallback={null}>
+              <Header />
+            </Suspense>
           </div>
 
           <div className="md-stage__sheet">
@@ -806,28 +839,43 @@ export default function MobileDiscoverPage() {
               </div>
             </section>
 
-            <MobileDiscoverCatalog />
+            <div ref={catalogSentinelRef} className="md-catalog-sentinel" aria-hidden="true" />
+            {catalogReady ? (
+              <Suspense fallback={null}>
+                <MobileDiscoverCatalog />
+              </Suspense>
+            ) : null}
           </div>
 
         </section>
       )}
     </div>
-    <InvestmentCompassDrawer
-      isOpen={compassDrawerOpen}
-      onClose={closeCompassDrawer}
-      onStart={startCompass}
-    />
-    <StrategyRecommendationDrawer
-      isOpen={recommendationDrawerOpen}
-      onClose={() => setRecommendationDrawerOpen(false)}
-      onWatch={watchRecommendationStories}
-      language={i18n.language}
-    />
-    <ProfileStrategyStories
-      language={i18n.language}
-      showTrigger={false}
-      openSignal={storiesOpenSignal}
-    />
+    <Suspense fallback={null}>
+      {compassDrawerOpen ? (
+        <InvestmentCompassDrawer
+          isOpen={compassDrawerOpen}
+          onClose={closeCompassDrawer}
+          onStart={startCompass}
+        />
+      ) : null}
+      {(recommendationDrawerOpen || storiesOpenSignal > 0) ? (
+        <>
+          <StrategyRecommendationDrawer
+            isOpen={recommendationDrawerOpen}
+            onClose={() => setRecommendationDrawerOpen(false)}
+            onWatch={watchRecommendationStories}
+            language={i18n.language}
+          />
+          {storiesOpenSignal > 0 ? (
+            <ProfileStrategyStories
+              language={i18n.language}
+              showTrigger={false}
+              openSignal={storiesOpenSignal}
+            />
+          ) : null}
+        </>
+      ) : null}
+    </Suspense>
     </SiteChatDock>
   )
 }

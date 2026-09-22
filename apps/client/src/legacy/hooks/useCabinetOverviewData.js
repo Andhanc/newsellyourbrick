@@ -16,10 +16,23 @@ import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import {
   CABINET_HISTORY_UPDATED_EVENT,
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
+  PURCHASE_SUCCESS_CONFIRMED_EVENT,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
 } from '../constants/cabinetEvents'
-import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../utils/purchaseSuccessFlow'
 import { mapReservationPurchase } from '../utils/cabinetPurchaseHistory'
+import {
+  effectiveDisplayTier,
+  effectivePurchasedTier,
+  normalizeSubscriptionPlanVisual,
+  userHasVipAccess,
+} from '../utils/subscriptionTier'
+
+export {
+  effectiveDisplayTier,
+  effectivePurchasedTier,
+  normalizeSubscriptionPlanVisual,
+  userHasVipAccess,
+}
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
@@ -138,46 +151,6 @@ function dayKeyFromRawDate(raw) {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
-}
-
-/** Для обзора кабинета: без подписки и пустой plan_key считаем Starter (не Pro). */
-export function normalizeSubscriptionPlanVisual(sub) {
-  if (!sub) return 'starter'
-  const raw = sub.plan_key
-  if (raw == null || String(raw).trim() === '') return 'starter'
-  const k = String(raw).toLowerCase()
-  if (k === 'starter' || k === 'free') return 'starter'
-  if (k === 'vip') return 'vip'
-  return 'pro'
-}
-
-const SUBSCRIPTION_UI_INACTIVE_STATUSES = new Set([
-  'canceled',
-  'unpaid',
-  'incomplete_expired',
-  'incomplete',
-])
-
-/**
- * Тариф для кнопок оплаты и превью: неактивная подписка в БД → starter (можно снова оформить Pro).
- */
-export function effectivePurchasedTier(sub) {
-  if (!sub) return 'starter'
-  const st = String(sub.status || '').toLowerCase()
-  if (SUBSCRIPTION_UI_INACTIVE_STATUSES.has(st)) return 'starter'
-  return normalizeSubscriptionPlanVisual(sub)
-}
-
-/** VIP-клуб = активная подписка Stripe VIP или промо vip_until. */
-export function userHasVipAccess({ subscription, vipClub }) {
-  if (vipClub && typeof vipClub === 'object' && vipClub.active) return true
-  return effectivePurchasedTier(subscription) === 'vip'
-}
-
-/** Тариф для карточек: учитывает VIP закрытого клуба (vip_until). */
-export function effectiveDisplayTier(subscription, vipClub) {
-  if (userHasVipAccess({ subscription, vipClub })) return 'vip'
-  return effectivePurchasedTier(subscription)
 }
 
 function subscriptionPlanBadgeLabel(visual) {

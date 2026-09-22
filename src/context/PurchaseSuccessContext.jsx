@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import PurchaseSuccessModal from '../components/PurchaseSuccessModal'
+
+const PurchaseSuccessModal = lazy(() => import('../components/PurchaseSuccessModal'))
 
 const PurchaseSuccessContext = createContext(null)
 
@@ -68,12 +69,16 @@ export function PurchaseSuccessProvider({ children }) {
   return (
     <PurchaseSuccessContext.Provider value={value}>
       {children}
-      <PurchaseSuccessModal
-        isOpen={isOpen}
-        property={property}
-        onClose={closePurchaseSuccess}
-        onGoToGuide={goToPurchasedGuide}
-      />
+      {isOpen ? (
+        <Suspense fallback={null}>
+          <PurchaseSuccessModal
+            isOpen={isOpen}
+            property={property}
+            onClose={closePurchaseSuccess}
+            onGoToGuide={goToPurchasedGuide}
+          />
+        </Suspense>
+      ) : null}
     </PurchaseSuccessContext.Provider>
   )
 }

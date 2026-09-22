@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiBriefcase } from 'react-icons/fi'
-import { FaChartPie, FaFileInvoiceDollar, FaGavel } from 'react-icons/fa'
+import { Gavel, PieChart, Receipt } from 'lucide-react'
 import { publicAsset } from '../utils/publicAsset'
 import './AuctionCategoryCtaCards.css'
 
@@ -20,7 +20,7 @@ const AUCTION_CTA_CARDS = [
     textKey: 'auctionPageCtaSharesText',
     ctaKey: 'auctionPageCtaSharesButton',
     to: '/shares',
-    icon: FaChartPie,
+    icon: PieChart,
     image: CTA_IMAGES.shares,
     accent: 'sage',
   },
@@ -30,7 +30,7 @@ const AUCTION_CTA_CARDS = [
     textKey: 'auctionPageCtaDebtsText',
     ctaKey: 'auctionPageCtaDebtsButton',
     to: '/debts',
-    icon: FaFileInvoiceDollar,
+    icon: Receipt,
     image: CTA_IMAGES.debts,
     accent: 'teal',
   },
@@ -40,7 +40,7 @@ const AUCTION_CTA_CARDS = [
     textKey: 'auctionPageCtaAuctionText',
     ctaKey: 'auctionPageCtaAuctionButton',
     to: '/auction',
-    icon: FaGavel,
+    icon: Gavel,
     image: CTA_IMAGES.auction,
     accent: 'teal',
   },

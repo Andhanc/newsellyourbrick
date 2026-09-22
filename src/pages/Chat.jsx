@@ -3,14 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle, FiX, FiSend, FiTrash2 } from 'react-icons/fi'
-import { FaWhatsapp } from 'react-icons/fa'
-import { FaTelegram } from 'react-icons/fa6'
+import { TelegramIcon, WhatsAppIcon } from '../components/icons/ContactChannelIcons'
 import './Chat.css'
 import '../pages/Home.css'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
-import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
+import { getCachedList } from '../services/auctionListCache'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -207,17 +206,8 @@ const Chat = () => {
   }, [chatUserId, t])
 
   useEffect(() => {
-    let cancelled = false
     const cached = getCachedList()
     if (cached?.length) setCatalogProperties(cached)
-    fetchAuctionList()
-      .then((list) => {
-        if (!cancelled && Array.isArray(list) && list.length) setCatalogProperties(list)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
   }, [])
 
   // Сохраняем историю, предпочтения и синхронизируем лид для админки
@@ -1125,9 +1115,9 @@ const Chat = () => {
                                       : button.value === 'email'
                                         ? FiMail
                                         : button.value === 'whatsapp'
-                                          ? FaWhatsapp
+                                          ? WhatsAppIcon
                                           : button.value === 'telegram'
-                                            ? FaTelegram
+                                            ? TelegramIcon
                                             : FiMessageCircle
                                   return (
                                     <button

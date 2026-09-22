@@ -14,6 +14,8 @@ import {
   Legend
 } from 'chart.js';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { fetchDedupe } from '../../utils/fetchDedupe';
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../../utils/fetchAuctionMaxBids';
 import './Statistics.css';
 import StatCard from './StatCard';
 import NearestAuctionsSlider from './NearestAuctionsSlider';
@@ -79,151 +81,135 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     };
   }, [isCalendarOpen]);
 
-  // Загружаем реальное количество пользователей из БД
+  const getMondayForWeekOffset = (offset) => {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayOffset + offset * 7);
+    return monday.toISOString().slice(0, 10);
+  };
+
+  const emptyWeekSeries = (weekStart) => {
+    const start = new Date(weekStart);
+    return Array(7).fill(0).map((_, i) => ({
+      date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10),
+      count: 0,
+    }));
+  };
+
   useEffect(() => {
-    const fetchUsersCount = async () => {
+    let cancelled = false;
+    const applyDashboard = (data) => {
+      if (!data?.success) return;
+      setUsersCount(data.usersCount ?? businessInfo.stats.clients_count);
+      setCountryStats(Array.isArray(data.countryStats) ? data.countryStats : []);
+      const roleRows = Array.isArray(data.roleStats) ? data.roleStats : [];
+      setRoleStats({
+        sellers: roleRows.find((item) => item.role === 'seller')?.count || 0,
+        buyers: roleRows.find((item) => item.role === 'buyer')?.count || 0,
+      });
+      if (Array.isArray(data.registrationsByDay)) {
+        setUsersByDayData(data.registrationsByDay);
+        setUsersByDayWeekRange({ weekStart: data.weekStart, weekEnd: data.weekEnd });
+        setUsersByDayLoadError(false);
+      }
+      setPropertiesCount(data.propertiesCount ?? 0);
+      setAuctionsCount(data.auctionsCount ?? 0);
+      if (typeof data.onlineCount === 'number') setOnlineCount(data.onlineCount);
+      setStripePaymentsCount(typeof data.stripePaymentsCount === 'number' ? data.stripePaymentsCount : 0);
+      setCategoryStats({
+        byType: data.categoryStats?.byType || [],
+        bySection: data.categoryStats?.bySection || [],
+      });
+    };
+
+    const fetchDashboard = async () => {
       try {
         setIsLoadingUsersCount(true);
+        setIsLoadingStats(true);
+        setIsLoadingUsersByDay(true);
+        setIsLoadingCounts(true);
+        setIsLoadingOnlineCount(true);
+        setIsLoadingStripePaymentsCount(true);
+        setIsLoadingCategoryStats(true);
         const API_BASE_URL = await getApiBaseUrl();
-        const response = await fetch(`${API_BASE_URL}/admin/users/count`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setUsersCount(data.count);
-          } else {
-            console.warn('⚠️ Не удалось получить количество пользователей:', data.error);
-            // Используем значение по умолчанию из businessInfo
-            setUsersCount(businessInfo.stats.clients_count);
-          }
-        } else {
-          console.warn('⚠️ Ошибка при получении количества пользователей:', response.status);
-          // Используем значение по умолчанию из businessInfo
-          setUsersCount(businessInfo.stats.clients_count);
-        }
+        const weekStart = getMondayForWeekOffset(0);
+        const response = await fetch(`${API_BASE_URL}/admin/dashboard-stats?weekStart=${weekStart}`);
+        if (!response.ok) throw new Error(`dashboard-stats ${response.status}`);
+        const data = await response.json();
+        if (!cancelled) applyDashboard(data);
       } catch (error) {
-        console.error('❌ Ошибка при загрузке количества пользователей:', error);
-        // Используем значение по умолчанию из businessInfo
-        setUsersCount(businessInfo.stats.clients_count);
+        console.error('Ошибка загрузки сводки статистики:', error);
+        if (!cancelled) {
+          setUsersCount(businessInfo.stats.clients_count);
+          setPropertiesCount(0);
+          setAuctionsCount(0);
+          setStripePaymentsCount(0);
+          setUsersByDayLoadError(true);
+          setUsersByDayData(emptyWeekSeries(getMondayForWeekOffset(0)));
+        }
       } finally {
-        setIsLoadingUsersCount(false);
+        if (!cancelled) {
+          setIsLoadingUsersCount(false);
+          setIsLoadingStats(false);
+          setIsLoadingUsersByDay(false);
+          setIsLoadingCounts(false);
+          setIsLoadingOnlineCount(false);
+          setIsLoadingStripePaymentsCount(false);
+          setIsLoadingCategoryStats(false);
+        }
       }
     };
 
-    fetchUsersCount();
+    fetchDashboard();
+    return () => {
+      cancelled = true;
+    };
   }, [businessInfo.stats.clients_count]);
 
-  // Загружаем статистику по странам и ролям
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setIsLoadingStats(true);
-        const API_BASE_URL = await getApiBaseUrl();
-        
-        // Загружаем статистику по странам
-        const countryResponse = await fetch(`${API_BASE_URL}/admin/users/country-stats`);
-        if (countryResponse.ok) {
-          const countryData = await countryResponse.json();
-          if (countryData.success && countryData.data) {
-            setCountryStats(countryData.data);
-          }
-        }
-
-        // Загружаем статистику по ролям
-        const roleResponse = await fetch(`${API_BASE_URL}/admin/users/role-stats`);
-        if (roleResponse.ok) {
-          const roleData = await roleResponse.json();
-          if (roleData.success && roleData.data) {
-            const sellers = roleData.data.find(item => item.role === 'seller')?.count || 0;
-            const buyers = roleData.data.find(item => item.role === 'buyer')?.count || 0;
-            setRoleStats({ sellers, buyers });
-          }
-        }
-      } catch (error) {
-        console.error('❌ Ошибка при загрузке статистики:', error);
-      } finally {
-        setIsLoadingStats(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  // Загружаем регистрации по дням за выбранную неделю
-  useEffect(() => {
-    const getMondayForWeekOffset = (offset) => {
-      const now = new Date();
-      const day = now.getDay();
-      const mondayOffset = day === 0 ? -6 : 1 - day;
-      const monday = new Date(now);
-      monday.setDate(now.getDate() + mondayOffset + offset * 7);
-      return monday.toISOString().slice(0, 10);
-    };
-
+    if (usersByDayWeekOffset === 0) return undefined;
+    let cancelled = false;
     const fetchRegistrationsByDay = async () => {
       try {
         setIsLoadingUsersByDay(true);
         const API_BASE_URL = await getApiBaseUrl();
         const weekStart = getMondayForWeekOffset(usersByDayWeekOffset);
-        const start = new Date(weekStart);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 6);
-        const weekEnd = end.toISOString().slice(0, 10);
-        setUsersByDayWeekRange({ weekStart, weekEnd });
+        setUsersByDayWeekRange({
+          weekStart,
+          weekEnd: new Date(new Date(weekStart).getTime() + 6 * 86400000).toISOString().slice(0, 10),
+        });
         setUsersByDayLoadError(false);
         const response = await fetch(`${API_BASE_URL}/admin/users/registrations-by-day?weekStart=${weekStart}`);
         if (response.ok) {
           const json = await response.json();
-          if (json.success && Array.isArray(json.data)) {
+          if (!cancelled && json.success && Array.isArray(json.data)) {
             setUsersByDayData(json.data);
             setUsersByDayWeekRange({ weekStart: json.weekStart, weekEnd: json.weekEnd });
-          } else {
-            setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+          } else if (!cancelled) {
+            setUsersByDayData(emptyWeekSeries(weekStart));
           }
-        } else {
+        } else if (!cancelled) {
           setUsersByDayLoadError(true);
-          setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+          setUsersByDayData(emptyWeekSeries(weekStart));
         }
       } catch (error) {
         console.error('Ошибка загрузки регистраций по дням:', error);
-        setUsersByDayLoadError(true);
-        const weekStart = getMondayForWeekOffset(usersByDayWeekOffset);
-        const start = new Date(weekStart);
-        setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+        if (!cancelled) {
+          setUsersByDayLoadError(true);
+          setUsersByDayData(emptyWeekSeries(getMondayForWeekOffset(usersByDayWeekOffset)));
+        }
       } finally {
-        setIsLoadingUsersByDay(false);
+        if (!cancelled) setIsLoadingUsersByDay(false);
       }
     };
-
     fetchRegistrationsByDay();
+    return () => {
+      cancelled = true;
+    };
   }, [usersByDayWeekOffset]);
 
-  // Загружаем количество объектов и аукционов из API (лёгкий эндпоинт счётчиков)
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        setIsLoadingCounts(true);
-        const API_BASE_URL = await getApiBaseUrl();
-        const response = await fetch(`${API_BASE_URL}/admin/stats/counts`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setPropertiesCount(data.propertiesCount ?? 0);
-            setAuctionsCount(data.auctionsCount ?? 0);
-          }
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки счётчиков объектов и аукционов:', error);
-        setPropertiesCount(0);
-        setAuctionsCount(0);
-      } finally {
-        setIsLoadingCounts(false);
-      }
-    };
-    fetchCounts();
-  }, []);
-
-  // Загружаем и периодически обновляем количество посетителей онлайн
   useEffect(() => {
     const fetchOnlineCount = async () => {
       try {
@@ -243,7 +229,6 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         setIsLoadingOnlineCount(false);
       }
     };
-    fetchOnlineCount();
     const interval = setInterval(fetchOnlineCount, 30000);
     const onFocus = () => fetchOnlineCount();
     window.addEventListener('focus', onFocus);
@@ -253,77 +238,23 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchStripePaymentsCount = async () => {
-      try {
-        setIsLoadingStripePaymentsCount(true);
-        const API_BASE_URL = await getApiBaseUrl();
-        const response = await fetch(`${API_BASE_URL}/admin/stripe-payments`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data && typeof data.data.totalCount === 'number') {
-            setStripePaymentsCount(data.data.totalCount);
-          } else {
-            setStripePaymentsCount(0);
-          }
-        } else {
-          setStripePaymentsCount(0);
-        }
-      } catch (e) {
-        console.error('Ошибка загрузки счётчика платежей:', e);
-        setStripePaymentsCount(0);
-      } finally {
-        setIsLoadingStripePaymentsCount(false);
-      }
-    };
-    fetchStripePaymentsCount();
-  }, []);
-
-  // Загружаем статистику категорий недвижимости (по типу и по разделам)
-  useEffect(() => {
-    const fetchCategoryStats = async () => {
-      try {
-        setIsLoadingCategoryStats(true);
-        const API_BASE_URL = await getApiBaseUrl();
-        const response = await fetch(`${API_BASE_URL}/admin/properties/category-stats`);
-        if (response.ok) {
-          const json = await response.json();
-          if (json.success) {
-            setCategoryStats({ byType: json.byType || [], bySection: json.bySection || [] });
-          }
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки статистики категорий:', error);
-      } finally {
-        setIsLoadingCategoryStats(false);
-      }
-    };
-    fetchCategoryStats();
-  }, []);
-
   // Загружаем реальные аукционные объявления из API
   useEffect(() => {
     const fetchAuctions = async (silent = false) => {
       try {
         if (!silent) setIsLoadingAuctions(true);
         const API_BASE_URL = await getApiBaseUrl();
-        
-        // Загружаем все типы аукционных объявлений
-        const types = ['commercial', 'villa', 'apartment', 'house'];
         const allAuctions = [];
-
-        for (const type of types) {
-          try {
-            const response = await fetch(`${API_BASE_URL}/properties/auctions?type=${type}`);
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success && data.data && Array.isArray(data.data)) {
-                allAuctions.push(...data.data);
-              }
+        try {
+          const response = await fetchDedupe(`${API_BASE_URL}/properties/auctions`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && Array.isArray(data.data)) {
+              allAuctions.push(...data.data);
             }
-          } catch (error) {
-            console.error(`Ошибка загрузки аукционных объявлений типа ${type}:`, error);
           }
+        } catch (error) {
+          console.error('Ошибка загрузки аукционных объявлений:', error);
         }
 
         // Форматируем данные для слайдера (без учета ставок)
@@ -349,44 +280,41 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           object_type: auction.property_type || 'apartment',
         }));
 
-        // Для каждой аукционной карточки подтягиваем ставки и, для уже завершённых, победителя
-        const formattedAuctionsWithBids = await Promise.all(
-          formattedAuctionsBase.map(async (auction) => {
-            let enriched = { ...auction };
-            try {
-              const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${auction.id}`);
-              if (bidsResponse.ok) {
-                const bidsData = await bidsResponse.json();
-                if (bidsData.success && Array.isArray(bidsData.data) && bidsData.data.length > 0) {
-                  const maxBid = Math.max(...bidsData.data.map(b => Number(b.bid_amount) || 0));
-                  enriched = {
-                    ...enriched,
-                    current_bid: maxBid || enriched.current_bid || enriched.auction_starting_price || enriched.starting_price || 0,
-                  };
-                }
-              }
-            } catch (e) {
-              console.warn(`⚠️ Не удалось загрузить ставки для аукциона ${auction.id}:`, e);
-            }
-
-            const endDate = enriched.end_date;
-            if (endDate && new Date(endDate) <= new Date()) {
-              try {
-                const winRes = await fetch(`${API_BASE_URL}/auction-winners/property/${auction.id}`);
-                if (winRes.ok) {
-                  const winJson = await winRes.json();
-                  if (winJson.success && winJson.data && winJson.data.user_id != null) {
-                    enriched.winner_user_id = winJson.data.user_id;
-                  }
-                }
-              } catch (_) {
-                /* ignore */
+        const bidByKey = await fetchAuctionMaxBidsBatch(API_BASE_URL, formattedAuctionsBase);
+        const endedAuctions = formattedAuctionsBase.filter((auction) => {
+          const endDate = auction.end_date;
+          return endDate && new Date(endDate) <= new Date();
+        }).slice(0, 8);
+        const winnerById = new Map();
+        const endedIds = endedAuctions.map((auction) => auction.id).filter((id) => id != null);
+        if (endedIds.length > 0) {
+          try {
+            const winRes = await fetchDedupe(
+              `${API_BASE_URL}/auction-winners/batch?ids=${endedIds.join(',')}`,
+            );
+            if (winRes.ok) {
+              const winJson = await winRes.json();
+              const rows = winJson?.success && winJson.data && typeof winJson.data === 'object'
+                ? winJson.data
+                : {};
+              for (const [propertyId, row] of Object.entries(rows)) {
+                if (row && row.user_id != null) winnerById.set(Number(propertyId), row.user_id);
               }
             }
+          } catch {
+            /* ignore */
+          }
+        }
 
-            return enriched;
-          })
-        );
+        const formattedAuctionsWithBids = formattedAuctionsBase.map((auction) => {
+          const maxBid = getMaxBidForProperty(bidByKey, auction);
+          const winnerUserId = winnerById.get(auction.id);
+          return {
+            ...auction,
+            current_bid: maxBid || auction.current_bid || auction.auction_starting_price || auction.starting_price || 0,
+            ...(winnerUserId != null ? { winner_user_id: winnerUserId } : {}),
+          };
+        });
 
         setRealAuctions(formattedAuctionsWithBids);
         console.log('✅ Загружено аукционных объявлений для слайдера:', formattedAuctionsWithBids.length);

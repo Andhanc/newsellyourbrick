@@ -1,0 +1,69 @@
+url: ${APP_URL}
+name: buyer-catalog-and-tools
+tags:
+  - buyer
+  - catalog
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- openLink: ${APP_URL}/__e2e__/session?role=buyer&next=/
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- tapOn:
+    id: "Go to next screen"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "Sale formats"
+    timeout: 20000
+    optional: true
+- tapOn:
+    id: "Auction"
+    optional: true
+- openLink: ${APP_URL}/auction
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_auction
+- openLink: ${APP_URL}/auction/buy-now
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_buy_now_list
+- openLink: ${APP_URL}/debts
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_debts_list
+- openLink: ${APP_URL}/co-investment
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_shares_list
+- openLink: ${APP_URL}/map
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_map
+- openLink: ${APP_URL}/calculator
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_calculator
+- openLink: ${APP_URL}/lottery
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: buyer_lottery
+- openLink: ${APP_URL}/chat
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_chat
+- openLink: ${APP_URL}/news
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_news

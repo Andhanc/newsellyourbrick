@@ -42,7 +42,7 @@ test('mobile comparison renders semantic metric cards instead of a table', () =>
   assert.match(source, /compare-mobile__value--winner/)
   assert.match(source, /compare-mobile__value-media/)
   assert.match(source, /compare-mobile__value-image/)
-  assert.match(source, /<FaTrophy \/>/)
+  assert.match(source, /<Trophy aria-hidden \/>/)
   assert.match(source, /METRIC_ICON_ROOT/)
   assert.match(source, /metric-icons/)
   assert.match(source, /\$\{row\.id\}\.png/)

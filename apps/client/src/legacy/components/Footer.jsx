@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { FaApple, FaTelegramPlane, FaYoutube, FaWhatsapp, FaInstagram } from 'react-icons/fa'
-import { MdSentimentDissatisfied } from 'react-icons/md'
+import { Frown } from 'lucide-react'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
+import { AppleIcon, InstagramIcon, TelegramIcon, WhatsAppIcon, YoutubeIcon } from './icons/ContactChannelIcons'
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
@@ -20,10 +20,10 @@ import { UI_LANGUAGES } from '../constants/uiLanguages'
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
 
 const SOCIAL_LINKS = [
-  { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', Icon: FaTelegramPlane },
-  { labelKey: 'sectionsSocialYoutube', href: 'https://youtube.com/', Icon: FaYoutube },
-  { labelKey: 'sectionsSocialWhatsapp', href: WHATSAPP_HREF, Icon: FaWhatsapp },
-  { labelKey: 'sectionsSocialInstagram', href: 'https://instagram.com/', Icon: FaInstagram },
+  { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', Icon: TelegramIcon },
+  { labelKey: 'sectionsSocialYoutube', href: 'https://youtube.com/', Icon: YoutubeIcon },
+  { labelKey: 'sectionsSocialWhatsapp', href: WHATSAPP_HREF, Icon: WhatsAppIcon },
+  { labelKey: 'sectionsSocialInstagram', href: 'https://instagram.com/', Icon: InstagramIcon },
 ]
 
 /** @typedef {{ to?: string; onClick?: () => void; label: string; requiresAuth?: boolean }} FooterLinkItem */
@@ -68,6 +68,12 @@ const Footer = () => {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [storeComingSoonOpen, closeStoreComingSoon])
+
+  useEffect(() => {
+    const openLanguageDrawer = () => setIsLanguageDrawerOpen(true)
+    window.addEventListener('openSiteLanguageDrawer', openLanguageDrawer)
+    return () => window.removeEventListener('openSiteLanguageDrawer', openLanguageDrawer)
+  }, [])
 
   const goWallet = () => {
     scrollToTop()
@@ -277,7 +283,7 @@ const Footer = () => {
               aria-label={`${t('downloadIn')} App Store`}
             >
               <div className="footer__store-icon">
-                <FaApple size={16} />
+                <AppleIcon size={16} />
               </div>
               <div className="footer__store-text">
                 <span className="footer__store-name">App Store</span>
@@ -333,7 +339,7 @@ const Footer = () => {
                 >
                   <FiX size={22} />
                 </button>
-                <MdSentimentDissatisfied className="footer-store-modal__icon" aria-hidden />
+                <Frown className="footer-store-modal__icon" aria-hidden />
                 <p id="footer-store-modal-title" className="footer-store-modal__title">
                   {t('footerComingSoon')}
                 </p>

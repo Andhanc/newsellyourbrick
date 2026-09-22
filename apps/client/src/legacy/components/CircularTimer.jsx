@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './CircularTimer.css';
-import { countries } from './CountrySelect';
+import { countries } from '../data/countries';
 
 // Объект с маппингом кодов стран к флагам
 const countryFlags = {};

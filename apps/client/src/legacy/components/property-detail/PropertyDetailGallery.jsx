@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiChevronLeft, FiChevronRight, FiHeart, FiShare2 } from 'react-icons/fi'
-import { FaHeart } from 'react-icons/fa6'
 import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe'
 
 const FALLBACK_IMAGE =
@@ -120,7 +119,7 @@ export default function PropertyDetailGallery({
               disabled={actionsDisabled}
               aria-label={t('addToFavorites')}
             >
-              {isFavorite ? <FaHeart size={20} /> : <FiHeart size={20} />}
+              {isFavorite ? <FiHeart size={20} fill="currentColor" /> : <FiHeart size={20} />}
             </button>
           )}
         </div>

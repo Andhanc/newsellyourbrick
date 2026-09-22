@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n/config'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
@@ -53,11 +53,7 @@ import {
   shouldClearStalePurchasedPrefillOnAddPropertyMount,
 } from '../utils/purchasedPropertyListingPrefill'
 import { isSellerCabinetRole } from '../utils/cabinetRoutes'
-import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
-import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
-import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
-import OwnerAddPropertyVerificationStep from './OwnerAddPropertyVerificationStep'
-import SellerVerificationModal from '../components/SellerVerificationModal'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -77,8 +73,6 @@ import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
 import OapPurchasedListingBanner from '../components/OapPurchasedListingBanner'
 import OapJourneyPublishLoader from '../components/OapJourneyPublishLoader'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OapAddPropertyMobileMedia from '../components/OapAddPropertyMobileMedia'
-import OwnerAddPropertyAmenitiesStep from './OwnerAddPropertyAmenitiesStep'
 import '../components/OapAddPropertyMobileScreens.css'
 import '../components/OapAddPropertyMobileMedia.css'
 import '../components/OapAddPropertyJourneyStrip.css'
@@ -93,6 +87,19 @@ import './AddProperty.css'
 import './OwnerAddPropertyTestPage.css'
 import './OwnerAddPropertyJourney.css'
 import './OwnerAddPropertyTestPage.mobile.css'
+
+const OwnerAddPropertyBasicsStep = lazyWithRetry(() => import('./OwnerAddPropertyBasicsStep'))
+const OwnerAddPropertyStrategyStep = lazyWithRetry(() => import('./OwnerAddPropertyStrategyStep'))
+const OwnerAddPropertyFinanceStep = lazyWithRetry(() => import('./OwnerAddPropertyFinanceStep'))
+const OwnerAddPropertyVerificationStep = lazyWithRetry(() => import('./OwnerAddPropertyVerificationStep'))
+const OwnerAddPropertyAmenitiesStep = lazyWithRetry(() => import('./OwnerAddPropertyAmenitiesStep'))
+const SellerVerificationModal = lazyWithRetry(() => import('../components/SellerVerificationModal'))
+const OapAddPropertyMobileMedia = lazyWithRetry(() => import('../components/OapAddPropertyMobileMedia'))
+
+function LazyMount({ when, children }) {
+  if (!when) return null
+  return <Suspense fallback={null}>{children}</Suspense>
+}
 
 function useOapMobile() {
   const [mobile, setMobile] = useState(() =>
@@ -1734,7 +1741,9 @@ export default function OwnerAddPropertyTestPage() {
               {purchasedBanner}
               <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
               <div className="oap-content__body oap-content__body--journey">
+                <Suspense fallback={null}>
                 {journeyScreenContent[mobileScreen]?.()}
+                </Suspense>
               </div>
             </div>
             {mobileScreen !== 1 ? (
@@ -1791,7 +1800,9 @@ export default function OwnerAddPropertyTestPage() {
               ) : null}
               <div className="oap-content__body oap-content__body--journey oap-content__body--journey-desktop">
                 {purchasedBanner}
+                <Suspense fallback={null}>
                 {journeyScreenContent[mobileScreen]?.()}
+                </Suspense>
               </div>
             </div>
             {mobileScreen !== 1 ? (
@@ -1822,12 +1833,14 @@ export default function OwnerAddPropertyTestPage() {
         </div>
       )}
 
+      <LazyMount when={showVerificationModal}>
       <SellerVerificationModal
         isOpen={showVerificationModal}
         onClose={() => setShowVerificationModal(false)}
         userId={userId}
         onComplete={handleVerificationComplete}
       />
+      </LazyMount>
 
       {showListingFeeModal && (
         <div

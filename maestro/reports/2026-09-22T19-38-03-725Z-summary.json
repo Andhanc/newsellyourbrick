@@ -1,0 +1,50 @@
+{
+  "startedAt": "2026-09-22T19:38:03.725Z",
+  "finishedAt": "2026-09-22T19:38:11.120Z",
+  "appUrl": "http://localhost:5173",
+  "runsRequested": 3,
+  "passedRuns": 0,
+  "failedRuns": 3,
+  "flowFiles": [
+    "maestro/flows/auth/01-login-ui-buyer.yaml",
+    "maestro/flows/buyer/01-session-cabinet.yaml",
+    "maestro/flows/buyer/02-catalog-and-tools.yaml",
+    "maestro/flows/buyer/03-property-detail.yaml",
+    "maestro/flows/guest/01-discover-hero.yaml",
+    "maestro/flows/guest/02-catalog-sections.yaml",
+    "maestro/flows/guest/03-marketing-pages.yaml",
+    "maestro/flows/guest/04-discover-interactions.yaml",
+    "maestro/flows/seller/01-session-cabinet.yaml",
+    "maestro/flows/seller/02-owner-views.yaml"
+  ],
+  "seedManifestPath": "maestro/demo-manifest.json",
+  "runs": [
+    {
+      "run": 1,
+      "status": 1,
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-1",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-1/junit.xml",
+      "stdoutTail": "\n",
+      "stderrTail": "Flow inclusion pattern(s) did not match any Flow files:\n- flows/**\n",
+      "error": null
+    },
+    {
+      "run": 2,
+      "status": 1,
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-2",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-2/junit.xml",
+      "stdoutTail": "\n",
+      "stderrTail": "Flow inclusion pattern(s) did not match any Flow files:\n- flows/**\n",
+      "error": null
+    },
+    {
+      "run": 3,
+      "status": 1,
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-3",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-38-03-725Z-run-3/junit.xml",
+      "stdoutTail": "\n",
+      "stderrTail": "Flow inclusion pattern(s) did not match any Flow files:\n- flows/**\n",
+      "error": null
+    }
+  ]
+}

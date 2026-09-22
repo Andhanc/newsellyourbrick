@@ -1,15 +1,10 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n/config'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
-  Home,
-  Castle,
-  Hotel,
-  Building2,
-  Store,
-  TreePine,
+  ArrowUpRight,
 } from 'lucide-react'
 import {
   FiX,
@@ -58,11 +53,7 @@ import {
   shouldClearStalePurchasedPrefillOnAddPropertyMount,
 } from '../utils/purchasedPropertyListingPrefill'
 import { isSellerCabinetRole } from '../utils/cabinetRoutes'
-import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
-import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
-import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
-import OwnerAddPropertyVerificationStep from './OwnerAddPropertyVerificationStep'
-import SellerVerificationModal from '../components/SellerVerificationModal'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -76,13 +67,12 @@ import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKy
 import OapAddPropertyJourneyStrip from '../components/OapAddPropertyJourneyStrip'
 import OapAddPropertyJourneyProgress from '../components/OapAddPropertyJourneyProgress'
 import { preloadOapWizardImages } from './oapWizardImages'
+import { OAP_PROPERTY_TYPE_IMAGES } from './oapPropertyTypeImages'
 import { OapAddPropertyMobileWelcome } from '../components/OapAddPropertyMobileScreens'
 import OapPublishSuccessDrawer from '../components/OapPublishSuccessDrawer'
 import OapPurchasedListingBanner from '../components/OapPurchasedListingBanner'
 import OapJourneyPublishLoader from '../components/OapJourneyPublishLoader'
 import OwnerSupportButton from '../components/OwnerSupportButton'
-import OapAddPropertyMobileMedia from '../components/OapAddPropertyMobileMedia'
-import OwnerAddPropertyAmenitiesStep from './OwnerAddPropertyAmenitiesStep'
 import '../components/OapAddPropertyMobileScreens.css'
 import '../components/OapAddPropertyMobileMedia.css'
 import '../components/OapAddPropertyJourneyStrip.css'
@@ -97,6 +87,19 @@ import './AddProperty.css'
 import './OwnerAddPropertyTestPage.css'
 import './OwnerAddPropertyJourney.css'
 import './OwnerAddPropertyTestPage.mobile.css'
+
+const OwnerAddPropertyBasicsStep = lazyWithRetry(() => import('./OwnerAddPropertyBasicsStep'))
+const OwnerAddPropertyStrategyStep = lazyWithRetry(() => import('./OwnerAddPropertyStrategyStep'))
+const OwnerAddPropertyFinanceStep = lazyWithRetry(() => import('./OwnerAddPropertyFinanceStep'))
+const OwnerAddPropertyVerificationStep = lazyWithRetry(() => import('./OwnerAddPropertyVerificationStep'))
+const OwnerAddPropertyAmenitiesStep = lazyWithRetry(() => import('./OwnerAddPropertyAmenitiesStep'))
+const SellerVerificationModal = lazyWithRetry(() => import('../components/SellerVerificationModal'))
+const OapAddPropertyMobileMedia = lazyWithRetry(() => import('../components/OapAddPropertyMobileMedia'))
+
+function LazyMount({ when, children }) {
+  if (!when) return null
+  return <Suspense fallback={null}>{children}</Suspense>
+}
 
 function useOapMobile() {
   const [mobile, setMobile] = useState(() =>
@@ -511,37 +514,37 @@ export default function OwnerAddPropertyTestPage() {
         value: 'house',
         label: t('oap_propertyTypeHouse'),
         description: t('oap_propertyTypeHouseDesc'),
-        Icon: Home,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.house,
       },
       {
         value: 'villa',
         label: t('oap_propertyTypeVilla'),
         description: t('oap_propertyTypeVillaDesc'),
-        Icon: Castle,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.villa,
       },
       {
         value: 'apartments',
         label: t('oap_propertyTypeApartments'),
         description: t('oap_propertyTypeApartmentsDesc'),
-        Icon: Hotel,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.apartments,
       },
       {
         value: 'apartment',
         label: t('oap_propertyTypeApartment'),
         description: t('oap_propertyTypeApartmentDesc'),
-        Icon: Building2,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.apartment,
       },
       {
         value: 'commercial',
         label: t('oap_propertyTypeCommercial'),
         description: t('oap_propertyTypeCommercialDesc'),
-        Icon: Store,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.commercial,
       },
       {
         value: 'land',
         label: t('oap_propertyTypeLand'),
         description: t('oap_propertyTypeLandDesc'),
-        Icon: TreePine,
+        iconSrc: OAP_PROPERTY_TYPE_IMAGES.land,
       },
     ],
     [t],
@@ -1728,16 +1731,19 @@ export default function OwnerAddPropertyTestPage() {
               >
                 <ArrowLeft size={22} strokeWidth={2} />
               </button>
+              <OapAddPropertyJourneyProgress
+                currentStep={mobileScreen}
+                totalSteps={MOBILE_JOURNEY_SCREENS}
+                compact
+              />
             </header>
-            <OapAddPropertyJourneyProgress
-              currentStep={mobileScreen}
-              totalSteps={MOBILE_JOURNEY_SCREENS}
-            />
             <div ref={journeyScrollRef} className="oap-content oap-content--journey">
               {purchasedBanner}
               <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
               <div className="oap-content__body oap-content__body--journey">
+                <Suspense fallback={null}>
                 {journeyScreenContent[mobileScreen]?.()}
+                </Suspense>
               </div>
             </div>
             {mobileScreen !== 1 ? (
@@ -1754,11 +1760,12 @@ export default function OwnerAddPropertyTestPage() {
                   </button>
                   <button
                     type="button"
-                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next btn-tiffany-shine"
                     onClick={handleJourneyNext}
                     disabled={!canProceedJourney || isSubmitting}
                   >
-                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                    <span>{isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}</span>
+                    {!isSubmitting ? <ArrowUpRight size={19} strokeWidth={2.4} aria-hidden /> : null}
                   </button>
                 </div>
               </footer>
@@ -1793,7 +1800,9 @@ export default function OwnerAddPropertyTestPage() {
               ) : null}
               <div className="oap-content__body oap-content__body--journey oap-content__body--journey-desktop">
                 {purchasedBanner}
+                <Suspense fallback={null}>
                 {journeyScreenContent[mobileScreen]?.()}
+                </Suspense>
               </div>
             </div>
             {mobileScreen !== 1 ? (
@@ -1810,11 +1819,12 @@ export default function OwnerAddPropertyTestPage() {
                   </button>
                   <button
                     type="button"
-                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next"
+                    className="oap-btn oap-btn--primary oap-btn--full oap-journey-footer__next btn-tiffany-shine"
                     onClick={handleJourneyNext}
                     disabled={!canProceedJourney || isSubmitting}
                   >
-                    {isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}
+                    <span>{isSubmitting ? t('oap_publishSubmitting') : journeyPrimaryLabel}</span>
+                    {!isSubmitting ? <ArrowUpRight size={19} strokeWidth={2.4} aria-hidden /> : null}
                   </button>
                 </div>
               </footer>
@@ -1823,12 +1833,14 @@ export default function OwnerAddPropertyTestPage() {
         </div>
       )}
 
+      <LazyMount when={showVerificationModal}>
       <SellerVerificationModal
         isOpen={showVerificationModal}
         onClose={() => setShowVerificationModal(false)}
         userId={userId}
         onComplete={handleVerificationComplete}
       />
+      </LazyMount>
 
       {showListingFeeModal && (
         <div

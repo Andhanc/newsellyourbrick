@@ -4,6 +4,7 @@ import { FiArrowRight } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import { getPropertyDetailPath } from '../../utils/propertyDetailUrl'
 import { getApiBaseUrlSync } from '../../utils/apiConfig'
+import { fetchTestDriveEligibility } from '../../utils/testDriveEligibilityApi'
 import './PropertyDetailDesktopTestDriveBanner.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -99,21 +100,12 @@ const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailD
       const { getApiBaseUrl } = await import('../../utils/apiConfig')
       API_BASE_URL = await getApiBaseUrl()
       const uid = localStorage.getItem('userId')
-      if (!uid || !/^\d+$/.test(uid)) {
-        setCanRequest(false)
-        setLoading(false)
-        return
-      }
-      const q = new URLSearchParams({
-        user_id: uid,
-        property_table: propertyTable || 'properties_apartments',
+      const data = await fetchTestDriveEligibility(API_BASE_URL, {
+        propertyKey: propertySlug || propertyId,
+        userId: uid,
+        propertyTable,
       })
-      const apiKey = propertySlug || propertyId
-      const res = await fetch(
-        `${API_BASE_URL}/properties/${encodeURIComponent(apiKey)}/test-drive/eligibility?${q.toString()}`,
-      )
-      const json = await res.json()
-      setCanRequest(Boolean(json.success && json.data?.can_request))
+      setCanRequest(Boolean(data?.can_request))
     } catch (error) {
       console.warn('test-drive eligibility', error)
       setCanRequest(false)

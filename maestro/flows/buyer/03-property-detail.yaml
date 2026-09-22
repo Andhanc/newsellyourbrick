@@ -1,0 +1,44 @@
+url: ${APP_URL}
+name: buyer-property-detail
+tags:
+  - buyer
+  - property
+env:
+  APP_URL: http://localhost:5173
+  AUCTION_SLUG: maestro-demo-auction-villa
+  BUY_NOW_SLUG: maestro-demo-buy-now-loft
+  DEBT_SLUG: maestro-demo-debt-townhouse
+  SHARE_SLUG: maestro-demo-share-penthouse
+  VIP_SLUG: maestro-demo-vip-estate
+---
+- launchApp
+- openLink: ${APP_URL}/__e2e__/session?role=buyer&next=/auction/property/${AUCTION_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 30000
+- takeScreenshot: buyer_auction_detail
+- openLink: ${APP_URL}/property/${BUY_NOW_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: buyer_buy_now_detail
+- openLink: ${APP_URL}/property/${BUY_NOW_SLUG}/test-drive
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: buyer_test_drive_booking
+- openLink: ${APP_URL}/debts/property/${DEBT_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: buyer_debt_detail
+- openLink: ${APP_URL}/co-investment/${SHARE_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: buyer_share_detail
+- openLink: ${APP_URL}/auction/property/${VIP_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: buyer_vip_detail

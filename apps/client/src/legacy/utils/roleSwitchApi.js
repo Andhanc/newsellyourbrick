@@ -1,18 +1,32 @@
 import { getApiBaseUrlSync } from './apiConfig'
+import { fetchDedupe } from './fetchDedupe'
 
 const API_BASE_URL = getApiBaseUrlSync()
+const LINKED_ROLES_TTL_MS = 30000
+const linkedRolesCache = new Map()
 
 export async function fetchLinkedRoles({ userId, email } = {}) {
   const params = new URLSearchParams()
   if (userId) params.set('userId', String(userId))
   if (email) params.set('email', email)
+  const key = params.toString()
+  const cached = linkedRolesCache.get(key)
+  const now = Date.now()
+  if (cached?.data && now - cached.ts < LINKED_ROLES_TTL_MS) return cached.data
+  if (cached?.promise) return cached.promise
 
-  const response = await fetch(`${API_BASE_URL}/auth/linked-roles?${params.toString()}`)
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(data.error || 'Не удалось загрузить связанные кабинеты')
-  }
-  return data
+  const request = (async () => {
+    const response = await fetchDedupe(`${API_BASE_URL}/auth/linked-roles?${key}`)
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(data.error || 'Не удалось загрузить связанные кабинеты')
+    }
+    linkedRolesCache.set(key, { ts: Date.now(), promise: null, data })
+    return data
+  })()
+
+  linkedRolesCache.set(key, { ts: now, promise: request, data: cached?.data || null })
+  return request
 }
 
 export async function createLinkedRole({ userId, targetRole, password }) {

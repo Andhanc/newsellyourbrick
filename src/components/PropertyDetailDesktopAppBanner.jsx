@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FiX } from 'react-icons/fi'
-import { FaApple } from 'react-icons/fa'
+import { AppleIcon } from './icons/ContactChannelIcons'
 import { useTranslation } from 'react-i18next'
 import { showNotification } from '../utils/toastHelper'
 import PropertyDetailAppBannerPhone from './PropertyDetailAppBannerPhone'
@@ -59,7 +59,7 @@ export default function PropertyDetailDesktopAppBanner({ className = '' }) {
           <div className="pd-v3-app-banner__stores">
             <button type="button" className="pd-v3-app-banner__store" onClick={handleStoreClick}>
               <span className="pd-v3-app-banner__store-icon" aria-hidden>
-                <FaApple size={22} />
+                <AppleIcon size={22} />
               </span>
               <span className="pd-v3-app-banner__store-text">
                 <span className="pd-v3-app-banner__store-label">{t('propertyDetailAppStoreTop')}</span>
