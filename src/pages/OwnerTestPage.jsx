@@ -1,17 +1,20 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { OwnerTestNavigationProvider, useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import OwnerTestCabinetChrome from '../components/OwnerTestCabinetChrome'
 import OwnerCabinetWelcomeHost from '../components/OwnerCabinetWelcomeHost'
+import OwnerTestCabinetPageFallback from '../components/OwnerTestCabinetPageFallback'
 import { OWNER_VIEWS, VIEW_PAGE_ACTIVE } from '../utils/ownerTestNav'
-import MainOwnerTestPage from './MainOwnerTestPage'
-import OwnerPropertiesTestPage from './OwnerPropertiesTestPage'
-import OwnerPropertyAnalyticsTestPage from './OwnerPropertyAnalyticsTestPage'
-import OwnerTestDrivePage from './OwnerTestDrivePage'
-import OwnerSubscriptionsTestPage from './OwnerSubscriptionsTestPage'
-import OwnerWalletTestPage from './OwnerWalletTestPage'
-import OwnerProfileTestPage from './OwnerProfileTestPage'
-import OwnerAddPropertyTestPage from './OwnerAddPropertyTestPage'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import SellerPurchasedPropertyArrivalDrawer from '../components/SellerPurchasedPropertyArrivalDrawer'
+
+const MainOwnerTestPage = lazyWithRetry(() => import('./MainOwnerTestPage'))
+const OwnerPropertiesTestPage = lazyWithRetry(() => import('./OwnerPropertiesTestPage'))
+const OwnerPropertyAnalyticsTestPage = lazyWithRetry(() => import('./OwnerPropertyAnalyticsTestPage'))
+const OwnerTestDrivePage = lazyWithRetry(() => import('./OwnerTestDrivePage'))
+const OwnerSubscriptionsTestPage = lazyWithRetry(() => import('./OwnerSubscriptionsTestPage'))
+const OwnerWalletTestPage = lazyWithRetry(() => import('./OwnerWalletTestPage'))
+const OwnerProfileTestPage = lazyWithRetry(() => import('./OwnerProfileTestPage'))
+const OwnerAddPropertyTestPage = lazyWithRetry(() => import('./OwnerAddPropertyTestPage'))
 
 function OwnerTestViewRouter() {
   const { view } = useOwnerTestNav()
@@ -45,11 +48,16 @@ function OwnerTestViewRouter() {
 
 function OwnerTestPageContent() {
   const { view } = useOwnerTestNav()
+  const viewTree = (
+    <Suspense fallback={<OwnerTestCabinetPageFallback />}>
+      <OwnerTestViewRouter />
+    </Suspense>
+  )
 
   if (view === OWNER_VIEWS.ADD_PROPERTY) {
     return (
       <OwnerCabinetWelcomeHost>
-        <OwnerTestViewRouter />
+        {viewTree}
         <SellerPurchasedPropertyArrivalDrawer />
       </OwnerCabinetWelcomeHost>
     )
@@ -58,7 +66,7 @@ function OwnerTestPageContent() {
   return (
     <OwnerCabinetWelcomeHost>
       <OwnerTestCabinetChrome>
-        <OwnerTestViewRouter />
+        {viewTree}
       </OwnerTestCabinetChrome>
       <SellerPurchasedPropertyArrivalDrawer />
     </OwnerCabinetWelcomeHost>

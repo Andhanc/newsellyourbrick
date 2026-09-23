@@ -1,8 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import ManagerChatModal, { useManagerChatUserId } from './ManagerChatModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { getUserData } from '../services/authService'
+
+const ManagerChatModal = lazy(() => import('./ManagerChatModal'))
+
+function resolveManagerChatUserId(clerkUser, clerkLoaded) {
+  if (isSiteUserSignedIn(clerkUser, clerkLoaded)) {
+    const freshUserData = getUserData()
+    const storedUserId = freshUserData?.id || localStorage.getItem('userId')
+    if (storedUserId) return `user_${storedUserId}`
+  }
+  let sessionId = localStorage.getItem('chatSessionId')
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    localStorage.setItem('chatSessionId', sessionId)
+  }
+  return sessionId
+}
 
 /**
  * App-wide host for in-app support (Header «Поддержка», owner nav, deep links).
@@ -12,7 +28,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 export default function GlobalManagerChatHost() {
   const { user, isLoaded } = useUser()
   const [open, setOpen] = useState(false)
-  const chatUserId = useManagerChatUserId(user, isLoaded)
+  const chatUserId = useMemo(() => resolveManagerChatUserId(user, isLoaded), [user, isLoaded])
 
   const openChat = useCallback(() => {
     if (!isSiteUserSignedIn(user, isLoaded)) {
@@ -47,5 +63,11 @@ export default function GlobalManagerChatHost() {
     )
   }, [open])
 
-  return <ManagerChatModal open={open} onClose={closeChat} chatUserId={chatUserId} />
+  if (!open) return null
+
+  return (
+    <Suspense fallback={null}>
+      <ManagerChatModal open={open} onClose={closeChat} chatUserId={chatUserId} />
+    </Suspense>
+  )
 }

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { FiSearch } from 'react-icons/fi'
-import { properties } from '../data/properties'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
@@ -12,8 +11,6 @@ import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
-import AuctionDesktopFilters from './AuctionDesktopFilters'
-import SharesMobileFiltersDrawer from './SharesMobileFiltersDrawer'
 import AuctionListingSaleToggle from './AuctionListingSaleToggle'
 import './AuctionListingSaleToggle.css'
 import PageBreadcrumbs from './PageBreadcrumbs'
@@ -66,6 +63,8 @@ const AuctionMobileLayoutLazy = lazyWithRetry(
   () => import('./ui/AuctionMobileLayout'),
   'AuctionMobileLayout',
 )
+const AuctionDesktopFilters = lazyWithRetry(() => import('./AuctionDesktopFilters'))
+const SharesMobileFiltersDrawer = lazyWithRetry(() => import('./SharesMobileFiltersDrawer'))
 
 const MOBILE_BREAKPOINT = 768
 const AUCTION_DESKTOP_PAGE_SIZE = 20
@@ -100,6 +99,7 @@ const PropertyList = ({
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
   const [mobileFiltersDrawerOpen, setMobileFiltersDrawerOpen] = useState(false)
+  const [mobileFiltersArmed, setMobileFiltersArmed] = useState(false)
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [desktopFiltersTransitioning, setDesktopFiltersTransitioning] = useState(false)
   const desktopFiltersTransitionTimerRef = useRef(null)
@@ -110,6 +110,10 @@ const PropertyList = ({
   const [countryFilter, setCountryFilter] = useState('')
   const [cityFilter, setCityFilter] = useState('')
   const searchFiltersBarRef = useRef(null)
+
+  useEffect(() => {
+    if (mobileFiltersDrawerOpen) setMobileFiltersArmed(true)
+  }, [mobileFiltersDrawerOpen])
 
   const toggleDesktopFilters = () => {
     setDesktopFiltersTransitioning(true)
@@ -222,7 +226,7 @@ const PropertyList = ({
   const isAuctionEnded = (property) => isAuctionListingEnded(property)
 
   // Используем переданные аукционные объявления или статические данные
-  const propertiesToUse = auctionProperties || properties
+  const propertiesToUse = auctionProperties || []
   const auctionLocationOptions = useMemo(() => {
     const onlyAuction = propertiesToUse.filter((property) => {
       const isDebtProperty =
@@ -652,7 +656,9 @@ const PropertyList = ({
           }`.trim()}
         >
           {isAuctionDesktop && desktopFiltersOpen ? (
-            <AuctionDesktopFilters {...auctionDesktopFilterProps} />
+            <Suspense fallback={null}>
+              <AuctionDesktopFilters {...auctionDesktopFilterProps} />
+            </Suspense>
           ) : null}
 
           <div
@@ -1473,18 +1479,20 @@ const PropertyList = ({
         </Suspense>
       ) : null}
 
-      {isAuctionMobileFilters ? (
-        <SharesMobileFiltersDrawer
-          isOpen={mobileFiltersDrawerOpen}
-          onClose={() => setMobileFiltersDrawerOpen(false)}
-          title={t('filters')}
-          applyLabel={t('auctionApplyFilters')}
-          onApply={applyAuctionFilters}
-          resetLabel={t('catalogResetFilters')}
-          onReset={resetAuctionFilters}
-        >
-          <AuctionDesktopFilters {...auctionDesktopFilterProps} variant="drawer" />
-        </SharesMobileFiltersDrawer>
+      {isAuctionMobileFilters && mobileFiltersArmed ? (
+        <Suspense fallback={null}>
+          <SharesMobileFiltersDrawer
+            isOpen={mobileFiltersDrawerOpen}
+            onClose={() => setMobileFiltersDrawerOpen(false)}
+            title={t('filters')}
+            applyLabel={t('auctionApplyFilters')}
+            onApply={applyAuctionFilters}
+            resetLabel={t('catalogResetFilters')}
+            onReset={resetAuctionFilters}
+          >
+            <AuctionDesktopFilters {...auctionDesktopFilterProps} variant="drawer" />
+          </SharesMobileFiltersDrawer>
+        </Suspense>
       ) : null}
     </section>
     </>

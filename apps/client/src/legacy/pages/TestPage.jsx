@@ -992,9 +992,10 @@ function TestPage() {
   }, [historySheetOpen])
 
   useEffect(() => {
-    const idlePrefetch = window.setTimeout(() => setHistoryLoadRequested(true), 1800)
-    return () => window.clearTimeout(idlePrefetch)
-  }, [])
+    if (searchParams.get('history') !== '1') return undefined
+    setHistoryLoadRequested(true)
+    return undefined
+  }, [searchParams])
 
   useEffect(() => {
     if (!dataSheetOpen) {

@@ -11,7 +11,7 @@ import {
   FiSliders,
   FiUmbrella,
 } from 'react-icons/fi'
-import { FaStar } from 'react-icons/fa'
+import { Star } from 'lucide-react'
 import Header from '../components/Header'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
@@ -543,7 +543,7 @@ const TestDriveLandingPage = () => {
                             </div>
                             {listing.rating != null ? (
                               <span className="test-drive-card__rating">
-                                <FaStar size={13} aria-hidden />
+                                <Star size={13} aria-hidden />
                                 {listing.rating.toFixed(1)}
                                 {listing.reviews != null ? ` (${listing.reviews})` : null}
                               </span>

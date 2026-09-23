@@ -94,7 +94,7 @@ function Home() {
     if (!backgroundRefresh) setLoading(true)
     try {
       const viewerId = numericUserId ?? getStoredNumericUserId()
-      const list = await fetchAuctionList(viewerId ?? undefined)
+      const list = await fetchAuctionList(viewerId ?? undefined, { catalogs: 'auction' })
       setAuctionProperties(list)
     } catch (error) {
       console.error('❌ Ошибка загрузки объявлений:', error)
@@ -157,7 +157,7 @@ function Home() {
                 return formatPropertyForList(merged, isAuction)
               })
               if (!found && !cleared) {
-                fetchAuctionList().then(setAuctionProperties).catch(() => {})
+                fetchAuctionList(undefined, { catalogs: 'auction' }).then(setAuctionProperties).catch(() => {})
               } else {
                 setCachedList(mapped)
               }

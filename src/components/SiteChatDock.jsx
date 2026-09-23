@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import '../pages/Home.css'
+import './SiteChatDock.css'
 
 export default function SiteChatDock({
   wrapperClassName = 'site-chat-dock',

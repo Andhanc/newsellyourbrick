@@ -74,13 +74,11 @@ async function probeVerificationGates({ cancelledRef }) {
 
   try {
     const { getApiBaseUrl } = await import('../utils/apiConfig')
+    const { fetchVerificationStatus } = await import('../utils/verificationStatusApi')
     const base = String(await getApiBaseUrl()).replace(/\/$/, '')
-    const r = await fetch(`${base}/users/${uid}/verification-status`)
-    if (r.ok) {
-      const j = await r.json()
-      if (j.success && j.data?.needsReverificationAfterRejection) {
-        rejected = true
-      }
+    const status = await fetchVerificationStatus(base, uid, { ttlMs: 15000 })
+    if (status?.needsReverificationAfterRejection) {
+      rejected = true
     }
   } catch {
     /* ignore */
@@ -131,14 +129,12 @@ export function LoggedInVerificationGatesHost({ isBlocked }) {
     const onRefresh = () => runProbe()
     window.addEventListener('verification-status-update', onRefresh)
     window.addEventListener('owner-notifications-refresh', onRefresh)
-    window.addEventListener('focus', onRefresh)
 
     return () => {
       cancelledRef.current = true
       cancelSchedule()
       window.removeEventListener('verification-status-update', onRefresh)
       window.removeEventListener('owner-notifications-refresh', onRefresh)
-      window.removeEventListener('focus', onRefresh)
     }
   }, [isBlocked, pathname])
 

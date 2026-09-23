@@ -1,0 +1,50 @@
+url: ${APP_URL}
+name: seller-owner-views
+tags:
+  - seller
+  - owner
+env:
+  APP_URL: http://localhost:5173
+  BUY_NOW_SLUG: maestro-demo-buy-now-loft
+---
+- launchApp
+- openLink: ${APP_URL}/__e2e__/session?role=seller&next=/owner-test/properties
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 30000
+- takeScreenshot: seller_properties_list
+- openLink: ${APP_URL}/owner-add-property-test
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_add_property_legacy
+- openLink: ${APP_URL}/owner-wallet-test
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_wallet_legacy
+- openLink: ${APP_URL}/owner-sales-test
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_sales_legacy
+- openLink: ${APP_URL}/owner-subscriptions-test
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_subs_legacy
+- openLink: ${APP_URL}/owner-test-drive
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_testdrive_legacy
+- openLink: ${APP_URL}/seller
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: seller_marketing
+- openLink: ${APP_URL}/property/${BUY_NOW_SLUG}
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 25000
+- takeScreenshot: seller_own_listing_detail

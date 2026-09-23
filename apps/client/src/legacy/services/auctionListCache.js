@@ -227,17 +227,21 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
 /**
  * Загружает список объявлений для /auction.
  * @param {number|string|null|undefined} explicitViewerUserId — id в БД для VIP-лотов; по умолчанию из localStorage.
+ * @param {{ catalogs?: 'auction' | 'buyNow' | 'all', includeTestTimers?: boolean }} [options]
  */
-export async function fetchAuctionList(explicitViewerUserId) {
+export async function fetchAuctionList(explicitViewerUserId, options = {}) {
   const resolved =
     explicitViewerUserId !== undefined ? explicitViewerUserId : getStoredNumericUserId()
+  const catalogMode =
+    options.catalogs === 'auction' || options.catalogs === 'buyNow' ? options.catalogs : 'all'
+  const includeTestTimers = options.includeTestTimers !== false
   const viewerKey =
     resolved != null &&
     String(resolved).trim() !== '' &&
     Number.isFinite(Number(resolved)) &&
     Number(resolved) >= 1
-      ? String(Number(resolved))
-      : ''
+      ? `${String(Number(resolved))}|${catalogMode}|t${includeTestTimers ? 1 : 0}`
+      : `|${catalogMode}|t${includeTestTimers ? 1 : 0}`
 
   const existing = fetchAuctionListInFlightByKey.get(viewerKey)
   if (existing) return existing
@@ -260,15 +264,29 @@ export async function fetchAuctionList(explicitViewerUserId) {
   let allTestProperties = []
 
   const langQ = encodeURIComponent(lang)
-  const viewerQ = viewerKey ? `&viewer_user_id=${encodeURIComponent(viewerKey)}` : ''
+  const viewerIdPart = String(viewerKey).split('|')[0]
+  const viewerQ = viewerIdPart ? `&viewer_user_id=${encodeURIComponent(viewerIdPart)}` : ''
+  const includeApproved = catalogMode === 'all'
+  const includeDebts = catalogMode !== 'auction'
+  const includeShares = catalogMode === 'buyNow'
   try {
     /** test-timers не использует lang на бэкенде — без query для лучшего попадания в серверный кэш */
-    const [testRes, auctionAllRes, approvedAllRes, debtsRes] = await Promise.all([
-      fetchDedupe(`${API_BASE_URL}/properties/test-timers`),
+    const requests = [
+      includeTestTimers
+        ? fetchDedupe(`${API_BASE_URL}/properties/test-timers`)
+        : Promise.resolve({ ok: false }),
       fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${langQ}${viewerQ}`),
-      fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${langQ}`),
-      fetchDedupe(`${API_BASE_URL}/properties/debts`),
-    ])
+      includeApproved
+        ? fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${langQ}`)
+        : Promise.resolve({ ok: false }),
+      includeDebts
+        ? fetchDedupe(`${API_BASE_URL}/properties/debts`)
+        : Promise.resolve({ ok: false }),
+      includeShares
+        ? fetchDedupe(`${API_BASE_URL}/properties/shares?limit=10000`)
+        : Promise.resolve({ ok: false }),
+    ]
+    const [testRes, auctionAllRes, approvedAllRes, debtsRes, sharesRes] = await Promise.all(requests)
 
     if (testRes.ok) {
       const data = await testRes.json().catch(() => null)
@@ -278,7 +296,7 @@ export async function fetchAuctionList(explicitViewerUserId) {
       const data = await auctionAllRes.json().catch(() => null)
       if (data?.success && data.data) allAuctionProperties.push(...data.data)
     }
-    if (approvedAllRes.ok) {
+    if (includeApproved && approvedAllRes?.ok) {
       const data = await approvedAllRes.json().catch(() => null)
       if (data?.success && data.data) {
         const nonAuction = data.data.filter(
@@ -287,9 +305,18 @@ export async function fetchAuctionList(explicitViewerUserId) {
         allNonAuctionProperties.push(...nonAuction)
       }
     }
-    if (debtsRes.ok) {
+    if (includeDebts && debtsRes?.ok) {
       const data = await debtsRes.json().catch(() => null)
       if (data?.success && data.data) allDebtProperties.push(...data.data)
+    }
+    if (includeShares && sharesRes?.ok) {
+      const data = await sharesRes.json().catch(() => null)
+      const shareRows = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.shares)
+          ? data.shares
+          : []
+      allNonAuctionProperties.push(...shareRows)
     }
   } catch (_) {}
 

@@ -2,20 +2,20 @@ import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import ClerkAuthSync from './components/ClerkAuthSync'
-import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
-import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import YandexMetrikaHits from './components/YandexMetrikaHits'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
-import PrivateClubKickModal from './components/PrivateClubKickModal'
 import BiometricLockGate from './components/BiometricLockGate'
-
-import VerificationRejectedGate from './components/VerificationRejectedGate'
 import DepositVerificationGate from './components/DepositVerificationGate'
 import BuyerProfileOnboardingRouteGate from './components/BuyerProfileOnboardingRouteGate'
+import {
+  ClerkAuthHandlerGate,
+  DeferredSiteAdsHost,
+  LoggedInVerificationGatesHost,
+  PrivateClubKickModalHost,
+} from './components/DeferredAppShellGates'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
-import { prefetchAuctionList } from './services/auctionListCache'
 import { fetchUserById } from './utils/usersApi'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
@@ -34,22 +34,21 @@ import SiteFooterNearObserver from './components/SiteFooterNearObserver'
 import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import GlobalManagerChatHost from './components/GlobalManagerChatHost'
 import GlobalAiChatHost from './components/GlobalAiChatHost'
-import MobileDiscoverPage from './pages/MobileDiscoverPage'
+const MobileDiscoverPage = lazyWithRetry(() => import('./pages/MobileDiscoverPage'))
 const MobileShowcasePage = lazyWithRetry(() => import('./pages/MobileShowcasePage'))
-import Home from './pages/Home'
+const Home = lazyWithRetry(() => import('./pages/Home'))
+const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
+const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
+const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import { PurchaseSuccessProvider } from './context/PurchaseSuccessContext'
 import PurchaseCheckoutSuccessBridge from './components/PurchaseCheckoutSuccessBridge'
-import SiteAdsHost from './components/siteAds/SiteAdsHost'
 import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
-import DebtsPage from './pages/Debts'
-import SearchResults from './pages/SearchResults'
-import PropertyDetailPage from './pages/PropertyDetailPage'
 import DepositRedirect from './components/DepositRedirect'
 import CabinetDataRedirect from './components/CabinetDataRedirect'
 import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
 import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
-import NotFoundPage from './components/NotFoundPage'
+const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
 import SoftLaunchGate from './components/SoftLaunchGate'
 import { shouldShowSoftLaunchUnavailable } from './utils/softLaunchAccess'
 import { PageSeoProvider } from './context/PageSeoContext'
@@ -66,7 +65,7 @@ const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveE
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const PurchasedObjectGuidePage = lazyWithRetry(() => import('./pages/PurchasedObjectGuidePage'))
-const Chat = lazyWithRetry(() => import('./pages/Chat'))
+const Chat = lazyWithRetry(() => import('./pages/ChatRouteRedirect'))
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
 const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
@@ -88,6 +87,7 @@ const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const SellYourBrickLandingPage = lazyWithRetry(() => import('./pages/SellYourBrickLandingPage'))
 const BuyerPage = lazyWithRetry(() => import('./pages/BuyerPage'))
 const SellerPage = lazyWithRetry(() => import('./pages/SellerPage'))
+const E2eSessionPage = lazyWithRetry(() => import('./pages/E2eSessionPage'))
 const OwnerTestRoute = lazyWithRetry(() => import('./pages/OwnerTestRoute'), 'OwnerTestRoute')
 const OwnerTestLegacyRedirect = lazyWithRetry(() =>
   import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyRedirect }))
@@ -169,19 +169,58 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
 /** Soft-launch «Пока недоступно» replaces the page — no site footer underneath. */
 function AppChromeFooter() {
   const { pathname } = useLocation()
-  if (
+  const [footerReady, setFooterReady] = useState(false)
+  const sentinelRef = useRef(null)
+  const hidden =
     shouldShowSoftLaunchUnavailable(pathname) ||
+    pathname === '/' ||
     pathname === '/lottery' ||
     pathname === '/app' ||
     pathname === '/mobile-showcase' ||
     pathname === '/map' ||
+    pathname === '/owner-test' ||
+    pathname.startsWith('/owner-test/') ||
+    pathname === '/main-owner-test' ||
+    pathname === '/owner-test-drive' ||
     pathname.startsWith('/test-drive/survey/') ||
     pathname.startsWith('/test-drive/feedback/') ||
     pathname === '/compass'
-  ) {
-    return null
-  }
-  return <LazyFooter />
+
+  useEffect(() => {
+    setFooterReady(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (hidden || footerReady) return undefined
+    const root = document.querySelector('.app-layout')
+    if (!root) {
+      setFooterReady(true)
+      return undefined
+    }
+    const maybeLoad = () => {
+      const remaining = root.scrollHeight - root.scrollTop - root.clientHeight
+      if (remaining <= 320) setFooterReady(true)
+    }
+    const timer = window.setTimeout(maybeLoad, 500)
+    root.addEventListener('scroll', maybeLoad, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      root.removeEventListener('scroll', maybeLoad)
+    }
+  }, [hidden, footerReady, pathname])
+
+  if (hidden) return null
+  return (
+    <>
+      <div
+        ref={sentinelRef}
+        id="site-footer-sentinel"
+        aria-hidden="true"
+        style={{ height: 1, flexShrink: 0 }}
+      />
+      {footerReady ? <LazyFooter /> : null}
+    </>
+  )
 }
 
 // Компонент для валидации сессии при запуске приложения
@@ -443,84 +482,18 @@ function ReferralCapture() {
   return null
 }
 
-/** После первого кадра подгружаем чанк карты в idle — реже однотонный fallback при первом заходе на /map. */
-function HeavyRouteChunksPrefetch() {
-  useEffect(() => {
-    let cancelled = false
-    let idleId = null
-    let timeoutId = null
-    const rafIds = []
-
-    const run = () => {
-      if (cancelled) return
-      void import('./pages/MapPage')
-    }
-
-    const schedule = () => {
-      if (cancelled) return
-      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(run, { timeout: 600 })
-      } else {
-        timeoutId = window.setTimeout(run, 0)
-      }
-    }
-
-    rafIds.push(
-      requestAnimationFrame(() => {
-        rafIds.push(requestAnimationFrame(schedule))
-      }),
-    )
-
-    return () => {
-      cancelled = true
-      rafIds.forEach((id) => cancelAnimationFrame(id))
-      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId)
-      }
-      if (timeoutId != null) window.clearTimeout(timeoutId)
-    }
-  }, [])
-  return null
-}
-
-/**
- * Кэш списка аукциона: на /debts не запускаем — иначе батч запросов конкурирует с LCP и /properties/debts.
- * На главных маршрутах — в idle, чтобы не блокировать первую отрисовку.
- */
-function AuctionListPrefetch() {
+function BuyerCabinetScrollStyles() {
   const { pathname } = useLocation()
-
   useEffect(() => {
-    if (pathname === '/debts') return undefined
-
-    let cancelled = false
-    const run = () => {
-      if (!cancelled) prefetchAuctionList()
-    }
-
-    const fastPaths = new Set(['/', '/auction', '/main'])
-    if (fastPaths.has(pathname)) {
-      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-        const id = window.requestIdleCallback(run, { timeout: 2500 })
-        return () => {
-          cancelled = true
-          window.cancelIdleCallback(id)
-        }
-      }
-      const t = window.setTimeout(run, 0)
-      return () => {
-        cancelled = true
-        window.clearTimeout(t)
-      }
-    }
-
-    const t = window.setTimeout(run, 6000)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
+    if (
+      pathname.startsWith('/profile') ||
+      pathname.startsWith('/owner') ||
+      pathname.startsWith('/cabinet') ||
+      pathname === '/data'
+    ) {
+      void import('./styles/buyer-cabinet-scroll.css')
     }
   }, [pathname])
-
   return null
 }
 
@@ -552,10 +525,6 @@ function AdminSessionCleaner() {
 
 function App() {
   const appLayoutRef = useRef(null)
-
-  useEffect(() => {
-    void import('./styles/buyer-cabinet-scroll.css')
-  }, [])
 
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
@@ -649,22 +618,20 @@ function App() {
       <MainPageViewportLock />
       <AuctionMobileOverflowLock />
       <ReferralCapture />
-      <AuctionListPrefetch />
-      <HeavyRouteChunksPrefetch />
+      <BuyerCabinetScrollStyles />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <YandexMetrikaHits />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
-      <PrivateClubKickModal />
+      <PrivateClubKickModalHost />
       <BiometricLockGate />
-      <GlobalVerificationSuccessGate />
-      <VerificationRejectedGate blockedUser={isBlocked} />
+      <LoggedInVerificationGatesHost isBlocked={isBlocked} />
       <DepositVerificationGate blockedUser={isBlocked} />
       <BuyerProfileOnboardingRouteGate />
       <AdminSessionCleaner />
       <ClerkAuthSync />
-      <ClerkAuthHandler />
+      <ClerkAuthHandlerGate />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <SiteFooterNearObserver />
@@ -673,15 +640,15 @@ function App() {
       <GlobalAiChatHost />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <SiteAdsErrorBoundary>
-          <SiteAdsHost />
+          <DeferredSiteAdsHost />
         </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <SoftLaunchGate>
             <Routes>
-              <Route path="/" element={<MobileDiscoverPage />} />
+              <Route path="/" element={<LazyPage><MobileDiscoverPage /></LazyPage>} />
               <Route path="/mobile-showcase" element={<LazyPage><MobileShowcasePage /></LazyPage>} />
-              <Route path="/auction" element={<Home />} />
+              <Route path="/auction" element={<LazyPage><Home /></LazyPage>} />
               <Route
                 path="/auction/buy-now"
                 element={
@@ -690,8 +657,8 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/auction/property/:slugOrId" element={<PropertyDetailPage />} />
-              <Route path="/auction/:segment1/:segment2?" element={<Home />} />
+              <Route path="/auction/property/:slugOrId" element={<LazyPage><PropertyDetailPage /></LazyPage>} />
+              <Route path="/auction/:segment1/:segment2?" element={<LazyPage><Home /></LazyPage>} />
               <Route path="/main" element={<Navigate to="/auction" replace />} />
               <Route
                 path="/property/:slugOrId/test-drive"
@@ -741,22 +708,22 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="/property/:slugOrId" element={<PropertyDetailPage />} />
+              <Route path="/property/:slugOrId" element={<LazyPage><PropertyDetailPage /></LazyPage>} />
               <Route
                 path="/auction/:country/:city/property/:slugOrId"
-                element={<PropertyDetailPage />}
+                element={<LazyPage><PropertyDetailPage /></LazyPage>}
               />
               <Route
                 path="/debts/:country/:city/property/:slugOrId"
-                element={<PropertyDetailPage />}
+                element={<LazyPage><PropertyDetailPage /></LazyPage>}
               />
               <Route
                 path="/search-results/:country/:city/property/:slugOrId"
-                element={<PropertyDetailPage />}
+                element={<LazyPage><PropertyDetailPage /></LazyPage>}
               />
-              <Route path="/search-results/:country" element={<SearchResults />} />
-              <Route path="/search-results/:country/:city" element={<SearchResults />} />
-              <Route path="/search-results" element={<SearchResults />} />
+              <Route path="/search-results/:country" element={<LazyPage><SearchResults /></LazyPage>} />
+              <Route path="/search-results/:country/:city" element={<LazyPage><SearchResults /></LazyPage>} />
+              <Route path="/search-results" element={<LazyPage><SearchResults /></LazyPage>} />
               <Route
                 path="/map"
                 element={
@@ -897,8 +864,8 @@ function App() {
                 }
               />
               <Route path="/shares/:slugOrId" element={<LegacySharesDetailRedirect />} />
-              <Route path="/debts/property/:slugOrId" element={<PropertyDetailPage />} />
-              <Route path="/debts" element={<DebtsPage />} />
+              <Route path="/debts/property/:slugOrId" element={<LazyPage><PropertyDetailPage /></LazyPage>} />
+              <Route path="/debts" element={<LazyPage><DebtsPage /></LazyPage>} />
               <Route
                 path="/private-club"
                 element={
@@ -953,6 +920,14 @@ function App() {
                 element={
                   <LazyPage>
                     <SellerPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/__e2e__/session"
+                element={
+                  <LazyPage>
+                    <E2eSessionPage />
                   </LazyPage>
                 }
               />
@@ -1142,7 +1117,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<LazyPage><NotFoundPage /></LazyPage>} />
             </Routes>
             </SoftLaunchGate>
           </RouteErrorBoundary>

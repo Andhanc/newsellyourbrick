@@ -9,6 +9,7 @@ const aiHost = await readFile(new URL('./GlobalAiChatHost.jsx', import.meta.url)
 const aiModal = await readFile(new URL('./AiChatModal.jsx', import.meta.url), 'utf8')
 const aiPanel = await readFile(new URL('./AiChatPanel.jsx', import.meta.url), 'utf8')
 const css = await readFile(new URL('./SiteChatDock.css', import.meta.url), 'utf8')
+const hook = await readFile(new URL('../hooks/useSiteAiChatDock.js', import.meta.url), 'utf8')
 
 test('manager chat is hosted globally (modal desktop / drawer mobile)', () => {
   assert.match(managerHost, /GlobalManagerChatHost/)
@@ -17,12 +18,28 @@ test('manager chat is hosted globally (modal desktop / drawer mobile)', () => {
   assert.match(modal, /BuyerSheetShell/)
   assert.match(modal, /manager-chat-modal-root/)
   assert.match(modal, /chat-widget--sheet-drawer chat-widget--manager-drawer/)
+  assert.match(modal, /footer=\{composer\}/)
+  assert.match(modal, /chat-widget__composer-row/)
+  assert.match(css, /chat-widget__composer-row/)
+  assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 48px/)
+  assert.match(css, /chat-widget__message--manager[\s\S]*width:\s*fit-content/)
 })
 
 test('in-app support is available without a VIP subscription', () => {
   assert.doesNotMatch(managerHost, /canAccess\('personalManager'\)/)
   assert.doesNotMatch(managerHost, /subscriptionLockManagerToast/)
   assert.doesNotMatch(managerHost, /useViewerVipAccess/)
+})
+
+test('AI chat does not prefetch catalogs until a message is sent', () => {
+  assert.match(hook, /ensureCatalogForAi/)
+  assert.match(hook, /includeTestTimers: false/)
+  const openEffect = hook.slice(
+    hook.indexOf('if (!isChatOpen) return undefined'),
+    hook.indexOf('ensureCatalogForAi'),
+  )
+  assert.doesNotMatch(openEffect, /fetchAuctionList/)
+  assert.match(hook, /const catalog = await ensureCatalogForAi\(\)/)
 })
 
 test('AI chat is hosted globally (modal desktop / drawer mobile)', () => {

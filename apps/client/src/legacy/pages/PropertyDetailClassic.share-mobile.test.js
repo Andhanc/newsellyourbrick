@@ -24,7 +24,7 @@ test('places the live ownership chart below the mobile share title', () => {
 })
 
 test('uses a dedicated fixed mobile bar to buy several shares', () => {
-  assert.match(page, /import ShareMobilePurchaseBar from '..\/components\/ShareMobilePurchaseBar'/)
+  assert.match(page, /const ShareMobilePurchaseBar = lazyWithRetry\(\(\) => import\('\.\.\/components\/ShareMobilePurchaseBar'\)\)/)
   assert.match(page, /<ShareMobilePurchaseBar config=\{shareListingConfig\} \/>/)
   assert.match(mobileBar, /share-mobile-purchase-bar__stepper/)
   assert.match(mobileBar, /onBuyCountChange\?\.\(Math\.max\(1, buyCount - 1\)\)/)

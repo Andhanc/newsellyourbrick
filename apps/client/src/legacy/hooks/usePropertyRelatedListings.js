@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   buildCatalogCityPath,
   countryLabelToUrlSlug,
@@ -61,9 +61,9 @@ async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propert
 /**
  * Похожие объекты из geo-каталога (тот же город и тип).
  * @param {object | null} property
- * @param {{ limit?: number }} [options]
+ * @param {{ limit?: number, enabled?: boolean }} [options]
  */
-export function usePropertyRelatedListings(property, { limit = 4 } = {}) {
+export function usePropertyRelatedListings(property, { limit = 4, enabled = true } = {}) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -102,7 +102,7 @@ export function usePropertyRelatedListings(property, { limit = 4 } = {}) {
   const propertyId = property?.id
 
   useEffect(() => {
-    if (!countrySlug || !citySlug) {
+    if (!enabled || !countrySlug || !citySlug) {
       setItems([])
       setLoading(false)
       return undefined
@@ -131,7 +131,30 @@ export function usePropertyRelatedListings(property, { limit = 4 } = {}) {
     return () => {
       cancelled = true
     }
-  }, [countrySlug, citySlug, typePlural, propertyId, limit])
+  }, [enabled, countrySlug, citySlug, typePlural, propertyId, limit])
 
   return { items, loading, geo }
+}
+
+/** Каталог похожих объектов запрашивается только когда блок рядом с экраном. */
+export function useVisibleRelatedListings(property, { limit = 4, rootMargin = '240px' } = {}) {
+  const ref = useRef(null)
+  const [enabled, setEnabled] = useState(false)
+
+  useEffect(() => {
+    if (enabled) return undefined
+    const el = ref.current
+    if (!el) return undefined
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setEnabled(true)
+      },
+      { rootMargin },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [enabled, rootMargin])
+
+  const data = usePropertyRelatedListings(property, { limit, enabled })
+  return { ref, enabled, ...data }
 }

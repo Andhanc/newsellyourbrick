@@ -1,0 +1,74 @@
+url: ${APP_URL}
+name: guest-marketing-pages
+tags:
+  - guest
+  - marketing
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- openLink: ${APP_URL}/about
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: guest_about
+- openLink: ${APP_URL}/buyer
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_buyer_landing
+- openLink: ${APP_URL}/seller
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_seller_landing
+- openLink: ${APP_URL}/news
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: guest_news
+- openLink: ${APP_URL}/private-club
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_private_club
+- openLink: ${APP_URL}/calculator
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_calculator
+- openLink: ${APP_URL}/lottery
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_lottery
+- openLink: ${APP_URL}/bonuses
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_bonuses
+- openLink: ${APP_URL}/test-drive
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_test_drive
+- openLink: ${APP_URL}/app
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_app
+- openLink: ${APP_URL}/sections
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_sections
+- openLink: ${APP_URL}/wallet
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_wallet
+- openLink: ${APP_URL}/profile
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_profile_gate

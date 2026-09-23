@@ -700,14 +700,17 @@ export default function OwnerProfileTestPage() {
   }, [activeTab])
 
   useEffect(() => {
+    if (activeTab !== 'statistics') return undefined
     loadStatistics()
-  }, [loadStatistics])
+    return undefined
+  }, [loadStatistics, activeTab])
 
   useEffect(() => {
+    if (activeTab !== 'statistics') return undefined
     const onUserSynced = () => loadStatistics()
     window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
     return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
-  }, [loadStatistics])
+  }, [loadStatistics, activeTab])
 
   const statsPeriodStart = useMemo(() => getStatsPeriodStart(statsPeriod), [statsPeriod])
 

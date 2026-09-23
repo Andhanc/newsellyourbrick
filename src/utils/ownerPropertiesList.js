@@ -290,22 +290,36 @@ export function mapApiPropertyToOwnerListRow(prop) {
   return row
 }
 
+const ownerPropertiesInflight = new Map()
+
 export async function fetchOwnerProperties(userId) {
   if (!userId) return []
+  const key = String(userId)
+  const existing = ownerPropertiesInflight.get(key)
+  if (existing) return existing
 
-  const response = await fetch(`${API_BASE_URL}/properties/user/${userId}`)
-  if (!response.ok) {
-    throw new Error('Не удалось загрузить объекты')
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/properties/user/${userId}`)
+    if (!response.ok) {
+      throw new Error('Не удалось загрузить объекты')
+    }
+
+    const result = await response.json()
+    if (!result.success || !Array.isArray(result.data)) {
+      return []
+    }
+
+    const rows = sortOwnerPropertiesByNewest(result.data.map(mapApiPropertyToOwnerListRow))
+    setOwnerPropertiesLiveCache(rows)
+    return rows
+  })()
+
+  ownerPropertiesInflight.set(key, promise)
+  try {
+    return await promise
+  } finally {
+    if (ownerPropertiesInflight.get(key) === promise) ownerPropertiesInflight.delete(key)
   }
-
-  const result = await response.json()
-  if (!result.success || !Array.isArray(result.data)) {
-    return []
-  }
-
-  const rows = sortOwnerPropertiesByNewest(result.data.map(mapApiPropertyToOwnerListRow))
-  setOwnerPropertiesLiveCache(rows)
-  return rows
 }
 
 const LISTING_TYPE_TAB_IDS = new Set(['auction', 'buy_now', 'shares', 'debts'])

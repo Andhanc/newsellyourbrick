@@ -4,12 +4,13 @@ import { MOCK_SECTIONS, readLocalFavoriteFlags } from '../data/favoriteMockLists
 import { usePropertyFavorites, PROPERTY_FAVORITES_CHANGED } from '../context/PropertyFavoritesContext'
 import { favoriteCompositeKey } from '../utils/propertyFavoriteKey'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 
 export function useFavoriteAuctionItems() {
-  const { favoriteRows } = usePropertyFavorites()
+  const { favoriteRows, favoritesLoading } = usePropertyFavorites()
   const [catalogByKey, setCatalogByKey] = useState(() => new Map())
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [mockTick, setMockTick] = useState(0)
@@ -17,6 +18,13 @@ export function useFavoriteAuctionItems() {
   const [catalogLoading, setCatalogLoading] = useState(true)
 
   const loadCatalog = useCallback(async () => {
+    const flags = readLocalFavoriteFlags()
+    const hasMockFavorites = Object.values(flags).some(Boolean)
+    if (!favoriteRows.length && !hasMockFavorites) {
+      setCatalogByKey(new Map())
+      setCatalogLoading(false)
+      return
+    }
     try {
       const apiBase = await getApiBaseUrl()
       const lang = (() => {
@@ -33,10 +41,10 @@ export function useFavoriteAuctionItems() {
           ? `&viewer_user_id=${encodeURIComponent(String(uidRaw).trim())}`
           : ''
       const [approvedRes, auctionsRes, debtsRes, sharesRes] = await Promise.all([
-        fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetch(`${apiBase}/properties/debts`),
-        fetch(`${apiBase}/properties/shares?lang=${lang}`),
+        fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
+        fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
+        fetchDedupe(`${apiBase}/properties/debts`),
+        fetchDedupe(`${apiBase}/properties/shares?lang=${lang}`),
       ])
       let approved = []
       let auctions = []
@@ -109,11 +117,12 @@ export function useFavoriteAuctionItems() {
     } finally {
       setCatalogLoading(false)
     }
-  }, [])
+  }, [favoriteRows])
 
   useEffect(() => {
+    if (favoritesLoading) return
     loadCatalog()
-  }, [loadCatalog])
+  }, [loadCatalog, favoritesLoading])
 
   useEffect(() => {
     const onCustom = () => setMockTick((x) => x + 1)

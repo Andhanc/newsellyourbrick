@@ -1,13 +1,10 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Building2 } from 'lucide-react'
 import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
-import LoginModal from '../components/LoginModal'
-import Header from '../components/Header'
-import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
 import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
@@ -30,9 +27,14 @@ import {
 } from '../utils/propertySlug'
 import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../utils/propertySourceTable'
 import { usePageSeoOverride } from '../context/PageSeoContext'
-import NotFoundPage from '../components/NotFoundPage'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
 import './PropertyDetailPage.css'
+
+const LoginModal = lazyWithRetry(() => import('../components/LoginModal'))
+const Header = lazyWithRetry(() => import('../components/Header'))
+const BuyerEmptyState = lazyWithRetry(() => import('../components/buyer-mobile/BuyerEmptyState'))
+const NotFoundPage = lazyWithRetry(() => import('../components/NotFoundPage'))
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -495,7 +497,11 @@ const PropertyDetailPage = () => {
   }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
 
   if (notFound) {
-    return <NotFoundPage />
+    return (
+      <Suspense fallback={<PropertyDetailClassicSkeleton />}>
+        <NotFoundPage />
+      </Suspense>
+    )
   }
 
   if (isLoading && !property && !error) {
@@ -505,8 +511,11 @@ const PropertyDetailPage = () => {
   if (error && !property) {
     return (
       <div className="property-detail-recovery">
-        <Header />
+        <Suspense fallback={null}>
+          <Header />
+        </Suspense>
         <main className="property-detail-recovery__main">
+          <Suspense fallback={null}>
           <BuyerEmptyState
             icon={Building2}
             eyebrow="Продолжим выбор"
@@ -517,6 +526,7 @@ const PropertyDetailPage = () => {
             secondaryLabel="Все направления"
             onSecondary={() => navigate('/sections')}
           />
+          </Suspense>
         </main>
       </div>
     )
@@ -572,10 +582,14 @@ const PropertyDetailPage = () => {
         onRequireLogin={() => setIsLoginModalOpen(true)}
         requireAuthOnLoad={false}
       />
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleLoginModalClose}
-      />
+      {isLoginModalOpen ? (
+        <Suspense fallback={null}>
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={handleLoginModalClose}
+          />
+        </Suspense>
+      ) : null}
     </>
   )
 }

@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FaApple, FaGooglePlay } from 'react-icons/fa'
 import { FiArrowRight, FiArrowUpRight } from 'react-icons/fi'
 import Footer from '../components/Footer'
 import MobileDiscoverFaq from '../components/MobileDiscoverFaq'
 import InvestorPropertyShowcaseSection from '../components/InvestorPropertyShowcaseSection'
-import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { usePropertyFavorites, PROPERTY_FAVORITES_NEEDED } from '../context/PropertyFavoritesContext'
 import { useInvestorHomeShowcases } from '../hooks/useInvestorHomeShowcases'
 import { fetchPublishedArticles } from '../services/newsApi'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { publicAsset } from '../utils/publicAsset'
+import { AppleIcon, GooglePlayIcon } from '../components/icons/ContactChannelIcons'
 import './InvestorHomePage.css'
 import '../styles/discoverAuctionCards.css'
 
@@ -224,11 +224,11 @@ function AppDownloadSection() {
           <p className="md-app-download__lead">{t('discoverPage_appTitleRest')}</p>
           <div className="md-app-download__stores">
             <a href={IOS_URL} target="_blank" rel="noopener noreferrer" className="md-app-download__store">
-              <FaApple aria-hidden="true" />
+              <AppleIcon aria-hidden="true" />
               <span>App Store</span>
             </a>
             <a href={ANDROID_URL} target="_blank" rel="noopener noreferrer" className="md-app-download__store">
-              <FaGooglePlay aria-hidden="true" />
+              <GooglePlayIcon aria-hidden="true" />
               <span>Google Play</span>
             </a>
           </div>
@@ -373,6 +373,10 @@ export default function MobileDiscoverCatalog() {
     debtsSection,
     sharesSection,
   } = useInvestorHomeShowcases()
+
+  useEffect(() => {
+    window.dispatchEvent(new Event(PROPERTY_FAVORITES_NEEDED))
+  }, [])
 
   const itemsByKey = {
     auctionSection,

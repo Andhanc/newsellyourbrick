@@ -27,6 +27,26 @@ const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavor
 const PropertyFavoritesContext = createContext(null)
 
 export const PROPERTY_FAVORITES_CHANGED = 'propertyFavoritesChanged'
+export const PROPERTY_FAVORITES_NEEDED = 'propertyFavoritesNeeded'
+
+function pathnameNeedsPropertyFavorites(pathname = '') {
+  const path = String(pathname || '').split('?')[0]
+  if (path === '/owner-test' || path.startsWith('/owner-test/')) return false
+  if (path === '/') return false
+  return (
+    path.startsWith('/auction') ||
+    path.startsWith('/debts') ||
+    path.startsWith('/co-investment') ||
+    path.startsWith('/shares') ||
+    path.startsWith('/search-results') ||
+    path.startsWith('/property') ||
+    path.startsWith('/favorites') ||
+    path.startsWith('/compare') ||
+    path.startsWith('/map') ||
+    path.startsWith('/test-drive') ||
+    path.startsWith('/mobile-showcase')
+  )
+}
 
 function getDbUserId() {
   const storage =
@@ -159,52 +179,48 @@ export function PropertyFavoritesProvider({ children }) {
 
   useEffect(() => {
     if (!getDbUserId()) return undefined
+    if (!pathnameNeedsPropertyFavorites(pathname)) return undefined
     let cancelled = false
-    let loaded = false
     const run = () => {
-      if (cancelled || loaded) return
-      loaded = true
+      if (cancelled) return
       void loadDbFavorites()
     }
-    const isHome = pathname === '/'
-    const onInteract = () => run()
-    const interactEvents = ['scroll', 'click', 'keydown', 'touchstart']
-    if (isHome) {
-      interactEvents.forEach((eventName) => {
-        window.addEventListener(eventName, onInteract, { once: true, passive: true })
-      })
-    }
-    const idleTimeout = isHome ? 12000 : 4500
-    if (!isHome && typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(run, { timeout: idleTimeout })
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: 4500 })
       return () => {
         cancelled = true
         window.cancelIdleCallback(id)
-        if (isHome) {
-          interactEvents.forEach((eventName) => {
-            window.removeEventListener(eventName, onInteract)
-          })
-        }
       }
     }
-    const t = window.setTimeout(run, isHome ? 3000 : 600)
+    const t = window.setTimeout(run, 600)
     return () => {
       cancelled = true
       window.clearTimeout(t)
-      if (isHome) {
-        interactEvents.forEach((eventName) => {
-          window.removeEventListener(eventName, onInteract)
-        })
-      }
     }
   }, [loadDbFavorites, pathname])
 
   useEffect(() => {
+    const onNeeded = () => {
+      if (!getDbUserId()) return
+      void loadDbFavorites()
+    }
+    window.addEventListener(PROPERTY_FAVORITES_NEEDED, onNeeded)
+    return () => window.removeEventListener(PROPERTY_FAVORITES_NEEDED, onNeeded)
+  }, [loadDbFavorites])
+
+  useEffect(() => {
     const onStorage = (e) => {
+      if (!pathnameNeedsPropertyFavorites(pathname)) return
       if (e.key === 'userId' || e.key === null) loadDbFavorites()
     }
-    const onFocus = () => loadDbFavorites()
-    const onCustom = () => loadDbFavorites()
+    const onFocus = () => {
+      if (!pathnameNeedsPropertyFavorites(pathname)) return
+      loadDbFavorites()
+    }
+    const onCustom = () => {
+      if (!pathnameNeedsPropertyFavorites(pathname)) return
+      loadDbFavorites()
+    }
     window.addEventListener('storage', onStorage)
     window.addEventListener('focus', onFocus)
     window.addEventListener(PROPERTY_FAVORITES_CHANGED, onCustom)
@@ -213,7 +229,7 @@ export function PropertyFavoritesProvider({ children }) {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener(PROPERTY_FAVORITES_CHANGED, onCustom)
     }
-  }, [loadDbFavorites])
+  }, [loadDbFavorites, pathname])
 
   const isFavorite = useCallback(
     (property, mockCategory) => {

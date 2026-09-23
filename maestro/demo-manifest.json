@@ -1,0 +1,45 @@
+{
+  "password": "MaestroDemo2026!",
+  "buyer": {
+    "id": 57,
+    "email": "maestro-buyer@sellyourbrick.test",
+    "role": "buyer",
+    "created": false,
+    "deposit": 250000
+  },
+  "seller": {
+    "id": 58,
+    "email": "maestro-seller@sellyourbrick.test",
+    "role": "seller",
+    "created": false
+  },
+  "properties": {
+    "auction": {
+      "id": 74,
+      "slug": "maestro-demo-auction-villa",
+      "created": false
+    },
+    "buyNow": {
+      "id": 75,
+      "slug": "maestro-demo-buy-now-loft",
+      "created": false
+    },
+    "debt": {
+      "id": 76,
+      "slug": "maestro-demo-debt-townhouse",
+      "created": false
+    },
+    "share": {
+      "id": 77,
+      "slug": "maestro-demo-share-penthouse",
+      "created": false
+    },
+    "vip": {
+      "id": 78,
+      "slug": "maestro-demo-vip-estate",
+      "created": false
+    }
+  },
+  "bookingId": 4,
+  "paymentId": 42
+}

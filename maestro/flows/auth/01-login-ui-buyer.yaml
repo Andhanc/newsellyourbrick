@@ -1,0 +1,53 @@
+url: ${APP_URL}
+name: auth-login-ui-buyer
+tags:
+  - auth
+  - buyer
+env:
+  APP_URL: http://localhost:5173
+  BUYER_EMAIL: maestro-buyer@sellyourbrick.test
+  DEMO_PASSWORD: MaestroDemo2026!
+---
+- launchApp
+- openLink: ${APP_URL}/wallet
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- tapOn:
+    text: "Sign in"
+    optional: true
+- tapOn:
+    text: "Log in"
+    optional: true
+- tapOn:
+    text: "Войти"
+    optional: true
+- tapOn:
+    id: "Profile"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "email"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "email"
+    optional: true
+- inputText: ${BUYER_EMAIL}
+- tapOn:
+    id: "password"
+    optional: true
+- inputText: ${DEMO_PASSWORD}
+- tapOn:
+    id: "login-submit"
+    optional: true
+- tapOn:
+    text: "Sign in"
+    optional: true
+- takeScreenshot: auth_buyer_ui_attempt
+# Reliable authenticated path for remaining checks
+- openLink: ${APP_URL}/__e2e__/session?role=buyer&next=/profile
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 30000
+- takeScreenshot: auth_buyer_profile

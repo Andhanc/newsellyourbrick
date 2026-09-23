@@ -6,6 +6,8 @@ function asFiniteNumberOrNull(value) {
   return Number.isFinite(n) ? n : null
 }
 
+const maxBidsInflight = new Map()
+
 /**
  * Макс. ставки для списка лотов (карточки / главная / кэш аукциона).
  * @param {string} apiBaseUrl

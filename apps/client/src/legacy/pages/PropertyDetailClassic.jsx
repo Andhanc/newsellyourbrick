@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
@@ -32,8 +32,13 @@ import {
   FiBookOpen,
   FiUserCheck,
 } from 'react-icons/fi'
-import { FaHeart as FaHeartSolid, FaTelegramPlane, FaFacebookF, FaTwitter, FaWhatsapp } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
+import {
+  FacebookIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+  XTwitterIcon,
+} from '../components/icons/ContactChannelIcons'
 import {
   isAuthenticated,
   getUserData,
@@ -43,59 +48,33 @@ import {
 import { resolvePropertySourceTable, propertyBidsApiQuery } from '../utils/propertySourceTable'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
-import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BidLeaderboardBoard, { buildBidLeaderboard } from '../components/BidLeaderboardBoard'
-import BuyNowModal from '../components/BuyNowModal'
-import AuctionReminderModal from '../components/AuctionReminderModal'
-import DepositRequiredModal from '../components/DepositRequiredModal'
-import AuctionSoldOutNotice from '../components/AuctionSoldOutNotice'
-import AuctionEndedSimilarPromo from '../components/AuctionEndedSimilarPromo'
-import PropertyDetailLocationMap from '../components/PropertyDetailLocationMap'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
 import '../components/PropertyDetailBuyNowHub.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
 import './PropertyDetailClassic.mobileMap.css'
-import PropertyDetailDesktopPage from '../components/property-detail/PropertyDetailDesktopPage'
-import PropertyDetailDesktopGallery from '../components/property-detail/PropertyDetailDesktopGallery'
-import PropertyDetailDesktopRelatedSection from '../components/property-detail/PropertyDetailDesktopRelatedSection'
 import '../components/property-detail/PropertyDetailDesktopRelatedSection.css'
 import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import SubscriptionLock from '../components/SubscriptionLock'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
+import { fetchUserDeposit } from '../utils/depositApi'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
-import DebtAuctionInsight from '../components/DebtAuctionInsight'
-import PropertyDebtRiskBanner from '../components/PropertyDebtRiskBanner'
-import { Awards } from '@/components/ui/award'
-import TestDriveSection from '../components/TestDriveSection'
-import PropertyDetailTestDrivePromo, {
-  PROPERTY_TEST_DRIVE_PROMO_IMAGE,
-} from '../components/PropertyDetailTestDrivePromo'
-import PropertyDetailBuyNowPromo from '../components/PropertyDetailBuyNowPromo'
 import { publicAsset } from '../utils/publicAsset'
 import PageBackButton from '../components/PageBackButton'
 import PropertyGeoLinks from '../components/PropertyGeoLinks'
 import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLinks'
-import PropertyAiExperience from '../components/PropertyAiExperience'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { getCabinetProfilePath } from '../utils/cabinetRoutes'
-import TestDrivePromoModal from '../components/TestDrivePromoModal'
-import AuctionBidDrawer from '../components/AuctionBidDrawer'
-import AuctionBidCeilingModal from '../components/AuctionBidCeilingModal'
-import PropertyDetailAuctionBiddingForm from '../components/PropertyDetailAuctionBiddingForm'
-import ShareDetailPurchasePanel from '../components/ShareDetailPurchasePanel'
-import ShareMobilePurchaseBar from '../components/ShareMobilePurchaseBar'
 import '../components/ShareDetailPurchasePanel.css'
-import PropertyDetailDesktopAppBanner from '../components/PropertyDetailDesktopAppBanner'
-import PropertyDetailDesktopYieldCalc from '../components/PropertyDetailDesktopYieldCalc'
-import PropertyDetailYieldPromo from '../components/PropertyDetailYieldPromo'
-import PropertyDetailInvestorPanelPromo from '../components/property-detail/PropertyDetailInvestorPanelPromo'
 import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
@@ -103,10 +82,8 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
-import {
-  PURCHASE_SUCCESS_CONFIRMED_EVENT,
-  refetchPropertyAfterCheckout,
-} from '../utils/purchaseSuccessFlow'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../constants/cabinetEvents'
+import { refetchPropertyAfterCheckout } from '../utils/purchaseSuccessFlow'
 import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import { getPropertyShareUrl, sharePropertyListing } from '../utils/shareProperty'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -135,7 +112,6 @@ import {
 } from '../utils/moneyInputFormat'
 import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
 import '../components/PropertyCurrencySelector.css'
-import PropertyDepositAccessDrawer from '../components/PropertyDepositAccessDrawer'
 import {
   ShieldCheck,
   Bell,
@@ -160,6 +136,72 @@ import {
   Hash,
   MapPin,
 } from 'lucide-react'
+
+const Confetti = lazy(() => import('react-confetti'))
+
+const BiddingHistoryModal = lazyWithRetry(() => import('../components/BiddingHistoryModal'))
+const BuyNowModal = lazyWithRetry(() => import('../components/BuyNowModal'))
+const AuctionReminderModal = lazyWithRetry(() => import('../components/AuctionReminderModal'))
+const DepositRequiredModal = lazyWithRetry(() => import('../components/DepositRequiredModal'))
+const AuctionSoldOutNotice = lazyWithRetry(() => import('../components/AuctionSoldOutNotice'))
+const AuctionEndedSimilarPromo = lazyWithRetry(() => import('../components/AuctionEndedSimilarPromo'))
+const PropertyDetailLocationMap = lazyWithRetry(() => import('../components/PropertyDetailLocationMap'))
+const PropertyDetailDesktopPage = lazyWithRetry(() => import('../components/property-detail/PropertyDetailDesktopPage'))
+const PropertyDetailDesktopGallery = lazyWithRetry(() => import('../components/property-detail/PropertyDetailDesktopGallery'))
+const PropertyDetailDesktopRelatedSection = lazyWithRetry(() =>
+  import('../components/property-detail/PropertyDetailDesktopRelatedSection'),
+)
+const Awards = lazyWithRetry(() =>
+  import('@/components/ui/award').then((mod) => ({ default: mod.Awards })),
+)
+const PropertyAiExperience = lazyWithRetry(() => import('../components/PropertyAiExperience'))
+const TestDrivePromoModal = lazyWithRetry(() => import('../components/TestDrivePromoModal'))
+const AuctionBidDrawer = lazyWithRetry(() => import('../components/AuctionBidDrawer'))
+const AuctionBidCeilingModal = lazyWithRetry(() => import('../components/AuctionBidCeilingModal'))
+const ShareDetailPurchasePanel = lazyWithRetry(() => import('../components/ShareDetailPurchasePanel'))
+const ShareMobilePurchaseBar = lazyWithRetry(() => import('../components/ShareMobilePurchaseBar'))
+const PropertyDetailDesktopAppBanner = lazyWithRetry(() => import('../components/PropertyDetailDesktopAppBanner'))
+const PropertyDetailDesktopYieldCalc = lazyWithRetry(() => import('../components/PropertyDetailDesktopYieldCalc'))
+const PropertyDetailYieldPromo = lazyWithRetry(() => import('../components/PropertyDetailYieldPromo'))
+const PropertyDetailInvestorPanelPromo = lazyWithRetry(() =>
+  import('../components/property-detail/PropertyDetailInvestorPanelPromo'),
+)
+const PropertyDepositAccessDrawer = lazyWithRetry(() => import('../components/PropertyDepositAccessDrawer'))
+const DebtAuctionInsight = lazyWithRetry(() => import('../components/DebtAuctionInsight'))
+const PropertyDebtRiskBanner = lazyWithRetry(() => import('../components/PropertyDebtRiskBanner'))
+const TestDriveSection = lazyWithRetry(() => import('../components/TestDriveSection'))
+const PropertyDetailTestDrivePromo = lazyWithRetry(() => import('../components/PropertyDetailTestDrivePromo'))
+const PropertyDetailAuctionBiddingForm = lazyWithRetry(() => import('../components/PropertyDetailAuctionBiddingForm'))
+const PropertyDetailBuyNowPromo = lazyWithRetry(() => import('../components/PropertyDetailBuyNowPromo'))
+
+function LazyMount({ when, children }) {
+  if (!when) return null
+  return <Suspense fallback={null}>{children}</Suspense>
+}
+
+function VisibleMount({ children, rootMargin = '160px 0px' }) {
+  const ref = useRef(null)
+  const [shown, setShown] = useState(false)
+
+  useEffect(() => {
+    if (shown) return undefined
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setShown(true)
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setShown(true)
+      },
+      { rootMargin, threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [shown, rootMargin])
+
+  return <div ref={ref}>{shown ? children : null}</div>
+}
 
 const AMENITY_I18N_SPECIAL = {
   pool: 'propertyDetailAmenityPool',
@@ -202,6 +244,34 @@ function resolveAmenityLabel(t, key) {
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+const publicUserByIdCache = new Map()
+
+async function fetchPublicUserById(base, userId) {
+  const id = String(userId ?? '').trim()
+  if (!/^\d+$/.test(id)) return null
+  const now = Date.now()
+  const cached = publicUserByIdCache.get(id)
+  if (cached?.data && now - cached.ts < 15000) return cached.data
+  if (cached?.promise) return cached.promise
+  const origin = String(base || API_BASE_URL || '/api').replace(/\/$/, '')
+  const promise = fetchDedupe(`${origin}/users/${id}`)
+    .then(async (response) => {
+      if (!response.ok) return null
+      const payload = await response.json().catch(() => null)
+      return payload?.success ? payload.data : null
+    })
+    .then((data) => {
+      publicUserByIdCache.set(id, { ts: Date.now(), data, promise: null })
+      return data
+    })
+    .catch(() => {
+      publicUserByIdCache.set(id, { ts: Date.now(), data: cached?.data || null, promise: null })
+      return cached?.data || null
+    })
+  publicUserByIdCache.set(id, { ts: now, data: cached?.data || null, promise })
+  return promise
+}
 
 // Классическая страница объекта.
 // Для аукционных объектов дополнительно отображает таймер и историю ставок.
@@ -1452,25 +1522,16 @@ function PropertyDetailClassic({
           base = await getApiBaseUrl()
           API_BASE_URL = base
         }
-        const depRequest = fetch(`${base}/users/${uid}/deposit`)
-        const verRequest = isAuctionProperty
-          ? fetch(`${base}/users/${uid}/verification-status`)
-          : Promise.resolve(null)
-        const [depRes, verRes] = await Promise.all([depRequest, verRequest])
-        if (depRes.ok) {
-          const dj = await depRes.json()
-          setAuctionUserDeposit(dj.success ? (dj.data?.depositAmount || 0) : 0)
-        } else {
-          setAuctionUserDeposit(0)
-        }
-        if (verRes?.ok) {
-          const vj = await verRes.json()
-          setAuctionKycVerified(
-            vj.success && vj.data != null ? Boolean(vj.data.isVerified) : null
-          )
-        } else {
-          setAuctionKycVerified(null)
-        }
+        const [depositData, verification] = await Promise.all([
+          fetchUserDeposit(base, uid, { ttlMs: 15000 }),
+          isAuctionProperty
+            ? fetchVerificationStatus(base, uid, { ttlMs: 15000 })
+            : Promise.resolve(null),
+        ])
+        setAuctionUserDeposit(depositData?.depositAmount || 0)
+        setAuctionKycVerified(
+          verification != null ? Boolean(verification.isVerified) : null
+        )
       } catch {
         setAuctionUserDeposit(0)
         setAuctionKycVerified(null)
@@ -1812,9 +1873,9 @@ function PropertyDetailClassic({
     }
   }, [displayProperty.id, isAuctionProperty])
 
-  // Загружаем ставки для всех объектов (аукционных и обычных) и обновляем текущую ставку
+  // Ставки нужны только аукциону (включая долги и тестовый таймер). Buy now / доли — нет.
   useEffect(() => {
-    if (!displayProperty.id) return
+    if (!displayProperty.id || isShareListing || !isAuctionProperty) return
 
     const loadBids = async () => {
       try {
@@ -1851,7 +1912,7 @@ function PropertyDetailClassic({
           userId = userData?.id
         }
 
-        const response = await fetch(
+        const response = await fetchDedupe(
           `${API_BASE_URL}/bids/property/${displayProperty.id}?${propertyBidsApiQuery(displayProperty.id, propertySourceTable)}`,
         )
         if (response.ok) {
@@ -1907,46 +1968,18 @@ function PropertyDetailClassic({
             const previousLeaderId = currentLeaderId
             setCurrentLeaderId(newCurrentLeaderId)
             
-            // Если лидер изменился и мы еще не показывали информацию об этом лидере, получаем данные и показываем
+            // Если лидер изменился — флаг в таймере берём со ставки, без второго GET /users/{id}.
             if (previousLeaderId !== newCurrentLeaderId && leaderBid.user_id && shownLeaderInfoRef.current !== newCurrentLeaderId) {
-              shownLeaderInfoRef.current = newCurrentLeaderId // Помечаем, что показали информацию об этом лидере
-              
-              try {
-                const leaderUserResponse = await fetch(`${API_BASE_URL}/users/${leaderBid.user_id}`)
-                if (leaderUserResponse.ok) {
-                  const leaderUserData = await leaderUserResponse.json()
-                  if (leaderUserData.success && leaderUserData.data) {
-                    const leaderUser = leaderUserData.data
-                    const leaderCountry = leaderUser.country || ''
-                    const leaderFlag = flagEmojiForStoredCountry(leaderCountry) || ''
-
-                    // Дополняем текущего лидера страной и флагом
-                    setCurrentLeader((prev) =>
-                      prev && prev.userId === leaderBid.user_id
-                        ? { ...prev, country: leaderCountry, countryFlag: leaderFlag }
-                        : prev
-                    )
-
-                    // Показываем флаг и номер нового лидера в таймере на 3 секунды
-                    setTimerBidInfo({
-                      country: leaderCountry,
-                      userIdNumber: leaderUser.user_id_number || leaderBid.user_id
-                    })
-                    
-                    // Скрываем информацию через 3 секунды
-                    setTimeout(() => {
-                      setTimerBidInfo(null)
-                    }, 3000)
-                    
-                    console.log('🏳️ Показан новый лидер в таймере:', {
-                      userId: leaderBid.user_id,
-                      userIdNumber: leaderUser.user_id_number,
-                      country: leaderUser.country
-                    })
-                  }
-                }
-              } catch (leaderError) {
-                console.warn('⚠️ Не удалось получить данные лидера для таймера:', leaderError)
+              shownLeaderInfoRef.current = newCurrentLeaderId
+              const leaderCountry = leaderBid.bidder_country || leaderBid.country || ''
+              if (leaderCountry) {
+                setTimerBidInfo({
+                  country: leaderCountry,
+                  userIdNumber: leaderBid.user_id_number || leaderBid.user_id
+                })
+                setTimeout(() => {
+                  setTimerBidInfo(null)
+                }, 3000)
               }
             }
             
@@ -2107,55 +2140,13 @@ function PropertyDetailClassic({
     }
 
     loadBids()
-    const onFocus = () => loadBids()
     const onRemoteBid = () => loadBids()
-    window.addEventListener('focus', onFocus)
     window.addEventListener('property-bid-sse', onRemoteBid)
     return () => {
-      window.removeEventListener('focus', onFocus)
       window.removeEventListener('property-bid-sse', onRemoteBid)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayProperty.id, propertySourceTable])
-
-  // Периодически обновляем данные объекта с сервера для синхронизации таймера
-  useEffect(() => {
-    if (!displayProperty.id || !displayProperty.test_timer_end_date) return;
-
-    const updatePropertyData = async () => {
-      try {
-        const propResponse = await fetch(
-          appendViewerUserIdToPropertyApiUrl(
-            `${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`
-          )
-        );
-        if (propResponse.ok) {
-          const propData = await propResponse.json();
-          if (propData.success && propData.data) {
-            const updatedProp = propData.data;
-            // Обновляем только таймер, если он изменился И если он не null/undefined/пустая строка
-            // Это предотвращает потерю test_timer_end_date при обновлении данных
-            if (updatedProp.test_timer_end_date && 
-                updatedProp.test_timer_end_date !== property.test_timer_end_date) {
-              setProperty(prev => ({
-                ...prev,
-                test_timer_end_date: updatedProp.test_timer_end_date,
-                test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration
-              }));
-              console.log('🔄 Таймер обновлен с сервера:', updatedProp.test_timer_end_date);
-            }
-            // Если таймер на сервере null, но у нас он был - не обновляем (сохраняем текущее значение)
-          }
-        }
-      } catch (error) {
-        console.warn('Ошибка обновления данных объекта:', error);
-      }
-    };
-
-    // Обновление таймера с сервера реже (каждые 30 сек), без агрессивного polling
-    const interval = setInterval(updatePropertyData, 30000);
-    return () => clearInterval(interval);
-  }, [displayProperty.id, displayProperty.test_timer_end_date, property.test_timer_end_date]);
+  }, [displayProperty.id, propertySourceTable, isShareListing, isAuctionProperty])
 
   // Проверяем, закончился ли таймер
   // Используем только значение из базы данных для синхронизации между всеми пользователями
@@ -2193,7 +2184,7 @@ function PropertyDetailClassic({
       try {
         const base = await getApiBaseUrl()
         API_BASE_URL = base
-        const r = await fetch(`${base}/auction-winners/property/${displayProperty.id}`)
+        const r = await fetchDedupe(`${base}/auction-winners/property/${displayProperty.id}`)
         if (cancelled) return
         const j = await r.json().catch(() => ({}))
         if (j.success && j.data) {
@@ -2220,11 +2211,9 @@ function PropertyDetailClassic({
       try {
         const base = await getApiBaseUrl()
         API_BASE_URL = base
-        const r = await fetch(`${base}/users/${auctionWinnerFromDb.user_id}`)
-        if (cancelled || !r.ok) return
-        const j = await r.json().catch(() => ({}))
-        if (!j.success || !j.data || cancelled) return
-        const pub = j.data.user_id_number ?? j.data.id
+        const leaderUser = await fetchPublicUserById(base, auctionWinnerFromDb.user_id)
+        if (cancelled || !leaderUser) return
+        const pub = leaderUser.user_id_number ?? leaderUser.id
         if (pub != null && !cancelled) setEndedAuctionPlayerPublicId(pub)
       } catch (_) {}
     })()
@@ -2236,12 +2225,13 @@ function PropertyDetailClassic({
   useEffect(() => {
     const leaderUserId = currentLeader?.userId ?? currentLeader?.id
     if (!leaderUserId || !isAuctionProperty) return undefined
+    if (currentLeader?.userIdNumber != null && currentLeader?.memberSince) return undefined
 
     let cancelled = false
 
     ;(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/users/${leaderUserId}`)
+        const response = await fetchDedupe(`${API_BASE_URL}/users/${leaderUserId}`)
         if (!response.ok || cancelled) return
         const payload = await response.json()
         if (!payload?.success || !payload?.data || cancelled) return
@@ -2270,7 +2260,7 @@ function PropertyDetailClassic({
     return () => {
       cancelled = true
     }
-  }, [currentLeader?.userId, currentLeader?.id, isAuctionProperty])
+  }, [currentLeader?.userId, currentLeader?.id, currentLeader?.userIdNumber, currentLeader?.memberSince, isAuctionProperty])
 
   const resolvedWinnerUserId =
     currentLeader?.userIdNumber ??
@@ -2362,6 +2352,8 @@ function PropertyDetailClassic({
   // Сохраняем победителя когда таймер закончился
   useEffect(() => {
     if (!timerExpired || !isAuctionProperty || !currentLeader || !displayProperty.id) return;
+    if (auctionWinnerFromDb === undefined) return
+    if (auctionWinnerFromDb?.user_id) return
     
     // Проверяем, является ли текущий пользователь победителем
     const checkIfUserWon = async () => {
@@ -2512,7 +2504,7 @@ function PropertyDetailClassic({
     };
     
     saveWinner();
-  }, [timerExpired, currentLeader, displayProperty.id, isAuctionProperty, auctionEndTime, user, userLoaded]);
+  }, [timerExpired, currentLeader, displayProperty.id, isAuctionProperty, auctionEndTime, user, userLoaded, auctionWinnerFromDb]);
 
   const handleToggleFavorite = async () => {
     // Проверяем авторизацию через Clerk или старую систему
@@ -2973,7 +2965,7 @@ function PropertyDetailClassic({
 
         void (async () => {
           try {
-            const bidsResponse = await fetch(
+            const bidsResponse = await fetchDedupe(
               `${API_BASE_URL}/bids/property/${displayProperty.id}?${propertyBidsApiQuery(displayProperty.id, propertySourceTable)}`,
             )
             if (!bidsResponse.ok) return
@@ -4325,7 +4317,7 @@ function PropertyDetailClassic({
           onClick={() => handleShareSocial('telegram')}
           aria-label="Telegram"
         >
-          <FaTelegramPlane size={18} aria-hidden />
+          <TelegramIcon size={18} />
         </button>
         <button
           type="button"
@@ -4333,7 +4325,7 @@ function PropertyDetailClassic({
           onClick={() => handleShareSocial('facebook')}
           aria-label="Facebook"
         >
-          <FaFacebookF size={18} aria-hidden />
+          <FacebookIcon size={18} />
         </button>
         <button
           type="button"
@@ -4341,7 +4333,7 @@ function PropertyDetailClassic({
           onClick={() => handleShareSocial('twitter')}
           aria-label="Twitter"
         >
-          <FaTwitter size={18} aria-hidden />
+          <XTwitterIcon size={18} />
         </button>
         <button
           type="button"
@@ -4349,7 +4341,7 @@ function PropertyDetailClassic({
           onClick={() => handleShareSocial('whatsapp')}
           aria-label="WhatsApp"
         >
-          <FaWhatsapp size={18} aria-hidden />
+          <WhatsAppIcon size={18} />
         </button>
       </div>
     </section>
@@ -4690,6 +4682,7 @@ function PropertyDetailClassic({
       property.source_table || displayProperty.source_table || 'properties_apartments'
     return (
       <div className="property-detail-mobile-test-drive">
+        <Suspense fallback={null}>
         <PropertyDetailTestDrivePromo
           propertyId={displayProperty.id}
           propertySlug={displayProperty.slug}
@@ -4697,9 +4690,9 @@ function PropertyDetailClassic({
           propertyType={displayProperty.property_type || displayProperty.propertyType}
           hasTestDrive
           i18nLang={currentLang}
-          imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
           paused={isReservedActive}
         />
+        </Suspense>
       </div>
     )
   }
@@ -4793,16 +4786,20 @@ function PropertyDetailClassic({
           </section>
         ) : null}
         {showMobileBuyNowTab ? (
+          <Suspense fallback={null}>
           <PropertyDetailBuyNowPromo
             className="property-detail-buy-now-promo--mobile-about"
             priceLabel={buyNowPromoPriceLabel}
             onOpen={() => setAuctionMobileTab('buy_now')}
           />
+          </Suspense>
         ) : null}
         {renderPropertyMainDetailsBlock({ layout: 'mobile-about' })}
         {renderPropertyAdditionalDetailsBlock({ layout: 'mobile-about' })}
         {renderPropertyAmenitiesBlock({ layout: 'mobile-about' })}
+        <Suspense fallback={null}>
         <PropertyDetailYieldPromo onClick={openInvestorPanelForProperty} />
+        </Suspense>
         {renderMobileAboutAdditionalAmenitiesBlock()}
         {renderMobileAboutRestrictedContent()}
       </div>
@@ -4911,7 +4908,7 @@ function PropertyDetailClassic({
         property_id: String(displayProperty.id),
         property_table: propertySourceTable || 'properties_apartments',
       })
-      const res = await fetch(`${API_BASE_URL}/bids/ceiling?${q.toString()}`)
+      const res = await fetchDedupe(`${API_BASE_URL}/bids/ceiling?${q.toString()}`)
       const json = await res.json()
       if (json.success && json.data?.max_amount != null) {
         setUserBidCeiling(json.data)
@@ -5241,7 +5238,9 @@ function PropertyDetailClassic({
   const renderAuctionEndedState = () => {
     if (!auctionEndedForSidebar) return null
     const similarListingsCta = (
+      <Suspense fallback={null}>
       <AuctionEndedSimilarPromo onBrowseSimilar={openSearchCatalog} />
+      </Suspense>
     )
 
     if (showAuctionCompletedWinner) {
@@ -5264,6 +5263,7 @@ function PropertyDetailClassic({
     if (!isDebtProperty) return null
     return (
       <div className="property-detail-auction-desktop__debt">
+        <Suspense fallback={null}>
         <DebtAuctionInsight
           property={displayProperty}
           currentBid={debtAuctionBidValue}
@@ -5272,6 +5272,7 @@ function PropertyDetailClassic({
           onOpenDocuments={openDebtPropertyDocuments}
           isAuction={isAuctionProperty}
         />
+        </Suspense>
       </div>
     )
   }
@@ -5375,7 +5376,7 @@ function PropertyDetailClassic({
         disabled={isReservedActive}
         aria-label={t('addToFavorites')}
       >
-        {isFavorite ? <FaHeartSolid size={18} /> : <FiHeart size={18} />}
+        {isFavorite ? <FiHeart size={18} fill="currentColor" /> : <FiHeart size={18} />}
       </button>
     </div>
   )
@@ -5411,7 +5412,7 @@ function PropertyDetailClassic({
           disabled={isReservedActive}
           aria-label={t('addToFavorites')}
         >
-          {isFavorite ? <FaHeartSolid size={20} /> : <FiHeart size={20} />}
+          {isFavorite ? <FiHeart size={20} fill="currentColor" /> : <FiHeart size={20} />}
         </button>
       </>
     )
@@ -5562,7 +5563,7 @@ function PropertyDetailClassic({
           onClick={handleToggleFavorite}
           disabled={isReservedActive}
         >
-          {isFavorite ? <FaHeartSolid size={16} /> : <FiHeart size={16} />}
+          {isFavorite ? <FiHeart size={16} fill="currentColor" /> : <FiHeart size={16} />}
           {t('propertyDetailAddToFavorites')}
         </button>
       </div>
@@ -5987,6 +5988,7 @@ function PropertyDetailClassic({
     const propertyTable =
       property.source_table || displayProperty.source_table || 'properties_apartments'
     return (
+      <Suspense fallback={null}>
       <PropertyDetailTestDrivePromo
         className="property-detail-auction-desktop-test-drive"
         propertyId={displayProperty.id}
@@ -5995,9 +5997,9 @@ function PropertyDetailClassic({
         propertyType={displayProperty.property_type || displayProperty.propertyType}
         hasTestDrive
         i18nLang={currentLang}
-        imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
         paused={isReservedActive}
       />
+      </Suspense>
     )
   }
 
@@ -6112,6 +6114,8 @@ function PropertyDetailClassic({
 
     return (
       <>
+        <VisibleMount>
+        <Suspense fallback={null}>
         <PropertyDetailLocationMap
           center={finalCoordinates}
           zoom={hasExactMapCoords ? zoom : undefined}
@@ -6125,6 +6129,8 @@ function PropertyDetailClassic({
           markerColor={markerColor}
           className={className}
         />
+        </Suspense>
+        </VisibleMount>
         {isGeocoding ? (
           <div className={loadingClassName} role="status">
             {t('propertyDetailMapSearching')}
@@ -7044,7 +7050,7 @@ function PropertyDetailClassic({
           onClick={handleToggleFavorite}
           disabled={isReservedActive}
         >
-          {isFavorite ? <FaHeartSolid size={16} aria-hidden /> : <FiHeart size={16} aria-hidden />}
+          {isFavorite ? <FiHeart size={16} fill="currentColor" aria-hidden /> : <FiHeart size={16} aria-hidden />}
           {t('propertyDetailAddToFavorites')}
         </button>
       </>
@@ -7086,12 +7092,14 @@ function PropertyDetailClassic({
         footer={<PropertyGeoLinks property={displayProperty} />}
         belowGrid={(
           <>
+            <Suspense fallback={null}>
             <PropertyAiExperience
               property={displayProperty}
               onRequireLogin={onRequireLogin}
               desktop
               deferLauncherCollapse={isTestDrivePromoOpen && shouldShowTestDrivePromo}
             />
+            </Suspense>
             <PropertyDetailDesktopRelatedSection property={displayProperty} />
           </>
         )}
@@ -7104,11 +7112,13 @@ function PropertyDetailClassic({
         ) : null}
 
         {showMobileBuyNowTab ? (
+          <Suspense fallback={null}>
           <PropertyDetailBuyNowPromo
             className="property-detail-buy-now-promo--desktop"
             priceLabel={buyNowPromoPriceLabel}
             onOpen={showShareBuyNowTab ? shareListingConfig?.onBuyNow : handleBookNow}
           />
+          </Suspense>
         ) : null}
 
         {pageStats.length ? (
@@ -7127,6 +7137,7 @@ function PropertyDetailClassic({
         ) : null}
 
         {showsTestDriveSection ? (
+          <Suspense fallback={null}>
           <PropertyDetailTestDrivePromo
             ref={testDriveBannerRef}
             className="property-detail-desktop-test-drive-promo"
@@ -7138,9 +7149,9 @@ function PropertyDetailClassic({
             propertyType={displayProperty.property_type || displayProperty.propertyType}
             hasTestDrive
             i18nLang={currentLang}
-            imageUrl={PROPERTY_TEST_DRIVE_PROMO_IMAGE}
             paused={isReservedActive}
           />
+          </Suspense>
         ) : null}
 
         {isDebtProperty ? renderDesktopAuctionDebtRisk() : null}
@@ -7183,6 +7194,7 @@ function PropertyDetailClassic({
       {showConfetti && (
         <>
           <div className="winner-celebration-confetti" aria-hidden>
+            <Suspense fallback={null}>
             <Confetti
               width={windowSize.width}
               height={windowSize.height}
@@ -7202,6 +7214,7 @@ function PropertyDetailClassic({
               tweenDuration={10000}
               onConfettiComplete={() => setShowConfetti(false)}
             />
+            </Suspense>
           </div>
           {showWinnerModal && (
             <div className="winner-celebration">
@@ -7213,6 +7226,7 @@ function PropertyDetailClassic({
                   aria-label={t('auctionWinModalTitle')}
                 >
                   <div className="winner-celebration__award-shell">
+                    <Suspense fallback={null}>
                     <Awards
                       variant="award"
                       title={t('auctionWinModalTitle')}
@@ -7220,6 +7234,7 @@ function PropertyDetailClassic({
                       recipient={auctionWinCelebrationText.recipientText}
                       date={auctionWinCelebrationText.dateLine}
                     />
+                    </Suspense>
                     <button
                       type="button"
                       className="winner-celebration__purchase-btn"
@@ -7247,13 +7262,17 @@ function PropertyDetailClassic({
           )}
         </>
       )}
+      <LazyMount when={auctionSoldOutNoticeOpen}>
       <AuctionSoldOutNotice
         open={auctionSoldOutNoticeOpen}
         onClose={() => setAuctionSoldOutNoticeOpen(false)}
         property={displayProperty}
         isMobile={windowSize.width <= 768}
       />
-      {isDesktopProperty ? renderPropertyDetailDesktopV4() : null}
+      </LazyMount>
+      {isDesktopProperty ? (
+        <Suspense fallback={null}>{renderPropertyDetailDesktopV4()}</Suspense>
+      ) : null}
 
       <div className="property-detail-legacy-shell">
       {!isDesktopProperty && isAuctionLayout ? renderAuctionMobileHeader() : null}
@@ -7479,7 +7498,7 @@ function PropertyDetailClassic({
                     disabled={isReservedActive}
                     aria-label={t('addToFavorites')}
                   >
-                    {isFavorite ? <FaHeartSolid size={20} /> : <FiHeart size={20} />}
+                    {isFavorite ? <FiHeart size={20} fill="currentColor" /> : <FiHeart size={20} />}
                   </button>
                 </div>
               </div>
@@ -7616,6 +7635,7 @@ function PropertyDetailClassic({
                 (property.test_drive === 1 ||
                   property.test_drive === true ||
                   property.test_drive === '1') && (
+                  <Suspense fallback={null}>
                   <TestDriveSection
                     propertyId={displayProperty.id}
                     propertyTable={
@@ -7627,6 +7647,7 @@ function PropertyDetailClassic({
                     i18nLang={currentLang}
                     paused={isReservedActive}
                   />
+                  </Suspense>
                 )}
             </div>
 
@@ -7734,11 +7755,13 @@ function PropertyDetailClassic({
                   ) : null}
                   <div className="property-detail-mobile-sheet__badge-row">
                     {isDebtProperty ? (
+                      <Suspense fallback={null}>
                       <PropertyDebtRiskBanner
                         property={displayProperty}
                         onRequireLogin={onRequireLogin}
                         onOpenDocuments={openDebtPropertyDocuments}
                       />
+                      </Suspense>
                     ) : (
                       <>
                         <span className="property-detail-mobile-badge property-detail-mobile-badge--type">
@@ -7765,11 +7788,13 @@ function PropertyDetailClassic({
                   {renderAuctionContentTabs()}
                   {isShareListing && auctionMobileTab !== 'buy_now' ? (
                     <div className="property-detail-mobile-share-chart">
+                      <Suspense fallback={null}>
                       <ShareDetailPurchasePanel
                         {...shareListingConfig}
                         variant="mobile"
                         mode="chart"
                       />
+                      </Suspense>
                     </div>
                   ) : null}
                 </div>
@@ -7839,6 +7864,7 @@ function PropertyDetailClassic({
                       paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
                     }`}
                     onClick={handleBookNow}
+                    disabled={isReservedActive}
                     title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}
                   >
                     {isReservedActive
@@ -7924,16 +7950,19 @@ function PropertyDetailClassic({
           </div>
         </div>
 
+        <Suspense fallback={null}>
         <PropertyAiExperience
           property={displayProperty}
           onRequireLogin={onRequireLogin}
           deferLauncherCollapse={isTestDrivePromoOpen && shouldShowTestDrivePromo}
         />
+        </Suspense>
         <PropertyDetailInternalLinks property={displayProperty} />
       </div>
       </div>
 
       {/* Модальное окно истории ставок для всех объектов */}
+      <LazyMount when={isBidHistoryOpen}>
       <BiddingHistoryModal
         isOpen={isBidHistoryOpen}
         onClose={() => setIsBidHistoryOpen(false)}
@@ -7952,6 +7981,7 @@ function PropertyDetailClassic({
             0
         }}
       />
+      </LazyMount>
 
       {/* Модальное окно с инструкциями по покупке */}
       {(() => {
@@ -7959,6 +7989,7 @@ function PropertyDetailClassic({
         const minimumSalePriceForCheckout =
           Number(displayProperty.minimum_sale_price) || buyNowPriceForCheckout
         return (
+      <LazyMount when={isBuyNowModalOpen}>
       <BuyNowModal
         isOpen={isBuyNowModalOpen}
         onClose={() => {
@@ -7989,15 +8020,19 @@ function PropertyDetailClassic({
           currentBid: currentBid || displayProperty.currentBid || displayProperty.auction_starting_price || displayProperty.price
         }}
       />
+      </LazyMount>
         )
       })()}
 
+      <LazyMount when={auctionReminderOpen}>
       <AuctionReminderModal
         property={displayProperty}
         open={auctionReminderOpen}
         onClose={() => setAuctionReminderOpen(false)}
       />
+      </LazyMount>
 
+      <LazyMount when={bidCeilingOpen}>
       <AuctionBidCeilingModal
         open={bidCeilingOpen}
         onClose={() => setBidCeilingOpen(false)}
@@ -8015,7 +8050,9 @@ function PropertyDetailClassic({
         }}
         onError={(msg) => showToast(msg, 'error')}
       />
+      </LazyMount>
 
+      <LazyMount when={isDepositRequiredOpen}>
       <DepositRequiredModal
         isOpen={isDepositRequiredOpen}
         onClose={() => setIsDepositRequiredOpen(false)}
@@ -8026,7 +8063,9 @@ function PropertyDetailClassic({
           navigateToWallet(navigate, from)
         }}
       />
+      </LazyMount>
 
+      <LazyMount when={isPropertyDepositDrawerOpen}>
       <PropertyDepositAccessDrawer
         isOpen={isPropertyDepositDrawerOpen}
         onClose={() => setIsPropertyDepositDrawerOpen(false)}
@@ -8037,16 +8076,21 @@ function PropertyDetailClassic({
           navigateToWallet(navigate, from)
         }}
       />
+      </LazyMount>
 
+      <LazyMount when={isTestDrivePromoOpen && shouldShowTestDrivePromo}>
       <TestDrivePromoModal
         isOpen={isTestDrivePromoOpen && shouldShowTestDrivePromo}
         onClose={dismissTestDrivePromo}
         onGoToSection={scrollToTestDriveSection}
       />
+      </LazyMount>
 
       {isShareListing ? (
         auctionMobileTab !== 'buy_now' ? (
+          <Suspense fallback={null}>
           <ShareMobilePurchaseBar config={shareListingConfig} />
+          </Suspense>
         ) : null
       ) : isAuctionProperty && auctionMobileTab !== 'buy_now' ? (
         <div
@@ -8075,6 +8119,7 @@ function PropertyDetailClassic({
         </div>
       ) : null}
 
+      <LazyMount when={isBidDrawerOpen && isAuctionProperty}>
       <AuctionBidDrawer
         isOpen={isBidDrawerOpen && isAuctionProperty}
         onClose={() => setIsBidDrawerOpen(false)}
@@ -8088,6 +8133,7 @@ function PropertyDetailClassic({
           layout="panel"
         />
       </AuctionBidDrawer>
+      </LazyMount>
 
       {/* Полноэкранный просмотр галереи */}
       {renderGalleryLightbox()}

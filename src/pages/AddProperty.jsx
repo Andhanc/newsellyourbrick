@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -29,7 +29,7 @@ import {
   FiTarget,
   FiLock,
 } from 'react-icons/fi'
-import { PiBuildingApartment, PiBuildings, PiWarehouse } from 'react-icons/pi'
+import { Building2, Building, Warehouse } from 'lucide-react'
 
 const ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS = {
   apartment: 'addPropertyNamePlaceholderApartment',
@@ -715,7 +715,6 @@ function getValidCoordsForPreview(coords) {
 }
 import { MdBed, MdOutlineBathtub, MdLightbulb } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
-import LocationMap from '../components/LocationMap'
 import {
   ensureGeocodedHit,
   fetchNominatimFirst,
@@ -724,12 +723,7 @@ import {
   searchHouses,
   searchStreets,
 } from '../utils/oapLocationGeocode'
-import AuctionPeriodPicker from '../components/AuctionPeriodPicker'
-import SellerVerificationModal from '../components/SellerVerificationModal'
-import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
-import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
-import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
@@ -741,9 +735,23 @@ import {
 import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKyc'
 import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
 import { applyPricingFieldChange } from '../utils/oapAuctionPriceAuto'
-import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
+
+const LocationMap = lazyWithRetry(() => import('../components/LocationMap'))
+const AuctionPeriodPicker = lazyWithRetry(() => import('../components/AuctionPeriodPicker'))
+const SellerVerificationModal = lazyWithRetry(() => import('../components/SellerVerificationModal'))
+const PropertyCalculatorModal = lazyWithRetry(() => import('../components/PropertyCalculatorModal'))
+const CountrySelect = lazyWithRetry(() => import('../components/CountrySelect'))
+const AnimatedGenerateButton = lazyWithRetry(() =>
+  import('../components/ui/animated-generate-button-shadcn-tailwind'),
+)
+
+function LazyMount({ when, children }) {
+  if (!when) return null
+  return <Suspense fallback={null}>{children}</Suspense>
+}
 
 const DRAFT_KEY = 'addPropertyDraft'
 const DRAFT_SAVE_DEBOUNCE_MS = 600
@@ -3202,13 +3210,13 @@ const AddProperty = ({
       case 'house':
         return <FiHome size={64} />
       case 'apartment':
-        return <PiBuildingApartment size={64} />
+        return <Building2 size={64} />
       case 'apartments':
-        return <PiBuildingApartment size={64} />
+        return <Building2 size={64} />
       case 'villa':
-        return <PiBuildings size={64} />
+        return <Building size={64} />
       case 'commercial':
-        return <PiWarehouse size={64} />
+        return <Warehouse size={64} />
       case 'land':
         return <FiMapPin size={64} />
       case 'other':
@@ -3384,6 +3392,7 @@ const AddProperty = ({
     }
     setIsGeneratingDescription(true)
     try {
+      const { generateListingDescription } = await import('../services/aiService')
       const text = await generateListingDescription(draft, formData.title?.trim() || '')
       setDescriptionCompareDraft(draft)
       setDescriptionCompareAi(text)
@@ -5668,6 +5677,7 @@ const AddProperty = ({
                           />
                         </div>
                         <div className="property-name-generate-row">
+                          <Suspense fallback={null}>
                           <AnimatedGenerateButton
                             labelIdle={t('addPropertyGenerateDescriptionButton')}
                             labelActive={t('addPropertyGeneratingDescription')}
@@ -5678,6 +5688,7 @@ const AddProperty = ({
                             ariaLabel={t('addPropertyGenerateDescriptionButton')}
                             className="property-name-generate-btn-wrap"
                           />
+                          </Suspense>
                         </div>
                       </div>
                     </div>
@@ -5712,6 +5723,7 @@ const AddProperty = ({
                       <div className="sp-card__collapsible-body">
                     <div className="property-location-input-group">
                       <label className="property-location-label">{t('addPropertyLocationCountryLabel')}</label>
+                      <Suspense fallback={null}>
                       <CountrySelect
                         value={formData.country}
                         onChange={async (countryName) => {
@@ -5733,6 +5745,7 @@ const AddProperty = ({
                         placeholder={t('addPropertyLocationCountryPlaceholder')}
                         className="property-location-country-select"
                       />
+                      </Suspense>
                     </div>
 
                     <div className="property-location-input-group">
@@ -5945,6 +5958,7 @@ const AddProperty = ({
                         : 'Выберите город и улицу из подсказок — на карте появится маркер.'}
                     </p>
                     <div className="sp-map-wrap">
+                      <Suspense fallback={null}>
                       <LocationMap
                         center={singlePageMapCoords || [55, 20]}
                         zoom={singlePageMapCoords ? (locationMapZoom ?? 15) : 4}
@@ -5952,6 +5966,7 @@ const AddProperty = ({
                         markerDraggable={!!singlePageMapCoords}
                         onMarkerDragEnd={handleSinglePageMarkerDragEnd}
                       />
+                      </Suspense>
                     </div>
                       </div>
                     </div>
@@ -6655,6 +6670,7 @@ const AddProperty = ({
                     >
                       <div className="sp-card__collapsible-body">
                     <div className="sp-calculator-embed">
+                      <Suspense fallback={null}>
                       <PropertyCalculatorModal
                         isOpen
                         variant="embedded"
@@ -6673,6 +6689,7 @@ const AddProperty = ({
                         }}
                         onApplyRecommendedPrice={handleApplyCalculatedPrice}
                       />
+                      </Suspense>
                     </div>
                       </div>
                     </div>
@@ -6761,6 +6778,7 @@ const AddProperty = ({
                       <div className="sp-auction-layout">
                         <div className="sp-auction-block">
                           <div className="auction-fields-section sp-auction-picker">
+                            <Suspense fallback={null}>
                             <AuctionPeriodPicker
                               label={t('addPropertyPriceAuctionPeriodLabel')}
                               startDate={formData.auctionStartDate}
@@ -6769,6 +6787,7 @@ const AddProperty = ({
                               onEndDateChange={(date) => setFormData((prev) => ({ ...prev, auctionEndDate: date }))}
                               disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
                             />
+                            </Suspense>
                           </div>
                         </div>
 
@@ -7080,19 +7099,19 @@ const AddProperty = ({
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('house', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('apartment', true)}>
-                <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
+                <div className="property-type-card-icon"><Building2 size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeApartmentDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('apartment', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('villa', true)}>
-                <div className="property-type-card-icon"><PiBuildings size={48} /></div>
+                <div className="property-type-card-icon"><Building size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeVillaDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('villa', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('commercial', true)}>
-                <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
+                <div className="property-type-card-icon"><Warehouse size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeApartmentsDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('commercial', true) }}>{t('addPropertyTypeContinue')}</button>
@@ -7118,19 +7137,19 @@ const AddProperty = ({
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('house') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('apartment')}>
-                <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
+                <div className="property-type-card-icon"><Building2 size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeApartmentDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('apartment') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('villa')}>
-                <div className="property-type-card-icon"><PiBuildings size={48} /></div>
+                <div className="property-type-card-icon"><Building size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeVillaDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('villa') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('commercial')}>
-                <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
+                <div className="property-type-card-icon"><Warehouse size={48} /></div>
                 <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
                 <p className="property-type-card-description">{t('addPropertyTypeApartmentsDescription')}</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('commercial') }}>{t('addPropertyTypeContinue')}</button>
@@ -7282,6 +7301,7 @@ const AddProperty = ({
                   rows="6"
                 />
                 <div className="property-name-generate-row">
+                  <Suspense fallback={null}>
                   <AnimatedGenerateButton
                     labelIdle={t('addPropertyGenerateDescriptionButton')}
                     labelActive={t('addPropertyGeneratingDescription')}
@@ -7292,6 +7312,7 @@ const AddProperty = ({
                     ariaLabel={t('addPropertyGenerateDescriptionButton')}
                     className="property-name-generate-btn-wrap"
                   />
+                  </Suspense>
                 </div>
               </div>
 
@@ -7427,6 +7448,7 @@ const AddProperty = ({
                     <label className="property-location-label">
                       {t('addPropertyLocationCountryLabel')}
                     </label>
+                    <Suspense fallback={null}>
                     <CountrySelect
                       value={formData.country}
                       onChange={async (countryName) => {
@@ -7450,6 +7472,7 @@ const AddProperty = ({
                       placeholder={t('addPropertyLocationCountryPlaceholder')}
                       className="property-location-country-select"
                     />
+                    </Suspense>
                   </div>
 
               <div className="property-location-input-group">
@@ -7844,11 +7867,13 @@ const AddProperty = ({
                     : (hasValidCoords && shouldShowMarker ? 15 : undefined)
 
                 return (
+                  <Suspense fallback={null}>
                   <LocationMap
                     center={finalMapCoords}
                     zoom={finalZoom}
                     marker={hasValidCoords && shouldShowMarker ? finalMapCoords : null}
                   />
+                  </Suspense>
                 )
               })()}
             </div>
@@ -9575,6 +9600,7 @@ const AddProperty = ({
                 Оценка по похожим объявлениям с площадок. После расчёта ориентировочные суммы можно скорректировать на следующем шаге.
               </p>
             </div>
+            <Suspense fallback={null}>
             <PropertyCalculatorModal
               isOpen
               variant="embedded"
@@ -9591,6 +9617,7 @@ const AddProperty = ({
               }}
               onApplyRecommendedPrice={handleApplyCalculatedPrice}
             />
+            </Suspense>
             <div className="property-price-actions add-property-price-calculator-step__actions">
               <button
                 type="button"
@@ -9875,6 +9902,7 @@ const AddProperty = ({
               {/* Поля аукциона (всегда видны, так как все объекты аукционные) */}
               <div className="auction-fields-section">
                 <div className="auction-date-range">
+                  <Suspense fallback={null}>
                   <AuctionPeriodPicker
                     label={t('addPropertyPriceAuctionPeriodLabel')}
                     startDate={formData.auctionStartDate}
@@ -9883,6 +9911,7 @@ const AddProperty = ({
                     onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
                     disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
                   />
+                  </Suspense>
                 </div>
                 
                 <div className="auction-starting-price">
@@ -10207,6 +10236,7 @@ const AddProperty = ({
         </div>
       )}
 
+      <LazyMount when={isCalculatorModalOpen && wizardRenderStep !== 'price-calculator'}>
       <PropertyCalculatorModal
         isOpen={isCalculatorModalOpen && wizardRenderStep !== 'price-calculator'}
         onClose={() => setIsCalculatorModalOpen(false)}
@@ -10222,13 +10252,16 @@ const AddProperty = ({
         }}
         onApplyRecommendedPrice={handleApplyCalculatedPrice}
       />
+      </LazyMount>
 
+      <LazyMount when={showVerificationModal}>
       <SellerVerificationModal
         isOpen={showVerificationModal}
         onClose={() => setShowVerificationModal(false)}
         userId={userId}
         onComplete={handleVerificationComplete}
       />
+      </LazyMount>
 
       {/* Модальное окно оплаты публикации (29 € / промокод) */}
       {showListingFeeModal && (

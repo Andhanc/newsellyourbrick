@@ -1,18 +1,20 @@
 import { useTranslation } from 'react-i18next'
 import PropertyListingCard from './PropertyListingCard'
-import { usePropertyRelatedListings } from '../hooks/usePropertyRelatedListings'
+import { useVisibleRelatedListings } from '../hooks/usePropertyRelatedListings'
 import './PropertyDetailInternalLinks.css'
 
 export default function PropertyDetailInternalLinks({ property }) {
   const { t } = useTranslation()
-  const { items: related, loading } = usePropertyRelatedListings(property, { limit: 4 })
+  const { ref, items: related, loading, enabled } = useVisibleRelatedListings(property, { limit: 4 })
 
-  const hasRelated = loading || related.length > 0
-
-  if (!hasRelated) return null
+  const hasRelated = enabled && (loading || related.length > 0)
 
   return (
-    <section className="property-internal-links" aria-label={t('seoInternalLinksAria')}>
+    <section
+      ref={ref}
+      className={hasRelated ? 'property-internal-links' : 'property-internal-links property-internal-links--sentinel'}
+      aria-label={t('seoInternalLinksAria')}
+    >
       {hasRelated ? (
         <div className="property-internal-links__block">
           <div className="property-internal-links__city-head">
@@ -40,7 +42,6 @@ export default function PropertyDetailInternalLinks({ property }) {
           )}
         </div>
       ) : null}
-
     </section>
   )
 }

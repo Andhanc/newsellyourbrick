@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useClerk, useAuth } from '@clerk/clerk-react';
-import { FaTimes } from 'react-icons/fa';
+import { X } from 'lucide-react';
 import { clearUserData } from '../services/authService';
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll';
 import './BlockedUserModal.css';
@@ -81,7 +81,7 @@ const BlockedUserModal = ({ isOpen }) => {
           aria-label="Выйти из аккаунта"
           title="Выйти из аккаунта"
         >
-          <FaTimes size={20} />
+          <X size={20} />
         </button>
         <div className="blocked-user-modal-content">
           <div className="blocked-user-icon">

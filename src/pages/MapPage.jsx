@@ -14,6 +14,7 @@ import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 import {
   createYandexMap,
@@ -592,8 +593,8 @@ const MapPage = () => {
       setLoading(true)
       const apiBase = await getApiBaseUrl()
       const [approvedRes, auctionsRes] = await Promise.all([
-        fetch(`${apiBase}/properties/approved`),
-        fetch(`${apiBase}/properties/auctions`)
+        fetchDedupe(`${apiBase}/properties/approved`),
+        fetchDedupe(`${apiBase}/properties/auctions`)
       ])
       let approved = [], auctions = []
       if (approvedRes.ok) {

@@ -27,6 +27,7 @@ import '../components/PropertyListingGrid.css'
 import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
+import { buildLocationOptionsFromProperties } from '../utils/propertySearchLocation'
 import { groupPropertiesByCatalogSection } from '../utils/catalogSearchSections'
 import {
   filterPropertiesStrict,
@@ -142,6 +143,10 @@ const SearchResults = () => {
 
   const filterBounds = useMemo(
     () => getCatalogFilterBounds(catalogProperties),
+    [catalogProperties],
+  )
+  const catalogLocationOptions = useMemo(
+    () => buildLocationOptionsFromProperties(catalogProperties),
     [catalogProperties],
   )
 
@@ -298,6 +303,7 @@ const SearchResults = () => {
                 filters={activeFilters}
                 onChange={handleDesktopFilterChange}
                 priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
+                locationOptions={catalogLocationOptions}
               />
             ) : null}
 
@@ -498,6 +504,7 @@ const SearchResults = () => {
                     filters={activeFilters}
                     onChange={handleDesktopFilterChange}
                     priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
+                    locationOptions={catalogLocationOptions}
                     variant="drawer"
                   />
                 </SharesMobileFiltersDrawer>

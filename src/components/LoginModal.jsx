@@ -2,7 +2,12 @@ import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 're
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag, FiArrowUpRight } from 'react-icons/fi'
-import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
+import {
+  FacebookIcon,
+  GoogleIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from './icons/ContactChannelIcons'
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
@@ -1124,7 +1129,7 @@ const LoginModal = ({
                   disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
                   aria-label={t('loginWithFacebook')}
                 >
-                  <FaFacebook size={22} />
+                  <FacebookIcon size={22} />
                 </button>
                 <button
                   type="button"
@@ -1142,11 +1147,11 @@ const LoginModal = ({
                   disabled={isLoading}
                   aria-label={t('loginWithWhatsApp')}
                 >
-                  <FaWhatsapp size={22} />
+                  <WhatsAppIcon size={22} />
                 </button>
                 {telegramBotUsername ? (
                   <div className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram login-modal__welcome-social-telegram">
-                    <FaTelegram size={22} aria-hidden />
+                    <TelegramIcon size={22} />
                     <div
                       className="login-modal__telegram-widget"
                       ref={telegramWidgetRef}
@@ -1161,7 +1166,7 @@ const LoginModal = ({
                     aria-label={t('loginWithTelegram')}
                     title={telegramConfigLoaded ? t('telegramEnvHint') : t('telegramLoading')}
                   >
-                    <FaTelegram size={22} />
+                    <TelegramIcon size={22} />
                   </button>
                 )}
               </div>
@@ -1431,7 +1436,7 @@ const LoginModal = ({
               cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
-            <FaFacebook size={20} />
+            <FacebookIcon size={20} />
             {isLoading ? (
               <span aria-hidden="true">{t('socialConnecting')}</span>
             ) : (
@@ -1457,7 +1462,7 @@ const LoginModal = ({
               cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
             }}
           >
-            <FaGoogle size={20} />
+            <GoogleIcon size={20} />
             <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
               {isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
             </span>
@@ -1477,7 +1482,7 @@ const LoginModal = ({
               cursor: isLoading ? 'not-allowed' : 'pointer' 
             }}
           >
-            <FaWhatsapp size={20} />
+            <WhatsAppIcon size={20} />
             <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
               {isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
             </span>
@@ -1512,7 +1517,7 @@ const LoginModal = ({
               title={t('telegramEnvHint')}
               aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
             >
-              <FaTelegram size={20} />
+              <TelegramIcon size={20} />
               <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
                 {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
               </span>
@@ -1558,6 +1563,7 @@ const LoginModal = ({
               type="text"
               id="email"
               name="email"
+              data-testid="login-email"
               value={formData.email}
               onChange={handleInputChange}
               onFocus={() => setIsEmailFocused(true)}
@@ -1580,6 +1586,7 @@ const LoginModal = ({
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
+                data-testid="login-password"
                 value={formData.password}
                 onChange={handleInputChange}
                 onFocus={() => setIsPasswordFocused(true)}
@@ -1646,6 +1653,7 @@ const LoginModal = ({
 
           <button
             type="submit"
+            data-testid="login-submit"
             className={`login-modal__submit${isLogin ? ' login-modal__submit--liquid-glass' : ''}`}
             disabled={isLoading}
           >

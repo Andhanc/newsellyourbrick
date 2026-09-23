@@ -44,6 +44,8 @@ const EXACT_ALLOWED = new Set([
   '/lottery',
   '/chat',
   '/compass',
+  /** Local Maestro/E2E session hydrator (dev only). */
+  '/__e2e__/session',
 ])
 
 /** UI features blocked during soft-launch (entry points + deep links). */
@@ -104,6 +106,7 @@ export function isSoftLaunchPathAllowed(pathname = '') {
   if (path.startsWith('/debts/')) return true
   if (path.startsWith('/test-drive/')) return true
   if (path.startsWith('/news/')) return true
+  if (path === '/__e2e__/session' || path.startsWith('/__e2e__/')) return true
 
   // /property/:id and /property/:id/test-drive — not /edit
   const propertyMatch = path.match(/^\/property\/([^/]+)(?:\/([^/]+))?$/)

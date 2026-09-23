@@ -1,0 +1,59 @@
+url: ${APP_URL}
+name: buyer-session-cabinet
+tags:
+  - buyer
+  - cabinet
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- openLink: ${APP_URL}/__e2e__/session?role=buyer&next=/profile
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 30000
+- takeScreenshot: buyer_profile
+- openLink: ${APP_URL}/profile?data=1
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_profile_data
+- openLink: ${APP_URL}/profile?subscriptions=1
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_subscriptions
+- openLink: ${APP_URL}/profile?history=1
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_history
+- openLink: ${APP_URL}/profile?bookings=1
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_bookings
+- openLink: ${APP_URL}/wallet
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_wallet
+- openLink: ${APP_URL}/bonuses
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_bonuses
+- openLink: ${APP_URL}/favorites
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_favorites
+- openLink: ${APP_URL}/compare
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_compare
+- openLink: ${APP_URL}/private-club
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: buyer_private_club

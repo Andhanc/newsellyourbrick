@@ -1,0 +1,59 @@
+url: ${APP_URL}
+name: seller-session-cabinet
+tags:
+  - seller
+  - cabinet
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- openLink: ${APP_URL}/__e2e__/session?role=seller&next=/owner-test
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 30000
+- takeScreenshot: seller_owner_home
+- openLink: ${APP_URL}/owner-test/properties
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_properties
+- openLink: ${APP_URL}/owner-test/test-drive
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_test_drive
+- openLink: ${APP_URL}/owner-test/wallet
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_wallet
+- openLink: ${APP_URL}/owner-test/subscriptions
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_subscriptions
+- openLink: ${APP_URL}/owner-test/profile
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_profile
+- openLink: ${APP_URL}/owner-test/profile?tab=statistics
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_statistics
+- openLink: ${APP_URL}/owner-test/profile?tab=settings
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_settings
+- openLink: ${APP_URL}/owner-test/add-property
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_add_property
+- openLink: ${APP_URL}/bonuses
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 20000
+- takeScreenshot: seller_bonuses

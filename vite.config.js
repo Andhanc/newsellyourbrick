@@ -253,6 +253,14 @@ export default defineConfig(({ mode }) => {
         'framer-motion',
         'recharts',
         '@radix-ui/react-accordion',
+        'lucide-react',
+        'react-icons/fi',
+        'react-icons/hi',
+        'react-icons/io5',
+        'react-icons/md',
+        'react-icons/bi',
+        'react-confetti',
+        'axios',
       ],
       // Исключаем тяжёлые наборы react-icons из pre-bundle (fa/pi по ~1–6 MB в dev)
       exclude: ['react-icons/fa', 'react-icons/fa6', 'react-icons/pi'],
@@ -305,7 +313,7 @@ export default defineConfig(({ mode }) => {
       // По умолчанию только localhost (OAuth origin).
       // Для теста с телефона в одной Wi‑Fi: VITE_LAN=1 npm run dev
       host: process.env.VITE_LAN === '1' ? true : 'localhost',
-      strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой
+      strictPort: true, // Только 5173: не уходим на 5174, если порт уже занят
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
       allowedHosts:
         process.env.VITE_LAN === '1'
@@ -318,18 +326,14 @@ export default defineConfig(({ mode }) => {
               '127.0.0.1',
             ],
       // Отключаем HMR в production (на Railway) - он не нужен и вызывает проблемы с WebSocket
+      // HMR берёт host/port из страницы. Не фиксируем clientPort=5173:
+      // иначе второй Vite на 5174 крутит бесконечную загрузку.
       hmr:
         actualMode === 'production'
           ? false
-          : process.env.VITE_LAN === '1'
-            ? {
-                // Телефон ходит по LAN IP — HMR берёт host из страницы
-                overlay: false,
-              }
-            : {
-                clientPort: vitePort, // Для HMR в development
-                overlay: false, // Отключаем overlay для избежания ошибок esbuild на Railway
-              },
+          : {
+              overlay: false,
+            },
       // JSON новостей, счётчики и сессия WhatsApp Web — не триггерить full reload
       watch: {
         ignored: [

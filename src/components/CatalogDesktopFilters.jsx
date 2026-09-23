@@ -32,9 +32,11 @@ function CatalogDesktopFilters({
   onChange,
   priceBounds,
   variant = 'sidebar',
+  locationOptions: locationOptionsFromParent,
 }) {
   const { t } = useTranslation()
-  const [locationOptions, setLocationOptions] = useState([])
+  const [fetchedLocationOptions, setFetchedLocationOptions] = useState([])
+  const locationOptions = locationOptionsFromParent ?? fetchedLocationOptions
   const [optionsLoading, setOptionsLoading] = useState(false)
   const [openSections, setOpenSections] = useState({
     location: true,
@@ -52,18 +54,22 @@ function CatalogDesktopFilters({
   )
 
   useEffect(() => {
+    if (locationOptionsFromParent !== undefined) {
+      setOptionsLoading(false)
+      return undefined
+    }
     let cancelled = false
     ;(async () => {
       try {
         setOptionsLoading(true)
         const base = await getApiBaseUrl()
-        const res = await fetchDedupe(`${base}/properties/search-options?_=${Date.now()}`)
+        const res = await fetchDedupe(`${base}/properties/search-options`)
         if (!res.ok || cancelled) return
         const json = await res.json()
         if (!json?.success || cancelled) return
-        setLocationOptions(Array.isArray(json?.data?.locations) ? json.data.locations : [])
+        setFetchedLocationOptions(Array.isArray(json?.data?.locations) ? json.data.locations : [])
       } catch {
-        if (!cancelled) setLocationOptions([])
+        if (!cancelled) setFetchedLocationOptions([])
       } finally {
         if (!cancelled) setOptionsLoading(false)
       }
@@ -71,7 +77,7 @@ function CatalogDesktopFilters({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [locationOptionsFromParent])
 
   const patch = (partial) => onChange((prev) => ({ ...prev, ...partial }))
 

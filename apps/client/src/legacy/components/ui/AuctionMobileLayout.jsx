@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -34,11 +34,11 @@ import ImageWithSkeleton from '../ImageWithSkeleton'
 import AuctionPropertyCard from '../AuctionPropertyCard'
 import BuyerStatusRibbon from '../buyer-mobile/BuyerStatusRibbon'
 import { resolveBuyerListingState } from '../../utils/resolveBuyerListingState'
-import DebtsPropertyCard from '../DebtsPropertyCard'
 import '../PropertyList.css'
 import '../../styles/discoverAuctionCards.css'
-import '../../styles/hrShowcaseDebtsCards.css'
 import './AuctionMobileLayout.css'
+
+const DebtsPropertyCard = lazy(() => import('../DebtsPropertyCard'))
 
 const STORAGE_KEY = AUCTION_MOBILE_VIEW_STORAGE_KEY
 
@@ -187,13 +187,15 @@ export default function AuctionMobileLayout({
             {groupedCardProperties.map((property) =>
               view === 'card' ? (
                 debtsCards ? (
-                  <DebtsPropertyCard
-                    key={auctionListingDedupeKey(property)}
-                    property={property}
-                    isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
-                    onFavoriteToggle={onFavoriteToggle}
-                    onOpen={openProperty}
-                  />
+                  <Suspense fallback={null}>
+                    <DebtsPropertyCard
+                      key={auctionListingDedupeKey(property)}
+                      property={property}
+                      isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
+                      onFavoriteToggle={onFavoriteToggle}
+                      onOpen={openProperty}
+                    />
+                  </Suspense>
                 ) : (
                   <AuctionPropertyCard
                     key={auctionListingDedupeKey(property)}

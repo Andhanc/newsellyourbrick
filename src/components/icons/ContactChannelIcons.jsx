@@ -31,3 +31,133 @@ export function TelegramIcon({ size = 18, className, ...props }) {
     </svg>
   )
 }
+
+export function YoutubeIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.65 12 3.65 12 3.65s-7.5 0-9.38.41A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14c1.88.41 9.38.41 9.38.41s7.5 0 9.38-.41a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.75 15.57V8.43L15.84 12l-6.09 3.57z" />
+    </svg>
+  )
+}
+
+export function InstagramIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8zm9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+    </svg>
+  )
+}
+
+export function AppleIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M16.37 12.74c.03-2.54 2.07-3.76 2.16-3.81-1.18-1.72-3.01-1.96-3.66-1.98-1.56-.16-3.04.92-3.83.92-.79 0-2.01-.9-3.3-.87-1.7.03-3.27.99-4.14 2.51C1.86 12.57 3.17 17.12 4.88 19.5c.84 1.21 1.83 2.58 3.14 2.53 1.27-.05 1.74-.82 3.27-.82s1.95.82 3.29.79c1.36-.02 2.24-1.23 3.07-2.47.96-1.4 1.36-2.76 1.38-2.83-.03-.01-2.65-1.02-2.66-4.96zM14.05 5.05c.73-.88 1.22-2.1 1.09-3.32-1.05.04-2.32.7-3.07 1.58-.68.78-1.27 2.03-1.11 3.23 1.18.09 2.38-.6 3.09-1.49z" />
+    </svg>
+  )
+}
+
+export function GooglePlayIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M3.18 2.41A1.5 1.5 0 0 0 3 3.27v17.46c0 .54.28 1.03.73 1.31l9.62-9.04L3.18 2.41zm11.2 10.5 2.18 2.05-8.7 5.03 6.52-7.08zm2.9-2.73c.6.45.6 1.32.02 1.79l-2.37 1.77-2.22-2.09 2.2-2.07 2.37 1.6zM7.86 3.01l8.7 5.03-2.18 2.05L7.86 3.01z" />
+    </svg>
+  )
+}
+
+export function FacebookIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M22 12.07C22 6.48 17.52 2 11.93 2S1.86 6.48 1.86 12.07c0 4.99 3.66 9.13 8.44 9.88v-6.99H7.9v-2.89h2.4V9.84c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.12.18 2.12.18v2.33h-1.2c-1.18 0-1.55.73-1.55 1.48v1.78h2.64l-.42 2.89h-2.22V21.95C18.34 21.2 22 17.06 22 12.07z" />
+    </svg>
+  )
+}
+
+export function XTwitterIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M18.24 2H21.5l-7.5 8.57L22.5 22h-6.56l-5.14-6.72L5.3 22H2.02l8.02-9.17L1.5 2h6.72l4.64 6.15L18.24 2zm-1.15 18h1.81L7.01 3.89H5.07L17.09 20z" />
+    </svg>
+  )
+}
+
+export function GoogleIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path fill="#4285F4" d="M23.49 12.27c0-.82-.07-1.64-.23-2.43H12v4.6h6.46a5.52 5.52 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.55-5.17 3.55-8.8z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.97-1.07 7.96-2.93l-3.88-3c-1.08.73-2.47 1.16-4.08 1.16-3.14 0-5.8-2.12-6.76-4.96H1.23v3.09A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.24 14.27A7.2 7.2 0 0 1 4.86 12c0-.79.14-1.55.38-2.27V6.64H1.23A12 12 0 0 0 0 12c0 1.94.46 3.78 1.23 5.36l4.01-3.09z" />
+      <path fill="#EA4335" d="M12 4.75c1.76 0 3.35.6 4.6 1.79l3.45-3.45C17.96 1.14 15.24 0 12 0 7.31 0 3.26 2.69 1.23 6.64l4.01 3.09C6.2 6.87 8.86 4.75 12 4.75z" />
+    </svg>
+  )
+}
+
+export function TikTokIcon({ size = 18, className, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.88-2.89 2.89 2.89 0 0 1 2.88-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.16 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.73a8.18 8.18 0 0 0 4.76 1.52V6.8a4.84 4.84 0 0 1-1.01-.11z" />
+    </svg>
+  )
+}

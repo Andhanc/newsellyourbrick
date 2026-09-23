@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
-import { FaGavel, FaShoppingBag, FaChartPie, FaHome, FaBuilding } from 'react-icons/fa'
+import { Building2, Gavel, Home, PieChart, ShoppingBag } from 'lucide-react'
 import { scrollMainTo } from '@/utils/mainScroll'
 
 const CATALOG_FILTERS_STORAGE_KEY = 'propertySearchFilters'
@@ -35,7 +35,7 @@ const FILTER_CHIPS = [
     value: 'auction',
     labelKey: 'auction',
     sublabelKey: 'sybLandingFilterSubAuction',
-    Icon: FaGavel,
+    Icon: Gavel,
   },
   {
     id: 'buy_now',
@@ -43,7 +43,7 @@ const FILTER_CHIPS = [
     value: 'buy_now',
     labelKey: 'buyNowSectionTitle',
     sublabelKey: 'sybLandingFilterSubBuyNow',
-    Icon: FaShoppingBag,
+    Icon: ShoppingBag,
   },
   {
     id: 'shares',
@@ -51,7 +51,7 @@ const FILTER_CHIPS = [
     value: 'shares',
     labelKey: 'shares',
     sublabelKey: 'sybLandingFilterSubShares',
-    Icon: FaChartPie,
+    Icon: PieChart,
   },
   {
     id: 'villa',
@@ -59,7 +59,7 @@ const FILTER_CHIPS = [
     value: 'Вилла',
     labelKey: 'propertyTypeVilla',
     sublabelKey: 'sybLandingFilterSubVilla',
-    Icon: FaHome,
+    Icon: Home,
   },
   {
     id: 'commercial',
@@ -67,7 +67,7 @@ const FILTER_CHIPS = [
     value: 'Коммерческая недвижимость',
     labelKey: 'propertyTypeCommercial',
     sublabelKey: 'sybLandingFilterSubCommercial',
-    Icon: FaBuilding,
+    Icon: Building2,
   },
 ]
 

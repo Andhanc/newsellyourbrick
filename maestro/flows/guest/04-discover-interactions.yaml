@@ -1,0 +1,51 @@
+url: ${APP_URL}
+name: guest-discover-interactions
+tags:
+  - guest
+  - discover
+env:
+  APP_URL: http://localhost:5173
+---
+- launchApp
+- tapOn:
+    id: "Go to next screen"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "Sale formats"
+    timeout: 30000
+- tapOn:
+    id: "Auction"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: guest_after_auction_card
+- openLink: ${APP_URL}/
+- tapOn:
+    id: "Go to next screen"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "Sale formats"
+    timeout: 20000
+    optional: true
+- tapOn:
+    id: "Menu"
+    optional: true
+- takeScreenshot: guest_menu_open
+- tapOn:
+    id: "Open search"
+    optional: true
+- takeScreenshot: guest_search_open
+- tapOn:
+    id: "Favorites"
+    optional: true
+- takeScreenshot: guest_nav_favorites
+- tapOn:
+    id: "Map"
+    optional: true
+- takeScreenshot: guest_nav_map
+- tapOn:
+    id: "Save"
+    optional: true
+- takeScreenshot: guest_save_recommendation

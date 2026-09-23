@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-09-22T19:42:39.313Z",
+  "finishedAt": "2026-09-22T20:18:03.970Z",
+  "appUrl": "http://localhost:5173",
+  "runsRequested": 3,
+  "passedRuns": 0,
+  "failedRuns": 3,
+  "flowFiles": [
+    "maestro/flows/auth/01-login-ui-buyer.yaml",
+    "maestro/flows/buyer/01-session-cabinet.yaml",
+    "maestro/flows/buyer/02-catalog-and-tools.yaml",
+    "maestro/flows/buyer/03-property-detail.yaml",
+    "maestro/flows/guest/01-discover-hero.yaml",
+    "maestro/flows/guest/02-catalog-sections.yaml",
+    "maestro/flows/guest/03-marketing-pages.yaml",
+    "maestro/flows/guest/04-discover-interactions.yaml",
+    "maestro/flows/seller/01-session-cabinet.yaml",
+    "maestro/flows/seller/02-owner-views.yaml"
+  ],
+  "seedManifestPath": "maestro/demo-manifest.json",
+  "runs": [
+    {
+      "run": 1,
+      "status": 1,
+      "maestroExit": 1,
+      "flowSummary": null,
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-1",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-1/junit.xml",
+      "stdoutTail": "\nWeb support is in Beta. We would appreciate your feedback!\n\n╭───────────────────────────────────────────────────────────────────────────────────────────────╮\n│                                                                                               │\n│   Get results faster by executing flows in parallel on Maestro Cloud virtual devices. Run:    │\n│   maestro cloud app_file flows_folder/                                                        │\n│                                                                                               │\n╰───────────────────────────────────────────────────────────────────────────────────────────────╯\n\n\nWaiting for flows to complete...\n[Failed] auth-login-ui-buyer (35s) (Assertion is false: id: email is visible)\n[Passed] buyer-session-cabinet (1m 10s)\n[Passed] buyer-catalog-and-tools (2m 5s)\n[Passed] buyer-property-detail (1m 56s)\n[Failed] guest-discover-hero (26s) (Assertion is false: id: Profile is visible)\n[Failed] guest-catalog-sections (1m 11s)\n[Passed] guest-marketing-pages (36s)\n[Failed] guest-discover-interactions (23s) (Element not found: Id matching regex: What is this?: Property auction)\n[Passed] seller-session-cabinet (1m 11s)\n[Passed] seller-owner-views (19s)\n\n4/10 Flows Failed\n\n",
+      "stderrTail": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.oracle.truffle.api.dsl.InlineSupport$UnsafeField (file:/Users/andrei/.maestro/lib/truffle-api-24.2.0.jar)\nWARNING: Please consider reporting this to the maintainers of class com.oracle.truffle.api.dsl.InlineSupport$UnsafeField\nWARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release\n",
+      "error": null
+    },
+    {
+      "run": 2,
+      "status": 1,
+      "maestroExit": 1,
+      "flowSummary": null,
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-2",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-2/junit.xml",
+      "stdoutTail": "\nWeb support is in Beta. We would appreciate your feedback!\n\n\nWaiting for flows to complete...\n[Failed] auth-login-ui-buyer (34s) (Assertion is false: id: email is visible)\n[Passed] buyer-session-cabinet (1m 11s)\n[Passed] buyer-catalog-and-tools (1m 13s)\n[Passed] buyer-property-detail (2m)\n[Failed] guest-discover-hero (58s) (Assertion is false: id: Profile is visible)\n[Passed] guest-catalog-sections (2m 23s)\n[Passed] guest-marketing-pages (2m)\n[Passed] guest-discover-interactions (39s)\n[Passed] seller-session-cabinet (1m 9s)\n[Passed] seller-owner-views (17s)\n\n2/10 Flows Failed\n\n",
+      "stderrTail": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.oracle.truffle.api.dsl.InlineSupport$UnsafeField (file:/Users/andrei/.maestro/lib/truffle-api-24.2.0.jar)\nWARNING: Please consider reporting this to the maintainers of class com.oracle.truffle.api.dsl.InlineSupport$UnsafeField\nWARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release\n",
+      "error": null
+    },
+    {
+      "run": 3,
+      "status": 1,
+      "maestroExit": 1,
+      "flowSummary": "1/10 Flow Failed",
+      "outDir": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-3",
+      "junitPath": "/Users/andrei/project/newsellyourbrick/maestro/reports/2026-09-22T19-42-39-313Z-run-3/junit.xml",
+      "stdoutTail": "\nWeb support is in Beta. We would appreciate your feedback!\n\n\nWaiting for flows to complete...\n[Passed] auth-login-ui-buyer (55s)\n[Passed] buyer-session-cabinet (1m 10s)\n[Passed] buyer-catalog-and-tools (2m 5s)\n[Passed] buyer-property-detail (1m 6s)\n[Failed] guest-discover-hero (33s) (Assertion is false: id: Menu is visible)\n[Passed] guest-catalog-sections (2m 42s)\n[Passed] guest-marketing-pages (34s)\n[Passed] guest-discover-interactions (36s)\n[Passed] seller-session-cabinet (1m 10s)\n[Passed] seller-owner-views (1m 58s)\n\n1/10 Flow Failed\n\n",
+      "stderrTail": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.oracle.truffle.api.dsl.InlineSupport$UnsafeField (file:/Users/andrei/.maestro/lib/truffle-api-24.2.0.jar)\nWARNING: Please consider reporting this to the maintainers of class com.oracle.truffle.api.dsl.InlineSupport$UnsafeField\nWARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release\n",
+      "error": null
+    }
+  ]
+}

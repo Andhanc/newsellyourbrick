@@ -31,6 +31,8 @@ import {
   translateAndPersistProperty,
 } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
+import { loadAdminSidebarBadgePayload } from './adminSidebarBadgeCounts.js';
+import { loadAdminDashboardStats } from './adminDashboardStats.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
@@ -58,6 +60,7 @@ import {
   notifyPurchaseRequest,
   notifyBid,
   notifyAuctionWon,
+  notifyLiveChat,
   startOpsBotCommands,
   getOpsStatus,
 } from './telegramOpsNotify.js';
@@ -774,7 +777,7 @@ async function fetchEngagementCountsForProperty(prisma, propertyId, propertyTabl
   const bidWhere = buildBidWhereForProperty(propertyId, propertyTable);
   const [likes_count, bids_count] = await Promise.all([
     prisma.property_favorites.count({
-      where: { property_id: pid, property_table: tbl },
+      where: { property_id: propertyId, property_table: propertyTable },
     }),
     prisma.bids.count({ where: bidWhere }),
   ]);
@@ -5393,6 +5396,26 @@ app.post('/api/live-chat/sessions/:token/messages', async (req, res) => {
     if (!msgId) return res.status(400).json({ success: false, error: 'Не удалось сохранить сообщение' });
     const row = await liveChatQueries.getMessageRow(session.id, msgId);
     broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: session.id, message: row });
+    fireOpsAlert(async () => {
+      let listRow = null;
+      try {
+        listRow = await liveChatQueries.getSessionListRowById(session.id);
+      } catch (err) {
+        console.warn('telegram live-chat session row:', err?.message || err);
+      }
+      return notifyLiveChat({
+        sessionId: session.id,
+        messageId: msgId,
+        userId: session.user_id || listRow?.user_id,
+        text,
+        createdAt: row?.created_at,
+        clientFirstName: listRow?.client_first_name,
+        clientLastName: listRow?.client_last_name,
+        clientEmail: listRow?.client_email,
+        clientPhone: listRow?.client_phone,
+        leadEmail: listRow?.lead_email,
+      });
+    });
     return res.json({ success: true, data: row });
   } catch (error) {
     console.error('❌ POST live-chat user message:', error);
@@ -8224,6 +8247,33 @@ app.get('/api/admin/stats/counts', async (req, res) => {
     res.json({ success: true, propertiesCount, auctionsCount });
   } catch (error) {
     console.error('Ошибка при получении счётчиков:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/sidebar-badges — счётчики меню админки одним ответом
+ */
+app.get('/api/admin/sidebar-badges', async (req, res) => {
+  try {
+    const payload = await loadAdminSidebarBadgePayload();
+    res.json({ success: true, ...payload });
+  } catch (error) {
+    console.error('GET /api/admin/sidebar-badges:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/dashboard-stats — карточки и графики статистики одним ответом
+ */
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+  try {
+    pruneOnlineVisitors();
+    const payload = await loadAdminDashboardStats({ weekStart: req.query.weekStart });
+    res.json({ success: true, onlineCount: onlineVisitors.size, ...payload });
+  } catch (error) {
+    console.error('GET /api/admin/dashboard-stats:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -11128,7 +11178,7 @@ app.get('/api/properties/auctions', async (req, res) => {
     });
     
     // Преобразуем данные в формат для фронтенда (возвращаем ВСЕ поля); резервы — пакетом после map
-    const formattedProperties = properties.map((prop) => {
+    let formattedProperties = properties.map((prop) => {
       const formatted = { ...prop };
       
       // Парсим JSON поля безопасно
@@ -16849,6 +16899,45 @@ app.post('/api/auction-winners/ensure/:propertyId', async (req, res) => {
     return res.json({ success: result.ok, details: result });
   } catch (error) {
     console.error('❌ ensure auction winner:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/auction-winners/batch?ids=1,2,3 — победители нескольких объектов одним ответом
+ */
+app.get('/api/auction-winners/batch', async (req, res) => {
+  try {
+    const ids = String(req.query.ids || '')
+      .split(',')
+      .map((part) => parseInt(part, 10))
+      .filter((id) => Number.isFinite(id));
+    const uniqueIds = [...new Set(ids)].slice(0, 50);
+    if (uniqueIds.length === 0) {
+      return res.json({ success: true, data: {} });
+    }
+    const rows = await getPrisma().auction_winners.findMany({
+      where: { property_id: { in: uniqueIds } },
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        user_id: true,
+        property_id: true,
+        property_table: true,
+        winning_bid_amount: true,
+        currency: true,
+        auction_end_date: true,
+        status: true,
+        won_at: true,
+      },
+    });
+    const data = {};
+    for (const row of rows) {
+      if (data[row.property_id] == null) data[row.property_id] = row;
+    }
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('❌ GET /api/auction-winners/batch:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

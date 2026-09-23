@@ -10,6 +10,48 @@ import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import './ManagerChatModal.css'
 import './SiteChatDock.css'
 
+function ManagerChatComposer({
+  t,
+  liveChatToken,
+  managerConnecting,
+  input,
+  setInput,
+  sendManagerMessage,
+}) {
+  return (
+    <form
+      className="chat-widget__input-form"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!input.trim() || managerConnecting || !liveChatToken) return
+        const text = input.trim()
+        setInput('')
+        void sendManagerMessage(text)
+      }}
+    >
+      <div className="chat-widget__composer-row">
+        <input
+          type="text"
+          className="chat-widget__input"
+          placeholder={t('chatPlaceholder')}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          autoComplete="off"
+          disabled={managerConnecting || !liveChatToken}
+        />
+        <button
+          type="submit"
+          className="chat-widget__send"
+          aria-label={t('sendMessage')}
+          disabled={managerConnecting || !liveChatToken}
+        >
+          <FiSend size={18} />
+        </button>
+      </div>
+    </form>
+  )
+}
+
 function ManagerChatPanel({
   inDrawer = false,
   t,
@@ -23,6 +65,16 @@ function ManagerChatPanel({
   onClose,
 }) {
   const titleId = inDrawer ? 'manager-chat-drawer-title' : 'manager-chat-dock-title'
+  const composer = (
+    <ManagerChatComposer
+      t={t}
+      liveChatToken={liveChatToken}
+      managerConnecting={managerConnecting}
+      input={input}
+      setInput={setInput}
+      sendManagerMessage={sendManagerMessage}
+    />
+  )
 
   return (
     <div
@@ -87,34 +139,7 @@ function ManagerChatPanel({
         )}
       </div>
 
-      <form
-        className="chat-widget__input-form"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!input.trim() || managerConnecting || !liveChatToken) return
-          const text = input.trim()
-          setInput('')
-          void sendManagerMessage(text)
-        }}
-      >
-        <input
-          type="text"
-          className="chat-widget__input"
-          placeholder={t('chatPlaceholder')}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          autoComplete="off"
-          disabled={managerConnecting || !liveChatToken}
-        />
-        <button
-          type="submit"
-          className="chat-widget__send"
-          aria-label={t('sendMessage')}
-          disabled={managerConnecting || !liveChatToken}
-        >
-          <FiSend size={18} />
-        </button>
-      </form>
+      {!inDrawer ? composer : null}
     </div>
   )
 }
@@ -181,6 +206,17 @@ export default function ManagerChatModal({ open, onClose, chatUserId }) {
     }
   }, [open, isMobile, handleClose])
 
+  const composer = (
+    <ManagerChatComposer
+      t={t}
+      liveChatToken={liveChatToken}
+      managerConnecting={managerConnecting}
+      input={input}
+      setInput={setInput}
+      sendManagerMessage={sendManagerMessage}
+    />
+  )
+
   const panel = (
     <ManagerChatPanel
       inDrawer={isMobile}
@@ -207,6 +243,7 @@ export default function ManagerChatModal({ open, onClose, chatUserId }) {
         titleId="manager-chat-drawer-title"
         closeLabel={t('closeChat')}
         className="site-ai-drawer site-manager-drawer manager-chat-drawer"
+        footer={composer}
       >
         {panel}
       </BuyerSheetShell>

@@ -1,0 +1,2 @@
+# Maestro config (optional). Suite runner passes explicit flow file paths.
+flows: []

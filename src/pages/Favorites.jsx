@@ -3,12 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
-import {
-  PiArrowRight,
-  PiHeartStraight,
-  PiQuestion,
-  PiX,
-} from 'react-icons/pi'
+import { ArrowRight, Heart, HelpCircle, X } from 'lucide-react'
 import './Favorites.css'
 import '../components/PropertyList.css'
 import '../components/AuctionPropertyCard.css'
@@ -184,7 +179,7 @@ const Favorites = () => {
       <div className="favorites-container">
         <div className="favorites-header">
           <h1 className="favorites-title">
-            <PiHeartStraight className="favorites-title-icon" aria-hidden />
+            <Heart className="favorites-title-icon" aria-hidden />
             {t('footerLiked')}
           </h1>
           <nav className="favorites-breadcrumbs" aria-label={t('favoritesPage_breadcrumbsAria')}>
@@ -259,7 +254,7 @@ const Favorites = () => {
             </p>
             <button className="favorites-empty-button" onClick={() => navigate('/auction')}>
               {t('favoritesPage_goToCatalog')}
-              <PiArrowRight size={18} aria-hidden />
+              <ArrowRight size={18} aria-hidden />
             </button>
             <button
               className="favorites-empty-help"
@@ -267,7 +262,7 @@ const Favorites = () => {
               onClick={() => setGuideOpen(true)}
             >
               {t('favoritesPage_howItWorks')}
-              <PiQuestion size={16} aria-hidden />
+              <HelpCircle size={16} aria-hidden />
             </button>
           </section>
         )}
@@ -297,7 +292,7 @@ const Favorites = () => {
           </div>
           <Link to="/compare" className="favorites-compare__button">
             {t('favoritesPage_goToCompare')}
-            <PiArrowRight size={17} aria-hidden />
+            <ArrowRight size={17} aria-hidden />
           </Link>
         </section>
 
@@ -306,7 +301,7 @@ const Favorites = () => {
             <h2 id="favorites-recommendations-title">{t('favoritesPage_recommendationsTitle')}</h2>
             <Link to="/auction" className="favorites-recommendations__all">
               {t('favoritesPage_seeAll')}
-              <PiArrowRight size={22} aria-hidden />
+              <ArrowRight size={22} aria-hidden />
             </Link>
           </div>
           <div className="favorites-recommendations__grid">
@@ -347,12 +342,12 @@ const Favorites = () => {
             }}
           >
             {t('favoritesPage_goToCatalog')}
-            <PiArrowRight size={16} aria-hidden />
+            <ArrowRight size={16} aria-hidden />
           </button>
         )}
       >
         <div className="favorites-guide__content">
-          <span className="favorites-guide__illustration" aria-hidden><PiHeartStraight /></span>
+          <span className="favorites-guide__illustration" aria-hidden><Heart /></span>
           <p className="favorites-eyebrow">{t('favoritesPage_guideEyebrow')}</p>
           <h2 id="favorites-guide-title">{t('favoritesPage_guideTitle')}</h2>
           <p id="favorites-guide-description">
@@ -376,7 +371,7 @@ const Favorites = () => {
               onClick={() => setGuideOpen(false)}
               aria-label={t('close')}
             >
-              <PiX size={20} aria-hidden />
+              <X size={20} aria-hidden />
             </button>
             <h2 id="favorites-guide-title">{t('favoritesPage_guideTitle')}</h2>
             <p>
@@ -391,7 +386,7 @@ const Favorites = () => {
               }}
             >
               {t('favoritesPage_goToCatalog')}
-              <PiArrowRight size={20} aria-hidden />
+              <ArrowRight size={20} aria-hidden />
             </button>
           </div>
         </div>
@@ -405,7 +400,7 @@ const Favorites = () => {
           </div>
           <Link to="/compare">
             <span>{t('favoritesPage_compareAction')}</span>
-            <PiArrowRight size={17} aria-hidden />
+            <ArrowRight size={17} aria-hidden />
           </Link>
         </aside>
       ) : null}

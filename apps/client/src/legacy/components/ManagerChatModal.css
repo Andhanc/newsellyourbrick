@@ -170,12 +170,19 @@
 
 .manager-chat-modal-root .chat-widget__message--user {
   align-self: flex-end;
+  width: fit-content;
 }
 
 .manager-chat-modal-root .chat-widget__message--bot,
-.manager-chat-modal-root .chat-widget__message--manager,
-.manager-chat-modal-root .chat-widget__message--system {
+.manager-chat-modal-root .chat-widget__message--manager {
   align-self: flex-start;
+  width: fit-content;
+}
+
+.manager-chat-modal-root .chat-widget__message--manager .chat-widget__message-content,
+.manager-chat-modal-root .chat-widget__message--bot .chat-widget__message-content {
+  width: fit-content;
+  max-width: 100%;
 }
 
 .manager-chat-modal-root .chat-widget__message-content {
@@ -242,10 +249,20 @@
 
 .manager-chat-modal-root .chat-widget__input-form {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 0;
   padding: 16px 20px;
   border-top: 1px solid rgba(17, 24, 39, 0.1);
   background: #ffffff;
+}
+
+.manager-chat-modal-root .chat-widget__composer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
 .manager-chat-modal-root .chat-widget__input {

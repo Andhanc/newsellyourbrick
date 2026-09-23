@@ -6,6 +6,8 @@ function asFiniteNumberOrNull(value) {
   return Number.isFinite(n) ? n : null
 }
 
+const maxBidsInflight = new Map()
+
 /**
  * Макс. ставки для списка лотов (карточки / главная / кэш аукциона).
  * @param {string} apiBaseUrl
@@ -26,6 +28,11 @@ export async function fetchAuctionMaxBidsBatch(apiBaseUrl, properties) {
   }
   if (items.length === 0) return new Map()
 
+  const inflightKey = JSON.stringify(items)
+  const existing = maxBidsInflight.get(inflightKey)
+  if (existing) return existing
+
+  const promise = (async () => {
   const base = String(apiBaseUrl || '').replace(/\/$/, '')
   try {
     const response = await fetch(`${base}/bids/max-amounts`, {
@@ -46,6 +53,16 @@ export async function fetchAuctionMaxBidsBatch(apiBaseUrl, properties) {
     return m
   } catch {
     return new Map()
+  }
+  })()
+
+  maxBidsInflight.set(inflightKey, promise)
+  try {
+    return await promise
+  } finally {
+    queueMicrotask(() => {
+      if (maxBidsInflight.get(inflightKey) === promise) maxBidsInflight.delete(inflightKey)
+    })
   }
 }
 

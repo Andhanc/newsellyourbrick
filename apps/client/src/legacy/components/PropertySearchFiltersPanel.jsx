@@ -118,7 +118,7 @@ const PropertySearchFiltersPanel = ({
       try {
         setOptionsLoading(true)
         const base = await getApiBaseUrl()
-        const res = await fetchDedupe(`${base}/properties/search-options?_=${Date.now()}`)
+        const res = await fetchDedupe(`${base}/properties/search-options`)
         if (!res.ok || cancelled) return
         const json = await res.json()
         if (!json?.success || cancelled) return

@@ -87,6 +87,49 @@ function displayName(userOrName) {
   return '—';
 }
 
+function previewText(text, max = 800) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return '—';
+  if (raw.length <= max) return raw;
+  return `${raw.slice(0, Math.max(1, max - 1))}…`;
+}
+
+function formatOpsDateTime(value) {
+  const date = value instanceof Date ? value : new Date(value || Date.now());
+  const valid = Number.isNaN(date.getTime()) ? new Date() : date;
+  return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(valid);
+}
+
+function liveChatClientLabel(data = {}) {
+  const name = displayName({
+    first_name: data.clientFirstName || data.client_first_name,
+    last_name: data.clientLastName || data.client_last_name,
+    name: data.clientName || data.name,
+    email: data.clientEmail || data.client_email,
+    phone_number: data.clientPhone || data.client_phone,
+  });
+  if (name && name !== '—') return name;
+  const lead = data.leadEmail || data.lead_email;
+  if (lead) return String(lead).trim();
+  return 'гость';
+}
+
+function liveChatFromLabel(data = {}) {
+  const who = liveChatClientLabel(data);
+  const userId = data.userId ?? data.user_id;
+  const hasUser = userId != null && String(userId).trim() !== '' && Number(userId) > 0;
+  if (hasUser && who && who !== 'гость') return `${who} (#${userId})`;
+  if (hasUser) return `пользователь #${userId}`;
+  return who || 'гость';
+}
+
 function ensureDataDir() {
   const dir = path.dirname(getKnownChatsPath());
   if (!fs.existsSync(dir)) {
@@ -429,6 +472,35 @@ export async function notifyAuctionWon(data) {
   });
 }
 
+export function buildLiveChatMessage(data = {}) {
+  const from = escapeHtml(liveChatFromLabel(data));
+  const when = escapeHtml(
+    formatOpsDateTime(data.createdAt || data.created_at || data.when || Date.now()),
+  );
+  const preview = escapeHtml(previewText(data.text || data.body || data.preview));
+  const email = data.clientEmail || data.client_email || data.leadEmail || data.lead_email;
+  const phone = data.clientPhone || data.client_phone;
+  const lines = [
+    '💬 <b>Новое сообщение в поддержку</b>',
+    '',
+    `От: ${from}`,
+  ];
+  if (email) lines.push(`Email: ${escapeHtml(email)}`);
+  if (phone) lines.push(`Телефон: ${escapeHtml(phone)}`);
+  lines.push(`Когда: ${when}`);
+  lines.push('');
+  lines.push(`Сообщение: ${preview}`);
+  return lines.join('\n');
+}
+
+export async function notifyLiveChat(data) {
+  const sessionId = data?.sessionId ?? data?.session_id ?? '';
+  const messageId = data?.messageId ?? data?.message_id ?? data?.id ?? '';
+  return sendOpsAlert(buildLiveChatMessage(data), {
+    dedupKey: `live-chat:${sessionId}:${messageId}`,
+  });
+}
+
 async function replyToChat(chatId, text) {
   try {
     await postTelegramMessage(chatId, text);
@@ -451,7 +523,7 @@ async function handleBotCommand(msg) {
       [
         'SellYourBrick ops-бот',
         '',
-        'Шлёт в этот чат алерты: KYC, объекты на модерации, Buy Now, ставки.',
+        'Шлёт в этот чат алерты: KYC, объекты на модерации, Buy Now, ставки, чат поддержки.',
         '',
         'Команды:',
         '/whoami — показать chat id и зарегистрировать чат',

@@ -1,4 +1,5 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 
 const BASE = () => `${getApiBaseUrlSync()}/news`
 const MARKETER_TOKEN_KEY = 'marketer_panel_token'
@@ -52,7 +53,7 @@ export async function marketerLogout() {
 }
 
 export async function fetchPublishedArticles() {
-  const res = await fetch(`${BASE()}/articles`)
+  const res = await fetchDedupe(`${BASE()}/articles`)
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || 'Не удалось загрузить новости')
   return data.articles || []

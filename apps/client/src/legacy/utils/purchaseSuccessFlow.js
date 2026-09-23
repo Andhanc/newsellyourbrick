@@ -1,17 +1,13 @@
 import { getApiBaseUrl } from './apiConfig'
 import { getUserData } from '../services/authService'
-import { confirmPropertyReservationSession } from './subscriptionCheckout'
-import {
-  buildPurchasedPropertySnapshot,
-  fetchPropertySnapshot,
-} from './purchasedPropertyListingPrefill'
 import { appendViewerUserIdToPropertyApiUrl } from './propertyDetailUrl'
+import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../constants/cabinetEvents'
+
+export { PURCHASE_SUCCESS_CONFIRMED_EVENT }
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 const HANDLED_SESSIONS_KEY = 'purchaseCheckoutHandledSessions'
 const PENDING_CHECKOUT_SESSION_KEY = 'pendingPurchaseCheckoutSession'
-
-export const PURCHASE_SUCCESS_CONFIRMED_EVENT = 'purchase-success-confirmed'
 
 function readHandledSessions() {
   try {
@@ -156,6 +152,9 @@ export async function loadPurchaseSuccessSnapshot(propertyId, { lang = 'ru', fal
   if (!pid || Number.isNaN(pid)) return null
 
   try {
+    const { fetchPropertySnapshot, buildPurchasedPropertySnapshot } = await import(
+      './purchasedPropertyListingPrefill'
+    )
     const property = await fetchPropertySnapshot(pid, lang)
     return buildPurchasedPropertySnapshot(property)
   } catch (e) {
@@ -199,6 +198,7 @@ export async function confirmPurchaseCheckoutAndBuildSnapshot({
   if (kind === 'share') {
     result = await confirmSharePurchaseSession(sessionId, userId)
   } else {
+    const { confirmPropertyReservationSession } = await import('./subscriptionCheckout')
     result = await confirmPropertyReservationSession(sessionId, userId)
   }
 
