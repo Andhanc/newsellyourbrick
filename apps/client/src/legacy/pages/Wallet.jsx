@@ -23,6 +23,8 @@ import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
+import DepositStrategyModal from '../components/DepositStrategyModal'
+import SiteNavDrawer from '../components/SiteNavDrawer'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { writeDepositVerificationGateFlag } from '../utils/depositVerificationGate'
 import { showNotification } from '../utils/toastHelper'
@@ -56,6 +58,8 @@ import {
   fetchIsBuyerProfileCompleteForDeposit,
 } from '../utils/depositProfileGate'
 import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import './MainPage.css'
 import './Wallet.css'
 import './Wallet.bank.css'
 
@@ -186,6 +190,7 @@ const WalletInner = () => {
   const lastFocusReloadAtRef = useRef(0)
   const walletMenuRef = useRef(null)
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
+  const [walletMenuClosing, setWalletMenuClosing] = useState(false)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
@@ -233,20 +238,18 @@ const WalletInner = () => {
   }, [user, userLoaded, navigate])
 
   useEffect(() => {
-    if (!walletMenuOpen) return undefined
-
-    const closeOnOutsidePress = (event) => {
-      if (!walletMenuRef.current?.contains(event.target)) setWalletMenuOpen(false)
-    }
+    setSiteNavDrawerOpen(walletMenuOpen)
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setWalletMenuOpen(false)
+      if (event.key === 'Escape') {
+        setWalletMenuOpen(false)
+        setWalletMenuClosing(false)
+      }
     }
 
-    document.addEventListener('pointerdown', closeOnOutsidePress)
-    document.addEventListener('keydown', closeOnEscape)
+    if (walletMenuOpen) document.addEventListener('keydown', closeOnEscape)
     return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePress)
       document.removeEventListener('keydown', closeOnEscape)
+      setSiteNavDrawerOpen(false)
     }
   }, [walletMenuOpen])
 
@@ -257,6 +260,7 @@ const WalletInner = () => {
   const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
+  const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false)
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [analytics, setAnalytics] = useState({
     totalDeposit: 0,
@@ -737,6 +741,18 @@ const WalletInner = () => {
     setIsBuyNowModalOpen(true)
   }
 
+  const openWalletMenuDestination = (path, closeMenu = false) => {
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      window.dispatchEvent(new CustomEvent('openManagerChat'))
+    } else {
+      navigate(path)
+    }
+    if (closeMenu) {
+      setWalletMenuOpen(false)
+      setWalletMenuClosing(false)
+    }
+  }
+
   // Показываем загрузку, если данные еще не загружены или dbUserId не получен
   if (loading || !dbUserId) {
     return (
@@ -798,21 +814,15 @@ const WalletInner = () => {
                 <button
                   type="button"
                   className={`wallet-bank__icon-button wallet-bank__menu-button${walletMenuOpen ? ' is-open' : ''}`}
-                  onClick={() => setWalletMenuOpen((open) => !open)}
+                  onClick={() => {
+                    setWalletMenuClosing(false)
+                    setWalletMenuOpen(true)
+                  }}
                   aria-label={t('menu')}
-                  aria-haspopup="menu"
                   aria-expanded={walletMenuOpen}
                 >
                   <FiMenu aria-hidden />
                 </button>
-                {walletMenuOpen && (
-                  <nav className="wallet-bank__menu-popover" role="menu" aria-label={t('menu')}>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/') }}>{t('home')}</button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/auction') }}>{t('auction')}</button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/favorites') }}>{t('favorites')}</button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate(getCabinetProfilePath()) }}>{t('profile')}</button>
-                  </nav>
-                )}
               </div>
             </div>
           </div>
@@ -877,7 +887,7 @@ const WalletInner = () => {
               <h2 id="wallet-start-title">{t('walletPage_auctionAccessTitle')}</h2>
             </div>
             <p>{t('walletPage_auctionAccessDescription')}</p>
-            <button type="button" className="wallet-bank__auction-action" onClick={() => navigate('/auction')}>
+            <button type="button" className="wallet-bank__auction-action" onClick={() => setIsStrategyModalOpen(true)}>
               <span>{t('walletPage_auctionAccessCta')}</span>
               <FiArrowRight aria-hidden />
             </button>
@@ -1066,6 +1076,10 @@ const WalletInner = () => {
           onClose={() => setIsDepositInfoOpen(false)}
           onTopUp={handleInfoTopUp}
         />
+        <DepositStrategyModal
+          isOpen={isStrategyModalOpen}
+          onClose={() => setIsStrategyModalOpen(false)}
+        />
         <DepositTopUpPicker
           isOpen={showTopUpPicker}
           onClose={() => setShowTopUpPicker(false)}
@@ -1106,6 +1120,16 @@ const WalletInner = () => {
           />
         )}
       </div>
+      {(walletMenuOpen || walletMenuClosing) && (
+        <SiteNavDrawer
+          menuRef={walletMenuRef}
+          isMenuOpen={walletMenuOpen}
+          isMenuClosing={walletMenuClosing}
+          setIsMenuOpen={setWalletMenuOpen}
+          setIsMenuClosing={setWalletMenuClosing}
+          openLoginOrNavigate={openWalletMenuDestination}
+        />
+      )}
     </div>
   )
 }

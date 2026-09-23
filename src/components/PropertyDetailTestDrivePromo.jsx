@@ -5,7 +5,7 @@ import { publicAsset } from '../utils/publicAsset'
 import './PropertyDetailTestDriveActionPromo.css'
 
 export const PROPERTY_TEST_DRIVE_PROMO_IMAGE = publicAsset(
-  'images/property-detail/test-drive-action-3d.webp',
+  'images/property-detail/test-drive-suitcase-calendar-3d.webp',
 )
 
 const PropertyDetailTestDrivePromo = forwardRef(function PropertyDetailTestDrivePromo(
@@ -55,18 +55,18 @@ const PropertyDetailTestDrivePromo = forwardRef(function PropertyDetailTestDrive
         <p className="property-detail-test-drive-promo__lead">
           {t('propertyDetailTestDrivePromoLead')}
         </p>
-        <div className="property-detail-test-drive-promo__actions">
-          <TestDriveSection
-            propertyId={propertyId}
-            propertySlug={propertySlug}
-            propertyTable={propertyTable}
-            propertyType={propertyType}
-            hasTestDrive={hasTestDrive}
-            i18nLang={i18nLang}
-            layout="promo"
-            paused={paused}
-          />
-        </div>
+      </div>
+      <div className="property-detail-test-drive-promo__actions">
+        <TestDriveSection
+          propertyId={propertyId}
+          propertySlug={propertySlug}
+          propertyTable={propertyTable}
+          propertyType={propertyType}
+          hasTestDrive={hasTestDrive}
+          i18nLang={i18nLang}
+          layout="promo"
+          paused={paused}
+        />
       </div>
     </section>
   )

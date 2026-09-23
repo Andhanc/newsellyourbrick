@@ -165,13 +165,13 @@ function FormatCard({ id, index, tone = 'sheet', photo, children }) {
 }
 
 /**
- * Debts + app share one sticky panel (same park point as other format cards).
+ * Debts use one sticky panel with the same park point as other format cards.
  * A short park tail keeps the panel locked; then the rest of the page scrolls normally.
  */
 function DebtsFlow({ index, children }) {
   return (
     <div className="md-debts-scene" style={{ zIndex: index + 1 }}>
-      {/* One sticky unit: photo + cards + app move together with page scroll. */}
+      {/* The debts photo and property cards move together with page scroll. */}
       <div className="md-debts-pin">
         <div className="md-debts-pin__media" aria-hidden="true">
           <img
@@ -194,9 +194,6 @@ function DebtsFlow({ index, children }) {
           {children}
         </div>
 
-        <div className="md-debts-pin__app">
-          <AppDownloadSection />
-        </div>
       </div>
 
       <div className="md-debts-pin__park" aria-hidden="true" />
@@ -209,47 +206,36 @@ function AppDownloadSection() {
   return (
     <section className="md-app-download" aria-labelledby="md-app-download-title">
       <div className="md-app-download__inner">
-        <p className="md-app-download__kicker">{t('discoverPage_appKicker')}</p>
-        <h2 id="md-app-download-title" className="md-app-download__title">
-          <span className="md-app-download__brand">
+        <img
+          className="md-app-download__art"
+          src={publicAsset('images/app-download/tiffany-chair-banner.webp')}
+          alt=""
+          loading="lazy"
+          width="1536"
+          height="1024"
+        />
+        <div className="md-app-download__copy">
+          <p className="md-app-download__kicker">{t('discoverPage_appKicker')}</p>
+          <h2 id="md-app-download-title" className="md-app-download__title" aria-label="SellYourBrick">
             <span>Sell</span>
             <span className="md-app-download__brand-accent">Your</span>
             <span>Brick</span>
-          </span>
-          <span className="md-app-download__title-rest">{t('discoverPage_appTitleRest')}</span>
-        </h2>
-        <p className="md-app-download__lead">{t('discoverPage_appLead')}</p>
-
-        <div className="md-app-download__actions">
-          <a
-            className="md-app-download__btn md-app-download__btn--ios"
-            href={IOS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="md-app-download__btn-icon" aria-hidden>
-              <FaApple />
-            </span>
-            <span className="md-app-download__btn-copy">
-              <span className="md-app-download__btn-eyebrow">{t('discoverPage_downloadOn')}</span>
-              <span className="md-app-download__btn-label">App Store</span>
-            </span>
-          </a>
-
-          <a
-            className="md-app-download__btn md-app-download__btn--android"
-            href={ANDROID_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="md-app-download__btn-icon" aria-hidden>
-              <FaGooglePlay />
-            </span>
-            <span className="md-app-download__btn-copy">
-              <span className="md-app-download__btn-eyebrow">{t('discoverPage_availableOn')}</span>
-              <span className="md-app-download__btn-label">Google Play</span>
-            </span>
-          </a>
+          </h2>
+          <p className="md-app-download__lead">{t('discoverPage_appTitleRest')}</p>
+          <div className="md-app-download__stores">
+            <a href={IOS_URL} target="_blank" rel="noopener noreferrer" className="md-app-download__store">
+              <FaApple aria-hidden="true" />
+              <span>App Store</span>
+            </a>
+            <a href={ANDROID_URL} target="_blank" rel="noopener noreferrer" className="md-app-download__store">
+              <FaGooglePlay aria-hidden="true" />
+              <span>Google Play</span>
+            </a>
+          </div>
+          <Link to="/app" className="md-app-download__download">
+            <span>{t('discoverPage_appDownload')}</span>
+            <FiArrowUpRight aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </section>
@@ -1043,6 +1029,7 @@ export default function MobileDiscoverCatalog() {
       </div>
 
       <div className="md-free-tail" data-md-free-tail="">
+        <AppDownloadSection />
         <NewsSection articles={newsArticles} />
         <MobileDiscoverFaq />
         <div className="md-footer-wrap">

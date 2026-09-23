@@ -6,6 +6,7 @@ import emailjs from '@emailjs/browser'
 
 import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { clearCompassOfferSession } from '../utils/investmentCompass'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync()
@@ -571,6 +572,7 @@ export const clearReferrerId = () => {
  */
 export const clearUserDataWithoutAdmin = () => {
   clearBiometricSessionState()
+  clearCompassOfferSession()
   // Сохраняем админские данные перед очисткой
   const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn')
   const adminPermissions = localStorage.getItem('adminPermissions')
@@ -646,6 +648,7 @@ export const clearUserDataWithoutAdmin = () => {
  */
 export const clearUserData = () => {
   clearBiometricSessionState()
+  clearCompassOfferSession()
   // Удаляем основной объект userData (если был сохранен)
   localStorage.removeItem('userData')
   

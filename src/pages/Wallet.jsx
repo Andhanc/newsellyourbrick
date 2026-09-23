@@ -23,7 +23,9 @@ import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessModal from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
+import DepositStrategyModal from '../components/DepositStrategyModal'
 import WalletAuctionQrModal from '../components/WalletAuctionQrModal'
+import SiteNavDrawer from '../components/SiteNavDrawer'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { writeDepositVerificationGateFlag } from '../utils/depositVerificationGate'
 import { showNotification } from '../utils/toastHelper'
@@ -54,6 +56,8 @@ import {
   fetchIsBuyerProfileCompleteForDeposit,
 } from '../utils/depositProfileGate'
 import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
+import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import './MainPage.css'
 import './Wallet.css'
 import './Wallet.bank.css'
 
@@ -93,13 +97,6 @@ const WALLET_PREVIEW_TRANSACTIONS = [
     created_at: '2026-08-23T14:20:00.000Z',
   },
 ]
-
-const getWalletGreetingKey = () => {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'walletPage_greetingMorning'
-  if (hour < 18) return 'walletPage_greetingAfternoon'
-  return 'walletPage_greetingEvening'
-}
 
 const isSameTransactionList = (prev = [], next = []) => {
   if (prev === next) return true
@@ -216,6 +213,7 @@ const WalletInner = () => {
   const lastFocusReloadAtRef = useRef(0)
   const walletMenuRef = useRef(null)
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
+  const [walletMenuClosing, setWalletMenuClosing] = useState(false)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
@@ -264,20 +262,18 @@ const WalletInner = () => {
   }, [isDesignPreview, user, userLoaded, navigate])
 
   useEffect(() => {
-    if (!walletMenuOpen) return undefined
-
-    const closeOnOutsidePress = (event) => {
-      if (!walletMenuRef.current?.contains(event.target)) setWalletMenuOpen(false)
-    }
+    setSiteNavDrawerOpen(walletMenuOpen)
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setWalletMenuOpen(false)
+      if (event.key === 'Escape') {
+        setWalletMenuOpen(false)
+        setWalletMenuClosing(false)
+      }
     }
 
-    document.addEventListener('pointerdown', closeOnOutsidePress)
-    document.addEventListener('keydown', closeOnEscape)
+    if (walletMenuOpen) document.addEventListener('keydown', closeOnEscape)
     return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePress)
       document.removeEventListener('keydown', closeOnEscape)
+      setSiteNavDrawerOpen(false)
     }
   }, [walletMenuOpen])
 
@@ -288,6 +284,7 @@ const WalletInner = () => {
   const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState(isDesignPreview ? WALLET_PREVIEW_TRANSACTIONS : [])
   const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
+  const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false)
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [analytics, setAnalytics] = useState({
     totalDeposit: isDesignPreview ? 133576.85 : 0,
@@ -782,11 +779,22 @@ const WalletInner = () => {
     setIsBuyNowModalOpen(true)
   }
 
+  const openWalletMenuDestination = (path, closeMenu = false) => {
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      window.dispatchEvent(new CustomEvent('openManagerChat'))
+    } else {
+      navigate(path)
+    }
+    if (closeMenu) {
+      setWalletMenuOpen(false)
+      setWalletMenuClosing(false)
+    }
+  }
+
   const walletDisplayName = isDesignPreview
     ? 'Ethan Carter'
     : user?.fullName || userData?.name || t('walletPage_guestName')
   const walletAvatar = user?.imageUrl || userData?.picture || '/images/profile/history-hero-man.png'
-  const walletGreeting = t(getWalletGreetingKey())
 
   // Показываем загрузку, если данные еще не загружены или dbUserId не получен
   if (loading || !dbUserId) {
@@ -844,7 +852,6 @@ const WalletInner = () => {
             >
               <img className="wallet-bank__avatar" src={walletAvatar} alt="" />
               <span className="wallet-bank__identity-copy">
-                <small>{walletGreeting}</small>
                 <strong>{walletDisplayName}</strong>
               </span>
             </button>
@@ -854,29 +861,15 @@ const WalletInner = () => {
                 <button
                   type="button"
                   className={`wallet-bank__icon-button wallet-bank__menu-button${walletMenuOpen ? ' is-open' : ''}`}
-                  onClick={() => setWalletMenuOpen((open) => !open)}
+                  onClick={() => {
+                    setWalletMenuClosing(false)
+                    setWalletMenuOpen(true)
+                  }}
                   aria-label={t('menu')}
-                  aria-haspopup="menu"
                   aria-expanded={walletMenuOpen}
                 >
                   <FiMenu aria-hidden />
                 </button>
-                {walletMenuOpen && (
-                  <nav className="wallet-bank__menu-popover" role="menu" aria-label={t('menu')}>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/') }}>
-                      {t('home')}
-                    </button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/auction') }}>
-                      {t('auction')}
-                    </button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate('/favorites') }}>
-                      {t('favorites')}
-                    </button>
-                    <button type="button" role="menuitem" onClick={() => { setWalletMenuOpen(false); navigate(getCabinetProfilePath()) }}>
-                      {t('profile')}
-                    </button>
-                  </nav>
-                )}
               </div>
             </div>
           </div>
@@ -955,7 +948,7 @@ const WalletInner = () => {
               <h2 id="wallet-start-title">{t('walletPage_auctionAccessTitle')}</h2>
             </div>
             <p>{t('walletPage_auctionAccessDescription')}</p>
-            <button type="button" className="wallet-bank__alert-action wallet-bank__auction-action" onClick={() => navigate('/auction')}>
+            <button type="button" className="wallet-bank__alert-action wallet-bank__auction-action" onClick={() => setIsStrategyModalOpen(true)}>
               <span>{t('walletPage_auctionAccessCta')}</span>
               <FiArrowRight aria-hidden />
             </button>
@@ -1081,6 +1074,10 @@ const WalletInner = () => {
           onClose={() => setIsDepositInfoOpen(false)}
           onTopUp={handleInfoTopUp}
         />
+        <DepositStrategyModal
+          isOpen={isStrategyModalOpen}
+          onClose={() => setIsStrategyModalOpen(false)}
+        />
         <WalletAuctionQrModal
           isOpen={showAuctionQr}
           onClose={() => setShowAuctionQr(false)}
@@ -1125,6 +1122,16 @@ const WalletInner = () => {
           />
         )}
       </div>
+      {(walletMenuOpen || walletMenuClosing) && (
+        <SiteNavDrawer
+          menuRef={walletMenuRef}
+          isMenuOpen={walletMenuOpen}
+          isMenuClosing={walletMenuClosing}
+          setIsMenuOpen={setWalletMenuOpen}
+          setIsMenuClosing={setWalletMenuClosing}
+          openLoginOrNavigate={openWalletMenuDestination}
+        />
+      )}
     </div>
   )
 }

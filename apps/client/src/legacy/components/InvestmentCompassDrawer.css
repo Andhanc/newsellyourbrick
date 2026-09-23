@@ -113,14 +113,41 @@
   background: #45c5cf;
 }
 
+.investment-compass-drawer__cta-copy {
+  min-width: 0;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.investment-compass-drawer__price {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.investment-compass-drawer__price .investment-compass-price__old {
+  color: #155b61;
+  text-decoration-color: #e34646;
+  text-decoration-thickness: 2px;
+}
+
+.investment-compass-drawer__price .investment-compass-price__current {
+  color: inherit;
+}
+
 .investment-compass-drawer__cta {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 20px;
   align-items: center;
-  justify-content: center;
   gap: 12px;
   width: 100%;
-  min-height: 58px;
+  min-height: 64px;
+  padding: 12px 18px;
   overflow: hidden;
   border: 0;
   border-radius: 18px;
@@ -128,31 +155,14 @@
   box-shadow: 0 13px 28px rgba(32, 175, 185, 0.23);
   color: #fff;
   cursor: pointer;
-  font: 800 17px/1 var(--buyer-font-display);
-}
-
-.investment-compass-drawer__cta::before {
-  position: absolute;
-  inset: 0 auto 0 -45%;
-  width: 36%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
-  content: '';
-  transform: skewX(-18deg);
-  animation: investment-compass-sheen 3.2s ease-in-out infinite;
-}
-
-.investment-compass-drawer__cta > * {
-  position: relative;
-  z-index: 1;
+  font: 750 16px/1 var(--buyer-font-display);
 }
 
 .investment-compass-drawer__cta-icon {
   display: grid;
   place-items: center;
-  width: 31px;
-  height: 31px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  width: 20px;
+  height: 20px;
 }
 
 .investment-compass-drawer__cta-icon svg {
@@ -172,11 +182,6 @@
 @keyframes investment-compass-float {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
   50% { transform: translateY(-6px) rotate(3deg); }
-}
-
-@keyframes investment-compass-sheen {
-  0%, 38% { left: -45%; }
-  68%, 100% { left: 115%; }
 }
 
 @media (max-width: 359px) {
@@ -201,8 +206,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .investment-compass-drawer__icon,
-  .investment-compass-drawer__cta::before {
+  .investment-compass-drawer__icon {
     animation: none !important;
   }
 }

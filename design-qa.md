@@ -532,3 +532,10 @@ final result: passed
 - None required for this scope.
 
 final result: passed
+
+
+## Deposit strategy modal — supplied layout and 3D references
+
+The latest full report and visual comparison are in [the deposit modal QA](docs/design/deposit-strategy-reference/design-qa.md). Reference and implementation were compared together; mobile, compact and desktop checks passed.
+
+final result: passed

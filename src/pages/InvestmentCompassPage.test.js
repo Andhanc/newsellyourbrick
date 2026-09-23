@@ -32,12 +32,14 @@ test('compass page plays the intro, auction confetti and strategy instructions',
   assert.match(legacyApp, /InvestmentCompassPage/)
   assert.match(discover, /InvestmentCompassDrawer/)
   assert.match(discover, /md-stage__compass/)
-  assert.match(discover, /shouldAutoOpenCompass/)
+  assert.match(discover, /InvestmentCompassPromoModal/)
+  assert.match(discover, /COMPASS_PROMPT_DELAY_MS/)
   assert.equal(discover, legacyDiscover)
 })
 
 test('compass copy exists in every locale and legacy mirror', async () => {
   const required = [
+    'compass_drawerEyebrow',
     'compass_drawerTitle',
     'compass_drawerCta',
     'compass_stageCta',

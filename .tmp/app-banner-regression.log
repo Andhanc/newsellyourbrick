@@ -1,0 +1,100 @@
+✔ profile strategy stories expose all seven steps and destination routes (1.345208ms)
+✔ strategy stories are wired into web and bundled app profiles (4.226916ms)
+✔ renders one interactive risk card using the property debt severity (0.767875ms)
+✔ matches the compact colored card reference on phones (0.178959ms)
+✔ removes location and buying-guide blocks from every property object mode (1.440333ms)
+✔ keeps related-property cards without links to unavailable catalog pages (0.16275ms)
+✔ seller pitch is a text-first explainer without the pitch image (0.741333ms)
+✔ seller pitch mirrors the numbered-step and note language of section explainers (0.62625ms)
+✔ seller pitch copy explains account creation, listing moderation, and reversibility (0.414084ms)
+✔ section explainer reuses the generated 3D category icon family (0.685375ms)
+✔ mobile explainer exposes a real drag handle wired to sheet dismissal (0.170167ms)
+✔ section explainer trigger is monochrome and lives beside each section heading (0.389416ms)
+✔ section headings stay short and every explainer uses the Tiffany theme (0.199625ms)
+✔ shares mobile hero copy is lifted above the scroll control (0.116084ms)
+✔ auction mobile hero copy is lifted by the same amount as shares (0.096417ms)
+✔ test-drive mobile heading uses the shared 18px page edge (0.185125ms)
+✔ generated test-drive icon is persisted as a transparent PNG asset (4.408333ms)
+✔ mobile compare landing shows at most five overlapping object previews (2.259416ms)
+✔ preview cards and primary action open the scrollable drum picker (0.604458ms)
+✔ touch scrolling gives one short haptic tick when the active drum card changes (0.2085ms)
+✔ drum selection records first and second choices and starts comparison (0.299791ms)
+✔ drum footer has a high-contrast two-step selection tracker (0.224042ms)
+✔ mobile landing replaces the old picker grid until two objects are selected (0.643208ms)
+✔ compare picker cards show sale type badges instead of generic object label (0.063084ms)
+✔ mobile investor header explains the three-step decision path (0.747625ms)
+✔ mobile investor result separates deterministic outcome, assumptions and risk (0.220875ms)
+✔ calculator uses object-goal-result order across mobile and desktop (0.356792ms)
+✔ mobile object and goal steps collect the minimum decision inputs before results (0.138208ms)
+✔ numeric investment inputs expose mobile keyboard and bounds (0.1175ms)
+✔ goal selection uses swipeable cards before opening a separate values scene (0.111375ms)
+✔ timed auction listings keep the fractional goal inactive and explain why on press (0.074ms)
+✔ investor starts with a real property-card composition and transitions to two radio source choices (0.34625ms)
+✔ result keeps advanced assumptions in an accessible guided sheet on mobile (0.162125ms)
+✔ AI result provides a cinematic loader and a single focused score screen (1.861083ms)
+✔ mobile result provides a real next property action without claiming guaranteed returns (0.252792ms)
+✔ phone layout is clipped to the viewport while desktop calculator remains untouched (0.457875ms)
+✔ investor UI wires i18n instead of hardcoded Russian copy (0.258333ms)
+✔ mobile Buy now explains the fixed-price payment split (1.309166ms)
+✔ web and legacy Buy now implementations stay identical (0.079459ms)
+✔ Buy now explanation is translated in every supported locale and mirror (56.371416ms)
+✔ integrates the debt insight into desktop and mobile auction layouts (1.5725ms)
+✔ removes the old duplicated debt FlipCard presentation (0.241125ms)
+✔ places the live ownership chart below the mobile share title (0.973959ms)
+✔ uses a dedicated fixed mobile bar to buy several shares (0.237708ms)
+✔ gives configured share listings their own buy-now tab and full-page state (0.459792ms)
+✔ reserves enough safe-area space for the taller share purchase bar (0.172583ms)
+✔ mobile property map card stays mirrored and smartphone-scoped (4.734583ms)
+✔ keeps all debt detail fields when normalizing an API property (1.635042ms)
+✔ property detail exposes a development-only buyer preview for visual QA (0.605917ms)
+✔ property load failure gives the buyer a guided recovery path (0.065834ms)
+✔ public property details do not force authentication before the buyer sees the offer (0.048833ms)
+✔ mobile property detail starts with media and the purchase offer before specifications (0.352334ms)
+✖ guest buyer can express purchase intent before authentication (0.904542ms)
+✔ mobile documents and location use one combined access gate (0.207042ms)
+✔ mobile auction puts the timer first and moves badges below the address (0.074583ms)
+✔ full-screen auction photos retain the mobile bid menu (0.13275ms)
+✔ successful and outbid auction events use distinct haptic feedback (0.074958ms)
+✔ fractional goal is unavailable only for auction properties with a timer (1.303292ms)
+✔ onboarding threshold matches cabinet gate (0.577167ms)
+✔ only buyer cabinet paths are allowed while gate is active (0.073875ms)
+ℹ tests 60
+ℹ suites 0
+ℹ pass 59
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 206.308625
+
+✖ failing tests:
+
+test at src/pages/PropertyDetailPage.mobile.test.js:33:1
+✖ guest buyer can express purchase intent before authentication (0.904542ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /disabled=\{isReservedActive\}/. Input:
+  
+  'className={`property-detail-sidebar__buy-now-btn${\n' +
+    "                      paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''\n" +
+    '                    }`}\n' +
+    '                    onClick={handleBookNow}\n' +
+    "                    title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}\n" +
+    '                  >\n' +
+    '                    {isReservedActive\n' +
+    "                      ? t('purchaseSuccess_goToObject')\n" +
+    "                      : t('buyNowSectionTitle')}\n" +
+    '                  '
+  
+      at TestContext.<anonymous> (file:///Users/vtichonenko/newsellyourbrick/src/pages/PropertyDetailPage.mobile.test.js:42:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "className={`property-detail-sidebar__buy-now-btn${\n                      paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''\n                    }`}\n                    onClick={handleBookNow}\n                    title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}\n                  >\n                    {isReservedActive\n                      ? t('purchaseSuccess_goToObject')\n                      : t('buyNowSectionTitle')}\n                  ",
+    expected: /disabled=\{isReservedActive\}/,
+    operator: 'match',
+    diff: 'simple'
+  }

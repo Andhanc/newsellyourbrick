@@ -1,0 +1,26 @@
+✔ format stack hard-pages on a small vertical swipe by default (0.662875ms)
+✔ pager commits mid-gesture instead of waiting for touchend (0.092542ms)
+✔ one swipe never flips more than one card (0.073666ms)
+✔ a fresh flick is never blocked by the previous inertia tail (0.633667ms)
+✔ reaching the auction card is plain native scroll (0.202834ms)
+✔ nothing else may drive stage scroll to a mid-park offset (0.08525ms)
+✔ web and legacy catalog snap logic stay in parity (0.061375ms)
+✔ home discover page hosts the same AI plaque as auction (0.606708ms)
+✔ home AI plaque reuses shared Home.css sizing without local overrides (0.307958ms)
+✔ main page uses the shared auction AI FAB instead of the grid menu (1.454833ms)
+✔ AI FAB is hidden on the hero and while the embedded footer is visible (0.17325ms)
+✔ mobile home uses the restored swipe rail and generated card icons (1.488917ms)
+✔ welcome photo keeps showcase shortcuts under the search field (0.334625ms)
+✔ desktop four-column layout is preserved (0.108375ms)
+✔ guests see three locked shortcuts with readable localized login labels (22.855375ms)
+✔ signed-in shortcuts show artwork and arrows and retain all three destinations (4.187916ms)
+✔ a guest click opens login while an authenticated click keeps normal navigation (0.767416ms)
+✔ welcome implementation and generated assets match the client mirror (2.0145ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.74725

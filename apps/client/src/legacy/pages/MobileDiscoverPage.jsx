@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useSession, useUser } from '@clerk/clerk-react'
 import {
   FiArrowUpRight,
   FiBookmark,
@@ -14,73 +15,79 @@ import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import ProfileStrategyStories from '../components/ProfileStrategyStories'
 import StrategyRecommendationDrawer from '../components/StrategyRecommendationDrawer'
 import InvestmentCompassDrawer from '../components/InvestmentCompassDrawer'
+import InvestmentCompassPromoModal from '../components/InvestmentCompassPromoModal'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { COMPASS_PATH, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import {
   COMPASS_BANNER_SRC,
+  COMPASS_PROMPT_DELAY_MS,
   getStrategyTitleKey,
-  hasCompassPrompted,
-  hasCompassResult,
+  getCompassOfferSessionId,
+  hasCompassOfferShown,
   markCompassIntroPending,
+  markCompassOfferShown,
   markCompassPrompted,
   readCompassState,
-  shouldAutoOpenCompass,
 } from '../utils/investmentCompass'
 import { showNotification } from '../utils/toastHelper'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import './MobileDiscoverPage.css'
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
+const WELCOME_LOCK_IMAGE = publicAsset('images/property-detail/deposit-lock-gate-clay-3d-clean.png')
 const WELCOME_SHORTCUTS = [
   { id: 'map', path: '/map' },
   { id: 'deposit', path: '/deposit' },
   { id: 'favorites', path: '/favorites' },
 ]
-const welcomeShortcutAsset = (id) => publicAsset(`images/mobile-showcase/${id}.webp`)
+const welcomeShortcutAsset = (id) => publicAsset(`images/mobile-showcase/glass/${id}.webp`)
 
 const SALE_DESCRIPTION_TRIGGERS = {
   ru: {
-    auction: 'рыночной цене',
-    buy_now: 'Фиксированная цена',
-    debts: 'Выгодные объекты',
-    shares: 'низким порогом входа',
+    auction: 'рыночной',
+    buy_now: 'цена',
+    debts: 'Выгодные',
+    shares: 'порогом',
   },
   en: {
-    auction: 'market-driven prices',
-    buy_now: 'A fixed price',
-    debts: 'Discounted properties',
-    shares: 'low entry point',
+    auction: 'market-driven',
+    buy_now: 'fixed',
+    debts: 'Discounted',
+    shares: 'entry',
   },
   pl: {
-    auction: 'cenie rynkowej',
-    buy_now: 'Stała cena',
-    debts: 'lepszej cenie',
-    shares: 'niskim progiem wejścia',
+    auction: 'rynkowej',
+    buy_now: 'Stała',
+    debts: 'lepszej',
+    shares: 'progiem',
   },
   fr: {
-    auction: 'prix du marché',
-    buy_now: 'Un prix fixe',
-    debts: 'prix avantageux',
-    shares: 'faible ticket d’entrée',
+    auction: 'marché',
+    buy_now: 'fixe',
+    debts: 'avantageux',
+    shares: 'faible',
   },
   sv: {
-    auction: 'rätt marknadspris',
-    buy_now: 'Fast pris',
-    debts: 'bättre pris',
-    shares: 'låg insats',
+    auction: 'marknadspris',
+    buy_now: 'Fast',
+    debts: 'bättre',
+    shares: 'insats',
   },
   de: {
-    auction: 'fairen Marktpreis',
+    auction: 'Marktpreis',
     buy_now: 'Festpreis',
     debts: 'Preisvorteil',
-    shares: 'kleiner Summe',
+    shares: 'Summe',
   },
   es: {
-    auction: 'precio de mercado',
-    buy_now: 'Precio fijo',
+    auction: 'mercado',
+    buy_now: 'fijo',
     debts: 'descuento',
-    shares: 'poco capital',
+    shares: 'capital',
   },
 }
 
@@ -178,6 +185,10 @@ function prefersReducedMotion() {
  */
 export default function MobileDiscoverPage() {
   const { t, i18n } = useTranslation()
+  const { user, isLoaded: userLoaded } = useUser()
+  const { session, isLoaded: sessionLoaded } = useSession()
+  const authSessionId = session?.id || ''
+  const [shortcutsUnlocked, setShortcutsUnlocked] = useState(() => isSiteUserSignedIn(user, userLoaded))
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
@@ -198,20 +209,34 @@ export default function MobileDiscoverPage() {
   const [recommendationDrawerOpen, setRecommendationDrawerOpen] = useState(false)
   const [storiesOpenSignal, setStoriesOpenSignal] = useState(0)
   const [compassDrawerOpen, setCompassDrawerOpen] = useState(false)
+  const [compassOfferOpen, setCompassOfferOpen] = useState(false)
   const [compassBannerDismissed, setCompassBannerDismissed] = useState(false)
   const compassResultStrategy = readCompassState().result?.strategy || ''
-  const activeSaleCardRef = useRef(0)
-  const compassStartCardRef = useRef(null)
-  const compassBlockedRef = useRef(false)
+  const compassOfferBlockedRef = useRef(false)
 
   const saleCards = getSaleCards(t, i18n.language)
 
-  screenRef.current = screen
-  activeSaleCardRef.current = activeSaleCard
-  if (screen === 'stage' && compassStartCardRef.current == null) {
-    compassStartCardRef.current = activeSaleCard
+  useEffect(() => {
+    const refreshShortcutAccess = () => setShortcutsUnlocked(isSiteUserSignedIn(user, userLoaded))
+    refreshShortcutAccess()
+    window.addEventListener(CLERK_DB_USER_SYNCED, refreshShortcutAccess)
+    window.addEventListener('storage', refreshShortcutAccess)
+    window.addEventListener('focus', refreshShortcutAccess)
+    return () => {
+      window.removeEventListener(CLERK_DB_USER_SYNCED, refreshShortcutAccess)
+      window.removeEventListener('storage', refreshShortcutAccess)
+      window.removeEventListener('focus', refreshShortcutAccess)
+    }
+  }, [user, userLoaded])
+
+  const handleWelcomeShortcutClick = (event) => {
+    if (isSiteUserSignedIn(user, userLoaded)) return
+    event.preventDefault()
+    requestOpenLoginModal({ wizard: true })
   }
-  if (recommendationDrawerOpen) compassBlockedRef.current = true
+
+  screenRef.current = screen
+  compassOfferBlockedRef.current = recommendationDrawerOpen || compassDrawerOpen
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -309,36 +334,35 @@ export default function MobileDiscoverPage() {
     markCompassPrompted()
     markCompassIntroPending()
     setCompassDrawerOpen(false)
+    setCompassOfferOpen(false)
     navigate(COMPASS_PATH)
   }, [navigate])
 
   useEffect(() => {
-    if (screen !== 'stage' || !stageEntered || recommendationDrawerOpen || compassDrawerOpen) {
+    setCompassOfferOpen(false)
+    if (!sessionLoaded || !shortcutsUnlocked) {
       return undefined
     }
-    if (hasCompassPrompted() || hasCompassResult()) return undefined
 
-    const startedAt = Date.now()
+    const sessionId = getCompassOfferSessionId(authSessionId)
+    if (!sessionId || hasCompassOfferShown(sessionId)) return undefined
+
+    const enteredAt = Date.now()
     const id = window.setInterval(() => {
-      if (
-        shouldAutoOpenCompass({
-          stageReady: true,
-          hasBrowsedCards:
-            compassStartCardRef.current != null &&
-            activeSaleCardRef.current !== compassStartCardRef.current,
-          blocked: compassBlockedRef.current,
-          elapsedMs: Date.now() - startedAt,
-          prompted: false,
-          hasResult: false,
-        })
-      ) {
-        setCompassDrawerOpen(true)
+      if (hasCompassOfferShown(sessionId)) {
         window.clearInterval(id)
+        return
       }
-    }, 400)
+      if (Date.now() - enteredAt < COMPASS_PROMPT_DELAY_MS) return
+      if (compassOfferBlockedRef.current || document.documentElement.classList.contains('login-modal-open')) return
+
+      markCompassOfferShown(sessionId)
+      setCompassOfferOpen(true)
+      window.clearInterval(id)
+    }, 200)
 
     return () => window.clearInterval(id)
-  }, [compassDrawerOpen, recommendationDrawerOpen, screen, stageEntered])
+  }, [shortcutsUnlocked, sessionLoaded, authSessionId])
 
   const goTo = useCallback(
     (next) => {
@@ -777,8 +801,10 @@ export default function MobileDiscoverPage() {
                   {WELCOME_SHORTCUTS.map((item) => (
                     <Link
                       key={item.id}
-                      className={`md-welcome__shortcut md-welcome__shortcut--${item.id}`}
+                      className={`md-welcome__shortcut md-welcome__shortcut--${item.id}${shortcutsUnlocked ? '' : ' is-locked'}`}
                       to={item.path}
+                      onClick={handleWelcomeShortcutClick}
+                      aria-label={shortcutsUnlocked ? undefined : `${t(`mobileShowcase.${item.id}.title`)} — ${t('logIn')}`}
                     >
                       <img
                         src={welcomeShortcutAsset(item.id)}
@@ -788,7 +814,13 @@ export default function MobileDiscoverPage() {
                         decoding="async"
                       />
                       <h3>{t(`mobileShowcase.${item.id}.title`)}</h3>
-                      <FiArrowUpRight className="md-welcome__shortcut-arrow" aria-hidden="true" />
+                      {shortcutsUnlocked ? (
+                        <FiArrowUpRight className="md-welcome__shortcut-arrow" aria-hidden="true" />
+                      ) : (
+                        <span className="md-welcome__shortcut-lock" aria-hidden="true">
+                          <img src={WELCOME_LOCK_IMAGE} alt="" width="181" height="191" draggable="false" />
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </nav>
@@ -815,6 +847,11 @@ export default function MobileDiscoverPage() {
     <InvestmentCompassDrawer
       isOpen={compassDrawerOpen}
       onClose={closeCompassDrawer}
+      onStart={startCompass}
+    />
+    <InvestmentCompassPromoModal
+      isOpen={compassOfferOpen}
+      onClose={() => setCompassOfferOpen(false)}
       onStart={startCompass}
     />
     <StrategyRecommendationDrawer

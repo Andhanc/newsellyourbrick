@@ -3,14 +3,49 @@ import test from 'node:test'
 import {
   COMPASS_PATH,
   COMPASS_PROMPT_DELAY_MS,
+  COMPASS_OFFER_SESSION_KEY,
+  COMPASS_OFFER_SHOWN_KEY,
   COMPASS_QUESTIONS,
   COMPASS_STRATEGIES,
-  COMPASS_SWIPE_PROMPT_DELAY_MS,
   getStrategyPath,
+  getCompassOfferSessionId,
+  hasCompassOfferShown,
   isCompassComplete,
+  markCompassOfferShown,
+  clearCompassOfferSession,
   scoreCompassAnswers,
-  shouldAutoOpenCompass,
 } from './investmentCompass.js'
+
+test('compass offer is shown once per login session and resets after logout', () => {
+  const previousWindow = global.window
+  const values = new Map()
+  global.window = {
+    localStorage: {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, String(value)),
+      removeItem: (key) => values.delete(key),
+    },
+  }
+
+  try {
+    assert.equal(COMPASS_PROMPT_DELAY_MS, 5000)
+    const firstSession = getCompassOfferSessionId()
+    assert.ok(firstSession)
+    assert.equal(getCompassOfferSessionId(), firstSession)
+    assert.equal(hasCompassOfferShown(firstSession), false)
+    markCompassOfferShown(firstSession)
+    assert.equal(hasCompassOfferShown(firstSession), true)
+    assert.equal(values.get(COMPASS_OFFER_SHOWN_KEY), firstSession)
+
+    clearCompassOfferSession()
+    assert.equal(values.has(COMPASS_OFFER_SESSION_KEY), false)
+    assert.equal(hasCompassOfferShown(firstSession), false)
+    assert.notEqual(getCompassOfferSessionId(), firstSession)
+  } finally {
+    if (previousWindow === undefined) delete global.window
+    else global.window = previousWindow
+  }
+})
 
 test('compass scoring maps conservative answers to buy now', () => {
   const { strategy, scores } = scoreCompassAnswers({
@@ -69,35 +104,4 @@ test('compass completion and strategy paths stay aligned with the four formats',
   assert.equal(getStrategyPath('buyNow'), '/auction/buy-now')
   assert.equal(getStrategyPath('shares'), '/co-investment')
   assert.equal(COMPASS_PATH, '/compass')
-})
-
-test('compass auto-opens after the strategy stage, not on first paint', () => {
-  assert.equal(shouldAutoOpenCompass({ stageReady: false, elapsedMs: 20_000 }), false)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    elapsedMs: COMPASS_PROMPT_DELAY_MS - 1,
-  }), false)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    elapsedMs: COMPASS_PROMPT_DELAY_MS,
-  }), true)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    hasBrowsedCards: true,
-    elapsedMs: COMPASS_SWIPE_PROMPT_DELAY_MS,
-  }), true)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    elapsedMs: COMPASS_SWIPE_PROMPT_DELAY_MS,
-  }), false)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    elapsedMs: 20_000,
-    prompted: true,
-  }), false)
-  assert.equal(shouldAutoOpenCompass({
-    stageReady: true,
-    elapsedMs: 20_000,
-    blocked: true,
-  }), false)
 })

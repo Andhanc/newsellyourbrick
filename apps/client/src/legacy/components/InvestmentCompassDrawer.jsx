@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import { publicAsset } from '../utils/publicAsset'
 import { COMPASS_ICON_SRC } from '../utils/investmentCompass'
+import InvestmentCompassPrice from './InvestmentCompassPrice'
 import './InvestmentCompassDrawer.css'
 
 export default function InvestmentCompassDrawer({ isOpen, onClose, onStart }) {
@@ -19,7 +20,8 @@ export default function InvestmentCompassDrawer({ isOpen, onClose, onStart }) {
       className="investment-compass-drawer"
       footer={
         <button type="button" className="investment-compass-drawer__cta" onClick={onStart}>
-          <span>{t('compass_drawerCta')}</span>
+          <span className="investment-compass-drawer__cta-copy">{t('compass_drawerCta')}</span>
+          <InvestmentCompassPrice className="investment-compass-drawer__price" />
           <span className="investment-compass-drawer__cta-icon" aria-hidden="true">
             <FiArrowUpRight />
           </span>

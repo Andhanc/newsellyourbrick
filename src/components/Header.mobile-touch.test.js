@@ -24,7 +24,7 @@ test('expanded mobile search has a styled field and results panel', () => {
 })
 
 test('authenticated mobile header keeps the menu visible and shrinks the catalogue label', () => {
-  assert.match(mobileHeaderCss, /\.new-header--authenticated:not\(\.new-header--search-open\) \.new-header__left[\s\S]*flex:\s*0 0 44px/)
+  assert.match(mobileHeaderCss, /\.new-header:not\(\.new-header--search-open\) \.new-header__left[\s\S]*flex:\s*0 0 44px/)
   assert.match(mobileHeaderCss, /grid-template-columns:\s*minmax\(0, 1fr\) repeat\(3, 44px\)/)
   assert.match(mobileHeaderCss, /\.header-pinned-catalog-nav__label[\s\S]*min-width:\s*0[\s\S]*text-overflow:\s*ellipsis/)
   assert.match(mobileHeaderCss, /\.header-pinned-catalog-nav__toggle[\s\S]*min-width:\s*44px/)

@@ -1,0 +1,217 @@
+.deposit-strategy-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 13300;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 28px 18px;
+  isolation: isolate;
+}
+
+.deposit-strategy-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(13, 32, 39, 0.66);
+  backdrop-filter: blur(6px);
+  animation: deposit-strategy-fade-in 0.25s ease-out both;
+}
+
+.deposit-strategy-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(490px, 100%);
+  max-height: calc(100dvh - 56px);
+  animation: deposit-strategy-in 0.42s cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+
+.deposit-strategy-modal__card {
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  flex: 0 1 auto;
+  box-sizing: border-box;
+  padding: 22px;
+  border-radius: 32px;
+  background: #dcefeb;
+  box-shadow: 0 28px 75px rgba(0, 32, 43, 0.28);
+}
+
+.deposit-strategy-modal__heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.deposit-strategy-modal__heading h2 {
+  margin: 0;
+  color: #17282b;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: clamp(22px, 5vw, 27px);
+  font-weight: 700;
+  line-height: 1.13;
+  letter-spacing: -0.035em;
+}
+
+.deposit-strategy-modal__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.deposit-strategy-modal__option {
+  --strategy-art-size: clamp(88px, 15dvh, 132px);
+  display: grid;
+  grid-template-columns: var(--strategy-art-size) minmax(0, 1fr);
+  width: 100%;
+  min-height: var(--strategy-art-size);
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 30px;
+  background: #fff;
+  color: #17282b;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.deposit-strategy-modal__option:nth-child(even) {
+  grid-template-columns: minmax(0, 1fr) var(--strategy-art-size);
+}
+
+.deposit-strategy-modal__option:nth-child(even) img { order: 2; }
+
+.deposit-strategy-modal__option img {
+  display: block;
+  width: var(--strategy-art-size);
+  height: 100%;
+  min-height: var(--strategy-art-size);
+  object-fit: cover;
+  border-radius: 30px;
+  pointer-events: none;
+}
+
+.deposit-strategy-modal__option-content {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  align-content: center;
+  align-items: end;
+  gap: 8px;
+  padding: 20px;
+}
+
+.deposit-strategy-modal__option-title {
+  grid-column: 1 / -1;
+  color: inherit;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.deposit-strategy-modal__option-description {
+  color: #5b6e70;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.deposit-strategy-modal__arrow {
+  align-self: end;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+@media (hover: hover) {
+  .deposit-strategy-modal__option:hover {
+    transform: translateY(-2px);
+    background: #f7fffd;
+  }
+}
+
+.deposit-strategy-modal__option:active { transform: scale(0.985); }
+
+.deposit-strategy-modal__close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  margin-top: 18px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.deposit-strategy-modal__close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+}
+
+.deposit-strategy-modal__option:focus-visible,
+.deposit-strategy-modal__close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.deposit-strategy-modal__option:focus-visible { outline-color: #48d5d0; }
+
+@keyframes deposit-strategy-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes deposit-strategy-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 480px) {
+  .deposit-strategy-modal__overlay { padding: 18px; }
+  .deposit-strategy-modal { max-height: calc(100dvh - 36px); }
+  .deposit-strategy-modal__card { padding: 20px 14px 14px; border-radius: 32px; }
+  .deposit-strategy-modal__heading { margin: 0 6px 20px; }
+  .deposit-strategy-modal__heading h2 { font-size: 24px; }
+  .deposit-strategy-modal__option,
+  .deposit-strategy-modal__option img { border-radius: 27px; }
+  .deposit-strategy-modal__option-content { padding: 18px; }
+  .deposit-strategy-modal__option-title { font-size: 20px; }
+  .deposit-strategy-modal__arrow { width: 23px; height: 23px; }
+  .deposit-strategy-modal__close { margin-top: 14px; }
+}
+
+@media (max-width: 350px), (max-height: 650px) {
+  .deposit-strategy-modal__card { padding: 16px 12px 12px; }
+  .deposit-strategy-modal__heading { margin-bottom: 16px; }
+  .deposit-strategy-modal__list { gap: 9px; }
+  .deposit-strategy-modal__heading h2 { font-size: 21px; }
+  .deposit-strategy-modal__option,
+  .deposit-strategy-modal__option img { border-radius: 23px; }
+  .deposit-strategy-modal__option-content { padding: 13px 15px; gap: 6px; }
+  .deposit-strategy-modal__option-description { font-size: 11px; }
+  .deposit-strategy-modal__option-title { font-size: 18px; }
+  .deposit-strategy-modal__arrow { width: 20px; height: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deposit-strategy-modal__backdrop,
+  .deposit-strategy-modal { animation: none; }
+  .deposit-strategy-modal__option,
+  .deposit-strategy-modal__close { transition: none; }
+}

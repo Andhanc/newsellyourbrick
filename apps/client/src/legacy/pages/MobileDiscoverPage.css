@@ -335,7 +335,7 @@
 
 .md-stage__compass {
   position: relative;
-  width: min(100%, 430px);
+  width: min(calc(100% - 2rem), 430px);
   min-height: 88px;
   margin: 0.85rem auto 0;
   overflow: hidden;
@@ -839,7 +839,8 @@
     0 12px 32px rgba(8, 28, 42, 0.38);
 }
 
-.md-welcome__brand-word--accent {
+.md-welcome__brand-word--accent,
+.md-app-download__brand-accent {
   color: #ffffff;
   padding: 0.1em 0.3em 0.12em;
   border-radius: 999px;
@@ -858,7 +859,13 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: calc(0.85rem + 20px);
+}
+
+@media (max-width: 767px) {
+  .md-welcome__actions {
+    gap: 48px;
+  }
 }
 
 .md-welcome__search {
@@ -940,58 +947,103 @@
 .md-welcome__shortcuts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .md-welcome__shortcut {
   position: relative;
   display: block;
-  aspect-ratio: 0.92;
-  border-radius: 19px;
+  min-width: 0;
+  aspect-ratio: 0.98;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 24px;
   overflow: hidden;
-  background: #092f31;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(242, 253, 253, 0.24) 55%, rgba(255, 255, 255, 0.34));
   color: #ffffff !important;
   isolation: isolate;
   text-decoration: none;
-  box-shadow: 0 12px 28px rgba(8, 28, 42, 0.24);
+  box-shadow: 0 10px 26px rgba(8, 45, 50, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.64), inset 0 -1px 1px rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.md-welcome__shortcut:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(8, 45, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .md-welcome__shortcut > img {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
+  left: 5%;
+  bottom: 5%;
+  width: 90%;
+  height: 76%;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(8, 59, 64, 0.14));
+  pointer-events: none;
 }
 
 .md-welcome__shortcut h3 {
   position: relative;
   z-index: 1;
   margin: 0;
-  padding: 12px 10px;
-  font-size: clamp(10px, 3.1vw, 15px);
+  padding: 13px 11px 0;
+  font-size: clamp(10px, 2.8vw, 14px);
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.45px;
+  letter-spacing: -0.35px;
   text-transform: uppercase;
+  text-shadow: 0 1px 8px rgba(7, 39, 43, 0.65);
   overflow-wrap: anywhere;
 }
 
-.md-welcome__shortcut--deposit {
-  color: #142b2b !important;
+.md-welcome__shortcut.is-locked > img {
+  filter: blur(7px);
+  opacity: 0.78;
 }
 
 .md-welcome__shortcut--favorites h3 {
-  font-size: clamp(9px, 2.6vw, 13px);
+  font-size: clamp(9px, 2.5vw, 13px);
   letter-spacing: -0.5px;
 }
 
 .md-welcome__shortcut-arrow {
   position: absolute;
-  right: 9px;
-  bottom: 9px;
-  font-size: 16px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(14, 89, 95, 0.32);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(8, 45, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.md-welcome__shortcut-lock {
+  position: absolute;
+  left: 50%;
+  top: 57%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  filter: drop-shadow(0 3px 9px rgba(4, 44, 48, 0.38));
+  pointer-events: none;
+}
+
+.md-welcome__shortcut-lock > img {
+  display: block;
+  width: clamp(64px, 17vw, 88px);
+  height: auto;
+  object-fit: contain;
 }
 
 .md-welcome__shortcut:focus-visible {
@@ -1117,7 +1169,7 @@
     );
 }
 
-/* Debts + app: one sticky sheet (photo + cards + app). Page scroll moves the whole unit. */
+/* Debts: one sticky sheet. The app banner follows as an independent section. */
 .md-debts-scene {
   position: relative;
   isolation: isolate;
@@ -1178,15 +1230,6 @@
   z-index: 1;
   flex: 0 0 auto;
   overflow: visible;
-}
-
-.md-debts-pin__app {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 auto;
-  margin-top: auto;
-  box-sizing: border-box;
-  padding-top: clamp(1.75rem, 5vh, 2.75rem);
 }
 
 .md-debts-pin__park {
@@ -1295,33 +1338,6 @@
   text-shadow:
     0 1px 2px rgba(8, 28, 42, 0.5),
     0 2px 12px rgba(8, 28, 42, 0.35);
-}
-
-.md-debts-pin__app .md-app-download {
-  padding: 0.25rem 1rem 1.1rem;
-}
-
-.md-debts-pin__app .md-app-download__inner {
-  padding: 1.15rem 1.1rem 1.15rem;
-}
-
-.md-debts-pin__app .md-app-download__title {
-  margin-top: 0.65rem;
-  font-size: clamp(1.05rem, 4.2vw, 1.4rem);
-}
-
-.md-debts-pin__app .md-app-download__lead {
-  margin-top: 0.45rem;
-  font-size: 0.875rem;
-}
-
-.md-debts-pin__app .md-app-download__actions {
-  margin-top: 0.85rem;
-  gap: 0.5rem;
-}
-
-.md-debts-pin__app .md-app-download__btn {
-  min-height: 50px;
 }
 
 .md-catalog.invest-home-page .invest-showcase,
@@ -1955,7 +1971,7 @@
   color: var(--md-sky-deep);
 }
 
-/* ——— Free tail (news + FAQ) ——— */
+/* ——— Free tail (app download + news + FAQ) ——— */
 
 .md-free-tail {
   position: relative;
@@ -2045,204 +2061,182 @@
     0 14px 32px rgba(15, 23, 42, 0.16);
 }
 
-/* ——— App download ——— */
-
+/* ——— Tiffany app download banner ——— */
 .md-app-download {
   position: relative;
   z-index: 1;
-  background: transparent;
-  padding: 1.15rem 1.15rem 1.9rem;
+  width: 100%;
+  padding: 0;
+  background: #299da8;
+  font-family: var(--md-font);
 }
 
 .md-app-download__inner {
-  max-width: 26rem;
-  margin: 0 auto;
-  text-align: center;
-  padding: 1.25rem 1.15rem 1.15rem;
-  border-radius: 26px;
-  background:
-    linear-gradient(165deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%),
-    rgba(8, 28, 42, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow:
-    0 18px 48px rgba(6, 22, 34, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(22px) saturate(1.25);
-  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  min-height: 340px;
+  background: #299da8;
+}
+
+.md-app-download__art {
+  position: absolute;
+  z-index: -2;
+  right: -16%;
+  bottom: 0;
+  width: 125%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.md-app-download__inner::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(5, 66, 76, 0.62), rgba(5, 66, 76, 0.08) 64%, transparent);
+  pointer-events: none;
+}
+
+.md-app-download__copy {
+  padding: 25px 22px;
+  color: #ffffff;
 }
 
 .md-app-download__kicker {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.55rem;
-  padding: 0 0.65rem;
-  border-radius: 999px;
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  margin: 0 0 15px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #e8fcff;
-  font-family: var(--md-font);
-  background: rgba(78, 205, 214, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .md-app-download__title {
-  margin: 0.75rem 0 0;
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
   align-items: baseline;
-  justify-content: center;
-  gap: 0.35em;
-  white-space: nowrap;
-  font-size: clamp(1.05rem, 4.4vw, 1.45rem);
-  font-weight: var(--md-heading-weight);
-  letter-spacing: var(--md-heading-letter-spacing);
+  gap: 0.14em;
+  margin: 0;
+  width: max-content;
   color: #ffffff;
+  font-family: inherit;
+  font-size: clamp(25px, 7.4vw, 38px);
+  font-weight: 800;
   line-height: 1.2;
-  font-family: var(--md-font);
-  text-shadow: 0 2px 14px rgba(6, 22, 34, 0.4);
-}
-
-.md-app-download__brand {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.12em;
-  white-space: nowrap;
-}
-
-.md-app-download__brand-accent {
-  padding: 0.08em 0.28em 0.1em;
-  border-radius: 999px;
-  background: rgba(78, 205, 214, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.md-app-download__title-rest {
-  font-size: 1em;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  color: rgba(255, 255, 255, 0.94);
+  letter-spacing: -0.04em;
   white-space: nowrap;
 }
 
 .md-app-download__lead {
-  margin: 0.55rem auto 0;
-  max-width: 28ch;
-  font-size: 0.86rem;
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.86);
-  font-family: var(--md-font);
-  text-shadow: 0 1px 4px rgba(6, 22, 34, 0.35);
+  margin: 12px 0 0;
+  max-width: 13ch;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
 }
 
-.md-app-download__actions {
-  margin-top: 0.95rem;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 0.5rem;
-}
-
-.md-app-download__btn {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 50px;
-  padding: 0.45rem 0.55rem 0.45rem 0.45rem;
-  border-radius: 14px;
-  text-decoration: none;
-  color: #ffffff;
-  font-family: var(--md-font);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  box-sizing: border-box;
-}
-
-.md-app-download__btn:active {
-  transform: scale(0.985);
-}
-
-.md-app-download__btn--ios {
-  background: #000000;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.md-app-download__btn--android {
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background-image:
-    linear-gradient(
-      115deg,
-      transparent 0%,
-      transparent 38%,
-      rgba(255, 255, 255, 0.28) 50%,
-      transparent 62%,
-      transparent 100%
-    ),
-    linear-gradient(
-      118deg,
-      #2aa8b4 0%,
-      #3bc0cb 24%,
-      #6ad6dd 46%,
-      #8ee6ed 52%,
-      #4ecdd6 64%,
-      #2aa8b4 100%
-    );
-  box-shadow:
-    0 12px 28px var(--md-sky-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.md-app-download__btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  flex-shrink: 0;
-}
-
-.md-app-download__btn-icon svg {
-  width: 17px;
-  height: 17px;
-}
-
-.md-app-download__btn-copy {
+.md-app-download__stores {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
-  text-align: left;
-  min-width: 0;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-.md-app-download__btn-eyebrow {
-  font-size: 0.58rem;
+.md-app-download__store {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 11px;
   font-weight: 600;
-  opacity: 0.78;
-  line-height: 1.2;
 }
 
-.md-app-download__btn-label {
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
-  white-space: nowrap;
+.md-app-download__store svg {
+  width: 22px;
+  height: 22px;
 }
 
-.md-app-download__btn:focus-visible {
-  outline: 2px solid var(--md-sky-soft);
-  outline-offset: 3px;
+.md-app-download__download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  min-height: 46px;
+  margin-top: 21px;
+  padding: 0 16px;
+  border-radius: 14px;
+  color: #074c56;
+  background: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 750;
+  transition: background 150ms ease;
+}
+
+.md-app-download__download svg {
+  width: 19px;
+  height: 19px;
+}
+
+.md-app-download__download:hover {
+  background: #d0ffff;
+}
+
+.md-app-download__store:focus-visible,
+.md-app-download__download:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 5px;
+}
+
+@media (min-width: 600px) {
+  .md-app-download__inner {
+    min-height: clamp(390px, 44vw, 680px);
+  }
+
+  .md-app-download__art {
+    width: 100%;
+    height: 100%;
+    right: 0;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .md-app-download__copy {
+    padding: clamp(38px, 5vw, 80px) clamp(36px, 6vw, 100px);
+  }
+
+  .md-app-download__title {
+    font-size: clamp(38px, 4.3vw, 72px);
+  }
+
+  .md-app-download__lead {
+    margin-top: 20px;
+    font-size: 29px;
+  }
+
+  .md-app-download__stores {
+    flex-direction: row;
+    gap: 18px;
+    margin-top: 28px;
+  }
+
+  .md-app-download__store {
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  .md-app-download__download {
+    min-height: 50px;
+    margin-top: 26px;
+    padding: 0 22px;
+    font-size: 16px;
+  }
 }
 
 /* ——— News (white band under photo flow) ——— */
@@ -2715,6 +2709,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .md-welcome__shortcut {
+    transition: none;
+  }
+
+  .md-welcome__shortcut:hover {
+    transform: none;
+  }
+
   .md-hero__title,
   .md-hero__lead,
   .md-hero__image,
@@ -2930,20 +2932,20 @@
     width: min(40rem, 88%);
     transform: translateX(-50%);
     top: calc(20% + 5.4rem);
-    gap: 1rem;
+    gap: calc(1rem + 20px);
   }
 
   .md-welcome__shortcuts {
-    gap: 12px;
+    gap: 14px;
   }
 
   .md-welcome__shortcut {
     aspect-ratio: 1.18;
-    border-radius: 22px;
+    border-radius: 25px;
   }
 
   .md-welcome__shortcut h3 {
-    padding: 16px 14px;
+    padding: 16px 14px 0;
     font-size: clamp(14px, 1.4vw, 18px);
   }
 
@@ -2952,9 +2954,11 @@
   }
 
   .md-welcome__shortcut-arrow {
-    right: 12px;
-    bottom: 12px;
-    font-size: 20px;
+    right: 14px;
+    bottom: 14px;
+    width: 34px;
+    height: 34px;
+    padding: 8px;
   }
 
   .md-welcome__search {
@@ -3292,91 +3296,6 @@
       0 1px 2px rgba(8, 28, 42, 0.5),
       0 2px 12px rgba(8, 28, 42, 0.35);
     font-weight: 550;
-  }
-
-  .md-debts-pin__app .md-app-download__title {
-    font-size: clamp(1.5rem, 1.9vw, 1.9rem);
-  }
-
-  .md-debts-pin__app .md-app-download__lead {
-    font-size: 0.95rem;
-  }
-
-  .md-debts-pin__app {
-    padding-bottom: clamp(3.75rem, 9vh, 6rem);
-  }
-
-  .md-debts-pin__app .md-app-download {
-    padding-bottom: 0.35rem;
-  }
-
-  /* ——— App download ——— */
-  .md-app-download {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-
-  .md-app-download__inner {
-    max-width: 52rem;
-    padding: 1.75rem 1.75rem 1.5rem;
-  }
-
-  .md-app-download__title {
-    font-size: clamp(1.55rem, 2vw, 1.95rem);
-    gap: 0.4em;
-  }
-
-  .md-app-download__lead {
-    max-width: 40ch;
-    margin-left: auto;
-    margin-right: auto;
-    font-size: 1rem;
-  }
-
-  .md-app-download__actions {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: center;
-    gap: 0.75rem;
-  }
-
-  .md-app-download__btn {
-    flex: 0 0 12rem;
-    width: 12rem;
-    max-width: 12rem;
-    min-height: 54px;
-    gap: 0.8rem;
-    box-sizing: border-box;
-    padding: 0.55rem 0.85rem 0.55rem 0.7rem;
-    border-radius: 16px;
-  }
-
-  .md-app-download__btn-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-  }
-
-  .md-app-download__btn-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .md-app-download__btn-eyebrow {
-    font-size: 0.66rem;
-  }
-
-  .md-app-download__btn-label {
-    font-size: 1.02rem;
-  }
-
-  .md-app-download__btn--ios {
-    background: #000000;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background-image: none;
-    box-shadow:
-      0 12px 28px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
   /* ——— News ——— */

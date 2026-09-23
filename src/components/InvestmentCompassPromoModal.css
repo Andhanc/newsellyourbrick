@@ -1,0 +1,211 @@
+.investment-compass-promo-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 13300;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 82px 20px 20px;
+  isolation: isolate;
+}
+
+.investment-compass-promo-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(13, 32, 39, 0.66);
+  backdrop-filter: blur(6px);
+  animation: investment-compass-promo-fade-in 0.25s ease-out both;
+}
+
+.investment-compass-promo-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(440px, 100%);
+  max-height: 100%;
+  animation: investment-compass-promo-in 0.42s cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+
+.investment-compass-promo-modal__card {
+  width: 100%;
+  border-radius: 32px;
+  background: #fff;
+  box-shadow: 0 28px 75px rgba(0, 32, 43, 0.28);
+}
+
+.investment-compass-promo-modal__hero {
+  position: relative;
+  height: clamp(190px, 27dvh, 245px);
+  border-radius: 32px 32px 0 0;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.8), transparent 42%),
+    linear-gradient(145deg, #b8f1f0 0%, #72d7d7 58%, #50bbc5 100%);
+}
+
+.investment-compass-promo-modal__illustration {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: -8px;
+  display: block;
+  width: min(315px, 82%);
+  height: 315px;
+  object-fit: contain;
+  object-position: bottom center;
+  transform: translateX(-50%) rotate(-8deg);
+  filter: drop-shadow(0 16px 18px rgba(0, 69, 73, 0.22));
+  pointer-events: none;
+}
+
+.investment-compass-promo-modal__content {
+  position: relative;
+  z-index: 3;
+  margin-top: -14px;
+  padding: 31px 28px 28px;
+  border-radius: 28px 28px 32px 32px;
+  background: #fff;
+  text-align: center;
+}
+
+.investment-compass-promo-modal__title {
+  margin: 0;
+  color: #14282d;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: clamp(24px, 5.8vw, 31px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.investment-compass-promo-modal__lead {
+  max-width: 36ch;
+  margin: 12px auto 13px;
+  color: #5b6e73;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.investment-compass-promo-modal__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #73888a;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.investment-compass-promo-modal__cta-copy {
+  min-width: 0;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.investment-compass-promo-modal__price {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.investment-compass-promo-modal__price .investment-compass-price__old {
+  color: #155b61;
+  text-decoration-color: #e34646;
+  text-decoration-thickness: 2px;
+}
+
+.investment-compass-promo-modal__price .investment-compass-price__current {
+  color: inherit;
+}
+
+.investment-compass-promo-modal__cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 20px;
+  width: 100%;
+  min-height: 64px;
+  margin-top: 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: #42d2d0;
+  box-shadow: 0 9px 20px rgba(36, 184, 187, 0.22);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 750;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.investment-compass-promo-modal__cta:hover {
+  background: #3dc1c0;
+  transform: translateY(-2px);
+}
+
+.investment-compass-promo-modal__close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  margin-top: 18px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.investment-compass-promo-modal__close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+}
+
+.investment-compass-promo-modal__cta:focus-visible,
+.investment-compass-promo-modal__close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+@keyframes investment-compass-promo-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes investment-compass-promo-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 480px) {
+  .investment-compass-promo-modal__overlay { padding: 60px 18px 18px; }
+  .investment-compass-promo-modal__hero { height: clamp(170px, 25dvh, 210px); }
+  .investment-compass-promo-modal__illustration { width: min(285px, 80%); height: 285px; }
+  .investment-compass-promo-modal__content { padding: 27px 22px 24px; }
+}
+
+@media (max-height: 650px) {
+  .investment-compass-promo-modal__overlay { padding-top: 40px; }
+  .investment-compass-promo-modal__hero { height: 155px; }
+  .investment-compass-promo-modal__illustration { height: 245px; }
+  .investment-compass-promo-modal__content { padding-top: 22px; padding-bottom: 18px; }
+  .investment-compass-promo-modal__close { margin-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .investment-compass-promo-modal__backdrop,
+  .investment-compass-promo-modal { animation: none; }
+  .investment-compass-promo-modal__cta,
+  .investment-compass-promo-modal__close { transition: none; }
+}

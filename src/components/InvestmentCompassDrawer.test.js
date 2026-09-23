@@ -35,10 +35,38 @@ test('investment compass drawer uses the generated 3D icon and keeps legacy pari
   assert.match(drawer, /investment-compass-drawer__hero/)
   assert.match(drawer, /BuyerSheetShell/)
   assert.match(drawer, /compass_drawerCta/)
+  assert.match(drawer, /InvestmentCompassPrice/)
   assert.match(styles, /investment-compass-drawer__icon/)
   assert.deepEqual([...icon.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10])
   assert.ok(icon.length > 40_000)
   assert.equal(drawer, legacyDrawer)
   assert.equal(styles, legacyStyles)
   assert.deepEqual(icon, legacyIcon)
+})
+
+test('automatic compass offer is a centered modal with the same artwork and price in both clients', async () => {
+  for (const file of [
+    'InvestmentCompassPromoModal.jsx',
+    'InvestmentCompassPromoModal.css',
+    'InvestmentCompassPrice.jsx',
+    'InvestmentCompassPrice.css',
+  ]) {
+    const web = await readFile(new URL(file, import.meta.url), 'utf8')
+    const legacy = await readFile(
+      new URL(`../../apps/client/src/legacy/components/${file}`, import.meta.url),
+      'utf8',
+    )
+    assert.equal(web, legacy, `${file} legacy mirror differs`)
+  }
+
+  const modal = await readFile(new URL('./InvestmentCompassPromoModal.jsx', import.meta.url), 'utf8')
+  const price = await readFile(new URL('./InvestmentCompassPrice.jsx', import.meta.url), 'utf8')
+  const priceStyles = await readFile(new URL('./InvestmentCompassPrice.css', import.meta.url), 'utf8')
+  assert.match(modal, /COMPASS_BANNER_SRC/)
+  assert.match(modal, /role="dialog"/)
+  assert.match(modal, /investment-compass-promo-modal__close/)
+  assert.match(modal, /InvestmentCompassPrice/)
+  assert.match(price, /<del[^>]*>199 €<\/del>/)
+  assert.match(price, /<span[^>]*>0 €<\/span>/)
+  assert.match(priceStyles, /text-decoration:\s*line-through/)
 })

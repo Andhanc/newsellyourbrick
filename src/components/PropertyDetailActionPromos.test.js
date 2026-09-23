@@ -88,12 +88,12 @@ test('property action promos stay focused and retain legacy parity', async () =>
   assert.match(testDriveStyles, /radial-gradient\(circle at 10% 8%/)
   assert.match(testDriveStyles, /linear-gradient\(135deg, #e3f1ff/)
   assert.match(testDriveStyles, /\.property-detail-mobile-test-drive\s*\{[^}]*width:\s*100%/s)
-  assert.match(testDriveStyles, /min-width:\s*168px/)
-  assert.match(testDriveStyles, /min-height:\s*182px/)
+  assert.match(testDriveStyles, /grid-template-areas: "copy" "art" "actions"/)
+  assert.match(testDriveStyles, /\.property-detail-test-drive-promo__photo\s*\{\s*position: relative/)
 })
 
 test('generated promo images are valid non-empty WebP assets', async () => {
-  for (const name of ['buy-now-action-3d.webp', 'test-drive-action-3d.webp']) {
+  for (const name of ['buy-now-action-3d.webp', 'test-drive-suitcase-calendar-3d.webp']) {
     const image = await readFile(
       new URL(`../../public/images/property-detail/${name}`, import.meta.url),
     )

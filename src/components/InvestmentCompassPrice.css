@@ -1,0 +1,23 @@
+.investment-compass-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.investment-compass-price__old {
+  color: #8b989b;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  white-space: nowrap;
+}
+
+.investment-compass-price__current {
+  color: #587073;
+  white-space: nowrap;
+}

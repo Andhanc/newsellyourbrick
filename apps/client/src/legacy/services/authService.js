@@ -6,6 +6,7 @@ import emailjs from '@emailjs/browser'
 
 import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { clearCompassOfferSession } from '../utils/investmentCompass'
 import { isBundledNativeDom } from '../utils/nativeDomBridge'
 
 // Используем dev tunnel для API
@@ -542,6 +543,7 @@ export const clearReferrerId = () => {
  * Очищает данные пользователя из localStorage, но сохраняет админские данные
  */
 export const clearUserDataWithoutAdmin = () => {
+  clearCompassOfferSession()
   // Сохраняем админские данные перед очисткой
   const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn')
   const adminPermissions = localStorage.getItem('adminPermissions')
@@ -616,6 +618,7 @@ export const clearUserDataWithoutAdmin = () => {
  * Очищает данные пользователя из localStorage
  */
 export const clearUserData = () => {
+  clearCompassOfferSession()
   // Удаляем основной объект userData (если был сохранен)
   localStorage.removeItem('userData')
   

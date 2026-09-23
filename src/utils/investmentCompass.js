@@ -5,8 +5,9 @@ export const COMPASS_STORAGE_KEY = 'syb.investmentCompass.v1'
 export const COMPASS_INTRO_KEY = 'syb.investmentCompass.playIntro'
 export const COMPASS_ICON_SRC = 'images/home-sale-formats/icons/compass-3d.png'
 export const COMPASS_BANNER_SRC = 'images/home-sale-formats/icons/compass-banner-3d.png'
-export const COMPASS_PROMPT_DELAY_MS = 6500
-export const COMPASS_SWIPE_PROMPT_DELAY_MS = 1200
+export const COMPASS_PROMPT_DELAY_MS = 5000
+export const COMPASS_OFFER_SESSION_KEY = 'syb.investmentCompass.offerSession.v1'
+export const COMPASS_OFFER_SHOWN_KEY = 'syb.investmentCompass.offerShown.v1'
 export const COMPASS_INTRO_MS = 1200
 export const COMPASS_SELECT_ADVANCE_MS = 280
 
@@ -131,25 +132,57 @@ export function getStrategyInfoSection(strategy) {
   return COMPASS_STRATEGIES.includes(strategy) ? strategy : 'auction'
 }
 
-export function shouldAutoOpenCompass({
-  stageReady = false,
-  hasBrowsedCards = false,
-  blocked = false,
-  elapsedMs = 0,
-  prompted = false,
-  hasResult = false,
-} = {}) {
-  if (!stageReady || blocked || prompted || hasResult) return false
-  if (hasBrowsedCards && elapsedMs >= COMPASS_SWIPE_PROMPT_DELAY_MS) return true
-  return elapsedMs >= COMPASS_PROMPT_DELAY_MS
-}
-
 function storage() {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null
     return window.localStorage
   } catch {
     return null
+  }
+}
+
+export function getCompassOfferSessionId(authSessionId) {
+  // Clerk issues a new ID for every sign-in, even if logout cleanup was skipped.
+  // Keep the local fallback for sign-ins that do not use Clerk.
+  if (authSessionId) return `clerk:${authSessionId}`
+  const store = storage()
+  if (!store) return ''
+  try {
+    let id = store.getItem(COMPASS_OFFER_SESSION_KEY)
+    if (!id) {
+      id = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
+      store.setItem(COMPASS_OFFER_SESSION_KEY, id)
+    }
+    return id
+  } catch {
+    return ''
+  }
+}
+
+export function hasCompassOfferShown(sessionId) {
+  if (!sessionId) return false
+  try {
+    return storage()?.getItem(COMPASS_OFFER_SHOWN_KEY) === sessionId
+  } catch {
+    return false
+  }
+}
+
+export function markCompassOfferShown(sessionId) {
+  if (!sessionId) return
+  try {
+    storage()?.setItem(COMPASS_OFFER_SHOWN_KEY, sessionId)
+  } catch {
+    /* Offer still opens when storage is unavailable. */
+  }
+}
+
+export function clearCompassOfferSession() {
+  try {
+    storage()?.removeItem(COMPASS_OFFER_SESSION_KEY)
+    storage()?.removeItem(COMPASS_OFFER_SHOWN_KEY)
+  } catch {
+    /* Storage can be unavailable in private browsing contexts. */
   }
 }
 

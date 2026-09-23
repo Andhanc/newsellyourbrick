@@ -85,7 +85,7 @@ import PropertyDetailInternalLinks from '../components/PropertyDetailInternalLin
 import PropertyAiExperience from '../components/PropertyAiExperience'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { getCabinetProfilePath } from '../utils/cabinetRoutes'
-import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
+import TestDrivePromoModal from '../components/TestDrivePromoModal'
 import AuctionBidDrawer from '../components/AuctionBidDrawer'
 import AuctionBidCeilingModal from '../components/AuctionBidCeilingModal'
 import PropertyDetailAuctionBiddingForm from '../components/PropertyDetailAuctionBiddingForm'
@@ -288,6 +288,8 @@ function PropertyDetailClassic({
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
   const [isTestDrivePromoOpen, setIsTestDrivePromoOpen] = useState(false)
   const testDrivePromoDismissedRef = useRef(false)
+  const testDrivePromoEnteredAtRef = useRef(Date.now())
+  const testDrivePromoPropertyIdRef = useRef(initialProperty?.id)
   /** После окончания аукциона не даём сбросить timerExpired, если сервер подставил другую дату окончания */
   const auctionFinishedLatchRef = useRef(false)
   /** Последняя известная дата кругового таймера (если API убрал test_timer_end_date) */
@@ -903,6 +905,10 @@ function PropertyDetailClassic({
       property.test_drive === '1')
 
   useEffect(() => {
+    if (testDrivePromoPropertyIdRef.current != null && testDrivePromoPropertyIdRef.current !== displayProperty.id) {
+      testDrivePromoEnteredAtRef.current = Date.now()
+    }
+    testDrivePromoPropertyIdRef.current = displayProperty.id
     testDrivePromoDismissedRef.current = false
     setIsTestDrivePromoOpen(false)
   }, [displayProperty.id])
@@ -952,7 +958,8 @@ function PropertyDetailClassic({
   const scrollToTestDriveSection = () => {
     testDrivePromoDismissedRef.current = true
     window.setTimeout(() => {
-      const section = document.getElementById('property-test-drive-section')
+      const section = [...document.querySelectorAll('[id="property-test-drive-section"]')]
+        .find((element) => element.getClientRects().length > 0)
       if (!section) return
       section.scrollIntoView({ behavior: 'smooth', block: 'start' })
       section.classList.add('property-detail-test-drive--highlight')
@@ -1368,11 +1375,12 @@ function PropertyDetailClassic({
       setIsTestDrivePromoOpen(false)
       return undefined
     }
+    const delay = Math.max(0, 5000 - (Date.now() - testDrivePromoEnteredAtRef.current))
     const timer = window.setTimeout(() => {
       if (!testDrivePromoDismissedRef.current && shouldShowTestDrivePromo) {
         setIsTestDrivePromoOpen(true)
       }
-    }, 750)
+    }, delay)
     return () => window.clearTimeout(timer)
   }, [displayProperty.id, shouldShowTestDrivePromo])
 
@@ -8030,7 +8038,7 @@ function PropertyDetailClassic({
         }}
       />
 
-      <TestDrivePromoDrawer
+      <TestDrivePromoModal
         isOpen={isTestDrivePromoOpen && shouldShowTestDrivePromo}
         onClose={dismissTestDrivePromo}
         onGoToSection={scrollToTestDriveSection}
