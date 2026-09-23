@@ -21,7 +21,9 @@ test('format stack hard-pages on a small vertical swipe by default', () => {
   assert.match(catalog, /nearestFlipIndex/)
   assert.match(catalog, /cardStepHeight/)
   // Park offsets are cached — the scroll handler must not re-read layout.
-  assert.match(catalog, /GEOM_TTL_MS/)
+  assert.match(catalog, /geometryDirty/)
+  assert.match(catalog, /new ResizeObserver\(invalidateGeom\)/)
+  assert.doesNotMatch(catalog, /GEOM_TTL_MS/)
   assert.match(catalog, /invalidateGeom/)
   // Hard pager is default; native settle is opt-in via data-native-format-scroll="true"
   assert.match(catalog, /nativeFormatScroll !== 'true'/)

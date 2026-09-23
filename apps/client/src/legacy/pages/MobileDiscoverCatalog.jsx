@@ -40,8 +40,6 @@ const EXIT_RELEASE = 0.92
 const WHEEL_FLICK_GAP = 140
 const WHEEL_RISE = 6
 const WHEEL_TAIL = 4
-/** How long measured park offsets stay valid. */
-const GEOM_TTL_MS = 200
 const ANDROID_URL = 'https://play.google.com/store/apps'
 const IOS_URL = 'https://apps.apple.com/'
 
@@ -485,14 +483,13 @@ export default function MobileDiscoverCatalog() {
      * Park offsets are layout, not scroll state, so they are measured once and
      * reused — the scroll handler must never trigger a stack of layout reads.
      */
-    let measuredAt = 0
+    let geometryDirty = true
     let parks = []
     let tailTop = Number.POSITIVE_INFINITY
 
     const measure = () => {
-      const now = performance.now()
-      if (parks.length && now - measuredAt < GEOM_TTL_MS) return
-      measuredAt = now
+      if (!geometryDirty) return
+      geometryDirty = false
 
       const origin = getOrigin()
       const cards = getFlipCards()
@@ -512,10 +509,17 @@ export default function MobileDiscoverCatalog() {
     }
 
     const invalidateGeom = () => {
-      measuredAt = 0
+      geometryDirty = true
     }
     window.addEventListener('resize', invalidateGeom)
     window.addEventListener('orientationchange', invalidateGeom)
+    const geometryObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(invalidateGeom)
+      : null
+    // Observe layout changes, rather than reflowing the sticky stack during scroll.
+    for (const node of [stage, catalog, catalog.parentElement, ...getFlipCards()]) {
+      if (node) geometryObserver?.observe(node)
+    }
 
     const cardTop = (index) => {
       measure()
@@ -625,7 +629,7 @@ export default function MobileDiscoverCatalog() {
 
     /** Snap to nearest format park — used by native settle and hard pager. */
     const settleFlip = () => {
-      if (jumpingRef.current || !inFlipZone()) return
+      if (touching || jumpingRef.current || !inFlipZone()) return
       const current = nearestFlipIndex()
       if (current < 0) return
       const target = cardTop(current)
@@ -674,6 +678,7 @@ export default function MobileDiscoverCatalog() {
       return () => {
         window.clearTimeout(settleTimer)
         stopAnim()
+        geometryObserver?.disconnect()
         window.removeEventListener('resize', invalidateGeom)
         window.removeEventListener('orientationchange', invalidateGeom)
         stage.removeEventListener('touchstart', onNativeTouchStart)
@@ -754,6 +759,8 @@ export default function MobileDiscoverCatalog() {
 
     const onWheel = (event) => {
       if (document.documentElement.classList.contains('login-modal-open')) return
+      // Horizontal trackpad motion belongs to the property rail, even mid-flip.
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey) return
 
       const now = performance.now()
       const mag = Math.abs(event.deltaY)
@@ -867,17 +874,15 @@ export default function MobileDiscoverCatalog() {
     const onTouchStart = (event) => {
       const touch = event.touches[0]
       if (!touch) return
+      touching = true
+      window.clearTimeout(settleTimer)
       startX = touch.clientX
       startY = touch.clientY
       committed = false
       owned = false
       axisLock = null
 
-      // A gesture must never start from a half-open drawer.
-      if (!jumpingRef.current && inFlipZone()) {
-        const park = cardTop(Math.max(0, nearestFlipIndex()))
-        if (Math.abs(stage.scrollTop - park) > 2) stage.scrollTop = park
-      }
+      // A tap or horizontal swipe must never change the vertical position.
     }
 
     const onTouchMove = (event) => {
@@ -910,6 +915,7 @@ export default function MobileDiscoverCatalog() {
     }
 
     const onTouchEnd = (event) => {
+      touching = false
       if (document.documentElement.classList.contains('login-modal-open')) return
       const endY = event.changedTouches[0]?.clientY ?? startY
       const endX = event.changedTouches[0]?.clientX ?? startX
@@ -930,6 +936,14 @@ export default function MobileDiscoverCatalog() {
         }
       }
       settleFlip()
+    }
+
+    const onTouchCancel = () => {
+      touching = false
+      axisLock = null
+      owned = false
+      committed = false
+      scheduleSettle(140)
     }
 
     /*
@@ -962,8 +976,7 @@ export default function MobileDiscoverCatalog() {
 
       syncLock()
       if (!inFlipZone()) return
-      window.clearTimeout(settleTimer)
-      settleTimer = window.setTimeout(settleFlip, 90)
+      scheduleSettle(140)
     }
 
     syncLock()
@@ -976,10 +989,11 @@ export default function MobileDiscoverCatalog() {
     stage.addEventListener('touchstart', onTouchStart, passiveOpts)
     stage.addEventListener('touchmove', onTouchMove, moveOpts)
     stage.addEventListener('touchend', onTouchEnd, passiveOpts)
-    stage.addEventListener('touchcancel', onTouchEnd, passiveOpts)
+    stage.addEventListener('touchcancel', onTouchCancel, passiveOpts)
     return () => {
       window.clearTimeout(settleTimer)
       stopAnim()
+      geometryObserver?.disconnect()
       window.removeEventListener('resize', invalidateGeom)
       window.removeEventListener('orientationchange', invalidateGeom)
       stage.removeEventListener('wheel', onWheel)
@@ -987,7 +1001,7 @@ export default function MobileDiscoverCatalog() {
       stage.removeEventListener('touchstart', onTouchStart, passiveOpts)
       stage.removeEventListener('touchmove', onTouchMove, moveOpts)
       stage.removeEventListener('touchend', onTouchEnd, passiveOpts)
-      stage.removeEventListener('touchcancel', onTouchEnd, passiveOpts)
+      stage.removeEventListener('touchcancel', onTouchCancel, passiveOpts)
     }
   }, [loading])
 

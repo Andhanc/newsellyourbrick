@@ -1,4 +1,5 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createShowcaseScroller } from '../utils/showcaseScroller'
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AuctionPropertyCard from './AuctionPropertyCard'
 import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from './DebtsPropertyCard'
@@ -50,10 +51,10 @@ export default function InvestorPropertyShowcaseSection({
   showPropertyAuthRequiredToast,
 }) {
   const scrollerRef = useRef(null)
-  const [activePage, setActivePage] = useState(0)
-  const [pageCount, setPageCount] = useState(1)
-  const [canScrollPrev, setCanScrollPrev] = useState(false)
-  const [canScrollNext, setCanScrollNext] = useState(false)
+  const paginationRef = useRef(null)
+  const [{ activePage, pageCount, canScrollPrev, canScrollNext }, setPagination] = useState({
+    activePage: 0, pageCount: 1, canScrollPrev: false, canScrollNext: false,
+  })
 
   const favoriteCategory = (property) =>
     hasDbBackedProperty(property) ? undefined : 'property'
@@ -156,87 +157,25 @@ export default function InvestorPropertyShowcaseSection({
     ))
   }
 
-  const updatePagination = useCallback(() => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-
-    const scrollThreshold = 8
-    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth)
-    const scrollable = maxScroll > scrollThreshold
-    const atStart = scroller.scrollLeft <= scrollThreshold
-    const atEnd = scroller.scrollLeft >= maxScroll - scrollThreshold
-
-    setCanScrollPrev(scrollable && !atStart)
-    setCanScrollNext(scrollable && !atEnd)
-
-    const slot = scroller.querySelector('.home-showcase__slot')
-    if (!slot) {
-      setPageCount(1)
-      setActivePage(0)
-      return
-    }
-
-    const gap = Number.parseFloat(getComputedStyle(scroller).columnGap) || 0
-    const slotWidth = slot.getBoundingClientRect().width + gap
-    const visible = Math.max(1, Math.floor((scroller.clientWidth + gap) / slotWidth))
-    const total = loading ? skeletonCount : items.length
-    const pages = Math.max(1, Math.ceil(total / visible))
-    setPageCount(pages)
-
-    if (maxScroll <= 0 || pages <= 1) {
-      setActivePage(0)
-      return
-    }
-
-    const ratio = scroller.scrollLeft / maxScroll
-    setActivePage(Math.min(pages - 1, Math.round(ratio * (pages - 1))))
-  }, [items.length, loading])
-
   useLayoutEffect(() => {
-    updatePagination()
     const scroller = scrollerRef.current
     if (!scroller) return undefined
-
-    const onScroll = () => updatePagination()
-    scroller.addEventListener('scroll', onScroll, { passive: true })
-
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => updatePagination()) : null
-    resizeObserver?.observe(scroller)
-    window.addEventListener('resize', updatePagination)
-
-    const rafId = requestAnimationFrame(() => {
-      updatePagination()
-      requestAnimationFrame(updatePagination)
-    })
-
+    const controller = createShowcaseScroller(scroller, setPagination)
+    paginationRef.current = controller
     return () => {
-      cancelAnimationFrame(rafId)
-      scroller.removeEventListener('scroll', onScroll)
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', updatePagination)
+      controller.destroy()
+      paginationRef.current = null
     }
-  }, [updatePagination])
+  }, [items.length, loading, variant])
 
-  const scrollByDirection = useCallback((direction) => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-    const slot = scroller.querySelector('.home-showcase__slot')
-    const gap = Number.parseFloat(getComputedStyle(scroller).columnGap) || 0
-    const delta = slot ? slot.getBoundingClientRect().width + gap : Math.max(scroller.clientWidth * 0.72, 300)
-    scroller.scrollBy({ left: direction * delta, behavior: 'smooth' })
-  }, [])
+  const scrollByDirection = (direction) => paginationRef.current?.scrollByDirection(direction)
+  const goToPage = (index) => paginationRef.current?.goToPage(index)
 
-  const goToPage = useCallback(
-    (pageIndex) => {
-      const scroller = scrollerRef.current
-      if (!scroller || pageCount <= 1) return
-      const maxScroll = scroller.scrollWidth - scroller.clientWidth
-      const target = (pageIndex / (pageCount - 1)) * maxScroll
-      scroller.scrollTo({ left: target, behavior: 'smooth' })
-    },
-    [pageCount],
-  )
+  // Pagination changes only the controls; the property trees stay mounted and stable.
+  const cards = useMemo(() => loading ? renderSkeletons() : renderCards(), [
+    loading, items, variant, navigate, isFavorite, toggleFavorite,
+    ensureCanOpenProperty, showPropertyAuthRequiredToast,
+  ])
 
   const hasContent = loading || items.length > 0
   const showDots = !loading && items.length > 0 && pageCount > 1
@@ -289,7 +228,7 @@ export default function InvestorPropertyShowcaseSection({
               className="invest-showcase__scroller home-showcase__scroller"
               aria-busy={loading}
             >
-              {loading ? renderSkeletons() : renderCards()}
+              {cards}
             </div>
 
             <button

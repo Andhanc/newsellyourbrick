@@ -421,6 +421,7 @@ export default function MobileDiscoverPage() {
       // The format-stack pager already consumed this wheel — never re-drive
       // stage scroll by hand, that is what parked drawers half-open.
       if (event.defaultPrevented) return
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey) return
       if (busyRef.current || flashPhase !== 'idle') {
         event.preventDefault()
         return
