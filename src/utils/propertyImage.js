@@ -154,6 +154,12 @@ function normalizeImageUrl(raw, baseOrigin) {
     return `${normalizedBase}/${value}`
   }
 
+  // Публичные ассеты сайта (/images/..., /fonts/...) нельзя класть под /uploads/ —
+  // иначе placeholder'ы и статичные фото долгов/карточек дают 404 на проде.
+  if (value.startsWith('/')) {
+    return `${normalizedBase}${value}`
+  }
+
   return `${normalizedBase}/uploads/${value.replace(/^\/+/, '')}`
 }
 
