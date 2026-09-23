@@ -47,6 +47,16 @@ test('seller opt-in and share detail full-purchase UI are wired end to end', () 
   assert.match(panel, /disabled=\{!buyNowAvailable\}/)
 })
 
+test('share detail does not fall back to the skeleton when Suspense re-runs layout effects', () => {
+  const detail = read('./ShareDetailPage.jsx')
+
+  assert.match(detail, /const loadingResetKeyRef = useRef\(null\)/)
+  assert.match(
+    detail,
+    /if \(loadingResetKeyRef\.current === resetKey\) return\s+loadingResetKeyRef\.current = resetKey\s+setLoadingShare\(/,
+  )
+})
+
 test('new buy-now share surfaces stay identical in web and legacy bundles', () => {
   const pairs = [
     ['./BuyNow.jsx', '../../apps/client/src/legacy/pages/BuyNow.jsx'],

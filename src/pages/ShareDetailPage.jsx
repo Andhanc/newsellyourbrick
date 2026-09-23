@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -279,9 +279,15 @@ const ShareDetailPage = () => {
       .finally(() => setLoadingShare(false))
   }, [id, navigate, location.state])
 
+  // React re-runs layout effects when a Suspense boundary reveals this subtree again
+  // (lazy detail chunks); only a real route/prefetch change may reset loading.
+  const loadingResetKeyRef = useRef(null)
   useLayoutEffect(() => {
     const prefetched = location.state?.sharePrefetch
     const same = prefetched && String(prefetched.id) === String(shareRoutePropertyId(id))
+    const resetKey = `${id}|${same ? prefetched.id : ''}`
+    if (loadingResetKeyRef.current === resetKey) return
+    loadingResetKeyRef.current = resetKey
     setLoadingShare(isShareDbRouteId(id) && !same)
   }, [id, location.state])
 
