@@ -4,14 +4,17 @@ import {
   buildDebtCategories,
   getDebtRiskPresentation,
   normalizeDebtAmount,
+  resolveDebtRiskPresentation,
 } from './debtPropertyDetail.js'
 
-test('maps known debt severities to honest risk presentation', () => {
+const t = (key) => `t:${key}`
+
+test('maps known debt severities to honest risk presentation keys', () => {
   assert.deepEqual(getDebtRiskPresentation('red'), {
     tone: 'high',
-    label: 'Высокий риск',
-    shortLabel: 'Высокий',
-    description: 'Красный — сложные и существенные задолженности',
+    labelKey: 'debtsHighRisk',
+    shortLabelKey: 'debtRiskShort_high',
+    descriptionKey: 'debtsHighRiskSubtitle',
   })
   assert.equal(getDebtRiskPresentation('yellow').tone, 'medium')
   assert.equal(getDebtRiskPresentation('green').tone, 'low')
@@ -20,11 +23,21 @@ test('maps known debt severities to honest risk presentation', () => {
 test('uses a neutral state when debt severity is missing or invalid', () => {
   assert.deepEqual(getDebtRiskPresentation(null), {
     tone: 'unknown',
-    label: 'Риск оценивается',
-    shortLabel: 'Оценивается',
-    description: 'Полная оценка риска ещё формируется',
+    labelKey: 'debtRiskUnknown',
+    shortLabelKey: 'debtRiskUnknownShort',
+    descriptionKey: 'debtRiskUnknownDescription',
   })
   assert.equal(getDebtRiskPresentation('blue').tone, 'unknown')
+})
+
+test('resolves risk presentation strings through the translator', () => {
+  assert.deepEqual(resolveDebtRiskPresentation('red', t), {
+    tone: 'high',
+    label: 't:debtsHighRisk',
+    shortLabel: 't:debtRiskShort_high',
+    description: 't:debtsHighRiskSubtitle',
+  })
+  assert.equal(resolveDebtRiskPresentation(null, t).label, 't:debtRiskUnknown')
 })
 
 test('normalizes only positive finite debt amounts', () => {
@@ -35,21 +48,24 @@ test('normalizes only positive finite debt amounts', () => {
 })
 
 test('builds a stable list of real debt categories without inventing data', () => {
-  const categories = buildDebtCategories({
-    debt_utilities: 1,
-    debt_mortgage_pledge: true,
-    debt_property_taxes: 0,
-    debt_arrest: '1',
-    debt_inherited: false,
-    debt_third_party: true,
-    debt_other: ' Судебные расходы ',
-  })
+  const categories = buildDebtCategories(
+    {
+      debt_utilities: 1,
+      debt_mortgage_pledge: true,
+      debt_property_taxes: 0,
+      debt_arrest: '1',
+      debt_inherited: false,
+      debt_third_party: true,
+      debt_other: ' Судебные расходы ',
+    },
+    t,
+  )
 
   assert.deepEqual(categories, [
-    { id: 'utilities', label: 'Коммунальные платежи' },
-    { id: 'mortgage', label: 'Банковский залог' },
-    { id: 'arrest', label: 'Аресты и ограничения' },
-    { id: 'third-party', label: 'Обязательства перед третьими лицами' },
+    { id: 'utilities', label: 't:debtRiskCategory_utilities' },
+    { id: 'mortgage', label: 't:debtRiskCategory_mortgage' },
+    { id: 'arrest', label: 't:debtRiskCategory_arrest' },
+    { id: 'third-party', label: 't:debtRiskCategory_thirdParty' },
     { id: 'other', label: 'Судебные расходы' },
   ])
   assert.deepEqual(buildDebtCategories({}), [])

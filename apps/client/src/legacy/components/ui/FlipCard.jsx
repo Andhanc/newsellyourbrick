@@ -1,5 +1,6 @@
 import { ArrowRight, Code2, Copy, Rocket, Zap } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import './FlipCard.css'
 
 export default function FlipCard({
@@ -14,17 +15,22 @@ export default function FlipCard({
   ],
   color = '#ff2e88',
   clickToFlip = false,
-  ctaText = 'Подробнее',
+  ctaText,
+  clickHintText,
   isFlipped: isFlippedProp,
   onFlipChange,
   icon: CardIcon = Rocket,
+  iconSrc,
 }) {
+  const { t } = useTranslation()
+  const resolvedCtaText = ctaText ?? t('debtsCardViewDetails')
+  const resolvedClickHint = clickHintText ?? t('debtsFlipCardClickHint')
   const [internalIsFlipped, setInternalIsFlipped] = useState(false)
   const isControlled = typeof isFlippedProp === 'boolean'
   const isFlipped = isControlled ? isFlippedProp : internalIsFlipped
   const accent = color || '#ff2e88'
 
-  const ctaLabel = String(ctaText || '')
+  const ctaLabel = String(resolvedCtaText || '')
     .replace(/^(\p{Extended_Pictographic}\p{Emoji_Modifier}*|\p{Emoji_Presentation})(\uFE0F|\u200D\p{Extended_Pictographic})*\s+/u, '')
     .trim()
 
@@ -109,8 +115,15 @@ export default function FlipCard({
                 )
               })}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: accent, boxShadow: `0 8px 24px ${accent}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CardIcon style={{ width: 28, height: 28, color: 'white' }} />
+                <div
+                  className={`flip-card-icon-wrap${iconSrc ? ' flip-card-icon-wrap--image' : ''}`}
+                  style={{ width: iconSrc ? 132 : 56, height: iconSrc ? 132 : 56, borderRadius: 16, background: iconSrc ? 'transparent' : accent, boxShadow: iconSrc ? 'none' : `0 8px 24px ${accent}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {iconSrc ? (
+                    <img className="flip-card-icon-image" src={iconSrc} alt="" aria-hidden />
+                  ) : (
+                    <CardIcon style={{ width: 28, height: 28, color: 'white' }} />
+                  )}
                 </div>
               </div>
             </div>
@@ -133,7 +146,7 @@ export default function FlipCard({
                 <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v3" />
                 <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
               </svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: accent, letterSpacing: '0.02em' }}>Нажмите</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: accent, letterSpacing: '0.02em' }}>{resolvedClickHint}</span>
             </div>
           )}
 
@@ -178,8 +191,12 @@ export default function FlipCard({
 
             {/* 1. Иконка + заголовок */}
             <div className="flip-card-back-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div className="flip-card-back-icon-wrap" style={{ width: 36, height: 36, borderRadius: 10, background: accent, boxShadow: `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CardIcon style={{ width: 18, height: 18, color: 'white' }} />
+              <div className={`flip-card-back-icon-wrap${iconSrc ? ' flip-card-back-icon-wrap--image' : ''}`} style={{ width: iconSrc ? 48 : 36, height: iconSrc ? 48 : 36, borderRadius: 10, background: iconSrc ? 'transparent' : accent, boxShadow: iconSrc ? 'none' : `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {iconSrc ? (
+                  <img className="flip-card-back-icon-image" src={iconSrc} alt="" aria-hidden />
+                ) : (
+                  <CardIcon style={{ width: 18, height: 18, color: 'white' }} />
+                )}
               </div>
               <h3 className="flip-card-back-title" style={{ fontSize: 20, fontWeight: 700, color: '#18181b', lineHeight: 1.2, margin: 0 }}>{title}</h3>
             </div>
@@ -225,7 +242,11 @@ export default function FlipCard({
                 }}
               >
                 <span className="flip-card-back-cta-label">
-                  <CardIcon className="flip-card-back-cta-icon" style={{ color: accent }} aria-hidden />
+                  {iconSrc ? (
+                    <img className="flip-card-back-cta-image" src={iconSrc} alt="" aria-hidden />
+                  ) : (
+                    <CardIcon className="flip-card-back-cta-icon" style={{ color: accent }} aria-hidden />
+                  )}
                   <span style={{ fontSize: 14, fontWeight: 600, color: '#18181b' }}>{ctaLabel}</span>
                 </span>
                 <ArrowRight style={{ width: 16, height: 16, color: accent, flexShrink: 0 }} />

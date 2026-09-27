@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import {
@@ -17,13 +18,6 @@ const MAP_FOCUS = {
 }
 
 const FEATURED_IMAGE = 'images/test-drive/property-marbella-card.jpg'
-
-const metricCards = [
-  { key: 'yield', label: 'Доходность', value: '+10.8%', Icon: FiTrendingUp, placement: 'tl' },
-  { key: 'area', label: 'Площадь', value: '1 500 м²', Icon: FiGrid, placement: 'tr' },
-  { key: 'beds', label: 'Спальни', value: '3 bed', Icon: FiHome, placement: 'bl' },
-  { key: 'trust', label: 'Проверка', value: '99%', Icon: FiShield, placement: 'br' },
-]
 
 function disableMapInteraction(map) {
   map.scrollZoom.disable()
@@ -55,8 +49,21 @@ function MetricCard({ label, value, Icon, placement }) {
 }
 
 export default function BuyerMapScene({ onCardClick }) {
+  const { t } = useTranslation()
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
+
+  const metricCards = useMemo(
+    () => [
+      { key: 'yield', label: t('buyerPage_mapYield'), value: '+10.8%', Icon: FiTrendingUp, placement: 'tl' },
+      { key: 'area', label: t('buyerPage_mapArea'), value: '1 500 м²', Icon: FiGrid, placement: 'tr' },
+      { key: 'beds', label: t('buyerPage_mapBeds'), value: t('buyerPage_mapBedsValue'), Icon: FiHome, placement: 'bl' },
+      { key: 'trust', label: t('buyerPage_mapTrust'), value: '99%', Icon: FiShield, placement: 'br' },
+    ],
+    [t],
+  )
+
+  const featuredTitle = t('buyerPage_mapFeaturedTitle')
 
   useEffect(() => {
     const container = mapContainerRef.current
@@ -109,16 +116,16 @@ export default function BuyerMapScene({ onCardClick }) {
   }, [])
 
   return (
-    <div className="buyer-map-scene" aria-label="Карта с объектом">
+    <div className="buyer-map-scene" aria-label={t('buyerPage_mapAria')}>
       <div className="buyer-map-scene__map" ref={mapContainerRef} aria-hidden />
 
-      <div className="buyer-map-scene__metrics" aria-label="Показатели объекта">
+      <div className="buyer-map-scene__metrics" aria-label={t('buyerPage_mapMetricsAria')}>
         {metricCards.map((card) => (
           <MetricCard key={card.key} {...card} />
         ))}
       </div>
 
-      <div className="buyer-map-scene__marker" aria-label="Выбранный объект">
+      <div className="buyer-map-scene__marker" aria-label={t('buyerPage_mapSelectedAria')}>
         <article className="buyer-map-marker__card">
           <div className="buyer-map-marker__media">
             <img
@@ -129,19 +136,19 @@ export default function BuyerMapScene({ onCardClick }) {
               loading="eager"
               decoding="async"
             />
-            <span className="buyer-map-marker__badge">New</span>
+            <span className="buyer-map-marker__badge">{t('buyerPage_mapBadgeNew')}</span>
           </div>
           <div className="buyer-map-marker__body">
-            <h2>Luxury Oceanfront Villa</h2>
+            <h2>{featuredTitle}</h2>
             <p>
               <FiMapPin aria-hidden />
-              Marbella, Costa del Sol
+              {t('buyerPage_mapFeaturedLocation')}
             </p>
             <footer>
               <strong>$520,000</strong>
               <em>+10.8%</em>
-              <button type="button" onClick={() => onCardClick?.('Luxury Oceanfront Villa')}>
-                Подробнее
+              <button type="button" onClick={() => onCardClick?.(featuredTitle)}>
+                {t('buyerPage_mapLearnMore')}
               </button>
             </footer>
           </div>

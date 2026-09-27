@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Pointer,
   ShieldAlert,
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react'
 import { getUserData } from '../services/authService'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
-import { getDebtRiskPresentation } from '../utils/debtPropertyDetail'
+import { resolveDebtRiskPresentation } from '../utils/debtPropertyDetail'
 import { DebtProModal } from './DebtAuctionInsight'
 import './PropertyDebtRiskBanner.css'
 
@@ -20,12 +21,13 @@ const ICONS = {
 }
 
 export default function PropertyDebtRiskBanner({ property, onRequireLogin, onOpenDocuments }) {
+  const { t } = useTranslation()
   const [paywallOpen, setPaywallOpen] = useState(false)
   const { canAccess, resolved } = useViewerVipAccess()
   const docsUnlocked = resolved && canAccess('documents')
   const risk = useMemo(
-    () => getDebtRiskPresentation(property?.debt_severity),
-    [property?.debt_severity],
+    () => resolveDebtRiskPresentation(property?.debt_severity, t),
+    [property?.debt_severity, t],
   )
   const RiskIcon = ICONS[risk.tone]
 
@@ -51,11 +53,7 @@ export default function PropertyDebtRiskBanner({ property, onRequireLogin, onOpe
         className={`debt-risk-banner debt-risk-banner--${risk.tone}`}
         onClick={handleOpen}
         disabled={!resolved}
-        aria-label={
-          docsUnlocked
-            ? `${risk.label}. Открыть документы объекта`
-            : `${risk.label}. Открыть документы объекта`
-        }
+        aria-label={t('debtRiskOpenDocumentsAria', { label: risk.label })}
       >
         <span className="debt-risk-banner__icon" aria-hidden>
           <RiskIcon size={28} strokeWidth={2.15} />
@@ -65,7 +63,7 @@ export default function PropertyDebtRiskBanner({ property, onRequireLogin, onOpe
           <span>{risk.description}</span>
         </span>
         <span className="debt-risk-banner__action" aria-hidden>
-          <span><Pointer size={14} /> Нажмите</span>
+          <span><Pointer size={14} /> {t('debtsFlipCardClickHint')}</span>
           <Zap size={22} />
         </span>
       </button>

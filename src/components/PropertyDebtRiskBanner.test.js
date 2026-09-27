@@ -6,14 +6,15 @@ const component = await readFile(new URL('./PropertyDebtRiskBanner.jsx', import.
 const css = await readFile(new URL('./PropertyDebtRiskBanner.css', import.meta.url), 'utf8')
 
 test('renders one interactive risk card using the property debt severity', () => {
-  assert.match(component, /getDebtRiskPresentation/)
+  assert.match(component, /resolveDebtRiskPresentation/)
   assert.match(component, /debt-risk-banner--\$\{risk\.tone\}/)
   assert.match(component, /risk\.label/)
   assert.match(component, /risk\.description/)
   assert.match(component, /DebtProModal/)
   assert.match(component, /canAccess\('documents'\)/)
   assert.match(component, /onOpenDocuments/)
-  assert.match(component, /Нажмите/)
+  assert.match(component, /debtsFlipCardClickHint/)
+  assert.match(component, /resolveDebtRiskPresentation/)
 })
 
 test('matches the compact colored card reference on phones', () => {

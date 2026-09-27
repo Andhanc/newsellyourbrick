@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   FiArrowRight,
   FiArrowUp,
@@ -23,17 +24,17 @@ import {
 import { applyPropertyImageFallback, normalizePropertyMediaFields } from '../utils/propertyImage'
 import './PropertyAiExperience.css'
 
-const SCENARIOS = [
-  { id: 'risks', label: 'Плюсы и риски', question: 'Какие у этого объекта главные плюсы и риски?', Icon: FiShield },
-  { id: 'investment', label: 'Инвестиционный потенциал', question: 'Какой инвестиционный потенциал у этого объекта?', Icon: FiTrendingUp },
-  { id: 'details', label: 'Подробный разбор', question: 'Сделай подробный разбор этого объекта.', Icon: FiFileText },
-  { id: 'custom', label: 'Свой вопрос', question: '', Icon: FiMessageCircle },
+const SCENARIO_DEFS = [
+  { id: 'risks', labelKey: 'propertyAi_scenarioRisks', questionKey: 'propertyAi_scenarioRisksQuestion', Icon: FiShield },
+  { id: 'investment', labelKey: 'propertyAi_scenarioInvestment', questionKey: 'propertyAi_scenarioInvestmentQuestion', Icon: FiTrendingUp },
+  { id: 'details', labelKey: 'propertyAi_scenarioDetails', questionKey: 'propertyAi_scenarioDetailsQuestion', Icon: FiFileText },
+  { id: 'custom', labelKey: 'propertyAi_scenarioCustom', questionKey: null, Icon: FiMessageCircle },
 ]
 
-const STATUS_COPY = {
-  queued: ['Готовим анализ', 'Собираем данные объявления'],
-  analyzing: ['Анализируем объект', 'Gemini изучает характеристики и фотографии'],
-  rendering: ['Оформляем презентацию', 'Создаём страницы и собираем PDF'],
+const STATUS_KEYS = {
+  queued: ['propertyAi_statusQueuedTitle', 'propertyAi_statusQueuedText'],
+  analyzing: ['propertyAi_statusAnalyzingTitle', 'propertyAi_statusAnalyzingText'],
+  rendering: ['propertyAi_statusRenderingTitle', 'propertyAi_statusRenderingText'],
 }
 
 const LAUNCHER_HOLD_MS = 1100
@@ -53,6 +54,7 @@ function splitAnswerLines(value) {
 }
 
 function PropertyMiniCard({ property }) {
+  const { t } = useTranslation()
   const image = propertyImages(property)[0]
   return (
     <article className="property-ai-card">
@@ -62,9 +64,13 @@ function PropertyMiniCard({ property }) {
         <div className="property-ai-card__placeholder">AI</div>
       )}
       <div>
-        <strong>{property?.title || property?.name || 'Объект недвижимости'}</strong>
-        <span>{[property?.area ? `${property.area} м²` : '', property?.rooms ? `${property.rooms} комн.` : '', property?.floor ? `${property.floor} этаж` : ''].filter(Boolean).join(' · ')}</span>
-        <small>{property?.location || 'Локация указана в объявлении'}</small>
+        <strong>{property?.title || property?.name || t('propertyAi_propertyFallback')}</strong>
+        <span>{[
+          property?.area ? `${property.area} м²` : '',
+          property?.rooms ? t('propertyAi_roomsShort', { count: property.rooms }) : '',
+          property?.floor ? t('propertyAi_floorShort', { floor: property.floor }) : '',
+        ].filter(Boolean).join(' · ')}</span>
+        <small>{property?.location || t('propertyAi_locationFallback')}</small>
       </div>
     </article>
   )
@@ -76,6 +82,7 @@ export default function PropertyAiExperience({
   desktop = false,
   deferLauncherCollapse = false,
 }) {
+  const { t } = useTranslation()
   const [view, setView] = useState('closed')
   const [launcherExpanded, setLauncherExpanded] = useState(true)
   const [launcherMorphing, setLauncherMorphing] = useState(false)
@@ -328,8 +335,19 @@ export default function PropertyAiExperience({
   }, [answerLines])
 
   const isTerminalStatus = ['completed', 'failed'].includes(job?.status)
-  const statusCopy = STATUS_COPY[job?.status]
-    || (job?.status && !isTerminalStatus ? ['Готовим анализ', 'Обрабатываем данные объявления'] : null)
+  const statusKeys = STATUS_KEYS[job?.status]
+    || (job?.status && !isTerminalStatus
+      ? ['propertyAi_statusQueuedTitle', 'propertyAi_statusQueuedText']
+      : null)
+  const statusCopy = statusKeys ? [t(statusKeys[0]), t(statusKeys[1])] : null
+  const scenarios = useMemo(
+    () => SCENARIO_DEFS.map((scenario) => ({
+      ...scenario,
+      label: t(scenario.labelKey),
+      question: scenario.questionKey ? t(scenario.questionKey) : '',
+    })),
+    [t],
+  )
   const visibleError = error || (job?.status === 'failed'
     ? job.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.'
     : '')
@@ -350,16 +368,16 @@ export default function PropertyAiExperience({
         type="button"
         className={`property-ai-launcher${launcherExpanded ? '' : ' property-ai-launcher--collapsed'}`}
         onClick={handleLauncherClick}
-        aria-label={launcherExpanded ? 'Открыть Недвижимость AI' : 'Развернуть Недвижимость AI'}
+        aria-label={launcherExpanded ? t('propertyAi_openAria') : t('propertyAi_expandAria')}
       >
         <span ref={sparkRef} className="property-ai-spark" aria-hidden>✦</span>
-        <span className="property-ai-launcher__label">НЕДВИЖИМОСТЬ AI</span>
+        <span className="property-ai-launcher__label">{t('propertyAi_brandLabel')}</span>
       </button>
 
       {view === 'picker' && (
         <div className="property-ai-overlay property-ai-overlay--picker" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setView('closed')}>
           <div className="property-ai-picker" role="dialog" aria-modal="true" aria-labelledby="property-ai-picker-title">
-            <button className="property-ai-close property-ai-close--dark" type="button" onClick={() => setView('closed')} aria-label="Закрыть"><FiX /></button>
+            <button className="property-ai-close property-ai-close--dark" type="button" onClick={() => setView('closed')} aria-label={t('propertyAi_close')}><FiX /></button>
             <div className="property-ai-picker__thumbs" aria-hidden>
               {images.map((image, index) => (
                 <img
@@ -372,9 +390,14 @@ export default function PropertyAiExperience({
               ))}
               {!images.length && <span>AI</span>}
             </div>
-            <h2 id="property-ai-picker-title">РАССКАЖУ ПРО ЭТОТ<br />ОБЪЕКТ</h2>
+            <h2 id="property-ai-picker-title">{t('propertyAi_pickerTitle').split('\n').map((line, index) => (
+              <span key={line}>
+                {index > 0 ? <br /> : null}
+                {line}
+              </span>
+            ))}</h2>
             <div className="property-ai-picker__actions">
-              {SCENARIOS.map((scenario) => {
+              {scenarios.map((scenario) => {
                 const Icon = scenario.Icon
                 return (
                   <button
@@ -404,15 +427,15 @@ export default function PropertyAiExperience({
           role="presentation"
           onMouseDown={(event) => event.target === event.currentTarget && setView('closed')}
         >
-          <div className="property-ai-chat" role="dialog" aria-modal="true" aria-label="Недвижимость AI">
+          <div className="property-ai-chat" role="dialog" aria-modal="true" aria-label={t('propertyAi_brandLabel')}>
           <header className="property-ai-chat__header">
-            <button type="button" onClick={() => setView('closed')} aria-label="Закрыть"><FiX /></button>
-            <strong>НЕДВИЖИМОСТЬ AI</strong>
-            <button type="button" onClick={() => { setHistoryOpen((open) => !open); void loadHistory() }} aria-label="История"><FiClock /></button>
+            <button type="button" onClick={() => setView('closed')} aria-label={t('propertyAi_close')}><FiX /></button>
+            <strong>{t('propertyAi_brandLabel')}</strong>
+            <button type="button" onClick={() => { setHistoryOpen((open) => !open); void loadHistory() }} aria-label={t('propertyAi_history')}><FiClock /></button>
           </header>
 
           <div className="property-ai-chat__body">
-            <p className="property-ai-greeting">Привет! Я изучу данные этого объявления, дам короткий ответ и подготовлю подробную PDF-презентацию.</p>
+            <p className="property-ai-greeting">{t('propertyAi_greeting')}</p>
             <div className="property-ai-property-row"><PropertyMiniCard property={property} /></div>
             {question && <div className="property-ai-user-message">{question}</div>}
 

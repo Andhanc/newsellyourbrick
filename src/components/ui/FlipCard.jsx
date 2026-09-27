@@ -1,5 +1,6 @@
 import { ArrowRight, Code2, Copy, Rocket, Zap } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import './FlipCard.css'
 
 export default function FlipCard({
@@ -14,18 +15,22 @@ export default function FlipCard({
   ],
   color = '#ff2e88',
   clickToFlip = false,
-  ctaText = 'Подробнее',
+  ctaText,
+  clickHintText,
   isFlipped: isFlippedProp,
   onFlipChange,
   icon: CardIcon = Rocket,
   iconSrc,
 }) {
+  const { t } = useTranslation()
+  const resolvedCtaText = ctaText ?? t('debtsCardViewDetails')
+  const resolvedClickHint = clickHintText ?? t('debtsFlipCardClickHint')
   const [internalIsFlipped, setInternalIsFlipped] = useState(false)
   const isControlled = typeof isFlippedProp === 'boolean'
   const isFlipped = isControlled ? isFlippedProp : internalIsFlipped
   const accent = color || '#ff2e88'
 
-  const ctaLabel = String(ctaText || '')
+  const ctaLabel = String(resolvedCtaText || '')
     .replace(/^(\p{Extended_Pictographic}\p{Emoji_Modifier}*|\p{Emoji_Presentation})(\uFE0F|\u200D\p{Extended_Pictographic})*\s+/u, '')
     .trim()
 
@@ -141,7 +146,7 @@ export default function FlipCard({
                 <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v3" />
                 <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
               </svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: accent, letterSpacing: '0.02em' }}>Нажмите</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: accent, letterSpacing: '0.02em' }}>{resolvedClickHint}</span>
             </div>
           )}
 

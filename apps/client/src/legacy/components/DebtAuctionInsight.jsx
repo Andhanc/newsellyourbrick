@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   Check,
@@ -18,7 +19,7 @@ import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import {
   buildDebtCategories,
-  getDebtRiskPresentation,
+  resolveDebtRiskPresentation,
   normalizeDebtAmount,
 } from '../utils/debtPropertyDetail'
 import './DebtAuctionInsight.css'
@@ -188,11 +189,15 @@ export default function DebtAuctionInsight({
   isAuction = false,
   compact = false,
 }) {
+  const { t } = useTranslation()
   const [paywallOpen, setPaywallOpen] = useState(false)
   const { canAccess, resolved } = useViewerVipAccess()
   const docsUnlocked = resolved && canAccess('documents')
-  const risk = useMemo(() => getDebtRiskPresentation(property?.debt_severity), [property?.debt_severity])
-  const categories = useMemo(() => buildDebtCategories(property), [property])
+  const risk = useMemo(
+    () => resolveDebtRiskPresentation(property?.debt_severity, t),
+    [property?.debt_severity, t],
+  )
+  const categories = useMemo(() => buildDebtCategories(property, t), [property, t])
   const debtAmount = normalizeDebtAmount(property?.debt_amount)
   const bidAmount = Number(currentBid) > 0 ? Number(currentBid) : null
   const formatAmount = (value) => value != null ? formatPrice(value) : 'Уточняется'
@@ -245,7 +250,7 @@ export default function DebtAuctionInsight({
           <div className="debt-insight__chips">
             {categories.length ? categories.slice(0, 3).map((item) => (
               <span key={item.id}>{item.label}</span>
-            )) : <span>Состав обязательств уточняется</span>}
+            )) : <span>{t('debtRiskCategoriesPending')}</span>}
             {categories.length > 3 && <span className="debt-insight__more">+{categories.length - 3}</span>}
           </div>
           {docsUnlocked ? (
