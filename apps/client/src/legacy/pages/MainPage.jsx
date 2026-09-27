@@ -87,7 +87,7 @@ import CookieConsentDrawer, {
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
-import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { getApiBaseUrl, getApiBaseUrlSync, getEventsBaseUrl } from '../utils/apiConfig'
 import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -1616,7 +1616,7 @@ function MainPage() {
     let cancelled = false
 
     const connect = async () => {
-      const base = await getApiBaseUrl()
+      const base = await getEventsBaseUrl()
       if (cancelled) return
       const url = base.startsWith('http')
         ? `${base.replace(/\/$/, '')}/events/auction-updates`

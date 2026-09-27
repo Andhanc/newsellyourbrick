@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { FiSend, FiSearch, FiZap, FiMessageCircle, FiCpu } from 'react-icons/fi';
 import './AdminChat.css';
 import { askPropertyAssistant } from '../../services/aiService';
-import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
+import { getApiBaseUrl, getApiBaseUrlSync, getEventsBaseUrl } from '../../utils/apiConfig';
 import {
   fetchAdminLiveChatMessages,
   fetchAdminLiveChatSessions,
@@ -307,7 +307,7 @@ const AdminChat = ({ onAdminSectionBadgeRefresh, targetUserId = null, onTargetHa
     let cancelled = false;
 
     const connect = async () => {
-      const base = await getApiBaseUrl();
+      const base = await getEventsBaseUrl();
       const normalized = base.replace(/\/$/, '');
       const path = `${normalized}/events/live-chat-admin`;
       const url = base.startsWith('http') ? path : `${window.location.origin}${path}`;

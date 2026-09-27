@@ -1,6 +1,7 @@
 /**
  * Модуль 2: квартиры, дома, агрегированная недвижимость — PostgreSQL через Prisma.
  */
+import prismaPkg from '@prisma/client';
 import { getPrisma } from './prismaClient.js';
 import { propertySlugQueries } from './propertySlugPrisma.js';
 import {
@@ -22,6 +23,30 @@ function parseJsonSafe(val, fallback) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+export function prismaModelFieldNames(modelName) {
+  const model = prismaPkg.Prisma?.dmmf?.datamodel?.models?.find((m) => m.name === modelName);
+  if (!model) return null;
+  return new Set(
+    model.fields.filter((field) => field.kind === 'scalar' || field.kind === 'enum').map((field) => field.name),
+  );
+}
+
+/** Отбрасывает поля, которых нет в текущем Prisma Client — иначе create падает целиком. */
+export function pickPrismaModelData(modelName, data) {
+  const names = prismaModelFieldNames(modelName);
+  if (!names) return data;
+  const next = {};
+  const dropped = [];
+  for (const [key, value] of Object.entries(data || {})) {
+    if (names.has(key)) next[key] = value;
+    else dropped.push(key);
+  }
+  if (dropped.length) {
+    console.warn(`[Prisma] ${modelName}: omitted unknown fields: ${dropped.join(', ')}`);
+  }
+  return next;
 }
 
 /** Prisma @default("datetime('now')") на Postgres пишет литерал, а не timestamp. */
@@ -513,7 +538,9 @@ export const apartmentQueries = {
       created_at: propertyData.created_at || nowIso(),
       updated_at: propertyData.updated_at || nowIso(),
     };
-    const created = await prisma.properties_apartments.create({ data });
+    const created = await prisma.properties_apartments.create({
+      data: pickPrismaModelData('properties_apartments', data),
+    });
     return { lastInsertRowid: created.id, changes: 1 };
   },
 
@@ -738,7 +765,9 @@ export const houseQueries = {
       created_at: propertyData.created_at || nowIso(),
       updated_at: propertyData.updated_at || nowIso(),
     };
-    const created = await prisma.properties_houses.create({ data });
+    const created = await prisma.properties_houses.create({
+      data: pickPrismaModelData('properties_houses', data),
+    });
     return { lastInsertRowid: created.id, changes: 1 };
   },
 

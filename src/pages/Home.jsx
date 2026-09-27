@@ -21,7 +21,7 @@ import {
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
 
-import { getApiBaseUrl } from '../utils/apiConfig'
+import { getApiBaseUrl, getEventsBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
@@ -117,7 +117,7 @@ function Home() {
     let cancelled = false
 
     const connect = async () => {
-      const base = await getApiBaseUrl()
+      const base = await getEventsBaseUrl()
       if (cancelled) return // cleanup уже запущен — не создавать новое соединение
       const url = base.startsWith('http') ? `${base}/events/auction-updates` : `${window.location.origin}${base}/events/auction-updates`
       eventSource = new EventSource(url)

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { getApiBaseUrl } from '../utils/apiConfig'
+import { getEventsBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import {
   PRIVATE_CLUB_KICKED_MODAL_EVENT,
@@ -40,7 +40,7 @@ export default function UserCabinetSseBridge() {
       // Достаточно числового id из Clerk→БД; isLoggedIn иногда выставляется позже — иначе SSE не поднимался без F5
       if (!uid || uid <= 0) return
 
-      const base = await getApiBaseUrl()
+      const base = await getEventsBaseUrl()
       if (cancelled) return // проверяем снова после await — cleanup мог сработать пока ждали
       const normalized = base.replace(/\/$/, '')
       const path = `${normalized}/events/user-updates?user_id=${uid}`

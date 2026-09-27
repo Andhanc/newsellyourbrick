@@ -63,7 +63,7 @@ import { useIsDesktopProperty } from '../hooks/useIsDesktopProperty'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import SubscriptionLock from '../components/SubscriptionLock'
 
-import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { getApiBaseUrl, getApiBaseUrlSync, getEventsBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
@@ -1734,9 +1734,11 @@ function PropertyDetailClassic({
       const base = await getApiBaseUrl()
       if (cancelled) return // проверяем снова после await — cleanup мог сработать пока ждали
       API_BASE_URL = base
-      const normalized = base.replace(/\/$/, '')
+      const eventsBase = await getEventsBaseUrl()
+      if (cancelled) return
+      const normalized = eventsBase.replace(/\/$/, '')
       const path = `${normalized}/events/property-bids?property_id=${displayProperty.id}`
-      const url = base.startsWith('http') ? path : `${window.location.origin}${path}`
+      const url = eventsBase.startsWith('http') ? path : `${window.location.origin}${path}`
 
       es = new EventSource(url)
 
@@ -1818,7 +1820,7 @@ function PropertyDetailClassic({
     let cancelled = false
 
     const connect = async () => {
-      const base = await getApiBaseUrl()
+      const base = await getEventsBaseUrl()
       if (cancelled) return
       const url = base.startsWith('http')
         ? `${base.replace(/\/$/, '')}/events/auction-updates`
