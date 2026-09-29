@@ -820,6 +820,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} ans",
   "propertyDetailGalleryViewAll": "Toutes les photos ({{count}})",
   "auctionBidCeilingButtonAria": "Définir le plafond de prix",
+  "auctionBidCeilingButtonLabel": "Configurer une enchère automatique",
   "auctionBidCeilingButtonShort": "Plafond de prix",
   "auctionBidCeilingBadge": "Enchère intelligente",
   "auctionBidCeilingTitle": "Prix maximum d'achat",

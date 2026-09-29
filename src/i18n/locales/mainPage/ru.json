@@ -1027,6 +1027,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} лет",
   "propertyDetailGalleryViewAll": "Все фото ({{count}})",
   "auctionBidCeilingButtonAria": "Установить потолок цены",
+  "auctionBidCeilingButtonLabel": "Настроить автоставку",
   "auctionBidCeilingButtonShort": "Потолок цены",
   "auctionBidCeilingBadge": "Умная ставка",
   "auctionBidCeilingTitle": "Потолок цены покупки",

@@ -821,6 +821,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} Jahre",
   "propertyDetailGalleryViewAll": "Alle Fotos ({{count}})",
   "auctionBidCeilingButtonAria": "Preisobergrenze festlegen",
+  "auctionBidCeilingButtonLabel": "Automatisches Gebot einrichten",
   "auctionBidCeilingButtonShort": "Preisobergrenze",
   "auctionBidCeilingBadge": "Smartes Bieten",
   "auctionBidCeilingTitle": "Maximaler Kaufpreis",

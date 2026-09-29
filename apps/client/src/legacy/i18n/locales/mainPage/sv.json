@@ -820,6 +820,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} år",
   "propertyDetailGalleryViewAll": "Alla foton ({{count}})",
   "auctionBidCeilingButtonAria": "Sätt pristak",
+  "auctionBidCeilingButtonLabel": "Ställ in automatisk budgivning",
   "auctionBidCeilingButtonShort": "Pristak",
   "auctionBidCeilingBadge": "Smart budgivning",
   "auctionBidCeilingTitle": "Maximalt köppris",

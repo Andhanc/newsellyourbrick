@@ -956,6 +956,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} years",
   "propertyDetailGalleryViewAll": "All photos ({{count}})",
   "auctionBidCeilingButtonAria": "Set maximum bid ceiling",
+  "auctionBidCeilingButtonLabel": "Ustaw automatyczne licytowanie",
   "auctionBidCeilingButtonShort": "Price ceiling",
   "auctionBidCeilingBadge": "Smart bidding",
   "auctionBidCeilingTitle": "Maximum purchase price",

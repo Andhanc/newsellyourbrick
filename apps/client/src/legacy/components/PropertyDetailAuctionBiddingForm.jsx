@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { FiLock, FiPlus, FiX } from 'react-icons/fi'
+import { FiLock, FiPlus, FiSliders, FiX } from 'react-icons/fi'
 import { Gavel, ShieldCheck, Trophy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { publicAsset } from '../utils/publicAsset'
 import PropertyCurrencySelector, {
   PropertyCurrencyInputTrigger,
 } from './PropertyCurrencySelector'
@@ -162,43 +163,71 @@ export default function PropertyDetailAuctionBiddingForm({
           }`}
         >
           {isPanelLayout ? (
-            <div className="current-bid-meta">
+            <>
+              <div className="current-bid-card-copy">
+                <div className="current-bid-meta">
+                  <span className="current-bid-label">
+                    {isAuctionProperty
+                      ? t('propertyDetailCurrentMaxBid')
+                      : t('propertyDetailObjectPrice')}
+                  </span>
+                  {isAuctionProperty ? (
+                    <span className="current-bid-live">
+                      <span className="current-bid-live__dot" aria-hidden />
+                      {t('propertyDetailAuctionLive')}
+                    </span>
+                  ) : null}
+                </div>
+                <div
+                  className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}
+                  aria-live="polite"
+                >
+                  <span className="current-bid-value">
+                    {fmtBidPrice(
+                      currentBid !== null
+                        ? currentBid
+                        : isAuctionProperty
+                          ? displayProperty.auction_starting_price || 0
+                          : displayProperty.price || 0,
+                    )}
+                  </span>
+                </div>
+              </div>
+              {isAuctionProperty ? (
+                <img
+                  className="current-bid-art"
+                  src={publicAsset('images/property-detail/auction-current-bid-gavel-v1.webp')}
+                  alt=""
+                  aria-hidden="true"
+                  width="1373"
+                  height="1145"
+                  decoding="async"
+                />
+              ) : null}
+            </>
+          ) : (
+            <>
               <span className="current-bid-label">
                 {isAuctionProperty
                   ? t('propertyDetailCurrentMaxBid')
                   : t('propertyDetailObjectPrice')}
               </span>
-              {isAuctionProperty ? (
-                <span className="current-bid-live">
-                  <span className="current-bid-live__dot" aria-hidden />
-                  {t('propertyDetailAuctionLive')}
+              <div
+                className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}
+                aria-live="polite"
+              >
+                <span className="current-bid-value">
+                  {fmtBidPrice(
+                    currentBid !== null
+                      ? currentBid
+                      : isAuctionProperty
+                        ? displayProperty.auction_starting_price || 0
+                        : displayProperty.price || 0,
+                  )}
                 </span>
-              ) : null}
-            </div>
-          ) : (
-            <span className="current-bid-label">
-              {isAuctionProperty
-                ? t('propertyDetailCurrentMaxBid')
-                : t('propertyDetailObjectPrice')}
-            </span>
+              </div>
+            </>
           )}
-          {isPanelLayout && isAuctionProperty ? (
-            <Gavel className="current-bid-watermark" size={82} strokeWidth={1.35} aria-hidden />
-          ) : null}
-          <div
-            className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}
-            aria-live="polite"
-          >
-            <span className="current-bid-value">
-              {fmtBidPrice(
-                currentBid !== null
-                  ? currentBid
-                  : isAuctionProperty
-                    ? displayProperty.auction_starting_price || 0
-                    : displayProperty.price || 0,
-              )}
-            </span>
-          </div>
         </div>
       )}
 
@@ -523,15 +552,15 @@ export default function PropertyDetailAuctionBiddingForm({
                     {showBidCeilingButton && onOpenBidCeiling ? (
                       <button
                         type="button"
-                        className={`bidding-section__ceiling-btn bidding-section__panel-plus${
+                        className={`bidding-section__ceiling-btn bidding-section__panel-auto-bid${
                           bidCeilingActive ? ' bidding-section__ceiling-btn--active' : ''
                         }`}
                         onClick={onOpenBidCeiling}
                         disabled={disableAuctionBidFields || isReservedActive}
-                        aria-label={t('auctionBidCeilingButtonAria')}
-                        title={t('auctionBidCeilingButtonAria')}
+                        aria-label={t('auctionBidCeilingButtonLabel')}
                       >
-                        <FiPlus size={22} strokeWidth={2.5} aria-hidden />
+                        <FiSliders size={19} strokeWidth={2.2} aria-hidden />
+                        <span>{t('auctionBidCeilingButtonLabel')}</span>
                       </button>
                     ) : null}
                   </div>

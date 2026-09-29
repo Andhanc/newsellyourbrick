@@ -8111,7 +8111,7 @@ function PropertyDetailClassic({
         isOpen={isBidDrawerOpen && isAuctionProperty}
         onClose={() => setIsBidDrawerOpen(false)}
         title={t('placeBid')}
-        contextAnchorSelector=".property-detail-mobile-head__timer"
+        contextAnchorSelector=".property-detail-auction-mobile-gallery"
       >
         <PropertyDetailAuctionBiddingForm
           {...auctionBiddingFormProps}

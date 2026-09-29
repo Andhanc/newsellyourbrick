@@ -820,6 +820,7 @@
   "propertyDetailYieldCalcYears_other": "{{count}} años",
   "propertyDetailGalleryViewAll": "Todas las fotos ({{count}})",
   "auctionBidCeilingButtonAria": "Establecer tope de precio",
+  "auctionBidCeilingButtonLabel": "Configurar puja automática",
   "auctionBidCeilingButtonShort": "Tope de precio",
   "auctionBidCeilingBadge": "Puja inteligente",
   "auctionBidCeilingTitle": "Precio máximo de compra",

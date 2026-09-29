@@ -53,7 +53,7 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
   const requestCloseRef = useRef(requestClose)
   requestCloseRef.current = requestClose
 
-  // Keep the real listing photo and countdown in view, even when opened far down the page.
+  // Keep the real listing gallery visible above the sheet, even when opened far down the page.
   useLayoutEffect(() => {
     if (!visible || !contextAnchorSelector || !window.matchMedia('(max-width: 960px)').matches) return
     const anchor = document.querySelector(contextAnchorSelector)
@@ -65,14 +65,14 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
     const originalOverflow = scrollRoot?.style.overflowY
     if (scrollRoot) scrollRoot.style.overflowY = 'hidden'
     const alignContext = () => {
-      const timerBottom = anchor.getBoundingClientRect().bottom + (scrollRoot?.scrollTop ?? window.scrollY)
+      const anchorBottom = anchor.getBoundingClientRect().bottom + (scrollRoot?.scrollTop ?? window.scrollY)
       const viewport = window.visualViewport
       const viewportBottom = viewport && window.innerHeight - viewport.height > 120
         ? viewport.height + viewport.offsetTop
         : window.innerHeight
       const bottomInset = parseFloat(window.getComputedStyle(panel).marginBottom) || 0
       const visibleBottom = viewportBottom - panel.offsetHeight - bottomInset - 12
-      scrollTarget.scrollTo({ top: Math.max(0, timerBottom - visibleBottom), behavior: 'instant' })
+      scrollTarget.scrollTo({ top: Math.max(0, anchorBottom - visibleBottom), behavior: 'instant' })
     }
     alignContext()
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(alignContext) : null
