@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
@@ -49,6 +49,9 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
     panelClosingClass: 'auction-bid-drawer__panel--closing',
     dismissOnly: true,
   })
+
+  const requestCloseRef = useRef(requestClose)
+  requestCloseRef.current = requestClose
 
   // Keep the real listing photo and countdown in view, even when opened far down the page.
   useLayoutEffect(() => {
@@ -103,7 +106,7 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
         // Let the currency picker close before dismissing its parent sheet.
         if (panel.querySelector('[aria-expanded="true"]')) return
         event.preventDefault()
-        requestClose()
+        requestCloseRef.current()
       }
       if (event.key !== 'Tab') return
       const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]')]
@@ -123,7 +126,7 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
       document.removeEventListener('keydown', onKeyDown)
       if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
     }
-  }, [visible, panelRef, requestClose])
+  }, [visible, panelRef])
 
   if (!visible || typeof document === 'undefined') return null
 

@@ -23,6 +23,8 @@ import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import DepositInfoDrawer from '../components/DepositInfoDrawer'
 import DepositStrategyModal from '../components/DepositStrategyModal'
+import InvestmentCompassDrawer from '../components/InvestmentCompassDrawer'
+import { COMPASS_PATH, markCompassIntroPending, markCompassPrompted } from '../utils/investmentCompass'
 import SiteNavDrawer from '../components/SiteNavDrawer'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { writeDepositVerificationGateFlag } from '../utils/depositVerificationGate'
@@ -50,6 +52,7 @@ import '../components/PropertyList.css'
 import {
   isSafeWalletFromPath,
   getWalletEntryFrom,
+  getWalletPropertyReturnPath,
   clearWalletEntryFrom,
   setWalletEntryFrom,
 } from '../utils/walletNavigation'
@@ -260,6 +263,8 @@ const WalletInner = () => {
   const [transactions, setTransactions] = useState([])
   const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false)
+  const [strategyReturnPath, setStrategyReturnPath] = useState(null)
+  const [isCompassDrawerOpen, setIsCompassDrawerOpen] = useState(false)
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [analytics, setAnalytics] = useState({
     totalDeposit: 0,
@@ -690,6 +695,18 @@ const WalletInner = () => {
     return false
   }
 
+  const handleOpenStrategyModal = () => {
+    setStrategyReturnPath(getWalletPropertyReturnPath(location.state?.from))
+    setIsStrategyModalOpen(true)
+  }
+
+  const handleReturnToProperty = () => {
+    if (!strategyReturnPath) return
+    setIsStrategyModalOpen(false)
+    clearWalletEntryFrom()
+    navigate(strategyReturnPath, { replace: true })
+  }
+
   const handleWalletBack = () => {
     if (navigateToWalletEntryOrigin()) return
     const idx = window.history.state?.idx
@@ -886,7 +903,7 @@ const WalletInner = () => {
               <h2 id="wallet-start-title">{t('walletPage_auctionAccessTitle')}</h2>
             </div>
             <p>{t('walletPage_auctionAccessDescription')}</p>
-            <button type="button" className="wallet-bank__auction-action" onClick={() => setIsStrategyModalOpen(true)}>
+            <button type="button" className="wallet-bank__auction-action" onClick={handleOpenStrategyModal}>
               <span>{t('walletPage_auctionAccessCta')}</span>
               <FiArrowRight aria-hidden />
             </button>
@@ -1078,6 +1095,23 @@ const WalletInner = () => {
         <DepositStrategyModal
           isOpen={isStrategyModalOpen}
           onClose={() => setIsStrategyModalOpen(false)}
+          onOpenCompass={() => setIsCompassDrawerOpen(true)}
+          returnPropertyPath={strategyReturnPath}
+          onReturnToProperty={handleReturnToProperty}
+          onChooseStrategies={() => setStrategyReturnPath(null)}
+        />
+        <InvestmentCompassDrawer
+          isOpen={isCompassDrawerOpen}
+          onClose={() => {
+            setIsCompassDrawerOpen(false)
+            markCompassPrompted()
+          }}
+          onStart={() => {
+            markCompassPrompted()
+            markCompassIntroPending()
+            setIsCompassDrawerOpen(false)
+            navigate(COMPASS_PATH)
+          }}
         />
         <DepositTopUpPicker
           isOpen={showTopUpPicker}

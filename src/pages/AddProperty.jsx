@@ -1,3 +1,5 @@
+import PropertyPresentationUpload from '../components/PropertyPresentationUpload'
+import { isPropertyPresentation } from '../utils/propertyPresentation'
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -1090,6 +1092,15 @@ const AddProperty = ({
   const [photos, setPhotos] = useState([])
   const [videos, setVideos] = useState([])
   const [additionalDocuments, setAdditionalDocuments] = useState([])
+  const presentation = additionalDocuments.find(isPropertyPresentation)
+  const supportingDocuments = additionalDocuments.filter((doc) => !isPropertyPresentation(doc))
+  const presentationUpload = (
+    <PropertyPresentationUpload
+      document={presentation}
+      onChange={(doc) => setAdditionalDocuments((prev) => [...prev.filter((item) => !isPropertyPresentation(item)), doc])}
+      onRemove={() => setAdditionalDocuments((prev) => prev.filter((doc) => !isPropertyPresentation(doc)))}
+    />
+  )
   const [requiredDocuments, setRequiredDocuments] = useState({
     ownership: null,
     noDebts: null
@@ -1487,13 +1498,13 @@ const AddProperty = ({
     const MAX_DOCUMENTS = 5
     
     // Проверяем лимит документов
-    if (additionalDocuments.length >= MAX_DOCUMENTS) {
+    if (supportingDocuments.length >= MAX_DOCUMENTS) {
       showNotification(`Максимальное количество дополнительных документов: ${MAX_DOCUMENTS}`)
       e.target.value = ''
       return
     }
     
-    const remainingSlots = MAX_DOCUMENTS - additionalDocuments.length
+    const remainingSlots = MAX_DOCUMENTS - supportingDocuments.length
     const filesToAdd = files.slice(0, remainingSlots)
     
     if (files.length > remainingSlots) {
@@ -1513,7 +1524,7 @@ const AddProperty = ({
       const reader = new FileReader()
       reader.onloadend = () => {
         setAdditionalDocuments(prev => {
-          if (prev.length >= MAX_DOCUMENTS) {
+          if (prev.filter((doc) => !isPropertyPresentation(doc)).length >= MAX_DOCUMENTS) {
             return prev
           }
           return [...prev, {
@@ -2134,7 +2145,8 @@ const AddProperty = ({
       formDataToSend.append('additional_documents', JSON.stringify(additionalDocuments.map(doc => ({
         name: doc.name,
         url: doc.url,
-        type: doc.type
+        type: doc.type,
+        kind: doc.kind
       }))))
       
       // Документы (File или восстановленные из черновика после Stripe)
@@ -2360,7 +2372,7 @@ const AddProperty = ({
           showHints,
           showHint1,
           showHint2,
-          additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type })),
+          additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type, kind: d.kind })),
           requiredDocuments: { ownership: ownSer, noDebts: ndSer },
           debtDocumentsByCategory: debtSer,
           debtDocumentsStep,
@@ -2633,6 +2645,7 @@ const AddProperty = ({
           id: `doc-${index}`,
           name: typeof doc === 'object' ? doc.name : `Документ ${index + 1}`,
           url: typeof doc === 'string' ? doc : doc.url,
+          kind: typeof doc === 'object' ? doc.kind : undefined,
           type: typeof doc === 'object' ? doc.type : 'other'
         }))
         setAdditionalDocuments(formattedDocs)
@@ -4541,7 +4554,7 @@ const AddProperty = ({
           showHints,
           showHint1,
           showHint2,
-          additionalDocuments: additionalDocuments.map((d) => ({ name: d.name, url: d.url, type: d.type })),
+          additionalDocuments: additionalDocuments.map((d) => ({ name: d.name, url: d.url, type: d.type, kind: d.kind })),
           requiredDocuments: { ownership: ownSer, noDebts: ndSer },
           debtDocumentsByCategory: debtSer,
           debtDocumentsStep,
@@ -6371,6 +6384,7 @@ const AddProperty = ({
                       aria-hidden={!isSpSectionBodyVisible('documents')}
                     >
                       <div className="sp-card__collapsible-body">
+                    {presentationUpload}
                     <div className="sp-doc-actions-simple">
                       <div className="sp-doc-action-card">
                         <button
@@ -6440,14 +6454,14 @@ const AddProperty = ({
                         <button type="button" className="sp-btn sp-btn--ghost sp-btn--wide" onClick={() => documentInputRef.current?.click()}>
                           Дополнительные документы
                         </button>
-                        <div className={`sp-doc-action-status ${additionalDocuments.length > 0 ? 'is-ready' : ''}`}>
-                          {additionalDocuments.length > 0
-                            ? `Загружено файлов: ${additionalDocuments.length}`
+                        <div className={`sp-doc-action-status ${supportingDocuments.length > 0 ? 'is-ready' : ''}`}>
+                          {supportingDocuments.length > 0
+                            ? `Загружено файлов: ${supportingDocuments.length}`
                             : 'Файлы пока не загружены'}
                         </div>
-                        {additionalDocuments.length > 0 && (
+                        {supportingDocuments.length > 0 && (
                           <div className="sp-doc-action-files">
-                            {additionalDocuments.map((doc) => (
+                            {supportingDocuments.map((doc) => (
                               <div key={doc.id} className="sp-doc-action-file">
                                 <span>{doc.name}</span>
                                 <button type="button" onClick={() => handleRemoveDocument(doc.id)} aria-label="Удалить документ">
@@ -9295,6 +9309,7 @@ const AddProperty = ({
                 </div>
               </div>
 
+              {presentationUpload}
               {/* Блок для дополнительных документов */}
               <div className="documents-additional-section">
                 <h3 className="documents-section-title">{t('addPropertyDocumentsAdditionalTitle')}</h3>
@@ -9317,7 +9332,7 @@ const AddProperty = ({
                     }
                   }}
                 >
-                  {additionalDocuments.length === 0 ? (
+                  {supportingDocuments.length === 0 ? (
                     <div className="documents-upload-placeholder">
                       <div className="documents-upload-icon">
                         <FiFileText size={48} />
@@ -9335,7 +9350,7 @@ const AddProperty = ({
                     </div>
                   ) : (
                     <div className="documents-list-horizontal">
-                      {additionalDocuments.map((doc) => (
+                      {supportingDocuments.map((doc) => (
                         <div key={doc.id} className="document-preview-item">
                           {doc.type === 'pdf' ? (
                             <div className="document-preview-pdf">
@@ -9357,7 +9372,7 @@ const AddProperty = ({
                           </div>
                         </div>
                       ))}
-                      {additionalDocuments.length < 5 && (
+                      {supportingDocuments.length < 5 && (
                         <div
                           className="document-preview-add"
                           onClick={() => documentInputRef.current?.click()}

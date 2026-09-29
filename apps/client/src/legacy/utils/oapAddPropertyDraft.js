@@ -161,6 +161,7 @@ export function clearOapDraftAfterPublish(draftKey = getOapDraftKey()) {
 }
 
 const FORM_KEYS_IGNORED_FOR_MEANING = new Set([
+  'development',
   'calculatorApplied',
   'pricingFieldSource',
   'testDriveCurrency',
@@ -286,13 +287,14 @@ async function serializeDocForDraft(doc, scopeKey = getOapDraftKey(), role = 'ad
       blob,
       name,
       type: mime || blob.type || 'application/pdf',
-      meta: { docType, role },
+      meta: { docType, role, kind: doc.kind },
     })
     if (saved) {
       return {
         id: itemId,
         name,
         type: docType,
+        kind: doc.kind,
         docMime: mime || blob.type || 'application/pdf',
         storage: 'idb',
         role,
@@ -300,7 +302,7 @@ async function serializeDocForDraft(doc, scopeKey = getOapDraftKey(), role = 'ad
     }
     try {
       const dataUrl = await fileToDataUrl(blob)
-      return { id: itemId, name, type: docType, docMime: mime || blob.type, dataUrl, role }
+      return { id: itemId, name, type: docType, kind: doc.kind, docMime: mime || blob.type, dataUrl, role }
     } catch {
       return null
     }
@@ -311,6 +313,7 @@ async function serializeDocForDraft(doc, scopeKey = getOapDraftKey(), role = 'ad
       id: doc.id,
       name: doc.name,
       type: doc.type,
+      kind: doc.kind,
       docMime: doc.docMime,
       storage: 'idb',
       role,
@@ -326,6 +329,7 @@ function restoredDocFromFile(file, serialized, dataUrl) {
     id: serialized?.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     name: serialized?.name || file.name,
     file,
+    kind: serialized?.kind,
     type: serialized?.type || (isImage ? 'image' : 'pdf'),
     preview: isImage ? URL.createObjectURL(file) : '',
     url: dataUrl || '',
@@ -346,7 +350,7 @@ async function restoreDocFromDraft(serialized, scopeKey = getOapDraftKey()) {
           serialized.name || 'document',
           serialized.docMime || 'application/pdf',
         )
-        return restoredDocFromFile(file, { ...serialized, type: record.meta?.docType || serialized.type })
+        return restoredDocFromFile(file, { ...serialized, type: record.meta?.docType || serialized.type, kind: record.meta?.kind || serialized.kind })
       } catch {
         // try next scope
       }
@@ -387,6 +391,7 @@ function restoredDocFromRecord(record) {
     id: record.itemId,
     name: record.name || file.name,
     type: record.meta?.docType,
+    kind: record.meta?.kind,
   })
 }
 

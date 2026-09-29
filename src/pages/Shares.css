@@ -1941,7 +1941,8 @@ html.site-footer-near .shares-floats > button.ai-button {
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  opacity: 0.62;
+  opacity: 1;
+  filter: brightness(1.1) saturate(1.2);
 }
 
 .debts-hero-scene__overlay {
@@ -1950,13 +1951,25 @@ html.site-footer-near .shares-floats > button.ai-button {
   right: 0;
   bottom: 0;
   left: 0;
-  background: linear-gradient(
-    105deg,
-    rgba(5, 5, 5, 0.84) 0%,
-    rgba(5, 5, 5, 0.58) 42%,
-    rgba(76, 29, 29, 0.28) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(25, 31, 30, 0.2) 0%,
+      rgba(25, 31, 30, 0.04) 42%,
+      rgba(25, 24, 22, 0.4) 100%
+    ),
+    linear-gradient(
+      105deg,
+      rgba(25, 24, 22, 0.48) 0%,
+      rgba(25, 24, 22, 0.18) 42%,
+      rgba(225, 167, 93, 0.06) 100%
+    );
   pointer-events: none;
+}
+
+.debts-hero-scene__title,
+.debts-hero-scene__lead {
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.8), 0 3px 18px rgba(4, 29, 34, 0.4);
 }
 
 .debts-hero-scene__inner {
@@ -4479,4 +4492,36 @@ html.site-footer-near .shares-floats > button.ai-button {
     background: #1a1a1a;
     color: #fff;
   }
+}
+
+/* Feather the photo behind the copy without enclosing the text. */
+.debts-hero-scene__header {
+  position: relative;
+  isolation: isolate;
+}
+
+.debts-hero-scene .debts-hero-scene__lead {
+  position: relative;
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.55;
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.45);
+}
+
+.debts-hero-scene .debts-hero-scene__lead::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -96px -160px;
+  background: radial-gradient(
+    ellipse closest-side at center,
+    rgba(3, 20, 25, 0.66) 0%,
+    rgba(3, 20, 25, 0.54) 48%,
+    rgba(3, 20, 25, 0.2) 76%,
+    rgba(3, 20, 25, 0) 100%
+  );
+  pointer-events: none;
 }

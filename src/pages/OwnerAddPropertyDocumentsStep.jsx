@@ -1,3 +1,5 @@
+import PropertyPresentationUpload from '../components/PropertyPresentationUpload'
+import { isPropertyPresentation } from '../utils/propertyPresentation'
 import { useState, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -91,6 +93,8 @@ function DocumentsContent({
   onRemoveAdditional,
 }) {
   const { t } = useTranslation()
+  const presentation = additionalDocuments.find(isPropertyPresentation)
+  const supportingDocuments = additionalDocuments.filter((doc) => !isPropertyPresentation(doc))
 
   const standardRequiredDocs = useMemo(
     () => [
@@ -168,12 +172,12 @@ function DocumentsContent({
     (files) => {
       if (!files.length) return
 
-      if (additionalDocuments.length >= MAX_ADDITIONAL_DOCUMENTS) {
+      if (supportingDocuments.length >= MAX_ADDITIONAL_DOCUMENTS) {
         showNotice(t('oap_docsMaxAdditional', { count: MAX_ADDITIONAL_DOCUMENTS }))
         return
       }
 
-      const remaining = MAX_ADDITIONAL_DOCUMENTS - additionalDocuments.length
+      const remaining = MAX_ADDITIONAL_DOCUMENTS - supportingDocuments.length
       const filesToAdd = files.slice(0, remaining)
 
       if (files.length > remaining) {
@@ -204,7 +208,7 @@ function DocumentsContent({
         reader.readAsDataURL(file)
       })
     },
-    [additionalDocuments.length, onAddAdditional, showNotice, validateFile, t]
+    [supportingDocuments.length, onAddAdditional, showNotice, validateFile, t]
   )
 
   const handleAdditionalUpload = useCallback(
@@ -219,17 +223,17 @@ function DocumentsContent({
     (e) => {
       e.preventDefault()
       setExtraDragOver(false)
-      if (additionalDocuments.length >= MAX_ADDITIONAL_DOCUMENTS) return
+      if (supportingDocuments.length >= MAX_ADDITIONAL_DOCUMENTS) return
       processAdditionalFiles(Array.from(e.dataTransfer.files || []))
     },
-    [additionalDocuments.length, processAdditionalFiles]
+    [supportingDocuments.length, processAdditionalFiles]
   )
 
   const inputRefs = {
     ownership: ownershipInputRef,
     noDebts: noDebtsInputRef,
   }
-  const extraFull = additionalDocuments.length >= MAX_ADDITIONAL_DOCUMENTS
+  const extraFull = supportingDocuments.length >= MAX_ADDITIONAL_DOCUMENTS
 
   const requiredSectionNumber = 1
   const additionalSectionNumber = 2
@@ -318,9 +322,9 @@ function DocumentsContent({
           </button>
         )}
 
-        {additionalDocuments.length > 0 && (
+        {supportingDocuments.length > 0 && (
           <div className="oap-documents-step__gallery-track">
-            {additionalDocuments.map((doc) => (
+            {supportingDocuments.map((doc) => (
               <div key={doc.id} className="oap-documents-step__gallery-item">
                 <button
                   type="button"
@@ -536,6 +540,14 @@ function DocumentsContent({
         </div>
       )}
 
+      <PropertyPresentationUpload
+        document={presentation}
+        onChange={(doc) => {
+          if (presentation) onRemoveAdditional(presentation.id)
+          onAddAdditional(doc)
+        }}
+        onRemove={() => onRemoveAdditional(presentation.id)}
+      />
       {additionalSection}
       {securityBanner}
     </>

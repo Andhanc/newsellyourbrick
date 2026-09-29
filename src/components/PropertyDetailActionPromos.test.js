@@ -85,21 +85,26 @@ test('property action promos stay focused and retain legacy parity', async () =>
   assert.match(testDrive, /property-detail-test-drive-promo__lead/)
   assert.match(testDrive, /<TestDriveSection/)
   assert.doesNotMatch(testDrive, /FiClock|FiHome|property-detail-test-drive-promo__feature/)
-  assert.match(testDriveStyles, /radial-gradient\(circle at 10% 8%/)
-  assert.match(testDriveStyles, /linear-gradient\(135deg, #e3f1ff/)
+  assert.match(testDrive, /<picture[^>]*className="property-detail-test-drive-promo__art"/)
+  assert.match(testDrive, /media="\(max-width: 760px\)" srcSet=\{PROPERTY_TEST_DRIVE_PROMO_MOBILE_IMAGE\}/)
+  assert.match(testDriveStyles, /background:\s*#ffe76a/)
   assert.match(testDriveStyles, /\.property-detail-mobile-test-drive\s*\{[^}]*width:\s*100%/s)
-  assert.match(testDriveStyles, /grid-template-areas: "copy" "art" "actions"/)
-  assert.match(testDriveStyles, /\.property-detail-test-drive-promo__photo\s*\{\s*position: relative/)
+  assert.match(testDriveStyles, /position: absolute;[\s\S]*inset: 0;[\s\S]*width: 100%;[\s\S]*height: 100%/ )
+  assert.match(testDriveStyles, /object-fit: cover/)
 })
 
 test('generated promo images are valid non-empty WebP assets', async () => {
-  for (const name of ['buy-now-action-3d.webp', 'test-drive-suitcase-calendar-3d.webp']) {
+  for (const name of ['buy-now-action-3d.webp', 'test-drive-sunshine-desktop.webp', 'test-drive-sunshine-mobile.webp']) {
     const image = await readFile(
       new URL(`../../public/images/property-detail/${name}`, import.meta.url),
     )
     assert.equal(image.subarray(0, 4).toString('ascii'), 'RIFF')
     assert.equal(image.subarray(8, 12).toString('ascii'), 'WEBP')
-    assert.ok(image.length > 50_000)
+    assert.ok(image.length > 20_000)
+    if (name.startsWith('test-drive-sunshine-')) {
+      const legacy = await readFile(new URL(`../../apps/client/public/images/property-detail/${name}`, import.meta.url))
+      assert.deepEqual(image, legacy)
+    }
   }
 
   const badge = await readFile(

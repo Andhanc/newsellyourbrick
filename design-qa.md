@@ -539,3 +539,51 @@ final result: passed
 The latest full report and visual comparison are in [the deposit modal QA](docs/design/deposit-strategy-reference/design-qa.md). Reference and implementation were compared together; mobile, compact and desktop checks passed.
 
 final result: passed
+
+## Development stage ticket — 2026-09-27
+
+- Source visual: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-ae44b54b-5e28-4bbe-82dd-dcaead4e6294.png` (1022 × 658 pixels).
+- Implementation: `http://localhost:5173/development/callao-salvaje-costa-adeje-demo`.
+- Implementation screenshot evidence: inline Codex in-app browser screenshot in the combined reference/implementation tool result titled “Сверяю композицию и положение текущей точки”. No screenshot file was exported by the browser tool. Viewport: 319 × 837 CSS px; screenshot: 319 × 837 pixels. A prior clipped browser capture had an incorrect density and was excluded from comparison.
+- State: fundraising, second of five stages; next stage construction.
+- Full-view and focused comparison: reference and full rendered capture opened together in one tool result; the stage component is fully visible. The reference contains a loyalty program, while this task explicitly adapts it to the existing development project. Two columns (35/65), white rounded ticket, central top/bottom cutouts, inset vertical divider, filled and outlined badges, bottom progress track and circular milestones are preserved. Mobile copy wraps to remain readable at the narrower width; it is not a pixel-identical recreation of the unrelated loyalty text.
+- Typography: existing Montserrat maintained, regular/medium weights; current and next-stage headings and badges readable without clipping.
+- Spacing/layout: current stage left, upcoming stage and progress right, footer aligned near the bottom; all five milestones fit, with no component overflow.
+- Color/tokens: established Tiffany replaces reference pink; outlined lavender badge and neutral remaining track retained.
+- Images/assets: no photographic or illustrated assets in the scoped component; the scale and dots are semantic live UI, and the arrow/check use existing Lucide icons. Loyalty brand mark intentionally omitted.
+- Copy: project stage names, stage counter, next-stage explanation localized to seven languages. No loyalty percentages or prices copied into project progress.
+- Current-state verification: `aria-current="step"` identifies “Сбор капитала”; 164px track has a 45.9375px fill, ending at the second milestone center. Completed state uses the final stage instead of referring to a nonexistent next stage.
+- Browser console: no captured errors. Seven existing parity/localization/finance tests pass. Production code build passes with public asset copying disabled due to the previously documented disk-space limit; `git diff --check` passes.
+- Findings: no actionable P0/P1/P2 issues in the inspected mobile state. Responsive text reflow and Tiffany palette are intentional product adaptations. Other project statuses were reviewed in code rather than by changing persisted project data.
+- Comparison history: first full-view visual pass accepted; no visual correction loop required. Invalid clipped capture was replaced with full-viewport evidence before assessment.
+- Checklist: integrated existing stage data; kept surrounding description, waterfall and document/history drawers; mirrored web/legacy files; preserved seven locales.
+- final result: passed
+
+## Expandable stages and pool background — 2026-09-27
+
+- Scope update: user requested inline “Подробнее” expansion for all five stages and an additional swimming-pool background with a pink flamingo ring behind license and stages.
+- Asset truth: `public/images/development/pool-flamingo-v1.webp`; exact built-in ImageGen prompt and saved paths in `docs/development-pool-artwork.md`.
+- Rendered evidence: in-app browser screenshots in tool results “Проверяю фон лицензии и этапов” (1280 × 720), “Проверяю бассейн и текст на мобильном экране” and “Проверяю подробности этапов на фоне бассейна” (390 × 844). Browser did not export screenshot files. Temporary viewport override reset after verification.
+- Typography/layout: Montserrat maintained; license copy sits on a translucent white panel; stage ticket and detailed list remain opaque white. The pink flamingo is visible to the right of the license on desktop and mobile. All five steps are readable in the expanded panel without horizontal overflow.
+- Color/asset: generated turquoise pool photo with pink inflatable flamingo, no placeholder artwork. Image fades into the turquoise backdrop so expanding the content does not stretch the flamingo. Ticket cutouts now reveal the pool through a mask rather than showing the previous page-color circles.
+- Behavior verified: button click expands the inline details, exposes all five descriptions and marks fundraising as current; “Свернуть” collapses; Enter also collapses. aria-expanded and aria-controls match panel visibility. Project status and persisted data remain unchanged.
+- Verification: seven parity/localization/finance tests pass; diff check clean; production code build passes with static copying disabled due to known disk-space constraint.
+- Findings: no actionable P0/P1/P2 findings in inspected collapsed/expanded states. New backdrop intentionally supersedes the original plain page surroundings.
+- final result: passed
+
+## DEVELOP catalogue, gallery and isolation — 2026-09-27
+
+- Catalogue uses two columns: measured 171px + 171px at 390px, 135.5px + 135.5px at 319px. No page/card horizontal overflow. Buyer catalogue contains no publishing link.
+- New full-ticket project card, fixed capital in application drawer, seller-only management entry under My Properties.
+- Gallery uses auction desktop classes, mobile thumbnail styles and fullscreen viewer styles; opening, Escape and focus restoration checked in browser. Current demo has one source image, so multi-photo arrows are conditional.
+- Binocular banner rendered directly before Documents / History. Desktop and mobile compositions reviewed; banner link leads to the project stages.
+- Standard auction property `/property/house-abamah-golf-villa-110`: no development panels or investment decision block on mobile or desktop. Removed its unconditional integration from the shared PropertyDetailClassic template; legacy synced.
+- Development API integration test passes with partial investment rejection, single full funding, closed enquiries after funding and buyer publication/management rejection. UI/property regression subset: 30 passed. Wider existing UX suite: 60 passed, 3 unrelated failures in profile history/bookings and favorites expectations.
+- Full `npm run build` passed. `git diff --check` passed.
+
+### Compact card and promo CTA refinement
+
+- Removed the auction **page** class from the development gallery; it injected 100px of mobile bottom padding (and desktop shell padding). Gallery-only styles remain scoped to DEVELOP. Measured gallery padding 0px and 16px spacing to the heading at 390px.
+- Catalogue now reuses AuctionPropertyCard and discoverAuctionCards styling, with 4:3 photo, capital dock, compact facts and primary CTA. Card height: 287px at 390px viewport, 260px at 319px; two columns and no horizontal overflow. Desktop photo capped at 260px, total card 425px.
+- Promo CTA is centered across the banner, 52px tall on mobile, using the shared `btn-tiffany-shine` animation. Center offset measured below 0.01px; link still opens the project stages.
+- Twelve affected parity/property tests pass, full build passes and diff whitespace check passes. No changes to other strategy cards.

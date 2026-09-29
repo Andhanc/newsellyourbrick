@@ -266,8 +266,15 @@ function NotificationItem({
               <span className="visually-hidden">{t('notificationsOutbidCta', 'К торгам')}</span>
             </button>
           ) : (
-            <div className="notification-item__property">
-              <div className="notification-item__image">
+            <button
+              type="button"
+              className="notification-item__property notification-item__property--linked"
+              onClick={(event) => {
+                event.stopPropagation()
+                goToPropertyListing(notification.id, propertyMeta.id)
+              }}
+            >
+              <span className="notification-item__image">
                 <img
                   src={propertyThumbSrc}
                   alt=""
@@ -278,25 +285,17 @@ function NotificationItem({
                     event.currentTarget.src = LIST_FALLBACK_IMG
                   }}
                 />
-              </div>
-              <div className="notification-item__info">
-                <p className="notification-item__property-name">{propertyMeta.name}</p>
+              </span>
+              <span className="notification-item__info">
+                <span className="notification-item__property-name">{propertyMeta.name}</span>
                 {displayLocation ? (
-                  <p className="notification-item__property-location">{displayLocation}</p>
+                  <span className="notification-item__property-location">{displayLocation}</span>
                 ) : null}
-                <button
-                  type="button"
-                  className="notification-item__button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    goToPropertyListing(notification.id, propertyMeta.id)
-                  }}
-                >
-                  {t('goTo')}
-                  <FiArrowRight aria-hidden />
-                </button>
-              </div>
-            </div>
+              </span>
+              <span className="notification-item__property-arrow" aria-hidden="true">
+                <FiArrowRight />
+              </span>
+            </button>
           )
         ) : notification.type === 'buy_now_approved' ? (
           <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>

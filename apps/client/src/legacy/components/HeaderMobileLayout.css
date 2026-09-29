@@ -1,5 +1,11 @@
 /* Mobile top sheet and control fitting for guests and signed-in users. */
 @media (max-width: 768px) {
+  /* Keep icons readable on the white header above dark page content. */
+  .new-header .new-header__search-btn,
+  .new-header .new-header__notification-btn {
+    color: #111827;
+  }
+
   /*
    * Phone shell: the header is a full-bleed top sheet, matching native mobile
    * navigation. Only the lower corners are rounded. The outer fixed layer must

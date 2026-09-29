@@ -36,7 +36,7 @@ import {
   Car,
   Columns2,
 } from 'lucide-react'
-import { SiteBrandIcon } from './SiteBrandLogo'
+import { SiteBrandWordmark } from './SiteBrandLogo'
 import './SiteBrandLogo.css'
 import { FiX } from 'react-icons/fi'
 import { CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
@@ -95,6 +95,7 @@ const TRADES_COLUMN = {
     { labelKey: 'auction', path: '/auction' },
     { labelKey: 'coInvestment', path: CO_INVESTMENT_PATH },
     { labelKey: 'debtsTitle', path: '/debts' },
+    { labelKey: 'develop.title', path: '/development' },
     { labelKey: 'headerMegaBuyNow', path: '/auction/buy-now' },
   ],
 }
@@ -104,6 +105,7 @@ const SERVICES_COLUMN = {
   titleKey: 'headerMegaServices',
   icon: Sparkles,
   links: [
+    { labelKey: 'develop.passport', path: '/buyer-passport', requiresAuth: true },
     { labelKey: 'testDrive', path: TEST_DRIVE_PATH },
     { labelKey: 'aiAssistant', path: null, action: 'ai' },
     { labelKey: 'calculator', path: '/calculator', requiresAuth: true },
@@ -139,6 +141,7 @@ function buildRoleColumn(role) {
         { labelKey: 'listProperty', path: '/owner-test/add-property', requiresAuth: true },
         { labelKey: 'ownerTest_tabBookings', path: '/owner-test/test-drive', requiresAuth: true },
         { labelKey: 'ownerTest_navMyProperties', path: '/owner-test/properties', requiresAuth: true },
+        { labelKey: 'develop.myProjects', path: '/development/mine', requiresAuth: true },
         { labelKey: 'bonuses', path: '/bonuses', requiresAuth: true },
       ],
     }
@@ -166,6 +169,9 @@ function matchesMenuPath(pathname, search, linkPath) {
   let pathMatch = false
   if (base === '/') {
     pathMatch = pathname === '/' || pathname === '/main'
+  } else if (base === '/auction') {
+    const isBuyNow = pathname === '/auction/buy-now' || pathname.startsWith('/auction/buy-now/')
+    pathMatch = !isBuyNow && (pathname === base || pathname.startsWith(`${base}/`))
   } else if (base === CO_INVESTMENT_PATH) {
     pathMatch =
       pathname === CO_INVESTMENT_PATH ||
@@ -577,8 +583,7 @@ export default function HeaderMegaMenu({
             closeAfterNav?.()
           }}
         >
-          <SiteBrandIcon />
-          <span className="site-brand__text">sellyourbrick</span>
+          <span className="site-brand__text"><SiteBrandWordmark /></span>
         </button>
         <button
           type="button"

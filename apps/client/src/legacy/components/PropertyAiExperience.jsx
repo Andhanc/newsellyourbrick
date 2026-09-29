@@ -75,8 +75,10 @@ export default function PropertyAiExperience({
   onRequireLogin,
   desktop = false,
   deferLauncherCollapse = false,
+  openSignal = 0,
 }) {
   const [view, setView] = useState('closed')
+  useEffect(() => { if (openSignal > 0) setView('picker') }, [openSignal])
   const [launcherExpanded, setLauncherExpanded] = useState(true)
   const [launcherMorphing, setLauncherMorphing] = useState(false)
   const [job, setJob] = useState(null)

@@ -318,6 +318,43 @@
   border-top: 1px solid #eef2f6;
 }
 
+.notification-item__property--linked {
+  grid-template-columns: 52px minmax(0, 1fr) 36px;
+  width: 100%;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid #eef2f6;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item__property--linked .notification-item__property-name {
+  display: block;
+}
+
+.notification-item__property-arrow {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--buyer-teal) 10%, #fff);
+  color: var(--buyer-teal-deep);
+}
+
+.notification-item__property-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.notification-item__property--linked:hover .notification-item__property-arrow {
+  background: color-mix(in srgb, var(--buyer-teal) 18%, #fff);
+}
+
 .notification-item__property--compact {
   grid-template-columns: 36px minmax(0, 1fr) auto;
   gap: 10px;
@@ -338,6 +375,7 @@
   color: #173b44;
 }
 
+.notification-item__property--linked:focus-visible,
 .notification-item__property--compact:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--buyer-teal) 55%, #fff);
   outline-offset: 2px;

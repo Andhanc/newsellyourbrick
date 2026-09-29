@@ -1,3 +1,4 @@
+import { DealAnalytics } from '../features/development/DealRoom'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -998,6 +999,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
         <div className="opa-workspace">
           <div className="opa-content">
+            {property?.raw?.id && <><Link to={`/deal-room/${property.raw.source_table || property.raw.property_table || (['house','villa'].includes(property.raw.property_type) ? 'properties_houses' : 'properties_apartments')}/${property.raw.id}`}>{t('develop.manageAsset')}</Link><DealAnalytics assetKey={`${property.raw.source_table || property.raw.property_table || (['house','villa'].includes(property.raw.property_type) ? 'properties_houses' : 'properties_apartments')}:${property.raw.id}`} currency={property.currency || 'EUR'} /></>}
             <div className="opa-mob-period opa-mobile-only">
               <Calendar size={16} strokeWidth={2} aria-hidden />
               <span>{analytics.period}</span>

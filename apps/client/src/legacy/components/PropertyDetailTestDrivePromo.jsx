@@ -5,7 +5,11 @@ import { publicAsset } from '../utils/publicAsset'
 import './PropertyDetailTestDriveActionPromo.css'
 
 export const PROPERTY_TEST_DRIVE_PROMO_IMAGE = publicAsset(
-  'images/property-detail/test-drive-suitcase-calendar-3d.webp',
+  'images/property-detail/test-drive-sunshine-desktop.webp',
+)
+
+export const PROPERTY_TEST_DRIVE_PROMO_MOBILE_IMAGE = publicAsset(
+  'images/property-detail/test-drive-sunshine-mobile.webp',
 )
 
 const PropertyDetailTestDrivePromo = forwardRef(function PropertyDetailTestDrivePromo(
@@ -38,7 +42,8 @@ const PropertyDetailTestDrivePromo = forwardRef(function PropertyDetailTestDrive
         </div>
       ) : null}
 
-      {promoPhoto ? (
+      <picture className="property-detail-test-drive-promo__art" aria-hidden="true">
+        {!imageUrl ? <source media="(max-width: 760px)" srcSet={PROPERTY_TEST_DRIVE_PROMO_MOBILE_IMAGE} /> : null}
         <img
           className="property-detail-test-drive-promo__photo"
           src={promoPhoto}
@@ -46,9 +51,10 @@ const PropertyDetailTestDrivePromo = forwardRef(function PropertyDetailTestDrive
           loading="lazy"
           decoding="async"
         />
-      ) : null}
+      </picture>
 
       <div className="property-detail-test-drive-promo__copy">
+        <span className="property-detail-test-drive-promo__eyebrow">{t('testDrive')}</span>
         <h3 id="property-test-drive-promo-title" className="property-detail-test-drive-promo__title">
           {t('propertyDetailTestDriveHeadline')}
         </h3>

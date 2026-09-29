@@ -12,6 +12,7 @@ import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { navigateToWallet } from '../utils/walletNavigation'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
@@ -1286,8 +1287,7 @@ const PropertyDetail = () => {
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          const from =
-            typeof window !== 'undefined' ? window.location.pathname : '/auction'
+          const from = getPropertyDetailPath(normalizedProperty)
           navigateToWallet(navigate, from)
         }}
       />

@@ -48,7 +48,7 @@ test('section headings stay short and every explainer uses the Tiffany theme', (
   assert.match(debts, /\{t\('debtsTitle'\)\}/)
   assert.equal(testDrive.match(/<h1>\{t\('testDrive'\)\}<\/h1>/g)?.length, 2)
   assert.match(component, /const TIFFANY_THEME = \{[\s\S]*?accent:\s*'#16a7b3'[\s\S]*?accentRgb:\s*'22, 167, 179'/)
-  assert.equal(component.match(/\.\.\.TIFFANY_THEME/g)?.length, 5)
+  assert.equal(component.match(/\.\.\.TIFFANY_THEME/g)?.length, 6)
   assert.doesNotMatch(component, /#c99a45|#d47755|#2b9b78/)
 })
 

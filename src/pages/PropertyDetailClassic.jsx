@@ -1,3 +1,4 @@
+import { isPropertyPresentation } from '../utils/propertyPresentation'
 import { useState, useRef, useEffect, useMemo, useCallback, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation, Trans } from 'react-i18next'
@@ -55,6 +56,7 @@ import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './PropertyDetailClassic.css'
+import './PropertyDetailPresentation.css'
 import '../components/PropertyDetailBuyNowHub.css'
 import './PropertyDetailClassic.desktopAuctionV3.css'
 import './PropertyDetailClassic.mobileMap.css'
@@ -81,7 +83,7 @@ import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { STREET_MAP_STYLE } from '../utils/mapStyles'
-import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../constants/cabinetEvents'
 import { refetchPropertyAfterCheckout } from '../utils/purchaseSuccessFlow'
 import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
@@ -169,7 +171,6 @@ const PropertyDetailInvestorPanelPromo = lazyWithRetry(() =>
 const PropertyDepositAccessDrawer = lazyWithRetry(() => import('../components/PropertyDepositAccessDrawer'))
 const DebtAuctionInsight = lazyWithRetry(() => import('../components/DebtAuctionInsight'))
 const PropertyDebtRiskBanner = lazyWithRetry(() => import('../components/PropertyDebtRiskBanner'))
-const TestDriveSection = lazyWithRetry(() => import('../components/TestDriveSection'))
 const PropertyDetailTestDrivePromo = lazyWithRetry(() => import('../components/PropertyDetailTestDrivePromo'))
 const PropertyDetailAuctionBiddingForm = lazyWithRetry(() => import('../components/PropertyDetailAuctionBiddingForm'))
 const PropertyDetailBuyNowPromo = lazyWithRetry(() => import('../components/PropertyDetailBuyNowPromo'))
@@ -408,7 +409,6 @@ function PropertyDetailClassic({
   const [propertyViewerCount, setPropertyViewerCount] = useState(null)
 
   const MOBILE_MAIN_SPECS_INITIAL_COUNT = 6
-  const MOBILE_AUCTION_TITLE_INLINE_MAX = 26
   const VISITOR_STORAGE_KEY = 'visitor_global_id'
   const PROPERTY_VIEWER_HEARTBEAT_MS = 30 * 1000
 
@@ -698,12 +698,13 @@ function PropertyDetailClassic({
         }
         
         for (const doc of additionalDocs) {
-          const docName = typeof doc === 'string' ? doc : (doc.name || t('propertyDetail_documentN', { n: additionalDocs.indexOf(doc) + 1 }))
+          const docName = isPropertyPresentation(doc) ? t('propertyPresentationTitle') : typeof doc === 'string' ? doc : (doc.name || t('propertyDetail_documentN', { n: additionalDocs.indexOf(doc) + 1 }))
           const docUrl = typeof doc === 'object' && doc.url ? doc.url : (typeof doc === 'string' ? doc : null)
           if (docUrl) {
             const processedUrl = await processDocumentUrl(docUrl)
             docs.push({
               name: docName,
+              kind: isPropertyPresentation(doc) ? 'presentation' : undefined,
               url: processedUrl,
               type: typeof doc === 'object' && doc.type ? doc.type : getDocumentType(docUrl, docName)
             })
@@ -3967,7 +3968,7 @@ function PropertyDetailClassic({
               <button
                 key={`${doc.url}-${index}`}
                 type="button"
-                className="pd-v3-doc-card"
+                className={`pd-v3-doc-card${isPropertyPresentation(doc) ? ' property-document--presentation' : ''}`}
                 onClick={() => setSelectedDocument(doc)}
                 tabIndex={aboutDepositContentLocked ? -1 : undefined}
               >
@@ -4712,7 +4713,7 @@ function PropertyDetailClassic({
             <li key={`${doc.url}-${index}`}>
               <button
                 type="button"
-                className="property-detail-mobile-documents__item"
+                className={`property-detail-mobile-documents__item${isPropertyPresentation(doc) ? ' property-document--presentation' : ''}`}
                 onClick={() => setSelectedDocument(doc)}
                 tabIndex={aboutDepositContentLocked ? -1 : undefined}
               >
@@ -5422,16 +5423,13 @@ function PropertyDetailClassic({
 
   const renderAuctionMobileHeader = () => {
     const showTitleInHeader = !isAuctionMobileTitleVisible
-    const titleLong = (propertyInfo?.length ?? 0) > MOBILE_AUCTION_TITLE_INLINE_MAX
     const isSolid = isAuctionMobileHeaderSolid || showTitleInHeader
 
     return (
       <header
         className={`property-detail-auction-mobile-header property-detail-auction-mobile-only${
           isSolid ? ' property-detail-auction-mobile-header--solid' : ''
-        }${showTitleInHeader ? ' property-detail-auction-mobile-header--title-visible' : ''}${
-          titleLong ? ' property-detail-auction-mobile-header--title-long' : ''
-        }`}
+        }${showTitleInHeader ? ' property-detail-auction-mobile-header--title-visible' : ''}`}
       >
         <div className="property-detail-auction-mobile-header__toolbar">
           <PageBackButton
@@ -5439,30 +5437,18 @@ function PropertyDetailClassic({
             className="page-back-button--icon-only property-detail-auction-mobile-header__back"
             iconSize={20}
           />
-          {!titleLong ? (
-            <div
-              className={`property-detail-auction-mobile-header__title-inline-wrap${
-                showTitleInHeader ? ' is-visible' : ''
-              }`}
-              aria-hidden={!showTitleInHeader}
-            >
-              <span className="property-detail-auction-mobile-header__title-inline">{propertyInfo}</span>
-            </div>
-          ) : null}
-          <div className="property-detail-auction-mobile-header__actions">
-            {renderAuctionMobileToolbarActions()}
-          </div>
-        </div>
-        {titleLong ? (
           <div
-            className={`property-detail-auction-mobile-header__title-row-wrap${
+            className={`property-detail-auction-mobile-header__title-inline-wrap${
               showTitleInHeader ? ' is-visible' : ''
             }`}
             aria-hidden={!showTitleInHeader}
           >
-            <p className="property-detail-auction-mobile-header__title-row">{propertyInfo}</p>
+            <span className="property-detail-auction-mobile-header__title-inline">{propertyInfo}</span>
           </div>
-        ) : null}
+          <div className="property-detail-auction-mobile-header__actions">
+            {renderAuctionMobileToolbarActions()}
+          </div>
+        </div>
       </header>
     )
   }
@@ -6069,7 +6055,7 @@ function PropertyDetailClassic({
             <li key={`${doc.url}-${index}`}>
               <button
                 type="button"
-                className="property-detail-auction-desktop-documents__item"
+                className={`property-detail-auction-desktop-documents__item${isPropertyPresentation(doc) ? ' property-document--presentation' : ''}`}
                 onClick={() => setSelectedDocument(doc)}
                 tabIndex={aboutDepositContentLocked ? -1 : undefined}
               >
@@ -6866,7 +6852,7 @@ function PropertyDetailClassic({
             <ul className="pdx-docs-list">
               {visibleDocs.map((doc, index) => (
                 <li key={`${doc.url}-${index}`} className="pdx-docs-list__item">
-                  <button type="button" className="pdx-docs-list__button" onClick={() => setSelectedDocument(doc)}>
+                  <button type="button" className={`pdx-docs-list__button${isPropertyPresentation(doc) ? ' property-document--presentation' : ''}`} onClick={() => setSelectedDocument(doc)}>
                     <span className="pdx-docs-list__icon" aria-hidden>
                       <FiFileText size={16} />
                     </span>
@@ -7638,8 +7624,10 @@ function PropertyDetailClassic({
                   property.test_drive === true ||
                   property.test_drive === '1') && (
                   <Suspense fallback={null}>
-                  <TestDriveSection
+                  <PropertyDetailTestDrivePromo
                     propertyId={displayProperty.id}
+                    propertySlug={displayProperty.slug}
+                    propertyType={displayProperty.property_type || displayProperty.propertyType}
                     propertyTable={
                       property.source_table ||
                       displayProperty.source_table ||
@@ -7928,14 +7916,14 @@ function PropertyDetailClassic({
                       key={index}
                       type="button"
                       onClick={() => setSelectedDocument(doc)}
-                      className="property-detail-sidebar__document-item"
+                      className={`property-detail-sidebar__document-item${isPropertyPresentation(doc) ? ' property-document--presentation' : ''}`}
                       style={{
-                        background: 'none',
-                        border: 'none',
+                        background: isPropertyPresentation(doc) ? undefined : 'none',
+                        border: isPropertyPresentation(doc) ? undefined : 'none',
                         cursor: 'pointer',
                         width: '100%',
                         textAlign: 'left',
-                        padding: 0
+                        padding: isPropertyPresentation(doc) ? 14 : 0
                       }}
                     >
                       <FiFileText size={20} className="property-detail-sidebar__document-icon" />
@@ -8060,8 +8048,7 @@ function PropertyDetailClassic({
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          const from =
-            typeof window !== 'undefined' ? window.location.pathname : '/auction'
+          const from = getPropertyDetailPath(displayProperty)
           navigateToWallet(navigate, from)
         }}
       />
@@ -8072,9 +8059,7 @@ function PropertyDetailClassic({
         isOpen={isPropertyDepositDrawerOpen}
         onClose={() => setIsPropertyDepositDrawerOpen(false)}
         onGoToDeposit={() => {
-          const from = typeof window !== 'undefined'
-            ? `${window.location.pathname}${window.location.search || ''}`
-            : '/auction'
+          const from = getPropertyDetailPath(displayProperty)
           navigateToWallet(navigate, from)
         }}
       />

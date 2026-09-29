@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiArrowLeft, FiCheck, FiChevronDown, FiX } from 'react-icons/fi'
+import { FiArrowLeft, FiArrowRight, FiCheck, FiChevronDown, FiX } from 'react-icons/fi'
 import { formatPropertyPrice } from '../../utils/currency'
 import { triggerSelectionHaptic } from '../../utils/haptics'
 import { getPropertyCardImage } from '../../utils/propertyImage'
@@ -229,6 +230,10 @@ export default function CompareMobilePicker({
             <div className="compare-picker__empty">
               <strong>{t('comparePage_emptyTitle')}</strong>
               <span>{t('comparePage_emptyText')}</span>
+              <Link className="compare-picker__empty-link" to="/auction">
+                {t('comparePage_goToTrading')}
+                <FiArrowRight size={16} aria-hidden="true" />
+              </Link>
             </div>
           ) : previewItems.map((item, index) => {
             const view = propertyView(item, index, t)

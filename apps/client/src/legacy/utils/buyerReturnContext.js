@@ -22,16 +22,21 @@ export function validateBuyerReturnPath(value, options = {}) {
 
   const base = path.split(/[?#]/, 1)[0]
   if (EXACT_ROUTES.has(base)) return path
+  // Property pages also have catalogue and country/city routes.
   const propertyMatch = base.match(/^\/property\/([^/]+)$/)
+    || base.match(/^\/(?:auction|debts)\/property\/([^/]+)$/)
+    || base.match(/^\/(?:auction|debts|search-results)\/[^/]+\/[^/]+\/property\/([^/]+)$/)
   if (!propertyMatch) return fallback
 
   try {
-    const decodedId = decodeURIComponent(propertyMatch[1])
-    if (!decodedId || decodedId.includes('/') || decodedId.includes('\\')) return fallback
+    for (const segment of base.split('/').slice(1)) {
+      const decoded = decodeURIComponent(segment)
+      if (!decoded || decoded === '.' || decoded === '..' || /[/\\\u0000-\u001f]/.test(decoded)) return fallback
+    }
   } catch {
     return fallback
   }
-  return path
+  return `/property/${propertyMatch[1]}${path.slice(base.length)}`
 }
 
 export function writeBuyerReturnContext(path, options = {}) {

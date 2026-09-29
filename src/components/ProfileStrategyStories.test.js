@@ -9,11 +9,11 @@ const APP_COMPONENT = new URL('../../apps/client/src/legacy/components/ProfileSt
 const APP_STYLES = new URL('../../apps/client/src/legacy/components/ProfileStrategyStories.css', import.meta.url)
 const APP_PROFILE = new URL('../../apps/client/src/legacy/pages/TestPage.jsx', import.meta.url)
 
-test('profile strategy stories expose all seven steps and destination routes', () => {
+test('profile strategy stories expose all eight steps and destination routes', () => {
   const source = fs.readFileSync(WEB_COMPONENT, 'utf8')
-  const storyIds = [...source.matchAll(/id: '(intro|auction|shares|debts|buy-now|test-drive|assistant)'/g)]
+  const storyIds = [...source.matchAll(/id: '(intro|auction|shares|debts|buy-now|test-drive|assistant|development)'/g)]
 
-  assert.equal(storyIds.length, 7)
+  assert.equal(storyIds.length, 8)
   assert.match(source, /STORY_DURATION_MS = 6500/)
   assert.match(source, /\/auction\?filter=auction/)
   assert.match(source, /\/auction\/buy-now/)

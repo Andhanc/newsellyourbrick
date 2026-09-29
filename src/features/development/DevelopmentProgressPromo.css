@@ -1,0 +1,23 @@
+.dev-progress-promo { position: relative; isolation: isolate; overflow: hidden; border-radius: 28px; background: #00181b; color: #fff; margin: 36px 0 20px; min-height: 340px; }
+.dev-progress-promo__content { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); min-height: 260px; }
+.dev-progress-promo__art { position: relative; min-width: 0; display: grid; place-items: center; padding: 12px 12px 0 0; background: radial-gradient(ellipse at center, #23b9bd24, transparent 70%); }
+.dev-progress-promo__art img { display: block; width: 100%; max-width: 360px; height: auto; object-fit: contain; filter: drop-shadow(0 8px 20px #29c5c82b); }
+.dev-progress-promo__copy { position: relative; padding: 36px 0 0 40px; min-width: 0; box-sizing: border-box; }
+.dev-progress-promo__brand { display: block; font-size: 18px; font-weight: 700; letter-spacing: -.06em; }
+.dev-progress-promo__brand > span { color: #4ecdd6; }
+.dev-progress-promo h2 { margin: 24px 0 12px; font-size: clamp(28px, 4vw, 46px); font-weight: 600; line-height: 1.06; letter-spacing: -.04em; color: #fff; }
+.dev-progress-promo p { margin: 0 0 22px; color: #d9eded; font-size: 15px; line-height: 1.5; max-width: 390px; }
+.dev-progress-promo .dev-progress-promo__cta { position: relative; display: flex; justify-content: center; align-items: center; gap: 12px; width: fit-content; min-width: 220px; border: 0; cursor: pointer; max-width: calc(100% - 40px); box-sizing: border-box; min-height: 56px; margin: 8px auto 28px; padding: 16px 32px; border-radius: 999px; color: #fff; font: inherit; font-size: 16px; font-weight: 700; line-height: 1.25; text-align: center; text-decoration: none; }
+.dev-progress-promo__cta svg { flex-shrink: 0; }
+.dev-progress-promo__cta:focus-visible { outline: 3px solid #4ecdd6; outline-offset: 4px; }
+@media(max-width: 600px) {
+  .dev-progress-promo { border-radius: 22px; min-height: 270px; margin-top: 28px; }
+  .dev-progress-promo__content { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); min-height: 230px; }
+  .dev-progress-promo__copy { padding: 24px 10px 0 20px; }
+  .dev-progress-promo__brand { font-size: 13px; }
+  .dev-progress-promo h2 { margin: 24px 0 12px; font-size: clamp(23px, 6.8vw, 29px); }
+  .dev-progress-promo p { font-size: 11px; line-height: 1.5; }
+  .dev-progress-promo .dev-progress-promo__cta { min-height: 52px; margin: 4px auto 24px; padding: 14px 22px; font-size: 14px; gap: 8px; }
+}
+
+.dev-progress-promo__cta:disabled { opacity: .5; cursor: not-allowed; }

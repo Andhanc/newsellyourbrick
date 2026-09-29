@@ -1,4 +1,7 @@
-import { getUserData } from '../services/authService'
+import { serializePropertyDocuments } from './propertyPresentation.js'
+import { dealApi } from '../features/development/api'
+import { validateDevelopment } from './developmentFinance'
+import { getUserData, getMobileAuthToken } from '../services/authService'
 import {
   getMinimumSaleVsBuyNowError,
   getAuctionStartingVsBuyNowError,
@@ -41,6 +44,7 @@ export function buildOapTzPayload(form, selectedAmenities) {
   const amenities = Array.isArray(selectedAmenities) ? [...new Set(selectedAmenities)] : []
 
   const params = {}
+  if (form.sellerGoal) params.seller_goal = form.sellerGoal
   if (
     typeProfile === 'apartment' ||
     typeProfile === 'apartments' ||
@@ -196,6 +200,8 @@ export async function publishOapProperty({
     return { ok: false, error: 'Пожалуйста, загрузите хотя бы одно фото' }
   }
 
+  if (listingMode === 'development' && Object.keys(validateDevelopment(form.development)).length) return { ok: false, error: 'invalidTerms' }
+
   if (isShare) {
     const totalSharesNum = parseInt(String(form.totalShares || '').replace(/\D/g, ''), 10)
     if (!form.totalShares || Number.isNaN(totalSharesNum) || totalSharesNum <= 0) {
@@ -245,6 +251,31 @@ export async function publishOapProperty({
     photoUrlsForSubmit = await Promise.all(photos.map((p) => uploadOneListingPhoto(p, API_BASE_URL)))
   } catch (uploadErr) {
     return { ok: false, error: uploadErr.message || 'Ошибка загрузки фотографий' }
+  }
+
+  if (listingMode === 'development') {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const data = await dealApi('/projects', { method: 'POST', body: {
+        title: form.title, description: form.description,
+        location: form.location || [form.country, form.city, form.address].filter(Boolean).join(', '),
+        currency: form.listingCurrency || 'EUR', asset_type: getTypeProfile(form.propertyType),
+        photos: photoUrlsForSubmit, terms: form.development, sellerGoal: form.sellerGoal,
+        source_table: form.sourceAssetTable || params.get('source_table'), source_id: form.sourceAssetId || params.get('source_id'),
+      } })
+      let documentWarning = false
+      for (const [kind, file] of [['ownership', resolvedOwnershipDoc], ['noDebts', resolvedNoDebtsDoc]]) {
+        if (!file) continue
+        const upload = new FormData(); upload.append('document', file); upload.append('kind', kind)
+        try {
+          const response = await fetch(`${API_BASE_URL}/development/projects/${data.id}/documents`, {
+            method: 'POST', headers: { Authorization: `Bearer ${getMobileAuthToken()}` }, body: upload,
+          })
+          if (!response.ok) documentWarning = true
+        } catch { documentWarning = true }
+      }
+      return { ok: true, data: { ...data, development: true, documentWarning } }
+    } catch (error) { return { ok: false, error: error.message } }
   }
 
   const currency = form.listingCurrency || 'EUR'
@@ -384,11 +415,7 @@ export async function publishOapProperty({
   formDataToSend.append(
     'additional_documents',
     JSON.stringify(
-      (additionalDocuments || []).map((doc) => ({
-        name: doc.name,
-        url: doc.url,
-        type: doc.type,
-      })),
+      await serializePropertyDocuments(additionalDocuments),
     ),
   )
 

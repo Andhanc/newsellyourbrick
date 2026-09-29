@@ -30,7 +30,7 @@ const CATEGORY_ICONS = {
 }
 
 function buildCacheKey(lat, lng, categoryId) {
-  return `${categoryId}:${lat.toFixed(4)}:${lng.toFixed(4)}`
+  return `${categoryId}:${lat.toFixed(5)}:${lng.toFixed(5)}`
 }
 
 function PoiMarkerIcon({ categoryId, color }) {
@@ -63,6 +63,7 @@ export default function PropertyDetailLocationMap({
   const [activeCategory, setActiveCategory] = useState(null)
   const [loadingCategory, setLoadingCategory] = useState(null)
   const [errorCategory, setErrorCategory] = useState(null)
+  const [placeCount, setPlaceCount] = useState(null)
   const [streetViewOpen, setStreetViewOpen] = useState(false)
   const [satelliteOpen, setSatelliteOpen] = useState(false)
 
@@ -203,16 +204,26 @@ export default function PropertyDetailLocationMap({
   }, [applyActiveCategoryMarkers, loadingCategory])
 
   useEffect(() => {
+    requestIdRef.current += 1
+    clearAllCategoryMarkers()
+    poiCacheRef.current.clear()
+    setActiveCategory(null)
+    setLoadingCategory(null)
+    setErrorCategory(null)
+    setPlaceCount(null)
     return () => {
+      requestIdRef.current += 1
       clearAllCategoryMarkers()
     }
-  }, [clearAllCategoryMarkers])
+  }, [coords, clearAllCategoryMarkers])
 
   const selectCategory = async (categoryId) => {
     if (!interactive || !coords) return
 
     const isRetryAfterError = activeCategory === categoryId && errorCategory === categoryId
     setErrorCategory(null)
+    setPlaceCount(null)
+    setLoadingCategory(null)
 
     if (activeCategory === categoryId && !isRetryAfterError) {
       requestIdRef.current += 1
@@ -230,16 +241,12 @@ export default function PropertyDetailLocationMap({
     }
 
     const cacheKey = buildCacheKey(coords.lat, coords.lng, categoryId)
-    if (poiCacheRef.current.has(cacheKey)) {
-      setErrorCategory(null)
-      return
-    }
-
     setLoadingCategory(categoryId)
     try {
       const places = await fetchNearbyPlaces(coords.lat, coords.lng, categoryId)
       if (requestId !== requestIdRef.current) return
       poiCacheRef.current.set(cacheKey, places)
+      setPlaceCount(places.length)
       setErrorCategory(null)
     } catch {
       if (requestId !== requestIdRef.current) return
@@ -322,7 +329,7 @@ export default function PropertyDetailLocationMap({
                 '--filter-border': category.borderColor,
               }}
               onClick={() => selectCategory(category.id)}
-              disabled={Boolean(loadingCategory)}
+              aria-busy={isLoading}
               aria-pressed={isActive}
             >
               <span className="property-detail-location-map__filter-icon" aria-hidden>
@@ -335,8 +342,12 @@ export default function PropertyDetailLocationMap({
               <span className="property-detail-location-map__filter-label">
                 {t(category.labelKey)}
               </span>
-              <span className="property-detail-location-map__filter-meta">
-                {isLoading ? t('propertyDetailMapSearching') : t('mapPage_showOnMap')}
+              <span className="property-detail-location-map__filter-meta" aria-live="polite">
+                {isLoading ? t('propertyDetailMapPlacesLoading')
+                  : hasError ? t('propertyDetailMapPlacesError')
+                    : isActive && placeCount === 0 ? t('propertyDetailMapPlacesEmpty')
+                      : isActive && placeCount > 0 ? t('propertyDetailMapPlacesFound', { count: placeCount })
+                        : t('mapPage_showOnMap')}
               </span>
               <span className="property-detail-location-map__filter-action" aria-hidden>
                 <ArrowUpRight size={17} strokeWidth={2.2} />

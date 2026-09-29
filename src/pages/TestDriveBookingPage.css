@@ -82,6 +82,34 @@
   margin: 0;
 }
 
+.test-drive-page__property-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 44px;
+  margin: 4px auto 0;
+  padding: 4px 0;
+  box-sizing: border-box;
+  color: #087e89;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.test-drive-page__property-link:hover {
+  color: #065d65;
+}
+
+.test-drive-page__property-link:focus-visible {
+  outline: 2px solid #087e89;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
 .test-drive-page__layout {
   max-width: 1200px;
   margin: 0 auto;

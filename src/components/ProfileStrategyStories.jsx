@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { FiArrowRight, FiPlay, FiX } from 'react-icons/fi'
 import { publicAsset } from '../utils/publicAsset'
@@ -166,6 +167,7 @@ const STORY_BLUEPRINTS = [
 ]
 
 function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSignal = 0 }) {
+  const { t } = useTranslation()
   const prefersReducedMotion = useReducedMotion()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -175,8 +177,16 @@ function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSigna
   const locale = String(language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
   const copy = STORY_COPY[locale]
   const stories = useMemo(
-    () => STORY_BLUEPRINTS.map((story, index) => ({ ...story, ...copy.stories[index] })),
-    [copy],
+    () => {
+      const items = STORY_BLUEPRINTS.map((story, index) => ({ ...story, ...copy.stories[index] }))
+      items.splice(items.length - 1, 0, {
+        id: 'development', tone: 'shares', to: '/development',
+        image: publicAsset('images/development/costa-adeje-cover.png'),
+        eyebrow: 'DEVELOP', title: t('develop.heading'), text: t('develop.intro'), note: t('develop.forecastNote'),
+      })
+      return items
+    },
+    [copy, t],
   )
   const activeStory = stories[activeIndex]
 
@@ -265,7 +275,7 @@ function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSigna
           <span className="profile-strategy-card__copy">
             <span className="profile-strategy-card__eyebrow">{copy.triggerEyebrow}</span>
             <strong>{copy.triggerTitle}</strong>
-            <span className="profile-strategy-card__text">{copy.triggerText}</span>
+            <span className="profile-strategy-card__text">{t('develop.storiesIntro')}</span>
           </span>
           <span className="profile-strategy-card__action">
             <FiPlay size={14} fill="currentColor" aria-hidden />

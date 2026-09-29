@@ -9,6 +9,7 @@ import {
   FiX,
 } from 'react-icons/fi'
 import SiteChatDock from '../components/SiteChatDock'
+import DiscoverIntroBanners from '../components/DiscoverIntroBanners'
 import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
@@ -163,6 +164,13 @@ function getSaleCards(t, language) {
       to: CO_INVESTMENT_PATH,
       theme: 'shares',
       infoSection: 'shares',
+      iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
+    },
+    {
+      id: 'development', title: 'DEVELOP', description: t('develop.cardDescription'),
+      descriptionTrigger: t('develop.cardAccent'),
+      image: publicAsset('images/development/costa-adeje-cover.png'), imagePosition: 'center 20%',
+      to: '/development', theme: 'shares', infoSection: 'development',
       iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     },
   ]
@@ -627,6 +635,8 @@ export default function MobileDiscoverPage() {
           </div>
 
           <div className="md-stage__sheet">
+            <DiscoverIntroBanners />
+
             <div className="md-stage__intro">
               <h2 className="md-stage__title">
                 {t('discoverPage_stageTitlePrefix')}{' '}

@@ -1,6 +1,16 @@
 import { Link } from 'react-router-dom'
 import './SiteBrandLogo.css'
 
+export function SiteBrandWordmark() {
+  return (
+    <span className="site-brand__wordmark">
+      <span>Sell</span>{' '}
+      <span className="site-brand__wordmark-accent">Your</span>{' '}
+      <span>Brick</span>
+    </span>
+  )
+}
+
 export function SiteBrandIcon({ className = '' }) {
   return (
     <div className={`site-brand__icon ${className}`.trim()} aria-hidden>

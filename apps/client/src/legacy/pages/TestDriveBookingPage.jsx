@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
 import { SiTelegram, SiWhatsapp } from 'react-icons/si'
@@ -36,6 +37,7 @@ const CONTACT_OPTIONS = [
 ]
 
 export default function TestDriveBookingPage() {
+  const { t } = useTranslation()
   const { slugOrId: propertyRouteKey } = useParams()
   const propertyApiKey = propertyRouteKey ? encodeURIComponent(propertyRouteKey) : ''
   const navigate = useNavigate()
@@ -349,6 +351,13 @@ export default function TestDriveBookingPage() {
         <p className="test-drive-page__subtitle">
           Отметьте от 5 до 21 дня подряд — затем выберите способ связи.
         </p>
+        <Link
+          className="test-drive-page__property-link"
+          to={`/property/${propertyApiKey}`}
+        >
+          {t('testDriveBooking_goToProperty')}
+          <span aria-hidden="true">↗</span>
+        </Link>
       </div>
 
       <div className="test-drive-page__layout">
