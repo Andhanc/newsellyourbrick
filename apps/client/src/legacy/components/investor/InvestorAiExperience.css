@@ -1338,6 +1338,10 @@
   margin-top: 24px;
 }
 
+.investor-score-screen__cash-chart .recharts-surface:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .investor-score-screen__recommendation-list article {
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr);

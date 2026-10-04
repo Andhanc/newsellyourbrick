@@ -264,6 +264,11 @@ test('mobile result provides a real next property action without claiming guaran
 
 test('phone layout is clipped to the viewport while desktop calculator remains untouched', () => {
   assert.match(pageCss, /overflow-x:\s*clip/)
+  assert.match(pageCss, /\.investment-calculator-page--start\s*\{[^}]*height:\s*100svh/s)
+  assert.match(pageCss, /\.investment-calculator-page--start\s*>\s*\.new-header-spacer\s*\{[^}]*display:\s*none/s)
+  assert.match(pageCss, /\.investment-calculator-page--start \.calculator-container\s*\{[^}]*flex:\s*1 1 0[^}]*min-height:\s*0/s)
+  assert.match(sourceHeroCss, /height:\s*clamp\(128px,\s*20svh,\s*180px\)/)
+  assert.match(sourceHeroCss, /@media \(max-width:\s*768px\) and \(max-height:\s*700px\)/)
   assert.match(pageCss, /\.calc-step3-sidebar\.calc-dashboard__form\s*\{[^}]*display:\s*none/s)
   assert.match(pageCss, /@media \(min-width:\s*769px\)/)
 })

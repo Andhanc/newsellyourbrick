@@ -771,25 +771,36 @@
   .investor-source-hero {
     display: flex;
     flex: 1 1 auto;
-    min-height: calc(100svh - 112px);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .investor-source-hero__scene {
-    min-height: calc(100svh - 112px);
+    height: 100%;
+    min-height: 0;
   }
 
   .investor-source-hero.is-intro {
-    min-height: calc(100svh - 112px);
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
   }
 
   .investor-source-hero.is-intro .investor-source-hero__scene {
-    min-height: inherit;
+    min-height: 0;
+  }
+
+  .investor-source-hero__intro {
+    height: 100%;
+    min-height: 0;
   }
 
   .investor-source-hero__stage {
-    --investor-art-size: 360px;
-    height: 350px;
-    margin-bottom: -67px;
+    --investor-art-size: clamp(230px, min(88vw, 42svh), 360px);
+    height: clamp(150px, 32svh, 350px);
+    margin-bottom: clamp(-56px, -6svh, -36px);
   }
 
   .investor-source-hero__art {
@@ -807,41 +818,57 @@
 
   .investor-source-hero__explain-card {
     flex-basis: 52%;
-    padding: 16px 15px 18px;
+    height: clamp(128px, 20svh, 180px);
+    padding: clamp(9px, 1.6svh, 16px) 15px clamp(11px, 1.8svh, 18px);
+    overflow: hidden;
   }
 
   .investor-source-hero__explain-icon {
-    width: 39px;
-    height: 39px;
-    margin-bottom: 10px;
+    width: clamp(30px, 4.6svh, 39px);
+    height: clamp(30px, 4.6svh, 39px);
+    margin-bottom: clamp(6px, 1.1svh, 10px);
     border-radius: 13px;
   }
 
   .investor-source-hero__explain-card strong {
-    font-size: 16px;
+    font-size: clamp(14px, 2svh, 16px);
+    line-height: 1.25;
   }
 
   .investor-source-hero__explain-body {
-    font-size: 12px;
+    display: -webkit-box;
+    margin-top: clamp(5px, .9svh, 10px);
+    overflow: hidden;
+    font-size: clamp(11px, 1.5svh, 12px);
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .investor-source-hero__explain-dots {
-    margin-bottom: 18px;
+    margin-top: clamp(3px, .8svh, 8px);
+    margin-bottom: clamp(6px, 1.8svh, 18px);
   }
 
   .investor-source-hero__headline {
-    padding-top: 48px;
+    padding-top: clamp(6px, 3svh, 32px);
   }
 
   .investor-source-hero__headline h1 {
     max-width: 11.5em;
-    font-size: clamp(32px, 8.6vw, 40px);
-    line-height: 1.18;
+    font-size: clamp(28px, min(8.6vw, 4.8svh), 40px);
+    line-height: 1.12;
   }
 
   .investor-source-hero__start {
     width: 100%;
-    min-height: 62px;
+    min-height: clamp(54px, 7.3svh, 62px);
+    margin-bottom: 0;
+  }
+
+  .investor-source-hero__start-arrow {
+    width: clamp(40px, 5.2svh, 44px);
+    height: clamp(40px, 5.2svh, 44px);
   }
 
   .investor-source-hero__source {
@@ -932,6 +959,91 @@
 
   .investor-source-hero__continue {
     min-height: 62px;
+  }
+}
+
+@media (max-width: 768px) and (max-height: 700px) {
+  .investor-source-hero__stage {
+    --investor-art-size: clamp(210px, min(76vw, 38svh), 280px);
+    height: clamp(128px, 27svh, 185px);
+    margin-bottom: -34px;
+  }
+
+  .investor-source-hero__explain {
+    padding-top: 4px;
+    padding-bottom: 6px;
+  }
+
+  .investor-source-hero__explain-card {
+    height: 124px;
+  }
+
+  .investor-source-hero__explain-body {
+    -webkit-line-clamp: 2;
+  }
+
+  .investor-source-hero__explain-dots {
+    margin-bottom: 4px;
+  }
+}
+
+@media (max-width: 768px) and (min-height: 851px) {
+  .investor-source-hero__stage {
+    --investor-art-size: min(70vw, 460px);
+    height: min(68vw, 450px);
+    margin-bottom: -72px;
+  }
+
+  .investor-source-hero__explain-card {
+    height: auto;
+    min-height: 210px;
+    padding: 20px 20px 22px;
+  }
+
+  .investor-source-hero__explain-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 13px;
+  }
+
+  .investor-source-hero__explain-card strong {
+    font-size: 19px;
+    line-height: 1.4;
+  }
+
+  .investor-source-hero__explain-body {
+    display: block;
+    margin-top: 10px;
+    overflow: visible;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-line-clamp: unset;
+  }
+
+  .investor-source-hero__explain-dots {
+    margin-top: 8px;
+    margin-bottom: 18px;
+  }
+
+  .investor-source-hero__headline {
+    padding-top: 48px;
+  }
+
+  .investor-source-hero__headline h1 {
+    font-size: clamp(32px, 8.6vw, 48px);
+    line-height: 1.18;
+  }
+}
+
+@media (max-width: 420px) {
+  .investor-source-hero__explain-card {
+    flex-basis: 76%;
+  }
+}
+
+@media (max-width: 768px) {
+  .investor-source-hero__start {
+    box-shadow: none;
   }
 }
 
