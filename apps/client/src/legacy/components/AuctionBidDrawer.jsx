@@ -9,9 +9,17 @@ import './AuctionBidDrawer.css'
 export default function AuctionBidDrawer({ isOpen, onClose, title, children, contextAnchorSelector }) {
   const { t } = useTranslation()
   const [keyboardViewport, setKeyboardViewport] = useState(null)
+  const [isOpening, setIsOpening] = useState(isOpen)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
   })
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    setIsOpening(true)
+    const timer = window.setTimeout(() => setIsOpening(false), 620)
+    return () => window.clearTimeout(timer)
+  }, [isOpen])
 
   useLayoutEffect(() => {
     if (!visible || !window.visualViewport) return
@@ -35,7 +43,6 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
     isDragging,
     panelDragStyle,
     isCollapsed,
-    isEntering,
     closingPanel,
     onDragZonePointerDown,
     onDragZonePointerMove,
@@ -118,13 +125,16 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
         <div
           ref={panelRef}
           className={`auction-bid-drawer__panel${closingPanelClasses}${
-            isEntering ? ' auction-bid-drawer__panel--entering' : ''
+            isOpening && !isClosing ? ' auction-bid-drawer__panel--entering' : ''
           }${isCollapsed ? ' auction-bid-drawer__panel--collapsed' : ''}`}
           style={panelDragStyle}
         >
           <div
             className="auction-bid-drawer__drag-zone"
-            onPointerDown={onDragZonePointerDown}
+            onPointerDown={(event) => {
+              setIsOpening(false)
+              onDragZonePointerDown(event)
+            }}
             onPointerMove={onDragZonePointerMove}
             onPointerUp={onDragZonePointerUp}
             onPointerCancel={onDragZonePointerCancel}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Heart, PenLine } from 'lucide-react'
+import { ArrowRight, Calculator, Check, Heart, PenLine, ShieldCheck, Target } from 'lucide-react'
 import { applyPropertyImageFallback } from '../../utils/propertyImage'
 import { publicAsset } from '../../utils/publicAsset'
 import './InvestorSourceHero.css'
@@ -10,10 +10,16 @@ import './InvestorSourceHero.css'
 const FAVORITES_EMPTY_IMAGE = publicAsset('images/investor-favorites-empty-illustration.png')
 const INTRO_ART = publicAsset('images/investor/smart-investor-glass-puzzles.png')
 const INTRO_EXPLAIN = [
-  { title: 'smartInvestor_explain1Title', body: 'smartInvestor_explain1Body' },
-  { title: 'smartInvestor_explain2Title', body: 'smartInvestor_explain2Body' },
-  { title: 'smartInvestor_explain3Title', body: 'smartInvestor_explain3Body' },
+  { title: 'smartInvestor_explain1Title', highlight: 'smartInvestor_explain1Highlight', body: 'smartInvestor_explain1Body', Icon: Calculator },
+  { title: 'smartInvestor_explain2Title', highlight: 'smartInvestor_explain2Highlight', body: 'smartInvestor_explain2Body', Icon: Target },
+  { title: 'smartInvestor_explain3Title', highlight: 'smartInvestor_explain3Highlight', body: 'smartInvestor_explain3Body', Icon: ShieldCheck },
 ]
+
+function renderHighlightedTitle(title, highlight) {
+  const index = title.indexOf(highlight)
+  if (index < 0) return title
+  return <>{title.slice(0, index)}<mark>{highlight}</mark>{title.slice(index + highlight.length)}</>
+}
 
 const sceneMotion = {
   initial: { opacity: 0, y: 18, scale: 0.985 },
@@ -75,7 +81,7 @@ export default function InvestorSourceHero({
     const scroller = node || explainRef.current
     const card = scroller?.firstElementChild
     if (!scroller || !card) return
-    const step = card.getBoundingClientRect().width + 14
+    const step = card.getBoundingClientRect().width + (parseFloat(window.getComputedStyle(scroller).columnGap) || 0)
     const next = Math.max(0, Math.min(INTRO_EXPLAIN.length - 1, Math.round(scroller.scrollLeft / step)))
     setExplainPage((current) => (current === next ? current : next))
   }
@@ -107,7 +113,7 @@ export default function InvestorSourceHero({
 
             <div className="investor-source-hero__stage">
               <div className="investor-source-hero__art">
-                <img src={INTRO_ART} alt="" width={935} height={1017} decoding="async" />
+                <img src={INTRO_ART} alt="" width={1254} height={1254} decoding="async" />
               </div>
             </div>
 
@@ -120,8 +126,11 @@ export default function InvestorSourceHero({
               >
                 {INTRO_EXPLAIN.map((card) => (
                   <li key={card.title} className="investor-source-hero__explain-card">
-                    <strong>{t(card.title)}</strong>
-                    <span>{t(card.body)}</span>
+                    <span className="investor-source-hero__explain-icon" aria-hidden="true">
+                      <card.Icon size={24} strokeWidth={1.9} />
+                    </span>
+                    <strong>{renderHighlightedTitle(t(card.title), t(card.highlight))}</strong>
+                    <span className="investor-source-hero__explain-body">{t(card.body)}</span>
                   </li>
                 ))}
               </ul>

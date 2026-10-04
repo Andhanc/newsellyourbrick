@@ -11,6 +11,7 @@ import {
   PieChart,
   TrendingUp,
 } from 'lucide-react'
+import { publicAsset } from '../../utils/publicAsset'
 import './InvestorGoalFlow.css'
 
 function buildGoals(t) {
@@ -22,6 +23,7 @@ function buildGoals(t) {
       description: t('smartInvestor_goalRentDesc'),
       chips: [t('smartInvestor_goalRentChip1'), t('smartInvestor_goalRentChip2')],
       Icon: Building2,
+      image: publicAsset('images/investor/goals/rental-income.png'),
     },
     {
       id: 'resale',
@@ -30,6 +32,7 @@ function buildGoals(t) {
       description: t('smartInvestor_goalResaleDesc'),
       chips: [t('smartInvestor_goalResaleChip1'), t('smartInvestor_goalResaleChip2')],
       Icon: TrendingUp,
+      image: publicAsset('images/investor/goals/capital-growth.png'),
     },
     {
       id: 'fractional',
@@ -38,6 +41,7 @@ function buildGoals(t) {
       description: t('smartInvestor_goalFracDesc'),
       chips: [t('smartInvestor_goalFracChip1'), t('smartInvestor_goalFracChip2')],
       Icon: PieChart,
+      image: publicAsset('images/investor/goals/fractional-home.png'),
     },
   ]
 }
@@ -162,7 +166,7 @@ export default function InvestorGoalFlow({
               role="radiogroup"
               aria-label={t('smartInvestor_goalAria')}
             >
-              {goals.map(({ id, eyebrow, title, description, chips, Icon }, index) => {
+              {goals.map(({ id, eyebrow, title, description, chips, image }, index) => {
                 const isUnavailable = id === 'fractional' && fractionalUnavailable
                 const tooltipId = isUnavailable ? 'investor-fractional-unavailable-tooltip' : undefined
                 return (
@@ -190,7 +194,7 @@ export default function InvestorGoalFlow({
                     <small>0{index + 1}</small>
                   </span>
                   <span className="investor-goal-flow__goal-icon" aria-hidden="true">
-                    <Icon size={30} strokeWidth={1.8} />
+                    <img src={image} alt="" decoding="async" />
                   </span>
                   <span className="investor-goal-flow__goal-copy">
                     <strong>{title}</strong>

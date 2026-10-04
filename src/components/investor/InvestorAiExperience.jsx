@@ -167,10 +167,12 @@ function buildResultFactors(analysis, t) {
   return factors
 }
 
+const BASE_OUTCOME_COLOR = '#087f9b'
+
 function buildMarketOutcomeSummary(analysis, t) {
   const configs = [
     { id: 'pessimistic', dataKey: 'cautious', label: t('smartInvestor_scenarioCautious'), color: '#c2412d' },
-    { id: 'base', dataKey: 'base', label: t('smartInvestor_scenarioBase'), color: '#0b1220' },
+    { id: 'base', dataKey: 'base', label: t('smartInvestor_scenarioBase'), color: BASE_OUTCOME_COLOR },
     { id: 'optimistic', dataKey: 'strong', label: t('smartInvestor_scenarioStrong'), color: '#0f6b4c' },
   ]
   const scenarioMaps = new Map(configs.map((config) => [
@@ -383,10 +385,10 @@ function MarketOutcomeChart({ summary, currency }) {
             name={t('smartInvestor_scenarioBase')}
             type="monotone"
             dataKey="base"
-            stroke="#0b1220"
+            stroke={BASE_OUTCOME_COLOR}
             strokeWidth={3.8}
-            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#0b1220" />}
-            activeDot={{ r: 5, fill: '#0b1220', stroke: '#ffffff', strokeWidth: 2 }}
+            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color={BASE_OUTCOME_COLOR} />}
+            activeDot={{ r: 5, fill: BASE_OUTCOME_COLOR, stroke: '#ffffff', strokeWidth: 2 }}
           />
           <Line
             name={t('smartInvestor_scenarioStrong')}
@@ -409,15 +411,15 @@ function FocusedCashFlowChart({ points, currency }) {
     <div className="investor-score-screen__cash-chart" aria-label={t('smartInvestor_chartCashYears')}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={points} margin={{ top: 14, right: 4, left: 4, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(11,18,32,.16)" vertical={false} />
-          <XAxis dataKey="year" tick={{ fill: 'rgba(11,18,32,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <CartesianGrid stroke="rgba(255,255,255,.3)" vertical={false} />
+          <XAxis dataKey="year" tick={{ fill: 'rgba(255,255,255,.78)', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip currency={currency} />} />
           <Bar name={t('smartInvestor_chartNetFlow')} dataKey="netCashFlow" radius={[8, 8, 2, 2]} maxBarSize={24}>
             {points.map((point, index) => (
               <Cell
                 key={`cash-flow-${point.year}`}
-                fill={index === points.length - 1 ? '#006672' : 'rgba(132, 143, 145, 0.72)'}
-                style={index === points.length - 1 ? { filter: 'drop-shadow(0 0 8px rgba(0, 102, 114, 0.45))' } : undefined}
+                fill={index === points.length - 1 ? '#f4ffff' : 'rgba(255, 255, 255, 0.48)'}
+                style={index === points.length - 1 ? { filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.28))' } : undefined}
               />
             ))}
           </Bar>

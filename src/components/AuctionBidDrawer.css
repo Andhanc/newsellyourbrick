@@ -1,10 +1,10 @@
-/* Full-screen catalog bid page. */
+/* Full-screen catalog bid page. Keep the property visible until the sheet covers it. */
 .auction-bid-drawer__backdrop {
   position: fixed;
   inset: 0;
   z-index: 13400;
-  background: #fff;
-  animation: auction-bid-drawer-backdrop-in 0.24s ease-out both;
+  background: rgba(15, 23, 42, 0.42);
+  animation: auction-bid-drawer-backdrop-in 0.3s ease-out both;
 }
 
 .auction-bid-drawer {
@@ -42,7 +42,7 @@
 }
 
 .auction-bid-drawer__panel--entering {
-  animation: auction-bid-drawer-panel-in 0.4s cubic-bezier(0.22, 1, 0.32, 1) both;
+  animation: auction-bid-drawer-panel-in 0.62s cubic-bezier(0.2, 0.78, 0.2, 1) both;
 }
 
 .auction-bid-drawer--dragging .auction-bid-drawer__panel { transition: none !important; }

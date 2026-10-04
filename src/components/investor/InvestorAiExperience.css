@@ -699,7 +699,7 @@
   width: 100%;
   min-height: 100dvh;
   overflow-x: clip;
-  /* Transparent so the fixed page backdrop stays visible and static */
+  /* The sticky gradient below paints the full result column. */
   background: transparent;
   color: #ffffff;
   font-family: var(--site-font-family, 'Montserrat', sans-serif);
@@ -720,13 +720,17 @@
   will-change: opacity, transform;
 }
 
-/* Viewport-fixed backdrop: welcome-screen tiffany, does not scroll with content */
+/* Stays in place while scrolling and follows the width of the result column. */
 .investor-score-screen__gradient {
-  position: fixed;
+  position: sticky;
   z-index: 0;
-  inset: 0;
+  top: 0;
+  width: 100%;
+  height: 100dvh;
+  margin-bottom: -100dvh;
   background:
-    radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%),
+    radial-gradient(ellipse 68% 92% at 112% 58%, rgba(255, 255, 255, .76) 0%, rgba(255, 255, 255, .32) 42%, transparent 82%),
+    radial-gradient(ellipse 88% 54% at 36% -12%, rgba(255, 255, 255, .26) 0%, transparent 76%),
     #4ecdd6;
   pointer-events: none;
 }
@@ -1024,6 +1028,9 @@
   width: 100%;
   height: 250px;
   margin-top: 30px;
+  border: 1px solid rgba(255, 255, 255, .76);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .82), rgba(239, 253, 253, .7));
 }
 
 .investor-score-screen__chart-price-label text {
@@ -1459,15 +1466,15 @@
   }
 }
 
-/* White cards on the tiffany field keep dark ink. Copy on the field stays white, like the welcome hero. */
+/* Light data surfaces keep dark ink; copy on the tiffany field stays white. */
 .investor-score-screen__factor {
   border-color: rgba(255, 255, 255, .85);
-  background: rgba(255, 255, 255, .88);
+  background: #d8e1e3;
   color: #0b1220;
 }
 
 .investor-score-screen__factor-fill {
-  background: rgba(0, 102, 114, .22);
+  background: #ffffff;
 }
 
 .investor-score-screen__factor.is-open {
