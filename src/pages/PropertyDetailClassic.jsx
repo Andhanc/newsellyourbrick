@@ -104,7 +104,7 @@ import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { viewerOwnsListing } from '../utils/listingOwnerGuard'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
-import { triggerAuctionBidHaptic } from '../utils/haptics'
+import { triggerAuctionBidHaptic, triggerCoinFallHaptic } from '../utils/haptics'
 import useAuctionDesktopBidPanelDock from '../hooks/useAuctionDesktopBidPanelDock'
 import {
   formatBidInputDisplayFromStored,
@@ -402,6 +402,8 @@ function PropertyDetailClassic({
     }
   }, [property?.id, shareListingConfig])
   const [isBidDrawerOpen, setIsBidDrawerOpen] = useState(false)
+  const [bidCelebrateToken, setBidCelebrateToken] = useState(0)
+  const [bidCelebrating, setBidCelebrating] = useState(false)
   const [mobileMainSpecsExpanded, setMobileMainSpecsExpanded] = useState(false)
   const [desktopAmenitiesExpanded, setDesktopAmenitiesExpanded] = useState(false)
   const [desktopDocsExpanded, setDesktopDocsExpanded] = useState(false)
@@ -423,6 +425,22 @@ function PropertyDetailClassic({
       return () => clearTimeout(timer)
     }
   }, [currentBid, prevBid])
+
+  useEffect(() => {
+    if (isBidDrawerOpen) return undefined
+    setBidCelebrating(false)
+    return undefined
+  }, [isBidDrawerOpen])
+
+  useEffect(() => {
+    if (!bidCelebrating) return undefined
+    const stopCoinFallHaptic = triggerCoinFallHaptic()
+    const timeout = window.setTimeout(() => setBidCelebrating(false), 5200)
+    return () => {
+      stopCoinFallHaptic()
+      window.clearTimeout(timeout)
+    }
+  }, [bidCelebrating, bidCelebrateToken])
 
   // Проверка авторизации при загрузке компонента
   useEffect(() => {
@@ -2918,6 +2936,8 @@ function PropertyDetailClassic({
         setBidOutbidShown(false)
         setIsUserLeader(true)
         wasUserLeaderRef.current = true
+        setBidCelebrating(true)
+        setBidCelebrateToken((value) => value + 1)
         if (userIdNum) {
           setCurrentLeaderId(userIdNum)
           setPreviousLeaderId(userIdNum)
@@ -2955,16 +2975,17 @@ function PropertyDetailClassic({
           setTimerExpired(false)
         }
 
-        triggerAuctionBidHaptic('placed')
-        showToast(
-          t('propertyDetail_bidSuccess', {
-            amount: appliedBid.toLocaleString(i18n.language || 'en'),
-            currency: displayProperty.currency || 'USD',
-          }),
-          'success',
-          4000,
-        )
-        setIsBidDrawerOpen(false)
+        if (!isBidDrawerOpen) {
+          triggerAuctionBidHaptic('placed')
+          showToast(
+            t('propertyDetail_bidSuccess', {
+              amount: appliedBid.toLocaleString(i18n.language || 'en'),
+              currency: displayProperty.currency || 'USD',
+            }),
+            'success',
+            4000,
+          )
+        }
 
         void (async () => {
           try {
@@ -4991,6 +5012,26 @@ function PropertyDetailClassic({
     showBidCeilingButton: isAuctionProperty && !auctionEndedForSidebar && !isOwnListing,
     onOpenBidCeiling: handleOpenBidCeiling,
     bidCeilingActive: userBidCeiling?.max_amount != null,
+    bidCeilingModalProps: {
+      property: displayProperty,
+      propertyTable: propertySourceTable,
+      userId: getStoredNumericUserId(),
+      currentBid,
+      startingPrice: displayProperty?.auction_starting_price || 0,
+      currencySymbol: currencyView.baseSymbol,
+      fmtPrice: fmtBidPrice,
+      onSaved: (data) => {
+        setUserBidCeiling(data)
+        void fetchUserBidCeiling()
+      },
+      onError: (msg) => showToast(msg, 'error'),
+    },
+    onOpenBidHistory: () => {
+      setIsBidDrawerOpen(false)
+      setIsBidHistoryOpen(true)
+    },
+    bidCelebrateToken,
+    celebrateBid: bidCelebrating && isBidDrawerOpen,
   }
 
   const renderAuctionBuyNowBlock = ({ variant = 'sidebar' } = {}) => {
@@ -8035,7 +8076,6 @@ function PropertyDetailClassic({
         fmtPrice={fmtBidPrice}
         onSaved={(data) => {
           setUserBidCeiling(data)
-          showToast(t('auctionBidCeilingSaved'), 'success')
           void fetchUserBidCeiling()
         }}
         onError={(msg) => showToast(msg, 'error')}
@@ -8110,7 +8150,7 @@ function PropertyDetailClassic({
       <AuctionBidDrawer
         isOpen={isBidDrawerOpen && isAuctionProperty}
         onClose={() => setIsBidDrawerOpen(false)}
-        title={t('placeBid')}
+        title={propertyInfo || t('placeBid')}
         contextAnchorSelector=".property-detail-auction-mobile-gallery"
       >
         <PropertyDetailAuctionBiddingForm

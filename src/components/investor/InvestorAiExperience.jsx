@@ -169,9 +169,9 @@ function buildResultFactors(analysis, t) {
 
 function buildMarketOutcomeSummary(analysis, t) {
   const configs = [
-    { id: 'pessimistic', dataKey: 'cautious', label: t('smartInvestor_scenarioCautious'), color: '#ff9d8c' },
-    { id: 'base', dataKey: 'base', label: t('smartInvestor_scenarioBase'), color: '#ffffff' },
-    { id: 'optimistic', dataKey: 'strong', label: t('smartInvestor_scenarioStrong'), color: '#e5ff6b' },
+    { id: 'pessimistic', dataKey: 'cautious', label: t('smartInvestor_scenarioCautious'), color: '#c2412d' },
+    { id: 'base', dataKey: 'base', label: t('smartInvestor_scenarioBase'), color: '#0b1220' },
+    { id: 'optimistic', dataKey: 'strong', label: t('smartInvestor_scenarioStrong'), color: '#0f6b4c' },
   ]
   const scenarioMaps = new Map(configs.map((config) => [
     config.id,
@@ -367,35 +367,35 @@ function MarketOutcomeChart({ summary, currency }) {
     <div className="investor-score-screen__outcome-chart" aria-label={t('smartInvestor_chartPriceForecast')}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={summary.chartRows} margin={{ top: 18, right: 88, left: 48, bottom: 4 }}>
-          <CartesianGrid stroke="rgba(255,255,255,.16)" vertical={false} />
-          <XAxis dataKey="year" tick={{ fill: 'rgba(255,255,255,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <CartesianGrid stroke="rgba(11,18,32,.16)" vertical={false} />
+          <XAxis dataKey="year" tick={{ fill: 'rgba(11,18,32,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip currency={currency} />} />
           <Line
             name={t('smartInvestor_scenarioCautious')}
             type="monotone"
             dataKey="cautious"
-            stroke="#ff9d8c"
+            stroke="#c2412d"
             strokeWidth={2.8}
-            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#ff9d8c" />}
-            activeDot={{ r: 4, fill: '#ff9d8c', stroke: '#fff', strokeWidth: 1.5 }}
+            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#c2412d" />}
+            activeDot={{ r: 4, fill: '#c2412d', stroke: '#fff', strokeWidth: 1.5 }}
           />
           <Line
             name={t('smartInvestor_scenarioBase')}
             type="monotone"
             dataKey="base"
-            stroke="#ffffff"
+            stroke="#0b1220"
             strokeWidth={3.8}
-            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#ffffff" />}
-            activeDot={{ r: 5, fill: '#ffffff', stroke: '#0099a9', strokeWidth: 2 }}
+            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#0b1220" />}
+            activeDot={{ r: 5, fill: '#0b1220', stroke: '#ffffff', strokeWidth: 2 }}
           />
           <Line
             name={t('smartInvestor_scenarioStrong')}
             type="monotone"
             dataKey="strong"
-            stroke="#e5ff6b"
+            stroke="#0f6b4c"
             strokeWidth={2.8}
-            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#e5ff6b" showStart />}
-            activeDot={{ r: 4, fill: '#e5ff6b', stroke: '#fff', strokeWidth: 1.5 }}
+            dot={(props) => <OutcomePriceMarker {...props} total={total} currency={currency} color="#0f6b4c" showStart />}
+            activeDot={{ r: 4, fill: '#0f6b4c', stroke: '#fff', strokeWidth: 1.5 }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -409,15 +409,15 @@ function FocusedCashFlowChart({ points, currency }) {
     <div className="investor-score-screen__cash-chart" aria-label={t('smartInvestor_chartCashYears')}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={points} margin={{ top: 14, right: 4, left: 4, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,.16)" vertical={false} />
-          <XAxis dataKey="year" tick={{ fill: 'rgba(255,255,255,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <CartesianGrid stroke="rgba(11,18,32,.16)" vertical={false} />
+          <XAxis dataKey="year" tick={{ fill: 'rgba(11,18,32,.68)', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip currency={currency} />} />
           <Bar name={t('smartInvestor_chartNetFlow')} dataKey="netCashFlow" radius={[8, 8, 2, 2]} maxBarSize={24}>
             {points.map((point, index) => (
               <Cell
                 key={`cash-flow-${point.year}`}
-                fill={index === points.length - 1 ? '#55f4ff' : 'rgba(132, 143, 145, 0.72)'}
-                style={index === points.length - 1 ? { filter: 'drop-shadow(0 0 8px rgba(85, 244, 255, 0.72))' } : undefined}
+                fill={index === points.length - 1 ? '#006672' : 'rgba(132, 143, 145, 0.72)'}
+                style={index === points.length - 1 ? { filter: 'drop-shadow(0 0 8px rgba(0, 102, 114, 0.45))' } : undefined}
               />
             ))}
           </Bar>

@@ -1,6 +1,9 @@
 .investment-calculator-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, #0a0e27 0%, #12162e 35%, #1a1f3a 70%, #0f1429 100%);
+  /* Same sky as the home welcome hero: --md-sky #4ecdd6 */
+  background: #4ecdd6;
+  background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
+  color: #ffffff;
   padding-bottom: 4rem;
   position: relative;
   /* Принудительно отключаем локальный скролл у контейнера страницы. */
@@ -9,8 +12,9 @@
 }
 
 .investment-calculator-page--start {
-  background: #f7f7f5;
-  color: #292f3c;
+  background: #4ecdd6;
+  background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
+  color: #ffffff;
 }
 
 .investment-calculator-page--start::before,
@@ -26,12 +30,12 @@
 
 .investment-calculator-page--ai-result {
   --investor-result-backdrop:
-    radial-gradient(ellipse 88% 96% at 112% 104%, rgba(85, 244, 255, .62) 0%, rgba(39, 221, 230, .4) 36%, rgba(0, 153, 169, .12) 61%, rgba(0, 125, 138, 0) 76%),
-    radial-gradient(ellipse 150% 62% at 50% 110%, rgba(85, 244, 255, .92) 0%, rgba(39, 221, 230, .7) 31%, rgba(0, 153, 169, .24) 63%, rgba(0, 125, 138, 0) 82%),
-    linear-gradient(180deg, #050606 0%, #060909 55%, #06272b 78%, #0099a9 100%);
+    radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%),
+    #4ecdd6;
   min-height: 100dvh;
   padding-bottom: 0;
-  background: #070909;
+  background: #4ecdd6;
+  color: #ffffff;
   overscroll-behavior-y: none;
 }
 
@@ -48,6 +52,7 @@
   z-index: 0;
   inset: 0;
   pointer-events: none;
+  opacity: 1;
   background: var(--investor-result-backdrop);
 }
 
@@ -120,23 +125,8 @@
 }
 
 .investment-calculator-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 15% 30%, rgba(99, 102, 241, 0.25) 0%, transparent 40%),
-    radial-gradient(circle at 85% 70%, rgba(168, 85, 247, 0.25) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-  animation: backgroundShift 20s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+  content: none;
+  display: none;
 }
 
 @media (prefer-reduced-motion: reduce) {
@@ -152,12 +142,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
-  background-size: 50px 50px;
+  background-image: none;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.4;
+  opacity: 0;
 }
 
 @keyframes backgroundShift {
@@ -2162,21 +2150,12 @@ select.parameter-input option {
   }
 }
 
-/* Intro screen: monochrome reference treatment */
+/* Intro screen: same flat tiffany and top glow as the home welcome hero */
 .investment-calculator-page--start {
-  background-color: #080909;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, .014) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .014) 1px, transparent 1px),
-    conic-gradient(
-      from 90deg,
-      rgba(255, 255, 255, .018) 0 25%,
-      transparent 0 50%,
-      rgba(255, 255, 255, .018) 0 75%,
-      transparent 0
-    );
-  background-repeat: repeat;
-  background-size: 12px 12px, 12px 12px, 84px 84px;
+  background-color: #4ecdd6;
+  background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
+  background-repeat: no-repeat;
+  background-size: cover;
   color: #ffffff;
 }
 
@@ -2186,19 +2165,11 @@ select.parameter-input option {
 
 @media (max-width: 768px) {
   .investment-calculator-page--start {
-    background-color: #080909;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, .014) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, .014) 1px, transparent 1px),
-      conic-gradient(
-        from 90deg,
-        rgba(255, 255, 255, .018) 0 25%,
-        transparent 0 50%,
-        rgba(255, 255, 255, .018) 0 75%,
-        transparent 0
-      );
-    background-repeat: repeat;
-    background-size: 12px 12px, 12px 12px, 84px 84px;
+    background-color: #4ecdd6;
+    background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #ffffff;
   }
 
   .investment-calculator-page--start .calculator-container {
@@ -2492,7 +2463,8 @@ select.parameter-input option {
   }
 
   .investment-calculator-page.investment-calculator-page--ai-result {
-    background: #070909;
+    background: #4ecdd6;
+    background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
     color: #ffffff;
     padding-bottom: 0;
     overscroll-behavior-y: none;
@@ -2504,23 +2476,73 @@ select.parameter-input option {
   }
 
   .investment-calculator-page.investment-calculator-page--start {
-    background-color: #080909;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, .014) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, .014) 1px, transparent 1px),
-      conic-gradient(
-        from 90deg,
-        rgba(255, 255, 255, .018) 0 25%,
-        transparent 0 50%,
-        rgba(255, 255, 255, .018) 0 75%,
-        transparent 0
-      );
-    background-repeat: repeat;
-    background-size: 12px 12px, 12px 12px, 84px 84px;
+    background-color: #4ecdd6;
+    background-image: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 68%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #ffffff;
   }
 
   .investment-calculator-page--start .calculator-container {
     background: transparent;
     box-shadow: none;
   }
+}
+
+/* Dark-glass calculator chrome sits on the welcome tiffany field */
+.investment-calculator-page .calculator-header,
+.investment-calculator-page .calculator-subtitle,
+.investment-calculator-page .calc-step3-preview-title {
+  color: #ffffff;
+}
+
+.investment-calculator-page .calculator-title {
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  color: #ffffff;
+}
+
+.investment-calculator-page .section-title,
+.investment-calculator-page .summary-card__label,
+.investment-calculator-page .summary-card__value,
+.investment-calculator-page .calc-step3-sidebar-title,
+.investment-calculator-page .parameter-group label,
+.investment-calculator-page .expandable-button,
+.investment-calculator-page .chart-tab {
+  color: #0b1220;
+}
+
+.investment-calculator-page .calculator-badge {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.investment-calculator-page .summary-card,
+.investment-calculator-page .chart-section,
+.investment-calculator-page .parameters-section,
+.investment-calculator-page .expandable-section {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.95);
+  color: #0b1220;
+  box-shadow: 0 14px 36px rgba(8, 40, 48, 0.1);
+}
+
+.investment-calculator-page .parameter-input {
+  background: #ffffff;
+  border-color: rgba(11, 18, 32, 0.12);
+  color: #0b1220;
+}
+
+.investment-calculator-page .parameter-input::placeholder {
+  color: rgba(11, 18, 32, 0.4);
+}
+
+.investment-calculator-page .parameter-input:focus {
+  border-color: #3bc0cb;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.35);
+}
+
+.investment-calculator-page .chart-tabs {
+  background: rgba(11, 18, 32, 0.06);
+  border-color: rgba(11, 18, 32, 0.08);
 }
