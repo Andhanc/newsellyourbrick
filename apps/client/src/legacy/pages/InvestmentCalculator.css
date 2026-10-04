@@ -2496,6 +2496,7 @@ select.parameter-input option {
     background-repeat: no-repeat;
     background-size: cover;
     color: #ffffff;
+    padding-bottom: 0;
   }
 
   .investment-calculator-page--start .calculator-container {

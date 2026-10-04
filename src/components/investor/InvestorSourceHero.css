@@ -799,11 +799,12 @@
 
   .investor-source-hero__stage {
     --investor-art-size: clamp(230px, min(88vw, 42svh), 360px);
-    height: clamp(150px, 32svh, 350px);
-    margin-bottom: clamp(-56px, -6svh, -36px);
+    height: clamp(150px, 40svh, 350px);
+    margin-bottom: clamp(-50px, -5svh, -34px);
   }
 
   .investor-source-hero__art {
+    top: -12px;
     right: auto;
     bottom: 0;
     width: min(100%, 280px);
@@ -816,9 +817,13 @@
     margin-left: 12px;
   }
 
+  .investor-source-hero__explain {
+    padding-bottom: 8px;
+  }
+
   .investor-source-hero__explain-card {
     flex-basis: 52%;
-    height: clamp(128px, 20svh, 180px);
+    height: clamp(144px, 22svh, 180px);
     padding: clamp(9px, 1.6svh, 16px) 15px clamp(11px, 1.8svh, 18px);
     overflow: hidden;
   }
@@ -851,7 +856,7 @@
   }
 
   .investor-source-hero__headline {
-    padding-top: clamp(6px, 3svh, 32px);
+    padding-top: clamp(12px, 5svh, 40px);
   }
 
   .investor-source-hero__headline h1 {
