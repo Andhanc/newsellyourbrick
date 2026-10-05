@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { FiX } from 'react-icons/fi'
+import { FiChevronLeft } from 'react-icons/fi'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import './AuctionBidDrawer.css'
@@ -9,9 +9,17 @@ import './AuctionBidDrawer.css'
 export default function AuctionBidDrawer({ isOpen, onClose, title, children, contextAnchorSelector }) {
   const { t } = useTranslation()
   const [keyboardViewport, setKeyboardViewport] = useState(null)
+  const [isOpening, setIsOpening] = useState(isOpen)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
   })
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    setIsOpening(true)
+    const timer = window.setTimeout(() => setIsOpening(false), 620)
+    return () => window.clearTimeout(timer)
+  }, [isOpen])
 
   useLayoutEffect(() => {
     if (!visible || !window.visualViewport) return
@@ -35,7 +43,6 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
     isDragging,
     panelDragStyle,
     isCollapsed,
-    isEntering,
     closingPanel,
     onDragZonePointerDown,
     onDragZonePointerMove,
@@ -52,40 +59,6 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
 
   const requestCloseRef = useRef(requestClose)
   requestCloseRef.current = requestClose
-
-  // Keep the real listing photo and countdown in view, even when opened far down the page.
-  useLayoutEffect(() => {
-    if (!visible || !contextAnchorSelector || !window.matchMedia('(max-width: 960px)').matches) return
-    const anchor = document.querySelector(contextAnchorSelector)
-    const panel = panelRef.current
-    if (!anchor || !panel || !anchor.getClientRects().length) return
-    const scrollRoot = anchor.closest('.app-layout')
-    const scrollTarget = scrollRoot || window
-    const originalScrollY = scrollRoot?.scrollTop ?? window.scrollY
-    const originalOverflow = scrollRoot?.style.overflowY
-    if (scrollRoot) scrollRoot.style.overflowY = 'hidden'
-    const alignContext = () => {
-      const timerBottom = anchor.getBoundingClientRect().bottom + (scrollRoot?.scrollTop ?? window.scrollY)
-      const viewport = window.visualViewport
-      const viewportBottom = viewport && window.innerHeight - viewport.height > 120
-        ? viewport.height + viewport.offsetTop
-        : window.innerHeight
-      const bottomInset = parseFloat(window.getComputedStyle(panel).marginBottom) || 0
-      const visibleBottom = viewportBottom - panel.offsetHeight - bottomInset - 12
-      scrollTarget.scrollTo({ top: Math.max(0, timerBottom - visibleBottom), behavior: 'instant' })
-    }
-    alignContext()
-    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(alignContext) : null
-    observer?.observe(panel)
-    observer?.observe(anchor)
-    window.addEventListener('resize', alignContext)
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', alignContext)
-      if (scrollRoot) scrollRoot.style.overflowY = originalOverflow
-      scrollTarget.scrollTo({ top: originalScrollY, behavior: 'instant' })
-    }
-  }, [visible, contextAnchorSelector, panelRef])
 
   useEffect(() => {
     if (!visible) return
@@ -152,13 +125,16 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
         <div
           ref={panelRef}
           className={`auction-bid-drawer__panel${closingPanelClasses}${
-            isEntering ? ' auction-bid-drawer__panel--entering' : ''
+            isOpening && !isClosing ? ' auction-bid-drawer__panel--entering' : ''
           }${isCollapsed ? ' auction-bid-drawer__panel--collapsed' : ''}`}
           style={panelDragStyle}
         >
           <div
             className="auction-bid-drawer__drag-zone"
-            onPointerDown={onDragZonePointerDown}
+            onPointerDown={(event) => {
+              setIsOpening(false)
+              onDragZonePointerDown(event)
+            }}
             onPointerMove={onDragZonePointerMove}
             onPointerUp={onDragZonePointerUp}
             onPointerCancel={onDragZonePointerCancel}
@@ -169,22 +145,16 @@ export default function AuctionBidDrawer({ isOpen, onClose, title, children, con
           </div>
 
           <div className="auction-bid-drawer__header">
-            {title ? (
-              <h2 id="auction-bid-drawer-title" className="auction-bid-drawer__title">
-                {title}
-              </h2>
-            ) : (
-              <span id="auction-bid-drawer-title" className="auction-bid-drawer__title-sr">
-                {t('placeBid')}
-              </span>
-            )}
+            <h2 id="auction-bid-drawer-title" className="auction-bid-drawer__title-sr">
+              {title || t('placeBid')}
+            </h2>
             <button
               type="button"
               className="auction-bid-drawer__close"
               onClick={() => requestClose()}
               aria-label={t('closeAria')}
             >
-              <FiX size={20} />
+              <FiChevronLeft size={20} />
             </button>
           </div>
 

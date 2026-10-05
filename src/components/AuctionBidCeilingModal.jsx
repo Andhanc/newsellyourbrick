@@ -14,9 +14,56 @@ import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import './AuctionBidCeilingModal.css'
 
+const ART = {
+  hero: '/images/auction-bid-ceiling/hero.jpg',
+  auto: '/images/auction-bid-ceiling/auto.jpg',
+  hidden: '/images/auction-bid-ceiling/hidden.jpg',
+  final: '/images/auction-bid-ceiling/final.jpg',
+  cap: '/images/auction-bid-ceiling/cap.jpg',
+  locked: '/images/auction-bid-ceiling/locked.jpg',
+}
+
+function CeilingLockScene({ isComplete, onDone, loadingLabel, successLabel }) {
+  const [showCheck, setShowCheck] = useState(false)
+
+  useEffect(() => {
+    if (!isComplete) return undefined
+    const checkTimer = window.setTimeout(() => setShowCheck(true), 450)
+    const doneTimer = window.setTimeout(onDone, 1250)
+    return () => {
+      window.clearTimeout(checkTimer)
+      window.clearTimeout(doneTimer)
+    }
+  }, [isComplete, onDone])
+
+  return (
+    <div className="abc-lock-wrap" role="status" aria-live="polite">
+      <div className={`abc-lock__status${showCheck ? ' abc-lock__status--done' : ''}`} aria-hidden="true">
+        {showCheck ? (
+          <svg viewBox="0 0 48 48" className="abc-lock__check">
+            <path d="M11 24.5 20 33l17-18" />
+          </svg>
+        ) : (
+          <span className="abc-spinner" />
+        )}
+      </div>
+      <p className="abc-lock__caption">{showCheck ? successLabel : loadingLabel}</p>
+    </div>
+  )
+}
+
+function CeilingWait({ label }) {
+  return (
+    <div className="abc-wait" role="status" aria-label={label}>
+      <span className="abc-spinner" />
+    </div>
+  )
+}
+
 export default function AuctionBidCeilingModal({
   open,
   onClose,
+  embedded = false,
   property,
   propertyTable,
   userId,
@@ -31,7 +78,8 @@ export default function AuctionBidCeilingModal({
   const [maxAmountInput, setMaxAmountInput] = useState('')
   const [existingCeiling, setExistingCeiling] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [fetching, setFetching] = useState(false)
+  const [view, setView] = useState('boot')
+  const [lockedAmount, setLockedAmount] = useState(null)
 
   const effectiveCurrentBid = useMemo(() => {
     const cur = currentBid != null ? Number(currentBid) : null
@@ -56,19 +104,56 @@ export default function AuctionBidCeilingModal({
     [minCeiling],
   )
 
-  const formattedCurrent = fmtPrice
-    ? fmtPrice(effectiveCurrentBid)
-    : `${effectiveCurrentBid} ${currencySymbol}`
-  const formattedMin = fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`
-  const formattedStep = fmtPrice ? fmtPrice(step) : `${step} ${currencySymbol}`
+  const formatMoney = useCallback(
+    (amount) => (fmtPrice ? fmtPrice(amount) : `${amount} ${currencySymbol}`),
+    [fmtPrice, currencySymbol],
+  )
+
+  const formattedCurrent = formatMoney(effectiveCurrentBid)
+  const formattedMin = formatMoney(minCeiling)
+  const formattedStep = formatMoney(step)
+  const formattedLocked = formatMoney(lockedAmount ?? existingCeiling?.max_amount ?? 0)
+
+  const cards = useMemo(
+    () => [
+      {
+        key: 'auto',
+        title: t('auctionBidCeilingCardAutoTitle'),
+        text: t('auctionBidCeilingCardAutoText'),
+        art: ART.auto,
+      },
+      {
+        key: 'hidden',
+        title: t('auctionBidCeilingCardHiddenTitle'),
+        text: t('auctionBidCeilingCardHiddenText'),
+        art: ART.hidden,
+      },
+      {
+        key: 'final',
+        title: t('auctionBidCeilingCardFinalTitle'),
+        text: t('auctionBidCeilingCardFinalText'),
+        art: ART.final,
+      },
+      {
+        key: 'cap',
+        title: t('auctionBidCeilingCardCapTitle'),
+        text: t('auctionBidCeilingCardCapText'),
+        art: ART.cap,
+      },
+    ],
+    [t],
+  )
 
   const handleAmountChange = (e) => {
     setMaxAmountInput(sanitizeMoneyInputRaw(e.target.value))
   }
 
   const fetchCeiling = useCallback(async () => {
-    if (!userId || !property?.id) return
-    setFetching(true)
+    if (!userId || !property?.id) {
+      setExistingCeiling(null)
+      setMaxAmountInput('')
+      return null
+    }
     try {
       const q = new URLSearchParams({
         user_id: String(userId),
@@ -80,23 +165,43 @@ export default function AuctionBidCeilingModal({
       if (json.success && json.data?.max_amount != null) {
         setExistingCeiling(json.data)
         setMaxAmountInput(sanitizeMoneyInputRaw(String(Math.round(json.data.max_amount))))
-      } else {
-        setExistingCeiling(null)
-        setMaxAmountInput('')
+        return json.data
       }
+      setExistingCeiling(null)
+      setMaxAmountInput('')
+      return null
     } catch {
       setExistingCeiling(null)
-    } finally {
-      setFetching(false)
+      return null
     }
   }, [userId, property?.id, propertyTable])
 
   useEffect(() => {
-    if (!open) return
-    void fetchCeiling()
+    if (!open) return undefined
+    let cancelled = false
+    setView('boot')
+    ;(async () => {
+      const data = await fetchCeiling()
+      if (cancelled) return
+      if (data?.max_amount != null) {
+        setLockedAmount(Number(data.max_amount))
+        setView('confirmed')
+      } else {
+        setLockedAmount(null)
+        setView('setup')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [open, fetchCeiling])
 
-  const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose, {
+  useEffect(() => {
+    const body = document.querySelector('.auction-bid-ceiling-modal__body')
+    if (body) body.scrollTop = 0
+  }, [view])
+
+  const { visible, isClosing, requestClose } = useDrawerDismiss(embedded ? false : open, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
   })
 
@@ -112,36 +217,25 @@ export default function AuctionBidCeilingModal({
     onDragZonePointerUp,
     onDragZonePointerCancel,
   } = useBottomSheetDrag({
-    isOpen: open,
-    visible,
-    isClosing,
+    isOpen: embedded ? false : open,
+    visible: embedded ? false : visible,
+    isClosing: embedded ? false : isClosing,
     requestClose,
     panelClosingClass: 'auction-bid-ceiling-modal__panel--closing',
-    maxViewportHeightRatio: 0.62,
+    maxViewportHeightRatio: 0.92,
   })
 
   useEffect(() => {
-    if (!visible) return
+    if (embedded || !visible) return undefined
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = prev
     }
-  }, [visible])
+  }, [embedded, visible])
 
-  const handleSave = async () => {
-    const amount = parseMoneyInputValue(maxAmountInput)
-    if (!Number.isFinite(amount) || amount <= 0) {
-      onError?.(t('auctionBidCeilingInvalidAmount'))
-      return
-    }
-    if (amount < minCeiling) {
-      onError?.(t('auctionBidCeilingBelowMin', { min: formattedMin }))
-      return
-    }
-
-    setSaving(true)
-    try {
+  const persistCeiling = useCallback(
+    async (amount) => {
       const res = await fetch(`${getApiBaseUrlSync()}/bids/ceiling`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -158,22 +252,52 @@ export default function AuctionBidCeilingModal({
         if (json.error === 'MAX_BELOW_MINIMUM' && json.minimum) {
           onError?.(
             t('auctionBidCeilingBelowMin', {
-              min: fmtPrice ? fmtPrice(json.minimum) : `${json.minimum} ${currencySymbol}`,
+              min: formatMoney(json.minimum),
             }),
           )
         } else {
           onError?.(json.error || t('auctionBidCeilingSaveError'))
         }
-        return
+        return false
       }
+      setExistingCeiling(json.data)
+      setLockedAmount(amount)
       onSaved?.(json.data)
-      requestClose()
+      return true
+    },
+    [userId, property?.id, property?.property_type, propertyTable, onError, onSaved, t, formatMoney],
+  )
+
+  const handleSave = async () => {
+    const amount = parseMoneyInputValue(maxAmountInput)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      onError?.(t('auctionBidCeilingInvalidAmount'))
+      return
+    }
+    if (amount < minCeiling) {
+      onError?.(t('auctionBidCeilingBelowMin', { min: formattedMin }))
+      return
+    }
+
+    setSaving(true)
+    setLockedAmount(amount)
+    setView('locking')
+    try {
+      const ok = await persistCeiling(amount)
+      if (!ok) setView('setup')
     } catch {
       onError?.(t('auctionBidCeilingSaveError'))
+      setView('setup')
     } finally {
       setSaving(false)
     }
   }
+
+  const handleLockDone = useCallback(() => {
+    setView((current) => (current === 'locking' ? 'confirmed' : current))
+  }, [])
+
+  const handleChange = () => setView('setup')
 
   const handleRemove = async () => {
     setSaving(true)
@@ -193,9 +317,10 @@ export default function AuctionBidCeilingModal({
         return
       }
       setExistingCeiling(null)
+      setLockedAmount(null)
       setMaxAmountInput('')
       onSaved?.(null)
-      requestClose()
+      setView('setup')
     } catch {
       onError?.(t('auctionBidCeilingSaveError'))
     } finally {
@@ -203,7 +328,124 @@ export default function AuctionBidCeilingModal({
     }
   }
 
-  if (!visible || typeof document === 'undefined') return null
+  const show = embedded ? Boolean(open) : visible
+  if (!show || typeof document === 'undefined') return null
+
+  const views = (
+    <>
+      {view === 'boot' ? <CeilingWait label={t('auctionBidCeilingLocking')} /> : null}
+
+      {view === 'locking' ? (
+        <CeilingLockScene
+          isComplete={!saving}
+          onDone={handleLockDone}
+          loadingLabel={t('auctionBidCeilingLocking')}
+          successLabel={t('auctionBidCeilingSaved')}
+        />
+      ) : null}
+
+      {view === 'confirmed' ? (
+        <div className="abc-confirmed">
+          <article className="abc-result">
+            <div className="abc-result__copy">
+              <p className="abc-result__kicker">{t('auctionBidCeilingLockedKicker')}</p>
+              <p className="abc-result__amount">{formattedLocked}</p>
+              <p className="abc-result__lead">{t('auctionBidCeilingLockedLead')}</p>
+            </div>
+            <img src={ART.locked} alt="" className="abc-result__art" />
+          </article>
+          <button type="button" className="abc-change" onClick={handleChange}>
+            <span className="abc-change__shine" aria-hidden="true" />
+            <span className="abc-change__label">{t('auctionBidCeilingChange')}</span>
+          </button>
+        </div>
+      ) : null}
+
+      {view === 'setup' ? (
+        <div className="abc-setup">
+          <article className="abc-hero">
+            <div className="abc-hero__copy">
+              <h3 className="abc-hero__title">{t('auctionBidCeilingHeroTitle')}</h3>
+              <p className="abc-hero__text">{t('auctionBidCeilingHeroText')}</p>
+              <p className="abc-hero__now">
+                <span>{t('propertyDetailCurrentMaxBid')}</span>
+                <strong>{formattedCurrent}</strong>
+              </p>
+            </div>
+            <img src={ART.hero} alt="" className="abc-hero__art" />
+          </article>
+
+          <div className="abc-grid">
+            {cards.map((card) => (
+              <article key={card.key} className="abc-tile">
+                <div className="abc-tile__copy">
+                  <h3>{card.title}</h3>
+                  <p>{card.text}</p>
+                </div>
+                <img src={card.art} alt="" />
+              </article>
+            ))}
+          </div>
+
+          <div className="abc-compose">
+            <label className="abc-compose__label" htmlFor="auction-bid-ceiling-input">
+              {t('auctionBidCeilingInputLabel')}
+            </label>
+            <div className="abc-compose__field">
+              <span className="abc-compose__currency">{currencySymbol}</span>
+              <input
+                id="auction-bid-ceiling-input"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                className="abc-compose__input"
+                placeholder={minCeilingPlaceholder}
+                value={maxAmountDisplay}
+                onChange={handleAmountChange}
+                disabled={saving}
+              />
+            </div>
+            <p className="abc-compose__hint">
+              {t('auctionBidCeilingInputHint', { step: formattedStep })}
+            </p>
+            {existingCeiling ? (
+              <button
+                type="button"
+                className="abc-remove"
+                onClick={handleRemove}
+                disabled={saving}
+              >
+                {t('auctionBidCeilingRemove')}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </>
+  )
+
+  const fixBar = view === 'setup' ? (
+    <div className="abc-fix-bar">
+      <button
+        type="button"
+        className="abc-fix"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        <span className="abc-fix__shine" aria-hidden="true" />
+        <span className="abc-fix__label">{t('auctionBidCeilingFix')}</span>
+      </button>
+    </div>
+  ) : null
+
+  if (embedded) {
+    return (
+      <div className="auction-bid-ceiling-embed">
+        <div className="auction-bid-ceiling-modal__body">{views}</div>
+        {fixBar}
+      </div>
+    )
+  }
 
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
   const closingPanelClasses = isClosing
@@ -244,7 +486,7 @@ export default function AuctionBidCeilingModal({
 
           <div className="auction-bid-ceiling-modal__header">
             <h2 id="auction-bid-ceiling-title" className="auction-bid-ceiling-modal__title">
-              {t('auctionBidCeilingTitle')}
+              {t('auctionBidCeilingSheetTitle')}
             </h2>
             <button
               type="button"
@@ -256,73 +498,8 @@ export default function AuctionBidCeilingModal({
             </button>
           </div>
 
-          <div className="auction-bid-ceiling-modal__body">
-            <div className="auction-bid-ceiling-modal__top">
-              <div className="auction-bid-ceiling-modal__top-copy">
-                <p className="auction-bid-ceiling-modal__lead">{t('auctionBidCeilingSubtitle')}</p>
-                <div className="auction-bid-ceiling-modal__current">
-                  <span className="auction-bid-ceiling-modal__current-label">
-                    {t('propertyDetailCurrentMaxBid')}
-                  </span>
-                  <strong className="auction-bid-ceiling-modal__current-value">{formattedCurrent}</strong>
-                </div>
-              </div>
-              <img
-                src="/images/auction-empty-illustration.png"
-                alt=""
-                className="auction-bid-ceiling-modal__art"
-                aria-hidden="true"
-              />
-            </div>
-
-            <label className="auction-bid-ceiling-modal__label" htmlFor="auction-bid-ceiling-input">
-              {t('auctionBidCeilingInputLabel')}
-            </label>
-            <div className="auction-bid-ceiling-modal__input-wrap">
-              <span className="auction-bid-ceiling-modal__currency">{currencySymbol}</span>
-              <input
-                id="auction-bid-ceiling-input"
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                className="auction-bid-ceiling-modal__input"
-                placeholder={minCeilingPlaceholder}
-                value={maxAmountDisplay}
-                onChange={handleAmountChange}
-                disabled={saving || fetching}
-              />
-            </div>
-            <p className="auction-bid-ceiling-modal__hint">
-              {t('auctionBidCeilingInputHint', { step: formattedStep })}
-            </p>
-
-            {existingCeiling?.activated_at ? (
-              <p className="auction-bid-ceiling-modal__active-note" role="status">
-                {t('auctionBidCeilingAlreadyActive')}
-              </p>
-            ) : null}
-
-            <div className="auction-bid-ceiling-modal__actions">
-              <button
-                type="button"
-                className="auction-bid-ceiling-modal__submit"
-                onClick={handleSave}
-                disabled={saving || fetching || !maxAmountInput.trim()}
-              >
-                {saving ? t('propertyDetailSubmitting') : t('auctionBidCeilingSubmit')}
-              </button>
-              {existingCeiling ? (
-                <button
-                  type="button"
-                  className="auction-bid-ceiling-modal__remove"
-                  onClick={handleRemove}
-                  disabled={saving}
-                >
-                  {t('auctionBidCeilingRemove')}
-                </button>
-              ) : null}
-            </div>
-          </div>
+          <div className="auction-bid-ceiling-modal__body">{views}</div>
+          {fixBar}
         </div>
       </div>
     </>,

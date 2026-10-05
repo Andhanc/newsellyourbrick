@@ -93,6 +93,7 @@ test('full-screen auction photos retain the mobile bid menu', () => {
 test('successful and outbid auction events use distinct haptic feedback', () => {
   assert.match(classicSource, /triggerAuctionBidHaptic\('placed'\)/)
   assert.match(classicSource, /triggerAuctionBidHaptic\('outbid'\)/)
+  assert.match(classicSource, /triggerCoinFallHaptic/)
 })
 
 

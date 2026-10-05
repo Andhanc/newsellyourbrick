@@ -2,8 +2,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   AUCTION_BID_HAPTIC_PATTERNS,
+  COIN_FALL_HAPTIC_PATTERN,
+  COIN_FALL_WEBKIT_OFFSETS_MS,
   SELECTION_HAPTIC_DURATION_MS,
   triggerAuctionBidHaptic,
+  triggerCoinFallHaptic,
   triggerSelectionHaptic,
 } from './haptics.js'
 
@@ -87,5 +90,23 @@ test('auction bid confirmation and outbid warning use distinct vibration pattern
   assert.ok(
     AUCTION_BID_HAPTIC_PATTERNS.outbid.reduce((sum, value) => sum + value, 0) >
       AUCTION_BID_HAPTIC_PATTERNS.placed.reduce((sum, value) => sum + value, 0),
+    'outbid warning lasts longer than a placed confirmation',
   )
+})
+
+test('coin fall haptic uses a staggered vibration pattern and can be cancelled', () => {
+  const calls = []
+  const navigatorObject = {
+    vibrate(pattern) {
+      calls.push(pattern)
+      return true
+    },
+  }
+
+  const stop = triggerCoinFallHaptic({ navigatorObject, documentObject: null })
+  assert.equal(typeof stop, 'function')
+  stop()
+  assert.deepEqual(calls, [[...COIN_FALL_HAPTIC_PATTERN], 0])
+  assert.ok(COIN_FALL_HAPTIC_PATTERN.reduce((sum, value) => sum + value, 0) > 4000)
+  assert.ok(COIN_FALL_WEBKIT_OFFSETS_MS.length >= 7)
 })

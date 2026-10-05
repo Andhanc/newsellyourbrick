@@ -1,38 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Heart, PenLine, Sparkles } from 'lucide-react'
+import { ArrowRight, Calculator, Check, Heart, PenLine, ShieldCheck, Target } from 'lucide-react'
 import { applyPropertyImageFallback } from '../../utils/propertyImage'
 import { publicAsset } from '../../utils/publicAsset'
 import './InvestorSourceHero.css'
 
 const FAVORITES_EMPTY_IMAGE = publicAsset('images/investor-favorites-empty-illustration.png')
+const INTRO_ART = publicAsset('images/investor/smart-investor-glass-puzzles.png')
+const INTRO_EXPLAIN = [
+  { title: 'smartInvestor_explain1Title', highlight: 'smartInvestor_explain1Highlight', body: 'smartInvestor_explain1Body', Icon: Calculator },
+  { title: 'smartInvestor_explain2Title', highlight: 'smartInvestor_explain2Highlight', body: 'smartInvestor_explain2Body', Icon: Target },
+  { title: 'smartInvestor_explain3Title', highlight: 'smartInvestor_explain3Highlight', body: 'smartInvestor_explain3Body', Icon: ShieldCheck },
+]
 
-function buildCuratedPropertyCards(t) {
-  return [
-    {
-      src: '/images/sellyourbrick/about/about-hero-villa.jpg',
-      alt: t('smartInvestor_cardAlt1'),
-      name: t('smartInvestor_cityMarbella'),
-      price: '€248 000',
-      tone: 'amber',
-    },
-    {
-      src: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
-      alt: t('smartInvestor_cardAlt2'),
-      name: t('smartInvestor_cityValencia'),
-      price: '€186 400',
-      tone: 'silver',
-    },
-    {
-      src: '/images/external/villa-palazzetta-1-577bba2c20.jpg',
-      alt: t('smartInvestor_cardAlt3'),
-      name: t('smartInvestor_cityBarcelona'),
-      price: '€312 900',
-      tone: 'sky',
-    },
-  ]
+function renderHighlightedTitle(title, highlight) {
+  const index = title.indexOf(highlight)
+  if (index < 0) return title
+  return <>{title.slice(0, index)}<mark>{highlight}</mark>{title.slice(index + highlight.length)}</>
 }
 
 const sceneMotion = {
@@ -88,7 +74,17 @@ export default function InvestorSourceHero({
 }) {
   const { t } = useTranslation()
   const [hasStarted, setHasStarted] = useState(false)
-  const portfolioCards = useMemo(() => buildCuratedPropertyCards(t), [t])
+  const [explainPage, setExplainPage] = useState(0)
+  const explainRef = useRef(null)
+
+  const syncExplainPage = (node) => {
+    const scroller = node || explainRef.current
+    const card = scroller?.firstElementChild
+    if (!scroller || !card) return
+    const step = card.getBoundingClientRect().width + (parseFloat(window.getComputedStyle(scroller).columnGap) || 0)
+    const next = Math.max(0, Math.min(INTRO_EXPLAIN.length - 1, Math.round(scroller.scrollLeft / step)))
+    setExplainPage((current) => (current === next ? current : next))
+  }
 
   useEffect(() => {
     const scrollRoot = document.querySelector('.app-layout')
@@ -110,40 +106,51 @@ export default function InvestorSourceHero({
           >
             <div className="investor-source-hero__headline">
               <h1 aria-label={t('smartInvestor_introAria')}>
-                <span>{t('smartInvestor_introLine1')}</span>
-                <span>{t('smartInvestor_introLine2Before')} <mark>{t('smartInvestor_introLine2Mark')}</mark></span>
-                <span>{t('smartInvestor_introLine3')}</span>
+                <span>{t('smartInvestor_introLine1')} {t('smartInvestor_introLine2Before')}</span>
+                <span><mark>{t('smartInvestor_introLine2Mark')}</mark> {t('smartInvestor_introLine3')}</span>
               </h1>
             </div>
 
-            <div className="investor-source-hero__portfolio" aria-label={t('smartInvestor_portfolioAria')}>
-              {portfolioCards.map((card, index) => (
-                <button
-                  key={`${card.src}-${index}`}
-                  type="button"
-                  className={`investor-source-hero__property-card investor-source-hero__property-card--${card.tone} investor-source-hero__property-card--${index + 1}`}
-                  aria-label={t('smartInvestor_startCalcAria', { name: card.name, price: card.price })}
-                  onClick={() => setHasStarted(true)}
-                >
-                  <span className="investor-source-hero__property-avatar">
-                    <img
-                      src={card.src}
-                      alt=""
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      fetchPriority={index === 0 ? 'high' : 'auto'}
-                      onError={(event) => applyPropertyImageFallback(event, portfolioCards[index].src)}
-                    />
-                  </span>
-                  <span className="investor-source-hero__property-copy">
-                    <strong>{card.name}</strong>
-                    <b>{card.price}</b>
-                  </span>
-                  <span className="investor-source-hero__property-action" aria-hidden="true">
-                    <Sparkles size={12} strokeWidth={2.4} />
-                    {t('smartInvestor_calculate')}
-                  </span>
-                </button>
-              ))}
+            <div className="investor-source-hero__stage">
+              <div className="investor-source-hero__art">
+                <img src={INTRO_ART} alt="" width={1254} height={1254} decoding="async" />
+              </div>
+            </div>
+
+            <div className="investor-source-hero__explain-wrap">
+              <ul
+                ref={explainRef}
+                className="investor-source-hero__explain"
+                aria-label={t('smartInvestor_explainAria')}
+                onScroll={(event) => syncExplainPage(event.currentTarget)}
+              >
+                {INTRO_EXPLAIN.map((card) => (
+                  <li key={card.title} className="investor-source-hero__explain-card">
+                    <span className="investor-source-hero__explain-icon" aria-hidden="true">
+                      <card.Icon size={24} strokeWidth={1.9} />
+                    </span>
+                    <strong>{renderHighlightedTitle(t(card.title), t(card.highlight))}</strong>
+                    <span className="investor-source-hero__explain-body">{t(card.body)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="investor-source-hero__explain-dots">
+                {INTRO_EXPLAIN.map((card, index) => (
+                  <button
+                    key={card.title}
+                    type="button"
+                    className={index === explainPage ? 'is-active' : undefined}
+                    aria-label={t(card.title)}
+                    aria-current={index === explainPage ? 'true' : undefined}
+                    onClick={() => {
+                      const scroller = explainRef.current
+                      const cardNode = scroller?.children[index]
+                      if (!scroller || !cardNode) return
+                      scroller.scrollTo({ left: cardNode.offsetLeft, behavior: 'smooth' })
+                    }}
+                  />
+                ))}
+              </div>
             </div>
 
             <button
