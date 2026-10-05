@@ -932,52 +932,39 @@ function parseCompareAnalysisJson(messageContent) {
  * @returns {Promise<{ summary: string, rows: Array<{ aspect: string, left: string, right: string, winner: 'left'|'right'|'tie'|'unknown' }> }>}
  */
 export async function askPropertyCompareAssistant(propertyLeft, propertyRight, options = {}) {
-  const { signal } = options
+  const { signal, language = 'ru', fallbackMessage = '' } = options
+  const languageNames = {
+    ru: 'Russian', en: 'English', de: 'German', es: 'Spanish',
+    fr: 'French', pl: 'Polish', sv: 'Swedish',
+  }
+  const languageCode = String(language).toLowerCase().split(/[-_]/)[0]
+  const responseLanguage = languageNames[languageCode] || languageNames.ru
   const payloadJson = JSON.stringify(
     { object_left: propertyLeft, object_right: propertyRight },
     null,
     0
   )
 
-  const systemPrompt = `Ты консультант по недвижимости SellYourBrick. Пользователь сравнивает ДВА конкретных объекта.
-Тебе переданы структурированные данные object_left и object_right (адрес, локация, характеристики).
+  const systemPrompt = `You are a SellYourBrick real-estate adviser comparing two specific properties.
+The structured object_left and object_right data includes addresses, locations and features.
 
-Задача:
-1) Кратко (4–8 предложений) дай вывод: для кого какой вариант может подойти лучше, нюансы локации. Пиши простым русским, без markdown (** ## списков с -).
-2) Сформируй таблицу сравнения по ОКРУЖЕНИЮ и инфраструктуре рядом с каждым адресом. Используй общеизвестные факты о районе/городе по указанной локации. Если точных данных нет — пиши честно: «нет данных», «вероятно», «нужно уточнить на карте», не выдумывай конкретные названия клиник, если не уверен.
+Write ALL user-visible text strictly in ${responseLanguage}: the summary, every aspect, and every left/right description. Never leave any Russian text in the answer unless the requested language is Russian. Keep property names and proper nouns as supplied. Do not use markdown.
 
-Обязательно включи строки (можно объединить смежное, но не пропускай темы полностью):
-— Повседневные удобства (магазины, аптеки, кафе рядом): есть/нет, примерно как близко
-— Поликлиники / амбулатории
-— Больницы / экстренная помощь
-— Школы и детсады
-— Транспорт (общественный, до аэропорта если уместно)
-— Парки и зелёные зоны
-— Море / пляж / набережная (если по локации уместно; иначе «не применимо»)
-— Зоны отдыха, набережные, променады
-— Достопримечательности и развлечения рядом
+Provide a short 4–8 sentence summary explaining which property may suit which buyer and relevant location nuances. Then compare the surroundings and infrastructure near each address. Use only well-known facts about the area; if exact information is unavailable, say so honestly and do not invent specific places.
 
-Для КАЖДОЙ строки таблицы укажи winner — кто выгоднее по этому критерию для типичного покупателя жилья:
-- "left" если заметно лучше object_left
-- "right" если заметно лучше object_right  
-- "tie" если примерно равно или оба слабые/оба сильные
-- "unknown" если нельзя сравнить
+Include all of these topics (related topics may be combined): everyday shops, pharmacies and cafes; clinics; hospitals and emergency care; schools and kindergartens; public transport and airport access where relevant; parks and green spaces; sea, beach and waterfront where relevant; leisure areas and promenades; nearby attractions and entertainment.
 
-Ответ ТОЛЬКО один JSON-объект без текста вокруг:
-{
-  "summary": "текст",
-  "rows": [
-    { "aspect": "краткое название строки", "left": "текст по левому объекту", "right": "текст по правому", "winner": "left" }
-  ]
-}
+For EACH row set winner to "left" when object_left is clearly better, "right" when object_right is clearly better, "tie" when roughly equal, or "unknown" when comparison is impossible.
 
-Поле aspect — короткая подпись строки на русском. left/right — содержательное описание (есть/нет, как далеко: пешком, 5–10 мин, несколько км и т.д.).`
+Return ONLY one JSON object with this shape:
+{"summary":"text in ${responseLanguage}","rows":[{"aspect":"short label in ${responseLanguage}","left":"description in ${responseLanguage}","right":"description in ${responseLanguage}","winner":"left"}]}
+Descriptions should say what is available and how far away it is when known.`
 
   const messages = [
     { role: 'system', content: systemPrompt },
     {
       role: 'user',
-      content: `Сравни два объекта недвижимости по данным ниже и верни JSON как указано.\n\n${payloadJson}`,
+      content: `Compare these two properties and return the specified JSON. Write every text field in ${responseLanguage}.\n\n${payloadJson}`,
     },
   ]
 
@@ -1032,13 +1019,7 @@ export async function askPropertyCompareAssistant(propertyLeft, propertyRight, o
       }
     }
 
-    return {
-      summary: stripMarkdown(
-        messageContent.trim() ||
-          'Не удалось разобрать ответ ИИ. Попробуйте обновить анализ позже.'
-      ),
-      rows: [],
-    }
+    throw new Error(fallbackMessage)
   } catch (error) {
     if (error.name === 'AbortError') throw error
     console.error('askPropertyCompareAssistant:', error)

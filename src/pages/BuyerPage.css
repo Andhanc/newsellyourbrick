@@ -94,7 +94,6 @@
   margin-inline: auto;
 }
 
-.buyer-pill-button,
 .buyer-dark-button {
   min-height: 42px;
   display: inline-flex;
@@ -111,20 +110,12 @@
   transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
-.buyer-pill-button {
-  background: var(--buyer-ocean);
-  color: var(--buyer-white);
-  box-shadow: 0 12px 28px rgba(0, 153, 169, 0.2);
-}
-
 .buyer-dark-button {
   background: var(--buyer-black);
   color: var(--buyer-white);
   box-shadow: 0 16px 34px var(--buyer-black-12);
 }
 
-.buyer-pill-button:hover,
-.buyer-pill-button:focus-visible,
 .buyer-dark-button:hover,
 .buyer-dark-button:focus-visible,
 .buyer-search button:hover,
@@ -132,7 +123,6 @@
   transform: translateY(-2px);
 }
 
-.buyer-pill-button:focus-visible,
 .buyer-dark-button:focus-visible,
 .buyer-search button:focus-visible,
 .buyer-plan__button:focus-visible,
@@ -640,21 +630,6 @@
   flex: 0 0 auto;
 }
 
-.buyer-map-marker__card footer button {
-  margin-left: auto;
-  flex: 0 0 auto;
-  min-height: 30px;
-  border: 0;
-  border-radius: 999px;
-  padding: 0 11px;
-  background: var(--buyer-black);
-  color: var(--buyer-white);
-  font-size: 10px;
-  font-weight: 850;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
 .buyer-map-scene__map .maplibregl-canvas,
 .buyer-map-scene__map .maplibregl-map {
   width: 100% !important;
@@ -886,7 +861,7 @@
   column-gap: 14px;
   row-gap: 0;
   align-items: start;
-  min-height: 228px;
+  min-height: 190px;
   padding: 28px 24px 24px;
 }
 
@@ -918,51 +893,6 @@
 
 .buyer-benefits-wrap .seller-feature-card__text--short {
   display: none;
-}
-
-.buyer-benefits-wrap .seller-feature-card__link {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  justify-self: start;
-  width: fit-content;
-  max-width: 100%;
-  margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 0;
-  height: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--buyer-black);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  transition: color 0.18s ease;
-}
-
-.buyer-benefits-wrap .seller-feature-card__link svg {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-  transition: transform 0.18s ease;
-}
-
-.buyer-benefits-wrap .seller-feature-card__link:hover,
-.buyer-benefits-wrap .seller-feature-card__link:focus-visible {
-  color: var(--buyer-black);
-  background: transparent;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.buyer-benefits-wrap .seller-feature-card__link:hover svg,
-.buyer-benefits-wrap .seller-feature-card__link:focus-visible svg {
-  transform: translateX(2px);
 }
 
 .buyer-showcase-section {
@@ -1485,56 +1415,6 @@
   }
 }
 
-.buyer-modal {
-  position: fixed;
-  z-index: 80;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 22px;
-}
-
-.buyer-modal__scrim {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: rgba(5, 5, 5, 0.5);
-  cursor: pointer;
-}
-
-.buyer-modal__panel {
-  position: relative;
-  width: min(430px, 100%);
-  border-radius: 18px;
-  padding: 34px;
-  background: var(--buyer-white);
-  color: var(--buyer-black);
-  box-shadow: 0 24px 80px rgba(5, 5, 5, 0.22);
-}
-
-.buyer-modal__panel p {
-  margin: 0;
-  color: var(--buyer-ocean-deep);
-  font-size: 12px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.buyer-modal__panel h2 {
-  margin: 12px 0 0;
-  font-size: 32px;
-  font-weight: 900;
-  line-height: 1.05;
-}
-
-.buyer-modal__panel span {
-  display: block;
-  margin: 14px 0 24px;
-  color: var(--buyer-black-58);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
 @media (max-width: 1060px) {
   .buyer-service {
     grid-template-columns: 1fr;
@@ -1873,19 +1753,6 @@
 
   .buyer-benefits-wrap .seller-feature-card__text--short {
     display: block;
-  }
-
-  .buyer-benefits-wrap .seller-feature-card__link {
-    justify-self: center;
-    width: auto;
-    margin-top: 12px;
-    font-size: clamp(10px, 2.5vw, 11px);
-    gap: 4px;
-  }
-
-  .buyer-benefits-wrap .seller-feature-card__link svg {
-    width: 10px;
-    height: 10px;
   }
 
   .buyer-plan-grid {
@@ -2535,9 +2402,6 @@
     -webkit-line-clamp: 3;
   }
 
-  .buyer-benefits-wrap .seller-feature-card__link {
-    margin-top: 10px;
-  }
 }
 
 @media (max-width: 520px) and (max-height: 740px) {

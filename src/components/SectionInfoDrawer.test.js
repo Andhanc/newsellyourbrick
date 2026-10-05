@@ -31,6 +31,15 @@ test('mobile explainer exposes a real drag handle wired to sheet dismissal', () 
   assert.match(styles, /\.section-info-panel--dragging/)
 })
 
+test('section explainer exits down on mobile and right on desktop', async () => {
+  const legacyComponent = await readFile(
+    new URL('../../apps/client/src/legacy/components/SectionInfoDrawer.jsx', import.meta.url),
+    'utf8',
+  )
+  assert.equal(component, legacyComponent)
+  assert.match(component, /isMobileSheet\s*\? ' drawer-dismiss-from-bottom--closing section-info-panel--closing'\s*: ' drawer-dismiss-from-right--closing'/)
+})
+
 test('section explainer trigger is monochrome and lives beside each section heading', () => {
   assert.doesNotMatch(header, /OwnerSupportButton className="new-header__support-btn"/)
   assert.match(hero, /<SectionInfoDrawer section="auction" placement="heading" \/>/)
@@ -41,10 +50,10 @@ test('section explainer trigger is monochrome and lives beside each section head
   assert.match(styles, /\.section-info-trigger--heading \.section-info-trigger__halo\s*\{[\s\S]*?display:\s*none/)
 })
 
-test('section headings stay short and every explainer uses the Tiffany theme', () => {
+test('section headings use their current translation keys and every explainer uses the Tiffany theme', () => {
   assert.match(hero, /<h1 className="hero-auction-mobile__title">\{t\('auction'\)\}<\/h1>/)
   assert.match(hero, /<h1 className="hero-auction-header__title">\{t\('auction'\)\}<\/h1>/)
-  assert.match(shares, /\{t\('shares'\)\}/)
+  assert.match(shares, /\{t\('sharesPage_heroTitle'\)\}/)
   assert.match(debts, /\{t\('debtsTitle'\)\}/)
   assert.equal(testDrive.match(/<h1>\{t\('testDrive'\)\}<\/h1>/g)?.length, 2)
   assert.match(component, /const TIFFANY_THEME = \{[\s\S]*?accent:\s*'#16a7b3'[\s\S]*?accentRgb:\s*'22, 167, 179'/)

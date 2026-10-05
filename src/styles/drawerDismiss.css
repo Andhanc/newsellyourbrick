@@ -32,10 +32,17 @@
 
 @keyframes drawer-dismiss-from-bottom-out {
   from {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, var(--drawer-dismiss-start-y, 0px), 0);
   }
   to {
     transform: translate3d(0, 100%, 0);
+  }
+}
+
+/* Panels carrying both legacy variants need one exit path at each viewport size. */
+@media (max-width: 768px) {
+  .drawer-dismiss-from-bottom--closing.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
   }
 }
 

@@ -3836,11 +3836,7 @@ function TestPage() {
                                   }`
                                   return (
                                     <li key={row.key}>
-                                      <button
-                                        type="button"
-                                        className={rowClass}
-                                        onClick={() => handleProfileCompletionRowActivate(row.key)}
-                                      >
+                                      <div className={rowClass}>
                                         {row.filled ? (
                                           <FiCheck size={16} aria-hidden />
                                         ) : (
@@ -3852,7 +3848,7 @@ function TestPage() {
                                             {displayValue}
                                           </strong>
                                         </span>
-                                      </button>
+                                      </div>
                                     </li>
                                   )
                                 })}

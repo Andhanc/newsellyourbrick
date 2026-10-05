@@ -14,11 +14,13 @@ import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
 import { getCabinetBookingsPath, getCabinetHistoryPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
+const WHATSAPP_QR_HREF = 'https://wa.me/qr/6PUPSH7LX2FLE1'
 
 const SOCIAL_LINKS = [
   { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', Icon: TelegramIcon },
@@ -55,6 +57,9 @@ const Footer = () => {
   }
 
   const scrollToTop = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
     scrollMainTo(0, 0, 'instant')
   }
 
@@ -85,6 +90,14 @@ const Footer = () => {
     navigateToWallet(navigate, location.pathname)
   }
 
+  const openAiAssistant = () => {
+    if (isSoftLaunchFeatureBlocked('aiAssistant')) {
+      navigate('/chat?assistant=1')
+      return
+    }
+    window.dispatchEvent(new CustomEvent('openAIChat'))
+  }
+
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetBookingsPath = getCabinetBookingsPath()
   const cabinetHistoryPath = getCabinetHistoryPath()
@@ -97,7 +110,7 @@ const Footer = () => {
       requestOpenLoginModal({ wizard: true })
       return
     }
-    navigate(to)
+    navigate(to.split('#')[0])
   }
 
   const linkNeedsAuth = (item) =>
@@ -132,7 +145,7 @@ const Footer = () => {
         { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs'), requiresAuth: true },
         { to: '/bonuses', label: t('bonuses'), requiresAuth: true },
         { to: '/news', label: t('news') },
-        { to: '/chat', label: t('aiAssistant'), requiresAuth: true },
+        { onClick: openAiAssistant, label: t('aiAssistant') },
         { to: '/sections', label: t('footerAllSections') },
       ],
     },
@@ -187,7 +200,7 @@ const Footer = () => {
       )
     }
     return (
-      <Link key={key} to={item.to} onClick={scrollToTop} className="footer__menu-link">
+      <Link key={key} to={item.to.split('#')[0]} onClick={scrollToTop} className="footer__menu-link">
         {item.label}
       </Link>
     )
@@ -220,10 +233,16 @@ const Footer = () => {
             </div>
 
             <aside className="footer__nav-qr-slot" aria-label={t('footerQrApp')}>
-              <div className="footer__whatsapp-qr">
+              <a
+                className="footer__whatsapp-qr"
+                href={WHATSAPP_QR_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('sectionsSocialWhatsapp')}
+              >
                 <img
                   src={whatsappQR}
-                  alt={t('footerQrApp')}
+                  alt=""
                   className="footer__qr-image"
                   width={130}
                   height={130}
@@ -231,7 +250,7 @@ const Footer = () => {
                   decoding="async"
                 />
                 <p className="footer__qr-caption">{t('footerQrApp')}</p>
-              </div>
+              </a>
             </aside>
           </div>
         </nav>

@@ -484,6 +484,7 @@ function ComparePickListingGrid({
 
 const Compare = () => {
   const { t, i18n } = useTranslation()
+  const compareLanguage = String(i18n.resolvedLanguage || i18n.language || 'ru').toLowerCase().split(/[-_]/)[0]
   const navigate = useNavigate()
   const isMobile = useMobileLayout(767)
   const { favoritesLoading, isFavorite, toggleFavorite } = usePropertyFavorites()
@@ -496,6 +497,7 @@ const Compare = () => {
   }
   const [selectedKeys, setSelectedKeys] = useState(() => [])
   const [aiResult, setAiResult] = useState(null)
+  const [aiLanguage, setAiLanguage] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
   const aiRequestGuardRef = useRef(null)
@@ -561,17 +563,19 @@ const Compare = () => {
     return buildRows(pair.left.property, pair.right.property, t)
   }, [pair, t, i18n.language])
 
-  const requestAiAnalysis = useCallback(async () => {
-    if (!pair || aiLoading) return
+  const requestAiAnalysis = useCallback(async (options = {}) => {
+    if (!pair || (aiLoading && options.force !== true)) return
 
     const { requestId, signal } = aiRequestGuardRef.current.start()
+    setAiLanguage(compareLanguage)
+    setAiResult(null)
     setAiLoading(true)
     setAiError(null)
     try {
       const result = await askPropertyCompareAssistant(
         serializePropertyForAi(pair.left.property, t),
         serializePropertyForAi(pair.right.property, t),
-        { signal },
+        { signal, language: compareLanguage, fallbackMessage: t('comparePage_aiErrorFallback') },
       )
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiResult(result)
     } catch (error) {
@@ -581,13 +585,14 @@ const Compare = () => {
     } finally {
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
     }
-  }, [aiLoading, pair, t])
+  }, [aiLoading, compareLanguage, pair, t])
 
   useEffect(() => {
     aiRequestGuardRef.current.cancel()
     autoAiPairKeyRef.current = null
     setAiResult(null)
     setAiError(null)
+    setAiLanguage(null)
     setAiLoading(false)
   }, [pair?.left?.key, pair?.right?.key])
 
@@ -596,6 +601,17 @@ const Compare = () => {
     autoAiPairKeyRef.current = pairKey
     void requestAiAnalysis()
   }, [aiLoading, pair, pairKey, requestAiAnalysis])
+
+  useEffect(() => {
+    if (!pairKey || autoAiPairKeyRef.current !== pairKey || aiLanguage === compareLanguage) return
+    void requestAiAnalysis({ force: true })
+  }, [aiLanguage, compareLanguage, pairKey, requestAiAnalysis])
+
+  const visibleAiResult = aiLanguage === compareLanguage ? aiResult : null
+  const visibleAiError = aiLanguage === compareLanguage ? aiError : null
+  const aiDisplayLoading = aiLoading || Boolean(
+    pairKey && autoAiPairKeyRef.current === pairKey && aiLanguage !== compareLanguage,
+  )
 
   useEffect(() => {
     return () => {
@@ -711,9 +727,9 @@ const Compare = () => {
                 pair={pair}
                 rows={tableRows}
                 onReplace={replaceSelectedSide}
-                aiResult={aiResult}
-                aiLoading={aiLoading}
-                aiError={aiError}
+                aiResult={visibleAiResult}
+                aiLoading={aiDisplayLoading}
+                aiError={visibleAiError}
                 onRunAi={requestAiAnalysis}
               />
             )}

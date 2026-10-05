@@ -21,6 +21,7 @@
 
 .app-layout:has(.app-dl) .app-layout__content {
   overflow: visible;
+  z-index: auto;
 }
 
 .app-dl__page {

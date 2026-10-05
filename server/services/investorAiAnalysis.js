@@ -1,11 +1,21 @@
 import crypto from 'crypto'
 import { postChatCompletions } from './aiChatCompletion.js'
 import { parseLooseJson } from '../utils/parseLooseJson.js'
+import { investorAiFallbackText } from './investorAiFallbackText.js'
 
 const DEFAULT_MODEL = 'google/gemini-3.6-flash'
 const MAX_HORIZON = 30
 const CACHE_TTL_MS = 20 * 60 * 1000
 const analysisCache = new Map()
+const LANGUAGE_NAMES = Object.freeze({
+  ru: 'Russian', en: 'English', de: 'German', es: 'Spanish',
+  fr: 'French', pl: 'Polish', sv: 'Swedish',
+})
+
+function normalizeLocale(value) {
+  const code = String(value || 'ru').toLowerCase().split(/[-_]/)[0]
+  return LANGUAGE_NAMES[code] ? code : 'ru'
+}
 
 const num = (value, fallback = 0) => {
   const parsed = Number(value)
@@ -15,7 +25,7 @@ const num = (value, fallback = 0) => {
 const clamp = (value, min, max) => Math.min(max, Math.max(min, num(value, min)))
 const money = (value) => Math.round(Math.max(0, num(value)))
 const pct = (value) => Math.round(num(value) * 100) / 100
-const formatAmount = (value, currency) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(money(value))} ${currency}`
+const formatAmount = (value, currency, locale) => `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(money(value))} ${currency}`
 
 function monthlyPayment(principal, annualRatePct, termYears) {
   const amount = Math.max(0, num(principal))
@@ -47,11 +57,11 @@ function sanitizeInput(raw = {}) {
   const periodYears = clamp(Math.round(goal.periodYears || finance.ownershipPeriod || 10), 1, MAX_HORIZON)
 
   return {
-    locale: String(raw.locale || 'ru').slice(0, 12),
+    locale: normalizeLocale(raw.locale),
     currency: String(raw.currency || 'EUR').slice(0, 6),
     property: {
       id: property.id == null ? null : String(property.id).slice(0, 80),
-      title: String(property.title || 'Инвестиционный объект').slice(0, 180),
+      title: String(property.title || investorAiFallbackText(normalizeLocale(raw.locale)).propertyTitle).slice(0, 180),
       country,
       city,
       type: String(property.type || 'residential').slice(0, 80),
@@ -118,6 +128,7 @@ function scenarioAssumptions(input) {
 }
 
 function buildScenario(input, label, assumptions) {
+  const copy = investorAiFallbackText(input.locale)
   const scale = input.goal.ownershipSharePct / 100
   const purchasePrice = input.property.price * scale
   const renovation = input.property.renovationCost * scale
@@ -182,15 +193,16 @@ function buildScenario(input, label, assumptions) {
 
   return {
     summary: label === 'pessimistic'
-      ? 'Стресс-сценарий с более высокой вакантностью и слабыми темпами рынка.'
+      ? copy.scenarioLow
       : label === 'optimistic'
-        ? 'Сценарий ускоренного роста при устойчивом спросе и контроле расходов.'
-        : 'Базовый сценарий на введённых параметрах с умеренной вакантностью.',
+        ? copy.scenarioHigh
+        : copy.scenarioBase,
     yearlyPoints: points,
   }
 }
 
 function buildFallback(input, reason = '') {
+  const copy = investorAiFallbackText(input.locale)
   const assumptions = scenarioAssumptions(input)
   const scenarios = {
     pessimistic: buildScenario(input, 'pessimistic', assumptions.pessimistic),
@@ -211,9 +223,9 @@ function buildFallback(input, reason = '') {
     ? ((Math.max(0.01, 1 + totalRoiPct / 100) ** (1 / input.goal.periodYears)) - 1) * 100
     : 0
   const dataGaps = []
-  if (!input.borrower.monthlyNetIncome) dataGaps.push('Не указан подтверждённый ежемесячный доход для персональной оценки ипотеки.')
-  if (!input.borrower.residenceCountry) dataGaps.push('Не указана страна налогового резидентства покупателя.')
-  if (reason) dataGaps.push('Актуальные данные AI временно недоступны; показан проверяемый расчётный сценарий.')
+  if (!input.borrower.monthlyNetIncome) dataGaps.push(copy.missingIncome)
+  if (!input.borrower.residenceCountry) dataGaps.push(copy.missingResidence)
+  if (reason) dataGaps.push(copy.unavailable)
 
   return {
     schemaVersion: '2.0',
@@ -222,8 +234,8 @@ function buildFallback(input, reason = '') {
       city: input.property.city,
       asOf: new Date().toISOString(),
       summary: reason
-        ? 'Расчёт построен на параметрах пользователя без подтверждённого live-контекста рынка.'
-        : 'Предварительный сценарный анализ выбранного рынка.',
+        ? copy.marketFallback
+        : copy.marketBase,
       annualPriceGrowthPctRange: {
         min: assumptions.pessimistic.annualPriceGrowthPct,
         max: assumptions.optimistic.annualPriceGrowthPct,
@@ -247,9 +259,9 @@ function buildFallback(input, reason = '') {
       estimatedDebtToIncomePct: input.borrower.monthlyNetIncome
         ? pct(((monthlyMid + input.borrower.monthlyDebtPayments) / input.borrower.monthlyNetIncome) * 100)
         : null,
-      approvalFactors: ['Размер первоначального взноса', 'Подтверждённый доход', 'Статус резидентства'],
+      approvalFactors: [copy.downPayment, copy.income, copy.residence],
       riskFactors: dataGaps.slice(0, 2),
-      disclaimer: 'Предварительная аналитическая оценка. Окончательные условия и решение определяет банк.',
+      disclaimer: copy.mortgageDisclaimer,
     },
     assumptions,
     scenarios,
@@ -269,26 +281,26 @@ function buildFallback(input, reason = '') {
       score: clamp(Math.round(52 + annualizedReturnPct * 4), 18, 91),
       confidence: reason ? 0.45 : 0.72,
       headline: totalRoiPct >= 35
-        ? 'Сильный потенциал при контроле расходов'
+        ? copy.verdictStrong
         : totalRoiPct >= 5
-          ? 'Сбалансированная инвестиционная картина'
-          : 'Запас прочности пока слишком мал',
-      summary: 'Результат зависит прежде всего от цены входа, фактической аренды, вакантности и условий финансирования.',
+          ? copy.verdictBalanced
+          : copy.verdictRisky,
+      summary: copy.verdictSummary,
     },
     strengths: [
-      { title: 'Сценарный горизонт', explanation: `Прогноз учитывает ${input.goal.periodYears} лет владения и три режима рынка.` },
-      { title: 'Контроль цены входа', explanation: `Ориентир для переговоров — около ${formatAmount(purchasePrice * 0.92, input.currency)}.` },
+      { title: copy.horizon, explanation: copy.horizonText(input.goal.periodYears) },
+      { title: copy.entry, explanation: copy.entryText(formatAmount(purchasePrice * 0.92, input.currency, input.locale)) },
     ],
     risks: [
-      { level: 'medium', title: 'Вакантность', explanation: 'Периоды без арендатора снижают денежный поток.', mitigation: 'Заложить резерв не менее нескольких месячных платежей.' },
-      { level: 'medium', title: 'Ставка и одобрение', explanation: 'Финальная ставка зависит от профиля заёмщика и политики банка.', mitigation: 'Сравнить предварительные решения нескольких кредиторов.' },
+      { level: 'medium', title: copy.vacancy, explanation: copy.vacancyText, mitigation: copy.vacancyAction },
+      { level: 'medium', title: copy.rate, explanation: copy.rateText, mitigation: copy.rateAction },
     ],
     recommendations: [
-      { priority: 1, title: 'Зафиксировать потолок цены', action: `Не выходить выше ${formatAmount(purchasePrice * 0.92, input.currency)} без подтверждения более высокой аренды.`, expectedEffect: 'Повышает запас прочности и потенциальную доходность.' },
-      { priority: 2, title: 'Подтвердить аренду', action: 'Собрать минимум пять сравнимых актуальных предложений в том же районе.', expectedEffect: 'Снижает риск завышенного денежного потока.' },
+      { priority: 1, title: copy.priceCap, action: copy.priceCapAction(formatAmount(purchasePrice * 0.92, input.currency, input.locale)), expectedEffect: copy.priceCapEffect },
+      { priority: 2, title: copy.rent, action: copy.rentAction, expectedEffect: copy.rentEffect },
       input.borrower.monthlyNetIncome
-        ? { priority: 3, title: 'Сравнить решения банков', action: 'Запросить предварительные предложения минимум у двух кредиторов.', expectedEffect: 'Покажет реальный LTV, ставку и требования к документам.' }
-        : { priority: 3, title: 'Получить банковский диапазон', action: 'Добавить доход, резидентство и текущие обязательства.', expectedEffect: 'Позволит уточнить LTV, ставку и ежемесячный платёж.' },
+        ? { priority: 3, title: copy.banks, action: copy.banksAction, expectedEffect: copy.banksEffect }
+        : { priority: 3, title: copy.bankRange, action: copy.bankRangeAction, expectedEffect: copy.bankRangeEffect },
     ],
     dataGaps,
     sources: [],
@@ -504,11 +516,11 @@ function normalizeAnalysis(ai, fallback, model) {
   return normalized
 }
 
-function promptFor(input, fallback) {
+export function promptFor(input, fallback) {
   const years = sampleYears(input.goal.periodYears)
   return `Ты — осторожный аналитик инвестиций в жилую недвижимость. Выполни актуальный поиск по официальным статистическим источникам, центральным банкам, официальным страницам банков и крупным площадкам недвижимости для ${input.property.city}, ${input.property.country}. Сегодня ${new Date().toISOString().slice(0, 10)}.
 
-Верни только JSON по заданной схеме. Построй три сценария и обязательно верни yearlyPoints строго для лет: ${years.join(', ')}. Значения графиков должны быть числовыми и внутренне согласованными. Ипотека — только предварительный диапазон, не обещание одобрения. Если данных заёмщика недостаточно, status=insufficient_data и перечисли недостающие данные. Не выдумывай источники: sources содержит только реально найденные URL. Все тексты — на русском языке.
+Верни только JSON по заданной схеме. Построй три сценария и обязательно верни yearlyPoints строго для лет: ${years.join(', ')}. Значения графиков должны быть числовыми и внутренне согласованными. Ипотека — только предварительный диапазон, не обещание одобрения. Если данных заёмщика недостаточно, status=insufficient_data и перечисли недостающие данные. Не выдумывай источники: sources содержит только реально найденные URL. Все пользовательские текстовые поля JSON пиши строго на языке ${LANGUAGE_NAMES[input.locale]} (${input.locale}), включая вывод, сценарии, риски, рекомендации, ипотеку и пробелы в данных. Названия собственные и URL оставь как в источнике.
 
 Вход пользователя:
 ${JSON.stringify(input)}

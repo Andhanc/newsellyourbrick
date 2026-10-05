@@ -21,6 +21,14 @@ test('AI responses are aborted and request-id guarded when the pair changes or t
   assert.match(page, /return \(\) => aiRequestGuardRef\.current\.cancel\(\)/)
 })
 
+test('AI comparison uses the active language and refreshes a saved answer after a locale change', () => {
+  assert.match(page, /language: compareLanguage/)
+  assert.match(page, /aiLanguage === compareLanguage \? aiResult : null/)
+  assert.match(page, /aiLanguage === compareLanguage \? aiError : null/)
+  assert.match(page, /requestAiAnalysis\(\{ force: true \}\)/)
+  assert.match(page, /aiLanguage,\s*\n\s*aiResult/)
+})
+
 test('AI pending and error states are accessible', () => {
   assert.match(page, /role="status"/)
   assert.match(page, /aria-live="polite"/)

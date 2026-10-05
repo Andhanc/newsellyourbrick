@@ -116,6 +116,7 @@ ChartJS.register(
 
 const InvestmentCalculator = () => {
   const { t, i18n } = useTranslation();
+  const analysisLanguage = String(i18n.resolvedLanguage || i18n.language || 'ru').toLowerCase().split(/[-_]/)[0];
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMobileLayout(768);
@@ -169,6 +170,7 @@ const InvestmentCalculator = () => {
   const [analysisStatus, setAnalysisStatus] = useState('idle');
   const [investorAiAnalysis, setInvestorAiAnalysis] = useState(null);
   const [investorAiError, setInvestorAiError] = useState('');
+  const [investorAiLanguage, setInvestorAiLanguage] = useState(null);
   const investorAiRequestRef = useRef(0);
   const investorAiAbortRef = useRef(null);
 
@@ -691,7 +693,7 @@ const InvestmentCalculator = () => {
     const propertyCountry = property.country || property.country_name || property.address_country || 'Spain';
     const propertyCity = property.city || property.location || property.municipality || 'Spain';
     return {
-      locale: i18n.language || 'ru',
+      locale: analysisLanguage,
       currency: 'EUR',
       property: {
         id: property.id ?? null,
@@ -742,19 +744,23 @@ const InvestmentCalculator = () => {
     };
   }
 
-  async function beginAiAnalysis() {
+  async function beginAiAnalysis(options = {}) {
+    const preserveScroll = options.preserveScroll === true;
     investorAiAbortRef.current?.abort();
     const controller = new AbortController();
     investorAiAbortRef.current = controller;
     const requestId = investorAiRequestRef.current + 1;
     investorAiRequestRef.current = requestId;
     setAnalysisStatus('loading');
+    setInvestorAiLanguage(analysisLanguage);
     setInvestorAiError('');
     setInvestorAiAnalysis(null);
-    scrollMainTo(0, 0, 'instant');
+    if (!preserveScroll) scrollMainTo(0, 0, 'instant');
 
     try {
-      const minimumLoader = new Promise((resolve) => window.setTimeout(resolve, 3900));
+      const minimumLoader = preserveScroll
+        ? Promise.resolve()
+        : new Promise((resolve) => window.setTimeout(resolve, 3900));
       const [analysis] = await Promise.all([
         requestInvestorAiAnalysis(buildInvestorAiPayload(), { signal: controller.signal }),
         minimumLoader,
@@ -762,13 +768,18 @@ const InvestmentCalculator = () => {
       if (investorAiRequestRef.current !== requestId) return;
       setInvestorAiAnalysis(analysis);
       setAnalysisStatus('ready');
-      scrollMainTo(0, 0, 'instant');
+      if (!preserveScroll) scrollMainTo(0, 0, 'instant');
     } catch (error) {
       if (error?.name === 'AbortError' || investorAiRequestRef.current !== requestId) return;
-      setInvestorAiError(String(error?.message || error));
+      setInvestorAiError(t('smartInvestor_analysisFailedDefault'));
       setAnalysisStatus('error');
     }
   }
+
+  useEffect(() => {
+    if (wizardStep !== 3 || analysisStatus === 'idle' || investorAiLanguage === analysisLanguage) return;
+    void beginAiAnalysis({ preserveScroll: true });
+  }, [analysisLanguage, analysisStatus, investorAiLanguage, wizardStep]);
 
   const leaveAiResult = () => {
     investorAiAbortRef.current?.abort();
@@ -1075,9 +1086,9 @@ const InvestmentCalculator = () => {
 
         {wizardStep === 3 && analysisStatus !== 'idle' && (
           <InvestorAiExperience
-            status={analysisStatus}
-            analysis={investorAiAnalysis}
-            error={investorAiError}
+            status={investorAiLanguage === analysisLanguage ? analysisStatus : 'loading'}
+            analysis={investorAiLanguage === analysisLanguage ? investorAiAnalysis : null}
+            error={investorAiLanguage === analysisLanguage ? investorAiError : ''}
             currency="EUR"
             propertyTitle={selectedFavoriteItem?.property?.title || selectedFavoriteItem?.property?.name}
             onRetry={beginAiAnalysis}

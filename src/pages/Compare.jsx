@@ -689,6 +689,7 @@ function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSele
 
 const Compare = () => {
   const { t, i18n } = useTranslation()
+  const compareLanguage = String(i18n.resolvedLanguage || i18n.language || 'ru').toLowerCase().split(/[-_]/)[0]
   const navigate = useNavigate()
   const isMobile = useMobileLayout(767)
   const { favoritesLoading } = usePropertyFavorites()
@@ -707,6 +708,7 @@ const Compare = () => {
   ))
   const [pickerOpen, setPickerOpen] = useState(false)
   const [aiResult, setAiResult] = useState(() => snapshotRef.current?.aiResult ?? null)
+  const [aiLanguage, setAiLanguage] = useState(() => snapshotRef.current?.aiLanguage ?? null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(() => snapshotRef.current?.aiError ?? null)
   const aiRequestGuardRef = useRef(null)
@@ -835,12 +837,14 @@ const Compare = () => {
       pairKey,
       aiResult,
       aiError,
+      aiLanguage,
       calcData,
       calcError,
       showdownCompleted: showdownCompletedKey === pairKey,
     }, { userId: compareUserId })
   }, [
     aiError,
+    aiLanguage,
     aiResult,
     calcData,
     calcError,
@@ -875,23 +879,30 @@ const Compare = () => {
 
   const decisionSummary = useMemo(() => summarizeComparisonRows(tableRows), [tableRows])
 
+  const visibleAiResult = aiLanguage === compareLanguage ? aiResult : null
+  const visibleAiError = aiLanguage === compareLanguage ? aiError : null
+  const aiDisplayLoading = aiLoading || Boolean(
+    pairKey && showdownAnalysisStartedKey === pairKey && aiLanguage !== compareLanguage,
+  )
   const aiScores = useMemo(
-    () => (aiResult?.rows?.length ? scoreAiInfrastructure(aiResult.rows) : null),
-    [aiResult]
+    () => (visibleAiResult?.rows?.length ? scoreAiInfrastructure(visibleAiResult.rows) : null),
+    [visibleAiResult]
   )
   const aiScoreView = useMemo(() => buildAiScoreView(aiScores), [aiScores])
 
-  const requestAiAnalysis = useCallback(async () => {
-    if (!pair || aiLoading) return
+  const requestAiAnalysis = useCallback(async (options = {}) => {
+    if (!pair || (aiLoading && options.force !== true)) return
 
     const { requestId, signal } = aiRequestGuardRef.current.start()
+    setAiLanguage(compareLanguage)
+    setAiResult(null)
     setAiLoading(true)
     setAiError(null)
     try {
       const result = await askPropertyCompareAssistant(
         serializePropertyForAi(pair.left.property, t),
         serializePropertyForAi(pair.right.property, t),
-        { signal },
+        { signal, language: compareLanguage, fallbackMessage: t('comparePage_aiErrorFallback') },
       )
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiResult(result)
     } catch (error) {
@@ -901,7 +912,7 @@ const Compare = () => {
     } finally {
       if (aiRequestGuardRef.current.isCurrent(requestId)) setAiLoading(false)
     }
-  }, [aiLoading, pair, t])
+  }, [aiLoading, compareLanguage, pair, t])
 
   useEffect(() => {
     const nextPairKey = pair?.left?.key && pair?.right?.key
@@ -914,6 +925,7 @@ const Compare = () => {
     if (nextPairKey && snap?.pairKey === nextPairKey) {
       setAiResult(snap.aiResult ?? null)
       setAiError(snap.aiError ?? null)
+      setAiLanguage(snap.aiLanguage ?? null)
       setAiLoading(false)
       setCalcData(snap.calcData ?? { left: null, right: null })
       setCalcError(snap.calcError ?? { left: null, right: null })
@@ -931,11 +943,17 @@ const Compare = () => {
     aiRequestGuardRef.current.cancel()
     setAiResult(null)
     setAiError(null)
+    setAiLanguage(null)
     setAiLoading(false)
     setCalcData({ left: null, right: null })
     setCalcError({ left: null, right: null })
     setCalcLoading(false)
   }, [pair?.left?.key, pair?.right?.key])
+
+  useEffect(() => {
+    if (!pairKey || showdownAnalysisStartedKey !== pairKey || aiLanguage === compareLanguage) return
+    void requestAiAnalysis({ force: true })
+  }, [aiLanguage, compareLanguage, pairKey, requestAiAnalysis, showdownAnalysisStartedKey])
 
   useEffect(() => {
     return () => aiRequestGuardRef.current.cancel()
@@ -1021,7 +1039,7 @@ const Compare = () => {
     void runCompareCalculator()
   }, [canRunCompareCalculator, pairKey, runCompareCalculator])
 
-  const aiReadyForShowdown = Boolean(aiResult || aiError)
+  const aiReadyForShowdown = Boolean(visibleAiResult || visibleAiError)
   const calcReadyForShowdown = Boolean(
     !canRunCompareCalculator || (
       !calcLoading &&
@@ -1317,17 +1335,17 @@ const Compare = () => {
                       type="button"
                       className="compare-ai-refresh"
                       onClick={requestAiAnalysis}
-                      disabled={aiLoading}
+                      disabled={aiDisplayLoading}
                     >
-                      <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
-                      {aiResult ? t('comparePage_aiRefresh') : t('comparePage_aiGet')}
+                      <FiRefreshCw size={18} className={aiDisplayLoading ? 'compare-ai-spin' : ''} aria-hidden />
+                      {visibleAiResult ? t('comparePage_aiRefresh') : t('comparePage_aiGet')}
                     </button>
                   </div>
                   <p className="compare-ai-disclaimer">
                     {t('comparePage_aiDisclaimer')}
                   </p>
 
-                  {!aiLoading && !aiError && !aiResult && (
+                  {!aiDisplayLoading && !visibleAiError && !visibleAiResult && (
                     <div className="compare-ai-idle">
                       <strong>{t('comparePage_aiIdleStrong')}</strong>
                       <span>{t('comparePage_aiIdleText')}</span>
@@ -1341,32 +1359,32 @@ const Compare = () => {
                     </div>
                   )}
 
-                  {aiLoading && (
+                  {aiDisplayLoading && (
                     <div className="compare-ai-loading" role="status" aria-live="polite">
                       <span className="compare-ai-loading-dot" />
-                      {t('comparePage_aiLoading')}
+                      {t('comparePage_aiDisplayLoading')}
                     </div>
                   )}
 
-                  {aiError && !aiLoading && (
+                  {visibleAiError && !aiDisplayLoading && (
                     <div className="compare-ai-error" role="alert">
-                      {aiError}
+                      {visibleAiError}
                       <button type="button" className="compare-ai-retry" onClick={requestAiAnalysis}>
                         {t('comparePage_aiRetry')}
                       </button>
                     </div>
                   )}
 
-                  {!aiLoading && aiResult?.summary && (
+                  {!aiDisplayLoading && visibleAiResult?.summary && (
                     <div className="compare-ai-summary">
                       <div>
                         <span className="compare-ai-summary-label">{t('comparePage_resultEyebrow')}</span>
-                        <p>{aiResult.summary}</p>
+                        <p>{visibleAiResult.summary}</p>
                       </div>
                     </div>
                   )}
 
-                  {!aiLoading && aiResult?.rows?.length > 0 && (
+                  {!aiDisplayLoading && visibleAiResult?.rows?.length > 0 && (
                     <div className="compare-ai-results">
                       {aiScoreView ? (
                         <div
@@ -1400,7 +1418,7 @@ const Compare = () => {
                       ) : null}
 
                       <div className="compare-ai-evidence-grid">
-                        {aiResult.rows.map((row, idx) => (
+                        {visibleAiResult.rows.map((row, idx) => (
                           <article className="compare-ai-mobile-card" key={`${row.aspect}-${idx}`}>
                             <div className="compare-ai-card-head">
                               <span>{String(idx + 1).padStart(2, '0')}</span>
@@ -1429,7 +1447,7 @@ const Compare = () => {
                     </div>
                   )}
 
-                  {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
+                  {!aiDisplayLoading && visibleAiResult && !visibleAiResult.rows?.length && visibleAiResult.summary && (
                     <p className="compare-ai-note">
                       {t('comparePage_aiNote')}
                     </p>

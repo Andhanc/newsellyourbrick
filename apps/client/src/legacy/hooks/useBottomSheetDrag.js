@@ -102,7 +102,7 @@ export function useBottomSheetDrag({
   }, [isOpen, dismissOnly])
 
   useLayoutEffect(() => {
-    if (dismissOnly || !visible || !isOpen) return undefined
+    if (dismissOnly || !visible || !isOpen || isClosing) return undefined
     measureFullHeight(false)
     if (!dragLayoutReady) return undefined
     measureFullHeight(true)
@@ -113,7 +113,7 @@ export function useBottomSheetDrag({
     })
     ro.observe(panel)
     return () => ro.disconnect()
-  }, [visible, isOpen, dragLayoutReady, measureFullHeight, isDragging, dismissOnly])
+  }, [visible, isOpen, isClosing, dragLayoutReady, measureFullHeight, isDragging, dismissOnly])
 
   useEffect(() => {
     if (isOpen) {
@@ -327,6 +327,13 @@ export function useBottomSheetDrag({
 
   const panelDragStyle = !applyVisual
     ? undefined
+    : isClosing
+      ? {
+          ...(dragY > 0 ? { '--drawer-dismiss-start-y': `${dragY}px` } : {}),
+          ...(!dismissOnly && dragLayoutReady && sheetHeight != null
+            ? { height: sheetHeight, maxHeight: sheetHeight }
+            : {}),
+        }
     : dismissOnly
       ? !isClosing && (isDragging || dragY > 0)
         ? {

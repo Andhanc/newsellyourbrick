@@ -3508,7 +3508,7 @@ button.profile-cabinet-row:disabled {
   font-family: var(--test-font-body);
   color: var(--test-ink);
   text-align: left;
-  cursor: pointer;
+  cursor: default;
 }
 
 .test-data-review-list__row svg {
@@ -3547,12 +3547,6 @@ button.profile-cabinet-row:disabled {
 
 .test-data-review-list__row--missing {
   background: #fff;
-}
-
-.test-data-review-list__row--missing:hover,
-.test-data-review-list__row--done:hover {
-  border-color: rgba(78, 205, 214, 0.45);
-  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.12);
 }
 
 .test-data-review-list__dot {

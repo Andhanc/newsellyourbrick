@@ -263,6 +263,13 @@ body.admin-panel-active .footer .footer__brand-text {
   justify-content: center;
   flex-shrink: 0;
   margin-left: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.footer__whatsapp-qr:focus-visible {
+  outline: 2px solid #0099a9;
+  outline-offset: 4px;
 }
 
 

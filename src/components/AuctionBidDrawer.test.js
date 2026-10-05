@@ -7,6 +7,15 @@ const legacyDrawerCss = await readFile(
   new URL('../../apps/client/src/legacy/components/AuctionBidDrawer.css', import.meta.url),
   'utf8',
 )
+const ceilingCss = await readFile(new URL('./AuctionBidCeilingModal.css', import.meta.url), 'utf8')
+const functionalDrawerChromeCss = await readFile(
+  new URL('../styles/functionalDrawerChrome.css', import.meta.url),
+  'utf8',
+)
+const legacyFunctionalDrawerChromeCss = await readFile(
+  new URL('../../apps/client/src/legacy/styles/functionalDrawerChrome.css', import.meta.url),
+  'utf8',
+)
 const biddingForm = await readFile(
   new URL('./PropertyDetailAuctionBiddingForm.jsx', import.meta.url),
   'utf8',
@@ -118,6 +127,20 @@ test('mobile bid drawer fills the viewport like a catalog page', () => {
   assert.match(drawerCss, /position:\s*fixed/)
   assert.match(drawerCss, /auction-bid-rise__arrow/)
   assert.match(drawerCss, /@media \(prefers-reduced-motion: reduce\)/)
+})
+
+test('bid increments stay gray and submit matches the auto-bid button', () => {
+  assert.doesNotMatch(functionalDrawerChromeCss, /\.auction-bid-drawer__body \.bidding-section__(?:quick-btn|panel-submit)/)
+  assert.equal(legacyFunctionalDrawerChromeCss, functionalDrawerChromeCss)
+
+  const quickButton = drawerCss.match(/\.auction-bid-drawer__body \.bidding-section__quick-btn \{([^}]+)\}/)?.[1]
+  const submitButton = drawerCss.match(/\.auction-bid-drawer__body \.bidding-section__panel-submit \{([^}]+)\}/)?.[1]
+  const autoBidButton = ceilingCss.match(/\.abc-fix \{([^}]+)\}/)?.[1]
+  const background = (rule) => rule?.match(/background: (linear-gradient\([^;]+\));/)?.[1]
+
+  assert.match(quickButton, /color: #334155 !important;/)
+  assert.match(quickButton, /background: linear-gradient\(118deg, #dce3e8/)
+  assert.equal(background(submitButton), background(autoBidButton))
 })
 
 test('drawer preserves dismiss-only dragging and escape', async () => {

@@ -20,6 +20,7 @@ import {
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
+import { getFavoriteDrawerMilestone } from '../utils/favoriteDrawerMilestone'
 
 const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
 const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
@@ -100,14 +101,6 @@ function dispatchFavoritesChanged() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(PROPERTY_FAVORITES_CHANGED))
   }
-}
-
-function maybeOpenFirstFavoriteDrawer(countBeforeAdd) {
-  return countBeforeAdd === 0
-}
-
-function maybeOpenCompareFavoritesDrawer(countBeforeAdd) {
-  return countBeforeAdd === 1
 }
 
 function PropertyFavoritesDrawersHost({
@@ -267,9 +260,9 @@ export function PropertyFavoritesProvider({ children }) {
         }
         const key = favoriteCompositeKey(property.id, property.source_table)
         const wasLiked = dbKeys.has(key)
-        const countBeforeAdd = dbKeys.size + mockMap.size
-        const showFirstFavoriteDrawer = !wasLiked && maybeOpenFirstFavoriteDrawer(countBeforeAdd)
-        const showCompareFavoritesDrawer = !wasLiked && maybeOpenCompareFavoritesDrawer(countBeforeAdd)
+        const milestone = !wasLiked
+          ? getFavoriteDrawerMilestone(property, mockCategory, dbKeys, mockMap)
+          : null
         setDbKeys((prev) => {
           const next = new Set(prev)
           if (wasLiked) next.delete(key)
@@ -316,25 +309,35 @@ export function PropertyFavoritesProvider({ children }) {
           return false
         }
         dispatchFavoritesChanged()
-        if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
-        else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
+        if (milestone === 'first') {
+          setCompareFavoritesDrawerOpen(false)
+          setFirstFavoriteDrawerOpen(true)
+        } else if (milestone === 'compare') {
+          setFirstFavoriteDrawerOpen(false)
+          setCompareFavoritesDrawerOpen(true)
+        }
         return !wasLiked
       }
 
       if (!mockCategory) return false
       const mapKey = `${mockCategory}-${property.id}`
       const wasLiked = Boolean(mockMap.get(mapKey))
-      const countBeforeAdd = dbKeys.size + mockMap.size
-      const showFirstFavoriteDrawer = !wasLiked && maybeOpenFirstFavoriteDrawer(countBeforeAdd)
-      const showCompareFavoritesDrawer = !wasLiked && maybeOpenCompareFavoritesDrawer(countBeforeAdd)
+      const milestone = !wasLiked
+        ? getFavoriteDrawerMilestone(property, mockCategory, dbKeys, mockMap)
+        : null
       const nextMock = new Map(mockMap)
       if (wasLiked) nextMock.delete(mapKey)
       else nextMock.set(mapKey, true)
       setMockMap(nextMock)
       persistMockKey(mapKey, !wasLiked)
       dispatchFavoritesChanged()
-      if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
-      else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
+      if (milestone === 'first') {
+        setCompareFavoritesDrawerOpen(false)
+        setFirstFavoriteDrawerOpen(true)
+      } else if (milestone === 'compare') {
+        setFirstFavoriteDrawerOpen(false)
+        setCompareFavoritesDrawerOpen(true)
+      }
       return !wasLiked
     },
     [user, userLoaded, mockMap, dbKeys]

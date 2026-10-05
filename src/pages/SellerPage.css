@@ -619,8 +619,12 @@
   padding: clamp(104px, 10vw, 120px) clamp(44px, 8vw, 110px) clamp(42px, 5vw, 62px);
 }
 
+.seller-savings__copy {
+  min-width: 0;
+}
+
 .seller-savings__copy h2 {
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   margin: 0;
   color: #050505;
@@ -632,7 +636,8 @@
 
 .seller-savings__title-line {
   display: block;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .seller-savings__copy p {

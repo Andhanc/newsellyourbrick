@@ -33,7 +33,6 @@ export default function BuyerPage() {
   const navigate = useNavigate()
   const { numericUserId } = useViewerVipAccess()
   const [checkoutPlan, setCheckoutPlan] = useState('')
-  const [modalTitle, setModalTitle] = useState('')
 
   const openPlanCheckout = async (plan) => {
     if (checkoutPlan) return
@@ -320,9 +319,7 @@ export default function BuyerPage() {
       <section className="buyer-hero-viewport" id="buyer-map">
         <div className="buyer-hero__stage-wrap">
           <div className="buyer-hero__stage">
-            <BuyerMapScene
-              onCardClick={(title) => setModalTitle(title)}
-            />
+            <BuyerMapScene />
           </div>
 
           <div className="buyer-stats" aria-label={t('buyerLanding_statsAria')}>
@@ -392,10 +389,6 @@ export default function BuyerPage() {
                     <span className="seller-feature-card__text seller-feature-card__text--full">{text}</span>
                     <span className="seller-feature-card__text seller-feature-card__text--short">{textShort}</span>
                   </p>
-                  <button type="button" className="seller-feature-card__link" onClick={() => setModalTitle(title)}>
-                    {t('buyerLanding_benefitLink')}
-                    <FiArrowRight aria-hidden />
-                  </button>
                 </article>
               ))}
             </div>
@@ -457,24 +450,6 @@ export default function BuyerPage() {
         </div>
       </section>
 
-      {modalTitle && (
-        <div className="buyer-modal" role="dialog" aria-modal="true" aria-labelledby="buyer-modal-title">
-          <button
-            className="buyer-modal__scrim"
-            type="button"
-            aria-label={t('buyerLanding_modalClose')}
-            onClick={() => setModalTitle('')}
-          />
-          <div className="buyer-modal__panel">
-            <p>SellYourBrick</p>
-            <h2 id="buyer-modal-title">{modalTitle}</h2>
-            <span>{t('buyerLanding_modalHint')}</span>
-            <button type="button" className="buyer-pill-button" onClick={() => setModalTitle('')}>
-              {t('buyerLanding_modalOk')}
-            </button>
-          </div>
-        </div>
-      )}
     </main>
     </>
   )

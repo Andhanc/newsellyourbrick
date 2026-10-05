@@ -476,6 +476,10 @@ const MapPage = () => {
   const resultsSheetRef = useRef(null)
   const listScrollRef = useRef(null)
   const sheetGestureStartYRef = useRef(null)
+  const sheetGestureStartXRef = useRef(null)
+  const sheetGestureLockedRef = useRef(false)
+  const sheetWheelDeltaRef = useRef(0)
+  const sheetTransitionUntilRef = useRef(0)
   const resultsSheetStateRef = useRef(resultsSheetState)
   resultsSheetStateRef.current = resultsSheetState
   const SHEET_GESTURE_PX = 28
@@ -483,6 +487,9 @@ const MapPage = () => {
 
   const expandResultsSheet = useCallback(() => {
     if (!isMobile) return
+    resultsSheetStateRef.current = 'expanded'
+    sheetWheelDeltaRef.current = 0
+    sheetTransitionUntilRef.current = Date.now() + 320
     setResultsSheetState((current) => (current === 'expanded' ? current : 'expanded'))
   }, [isMobile])
 
@@ -490,6 +497,9 @@ const MapPage = () => {
     if (!isMobile) return
     const el = listScrollRef.current
     if (el) el.scrollTop = 0
+    resultsSheetStateRef.current = 'half'
+    sheetWheelDeltaRef.current = 0
+    sheetTransitionUntilRef.current = Date.now() + 320
     setResultsSheetState((current) => (current === 'half' || current === 'peek' ? current : 'half'))
   }, [isMobile])
 
@@ -528,64 +538,94 @@ const MapPage = () => {
     if (!root) return undefined
 
     const onTouchStart = (event) => {
+      sheetGestureLockedRef.current = false
       if (event.touches.length !== 1) {
         sheetGestureStartYRef.current = null
+        sheetGestureStartXRef.current = null
         return
       }
       const target = event.target
       if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
         sheetGestureStartYRef.current = null
+        sheetGestureStartXRef.current = null
         return
       }
       sheetGestureStartYRef.current = event.touches[0].clientY
+      sheetGestureStartXRef.current = event.touches[0].clientX
     }
 
     const onTouchMove = (event) => {
       if (event.touches.length !== 1) return
       const startY = sheetGestureStartYRef.current
       if (startY == null) return
+      if (sheetGestureLockedRef.current) {
+        event.preventDefault()
+        return
+      }
       const currentY = event.touches[0].clientY
       const scrollDelta = startY - currentY
+      if (Math.abs(event.touches[0].clientX - sheetGestureStartXRef.current) > Math.abs(scrollDelta)) return
       const state = resultsSheetStateRef.current
 
       if (state !== 'expanded') {
+        event.preventDefault()
         if (applyNestedSheetScroll(scrollDelta)) {
-          event.preventDefault()
+          sheetGestureLockedRef.current = true
           sheetGestureStartYRef.current = currentY
         }
         return
       }
 
-      if (scrollDelta < -SHEET_GESTURE_PX && isResultsListAtTop()) {
+      if (scrollDelta < 0 && isResultsListAtTop()) {
         event.preventDefault()
-        collapseResultsSheet()
-        sheetGestureStartYRef.current = currentY
+        if (scrollDelta < -SHEET_GESTURE_PX) {
+          collapseResultsSheet()
+          sheetGestureLockedRef.current = true
+          sheetGestureStartYRef.current = currentY
+        }
       }
     }
 
     const onWheel = (event) => {
-      const state = resultsSheetStateRef.current
-      if (state !== 'expanded') {
-        if (applyNestedSheetScroll(event.deltaY, SHEET_WHEEL_PX)) {
-          event.preventDefault()
-        }
+      if (Date.now() < sheetTransitionUntilRef.current) {
+        event.preventDefault()
         return
       }
-      if (event.deltaY < -SHEET_WHEEL_PX && isResultsListAtTop()) {
+      const state = resultsSheetStateRef.current
+      if (state !== 'expanded') {
         event.preventDefault()
-        collapseResultsSheet()
+        sheetWheelDeltaRef.current = Math.max(0, sheetWheelDeltaRef.current + event.deltaY)
+        if (sheetWheelDeltaRef.current > SHEET_WHEEL_PX) expandResultsSheet()
+        return
       }
+      if (event.deltaY < 0 && isResultsListAtTop()) {
+        event.preventDefault()
+        sheetWheelDeltaRef.current = Math.min(0, sheetWheelDeltaRef.current + event.deltaY)
+        if (sheetWheelDeltaRef.current < -SHEET_WHEEL_PX) collapseResultsSheet()
+        return
+      }
+      sheetWheelDeltaRef.current = 0
+    }
+
+    const onTouchEnd = () => {
+      sheetGestureStartYRef.current = null
+      sheetGestureStartXRef.current = null
+      sheetGestureLockedRef.current = false
     }
 
     root.addEventListener('touchstart', onTouchStart, { passive: true })
     root.addEventListener('touchmove', onTouchMove, { passive: false })
+    root.addEventListener('touchend', onTouchEnd)
+    root.addEventListener('touchcancel', onTouchEnd)
     root.addEventListener('wheel', onWheel, { passive: false })
     return () => {
       root.removeEventListener('touchstart', onTouchStart)
       root.removeEventListener('touchmove', onTouchMove)
+      root.removeEventListener('touchend', onTouchEnd)
+      root.removeEventListener('touchcancel', onTouchEnd)
       root.removeEventListener('wheel', onWheel)
     }
-  }, [isMobile, applyNestedSheetScroll, collapseResultsSheet, isResultsListAtTop])
+  }, [isMobile, applyNestedSheetScroll, collapseResultsSheet, expandResultsSheet, isResultsListAtTop])
 
   // ─── Загрузка объектов ───────────────────────────────────────────────────
   const loadProperties = useCallback(async () => {

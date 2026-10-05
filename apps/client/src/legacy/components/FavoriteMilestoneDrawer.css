@@ -1,0 +1,294 @@
+@import '../styles/promoBottomSheetDrawer.css';
+
+.favorite-milestone__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13380;
+  background: rgba(7, 30, 36, 0.55);
+  backdrop-filter: blur(6px);
+  animation: favorite-milestone-backdrop-in 0.28s ease-out both;
+}
+
+.favorite-milestone {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 13390;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.favorite-milestone__panel {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: auto;
+  background: #fff;
+  border: 1px solid rgba(191, 232, 235, 0.84);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -18px 55px rgba(5, 45, 50, 0.22);
+  touch-action: pan-y;
+}
+
+.favorite-milestone:not(.favorite-milestone--dragging) .favorite-milestone__panel {
+  animation: favorite-milestone-panel-in 0.42s cubic-bezier(0.22, 1, 0.32, 1) both;
+}
+
+.favorite-milestone--dragging .favorite-milestone__panel {
+  animation: none !important;
+}
+
+.favorite-milestone__panel--closing {
+  animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+}
+
+.favorite-milestone__panel--collapsed .favorite-milestone__body,
+.favorite-milestone__panel--collapsed .favorite-milestone__close {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.favorite-milestone__drag-zone {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+  padding: 8px 20px 2px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.favorite-milestone__drag-zone:active { cursor: grabbing; }
+
+.favorite-milestone__handle {
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.favorite-milestone__handle-pill {
+  width: 42px;
+  height: 5px;
+  border-radius: 999px;
+  background: #c7e6e9;
+}
+
+.favorite-milestone__close {
+  position: absolute;
+  top: 43px;
+  right: 29px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  color: #28444a;
+  box-shadow: 0 3px 12px rgba(22, 82, 89, 0.08);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.favorite-milestone__close:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+
+.favorite-milestone__body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  transition: opacity 0.2s ease;
+}
+
+.favorite-milestone__art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 210px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid #e0f3f5;
+  border-radius: 23px;
+  background: var(--favorite-milestone-art);
+  isolation: isolate;
+}
+
+.favorite-milestone__art::before {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  content: '';
+}
+
+.favorite-milestone__illustration {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 16px rgba(19, 118, 127, 0.09));
+}
+
+.favorite-milestone__copy {
+  padding: 20px 4px 18px;
+  text-align: left;
+}
+
+.favorite-milestone__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.favorite-milestone__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  margin-top: 1px;
+  border-radius: 11px;
+  color: #087f89;
+  background: #e0f6f7;
+}
+
+.favorite-milestone__title {
+  margin: 0;
+  color: #10282d;
+  font-size: clamp(1.22rem, 4.8vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.favorite-milestone__lead {
+  margin: 12px 0 0;
+  color: #3d5a60;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.48;
+}
+
+.favorite-milestone__hint {
+  margin: 8px 0 0;
+  color: #738b90;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.favorite-milestone__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  background: #3bc0cb;
+  box-shadow: 0 10px 24px rgba(18, 158, 169, 0.24);
+  font: 700 14px 'Montserrat', system-ui, sans-serif;
+  cursor: pointer;
+  transition: transform 0.18s ease;
+}
+
+.favorite-milestone__cta svg { transition: transform 0.18s ease; }
+.favorite-milestone__cta:hover { transform: translateY(-1px); }
+.favorite-milestone__cta:hover svg { transform: translateX(3px); }
+
+.favorite-milestone__cta:focus-visible,
+.favorite-milestone__close:focus-visible {
+  outline: 3px solid #087f89;
+  outline-offset: 3px;
+}
+
+@keyframes favorite-milestone-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes favorite-milestone-panel-in {
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@media (min-width: 769px) {
+  .favorite-milestone {
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .favorite-milestone__panel,
+  .favorite-milestone:not(.favorite-milestone--dragging) .favorite-milestone__panel {
+    width: min(440px, 100%);
+    height: auto !important;
+    max-height: min(90vh, 650px) !important;
+    transform: none !important;
+    border-radius: 28px;
+    box-shadow: 0 25px 65px rgba(4, 43, 50, 0.22);
+    animation: promo-drawer-modal-in 0.32s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .favorite-milestone__panel.drawer-dismiss-from-bottom--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
+
+  .favorite-milestone__drag-zone { display: none; }
+  .favorite-milestone__body { padding: 20px 20px 24px; }
+  .favorite-milestone__close { top: 34px; right: 34px; }
+}
+
+@media (max-width: 768px) {
+  .favorite-milestone__panel {
+    max-height: 72dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .favorite-milestone__body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .favorite-milestone__art { height: clamp(135px, 24dvh, 190px); }
+  .favorite-milestone__copy { padding: 15px 3px 14px; }
+  .favorite-milestone__lead { margin-top: 8px; }
+  .favorite-milestone__hint { margin-top: 6px; }
+
+  .favorite-milestone__panel.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+  }
+}
+
+@media (max-width: 768px) and (max-height: 640px) {
+  .favorite-milestone__art { height: 115px; }
+  .favorite-milestone__copy { padding-top: 12px; padding-bottom: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-milestone__backdrop,
+  .favorite-milestone__panel { animation: none !important; }
+  .favorite-milestone__cta,
+  .favorite-milestone__cta svg,
+  .favorite-milestone__close { transition: none; }
+}

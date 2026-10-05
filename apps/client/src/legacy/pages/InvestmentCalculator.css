@@ -2570,3 +2570,14 @@ select.parameter-input option {
   background: transparent;
   box-shadow: none;
 }
+
+.investment-calculator-page .recharts-surface,
+.investment-calculator-page .chart-wrapper canvas {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.investment-calculator-page .recharts-surface:focus:not(:focus-visible),
+.investment-calculator-page .chart-wrapper canvas:focus:not(:focus-visible) {
+  outline: none;
+}

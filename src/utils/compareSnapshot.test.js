@@ -30,6 +30,7 @@ test('compare snapshot round-trips selected pair and results', () => {
         rows: [{ aspect: 'Location', left: 'Good', right: 'Ok', winner: 'left' }],
       },
       aiError: null,
+      aiLanguage: 'en',
       calcData: {
         left: { recommendedPrice: 100000, recommendedPricePerSqm: 2000, note: 'ok' },
         right: { recommendedPrice: 90000, recommendedPricePerSqm: 1800, note: 'ok' },
@@ -48,8 +49,21 @@ test('compare snapshot round-trips selected pair and results', () => {
   })
   assert.equal(read.pairKey, 'properties_houses:1::properties_houses:2')
   assert.equal(read.aiResult.summary, 'Villa A looks stronger')
+  assert.equal(read.aiLanguage, 'en')
   assert.equal(read.calcData.left.recommendedPrice, 100000)
   assert.equal(read.showdownCompleted, true)
+})
+
+test('legacy comparison results without a language are marked for regeneration', () => {
+  const storage = memoryStorage()
+  writeCompareSnapshot({
+    selectedKeys: ['a:1', 'a:2'],
+    pairKey: 'a:1::a:2',
+    aiResult: { summary: 'Старый ответ', rows: [] },
+  }, { storage, now: () => 10_000 })
+  const read = readCompareSnapshot({ storage, now: () => 10_000 })
+  assert.equal(read.aiLanguage, null)
+  assert.equal(read.aiResult.summary, 'Старый ответ')
 })
 
 test('compare snapshot expires after ttl', () => {

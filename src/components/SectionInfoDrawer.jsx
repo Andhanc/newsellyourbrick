@@ -188,7 +188,9 @@ export default function SectionInfoDrawer({ section, placement = 'floating' }) {
                 ref={setPanelRefs}
                 className={`section-info-panel${
                   isClosing
-                    ? ' drawer-dismiss-from-right--closing section-info-panel--closing'
+                    ? isMobileSheet
+                      ? ' drawer-dismiss-from-bottom--closing section-info-panel--closing'
+                      : ' drawer-dismiss-from-right--closing'
                     : ''
                 }${sheetDrag.isDragging ? ' section-info-panel--dragging' : ''}`}
                 style={sheetDrag.panelDragStyle}

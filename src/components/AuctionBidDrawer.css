@@ -664,7 +664,8 @@ html body .auction-bid-drawer:has(.property-detail-sidebar__bidding-section) .au
   padding: 14px 18px;
   border: 0;
   border-radius: 999px;
-  background: #6ec6d0;
+  background: linear-gradient(110deg, #5eb8c4 0%, #8adbe3 34%, #6ec6d0 58%, #b7f3f8 78%, #62c0cb 100%);
+  background-size: 220% 100%;
   color: #ffffff;
   font-family: inherit;
   font-size: 16px;
@@ -674,7 +675,8 @@ html body .auction-bid-drawer:has(.property-detail-sidebar__bidding-section) .au
   text-shadow: none;
   box-shadow: 0 10px 24px rgba(110, 198, 208, 0.38);
   cursor: pointer;
-  transition: background 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+  animation: auction-bid-iridescent 4.6s ease-in-out infinite;
+  transition: box-shadow 0.16s ease, filter 0.16s ease, opacity 0.16s ease;
 }
 .auction-bid-drawer__body .bidding-section__panel-submit-shine {
   position: absolute;
@@ -691,7 +693,7 @@ html body .auction-bid-drawer:has(.property-detail-sidebar__bidding-section) .au
   z-index: 1;
 }
 .auction-bid-drawer__body .bidding-section__panel-submit:hover:not(:disabled) {
-  background: #61bcc7;
+  filter: brightness(1.04);
   transform: none;
   box-shadow: 0 10px 24px rgba(110, 198, 208, 0.42);
 }
@@ -728,10 +730,10 @@ html body .auction-bid-drawer:has(.property-detail-sidebar__bidding-section) .au
 }
 .auction-bid-drawer__body .bidding-section__panel-auto-bid:active:not(:disabled) { transform: none; }
 .auction-bid-drawer__body .bidding-section__panel-submit:disabled {
-  background: #6ec6d0;
   color: #ffffff;
   cursor: not-allowed;
   box-shadow: 0 8px 18px rgba(110, 198, 208, 0.18);
+  animation: none;
 }
 .auction-bid-drawer__body .bidding-section__panel-submit:disabled .bidding-section__panel-submit-shine {
   animation: none;

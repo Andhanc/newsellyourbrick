@@ -48,7 +48,7 @@ function MetricCard({ label, value, Icon, placement }) {
   )
 }
 
-export default function BuyerMapScene({ onCardClick }) {
+export default function BuyerMapScene() {
   const { t } = useTranslation()
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
@@ -147,9 +147,6 @@ export default function BuyerMapScene({ onCardClick }) {
             <footer>
               <strong>$520,000</strong>
               <em>+10.8%</em>
-              <button type="button" onClick={() => onCardClick?.(featuredTitle)}>
-                {t('buyerPage_mapLearnMore')}
-              </button>
             </footer>
           </div>
         </article>

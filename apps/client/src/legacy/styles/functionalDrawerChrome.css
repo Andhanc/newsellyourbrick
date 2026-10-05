@@ -316,32 +316,6 @@ html body :is(
   box-shadow: 0 12px 24px rgba(0, 125, 138, 0.24);
 }
 
-html body .auction-bid-drawer__body .bidding-section__quick-btn {
-  border: 0;
-  background: #0099a9 !important;
-  background-image: none !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 18px rgba(0, 125, 138, 0.22);
-}
-
-html body .auction-bid-drawer__body .bidding-section__quick-btn:hover:not(:disabled) {
-  background: #007d8a !important;
-  background-image: none !important;
-}
-
-html body .auction-bid-drawer__body .bidding-section__panel-submit {
-  border: 0;
-  background: #0099a9 !important;
-  background-image: none !important;
-  color: #ffffff !important;
-  box-shadow: 0 10px 22px rgba(0, 125, 138, 0.24);
-}
-
-html body .auction-bid-drawer__body .bidding-section__panel-submit:hover:not(:disabled) {
-  background: #007d8a !important;
-  background-image: none !important;
-}
-
 html body .auction-bid-drawer__body .bidding-section__panel-plus {
   border: 1px solid rgba(0, 153, 169, 0.28);
   background: #ffffff;

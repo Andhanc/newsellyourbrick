@@ -5,6 +5,7 @@ const MAX_KEY_LENGTH = 160
 const SAFE_KEY = /^[a-zA-Z0-9_.:-]+$/
 const MAX_TEXT = 4000
 const MAX_AI_ROWS = 24
+const SUPPORTED_LANGUAGES = new Set(['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv'])
 
 function defaultStorage() {
   try {
@@ -57,6 +58,11 @@ function normalizeAiResult(value) {
     summary: clipText(value.summary, 4000),
     rows,
   }
+}
+
+function normalizeAiLanguage(value) {
+  const language = String(value || '').toLowerCase().split(/[-_]/)[0]
+  return SUPPORTED_LANGUAGES.has(language) ? language : null
 }
 
 function normalizeCalcSide(value) {
@@ -112,6 +118,7 @@ function normalizeSnapshot(value, now) {
     pairKey,
     aiResult: normalizeAiResult(value.aiResult),
     aiError: clipText(value.aiError, 400),
+    aiLanguage: normalizeAiLanguage(value.aiLanguage),
     calcData: normalizeCalcPair(value.calcData),
     calcError: normalizeErrorPair(value.calcError),
     showdownCompleted: value.showdownCompleted === true,
@@ -128,6 +135,7 @@ export function writeCompareSnapshot(input, options = {}) {
     pairKey: input?.pairKey,
     aiResult: input?.aiResult ?? null,
     aiError: input?.aiError ?? null,
+    aiLanguage: input?.aiLanguage ?? null,
     calcData: input?.calcData ?? { left: null, right: null },
     calcError: input?.calcError ?? { left: null, right: null },
     showdownCompleted: input?.showdownCompleted === true,

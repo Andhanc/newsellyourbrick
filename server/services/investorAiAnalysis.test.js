@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getInvestorAiFallback } from './investorAiAnalysis.js'
+import { getInvestorAiFallback, promptFor } from './investorAiAnalysis.js'
 
 const baseInput = {
   currency: 'EUR',
@@ -66,4 +66,32 @@ test('missing borrower data is clearly labelled rather than treated as approval'
   assert.equal(analysis.meta.mode, 'deterministic_fallback')
   assert.ok(analysis.dataGaps.some((item) => /доход/i.test(item)))
   assert.equal(analysis.sources.length, 0)
+})
+
+test('fallback narrative is localized in every supported language', () => {
+  const headlines = {
+    ru: 'банк', en: 'bank', de: 'bank',
+    es: 'banco', fr: 'banque', pl: 'bank', sv: 'banken',
+  }
+  for (const [locale, expected] of Object.entries(headlines)) {
+    const analysis = getInvestorAiFallback({ ...baseInput, locale }, 'live data unavailable')
+    const visibleText = [
+      analysis.verdict.headline,
+      analysis.verdict.summary,
+      analysis.scenarios.base.summary,
+      ...analysis.risks.map((item) => item.explanation),
+      ...analysis.recommendations.map((item) => item.action),
+      analysis.mortgageEstimate.disclaimer,
+    ].join(' ')
+    assert.match(visibleText.toLowerCase(), new RegExp(expected.toLowerCase(), 'u'), locale)
+    if (locale !== 'ru') assert.doesNotMatch(visibleText, /[А-Яа-яЁё]/u, locale)
+  }
+})
+
+test('model prompt requests every narrative field in the selected language', () => {
+  const input = { ...baseInput, locale: 'es' }
+  const prompt = promptFor(input, getInvestorAiFallback(input))
+  assert.match(prompt, /Spanish \(es\)/)
+  assert.match(prompt, /включая вывод, сценарии, риски, рекомендации, ипотеку/)
+  assert.doesNotMatch(prompt, /Все тексты — на русском языке/)
 })

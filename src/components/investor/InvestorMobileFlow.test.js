@@ -55,6 +55,14 @@ test('calculator uses object-goal-result order across mobile and desktop', () =>
   assert.match(pageCss, /padding-bottom:\s*calc\([^)]*safe-area-inset-bottom/)
 })
 
+test('investor analysis refreshes in the selected language without showing the previous answer', () => {
+  assert.match(page, /locale: analysisLanguage/)
+  assert.match(page, /setInvestorAiLanguage\(analysisLanguage\)/)
+  assert.match(page, /beginAiAnalysis\(\{ preserveScroll: true \}\)/)
+  assert.match(page, /status=\{investorAiLanguage === analysisLanguage \? analysisStatus : 'loading'\}/)
+  assert.match(page, /analysis=\{investorAiLanguage === analysisLanguage \? investorAiAnalysis : null\}/)
+})
+
 test('mobile object and goal steps collect the minimum decision inputs before results', () => {
   assert.match(sourceHero, /investor-source-hero__manual-fields/)
   assert.match(sourceHero, /smartInvestor_purchasePrice/)

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FiMaximize2, FiMinimize2 } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import './LocationMap.css'
@@ -50,7 +51,10 @@ const LocationMap = ({
   const onMapReadyRef = useRef(onMapReady)
   const markerDraggableRef = useRef(markerDraggable)
   const markerColorRef = useRef(markerColor)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const fullscreenFallbackTimerRef = useRef(null)
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false)
+  const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false)
+  const isFullscreen = isNativeFullscreen || isFallbackFullscreen
   const [mapFailed, setMapFailed] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [activeMapType, setActiveMapType] = useState(mapType)
@@ -120,7 +124,7 @@ const LocationMap = ({
       resizeObserver.disconnect()
       intersectionObserver?.disconnect()
     }
-  }, [])
+  }, [isFallbackFullscreen])
 
   useEffect(() => {
     const container = mapContainerRef.current
@@ -187,7 +191,7 @@ const LocationMap = ({
       lastCenterRef.current = null
       lastZoomAppliedRef.current = null
     }
-  }, [allowFullscreen, controlsLayout, resolvedMaxZoom, mapsLang, pageScrollInteraction])
+  }, [allowFullscreen, controlsLayout, resolvedMaxZoom, mapsLang, pageScrollInteraction, isFallbackFullscreen])
 
   useEffect(() => {
     if (!allowFullscreen || typeof document === 'undefined') return undefined
@@ -201,8 +205,12 @@ const LocationMap = ({
     )
 
     const handleFullscreenChange = () => {
+      if (fullscreenFallbackTimerRef.current != null) {
+        window.clearTimeout(fullscreenFallbackTimerRef.current)
+        fullscreenFallbackTimerRef.current = null
+      }
       const fullscreenElement = getFullscreenElement()
-      setIsFullscreen(fullscreenElement === containerRef.current)
+      setIsNativeFullscreen(fullscreenElement === containerRef.current)
       window.setTimeout(scheduleMapResize, 30)
     }
 
@@ -212,12 +220,31 @@ const LocationMap = ({
     document.addEventListener('MSFullscreenChange', handleFullscreenChange)
 
     return () => {
+      if (fullscreenFallbackTimerRef.current != null) {
+        window.clearTimeout(fullscreenFallbackTimerRef.current)
+        fullscreenFallbackTimerRef.current = null
+      }
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
     }
   }, [allowFullscreen])
+
+  useEffect(() => {
+    if (!isFallbackFullscreen) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsFallbackFullscreen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isFallbackFullscreen])
 
   useEffect(() => {
     if (!mapReady) return
@@ -284,6 +311,10 @@ const LocationMap = ({
 
   const toggleFullscreen = () => {
     if (!allowFullscreen || typeof document === 'undefined') return
+    if (isFallbackFullscreen) {
+      setIsFallbackFullscreen(false)
+      return
+    }
     const element = containerRef.current
     if (!element) return
 
@@ -293,22 +324,46 @@ const LocationMap = ({
       document.mozFullScreenElement ||
       document.msFullscreenElement
 
+    if (fullscreenElement === element) {
+      const exitFullscreen =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen
+      exitFullscreen?.call(document)
+      return
+    }
+
     if (!fullscreenElement) {
       const requestFullscreen =
         element.requestFullscreen ||
         element.webkitRequestFullscreen ||
         element.mozRequestFullScreen ||
         element.msRequestFullscreen
-      requestFullscreen?.call(element)
+      if (!requestFullscreen) {
+        setIsFallbackFullscreen(true)
+        return
+      }
+      try {
+        const result = requestFullscreen.call(element)
+        if (typeof result?.then === 'function') {
+          result.catch(() => setIsFallbackFullscreen(true))
+        } else {
+          fullscreenFallbackTimerRef.current = window.setTimeout(() => {
+            fullscreenFallbackTimerRef.current = null
+            if (document.fullscreenElement !== element &&
+                document.webkitFullscreenElement !== element &&
+                document.mozFullScreenElement !== element &&
+                document.msFullscreenElement !== element) {
+              setIsFallbackFullscreen(true)
+            }
+          }, 400)
+        }
+      } catch {
+        setIsFallbackFullscreen(true)
+      }
       return
     }
-
-    const exitFullscreen =
-      document.exitFullscreen ||
-      document.webkitExitFullscreen ||
-      document.mozCancelFullScreen ||
-      document.msExitFullscreen
-    exitFullscreen?.call(document)
   }
 
   useEffect(() => {
@@ -411,11 +466,12 @@ const LocationMap = ({
   const hideControls = controlsLayout === 'none'
   const useDefaultZoom = !hideControls && !useColumnControls
 
-  return (
+  const mapNode = (
     <div
       ref={containerRef}
       className={`location-map-container${
         isFullscreen ? ' location-map-container--fullscreen' : ''
+      }${isFallbackFullscreen ? ' location-map-container--fallback-fullscreen' : ''
       }${useColumnControls ? ' location-map-container--column-controls' : ''}${
         hideControls ? ' location-map-container--no-controls' : ''
       }${pageScrollInteraction ? ' location-map-container--page-scroll' : ''}`}
@@ -499,6 +555,13 @@ const LocationMap = ({
       ) : null}
     </div>
   )
+
+  return isFallbackFullscreen ? (
+    <>
+      <div className="location-map-placeholder" aria-hidden="true" />
+      {createPortal(mapNode, document.body)}
+    </>
+  ) : mapNode
 }
 
 export default LocationMap

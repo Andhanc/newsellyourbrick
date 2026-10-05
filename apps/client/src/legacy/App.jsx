@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
@@ -179,7 +179,6 @@ function AppChromeFooter() {
     shouldShowSoftLaunchUnavailable(pathname) ||
     pathname === '/' ||
     pathname === '/lottery' ||
-    pathname === '/app' ||
     pathname === '/mobile-showcase' ||
     pathname === '/map' ||
     pathname === '/owner-test' ||
@@ -305,10 +304,14 @@ function SessionValidator({ onBlockedChange }) {
 function ScrollToTop() {
   const location = useLocation()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Mega-menu scroll lock can stick after in-menu navigation; clear before scrolling.
     ensureMainScrollReady()
     scrollMainTo(0, 0, 'instant')
+    // Lazy route content and the persistent footer can shift the scroll position
+    // after the first layout, especially in mobile Safari.
+    const frame = window.requestAnimationFrame(() => scrollMainTo(0, 0, 'instant'))
+    return () => window.cancelAnimationFrame(frame)
   }, [location.pathname])
 
   return null
