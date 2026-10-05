@@ -56,21 +56,34 @@ function createdTimeMs(notification) {
   return date.getTime()
 }
 
-function notificationRelativeTime(notification, t) {
+function notificationRelativeTime(notification, t, locale) {
   const created = createdTimeMs(notification)
   if (!created) return ''
   const diffMs = Math.max(0, Date.now() - created)
   const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 1) return t('notificationsTimeJustNow', 'только что')
-  if (minutes < 60) return t('notificationsTimeMinutes', { count: minutes, defaultValue: '{{count}} мин' })
+  if (minutes < 1) return t('notificationsTimeJustNow', { defaultValue: 'just now' })
+  if (minutes < 60) {
+    return t('notificationsTimeMinutes', { count: minutes, defaultValue: '{{count}}m ago' })
+  }
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return t('notificationsTimeHours', { count: hours, defaultValue: '{{count}} ч' })
+  if (hours < 24) {
+    return t('notificationsTimeHours', { count: hours, defaultValue: '{{count}}h ago' })
+  }
   const days = Math.floor(hours / 24)
-  if (days < 7) return t('notificationsTimeDays', { count: days, defaultValue: '{{count}} дн' })
-  return new Intl.DateTimeFormat(undefined, {
-    day: '2-digit',
-    month: 'short',
-  }).format(new Date(created))
+  if (days < 7) {
+    return t('notificationsTimeDays', { count: days, defaultValue: '{{count}}d ago' })
+  }
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      day: 'numeric',
+      month: 'short',
+    }).format(new Date(created))
+  } catch {
+    return new Intl.DateTimeFormat(undefined, {
+      day: 'numeric',
+      month: 'short',
+    }).format(new Date(created))
+  }
 }
 
 function notificationNextStep(notification, dataObj, t) {
@@ -79,26 +92,76 @@ function notificationNextStep(notification, dataObj, t) {
 
   switch (String(notification?.type || '').toLowerCase()) {
     case 'test_drive_request':
-      return 'Подтвердите или отклоните даты — покупатель сразу получит ответ.'
+      return t('notificationsNext_testDriveRequest', {
+        defaultValue: 'Confirm or decline the dates — the buyer will get a reply right away.',
+      })
     case 'test_drive_survey':
-      return 'Пройдите короткий опрос: что понравилось, намерение купить и оценка звёздами.'
+      return t('notificationsNext_testDriveSurvey', {
+        defaultValue: 'Take a short survey: what you liked, purchase intent, and a star rating.',
+      })
     case 'test_drive_result':
     case 'test_drive_approved':
-      return 'Откройте бронь и проверьте даты, анкету и инструкции к визиту.'
+      return t('notificationsNext_testDriveApproved', {
+        defaultValue: 'Open the booking to check dates, the form, and visit instructions.',
+      })
     case 'test_drive_cancelled':
-      return 'Откройте бронирования, чтобы выбрать другой объект или новые даты.'
+      return t('notificationsNext_testDriveCancelled', {
+        defaultValue: 'Open bookings to choose another property or new dates.',
+      })
     case 'buy_now_approved':
-      return 'Проверьте покупку и срок следующего платежа в истории.'
+      return t('notificationsNext_buyNowApproved', {
+        defaultValue: 'Check the purchase and the next payment deadline in your history.',
+      })
     case 'property_reservation_paid':
-      return 'Следите за оформлением сделки в профиле — сейчас оплачен только резерв.'
+      return t('notificationsNext_reservationPaid', {
+        defaultValue: 'Follow the deal in your profile — only the reservation is paid so far.',
+      })
     case 'buy_now_completed':
-      return 'Сделка завершена. Теперь объект можно выставить на продажу.'
+      return t('notificationsNext_buyNowCompleted', {
+        defaultValue: 'The deal is complete. You can now list the property for sale.',
+      })
     case 'outbid':
     case 'bid_outbid':
-      return null
+      return t('notificationsOutbidNextStep', {
+        defaultValue: 'Open the listing and decide whether to raise your bid before the auction ends.',
+      })
+    case 'payment_deadline':
+      return t('notificationsNext_paymentDeadline', {
+        defaultValue: 'Pay the deposit on time to keep your purchase right.',
+      })
+    case 'auction_won':
+      return t('notificationsNext_auctionWon', {
+        defaultValue: 'Open the listing and complete the deposit payment.',
+      })
     case 'payment_succeeded':
     case 'deposit_paid':
-      return 'Средства зачислены. Проверьте, какой шаг сделки теперь доступен.'
+      return t('notificationsNext_depositPaid', {
+        defaultValue: 'Funds are credited. Check which deal step is available now.',
+      })
+    case 'no_bids_45_days':
+      return t('notificationsNext_noBids45Days', {
+        defaultValue: 'Open the listing in your seller cabinet and lower the price if needed.',
+      })
+    case 'property_approved': {
+      const isEdit =
+        dataObj?.approval_kind === 'edit' ||
+        dataObj?.is_edit === true ||
+        /изменения в (?:объекте|объявлении)|changes (?:to|in)|modifications? (?:to|in)|Änderungen|cambios (?:en|del)|zmiany|ändringar/i.test(
+          `${notification?.title || ''} ${notification?.message || ''}`,
+        )
+      if (isEdit) {
+        return t('notificationsNext_propertyEditApproved', {
+          defaultValue: 'Open the listing to review the applied changes.',
+        })
+      }
+      return t('notificationsNext_propertyApproved', {
+        defaultValue: 'Open the published listing and check how it looks to buyers.',
+      })
+    }
+    case 'property_rejected':
+      return t('notificationsNext_propertyRejected', {
+        defaultValue: 'Check the reason and resubmit the listing after fixes.',
+      })
     default:
       return null
   }
@@ -115,6 +178,7 @@ function NotificationItem({
   goToPropertyListing,
 }) {
   const { i18n } = useTranslation()
+  const locale = i18n?.language || 'en'
   const propertyMeta = getNotificationPropertyMeta(notification)
   const dataObj = parseNotificationData(notification?.data)
   const propertyThumbSrc = getNotificationThumbSrc(propertyMeta.image)
@@ -130,14 +194,14 @@ function NotificationItem({
   const displayLocation = localizeNotificationLocation(
     propertyMeta.location,
     t,
-    i18n?.language,
+    locale,
   )
   const displayMessage = formatBuyerNotificationMessage({
     notification,
     data: dataObj,
     propertyName: propertyMeta.name,
     hasPropertyCard,
-    locale: i18n?.language,
+    locale,
     t,
   })
 
@@ -173,10 +237,10 @@ function NotificationItem({
       <div className="notification-item__body">
         <div className="notification-item__head">
           <h4 className="notification-item__title">
-            {unread ? <span className="visually-hidden">Новое уведомление. </span> : null}
+            {unread ? <span className="visually-hidden">{t('notificationsNewHidden', 'New notification. ')}</span> : null}
             {displayTitle}
           </h4>
-          <time className="notification-item__time">{notificationRelativeTime(notification, t)}</time>
+          <time className="notification-item__time">{notificationRelativeTime(notification, t, locale)}</time>
         </div>
         {displayMessage ? (
           <p
@@ -300,7 +364,8 @@ function NotificationItem({
         ) : notification.type === 'buy_now_approved' ? (
           <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="notification-item__button" onClick={() => openRoute('/profile?history=1')}>
-              Открыть покупки<FiArrowRight aria-hidden />
+              {t('notificationsOpenPurchases', { defaultValue: 'Open purchases' })}
+              <FiArrowRight aria-hidden />
             </button>
           </div>
         ) : route ? (

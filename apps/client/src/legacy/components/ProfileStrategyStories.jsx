@@ -120,6 +120,281 @@ const STORY_COPY = {
       },
     ],
   },
+  es: {
+    triggerEyebrow: 'Tu ruta personal',
+    triggerTitle: 'Elegir una estrategia',
+    triggerText: '7 historias cortas sobre cómo comprar inmuebles en SellYourBrick',
+    triggerButton: 'Ver',
+    close: 'Cerrar historias',
+    previous: 'Historia anterior',
+    next: 'Historia siguiente',
+    openSection: 'Explorar',
+    start: 'Empezar',
+    stories: [
+      {
+        eyebrow: 'SellYourBrick · 1 minuto',
+        title: '¿Qué estrategia te encaja?',
+        text: 'Cada formato resuelve una necesidad distinta: comprar mejor, entrar con menos presupuesto, cerrar rápido o vivir primero en el inmueble. Te lo explicamos con claridad.',
+        note: 'Toca los bordes o sigue mirando: las historias avanzan solas.',
+      },
+      {
+        eyebrow: 'Estrategia 01',
+        title: 'Subasta',
+        text: 'La subasta encaja si quieres que el precio lo marque la demanda abierta. Sigue las pujas, define tu límite y participa con reglas transparentes.',
+        note: 'Ves la competencia y decides hasta dónde estás dispuesto a llegar.',
+      },
+      {
+        eyebrow: 'Estrategia 02',
+        title: 'Participaciones',
+        text: 'Las participaciones encajan si quieres invertir en inmuebles premium con menos capital y repartir el riesgo entre varios activos.',
+        note: 'Compras una parte del inmueble e inviertes junto a otros participantes.',
+      },
+      {
+        eyebrow: 'Estrategia 03',
+        title: 'Deudas',
+        text: 'Los inmuebles con deuda encajan si buscas un descuento relevante y estás listo para valorar con cuidado los riesgos legales y financieros.',
+        note: 'Reunimos la información clave para que decidas con criterio.',
+      },
+      {
+        eyebrow: 'Estrategia 04',
+        title: 'Comprar ahora',
+        text: 'Comprar a precio fijo encaja si ya encontraste el inmueble y quieres avanzar sin pujas ni esperar el fin de una subasta.',
+        note: 'Precio claro, condiciones conocidas y un camino más corto hacia la compra.',
+      },
+      {
+        eyebrow: 'Estrategia 05',
+        title: 'Test drive',
+        text: 'El test drive encaja si quieres vivir en el inmueble antes de comprar y comprobar barrio, ritmo diario y detalles que no se ven en las fotos.',
+        note: 'Prueba el inmueble en la vida real y luego decide.',
+      },
+      {
+        eyebrow: 'Tu siguiente paso',
+        title: 'Asistente inteligente',
+        text: 'El asistente inteligente encaja si aún no has elegido estrategia. Cuéntale presupuesto, objetivo y plazo: te arma una ruta personal.',
+        note: 'Responde unas preguntas y verás las direcciones que te encajan.',
+      },
+    ],
+  },
+  de: {
+    triggerEyebrow: 'Ihre persönliche Route',
+    triggerTitle: 'Strategie wählen',
+    triggerText: '7 kurze Geschichten über den Immobilienkauf bei SellYourBrick',
+    triggerButton: 'Ansehen',
+    close: 'Geschichten schließen',
+    previous: 'Vorherige Geschichte',
+    next: 'Nächste Geschichte',
+    openSection: 'Entdecken',
+    start: 'Starten',
+    stories: [
+      {
+        eyebrow: 'SellYourBrick · 1 Minute',
+        title: 'Welche Strategie passt zu Ihnen?',
+        text: 'Jedes Format löst eine andere Aufgabe: günstiger kaufen, mit kleinerem Budget einsteigen, schnell abschließen oder zuerst im Objekt wohnen. Wir erklären die Optionen klar.',
+        note: 'Tippen Sie an die Ränder oder schauen Sie weiter — die Geschichten wechseln automatisch.',
+      },
+      {
+        eyebrow: 'Strategie 01',
+        title: 'Auktion',
+        text: 'Eine Auktion passt, wenn der Preis durch offene Nachfrage entsteht. Folgen Sie den Geboten, setzen Sie Ihr Limit und nehmen Sie transparent teil.',
+        note: 'Sie sehen den Wettbewerb und entscheiden selbst, wie weit Sie gehen.',
+      },
+      {
+        eyebrow: 'Strategie 02',
+        title: 'Anteile',
+        text: 'Anteile passen, wenn Sie in Premium-Immobilien mit kleinerem Budget investieren und Kapital auf mehrere Objekte verteilen möchten.',
+        note: 'Sie kaufen einen Teil des Objekts und investieren mit anderen Teilnehmern.',
+      },
+      {
+        eyebrow: 'Strategie 03',
+        title: 'Schulden',
+        text: 'Objekte mit Schulden passen, wenn Sie einen spürbaren Abschlag suchen und rechtliche sowie finanzielle Risiken sorgfältig prüfen wollen.',
+        note: 'Wir bündeln die wichtigsten Daten für eine bewusste Entscheidung.',
+      },
+      {
+        eyebrow: 'Strategie 04',
+        title: 'Sofort kaufen',
+        text: 'Der Festpreiskauf passt, wenn Sie das passende Objekt gefunden haben und ohne Gebote oder Auktionsende weitermachen wollen.',
+        note: 'Klarer Preis, bekannte Konditionen und ein kürzerer Weg zum Kauf.',
+      },
+      {
+        eyebrow: 'Strategie 05',
+        title: 'Testfahrt',
+        text: 'Eine Testfahrt passt, wenn Sie vor dem Kauf im Objekt wohnen und Viertel, Alltag und Details prüfen wollen, die Fotos nicht zeigen.',
+        note: 'Probieren Sie die Immobilie im echten Leben — dann entscheiden Sie.',
+      },
+      {
+        eyebrow: 'Ihr nächster Schritt',
+        title: 'Smart Assistant',
+        text: 'Der Smart Assistant passt, wenn Sie noch keine Strategie gewählt haben. Nennen Sie Budget, Ziel und Zeitraum — er baut Ihre persönliche Route.',
+        note: 'Beantworten Sie ein paar Fragen und sehen Sie passende Richtungen.',
+      },
+    ],
+  },
+  fr: {
+    triggerEyebrow: 'Votre parcours personnel',
+    triggerTitle: 'Choisir une stratégie',
+    triggerText: '7 courtes histoires sur l’achat immobilier avec SellYourBrick',
+    triggerButton: 'Regarder',
+    close: 'Fermer les histoires',
+    previous: 'Histoire précédente',
+    next: 'Histoire suivante',
+    openSection: 'Explorer',
+    start: 'Commencer',
+    stories: [
+      {
+        eyebrow: 'SellYourBrick · 1 minute',
+        title: 'Quelle stratégie vous convient ?',
+        text: 'Chaque format répond à un besoin : acheter mieux, entrer avec un budget plus petit, conclure vite ou vivre d’abord dans le bien. Nous expliquons chaque option clairement.',
+        note: 'Touchez les bords ou continuez à regarder — les histoires avancent toutes seules.',
+      },
+      {
+        eyebrow: 'Stratégie 01',
+        title: 'Enchère',
+        text: 'L’enchère convient si vous voulez que le prix soit façonné par la demande ouverte. Suivez les offres, fixez votre limite et participez en toute transparence.',
+        note: 'Vous voyez la concurrence et décidez jusqu’où aller.',
+      },
+      {
+        eyebrow: 'Stratégie 02',
+        title: 'Parts',
+        text: 'Les parts conviennent si vous voulez investir dans l’immobilier premium avec un budget plus réduit et répartir le capital sur plusieurs biens.',
+        note: 'Vous achetez une partie du bien et investissez avec d’autres participants.',
+      },
+      {
+        eyebrow: 'Stratégie 03',
+        title: 'Dettes',
+        text: 'Les biens avec dettes conviennent si vous cherchez une décote significative et acceptez d’évaluer soigneusement les risques juridiques et financiers.',
+        note: 'Nous réunissons les infos clés pour une décision éclairée.',
+      },
+      {
+        eyebrow: 'Stratégie 04',
+        title: 'Acheter maintenant',
+        text: 'L’achat au prix fixe convient si vous avez trouvé le bon bien et voulez avancer sans enchères ni attendre la fin d’une vente.',
+        note: 'Prix clair, conditions connues et chemin plus court vers l’achat.',
+      },
+      {
+        eyebrow: 'Stratégie 05',
+        title: 'Essai',
+        text: 'L’essai convient si vous voulez vivre dans le bien avant d’acheter et vérifier le quartier, le rythme quotidien et les détails invisibles sur les photos.',
+        note: 'Essayez le bien dans la vraie vie, puis décidez.',
+      },
+      {
+        eyebrow: 'Votre prochaine étape',
+        title: 'Assistant intelligent',
+        text: 'L’assistant intelligent convient si vous n’avez pas encore choisi de stratégie. Indiquez budget, objectif et délai — il construit votre parcours.',
+        note: 'Répondez à quelques questions et voyez les directions qui vous correspondent.',
+      },
+    ],
+  },
+  pl: {
+    triggerEyebrow: 'Twój osobisty szlak',
+    triggerTitle: 'Dobierz strategię',
+    triggerText: '7 krótkich historii o kupnie nieruchomości na SellYourBrick',
+    triggerButton: 'Obejrzyj',
+    close: 'Zamknij historie',
+    previous: 'Poprzednia historia',
+    next: 'Następna historia',
+    openSection: 'Zobacz',
+    start: 'Zacznij',
+    stories: [
+      {
+        eyebrow: 'SellYourBrick · 1 minuta',
+        title: 'Która strategia do Ciebie pasuje?',
+        text: 'Każdy format rozwiązuje inną potrzebę: kupić taniej, wejść z mniejszym budżetem, szybko domknąć transakcję albo najpierw zamieszkać w obiekcie. Wyjaśnimy opcje bez skomplikowanych terminów.',
+        note: 'Dotknij krawędzi ekranu lub po prostu oglądaj — historie przełączą się same.',
+      },
+      {
+        eyebrow: 'Strategia 01',
+        title: 'Aukcja',
+        text: 'Aukcja pasuje, gdy chcesz, by cenę kształtował otwarty popyt. Śledź oferty, ustal swój limit i bierz udział na przejrzystych zasadach.',
+        note: 'Widzisz konkurencję i sam decydujesz, jak daleko możesz pójść.',
+      },
+      {
+        eyebrow: 'Strategia 02',
+        title: 'Udziały',
+        text: 'Udziały pasują, gdy chcesz inwestować w premium z mniejszym budżetem i rozłożyć kapitał na kilka obiektów.',
+        note: 'Kupujesz część obiektu i inwestujesz razem z innymi uczestnikami.',
+      },
+      {
+        eyebrow: 'Strategia 03',
+        title: 'Długi',
+        text: 'Obiekty z długami pasują, gdy szukasz wyraźnego dyskonta i jesteś gotów uważnie ocenić ryzyka prawne oraz finansowe.',
+        note: 'Zbieramy kluczowe dane, by decyzja była świadoma.',
+      },
+      {
+        eyebrow: 'Strategia 04',
+        title: 'Kup teraz',
+        text: 'Zakup w cenie stałej pasuje, gdy znalazłeś właściwy obiekt i chcesz iść dalej bez licytacji i czekania na koniec aukcji.',
+        note: 'Jasna cena, znane warunki i krótsza droga do zakupu.',
+      },
+      {
+        eyebrow: 'Strategia 05',
+        title: 'Test-drive',
+        text: 'Test-drive pasuje, gdy chcesz zamieszkać w obiekcie przed zakupem i sprawdzić okolicę, rytm dnia oraz detale, których nie widać na zdjęciach.',
+        note: 'Wypróbuj nieruchomość w realnym życiu, a potem zdecyduj.',
+      },
+      {
+        eyebrow: 'Twój kolejny krok',
+        title: 'Inteligentny asystent',
+        text: 'Inteligentny asystent pasuje, gdy jeszcze nie wybrałeś strategii. Podaj budżet, cel i termin — zbierze osobisty szlak.',
+        note: 'Odpowiedz na kilka pytań i zobacz kierunki, które do Ciebie pasują.',
+      },
+    ],
+  },
+  sv: {
+    triggerEyebrow: 'Din personliga väg',
+    triggerTitle: 'Välj en strategi',
+    triggerText: '7 korta berättelser om hur du köper fastighet med SellYourBrick',
+    triggerButton: 'Titta',
+    close: 'Stäng berättelser',
+    previous: 'Föregående berättelse',
+    next: 'Nästa berättelse',
+    openSection: 'Utforska',
+    start: 'Börja',
+    stories: [
+      {
+        eyebrow: 'SellYourBrick · 1 minut',
+        title: 'Vilken strategi passar dig?',
+        text: 'Varje format löser ett annat behov: köpa bättre, gå in med mindre budget, avsluta snabbt eller bo i objektet först. Vi förklarar varje alternativ tydligt.',
+        note: 'Tryck på kanterna eller fortsätt titta — berättelserna byts automatiskt.',
+      },
+      {
+        eyebrow: 'Strategi 01',
+        title: 'Auktion',
+        text: 'Auktion passar dig som vill att priset formas av öppen efterfrågan. Följ buden, sätt din gräns i förväg och delta på transparenta villkor.',
+        note: 'Du ser konkurrensen och bestämmer själv hur långt du vill gå.',
+      },
+      {
+        eyebrow: 'Strategi 02',
+        title: 'Andelar',
+        text: 'Andelar passar dig som vill investera i premiumfastigheter med mindre budget och sprida kapital över flera objekt.',
+        note: 'Du köper en del av objektet och investerar tillsammans med andra deltagare.',
+      },
+      {
+        eyebrow: 'Strategi 03',
+        title: 'Skulder',
+        text: 'Objekt med skulder passar dig som söker en tydlig rabatt och är beredd att noga bedöma juridiska och finansiella risker.',
+        note: 'Vi samlar nyckelinformationen så att beslutet blir genomtänkt.',
+      },
+      {
+        eyebrow: 'Strategi 04',
+        title: 'Köp nu',
+        text: 'Köp till fast pris passar dig som redan hittat rätt objekt och vill gå vidare utan budgivning eller väntan på auktionens slut.',
+        note: 'Tydligt pris, kända villkor och en kortare väg till köp.',
+      },
+      {
+        eyebrow: 'Strategi 05',
+        title: 'Testdrive',
+        text: 'Testdrive passar dig som vill bo i objektet före köp och uppleva område, vardagsrytm och detaljer som foton inte visar.',
+        note: 'Prova fastigheten i verkligheten — sedan bestämmer du.',
+      },
+      {
+        eyebrow: 'Ditt nästa steg',
+        title: 'Smart assistent',
+        text: 'Den smarta assistenten passar dig som ännu inte valt strategi. Berätta budget, mål och tidplan — den bygger din personliga väg.',
+        note: 'Svara på några frågor och se riktningarna som passar dig.',
+      },
+    ],
+  },
 }
 
 const STORY_BLUEPRINTS = [
@@ -174,7 +449,8 @@ function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSigna
   const [runId, setRunId] = useState(0)
   const triggerRef = useRef(null)
   const closeRef = useRef(null)
-  const locale = String(language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
+  const localeCode = String(language || 'ru').toLowerCase().slice(0, 2)
+  const locale = STORY_COPY[localeCode] ? localeCode : 'en'
   const copy = STORY_COPY[locale]
   const stories = useMemo(
     () => {
@@ -320,7 +596,11 @@ function ProfileStrategyStories({ language = 'ru', showTrigger = true, openSigna
                     </AnimatePresence>
                     <span className="profile-strategy-story__overlay" aria-hidden />
 
-                    <div className="profile-strategy-story__progress" aria-label={`${activeIndex + 1} / ${stories.length}`}>
+                    <div
+                      className="profile-strategy-story__progress"
+                      style={{ '--story-count': stories.length }}
+                      aria-label={`${activeIndex + 1} / ${stories.length}`}
+                    >
                       {stories.map((story, index) => (
                         <span key={story.id} className="profile-strategy-story__progress-track">
                           <span

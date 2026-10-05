@@ -230,7 +230,7 @@
   .property-detail-test-drive-promo__actions { width: 100%; }
   .property-detail-test-drive-promo__actions .property-detail-test-drive__cta { width: min(100%, 340px); min-width: 0; padding: 14px 12px; font-size: 14px; }
   .property-detail-test-drive-promo__actions .property-detail-test-drive__hint { max-width: 25ch; }
-  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-test-drive { padding: 0 !important; margin: 16px 0 24px !important; }
+  .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-test-drive { padding: 0 !important; margin: 0 !important; }
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-test-drive .property-detail-test-drive-promo { border: 0 !important; border-radius: 0 !important; }
 }
 

@@ -258,11 +258,33 @@ export default function MobileDiscoverPage() {
     const layout = getMainScrollEl()
     if (layout) layout.style.overflowY = 'hidden'
     return () => {
-      root.classList.remove('md-page-active')
+      root.classList.remove('md-page-active', 'md-hero-chrome')
       clearTimers()
       if (layout) layout.style.overflowY = ''
     }
   }, [clearTimers])
+
+  /* iOS Safari Liquid Glass: белый html/body даёт непрозрачную нижнюю полоску.
+   * На hero сэмплируем цвет газона + theme-color, чтобы панель была прозрачной над фото. */
+  useEffect(() => {
+    const root = document.documentElement
+    const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]'))
+    const HERO_CHROME = '#748f1d'
+    const STAGE_CHROME = '#ffffff'
+
+    if (screen === 'hero') {
+      root.classList.add('md-hero-chrome')
+      metas.forEach((meta) => meta.setAttribute('content', HERO_CHROME))
+    } else {
+      root.classList.remove('md-hero-chrome')
+      metas.forEach((meta) => meta.setAttribute('content', STAGE_CHROME))
+    }
+
+    return () => {
+      root.classList.remove('md-hero-chrome')
+      metas.forEach((meta) => meta.setAttribute('content', STAGE_CHROME))
+    }
+  }, [screen])
 
   useEffect(() => {
     const scroller = cardsRef.current
@@ -603,6 +625,9 @@ export default function MobileDiscoverPage() {
             <div className="md-hero__veil" />
           </div>
 
+          {/* Safari 26 сэмплирует fixed у нижнего края для tint нижней панели */}
+          <div className="md-hero__safari-tint" aria-hidden="true" />
+
           <button
             type="button"
             className="md-hero__scroll"
@@ -904,7 +929,6 @@ export default function MobileDiscoverPage() {
             isOpen={recommendationDrawerOpen}
             onClose={() => setRecommendationDrawerOpen(false)}
             onWatch={watchRecommendationStories}
-            language={i18n.language}
           />
           {storiesOpenSignal > 0 ? (
             <ProfileStrategyStories

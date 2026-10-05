@@ -1,9 +1,18 @@
 /**
  * Soft-launch gate: only allowlisted buyer-facing paths stay live.
  * Flip SOFT_LAUNCH_ENABLED to false to restore full access.
+ *
+ * Mobile-only gate: desktop viewport shows «в разработке».
+ * Flip MOBILE_ONLY_ENABLED to false to allow desktop again.
  */
 
 export const SOFT_LAUNCH_ENABLED = true
+
+/** When true, viewports at/above MOBILE_ONLY_MIN_DESKTOP_WIDTH see a desktop-unavailable page. */
+export const MOBILE_ONLY_ENABLED = true
+
+/** Match useIsMobile (768): desktop starts at this width. */
+export const MOBILE_ONLY_MIN_DESKTOP_WIDTH = 768
 
 const EXACT_ALLOWED = new Set([
   '/',
@@ -135,6 +144,16 @@ export function shouldShowSoftLaunchUnavailable(pathname = '') {
     return isSoftLaunchFeatureBlocked('sellerCabinet')
   }
   if (isSoftLaunchPathAllowed(pathname)) return false
+  return true
+}
+
+/**
+ * Whether the desktop viewport should be blocked (mobile-only soft launch).
+ * Viewport width is checked by DesktopUnavailableGate; this only covers path exemptions.
+ */
+export function shouldBlockDesktopForPath(pathname = '') {
+  if (!MOBILE_ONLY_ENABLED) return false
+  if (isSoftLaunchExemptPath(pathname)) return false
   return true
 }
 

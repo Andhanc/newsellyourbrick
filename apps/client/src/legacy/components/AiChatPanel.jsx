@@ -318,9 +318,9 @@ export default function AiChatPanel({
                 <span />
                 <span />
               </div>
-              {chat.isSlowAIResponse ? (
-                <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div>
-              ) : null}
+              <div className="chat-widget__slow-hint">
+                {chat.isSlowAIResponse ? t('chatSlowHint') : t('chatWaitingReply')}
+              </div>
             </div>
           </div>
         )}
@@ -330,7 +330,7 @@ export default function AiChatPanel({
         <input
           type="text"
           className="chat-widget__input"
-          placeholder={chat.isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
+          placeholder={chat.isLoadingAI ? t('chatWaitingReply') : t('chatPlaceholder')}
           value={chat.chatInput}
           onChange={chat.handleChatInputChange}
           disabled={chat.isLoadingAI}

@@ -7,6 +7,8 @@ import {
   isSoftLaunchHrefBlocked,
   isSoftLaunchPathAllowed,
   isSoftLaunchSellerContourPath,
+  MOBILE_ONLY_ENABLED,
+  shouldBlockDesktopForPath,
   shouldShowSoftLaunchUnavailable,
 } from './softLaunchAccess.js'
 
@@ -142,4 +144,14 @@ test('seller cabinet and released tools stay available; AI assistant is live', (
   assert.equal(isSoftLaunchHrefBlocked('/owner/property/new'), false)
   assert.equal(isSoftLaunchHrefBlocked('/property/p-1/edit'), false)
   assert.equal(shouldShowSoftLaunchUnavailable('/chat'), false)
+})
+
+test('mobile-only gate blocks public paths but exempts admin and marketer', () => {
+  assert.equal(MOBILE_ONLY_ENABLED, true)
+  assert.equal(shouldBlockDesktopForPath('/'), true)
+  assert.equal(shouldBlockDesktopForPath('/auction'), true)
+  assert.equal(shouldBlockDesktopForPath('/admin'), false)
+  assert.equal(shouldBlockDesktopForPath('/admin/users'), false)
+  assert.equal(shouldBlockDesktopForPath('/marketer'), false)
+  assert.equal(shouldBlockDesktopForPath('/marketer/campaigns'), false)
 })

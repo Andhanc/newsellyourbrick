@@ -53,6 +53,7 @@ import BuyerPassport from './features/development/BuyerPassport'
 import DealRoom from './features/development/DealRoom'
 import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
+import DesktopUnavailableGate from './components/DesktopUnavailableGate'
 import SoftLaunchGate from './components/SoftLaunchGate'
 import { shouldShowSoftLaunchUnavailable } from './utils/softLaunchAccess'
 import { PageSeoProvider } from './context/PageSeoContext'
@@ -651,6 +652,7 @@ function App() {
         </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
+            <DesktopUnavailableGate>
             <SoftLaunchGate>
             <Routes>
               <Route path="/development" element={<DevelopmentPages />} />
@@ -1132,6 +1134,7 @@ function App() {
               <Route path="*" element={<LazyPage><NotFoundPage /></LazyPage>} />
             </Routes>
             </SoftLaunchGate>
+            </DesktopUnavailableGate>
           </RouteErrorBoundary>
         </div>
         <Suspense

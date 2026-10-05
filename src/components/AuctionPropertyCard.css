@@ -517,6 +517,12 @@
   border-color: rgba(244, 63, 94, 0.35);
 }
 
+.auction-card__favorite svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
 .auction-card__favorite--active svg {
   filter: none;
 }

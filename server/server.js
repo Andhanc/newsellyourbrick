@@ -14768,7 +14768,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           type: 'property_approved',
           title: 'Изменения в объекте одобрены',
           message: `Изменения в объекте "${property.title}" одобрены и применены к опубликованному объявлению`,
-          data: JSON.stringify({ property_id: originalPropertyId })
+          data: JSON.stringify({ property_id: originalPropertyId, approval_kind: 'edit' })
         });
       } catch (notifError) {
         console.warn('Не удалось создать уведомление:', notifError);
@@ -15004,7 +15004,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           type: 'property_approved',
           title: 'Ваш объект прошел верификацию',
           message: `Ваш объект "${property.title}" прошел верификацию, переведён на языки сайта и опубликован на платформе`,
-          data: JSON.stringify({ property_id: id })
+          data: JSON.stringify({ property_id: id, approval_kind: 'publish' })
         });
       } catch (notifError) {
         console.warn('Не удалось создать уведомление:', notifError);

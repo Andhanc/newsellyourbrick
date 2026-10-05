@@ -1,7 +1,9 @@
 /**
- * Текст уведомления для панели: без дубля названия объекта,
- * если карточка объекта уже показана ниже.
+ * Текст уведомления для панели: локализуется по type + data,
+ * без дубля названия объекта, если карточка объекта уже показана ниже.
  */
+
+import { isPropertyEditApproval } from './localizeBuyerNotification.js'
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -19,6 +21,23 @@ export function formatMoneyAmount(amount, currency = 'EUR', locale) {
     }).format(value)
   } catch {
     return `${Math.round(value)} ${currency || 'EUR'}`
+  }
+}
+
+export function formatNotificationDeadline(iso, locale) {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (!Number.isFinite(date.getTime())) return String(iso)
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+  } catch {
+    return date.toISOString()
   }
 }
 
@@ -59,6 +78,13 @@ function extractOutbidAmountPhrase(message) {
   return null
 }
 
+function resolvePropertyLabel(propertyName, hasPropertyCard, t) {
+  const name = String(propertyName || '').trim()
+  if (name) return name
+  if (hasPropertyCard) return ''
+  return t('listingDefault', { defaultValue: 'Listing' })
+}
+
 /**
  * @param {{
  *   notification: { type?: string, message?: string },
@@ -79,7 +105,7 @@ export function formatBuyerNotificationMessage({
 }) {
   const type = String(notification?.type || '').toLowerCase()
   const raw = String(notification?.message || '').trim()
-  if (!raw) return ''
+  const property = resolvePropertyLabel(propertyName, hasPropertyCard, t)
 
   const isOutbid = type === 'bid_outbid' || type === 'outbid'
   if (isOutbid) {
@@ -88,30 +114,24 @@ export function formatBuyerNotificationMessage({
     if (amountRaw != null && Number.isFinite(Number(amountRaw))) {
       return t('notificationsOutbidNewMaxBid', {
         amount: formatMoneyAmount(amountRaw, currency, locale),
-        defaultValue: 'Новая максимальная ставка: {{amount}}',
+        defaultValue: 'New highest bid: {{amount}}',
       })
     }
     const extracted = extractOutbidAmountPhrase(raw)
     if (extracted) {
       return t('notificationsOutbidNewMaxBid', {
         amount: extracted,
-        defaultValue: 'Новая максимальная ставка: {{amount}}',
-      })
-    }
-    if (hasPropertyCard) {
-      return t('notificationsOutbidShort', {
-        defaultValue: 'Вашу ставку на этот объект перебили.',
+        defaultValue: 'New highest bid: {{amount}}',
       })
     }
     return t('notificationsOutbidShort', {
-      defaultValue: 'Вашу ставку на этот объект перебили.',
+      defaultValue: 'Your bid on this property was outbid.',
     })
   }
 
   if (type === 'verification_success') {
     return t('notificationMessage_verificationSuccess', {
-      defaultValue:
-        'Документы одобрены. Теперь можно делать ставки на аукционах.',
+      defaultValue: 'Your documents were approved. You can now bid on auctions.',
     })
   }
   if (type === 'verification_rejected') {
@@ -119,18 +139,183 @@ export function formatBuyerNotificationMessage({
     if (reason) {
       return t('notificationMessage_verificationRejectedReason', {
         reason: String(reason),
-        defaultValue: 'Документы отклонены. Причина: {{reason}}. Загрузите документы заново.',
+        defaultValue: 'Documents were rejected. Reason: {{reason}}. Please upload them again.',
       })
     }
     return t('notificationMessage_verificationRejected', {
-      defaultValue: 'Документы отклонены. Загрузите документы заново для повторной проверки.',
+      defaultValue: 'Documents were rejected. Please upload them again for review.',
     })
   }
 
+  if (type === 'auction_won') {
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_auctionWonShort', {
+        defaultValue: 'Congratulations! You won the auction.',
+      })
+    }
+    return t('notificationMessage_auctionWon', {
+      property,
+      defaultValue: 'Congratulations! You won the auction for «{{property}}».',
+    })
+  }
+
+  if (type === 'auction_lost') {
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_auctionLostShort', {
+        defaultValue: 'The auction has ended. Another participant won.',
+      })
+    }
+    return t('notificationMessage_auctionLost', {
+      property,
+      defaultValue: 'The auction for «{{property}}» has ended. Another participant won.',
+    })
+  }
+
+  if (type === 'payment_deadline') {
+    const deadline = formatNotificationDeadline(
+      data?.deposit_due_date || data?.depositDueDate || data?.deadline,
+      locale,
+    )
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_paymentDeadlineShort', {
+        deadline: deadline || '—',
+        defaultValue: 'Pay the deposit by {{deadline}} to keep your purchase right.',
+      })
+    }
+    return t('notificationMessage_paymentDeadline', {
+      deadline: deadline || '—',
+      property,
+      defaultValue: 'Pay the deposit by {{deadline}} to keep your purchase right for «{{property}}».',
+    })
+  }
+
+  if (type === 'deposit_paid') {
+    return t('notificationMessage_depositPaid', {
+      defaultValue: 'Your deposit has been credited.',
+    })
+  }
+  if (type === 'payment_succeeded') {
+    return t('notificationMessage_paymentSucceeded', {
+      defaultValue: 'Payment was successful.',
+    })
+  }
+  if (type === 'property_reservation_paid') {
+    return t('notificationMessage_reservationPaid', {
+      defaultValue: 'The reservation has been paid. Follow the deal progress in your profile.',
+    })
+  }
+  if (type === 'buy_now_approved') {
+    return t('notificationMessage_buyNowApproved', {
+      defaultValue: 'Your purchase request was approved.',
+    })
+  }
+  if (type === 'buy_now_completed') {
+    return t('notificationMessage_buyNowCompleted', {
+      defaultValue: 'The purchase is complete. You can list the property for sale.',
+    })
+  }
+  if (type === 'buy_now_rejected') {
+    return t('notificationMessage_buyNowRejected', {
+      defaultValue: 'Your purchase request was rejected.',
+    })
+  }
+  if (type === 'test_drive_request') {
+    return t('notificationMessage_testDriveRequest', {
+      defaultValue: 'A buyer requested a test drive for your property.',
+    })
+  }
+  if (type === 'test_drive_result' || type === 'test_drive_approved') {
+    return t('notificationMessage_testDriveApproved', {
+      defaultValue: 'Your test drive was confirmed.',
+    })
+  }
+  if (type === 'test_drive_cancelled') {
+    return t('notificationMessage_testDriveCancelled', {
+      defaultValue: 'The test drive was cancelled.',
+    })
+  }
+  if (type === 'test_drive_survey') {
+    return t('notificationMessage_testDriveSurvey', {
+      defaultValue: 'Please share feedback about your test drive.',
+    })
+  }
+
+  if (type === 'no_bids_45_days') {
+    return t('notificationMessage_noBids45DaysShort', {
+      defaultValue:
+        'No bids or engagement for 45 days since listing. Consider lowering the price in your account via edit.',
+    })
+  }
+
+  if (type === 'property_approved') {
+    if (isPropertyEditApproval(notification, data)) {
+      if (hasPropertyCard || !property) {
+        return t('notificationMessage_propertyEditApprovedShort', {
+          defaultValue: 'Changes were approved and applied to the published listing.',
+        })
+      }
+      return t('notificationMessage_propertyEditApproved', {
+        property,
+        defaultValue:
+          'Changes to «{{property}}» were approved and applied to the published listing.',
+      })
+    }
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_propertyApprovedShort', {
+        defaultValue:
+          'Your listing passed verification, was translated for the site languages, and is now published.',
+      })
+    }
+    return t('notificationMessage_propertyApproved', {
+      property,
+      defaultValue:
+        'Your listing «{{property}}» passed verification, was translated for the site languages, and is now published.',
+    })
+  }
+
+  if (type === 'property_rejected') {
+    const reason = data?.rejection_reason || data?.reason
+    if (reason) {
+      if (hasPropertyCard || !property) {
+        return t('notificationMessage_propertyRejectedReasonShort', {
+          reason: String(reason),
+          defaultValue: 'Your listing was rejected. Reason: {{reason}}.',
+        })
+      }
+      return t('notificationMessage_propertyRejectedReason', {
+        property,
+        reason: String(reason),
+        defaultValue: 'Your listing «{{property}}» was rejected. Reason: {{reason}}.',
+      })
+    }
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_propertyRejectedShort', {
+        defaultValue: 'Your listing was rejected.',
+      })
+    }
+    return t('notificationMessage_propertyRejected', {
+      property,
+      defaultValue: 'Your listing «{{property}}» was rejected.',
+    })
+  }
+
+  if (type === 'property_deleted') {
+    if (hasPropertyCard || !property) {
+      return t('notificationMessage_propertyDeletedShort', {
+        defaultValue: 'Your delete request was approved. The listing has been removed.',
+      })
+    }
+    return t('notificationMessage_propertyDeleted', {
+      property,
+      defaultValue:
+        'Your request to delete «{{property}}» was approved. The listing has been removed.',
+    })
+  }
+
+  if (!raw) return ''
   if (hasPropertyCard && propertyName) {
     return stripPropertyNameEcho(raw, propertyName)
   }
-
   return raw
 }
 

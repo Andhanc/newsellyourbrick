@@ -12,6 +12,7 @@ import PageBackButton from '@/components/PageBackButton'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
 import NewsArticleBody from '@/components/news/NewsArticleBody'
 import { fetchArticleBySlug } from '@/services/newsApi'
+import { localizeNewsArticle } from '@/utils/localizeNewsArticle'
 import { usePageSeoOverride } from '@/context/PageSeoContext'
 import NotFoundPage from '@/components/NotFoundPage'
 import { buildNewsArticlePageSeo } from '@/utils/pageSeoBuilders'
@@ -28,7 +29,7 @@ import './NewsArticlePage.css'
 export default function NewsArticlePage() {
   const navigate = useNavigate()
   const { slug } = useParams()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -63,7 +64,7 @@ export default function NewsArticlePage() {
     fetchArticleBySlug(slug)
       .then((data) => {
         if (!cancelled) {
-          setArticle(data)
+          setArticle(localizeNewsArticle(data, t, i18n.language))
           const first = data.sections?.[0]?.id
           if (first) setActiveSection(first)
         }
@@ -77,7 +78,7 @@ export default function NewsArticlePage() {
     return () => {
       cancelled = true
     }
-  }, [slug, t])
+  }, [slug, t, i18n.language])
 
   const articleSeo = useMemo(
     () => (article ? buildNewsArticlePageSeo(article, t) : null),

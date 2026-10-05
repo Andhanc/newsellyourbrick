@@ -413,7 +413,9 @@ export default function AiChatPanel({
             <div className="chat-widget__message chat-widget__message--bot">
               <div className="chat-widget__message-content">
                 <div className="chat-widget__typing" aria-hidden><span /><span /><span /></div>
-                {chat.isSlowAIResponse ? <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div> : null}
+                <div className="chat-widget__slow-hint">
+                  {chat.isSlowAIResponse ? t('chatSlowHint') : t('chatWaitingReply')}
+                </div>
               </div>
             </div>
           ) : null}
@@ -448,7 +450,7 @@ export default function AiChatPanel({
           <button type="button" className="chat-widget__attach" onClick={() => fileInputRef.current?.click()} aria-label={t('assistantAttachFile')} disabled={chat.isLoadingAI || chat.pendingAttachments.length >= 2}>
             <FiPlus aria-hidden />
           </button>
-          <input type="text" className="chat-widget__input" placeholder={chat.isLoadingAI ? t('aiThinking') : t('chatPlaceholder')} value={chat.chatInput} onChange={chat.handleChatInputChange} disabled={chat.isLoadingAI} />
+          <input type="text" className="chat-widget__input" placeholder={chat.isLoadingAI ? t('chatWaitingReply') : t('chatPlaceholder')} value={chat.chatInput} onChange={chat.handleChatInputChange} disabled={chat.isLoadingAI} />
           <button type="submit" className="chat-widget__send" aria-label={t('sendMessage')} disabled={chat.isLoadingAI || (!chat.chatInput.trim() && !chat.pendingAttachments.length)}>
             {chat.isLoadingAI ? <span className="assistant-send-loader" aria-hidden /> : <FiSend size={18} />}
           </button>

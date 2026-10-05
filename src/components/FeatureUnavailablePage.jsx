@@ -8,7 +8,7 @@ import './FeatureUnavailablePage.css'
 
 const PAGE_BG = publicAsset('images/mobile-discover/welcome-summer.png')
 
-const FALLBACK = {
+const SECTION_FALLBACK = {
   title: 'Временно в разработке | Sellyourbrick',
   description: 'Этот раздел временно в разработке. Скоро откроем — загляните на главную.',
   eyebrow: 'SellYourBrick',
@@ -18,8 +18,18 @@ const FALLBACK = {
   backHome: 'На главную',
 }
 
-export default function FeatureUnavailablePage() {
+const DESKTOP_FALLBACK = {
+  title: 'Мобильная версия | Sellyourbrick',
+  description: 'Десктопная версия временно в разработке. Откройте сайт на телефоне.',
+  eyebrow: 'SellYourBrick',
+  heading: 'Пока только на телефоне',
+  body: 'Десктопная версия ещё в разработке. Откройте SellYourBrick на смартфоне — мобильная версия уже доступна.',
+}
+
+export default function FeatureUnavailablePage({ variant = 'section' }) {
   const { t } = useTranslation()
+  const isDesktop = variant === 'desktop'
+  const fallback = isDesktop ? DESKTOP_FALLBACK : SECTION_FALLBACK
 
   useEffect(() => {
     document.documentElement.classList.add('feature-unavailable-active')
@@ -29,38 +39,58 @@ export default function FeatureUnavailablePage() {
   }, [])
 
   usePageSeo({
-    title: t('featureUnavailableTitle', { defaultValue: FALLBACK.title }),
-    description: t('featureUnavailableDescription', { defaultValue: FALLBACK.description }),
+    title: t(isDesktop ? 'desktopUnavailableTitle' : 'featureUnavailableTitle', {
+      defaultValue: fallback.title,
+    }),
+    description: t(
+      isDesktop ? 'desktopUnavailableDescription' : 'featureUnavailableDescription',
+      { defaultValue: fallback.description },
+    ),
     noindex: true,
   })
 
   return (
-    <div className="feature-unavailable-page">
+    <div
+      className={`feature-unavailable-page${isDesktop ? ' feature-unavailable-page--desktop' : ''}`}
+    >
       <div className="feature-unavailable-page__scene" aria-hidden>
         <img className="feature-unavailable-page__bg" src={PAGE_BG} alt="" />
         <div className="feature-unavailable-page__veil" />
       </div>
 
-      <Header />
+      {isDesktop ? null : <Header />}
       <main className="feature-unavailable-page__main">
         <div className="feature-unavailable-page__card">
           <p className="feature-unavailable-page__eyebrow">
-            {t('featureUnavailableEyebrow', { defaultValue: FALLBACK.eyebrow })}
+            {t(isDesktop ? 'desktopUnavailableEyebrow' : 'featureUnavailableEyebrow', {
+              defaultValue: fallback.eyebrow,
+            })}
           </p>
           <h1 className="feature-unavailable-page__title">
-            {t('featureUnavailableHeading', { defaultValue: FALLBACK.heading })}
+            {t(isDesktop ? 'desktopUnavailableHeading' : 'featureUnavailableHeading', {
+              defaultValue: fallback.heading,
+            })}
           </h1>
           <p className="feature-unavailable-page__text">
-            {t('featureUnavailableBody', { defaultValue: FALLBACK.body })}
+            {t(isDesktop ? 'desktopUnavailableBody' : 'featureUnavailableBody', {
+              defaultValue: fallback.body,
+            })}
           </p>
-          <nav
-            className="feature-unavailable-page__links"
-            aria-label={t('featureUnavailableLinksLabel', { defaultValue: FALLBACK.linksLabel })}
-          >
-            <Link to="/" className="feature-unavailable-page__link feature-unavailable-page__link--primary">
-              {t('featureUnavailableBackHome', { defaultValue: FALLBACK.backHome })}
-            </Link>
-          </nav>
+          {isDesktop ? null : (
+            <nav
+              className="feature-unavailable-page__links"
+              aria-label={t('featureUnavailableLinksLabel', {
+                defaultValue: SECTION_FALLBACK.linksLabel,
+              })}
+            >
+              <Link
+                to="/"
+                className="feature-unavailable-page__link feature-unavailable-page__link--primary"
+              >
+                {t('featureUnavailableBackHome', { defaultValue: SECTION_FALLBACK.backHome })}
+              </Link>
+            </nav>
+          )}
         </div>
       </main>
     </div>

@@ -3346,7 +3346,7 @@
     .property-detail-map-mobile--auction-sheet {
     order: 3;
     display: block;
-    padding: 0 20px 24px;
+    padding: 0 20px 0;
   }
 
   .property-detail-page-new--auction-mobile-v2:not(.property-detail-mobile-tab-about)
@@ -3359,7 +3359,7 @@
     order: 4;
     display: block;
     padding: 0;
-    margin: 8px 0 20px;
+    margin: 0;
     box-sizing: border-box;
   }
 
@@ -3387,7 +3387,7 @@
     order: 5;
     display: block;
     margin: 0;
-    padding: 0 20px 32px;
+    padding: 12px 20px 0;
     box-sizing: border-box;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 12px;
@@ -3881,7 +3881,7 @@
     flex-direction: column;
     gap: 36px;
     margin-top: 28px;
-    padding: 0 2px 12px;
+    padding: 0 2px 0;
     box-sizing: border-box;
   }
 
@@ -8292,6 +8292,12 @@
     display: block !important;
     padding: 0;
     margin: 0;
+  }
+
+  .property-detail-page-new--auction-mobile-v2 .property-internal-links {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-top: 0;
   }
 
   .property-detail-page-new--auction-mobile-v2

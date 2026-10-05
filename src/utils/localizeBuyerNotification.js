@@ -24,6 +24,33 @@ export const BUYER_NOTIFICATION_TITLE_KEYS = {
   deposit_paid: 'notificationTitle_depositPaid',
   payment_succeeded: 'notificationTitle_paymentSucceeded',
   property_reservation_paid: 'notificationTitle_reservationPaid',
+  no_bids_45_days: 'notificationTitle_noBids45Days',
+  property_approved: 'notificationTitle_propertyApproved',
+  property_rejected: 'notificationTitle_propertyRejected',
+  property_deleted: 'notificationTitle_propertyDeleted',
+}
+
+function parseNotificationDataLoose(data) {
+  if (data == null) return null
+  if (typeof data === 'object') return data
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data)
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+/** Same type `property_approved` is used for first publish and edit approval. */
+export function isPropertyEditApproval(notification, data = null) {
+  const payload = data || parseNotificationDataLoose(notification?.data)
+  if (payload?.approval_kind === 'edit' || payload?.is_edit === true) return true
+  const blob = `${notification?.title || ''} ${notification?.message || ''}`
+  return /изменения в (?:объекте|объявлении)|changes (?:to|in) (?:your )?(?:listing|property|object)|modifications? (?:to|in)|Änderungen (?:am|im)|cambios (?:en|del)|modifications (?:du|de)|zmiany (?:w|do)|ändringar (?:i|av)/i.test(
+    blob,
+  )
 }
 
 const COUNTRY_ISO = {
@@ -147,6 +174,11 @@ export function localizeNotificationLocation(location, t, locale = 'en') {
 
 export function getBuyerNotificationTitle(notification, t) {
   const type = String(notification?.type || '').toLowerCase()
+  if (type === 'property_approved' && isPropertyEditApproval(notification)) {
+    return t('notificationTitle_propertyEditApproved', {
+      defaultValue: notification?.title || 'Listing changes approved',
+    })
+  }
   const key = BUYER_NOTIFICATION_TITLE_KEYS[type]
   if (key) {
     return t(key, { defaultValue: notification?.title || key })

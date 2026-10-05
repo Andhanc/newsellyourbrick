@@ -19,6 +19,18 @@
   background: #ffffff;
 }
 
+/* Hero: Safari/Chrome берут цвет нижней панели с html/body — совпадаем с газоном фото */
+html.md-hero-chrome,
+html.md-hero-chrome body,
+html.md-hero-chrome #root,
+html.md-hero-chrome .app-root-fill,
+html.md-hero-chrome .app-shell,
+html.md-hero-chrome .app-layout,
+html.md-hero-chrome .app-layout--mobile-discover,
+html.md-hero-chrome .md {
+  background-color: var(--md-hero-chrome, #748f1d) !important;
+}
+
 .md {
   --md-sky: #4ecdd6;
   --md-sky-soft: #6ad6dd;
@@ -28,6 +40,7 @@
   --md-ink-soft: #8b95a7;
   --md-ink-muted: #64748b;
   --md-white: #ffffff;
+  --md-hero-chrome: #748f1d;
   --md-radius-card: 26px;
   --md-radius-pill: 9999px;
   --md-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -156,9 +169,10 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Bleed under iOS Safari bottom chrome so Liquid Glass samples the lawn */
+  bottom: calc(-1 * (var(--md-safe-bottom) + 96px));
   z-index: 1;
-  height: 66%;
+  height: calc(66% + var(--md-safe-bottom) + 96px);
   pointer-events: none;
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -178,6 +192,20 @@
     #000 58%,
     #000 100%
   );
+}
+
+/* Fixed sampler for Safari 26 toolbar tint (must be near bottom, ≥80% wide, ≥3px) */
+.md-hero__safari-tint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 100%;
+  min-height: 12px;
+  height: max(12px, var(--md-safe-bottom));
+  pointer-events: none;
+  background-color: var(--md-hero-chrome, #748f1d);
 }
 
 .md-hero__image {

@@ -13,6 +13,7 @@ import NewsArticleCard from '@/components/news/NewsArticleCard'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
 import NewsSubscriptionDrawer from '@/components/news/NewsSubscriptionDrawer'
 import { fetchPublishedArticles } from '@/services/newsApi'
+import { localizeNewsArticle } from '@/utils/localizeNewsArticle'
 import { scrollMainElementIntoView, scrollMainTo } from '@/utils/mainScroll'
 import './News.css'
 
@@ -445,34 +446,37 @@ const News = () => {
   }, [])
 
   const gridArticles = useMemo(() => {
-    const mapArticle = (a) => ({
-      id: a.id,
-      slug: a.slug,
-      size: a.size || 'medium',
-      image: a.image,
-      badge: a.badge,
-      title: a.title,
-      excerpt: a.excerpt,
-      date: a.date,
-      views: a.views,
-      comments: a.comments,
-      likes: a.likes,
-    })
+    const mapArticle = (a) => {
+      const localized = localizeNewsArticle(a, t, i18n.language)
+      return {
+        id: localized.id,
+        slug: localized.slug,
+        size: localized.size || 'medium',
+        image: localized.image,
+        badge: localized.badge,
+        title: localized.title,
+        excerpt: localized.excerpt,
+        date: localized.date,
+        views: localized.views,
+        comments: localized.comments,
+        likes: localized.likes,
+      }
+    }
 
     if (published.length) {
       return dedupeArticlesById(published).map(mapArticle)
     }
     return staticPoraArticles
-  }, [published, staticPoraArticles])
+  }, [published, staticPoraArticles, t, i18n.language])
 
   const heroSlides = useMemo(() => {
     const fromPublished = dedupeArticlesById(published)
       .filter((a, i) => a.featured || i < 3)
       .slice(0, 5)
-      .map(publishedToHeroSlide)
+      .map((article) => publishedToHeroSlide(localizeNewsArticle(article, t, i18n.language)))
     if (fromPublished.length) return fromPublished
     return staticHeroSlides
-  }, [published, staticHeroSlides])
+  }, [published, staticHeroSlides, t, i18n.language])
 
   const { duoRow1, duoRow2, trioRow1, trioRow2 } = useMemo(
     () => buildNewsGridRows(gridArticles),

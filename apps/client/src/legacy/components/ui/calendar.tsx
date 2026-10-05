@@ -3,7 +3,13 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import {
+  getMonthLabels,
+  getWeekdayShortLabels,
+  resolveCalendarLocale,
+} from "@/utils/testDriveCalendarLocale";
 import "./TestDriveRangeCalendar.css";
 
 interface CalendarDay {
@@ -225,7 +231,8 @@ export interface TestDriveRangeCalendarProps {
   bookedDates: string[];
   /** Подмножество: дни текущего пользователя — подсветка зелёная */
   myBookedDates?: string[];
-  locale?: "ru" | "en";
+  /** BCP 47 / UI language; falls back to i18n language when omitted. */
+  locale?: string;
   /** Вызывается, когда выбран допустимый диапазон 5–21 дня, или null при сбросе выбора */
   onRangeSelected?: (
     range: { start: string; end: string } | null
@@ -246,12 +253,14 @@ function fromYmd(value?: string): Date | null {
 export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
   bookedDates,
   myBookedDates = [],
-  locale = "ru",
+  locale: localeProp,
   onRangeSelected,
   className = "",
   maxWidth = "max-w-2xl",
   initialRange = null,
 }) => {
+  const { t, i18n } = useTranslation();
+  const locale = resolveCalendarLocale(localeProp, i18n.language);
   const bookedSet = useMemo(() => new Set(bookedDates), [bookedDates]);
   const myBookedSet = useMemo(() => new Set(myBookedDates), [myBookedDates]);
   const initialStart = fromYmd(initialRange?.start);
@@ -270,41 +279,8 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const monthNames =
-    locale === "ru"
-      ? [
-          "Январь",
-          "Февраль",
-          "Март",
-          "Апрель",
-          "Май",
-          "Июнь",
-          "Июль",
-          "Август",
-          "Сентябрь",
-          "Октябрь",
-          "Ноябрь",
-          "Декабрь",
-        ]
-      : [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
-
-  const weekShort =
-    locale === "ru"
-      ? ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
-      : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = useMemo(() => getMonthLabels(locale), [locale]);
+  const weekShort = useMemo(() => getWeekdayShortLabels(locale), [locale]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -345,17 +321,17 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
     const today = startOfDay(new Date());
     if (startOfDay(d) < today) {
       setError(
-        locale === "ru"
-          ? "Нельзя выбрать прошедшую дату"
-          : "Cannot select a past date"
+        t("testDriveCal_errPast", {
+          defaultValue: "Cannot select a past date",
+        })
       );
       return;
     }
     if (bookedSet.has(ymd)) {
       setError(
-        locale === "ru"
-          ? "Эта дата уже занята"
-          : "This date is already booked"
+        t("testDriveCal_errBooked", {
+          defaultValue: "This date is already booked",
+        })
       );
       return;
     }
@@ -378,9 +354,9 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
     const n = daysInclusive(anchor, d);
     if (n < 5 || n > 21) {
       setError(
-        locale === "ru"
-          ? "Выберите подряд от 5 до 21 дня (первая и последняя дата)"
-          : "Pick 5 to 21 consecutive days (first and last day)"
+        t("testDriveCal_errRangeLength", {
+          defaultValue: "Pick 5 to 21 consecutive days (first and last day)",
+        })
       );
       setAnchor(d);
       setRangeEnd(d);
@@ -401,9 +377,9 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
     }
     if (blocked) {
       setError(
-        locale === "ru"
-          ? "В диапазон попадает занятая дата"
-          : "Range overlaps a booked date"
+        t("testDriveCal_errRangeOverlap", {
+          defaultValue: "Range overlaps a booked date",
+        })
       );
       setAnchor(d);
       setRangeEnd(d);
@@ -430,20 +406,12 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
     );
   };
 
-  const legend =
-    locale === "ru"
-      ? {
-          free: "Свободно",
-          picked: "Выбрано",
-          mine: "Ваша бронь",
-          taken: "Занято",
-        }
-      : {
-          free: "Available",
-          picked: "Selected",
-          mine: "Your booking",
-          taken: "Booked",
-        };
+  const legend = {
+    free: t("testDriveCal_legendAvailable", { defaultValue: "Available" }),
+    picked: t("testDriveCal_legendSelected", { defaultValue: "Selected" }),
+    mine: t("testDriveCal_legendMine", { defaultValue: "Your booking" }),
+    taken: t("testDriveCal_legendBooked", { defaultValue: "Booked" }),
+  };
 
   const selectedDays =
     confirmedRange && anchor && rangeEnd
@@ -465,7 +433,9 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
             type="button"
             className="td-range-cal__nav"
             onClick={prevMonth}
-            aria-label={locale === "ru" ? "Предыдущий месяц" : "Previous month"}
+            aria-label={t("testDriveCal_prevMonth", {
+              defaultValue: "Previous month",
+            })}
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
           </button>
@@ -485,7 +455,9 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
             type="button"
             className="td-range-cal__nav"
             onClick={nextMonth}
-            aria-label={locale === "ru" ? "Следующий месяц" : "Next month"}
+            aria-label={t("testDriveCal_nextMonth", {
+              defaultValue: "Next month",
+            })}
           >
             <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
           </button>
@@ -493,20 +465,21 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
         <div className="td-range-cal__meta">
           <span className="td-range-cal__meta-days">
             {selectedDays != null
-              ? `${selectedDays} ${locale === "ru" ? "дн." : "days"}`
-              : locale === "ru"
-                ? "5–21 дн."
-                : "5–21 days"}
+              ? t("testDriveCal_daysSelected", {
+                  count: selectedDays,
+                  defaultValue: "{{count}} days",
+                })
+              : t("testDriveCal_daysHint", { defaultValue: "5–21 days" })}
           </span>
           <span className="td-range-cal__meta-label">
-            {locale === "ru" ? "Диапазон" : "Range"}
+            {t("testDriveCal_rangeLabel", { defaultValue: "Range" })}
           </span>
         </div>
       </div>
 
       <div className="td-range-cal__weekdays" aria-hidden>
-        {weekShort.map((day) => (
-          <div key={day} className="td-range-cal__weekday">
+        {weekShort.map((day, index) => (
+          <div key={`${day}-${index}`} className="td-range-cal__weekday">
             {day}
           </div>
         ))}
@@ -550,10 +523,11 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
               className={stateClass}
               disabled={disabled}
               onClick={() => handleDayClick(day.date)}
-              aria-label={day.date.toLocaleDateString(
-                locale === "ru" ? "ru-RU" : "en-US",
-                { day: "numeric", month: "long", year: "numeric" }
-              )}
+              aria-label={day.date.toLocaleDateString(locale, {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
               aria-pressed={Boolean(isEndpoint || isPicked || (inRange && !disabled))}
             >
               <span className="td-range-cal__day">{day.date.getDate()}</span>
@@ -578,7 +552,7 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
 
       <div
         className="td-range-cal__legend"
-        aria-label={locale === "ru" ? "Обозначения" : "Legend"}
+        aria-label={t("testDriveCal_legendAria", { defaultValue: "Legend" })}
       >
         <span>
           <i className="is-free" aria-hidden />

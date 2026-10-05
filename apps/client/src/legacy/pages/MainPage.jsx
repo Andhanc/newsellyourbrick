@@ -3258,9 +3258,9 @@ function MainPage() {
                     <span></span>
                     <span></span>
                   </div>
-                  {isSlowAIResponse && (
-                    <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div>
-                  )}
+                  <div className="chat-widget__slow-hint">
+                    {isSlowAIResponse ? t('chatSlowHint') : t('chatWaitingReply')}
+                  </div>
                 </div>
               </div>
             )}
@@ -3271,7 +3271,7 @@ function MainPage() {
               type="text"
               className="chat-widget__input"
               placeholder={
-                isLoadingAI ? t('aiThinking') : t('chatPlaceholder')
+                isLoadingAI ? t('chatWaitingReply') : t('chatPlaceholder')
               }
               value={chatInput}
               onChange={handleChatInputChange}

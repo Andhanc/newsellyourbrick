@@ -26,6 +26,13 @@ test('profile strategy stories expose all eight steps and destination routes', (
   assert.match(source, /Доли подходят для тех, кто/)
   assert.match(source, /Долговые объекты подходят для тех, кто/)
   assert.doesNotMatch(source, /profile-strategy-story__icon/)
+  assert.match(source, /--story-count': stories\.length/)
+})
+
+test('strategy story progress stays on one row for all slides', () => {
+  const styles = fs.readFileSync(WEB_STYLES, 'utf8')
+  assert.match(styles, /grid-template-columns:\s*repeat\(var\(--story-count/)
+  assert.doesNotMatch(styles, /grid-template-columns:\s*repeat\(7,/)
 })
 
 test('strategy stories are wired into web and bundled app profiles', () => {

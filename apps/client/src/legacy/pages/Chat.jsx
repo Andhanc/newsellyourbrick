@@ -1163,7 +1163,7 @@ const Chat = () => {
                 {activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI && (
                   <div className="message message-bot">
                     <div className="message-content chat-msg-loading">
-                      <span>Печатает…</span>
+                      <span>{t('chatWaitingReply')}</span>
                     </div>
                   </div>
                 )}
@@ -1185,7 +1185,11 @@ const Chat = () => {
                 <input
                   type="text"
                   className="chat-input"
-                  placeholder="Напишите сообщение..."
+                  placeholder={
+                    activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI
+                      ? t('chatWaitingReply')
+                      : t('chatPlaceholder')
+                  }
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   disabled={activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI}
