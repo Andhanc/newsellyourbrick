@@ -327,9 +327,9 @@ export async function persistPropertyTranslations(prisma, { propertyId, property
     where: { property_id: pid, property_table: table },
   });
 
-  for (const [langCode, data] of Object.entries(translations || {})) {
-    const split = splitTranslationForStore(data);
-    const data = {
+  for (const [langCode, translated] of Object.entries(translations || {})) {
+    const split = splitTranslationForStore(translated);
+    const row = {
       property_id: pid,
       property_table: table,
       lang_code: String(langCode),
@@ -341,10 +341,10 @@ export async function persistPropertyTranslations(prisma, { propertyId, property
       created_at: new Date().toISOString(),
     };
     try {
-      await prisma.property_translations.create({ data });
+      await prisma.property_translations.create({ data: row });
     } catch (err) {
       if (!/extra_json/i.test(String(err?.message || ''))) throw err;
-      const { extra_json: _ignored, ...withoutExtra } = data;
+      const { extra_json: _ignored, ...withoutExtra } = row;
       await prisma.property_translations.create({ data: withoutExtra });
     }
   }

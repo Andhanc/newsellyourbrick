@@ -53,7 +53,7 @@ export default function PropertyDetailExpandableDescription({ text, textClassNam
           aria-expanded={expanded}
         >
           <span>
-            {expanded ? t('buyerCabinet_collapse') : t('privateClubLearnMore')}
+            {expanded ? t('buyerCabinet_collapse') : t('propertyDetail_showMoreShort')}
           </span>
           <ChevronDown
             className={`property-detail-expandable-description__chevron${

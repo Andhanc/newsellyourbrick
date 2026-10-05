@@ -116,7 +116,7 @@ function getShowcaseSections(t) {
       id: 'shares',
       sectionId: 'invest-objects-shares',
       variant: 'shares',
-      title: t('shares'),
+      title: t('coInvestment'),
       subtitle: t('discoverPage_showcaseSharesSubtitle'),
       ctaLabel: t('goTo'),
       to: '/shares',

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import { isPropertyPresentation } from '../utils/propertyPresentation'
 import { useState } from 'react'
 import { FiX, FiChevronLeft, FiChevronRight, FiMapPin, FiDollarSign, FiCalendar, FiVideo, FiFileText, FiXCircle } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
@@ -5,6 +7,7 @@ import { BiArea } from 'react-icons/bi'
 import './PropertyPreviewModal.css'
 
 const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
+  const { t } = useTranslation()
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
   const [selectedDocument, setSelectedDocument] = useState(null)
 
@@ -264,7 +267,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                         <FiFileText size={24} />
                       </div>
                       <div className="preview-document-info">
-                        <h4 className="preview-document-name">{doc.name}</h4>
+                        <h4 className="preview-document-name">{isPropertyPresentation(doc) ? t('propertyPresentationTitle') : doc.name}</h4>
                         <span className="preview-document-type">
                           {doc.type === 'pdf' ? 'PDF документ' : 'Изображение'}
                         </span>

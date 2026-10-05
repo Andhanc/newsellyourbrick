@@ -76,6 +76,7 @@ import { registerSeoSitemap } from './seoSitemap.js';
 import { registerSeoNotFound } from './seoNotFound.js';
 import { registerSeoAdminRoutes } from './seoAdminRoutes.js';
 import { sendSeoSpaHtml } from './seoHtmlRender.js';
+import { registerDevelopmentRoutes } from './developmentRoutes.js';
 import { registerCatalogRoutes } from './catalogRoutes.js';
 import { registerPropertyAiRoutes } from './propertyAiRoutes.js';
 import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
@@ -230,6 +231,7 @@ registerSeoSitemap(app);
 registerSeoNotFound(app);
 registerSeoAdminRoutes(app);
 registerCatalogRoutes(app);
+registerDevelopmentRoutes(app);
 // На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
 // В development: используем SERVER_PORT или 3000
 // Логика: если NODE_ENV=production и есть PORT, используем PORT, иначе SERVER_PORT или 3000
@@ -1094,6 +1096,7 @@ app.get('/api/map/nearby-places', async (req, res) => {
   const lat = Number.parseFloat(req.query.lat);
   const lng = Number.parseFloat(req.query.lng);
   const category = String(req.query.category || '').trim();
+  const radius = req.query.radius == null ? 1500 : Number(req.query.radius);
 
   if (
     !Number.isFinite(lat) ||
@@ -1102,14 +1105,15 @@ app.get('/api/map/nearby-places', async (req, res) => {
     lat > 90 ||
     lng < -180 ||
     lng > 180 ||
+    !Number.isFinite(radius) || radius < 100 || radius > 5000 ||
     !category
   ) {
     return res.status(400).json({ success: false, error: 'Invalid map query params' });
   }
 
   try {
-    const places = await fetchNearbyPlacesForCategory(lat, lng, category);
-    res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    const places = await fetchNearbyPlacesForCategory(lat, lng, category, radius);
+    res.setHeader('Cache-Control', places.length ? 'public, max-age=3600' : 'public, max-age=60');
     return res.json({ success: true, data: { places } });
   } catch (error) {
     console.error('[map/nearby-places]', category, lat, lng, error?.message || error);
@@ -10428,7 +10432,7 @@ app.put('/api/properties/:id', upload.fields([
         furniture === '1' || furniture === 1 || (typeof furniture === 'boolean' && furniture) ? 1 : 0,
         JSON.stringify(parsedPhotos.length > 0 ? parsedPhotos : parseStoredJsonArraySafe(originalProperty.photos)),
         JSON.stringify(parsedVideos.length > 0 ? parsedVideos : parseStoredJsonArraySafe(originalProperty.videos)),
-        JSON.stringify(parsedAdditionalDocuments.length > 0 ? parsedAdditionalDocuments : parseStoredJsonArraySafe(originalProperty.additional_documents)),
+        JSON.stringify(additional_documents !== undefined ? parsedAdditionalDocuments : parseStoredJsonArraySafe(originalProperty.additional_documents)),
         additional_amenities || originalProperty.additional_amenities,
         JSON.stringify(
           Array.isArray(parsedTzAmenities)

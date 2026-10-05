@@ -21,6 +21,13 @@ export function getWalletEntryFrom() {
   return path === '/deposit' ? null : path
 }
 
+/** Объект, из которого открыли депозит; state имеет приоритет над сохранённым контекстом. */
+export function getWalletPropertyReturnPath(fromState) {
+  const from = isSafeWalletFromPath(fromState) ? fromState : getWalletEntryFrom()
+  const validated = validateBuyerReturnPath(from, { fallback: null })
+  return validated?.split(/[?#]/, 1)[0].startsWith('/property/') ? validated : null
+}
+
 export function clearWalletEntryFrom() {
   consumeBuyerReturnContext({ fallback: null })
 }

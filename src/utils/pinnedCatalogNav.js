@@ -8,6 +8,7 @@ export const CATALOG_NAV_SECTIONS = [
   { id: 'auction', path: '/auction', labelKey: 'auction' },
   { id: 'shares', path: CO_INVESTMENT_PATH, labelKey: 'footerShares' },
   { id: 'debts', path: '/debts', labelKey: 'auctionPageCtaDebtsTitle' },
+  { id: 'development', path: '/development', labelKey: 'develop.title' },
 ]
 
 export const DEFAULT_PINNED_CATALOG_SECTION = 'home'

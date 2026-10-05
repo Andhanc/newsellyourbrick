@@ -58,6 +58,6 @@ test('welcome photo keeps showcase shortcuts under the search field', () => {
   assert.match(css, /\.md-welcome__shortcuts[\s\S]*grid-template-columns: repeat\(3/)
 })
 
-test('desktop four-column layout is preserved', () => {
-  assert.match(css, /@media \(min-width: 1024px\)[\s\S]*grid-template-columns: repeat\(4/)
+test('desktop layout includes all five deal models', () => {
+  assert.match(css, /@media \(min-width: 1024px\)[\s\S]*grid-template-columns: repeat\(5/)
 })

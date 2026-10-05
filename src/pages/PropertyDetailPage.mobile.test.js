@@ -94,3 +94,8 @@ test('successful and outbid auction events use distinct haptic feedback', () => 
   assert.match(classicSource, /triggerAuctionBidHaptic\('placed'\)/)
   assert.match(classicSource, /triggerAuctionBidHaptic\('outbid'\)/)
 })
+
+
+test('standard property pages do not mount development deal information', () => {
+  assert.doesNotMatch(classicSource, /features\/development|<InvestmentDecision|<DevelopmentProject/)
+})

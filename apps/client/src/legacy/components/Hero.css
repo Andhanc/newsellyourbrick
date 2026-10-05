@@ -30,7 +30,8 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  opacity: 0.72;
+  opacity: 1;
+  filter: brightness(1.1) saturate(1.2);
 }
 
 .hero--auction-scene__overlay {
@@ -42,17 +43,24 @@
   background:
     linear-gradient(
       180deg,
-      rgba(5, 12, 14, 0.42) 0%,
-      rgba(5, 12, 14, 0.28) 38%,
-      rgba(5, 12, 14, 0.72) 100%
+      rgba(5, 35, 40, 0.22) 0%,
+      rgba(5, 35, 40, 0.06) 38%,
+      rgba(4, 29, 34, 0.54) 100%
     ),
     linear-gradient(
       105deg,
-      rgba(5, 5, 5, 0.55) 0%,
-      rgba(5, 5, 5, 0.2) 48%,
-      rgba(78, 205, 214, 0.18) 100%
+      rgba(5, 35, 40, 0.28) 0%,
+      rgba(5, 35, 40, 0.06) 48%,
+      rgba(78, 205, 214, 0.06) 100%
     );
   pointer-events: none;
+}
+
+.hero-auction-header__title,
+.hero-auction-header__lead,
+.hero-auction-mobile__title,
+.hero-auction-mobile__lead {
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.8), 0 3px 18px rgba(4, 29, 34, 0.4);
 }
 
 .hero--auction-scene .hero-container {
@@ -422,21 +430,21 @@
 
   .hero--auction-scene__bg {
     object-position: center center;
-    opacity: 0.88;
+    opacity: 1;
   }
 
   .hero--auction-scene__overlay {
     background:
       linear-gradient(
         180deg,
-        rgba(4, 15, 18, 0.45) 0%,
-        rgba(4, 15, 18, 0.28) 42%,
-        rgba(4, 15, 18, 0.72) 100%
+        rgba(4, 39, 45, 0.18) 0%,
+        rgba(6, 55, 61, 0.06) 42%,
+        rgba(4, 29, 34, 0.58) 100%
       ),
       linear-gradient(
         115deg,
-        rgba(4, 15, 18, 0.4) 0%,
-        rgba(78, 205, 214, 0.12) 100%
+        rgba(5, 55, 62, 0.12) 0%,
+        rgba(78, 205, 214, 0.03) 100%
       );
   }
 
@@ -986,4 +994,39 @@
     opacity: 0;
     transform: translateX(140%);
   }
+}
+
+/* Feather the photo behind the copy without enclosing the text. */
+.hero-auction-header,
+.hero-auction-mobile__copy {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero--auction-scene .hero-auction-header__lead,
+.hero--auction-scene .hero-auction-mobile__lead {
+  position: relative;
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.55;
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.45);
+}
+
+.hero--auction-scene .hero-auction-header__lead::before,
+.hero--auction-scene .hero-auction-mobile__lead::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -96px -160px;
+  background: radial-gradient(
+    ellipse closest-side at center,
+    rgba(3, 20, 25, 0.66) 0%,
+    rgba(3, 20, 25, 0.54) 48%,
+    rgba(3, 20, 25, 0.2) 76%,
+    rgba(3, 20, 25, 0) 100%
+  );
+  pointer-events: none;
 }

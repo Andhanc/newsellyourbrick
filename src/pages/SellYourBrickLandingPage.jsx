@@ -55,7 +55,7 @@ const DIRECTION_CARDS = [
   },
   {
     key: 'shares',
-    titleKey: 'shares',
+    titleKey: 'coInvestment',
     countKey: 'sybLandingCountShares',
     href: '/shares',
     image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg',

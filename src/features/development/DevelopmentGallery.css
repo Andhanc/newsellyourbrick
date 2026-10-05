@@ -1,0 +1,27 @@
+.dev-auction-gallery { --pd-v3-card-radius: 20px; --pd-v3-primary: #4ecdd6; --pd-tiffany: #4ecdd6; }
+.dev-auction-gallery__mobile-strip { display: none; }
+@media(max-width: 960px) {
+  .dev-project-hero { margin-inline: -18px; }
+  .dev-auction-gallery .pd-v3-gallery__stage { position: relative; width: 100%; height: calc(36vh + 20px); min-height: 240px; overflow: hidden; background: #e2e8f0; }
+  .dev-auction-gallery .pd-v3-gallery__image-button { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; }
+  .dev-auction-gallery .pd-v3-gallery__image { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+  .dev-auction-gallery .pd-v3-gallery__counter, .dev-auction-gallery .pd-v3-gallery__thumbs-row { display: none; }
+
+}
+
+.dev-auction-gallery .pd-v3-gallery__image { object-position: center 20%; }
+
+/* Only the auction filmstrip styling; never apply its page shell to a gallery. */
+@media (max-width: 960px) {
+  .dev-auction-gallery__mobile-strip { display: flex; gap: 8px; position: absolute; left: 20px; right: 20px; bottom: 28px; z-index: 15; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .dev-auction-gallery__mobile-strip .property-detail-gallery__thumb-strip-item { position: relative; flex: 0 0 56px; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 12px; overflow: hidden; cursor: pointer; background: #e5e7eb; }
+  .dev-auction-gallery__mobile-strip .property-detail-gallery__thumb-strip-item--active { border-color: var(--pd-tiffany); }
+  .dev-auction-gallery__mobile-strip img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .dev-auction-gallery__mobile-strip .property-detail-gallery__thumb-strip-more { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: #0f172a8c; font-size: 14px; font-weight: 700; }
+}
+
+.dev-auction-gallery__status { position: absolute; z-index: 3; left: 18px; bottom: 16px; margin: 0; pointer-events: none; }
+.dev-auction-gallery .pd-v3-gallery__counter { left: auto; right: 14px; }
+@media (max-width: 960px) {
+  .dev-auction-gallery__mobile-strip { bottom: 56px; }
+}

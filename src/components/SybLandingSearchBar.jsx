@@ -49,7 +49,7 @@ const FILTER_CHIPS = [
     id: 'shares',
     kind: 'purchase',
     value: 'shares',
-    labelKey: 'shares',
+    labelKey: 'coInvestment',
     sublabelKey: 'sybLandingFilterSubShares',
     Icon: PieChart,
   },

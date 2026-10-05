@@ -1,18 +1,13 @@
-/* Shared chrome for mobile drawers.
-   Matches the section-info sheet: warm surface, 27px cap, slate handle,
-   circular close, Montserrat titles. */
+/* Shared chrome for functional mobile drawers.
+   Profiles, language picker, and catalog filters keep their own styles. */
 
 html body :is(
-  .auction-mobile-filters-drawer__backdrop,
-  .shares-mobile-filters-drawer__backdrop,
-  .debts-advanced-filters-drawer__backdrop,
   .debts-risk-drawer__backdrop,
   .debts-risk-drawer-overlay,
   .auction-bid-drawer__backdrop,
   .news-subscription-drawer__backdrop,
   .biometric-drawer__backdrop,
   .property-deposit-drawer__backdrop,
-  .map-filters-sheet .buyer-sheet__backdrop,
   .bonuses-task-drawer .buyer-sheet__backdrop,
   .investor-assumptions-sheet .buyer-sheet__backdrop,
   .seller-verification-drawer .buyer-sheet__backdrop
@@ -23,13 +18,11 @@ html body :is(
 }
 
 html body :is(
-  .auction-mobile-filters-drawer__panel,
   .debts-risk-drawer__panel,
   .auction-bid-drawer__panel,
   .news-subscription-drawer__panel,
   .biometric-drawer__panel,
   .property-deposit-drawer__panel,
-  .map-filters-sheet .buyer-sheet__surface,
   .bonuses-task-drawer .buyer-sheet__surface,
   .investor-assumptions-sheet .buyer-sheet__surface,
   .seller-verification-drawer .buyer-sheet__surface
@@ -47,12 +40,10 @@ html body :is(
 }
 
 html body :is(
-  .auction-mobile-filters-drawer__handle-pill,
   .debts-risk-drawer__handle-pill,
   .auction-bid-drawer__handle-pill,
   .news-subscription-drawer__handle span,
   .property-deposit-drawer__handle span,
-  .map-filters-sheet .buyer-sheet__handle span,
   .bonuses-task-drawer .buyer-sheet__handle span,
   .investor-assumptions-sheet .buyer-sheet__handle span,
   .seller-verification-drawer .buyer-sheet__handle span
@@ -72,7 +63,6 @@ html body .biometric-drawer__panel::before {
 }
 
 html body :is(
-  .auction-mobile-filters-drawer__close,
   .debts-risk-drawer__close,
   .auction-bid-drawer__close,
   .news-subscription-drawer__close,
@@ -90,14 +80,11 @@ html body :is(
 }
 
 html body :is(
-  .auction-mobile-filters-drawer__title,
-  .shares-mobile-filters-drawer__header h2,
   .debts-risk-drawer__heading h2,
   .auction-bid-drawer__title,
   .news-subscription-drawer h2,
   .biometric-drawer__copy h2,
   .cookie-consent-modal__title,
-  .map-filters-sheet__head h2,
   .bonuses-drawer__title,
   .property-deposit-drawer__content h2
 ) {
@@ -108,20 +95,12 @@ html body :is(
   line-height: 1.12;
 }
 
-html body :is(
-  .auction-mobile-filters-drawer__header,
-  .shares-mobile-filters-drawer__header,
-  .debts-risk-drawer__toolbar
-) {
+html body .debts-risk-drawer__toolbar {
   border-bottom-color: rgba(22, 167, 179, 0.12);
   background: transparent;
 }
 
-html body :is(
-  .shares-mobile-filters-drawer__panel,
-  .debts-advanced-filters-drawer__panel,
-  .ond__panel
-) {
+html body .ond__panel {
   background:
     radial-gradient(circle at 100% 0%, rgba(22, 167, 179, 0.12), transparent 34%),
     linear-gradient(180deg, #fcfffe 0%, #f7fbfa 46%, #ffffff 100%);
@@ -130,18 +109,9 @@ html body :is(
   font-family: 'Montserrat', system-ui, sans-serif;
 }
 
-html body .shares-mobile-filters-drawer__footer,
-html body .debts-advanced-filters-drawer__footer {
-  border-top: 1px solid rgba(22, 167, 179, 0.12);
-  background: rgba(255, 255, 255, 0.94);
-}
-
-html body .shares-mobile-filters-drawer__apply,
-html body .debts-advanced-filters-drawer__btn--primary,
 html body .news-subscription-drawer__submit,
 html body .biometric-drawer__primary,
 html body .cookie-consent-modal__btn--accept,
-html body .map-filters-sheet__apply,
 html body .property-deposit-drawer__cta {
   border: 0;
   border-radius: 16px;
@@ -152,10 +122,7 @@ html body .property-deposit-drawer__cta {
   font-weight: 800;
 }
 
-html body .shares-mobile-filters-drawer__reset,
-html body .debts-advanced-filters-drawer__btn--ghost,
-html body .cookie-consent-modal__btn--decline,
-html body .map-filters-sheet__reset {
+html body .cookie-consent-modal__btn--decline {
   border: 1px solid rgba(20, 48, 51, 0.1);
   border-radius: 16px;
   background: #ffffff;
@@ -194,7 +161,6 @@ html body .news-subscription-drawer__lead {
 
 @media (min-width: 768px) {
   html body :is(
-    .map-filters-sheet .buyer-sheet__surface,
     .bonuses-task-drawer .buyer-sheet__surface,
     .investor-assumptions-sheet .buyer-sheet__surface,
     .seller-verification-drawer .buyer-sheet__surface
@@ -214,298 +180,14 @@ html body .news-subscription-drawer__lead {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html body :is(
-    .auction-mobile-filters-drawer__close,
-    .shares-mobile-filters-drawer__apply,
-    .cookie-consent-modal__btn
-  ) {
+  html body .cookie-consent-modal__btn {
     transition: none;
   }
 }
 
-/* Profile tab sheets: shell only. History, bookings, subscriptions,
-   buyer data, legal, and the seller personal / stats / settings sheets. */
-
-html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__backdrop {
-  background: rgba(7, 20, 23, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__surface {
-  border-top: 1px solid rgba(22, 167, 179, 0.22);
-  background:
-    radial-gradient(circle at 88% 0%, rgba(22, 167, 179, 0.1), transparent 28%),
-    linear-gradient(168deg, #fcfffe 0%, #f7fbfa 52%, #ffffff 100%);
-  color: #17282a;
-  font-family: 'Montserrat', system-ui, sans-serif;
-}
-
-html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__handle span {
-  width: 44px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(37, 66, 69, 0.2);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.62);
-}
-
-html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__close {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  min-height: 42px;
-  border: 1px solid rgba(20, 48, 51, 0.08);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: #243d40;
-  box-shadow: 0 7px 18px rgba(12, 34, 37, 0.08);
-}
+/* Soft Tiffany wash for remaining functional drawers (not profiles / lang / filters). */
 
 html body :is(
-  .profile-cabinet-sheet__title,
-  .profile-data-panel__title,
-  .profile-subscriptions-panel__title
-) {
-  color: #152628;
-  font-family: 'Montserrat', system-ui, sans-serif;
-  font-weight: 750;
-  letter-spacing: -0.035em;
-  line-height: 1.12;
-}
-
-html body .profile-cabinet-sheet .buyer-sheet__footer {
-  border-top-color: rgba(22, 167, 179, 0.12);
-  background: rgba(255, 255, 255, 0.94);
-}
-
-@media (max-width: 959px) {
-  html body :is(
-    .profile-cabinet-sheet--history,
-    .profile-cabinet-sheet--bookings,
-    .profile-cabinet-sheet--data,
-    .profile-cabinet-sheet--subscriptions,
-    .opr-owner-sheet
-  ).buyer-sheet {
-    align-items: flex-end;
-  }
-
-  html body .profile-cabinet-sheet--legal .buyer-sheet__surface {
-    width: 100%;
-    max-width: 640px;
-    height: auto;
-    max-height: min(92dvh, 860px);
-    border: 0;
-    border-top: 1px solid rgba(22, 167, 179, 0.22);
-    border-radius: 27px 27px 0 0;
-    box-shadow: 0 -24px 70px rgba(5, 23, 27, 0.22);
-    overflow: auto;
-  }
-
-  html body :is(
-    .profile-cabinet-sheet--history,
-    .profile-cabinet-sheet--bookings,
-    .profile-cabinet-sheet--data,
-    .profile-cabinet-sheet--subscriptions,
-    .opr-owner-sheet
-  ) .buyer-sheet__surface {
-    width: 100%;
-    max-width: 640px;
-    height: auto;
-    max-height: min(92dvh, 860px);
-    border: 0;
-    border-top: 1px solid rgba(22, 167, 179, 0.22);
-    border-radius: 27px 27px 0 0;
-    box-shadow: 0 -24px 70px rgba(5, 23, 27, 0.22);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  html body :is(
-    .profile-cabinet-sheet--history,
-    .profile-cabinet-sheet--bookings,
-    .profile-cabinet-sheet--data,
-    .profile-cabinet-sheet--subscriptions,
-    .opr-owner-sheet
-  ) .buyer-sheet__handle {
-    display: flex;
-    flex: 0 0 auto;
-    background: transparent;
-  }
-
-  html body :is(
-    .profile-cabinet-sheet--history,
-    .profile-cabinet-sheet--bookings,
-    .profile-cabinet-sheet--data,
-    .profile-cabinet-sheet--subscriptions,
-    .opr-owner-sheet
-  ) .buyer-sheet__body {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: auto;
-    overflow: auto;
-    padding: 0;
-  }
-
-  html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-  }
-}
-
-@media (min-width: 960px) {
-  html body :is(.profile-cabinet-sheet, .opr-owner-sheet) .buyer-sheet__surface {
-    border: 1px solid rgba(22, 167, 179, 0.16);
-    border-radius: 27px;
-    box-shadow: 0 28px 80px rgba(5, 23, 27, 0.22);
-  }
-}
-
-/* #3bc0cb on the warm sheet is about 2.2:1. Text accents use #007d8a;
-   filled accents use #0099A9 so they match the brand and stay readable. */
-
-html body :is(
-  .profile-cabinet-sheet__eyebrow,
-  .profile-cabinet-sheet .profile-bookings-experience__toolbar div > span,
-  .profile-cabinet-sheet .profile-booking-drawer__eyebrow,
-  .profile-cabinet-sheet .profile-booking-drawer__note,
-  .profile-cabinet-sheet .profile-booking-drawer__note span,
-  .profile-cabinet-sheet .profile-booking-drawer__secondary,
-  .profile-cabinet-sheet .profile-booking-pass__booking-id,
-  .profile-cabinet-sheet .profile-booking-pass__facts strong,
-  .profile-cabinet-sheet .profile-history-cat-chip__icon
-) {
-  color: #007d8a;
-}
-
-html body .profile-cabinet-sheet .profile-legal-sheet__tab {
-  border-color: rgba(0, 153, 169, 0.18);
-}
-
-html body .profile-cabinet-sheet .profile-legal-sheet__tab--active {
-  border-color: rgba(0, 125, 138, 0.32);
-  background: rgba(0, 153, 169, 0.1);
-  color: #007d8a;
-}
-
-html body .profile-cabinet-sheet .profile-history-experience--fullscreen {
-  --ph-tiffany: #0099a9;
-  --ph-tiffany-dark: #007d8a;
-}
-
-html body .profile-cabinet-sheet .profile-history-cat-chip__icon {
-  background: rgba(0, 153, 169, 0.12);
-}
-
-html body .profile-cabinet-sheet .profile-history-cat-chip--active {
-  border-color: rgba(0, 153, 169, 0.4);
-  background: rgba(0, 153, 169, 0.08);
-}
-
-html body .profile-cabinet-sheet .profile-history-cat-chip--active .profile-history-cat-chip__icon {
-  background: #0099a9;
-  color: #fff;
-}
-
-html body .profile-cabinet-sheet .profile-history-empty__cta {
-  background: #0099a9;
-  box-shadow: 0 14px 28px rgba(0, 153, 169, 0.22);
-}
-
-html body .profile-cabinet-sheet .profile-bookings-summary > div {
-  border-color: rgba(0, 153, 169, 0.22);
-  background: linear-gradient(145deg, #ffffff, #f7fbfa);
-  color: #007d8a;
-}
-
-html body .profile-cabinet-sheet .profile-booking-pass,
-html body .profile-cabinet-sheet .profile-booking-pass__tear span {
-  background-color: #0099a9;
-}
-
-html body .profile-cabinet-sheet .profile-booking-pass {
-  background: #0099a9;
-}
-
-html body .profile-cabinet-sheet .profile-booking-pass__top {
-  background:
-    radial-gradient(circle at 18% 35%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1.5px) 0 0 / 7px 7px,
-    linear-gradient(135deg, #007d8a 0%, #0099a9 100%);
-  color: #ffffff;
-}
-
-html body .profile-cabinet-sheet .profile-booking-pass__barcode {
-  background: repeating-linear-gradient(
-    90deg,
-    #007d8a 0 2px,
-    transparent 2px 4px,
-    #007d8a 4px 5px,
-    transparent 5px 8px
-  );
-}
-
-html body .profile-cabinet-sheet .profile-booking-pass__footer button {
-  background: #0099a9;
-}
-
-html body .news-subscription-drawer__icon-wrap {
-  background-color: #0099a9;
-  background-image: none;
-  box-shadow: 0 14px 28px rgba(0, 153, 169, 0.22);
-}
-
-/* Auction filters: keep previous Tiffany wash; do not restyle further. */
-html body .auction-mobile-filters-drawer__panel {
-  --syb-tiffany-btn: #007d8a;
-  --syb-tiffany-btn-deep: #006672;
-  --syb-tiffany-btn-shadow: rgba(0, 102, 114, 0.26);
-  --syb-tiffany-btn-fill: linear-gradient(118deg, #007784 0%, #00838f 50%, #008f9c 100%);
-  --syb-tiffany-btn-fill-hover: linear-gradient(118deg, #006c78 0%, #007884 50%, #008490 100%);
-  border-color: rgba(0, 125, 138, 0.2);
-  background:
-    radial-gradient(120% 55% at 100% 0%, rgba(255, 255, 255, 0.5), transparent 60%),
-    linear-gradient(180deg, #a6e0e5 0%, #c9eef1 24%, #e2f6f7 58%, #f2fbfb 100%);
-  color: #0c2f34;
-}
-
-html body .auction-mobile-filters-drawer__header {
-  border-bottom-color: rgba(0, 102, 114, 0.14);
-  background: transparent;
-}
-
-html body .auction-mobile-filters-drawer__panel .auction-desktop-filters__footer {
-  border-top-color: rgba(0, 102, 114, 0.14);
-  background: rgba(242, 251, 251, 0.94);
-}
-
-html body .auction-mobile-filters-drawer__handle-pill {
-  background: rgba(0, 72, 80, 0.3);
-}
-
-html body .auction-mobile-filters-drawer__close {
-  border: 1px solid rgba(0, 102, 114, 0.12);
-  background: #ffffff;
-  color: #0c2f34;
-  box-shadow: 0 6px 16px rgba(0, 72, 80, 0.14);
-}
-
-html body .auction-mobile-filters-drawer__title {
-  color: #0a2a2e;
-}
-
-html body .auction-mobile-filters-drawer__panel .auction-desktop-filters__clear {
-  border-color: rgba(0, 102, 114, 0.18);
-  background: #ffffff;
-  color: #0c2f34;
-}
-
-/* Tiffany theme for functional drawers (profile tabs + auction filters excluded).
-   Soft Tiffany wash, edge-to-edge sheets, brand #0099A9 CTAs. */
-
-html body :is(
-  .shares-mobile-filters-drawer__panel,
-  .debts-advanced-filters-drawer__panel,
   .debts-risk-drawer__panel,
   .auction-bid-drawer__panel,
   .news-subscription-drawer__panel,
@@ -513,11 +195,9 @@ html body :is(
   .property-deposit-drawer__panel,
   .cookie-consent-modal__panel,
   .ond__panel,
-  .map-filters-sheet .buyer-sheet__surface,
   .bonuses-task-drawer .buyer-sheet__surface,
   .investor-assumptions-sheet .buyer-sheet__surface,
-  .seller-verification-drawer .buyer-sheet__surface,
-  .footer-lang-drawer .buyer-sheet__surface
+  .seller-verification-drawer .buyer-sheet__surface
 ) {
   --syb-tiffany-btn: #0099a9;
   --syb-tiffany-btn-deep: #007d8a;
@@ -536,11 +216,9 @@ html body :is(
 }
 
 html body :is(
-  .map-filters-sheet.buyer-sheet,
   .bonuses-task-drawer.buyer-sheet,
   .investor-assumptions-sheet.buyer-sheet,
-  .seller-verification-drawer.buyer-sheet,
-  .footer-lang-drawer.buyer-sheet
+  .seller-verification-drawer.buyer-sheet
 ) {
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -548,20 +226,14 @@ html body :is(
   justify-content: stretch;
 }
 
-html body :is(
-  .shares-mobile-filters-drawer__panel,
-  .debts-advanced-filters-drawer__panel,
-  .ond__panel
-) {
+html body .ond__panel {
   background: linear-gradient(180deg, #d8f0f3 0%, #e8f6f8 32%, #f4fbfb 100%);
   border-left: 1px solid rgba(0, 153, 169, 0.18);
   border-radius: 0;
 }
 
 html body :is(
-  .shares-mobile-filters-drawer__header,
   .debts-risk-drawer__toolbar,
-  .map-filters-sheet .buyer-sheet__handle,
   .bonuses-task-drawer .buyer-sheet__handle,
   .investor-assumptions-sheet .buyer-sheet__handle,
   .seller-verification-drawer .buyer-sheet__handle
@@ -571,9 +243,6 @@ html body :is(
 }
 
 html body :is(
-  .shares-mobile-filters-drawer__footer,
-  .debts-advanced-filters-drawer__footer,
-  .map-filters-sheet .buyer-sheet__footer,
   .bonuses-task-drawer .buyer-sheet__footer,
   .investor-assumptions-sheet .buyer-sheet__footer,
   .seller-verification-drawer .buyer-sheet__footer
@@ -587,7 +256,6 @@ html body :is(
   .auction-bid-drawer__handle-pill,
   .news-subscription-drawer__handle span,
   .property-deposit-drawer__handle span,
-  .map-filters-sheet .buyer-sheet__handle span,
   .bonuses-task-drawer .buyer-sheet__handle span,
   .investor-assumptions-sheet .buyer-sheet__handle span,
   .seller-verification-drawer .buyer-sheet__handle span
@@ -597,7 +265,6 @@ html body .biometric-drawer__panel::before {
 }
 
 html body :is(
-  .shares-mobile-filters-drawer__close,
   .debts-risk-drawer__close,
   .auction-bid-drawer__close,
   .news-subscription-drawer__close,
@@ -605,7 +272,6 @@ html body :is(
   .property-deposit-drawer__close,
   .cookie-consent-modal__close,
   .ond__close,
-  .map-filters-sheet .buyer-sheet__close,
   .bonuses-task-drawer .buyer-sheet__close,
   .investor-assumptions-sheet .buyer-sheet__close,
   .seller-verification-drawer .buyer-sheet__close
@@ -617,16 +283,13 @@ html body :is(
 }
 
 html body :is(
-  .shares-mobile-filters-drawer__header h2,
   .debts-risk-drawer__heading h2,
   .auction-bid-drawer__title,
   .news-subscription-drawer h2,
   .biometric-drawer__copy h2,
   .cookie-consent-modal__title,
-  .map-filters-sheet__head h2,
   .bonuses-drawer__title,
-  .property-deposit-drawer__content h2,
-  .footer-lang-drawer__title
+  .property-deposit-drawer__content h2
 ) {
   color: #0a2a2e;
 }
@@ -638,26 +301,21 @@ html body :is(
   .auction-bid-drawer__body .bidding-section__quick-label,
   .auction-bid-drawer__body .bidding-section__panel-label,
   .auction-bid-drawer__body .bidding-section__panel-min-hint,
-  .auction-bid-drawer__body .bidding-section__winner-bar__hint,
-  .footer-lang-drawer__subtitle
+  .auction-bid-drawer__body .bidding-section__winner-bar__hint
 ) {
   color: #2d5256;
 }
 
 html body :is(
-  .shares-mobile-filters-drawer__apply,
-  .debts-advanced-filters-drawer__btn--primary,
   .news-subscription-drawer__submit,
   .biometric-drawer__primary,
   .cookie-consent-modal__btn--accept,
-  .map-filters-sheet__apply,
   .property-deposit-drawer__cta
 ) {
   background: #0099a9;
   box-shadow: 0 12px 24px rgba(0, 125, 138, 0.24);
 }
 
-/* Place-bid: brand Tiffany on quick chips + primary CTA */
 html body .auction-bid-drawer__body .bidding-section__quick-btn {
   border: 0;
   background: #0099a9 !important;
@@ -690,29 +348,19 @@ html body .auction-bid-drawer__body .bidding-section__panel-plus {
   color: #007d8a;
 }
 
-html body :is(
-  .shares-mobile-filters-drawer__reset,
-  .debts-advanced-filters-drawer__btn--ghost,
-  .cookie-consent-modal__btn--decline,
-  .map-filters-sheet__reset
-) {
+html body .cookie-consent-modal__btn--decline {
   border-color: rgba(0, 102, 114, 0.18);
   background: #ffffff;
   color: #0c2f34;
 }
 
 html body :is(
-  .map-filters-sheet__head > p,
   .bonuses-drawer__eyebrow,
   .biometric-drawer__eyebrow,
   .property-deposit-drawer__eyebrow,
   .news-subscription-drawer__eyebrow
 ) {
   color: #006672;
-}
-
-html body .map-filters-sheet__head > span {
-  color: #2d5256;
 }
 
 html body .auction-bid-drawer__body .property-detail-sidebar__current-bid {
@@ -727,12 +375,4 @@ html body .auction-bid-drawer__body .property-detail-sidebar__current-bid {
 html body .news-subscription-drawer__icon-wrap {
   background-color: #0099a9;
   box-shadow: 0 14px 28px rgba(0, 125, 138, 0.24);
-}
-
-html body .footer-lang-drawer__option--active {
-  border-color: #0099a9;
-}
-
-html body .footer-lang-drawer__check {
-  color: #0099a9;
 }

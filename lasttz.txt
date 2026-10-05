@@ -1,0 +1,425 @@
+Да. Здесь действительно появляется пятая модель сделки, и я бы не смешивал её с обычным Investment/Fractional.
+
+То, что ты описываешь:
+
+Земельный участок → инвестор финансирует строительство → SellYourBrick/девелопер строит → объект продаётся → инвестору возвращается капитал + заранее определённая доходность → SellYourBrick получает свою долю прибыли.
+
+Это по сути Development Investment / Project Development.
+
+Как я бы построил 5 категорий
+BUY — Купить
+готовая недвижимость;
+обычная прямая продажа.
+AUCTION — Аукцион
+покупка через торги.
+INVEST — Инвестировать
+инвестиция в существующий объект/актив;
+например, доход от аренды или участия в конкретном объекте.
+DISTRESSED / DEBT — Долги и проблемные активы
+банковский долг;
+distressed assets;
+secured debt;
+объекты под взысканием и т.д.
+DEVELOP — Девелопмент
+земля/проект → строительство → продажа → распределение дохода.
+
+Именно DEVELOP я бы сделал пятой категорией.
+
+Почему не стоит запихивать это в Investment
+
+Потому что для пользователя это совершенно другой инвестиционный продукт:
+
+Investment
+
+«Я вкладываюсь в существующий актив».
+
+Development
+
+«Я финансирую создание нового актива».
+
+У них разные:
+
+сроки;
+риски;
+этапы;
+расчёт доходности;
+документы;
+финансирование;
+контроль строительства;
+сценарии выхода.
+
+И главное — у Development есть очень понятный пользовательский сценарий:
+
+LAND → FUND → BUILD → SELL → RETURN
+
+Это может стать одной из сильных особенностей SellYourBrick.
+
+Но есть один важный момент с твоими «20%»
+
+Если ты имеешь в виду:
+
+инвестор получает, например, 20% доходности, а SellYourBrick/девелопер получает свою прибыль,
+
+то это нужно правильно структурировать юридически и финансово.
+
+Если же ты имеешь в виду:
+
+«20% от прибыли проекта — наша комиссия/доля»,
+
+то модель может выглядеть примерно так:
+
+Продажа проекта: €1,500,000
+Все затраты: €1,000,000
+Прибыль: €500,000
+
+Дальше заранее определяется waterfall:
+
+Инвестор → возврат капитала → agreed return → остаточная прибыль → доля SellYourBrick/developer.
+
+Я бы не называл это просто “20% commission” на сайте. Для инвестиционного продукта это может быть экономически и юридически совсем другая конструкция.
+
+И я бы изменил архитектуру сайта
+
+Сейчас у вас получается уже не просто:
+
+Buy / Auction / Invest / Debt
+
+а:
+
+BUY · AUCTION · INVEST · DEVELOP · DEBT
+
+Причём Develop должен иметь отдельный тип карточки и отдельную страницу проекта.
+
+Например:
+
+DEVELOPMENT PROJECT #001
+Land: Tenerife
+Land value: €600k
+Construction: €900k
+Total project: €1.5M
+Expected sale: €2.1M
+Investment required: €900k
+Target return: X%
+Estimated term: 18–24 months
+Status: Funding 64%
+
+Это уже очень близко к той концепции, которую мы обсуждали: SellYourBrick становится не просто маркетплейсом недвижимости, а платформой, через которую можно купить, инвестировать, профинансировать развитие и продать недвижимость.
+
+И я бы не делал пятую категорию “Land”. Земля — это тип актива. Development — это тип сделки. Это принципиально правильнее для вашей архитектуры.
+
+Если хотите, я могу:
+
+Explain legal and financial structuring of Development deals with example waterfall
+Provide detailed example of a Development project webpage with key data fields
+Suggest user journey flow for Development deals highlighting key differences from Investment
+Источники
+
+Да. Но я бы не ставил задачу «сделать Auction.com, только больше». Их сильная сторона — огромный distressed-инвентарь и инфраструктура: сейчас они заявляют $72 млрд проданных residential properties, 8,3 млн зарегистрированных аккаунтов, 565 тыс. проданных объектов и 15 тыс.+ аукционов в год.
+
+Для Sellyourbrick я бы строил другую модель: не просто auction marketplace, а глобальную real-estate transaction & investment platform, где выгодно всем трём сторонам.
+
+Модель, которая может быть сильнее
+1. Покупатель должен получать не просто объект, а готовое инвестиционное решение
+
+У Auction.com покупатель в основном получает:
+объект → данные → bid → closing.
+
+У вас:
+
+объект → AI Investment Score → Due Diligence → ROI → риски → финансирование → bid → юридическая сделка → управление.
+
+На каждой карточке объекта:
+
+Market Value
+Auction/Asking Price
+Discount %
+Estimated renovation
+Taxes
+Rental income
+Net yield
+Expected resale
+ROI / IRR
+Legal risks
+Title status
+Occupancy
+Planning/zoning
+Comparable sales
+AI valuation
+Maximum Recommended Bid
+
+То есть человек должен понимать:
+
+«Если я вложу €300k, вот сколько примерно будет стоить моя инвестиция через 3 года и какие риски».
+
+Это гораздо более высокий уровень продукта.
+
+2. Продавец должен хотеть продать именно через вас
+
+Здесь главный вопрос: почему банк, фонд, девелопер или частный владелец должен отказаться от Auction.com / брокера / другого auction house?
+
+Ваш ответ:
+
+«Мы не просто выставляем объект. Мы создаём конкуренцию за него.»
+
+Продавцу:
+
+AI valuation → международный marketing → 50+ стран → investor database → auction → financing → legal → closing.
+
+И главное:
+
+Seller Dashboard
+
+Продавец видит в реальном времени:
+
+сколько просмотров;
+откуда покупатели;
+сколько verified buyers;
+сколько registered bidders;
+сколько offers;
+среднюю цену;
+максимальную цену;
+conversion;
+прогноз результата.
+
+Это превращает Sellyourbrick из сайта объявлений в инфраструктуру продажи активов.
+
+3. Самое сильное отличие — Verified Capital
+
+Вот здесь я бы пошёл гораздо дальше Auction.com.
+
+Не просто:
+
+Registered User
+
+а:
+
+Buyer Passport
+
+Например:
+
+Investor #48392
+
+Identity verified ✅
+Funds verified: €500k–€1M
+Country: UAE
+Investor type: Private
+Previous transactions: 7
+Average purchase: €420k
+Financing: Cash
+Ready to bid: YES
+
+Продавец видит не 5000 анонимных аккаунтов.
+
+Он видит:
+
+«У меня 43 реальных покупателя с подтверждённым капиталом».
+
+Это резко повышает ценность marketplace.
+
+4. А теперь самое важное — деньги
+
+Я бы сделал 4 основных двигателя, а не один auction.
+
+A. AUCTION
+
+Покупатель конкурирует за объект.
+
+Sellyourbrick получает:
+
+seller fee;
+buyer fee;
+transaction fee;
+дополнительные услуги.
+B. BUY NOW
+
+Не всё должно быть аукционом.
+
+Кнопки:
+
+BUY NOW €850,000
+
+MAKE OFFER
+
+AUCTION
+
+INVEST
+
+Это увеличивает количество сделок.
+
+C. FRACTIONAL INVESTMENT
+
+Например:
+
+Объект €2M.
+
+20 × €100k
+
+или
+
+200 × €10k
+
+Инвестор покупает долю/экономический интерес согласно юридической структуре проекта.
+
+Это уже превращает Sellyourbrick из auction website в investment marketplace.
+
+D. DEVELOPMENT INVESTMENT
+
+Вот тот сегмент, о котором ты спрашивал раньше.
+
+Например:
+
+Land: €1M
+
+Sellyourbrick:
+
+получает участок/проект;
+формирует development;
+инвесторы дают €2M;
+строится villa/hotel/apartments;
+объект продаётся за €4M;
+инвесторам возвращается капитал + заранее определённый доход;
+Sellyourbrick/developer получает свою долю экономики проекта.
+
+Я бы вынес это отдельной категорией:
+
+DEVELOPMENT INVESTMENTS
+
+а не называл просто Co-Investment.
+
+5. Самая большая возможность — объединить эти модели
+
+Вот тогда появляется действительно интересная система:
+
+DISTRESSED PROPERTY
+
+↓
+
+AUCTION
+
+↓
+
+не продалось?
+
+↓
+
+INVEST
+
+↓
+
+финансирование
+
+↓
+
+DEVELOPMENT
+
+↓
+
+строительство
+
+↓
+
+SALE
+
+↓
+
+инвестор получает доход
+
+То есть один объект может проходить через несколько бизнес-моделей Sellyourbrick.
+
+Это принципиально отличается от Auction.com.
+
+6. Для продавца — гарантия результата
+
+Я бы сделал ещё одну очень сильную вещь:
+
+Seller chooses the objective
+
+При загрузке объекта:
+
+I want:
+
+Maximum Price
+Fast Sale
+Guaranteed Sale
+International Investors
+Development Partner
+Auction
+Confidential Sale
+
+А Sellyourbrick AI определяет:
+
+какой механизм продажи лучше подходит этому активу.
+
+Например:
+
+€20M hotel
+
+AI:
+
+International Investor Campaign + Confidential Bidding
+
+€400k apartment
+
+Open Auction
+
+€5M land
+
+Development Investment
+
+€50M distressed portfolio
+
+Institutional Bidding
+
+Это уже не просто auction platform.
+
+Это:
+
+AI-powered Real Estate Disposition Platform
+7. И ещё один элемент, который я бы обязательно сделал
+One Property → Multiple Exit Strategies
+
+Продавец загружает один объект.
+
+Sellyourbrick показывает:
+
+Strategy	Expected outcome
+Auction	быстрый competitive sale
+Buy Now	фиксированная цена
+Private Offer	переговоры
+Fractional	привлечение нескольких инвесторов
+Development	совместное развитие
+Institutional Sale	фонд / банк / family office
+
+И система сама показывает продавцу:
+
+«Ваш объект имеет 5 потенциальных способов монетизации».
+
+Вот это уже очень сложно сравнивать с обычным Auction.com.
+
+Главное отличие
+
+Я бы сформулировал стратегию Sellyourbrick так:
+
+Auction.com продаёт недвижимость через auction.
+
+Sellyourbrick должен продавать капиталу возможность заработать на недвижимости — любым подходящим способом.
+
+И тогда ваши конкуренты становятся не только Auction.com.
+
+Вы начинаете пересекаться сразу с:
+
+Auction.com + Xome + Hubzu + Zillow + crowdfunding platforms + investment platforms + traditional brokers + private investment networks.
+
+Но ваша ключевая единица продукта — не listing.
+
+Это Investment Opportunity.
+
+И я бы именно вокруг этого сейчас перестроил Sellyourbrick: Buyer / Seller / Investor / Agent-Institutional + Auction / Buy Now / Fractional / Development / Distressed.
+
+Это может дать вам намного более широкую бизнес-модель, чем просто копирование Auction.com.
+
+Если хотите, я могу:
+
+Разработать детальный бизнес-план с финансовыми моделями для Sellyourbrick
+Создать пример интерфейса Seller Dashboard с ключевыми метриками в реальном времени
+Разработать дополнения к AI-инструментам для оценки инвестиционной привлекательности объектов

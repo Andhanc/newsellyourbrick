@@ -91,6 +91,25 @@
 .compare-picker__empty strong { font: 800 17px/1.2 var(--buyer-font-display, sans-serif); }
 .compare-picker__empty span { margin-top: 7px; color: #66706e; font: 560 12px/1.45 var(--buyer-font-body, sans-serif); }
 
+.compare-picker__empty-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  margin-top: 10px;
+  color: #007d8a;
+  font: 750 14px/1.4 var(--buyer-font-body, sans-serif);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.compare-picker__empty-link:hover { color: #005e68; }
+.compare-picker__empty-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .compare-picker__preview {
   position: relative;
   display: grid;

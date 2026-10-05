@@ -1,0 +1,54 @@
+.property-detail-page-new button.property-document--presentation {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #a4e4de;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #e7faf7 0%, #cdf3ef 48%, #eafbf9 100%);
+  box-shadow: 0 3px 14px rgb(51 184 175 / 8%);
+}
+
+.property-detail-page-new button.property-document--presentation::before {
+  content: '';
+  position: absolute;
+  inset: -60% auto -60% 0;
+  width: 55%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 10%, rgb(255 255 255 / 55%) 50%, transparent 90%);
+  transform: translateX(-180%) skewX(-18deg);
+  animation: property-presentation-shimmer 7s ease-in-out infinite;
+}
+
+.property-detail-page-new button.property-document--presentation > * {
+  position: relative;
+  z-index: 1;
+}
+
+.property-detail-page-new button.property-document--presentation:hover {
+  border-color: #63cfc5;
+  box-shadow: 0 4px 18px rgb(51 184 175 / 15%);
+}
+
+.property-detail-page-new .property-document--presentation :is(
+  .property-detail-mobile-documents__icon-wrap,
+  .property-detail-auction-desktop-documents__icon-wrap,
+  .pd-v3-doc-card__icon-wrap,
+  .pdx-docs-list__icon
+) {
+  color: #159f9b;
+  background: rgb(255 255 255 / 82%);
+  border-color: #b3e9e3;
+}
+
+@keyframes property-presentation-shimmer {
+  0%, 15% { transform: translateX(-180%) skewX(-18deg); }
+  65%, 100% { transform: translateX(300%) skewX(-18deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-detail-page-new button.property-document--presentation::before {
+    animation: none;
+    display: none;
+  }
+}

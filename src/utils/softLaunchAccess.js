@@ -19,6 +19,8 @@ const EXACT_ALLOWED = new Set([
   '/co-investment',
   '/shares',
   '/debts',
+  '/development',
+  '/buyer-passport',
   '/test-drive',
   '/about',
   '/app',
@@ -104,6 +106,8 @@ export function isSoftLaunchPathAllowed(pathname = '') {
   if (path.startsWith('/co-investment/')) return true
   if (path.startsWith('/shares/')) return true
   if (path.startsWith('/debts/')) return true
+  if (path.startsWith('/development/')) return true
+  if (/^\/deal-room\/(properties|properties_apartments|properties_houses)\/\d+$/.test(path)) return true
   if (path.startsWith('/test-drive/')) return true
   if (path.startsWith('/news/')) return true
   if (path === '/__e2e__/session' || path.startsWith('/__e2e__/')) return true

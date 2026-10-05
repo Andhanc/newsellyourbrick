@@ -1,0 +1,206 @@
+.mot-dashboard-promos {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.mot-dashboard-promo {
+  --promo-ink: #111313;
+  --promo-accent: var(--oc-tiffany-dark, #007d8a);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 224px;
+  padding: 22px 22px 70px;
+  overflow: hidden;
+  border: 1px solid var(--mot-tiffany-muted);
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 95% 95%, var(--mot-tiffany-pale), transparent 70%), var(--oc-tiffany-soft, #f0fafb);
+  color: var(--promo-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mot-dashboard-promo--bookings {
+  background: radial-gradient(ellipse at 95% 95%, var(--mot-tiffany-soft), transparent 70%), #f3f4f2;
+  border-color: rgb(17 19 19 / 8%);
+}
+
+.mot-dashboard-promo--add {
+  --promo-accent: #111313;
+  background: radial-gradient(ellipse at 90% 90%, var(--mot-tiffany-light), transparent 75%), var(--mot-tiffany);
+}
+
+.mot-dashboard-promo__art {
+  position: absolute;
+  z-index: -1;
+  right: -2px;
+  bottom: -2px;
+  width: min(66%, 190px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 10px rgb(17 19 19 / 12%));
+  pointer-events: none;
+  transition: transform 240ms ease;
+}
+
+.mot-dashboard-promo--add .mot-dashboard-promo__art {
+  width: min(80%, 220px);
+  right: -10px;
+  bottom: -8px;
+}
+
+.mot-dashboard-promo__count {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+  font-size: clamp(40px, 4.4vw, 54px);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mot-dashboard-promo__copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.mot-dashboard-promo__title {
+  font-size: clamp(19px, 1.8vw, 24px);
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.mot-dashboard-promo__hint {
+  max-width: 19ch;
+  min-height: 2.7em;
+  color: var(--promo-ink);
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.mot-dashboard-promo__arrow {
+  position: absolute;
+  z-index: 1;
+  left: 22px;
+  bottom: 18px;
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 78%);
+  color: var(--promo-accent);
+}
+
+.mot-dashboard-promo__plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-color: transparent;
+  background: var(--promo-accent);
+  color: #fff;
+  box-shadow: 0 4px 10px rgb(17 19 19 / 14%);
+}
+
+.mot-dashboard-promo__plus svg { width: 22px; height: 22px; }
+
+.mot-dashboard-promo:focus-visible {
+  outline: 3px solid var(--oc-tiffany, #0099a9);
+  outline-offset: 3px;
+}
+
+.mot-finance__action-bar .mot-finance__action-add > span {
+  border-color: var(--mot-tiffany);
+  background: var(--mot-tiffany);
+  color: #111313;
+}
+
+.mot-finance__action-bar .mot-finance__action-add:hover > span {
+  border-color: var(--mot-tiffany-light);
+  background: var(--mot-tiffany-light);
+}
+
+.mot-finance__action-bar button:focus-visible {
+  outline: 2px solid var(--mot-tiffany);
+  outline-offset: 5px;
+  border-radius: 12px;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .mot-dashboard-promo:hover {
+    border-color: var(--mot-tiffany-ring);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), 0 5px 16px rgb(17 19 19 / 8%);
+  }
+
+  .mot-dashboard-promo:hover .mot-dashboard-promo__art {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mot-dashboard-promo,
+  .mot-dashboard-promo__art { transition: none; }
+}
+
+@media (max-width: 900px) {
+  .mot-dashboard-promos {
+    display: flex;
+    gap: 12px;
+    margin: 28px -18px 0;
+    padding: 4px 18px 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 18px;
+    scrollbar-width: none;
+  }
+
+  .mot-dashboard-promos::-webkit-scrollbar { display: none; }
+
+  .mot-dashboard-promo {
+    flex: 0 0 184px;
+    min-height: 208px;
+    padding: 17px 16px 64px;
+    border-radius: 22px;
+    scroll-snap-align: start;
+  }
+
+  .mot-dashboard-promo__art { width: 70%; right: -2px; bottom: 0; }
+  .mot-dashboard-promo--add .mot-dashboard-promo__art { width: 84%; }
+  .mot-dashboard-promo__count { margin-top: 12px; font-size: 42px; }
+  .mot-dashboard-promo__title { font-size: 18px; }
+  .mot-dashboard-promo__hint { font-size: 11px; }
+  .mot-dashboard-promo__copy { gap: 6px; }
+  .mot-dashboard-promo__arrow { left: 16px; bottom: 14px; }
+}
+
+@media (min-width: 560px) and (max-width: 900px) {
+  .mot-dashboard-promos {
+    display: grid;
+    margin-inline: 0;
+    padding-inline: 4px;
+    overflow: visible;
+  }
+}

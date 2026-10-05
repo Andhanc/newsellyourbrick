@@ -863,6 +863,12 @@ model transactions {
 }
 
 model users {
+  development_projects development_projects[] @relation("DevelopmentOwner")
+  development_interests development_interests[]
+  development_funding development_funding[] @relation("FundingRecorder")
+  buyer_passport buyer_passports?
+  asset_deal_profiles asset_deal_profiles[]
+  deal_events deal_events[]
   id                            Int                             @id @default(autoincrement())
   first_name                    String
   last_name                     String?
@@ -1034,4 +1040,94 @@ model seo_page_history {
   action     String?   @default("update")
 
   @@index([path, changed_at], map: "idx_seo_page_history_path")
+}
+
+model development_projects {
+  owner users @relation("DevelopmentOwner", fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  interests development_interests[]
+  funding development_funding[]
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  owner_id    Int
+  title       String
+  description String   @default("")
+  location    String
+  asset_type  String   @default("land")
+  currency    String   @default("EUR")
+  stage       String   @default("land")
+  published   Boolean  @default(false)
+  is_demo     Boolean  @default(false)
+  photos      Json     @default("[]")
+  documents   Json     @default("[]")
+  terms       Json
+  history     Json     @default("[]")
+  source_table String?
+  source_id   Int?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  @@index([owner_id])
+}
+
+model development_interests {
+  project development_projects @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  user_id    Int
+  amount     Decimal  @db.Decimal(18, 2)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([project_id, user_id])
+}
+
+model development_funding {
+  project development_projects @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recorder users @relation("FundingRecorder", fields: [recorded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  amount     Decimal  @db.Decimal(18, 2)
+  reference  String
+  recorded_by Int
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([project_id, reference])
+}
+
+model buyer_passports {
+  user users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_id       Int      @id
+  investor_type String   @default("individual")
+  declared_capital Decimal @default(0) @db.Decimal(18, 2)
+  average_ticket Decimal @default(0) @db.Decimal(18, 2)
+  past_deals    Int      @default(0)
+  payment_method String  @default("bank")
+  readiness     String   @default("exploring")
+  share_with_sellers Boolean @default(false)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model asset_deal_profiles {
+  owner users @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id           Int      @id @default(autoincrement())
+  property_table String
+  property_id  Int
+  owner_id     Int
+  seller_goal  String   @default("maximum")
+  current_model String  @default("auction")
+  decision     Json     @default("{}")
+  exits        Json     @default("{}")
+  history      Json     @default("[]")
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([property_table, property_id])
+}
+
+model deal_events {
+  user users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id         Int      @id @default(autoincrement())
+  asset_key  String
+  user_id    Int?
+  visitor_id String
+  kind       String
+  amount     Decimal? @db.Decimal(18, 2)
+  country    String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([asset_key, created_at])
 }

@@ -78,6 +78,8 @@ import '../components/OapAddPropertyMobileMedia.css'
 import '../components/OapAddPropertyJourneyStrip.css'
 import '../components/OapAddPropertyJourneyProgress.css'
 import './OwnerAddPropertyBasicsStep.css'
+import DevelopmentFields, { EMPTY_TERMS } from '../features/development/DevelopmentFields'
+import { validateDevelopment } from '../utils/developmentFinance'
 import './OwnerAddPropertyStrategyStep.css'
 import './OwnerAddPropertyFinanceStep.css'
 import './OwnerAddPropertyVerificationStep.css'
@@ -164,6 +166,10 @@ const INITIAL_FORM = {
   testDriveInsuranceDeposit: '',
   testDriveCurrency: 'EUR',
   listingMode: '',
+  sellerGoal: '',
+  sourceAssetTable: '',
+  sourceAssetId: '',
+  development: { ...EMPTY_TERMS },
   minimumSalePrice: '',
   debtAmount: '',
   totalShares: '',
@@ -228,6 +234,7 @@ function validateListingStep(form) {
 function validatePricingStep(form) {
   const errors = {}
   const mode = form.listingMode
+  if (mode === 'development') return validateDevelopment(form.development)
 
   if (mode === 'shares' || mode === 'shares_buy_now') {
     const price = parseMoneyDigits(form.price)
@@ -404,7 +411,7 @@ export default function OwnerAddPropertyTestPage() {
     preloadOapWizardImages()
   }, [])
 
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [form, setForm] = useState(() => new URLSearchParams(window.location.search).get('model') === 'development' ? { ...INITIAL_FORM, listingMode: 'development', testDrive: 'no', sellerGoal: 'partner', sourceAssetTable: new URLSearchParams(window.location.search).get('source_table') || '', sourceAssetId: new URLSearchParams(window.location.search).get('source_id') || '' } : INITIAL_FORM)
   const [paramErrors, setParamErrors] = useState({})
   const [locationErrors, setLocationErrors] = useState({})
   const [photos, setPhotos] = useState([])
@@ -552,6 +559,12 @@ export default function OwnerAddPropertyTestPage() {
 
   const listingModes = useMemo(
     () => [
+      {
+        id: 'development',
+        label: 'DEVELOP',
+        description: t('develop.intro'),
+        tone: 'teal',
+      },
       {
         id: 'auction',
         label: t('oap_listingModeAuction'),
@@ -785,7 +798,7 @@ export default function OwnerAddPropertyTestPage() {
         }
         return false
       }
-      showNotification(result.error || t('oap_publishSubmitError'))
+      showNotification(snapshot.form.listingMode === 'development' ? t(`develop.${result.error}`, { defaultValue: result.error || t('oap_publishSubmitError') }) : result.error || t('oap_publishSubmitError'))
       return false
     }
 
@@ -833,7 +846,10 @@ export default function OwnerAddPropertyTestPage() {
     draftReadyRef.current = true
 
     window.dispatchEvent(new CustomEvent('owner-properties-update'))
-    setShowJourneyPublishDrawer(true)
+    if (result.data?.development) {
+      if (result.data.documentWarning) showNotification(t('develop.documentWarning'), 'error')
+      navigate(`/development/${result.data.slug}`)
+    } else setShowJourneyPublishDrawer(true)
     setIsSubmitting(false)
     return true
   }, [userId, goTo, navigate])
@@ -1292,6 +1308,7 @@ export default function OwnerAddPropertyTestPage() {
       }
 
       const mergedForm = { ...INITIAL_FORM, ...restored.form }
+      if (new URLSearchParams(window.location.search).get('model') === 'development') Object.assign(mergedForm, { listingMode: 'development', testDrive: 'no', sellerGoal: 'partner', sourceAssetTable: new URLSearchParams(window.location.search).get('source_table') || mergedForm.sourceAssetTable, sourceAssetId: new URLSearchParams(window.location.search).get('source_id') || mergedForm.sourceAssetId })
       setForm(mergedForm)
       const restoredStep = migrateWizardStep(restored.step)
       setStep(restoredStep)
@@ -1585,9 +1602,12 @@ export default function OwnerAddPropertyTestPage() {
         hideWizardChrome={hideWizardChrome}
         listingModes={filteredListingModes}
         listingMode={form.listingMode}
+        sellerGoal={form.sellerGoal}
+        onSellerGoalChange={(value) => updateField('sellerGoal', value)}
         listingErrors={listingErrors}
         onSelectListingMode={(modeId) => {
           updateField('listingMode', modeId)
+          if (modeId === 'development') updateField('testDrive', 'no')
           setListingErrors((prev) => {
             if (!prev.listingMode) return prev
             const next = { ...prev }
@@ -1649,6 +1669,7 @@ export default function OwnerAddPropertyTestPage() {
 
   const renderStepFinance = (options = {}) => {
     const { hideWizardChrome = false } = options
+    if (form.listingMode === 'development') return <DevelopmentFields value={form.development} onChange={(value) => updateField('development', value)} errors={pricingErrors} currency={form.listingCurrency || 'EUR'} />
 
     return (
     <OwnerAddPropertyFinanceStep

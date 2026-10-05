@@ -51,7 +51,8 @@
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  opacity: 0.78;
+  opacity: 1;
+  filter: brightness(1.2) saturate(1.24);
 }
 
 .shares-hero-scene__overlay {
@@ -61,15 +62,20 @@
   background:
     linear-gradient(
       180deg,
-      rgba(4, 15, 18, 0.45) 0%,
-      rgba(4, 15, 18, 0.28) 42%,
-      rgba(4, 15, 18, 0.72) 100%
+      rgba(4, 39, 45, 0.16) 0%,
+      rgba(6, 55, 61, 0.04) 42%,
+      rgba(4, 29, 34, 0.58) 100%
     ),
     linear-gradient(
       115deg,
-      rgba(4, 15, 18, 0.4) 0%,
-      rgba(78, 205, 214, 0.14) 100%
+      rgba(5, 35, 40, 0.24) 0%,
+      rgba(78, 205, 214, 0.04) 100%
     );
+}
+
+.shares-hero-scene__title,
+.shares-hero-scene__lead {
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.8), 0 3px 18px rgba(4, 29, 34, 0.4);
 }
 
 .shares-hero-scene__brand {
@@ -836,4 +842,36 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* Feather the photo behind the copy without enclosing the text. */
+.shares-hero-scene__copy {
+  position: relative;
+  isolation: isolate;
+}
+
+.shares-hero-scene .shares-hero-scene__lead {
+  position: relative;
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.55;
+  text-shadow: 0 1px 3px rgba(4, 29, 34, 0.45);
+}
+
+.shares-hero-scene .shares-hero-scene__lead::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -96px -160px;
+  background: radial-gradient(
+    ellipse closest-side at center,
+    rgba(3, 20, 25, 0.66) 0%,
+    rgba(3, 20, 25, 0.54) 48%,
+    rgba(3, 20, 25, 0.2) 76%,
+    rgba(3, 20, 25, 0) 100%
+  );
+  pointer-events: none;
 }

@@ -69,6 +69,7 @@ import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
 import { openOwnerAiChat } from '../utils/ownerCabinetChat'
 import './MainOwnerTestPage.css'
 import './MainOwnerTestPage.mobile.css'
+import './MainOwnerDashboardPromos.css'
 
 ChartJS.register(
   CategoryScale,
@@ -1551,14 +1552,6 @@ export default function MainOwnerTestPage() {
     () => testDriveRows.filter((row) => row.statusKey === 'pending').length,
     [testDriveRows]
   )
-  const propertyPreviewRows = useMemo(() => propertyStatsRows.slice(0, 3), [propertyStatsRows])
-  const bookingPreviewRows = useMemo(
-    () => [...activeBookings]
-      .sort((a, b) => (parseMotTime(a.startDate) || Infinity) - (parseMotTime(b.startDate) || Infinity))
-      .slice(0, 3),
-    [activeBookings]
-  )
-
   const openOwnerView = useCallback((view, params = {}) => {
     if (goTo) {
       goTo(view, params)
@@ -1622,64 +1615,53 @@ export default function MainOwnerTestPage() {
             </div>
           </div>
 
-          <div className="mot-finance__quick-grid" aria-label={t('ownerTest_ariaKeyMetrics')}>
-          <button
-            type="button"
-            className="mot-finance__quick-card mot-finance__quick-card--properties"
-            onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}
-          >
-            <span className="mot-finance__quick-card-top">
-              <span className="mot-finance__quick-icon"><Building2 size={19} aria-hidden /></span>
-              {propertyPreviewRows.length > 0 ? (
-                <span className="mot-finance__thumb-stack" aria-hidden>
-                  {propertyPreviewRows.map((row) => (
-                    <img key={row.statsKey || row.id} src={row.image || MOT_EVENT_FALLBACK_IMAGE} alt="" />
-                  ))}
-                </span>
-              ) : null}
-            </span>
-            <span className="mot-finance__quick-title">{dashboardCopy.properties}</span>
-            <strong>{overviewLoading ? '—' : formatMotNumber(propertyStatsRows.length, intlLocale)}</strong>
-            <span className="mot-finance__quick-hint">{dashboardCopy.propertiesHint}</span>
-            <ArrowUpRight className="mot-finance__quick-arrow" size={18} strokeWidth={2.2} aria-hidden />
-          </button>
+          <div className="mot-dashboard-promos" aria-label={t('ownerTest_ariaKeyMetrics')}>
+            <button
+              type="button"
+              className="mot-dashboard-promo mot-dashboard-promo--properties"
+              onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}
+            >
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/properties-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <span className="mot-dashboard-promo__copy">
+                <span className="mot-dashboard-promo__title">{dashboardCopy.properties}</span>
+                <span className="mot-dashboard-promo__hint">{dashboardCopy.propertiesHint}</span>
+              </span>
+              <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(propertyStatsRows.length, intlLocale)}</strong>
+              <ArrowUpRight className="mot-dashboard-promo__arrow" size={19} strokeWidth={2.2} aria-hidden />
+            </button>
 
-          <button
-            type="button"
-            className="mot-finance__quick-card mot-finance__quick-card--bookings"
-            onClick={() => openOwnerView(OWNER_VIEWS.TEST_DRIVE)}
-          >
-            <span className="mot-finance__quick-card-top">
-              <span className="mot-finance__quick-icon"><Calendar size={19} aria-hidden /></span>
-              {bookingPreviewRows.length > 0 ? (
-                <span className="mot-finance__thumb-stack" aria-hidden>
-                  {bookingPreviewRows.map((row) => (
-                    <img key={row.id} src={row.image || MOT_EVENT_FALLBACK_IMAGE} alt="" />
-                  ))}
+            <button
+              type="button"
+              className="mot-dashboard-promo mot-dashboard-promo--bookings"
+              onClick={() => openOwnerView(OWNER_VIEWS.TEST_DRIVE)}
+            >
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/bookings-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <span className="mot-dashboard-promo__copy">
+                <span className="mot-dashboard-promo__title">{dashboardCopy.bookings}</span>
+                <span className="mot-dashboard-promo__hint">
+                  {pendingBookingCount > 0
+                    ? `${pendingBookingCount} ${dashboardCopy.pending}`
+                    : dashboardCopy.bookingsHint}
                 </span>
-              ) : null}
-            </span>
-            <span className="mot-finance__quick-title">{dashboardCopy.bookings}</span>
-            <strong>{overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}</strong>
-            <span className="mot-finance__quick-hint">
-              {pendingBookingCount > 0
-                ? `${pendingBookingCount} ${dashboardCopy.pending}`
-                : dashboardCopy.bookingsHint}
-            </span>
-            <ArrowUpRight className="mot-finance__quick-arrow" size={18} strokeWidth={2.2} aria-hidden />
-          </button>
+              </span>
+              <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}</strong>
+              <ArrowUpRight className="mot-dashboard-promo__arrow" size={19} strokeWidth={2.2} aria-hidden />
+            </button>
 
-          <button
-            type="button"
-            className="mot-finance__quick-card mot-finance__quick-card--add"
-            disabled
-            aria-disabled="true"
-          >
-            <span className="mot-finance__add-icon"><Plus size={23} strokeWidth={2.2} aria-hidden /></span>
-            <span className="mot-finance__quick-title">{dashboardCopy.add}</span>
-            <span className="mot-finance__quick-hint">{dashboardCopy.addHint}</span>
-            <ArrowUpRight className="mot-finance__add-arrow" size={20} strokeWidth={2.2} aria-hidden />
-          </button>
+            <button
+              type="button"
+              className="mot-dashboard-promo mot-dashboard-promo--add"
+              onClick={() => openOwnerView(OWNER_VIEWS.ADD_PROPERTY)}
+            >
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/add-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <span className="mot-dashboard-promo__copy">
+                <span className="mot-dashboard-promo__title">{dashboardCopy.add}</span>
+                <span className="mot-dashboard-promo__hint">{dashboardCopy.addHint}</span>
+              </span>
+              <span className="mot-dashboard-promo__arrow mot-dashboard-promo__plus" aria-hidden="true">
+                <Plus size={22} strokeWidth={2} />
+              </span>
+            </button>
           </div>
         </section>
 
@@ -1696,7 +1678,7 @@ export default function MainOwnerTestPage() {
             <span className="mot-finance__action-ai-mark" aria-hidden>AI</span>
             {dashboardCopy.aiAssistant}
           </button>
-          <button type="button" disabled aria-disabled="true">
+          <button type="button" className="mot-finance__action-add" onClick={() => openOwnerView(OWNER_VIEWS.ADD_PROPERTY)}>
             <span><Plus size={23} strokeWidth={1.9} aria-hidden /></span>
             {dashboardCopy.add}
           </button>

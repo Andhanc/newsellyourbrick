@@ -295,7 +295,7 @@ export default function Shares() {
             <span className="shares-hero-scene__eyebrow">{t('coInvestment')}</span>
             <div className="section-info-heading-row">
               <h1 id="shares-hero-title" className="shares-hero-scene__title">
-                {t('shares')}
+                {t('sharesPage_heroTitle')}
               </h1>
               <SectionInfoDrawer section="shares" placement="heading" />
             </div>

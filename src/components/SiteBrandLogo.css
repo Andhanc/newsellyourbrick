@@ -7,6 +7,25 @@
   color: inherit;
 }
 
+.site-brand__wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.14em;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.site-brand__wordmark-accent {
+  padding: 0.1em 0.3em 0.12em;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--oc-tiffany, #0099a9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
 .site-brand__icon {
   width: 32px;
   height: 32px;

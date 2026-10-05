@@ -120,3 +120,7 @@ apps/client/.env.production
 # Maestro local run artifacts (keep LATEST.md tracked optionally)
 maestro/reports/*-run-*/
 maestro/reports/*.xml
+
+# Private project documents and local demo credentials
+server/private-development/
+output/development/demo-access.json

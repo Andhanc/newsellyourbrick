@@ -9,6 +9,7 @@ import { AppleIcon, InstagramIcon, TelegramIcon, WhatsAppIcon, YoutubeIcon } fro
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
+import { SiteBrandWordmark } from './SiteBrandLogo'
 import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
@@ -111,6 +112,7 @@ const Footer = () => {
         { to: '/auction', label: t('auction') },
         { to: CO_INVESTMENT_PATH, label: t('footerShares') },
         { to: '/debts', label: t('debtsTitle') },
+        { to: '/development', label: t('develop.title') },
         { to: '/auction/buy-now', label: t('footerBuyNowShort') },
       ],
     },
@@ -193,10 +195,7 @@ const Footer = () => {
 
   const renderFooterBrand = (className) => (
     <Link to="/" onClick={scrollToTop} className={className} aria-label={t('home')}>
-      <div className="footer__brand-icon">
-        <span className="footer__brand-house" />
-      </div>
-      <span className="footer__brand-text">Sellyourbrick</span>
+      <span className="footer__brand-text"><SiteBrandWordmark /></span>
     </Link>
   )
 

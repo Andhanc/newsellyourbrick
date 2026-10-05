@@ -1,0 +1,248 @@
+.dev-funding-overview {
+  margin: 0 0 28px;
+  min-width: 0;
+}
+.dev-capital-costs {
+  display: grid;
+  gap: 14px;
+}
+.dev-capital-cost {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  min-height: 190px;
+  padding: 28px 30px;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #f6f6f8;
+  color: #252629;
+  box-sizing: border-box;
+}
+.dev-capital-cost::before {
+  content: '';
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -78px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: linear-gradient(140deg, #e0f7f4, #b7eae5);
+  box-shadow: 0 0 0 10px rgba(78, 205, 214, 0.07);
+  pointer-events: none;
+}
+.dev-capital-cost--constructionCost::before {
+  background: linear-gradient(140deg, #f0eafb, #dacbf3);
+  box-shadow: 0 0 0 10px rgba(174, 145, 225, 0.07);
+}
+.dev-capital-cost__copy {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 150px);
+}
+.dev-capital-cost h2 {
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+.dev-capital-cost p {
+  margin: 14px 0 0;
+  font-size: 44px;
+  line-height: 1.08;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+.dev-capital-cost img {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  object-fit: contain;
+  pointer-events: none;
+}
+.dev-metrics-promo {
+  position: relative;
+  margin: 14px 0 0;
+  padding: 26px 20px 30px;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #f5f3f1;
+}
+.dev-metrics-promo__heading {
+  position: relative;
+  min-height: 92px;
+  padding: 0 14px 24px;
+}
+.dev-metrics-promo__heading h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 310px;
+  margin: 0;
+  color: #201d1c;
+  font-family: var(--site-font-family, 'Montserrat', system-ui, sans-serif);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.dev-metrics-promo__heading p {
+  max-width: 540px;
+  margin: 10px 0 0;
+  color: #718096;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.dev-metric-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.dev-metric-cards:focus-visible {
+  outline: 3px solid #168894;
+  outline-offset: 3px;
+  border-radius: 20px;
+}
+.dev-metric-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  padding: 20px;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(145deg, #1e9eae, #52cbd2 48%, #b6f2e8);
+  box-sizing: border-box;
+}
+.dev-metric-card--term {
+  background: linear-gradient(145deg, #8c67de, #bda6f3 52%, #a4e6dc);
+}
+.dev-metric-card--roi {
+  background: linear-gradient(145deg, #238f91, #56c9bd 50%, #b3f2d7);
+}
+.dev-metric-card img {
+  position: absolute;
+  z-index: -1;
+  width: 125%;
+  height: 125%;
+  max-width: none;
+  left: -12.5%;
+  bottom: -8%;
+  object-fit: cover;
+  mask-image: linear-gradient(180deg, transparent 34%, #000 67%);
+}
+.dev-metric-card dt {
+  position: relative;
+  min-height: 2.2em;
+  margin: 0;
+  font-size: clamp(18px, 2vw, 26px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  white-space: pre-line;
+  text-shadow: 0 1px 3px rgba(21, 66, 76, 0.12);
+}
+.dev-metric-card dd {
+  position: relative;
+  margin: 8px 0 0;
+  font-size: clamp(32px, 4.2vw, 54px);
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 6px rgba(21, 66, 76, 0.12);
+}
+.dev-funding-overview__notes {
+  padding: 4px 4px 0;
+}
+.dev-funding-overview__notes .dev-notice {
+  font-size: 12px;
+}
+@media (max-width: 768px) {
+  .dev-funding-overview {
+    margin-inline: -6px;
+  }
+  .dev-capital-costs {
+    gap: 12px;
+  }
+  .dev-capital-cost {
+    min-height: 158px;
+    padding: 22px 18px;
+    border-radius: 24px;
+  }
+  .dev-capital-cost::before {
+    width: 184px;
+    height: 184px;
+    right: -75px;
+    top: 60%;
+  }
+  .dev-capital-cost__copy {
+    width: calc(100% - 72px);
+  }
+  .dev-capital-cost h2 {
+    font-size: 19px;
+  }
+  .dev-capital-cost p {
+    margin-top: 14px;
+    font-size: clamp(27px, 7.2vw, 38px);
+  }
+  .dev-capital-cost img {
+    width: 116px;
+    height: 116px;
+    right: -24px;
+    top: 60%;
+  }
+  .dev-metrics-promo {
+    margin: 12px 0 0;
+    padding: 24px 10px 28px;
+    border-radius: 28px;
+  }
+  .dev-metrics-promo__heading {
+    min-height: 100px;
+    padding: 0 18px 26px;
+    box-sizing: border-box;
+  }
+  .dev-metrics-promo__heading h2 {
+    max-width: 100%;
+    font-size: 30px;
+  }
+  .dev-metric-cards {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 0 -10px;
+    padding: 0 10px;
+    scroll-padding-inline: 10px;
+  }
+  .dev-metric-cards::-webkit-scrollbar {
+    display: none;
+  }
+  .dev-metric-card {
+    flex: 0 0 43%;
+    min-width: 0;
+    container-type: inline-size;
+    aspect-ratio: 1 / 1.06;
+    padding: clamp(8px, 2.5vw, 14px);
+    border-radius: 20px;
+    scroll-snap-align: start;
+  }
+  .dev-metric-card dt {
+    min-height: 2.2em;
+    font-size: clamp(12px, 11cqw, 19px);
+  }
+  .dev-metric-card dd {
+    font-size: clamp(20px, 20cqw, 32px);
+    margin-top: 7px;
+  }
+  .dev-funding-overview__notes {
+    padding-inline: 4px;
+  }
+}

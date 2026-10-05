@@ -155,7 +155,7 @@ function getSaleCards(t, language) {
     },
     {
       id: 'shares',
-      title: t('shares'),
+      title: t('coInvestment'),
       description: stripDescriptionPeriod(t('discoverPage_saleCardSharesDesc')),
       descriptionTrigger: getDescriptionTrigger(language, 'shares'),
       image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),

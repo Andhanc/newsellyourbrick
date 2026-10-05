@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiX } from 'react-icons/fi'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { publicAsset } from '../utils/publicAsset'
+import DepositReturnPropertyCard from './DepositReturnPropertyCard'
 import './DepositStrategyModal.css'
 
 const STRATEGIES = [
@@ -14,7 +15,14 @@ const STRATEGIES = [
   { id: 'debts', titleKey: 'walletPage_strategyDebtsTitle', descriptionKey: 'walletPage_strategyDebtsDescription', path: '/debts' },
 ]
 
-export default function DepositStrategyModal({ isOpen, onClose }) {
+export default function DepositStrategyModal({
+  isOpen,
+  onClose,
+  onOpenCompass,
+  returnPropertyPath = null,
+  onReturnToProperty,
+  onChooseStrategies,
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dialogRef = useRef(null)
@@ -57,6 +65,10 @@ export default function DepositStrategyModal({ isOpen, onClose }) {
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (isOpen) firstCardRef.current?.focus()
+  }, [isOpen, returnPropertyPath])
+
   if (!isOpen || typeof document === 'undefined') return null
 
   const selectStrategy = (path) => {
@@ -76,32 +88,67 @@ export default function DepositStrategyModal({ isOpen, onClose }) {
       >
         <div className="deposit-strategy-modal__card">
           <div className="deposit-strategy-modal__heading">
-            <h2 id="deposit-strategy-modal-title">{t('walletPage_strategyModalTitle')}</h2>
+            <h2 id="deposit-strategy-modal-title">{t(returnPropertyPath ? 'walletPage_strategyReturnTitle' : 'walletPage_strategyModalTitle')}</h2>
           </div>
-          <div className="deposit-strategy-modal__list">
-            {STRATEGIES.map((strategy, index) => (
+          {returnPropertyPath ? (
+            <div className="deposit-strategy-modal__return">
+              <p>{t('walletPage_strategyReturnDescription')}</p>
+              <DepositReturnPropertyCard path={returnPropertyPath} />
               <button
-                key={strategy.id}
-                ref={index === 0 ? firstCardRef : undefined}
+                ref={firstCardRef}
                 type="button"
-                className={`deposit-strategy-modal__option deposit-strategy-modal__option--${strategy.id}`}
-                onClick={() => selectStrategy(strategy.path)}
+                className="deposit-strategy-modal__return-action"
+                onClick={onReturnToProperty}
               >
-                <img
-                  src={publicAsset(`images/deposit-strategies/${strategy.id}-clay-v2.webp`)}
-                  alt=""
-                  width="640"
-                  height="640"
-                  decoding="async"
-                />
-                <span className="deposit-strategy-modal__option-content">
-                  <span className="deposit-strategy-modal__option-title">{t(strategy.titleKey)}</span>
-                  <span className="deposit-strategy-modal__option-description">{t(strategy.descriptionKey)}</span>
-                  <FiArrowRight className="deposit-strategy-modal__arrow" aria-hidden="true" />
-                </span>
+                <span>{t('walletPage_strategyReturnCta')}</span>
+                <FiArrowRight aria-hidden="true" />
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                className="deposit-strategy-modal__compass-link"
+                onClick={onChooseStrategies}
+              >
+                {t('walletPage_strategyChooseOther')}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="deposit-strategy-modal__list">
+                {STRATEGIES.map((strategy, index) => (
+                  <button
+                    key={strategy.id}
+                    ref={index === 0 ? firstCardRef : undefined}
+                    type="button"
+                    className={`deposit-strategy-modal__option deposit-strategy-modal__option--${strategy.id}`}
+                    onClick={() => selectStrategy(strategy.path)}
+                  >
+                    <img
+                      src={publicAsset(`images/deposit-strategies/${strategy.id}-clay-v2.webp`)}
+                      alt=""
+                      width="640"
+                      height="640"
+                      decoding="async"
+                    />
+                    <span className="deposit-strategy-modal__option-content">
+                      <span className="deposit-strategy-modal__option-title">{t(strategy.titleKey)}</span>
+                      <span className="deposit-strategy-modal__option-description">{t(strategy.descriptionKey)}</span>
+                      <FiArrowRight className="deposit-strategy-modal__arrow" aria-hidden="true" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="deposit-strategy-modal__compass-link"
+                onClick={() => {
+                  onClose()
+                  onOpenCompass()
+                }}
+              >
+                {t('walletPage_strategyModalHelp')}
+              </button>
+            </>
+          )}
         </div>
         <button
           type="button"

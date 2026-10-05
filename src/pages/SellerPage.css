@@ -673,7 +673,6 @@
   padding: 0 16px;
   color: #ffffff;
   font-size: 13px;
-  color: #050505;
   background: var(--seller-cyan);
   background-image: none;
   box-shadow: 0 12px 28px rgba(78, 205, 214, 0.22);
@@ -1639,6 +1638,7 @@
 
   .seller-services__grid {
     grid-template-columns: 1fr;
+    grid-auto-rows: 1fr;
     align-items: stretch;
     gap: 16px;
     width: 100%;
@@ -1658,10 +1658,12 @@
 
   .seller-services-card__icon {
     margin-top: 0;
+    flex-shrink: 0;
   }
 
   .seller-services-card h3 {
     width: 100%;
+    overflow-wrap: anywhere;
     margin-top: 16px;
     font-size: clamp(1.35rem, 3.2vw, 1.7rem);
     line-height: 1.15;
@@ -1675,6 +1677,7 @@
     width: 100%;
     max-width: 34ch;
     margin-top: 12px;
+    margin-bottom: 20px;
     font-size: 0.95rem;
     line-height: 1.5;
     flex: 0 1 auto;
@@ -1684,12 +1687,17 @@
     overflow: visible;
   }
 
-  .seller-services-card a {
+  .seller-services-card a,
+  .seller-services-card .seller-listing-cta {
     align-self: flex-start;
     justify-content: center;
     width: auto;
-    margin-top: 22px;
-    padding: 0 18px;
+    max-width: 100%;
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 10px 18px;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -1905,6 +1913,7 @@
   .seller-savings__stats {
     min-height: 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
     gap: 20px 16px;
     padding: 28px 20px 30px;
   }
@@ -2069,16 +2078,18 @@
     min-height: 0;
   }
 
-  .seller-services-card a {
-    margin-top: 20px;
-    padding: 0 18px;
+  .seller-services-card a,
+  .seller-services-card .seller-listing-cta {
+    padding: 10px 18px;
     font-size: 11px;
     gap: 6px;
   }
 
-  .seller-services-card a svg {
+  .seller-services-card a svg,
+  .seller-services-card .seller-listing-cta svg {
     width: 13px;
     height: 13px;
+    flex-shrink: 0;
   }
 
   .seller-about {
@@ -2277,9 +2288,9 @@
     min-height: 0;
   }
 
-  .seller-services-card a {
-    margin-top: 18px;
-    padding: 0 16px;
+  .seller-services-card a,
+  .seller-services-card .seller-listing-cta {
+    padding: 10px 16px;
     font-size: 11px;
   }
 }

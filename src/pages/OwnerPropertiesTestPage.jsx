@@ -1319,6 +1319,7 @@ export default function OwnerPropertiesTestPage() {
         <header className="op-header op-desktop-only">
           <h1 className="op-header__title">{t('ownerTest_navMyProperties')}</h1>
           <div className="op-header__actions">
+            <Link to="/development/mine" className="op-btn op-btn--file">DEVELOP</Link>
             <button
               type="button"
               className="op-btn op-btn--file op-header__file-btn"
