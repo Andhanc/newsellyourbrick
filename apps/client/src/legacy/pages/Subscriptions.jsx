@@ -4,12 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { getUserData } from '../services/authService'
 import Header from '../components/Header'
 import VerificationToast from '../components/VerificationToast'
-import PricingCards from '../components/ui/PricingCards'
-import { startProSubscriptionCheckout, confirmCheckoutSession, startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import BuyerSubscriptionOffers from '../components/BuyerSubscriptionOffers'
+import { confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import './Subscriptions.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
-import { effectiveDisplayTier, effectivePurchasedTier, userHasVipAccess } from '../hooks/useCabinetOverviewData'
+import { effectiveDisplayTier } from '../hooks/useCabinetOverviewData'
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -93,76 +93,15 @@ const Subscriptions = () => {
     }
   }, [searchParams, setSearchParams, t, navigate])
 
-  const handleBookCall = async (plan, billingCycle = 'monthly') => {
-    if (plan === 'pro') {
-      const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
-      if (tier === 'pro' || tier === 'vip') {
-        showNotification(t('buyerCabinet_toastDuplicateSubscription'), 'info')
-        return
-      }
-      const userData = getUserData()
-      const uid = userData?.id ?? localStorage.getItem('userId')
-      const result = await startProSubscriptionCheckout({
-        userId: uid,
-        customerEmail: userData?.email,
-        billingCycle,
-      })
-      if (!result.ok) {
-        const msg =
-          result.error === 'already_subscribed_pro'
-            ? t('buyerCabinet_toastDuplicateSubscription')
-            : result.error || t('buyerCabinet_checkoutError')
-        showNotification(msg, result.error === 'already_subscribed_pro' ? 'info' : 'error')
-      }
-      return
-    }
-    if (plan === 'starter') {
-      showNotification(t('buyerCabinet_toastStarter'), 'info')
-      return
-    }
-    if (plan === 'vip') {
-      if (userHasVipAccess({ subscription: subscriptionBilling?.subscription, vipClub: subscriptionBilling?.vipClub })) {
-        showNotification(t('privateClubVipAlready'), 'info')
-        return
-      }
-      const userData = getUserData()
-      const uid = userData?.id ?? localStorage.getItem('userId')
-      const result = await startVipSubscriptionCheckout({
-        userId: uid,
-        customerEmail: userData?.email,
-        billingCycle,
-      })
-      if (!result.ok) {
-        const msg =
-          result.error === 'already_subscribed_vip'
-            ? t('privateClubVipAlready')
-            : result.error === 'already_subscribed_pro'
-              ? t('buyerCabinet_toastDuplicateSubscription')
-              : result.error || t('buyerCabinet_checkoutError')
-        showNotification(msg, result.error === 'already_subscribed_vip' ? 'info' : 'error')
-      }
-      return
-    }
-  }
-
   return (
     <div className="subscriptions-page subscriptions-page--focus" ref={buyerCabinetPageRef}>
       <Header />
       {userId && <VerificationToast userId={userId} />}
 
       <div className="subscriptions-focus" ref={buyerCabinetMainScrollRef}>
-        <header className="subscriptions-focus__header">
-          <h1 className="subscriptions-focus__title" id="subscriptions-pricing-section">
-            {t('buyerCabinet_sectionSubscriptions')}
-          </h1>
-          <p className="subscriptions-focus__lead">{t('buyerCabinet_sectionSubscriptionsSubtitle')}</p>
-        </header>
-
-        <div className="subscriptions-focus__cards">
-          <PricingCards
-            creative
-            onBookCall={handleBookCall}
-            mobileTwoColumn
+        <div id="subscriptions-pricing-section">
+          <BuyerSubscriptionOffers
+            userId={userId}
             currentPlanVisual={effectiveDisplayTier(
               subscriptionBilling?.subscription,
               subscriptionBilling?.vipClub
@@ -175,4 +114,3 @@ const Subscriptions = () => {
 }
 
 export default Subscriptions
-

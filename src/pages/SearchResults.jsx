@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiSliders } from 'react-icons/fi'
-import { Map, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { FiSearch, FiSliders } from 'react-icons/fi'
+import { ArrowUpRight, MapPin, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import PropertyListingCard from '../components/PropertyListingCard'
+import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
+import FavoritePropertyCard from '../components/FavoritePropertyCard'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
 import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
@@ -24,6 +25,10 @@ import {
 import './SearchResults.css'
 import '../components/PropertyList.css'
 import '../components/PropertyListingGrid.css'
+import '../styles/hrShowcaseAuctionCards.css'
+import '../styles/hrShowcaseDebtsCards.css'
+import '../styles/discoverAuctionCards.css'
+import '../components/ui/AuctionMobileLayout.css'
 import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
@@ -35,8 +40,13 @@ import {
 } from '../utils/propertySearchFilters'
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
 import { getSearchResultsPropertyPath, parseSearchResultsGeoRoute } from '../utils/searchResultsGeoUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { formatPropertyPrice } from '../utils/currency'
+import { PROPERTY_CARD_IMAGE_FALLBACK } from '../utils/propertyImage'
 import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
+import { publicAsset } from '../utils/publicAsset'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -46,25 +56,36 @@ function isHiddenSoldListing(property) {
   return isPropertyListingSoldOut(property)
 }
 
-function SearchResultsGrid({ properties, onOpen, linkGeo }) {
+function SearchResultsGrid({ properties, onOpen, onOpenShare, linkGeo }) {
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
+  const formatPrice = (price, currency = 'USD') =>
+    formatPropertyPrice(price ?? 0, currency, { compact: true })
+
   return (
-    <div className="properties-grid property-listing-grid search-results__grid">
-      {properties.map((property) => (
-        <PropertyListingCard
-          key={auctionListingDedupeKey(property)}
-          property={property}
-          href={getSearchResultsPropertyPath(property, linkGeo)}
-          onOpen={onOpen}
-          showActions={false}
-          pinFooter
-        />
-      ))}
+    <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
+      <div className="properties-grid property-listing-grid search-results__grid properties-grid--auction-cards auction-mobile-stack--desktop-cards">
+        {properties.map((property) => (
+          <FavoritePropertyCard
+            key={auctionListingDedupeKey(property)}
+            item={{ property, mockCategory: 'property' }}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            onOpen={onOpen}
+            onOpenShare={onOpenShare}
+            formatPrice={formatPrice}
+            shareImageFallback={PROPERTY_CARD_IMAGE_FALLBACK}
+            href={getSearchResultsPropertyPath(property, linkGeo)}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 const SearchResults = () => {
   const { t } = useTranslation()
+  const searchTitle = t('searchResults_title')
+  const accentStart = searchTitle.lastIndexOf(' ')
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams()
@@ -81,7 +102,9 @@ const SearchResults = () => {
   const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(
+    () => new URLSearchParams(location.search).get('q')?.trim() || '',
+  )
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -214,6 +237,10 @@ const SearchResults = () => {
   }, [activeFilters, searchQuery, routeCountry, routeCity])
 
   useEffect(() => {
+    setSearchQuery(new URLSearchParams(location.search).get('q')?.trim() || '')
+  }, [location.search])
+
+  useEffect(() => {
     if (!location.state?.fromPropertySearchBlock) return
     if (typeof location.state?.searchQuery === 'string' && location.state.searchQuery.trim()) {
       setSearchQuery(location.state.searchQuery.trim())
@@ -236,6 +263,11 @@ const SearchResults = () => {
     })
     const targetPath = getSearchResultsPropertyPath(property, linkGeo)
     navigate(targetPath === getPropertyDetailPath(property) ? pathname : targetPath, { state })
+  }
+
+  const openShare = (share) => {
+    if (!ensureCanOpenProperty()) return
+    navigate(getCoInvestmentDetailPath(share), { state: { shareObject: share } })
   }
 
   const sanitizeActiveFilters = (nextFilters) =>
@@ -321,70 +353,84 @@ const SearchResults = () => {
                   <div className="search-results__mobile-head">
                     <div>
                       <p className="search-results__eyebrow">{t('searchResults_eyebrow')}</p>
-                      <h1>{t('searchResults_title')}</h1>
+                      <h1>
+                        {accentStart < 0 ? null : `${searchTitle.slice(0, accentStart)} `}
+                        <span className="search-results__title-accent">
+                          {searchTitle.slice(accentStart + 1)}
+                        </span>
+                      </h1>
                       <p className="search-results__mobile-count">
                         {totalUniqueCount > 0
                           ? `${totalUniqueCount} ${t('mapFiltersObjects')}`
                           : t('searchResults_emptyCount')}
                       </p>
                     </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="search-results__map-promo"
+                    onClick={() => navigate('/map')}
+                    aria-label={t('searchResults_mapAria')}
+                  >
+                    <img
+                      className="search-results__map-promo-image"
+                      src={publicAsset('images/search-results/map-promo.webp')}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span className="search-results__map-promo-content">
+                      <span className="search-results__map-promo-eyebrow">
+                        <MapPin size={12} aria-hidden="true" />
+                        {t('searchResults_mapPromoEyebrow')}
+                      </span>
+                      <span className="search-results__map-promo-title">
+                        {t('searchResults_mapPromoTitle')}
+                      </span>
+                      <span className="search-results__map-promo-cta">
+                        {t('searchResults_mapPromoCta')}
+                        <ArrowUpRight size={16} aria-hidden="true" />
+                      </span>
+                    </span>
+                  </button>
+                  <div className="search-results__mobile-search">
+                    <form
+                      className="search-results__search-pill"
+                      onSubmit={(event) => {
+                        event.preventDefault()
+                        event.currentTarget.querySelector('input')?.blur()
+                      }}
+                    >
+                      <input
+                        type="search"
+                        className="search-results__search-pill-input"
+                        placeholder={t('discoverPage_searchPlaceholder')}
+                        aria-label={t('discoverPage_searchAria')}
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                      />
+                      <button
+                        type="submit"
+                        className="search-results__search-pill-go"
+                        aria-label={t('search')}
+                      >
+                        <FiSearch aria-hidden="true" />
+                      </button>
+                    </form>
                     <button
                       type="button"
-                      className="search-results__map-button"
-                      onClick={() => navigate('/map')}
-                      aria-label={t('searchResults_mapAria')}
+                      className={`search-results__mobile-filters-btn${
+                        activeFilterCount > 0 ? ' is-active' : ''
+                      }`}
+                      onClick={() => setMobileFiltersOpen(true)}
+                      aria-label={t('filters')}
+                      aria-expanded={mobileFiltersOpen}
                     >
-                      <Map size={18} aria-hidden />
-                      <span>{t('mapLink')}</span>
-                    </button>
-                  </div>
-                  <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
-                    <div className="search-box">
-                    <svg
-                      className="search-icon"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.35-4.35" />
-                    </svg>
-                    <input
-                      type="text"
-                      className="search-input"
-                      placeholder={t('searchPlaceholderLong')}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery ? (
-                      <button
-                        type="button"
-                        className="search-clear"
-                        onClick={() => setSearchQuery('')}
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                    </div>
-                    <button
-                    type="button"
-                    className={`search-results__mobile-filters-btn${
-                      activeFilterCount > 0 ? ' is-active' : ''
-                    }`}
-                    onClick={() => setMobileFiltersOpen(true)}
-                    aria-label={t('filters')}
-                    aria-expanded={mobileFiltersOpen}
-                  >
-                    <FiSliders size={20} aria-hidden />
-                    {activeFilterCount > 0 ? (
-                      <span className="search-results__mobile-filters-count" aria-hidden>
-                        {activeFilterCount}
-                      </span>
-                    ) : null}
+                      <FiSliders size={20} aria-hidden />
+                      {activeFilterCount > 0 ? (
+                        <span className="search-results__mobile-filters-count" aria-hidden>
+                          {activeFilterCount}
+                        </span>
+                      ) : null}
                     </button>
                   </div>
                 </>
@@ -460,7 +506,7 @@ const SearchResults = () => {
                             ({section.properties.length})
                           </span>
                         </h2>
-                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} linkGeo={linkGeo} />
+                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} onOpenShare={openShare} linkGeo={linkGeo} />
                         {index < groupedSections.length - 1 ? (
                           <div
                             className="property-listing-grid-divider"
@@ -514,6 +560,7 @@ const SearchResults = () => {
         </div>
       </div>
       </main>
+      {!isSearchDesktop ? <AuctionCategoryCtaCards variant="sharesPage" /> : null}
       <Footer />
     </div>
   )

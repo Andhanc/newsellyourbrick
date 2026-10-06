@@ -519,8 +519,8 @@
 }
 
 .investor-source-hero__favorite-card.is-selected {
-  border-color: #ffffff;
-  box-shadow: 0 0 0 3px #080909, 0 0 0 5px rgba(255, 255, 255, .82), 0 22px 46px rgba(0, 0, 0, .45);
+  border-color: #080909;
+  box-shadow: 0 22px 46px rgba(0, 0, 0, .45);
   transform: translateY(-2px);
 }
 

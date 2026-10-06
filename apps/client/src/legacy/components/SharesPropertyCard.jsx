@@ -24,6 +24,7 @@ function SharesPropertyCard({
   onFavoriteToggle,
   onInvest,
   href,
+  imageFallback = CARD_IMAGE_FALLBACK,
 }) {
   const { t, i18n } = useTranslation()
   const cardShare = normalizeMarketplaceShare(share)
@@ -37,7 +38,7 @@ function SharesPropertyCard({
     cardShare.location || [cardShare.city, cardShare.country].filter(Boolean).join(', ')
   const usesFallbackImage = !cardShare.image
   const numberLocale = i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US'
-  const imageProps = buildResponsiveImageProps(cardShare.image || CARD_IMAGE_FALLBACK, {
+  const imageProps = buildResponsiveImageProps(cardShare.image || imageFallback, {
     widths: [320, 480, 640, 800],
     sizes: viewMode === 'list' ? '280px' : '(max-width: 768px) 50vw, 25vw',
     quality: 76,
@@ -151,10 +152,10 @@ function SharesPropertyCard({
 
   const handleImageError = (event) => {
     const image = event.currentTarget
-    if (image.getAttribute('src') === CARD_IMAGE_FALLBACK) return
+    if (image.getAttribute('src') === imageFallback) return
     image.onerror = null
     image.removeAttribute('srcset')
-    image.src = CARD_IMAGE_FALLBACK
+    image.src = imageFallback
     image.alt = t('sharesCardFallbackImageAlt')
   }
 

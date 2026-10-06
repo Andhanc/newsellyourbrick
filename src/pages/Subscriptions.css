@@ -913,3 +913,14 @@
   z-index: 1;
 }
 
+.subscriptions-page::before {
+  background: #faf8f5;
+}
+
+.subscriptions-page::after {
+  display: none;
+}
+
+.subscriptions-focus {
+  max-width: 1120px;
+}

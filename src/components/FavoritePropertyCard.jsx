@@ -15,6 +15,8 @@ export default function FavoritePropertyCard({
   onOpen,
   onOpenShare,
   formatPrice,
+  shareImageFallback = SHARE_FALLBACK,
+  href,
 }) {
   const { property, mockCategory } = item
   const favoriteMockCategory = hasDbBackedProperty(property) ? undefined : mockCategory
@@ -28,7 +30,7 @@ export default function FavoritePropertyCard({
   }
 
   if (kind === 'shares') {
-    const share = mapShareFromApiResponse(property, SHARE_FALLBACK)
+    const share = mapShareFromApiResponse(property, shareImageFallback)
     if (!share) return null
 
     return (
@@ -37,7 +39,7 @@ export default function FavoritePropertyCard({
         isFavorite={liked}
         onFavoriteToggle={() => onToggleFavorite(property, favoriteMockCategory)}
         onInvest={() => onOpenShare?.(share)}
-        imageFallback={SHARE_FALLBACK}
+        imageFallback={shareImageFallback}
       />
     )
   }
@@ -49,6 +51,7 @@ export default function FavoritePropertyCard({
         isFavorite={liked}
         onFavoriteToggle={handleFavoriteToggle}
         onOpen={onOpen}
+        href={href}
       />
     )
   }
@@ -60,6 +63,7 @@ export default function FavoritePropertyCard({
         isFavorite={liked}
         onFavoriteToggle={handleFavoriteToggle}
         onOpen={onOpen}
+        href={href}
         formatPrice={formatPrice}
       />
     )
@@ -70,6 +74,7 @@ export default function FavoritePropertyCard({
       property={property}
       favoriteMockCategory={favoriteMockCategory}
       onOpen={onOpen}
+      href={href}
       showActions={false}
       pinFooter
     />

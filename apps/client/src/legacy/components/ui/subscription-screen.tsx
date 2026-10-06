@@ -50,6 +50,7 @@ export function SubscriptionScreen({
     duration: DRAWER_DISMISS_MS.spring,
   })
   const [selectedPlan, setSelectedPlan] = React.useState(defaultPlanId)
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null)
 
   React.useEffect(() => {
     if (!open) return
@@ -60,7 +61,9 @@ export function SubscriptionScreen({
     if (!visible) return undefined
 
     const previousOverflow = document.body.style.overflow
+    const previouslyFocused = document.activeElement as HTMLElement | null
     document.body.style.overflow = 'hidden'
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus())
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') requestClose()
@@ -68,8 +71,10 @@ export function SubscriptionScreen({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => {
+      window.cancelAnimationFrame(focusFrame)
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus?.()
     }
   }, [requestClose, visible])
 
@@ -80,20 +85,32 @@ export function SubscriptionScreen({
   const sheetMotionClass = isClosing ? ' subscription-screen--closing' : ' subscription-screen--open'
 
   return createPortal(
-    <div className="subscription-screen-overlay">
+    <div
+      className="subscription-screen-overlay"
+      onKeyDown={(event) => {
+        // The buyer profile also renders this portal inside a parent sheet.
+        // Keep Escape and Tab inside the checkout sheet.
+        event.stopPropagation()
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          requestClose()
+        }
+      }}
+    >
       <button
         type="button"
         className={`subscription-screen-overlay__backdrop${openBackdrop}${closingBackdrop}`}
         aria-label="Close"
         onClick={() => requestClose()}
       />
-      <div className={cn('subscription-screen', sheetMotionClass)}>
+      <div className={cn('subscription-screen', sheetMotionClass)} role="dialog" aria-modal="true" aria-label={`${appName} ${planType}`}>
         <div className="subscription-screen__sheet">
           <div className="subscription-screen__header">
             <h2 className="subscription-screen__title">
               {appName} <span className="subscription-screen__title-accent">{planType}</span>
             </h2>
             <button
+              ref={closeButtonRef}
               type="button"
               className="subscription-screen__close"
               aria-label="Close"

@@ -22,6 +22,7 @@ export default function DepositStrategyModal({
   returnPropertyPath = null,
   onReturnToProperty,
   onChooseStrategies,
+  titleKey = 'walletPage_strategyModalTitle',
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -88,7 +89,7 @@ export default function DepositStrategyModal({
       >
         <div className="deposit-strategy-modal__card">
           <div className="deposit-strategy-modal__heading">
-            <h2 id="deposit-strategy-modal-title">{t(returnPropertyPath ? 'walletPage_strategyReturnTitle' : 'walletPage_strategyModalTitle')}</h2>
+            <h2 id="deposit-strategy-modal-title">{t(returnPropertyPath ? 'walletPage_strategyReturnTitle' : titleKey)}</h2>
           </div>
           {returnPropertyPath ? (
             <div className="deposit-strategy-modal__return">

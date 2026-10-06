@@ -837,7 +837,7 @@ export default function MobileDiscoverPage() {
                   onSubmit={(event) => {
                     event.preventDefault()
                     const q = welcomeQuery.trim()
-                    navigate(q ? `/auction?q=${encodeURIComponent(q)}` : '/auction')
+                    navigate(q ? `/search-results?q=${encodeURIComponent(q)}` : '/search-results')
                   }}
                 >
                   <input

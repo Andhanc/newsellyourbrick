@@ -294,7 +294,7 @@ export default function Shares() {
           <div className="shares-hero-scene__copy">
             <span className="shares-hero-scene__eyebrow">{t('coInvestment')}</span>
             <div className="section-info-heading-row">
-              <h1 id="shares-hero-title" className="shares-hero-scene__title">
+              <h1 id="shares-hero-title" className="shares-hero-scene__title" lang={i18n.language}>
                 {t('sharesPage_heroTitle')}
               </h1>
               <SectionInfoDrawer section="shares" placement="heading" />

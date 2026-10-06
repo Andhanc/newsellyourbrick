@@ -1,0 +1,53 @@
+.buyer-subscription-offers {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  color: #111827;
+}
+
+.buyer-subscription-offers__hero {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.buyer-subscription-offers__title {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.buyer-subscription-offers__pill {
+  display: inline-block;
+  padding: 0.08em 0.52em 0.14em;
+  border-radius: 999px;
+  background: #4ecdd6;
+  color: #fff;
+  transform: rotate(-2deg);
+  box-shadow: 0 10px 24px rgba(78, 205, 214, 0.25);
+}
+
+.buyer-subscription-offers__lead {
+  max-width: 56ch;
+  margin: 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.buyer-subscription-offers__mobile { display: none; }
+.buyer-subscription-offers__desktop { width: 100%; }
+
+@media (max-width: 900px) {
+  .buyer-subscription-offers { gap: 22px; }
+  .buyer-subscription-offers__title { font-size: clamp(2rem, 8vw, 2.45rem); }
+  .buyer-subscription-offers__mobile { display: block; width: min(100%, 24rem); }
+  .buyer-subscription-offers__desktop { display: none; }
+}

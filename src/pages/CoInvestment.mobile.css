@@ -621,6 +621,27 @@
     font-size: clamp(1.9rem, 8.6vw, 2.55rem);
   }
 
+  .shares-hero-scene__title:lang(es),
+  .shares-hero-scene__title:lang(fr) {
+    font-size: clamp(1.45rem, 7.75vw, 2.45rem);
+    letter-spacing: 0;
+    text-wrap: wrap;
+  }
+
+  .shares-hero-scene__title:lang(es),
+  .shares-hero-scene__title:lang(ru) {
+    font-size: clamp(1.35rem, 7vw, 2.3rem);
+  }
+
+  .shares-hero-scene__title:lang(ru),
+  .shares-hero-scene__title:lang(sv) {
+    letter-spacing: 0;
+  }
+
+  .shares-hero-scene__title:lang(sv) {
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+  }
+
   .shares-hero-scene__lead {
     display: -webkit-box;
     max-width: 34ch;

@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import maplibregl from 'maplibre-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import {
   FiGrid,
   FiHome,
@@ -9,32 +7,10 @@ import {
   FiShield,
   FiTrendingUp,
 } from 'react-icons/fi'
-import { BUYER_HERO_MAP_STYLE } from '@/utils/mapStyles'
 import { publicAsset } from '@/utils/publicAsset'
 
-const MAP_FOCUS = {
-  center: [-4.8864, 36.5108],
-  zoom: 7.1,
-}
-
 const FEATURED_IMAGE = 'images/test-drive/property-marbella-card.jpg'
-
-function disableMapInteraction(map) {
-  map.scrollZoom.disable()
-  map.dragPan.disable()
-  map.boxZoom.disable()
-  map.dragRotate.disable()
-  map.keyboard.disable()
-  map.doubleClickZoom.disable()
-  map.touchZoomRotate.disable()
-}
-
-function focusMapOnSpain(map) {
-  map.jumpTo({
-    center: MAP_FOCUS.center,
-    zoom: MAP_FOCUS.zoom,
-  })
-}
+const MAP_ART = 'images/investor-home/world-map.png'
 
 function MetricCard({ label, value, Icon, placement }) {
   return (
@@ -48,10 +24,8 @@ function MetricCard({ label, value, Icon, placement }) {
   )
 }
 
-export default function BuyerMapScene() {
+export default function BuyerMapScene({ onOpenStrategies }) {
   const { t } = useTranslation()
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
 
   const metricCards = useMemo(
     () => [
@@ -65,59 +39,9 @@ export default function BuyerMapScene() {
 
   const featuredTitle = t('buyerPage_mapFeaturedTitle')
 
-  useEffect(() => {
-    const container = mapContainerRef.current
-    if (!container || mapRef.current) return undefined
-
-    const map = new maplibregl.Map({
-      container,
-      style: BUYER_HERO_MAP_STYLE,
-      center: MAP_FOCUS.center,
-      zoom: MAP_FOCUS.zoom,
-      minZoom: 5,
-      maxZoom: 9,
-      attributionControl: false,
-      fadeDuration: 0,
-      renderWorldCopies: false,
-    })
-
-    disableMapInteraction(map)
-    mapRef.current = map
-
-    const onLoad = () => focusMapOnSpain(map)
-
-    map.on('load', onLoad)
-    if (map.loaded()) onLoad()
-
-    let resizeRaf = null
-    const queueResize = () => {
-      if (resizeRaf != null) cancelAnimationFrame(resizeRaf)
-      resizeRaf = requestAnimationFrame(() => {
-        resizeRaf = null
-        try {
-          map.resize()
-          focusMapOnSpain(map)
-        } catch {
-          // ignore
-        }
-      })
-    }
-
-    const resizeObserver = new ResizeObserver(queueResize)
-    resizeObserver.observe(container)
-    queueResize()
-
-    return () => {
-      if (resizeRaf != null) cancelAnimationFrame(resizeRaf)
-      resizeObserver.disconnect()
-      map.remove()
-      mapRef.current = null
-    }
-  }, [])
-
   return (
     <div className="buyer-map-scene" aria-label={t('buyerPage_mapAria')}>
-      <div className="buyer-map-scene__map" ref={mapContainerRef} aria-hidden />
+      <img className="buyer-map-scene__map" src={publicAsset(MAP_ART)} alt="" aria-hidden loading="eager" decoding="async" />
 
       <div className="buyer-map-scene__metrics" aria-label={t('buyerPage_mapMetricsAria')}>
         {metricCards.map((card) => (
@@ -126,7 +50,12 @@ export default function BuyerMapScene() {
       </div>
 
       <div className="buyer-map-scene__marker" aria-label={t('buyerPage_mapSelectedAria')}>
-        <article className="buyer-map-marker__card">
+        <button
+          type="button"
+          className="buyer-map-marker__card"
+          onClick={onOpenStrategies}
+          aria-label={t('buyerLanding_strategyModalTitle')}
+        >
           <div className="buyer-map-marker__media">
             <img
               src={publicAsset(FEATURED_IMAGE)}
@@ -149,7 +78,7 @@ export default function BuyerMapScene() {
               <em>+10.8%</em>
             </footer>
           </div>
-        </article>
+        </button>
         <span className="buyer-map-marker__tail" aria-hidden />
         <span className="buyer-map-marker__point" aria-hidden />
       </div>

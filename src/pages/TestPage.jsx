@@ -40,7 +40,7 @@ import {
   effectivePurchasedTier,
   SUBSCRIPTION_BILLING_UPDATED_EVENT,
 } from '../hooks/useCabinetOverviewData'
-import { startProSubscriptionCheckout, startVipSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
+import { confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import PassportUploadSourceSheet from '../components/PassportUploadSourceSheet'
@@ -96,7 +96,7 @@ import {
 } from '../utils/buyerCabinetWelcome'
 import './TestPage.css'
 
-const OwnerPricingCards = lazy(() => import('../components/OwnerPricingCards'))
+const BuyerSubscriptionOffers = lazy(() => import('../components/BuyerSubscriptionOffers'))
 const ProfileHistoryExperience = lazy(() => import('../components/ProfileHistoryExperience'))
 const ProfileBookingsExperience = lazy(() => import('../components/ProfileBookingsExperience'))
 
@@ -750,7 +750,6 @@ function TestPage() {
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [subscriptionSheetLoading, setSubscriptionSheetLoading] = useState(false)
   const [subscriptionSheetState, setSubscriptionSheetState] = useState(null)
-  const [subscriptionUpgradeLoading, setSubscriptionUpgradeLoading] = useState(false)
   const [bookingsSheetLoading, setBookingsSheetLoading] = useState(false)
   const [bookingsSheetRows, setBookingsSheetRows] = useState([])
   const [testDriveCancelBooking, setTestDriveCancelBooking] = useState(null)
@@ -1449,129 +1448,6 @@ function TestPage() {
     if (subscriptionSheetState) return effectivePurchasedTier(subscriptionSheetState)
     return cabinetSubscriptionTier
   }, [subscriptionSheetState, cabinetSubscriptionTier])
-
-  const handleSubscriptionPlanSubscribe = useCallback(async (plan, billingCycle = 'monthly') => {
-    if (plan === 'starter') {
-      showNotification(t('buyerCabinet_toastStarter'), 'info')
-      return
-    }
-    if (plan === 'pro') {
-      const tier = subscriptionProfileVisual
-      if (tier === 'pro' || tier === 'vip') {
-        showNotification(t('buyerCabinet_toastDuplicateSubscription'), 'info')
-        return
-      }
-      setSubscriptionUpgradeLoading(true)
-      try {
-        const ud = getUserData()
-        const uid = ud?.id ?? localStorage.getItem('userId')
-        const result = await startProSubscriptionCheckout({
-          userId: uid,
-          customerEmail: ud?.email,
-          billingCycle,
-        })
-        if (!result.ok) {
-          const msg =
-            result.error === 'already_subscribed_pro'
-              ? t('buyerCabinet_toastDuplicateSubscription')
-              : result.error || t('buyerCabinet_checkoutError')
-          showNotification(msg, result.error === 'already_subscribed_pro' ? 'info' : 'error')
-        }
-      } finally {
-        setSubscriptionUpgradeLoading(false)
-      }
-      return
-    }
-    if (plan === 'vip') {
-      if (subscriptionProfileVisual === 'vip') {
-        showNotification(t('privateClubVipAlready'), 'info')
-        return
-      }
-      setSubscriptionUpgradeLoading(true)
-      try {
-        const ud = getUserData()
-        const uid = ud?.id ?? localStorage.getItem('userId')
-        const result = await startVipSubscriptionCheckout({
-          userId: uid,
-          customerEmail: ud?.email,
-          billingCycle,
-        })
-        if (!result.ok) {
-          const msg =
-            result.error === 'already_subscribed_vip'
-              ? t('privateClubVipAlready')
-              : result.error === 'already_subscribed_pro'
-                ? t('buyerCabinet_toastDuplicateSubscription')
-                : result.error || t('buyerCabinet_checkoutError')
-          showNotification(msg, result.error === 'already_subscribed_vip' ? 'info' : 'error')
-        }
-      } finally {
-        setSubscriptionUpgradeLoading(false)
-      }
-    }
-  }, [subscriptionProfileVisual, t])
-
-  const buyerSubscriptionPlans = useMemo(
-    () => [
-      {
-        id: 'starter',
-        name: 'Starter',
-        monthlyPrice: 0,
-        compareAtPrice: 99,
-        popular: false,
-      },
-      {
-        id: 'pro',
-        name: 'Pro',
-        monthlyPrice: 149,
-        popular: true,
-      },
-      {
-        id: 'vip',
-        name: 'VIP',
-        monthlyPrice: 499,
-        popular: false,
-      },
-    ],
-    [],
-  )
-
-  const buyerSubscriptionPlanDetails = useMemo(
-    () => ({
-      starter: {
-        features: [
-          { text: t('buyerPricing_featS0') },
-          { text: t('buyerPricing_featS1') },
-          { text: t('buyerPricing_featS2') },
-        ],
-      },
-      pro: {
-        features: [
-          { text: t('buyerPricing_featP0') },
-          { text: t('buyerPricing_featP1') },
-          { text: t('buyerPricing_featP2') },
-        ],
-      },
-      vip: {
-        features: [
-          { text: t('buyerPricing_featV0') },
-          { text: t('buyerPricing_featV1') },
-          { text: t('buyerPricing_featV2') },
-          { text: t('buyerPricing_featV3') },
-        ],
-      },
-    }),
-    [t],
-  )
-
-  const buyerSubscriptionTaglines = useMemo(
-    () => ({
-      starter: t('buyerPricing_starterDesc'),
-      pro: t('buyerPricing_proDesc'),
-      vip: t('buyerPricing_vipDesc'),
-    }),
-    [t],
-  )
 
   const completionForm = useMemo(() => {
     if (dbUserRow) {
@@ -3902,50 +3778,17 @@ function TestPage() {
           className="profile-subscriptions-experience profile-subscriptions-experience--fullscreen"
           data-profile-sheet="subscriptions"
         >
-          <div className="profile-subscriptions-hero">
-            <img
-              className="profile-subscriptions-hero__image"
-              src="/images/profile/subscriptions-hero-premium.png"
-              alt=""
-              decoding="async"
-            />
-          </div>
-          <div className="profile-subscriptions-panel">
-            <div className="profile-subscriptions-panel__intro">
-              <h2 id="test-subscription-panel-title" className="profile-subscriptions-panel__title">
-                {t('buyerCabinet_cardSubscriptionsTitle')}
-              </h2>
-              <p className="profile-subscriptions-panel__lead">
-                {t('buyerCabinet_subscriptionsLead')}
-              </p>
-            </div>
-            {subscriptionSheetLoading ? (
-              <TestSheetSkeletonSubscription />
-            ) : (
-              <div className="test-subscription-pricing-wrap">
-                <Suspense fallback={<TestSheetSkeletonSubscription />}>
-                  <OwnerPricingCards
-                    variant="light"
-                    showSubscribePanel={false}
-                    plans={buyerSubscriptionPlans}
-                    planDetails={buyerSubscriptionPlanDetails}
-                    taglines={buyerSubscriptionTaglines}
-                    planOrder={['starter', 'pro', 'vip']}
-                    featuredPlanId="pro"
-                    yearlyDiscount={0.25}
-                    activePlanId={subscriptionProfileVisual || 'starter'}
-                    loading={subscriptionUpgradeLoading}
-                    monthlyLabel={t('buyerPricing_tabMonthly')}
-                    yearlyLabel={t('buyerPricing_tabYearly')}
-                    perMonthSuffix={t('buyerPricing_perMonth')}
-                    activeCtaLabel={t('buyerCabinet_subStatus_active')}
-                    popularLabel={t('buyerPricing_badgeBest')}
-                    onSelectPlan={handleSubscriptionPlanSubscribe}
-                  />
-                </Suspense>
-              </div>
-            )}
-          </div>
+          {subscriptionSheetLoading ? (
+            <TestSheetSkeletonSubscription />
+          ) : (
+            <Suspense fallback={<TestSheetSkeletonSubscription />}>
+              <BuyerSubscriptionOffers
+                titleId="test-subscription-panel-title"
+                userId={numericUserId}
+                currentPlanVisual={subscriptionProfileVisual || 'starter'}
+              />
+            </Suspense>
+          )}
         </div>
       </BuyerSheetShell>
 

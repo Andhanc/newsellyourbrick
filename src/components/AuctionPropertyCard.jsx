@@ -169,6 +169,7 @@ function formatLandAreaValue(raw) {
 export default function AuctionPropertyCard({
   className,
   property,
+  href: hrefOverride,
   isFavorite,
   onFavoriteToggle,
   onOpen,
@@ -216,7 +217,7 @@ export default function AuctionPropertyCard({
   const bidsCount = Number(property.bids_count ?? property.bidsCount ?? property.total_bids ?? 0)
   const showBidsCount = state.hasTimer && !state.showSoldPresentation && Number.isFinite(bidsCount)
 
-  const detailHref = property ? getPropertyDetailPath(property) : '#'
+  const detailHref = hrefOverride || (property ? getPropertyDetailPath(property) : '#')
 
   const showFeatureBadges =
     !state.isReserved &&
