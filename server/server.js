@@ -7251,11 +7251,12 @@ function verifyTelegramAuthPayload(payload, botToken) {
  */
 app.post('/api/auth/telegram', async (req, res) => {
   try {
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    // Вход и ops-уведомления могут использовать разных ботов.
+    const botToken = process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
       return res.status(503).json({
         success: false,
-        error: 'Telegram-авторизация не настроена (нет TELEGRAM_BOT_TOKEN)',
+        error: 'Telegram-авторизация не настроена (нет TELEGRAM_LOGIN_BOT_TOKEN или TELEGRAM_BOT_TOKEN)',
       });
     }
 

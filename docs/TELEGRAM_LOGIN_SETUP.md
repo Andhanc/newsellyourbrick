@@ -35,14 +35,14 @@ Telegram разрешает виджет входа только с домена
 В корне проекта откройте файл **`.env`** (или создайте **`.env.local`**) и добавьте:
 
 ```env
-# Токен бота от BotFather (для сервера — проверка подписи)
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjkL-MnopqRStuVwxyz
+# Токен бота входа от BotFather (для сервера — проверка подписи)
+TELEGRAM_LOGIN_BOT_TOKEN=123456789:ABCdefGHIjkL-MnopqRStuVwxyz
 
 # Username бота без @ (для фронтенда — показ виджета)
 VITE_TELEGRAM_BOT_USERNAME=SellYourBrickBot
 ```
 
-- **`TELEGRAM_BOT_TOKEN`** — подставьте токен из шага 1.  
+- **`TELEGRAM_LOGIN_BOT_TOKEN`** — подставьте токен из шага 1. Если вход и ops-уведомления идут через одного бота, можно использовать только `TELEGRAM_BOT_TOKEN`: сервер возьмёт его при отсутствии отдельного токена входа.
 - **`VITE_TELEGRAM_BOT_USERNAME`** — подставьте username бота **без** символа `@` (тот же, что в ссылке `t.me/SellYourBrickBot`).
 
 Файл `.env` обычно не коммитится в git — не публикуйте токен.
@@ -75,7 +75,7 @@ Vite подхватывает переменные только при стар�
 
 Если при входе/регистрации появляется эта ошибка:
 
-1. **Токен и бот должны совпадать.** В `.env` указан **тот же** бот, что в виджете: `TELEGRAM_BOT_TOKEN` — токен от BotFather для бота с username из `VITE_TELEGRAM_BOT_USERNAME`. Скопируйте токен заново из @BotFather (команда `/mybots` → ваш бот → API Token).
+1. **Токен и бот должны совпадать.** `TELEGRAM_LOGIN_BOT_TOKEN` (или `TELEGRAM_BOT_TOKEN`, если отдельный токен входа не задан) должен принадлежать боту с username из `VITE_TELEGRAM_BOT_USERNAME`. Скопируйте токен заново из @BotFather (команда `/mybots` → ваш бот → API Token).
 2. **Перезапустите сервер** после изменения `.env` (Ctrl+C и снова `npm run server`).
 3. В виджете должен быть указан домен через BotFather (`/setdomain`). На `localhost` подпись может не проходить — используйте домен или туннель (ngrok, cloudflared).
 

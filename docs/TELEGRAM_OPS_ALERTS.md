@@ -13,7 +13,7 @@
 | Назначение | Login Widget на сайте | Push в чат команды |
 | Кто получает | Пользователь сайта | Админы / поддержка / координаторы |
 | API | проверка `hash` при `/api/auth/telegram` | `sendMessage` в `TELEGRAM_CHAT_ID` |
-| Env | `TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_BOT_USERNAME` | + `TELEGRAM_CHAT_ID` / `TELEGRAM_ALERT_CHAT_IDS` |
+| Env | `TELEGRAM_LOGIN_BOT_TOKEN`, `VITE_TELEGRAM_BOT_USERNAME` | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` / `TELEGRAM_ALERT_CHAT_IDS` |
 
 **Модель House Tenerife:** один модуль `sendAlert(html)` + вызовы из бизнес-логики в момент события. Без зеркалирования всего диалога, без ответов клиентам из Telegram.
 
@@ -172,14 +172,15 @@
 
 ### Шаг A. Env
 
-В `.env` / `.env.example` добавить (токен можно **переиспользовать** от Login Widget):
+В `.env` / `.env.example` указать отдельные токены, если вход и уведомления используют разных ботов:
 
 ```env
-# Уже есть для логина:
-TELEGRAM_BOT_TOKEN=...
+# Бот входа:
+TELEGRAM_LOGIN_BOT_TOKEN=...
 VITE_TELEGRAM_BOT_USERNAME=SellYourBrickBot
 
-# Новое — ops-алерты:
+# Бот ops-алертов:
+TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=-100xxxxxxxxxx
 # или несколько чатов:
 # TELEGRAM_ALERT_CHAT_IDS=123456789,-100xxxxxxxxxx
@@ -190,7 +191,7 @@ TELEGRAM_CHAT_ID=-100xxxxxxxxxx
 # TELEGRAM_OPS_NOTIFY_ALL_BIDS=0
 ```
 
-**Важно:** `TELEGRAM_BOT_TOKEN` один на бота. Login Widget и ops-алерты могут жить на одном боте: виджет — для пользователей на сайте, `sendMessage` — в закрытую группу поддержки.
+**Важно:** если оба потока используют одного бота, `TELEGRAM_LOGIN_BOT_TOKEN` можно не задавать: вход возьмёт `TELEGRAM_BOT_TOKEN`. Для разных ботов токены должны быть разными, а `VITE_TELEGRAM_BOT_USERNAME` должен соответствовать `TELEGRAM_LOGIN_BOT_TOKEN`.
 
 ### Шаг B. Модуль `server/telegramOpsNotify.js`
 
