@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Video, DollarSign, Shield, Gavel, Lightbulb } from 'lucide-react'
 import OapSelect from '../components/OapSelect'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { PROPERTY_CURRENCIES, QUICK_LISTING_CURRENCY_CODES } from '../utils/currency'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_TESTDRIVE_IMAGES } from './oapTestdriveImages'
@@ -98,6 +99,35 @@ export default function OwnerAddPropertyTestDriveStep({
     </div>
   )
 
+  const journeyBanner = (
+    <div className="oap-testdrive-step__banner">
+      <img
+        className="oap-testdrive-step__banner-art"
+        src={OAP_TESTDRIVE_IMAGES.sidebarHero}
+        alt=""
+        width="960"
+        height="800"
+        draggable="false"
+      />
+      <div className="oap-testdrive-step__banner-copy">
+        <span className="oap-testdrive-step__banner-eyebrow">{t('oap_tdBannerEyebrow')}</span>
+        <h3>{t('oap_tdBannerTitle')}</h3>
+        <p>{t('oap_tdBannerDescription')}</p>
+      </div>
+      <div className="oap-testdrive-step__banner-actions">
+        <div className="oap-testdrive-step__banner-toggle">
+          <span>{t(isEnabled ? 'oap_tdEnabled' : 'oap_tdEnable')}</span>
+          {toggleSwitch}
+        </div>
+        <SectionInfoDrawer
+          section="sellerTestDrive"
+          placement="inlineText"
+          triggerLabel={t('oap_tdWhatIsTestDrive')}
+        />
+      </div>
+    </div>
+  )
+
   const pricingBody = isEnabled && (
     <div className="oap-testdrive-step__body">
       <div className="oap-testdrive-step__section">
@@ -189,7 +219,7 @@ export default function OwnerAddPropertyTestDriveStep({
         {!journeyLayout ? <p className="oap-testdrive-step__embedded-hint">{t('oap_tdConfigureView')}</p> : null}
         {journeyLayout ? (
           <div className="oap-testdrive-step__journey-panel">
-            {toggleRow}
+            {journeyBanner}
             {pricingBody}
           </div>
         ) : (

@@ -144,6 +144,7 @@ function buildDonutGradient(items, total) {
 export default function OwnerSalesAnalyticsDrawer({
   open,
   onClose,
+  initialTab = 'sales',
   properties = [],
   bids = [],
   locale = 'ru-RU',
@@ -153,6 +154,9 @@ export default function OwnerSalesAnalyticsDrawer({
   const { t } = useTranslation()
   const closeRef = useRef(null)
   const [activeTab, setActiveTab] = useState('sales')
+  useEffect(() => {
+    if (open) setActiveTab(initialTab)
+  }, [initialTab, open])
   const sheetDrag = useBottomSheetDrag({
     isOpen: open,
     visible: open,

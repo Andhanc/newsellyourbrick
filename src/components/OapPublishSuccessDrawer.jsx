@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { Check } from 'lucide-react'
+import { Badge, Check } from 'lucide-react'
 import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
+import { triggerPublishSuccessHaptic } from '../utils/haptics'
 import Confetti from './Confetti'
 import './Confetti.css'
 import './OapPublishSuccessDrawer.css'
@@ -12,7 +13,6 @@ export default function OapPublishSuccessDrawer({
   isOpen,
   onClose,
   onViewProperties,
-  onGoHome,
 }) {
   const { t } = useTranslation()
   const [entered, setEntered] = useState(false)
@@ -45,14 +45,15 @@ export default function OapPublishSuccessDrawer({
     }
   }, [visible])
 
+  useEffect(() => {
+    if (!isOpen || isClosing) return undefined
+    return triggerPublishSuccessHaptic()
+  }, [isOpen, isClosing])
+
   if (!visible || typeof document === 'undefined') return null
 
   const handleViewProperties = () => {
     requestClose(() => onViewProperties?.())
-  }
-
-  const handleGoHome = () => {
-    requestClose(() => onGoHome?.())
   }
 
   return createPortal(
@@ -62,13 +63,14 @@ export default function OapPublishSuccessDrawer({
         aria-hidden="true"
       />
       {visible && !isClosing ? (
-        <Confetti className="oap-publish-success-drawer__confetti" />
+        <Confetti className="oap-publish-success-drawer__confetti" count={110} minSize={6} maxSize={13} loop spreadOnMount />
       ) : null}
       <div
         className="oap-publish-success-drawer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="oap-publish-success-drawer-title"
+        aria-describedby="oap-publish-success-drawer-description"
       >
         <div
           ref={sheetDrag.panelRef}
@@ -87,21 +89,17 @@ export default function OapPublishSuccessDrawer({
 
           <div className="oap-publish-success-drawer__body">
             <div className="oap-publish-success-drawer__badge" aria-hidden="true">
-              <Check size={34} strokeWidth={2.5} />
+              <Badge className="oap-publish-success-drawer__badge-shape" size={86} strokeWidth={1.7} />
+              <Check className="oap-publish-success-drawer__badge-check" size={43} strokeWidth={3.2} />
             </div>
 
             <div className="oap-publish-success-drawer__copy">
               <h2 id="oap-publish-success-drawer-title" className="oap-publish-success-drawer__title">
-                <span className="oap-publish-success-drawer__title-line">
-                  {t('oap_journeyPublishSuccessTitleBefore')}
-                </span>
-                <span className="oap-publish-success-drawer__title-line">
-                  <span className="oap-publish-success-drawer__pill">
-                    {t('oap_journeyPublishSuccessTitleHighlight')}
-                  </span>
-                </span>
+                {t('oap_journeyPublishSuccessTitle')}
               </h2>
-              <p className="oap-publish-success-drawer__lead">{t('oap_journeyPublishSuccessText')}</p>
+              <p id="oap-publish-success-drawer-description" className="oap-publish-success-drawer__lead">
+                {t('oap_journeyPublishSuccessText')}
+              </p>
             </div>
 
             <div className="oap-publish-success-drawer__actions">
@@ -111,13 +109,6 @@ export default function OapPublishSuccessDrawer({
                 onClick={handleViewProperties}
               >
                 {t('oap_journeyPublishSuccessPropertiesBtn')}
-              </button>
-              <button
-                type="button"
-                className="oap-publish-success-drawer__secondary"
-                onClick={handleGoHome}
-              >
-                {t('oap_journeyPublishSuccessHomeBtn')}
               </button>
             </div>
           </div>

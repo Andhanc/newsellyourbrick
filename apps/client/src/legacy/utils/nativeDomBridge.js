@@ -1,5 +1,6 @@
 let nativeSessionSwitch = null
 let nativeProfileSavedVibration = null
+let nativePublishSuccessVibration = null
 let nativeFirstFavoriteNotification = null
 let nativeNavigate = null
 let nativeSessionAuthenticated
@@ -42,6 +43,16 @@ export function setNativeProfileSavedVibration(handler) {
 export async function triggerNativeProfileSavedVibration() {
   if (!nativeProfileSavedVibration) return false
   await nativeProfileSavedVibration()
+  return true
+}
+
+export function setNativePublishSuccessVibration(handler) {
+  nativePublishSuccessVibration = typeof handler === 'function' ? handler : null
+}
+
+export async function setNativePublishSuccessVibrationActive(active) {
+  if (!nativePublishSuccessVibration) return false
+  await nativePublishSuccessVibration(Boolean(active))
   return true
 }
 

@@ -54,6 +54,16 @@ const SECTION_CONFIG = {
   },
 }
 
+const SELLER_SECTION_IMAGES = {
+  sellerDevelopment: 'development',
+  sellerAuction: 'auction',
+  sellerAuctionBuyNow: 'auction-buy-now',
+  sellerShares: 'shares',
+  sellerSharesBuyNow: 'shares-buy-now',
+  sellerDebt: 'debt',
+  sellerDebtAuction: 'debt-auction',
+}
+
 function getFocusableElements(root) {
   if (!root) return []
   return Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
@@ -61,7 +71,14 @@ function getFocusableElements(root) {
   )
 }
 
-export default function SectionInfoDrawer({ section, placement = 'floating' }) {
+export default function SectionInfoDrawer({
+  section,
+  placement = 'floating',
+  triggerLabel,
+  title,
+  lead,
+  noteKey,
+}) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [isMobileSheet, setIsMobileSheet] = useState(
@@ -73,8 +90,12 @@ export default function SectionInfoDrawer({ section, placement = 'floating' }) {
   const previousOverflowRef = useRef('')
   const titleId = useId()
   const descriptionId = useId()
-  const config = SECTION_CONFIG[section] || SECTION_CONFIG.auction
+  const sellerImage = SELLER_SECTION_IMAGES[section]
+  const config = sellerImage
+    ? { ...SECTION_CONFIG.auction, iconSrc: publicAsset(`images/oap-sale-formats/${sellerImage}.png`) }
+    : SECTION_CONFIG[section === 'sellerTestDrive' ? 'testDrive' : section] || SECTION_CONFIG.auction
   const translationPrefix = `sectionInfo_${section}`
+  const drawerTitle = title || t(`${translationPrefix}Title`)
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, () => setOpen(false), {
     duration: 340,
   })
@@ -165,13 +186,13 @@ export default function SectionInfoDrawer({ section, placement = 'floating' }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`${t('sectionInfo_trigger')}: ${t(`${translationPrefix}Title`)}`}
+        aria-label={triggerLabel || `${t('sectionInfo_trigger')}: ${drawerTitle}`}
       >
         <span className="section-info-trigger__halo" aria-hidden />
         <span className="section-info-trigger__icon" aria-hidden>
           <CircleHelp size={21} strokeWidth={2.35} />
         </span>
-        <span className="section-info-trigger__label">{t('sectionInfo_trigger')}</span>
+        <span className="section-info-trigger__label">{triggerLabel || t('sectionInfo_trigger')}</span>
       </button>
 
       {visible && typeof document !== 'undefined'
@@ -232,8 +253,8 @@ export default function SectionInfoDrawer({ section, placement = 'floating' }) {
                     <img src={config.iconSrc} alt="" />
                   </span>
                   <div>
-                    <h2 id={titleId}>{t(`${translationPrefix}Title`)}</h2>
-                    <p id={descriptionId}>{t(`${translationPrefix}Lead`)}</p>
+                    <h2 id={titleId}>{drawerTitle}</h2>
+                    <p id={descriptionId}>{lead || t(`${translationPrefix}Lead`)}</p>
                   </div>
                 </div>
 
@@ -251,7 +272,7 @@ export default function SectionInfoDrawer({ section, placement = 'floating' }) {
 
                 <div className="section-info-panel__note">
                   <CircleHelp size={21} aria-hidden />
-                  <p>{t(`${translationPrefix}Note`)}</p>
+                  <p>{t(noteKey || `${translationPrefix}Note`)}</p>
                 </div>
 
                 <button type="button" className="section-info-panel__done" onClick={close}>

@@ -560,12 +560,6 @@ export default function OwnerAddPropertyTestPage() {
   const listingModes = useMemo(
     () => [
       {
-        id: 'development',
-        label: 'DEVELOP',
-        description: t('develop.intro'),
-        tone: 'teal',
-      },
-      {
         id: 'auction',
         label: t('oap_listingModeAuction'),
         description: t('oap_listingModeAuctionDesc'),
@@ -600,6 +594,12 @@ export default function OwnerAddPropertyTestPage() {
         label: t('oap_listingModeDebtAuction'),
         description: t('oap_listingModeDebtAuctionDesc'),
         tone: 'slate',
+      },
+      {
+        id: 'development',
+        label: 'DEVELOP',
+        description: t('develop.intro'),
+        tone: 'teal',
       },
     ],
     [t],
@@ -726,14 +726,6 @@ export default function OwnerAddPropertyTestPage() {
       goTo(OWNER_VIEWS.PROPERTIES)
     } else {
       navigate('/owner-test/properties')
-    }
-  }, [goTo, navigate])
-
-  const goToHome = useCallback(() => {
-    if (goTo) {
-      goTo(OWNER_VIEWS.HOME)
-    } else {
-      navigate('/owner-test')
     }
   }, [goTo, navigate])
 
@@ -1602,12 +1594,10 @@ export default function OwnerAddPropertyTestPage() {
         hideWizardChrome={hideWizardChrome}
         listingModes={filteredListingModes}
         listingMode={form.listingMode}
-        sellerGoal={form.sellerGoal}
-        onSellerGoalChange={(value) => updateField('sellerGoal', value)}
         listingErrors={listingErrors}
         onSelectListingMode={(modeId) => {
+          if (modeId === 'development') return
           updateField('listingMode', modeId)
-          if (modeId === 'development') updateField('testDrive', 'no')
           setListingErrors((prev) => {
             if (!prev.listingMode) return prev
             const next = { ...prev }
@@ -1743,22 +1733,22 @@ export default function OwnerAddPropertyTestPage() {
       {isMobile ? (
         <div className={`oap oap--journey-mobile oap--journey-flow${stepClassSuffix}`}>
           <div className="oap-shell oap-shell--journey">
-            <header className="oap-journey-topbar">
-              <button
-                type="button"
-                className="oap-journey-topbar__back"
-                aria-label={t('oap_publishBackList')}
-                onClick={goToProperties}
-              >
-                <ArrowLeft size={22} strokeWidth={2} />
-              </button>
-              <OapAddPropertyJourneyProgress
-                currentStep={mobileScreen}
-                totalSteps={MOBILE_JOURNEY_SCREENS}
-                compact
-              />
-            </header>
             <div ref={journeyScrollRef} className="oap-content oap-content--journey">
+              <header className="oap-journey-topbar">
+                <button
+                  type="button"
+                  className="oap-journey-topbar__back"
+                  aria-label={t('oap_publishBackList')}
+                  onClick={goToProperties}
+                >
+                  <ArrowLeft size={22} strokeWidth={2} />
+                </button>
+                <OapAddPropertyJourneyProgress
+                  currentStep={mobileScreen}
+                  totalSteps={MOBILE_JOURNEY_SCREENS}
+                  compact
+                />
+              </header>
               {purchasedBanner}
               <OapAddPropertyJourneyStrip activeIndex={mobileScreen - 1} />
               <div className="oap-content__body oap-content__body--journey">
@@ -2004,10 +1994,6 @@ export default function OwnerAddPropertyTestPage() {
         onViewProperties={() => {
           setShowJourneyPublishDrawer(false)
           goToProperties()
-        }}
-        onGoHome={() => {
-          setShowJourneyPublishDrawer(false)
-          goToHome()
         }}
       />
     </>

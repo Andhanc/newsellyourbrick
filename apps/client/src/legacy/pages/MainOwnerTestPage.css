@@ -4393,3 +4393,46 @@
   color: #ffffff;
   box-shadow: 0 8px 18px rgba(59, 192, 203, 0.2);
 }
+
+.mot-finance__value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  margin-top: 22px;
+}
+
+.mot-finance__value-row .mot-finance__balance {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.mot-finance__value-row .mot-finance__balance-line {
+  gap: 8px;
+}
+
+.mot-finance__value-row .mot-finance__balance strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #6d787d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mot-finance__value-row .mot-finance__balance-visibility {
+  border-color: #d5dfe1;
+  background: #f1f5f5;
+  color: #69777b;
+}
+
+.mot-finance__value-row .mot-finance__wallet-actions {
+  flex: 0 0 auto;
+}

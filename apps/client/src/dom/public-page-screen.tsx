@@ -3,7 +3,7 @@ import Constants from 'expo-constants'
 import { StatusBar } from 'expo-status-bar'
 import { useClerk } from '@clerk/expo'
 import { Redirect, useRouter } from 'expo-router'
-import { ActivityIndicator, StyleSheet, Vibration, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, Vibration, View } from 'react-native'
 
 import PublicPage from './public-page-v4.dom'
 import { useAuth } from '../auth/session'
@@ -87,6 +87,20 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
     Vibration.cancel()
     Vibration.vibrate([0, 350, 120, 350, 120, 450, 120, 450], false)
   }, [])
+  const handlePublishSuccessVibration = useCallback(async (active: boolean) => {
+    Vibration.cancel()
+    if (active) {
+      Vibration.vibrate(
+        Platform.OS === 'ios'
+          ? [0, 250, 300, 350, 400]
+          : [
+              0, 100, 80, 100, 160, 180, 240, 100, 100, 180, 420,
+              200, 250, 100, 100, 220, 300, 200, 300, 160,
+            ],
+        false,
+      )
+    }
+  }, [])
   const handleFirstFavoriteNotification = useCallback(
     async ({ body }: { body: string }) => {
       try {
@@ -127,6 +141,7 @@ export function PublicPageScreen({ initialPath }: PublicPageScreenProps) {
         onLogout={handleLogout}
         onSwitchSession={handleSwitchSession}
         onProfileSavedVibration={handleProfileSavedVibration}
+        onPublishSuccessVibration={handlePublishSuccessVibration}
         onFirstFavoriteNotification={handleFirstFavoriteNotification}
         onReady={handleDomReady}
         nativeAppVersion={nativeAppVersion}

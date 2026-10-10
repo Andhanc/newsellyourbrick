@@ -432,3 +432,54 @@
   }
 
 }
+
+@media (max-width: 900px) {
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__modes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 148px;
+    padding: 25px 16px 14px;
+    text-align: left;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-body {
+    flex: 1;
+    padding: 0;
+    gap: 5px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-label {
+    max-width: calc(100% - 38px);
+    font-size: 17px;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-desc {
+    display: block;
+    max-width: 55%;
+    overflow: visible;
+    font-size: 11.5px;
+    -webkit-line-clamp: unset;
+  }
+
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-mark {
+    top: auto;
+    right: auto;
+    bottom: 10px;
+    left: 18px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .oap--journey-mobile .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated {
+    padding-right: 16px;
+  }
+}

@@ -898,6 +898,7 @@ export default function MainOwnerTestPage() {
   const [ownerBidRows, setOwnerBidRows] = useState([])
   const [bidDrawerOpen, setBidDrawerOpen] = useState(false)
   const [analyticsDrawerOpen, setAnalyticsDrawerOpen] = useState(false)
+  const [analyticsDrawerTab, setAnalyticsDrawerTab] = useState('sales')
   const [overviewLoading, setOverviewLoading] = useState(true)
   const [portfolioAmountVisible, setPortfolioAmountVisible] = useState(true)
   const isMobile = useMotMobile()
@@ -1502,13 +1503,12 @@ export default function MainOwnerTestPage() {
       portfolioLabel: t('ownerTest_dashPortfolioLabel'),
       live: t('ownerTest_dashLive'),
       properties: t('ownerTest_dashProperties'),
-      propertiesHint: t('ownerTest_dashPropertiesHint'),
       bookings: t('ownerTest_dashBookings'),
-      bookingsHint: t('ownerTest_dashBookingsHint'),
+      bookingsShort: t('ownerTest_dashBookingsShort'),
+      views: t('ownerTest_dashViews'),
+      bids: t('ownerTest_dashBids'),
       aiAssistant: t('ownerTest_dashAiAssistant'),
-      pending: t('ownerTest_dashPending'),
       add: t('ownerTest_dashAdd'),
-      addHint: t('ownerTest_dashAddHint'),
       open: t('ownerTest_dashOpen'),
       upcoming: t('ownerTest_dashUpcoming'),
       upcomingHint: t('ownerTest_dashUpcomingHint'),
@@ -1548,10 +1548,6 @@ export default function MainOwnerTestPage() {
     () => testDriveRows.filter((row) => row.statusKey !== 'cancelled'),
     [testDriveRows]
   )
-  const pendingBookingCount = useMemo(
-    () => testDriveRows.filter((row) => row.statusKey === 'pending').length,
-    [testDriveRows]
-  )
   const openOwnerView = useCallback((view, params = {}) => {
     if (goTo) {
       goTo(view, params)
@@ -1573,44 +1569,46 @@ export default function MainOwnerTestPage() {
               <Menu size={18} strokeWidth={2} aria-hidden />
               <span>{dashboardCopy.menu}</span>
             </button>
+          </div>
+
+          <div className="mot-finance__value-row">
+            <div className={`mot-finance__balance${overviewLoading ? ' mot-finance__balance--loading' : ''}`}>
+              <div className="mot-finance__balance-line">
+                {overviewLoading ? (
+                  <span className="mot-finance__shimmer mot-finance__shimmer--balance" aria-hidden />
+                ) : (
+                  <strong aria-live="polite">
+                    {portfolioAmountVisible
+                      ? salePortfolio.formatted
+                      : `•••••• ${getCurrencySymbol(salePortfolio.primaryCurrency).trim()}`}
+                  </strong>
+                )}
+                <button
+                  type="button"
+                  className="mot-finance__balance-visibility"
+                  aria-label={t(portfolioAmountVisible ? 'walletPage_hideBalance' : 'walletPage_showBalance')}
+                  aria-pressed={!portfolioAmountVisible}
+                  disabled={overviewLoading}
+                  onClick={() => setPortfolioAmountVisible((visible) => !visible)}
+                >
+                  {portfolioAmountVisible ? (
+                    <EyeOff size={21} strokeWidth={2} aria-hidden />
+                  ) : (
+                    <Eye size={21} strokeWidth={2} aria-hidden />
+                  )}
+                </button>
+              </div>
+            </div>
             <div className="mot-finance__wallet-actions">
               <button
                 type="button"
                 className="mot-finance__analytics-button"
                 aria-haspopup="dialog"
                 aria-expanded={analyticsDrawerOpen}
-                onClick={() => setAnalyticsDrawerOpen(true)}
+                onClick={() => { setAnalyticsDrawerTab('sales'); setAnalyticsDrawerOpen(true) }}
               >
                 <span>{dashboardCopy.title}</span>
                 <ArrowUpRight size={16} strokeWidth={2.2} aria-hidden />
-              </button>
-            </div>
-          </div>
-
-          <div className={`mot-finance__balance${overviewLoading ? ' mot-finance__balance--loading' : ''}`}>
-            <div className="mot-finance__balance-line">
-              {overviewLoading ? (
-                <span className="mot-finance__shimmer mot-finance__shimmer--balance" aria-hidden />
-              ) : (
-                <strong aria-live="polite">
-                  {portfolioAmountVisible
-                    ? salePortfolio.formatted
-                    : `•••••• ${getCurrencySymbol(salePortfolio.primaryCurrency).trim()}`}
-                </strong>
-              )}
-              <button
-                type="button"
-                className="mot-finance__balance-visibility"
-                aria-label={t(portfolioAmountVisible ? 'walletPage_hideBalance' : 'walletPage_showBalance')}
-                aria-pressed={!portfolioAmountVisible}
-                disabled={overviewLoading}
-                onClick={() => setPortfolioAmountVisible((visible) => !visible)}
-              >
-                {portfolioAmountVisible ? (
-                  <EyeOff size={21} strokeWidth={2} aria-hidden />
-                ) : (
-                  <Eye size={21} strokeWidth={2} aria-hidden />
-                )}
               </button>
             </div>
           </div>
@@ -1621,46 +1619,48 @@ export default function MainOwnerTestPage() {
               className="mot-dashboard-promo mot-dashboard-promo--properties"
               onClick={() => openOwnerView(OWNER_VIEWS.PROPERTIES)}
             >
-              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/properties-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/properties-blue-white-3d.webp')} alt="" width="160" height="160" draggable="false" />
               <span className="mot-dashboard-promo__copy">
                 <span className="mot-dashboard-promo__title">{dashboardCopy.properties}</span>
-                <span className="mot-dashboard-promo__hint">{dashboardCopy.propertiesHint}</span>
               </span>
               <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(propertyStatsRows.length, intlLocale)}</strong>
-              <ArrowUpRight className="mot-dashboard-promo__arrow" size={19} strokeWidth={2.2} aria-hidden />
             </button>
 
             <button
               type="button"
               className="mot-dashboard-promo mot-dashboard-promo--bookings"
+              aria-label={`${dashboardCopy.bookings}: ${overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}`}
               onClick={() => openOwnerView(OWNER_VIEWS.TEST_DRIVE)}
             >
-              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/bookings-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/bookings-blue-white-3d.webp')} alt="" width="160" height="160" draggable="false" />
               <span className="mot-dashboard-promo__copy">
-                <span className="mot-dashboard-promo__title">{dashboardCopy.bookings}</span>
-                <span className="mot-dashboard-promo__hint">
-                  {pendingBookingCount > 0
-                    ? `${pendingBookingCount} ${dashboardCopy.pending}`
-                    : dashboardCopy.bookingsHint}
-                </span>
+                <span className="mot-dashboard-promo__title">{dashboardCopy.bookingsShort}</span>
               </span>
               <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(activeBookings.length, intlLocale)}</strong>
-              <ArrowUpRight className="mot-dashboard-promo__arrow" size={19} strokeWidth={2.2} aria-hidden />
             </button>
 
             <button
               type="button"
-              className="mot-dashboard-promo mot-dashboard-promo--add"
-              onClick={() => openOwnerView(OWNER_VIEWS.ADD_PROPERTY)}
+              className="mot-dashboard-promo mot-dashboard-promo--views"
+              onClick={() => { setAnalyticsDrawerTab('reach'); setAnalyticsDrawerOpen(true) }}
             >
-              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/add-cutout-v2.webp')} alt="" width="512" height="512" draggable="false" />
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/views-blue-white-3d.webp')} alt="" width="160" height="160" draggable="false" />
               <span className="mot-dashboard-promo__copy">
-                <span className="mot-dashboard-promo__title">{dashboardCopy.add}</span>
-                <span className="mot-dashboard-promo__hint">{dashboardCopy.addHint}</span>
+                <span className="mot-dashboard-promo__title">{dashboardCopy.views}</span>
               </span>
-              <span className="mot-dashboard-promo__arrow mot-dashboard-promo__plus" aria-hidden="true">
-                <Plus size={22} strokeWidth={2} />
+              <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(totals.views, intlLocale)}</strong>
+            </button>
+
+            <button
+              type="button"
+              className="mot-dashboard-promo mot-dashboard-promo--bids"
+              onClick={() => { setAnalyticsDrawerTab('bids'); setAnalyticsDrawerOpen(true) }}
+            >
+              <img className="mot-dashboard-promo__art" src={publicAsset('images/owner-dashboard/bids-blue-white-3d.webp')} alt="" width="160" height="160" draggable="false" />
+              <span className="mot-dashboard-promo__copy">
+                <span className="mot-dashboard-promo__title">{dashboardCopy.bids}</span>
               </span>
+              <strong className="mot-dashboard-promo__count">{overviewLoading ? '—' : formatMotNumber(ownerBidRows.length, intlLocale)}</strong>
             </button>
           </div>
         </section>
@@ -1748,6 +1748,7 @@ export default function MainOwnerTestPage() {
       </main>
       <OwnerSalesAnalyticsDrawer
         open={analyticsDrawerOpen}
+        initialTab={analyticsDrawerTab}
         onClose={() => setAnalyticsDrawerOpen(false)}
         properties={propertyStatsRows}
         bids={ownerBidRows}

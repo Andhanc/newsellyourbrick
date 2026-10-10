@@ -2536,13 +2536,14 @@
   .mot-finance__auction-time strong {
     display: flex;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
     color: #15939d;
     font-size: 15px;
     font-weight: 850;
     line-height: 1.05;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .mot-finance__auction-open {
@@ -2609,7 +2610,6 @@
   }
 
   .mot-finance__auction-time strong {
-    max-width: 96px;
     font-size: 14px;
   }
 }
@@ -2725,5 +2725,38 @@
   .mot-finance__quick-card--add {
     width: 100%;
     min-width: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .mot-finance__value-row {
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .mot-finance__value-row .mot-finance__balance-line {
+    gap: 5px;
+  }
+
+  .mot-finance__value-row .mot-finance__balance strong {
+    font-size: clamp(24px, 7.5vw, 44px);
+  }
+
+  .mot-finance__value-row .mot-finance__balance-visibility {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .mot-finance__value-row .mot-finance__analytics-button {
+    min-height: 36px;
+    padding-inline: 10px;
+    gap: 5px;
+    font-size: clamp(10px, 2.6vw, 12px);
+  }
+
+  .mot-finance__value-row .mot-finance__analytics-button svg {
+    width: 14px;
+    height: 14px;
   }
 }

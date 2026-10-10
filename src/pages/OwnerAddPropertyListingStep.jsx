@@ -1,37 +1,57 @@
 import { useTranslation } from 'react-i18next'
-import { Gavel, Zap, PieChart, Shield, Target, Lightbulb, Check } from 'lucide-react'
+import { Lightbulb, Check } from 'lucide-react'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_LISTING_IMAGES } from './oapListingImages'
+import { showNotification } from '../utils/toastHelper'
 import './OwnerAddPropertyListingStep.css'
 
 const LISTING_MODE_META = {
+  development: {
+    image: OAP_LISTING_IMAGES.development,
+    section: 'sellerDevelopment',
+    summaryKey: 'oap_saleFormatDevelopmentSummary',
+    tone: 'teal',
+  },
   auction: {
-    Icon: Gavel,
+    image: OAP_LISTING_IMAGES.auction,
+    section: 'sellerAuction',
+    summaryKey: 'oap_saleFormatAuctionSummary',
     tone: 'teal',
   },
   auction_buy_now: {
-    Icon: Zap,
+    image: OAP_LISTING_IMAGES.auctionBuyNow,
+    section: 'sellerAuctionBuyNow',
+    summaryKey: 'oap_saleFormatAuctionBuyNowSummary',
     tone: 'violet',
   },
   shares: {
-    Icon: PieChart,
+    image: OAP_LISTING_IMAGES.shares,
+    section: 'sellerShares',
+    summaryKey: 'oap_saleFormatSharesSummary',
     tone: 'blue',
   },
   shares_buy_now: {
-    Icon: Zap,
+    image: OAP_LISTING_IMAGES.sharesBuyNow,
+    section: 'sellerSharesBuyNow',
+    summaryKey: 'oap_saleFormatSharesBuyNowSummary',
     tone: 'violet',
   },
   debt: {
-    Icon: Shield,
+    image: OAP_LISTING_IMAGES.debt,
+    section: 'sellerDebt',
+    summaryKey: 'oap_saleFormatDebtSummary',
     tone: 'amber',
   },
   debt_auction: {
-    Icon: Target,
+    image: OAP_LISTING_IMAGES.debtAuction,
+    section: 'sellerDebtAuction',
+    summaryKey: 'oap_saleFormatDebtAuctionSummary',
     tone: 'slate',
   },
 }
 
-function ListingModesList({ listingModes, listingMode, errors, onSelectMode, journeyLayout = false }) {
+function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
   const { t } = useTranslation()
 
   return (
@@ -44,49 +64,72 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode, jou
         {listingModes.map((mode) => {
           const meta = LISTING_MODE_META[mode.id] || LISTING_MODE_META.auction
           const tone = mode.tone || meta.tone
-          const ModeIcon = meta.Icon
           const isActive = listingMode === mode.id
+          const isComingSoon = mode.id === 'development'
+
+          const handleSelect = () => {
+            if (isComingSoon) {
+              showNotification({
+                type: 'info',
+                title: t('oap_developmentComingSoonTitle'),
+                message: t('oap_developmentComingSoonDescription'),
+                duration: 5000,
+                dedupeKey: 'oap-development-coming-soon',
+              })
+              return
+            }
+            onSelectMode(mode.id)
+          }
 
           return (
-            <button
+            <div
               key={mode.id}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              className={`oap-listing-step__mode oap-listing-step__mode--${tone}${isActive ? ' oap-listing-step__mode--active' : ''}`}
-              onClick={() => onSelectMode(mode.id)}
+              className={`oap-listing-step__mode-shell oap-listing-step__mode-shell--${tone}${isActive ? ' oap-listing-step__mode-shell--active' : ''}${isComingSoon ? ' oap-listing-step__mode-shell--coming-soon' : ''}`}
             >
-              {journeyLayout ? (
-                <>
-                  <span className="oap-listing-step__mode-body">
-                    <span className="oap-listing-step__mode-label">{mode.label}</span>
-                    <span className="oap-listing-step__mode-desc">{mode.description}</span>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                aria-disabled={isComingSoon}
+                className={`oap-listing-step__mode oap-listing-step__mode--illustrated oap-listing-step__mode--${tone}${isActive ? ' oap-listing-step__mode--active' : ''}`}
+                onClick={handleSelect}
+              >
+                <span className="oap-listing-step__mode-visual" aria-hidden="true">
+                  <img src={meta.image} alt="" width="128" height="128" loading="lazy" />
+                </span>
+                <span className="oap-listing-step__mode-body">
+                  <span className="oap-listing-step__mode-label">{mode.label}</span>
+                  <span className="oap-listing-step__mode-desc">{t(meta.summaryKey)}</span>
+                </span>
+                <span className="oap-listing-step__mode-mark" aria-hidden>
+                  {isActive ? <Check size={12} strokeWidth={2.5} /> : null}
+                </span>
+                {isComingSoon ? (
+                  <span className="oap-listing-step__mode-coming-soon">
+                    {t('oap_developmentComingSoonBadge')}
                   </span>
-                  <span
-                    className={`oap-listing-step__mode-icon oap-listing-step__mode-icon--${tone}`}
-                    aria-hidden
-                  >
-                    <ModeIcon size={18} strokeWidth={1.75} />
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span
-                    className={`oap-listing-step__mode-icon oap-listing-step__mode-icon--${tone}`}
-                    aria-hidden
-                  >
-                    <ModeIcon size={18} strokeWidth={1.75} />
-                  </span>
-                  <span className="oap-listing-step__mode-body">
-                    <span className="oap-listing-step__mode-label">{mode.label}</span>
-                    <span className="oap-listing-step__mode-desc">{mode.description}</span>
-                  </span>
-                </>
-              )}
-              <span className="oap-listing-step__mode-mark" aria-hidden>
-                {isActive ? <Check size={12} strokeWidth={2.5} /> : null}
-              </span>
-            </button>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className={`oap-listing-step__mode-action${isActive ? ' oap-listing-step__mode-action--selected' : ''}`}
+                aria-label={`${t(isActive ? 'oap_saleFormatSelected' : 'oap_saleFormatChoose')}: ${mode.label}${isComingSoon ? `. ${t('oap_developmentComingSoonTitle')}` : ''}`}
+                onClick={handleSelect}
+              >
+                {isActive ? <Check size={14} strokeWidth={2.5} aria-hidden /> : null}
+                {t(isActive ? 'oap_saleFormatSelected' : 'oap_saleFormatChoose')}
+              </button>
+              <div className="oap-listing-step__mode-help">
+                <SectionInfoDrawer
+                  section={meta.section}
+                  placement="card"
+                  triggerLabel={`${t('sectionInfo_trigger')}: ${mode.label}`}
+                  title={mode.label}
+                  lead={mode.description}
+                  noteKey="oap_saleFormatDrawerNote"
+                />
+              </div>
+            </div>
           )
         })}
       </div>
@@ -97,7 +140,6 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode, jou
 
 export default function OwnerAddPropertyListingStep({
   embedded = false,
-  journeyLayout = false,
   listingModes,
   listingMode,
   errors = {},
@@ -109,7 +151,6 @@ export default function OwnerAddPropertyListingStep({
     return (
       <section className="oap-listing-step oap-listing-step--embedded">
         <ListingModesList
-          journeyLayout={journeyLayout}
           listingModes={listingModes}
           listingMode={listingMode}
           errors={errors}

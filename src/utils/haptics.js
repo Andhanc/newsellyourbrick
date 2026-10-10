@@ -15,6 +15,15 @@ const COIN_FALL_WEBKIT_OFFSETS_MS = Object.freeze([
   0, 60, 120, 160, 200, 280, 360, 900, 1600, 2400, 3400, 4500,
 ])
 
+const PUBLISH_SUCCESS_HAPTIC_PATTERN = Object.freeze([
+  100, 80, 100, 160, 180, 240, 100, 100, 180, 420,
+  200, 250, 100, 100, 220, 300, 200, 300, 160,
+])
+
+const PUBLISH_SUCCESS_WEBKIT_OFFSETS_MS = Object.freeze([
+  0, 180, 440, 780, 1160, 1540, 2030, 2510, 3050, 3370,
+])
+
 function triggerWebKitSwitchHaptic(documentObject) {
   if (!documentObject?.body || typeof documentObject.createElement !== 'function') return false
 
@@ -122,9 +131,54 @@ export function triggerCoinFallHaptic({
   return stop
 }
 
+export function triggerPublishSuccessHaptic({
+  navigatorObject = globalThis.navigator,
+  documentObject = globalThis.document,
+  schedule = globalThis.setTimeout,
+  cancelSchedule = globalThis.clearTimeout,
+} = {}) {
+  const timers = []
+  let stopped = false
+
+  const stop = () => {
+    if (stopped) return
+    stopped = true
+    timers.forEach((id) => {
+      if (typeof cancelSchedule === 'function') cancelSchedule(id)
+    })
+    if (typeof navigatorObject?.vibrate === 'function') {
+      try {
+        navigatorObject.vibrate(0)
+      } catch {
+        // Ignore a blocked cancel.
+      }
+    }
+  }
+
+  if (typeof navigatorObject?.vibrate === 'function') {
+    try {
+      if (navigatorObject.vibrate([...PUBLISH_SUCCESS_HAPTIC_PATTERN])) return stop
+    } catch {
+      // Fall through to the WebKit switch control when the API is blocked.
+    }
+  }
+
+  if (documentObject?.body && typeof schedule === 'function') {
+    PUBLISH_SUCCESS_WEBKIT_OFFSETS_MS.forEach((offset) => {
+      timers.push(schedule(() => {
+        if (!stopped) triggerWebKitSwitchHaptic(documentObject)
+      }, offset))
+    })
+  }
+
+  return stop
+}
+
 export {
   AUCTION_BID_HAPTIC_PATTERNS,
   COIN_FALL_HAPTIC_PATTERN,
   COIN_FALL_WEBKIT_OFFSETS_MS,
+  PUBLISH_SUCCESS_HAPTIC_PATTERN,
+  PUBLISH_SUCCESS_WEBKIT_OFFSETS_MS,
   SELECTION_HAPTIC_DURATION_MS,
 }

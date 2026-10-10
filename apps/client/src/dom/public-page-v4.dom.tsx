@@ -17,6 +17,7 @@ import {
   setNativeNavigate,
   setNativeFirstFavoriteNotification,
   setNativeProfileSavedVibration,
+  setNativePublishSuccessVibration,
   setNativeSessionAuthenticated,
   setNativeSessionSwitch,
 } from '../legacy/utils/nativeDomBridge'
@@ -76,6 +77,7 @@ type PublicPageProps = {
   onLogout: () => Promise<void>
   onSwitchSession: (input: NativeSessionSwitchInput) => Promise<NativeSessionSwitchResult>
   onProfileSavedVibration: () => Promise<void>
+  onPublishSuccessVibration: (active: boolean) => Promise<void>
   onFirstFavoriteNotification: (input: { body: string }) => Promise<boolean>
   onReady: () => Promise<void>
   nativeAppVersion: string
@@ -182,6 +184,7 @@ function syncNativeSession(
   onNavigate: PublicPageProps['onNavigate'],
   onSwitchSession: PublicPageProps['onSwitchSession'],
   onProfileSavedVibration: PublicPageProps['onProfileSavedVibration'],
+  onPublishSuccessVibration: PublicPageProps['onPublishSuccessVibration'],
   onFirstFavoriteNotification: PublicPageProps['onFirstFavoriteNotification'],
   nativeAppVersion: PublicPageProps['nativeAppVersion'],
 ) {
@@ -192,6 +195,7 @@ function syncNativeSession(
   setNativeSessionAuthenticated(Boolean(user))
   setNativeSessionSwitch(onSwitchSession)
   setNativeProfileSavedVibration(onProfileSavedVibration)
+  setNativePublishSuccessVibration(onPublishSuccessVibration)
   setNativeFirstFavoriteNotification(onFirstFavoriteNotification)
   if (typeof window === 'undefined') return
 
@@ -217,6 +221,7 @@ export default function PublicPage({
   onLogout,
   onSwitchSession,
   onProfileSavedVibration,
+  onPublishSuccessVibration,
   onFirstFavoriteNotification,
   onReady,
   nativeAppVersion,
@@ -228,6 +233,7 @@ export default function PublicPage({
     onNavigate,
     onSwitchSession,
     onProfileSavedVibration,
+    onPublishSuccessVibration,
     onFirstFavoriteNotification,
     nativeAppVersion,
   )

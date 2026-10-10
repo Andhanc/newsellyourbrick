@@ -4,9 +4,12 @@ import {
   AUCTION_BID_HAPTIC_PATTERNS,
   COIN_FALL_HAPTIC_PATTERN,
   COIN_FALL_WEBKIT_OFFSETS_MS,
+  PUBLISH_SUCCESS_HAPTIC_PATTERN,
+  PUBLISH_SUCCESS_WEBKIT_OFFSETS_MS,
   SELECTION_HAPTIC_DURATION_MS,
   triggerAuctionBidHaptic,
   triggerCoinFallHaptic,
+  triggerPublishSuccessHaptic,
   triggerSelectionHaptic,
 } from './haptics.js'
 
@@ -109,4 +112,43 @@ test('coin fall haptic uses a staggered vibration pattern and can be cancelled',
   assert.deepEqual(calls, [[...COIN_FALL_HAPTIC_PATTERN], 0])
   assert.ok(COIN_FALL_HAPTIC_PATTERN.reduce((sum, value) => sum + value, 0) > 4000)
   assert.ok(COIN_FALL_WEBKIT_OFFSETS_MS.length >= 7)
+})
+
+test('publish success haptic lasts about three and a half seconds and stops on close', () => {
+  const calls = []
+  const stop = triggerPublishSuccessHaptic({
+    navigatorObject: {
+      vibrate(pattern) {
+        calls.push(pattern)
+        return true
+      },
+    },
+    documentObject: null,
+  })
+
+  const duration = PUBLISH_SUCCESS_HAPTIC_PATTERN.reduce((sum, value) => sum + value, 0)
+  assert.ok(duration >= 3000 && duration <= 4000)
+  assert.deepEqual(calls, [[...PUBLISH_SUCCESS_HAPTIC_PATTERN]])
+  stop()
+  assert.deepEqual(calls.at(-1), 0)
+})
+
+test('publish success WebKit fallback cancels its scheduled pulses', () => {
+  const scheduled = []
+  const cancelled = []
+  const stop = triggerPublishSuccessHaptic({
+    navigatorObject: {},
+    documentObject: { body: {}, createElement() {} },
+    schedule(callback, delay) {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    cancelSchedule(id) {
+      cancelled.push(id)
+    },
+  })
+
+  assert.deepEqual(scheduled.map(({ delay }) => delay), [...PUBLISH_SUCCESS_WEBKIT_OFFSETS_MS])
+  stop()
+  assert.equal(cancelled.length, scheduled.length)
 })

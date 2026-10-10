@@ -498,10 +498,179 @@
 .oap-testdrive-step--journey .oap-testdrive-step__journey-panel {
   display: flex;
   flex-direction: column;
-  border-radius: 14px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  background: #fff;
+  gap: 12px;
+  border: 0;
+  background: transparent;
   overflow: visible;
+}
+
+.oap-testdrive-step__banner {
+  position: relative;
+  isolation: isolate;
+  min-height: 220px;
+  padding: 22px 20px 18px;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(112deg, #087c88 0%, #18aab8 54%, #a4ecea 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(18, 151, 162, 0.18);
+}
+
+.oap-testdrive-step__banner-art {
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  right: -28px;
+  width: min(53%, 228px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 18px rgba(3, 78, 85, 0.2));
+  pointer-events: none;
+}
+
+.oap-testdrive-step__banner-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 64%;
+}
+
+.oap-testdrive-step__banner-eyebrow {
+  display: inline-block;
+  margin-bottom: 11px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.oap-testdrive-step__banner-copy h3 {
+  margin: 0;
+  font-size: clamp(20px, 4.8vw, 28px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.oap-testdrive-step__banner-copy p {
+  margin: 11px 0 0;
+  font-size: 12px;
+  font-weight: 520;
+  line-height: 1.43;
+}
+
+.oap-testdrive-step__banner-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-top: 22px;
+}
+
+.oap-testdrive-step__banner-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 220px;
+  max-width: 100%;
+  min-height: 54px;
+  padding: 8px 10px 8px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 750;
+  backdrop-filter: blur(8px);
+}
+
+.oap-testdrive-step__banner-toggle .oap-testdrive-step__switch {
+  width: 54px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.oap-testdrive-step__banner-toggle .oap-testdrive-step__switch--on {
+  background: #075e68;
+}
+
+.oap-testdrive-step__banner-toggle .oap-testdrive-step__switch-thumb {
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  background: #159aa7;
+}
+
+.oap-testdrive-step__banner-toggle .oap-testdrive-step__switch--on .oap-testdrive-step__switch-thumb {
+  background: #fff;
+  transform: translateX(22px);
+}
+
+.oap-testdrive-step__banner .section-info-trigger--inlineText {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  width: 100%;
+  flex: 0 0 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 34px;
+  max-width: 100%;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.oap-testdrive-step__banner .section-info-trigger--inlineText::after,
+.oap-testdrive-step__banner .section-info-trigger--inlineText .section-info-trigger__halo,
+.oap-testdrive-step__banner .section-info-trigger--inlineText .section-info-trigger__icon {
+  display: none;
+}
+
+.oap-testdrive-step__banner .section-info-trigger--inlineText .section-info-trigger__label {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.75);
+  text-underline-offset: 4px;
+}
+
+.oap-testdrive-step__banner .section-info-trigger--inlineText:hover {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+}
+
+.oap-testdrive-step__banner .section-info-trigger--inlineText:focus-visible,
+.oap-testdrive-step__banner-toggle .oap-testdrive-step__switch:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 .oap-testdrive-step--journey:not(.oap-testdrive-step--on) .oap-testdrive-step__toggle-row {
@@ -552,8 +721,29 @@
   padding: 14px 16px 16px;
   gap: 14px;
   background: #fff;
-  border-radius: 0 0 14px 14px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 16px;
   overflow: visible;
+}
+
+@media (max-width: 380px) {
+  .oap-testdrive-step__banner {
+    min-height: 215px;
+    padding: 19px 17px 16px;
+  }
+
+  .oap-testdrive-step__banner-art {
+    right: -34px;
+    width: 54%;
+  }
+
+  .oap-testdrive-step__banner-copy {
+    max-width: 67%;
+  }
+
+  .oap-testdrive-step__banner-copy h3 {
+    font-size: 20px;
+  }
 }
 
 .oap-testdrive-step--journey .oap-testdrive-step__price-card {

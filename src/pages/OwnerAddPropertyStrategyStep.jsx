@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { SellerGoalSelector } from '../features/development/DevelopmentFields'
 import OwnerAddPropertyListingStep from './OwnerAddPropertyListingStep'
 import OwnerAddPropertyTestDriveStep from './OwnerAddPropertyTestDriveStep'
 import OwnerAddPropertyStepAside from '../components/OwnerAddPropertyStepAside'
@@ -15,8 +14,6 @@ export default function OwnerAddPropertyStrategyStep({
   hideWizardChrome = false,
   listingModes,
   listingMode,
-  sellerGoal,
-  onSellerGoalChange,
   listingErrors,
   onSelectListingMode,
   testDrive,
@@ -71,7 +68,6 @@ export default function OwnerAddPropertyStrategyStep({
         />
       ) : null}
 
-      <SellerGoalSelector value={sellerGoal} onChange={onSellerGoalChange} />
       <div className="oap-strategy-step__rows">
         <div
           className={`oap-strategy-step__row oap-strategy-step__row--testdrive${hideWizardChrome ? ' oap-strategy-step__row--testdrive-journey' : ' oap-strategy-step__row--split'}`}

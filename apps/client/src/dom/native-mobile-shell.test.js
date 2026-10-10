@@ -7,6 +7,10 @@ const domSource = await readFile(new URL('./public-page-v4.dom.tsx', import.meta
 const authScreenSource = await readFile(new URL('./auth-page-screen.tsx', import.meta.url), 'utf8')
 const shellCss = await readFile(new URL('./legacy-public-shell.css', import.meta.url), 'utf8')
 const profileSource = await readFile(new URL('../legacy/pages/TestPage.jsx', import.meta.url), 'utf8')
+const publishSuccessDrawerSource = await readFile(
+  new URL('../legacy/components/OapPublishSuccessDrawer.jsx', import.meta.url),
+  'utf8',
+)
 const roleSwitchSource = await readFile(
   new URL('../legacy/hooks/useRoleSwitchFlow.js', import.meta.url),
   'utf8',
@@ -78,6 +82,27 @@ test('profile save celebration invokes the native Android vibration bridge once 
   assert.match(profileSource, /profileCelebrationVibrationStartedRef/)
   assert.match(profileSource, /triggerNativeProfileSavedVibration\(\)/)
   assert.match(profileSource, /\[showProfileCompleteCelebration\]/)
+})
+
+test('published property celebration uses the native vibration bridge and one properties action', () => {
+  assert.match(screenSource, /handlePublishSuccessVibration/)
+  assert.match(screenSource, /Platform\.OS === 'ios'/)
+  const iosPattern = screenSource.match(/Platform\.OS === 'ios'\s*\?\s*\[([^\]]+)\]/)?.[1]
+  const androidPattern = screenSource.match(/Platform\.OS === 'ios'[\s\S]*?:\s*\[([^\]]+)\]/)?.[1]
+  assert.ok(iosPattern && androidPattern)
+  const parsePattern = (value) => value.split(',').map(Number).filter(Number.isFinite)
+  const iosValues = parsePattern(iosPattern)
+  const androidValues = parsePattern(androidPattern)
+  const iosDuration = iosValues.reduce((sum, value) => sum + value, 0) + iosValues.length * 400
+  const androidDuration = androidValues.reduce((sum, value) => sum + value, 0)
+  assert.ok(iosDuration >= 3000 && iosDuration <= 4000)
+  assert.ok(androidDuration >= 3000 && androidDuration <= 4000)
+  assert.match(domSource, /setNativePublishSuccessVibration\(onPublishSuccessVibration\)/)
+  assert.match(nativeBridgeSource, /setNativePublishSuccessVibrationActive/)
+  assert.match(publishSuccessDrawerSource, /setNativePublishSuccessVibrationActive\(true\)/)
+  assert.match(publishSuccessDrawerSource, /setNativePublishSuccessVibrationActive\(false\)/)
+  assert.match(publishSuccessDrawerSource, /onViewProperties/)
+  assert.doesNotMatch(publishSuccessDrawerSource, /onGoHome/)
 })
 
 test('native Expo pages suppress only the website footer', () => {

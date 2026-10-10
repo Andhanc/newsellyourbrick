@@ -26,6 +26,9 @@
 }
 
 .oap-journey-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -131,23 +134,22 @@
 }
 
 .oap-journey-footer__next {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 148px;
+  flex: 0 0 var(--oap-next-button-width, 250px);
+  width: var(--oap-next-button-width, 250px);
+  min-width: var(--oap-next-button-width, 250px);
   min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   padding: 14px 28px;
   border-radius: 999px;
   font-weight: 700;
   font-size: 16px;
 }
 
-.oap-journey-footer__next:not(:disabled) {
-  background: #111827 !important;
-  color: #fff !important;
-  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.22);
+.oap-journey-footer__next svg {
+  flex-shrink: 0;
 }
 
 .oap-journey-footer__next:disabled {
@@ -160,9 +162,9 @@
 
 .oap-footer--journey .oap-journey-footer__next.oap-btn {
   display: flex;
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 148px;
+  flex: 0 0 var(--oap-next-button-width, 250px);
+  width: var(--oap-next-button-width, 250px);
+  min-width: var(--oap-next-button-width, 250px);
 }
 
 .oap--journey-flow .oap-wizard-step__head,
@@ -254,16 +256,16 @@
 }
 
 .oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card {
-  min-height: 78px;
+  min-height: 116px;
   padding: 8px 6px;
   background: #fff;
   border-color: rgba(17, 24, 39, 0.1);
 }
 
 .oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card__icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 76px;
+  height: 76px;
+  border-radius: 0;
 }
 
 .oap--journey-flow .oap-basics-step__zone--type-journey .oap-basics-type-card__icon svg {
@@ -468,6 +470,69 @@
 }
 
 @media (max-width: 900px) {
+  html.oap-journey-mobile-active .app-layout {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  html.oap-journey-mobile-active .app-layout__content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html.oap-journey-mobile-active #site-footer {
+    display: none !important;
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar {
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    gap: 6px;
+    margin: calc(8px + env(safe-area-inset-top, 0px)) 0 24px;
+    padding: 7px 8px;
+    border: 1px solid rgba(115, 203, 212, 0.28);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow:
+      0 4px 14px rgba(15, 23, 42, 0.06),
+      0 1px 3px rgba(115, 203, 212, 0.1);
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar__back {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    color: #111827;
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress__card {
+    width: 100%;
+    padding: 3px 5px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress__ring-track {
+    stroke: rgba(115, 203, 212, 0.28);
+  }
+
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress__title,
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress__step,
+  .oap.oap--journey-mobile .oap-journey-topbar .oap-journey-progress__percent {
+    color: #111827;
+  }
+
   html.oap-journey-mobile-active .oap.oap--journey-mobile,
   .oap.oap--journey-mobile {
     flex: 1 1 auto !important;
@@ -494,6 +559,7 @@
     min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    padding-top: 0;
   }
 
   html.oap-journey-mobile-active .oap.oap--journey-mobile .oap-footer--journey,
@@ -508,9 +574,14 @@
 
   .oap--journey-mobile .oap-journey-footer__next,
   .oap--journey-mobile .oap-journey-footer__next.oap-btn {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 0 0 var(--oap-next-button-width, 250px);
+    width: var(--oap-next-button-width, 250px);
+    min-width: var(--oap-next-button-width, 250px);
     padding-inline: 20px;
+  }
+
+  .oap--journey-mobile .oap-journey-footer__actions {
+    justify-content: space-between;
   }
 }
 
@@ -533,7 +604,7 @@
     display: flex;
     flex-direction: column;
     background: #faf8f5;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .oap-journey-topbar--desktop {
@@ -739,9 +810,9 @@
   }
 
   .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 76px;
+    height: 76px;
+    border-radius: 0;
   }
 
   .oap--journey-desktop .oap-basics-step__zone--type-journey .oap-basics-type-card__icon svg {
@@ -1053,5 +1124,78 @@
 
   .oap--journey-desktop .oap-basics-count-picker__exact {
     width: 56px;
+  }
+}
+
+/* Sale-format cards sit directly on the journey page surface. */
+.oap--journey-flow .oap-strategy-block--listing {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .oap--journey-mobile.oap--journey-flow .oap-strategy-block--listing {
+    width: calc(100% + 32px);
+    margin-inline: -16px;
+  }
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated {
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 148px;
+  padding: 25px 16px 14px;
+  border-radius: 20px;
+  background: #fff;
+  text-align: left;
+  box-shadow: 0 14px 32px rgba(17, 39, 49, 0.11);
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated.oap-listing-step__mode--active {
+  background: #fff;
+  border-color: var(--format-accent);
+  box-shadow: 0 0 0 2px var(--format-glow), 0 18px 38px rgba(17, 39, 49, 0.15);
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-body {
+  flex: 1;
+  width: 100%;
+  padding: 0;
+  gap: 5px;
+  text-align: left;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-label {
+  max-width: calc(100% - 38px);
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.08;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-desc {
+  display: block;
+  max-width: 55%;
+  overflow: visible;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  -webkit-line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+
+.oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated .oap-listing-step__mode-mark {
+  top: auto;
+  right: auto;
+  bottom: 10px;
+  left: 18px;
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 380px) {
+  .oap--journey-flow .oap-strategy-block--listing .oap-listing-step--embedded .oap-listing-step__mode--illustrated {
+    padding-right: 16px;
   }
 }
