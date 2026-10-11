@@ -1,0 +1,119 @@
+PERSONAL PLAN — BUYER 1
+
+1. Your role and overall objective
+
+You are testing the journey of a new buyer: registration, getting familiar with the platform, purchasing any available whole property, buying a share, placing bids, and booking a confirmed test drive. Only after completing the entire buyer scenario should you check the transition to the seller role.
+
+Do not open debt properties. Do not use real passport or payment details.
+
+2. Test data
+
+- Test website URL: ____________________
+- Email: ____________________
+- Phone/WhatsApp: ____________________
+- Interface language: ____________________
+- Device and browser: ____________________
+
+Test card: 4242 4242 4242 4242; expiry 12/34; CVC 123; Test User; postcode 28001.
+
+3. Required preparation before your personal scenario
+
+[ ] Open the URL as a guest.
+[ ] Select the language and refresh the page: the language should remain selected.
+[ ] Click "Profile" → "Sign Up."
+[ ] Create a new account using the provided email address.
+[ ] Confirm the email address using the link or code in the email.
+[ ] If the email does not arrive, check "Spam" and request a resend once.
+[ ] Return to the website and make sure you are signed in.
+[ ] Go to "Profile" → edit → enter your name, country, and phone/WhatsApp.
+[ ] Save, refresh the page, and check the data.
+[ ] From the home page, open "Buy Now," "Auction," and "Shares," then return.
+[ ] From the menu, open Profile, Favorites, Comparison, Deposit/Wallet, History, Bookings, and Subscriptions.
+[ ] In each section, check that it loads and that the empty state is clear.
+[ ] Check the registration notification in your account, email, and WhatsApp.
+
+Do not switch to the seller role yet.
+
+4. Choose a property to buy
+
+[ ] Open "Marketplace" → "Buy Now."
+[ ] Choose any available regular property.
+[ ] Before paying, send the link to the coordinator and receive confirmation that the property is available.
+[ ] Open the listing and check:
+   - the entire gallery and photo counter;
+   - the price and currency;
+   - the address and location;
+   - the description and features;
+   - the documents and access terms;
+   - the seller information.
+[ ] Add the selected property and two more properties to Favorites.
+[ ] Open "Favorites" → "Comparison" and compare the three properties.
+[ ] Return to the selected property.
+
+5. Buy a whole property
+
+[ ] Click "Buy Now."
+[ ] Open the PDF and check the property, amount, and terms.
+[ ] Confirm your consent and signature.
+[ ] Check the reservation amount.
+[ ] Start the first payment and cancel it.
+[ ] Make sure there is no charge, reservation, or purchase.
+[ ] Repeat the process and pay the reservation once.
+[ ] Record the application ID, payment ID, and amount.
+[ ] Send the ID to the coordinator and wait for the transaction to be completed.
+[ ] Open "History" and check that there is one entry with the correct property, amount, and final status.
+[ ] Check website, email, and WhatsApp notifications.
+
+6. Buy a share
+
+[ ] Open "Marketplace" → "Shares."
+[ ] Choose any property with shares still available.
+[ ] Check the description, price per share, remaining quantity, and total amount.
+[ ] Tell the coordinator which property you selected.
+[ ] Buy the assigned number of shares once.
+[ ] Open the portfolio and check the purchase.
+[ ] Refresh the page twice: the entry and charge must not be duplicated.
+[ ] Verify that the remaining quantity has decreased.
+
+7. Participate in the auction
+
+[ ] Open "Marketplace" → "Auction."
+[ ] Choose any active auction.
+[ ] Check the timer, current price, and minimum increment.
+[ ] Try to place a bid without a deposit: access should be blocked.
+[ ] Open "Deposit/Wallet" and fund the deposit with the test card.
+[ ] Submit KYC and send the ID to the coordinator.
+[ ] Wait for KYC approval. Bidding should remain unavailable until approval.
+[ ] Try to bid below the minimum increment: an error should appear without a charge.
+[ ] Place a valid bid.
+[ ] After the second buyer's bid, check the outbid notification and place a counterbid.
+[ ] You are not required to win or purchase through the auction.
+
+8. Book a test drive for confirmation
+
+[ ] Open the "Test Drive" section.
+[ ] Choose any property with available dates.
+[ ] Check the description, price, calendar, and terms.
+[ ] Select dates and pay for the booking once.
+[ ] Record the booking ID and send it to the coordinator/seller for confirmation.
+[ ] After the response, check the "Confirmed" status, dates, amount, and notifications.
+[ ] Open "Bookings" and make sure the application is displayed once.
+
+9. Transition to the seller role — complete this last
+
+[ ] Make sure the purchase, share, bid, and booking have already been completed.
+[ ] Return to Profile and click "Become a Seller."
+[ ] Read the explanation and steps, then continue.
+[ ] Review the main sections of the seller dashboard.
+[ ] Switch back to the buyer role without signing out.
+[ ] Check that your profile, purchase history, portfolio, deposit, and booking have been preserved.
+
+10. What to send to the coordinator
+
+- IDs for the account, purchase, payment, share, deposit, KYC, bids, and booking.
+- Screenshots of the email confirmation, property listing, canceled payment, and final purchase.
+- Screenshots of the portfolio, bids, confirmed booking, and role transition.
+- Notification results: account / email / WhatsApp.
+- Errors: step / expected / actual / time / URL / screenshot.
+
+The scenario is complete if the whole property was purchased once, the share appeared in the portfolio, bidding works after KYC, the test drive is confirmed, and the transition to the seller role was completed last without any data loss.

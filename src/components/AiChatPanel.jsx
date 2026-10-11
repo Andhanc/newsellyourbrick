@@ -5,6 +5,7 @@ import {
   FiBarChart2,
   FiBookmark,
   FiCheck,
+  FiClock,
   FiCompass,
   FiCreditCard,
   FiExternalLink,
@@ -72,6 +73,9 @@ function navigationPresentation(path = '') {
   if (path.startsWith('/auction') || path.startsWith('/property')) {
     return { Icon: FiHome, tone: 'green' }
   }
+  if (path.startsWith('/debts')) return { Icon: FiShield, tone: 'amber' }
+  if (path.startsWith('/development')) return { Icon: FiLayers, tone: 'indigo' }
+  if (path.startsWith('/owner-test')) return { Icon: FiHome, tone: 'green' }
   if (path.startsWith('/map')) return { Icon: FiMapPin, tone: 'green' }
   if (path.startsWith('/sections')) return { Icon: FiCompass, tone: 'teal' }
   return { Icon: FiBookmark, tone: 'teal' }
@@ -140,6 +144,15 @@ export default function AiChatPanel({
         new CustomEvent('openSiteLanguageDrawer', { detail: { suggestedLanguage } }),
       )
     }, 220)
+  }
+
+  const openGuestAuth = () => {
+    if (typeof chat.openGuestAuthPrompt === 'function') {
+      chat.openGuestAuthPrompt()
+      return
+    }
+    chat.closeChatDock()
+    window.setTimeout(() => requestOpenLoginModal({ wizard: true }), 180)
   }
 
   const formatEuro = (value) =>
@@ -232,6 +245,17 @@ export default function AiChatPanel({
           </div>
         </div>
         <div className="chat-widget__header-actions">
+          <button
+            type="button"
+            className="chat-widget__close"
+            onClick={() => (chat.isChatHistoryOpen ? chat.closeChatHistory() : chat.openChatHistory())}
+            aria-label={t('assistantChatHistory')}
+            title={t('assistantChatHistory')}
+            aria-pressed={Boolean(chat.isChatHistoryOpen)}
+            disabled={chat.isLoadingAI}
+          >
+            <FiClock size={18} />
+          </button>
           {hasStarted ? (
             <button
               type="button"
@@ -252,40 +276,59 @@ export default function AiChatPanel({
         </div>
       </div>
 
-      {!hasStarted ? (
-        <section className="assistant-welcome" aria-labelledby="assistant-welcome-title">
-          <div className="assistant-welcome__intro">
-            <p>{chat.userDisplayName ? t('assistantGreetingName', { name: chat.userDisplayName }) : t('assistantGreeting')}</p>
-            <h2 id="assistant-welcome-title">{t('assistantStartTitle')}</h2>
+      {chat.isChatHistoryOpen ? (
+        <div className="assistant-chat-history" role="region" aria-label={t('assistantChatHistory')}>
+          <div className="assistant-chat-history__head">
+            <strong>{t('assistantChatHistoryTitle')}</strong>
+            <button type="button" className="assistant-chat-history__close" onClick={chat.closeChatHistory}>
+              {t('assistantChatHistoryClose')}
+            </button>
           </div>
-          <div className="assistant-welcome__grid">
-            {STARTERS.map(({ id, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={`assistant-starter assistant-starter--${id}`}
-                onClick={() => chat.handleButtonClick(t(`assistantStarter_${id}Prompt`))}
-                disabled={chat.isLoadingAI}
-              >
-                <span className="assistant-starter__topline">
-                  <span className="assistant-starter__icon"><Icon aria-hidden /></span>
-                  <span className="assistant-starter__arrow"><FiArrowRight aria-hidden /></span>
-                </span>
-                <strong>{t(`assistantStarter_${id}Title`)}</strong>
-                <span>{t(`assistantStarter_${id}Description`)}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <div className="chat-widget__messages" ref={chat.chatMessagesRef} aria-live="polite">
-          {chat.chatMessages.map((message, idx) => (
+          {chat.chatSessions?.length ? (
+            <ul className="assistant-chat-history__list">
+              {chat.chatSessions.map((session) => (
+                <li key={session.id} className="assistant-chat-history__item">
+                  <button
+                    type="button"
+                    className="assistant-chat-history__open"
+                    onClick={() => chat.restoreChatSession(session.id)}
+                  >
+                    <span className="assistant-chat-history__title">{session.title}</span>
+                    <span className="assistant-chat-history__meta">
+                      {session.updatedAt
+                        ? new Date(session.updatedAt).toLocaleString()
+                        : t('assistantChatHistoryUntitled')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="assistant-chat-history__delete"
+                    aria-label={t('assistantChatHistoryDelete')}
+                    onClick={() => chat.removeChatSession(session.id)}
+                  >
+                    <FiTrash2 size={16} aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="assistant-chat-history__empty">{t('assistantChatHistoryEmpty')}</p>
+          )}
+        </div>
+      ) : null}
+
+      <div
+        className={`chat-widget__messages${!hasStarted ? ' chat-widget__messages--welcome' : ''}`}
+        ref={chat.chatMessagesRef}
+        aria-live="polite"
+      >
+        {chat.chatMessages.map((message, idx) => (
             <div
               key={message.id}
               ref={idx === chat.chatMessages.length - 1 ? chat.lastMessageRef : null}
               className={`chat-widget__message ${
                 message.sender === 'user' ? 'chat-widget__message--user' : 'chat-widget__message--bot'
-              }${message.navigation?.length || message.actions?.length || message.sources?.length || message.languageSuggestion ? ' chat-widget__message--rich' : ''}`}
+              }${message.navigation?.length || message.actions?.length || message.sources?.length || message.languageSuggestion || message.authPrompt ? ' chat-widget__message--rich' : ''}${message.isIntro ? ' chat-widget__message--intro' : ''}`}
             >
               <div className="chat-widget__message-content">
                 {message.text}
@@ -386,6 +429,14 @@ export default function AiChatPanel({
                     <span className="assistant-language-suggestion__arrow"><FiArrowRight aria-hidden /></span>
                   </button>
                 ) : null}
+                {message.authPrompt ? (
+                  <div className="assistant-auth-prompt">
+                    <button type="button" className="assistant-auth-prompt__btn" onClick={openGuestAuth}>
+                      {t('assistantGuestLimitCta')}
+                      <FiArrowRight aria-hidden />
+                    </button>
+                  </div>
+                ) : null}
               </div>
               {visibleAssistantButtons(message.buttons).length > 0 ? (
                 <div className="chat-widget__buttons chat-widget__buttons--contact">
@@ -419,8 +470,32 @@ export default function AiChatPanel({
               </div>
             </div>
           ) : null}
+          {!hasStarted ? (
+            <section className="assistant-welcome assistant-welcome--inline" aria-labelledby="assistant-welcome-title">
+              <div className="assistant-welcome__intro">
+                <h2 id="assistant-welcome-title">{t('assistantStartTitle')}</h2>
+              </div>
+              <div className="assistant-welcome__grid">
+                {STARTERS.map(({ id, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`assistant-starter assistant-starter--${id}`}
+                    onClick={() => chat.handleButtonClick(t(`assistantStarter_${id}Prompt`))}
+                    disabled={chat.isLoadingAI || chat.guestLimitReached}
+                  >
+                    <span className="assistant-starter__topline">
+                      <span className="assistant-starter__icon"><Icon aria-hidden /></span>
+                      <span className="assistant-starter__arrow"><FiArrowRight aria-hidden /></span>
+                    </span>
+                    <strong>{t(`assistantStarter_${id}Title`)}</strong>
+                    <span>{t(`assistantStarter_${id}Description`)}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
-      )}
 
       <form className="chat-widget__input-form" onSubmit={chat.handleChatSubmit}>
         {chat.pendingAttachments.length ? (
@@ -455,7 +530,22 @@ export default function AiChatPanel({
             {chat.isLoadingAI ? <span className="assistant-send-loader" aria-hidden /> : <FiSend size={18} />}
           </button>
         </div>
-        {!hasStarted ? <p className="assistant-composer-hint"><FiCheck aria-hidden />{t('assistantComposerHint')}</p> : null}
+        {chat.guestLimitReached ? (
+          <p className="assistant-composer-hint assistant-composer-hint--auth">
+            <FiCheck aria-hidden />
+            {t('assistantGuestLimitHint')}
+            <button type="button" className="assistant-composer-hint__link" onClick={openGuestAuth}>
+              {t('assistantGuestLimitCta')}
+            </button>
+          </p>
+        ) : !hasStarted ? (
+          <p className="assistant-composer-hint"><FiCheck aria-hidden />{t('assistantComposerHint')}</p>
+        ) : chat.guestRepliesRemaining != null && chat.guestRepliesRemaining > 0 && chat.guestRepliesRemaining <= 1 ? (
+          <p className="assistant-composer-hint">
+            <FiCheck aria-hidden />
+            {t('assistantGuestRepliesLeft', { count: chat.guestRepliesRemaining })}
+          </p>
+        ) : null}
       </form>
     </div>
   )

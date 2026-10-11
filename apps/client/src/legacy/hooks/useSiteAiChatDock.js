@@ -15,11 +15,23 @@ import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { refreshAssistantMessageCopy } from '../utils/siteAssistantHelpers'
 import {
   createAssistantCacheEnvelope,
+  createAssistantGuestLimitMessage,
+  createAssistantIntroMessage,
   detectAssistantInputLanguage,
+  GUEST_ASSISTANT_REPLY_LIMIT,
+  incrementGuestAssistantReplyCount,
+  isGuestAssistantLimitReached,
   normalizeAssistantLanguage,
   prepareAssistantFiles,
   readAssistantCache,
+  readGuestAssistantReplyCount,
 } from '../utils/assistantExperience'
+import {
+  archiveAssistantChatSession,
+  deleteAssistantChatSession,
+  getAssistantChatSession,
+  readAssistantChatSessions,
+} from '../utils/assistantChatSessions'
 
 const EMPTY_RECOMMENDATION_PROPERTIES = Object.freeze([])
 
@@ -59,6 +71,9 @@ export function useSiteAiChatDock({
     return getCachedList() || []
   })
   const [userPreferences, setUserPreferences] = useState(EMPTY_ASSISTANT_PREFERENCES)
+  const [guestReplyCount, setGuestReplyCount] = useState(0)
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false)
+  const [chatSessions, setChatSessions] = useState([])
 
   const slowResponseTimerRef = useRef(null)
   const chatMessagesRef = useRef(null)
@@ -143,10 +158,14 @@ export function useSiteAiChatDock({
     window.addEventListener('propertyFavoritesChanged', invalidate)
     window.addEventListener('subscription-billing-updated', invalidate)
     window.addEventListener('owner-properties-update', invalidate)
+    window.addEventListener('verification-status-update', invalidate)
+    window.addEventListener('property-bid-sse', invalidate)
     return () => {
       window.removeEventListener('propertyFavoritesChanged', invalidate)
       window.removeEventListener('subscription-billing-updated', invalidate)
       window.removeEventListener('owner-properties-update', invalidate)
+      window.removeEventListener('verification-status-update', invalidate)
+      window.removeEventListener('property-bid-sse', invalidate)
     }
   }, [assistantDbUserId])
 
@@ -217,8 +236,20 @@ export function useSiteAiChatDock({
   }, [])
 
   useEffect(() => {
+    if (isLoggedIn) {
+      setGuestReplyCount(0)
+      return
+    }
+    setGuestReplyCount(readGuestAssistantReplyCount(getChatUserId))
+  }, [isLoggedIn, getChatUserId])
+
+  useEffect(() => {
     const chatUserId = getChatUserId
-    if (lastChatUserIdRef.current !== chatUserId) {
+    const introText = t('assistantIntroMessage')
+    const guestLimitText = t('assistantGuestLimitMessage')
+    const userChanged = lastChatUserIdRef.current !== chatUserId
+
+    if (userChanged) {
       try {
         const historyKey = `aiChatHistory_${chatUserId}`
         const preferencesKey = `aiChatPreferences_${chatUserId}`
@@ -226,20 +257,28 @@ export function useSiteAiChatDock({
 
         if (savedChatHistory) {
           const parsed = readAssistantCache(savedChatHistory)
-          const welcomeText = t('chatWelcomeMessage')
-          const migratedMessages = parsed.some((msg) => msg?.sender === 'user') ? parsed : []
-          setChatMessages(
-            migratedMessages.map((msg) =>
-              refreshAssistantMessageCopy(
-                {
-                  ...msg,
-                  timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
-                },
-                welcomeText,
-              ),
-            ),
-          )
-        } else setChatMessages([])
+          const hasUserMessage = parsed.some((msg) => msg?.sender === 'user')
+          if (hasUserMessage) {
+            setChatMessages(
+              parsed.map((msg) => {
+                const refreshed = refreshAssistantMessageCopy(
+                  {
+                    ...msg,
+                    timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+                  },
+                  introText,
+                )
+                if (refreshed?.isIntro) return { ...refreshed, text: introText }
+                if (refreshed?.authPrompt) return { ...refreshed, text: guestLimitText }
+                return refreshed
+              }),
+            )
+          } else {
+            setChatMessages([createAssistantIntroMessage(introText)])
+          }
+        } else {
+          setChatMessages([createAssistantIntroMessage(introText)])
+        }
 
         const savedPreferences = localStorage.getItem(preferencesKey)
         if (savedPreferences) {
@@ -252,8 +291,30 @@ export function useSiteAiChatDock({
         console.error('Ошибка при загрузке истории чата:', error)
         lastChatUserIdRef.current = chatUserId
         chatHistoryLoadedRef.current = true
+        setChatMessages([createAssistantIntroMessage(introText)])
       }
+      return
     }
+
+    // Смена языка UI: обновляем локализованные системные реплики помощника.
+    setChatMessages((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) {
+        return [createAssistantIntroMessage(introText)]
+      }
+      let changed = false
+      const next = prev.map((msg) => {
+        if (msg?.isIntro && msg.text !== introText) {
+          changed = true
+          return { ...msg, text: introText }
+        }
+        if (msg?.authPrompt && msg.text !== guestLimitText) {
+          changed = true
+          return { ...msg, text: guestLimitText }
+        }
+        return msg
+      })
+      return changed ? next : prev
+    })
   }, [getChatUserId, t])
 
   useEffect(() => {
@@ -299,9 +360,33 @@ export function useSiteAiChatDock({
     window.dispatchEvent(new CustomEvent('aiChatStateChange', { detail: { isOpen: isChatOpen } }))
   }, [isChatOpen])
 
+  const refreshChatSessions = useCallback(() => {
+    setChatSessions(readAssistantChatSessions(getChatUserId))
+  }, [getChatUserId])
+
+  const openChatHistory = useCallback(() => {
+    refreshChatSessions()
+    setIsChatHistoryOpen(true)
+  }, [refreshChatSessions])
+
+  const closeChatHistory = useCallback(() => {
+    setIsChatHistoryOpen(false)
+  }, [])
+
+  const hydrateMessages = useCallback((messages, introText) => (
+    (Array.isArray(messages) ? messages : []).map((msg) => ({
+      ...msg,
+      timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+    })).map((msg) => {
+      const refreshed = refreshAssistantMessageCopy(msg, introText)
+      return refreshed || msg
+    })
+  ), [])
+
   const clearChatHistory = useCallback(() => {
     if (typeof window !== 'undefined' && !window.confirm(t('clearChatConfirm'))) return
     try {
+      archiveAssistantChatSession(getChatUserId, chatMessages, userPreferences)
       localStorage.removeItem(`aiChatHistory_${getChatUserId}`)
       localStorage.removeItem(`aiChatPreferences_${getChatUserId}`)
     } catch (error) {
@@ -312,8 +397,54 @@ export function useSiteAiChatDock({
     setPendingAttachments([])
     setAttachmentError('')
     setIsSlowAIResponse(false)
-    setChatMessages([])
-  }, [getChatUserId, t])
+    setIsChatHistoryOpen(false)
+    setChatMessages([createAssistantIntroMessage(t('assistantIntroMessage'))])
+    refreshChatSessions()
+  }, [chatMessages, getChatUserId, refreshChatSessions, t, userPreferences])
+
+  const restoreChatSession = useCallback((sessionId) => {
+    const session = getAssistantChatSession(getChatUserId, sessionId)
+    if (!session?.messages?.length) return
+    try {
+      // Текущий диалог тоже сохраняем, чтобы его можно было вернуть.
+      archiveAssistantChatSession(getChatUserId, chatMessages, userPreferences)
+      const introText = t('assistantIntroMessage')
+      const restored = hydrateMessages(session.messages, introText)
+      setChatMessages(restored.length ? restored : [createAssistantIntroMessage(introText)])
+      setUserPreferences({
+        ...EMPTY_ASSISTANT_PREFERENCES,
+        ...(session.preferences && typeof session.preferences === 'object' ? session.preferences : {}),
+      })
+      setChatInput('')
+      setPendingAttachments([])
+      setAttachmentError('')
+      setIsSlowAIResponse(false)
+      setIsChatHistoryOpen(false)
+      localStorage.setItem(
+        `aiChatHistory_${getChatUserId}`,
+        JSON.stringify(createAssistantCacheEnvelope(restored)),
+      )
+      if (session.preferences) {
+        localStorage.setItem(
+          `aiChatPreferences_${getChatUserId}`,
+          JSON.stringify(session.preferences),
+        )
+      }
+    } catch (error) {
+      console.error('Ошибка при восстановлении истории чата:', error)
+    }
+    refreshChatSessions()
+  }, [chatMessages, getChatUserId, hydrateMessages, refreshChatSessions, t, userPreferences])
+
+  const removeChatSession = useCallback((sessionId) => {
+    const next = deleteAssistantChatSession(getChatUserId, sessionId)
+    setChatSessions(next)
+  }, [getChatUserId])
+
+  const openGuestAuthPrompt = useCallback(() => {
+    closeChatDock()
+    window.setTimeout(() => requestOpenLoginModal({ wizard: true }), 180)
+  }, [closeChatDock])
 
   const handleChatInputChange = (e) => {
     setChatInput(e.target.value)
@@ -372,6 +503,17 @@ export function useSiteAiChatDock({
       sender: 'user',
       timestamp: new Date(),
       attachments: requestAttachments.map(({ name, mimeType, size }) => ({ name, mimeType, size })),
+    }
+
+    if (!isLoggedIn && !contactPref && isGuestAssistantLimitReached(getChatUserId)) {
+      setChatMessages((prev) => {
+        const alreadyPrompted = prev.some((msg) => msg?.authPrompt)
+        const next = [...prev, userMessageObj]
+        if (alreadyPrompted) return next
+        return [...next, createAssistantGuestLimitMessage(t('assistantGuestLimitMessage'))]
+      })
+      setGuestReplyCount(GUEST_ASSISTANT_REPLY_LIMIT)
+      return
     }
 
     setChatMessages((prev) => [...prev, userMessageObj])
@@ -610,22 +752,34 @@ export function useSiteAiChatDock({
         }))
       }
 
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: response.text,
-          sender: 'bot',
-          timestamp: new Date(),
-          buttons: response.buttons,
-          recommendations: response.recommendations,
-          navigation: response.navigation,
-          actions: response.actions,
-          languageSuggestion: response.languageSuggestion,
-          sources: response.sources,
-          yieldEstimate: response.yieldEstimate,
-        },
-      ])
+      const botReply = {
+        id: Date.now() + 1,
+        text: response.text,
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: response.buttons,
+        recommendations: response.recommendations,
+        navigation: response.navigation,
+        actions: response.actions,
+        languageSuggestion: response.languageSuggestion,
+        sources: response.sources,
+        yieldEstimate: response.yieldEstimate,
+      }
+
+      if (!isLoggedIn) {
+        const used = incrementGuestAssistantReplyCount(getChatUserId)
+        setGuestReplyCount(used)
+        if (used >= GUEST_ASSISTANT_REPLY_LIMIT) {
+          setChatMessages((prev) => [
+            ...prev,
+            botReply,
+            createAssistantGuestLimitMessage(t('assistantGuestLimitMessage'), Date.now() + 2),
+          ])
+          return
+        }
+      }
+
+      setChatMessages((prev) => [...prev, botReply])
     } catch (error) {
       console.error('Ошибка при обращении к AI:', error)
       setChatMessages((prev) => [
@@ -651,6 +805,9 @@ export function useSiteAiChatDock({
     }
   }
 
+  const guestLimitReached =
+    !isLoggedIn && guestReplyCount >= GUEST_ASSISTANT_REPLY_LIMIT
+
   return {
     isChatOpen,
     isManagerChatOpen,
@@ -658,6 +815,7 @@ export function useSiteAiChatDock({
     closeChatDock,
     closeManagerChatDock,
     openManagerChatDock,
+    openGuestAuthPrompt,
     userDisplayName: user?.firstName || user?.fullName || '',
     chatMessages,
     chatInput,
@@ -665,6 +823,10 @@ export function useSiteAiChatDock({
     isSlowAIResponse,
     pendingAttachments,
     attachmentError,
+    guestLimitReached,
+    guestRepliesRemaining: isLoggedIn
+      ? null
+      : Math.max(0, GUEST_ASSISTANT_REPLY_LIMIT - guestReplyCount),
     chatMessagesRef,
     lastMessageRef,
     handleChatInputChange,
@@ -673,6 +835,12 @@ export function useSiteAiChatDock({
     handleFilesSelected,
     removePendingAttachment,
     clearChatHistory,
+    isChatHistoryOpen,
+    chatSessions,
+    openChatHistory,
+    closeChatHistory,
+    restoreChatSession,
+    removeChatSession,
     catalogProperties: propertiesForAi,
   }
 }

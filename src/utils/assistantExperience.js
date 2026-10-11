@@ -4,6 +4,74 @@ export const ASSISTANT_CACHE_MAX_MESSAGES = 30
 export const ASSISTANT_MAX_FILES = 2
 export const ASSISTANT_MAX_FILE_BYTES = 5 * 1024 * 1024
 export const ASSISTANT_MAX_TOTAL_BYTES = 8 * 1024 * 1024
+/** Сколько ответов AI доступно гостю без регистрации. */
+export const GUEST_ASSISTANT_REPLY_LIMIT = 3
+
+function guestReplyCountStorageKey(sessionId) {
+  return `aiChatGuestReplies_${String(sessionId || 'guest')}`
+}
+
+export function readGuestAssistantReplyCount(sessionId) {
+  if (typeof localStorage === 'undefined') return 0
+  try {
+    const raw = Number(localStorage.getItem(guestReplyCountStorageKey(sessionId)))
+    return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0
+  } catch {
+    return 0
+  }
+}
+
+export function writeGuestAssistantReplyCount(sessionId, count) {
+  if (typeof localStorage === 'undefined') return
+  try {
+    const next = Math.max(0, Math.floor(Number(count) || 0))
+    localStorage.setItem(guestReplyCountStorageKey(sessionId), String(next))
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function incrementGuestAssistantReplyCount(sessionId) {
+  const next = readGuestAssistantReplyCount(sessionId) + 1
+  writeGuestAssistantReplyCount(sessionId, next)
+  return next
+}
+
+export function isGuestAssistantLimitReached(sessionId, limit = GUEST_ASSISTANT_REPLY_LIMIT) {
+  return readGuestAssistantReplyCount(sessionId) >= limit
+}
+
+export function createAssistantIntroMessage(text, id = Date.now()) {
+  return {
+    id,
+    text: String(text || ''),
+    sender: 'bot',
+    timestamp: new Date(),
+    isIntro: true,
+    buttons: null,
+    recommendations: null,
+    navigation: null,
+    actions: null,
+    sources: null,
+    yieldEstimate: null,
+  }
+}
+
+export function createAssistantGuestLimitMessage(text, id = Date.now() + 1) {
+  return {
+    id,
+    text: String(text || ''),
+    sender: 'bot',
+    timestamp: new Date(),
+    authPrompt: true,
+    buttons: null,
+    recommendations: null,
+    navigation: null,
+    actions: null,
+    sources: null,
+    yieldEstimate: null,
+  }
+}
 
 export const SUPPORTED_ASSISTANT_LANGUAGES = Object.freeze([
   'ru',
@@ -38,7 +106,7 @@ export function normalizeAssistantLanguage(value, fallback = 'ru') {
 export function detectAssistantInputLanguage(text = '') {
   const value = String(text || '')
   if (/[а-яё]/i.test(value)) return 'ru'
-  if (/\b(hola|gracias|quiero|necesito|propiedad|subasta|hipoteca|cómo)\b/i.test(value) || /[ñ¿¡]/i.test(value)) return 'es'
+  if (/\b(hola|gracias|quiero|necesito|propiedad|subasta|hipoteca|cómo|comprar|inmueble)\b/i.test(value) || /[ñ¿¡]/i.test(value)) return 'es'
   if (/\b(bonjour|merci|immobilier|logement|enchère)\b/i.test(value) || /[àâçèêëîïôùûÿœ]/i.test(value)) return 'fr'
   if (/\b(cześć|proszę|nieruchomość|mieszkanie|aukcja)\b/i.test(value) || /[ąćęłńśźż]/i.test(value)) return 'pl'
   if (/\b(hej|tack|fastighet|bostad|auktion)\b/i.test(value) || /[å]/i.test(value)) return 'sv'

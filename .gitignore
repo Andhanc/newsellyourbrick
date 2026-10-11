@@ -91,6 +91,10 @@ server/data/telegram-known-chats.json
 *.pdf
 !public/documents/reserve-terms.pdf
 !Document.pdf
+!docs/testing-users-3/pdf/
+!docs/testing-users-3/pdf/*.pdf
+!docs/testing-users-3/pdf/**/
+!docs/testing-users-3/pdf/**/*.pdf
 *.doc
 *.docx
 

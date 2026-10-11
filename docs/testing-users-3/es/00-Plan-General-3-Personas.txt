@@ -1,0 +1,99 @@
+PLAN GENERAL DE PRUEBAS — GRUPO DE 3 PERSONAS
+
+1. Descripción general
+
+En la prueba participan:
+- Vendedor 1: prepara los inmuebles de prueba, los envía a moderación y gestiona las acciones de los compradores.
+- Comprador 1: conoce la plataforma, compra un inmueble completo y una participación, realiza pujas, reserva un test drive y, al final, comprueba la transición al rol de vendedor.
+- Comprador 2: conoce la plataforma, compra otro inmueble completo, realiza pujas y comprueba el rechazo de un test drive.
+
+Los participantes no están vinculados a lotes designados previamente. Los compradores eligen dos inmuebles disponibles cualesquiera que sean diferentes. Antes del pago, la elección debe coordinarse obligatoriamente con el coordinador para evitar que dos personas compren el mismo inmueble.
+
+En esta ronda no creamos, abrimos ni compramos inmuebles con deudas.
+
+2. Orden de trabajo del grupo
+
+1. El coordinador entrega a cada participante un archivo personal, la URL del entorno de pruebas, un email, un idioma y un número de teléfono de prueba.
+2. Los tres participantes se registran, confirman su email y completan su perfil.
+3. El vendedor crea los inmuebles de prueba y los envía a moderación.
+4. El coordinador aprueba los anuncios e informa a los compradores de que el catálogo está listo.
+5. Los compradores eligen dos inmuebles normales diferentes e informan al coordinador de su elección.
+6. Los compradores realizan la compra y los escenarios adicionales.
+7. El coordinador confirma el KYC, completa las solicitudes de «Comprar ahora» y ayuda con los estados.
+8. Todos los participantes comprueban los datos finales y envían un informe.
+
+3. Datos de prueba de los participantes
+
+- URL del sitio web de prueba.
+- Email personal que no se haya utilizado antes en el entorno de pruebas.
+- Número de teléfono/WhatsApp de prueba.
+- Idioma de la interfaz asignado.
+
+No utilizar datos reales de pasaporte ni tarjetas bancarias reales.
+
+4. Tarjeta de prueba
+
+- Número: 4242 4242 4242 4242
+- Caducidad: 12/34
+- CVC: 123
+- Nombre: Test User
+- País/código postal: Spain / 28001
+
+La tarjeta se utiliza para la suscripción, la publicación, el depósito, la reserva de «Comprar ahora», la participación y el test drive.
+
+5. Normas generales
+
+1. Antes de pagar, comprobar el concepto y el importe.
+2. No pulsar dos veces el botón de pago.
+3. Si el pago se queda bloqueado, hacer una captura de pantalla, anotar la hora, la URL y el ID y, después, contactar con el coordinador.
+4. Después de cada acción importante, comprobar:
+   - las notificaciones en la cuenta;
+   - el email;
+   - WhatsApp, si está habilitado.
+5. Si el email no llega, comprobar la carpeta «Spam» y solicitar el reenvío una sola vez.
+6. Registrar los errores con el formato: paso → resultado esperado → resultado real → hora → URL → captura de pantalla.
+
+6. Moderación y verificación
+
+- El registro solo se considera completado después de confirmar el email.
+- Para realizar pujas, el comprador recarga el depósito, presenta el KYC y espera la confirmación del coordinador.
+- El anuncio del vendedor no puede entregarse al comprador hasta que haya superado la moderación y aparezca en el catálogo público.
+- Una reserva de «Comprar ahora» pagada todavía no constituye una compra definitiva: el coordinador establece el estado final.
+
+7. Qué crea el vendedor
+
+- Dos inmuebles normales diferentes con «Vender ahora».
+- Un inmueble independiente con participaciones.
+- Una subasta activa.
+- Un inmueble independiente con test drive.
+
+8. Qué hacen los compradores
+
+Ambos compradores:
+- completan el registro y conocen la plataforma;
+- eligen inmuebles normales diferentes;
+- compran un inmueble completo cada uno mediante «Comprar ahora»;
+- realizan pujas competitivas en una misma subasta activa;
+- crean una solicitud de test drive cada uno.
+
+Además:
+- El Comprador 1 compra una participación, recibe la confirmación del test drive y, como último paso, comprueba la transición al rol de vendedor.
+- El Comprador 2 recibe el rechazo del test drive con un motivo claro y no cambia al rol de vendedor.
+
+9. Criterios de éxito
+
+- Se han registrado y confirmado tres cuentas.
+- Todos los perfiles están completos y se conservan después de actualizar la página.
+- Las cinco entidades de prueba del vendedor han superado la moderación.
+- Se han comprado dos inmuebles completos diferentes mediante «Comprar ahora».
+- Una participación ha aparecido en la cartera y el saldo restante se ha reducido una sola vez.
+- Hay pujas competitivas en la subasta después del depósito y el KYC.
+- Una reserva de test drive ha sido confirmada y la otra ha sido rechazada con un motivo.
+- Se han comprobado las notificaciones por los tres canales.
+- No hay cargos dobles ni duplicados.
+
+10. Archivos personales
+
+- 01-Vendedor-1.txt
+- 02-Comprador-1.txt
+- 03-Comprador-2.txt

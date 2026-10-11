@@ -1,0 +1,119 @@
+PLAN PERSONAL — COMPRADOR 1
+
+1. Su rol y objetivo general
+
+Usted comprueba el recorrido de un comprador nuevo: registro, introducción a la plataforma, compra de cualquier inmueble completo que esté disponible, compra de una participación, pujas y un test drive confirmado. Solo después de completar todo el escenario del comprador, comprueba la transición al rol de vendedor.
+
+No abra inmuebles con deudas. No utilice datos reales de pasaporte ni datos de pago reales.
+
+2. Datos de prueba
+
+- URL del sitio web de prueba: ____________________
+- Email: ____________________
+- Teléfono/WhatsApp: ____________________
+- Idioma de la interfaz: ____________________
+- Dispositivo y navegador: ____________________
+
+Tarjeta de prueba: 4242 4242 4242 4242; caducidad 12/34; CVC 123; Test User; código postal 28001.
+
+3. Preparación obligatoria antes del escenario personal
+
+[ ] Abrir la URL como invitado.
+[ ] Seleccionar el idioma y actualizar la página: el idioma debe conservarse.
+[ ] Pulsar «Perfil» → «Registrarse».
+[ ] Crear una cuenta nueva con el email proporcionado.
+[ ] Confirmar el email mediante el enlace o el código del mensaje.
+[ ] Si el mensaje no llega, comprobar la carpeta «Spam» y solicitar el reenvío una sola vez.
+[ ] Volver al sitio web y comprobar que la sesión de la cuenta está iniciada.
+[ ] «Perfil» → editar → completar el nombre, el país y el teléfono/WhatsApp.
+[ ] Guardar, actualizar la página y comprobar los datos.
+[ ] Desde la página principal, abrir «Comprar ahora», «Subasta» y «Participaciones» y, después, volver.
+[ ] En el menú, abrir el perfil, los favoritos, la comparación, el depósito/monedero, el historial, las reservas y las suscripciones.
+[ ] En cada sección, comprobar la carga y que el estado vacío sea comprensible.
+[ ] Comprobar la notificación de registro en la cuenta, el email y WhatsApp.
+
+No cambie todavía al rol de vendedor.
+
+4. Elegir un inmueble para comprar
+
+[ ] Abrir «Operaciones» → «Comprar ahora».
+[ ] Elegir cualquier inmueble normal disponible.
+[ ] Antes del pago, enviar el enlace al coordinador y obtener la confirmación de que el inmueble está disponible.
+[ ] Abrir la ficha y comprobar:
+   - toda la galería y el contador de fotografías;
+   - el precio y la moneda;
+   - la dirección y la ubicación;
+   - la descripción y las características;
+   - los documentos y las condiciones de acceso;
+   - la información sobre el vendedor.
+[ ] Añadir el inmueble elegido y otros dos inmuebles a favoritos.
+[ ] Abrir «Favoritos» → «Comparación» y comparar los tres inmuebles.
+[ ] Volver al inmueble elegido.
+
+5. Comprar un inmueble completo
+
+[ ] Pulsar «Comprar ahora».
+[ ] Abrir el PDF y comprobar el inmueble, el importe y las condiciones.
+[ ] Confirmar la aceptación y la firma.
+[ ] Comprobar el importe de la reserva.
+[ ] Iniciar el primer pago y cancelarlo.
+[ ] Comprobar que no haya ningún cargo, ninguna reserva ni ninguna compra.
+[ ] Repetir el proceso y pagar la reserva una sola vez.
+[ ] Anotar el ID de la solicitud, el ID del pago y el importe.
+[ ] Facilitar el ID al coordinador y esperar a que se complete la operación.
+[ ] Abrir «Historial» y comprobar que haya una sola entrada con el inmueble, el importe y el estado final correctos.
+[ ] Comprobar las notificaciones del sitio web, el email y WhatsApp.
+
+6. Comprar una participación
+
+[ ] Abrir «Operaciones» → «Participaciones».
+[ ] Elegir cualquier inmueble con participaciones disponibles.
+[ ] Comprobar la descripción, el precio de una participación, el saldo restante y el importe total.
+[ ] Informar al coordinador del inmueble elegido.
+[ ] Comprar una sola vez la cantidad asignada de participaciones.
+[ ] Abrir la cartera y comprobar la compra.
+[ ] Actualizar la página dos veces: la entrada y el cargo no deben duplicarse.
+[ ] Verificar el saldo restante reducido.
+
+7. Participar en la subasta
+
+[ ] Abrir «Operaciones» → «Subasta».
+[ ] Elegir cualquier subasta activa.
+[ ] Comprobar el temporizador, el precio actual y el incremento mínimo.
+[ ] Intentar realizar una puja sin depósito: debe aparecer un bloqueo.
+[ ] Abrir «Depósito/Monedero» y recargar el depósito con la tarjeta de prueba.
+[ ] Presentar el KYC y facilitar el ID al coordinador.
+[ ] Esperar a que se confirme el KYC. Hasta que se confirme, las pujas deben estar deshabilitadas.
+[ ] Intentar realizar una puja inferior al incremento: debe aparecer un error sin que se efectúe ningún cargo.
+[ ] Realizar una puja válida.
+[ ] Después de la puja del segundo comprador, comprobar la notificación de puja superada y realizar una contraoferta.
+[ ] No es necesario ganar ni comprar mediante la subasta.
+
+8. Reservar un test drive para su confirmación
+
+[ ] Abrir la sección «Test drive».
+[ ] Elegir cualquier inmueble con fechas disponibles.
+[ ] Comprobar la descripción, el coste, el calendario y las condiciones.
+[ ] Elegir las fechas y pagar la reserva una sola vez.
+[ ] Anotar el ID de la reserva y facilitarlo al coordinador/vendedor para su confirmación.
+[ ] Después de la respuesta, comprobar el estado «Confirmada», las fechas, el importe y las notificaciones.
+[ ] Abrir «Reservas» y comprobar que la solicitud aparezca una sola vez.
+
+9. Transición al rol de vendedor — realizar en último lugar
+
+[ ] Comprobar que la compra, la participación, la puja y la reserva ya estén completadas.
+[ ] Volver al perfil y pulsar «Ser vendedor».
+[ ] Leer la explicación y los pasos y, después, continuar.
+[ ] Consultar las secciones principales de la cuenta de vendedor.
+[ ] Volver al rol de comprador sin cerrar sesión.
+[ ] Comprobar que el perfil, el historial de compras, la cartera, el depósito y la reserva se hayan conservado.
+
+10. Qué enviar al coordinador
+
+- ID de la cuenta, la compra, el pago, la participación, el depósito, el KYC, las pujas y la reserva.
+- Capturas de pantalla de la confirmación del email, la ficha del inmueble, el pago cancelado y la compra final.
+- Capturas de pantalla de la cartera, las pujas, la reserva confirmada y la transición entre roles.
+- Resultado de las notificaciones: cuenta / email / WhatsApp.
+- Errores: paso / resultado esperado / resultado real / hora / URL / captura de pantalla.
+
+La prueba estará completada si el inmueble completo se ha comprado una sola vez, la participación ha aparecido en la cartera, las pujas funcionan después del KYC, el test drive está confirmado y la transición al rol de vendedor se ha realizado en último lugar sin pérdida de datos.

@@ -40,6 +40,7 @@ test('knowledge base covers every core customer service route', () => {
     '/auction/buy-now',
     '/co-investment',
     '/debts',
+    '/development',
     '/test-drive',
     '/search-results',
     '/map',
@@ -264,7 +265,58 @@ test('platform question keeps the model answer instead of replacing it with funn
   }
 })
 
-test('selected site language wins and a different input language offers a switch', async () => {
+test('platform overview navigation enriches debts and development links', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Что такое SellYourBrick и какие форматы покупки есть?' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'На SellYourBrick доступны аукционы, купить сейчас, доли, объекты с долгами и Development — совместное развитие проектов.',
+            navigation: [
+              { path: '/auction', label: 'Аукционы' },
+              { path: '/co-investment', label: 'Доли' },
+              { path: '/auction/buy-now', label: 'Купить сейчас' },
+            ],
+            needsMoreInfo: false,
+          }),
+        },
+      }],
+    }),
+  })
+
+  assert.ok(reply.navigation?.some((item) => item.path === '/debts'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/development'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/auction'))
+})
+
+test('navigation questions resolve section paths and keep navigation guide knowledge', async () => {
+  const { getKnowledgeBaseForPrompt } = await import('./knowledgeBase.js')
+  const kb = getKnowledgeBaseForPrompt({
+    query: 'Где открыть умную панель инвестора?',
+    scenario: SCENARIOS.PLATFORM_HELP,
+    maxSections: 6,
+  })
+  assert.ok(kb.navigation_guide?.journeys?.investor_panel)
+  assert.ok(kb.site_map?.['/calculator'])
+
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Где открыть калькулятор доходности?' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    postChat: async () => {
+      throw new Error('llm disabled in test')
+    },
+  })
+
+  assert.equal(reply.scenario, SCENARIOS.PLATFORM_HELP)
+  assert.ok(reply.navigation?.some((item) => item.path === '/calculator'))
+  assert.ok(reply.actions?.some((item) => item.id === 'calculator' || item.id === 'allServices'))
+})
+
+test('detected message language wins over site UI and offers a switch', async () => {
   const reply = await buildAssistantReply({
     messages: [{ sender: 'user', text: 'Покажите, как работает сайт' }],
     properties: catalog,
@@ -279,6 +331,38 @@ test('selected site language wins and a different input language offers a switch
   assert.deepEqual(reply.languageSuggestion, {
     currentLanguage: 'de',
     suggestedLanguage: 'ru',
+  })
+})
+
+test('english site with spanish message replies in spanish context language', async () => {
+  const captured = { system: '' }
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Hola, ¿cómo funciona la subasta?' }],
+    properties: catalog,
+    selectedLanguage: 'en',
+    detectedLanguage: 'es',
+    postChat: async (payload) => {
+      captured.system = String(payload?.messages?.[0]?.content || '')
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              text: 'La subasta de SellYourBrick le permite pujar por inmuebles del catálogo actual.',
+              navigation: [{ path: '/auction', label: 'Subastas' }],
+              needsMoreInfo: false,
+            }),
+          },
+        }],
+      }
+    },
+  })
+
+  assert.match(reply.text, /subasta/i)
+  assert.match(captured.system, /Responde ESTRICTAMENTE en español/i)
+  assert.match(captured.system, /Site UI language is "en"/i)
+  assert.deepEqual(reply.languageSuggestion, {
+    currentLanguage: 'en',
+    suggestedLanguage: 'es',
   })
 })
 
@@ -348,6 +432,89 @@ test('one favorite blocks comparison and explains that one more is required', as
   assert.match(reply.text, /ещё один объект/)
   assert.ok(reply.navigation?.some((item) => item.path === '/favorites'))
   assert.ok(reply.navigation?.some((item) => item.path === '/auction'))
+})
+
+test('published property types question answers from owned listings', async () => {
+  let modelWasCalled = false
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'а какие типы недвижимости у меня опубликованы' }],
+    properties: catalog,
+    userContext: {
+      authenticated: true,
+      ownedProperties: {
+        count: 3,
+        items: [
+          { id: 1, title: 'Sea Villa', propertyType: 'villa' },
+          { id: 2, title: 'Centro Apartment', propertyType: 'apartment' },
+          { id: 3, title: 'Another Villa', propertyType: 'villa' },
+        ],
+      },
+      favorites: { count: 0, items: [] },
+      bookings: { count: 0, items: [] },
+      wallet: { depositAmount: 3000, currency: 'EUR' },
+    },
+    postChat: async () => {
+      modelWasCalled = true
+      return { choices: [] }
+    },
+  })
+
+  assert.equal(modelWasCalled, false)
+  assert.doesNotMatch(reply.text, /инвестиции или недвижимость для себя/i)
+  assert.match(reply.text, /Опубликованные типы недвижимости/)
+  assert.match(reply.text, /villa — 2/)
+  assert.match(reply.text, /apartment — 1/)
+})
+
+test('my villas in cabinet avoid property-search funnel', async () => {
+  let modelWasCalled = false
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'расскажи про мои виллы которые у меня есть' }],
+    properties: catalog,
+    userContext: {
+      authenticated: true,
+      ownedProperties: {
+        count: 2,
+        items: [
+          { id: 10, title: 'Villa One', auctionEndDate: '2026-12-01T12:00:00.000Z' },
+          { id: 11, title: 'Villa Two', auctionEndDate: '2026-10-12T12:00:00.000Z' },
+        ],
+      },
+      favorites: { count: 0, items: [] },
+      bookings: { count: 0, items: [] },
+    },
+    postChat: async () => {
+      modelWasCalled = true
+      return { choices: [] }
+    },
+  })
+
+  assert.equal(modelWasCalled, false)
+  assert.doesNotMatch(reply.text, /инвестиции или недвижимость для себя/i)
+  assert.match(reply.text, /Ваши объявления: 2/)
+  assert.ok(reply.navigation?.some((item) => item.path.startsWith('/owner-test/property-analytics/')))
+})
+
+test('cabinet balance question answers from userContext without LLM', async () => {
+  let modelWasCalled = false
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Сколько у меня на балансе?' }],
+    properties: catalog,
+    userContext: {
+      authenticated: true,
+      wallet: { depositAmount: 4500, currency: 'EUR' },
+      favorites: { count: 0, items: [] },
+      bookings: { count: 0, items: [] },
+    },
+    postChat: async () => {
+      modelWasCalled = true
+      return { choices: [] }
+    },
+  })
+
+  assert.equal(modelWasCalled, false)
+  assert.match(reply.text, /4500 EUR/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/wallet'))
 })
 
 test('two favorites and cabinet facts are passed to the model prompt', async () => {

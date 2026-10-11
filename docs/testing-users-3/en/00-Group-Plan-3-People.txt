@@ -1,0 +1,99 @@
+GENERAL TESTING PLAN — GROUP OF 3 PEOPLE
+
+1. Overview
+
+The test participants are:
+- Seller 1 — prepares test properties, submits them for moderation, and handles buyer actions.
+- Buyer 1 — gets familiar with the platform, buys a whole property and a share, places bids, books a test drive, and, as the very last step, checks the transition to the seller role.
+- Buyer 2 — gets familiar with the platform, buys a different whole property, places bids, and checks the test-drive rejection flow.
+
+Participants are not assigned to specific lots in advance. The buyers choose any two different available properties. Before payment, the choice must be agreed with the coordinator so that two people do not buy the same property.
+
+Do not create, open, or buy debt properties during this test run.
+
+2. Group workflow
+
+1. The coordinator gives each participant a personal file, the test environment URL, an email address, a language, and a test phone number.
+2. All three participants register, confirm their email addresses, and complete their profiles.
+3. The seller creates the test properties and submits them for moderation.
+4. The coordinator approves the listings and tells the buyers that the catalog is ready.
+5. The buyers choose two different regular properties and inform the coordinator of their choices.
+6. The buyers complete the purchase and additional scenarios.
+7. The coordinator approves KYC, completes the "Buy Now" applications, and assists with statuses.
+8. All participants check the final data and submit a report.
+
+3. Participant test data
+
+- Test website URL.
+- Personal email address that has not previously been used in the test environment.
+- Test phone/WhatsApp number.
+- Assigned interface language.
+
+Do not use real passport details or real bank cards.
+
+4. Test card
+
+- Number: 4242 4242 4242 4242
+- Expiry: 12/34
+- CVC: 123
+- Name: Test User
+- Country/postcode: Spain / 28001
+
+The card is used for the subscription, listing publication, deposit, "Buy Now" reservation, share, and test drive.
+
+5. General rules
+
+1. Before paying, check the payment purpose and amount.
+2. Do not click the payment button twice.
+3. If a payment gets stuck, take a screenshot, record the time, URL, and ID, then contact the coordinator.
+4. After an important action, check:
+   - in-account notifications;
+   - email;
+   - WhatsApp, if enabled.
+5. If the email does not arrive, check "Spam" and request a resend only once.
+6. Record an error as: step → expected result → actual result → time → URL → screenshot.
+
+6. Moderation and verification
+
+- Registration is considered complete only after email confirmation.
+- To place bids, the buyer funds the deposit, submits KYC, and waits for the coordinator's approval.
+- A seller's listing must not be passed to a buyer until it has passed moderation and appeared in the public catalog.
+- A paid "Buy Now" reservation is not yet a final purchase: the coordinator sets the final status.
+
+7. What the seller creates
+
+- Two different regular properties with "Sell Now."
+- One separate property with shares.
+- One active auction.
+- One separate property with a test drive.
+
+8. What the buyers do
+
+Both buyers:
+- register and get familiar with the platform;
+- choose different regular properties;
+- each buy one whole property through "Buy Now";
+- place competing bids in one active auction;
+- each create one test-drive application.
+
+In addition:
+- Buyer 1 buys a share, receives test-drive confirmation, and checks the transition to the seller role as the last step.
+- Buyer 2 receives a test-drive rejection with a clear reason and does not switch to the seller role.
+
+9. Success criteria
+
+- Three accounts are registered and confirmed.
+- All profiles are complete and remain saved after a refresh.
+- All five of the seller's test entities have passed moderation.
+- Two different whole properties have been purchased through "Buy Now."
+- One share appears in the portfolio, and the remaining quantity decreases once.
+- The auction contains competing bids after the deposit and KYC.
+- One test-drive booking is confirmed, and the other is rejected with a reason.
+- Notifications have been checked across all three channels.
+- There are no duplicate charges or duplicate records.
+
+10. Personal files
+
+- 01-Seller-1.txt
+- 02-Buyer-1.txt
+- 03-Buyer-2.txt

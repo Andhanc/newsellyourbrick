@@ -323,7 +323,7 @@
   "chatOnline": "Online",
   "closeChat": "Stäng support",
   "clearChat": "Rensa chatten",
-  "clearChatConfirm": "Rensa konversationen med assistenten? Chatten börjar om.",
+  "clearChatConfirm": "Starta en ny chatt? Den aktuella konversationen sparas i historiken och kan öppnas igen.",
   "chatRecommendationsTitle": "Rekommenderade annonser:",
   "listingDefault": "Annons",
   "priceNotSpecified": "Pris anges inte",
@@ -424,6 +424,11 @@
   "assistantAction_vipClubDescription": "Privata objekt och personliga möjligheter",
   "assistantLanguageSuggestion": "Det verkar som att frågan är skriven på ett annat språk.",
   "assistantChangeLanguage": "Byt språk",
+  "assistantIntroMessage": "Hej! Jag är SellYourBricks smarta assistent — jag hjälper dig på plattformen och matchar objekt från den aktuella katalogen.\n\nSellYourBrick är en bostadsmarknadsplats med auktioner, köp nu, andelar och skulder. Jag kan förklara sajtens delar, föreslå strategi, hitta passande lotter och svara på frågor om affären.\n\nSkriv ditt mål — investering eller bostad för dig själv — eller välj ett ämne nedan.",
+  "assistantGuestLimitMessage": "Gärna! Utan registrering kan jag bara svara på några frågor — gränsen är nådd. Registrera dig för att fortsätta utan gräns och spara historiken.",
+  "assistantGuestLimitCta": "Registrera dig",
+  "assistantGuestLimitHint": "Gränsen för gratis svar är nådd.",
+  "assistantGuestRepliesLeft": "Gratis svar kvar utan registrering: {{count}}",
   "assistantComposerHint": "Samtalskontexten sparas i 7 dagar",
   "chatPurposeSelf": "För mig själv",
   "chatPurposeRent": "För uthyrning",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Välj 5 till 21 dagar i följd (första och sista dagen)",
   "testDriveCal_errRangeOverlap": "Perioden överlappar ett bokat datum",
   "chatWaitingReply": "Vänta på svar…",
-  "chatTyping": "Skriver…"
+  "chatTyping": "Skriver…",
+  "assistantChatHistory": "Chatthistorik",
+  "assistantChatHistoryTitle": "Sparade konversationer",
+  "assistantChatHistoryClose": "Stäng",
+  "assistantChatHistoryEmpty": "Inga sparade konversationer ännu. Efter rensning visas den här.",
+  "assistantChatHistoryDelete": "Ta bort från historiken",
+  "assistantChatHistoryUntitled": "Utan titel"
 }

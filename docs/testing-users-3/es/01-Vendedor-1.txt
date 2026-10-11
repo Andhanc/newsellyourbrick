@@ -1,0 +1,108 @@
+PLAN PERSONAL — VENDEDOR 1
+
+1. Su rol y objetivo general
+
+Usted prepara la plataforma para dos compradores. Debe registrarse, abrir la cuenta de vendedor, crear cinco entidades de prueba, esperar a que sean moderadas y, después, comprobar las compras, las pujas, la participación y las solicitudes de test drive.
+
+No utilice documentos reales, datos de pago reales ni inmuebles con deudas.
+
+2. Datos de prueba
+
+- URL del sitio web de prueba: ____________________
+- Email: ____________________
+- Teléfono/WhatsApp: ____________________
+- Idioma de la interfaz: ____________________
+- Dispositivo y navegador: ____________________
+
+Tarjeta de prueba: 4242 4242 4242 4242; caducidad 12/34; CVC 123; Test User; código postal 28001.
+
+3. Preparación obligatoria antes del escenario personal
+
+[ ] Abrir la URL como invitado.
+[ ] Seleccionar el idioma asignado y actualizar la página: el idioma debe conservarse.
+[ ] Pulsar «Perfil» → «Registrarse».
+[ ] Crear una cuenta nueva con el email proporcionado.
+[ ] Abrir el correo y confirmar el email mediante el enlace o el código.
+[ ] Si el mensaje no llega, comprobar la carpeta «Spam» y solicitar el reenvío una sola vez.
+[ ] Volver al sitio web y comprobar que la sesión de la cuenta está iniciada.
+[ ] «Perfil» → editar → completar el nombre, el país y el teléfono/WhatsApp.
+[ ] Guardar, actualizar la página y comprobar que los datos no hayan desaparecido.
+[ ] Pulsar «Ser vendedor».
+[ ] Leer la explicación y los pasos y, después, continuar a la cuenta de vendedor.
+[ ] Abrir las secciones «Inmuebles», «Ventas», «Test drive», «Monedero», «Analítica» y «Suscripciones».
+[ ] Activar el plan asignado. Cancelar el primer intento de pago y, después, pagar una sola vez.
+[ ] Comprobar el plan y las notificaciones en la cuenta, el email y WhatsApp.
+
+Después, continúe con la creación de los anuncios.
+
+4. Crear el primer inmueble normal
+
+[ ] «Inmuebles» → «Añadir inmueble».
+[ ] Seleccionar el formato «Vender ahora».
+[ ] Completar la dirección mediante la sugerencia.
+[ ] Completar el tipo, la superficie, las habitaciones, la descripción, las características y el precio.
+[ ] Subir al menos cinco fotografías de prueba y los documentos obligatorios.
+[ ] Comprobar la vista previa.
+[ ] Guardar el borrador, salir y volver a abrirlo: los datos deben conservarse.
+[ ] Pulsar publicar y cancelar el primer pago.
+[ ] Comprobar que no haya ningún cargo ni ninguna ficha publicada.
+[ ] Repetir la publicación y pagar una sola vez.
+[ ] Anotar el ID del inmueble y del pago.
+[ ] Esperar a que el coordinador complete la moderación.
+[ ] Solo después de la aprobación, buscar el inmueble en la sección pública «Comprar ahora».
+
+5. Crear el segundo inmueble normal
+
+[ ] Repetir la ruta «Inmuebles» → «Añadir inmueble» → «Vender ahora».
+[ ] Utilizar una dirección, un precio, una descripción y unas fotografías de prueba diferentes.
+[ ] Pagar la publicación una sola vez y anotar el ID.
+[ ] Esperar a la moderación y comprobar la ficha en el catálogo público.
+
+Importante: solo se entregan a los compradores inmuebles públicos aprobados.
+
+6. Crear un inmueble con participaciones
+
+[ ] «Inmuebles» → «Añadir inmueble» → formato «Participaciones/Inversiones conjuntas».
+[ ] Comprobar la validación: no se aceptan cantidades vacías, iguales a cero ni fraccionarias no válidas.
+[ ] Introducir una cantidad válida de participaciones y el precio de una participación.
+[ ] Completar los demás datos, las fotografías y los documentos.
+[ ] Pagar la publicación, enviar a moderación y anotar el saldo inicial.
+[ ] Después de la aprobación, comprobar la ficha pública en la sección «Participaciones».
+
+7. Crear una subasta
+
+[ ] «Inmuebles» → «Añadir inmueble» → formato «Subasta».
+[ ] Completar los datos, las fotografías y los documentos.
+[ ] Indicar el precio inicial, el incremento mínimo y el plazo.
+[ ] Pagar la publicación y esperar a la moderación.
+[ ] Comprobar el temporizador, el precio actual y el incremento en la ficha pública.
+
+8. Crear un inmueble con test drive
+
+[ ] Crear un inmueble independiente y activar el test drive.
+[ ] Completar el coste, las condiciones y las fechas disponibles.
+[ ] Publicar el inmueble y esperar a la moderación.
+[ ] Comprobar la ficha pública y el calendario.
+
+9. Gestionar las acciones de los compradores
+
+[ ] Después de las dos reservas, abrir «Ventas».
+[ ] Para cada solicitud, comprobar el inmueble, el comprador, el importe y el estado.
+[ ] Después de que el coordinador las complete, comprobar que las dos ventas aparezcan una sola vez cada una.
+[ ] Después de la compra de la participación, comprobar la cantidad, el importe y el saldo restante reducido.
+[ ] Comprobar la secuencia de pujas competitivas en la subasta.
+[ ] Confirmar una solicitud en «Test drive».
+[ ] Rechazar la segunda solicitud con un motivo concreto y claro.
+[ ] Comprobar las notificaciones del sitio web, el email y WhatsApp para cada evento.
+
+10. Qué enviar al coordinador
+
+- ID de la cuenta.
+- ID de los cinco inmuebles y de los pagos de publicación.
+- Capturas de pantalla de las fichas públicas después de la moderación.
+- Capturas de pantalla de las dos ventas, la participación, las pujas y las dos solicitudes de test drive.
+- Tabla de importes: esperado / real.
+- Lista de notificaciones ausentes.
+- Errores con el formato: paso / resultado esperado / resultado real / hora / URL / captura de pantalla.
+
+La prueba estará completada si las cinco entidades están aprobadas, las dos ventas se han completado sin duplicados, el saldo de participaciones es correcto, las pujas son visibles y el test drive tiene una confirmación y un rechazo.

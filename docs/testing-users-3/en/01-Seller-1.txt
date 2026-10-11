@@ -1,0 +1,108 @@
+PERSONAL PLAN — SELLER 1
+
+1. Your role and overall objective
+
+You are preparing the platform for two buyers. You need to register, open the seller dashboard, create five test entities, wait for them to be moderated, and then check the purchases, bids, share, and test-drive applications.
+
+Do not use real documents, real payment details, or debt properties.
+
+2. Test data
+
+- Test website URL: ____________________
+- Email: ____________________
+- Phone/WhatsApp: ____________________
+- Interface language: ____________________
+- Device and browser: ____________________
+
+Test card: 4242 4242 4242 4242; expiry 12/34; CVC 123; Test User; postcode 28001.
+
+3. Required preparation before your personal scenario
+
+[ ] Open the URL as a guest.
+[ ] Select the assigned language and refresh the page: the language should remain selected.
+[ ] Click "Profile" → "Sign Up."
+[ ] Create a new account using the provided email address.
+[ ] Open your email and confirm the address using the link or code.
+[ ] If the email does not arrive, check "Spam" and request a resend once.
+[ ] Return to the website and make sure you are signed in.
+[ ] Go to "Profile" → edit → enter your name, country, and phone/WhatsApp.
+[ ] Save, refresh the page, and check that the data has not disappeared.
+[ ] Click "Become a Seller."
+[ ] Read the explanation and steps, then continue to the seller dashboard.
+[ ] Open the "Properties," "Sales," "Test Drive," "Wallet," "Analytics," and "Subscriptions" sections.
+[ ] Activate the assigned plan. Cancel the first payment attempt, then pay once.
+[ ] Check the plan and notifications in your account, email, and WhatsApp.
+
+After that, proceed to creating listings.
+
+4. Create the first regular property
+
+[ ] Go to "Properties" → "Add Property."
+[ ] Select the "Sell Now" format.
+[ ] Enter the address using the suggestion.
+[ ] Enter the type, area, rooms, description, features, and price.
+[ ] Upload at least five test photos and the required documents.
+[ ] Check the preview.
+[ ] Save the draft, exit, and open it again: the data should be preserved.
+[ ] Click to publish and cancel the first payment.
+[ ] Make sure there is no charge and no published listing.
+[ ] Repeat the publication process and pay once.
+[ ] Record the property ID and payment ID.
+[ ] Wait for the coordinator to moderate it.
+[ ] Only after approval, find the property in the public "Buy Now" section.
+
+5. Create the second regular property
+
+[ ] Repeat the path "Properties" → "Add Property" → "Sell Now."
+[ ] Use a different test address, price, description, and photos.
+[ ] Pay for publication once and record the ID.
+[ ] Wait for moderation and check the listing in the public catalog.
+
+Important: only approved public properties are passed to the buyers.
+
+6. Create a property with shares
+
+[ ] Go to "Properties" → "Add Property" → select the "Shares/Co-Investment" format.
+[ ] Check validation: blank, zero, and invalid fractional quantities must not be accepted.
+[ ] Enter a valid number of shares and the price per share.
+[ ] Enter the remaining details and add photos and documents.
+[ ] Pay for publication, submit it for moderation, and record the initial remaining quantity.
+[ ] After approval, check the public listing in the "Shares" section.
+
+7. Create an auction
+
+[ ] Go to "Properties" → "Add Property" → select the "Auction" format.
+[ ] Enter the details and add photos and documents.
+[ ] Specify the starting price, minimum increment, and duration.
+[ ] Pay for publication and wait for moderation.
+[ ] In the public listing, check the timer, current price, and increment.
+
+8. Create a property with a test drive
+
+[ ] Create a separate property and enable the test drive.
+[ ] Enter the price, terms, and available dates.
+[ ] Publish the property and wait for moderation.
+[ ] Check the public listing and calendar.
+
+9. Handle buyer actions
+
+[ ] After the two reservations, open "Sales."
+[ ] For each application, check the property, buyer, amount, and status.
+[ ] After the coordinator completes them, make sure the two sales are each displayed once.
+[ ] After the share purchase, check the quantity, amount, and reduced remaining quantity.
+[ ] Check the sequence of competing bids in the auction.
+[ ] In "Test Drive," confirm one application.
+[ ] Reject the second application with a specific, clear reason.
+[ ] Check website, email, and WhatsApp notifications for each event.
+
+10. What to send to the coordinator
+
+- Account ID.
+- IDs of all five properties and publication payments.
+- Screenshots of the public listings after moderation.
+- Screenshots of the two sales, the share, the bids, and the two test-drive applications.
+- A table of amounts: expected / actual.
+- A list of missing notifications.
+- Errors in this format: step / expected / actual / time / URL / screenshot.
+
+The scenario is complete if all five entities are approved, the two sales are completed without duplicates, the remaining share quantity is correct, the bids are visible, and the test drive has one confirmation and one rejection.

@@ -146,10 +146,10 @@ test('seller cabinet and released tools stay available; AI assistant is live', (
   assert.equal(shouldShowSoftLaunchUnavailable('/chat'), false)
 })
 
-test('mobile-only gate blocks public paths but exempts admin and marketer', () => {
-  assert.equal(MOBILE_ONLY_ENABLED, true)
-  assert.equal(shouldBlockDesktopForPath('/'), true)
-  assert.equal(shouldBlockDesktopForPath('/auction'), true)
+test('mobile-only gate is off so desktop public paths stay available', () => {
+  assert.equal(MOBILE_ONLY_ENABLED, false)
+  assert.equal(shouldBlockDesktopForPath('/'), false)
+  assert.equal(shouldBlockDesktopForPath('/auction'), false)
   assert.equal(shouldBlockDesktopForPath('/admin'), false)
   assert.equal(shouldBlockDesktopForPath('/admin/users'), false)
   assert.equal(shouldBlockDesktopForPath('/marketer'), false)

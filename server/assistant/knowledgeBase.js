@@ -85,6 +85,7 @@ function getScenarioPriorities(scenario, query) {
   if (scenario === 'platform_help') {
     add('platform_overview', 28)
     add('company_services', 18)
+    add('navigation_guide', 40)
     add('site_map', 16)
   } else if (scenario === 'auction_help') {
     add('auctions', 32)
@@ -109,12 +110,17 @@ function getScenarioPriorities(scenario, query) {
   if (/доли|shares|соинвест|фракцион/i.test(text)) add('shares', 32)
   if (/тест.?драйв|test.?drive/i.test(text)) add('test_drive', 32)
   if (/долг|distress|обремен/i.test(text)) add('debts', 30)
+  if (/development|девелоп|совместн\w*\s+развит|проект\w*\s+развит/i.test(text)) add('development', 32)
   if (/калькулятор|доходн|панель\s+инвест|roi|yield/i.test(text)) add('investor_tools', 30)
   if (/внж|виза|golden|residenc/i.test(text)) add('visa_residency', 32)
   if (/документ|паспорт|\bnie\b|dld/i.test(text)) add('purchase_documents', 28)
   if (/ипотек|mortgage|hipoteca/i.test(text)) add('mortgage', 30)
   if (/купить\s+сейчас|buy\s*now/i.test(text)) add('buy_now', 26)
   if (/о\s+платформ|что\s+такое\s+sellyourbrick|о\s+вас/i.test(text)) add('platform_overview', 30)
+  if (/где\s+|как\s+(попасть|открыть|найти|зайти)|куда\s+|раздел|навигац|карта\s+сервис|все\s+сервис|where\s+is|how\s+(do\s+i\s+)?(open|find|get\s+to)|go\s+to/i.test(text)) {
+    add('navigation_guide', 42)
+    add('discovery_tools', 18)
+  }
   if (/контакт|менеджер|manager|whatsapp/i.test(text)) add('contacts', 28)
   if (/бонус|промокод|реферал|приглас.*друг|bonus|promo\s*code|referral/i.test(text)) add('bonuses', 40)
   if (/кошел|депозит|пополн|вывест|вывод|баланс|wallet|deposit|withdraw|top.?up/i.test(text)) add('wallet_deposit', 38)

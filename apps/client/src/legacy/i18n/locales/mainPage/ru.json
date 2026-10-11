@@ -469,7 +469,7 @@
   "chatOnline": "Онлайн",
   "closeChat": "Закрыть поддержку",
   "clearChat": "Очистить историю",
-  "clearChatConfirm": "Очистить переписку с умным помощником? Диалог начнётся заново.",
+  "clearChatConfirm": "Начать новый диалог? Текущая переписка сохранится в истории чатов — её можно открыть снова.",
   "chatRecommendationsTitle": "Рекомендуемые объявления:",
   "chatNavigationTitle": "Куда перейти:",
   "chatOpenListing": "Открыть объект →",
@@ -579,6 +579,11 @@
   "assistantAction_vipClubDescription": "Закрытые лоты и персональные возможности",
   "assistantLanguageSuggestion": "Кажется, вопрос написан на другом языке.",
   "assistantChangeLanguage": "Сменить язык",
+  "assistantIntroMessage": "Здравствуйте! Я умный помощник SellYourBrick — помогаю разобраться в платформе и подобрать объекты из актуального каталога.\n\nSellYourBrick — площадка недвижимости: аукционы, покупка сейчас, доли и долги. Я могу объяснить разделы сайта, подсказать стратегию, найти подходящие лоты и ответить на вопросы по сделке.\n\nНапишите, что вас интересует — инвестиции или недвижимость для себя — или выберите тему ниже.",
+  "assistantGuestLimitMessage": "Рад был помочь! Без регистрации я могу ответить только на несколько вопросов — лимит уже исчерпан. Зарегистрируйтесь, чтобы продолжить диалог без ограничений и сохранить историю.",
+  "assistantGuestLimitCta": "Зарегистрироваться",
+  "assistantGuestLimitHint": "Лимит бесплатных ответов исчерпан.",
+  "assistantGuestRepliesLeft": "Осталось бесплатных ответов без регистрации: {{count}}",
   "assistantComposerHint": "Контекст диалога хранится 7 дней",
   "chatPurposeSelf": "Для себя",
   "chatPurposeRent": "Под сдачу",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Выберите подряд от 5 до 21 дня (первая и последняя дата)",
   "testDriveCal_errRangeOverlap": "В диапазон попадает занятая дата",
   "chatWaitingReply": "Подождите ответа…",
-  "chatTyping": "Печатает…"
+  "chatTyping": "Печатает…",
+  "assistantChatHistory": "История чатов",
+  "assistantChatHistoryTitle": "Сохранённые диалоги",
+  "assistantChatHistoryClose": "Закрыть",
+  "assistantChatHistoryEmpty": "Пока нет сохранённых диалогов. После очистки чата переписка появится здесь.",
+  "assistantChatHistoryDelete": "Удалить из истории",
+  "assistantChatHistoryUntitled": "Без названия"
 }

@@ -323,7 +323,7 @@
   "chatOnline": "En ligne",
   "closeChat": "Fermer l’assistance",
   "clearChat": "Effacer le chat",
-  "clearChatConfirm": "Effacer la conversation avec l’assistant ? Le chat recommencera.",
+  "clearChatConfirm": "Démarrer une nouvelle discussion ? La conversation actuelle sera enregistrée dans l’historique et vous pourrez la rouvrir.",
   "chatRecommendationsTitle": "Annonces recommandées :",
   "listingDefault": "Annonce",
   "priceNotSpecified": "Prix non indiqué",
@@ -424,6 +424,11 @@
   "assistantAction_vipClubDescription": "Biens privés et opportunités personnalisées",
   "assistantLanguageSuggestion": "Votre question semble être dans une autre langue.",
   "assistantChangeLanguage": "Changer de langue",
+  "assistantIntroMessage": "Bonjour ! Je suis l’assistant intelligent SellYourBrick — je vous guide sur la plateforme et trouve des biens dans le catalogue actuel.\n\nSellYourBrick est une place de marché immobilière avec enchères, achat immédiat, parts et dettes. Je peux expliquer les sections du site, proposer une stratégie, trouver des lots adaptés et répondre aux questions sur la transaction.\n\nIndiquez votre objectif — investissement ou logement pour vous — ou choisissez un thème ci-dessous.",
+  "assistantGuestLimitMessage": "Avec plaisir ! Sans inscription, je ne peux répondre qu’à quelques questions — la limite est atteinte. Inscrivez-vous pour continuer sans limite et conserver l’historique.",
+  "assistantGuestLimitCta": "S’inscrire",
+  "assistantGuestLimitHint": "Limite de réponses gratuites atteinte.",
+  "assistantGuestRepliesLeft": "Réponses gratuites restantes sans inscription : {{count}}",
   "assistantComposerHint": "Le contexte est conservé pendant 7 jours",
   "chatPurposeSelf": "Pour moi",
   "chatPurposeRent": "Pour la location",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Choisissez de 5 à 21 jours consécutifs (premier et dernier jour)",
   "testDriveCal_errRangeOverlap": "La période chevauche une date réservée",
   "chatWaitingReply": "Veuillez attendre la réponse…",
-  "chatTyping": "Écrit…"
+  "chatTyping": "Écrit…",
+  "assistantChatHistory": "Historique des chats",
+  "assistantChatHistoryTitle": "Conversations enregistrées",
+  "assistantChatHistoryClose": "Fermer",
+  "assistantChatHistoryEmpty": "Aucune conversation enregistrée pour le moment. Après effacement, elle apparaîtra ici.",
+  "assistantChatHistoryDelete": "Supprimer de l’historique",
+  "assistantChatHistoryUntitled": "Sans titre"
 }

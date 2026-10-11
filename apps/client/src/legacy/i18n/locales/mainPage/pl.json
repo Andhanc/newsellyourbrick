@@ -414,7 +414,7 @@
   "chatOnline": "Online",
   "closeChat": "Zamknij wsparcie",
   "clearChat": "Wyczyść czat",
-  "clearChatConfirm": "Wyczyścić rozmowę z asystentem? Czat zacznie się od nowa.",
+  "clearChatConfirm": "Zacząć nową rozmowę? Bieżąca rozmowa zostanie zapisana w historii i będzie można ją ponownie otworzyć.",
   "chatRecommendationsTitle": "Recommended listings:",
   "listingDefault": "Listing",
   "priceNotSpecified": "Price not specified",
@@ -515,6 +515,11 @@
   "assistantAction_vipClubDescription": "Oferty prywatne i spersonalizowane możliwości",
   "assistantLanguageSuggestion": "Wygląda na to, że pytanie jest w innym języku.",
   "assistantChangeLanguage": "Zmień język",
+  "assistantIntroMessage": "Cześć! Jestem inteligentnym asystentem SellYourBrick — pomagam w platformie i dobieram oferty z aktualnego katalogu.\n\nSellYourBrick to rynek nieruchomości z aukcjami, kupnem od ręki, udziałami i długami. Mogę wyjaśnić sekcje serwisu, zasugerować strategię, znaleźć pasujące loty i odpowiedzieć na pytania o transakcję.\n\nNapisz, czego szukasz — inwestycja czy nieruchomość dla siebie — albo wybierz temat poniżej.",
+  "assistantGuestLimitMessage": "Chętnie pomogłem! Bez rejestracji mogę odpowiedzieć tylko na kilka pytań — limit został wyczerpany. Zarejestruj się, aby kontynuować bez limitu i zachować historię.",
+  "assistantGuestLimitCta": "Zarejestruj się",
+  "assistantGuestLimitHint": "Limit bezpłatnych odpowiedzi wyczerpany.",
+  "assistantGuestRepliesLeft": "Pozostało bezpłatnych odpowiedzi bez rejestracji: {{count}}",
   "assistantComposerHint": "Kontekst rozmowy jest przechowywany przez 7 dni",
   "chatPurposeSelf": "For myself",
   "chatPurposeRent": "For rental",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Wybierz od 5 do 21 kolejnych dni (pierwszy i ostatni dzień)",
   "testDriveCal_errRangeOverlap": "Zakres obejmuje zajętą datę",
   "chatWaitingReply": "Proszę czekać na odpowiedź…",
-  "chatTyping": "Pisze…"
+  "chatTyping": "Pisze…",
+  "assistantChatHistory": "Historia czatów",
+  "assistantChatHistoryTitle": "Zapisane rozmowy",
+  "assistantChatHistoryClose": "Zamknij",
+  "assistantChatHistoryEmpty": "Brak zapisanych rozmów. Po wyczyszczeniu czatu pojawi się tutaj.",
+  "assistantChatHistoryDelete": "Usuń z historii",
+  "assistantChatHistoryUntitled": "Bez tytułu"
 }

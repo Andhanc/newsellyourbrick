@@ -2028,14 +2028,37 @@ body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
 /* ——— Language drawer (BuyerSheetShell) ——— */
 .footer-lang-drawer.buyer-sheet {
   z-index: 13000;
+  padding: 0;
+  align-items: flex-end;
+  justify-content: stretch;
 }
 
 .footer-lang-drawer .buyer-sheet__surface {
-  width: min(100%, 420px);
+  width: 100%;
+  max-width: none;
   max-height: min(78dvh, 560px);
+  border-radius: var(--buyer-radius-sheet, 28px) var(--buyer-radius-sheet, 28px) 0 0;
   background: #ffffff;
   border: 1px solid #e2e8f0;
+  border-bottom: 0;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+}
+
+@media (min-width: 768px) {
+  .footer-lang-drawer.buyer-sheet {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .footer-lang-drawer .buyer-sheet__surface {
+    width: 100%;
+    max-width: none;
+    border-radius: var(--buyer-radius-sheet, 28px) var(--buyer-radius-sheet, 28px) 0 0;
+  }
+
+  .footer-lang-drawer .buyer-sheet__handle {
+    display: flex;
+  }
 }
 
 .footer-lang-drawer .buyer-sheet__body {

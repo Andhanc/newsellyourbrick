@@ -1,0 +1,97 @@
+PLAN PERSONAL — COMPRADOR 2
+
+1. Su rol y objetivo general
+
+Usted comprueba un segundo recorrido independiente del comprador: registro, introducción a la plataforma, compra de otro inmueble completo que esté disponible, pujas competitivas y un test drive rechazado con un motivo claro.
+
+No cambie al rol de vendedor. No abra inmuebles con deudas. No utilice datos reales de pasaporte ni datos de pago reales.
+
+2. Datos de prueba
+
+- URL del sitio web de prueba: ____________________
+- Email: ____________________
+- Teléfono/WhatsApp: ____________________
+- Idioma de la interfaz: ____________________
+- Dispositivo y navegador: ____________________
+
+Tarjeta de prueba: 4242 4242 4242 4242; caducidad 12/34; CVC 123; Test User; código postal 28001.
+
+3. Preparación obligatoria antes del escenario personal
+
+[ ] Abrir la URL como invitado.
+[ ] Seleccionar el idioma y actualizar la página: el idioma debe conservarse.
+[ ] Pulsar «Perfil» → «Registrarse».
+[ ] Crear una cuenta nueva con el email proporcionado.
+[ ] Confirmar el email mediante el enlace o el código del mensaje.
+[ ] Si el mensaje no llega, comprobar la carpeta «Spam» y solicitar el reenvío una sola vez.
+[ ] Volver al sitio web y comprobar que la sesión de la cuenta está iniciada.
+[ ] Completar el nombre, el país y el teléfono/WhatsApp en el perfil.
+[ ] Guardar, actualizar la página y comprobar los datos.
+[ ] Desde la página principal, abrir «Comprar ahora», «Subasta» y «Participaciones».
+[ ] En el menú, abrir el perfil, los favoritos, la comparación, el depósito/monedero, el historial, las reservas y las suscripciones.
+[ ] Comprobar la notificación de registro en la cuenta, el email y WhatsApp.
+
+4. Elegir otro inmueble para comprar
+
+[ ] Abrir «Operaciones» → «Comprar ahora».
+[ ] Elegir cualquier inmueble disponible que sea diferente del elegido por el primer comprador.
+[ ] Enviar el enlace al coordinador y obtener la confirmación de que el inmueble está disponible.
+[ ] Comprobar la galería, el precio, la dirección, la descripción, las características, los documentos, la ubicación y el vendedor.
+[ ] Añadir el inmueble a favoritos.
+[ ] Abrir el «Panel inteligente», calcular el inmueble y cotejar los datos de partida con la ficha.
+[ ] Volver al inmueble elegido.
+
+5. Comprar un inmueble completo
+
+[ ] Pulsar «Comprar ahora».
+[ ] Abrir el PDF y comprobar el inmueble, el importe y las condiciones.
+[ ] Confirmar la aceptación y la firma.
+[ ] Iniciar el primer pago y cancelarlo.
+[ ] Comprobar que el inmueble no se haya comprado y que no haya ningún cargo.
+[ ] Repetir el proceso y pagar la reserva una sola vez.
+[ ] Anotar el ID de la solicitud, el ID del pago y el importe.
+[ ] Facilitar el ID al coordinador y esperar a que se complete la operación.
+[ ] Comprobar en «Historial» que haya una sola entrada con el inmueble, el importe y el estado correctos.
+[ ] Comprobar las notificaciones del sitio web, el email y WhatsApp.
+
+6. Participar en la subasta
+
+[ ] Abrir «Operaciones» → «Subasta».
+[ ] Elegir la misma subasta activa en la que participa el primer comprador.
+[ ] Comprobar el temporizador, el precio actual y el incremento mínimo.
+[ ] Recargar el depósito con la tarjeta de prueba.
+[ ] Presentar el KYC y facilitar el ID al coordinador.
+[ ] Esperar a que se confirme el KYC.
+[ ] Superar la puja del primer comprador con un incremento válido.
+[ ] Comprobar el historial de pujas y las notificaciones.
+[ ] Después de la contraoferta, comprobar la notificación de puja superada.
+[ ] No es necesario ganar ni comprar mediante la subasta.
+
+7. Reservar un test drive para su rechazo
+
+[ ] Abrir la sección «Test drive».
+[ ] Elegir cualquier inmueble con fechas disponibles.
+[ ] Comprobar la descripción, el coste, el calendario y las condiciones.
+[ ] Elegir fechas diferentes de las de la reserva del primer comprador.
+[ ] Pagar la reserva una sola vez y anotar el ID.
+[ ] Facilitar el ID al coordinador/vendedor y solicitar que rechace la solicitud e indique un motivo claro.
+[ ] Comprobar el estado «Rechazada», las fechas, el importe y el texto exacto del motivo.
+[ ] Comprobar las notificaciones del sitio web, el email y WhatsApp.
+[ ] Debe haber una sola solicitud rechazada en «Reservas».
+
+8. Recorrido final y comprobación de los datos
+
+[ ] Abrir el perfil, los favoritos, el depósito, el historial y las reservas.
+[ ] Comprobar que la compra, los pagos, las pujas y la reserva aparezcan una sola vez cada uno.
+[ ] Actualizar la página dos veces y volver a comprobar que no haya duplicados.
+[ ] No pulsar «Ser vendedor».
+
+9. Qué enviar al coordinador
+
+- ID de la cuenta, la compra, el pago, el depósito, el KYC, las pujas y la reserva.
+- Capturas de pantalla de la confirmación del email, la ficha, el pago cancelado y la compra final.
+- Capturas de pantalla de las pujas, la reserva rechazada y el motivo.
+- Resultado de las notificaciones: cuenta / email / WhatsApp.
+- Errores: paso / resultado esperado / resultado real / hora / URL / captura de pantalla.
+
+La prueba estará completada si se ha comprado una sola vez un inmueble completo diferente, las pujas competitivas funcionan después del KYC, el test drive se ha rechazado con un motivo visible y los datos no están duplicados.

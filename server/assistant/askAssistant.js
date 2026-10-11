@@ -14,6 +14,7 @@ import { formatAttachmentsForPrompt } from './fileAttachments.js'
 import { selectSpainLegalKnowledge } from './spainLegalKnowledge.js'
 import { getSpainLegalLiveContext } from './spainLegalLiveSources.js'
 import {
+  buildCabinetSnapshotReply,
   buildComparisonReadinessReply,
   formatUserContextForPrompt,
   isComparisonQuestion,
@@ -39,6 +40,7 @@ const SITE_NAV = [
   { path: '/about', label: 'О платформе' },
   { path: '/buyer', label: 'Покупателям' },
   { path: '/debts', label: 'Долги / Distressed' },
+  { path: '/development', label: 'Development' },
   { path: '/private-club', label: 'Private Club' },
   { path: '/subscriptions', label: 'Подписки' },
   { path: '/bonuses', label: 'Бонусы покупателя' },
@@ -54,6 +56,7 @@ const SITE_NAV = [
   { path: '/data', label: 'Личные данные и документы' },
   { path: '/seller', label: 'Продавцам' },
   { path: '/owner-test', label: 'Кабинет продавца' },
+  { path: '/owner-test/properties', label: 'Мои объявления' },
   { path: '/owner/property/new', label: 'Разместить объект' },
   { path: '/app', label: 'Мобильное приложение' },
   { path: '/lottery', label: 'Лотерея' },
@@ -90,14 +93,20 @@ function normalizeHistory(messages) {
     .filter((m) => m.text)
 }
 
-function languageRule(lang) {
-  if (lang === 'en') return 'Reply STRICTLY in English. No mixed languages.'
-  if (lang === 'es') return 'Responde ESTRICTAMENTE en español. Sin mezclar idiomas.'
-  if (lang === 'de') return 'Antworte AUSSCHLIESSLICH auf Deutsch. Mische keine Sprachen.'
-  if (lang === 'fr') return 'Réponds STRICTEMENT en français. Ne mélange pas les langues.'
-  if (lang === 'pl') return 'Odpowiadaj WYŁĄCZNIE po polsku. Nie mieszaj języków.'
-  if (lang === 'sv') return 'Svara ENDAST på svenska. Blanda inte språk.'
-  return 'Отвечай СТРОГО на русском языке. Без смеси языков. Обращение на «Вы».'
+function languageRule(lang, { siteLanguage = null } = {}) {
+  const matchUser =
+    'Match the language of the user\'s latest message. If they write in Spanish, reply in Spanish even when the site UI is English or another language.'
+  const siteNote =
+    siteLanguage && siteLanguage !== lang
+      ? ` Site UI language is "${siteLanguage}", but reply language must still be "${lang}".`
+      : ''
+  if (lang === 'en') return `${matchUser}${siteNote} Reply STRICTLY in English. No mixed languages.`
+  if (lang === 'es') return `${matchUser}${siteNote} Responde ESTRICTAMENTE en español. Sin mezclar idiomas.`
+  if (lang === 'de') return `${matchUser}${siteNote} Antworte AUSSCHLIESSLICH auf Deutsch. Mische keine Sprachen.`
+  if (lang === 'fr') return `${matchUser}${siteNote} Réponds STRICTEMENT en français. Ne mélange pas les langues.`
+  if (lang === 'pl') return `${matchUser}${siteNote} Odpowiadaj WYŁĄCZNIE po polsku. Nie mieszaj języków.`
+  if (lang === 'sv') return `${matchUser}${siteNote} Svara ENDAST på svenska. Blanda inte språk.`
+  return `${matchUser}${siteNote} Отвечай СТРОГО на русском языке. Без смеси языков. Обращение на «Вы».`
 }
 
 function stripReasoning(text = '') {
@@ -133,7 +142,9 @@ function sanitizeNavigation(navigation) {
       .replace(/\/+$/, '') || '/'
     const normalized = path.startsWith('/') ? path : `/${path}`
     const allowed =
-      ALLOWED_PATHS.has(normalized) || /^\/property\/[A-Za-z0-9\-_%]+$/i.test(normalized)
+      ALLOWED_PATHS.has(normalized)
+      || /^\/property\/[A-Za-z0-9\-_%]+$/i.test(normalized)
+      || /^\/owner-test\/property-analytics\/[A-Za-z0-9\-_%]+$/i.test(normalized)
     if (!allowed || seen.has(normalized)) continue
     seen.add(normalized)
     const fromCatalog = SITE_NAV.find((n) => n.path === normalized)
@@ -141,19 +152,70 @@ function sanitizeNavigation(navigation) {
       path: normalized,
       label: String(item?.label || fromCatalog?.label || normalized).slice(0, 80),
     })
-    if (out.length >= 6) break
+    if (out.length >= 8) break
   }
   return out
 }
 
-function navigationForScenario(gate, dialog) {
+const NAV_HINTS = [
+  { path: '/auction', label: 'Аукционы', aliases: ['аукцион', 'торг', 'лот', 'ставк', 'auction', 'bid'] },
+  { path: '/auction/buy-now', label: 'Купить сейчас', aliases: ['купить сейчас', 'buy now', 'buy-now', 'фиксирован'] },
+  { path: '/map', label: 'Карта объектов', aliases: ['карта', 'map', 'на карте'] },
+  { path: '/co-investment', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'соинвест', 'фракцион'] },
+  { path: '/debts', label: 'Долги / Distressed', aliases: ['долг', 'debt', 'distress'] },
+  { path: '/development', label: 'Development', aliases: ['development', 'девелоп', 'совместн развит', 'проект развит'] },
+  { path: '/calculator', label: 'Умная панель инвестора', aliases: ['калькулятор', 'панель инвест', 'доходност', 'roi', 'yield'] },
+  { path: '/compare', label: 'Сравнение', aliases: ['сравн', 'compare'] },
+  { path: '/favorites', label: 'Избранное', aliases: ['избран', 'favorite', 'favourite'] },
+  { path: '/test-drive', label: 'Test-drive', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
+  { path: '/private-club', label: 'Private Club', aliases: ['private club', 'vip', 'клуб'] },
+  { path: '/subscriptions', label: 'Подписки', aliases: ['подписк', 'тариф', 'pro', 'subscription'] },
+  { path: '/wallet', label: 'Кошелёк и депозит', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
+  { path: '/bonuses', label: 'Бонусы', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
+  { path: '/sections', label: 'Все сервисы', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
+  { path: '/profile', label: 'Личный кабинет', aliases: ['профил', 'кабинет', 'profile', 'account'] },
+  { path: '/seller', label: 'Продавцам', aliases: ['продав', 'seller', 'размест'] },
+  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'менеджер', 'support', 'manager'] },
+  { path: '/about', label: 'О платформе', aliases: ['о платформ', 'о нас', 'about'] },
+]
+
+function navigationFromMessage(text = '') {
+  const lower = String(text || '').toLowerCase()
+  if (!lower.trim()) return []
+  const matched = NAV_HINTS.filter((item) => item.aliases.some((alias) => lower.includes(alias)))
+  return matched.slice(0, 4).map(({ path, label }) => ({ path, label }))
+}
+
+/** Если в ответе упомянуты стратегии/разделы — добавим кнопки, которые модель могла пропустить. */
+function enrichNavigationWithMentionedSections(text = '', navigation = []) {
+  const lower = String(text || '').toLowerCase()
+  const out = sanitizeNavigation(navigation)
+  const ensure = (path, label) => {
+    if (out.some((item) => item.path === path)) return
+    out.push({ path, label })
+  }
+  if (/долг|distress|обремен/i.test(lower)) ensure('/debts', 'Долги / Distressed')
+  if (/development|девелоп|совместн\w*\s+развит|проект\w*\s+развит/i.test(lower)) {
+    ensure('/development', 'Development')
+  }
+  if (/test.?drive|тест.?драйв/i.test(lower)) ensure('/test-drive', 'Test-drive')
+  if (/доли|shares|соинвест|фракцион/i.test(lower)) ensure('/co-investment', 'Доли / совместные инвестиции')
+  if (/купить\s+сейчас|buy\s*now/i.test(lower)) ensure('/auction/buy-now', 'Купить сейчас')
+  if (/аукцион|торг|auction/i.test(lower)) ensure('/auction', 'Аукционы')
+  return sanitizeNavigation(out).slice(0, 6)
+}
+
+function navigationForScenario(gate, dialog, lastUser = '') {
+  const fromMessage = navigationFromMessage(lastUser)
+  if (fromMessage.length) return fromMessage
   if (gate.scenario === SCENARIOS.SHARES) return [{ path: '/co-investment', label: 'Доли (Shares)' }]
   if (gate.scenario === SCENARIOS.AUCTION_HELP) return [{ path: '/auction', label: 'Аукционы' }]
   if (gate.scenario === SCENARIOS.PLATFORM_HELP) {
     return [
-      { path: '/about', label: 'О платформе' },
+      { path: '/sections', label: 'Все сервисы' },
       { path: '/auction', label: 'Аукционы' },
-      { path: '/calculator', label: 'Умная панель инвестора' },
+      { path: '/debts', label: 'Долги / Distressed' },
+      { path: '/development', label: 'Development' },
     ]
   }
   return []
@@ -404,8 +466,8 @@ function deterministicCopy(dialog, gate, match, lang) {
   return pack.hello
 }
 
-function buildDeterministicReply(dialog, gate, match, lang, preferences) {
-  const navigation = sanitizeNavigation(navigationForScenario(gate, dialog))
+function buildDeterministicReply(dialog, gate, match, lang, preferences, lastUser = '') {
+  const navigation = sanitizeNavigation(navigationForScenario(gate, dialog, lastUser))
   const mayRecommend = dialog.stage === 'SHOW_LISTINGS'
   return {
     text: deterministicCopy(dialog, gate, match, lang),
@@ -436,10 +498,14 @@ function buildContextualActions({ history, lastUser, gate, match, dialog }) {
     add('compare', '/compare', 'auth')
     const propertyId = match.ids[0]
     add('presentation', `/property/${propertyId}`, 'subscription', propertyId)
-  } else if (/доходност|окупаем|\broi\b|yield|rentabil|rendement|avkastning/i.test(text)) {
+  } else if (/доходност|окупаем|\broi\b|yield|rentabil|rendement|avkastning|калькулятор|панель\s+инвест/i.test(text)) {
     add('calculator', '/calculator', 'subscription')
-  } else if (gate.scenario === SCENARIOS.PLATFORM_HELP) {
+  } else if (/vip|private\s*club|закрыт(ые|ых)\s+лот/i.test(text)) {
+    add('vipClub', '/private-club', 'vip')
+  } else if (gate.scenario === SCENARIOS.PLATFORM_HELP || /где\s+|как\s+(попасть|открыть|найти)|раздел|сервис/i.test(text)) {
     add('allServices', '/sections', 'public')
+    if (/калькулятор|инвест|доходност/i.test(text)) add('calculator', '/calculator', 'subscription')
+    if (/vip|клуб/i.test(text)) add('vipClub', '/private-club', 'vip')
   }
 
   const userTurns = history.filter((item) => item.sender === 'user').length
@@ -450,7 +516,7 @@ function buildContextualActions({ history, lastUser, gate, match, dialog }) {
     add('vipClub', '/private-club', 'vip')
   }
 
-  return actions.slice(0, 2)
+  return actions.slice(0, 3)
 }
 
 function buildLanguageSuggestion(selectedLanguage, detectedLanguage) {
@@ -494,7 +560,18 @@ function legalSourcesForResponse(legalKnowledge, liveLegalData = []) {
   return (fresh.length ? fresh : sources).slice(0, 3)
 }
 
-function buildSystemPrompt({ config, dialog, gate, match, knowledge, legalKnowledge, liveLegalData, lang, userContext }) {
+function buildSystemPrompt({
+  config,
+  dialog,
+  gate,
+  match,
+  knowledge,
+  legalKnowledge,
+  liveLegalData,
+  lang,
+  siteLanguage,
+  userContext,
+}) {
   const siteMap = SITE_NAV.map((item) => `- ${item.path} — ${item.label}`).join('\n')
   const knowledgeBlock = JSON.stringify(knowledge).slice(0, 28000)
   const legalBlock = legalKnowledge
@@ -528,17 +605,19 @@ ${formatStageInstruction(dialog, lang)}
 ${formatCriteriaForPrompt(dialog)}
 
 ${locationsBlock}`
-    : `Ты — сильный продуктовый и недвижимый консультант SellYourBrick. Сначала дай прямой содержательный ответ именно на вопрос пользователя.
+    : `Ты — навигационный гид и продуктовый консультант SellYourBrick. Сам веди пользователя по сайту: объясняй, где находится нужный раздел, что на странице, какие шаги в интерфейсе и что нужно заранее (вход, Pro, VIP, депозит, верификация).
+Сначала дай прямой содержательный ответ именно на вопрос пользователя.
 Не запускай анкету подбора и не спрашивай цель, бюджет или город, если пользователь сам не попросил подобрать объект.
 Объясняй логику и практический следующий шаг, но не показывай скрытую цепочку рассуждений.
-Факты о функциях, кнопках, тарифах и маршрутах SellYourBrick бери только из базы знаний и карты сайта ниже.
-На вопрос о сервисе обязательно дай: что он делает, нужен ли вход/Pro/VIP/депозит, точные шаги в интерфейсе и одну-две релевантные кнопки navigation.
+Факты о функциях, кнопках, тарифах и маршрутах SellYourBrick бери только из базы знаний (особенно navigation_guide, access_rules, site_map) и карты разделов ниже.
+На вопрос о сервисе или навигации обязательно дай: что делает раздел, как туда попасть, нужен ли вход/Pro/VIP/депозит, точные шаги и 1–3 релевантные кнопки navigation с path из списка.
+Если пользователь спрашивает «где / как открыть / куда зайти» — веди его к конкретному path, а не только описывай концепцию.
 Не перечисляй посторонние разделы «на всякий случай». Если в базе нет точной детали, честно скажи, что её нужно проверить на соответствующем экране или у менеджера.
 Для общих вопросов о недвижимости можешь использовать профессиональные знания, но не выдумывай текущие цены, законы, доходность или гарантии. Юридические и инвестиционные выводы помечай как ориентир.`
 
   return `${behaviorBlock}
 
-${languageRule(lang)}
+${languageRule(lang, { siteLanguage })}
 
 ${formatUserContextForPrompt(userContext)}
 
@@ -590,8 +669,13 @@ export function buildAssistantContext({
 }) {
   const history = normalizeHistory(messages)
   const lastUser = [...history].reverse().find((m) => m.sender === 'user')?.text || ''
-  const inputLanguage = normalizeSelectedLanguage(detectedLanguage, detectReplyLanguage(lastUser))
-  const lang = normalizeSelectedLanguage(selectedLanguage, inputLanguage)
+  const siteLanguage = normalizeSelectedLanguage(selectedLanguage, 'ru')
+  // Язык последнего сообщения пользователя важнее языка интерфейса сайта.
+  const inputLanguage = normalizeSelectedLanguage(
+    detectedLanguage,
+    normalizeSelectedLanguage(detectReplyLanguage(lastUser), siteLanguage),
+  )
+  const lang = inputLanguage
   const catalog = (Array.isArray(properties) ? properties : []).map(slimProperty).filter(Boolean)
   const dialog = analyzeConversation(history, lang, preferences, { catalog })
   const gate = evaluateIntentGate(history, lang)
@@ -610,6 +694,7 @@ export function buildAssistantContext({
     history,
     lastUser,
     lang,
+    siteLanguage,
     inputLanguage,
     dialog,
     gate,
@@ -628,9 +713,16 @@ export function buildAssistantContext({
  */
 export async function buildAssistantReply(input = {}) {
   const ctx = buildAssistantContext(input)
-  const fallback = buildDeterministicReply(ctx.dialog, ctx.gate, ctx.match, ctx.lang, ctx.preferences)
+  const fallback = buildDeterministicReply(
+    ctx.dialog,
+    ctx.gate,
+    ctx.match,
+    ctx.lang,
+    ctx.preferences,
+    ctx.lastUser,
+  )
   fallback.actions = buildContextualActions(ctx)
-  fallback.languageSuggestion = buildLanguageSuggestion(ctx.lang, ctx.inputLanguage)
+  fallback.languageSuggestion = buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage)
   fallback.sources = legalSourcesForResponse(ctx.legalKnowledge)
 
   if (isComparisonQuestion(ctx.lastUser)) {
@@ -640,6 +732,19 @@ export async function buildAssistantReply(input = {}) {
         ...fallback,
         ...readiness,
         languageSuggestion: fallback.languageSuggestion,
+      }
+    }
+  }
+
+  // Сравнение с 2+ избранными оставляем модели; кабинетный снимок — для баланса/броней/«моих» фактов.
+  if (!isComparisonQuestion(ctx.lastUser)) {
+    const cabinetReply = buildCabinetSnapshotReply(ctx.userContext, ctx.lastUser, ctx.lang)
+    if (cabinetReply) {
+      return {
+        ...fallback,
+        ...cabinetReply,
+        languageSuggestion: fallback.languageSuggestion,
+        scenario: ctx.gate.scenario,
       }
     }
   }
@@ -669,6 +774,7 @@ export async function buildAssistantReply(input = {}) {
     legalKnowledge: ctx.legalKnowledge,
     liveLegalData,
     lang: ctx.lang,
+    siteLanguage: ctx.siteLanguage,
     userContext: ctx.userContext,
   })
 
@@ -722,24 +828,34 @@ export async function buildAssistantReply(input = {}) {
     const inPropertyFunnel =
       ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH && funnelStages.includes(ctx.dialog.stage)
     const modelNavigation = sanitizeNavigation(parsed.navigation || [])
-    const navigation = inPropertyFunnel
+    const baseNavigation = inPropertyFunnel
       ? []
       : modelNavigation.length
         ? modelNavigation
-        : sanitizeNavigation(navigationForScenario(ctx.gate, ctx.dialog))
+        : sanitizeNavigation(navigationForScenario(ctx.gate, ctx.dialog, ctx.lastUser))
 
     const lockFunnelStage =
       ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH &&
       ['NEED_PURPOSE', 'NEED_COUNTRY', 'NEED_CITY', 'NEED_BUDGET'].includes(ctx.dialog.stage)
 
+    const replyText = lockFunnelStage
+      ? fallback.text
+      : String(parsed.text).replace(/\*\*/g, '').trim()
+    const navigation = inPropertyFunnel
+      ? []
+      : enrichNavigationWithMentionedSections(
+          replyText,
+          baseNavigation.length ? baseNavigation : fallback.navigation,
+        )
+
     return {
-      text: lockFunnelStage ? fallback.text : String(parsed.text).replace(/\*\*/g, '').trim(),
+      text: replyText,
       buttons: null,
       needsMoreInfo: parsed.needsMoreInfo !== false,
       recommendations: validateRecommendations(parsed.recommendations, ctx.match, ctx.dialog),
       navigation: navigation.length ? navigation : fallback.navigation,
       actions: buildContextualActions(ctx),
-      languageSuggestion: buildLanguageSuggestion(ctx.lang, ctx.inputLanguage),
+      languageSuggestion: buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage),
       sources: legalSourcesForResponse(ctx.legalKnowledge, liveLegalData),
       yieldEstimate: null,
       preferences: dialogToPreferences(ctx.dialog, ctx.preferences),

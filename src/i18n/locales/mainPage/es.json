@@ -323,7 +323,7 @@
   "chatOnline": "En línea",
   "closeChat": "Cerrar soporte",
   "clearChat": "Borrar chat",
-  "clearChatConfirm": "¿Borrar la conversación con el asistente? El chat empezará de nuevo.",
+  "clearChatConfirm": "¿Empezar un chat nuevo? La conversación actual se guardará en el historial y podrá abrirla de nuevo.",
   "chatRecommendationsTitle": "Anuncios recomendados:",
   "listingDefault": "Anuncio",
   "priceNotSpecified": "Precio no especificado",
@@ -424,6 +424,11 @@
   "assistantAction_vipClubDescription": "Inmuebles privados y oportunidades personales",
   "assistantLanguageSuggestion": "Parece que su pregunta está en otro idioma.",
   "assistantChangeLanguage": "Cambiar idioma",
+  "assistantIntroMessage": "¡Hola! Soy el asistente inteligente de SellYourBrick: le ayudo a entender la plataforma y a elegir inmuebles del catálogo actual.\n\nSellYourBrick es un marketplace inmobiliario con subastas, compra inmediata, participaciones y deudas. Puedo explicar secciones del sitio, sugerir una estrategia, encontrar lotes adecuados y responder dudas sobre la operación.\n\nDígame su objetivo — inversión o vivienda para usted — o elija un tema abajo.",
+  "assistantGuestLimitMessage": "¡Encantado de ayudar! Sin registro solo puedo responder unas pocas preguntas — ya alcanzó el límite. Regístrese para continuar sin límites y guardar el historial.",
+  "assistantGuestLimitCta": "Registrarse",
+  "assistantGuestLimitHint": "Se agotó el límite de respuestas gratis.",
+  "assistantGuestRepliesLeft": "Respuestas gratis sin registro: {{count}}",
   "assistantComposerHint": "El contexto se conserva durante 7 días",
   "chatPurposeSelf": "Para mí",
   "chatPurposeRent": "Para alquilar",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Elija de 5 a 21 días consecutivos (primer y último día)",
   "testDriveCal_errRangeOverlap": "El rango incluye una fecha ocupada",
   "chatWaitingReply": "Espere la respuesta…",
-  "chatTyping": "Escribiendo…"
+  "chatTyping": "Escribiendo…",
+  "assistantChatHistory": "Historial de chats",
+  "assistantChatHistoryTitle": "Conversaciones guardadas",
+  "assistantChatHistoryClose": "Cerrar",
+  "assistantChatHistoryEmpty": "Aún no hay conversaciones guardadas. Tras borrar el chat, aparecerá aquí.",
+  "assistantChatHistoryDelete": "Eliminar del historial",
+  "assistantChatHistoryUntitled": "Sin título"
 }

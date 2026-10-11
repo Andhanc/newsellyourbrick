@@ -1,6 +1,7 @@
 import { wantsEscalation } from './botCoreRules.js'
 import { detectDealFormat, detectLocationPreference, detectPropertyTypePreference } from './dialogContext.js'
 import { isSpainPropertyLegalQuery } from './spainLegalKnowledge.js'
+import { isCabinetPersonalQuery } from './userContext.js'
 
 export const SCENARIOS = {
   PROPERTY_SEARCH: 'property_search',
@@ -71,8 +72,13 @@ export function classifyScenario(text) {
     return { scenario: SCENARIOS.AUCTION_HELP, confidence: 0.92, strongSignal: true }
   }
 
+  // Личный кабинет раньше property_search: «мои объекты» не должно уходить в воронку подбора.
+  if (isCabinetPersonalQuery(lower)) {
+    return { scenario: SCENARIOS.PLATFORM_HELP, confidence: 0.96, strongSignal: true, cabinetPersonal: true }
+  }
+
   if (
-    /о\s+платформ|о\s+вас|что\s+такое\s+sellyourbrick|как\s+работ.*(сайт|платформ)|тест.?драйв|test.?drive|калькулятор|панель\s+инвест|сравн|compare|карта\s+объект|бонус|промокод|реферал|кошел|депозит|подписк|тариф|избран|профил|личн.*кабинет|истори.*став|презентац|property\s*ai|размест.*объект|кабинет\s+продав|скачать.*прилож|лотере|bonus|promo\s*code|wallet|deposit|subscription|favorite|profile|seller\s+cabinet/i.test(
+    /о\s+платформ|о\s+вас|что\s+такое\s+sellyourbrick|как\s+работ.*(сайт|платформ)|где\s+(найти|открыть|посмотреть|лежит|находится)|как\s+(попасть|открыть|найти|зайти|добраться)|куда\s+(зайти|нажать|перейти|идти)|открой|перейди|раздел|навигац|карта\s+сервис|все\s+сервис|тест.?драйв|test.?drive|калькулятор|панель\s+инвест|сравн|compare|карта\s+объект|бонус|промокод|реферал|кошел|депозит|баланс|подписк|тариф|избран|профил|личн.*кабинет|истори.*став|презентац|property\s*ai|размест.*объект|кабинет\s+продав|скачать.*прилож|лотере|private\s*club|долг|distress|shares|доли|bonus|promo\s*code|wallet|deposit|balance|subscription|favorite|profile|seller\s+cabinet|where\s+is|how\s+(do\s+i\s+)?(open|find|get\s+to)|go\s+to/i.test(
       lower,
     )
   ) {
@@ -173,7 +179,9 @@ export function formatIntentGateForPrompt(gate) {
   }
   if (gate.scenario === SCENARIOS.PLATFORM_HELP) {
     return `**ACTIVE SCENARIO: PLATFORM**
-Консультация по сайту: аукционы, доли, test-drive, калькулятор, сравнение, карта, кабинеты. Используй разрешённые path в navigation.`
+Консультация по сайту и личному кабинету: аукционы, buy now, доли, долги (/debts), Development (/development), test-drive, калькулятор, сравнение, карта, кабинеты.
+Если вопрос про «мои» объекты/ставки/брони/баланс/избранное — отвечай только по ПЕРСОНАЛЬНОМУ КОНТЕКСТУ, без воронки подбора.
+Если перечисляешь форматы — дай navigation и на /debts, и на /development. Используй только разрешённые path.`
   }
   if (gate.scenario === SCENARIOS.MANAGER_HANDOFF) {
     return `**ACTIVE SCENARIO: MANAGER HANDOFF**

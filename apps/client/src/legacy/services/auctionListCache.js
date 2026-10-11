@@ -266,7 +266,7 @@ export async function fetchAuctionList(explicitViewerUserId, options = {}) {
   const langQ = encodeURIComponent(lang)
   const viewerIdPart = String(viewerKey).split('|')[0]
   const viewerQ = viewerIdPart ? `&viewer_user_id=${encodeURIComponent(viewerIdPart)}` : ''
-  const includeApproved = catalogMode === 'all'
+  const includeApproved = catalogMode !== 'auction'
   const includeDebts = catalogMode !== 'auction'
   const includeShares = catalogMode === 'buyNow'
   try {

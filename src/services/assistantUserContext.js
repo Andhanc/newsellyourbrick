@@ -27,10 +27,25 @@ function propertySummary(property = {}, overrides = {}) {
     id: number(overrides.id ?? property.id),
     propertyId: number(overrides.propertyId ?? property.property_id ?? property.id),
     title: text(overrides.title || property.title || property.name || property.property_title) || null,
+    propertyType: text(
+      overrides.propertyType
+        || property.property_type
+        || property.type
+        || property.category
+        || property.propertyType,
+      40,
+    ) || null,
     location: text(overrides.location || property.location || property.address || property.property_location) || null,
     status: text(overrides.status || property.status || property.moderation_status) || null,
     amount: number(overrides.amount ?? property.price ?? property.bid_amount ?? property.total_paid),
     currency: text(overrides.currency || property.currency || 'EUR', 8),
+    auctionEndDate:
+      overrides.auctionEndDate
+      || property.auction_end_date
+      || property.test_timer_end_date
+      || property.endTime
+      || property.end_time
+      || null,
     sourceTable: text(
       overrides.sourceTable || property.source_table || property.property_table,
       48,

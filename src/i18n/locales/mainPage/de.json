@@ -324,7 +324,7 @@
   "chatOnline": "Online",
   "closeChat": "Support schließen",
   "clearChat": "Chat leeren",
-  "clearChatConfirm": "Unterhaltung mit dem Assistenten löschen? Der Chat beginnt von vorn.",
+  "clearChatConfirm": "Neuen Chat starten? Der aktuelle Dialog wird in der Chat-Historie gespeichert und kann später wieder geöffnet werden.",
   "chatRecommendationsTitle": "Empfohlene Anzeigen:",
   "listingDefault": "Anzeige",
   "priceNotSpecified": "Preis nicht angegeben",
@@ -425,6 +425,11 @@
   "assistantAction_vipClubDescription": "Private Objekte und persönliche Möglichkeiten",
   "assistantLanguageSuggestion": "Ihre Frage scheint in einer anderen Sprache zu sein.",
   "assistantChangeLanguage": "Sprache ändern",
+  "assistantIntroMessage": "Hallo! Ich bin der smarte SellYourBrick-Assistent — ich helfe Ihnen auf der Plattform und finde Objekte im aktuellen Katalog.\n\nSellYourBrick ist ein Immobilienmarktplatz mit Auktionen, Sofortkauf, Anteilen und Distressed-Angeboten. Ich erkläre Bereiche der Website, schlage Strategien vor, finde passende Lose und beantworte Fragen zum Ablauf.\n\nSchreiben Sie Ihr Ziel — Investment oder Eigennutzung — oder wählen Sie unten ein Thema.",
+  "assistantGuestLimitMessage": "Gern geschehen! Ohne Registrierung kann ich nur wenige Fragen beantworten — das Limit ist erreicht. Registrieren Sie sich, um ohne Limit weiterzuschreiben und den Verlauf zu speichern.",
+  "assistantGuestLimitCta": "Registrieren",
+  "assistantGuestLimitHint": "Kostenloses Antwortlimit erreicht.",
+  "assistantGuestRepliesLeft": "Kostenlose Antworten ohne Registrierung: {{count}}",
   "assistantComposerHint": "Der Gesprächskontext bleibt 7 Tage gespeichert",
   "chatPurposeSelf": "Für mich",
   "chatPurposeRent": "Zur Vermietung",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Wählen Sie 5 bis 21 aufeinanderfolgende Tage (erster und letzter Tag)",
   "testDriveCal_errRangeOverlap": "Der Zeitraum enthält ein belegtes Datum",
   "chatWaitingReply": "Bitte warten Sie auf die Antwort…",
-  "chatTyping": "Schreibt…"
+  "chatTyping": "Schreibt…",
+  "assistantChatHistory": "Chat-Verlauf",
+  "assistantChatHistoryTitle": "Gespeicherte Dialoge",
+  "assistantChatHistoryClose": "Schließen",
+  "assistantChatHistoryEmpty": "Noch keine gespeicherten Dialoge. Nach dem Löschen erscheint der Chat hier.",
+  "assistantChatHistoryDelete": "Aus Verlauf löschen",
+  "assistantChatHistoryUntitled": "Ohne Titel"
 }

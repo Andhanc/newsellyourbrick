@@ -1,0 +1,97 @@
+PERSONAL PLAN — BUYER 2
+
+1. Your role and overall objective
+
+You are testing a second, independent buyer journey: registration, getting familiar with the platform, purchasing a different available whole property, placing competing bids, and booking a test drive that is rejected with a clear reason.
+
+Do not switch to the seller role. Do not open debt properties. Do not use real passport or payment details.
+
+2. Test data
+
+- Test website URL: ____________________
+- Email: ____________________
+- Phone/WhatsApp: ____________________
+- Interface language: ____________________
+- Device and browser: ____________________
+
+Test card: 4242 4242 4242 4242; expiry 12/34; CVC 123; Test User; postcode 28001.
+
+3. Required preparation before your personal scenario
+
+[ ] Open the URL as a guest.
+[ ] Select the language and refresh the page: the language should remain selected.
+[ ] Click "Profile" → "Sign Up."
+[ ] Create a new account using the provided email address.
+[ ] Confirm the email address using the link or code in the email.
+[ ] If the email does not arrive, check "Spam" and request a resend once.
+[ ] Return to the website and make sure you are signed in.
+[ ] Enter your name, country, and phone/WhatsApp in your profile.
+[ ] Save, refresh the page, and check the data.
+[ ] From the home page, open "Buy Now," "Auction," and "Shares."
+[ ] From the menu, open Profile, Favorites, Comparison, Deposit/Wallet, History, Bookings, and Subscriptions.
+[ ] Check the registration notification in your account, email, and WhatsApp.
+
+4. Choose a different property to buy
+
+[ ] Open "Marketplace" → "Buy Now."
+[ ] Choose any available property other than the first buyer's selection.
+[ ] Send the link to the coordinator and receive confirmation that the property is available.
+[ ] Check the gallery, price, address, description, features, documents, location, and seller.
+[ ] Add the property to Favorites.
+[ ] Open the "Smart Panel," calculate the property, and compare the input data with the listing.
+[ ] Return to the selected property.
+
+5. Buy a whole property
+
+[ ] Click "Buy Now."
+[ ] Open the PDF and check the property, amount, and terms.
+[ ] Confirm your consent and signature.
+[ ] Start the first payment and cancel it.
+[ ] Check that the property has not been purchased and there is no charge.
+[ ] Repeat the process and pay the reservation once.
+[ ] Record the application ID, payment ID, and amount.
+[ ] Send the ID to the coordinator and wait for the transaction to be completed.
+[ ] In "History," check that there is one entry with the correct property, amount, and status.
+[ ] Check website, email, and WhatsApp notifications.
+
+6. Participate in the auction
+
+[ ] Open "Marketplace" → "Auction."
+[ ] Choose the same active auction in which the first buyer is participating.
+[ ] Check the timer, current price, and minimum increment.
+[ ] Fund the deposit with the test card.
+[ ] Submit KYC and send the ID to the coordinator.
+[ ] Wait for KYC approval.
+[ ] Outbid the first buyer using the correct increment.
+[ ] Check the bid history and notifications.
+[ ] After the counterbid, check the outbid notification.
+[ ] You are not required to win or purchase through the auction.
+
+7. Book a test drive for rejection
+
+[ ] Open the "Test Drive" section.
+[ ] Choose any property with available dates.
+[ ] Check the description, price, calendar, and terms.
+[ ] Select dates different from the first buyer's booking.
+[ ] Pay for the booking once and record the ID.
+[ ] Send the ID to the coordinator/seller with a request to reject the application and provide a clear reason.
+[ ] Check the "Rejected" status, dates, amount, and exact wording of the reason.
+[ ] Check website, email, and WhatsApp notifications.
+[ ] There should be one rejected application in "Bookings."
+
+8. Final walkthrough and data check
+
+[ ] Open Profile, Favorites, Deposit, History, and Bookings.
+[ ] Make sure the purchase, payments, bids, and booking are each displayed once.
+[ ] Refresh the page twice and check again that there are no duplicates.
+[ ] Do not click "Become a Seller."
+
+9. What to send to the coordinator
+
+- IDs for the account, purchase, payment, deposit, KYC, bids, and booking.
+- Screenshots of the email confirmation, listing, canceled payment, and final purchase.
+- Screenshots of the bids, rejected booking, and reason.
+- Notification results: account / email / WhatsApp.
+- Errors: step / expected / actual / time / URL / screenshot.
+
+The scenario is complete if a different whole property was purchased once, competing bids work after KYC, the test drive is rejected with a visible reason, and the data is not duplicated.

@@ -64,6 +64,8 @@ test('assistant message hints use icon cards with distinct tones', () => {
   assert.match(aiPanel, /chat-widget__navigation-icon/)
   assert.match(aiPanel, /chat-widget__message--rich/)
   assert.match(css, /chat-widget__navigation-link\[data-tone='rose'\]/)
+  assert.match(css, /\.chat-widget__navigation-link \{[\s\S]*?--syb-tiffany-btn-fill/)
+  assert.match(css, /\.chat-widget__navigation-label \{[\s\S]*?color:\s*#ffffff/)
   assert.match(css, /chat-widget__button-icon/)
   assert.match(aiPanel, /assistant-legal-source/)
   assert.match(aiPanel, /rel="noreferrer noopener"/)

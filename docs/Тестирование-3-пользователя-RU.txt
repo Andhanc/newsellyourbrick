@@ -1,0 +1,21 @@
+ТЕСТИРОВАНИЕ SELL YOUR BRICK — ГРУППА ИЗ 3 ЧЕЛОВЕК
+
+PDF — русский:
+docs/testing-users-3/pdf/Russian/00-Общий-план-3-человека.pdf
+docs/testing-users-3/pdf/Russian/01-Продавец-1.pdf
+docs/testing-users-3/pdf/Russian/02-Покупатель-1.pdf
+docs/testing-users-3/pdf/Russian/03-Покупатель-2.pdf
+
+PDF — English:
+docs/testing-users-3/pdf/English/00-Group-Plan-3-People.pdf
+docs/testing-users-3/pdf/English/01-Seller-1.pdf
+docs/testing-users-3/pdf/English/02-Buyer-1.pdf
+docs/testing-users-3/pdf/English/03-Buyer-2.pdf
+
+PDF — Español:
+docs/testing-users-3/pdf/Spanish/00-Plan-General-3-Personas.pdf
+docs/testing-users-3/pdf/Spanish/01-Vendedor-1.pdf
+docs/testing-users-3/pdf/Spanish/02-Comprador-1.pdf
+docs/testing-users-3/pdf/Spanish/03-Comprador-2.pdf
+
+Участники не привязаны к техническим названиям лотов. Покупатели самостоятельно выбирают два разных свободных объекта и выполняют персональные маршруты.

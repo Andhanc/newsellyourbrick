@@ -5,8 +5,10 @@
 
 export const SITE_ASSISTANT_NAV = [
   { path: '/auction', label: 'Аукционы', aliases: ['аукцион', 'лоты', 'торги', 'auction', 'home', 'главн'] },
+  { path: '/auction/buy-now', label: 'Купить сейчас', aliases: ['купить сейчас', 'buy now', 'buy-now'] },
   { path: '/map', label: 'Карта объектов', aliases: ['карта', 'карту', 'карты', 'map', 'на карте'] },
-  { path: '/shares', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'share', 'соинвест'] },
+  { path: '/co-investment', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'share', 'соинвест', 'фракцион'] },
+  { path: '/shares', label: 'Доли (Shares)', aliases: ['/shares'] },
   { path: '/calculator', label: 'Умная панель инвестора', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор'] },
   { path: '/compare', label: 'Сравнение объектов', aliases: ['сравн', 'compare'] },
   { path: '/test-drive', label: 'Test-drive объектов', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
@@ -14,10 +16,16 @@ export const SITE_ASSISTANT_NAV = [
   { path: '/news', label: 'Новости', aliases: ['новост', 'news'] },
   { path: '/about', label: 'О платформе', aliases: ['о нас', 'о платформе', 'about', 'компания'] },
   { path: '/buyer', label: 'Покупателям', aliases: ['покупател', 'buyer'] },
+  { path: '/seller', label: 'Продавцам', aliases: ['продав', 'seller'] },
   { path: '/debts', label: 'Долги / Distressed', aliases: ['долг', 'debt', 'distressed'] },
+  { path: '/development', label: 'Development', aliases: ['development', 'девелоп', 'совместн развит'] },
   { path: '/private-club', label: 'Private Club', aliases: ['private club', 'vip', 'клуб'] },
+  { path: '/subscriptions', label: 'Подписки', aliases: ['подписк', 'тариф', 'subscription', 'pro'] },
+  { path: '/wallet', label: 'Кошелёк и депозит', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
+  { path: '/bonuses', label: 'Бонусы', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
+  { path: '/sections', label: 'Все сервисы', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
   { path: '/chat', label: 'Чат с помощником', aliases: ['чат', 'chat', 'помощник'] },
-  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'support', 'техподдержк'] },
+  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'support', 'техподдержк', 'менеджер'] },
   { path: '/profile', label: 'Личный кабинет', aliases: ['кабинет', 'профиль', 'profile'] },
 ]
 
@@ -30,6 +38,8 @@ export function isAllowedAssistantPath(path) {
   if (ALLOWED_PATHS.has(normalized)) return true
   // Карточки объектов: /property/:id|slug
   if (/^\/property\/[A-Za-z0-9\-_%]+$/i.test(normalized)) return true
+  // Объект в кабинете продавца
+  if (/^\/owner-test\/property-analytics\/[A-Za-z0-9\-_%]+$/i.test(normalized)) return true
   return false
 }
 
@@ -95,9 +105,9 @@ export function detectNavigationFromMessage(userMessage) {
   }
 
   // Общий запрос «куда можно перейти / разделы сайта»
-  if (/(раздел|страниц|навигац|что\s+есть\s+на\s+сайте|меню)/i.test(t)) {
+  if (/(раздел|страниц|навигац|что\s+есть\s+на\s+сайте|меню|все\s+сервис)/i.test(t)) {
     return SITE_ASSISTANT_NAV.filter((item) =>
-      ['/auction', '/map', '/calculator', '/shares', '/test-drive', '/about'].includes(item.path),
+      ['/sections', '/auction', '/map', '/calculator', '/co-investment', '/test-drive', '/about'].includes(item.path),
     ).map(({ path, label }) => ({ path, label }))
   }
 

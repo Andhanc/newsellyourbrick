@@ -466,7 +466,7 @@
   "chatOnline": "Online",
   "closeChat": "Close support",
   "clearChat": "Clear chat",
-  "clearChatConfirm": "Clear the conversation with the assistant? The chat will start over.",
+  "clearChatConfirm": "Start a new chat? The current conversation will be saved in chat history and you can open it again.",
   "chatRecommendationsTitle": "Recommended listings:",
   "chatNavigationTitle": "Go to:",
   "chatOpenListing": "Open listing →",
@@ -576,6 +576,11 @@
   "assistantAction_vipClubDescription": "Private listings and personal opportunities",
   "assistantLanguageSuggestion": "It looks like your question is in another language.",
   "assistantChangeLanguage": "Change language",
+  "assistantIntroMessage": "Hello! I’m the SellYourBrick smart assistant — I help you navigate the platform and match listings from the current catalog.\n\nSellYourBrick is a real-estate marketplace with auctions, buy-now, shares, and debt listings. I can explain site sections, suggest a strategy, find matching lots, and answer transaction questions.\n\nTell me what you need — investment or a home for yourself — or pick a topic below.",
+  "assistantGuestLimitMessage": "Happy to help! Without an account I can only answer a few questions — you’ve reached that limit. Register to continue chatting without limits and keep your history.",
+  "assistantGuestLimitCta": "Register",
+  "assistantGuestLimitHint": "Free reply limit reached.",
+  "assistantGuestRepliesLeft": "Free replies left without registration: {{count}}",
   "assistantComposerHint": "Conversation context is kept for 7 days",
   "chatPurposeSelf": "For myself",
   "chatPurposeRent": "For rental",
@@ -7012,5 +7017,11 @@
   "testDriveCal_errRangeLength": "Pick 5 to 21 consecutive days (first and last day)",
   "testDriveCal_errRangeOverlap": "Range overlaps a booked date",
   "chatWaitingReply": "Waiting for a reply…",
-  "chatTyping": "Typing…"
+  "chatTyping": "Typing…",
+  "assistantChatHistory": "Chat history",
+  "assistantChatHistoryTitle": "Saved conversations",
+  "assistantChatHistoryClose": "Close",
+  "assistantChatHistoryEmpty": "No saved conversations yet. After you clear the chat, it will appear here.",
+  "assistantChatHistoryDelete": "Delete from history",
+  "assistantChatHistoryUntitled": "Untitled"
 }
