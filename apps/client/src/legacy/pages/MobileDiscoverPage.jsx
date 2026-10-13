@@ -9,6 +9,7 @@ import {
   FiX,
 } from 'react-icons/fi'
 import SiteChatDock from '../components/SiteChatDock'
+import DiscoverIntroBanners from '../components/DiscoverIntroBanners'
 import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
@@ -652,6 +653,8 @@ export default function MobileDiscoverPage() {
           </div>
 
           <div className="md-stage__sheet">
+            <DiscoverIntroBanners />
+
             <div className="md-stage__intro">
               <h2 className="md-stage__title">
                 {t('discoverPage_stageTitlePrefix')}{' '}
